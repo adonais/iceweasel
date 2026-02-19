@@ -69,6 +69,8 @@ void ReportSinkTypeMismatchViolations(nsIContentSecurityPolicy* aCSP,
                                       const nsAString& aSinkGroup,
                                       const nsAString& aSource);
 
+bool CanSkipTrustedTypesEnforcement(const nsINode& aNode);
+
 // https://w3c.github.io/trusted-types/dist/spec/#get-trusted-type-compliant-string-algorithm
 //
 // May only run script if aInput is not a trusted type and if the trusted types
@@ -145,8 +147,7 @@ MOZ_CAN_RUN_SCRIPT const nsAString*
 GetTrustedTypesCompliantStringForTrustedScript(
     const nsAString& aInput, const nsAString& aSink,
     const nsAString& aSinkGroup, const nsINode& aNode,
-    nsIPrincipal* aPrincipalOrNull, Maybe<nsAutoString>& aResultHolder,
-    ErrorResult& aError);
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError);
 
 // https://w3c.github.io/trusted-types/dist/spec/#abstract-opdef-process-value-with-a-default-policy
 template <typename ExpectedType>

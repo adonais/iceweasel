@@ -5,7 +5,6 @@
 package mozilla.components.feature.session.middleware
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.selector.findTab
@@ -15,31 +14,17 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.lib.state.MiddlewareContext
-import mozilla.components.support.test.mock
-import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
 
 @RunWith(AndroidJUnit4::class)
 class LastAccessMiddlewareTest {
-    lateinit var store: BrowserStore
-    lateinit var context: MiddlewareContext<BrowserState, BrowserAction>
-
-    @Before
-    fun setup() {
-        store = BrowserStore()
-        context = mock()
-
-        whenever(context.store).thenReturn(store)
-        whenever(context.state).thenReturn(store.state)
-    }
 
     @Test
     fun `UpdateLastAction is dispatched when tab is selected`() {
@@ -311,7 +296,7 @@ class LastAccessMiddlewareTest {
         var nextInvoked = false
         val middleware = LastAccessMiddleware()
 
-        middleware.invoke(context, { nextInvoked = true }, TabListAction.RemoveTabAction("123"))
+        middleware.invoke(BrowserStore(), { nextInvoked = true }, TabListAction.RemoveTabAction("123"))
 
         assertTrue(nextInvoked)
     }

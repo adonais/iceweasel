@@ -136,6 +136,9 @@ class nsDocLoader : public nsIDocumentLoader,
       nsresult aStatus, const nsAString& aHost, nsAString& aRetVal,
       mozilla::StaticRefPtr<mozilla::intl::Localization>& aL10n);
 
+  void FireOnLocationChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
+                            nsIURI* aUri, uint32_t aFlags);
+
  protected:
   explicit nsDocLoader(bool aNotifyAboutBackgroundRequests);
   virtual ~nsDocLoader();
@@ -180,9 +183,6 @@ class nsDocLoader : public nsIDocumentLoader,
 
   void FireOnStatusChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
                           nsresult aStatus, const char16_t* aMessage);
-
-  void FireOnLocationChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
-                            nsIURI* aUri, uint32_t aFlags);
 
   [[nodiscard]] bool RefreshAttempted(nsIWebProgress* aWebProgress,
                                       nsIURI* aURI, uint32_t aDelay,

@@ -542,6 +542,9 @@ NON_IDL_EVENT(complete, eAudioComplete, EventNameType_None, eBasicEventClass)
 
 EVENT(scrollend, eScrollend, EventNameType_All, eBasicEventClass)
 
+EVENT(mozorientationchange, eMozOrientationChange, EventNameType_All,
+      eBasicEventClass)
+
 #ifdef DEFINED_FORWARDED_EVENT
 #  undef DEFINED_FORWARDED_EVENT
 #  undef FORWARDED_EVENT

@@ -49,7 +49,7 @@ class nsLocalFile final : public nsILocalFileWin {
 
   // Checks if the filename is one of the windows reserved filenames
   // (com1, com2, etc...) and returns true if so.
-  static bool CheckForReservedFileName(const nsString& aFileName);
+  static bool CheckForReservedFileName(const nsAString& aFileName);
 
   /**
    * Checks whether the inherited ACEs in aChildDacl only come from the parent.

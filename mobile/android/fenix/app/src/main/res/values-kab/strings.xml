@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Sekcem awalen n unadi</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Iccaren-ik yeldin ad ttwaseknen dagi.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Iccaren-ik yeldin ad ttwaseknen dagi.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Accaren-ik n tbaḍnit ad d-ttwaseknen dagi.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Accaren-ik n tbaḍnit ad d-ttwaseknen dagi.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Tunigin tusligt</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,9 +54,13 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Ffeɣ seg uskar n uget-afran</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Sekles iccaren ittufernen ɣer tegrumma</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Sekles iccaren ittufernen ɣer tegrumma</string>
+  <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_header">Err-d accaren-ik·im seg yal ibenk</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Kcem</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">Akk tidyanin</string>
   <!--
     Home - Bookmarks
 
@@ -202,7 +206,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Isiɣzaf</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Γur-k isiɣzaf yettwasbedden, maca ur ttwaremden ara</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Γur-k isiɣzaf yettwasbedden, maca ur ttwaremden ara</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Sefrek isiɣzaf</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,9 +227,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Talut n umiḍan</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Tallalt</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Tallalt</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Amaynut</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Amaynut</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Iɣewwaṛen</string>
   <!-- Browser menu button that opens a user's library -->
@@ -233,7 +237,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Asmel n tnarit</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Ldi deg yiccer amagnu</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Ldi deg yiccer amagnu</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Rnu ɣer ugdil agejdan</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -261,7 +265,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">ITEDDU S LMENDAD N %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ITEDDU S LMENDAD N %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -274,15 +278,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Ldi deg usnas</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Sagen timeẓri n tɣuri</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Sagen timeẓri n tɣuri</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Sagen timeẓri n tɣuri</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Rnu</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Rnu</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Ẓreg</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Ẓreg</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Sagen asebter agejdan</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Sagen asebter agejdan</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Kcem</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -299,16 +303,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Mdel umuɣ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Tunigin</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Tallalt</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Iɣewwaṛen</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Mdel tiferkit n wumuɣ n yisiɣzaf</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Mdel tiferkit n wumuɣ n yisiɣzaf</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Mdel tiferkit n wumuɣ n usekles</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Mdel tiferkit n wumuɣ n usekles</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Mdel tiferkit n wumuɣ n yifecka</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Mdel tiferkit n wumuɣ n yifecka</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Mdel tiferkit n wumuɣ n waccaren udmawanen</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -320,7 +320,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Suqqel asebter</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Cegger asmel yerẓen…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Cegger asmel yerẓen…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Mmel asmel yerẓen</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -442,19 +442,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Tasertit tabaḍnit n Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Nḥemmel ad teqqimeḍ d aɣellsan</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Wali ayɣer aṭas i iḥemmlen Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Tunigin tusligt s wugar n yifranen</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Iminig-nneɣ tettallit yiwet n tkebbanit ur nettnadi ɣef tedrimt, tessewḥal tikebbaniyin ara ak-iḍefren deg web.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Ugar n 100 yimelyan n yimdanen mmestnen tabaḍnit-nsen s ufran n yiminig n tkebbanit ur nettnadi ara ɣef tedrimt.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Ineḍfaren i yettwassnen? Ttusweḥlen s wudem awurman. Isiɣzaf? Ԑreḍ-iten i 700. Ifuyla PDFs? Imeɣri-nneɣ usliɣ yessifsus asefrek-nsen.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Sbadu-t d iminig amezwer</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -545,39 +534,39 @@
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">S ukemmel, ad tqebleḍ %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">S ukemmel, ad tqebleḍ %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Tiwtiln n useqdec n Fiefox</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Tiwtiln n useqdec n Fiefox</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox terḥa-t tudert-ik tabaḍnit. Issin ugar deg %1$s.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox terḥa-t tudert-ik tabaḍnit. Issin ugar deg %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Tasertit n tbaḍnit</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Tasertit n tbaḍnit</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Akken ad tεawneḍ deg usnerni iminig, Firefox ad yazen isefka n tawassna akked umyigew ɣer Mozilla. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Akken ad tεawneḍ deg usnerni iminig, Firefox ad yazen isefka n tawassna akked umyigew ɣer Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Sefrek iɣewwaren</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Sefrek iɣewwaren</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Kemmel</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Kemmel</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Kemmel</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Kemmel</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Mudd afus i usnerni n Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Mudd afus i usnerni n Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Bḍu amek i d-tufiḍ Firefox, daɣen i t-tesseqdaceḍ, akked yicriken n ulzuz n Mozilla. Isefka-a werǧin ttnuzun.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Bḍu amek i d-tufiḍ Firefox, daɣen i t-tesseqdaceḍ, akked yicriken n ulzuz n Mozilla. Isefka-a werǧin ttnuzun.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Amek i nesseqdac isefka</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Amek i nesseqdac isefka</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Sentem</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Sentem</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Bdu amtawi</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Bdu amtawi</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Mačči tura</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Mačči tura</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Mudd afus i usnerni n Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -1017,8 +1006,6 @@
   <string name="alternative_app_icon_group_solid_colors">Initen imsariyen</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Tafesna n yini</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Wayeḍ</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Beddel tignit n usnas?</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
@@ -1370,9 +1357,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Rmed</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Ɛreḍ timahilin d tektiwin send ma ad asent-nserrḥen akk i medden.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Ɛreḍ timahilin d tektiwin send ma ad asent-nserrḥen akk i medden.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Sbedd syen bdu almad</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Sbedd syen bdu almad</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Issin ugar</string>
   <!--
@@ -1402,15 +1389,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Rnu iccer uslig</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Uslig</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Uslig</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sync</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sync</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Bḍu akk accaren</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Bḍu akk accaren</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Iccaren imedlen melmi kan</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Yettwamdel melmi kan</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Yettwamdel melmi kan</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Iɣewwaṛen n umiḍan</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1418,9 +1405,9 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Mdel akk iccaren</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Ticreḍt n usebter</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Ticreḍt n usebter</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Mdel</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Mdel</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Mdel accaren i yettwafernen</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1428,7 +1415,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Rnu ɣer tagrumma</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Bḍu accaren yettwafernen</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Bḍu accaren yettwafernen</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Umuɣ n waccaren i yettwafernen</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1995,7 +1982,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Qqen ɣer Sync</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Kcem</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Kcem</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Azen ɣer yibenkan meṛṛa</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2153,7 +2140,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Ad yekkes s wudem awurman isefka n tunigin ticki tferneḍ \"Ffeɣ\" seg umuɣ agejdan</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Ffeɣ</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Ffeɣ</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Azilal ara tekkseḍ</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2790,9 +2777,9 @@
   -->
   <string name="certificate_info_verified_by">Isenqed-it: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Kkes</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Kkes</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Ẓreg</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Ẓreg</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">D tidet tebɣiḍ ad tekkseḍ awal-a n uεeddi?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -2800,15 +2787,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Sefsex</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Tixtiṛiyin n wawal uffir</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Tixtiṛiyin n wawal uffir</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Urti n uḍris yettusenfal i tansa n usmel web.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Urti n uḍris yettusenfal i tansa n usmel web.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Urti n uḍris yettusenfal i yisem n useqdac.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Urti n uḍris yettusenfal i yisem n useqdac.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Urti n uḍris yettusenfal i wawal n uεeddi.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Urti n uḍris yettusenfal i wawal n uεeddi.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Sekles isenfal.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Sekles isenfal.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Ẓreg awal uffir</string>
   <!-- The page title for adding new password. -->

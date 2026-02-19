@@ -158,7 +158,7 @@ export var PropertyListUtils = Object.freeze({
    * and objects.
    *
    * @return one of the TYPE_* constants listed above.
-   * @note this method is merely for convenience.  It has no magic to detect
+   * Note: this method is merely for convenience.  It has no magic to detect
    * that aObject is indeed a property list object created by this module.
    */
   getObjectType: function PLU_getObjectType(aObject) {
@@ -384,7 +384,7 @@ BinaryPropertyListReader.prototype = {
    *        Whether or not it is a unicode string.
    * @return the string read.
    *
-   * @note this is tested to work well with unicode surrogate pairs.  Because
+   * Note: this is tested to work well with unicode surrogate pairs.  Because
    * all unicode characters are read as 2-byte integers, unicode surrogate
    * pairs are read from the buffer in the form of two integers, as required
    * by String.fromCharCode.
@@ -828,7 +828,7 @@ XMLPropertyListReader.prototype = {
  *
  * @member _lazyGetters
  *         Set() object to hold keys invoking LazyGetter.
- * @method get
+ * @function get
  *         Trap for getting property values. Ensures that if a lazyGetter is present
  *         as value for key, then the function is evaluated, the value is cached,
  *         and its value will be returned.

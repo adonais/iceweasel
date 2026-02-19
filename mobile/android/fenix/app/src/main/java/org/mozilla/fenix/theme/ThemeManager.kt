@@ -13,6 +13,7 @@ import android.view.Window
 import androidx.annotation.AnyRes
 import androidx.annotation.StyleRes
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import mozilla.components.support.ktx.android.content.getColorFromAttr
@@ -97,8 +98,14 @@ abstract class ThemeManager {
             return typedValue.resourceId
         }
 
+        /**
+         * Resolves the attribute to a color.
+         *
+         * @param attribute The attribute to resolve.
+         * @return The [Color] of the resolved attribute.
+         */
         @Composable
-        fun resolveAttributeColor(attribute: Int): androidx.compose.ui.graphics.Color {
+        fun resolveAttributeColor(attribute: Int): Color {
             val resourceId = resolveAttribute(attribute, LocalContext.current)
             return colorResource(resourceId)
         }

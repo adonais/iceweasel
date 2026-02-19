@@ -216,7 +216,7 @@ const jvmThreadColumns = [
 /**
  * This component manages the settings for recording a performance profile.
  *
- * @extends {React.PureComponent<Props, State>}
+ * @augments {React.PureComponent<Props, State>}
  */
 class Settings extends PureComponent {
   /**

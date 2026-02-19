@@ -607,7 +607,7 @@ FinderHighlighter.prototype = {
     let hasRanges = false;
     if (window) {
       let controllers = [this.finder._getSelectionController(window)];
-      let editors = this.editors;
+      let editors = this._editors;
       if (editors) {
         // Add the selection controllers from any input fields.
         controllers.push(...editors.map(editor => editor.selectionController));

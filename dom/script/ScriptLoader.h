@@ -809,6 +809,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
+  bool IsBeforeFCP();
+
  public:
   struct DiskCacheStrategy {
     bool mIsDisabled = false;
@@ -924,6 +926,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   bool mLoadEventFired;
   bool mGiveUpDiskCaching;
   bool mContinueParsingDocumentAfterCurrentScript;
+  bool mHadFCPDoNotUseDirectly;
 
   TimeDuration mMainThreadParseTime;
 

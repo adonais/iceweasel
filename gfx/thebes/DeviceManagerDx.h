@@ -80,6 +80,7 @@ class DeviceManagerDx final {
   bool CanUseP010();
   bool CanUseP016();
   bool CanUseDComp();
+  bool CanUseDCompositionTexture();
 
   // Returns true if we can create a texture with
   // D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX and also
@@ -209,6 +210,7 @@ class DeviceManagerDx final {
   RefPtr<layers::DeviceAttachmentsD3D11> mCompositorAttachments
       MOZ_GUARDED_BY(mDeviceLock);
   bool mCompositorDeviceSupportsVideo MOZ_GUARDED_BY(mDeviceLock);
+  bool mSupportsDCompositionTexture MOZ_GUARDED_BY(mDeviceLock);
   Maybe<D3D11DeviceStatus> mDeviceStatus MOZ_GUARDED_BY(mDeviceLock);
   Maybe<DeviceResetReason> mDeviceResetReason MOZ_GUARDED_BY(mDeviceLock);
   RefPtr<Runnable> mUpdateMonitorInfoRunnable MOZ_GUARDED_BY(mDeviceLock);

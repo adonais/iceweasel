@@ -23,9 +23,8 @@ const TEST_ADDITIONAL_TEXT_2 = "some other additional text";
  * HANG_TIME, and then returns the BHR hang report generated for
  * that hang.
  *
- * @returns {Promise}
- * @resolves {nsIHangDetails}
- *   The hang report that was created.
+ * @returns {Promise<nsIHangDetails>}
+ *   Resolves to the hang report that was created.
  */
 async function hangAndWaitForReport(expectTestAnnotation) {
   let hangPromise = TestUtils.topicObserved("bhr-thread-hang", subject => {

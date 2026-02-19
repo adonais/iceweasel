@@ -32,7 +32,6 @@ class UnifiedTrustPanelTest : TestSetup() {
         AndroidComposeTestRule(
             HomeActivityIntentTestRule(
                 isUnifiedTrustPanelEnabled = true,
-                isComposableToolbarEnabled = false,
                 isPWAsPromptEnabled = false,
             ),
         ) { it.activity }
@@ -53,11 +52,11 @@ class UnifiedTrustPanelTest : TestSetup() {
     fun verifySecurePageConnectionFromQuickSettingsWithNoTrackersTest() {
         val firstPage = "https://mozilla-mobile.github.io/testapp"
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.toUri()) {
             verifyPageContent("Lets test!")
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
@@ -90,13 +89,11 @@ class UnifiedTrustPanelTest : TestSetup() {
         val trackingProtectionPage = mockWebServer.enhancedTrackingProtectionAsset.url
 
         // browsing a generic page to allow GV to load on a fresh run
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
-        }.openTabDrawer(composeTestRule) {
-            closeTab()
+            verifyPageContent(genericPage.content)
         }
-
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(trackingProtectionPage) {
             verifyTrackingProtectionWebContent("social blocked")
             verifyTrackingProtectionWebContent("ads blocked")
@@ -104,11 +101,12 @@ class UnifiedTrustPanelTest : TestSetup() {
             verifyTrackingProtectionWebContent("Fingerprinting blocked")
             verifyTrackingProtectionWebContent("Cryptomining blocked")
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = trackingProtectionPage.host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = trackingProtectionPage.host.toString(),
                 isTheWebSiteSecure = false,
                 isEnhancedTrackingProtectionEnabled = true,
@@ -119,6 +117,7 @@ class UnifiedTrustPanelTest : TestSetup() {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = trackingProtectionPage.host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = trackingProtectionPage.host.toString(),
                 isTheWebSiteSecure = false,
                 isEnhancedTrackingProtectionEnabled = false,
@@ -135,11 +134,11 @@ class UnifiedTrustPanelTest : TestSetup() {
         val loginPage = "https://mozilla-mobile.github.io/testapp/loginForm"
         val originWebsite = "mozilla-mobile.github.io"
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(loginPage.toUri()) {
             waitForPageToLoad(waitingTimeLong)
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.openUnifiedTrustPanel {
             clickTheClearCookiesAndSiteDataButton(composeTestRule)
             verifyTheClearCookiesAndSiteDataDialog(composeTestRule, originWebsite)
@@ -154,19 +153,20 @@ class UnifiedTrustPanelTest : TestSetup() {
         val trackingProtectionPage = "https://senglehardt.com/test/trackingprotection/test_pages/tracking_protection"
 
         // browsing a generic page to allow GV to load on a fresh run
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
         }
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(trackingProtectionPage.toUri()) {
             verifyPageContent("Tracker Blocking")
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = trackingProtectionPage.toUri().host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = trackingProtectionPage.toUri().host.toString(),
                 isTheWebSiteSecure = true,
                 isEnhancedTrackingProtectionEnabled = true,
@@ -177,6 +177,7 @@ class UnifiedTrustPanelTest : TestSetup() {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = trackingProtectionPage.toUri().host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = trackingProtectionPage.toUri().host.toString(),
                 isEnhancedTrackingProtectionEnabled = false,
                 isTheWebSiteSecure = true,
@@ -191,11 +192,11 @@ class UnifiedTrustPanelTest : TestSetup() {
     fun verifyInsecurePageConnectionFromQuickSettingsWithNoTrackersTest() {
         val genericPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
             verifyPageContent(genericPage.content)
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
@@ -230,11 +231,11 @@ class UnifiedTrustPanelTest : TestSetup() {
             ),
         )
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             verifyPageContent("Lets test!")
         }
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
@@ -272,7 +273,7 @@ class UnifiedTrustPanelTest : TestSetup() {
             ),
         )
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             verifyPageContent(genericPage.content)
         }
 
@@ -282,14 +283,15 @@ class UnifiedTrustPanelTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
             verifyCustomTabUrl(customTabPage.toUri().host.toString())
         }
-        customTabScreen {
+        customTabScreen(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = customTabPage.toUri().host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = customTabPage.toUri().host.toString(),
                 isTheWebSiteSecure = true,
                 isEnhancedTrackingProtectionEnabled = true,
@@ -300,6 +302,7 @@ class UnifiedTrustPanelTest : TestSetup() {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = customTabPage.toUri().host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = customTabPage.toUri().host.toString(),
                 isEnhancedTrackingProtectionEnabled = false,
                 isTheWebSiteSecure = true,
@@ -321,11 +324,11 @@ class UnifiedTrustPanelTest : TestSetup() {
             ),
         )
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             verifyPageContent(customTabPage.content)
         }
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
@@ -362,7 +365,7 @@ class UnifiedTrustPanelTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
             waitForPageToLoad(waitingTimeLong)
         }.openUnifiedTrustPanel {
             clickTheClearCookiesAndSiteDataButton(composeTestRule)
@@ -383,18 +386,19 @@ class UnifiedTrustPanelTest : TestSetup() {
             ),
         )
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             verifyTrackingProtectionWebContent("social blocked")
             verifyTrackingProtectionWebContent("ads blocked")
             verifyTrackingProtectionWebContent("analytics blocked")
             verifyTrackingProtectionWebContent("Fingerprinting blocked")
             verifyTrackingProtectionWebContent("Cryptomining blocked")
         }
-        customTabScreen {
+        customTabScreen(composeTestRule) {
         }.openUnifiedTrustPanel {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = customTabPage.host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = customTabPage.host.toString(),
                 isTheWebSiteSecure = false,
                 isEnhancedTrackingProtectionEnabled = true,
@@ -405,6 +409,7 @@ class UnifiedTrustPanelTest : TestSetup() {
             verifyUnifiedTrustPanelItems(
                 composeTestRule = composeTestRule,
                 webSite = customTabPage.host.toString(),
+                shouldWebSiteURLBeDisplayed = false,
                 webSiteURL = customTabPage.host.toString(),
                 isTheWebSiteSecure = false,
                 isEnhancedTrackingProtectionEnabled = false,

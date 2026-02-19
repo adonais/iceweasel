@@ -461,6 +461,65 @@ describe("<FocusTimer>", () => {
     );
   });
 
+  it("should wait one second at zero before completing timer", () => {
+    const now = Math.floor(Date.now() / 1000);
+
+    const endState = {
+      ...mockState,
+      TimerWidget: {
+        ...mockState.TimerWidget,
+        timerType: "focus",
+        focus: {
+          duration: 300,
+          initialDuration: 300,
+          startTime: now - 300,
+          isRunning: true,
+        },
+      },
+    };
+
+    wrapper = mount(
+      <WrapWithProvider state={endState}>
+        <FocusTimer
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+
+    // First interval tick - should reach zero but not complete
+    clock.tick(1000);
+
+    // Verify timer has not ended yet (no WIDGETS_TIMER_END dispatched)
+    const callsAfterFirstTick = dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .filter(action => action && action.type === at.WIDGETS_TIMER_END);
+
+    assert.equal(
+      callsAfterFirstTick.length,
+      0,
+      "WIDGETS_TIMER_END should not be dispatched on first tick at zero"
+    );
+
+    // Second interval tick - should now complete
+    clock.tick(1000);
+
+    // Allowing time for the chained timeouts for animation
+    clock.tick(2000);
+    wrapper.update();
+
+    const endCall = dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .find(action => action && action.type === at.WIDGETS_TIMER_END);
+
+    assert.ok(
+      endCall,
+      "WIDGETS_TIMER_END should be dispatched after one second at zero"
+    );
+  });
+
   describe("context menu", () => {
     it("should render default context menu", () => {
       assert.ok(wrapper.find(".focus-timer-context-menu-button").exists());

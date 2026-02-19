@@ -101,9 +101,7 @@ def _initialize_telemetry(settings, is_employee, contributor_prompt_response=Non
         return_value=contributor_prompt_response,
     ) as prompt_mock, mock.patch(
         "subprocess.run", return_value=Mock(returncode=0)
-    ), mock.patch(
-        "mach.config.ConfigSettings"
-    ), mock.patch(
+    ), mock.patch("mach.config.ConfigSettings"), mock.patch(
         "mach.telemetry.record_is_employee_telemetry_setting"
     ):
         initialize_telemetry_setting(settings, "", "")
@@ -170,9 +168,7 @@ def test_resolve_is_employee(tmpdir, monkeypatch):
             return_value=is_employee_bugzilla,
         ), mock.patch(
             "mach.telemetry.resolve_is_employee_by_vcs", return_value=is_employee_vcs
-        ), mock.patch(
-            "mach.telemetry.record_is_employee_telemetry_setting"
-        ):
+        ), mock.patch("mach.telemetry.record_is_employee_telemetry_setting"):
             fake_settings = Mock()
             fake_settings.mach_telemetry.is_employee = None
             return resolve_is_employee(None, str(tmpdir), fake_settings)
@@ -196,9 +192,7 @@ def test_resolve_is_employee_no_cache_when_unknown(tmpdir, monkeypatch):
         return_value=None,
     ), mock.patch(
         "mach.telemetry.resolve_is_employee_by_vcs", return_value=None
-    ), mock.patch(
-        "mach.telemetry.record_is_employee_telemetry_setting"
-    ) as record_mock:
+    ), mock.patch("mach.telemetry.record_is_employee_telemetry_setting") as record_mock:
         fake_settings = Mock()
         fake_settings.mach_telemetry.is_employee = None
         result = resolve_is_employee(None, str(tmpdir), fake_settings)

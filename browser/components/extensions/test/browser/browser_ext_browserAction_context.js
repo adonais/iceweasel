@@ -462,10 +462,6 @@ add_task(async function testTabSwitchContext() {
 });
 
 add_task(async function testTabSwitchActionContext() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.manifestV3.enabled", true]],
-  });
-
   await runTests({
     manifest: {
       manifest_version: 3,

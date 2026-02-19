@@ -111,11 +111,11 @@ function createTargetsForWatcher(watcherDataObject, isProcessActorStartup) {
       //
       // We want to avoid creating transient targets for initial about blank when a new WindowGlobal
       // just get created as it will most likely navigate away just after and confuse the frontend with short lived target.
-      const acceptInitialDocument = !isProcessActorStartup;
+      const acceptUncommitedInitialDocument = !isProcessActorStartup;
 
       if (
         lazy.isWindowGlobalPartOfContext(windowGlobalChild, sessionContext, {
-          acceptInitialDocument,
+          acceptUncommitedInitialDocument,
         })
       ) {
         createWindowGlobalTargetActor(watcherDataObject, windowGlobalChild);
@@ -479,6 +479,16 @@ function observe(subject, topic) {
     topic == "content-document-global-created" ||
     topic == "chrome-document-global-created"
   ) {
+    if (subject.isUncommittedInitialDocument) {
+      // If this is the initial document, it might be a short-lived transient one, and
+      // onWindowGlobalCreated will ignore such documents. If we receive a load
+      // event, the document has been committed to, and we know the initial document
+      // will persist. In that case, we need to call onWindowGlobalCreated again.
+      subject.addEventListener("DOMContentLoaded", handleEvent, {
+        capture: true,
+        once: true,
+      });
+    }
     onWindowGlobalCreated(subject);
   } else if (topic == "inner-window-destroyed") {
     const innerWindowId = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
@@ -574,6 +584,20 @@ function handleEvent({ type, persisted, target }) {
     // We have to unregister it from the TargetActorRegistry, otherwise,
     // if we navigate back to it, the next DOMWindowCreated won't create a new target for it.
     onWindowGlobalDestroyed(target.defaultView.windowGlobalChild.innerWindowId);
+  }
+
+  if (type == "DOMContentLoaded") {
+    if (!target.isInitialDocument) {
+      return;
+    }
+
+    // This is similar to initial-document-element-inserted. onWindowGlobalCreated likely
+    // ignored the earlier call for this document because it was the uncommitted initial one. Now
+    // that we got a load event we know that the document is not transient but the destination of a
+    // load. Its state will have changed and onWindowGlobalCreated won't skip it anymore.
+    onWindowGlobalCreated(target.defaultView, {
+      ignoreIfExisting: true,
+    });
   }
 }
 

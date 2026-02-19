@@ -76,7 +76,7 @@ class _MachCommand:
         self.hidden = hidden
         if ok_if_tests_disabled and category != "testing":
             raise ValueError(
-                "ok_if_tests_disabled should only be set for " "`testing` mach commands"
+                "ok_if_tests_disabled should only be set for `testing` mach commands"
             )
         self.ok_if_tests_disabled = ok_if_tests_disabled
 

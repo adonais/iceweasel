@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.button.FilledButton
@@ -37,6 +37,7 @@ import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -230,21 +231,12 @@ private fun List<DebugRegionEnabledState>.updateRegionEnabled(regionToUpdate: De
         }
     }
 
-@Composable
-@PreviewLightDark
-private fun AddressesScreenPreview() {
-    FirefoxTheme {
-        AddressesTools(
-            debugRegionRepository = FakeAddressesDebugRegionRepository(),
-            creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
-        )
-    }
-}
-
-@Composable
 @Preview
-private fun AddressesScreenPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun AddressesScreenPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         AddressesTools(
             debugRegionRepository = FakeAddressesDebugRegionRepository(),
             creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),

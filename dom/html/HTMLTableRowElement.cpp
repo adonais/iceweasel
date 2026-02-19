@@ -222,8 +222,8 @@ bool HTMLTableRowElement::ParseAttribute(int32_t aNamespaceID,
 void HTMLTableRowElement::MapAttributesIntoRule(
     MappedDeclarationsBuilder& aBuilder) {
   nsGenericHTMLElement::MapHeightAttributeInto(aBuilder);
-  nsGenericHTMLElement::MapDivAlignAttributeInto(aBuilder);
-  nsGenericHTMLElement::MapVAlignAttributeInto(aBuilder);
+  nsGenericHTMLElement::MapTableCellHAlignAttributeInto(aBuilder);
+  nsGenericHTMLElement::MapTableVAlignAttributeInto(aBuilder);
   nsGenericHTMLElement::MapBackgroundAttributesInto(aBuilder);
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }

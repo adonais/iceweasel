@@ -85,8 +85,8 @@ add_task(async function viewContainsStaleRows() {
 
   let lastMatchingResultUpdatedPromise = TestUtils.waitForCondition(() => {
     let row = UrlbarTestUtils.getRowAt(window, halfResults);
-    console.log(row.result.title);
-    return row.result.title.startsWith("xx");
+    let { value } = row.result.getDisplayableValueAndHighlights("title");
+    return value.startsWith("xx");
   }, "Wait for the result to be updated");
 
   // Type another "x" so that we search for "xx", but don't wait for the search

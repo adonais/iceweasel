@@ -30,7 +30,7 @@ import mozilla.components.feature.syncedtabs.commands.SyncedTabsCommandsFlushSch
 import mozilla.components.feature.syncedtabs.storage.SyncedTabsStorage
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.service.fxa.PeriodicSyncConfig
 import mozilla.components.service.fxa.ServerConfig
 import mozilla.components.service.fxa.SyncConfig
@@ -264,13 +264,13 @@ private class AccountManagerReadyObserver(
 
 internal class TelemetryMiddleware : Middleware<SyncState, SyncAction> {
     override fun invoke(
-        context: MiddlewareContext<SyncState, SyncAction>,
+        store: Store<SyncState, SyncAction>,
         next: (SyncAction) -> Unit,
         action: SyncAction,
     ) {
-        val prevState = context.store.state
+        val prevState = store.state
         next(action)
-        val accountUid = context.store.state.account?.uid
+        val accountUid = store.state.account?.uid
         if (prevState.account?.uid != accountUid && accountUid != null) {
             ClientAssociation.uid.set(accountUid)
             fxAccounts.submit()

@@ -472,6 +472,7 @@ already_AddRefed<BindGroup> Device::CreateBindGroup(
       }
       e.buffer = buffer->GetId();
       e.offset = 0;
+      e.size_passed = false;
       e.size = 0;
     } else if (entry.mResource.IsGPUBufferBinding()) {
       const auto& bufBinding = entry.mResource.GetAsGPUBufferBinding();
@@ -481,7 +482,12 @@ already_AddRefed<BindGroup> Device::CreateBindGroup(
       }
       e.buffer = bufBinding.mBuffer->GetId();
       e.offset = bufBinding.mOffset;
-      e.size = bufBinding.mSize.WasPassed() ? bufBinding.mSize.Value() : 0;
+      e.size_passed = bufBinding.mSize.WasPassed();
+      if (e.size_passed) {
+        e.size = bufBinding.mSize.Value();
+      } else {
+        e.size = 0;
+      }
     } else if (entry.mResource.IsGPUTexture()) {
       auto texture = entry.mResource.GetAsGPUTexture();
       const dom::GPUTextureViewDescriptor defaultDesc{};

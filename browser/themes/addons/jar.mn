@@ -15,3 +15,6 @@ browser.jar:
   content/builtin-themes/light/preview.svg         (light/preview.svg)
   content/builtin-themes/light/icon.svg            (light/icon.svg)
   content/builtin-themes/light/manifest.json       (light/manifest.json)
+
+  content/builtin-themes/aiwindow/manifest.json       (aiwindow/manifest.json)
+  content/builtin-themes/aiwindow/aiwindow-theme.css  (aiwindow/aiwindow-theme.css)

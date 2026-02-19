@@ -149,56 +149,6 @@ function scaleImage(aImgContainer) {
 }
 
 /**
- * A channel listener to aid with receiving image data.
- */
-class ChannelListener {
-  #request = null;
-  #imageListener = null;
-  #rejector = null;
-
-  constructor(rejector) {
-    this.#rejector = rejector;
-  }
-
-  setImageListener(imageListener) {
-    this.#imageListener = imageListener;
-    if (this.#request) {
-      this.#imageListener.onStartRequest(this.#request);
-    }
-  }
-
-  onStartRequest(request) {
-    this.#request = request;
-    if (this.#imageListener) {
-      this.#imageListener.onStartRequest(request);
-    }
-  }
-
-  onStopRequest(request, status) {
-    if (this.#imageListener) {
-      this.#imageListener.onStopRequest(request, status);
-    }
-
-    if (
-      !Components.isSuccessCode(status) &&
-      status !== Cr.NS_ERROR_PARSED_DATA_CACHED
-    ) {
-      this.#rejector(new Components.Exception("Image loading failed", status));
-    }
-
-    this.#imageListener = null;
-    this.#rejector = null;
-    this.#request = null;
-  }
-
-  onDataAvailable(request, inputStream, offset, count) {
-    if (this.#imageListener) {
-      this.#imageListener.onDataAvailable(request, inputStream, offset, count);
-    }
-  }
-}
-
-/**
  * Retrieves an image given a URI.
  *
  * @param {nsIURI} aUri - The URI to retrieve an image from.
@@ -222,33 +172,5 @@ async function getImageFromUri(aUri) {
     Ci.nsIContentPolicy.TYPE_IMAGE
   );
 
-  return new Promise((resolve, reject) => {
-    // Despite the docs it is fine to pass null here, we then just get a global loader.
-    let imageLoader = lazy.imgTools.getImgLoaderForDocument(null);
-    let observer = lazy.imgTools.createScriptedObserver({
-      decodeComplete() {
-        request.cancel(Cr.NS_BINDING_ABORTED);
-        resolve(request.image);
-      },
-    });
-
-    let channelListener = new ChannelListener(reject);
-    channel.asyncOpen(channelListener);
-
-    let streamListener = {};
-    let request = imageLoader.loadImageWithChannelXPCOM(
-      channel,
-      observer,
-      null,
-      streamListener
-    );
-    // Force image decoding to start when the container is available.
-    request.startDecoding(Ci.imgIContainer.FLAG_ASYNC_NOTIFY);
-
-    // If the request is coming from the cache then there will be no listener
-    // and the channel will have been automatically cancelled.
-    if (streamListener.value) {
-      channelListener.setImageListener(streamListener.value);
-    }
-  });
+  return ChromeUtils.fetchDecodedImage(aUri, channel);
 }

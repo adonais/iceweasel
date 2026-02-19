@@ -184,13 +184,7 @@
     display: flex;
     // Bug 1880518 - Large font-size number (32px)
     font-size: calc(var(--font-size-large) * 2);
-
-    /**
-     * @backward-compat { version 146 }
-     *
-     * Replace this with `--font-weight-semibold` once 146 hits release.
-     */
-    font-weight: var(--heading-font-weight);
+    font-weight: var(--font-weight-semibold);
     font-variant-numeric: tabular-nums;
     height: 100%;
     inset-block-start: 0;

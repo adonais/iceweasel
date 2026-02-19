@@ -860,21 +860,6 @@ void HTMLTableElement::MapAttributesIntoRule(
     aBuilder.SetPixelValue(eCSSProperty_border_spacing,
                            float(value->GetIntegerValue()));
   }
-  // align; Check for enumerated type (it may be another type if
-  // illegal)
-  value = aBuilder.GetAttr(nsGkAtoms::align);
-  if (value && value->Type() == nsAttrValue::eEnum) {
-    uint8_t enumValue = value->GetEnumValue();
-
-    if (enumValue == uint8_t(StyleTextAlign::Center)) {
-      aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_left);
-      aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_right);
-    } else if (enumValue == uint8_t(StyleTextAlign::Left)) {
-      aBuilder.SetKeywordValue(eCSSProperty_float, StyleFloat::Left);
-    } else if (enumValue == uint8_t(StyleTextAlign::Right)) {
-      aBuilder.SetKeywordValue(eCSSProperty_float, StyleFloat::Right);
-    }
-  }
 
   // bordercolor
   value = aBuilder.GetAttr(nsGkAtoms::bordercolor);
@@ -905,6 +890,7 @@ void HTMLTableElement::MapAttributesIntoRule(
                                   (float)borderThickness);
   }
 
+  nsGenericHTMLElement::MapTableHAlignAttributeInto(aBuilder);
   nsGenericHTMLElement::MapImageSizeAttributesInto(aBuilder);
   nsGenericHTMLElement::MapBackgroundAttributesInto(aBuilder);
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);

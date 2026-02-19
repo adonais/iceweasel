@@ -229,6 +229,8 @@ typedef detail::Saturate<uint32_t> SaturateUint32;
 typedef detail::Saturate<intptr_t> SaturateIntPtr;
 typedef detail::Saturate<uintptr_t> SaturateUintPtr;
 
+using detail::Saturate;
+
 }  // namespace mozilla
 
 template <typename LhsT, typename RhsT>

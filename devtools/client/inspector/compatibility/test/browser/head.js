@@ -49,13 +49,12 @@ async function openCompatibilityView() {
  *        For the structure of issue items, see types.js.
  */
 async function assertIssueList(panel, expectedIssues) {
-  info("Check the number of issues");
-  await waitUntil(
+  await waitFor(
     () =>
       panel.querySelectorAll("[data-qa-property]").length ===
-      expectedIssues.length
+      expectedIssues.length,
+    "The number of issues is correct"
   );
-  ok(true, "The number of issues is correct");
 
   if (expectedIssues.length === 0) {
     // No issue.

@@ -514,17 +514,25 @@ JsepTransportController::CreateDtlsTransport(const ContentInfo& content_info,
   }
 
   // Connect to signals offered by the DTLS and ICE transport.
-  dtls->SignalWritableState.connect(
-      this, &JsepTransportController::OnTransportWritableState_n);
-  dtls->SignalReceivingState.connect(
-      this, &JsepTransportController::OnTransportReceivingState_n);
+  dtls->SubscribeWritableState(this,
+                               [this](PacketTransportInternal* transport) {
+                                 RTC_DCHECK_RUN_ON(network_thread_);
+                                 OnTransportWritableState_n(transport);
+                               });
+  dtls->SubscribeReceivingState([this](PacketTransportInternal* transport) {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    OnTransportReceivingState_n(transport);
+  });
   dtls->ice_transport()->AddGatheringStateCallback(
       this, [this](IceTransportInternal* transport) {
         RTC_DCHECK_RUN_ON(network_thread_);
         OnTransportGatheringState_n(transport);
       });
-  dtls->ice_transport()->SignalCandidateGathered.connect(
-      this, &JsepTransportController::OnTransportCandidateGathered_n);
+  dtls->ice_transport()->SubscribeCandidateGathered(
+      [this](IceTransportInternal* transport, const Candidate& candidate) {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        OnTransportCandidateGathered_n(transport, candidate);
+      });
   dtls->ice_transport()->SetCandidateErrorCallback(
       [this](IceTransportInternal* transport,
              const IceCandidateErrorEvent& error) {
@@ -536,10 +544,16 @@ JsepTransportController::CreateDtlsTransport(const ContentInfo& content_info,
         RTC_DCHECK_RUN_ON(network_thread_);
         OnTransportCandidatesRemoved_n(transport, candidates);
       });
-  dtls->ice_transport()->SignalRoleConflict.connect(
-      this, &JsepTransportController::OnTransportRoleConflict_n);
-  dtls->ice_transport()->SignalIceTransportStateChanged.connect(
-      this, &JsepTransportController::OnTransportStateChanged_n);
+  dtls->ice_transport()->SubscribeRoleConflict(
+      [this](IceTransportInternal* transport) {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        OnTransportRoleConflict_n(transport);
+      });
+  dtls->ice_transport()->SubscribeIceTransportStateChanged(
+      [this](IceTransportInternal* transport) {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        OnTransportStateChanged_n(transport);
+      });
   dtls->ice_transport()->SetCandidatePairChangeCallback(
       [this](const CandidatePairChangeEvent& event) {
         RTC_DCHECK_RUN_ON(network_thread_);

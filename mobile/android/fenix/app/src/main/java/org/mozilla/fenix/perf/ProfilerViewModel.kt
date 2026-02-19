@@ -5,7 +5,10 @@
 package org.mozilla.fenix.perf
 
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
@@ -14,21 +17,18 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.base.profiler.Profiler
-import mozilla.components.support.base.log.Log
 import org.json.JSONException
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
+import org.mozilla.gecko.GeckoJavaSampler
 import java.io.IOException
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Represents the various states of the profiler UI.
@@ -110,27 +110,44 @@ class ProfilerViewModel(
     private val profilerUtils: ProfilerUtils = ProfilerUtils,
 ) : AndroidViewModel(application) {
 
-    private val maxPollingAttempts = 50
     private val delayToUpdateStatus = 50L
     private val profiler: Profiler? = application.components.core.engine.profiler
-
-    private val _isProfilerActive = MutableStateFlow(profiler?.isProfilerActive() ?: false)
-    val isProfilerActive: StateFlow<Boolean> = _isProfilerActive.asStateFlow()
+    private val _isActive = MutableStateFlow(profiler?.isProfilerActive() ?: false)
+    val isProfilerActive: StateFlow<Boolean> = _isActive.asStateFlow()
 
     private val _uiState = MutableStateFlow<ProfilerUiState>(ProfilerUiState.Idle)
     val uiState: StateFlow<ProfilerUiState> = _uiState.asStateFlow()
 
-    private var pollingJob: Job? = null
-    private val delayToPollProfilerForStatus = 100L
+    private var stateReceiver: BroadcastReceiver? = null
 
-    /**
-     * Updates the profiler active status by checking the current state.
-     */
-    fun updateProfilerActiveStatus() {
-        val currentlyActive = profiler?.isProfilerActive() ?: false
-        if (_isProfilerActive.value != currentlyActive) {
-            _isProfilerActive.value = currentlyActive
+    init {
+        stateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == GeckoJavaSampler.INTENT_PROFILER_STATE_CHANGED) {
+                    val active = intent.getBooleanExtra(ProfilerService.IS_PROFILER_ACTIVE, false)
+                    _isActive.value = active
+                    if (active && _uiState.value is ProfilerUiState.Starting) {
+                        _uiState.value = ProfilerUiState.ShowToast(R.string.profiler_start_dialog_started)
+                        _uiState.value = ProfilerUiState.Running
+                    } else if (!active) {
+                        val currentState = _uiState.value
+                        if (currentState is ProfilerUiState.Running || currentState is ProfilerUiState.Stopping) {
+                            _uiState.value = ProfilerUiState.Finished(null)
+                        }
+                    }
+                }
+            }
         }
+        val filter = IntentFilter(GeckoJavaSampler.INTENT_PROFILER_STATE_CHANGED)
+        val permission = "${application.packageName}.permission.PROFILER_INTERNAL"
+        ContextCompat.registerReceiver(
+            application,
+            stateReceiver!!,
+            filter,
+            permission,
+            null,
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
     }
 
     /**
@@ -149,99 +166,23 @@ class ProfilerViewModel(
 
         _uiState.value = ProfilerUiState.Starting
         profiler.startProfiler(settings.threads, settings.features)
-
-        pollUntilProfilerActiveAndThen(
-            onActive = { startProfilerService() },
-            onPollFail = { handleProfilerStartFailure() },
-        )
-    }
-
-    /**
-     * Starts the ProfilerService which handles notifications via NotificationsDelegate.
-     */
-    private fun startProfilerService() {
-        val startIntent = Intent(application, ProfilerService::class.java).apply {
-            action = ProfilerService.ACTION_START_PROFILING
-        }
-        ContextCompat.startForegroundService(application, startIntent)
-        _uiState.value = ProfilerUiState.ShowToast(R.string.profiler_start_dialog_started)
-
-        viewModelScope.launch(mainDispatcher) {
-            delay(delayToPollProfilerForStatus)
-            if (isProfilerActive.value) {
-                _uiState.value = ProfilerUiState.Running
-            }
-        }
-    }
-
-    /**
-     * Handles profiler start failure after polling.
-     */
-    private fun handleProfilerStartFailure() {
-        _uiState.value = ProfilerUiState.Error(
-            R.string.profiler_error,
-            "Polling for active profiler failed",
-        )
-        updateProfilerActiveStatus()
-    }
-
-    /**
-     * Polls the profiler status until it becomes active or the operation is cancelled.
-     */
-    @Suppress("CognitiveComplexMethod")
-    private fun pollUntilProfilerActiveAndThen(onActive: () -> Unit, onPollFail: () -> Unit) {
-        pollingJob?.cancel()
-        pollingJob = viewModelScope.launch(ioDispatcher) {
-            try {
-                var pollingAttempts = 0
-                while (isActive && pollingAttempts < maxPollingAttempts) {
-                    if (profiler?.isProfilerActive() == true) {
-                        withContext(mainDispatcher) {
-                            if (!_isProfilerActive.value) {
-                                _isProfilerActive.value = true
-                            }
-                            onActive()
-                        }
-                        return@launch
-                    }
-                    pollingAttempts++
-                    delay(delayToPollProfilerForStatus)
-                }
-                withContext(mainDispatcher) {
-                    onPollFail()
-                }
-            } catch (e: CancellationException) {
-                withContext(mainDispatcher) {
-                    if (_uiState.value == ProfilerUiState.Starting) {
-                        _uiState.value = ProfilerUiState.Idle
-                    }
-                }
-                throw e
-            } catch (e: IOException) {
-                handleViewModelError(e, R.string.profiler_error, "Polling failed")
-            } catch (e: SecurityException) {
-                handleViewModelError(e, R.string.profiler_error, "Permission denied")
-            } catch (e: IllegalStateException) {
-                handleViewModelError(e, R.string.profiler_error, "Invalid profiler state")
-            }
-        }
     }
 
     /**
      * Stops the profiler and saves the collected profile data.
+     * This is for UI-initiated stops, so it should NOT create files via ProfilerService.
      */
     fun stopProfilerAndSave() {
         if (profiler == null || !isProfilerActive.value) {
-            updateProfilerActiveStatus()
             _uiState.value = ProfilerUiState.Finished(null)
             return
         }
+
         _uiState.value = ProfilerUiState.Gathering
-        _isProfilerActive.value = false
+
         profiler.stopProfiler(
             onSuccess = { profileData ->
                 viewModelScope.launch(mainDispatcher) {
-                    stopProfilerService()
                     if (profileData != null) {
                         handleProfileSaveInternal(profileData)
                     } else {
@@ -251,8 +192,6 @@ class ProfilerViewModel(
             },
             onError = { error ->
                 viewModelScope.launch(mainDispatcher) {
-                    stopProfilerService()
-                    updateProfilerActiveStatus()
                     val errorMessage = error.message ?: "Unknown stop error"
                     _uiState.value = ProfilerUiState.Error(R.string.profiler_error, errorMessage)
                 }
@@ -262,26 +201,24 @@ class ProfilerViewModel(
 
     /**
      * Stops the profiler without saving the collected data.
+     * This is for UI-initiated stops, so it should NOT create files via ProfilerService.
      */
     fun stopProfilerWithoutSaving() {
         if (profiler == null || !isProfilerActive.value) {
-            updateProfilerActiveStatus()
             _uiState.value = ProfilerUiState.Finished(null)
             return
         }
+
         _uiState.value = ProfilerUiState.Stopping
-        _isProfilerActive.value = false
+
         profiler.stopProfiler(
             onSuccess = {
                 viewModelScope.launch(mainDispatcher) {
-                    stopProfilerService()
                     _uiState.value = ProfilerUiState.Finished(null)
                 }
             },
             onError = { error ->
                 viewModelScope.launch(mainDispatcher) {
-                    stopProfilerService()
-                    updateProfilerActiveStatus()
                     val errorMessage = error.message ?: "Unknown stop error"
                     _uiState.value = ProfilerUiState.Error(R.string.profiler_error, errorMessage)
                 }
@@ -315,24 +252,6 @@ class ProfilerViewModel(
     }
 
     /**
-     * Stops the ProfilerService.
-     */
-    private fun stopProfilerService() {
-        try {
-            val stopIntent = Intent(application, ProfilerService::class.java).apply {
-                action = ProfilerService.ACTION_STOP_PROFILING
-            }
-            application.startService(stopIntent)
-        } catch (e: IllegalStateException) {
-            Log.log(
-                priority = Log.Priority.ERROR,
-                tag = "ProfilerViewModel",
-                message = "Error sending stop intent: ${e.message}",
-            )
-        }
-    }
-
-    /**
      * Resets the UI state to idle if it isn't already.
      */
     fun resetUiState() {
@@ -343,24 +262,17 @@ class ProfilerViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        pollingJob?.cancel()
+        stateReceiver?.let { application.unregisterReceiver(it) }
     }
 
-    private suspend fun handleViewModelError(
+    private fun handleViewModelError(
         exception: Exception,
         @StringRes errorMessageRes: Int,
         fallbackMessage: String = "Operation failed",
     ) {
-        Log.log(
-            priority = Log.Priority.ERROR,
-            tag = "ProfilerViewModel",
-            message = "Error: ${exception.message}",
+        _uiState.value = ProfilerUiState.Error(
+            errorMessageRes,
+            exception.message ?: fallbackMessage,
         )
-        withContext(mainDispatcher) {
-            _uiState.value = ProfilerUiState.Error(
-                errorMessageRes,
-                exception.message ?: fallbackMessage,
-            )
-        }
     }
 }

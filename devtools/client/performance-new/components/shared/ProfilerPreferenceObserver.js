@@ -55,7 +55,7 @@ const actions = require("resource://devtools/client/performance-new/store/action
  * This component mirrors the settings in the redux store and the preferences in
  * Firefox.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class ProfilerPreferenceObserver extends PureComponent {
   componentDidMount() {

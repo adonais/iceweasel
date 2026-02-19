@@ -303,8 +303,8 @@
       outline: var(--focus-outline);
 
       &::after {
-        border-bottom: var(--focus-outline);
-        border-right: var(--focus-outline);
+        border-block-end: var(--focus-outline);
+        border-inline-end: var(--focus-outline);
       }
     }
   }
@@ -408,7 +408,7 @@ dialog {
   border-end-end-radius: 0;
   border-end-start-radius: var(--border-radius-medium);
   text-decoration: none;
-  color: var(--text-color);;
+  color: var(--text-color);
   min-width: 130px;
   max-width: 190px;
   text-overflow: ellipsis;
@@ -526,13 +526,7 @@ dialog {
 
 .weatherForecastRow {
   text-transform: uppercase;
-
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Replace this with `--font-weight-semibold` once 146 hits release.
-   */
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-semibold);
 }
 
 .weatherCityRow {
@@ -747,7 +741,7 @@ dialog {
     border-radius: var(--border-radius-medium);
     background-color: light-dark(var(--color-white), var(--newtab-background-color-secondary));
     padding: var(--space-small) var(--space-xxlarge);
-    border: $border-primary;
+    border: 1px solid var(--border-color);
 
     &:focus-visible {
       outline: var(--focus-outline);

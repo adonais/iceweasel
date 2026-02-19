@@ -156,7 +156,7 @@ class ProtectedData {
   T& refNoCheck() { return value; }
   const T& refNoCheck() const { return value; }
 
-  static size_t offsetOfValue() { return offsetof(ThisType, value); }
+  static constexpr size_t offsetOfValue() { return offsetof(ThisType, value); }
 
  private:
   T value;

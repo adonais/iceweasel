@@ -8,7 +8,12 @@
 [scriptable, uuid(5f34ad48-92ec-4684-ab08-76f6ead9008d)]
 interface nsIWebTransportEventListener : nsISupports
 {
-  // TODO: The functions for this interface are still TBD
+  [must_use] void webTransportSessionCreated(in uint64_t aHttpChannelId);
+
+  [must_use] void webTransportSessionClosed(in uint64_t aHttpChannelId, in unsigned short aCode,
+                                  in AString aReason);
+
+  // TODO: The other functions for this interface are still TBD. See Bug 1963028
 };
 
 [scriptable, builtinclass, uuid(0907d7d4-351b-4513-a2d9-f6e6467d59ec)]

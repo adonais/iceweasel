@@ -50,15 +50,27 @@ impl ReportCrash {
     pub fn new(config: Arc<Config>, extra: serde_json::Value) -> anyhow::Result<Self> {
         let settings_file = config.data_dir().join("crashreporter_settings.json");
         let settings: Settings = match std::fs::File::open(&settings_file) {
-            Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
-                anyhow::bail!(
-                    "failed to open settings file ({}): {e}",
-                    settings_file.display()
-                );
+            Err(e) => {
+                if e.kind() != std::io::ErrorKind::NotFound {
+                    log::warn!(
+                        "failed to open settings file ({}): {e}",
+                        settings_file.display()
+                    );
+                }
+                Default::default()
             }
-            Err(_) => Default::default(),
-            Ok(f) => Settings::from_reader(f)?,
+            Ok(f) => match Settings::from_reader(f) {
+                Err(e) => {
+                    log::warn!(
+                        "failed to read settings file ({}): {e}",
+                        settings_file.display()
+                    );
+                    Default::default()
+                }
+                Ok(s) => s,
+            },
         };
+        log::debug!("loaded settings: {settings:?}");
 
         Ok(ReportCrash {
             config,

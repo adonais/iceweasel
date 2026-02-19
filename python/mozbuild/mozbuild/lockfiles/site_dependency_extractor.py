@@ -31,7 +31,6 @@ class DependencyParseError(Exception):
 
 
 class SiteDependencyExtractor:
-
     def __init__(self, site_name: str, sites_dir: Path, topsrcdir: Path) -> None:
         self.site_file = sites_dir / f"{site_name}.txt"
         if not self.site_file.is_file():

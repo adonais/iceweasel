@@ -6,7 +6,6 @@ package org.mozilla.fenix.webcompat.middleware
 
 import androidx.annotation.VisibleForTesting
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.WebCompatAction
@@ -25,14 +24,14 @@ class WebCompatReporterStorageMiddleware(
 ) : Middleware<WebCompatReporterState, WebCompatReporterAction> {
 
     override fun invoke(
-        context: MiddlewareContext<WebCompatReporterState, WebCompatReporterAction>,
+        store: Store<WebCompatReporterState, WebCompatReporterAction>,
         next: (WebCompatReporterAction) -> Unit,
         action: WebCompatReporterAction,
     ) {
         next(action)
 
         when (action) {
-            is WebCompatReporterStorageAction -> processStorageAction(store = context.store, action = action)
+            is WebCompatReporterStorageAction -> processStorageAction(store = store, action = action)
             else -> {} // no-op
         }
     }

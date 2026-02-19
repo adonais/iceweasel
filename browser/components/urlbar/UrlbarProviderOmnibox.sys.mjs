@@ -102,12 +102,17 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
       type: UrlbarUtils.RESULT_TYPE.OMNIBOX,
       source: UrlbarUtils.RESULT_SOURCE.ADDON,
       heuristic: true,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        title: [description, UrlbarUtils.HIGHLIGHT.TYPED],
-        content: [queryContext.searchString, UrlbarUtils.HIGHLIGHT.TYPED],
-        keyword: [queryContext.tokens[0].value, UrlbarUtils.HIGHLIGHT.TYPED],
+      payload: {
+        title: description,
+        content: queryContext.searchString,
+        keyword: queryContext.tokens[0].value,
         icon: UrlbarUtils.ICON.EXTENSION,
-      }),
+      },
+      highlights: {
+        title: UrlbarUtils.HIGHLIGHT.TYPED,
+        content: UrlbarUtils.HIGHLIGHT.TYPED,
+        keyword: UrlbarUtils.HIGHLIGHT.TYPED,
+      },
     });
     addCallback(this, heuristicResult);
 
@@ -131,19 +136,18 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
           let result = new lazy.UrlbarResult({
             type: UrlbarUtils.RESULT_TYPE.OMNIBOX,
             source: UrlbarUtils.RESULT_SOURCE.ADDON,
-            ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-              queryContext.tokens,
-              {
-                title: [suggestion.description, UrlbarUtils.HIGHLIGHT.TYPED],
-                content: [content, UrlbarUtils.HIGHLIGHT.TYPED],
-                keyword: [
-                  queryContext.tokens[0].value,
-                  UrlbarUtils.HIGHLIGHT.TYPED,
-                ],
-                isBlockable: suggestion.deletable,
-                icon: UrlbarUtils.ICON.EXTENSION,
-              }
-            ),
+            payload: {
+              title: suggestion.description,
+              content,
+              keyword: queryContext.tokens[0].value,
+              isBlockable: suggestion.deletable,
+              icon: UrlbarUtils.ICON.EXTENSION,
+            },
+            highlights: {
+              title: UrlbarUtils.HIGHLIGHT.TYPED,
+              content: UrlbarUtils.HIGHLIGHT.TYPED,
+              keyword: UrlbarUtils.HIGHLIGHT.TYPED,
+            },
           });
           addCallback(this, result);
         }

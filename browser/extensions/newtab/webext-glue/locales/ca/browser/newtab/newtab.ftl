@@ -319,6 +319,9 @@ newtab-custom-pocket-subtitle = Contingut excepcional seleccionat per { -pocket-
 newtab-custom-stories-toggle =
     .label = Articles recomanats
     .description = Contingut excepcional seleccionat per la família del { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Articles
+newtab-custom-stories-personalized-checkbox-label = Articles personalitzats basats en la vostra activitat
 newtab-custom-pocket-sponsored = Articles patrocinats
 newtab-custom-pocket-show-recent-saves = Mostra els elements desats recentment
 newtab-custom-recent-title = Activitat recent
@@ -354,6 +357,7 @@ newtab-wallpaper-custom-color = Trieu un color
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = La imatge supera el límit de mida de fitxer de { $file_size } MB. Proveu de pujar un fitxer més petit.
+newtab-wallpaper-error-upload-file-type = No s’ha pogut pujar el fitxer. Torneu-ho a provar amb un fitxer d'imatge.
 newtab-wallpaper-error-file-type = No s’ha pogut pujar el fitxer. Torneu-ho a provar amb un altre tipus de fitxer.
 newtab-wallpaper-light-red-panda = Panda vermell
 newtab-wallpaper-light-mountain = Muntanya blanca
@@ -367,6 +371,8 @@ newtab-wallpaper-dark-panda = Panda vermell amagat al bosc
 newtab-wallpaper-dark-sky = Paisatge urbà amb un cel nocturn
 newtab-wallpaper-dark-mountain = Paisatge de muntanya
 newtab-wallpaper-dark-city = Paisatge urbà porpra
+newtab-wallpaper-dark-fox-anniversary = Una guineu a la vorera prop d'un bosc
+newtab-wallpaper-light-fox-anniversary = Una guineu en un camp d'herba amb un paisatge de muntanya emboirat
 
 ## Solid Colors
 
@@ -396,6 +402,10 @@ newtab-wallpaper-abstract-purple = Formes porpres
 newtab-wallpaper-abstract-orange = Formes taronges
 newtab-wallpaper-gradient-orange = Degradat taronja i rosa
 newtab-wallpaper-abstract-blue-purple = Formes blaves i porpres
+newtab-wallpaper-abstract-white-curves = Blanc amb corbes ombrejades
+newtab-wallpaper-abstract-purple-green = Gradient de llum morada i verda
+newtab-wallpaper-abstract-blue-purple-waves = Formes ondulades blaves i morades
+newtab-wallpaper-abstract-black-waves = Formes ondulades negres
 
 ## Firefox
 
@@ -406,6 +416,12 @@ newtab-wallpaper-storm-sky = Cel tempestuós
 newtab-wallpaper-sky-with-pink-clouds = Cel amb núvols rosats
 newtab-wallpaper-red-panda-yawns-in-a-tree = Un panda vermell badalla en un arbre
 newtab-wallpaper-white-mountains = Muntanyes blanques
+newtab-wallpaper-hot-air-balloons = Globus aerostàtics de colors variats durant el dia
+newtab-wallpaper-starry-canyon = Nit blava estrellada
+newtab-wallpaper-suspension-bridge = Fotografia d'un pont penjant gris durant el dia
+newtab-wallpaper-sand-dunes = Dunes de sorra blanca
+newtab-wallpaper-palm-trees = Silueta de cocoters durant l'hora daurada
+newtab-wallpaper-blue-flowers = Fotografia de primer pla de flors de pètals blaus
 # Variables
 #   $author_string (String) - The name of the creator of the photo.
 #   $webpage_string (String) - The name of the webpage where the photo is located.
@@ -420,6 +436,23 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
+
+## Celestial
+
+# “Celestial” referring to astronomy; positioned in or relating to the sky,
+# or outer space as observed in astronomy.
+# Not to be confused with religious definition of the word.
+newtab-wallpaper-category-title-celestial = Celestial
+newtab-wallpaper-celestial-lunar-eclipse = Eclipsi lunar
+newtab-wallpaper-celestial-earth-night = Fotografia nocturna des de l'òrbita terrestre baixa
+newtab-wallpaper-celestial-starry-sky = Cel estrellat
+newtab-wallpaper-celestial-eclipse-time-lapse = Filmació a intervals d'eclipse lunar
+newtab-wallpaper-celestial-black-hole = Il·lustració d'una galàxia d'un forat negre
+newtab-wallpaper-celestial-river = Imatge de satèl·lit d'un riu
 
 ## New Tab Weather
 
@@ -449,12 +482,21 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Canvia a Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Canvia a Celsius
 newtab-weather-menu-hide-weather = Amaga la informació meteorològica en les pestanyes noves
 newtab-weather-menu-learn-more = Més informació
+newtab-weather-menu-detect-my-location = Detecta la meva ubicació
 # This message is shown if user is working offline
 newtab-weather-error-not-available = La informació meteorològica no està disponible ara mateix.
+newtab-weather-opt-in-see-weather = Voleu veure el temps que fa a la vostra ubicació?
+newtab-weather-opt-in-not-now =
+    .label = Ara no
+newtab-weather-opt-in-yes =
+    .label = Sí
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Nova York
 
 ## Topic Labels
 
 newtab-topic-label-business = Negocis
+newtab-topic-label-career = Carrera professional
 newtab-topic-label-education = Educació
 newtab-topic-label-arts = Entreteniment
 newtab-topic-label-food = Menjar
@@ -487,9 +529,32 @@ newtab-topic-selection-subtitle = Trieu dos temes o més. Els nostres experts pr
 newtab-topic-selection-save-button = Desa
 newtab-topic-selection-cancel-button = Cancel·la
 newtab-topic-selection-button-maybe-later = Potser més tard
+newtab-topic-selection-privacy-link = Informeu-vos sobre com protegim i gestionem les dades
+newtab-topic-selection-button-update-interests = Actualitzeu els vostres interessos
+newtab-topic-selection-button-pick-interests = Trieu els vostres interessos
+
+## Content Feed Sections
+## "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+## e.g. Following the travel section of stories.
+
+newtab-section-follow-button = Segueix
+newtab-section-following-button = Seguint
+newtab-section-unfollow-button = Deixar de seguir
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Ajusteu el canal
+newtab-section-follow-highlight-subtitle = Seguiu els vostres interessos per a veure més contingut que us agradi.
+
+## Button to block/unblock listed topics
+## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
+## e.g. Blocked the politics section of stories.
+
+newtab-section-block-button = Bloqueja
+newtab-section-blocked-button = Blocat
+newtab-section-unblock-button = Desbloca
 
 ## Confirmation modal for blocking a section
 
+newtab-section-cancel-button = Ara no
 newtab-section-confirm-block-topic-p1 = Segur que voleu blocar aquest tema?
 newtab-section-confirm-block-topic-p2 = Els temes blocats ja no apareixeran a la vostra cronologia.
 # Variables:
@@ -501,9 +566,117 @@ newtab-section-block-topic-button = Bloca { $topic }
 newtab-section-mangage-topics-title = Temes
 newtab-section-manage-topics-button-v2 =
     .label = Gestiona els temes
+newtab-section-mangage-topics-followed-topics = Seguits
 newtab-section-mangage-topics-followed-topics-empty-state = Encara no seguiu cap tema.
+newtab-section-mangage-topics-blocked-topics = Blocat
 newtab-section-mangage-topics-blocked-topics-empty-state = Encara no heu blocat cap tema.
+newtab-custom-wallpaper-title = Els fons de pantalla personalitzats són aquí
+# 'Make firefox yours" means to customize or personalize
+newtab-custom-wallpaper-subtitle = Pugeu els vostres fons de pantalla o trieu un color per a personalitzar el { -brand-product-name }.
+newtab-custom-wallpaper-cta = Proveu-ho
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Trieu un fons de pantalla per a personalitzar el { -brand-product-name }
+newtab-new-user-custom-wallpaper-subtitle = Decoreu cada pestanya nova al vostre gust amb fons de pantalla i colors personalitzats.
+newtab-new-user-custom-wallpaper-cta = Proveu-ho ara
+
+## Strings for download mobile highlight
+
+newtab-download-mobile-highlight-title = Baixeu el { -brand-product-name } per a mòbils
+# "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
+newtab-download-mobile-highlight-body-variant-a = Escanegeu el codi per a navegar de manera segura des de qualsevol lloc.
+newtab-download-mobile-highlight-body-variant-b = Continueu des d'on ho havíeu deixat quan sincronitzeu les pestanyes, les contrasenyes i més.
+newtab-download-mobile-highlight-body-variant-c = Sabeu que us podeu endur el { -brand-product-name } a qualsevol lloc? El mateix navegador. A la butxaca.
+newtab-download-mobile-highlight-image =
+    .aria-label = Codi QR per baixar el { -brand-product-name } per a mòbils
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Els vostres favorits a l'abast de la mà
+newtab-shortcuts-highlight-subtitle = Afegiu una drecera per a tenir els vostres llocs favorits a un sol clic.
 
 ## Strings for reporting ads and content
 
+newtab-report-content-why-reporting-this =
+    .label = Per què ho denuncieu?
+newtab-report-ads-reason-not-interested =
+    .label = No m'interessa
+newtab-report-ads-reason-inappropriate =
+    .label = És inadequat
+newtab-report-ads-reason-seen-it-too-many-times =
+    .label = L'he vist massa cops
+newtab-report-content-wrong-category =
+    .label = Categoria incorrecta
+newtab-report-content-outdated =
+    .label = Obsolet
+newtab-report-content-inappropriate-offensive =
+    .label = Inadequat o ofensiu
+newtab-report-content-spam-misleading =
+    .label = Correu brossa o enganyós
 newtab-report-cancel = Cancel·la
+newtab-report-submit = Envia
+newtab-toast-thanks-for-reporting =
+    .message = Gràcies per denunciar-ho.
+
+## Strings for trending searches
+
+newtab-trending-searches-show-trending =
+    .title = Mostra les cerques que són tendència
+newtab-trending-searches-hide-trending =
+    .title = Amaga les cerques que són tendència
+newtab-trending-searches-learn-more = Més informació
+newtab-trending-searches-dismiss = Amaga les cerques que són tendència
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Cerques que són tendència
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Les possibilitats són infinites. Afegiu-ne una.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nova
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Completats ({ $number })
+newtab-widget-task-list-menu-copy = Copia
+newtab-widget-lists-menu-edit = Edita el nom de la llista
+newtab-widget-lists-menu-create = Crea una llista nova
+newtab-widget-lists-menu-delete = Suprimeix aquesta llista
+newtab-widget-lists-menu-copy = Copia la llista al porta-retalls
+newtab-widget-lists-menu-hide = Amaga totes les llistes
+newtab-widget-lists-menu-learn-more = Més informació
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Afegeix un element
+newtab-widget-lists-input-error = Incloeu text per a afegir un element.
+newtab-widget-lists-input-menu-open-link = Obre l'enllaç
+newtab-widget-lists-input-menu-move-up = Mou cap amunt
+newtab-widget-lists-input-menu-move-down = Mou cap avall
+newtab-widget-lists-input-menu-delete = Suprimeix
+newtab-widget-lists-input-menu-edit = Edita
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Crea una llista nova
+newtab-widget-lists-name-label-default =
+    .label = Llista de tasques
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Llista de tasques
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Llista nova
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Temporitzador
+newtab-widget-timer-notification-focus = S'ha acabat el temps de concentració. Et felicito. Vols fer una pausa?
+newtab-widget-timer-notification-break = S'ha acabat la pausa. Estàs a punt per concentrar-te?
+newtab-widget-timer-notification-warning = Les notificacions estan desactivades
+newtab-widget-timer-mode-focus =
+    .label = Concentració
+newtab-widget-timer-mode-break =
+    .label = Pausa

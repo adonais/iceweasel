@@ -29,7 +29,7 @@ class nsMathMLmspaceFrame final : public nsMathMLContainerFrame {
   TransmitAutomaticData() override {
     // The REC defines the following elements to be space-like:
     // * an mtext, mspace, maligngroup, or malignmark element;
-    mPresentationData.flags |= NS_MATHML_SPACE_LIKE;
+    mPresentationData.flags += MathMLPresentationFlag::SpaceLike;
     return NS_OK;
   }
 

@@ -490,7 +490,7 @@ void SVGSVGElement::InvalidateTransformNotifyFrame() {
   // might fail this check if we've failed conditional processing
   if (ISVGSVGFrame* svgframe = do_QueryFrame(GetPrimaryFrame())) {
     svgframe->NotifyViewportOrTransformChanged(
-        ISVGDisplayableFrame::TRANSFORM_CHANGED);
+        ISVGDisplayableFrame::ChangeFlag::TransformChanged);
   }
 }
 

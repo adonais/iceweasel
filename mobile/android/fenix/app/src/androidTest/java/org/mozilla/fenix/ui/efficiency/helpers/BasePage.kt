@@ -7,8 +7,9 @@ package org.mozilla.fenix.ui.efficiency.helpers
 import android.util.Log
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -21,18 +22,13 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
-import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
-import org.hamcrest.CoreMatchers.containsString
-import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
@@ -300,6 +296,15 @@ abstract class BasePage(
             SelectorStrategy.COMPOSE_BY_TAG -> {
                 try {
                     composeRule.onNodeWithTag(selector.value)
+                } catch (e: Exception) {
+                    Log.i("mozGetElement", "Compose node not found for tag: ${selector.value}")
+                    null
+                }
+            }
+
+            SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_ON_LAST -> {
+                try {
+                    composeRule.onAllNodesWithTag(selector.value).onLast()
                 } catch (e: Exception) {
                     Log.i("mozGetElement", "Compose node not found for tag: ${selector.value}")
                     null

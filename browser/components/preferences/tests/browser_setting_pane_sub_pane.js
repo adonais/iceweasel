@@ -81,6 +81,27 @@ describe("setting-pane", () => {
     let backButton = pageHeader.backButtonEl;
     ok(backButton, "There is a back button");
 
+    /**
+     * Must dispatch paneshown event manually to have
+     * focus fire after contents on the page have loaded
+     * to replicate what happens in non-test environment.
+     */
+    doc.dispatchEvent(
+      new CustomEvent("paneshown", {
+        bubbles: true,
+        cancelable: true,
+        detail: {
+          category: "paneTestSubPane",
+        },
+      })
+    );
+    const checkbox = pane.querySelector("moz-checkbox");
+    is(
+      doc.activeElement,
+      checkbox,
+      "First element on the page (moz-checkbox) should be focused after pane is shown"
+    );
+
     // Go back
     paneLoaded = waitForPaneChange("privacy");
     EventUtils.synthesizeMouseAtCenter(backButton, {}, win);

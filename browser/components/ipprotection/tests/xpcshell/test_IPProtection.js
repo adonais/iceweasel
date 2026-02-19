@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { IPProtection } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtection.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs"
 );
 
 /**

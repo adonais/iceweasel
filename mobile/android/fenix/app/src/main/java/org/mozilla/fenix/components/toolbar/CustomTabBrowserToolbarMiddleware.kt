@@ -48,7 +48,6 @@ import mozilla.components.feature.session.TrackingProtectionUseCases
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
@@ -135,7 +134,7 @@ class CustomTabBrowserToolbarMiddleware(
 
     @Suppress("LongMethod")
     override fun invoke(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
         action: BrowserToolbarAction,
     ) {
@@ -144,16 +143,16 @@ class CustomTabBrowserToolbarMiddleware(
                 next(action)
 
                 val customTab = customTab
-                updateStartPageActions(context, customTab)
-                updateStartBrowserActions(context, customTab)
-                updateCurrentPageOrigin(context, customTab)
-                updateEndPageActions(context, customTab)
-                updateEndBrowserActions(context, customTab)
+                updateStartPageActions(store, customTab)
+                updateStartBrowserActions(store, customTab)
+                updateCurrentPageOrigin(store, customTab)
+                updateEndPageActions(store, customTab)
+                updateEndBrowserActions(store)
 
-                observePageLoadUpdates(context)
-                observePageOriginUpdates(context)
-                observePageSecurityUpdates(context)
-                observePageTrackingProtectionUpdates(context)
+                observePageLoadUpdates(store)
+                observePageOriginUpdates(store)
+                observePageSecurityUpdates(store)
+                observePageTrackingProtectionUpdates(store)
             }
 
             is CloseClicked -> {
@@ -193,7 +192,7 @@ class CustomTabBrowserToolbarMiddleware(
                                         isLocalPdf = customTab.content.url.isContentUrl(),
                                         isSecured = customTab.content.securityInfo.isSecure,
                                         sitePermissions = sitePermissions,
-                                        certificateName = customTab.content.securityInfo.issuer,
+                                        certificate = customTab.content.securityInfo.certificate,
                                         permissionHighlights = customTab.content.permissionHighlights,
                                         isTrackingProtectionEnabled =
                                             customTab.trackingProtection.enabled && !isExcepted,
@@ -288,22 +287,22 @@ class CustomTabBrowserToolbarMiddleware(
         }
     }
 
-    private fun observePageOriginUpdates(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun observePageOriginUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         browserStore.observeWhileActive {
             mapNotNull { state -> state.findCustomTab(customTabId) }
                 .ifAnyChanged { tab -> arrayOf(tab.content.title, tab.content.url) }
                 .collect {
-                    updateCurrentPageOrigin(context, it)
+                    updateCurrentPageOrigin(store, it)
                 }
         }
     }
 
-    private fun observePageLoadUpdates(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun observePageLoadUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         browserStore.observeWhileActive {
             mapNotNull { state -> state.findCustomTab(customTabId) }
                 .distinctUntilChangedBy { it.content.progress }
                 .collect {
-                    context.dispatch(
+                    store.dispatch(
                         UpdateProgressBarConfig(
                             buildProgressBar(it.content.progress),
                         ),
@@ -312,50 +311,50 @@ class CustomTabBrowserToolbarMiddleware(
         }
     }
 
-    private fun observePageSecurityUpdates(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun observePageSecurityUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         browserStore.observeWhileActive {
             mapNotNull { state -> state.findCustomTab(customTabId) }
                 .distinctUntilChangedBy { tab -> tab.content.securityInfo }
                 .collect {
-                    updateStartPageActions(context, it)
+                    updateStartPageActions(store, it)
                 }
         }
     }
 
     private fun observePageTrackingProtectionUpdates(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
     ) {
         browserStore.observeWhileActive {
             mapNotNull { state -> state.findCustomTab(customTabId) }
                 .distinctUntilChangedBy { tab -> tab.trackingProtection }
-                .collect { updateStartPageActions(context, it) }
+                .collect { updateStartPageActions(store, it) }
         }
     }
 
     private fun updateStartBrowserActions(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
-    ) = context.dispatch(
+    ) = store.dispatch(
         BrowserActionsStartUpdated(
             buildStartBrowserActions(customTab),
         ),
     )
 
     private fun updateStartPageActions(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
-    ) = context.dispatch(
+    ) = store.dispatch(
         PageActionsStartUpdated(
             buildStartPageActions(customTab),
         ),
     )
 
     private fun updateCurrentPageOrigin(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
     ) {
         scope.launch {
-            context.dispatch(
+            store.dispatch(
                 BrowserDisplayToolbarAction.PageOriginUpdated(
                     PageOrigin(
                         hint = R.string.search_hint,
@@ -370,20 +369,19 @@ class CustomTabBrowserToolbarMiddleware(
     }
 
     private fun updateEndPageActions(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
-    ) = context.dispatch(
+    ) = store.dispatch(
         BrowserDisplayToolbarAction.PageActionsEndUpdated(
             buildEndPageActions(customTab),
         ),
     )
 
     private fun updateEndBrowserActions(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
-        customTab: CustomTabSessionState?,
-    ) = context.dispatch(
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+    ) = store.dispatch(
         BrowserActionsEndUpdated(
-            buildEndBrowserActions(customTab),
+            buildEndBrowserActions(),
         ),
     )
 
@@ -472,17 +470,7 @@ class CustomTabBrowserToolbarMiddleware(
         }
     }
 
-    private fun buildEndBrowserActions(customTab: CustomTabSessionState?) = buildList {
-        if (customTab?.config?.showShareMenuItem == true) {
-            add(
-                ActionButtonRes(
-                    drawableResId = iconsR.drawable.mozac_ic_share_android_24,
-                    contentDescription = customtabsR.string.mozac_feature_customtabs_share_link,
-                    onClick = ShareClicked,
-                ),
-            )
-        }
-
+    private fun buildEndBrowserActions() = buildList {
         add(
             ActionButtonRes(
                 drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,

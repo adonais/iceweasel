@@ -78,7 +78,6 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
         "cs_fast_linear_gradient",
         "cs_border_segment",
         "cs_border_solid",
-        "cs_svg_filter",
         "cs_svg_filter_node",
     ] {
         shaders.insert(name, vec![String::new()]);

@@ -7,6 +7,8 @@
  * https://w3c.github.io/reporting/#interface-reporting-observer
  */
 
+interface nsISupports;
+
 [Pref="dom.reporting.enabled",
  Exposed=(Window,Worker)]
 interface ReportBody {
@@ -111,4 +113,22 @@ dictionary ReportingEndpoint {
   any priority;
   // This is an unsigned long.
   any weight;
+};
+
+dictionary GenerateTestReportParameters
+{
+  required DOMString message;
+  DOMString group = "default";
+};
+
+[ChromeOnly, Pref="dom.reporting.enabled", Exposed=Window]
+namespace TestReportGenerator {
+  [Throws]
+  Promise<undefined> generateReport(GenerateTestReportParameters params);
+};
+
+[LegacyNoInterfaceObject, Exposed=Window]
+interface TestReportBody : ReportBody {
+  [Default] object toJSON();
+  readonly attribute DOMString message;
 };

@@ -7,7 +7,6 @@
 #ifndef DOM_QUOTA_FIRSTINITIALIZATIONATTEMPTS_H_
 #define DOM_QUOTA_FIRSTINITIALIZATIONATTEMPTS_H_
 
-#include <cstdint>
 #include <utility>
 
 #include "ErrorList.h"

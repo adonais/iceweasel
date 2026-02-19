@@ -51,6 +51,7 @@ class SourceText;
 
 namespace js {
 
+class Compressor;
 class FrontendContext;
 class ScriptSource;
 
@@ -77,7 +78,7 @@ class JitScript;
 
 class ModuleObject;
 class RegExpObject;
-class SourceCompressionTask;
+class SourceCompressionTaskEntry;
 class Shape;
 class SrcNote;
 class DebugScript;
@@ -392,7 +393,8 @@ class ScriptSource {
   // modified by the main thread, and all members are always safe to access
   // on the main thread.
 
-  friend class SourceCompressionTask;
+  friend class PendingSourceCompressionEntry;
+  friend class SourceCompressionTaskEntry;
   friend bool SynchronouslyCompressSource(JSContext* cx,
                                           JS::Handle<BaseScript*> script);
 
@@ -1006,7 +1008,7 @@ class ScriptSource {
       size_t sourceLength);
 
  private:
-  void performTaskWork(SourceCompressionTask* task);
+  void performTaskWork(SourceCompressionTaskEntry* task, Compressor& comp);
 
   struct TriggerConvertToCompressedSourceFromTask {
     ScriptSource* const source_;
@@ -1441,6 +1443,37 @@ class alignas(uintptr_t) PrivateScriptData final
   // PrivateScriptData has trailing data so isn't copyable or movable.
   PrivateScriptData(const PrivateScriptData&) = delete;
   PrivateScriptData& operator=(const PrivateScriptData&) = delete;
+};
+
+// An entry in the runtime's pendingCompressions_ list for a single
+// ScriptSource.
+//
+// It is not desirable to eagerly compress: if lazy functions that are tied to
+// the ScriptSource were to be executed relatively soon after parsing, they
+// would need to block on decompression, which hurts responsiveness.
+//
+// To this end, script sources are enqueued in a pending list by
+// ScriptSource::tryCompressOffThread. When a major GC occurs, we allocate and
+// submit SourceCompressionTasks for them. Currently, a script source is
+// considered ready 2 major GCs after being enqueued.
+class PendingSourceCompressionEntry {
+  // The major GC number of the runtime when the entry was enqueued.
+  uint64_t majorGCNumber_;
+
+  // The source to be compressed.
+  RefPtr<ScriptSource> source_;
+
+ public:
+  PendingSourceCompressionEntry(JSRuntime* rt, ScriptSource* source);
+
+  ScriptSource* source() const { return source_.get(); }
+  uint64_t majorGCNumber() const { return majorGCNumber_; }
+  bool shouldCancel() const {
+    // If the refcount is exactly 1, then nothing else is holding on to the
+    // ScriptSource, so no reason to compress it and we should cancel the
+    // compression.
+    return source_->refs == 1;
+  }
 };
 
 // [SMDOC] Script Representation (js::BaseScript)

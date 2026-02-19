@@ -614,8 +614,8 @@ newtab-download-mobile-highlight-body-variant-c =
 newtab-download-mobile-highlight-image =
     .aria-label =
         { -brand-product-name.case-status ->
-            [with-cases] QR kód pro stažení { -brand-product-name(case: "gen") } pro mobilní zařízení
-           *[no-cases] QR kód pro stažení aplikace { -brand-product-name } pro mobilní zařízení
+            [with-cases] QR kód pro stažení { -brand-product-name(case: "gen") } pro mobily
+           *[no-cases] QR kód pro stažení aplikace { -brand-product-name } pro mobily
         }
 
 ## Strings for shortcuts highlight
@@ -695,6 +695,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nový seznam
+newtab-widget-section-title = Widgety
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Skrýt widgety
+    .aria-label = Skrýt všechny widgety
+newtab-widget-section-maximize =
+    .title = Rozbalit widgety
+    .aria-label = Rozbalení všech widgetů na plnou velikost
+newtab-widget-section-minimize =
+    .title = Minimalizovat wigety
+    .aria-label = Sbalení všech widgetů na kompaktní velikost
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -717,8 +728,6 @@ newtab-widget-timer-menu-notifications = Vypnout oznámení
 newtab-widget-timer-menu-notifications-on = Zapnout oznámení
 newtab-widget-timer-menu-hide = Skrýt časovač
 newtab-widget-timer-menu-learn-more = Zjistit více
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Rolováním zobrazíte další položky
 newtab-widget-message-title = Soustřeďte se díky seznamům a vestavěnému časovači
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Od rychlých připomínek po každodenní úkoly, od soustředění po přestávky na protažení - plňte úkoly včas.

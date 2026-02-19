@@ -308,7 +308,9 @@ async function runInferenceAndCollectMetrics({
     }
 
     const memUsage = await getTotalMemoryUsage();
-    const metrics = fetchMetrics(res.metrics);
+    const metrics = fetchMetrics(
+      (res.metrics && res.metrics.runTimestamps) || []
+    );
     let embeddingLatency = 0;
 
     for (const [metricName, value] of Object.entries(metrics)) {

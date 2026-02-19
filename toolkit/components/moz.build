@@ -68,6 +68,7 @@ DIRS += [
     "promiseworker",
     "prompts",
     "protobuf",
+    "qrcode",
     "remotebrowserutils",
     "reflect",
     "reputationservice",

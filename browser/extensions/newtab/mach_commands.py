@@ -104,9 +104,13 @@ def watch(command_context):
     processes = []
 
     try:
-        p1 = subprocess.Popen(
-            ["./mach", "npm", "run", "watchmc", "--prefix=browser/extensions/newtab"]
-        )
+        p1 = subprocess.Popen([
+            "./mach",
+            "npm",
+            "run",
+            "watchmc",
+            "--prefix=browser/extensions/newtab",
+        ])
         p2 = subprocess.Popen(["./mach", "watch"])
         processes.extend([p1, p2])
         print("Watching subprocesses started. Press Ctrl-C to terminate them.")
@@ -145,9 +149,13 @@ def update_locales(command_context):
     # Step 1: We download the latest reckoning of strings from firefox-l10n
     print("Cloning the latest HEAD of firefox-l10n repository")
     with tempfile.TemporaryDirectory() as clone_dir:
-        subprocess.check_call(
-            ["git", "clone", "--depth=1", FIREFOX_L10N_REPO, clone_dir]
-        )
+        subprocess.check_call([
+            "git",
+            "clone",
+            "--depth=1",
+            FIREFOX_L10N_REPO,
+            clone_dir,
+        ])
         # Step 2: Get some metadata about what we just pulled down -
         # specifically, the revision.
         revision = subprocess.check_output(
@@ -284,7 +292,7 @@ def get_message_dates(fluent_file_path):
         ["git", "blame", "--line-porcelain", fluent_file_path],
         stdout=subprocess.PIPE,
         text=True,
-        check=False,
+        check=True,
     )
 
     pattern = re.compile(r"^([a-z-]+[^\s]+) ")
@@ -831,9 +839,13 @@ def bundle(command_context):
     proc = None
 
     try:
-        proc = subprocess.Popen(
-            ["./mach", "npm", "run", "bundle", "--prefix=browser/extensions/newtab"]
-        )
+        proc = subprocess.Popen([
+            "./mach",
+            "npm",
+            "run",
+            "bundle",
+            "--prefix=browser/extensions/newtab",
+        ])
         print("Bundling newtab started. Press Ctrl-C to terminate.")
         proc.wait()
     except KeyboardInterrupt:
@@ -871,9 +883,12 @@ def install(command_context):
     proc = None
 
     try:
-        proc = subprocess.Popen(
-            ["./mach", "npm", "install", "--prefix=browser/extensions/newtab"]
-        )
+        proc = subprocess.Popen([
+            "./mach",
+            "npm",
+            "install",
+            "--prefix=browser/extensions/newtab",
+        ])
         print(
             "Installing node dependencies for newtab started. Press Ctrl-C to terminate."
         )
@@ -888,3 +903,72 @@ def install(command_context):
 
     # Swallow errors (no exception raising). Return the process returncode for mach to surface.
     return 0 if proc is None else proc.returncode
+
+
+@SubCommand(
+    "newtab",
+    "get-unbranded-builds",
+    description="Get URLs for the latest unbranded Firefox builds for add-on development.",
+)
+@CommandArgument(
+    "--channel",
+    default="release",
+    choices=["beta", "release"],
+    help="Which channel to get unbranded builds for",
+)
+def get_unbranded_builds(command_context, channel):
+    """
+    Prints the latest unbranded Firefox build artifact URLs for Mac, Windows, and Linux.
+    These builds allow testing unsigned extensions without enforcing signature requirements.
+    """
+    TASKCLUSTER_INDEX_URL = (
+        "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task"
+    )
+
+    repo = f"mozilla-{channel}"
+
+    platforms = {
+        "macOS (Intel)": {
+            "namespace": f"gecko.v2.{repo}.latest.firefox.macosx64-add-on-devel",
+            "artifact": "public/build/target.dmg",
+        },
+        "Windows 32-bit": {
+            "namespace": f"gecko.v2.{repo}.latest.firefox.win32-add-on-devel",
+            "artifact": "public/build/target.zip",
+        },
+        "Windows 64-bit": {
+            "namespace": f"gecko.v2.{repo}.latest.firefox.win64-add-on-devel",
+            "artifact": "public/build/target.zip",
+        },
+        "Linux 64-bit": {
+            "namespace": f"gecko.v2.{repo}.latest.firefox.linux64-add-on-devel",
+            "artifact": "public/build/target.tar.bz2",
+        },
+    }
+
+    print(f"Fetching latest unbranded builds for {channel} channel...\n")
+
+    for platform_name, platform_info in platforms.items():
+        namespace = platform_info["namespace"]
+        artifact = platform_info["artifact"]
+
+        try:
+            index_url = f"{TASKCLUSTER_INDEX_URL}/{namespace}"
+            response = requests.get(index_url, timeout=10)
+            response.raise_for_status()
+            task_data = response.json()
+            task_id = task_data["taskId"]
+
+            artifact_url = f"https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/{task_id}/runs/0/artifacts/{artifact}"
+
+            print(f"{platform_name}:")
+            print(f"  {artifact_url}\n")
+        except requests.RequestException as e:
+            print(f"{platform_name}: Failed to fetch ({e})\n")
+
+    print(
+        "For more information, see: https://wiki.mozilla.org/Add-ons/Extension_Signing#Unbranded_Builds"
+    )
+    print(
+        f"Manual search: https://treeherder.mozilla.org/#/jobs?repo={repo}&searchStr=addon"
+    )

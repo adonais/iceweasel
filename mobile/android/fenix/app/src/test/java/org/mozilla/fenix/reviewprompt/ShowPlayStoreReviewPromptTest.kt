@@ -52,7 +52,7 @@ class ShowPlayStoreReviewPromptTest {
                     reviewPrompt = ReviewPromptState.Eligible(ReviewPromptState.Eligible.Type.Custom),
                 ),
             )
-            val feature = ShowPlayStoreReviewPrompt(
+            val feature = ShowReviewPromptBinding(
                 appStore,
                 promptController,
                 activityRef,
@@ -87,7 +87,7 @@ class ShowPlayStoreReviewPromptTest {
                 ),
                 middlewares = listOf(captureMiddleware),
             )
-            val feature = ShowPlayStoreReviewPrompt(
+            val feature = ShowReviewPromptBinding(
                 appStore,
                 promptController,
                 activityRef,
@@ -116,7 +116,7 @@ class ShowPlayStoreReviewPromptTest {
                 ),
                 middlewares = listOf(captureMiddleware),
             )
-            val feature = ShowPlayStoreReviewPrompt(
+            val feature = ShowReviewPromptBinding(
                 appStore,
                 promptController,
                 activityRef,
@@ -143,7 +143,7 @@ class ShowPlayStoreReviewPromptTest {
             ),
             middlewares = listOf(captureMiddleware),
         )
-        val feature = ShowPlayStoreReviewPrompt(
+        val feature = ShowReviewPromptBinding(
             appStore,
             promptController,
             activityRef,

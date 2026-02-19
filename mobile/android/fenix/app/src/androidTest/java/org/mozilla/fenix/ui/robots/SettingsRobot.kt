@@ -443,7 +443,7 @@ class SettingsRobot {
         assertUIObjectExists(aboutFirefoxHeading())
     }
 
-    fun verifyGooglePlayRedirect() {
+    fun verifyGooglePlayRedirect(composeTestRule: ComposeTestRule) {
         if (isPackageInstalled(GOOGLE_PLAY_SERVICES)) {
             Log.i(TAG, "verifyGooglePlayRedirect: $GOOGLE_PLAY_SERVICES is installed")
             try {
@@ -457,12 +457,12 @@ class SettingsRobot {
                 Log.i(TAG, "verifyGooglePlayRedirect: Verified intent to: $GOOGLE_PLAY_SERVICES")
             } catch (e: AssertionFailedError) {
                 Log.i(TAG, "verifyGooglePlayRedirect: AssertionFailedError caught, executing fallback methods")
-                BrowserRobot().verifyRateOnGooglePlayURL()
+                BrowserRobot(composeTestRule).verifyRateOnGooglePlayURL()
             } finally {
                 forceCloseApp(GOOGLE_PLAY_SERVICES)
             }
         } else {
-            BrowserRobot().verifyRateOnGooglePlayURL()
+            BrowserRobot(composeTestRule).verifyRateOnGooglePlayURL()
         }
     }
 
@@ -479,16 +479,16 @@ class SettingsRobot {
     }
 
     class Transition {
-        fun goBack(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun goBack(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the navigate up button")
             goBackButton().click()
             Log.i(TAG, "goBack: Clicked the navigate up button")
 
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
 
-        fun goBackToOnboardingScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun goBackToOnboardingScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             Log.i(TAG, "goBackToOnboardingScreen: Trying to click device back button")
             mDevice.pressBack()
             Log.i(TAG, "goBackToOnboardingScreen: Clicked device back button")
@@ -496,17 +496,17 @@ class SettingsRobot {
             mDevice.waitForIdle(waitingTimeShort)
             Log.i(TAG, "goBackToOnboardingScreen: Device was idle for $waitingTimeShort ms")
 
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
 
-        fun goBackToBrowser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun goBackToBrowser(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "goBackToBrowser: Trying to click the navigate up button")
             goBackButton().click()
             Log.i(TAG, "goBackToBrowser: Clicked the navigate up button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun openAboutFirefoxPreview(interact: SettingsSubMenuAboutRobot.() -> Unit): SettingsSubMenuAboutRobot.Transition {
@@ -716,13 +716,13 @@ class SettingsRobot {
             return SettingsSubMenuDataCollectionRobot.Transition()
         }
 
-        fun openAddonsManagerMenu(interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
+        fun openAddonsManagerMenu(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
             Log.i(TAG, "openAddonsManagerMenu: Trying to click the \"Add-ons\" button")
             addonsManagerButton().click()
             Log.i(TAG, "openAddonsManagerMenu: Clicked the \"Add-ons\" button")
 
-            SettingsSubMenuAddonsManagerRobot().interact()
-            return SettingsSubMenuAddonsManagerRobot.Transition()
+            SettingsSubMenuAddonsManagerRobot(composeTestRule).interact()
+            return SettingsSubMenuAddonsManagerRobot.Transition(composeTestRule)
         }
 
         fun openOpenLinksInAppsMenu(interact: SettingsSubMenuOpenLinksInAppsRobot.() -> Unit): SettingsSubMenuOpenLinksInAppsRobot.Transition {

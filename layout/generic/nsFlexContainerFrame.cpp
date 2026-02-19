@@ -2982,7 +2982,7 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, tempLists);
-    DisplayAbsoluteContinuations(aBuilder, tempLists);
+    DisplayPushedAbsoluteFrames(aBuilder, tempLists);
   }
 
   // Our children are all block-level, so their borders/backgrounds all go on
@@ -5195,27 +5195,12 @@ void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
 nsFlexContainerFrame* nsFlexContainerFrame::GetFlexFrameWithComputedInfo(
     nsIFrame* aFrame) {
   // Prepare a lambda function that we may need to call multiple times.
-  auto GetFlexContainerFrame = [](nsIFrame* aFrame) {
-    // Return the aFrame's content insertion frame, iff it is
-    // a flex container frame.
-    nsFlexContainerFrame* flexFrame = nullptr;
-
-    if (aFrame) {
-      nsIFrame* inner = aFrame;
-      if (MOZ_UNLIKELY(aFrame->IsFieldSetFrame())) {
-        inner = static_cast<nsFieldSetFrame*>(aFrame)->GetInner();
-      }
-      // Since "Get" methods like GetInner and GetContentInsertionFrame can
-      // return null, we check the return values before dereferencing. Our
-      // calling pattern makes this unlikely, but we're being careful.
-      nsIFrame* insertionFrame =
-          inner ? inner->GetContentInsertionFrame() : nullptr;
-      nsIFrame* possibleFlexFrame = insertionFrame ? insertionFrame : aFrame;
-      flexFrame = possibleFlexFrame->IsFlexContainerFrame()
-                      ? static_cast<nsFlexContainerFrame*>(possibleFlexFrame)
-                      : nullptr;
+  auto GetFlexContainerFrame = [](nsIFrame* aFrame) -> nsFlexContainerFrame* {
+    // Return the aFrame's content insertion frame, iff it is a flex container.
+    if (!aFrame) {
+      return nullptr;
     }
-    return flexFrame;
+    return do_QueryFrame(aFrame->GetContentInsertionFrame());
   };
 
   nsFlexContainerFrame* flexFrame = GetFlexContainerFrame(aFrame);

@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.components.search
 
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
@@ -15,7 +14,6 @@ import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.InitAction
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -31,10 +29,8 @@ class ApplicationSearchMiddlewareTest {
             this,
         )
         val store: Store<BrowserState, BrowserAction> = mockk(relaxed = true)
-        val context: MiddlewareContext<BrowserState, BrowserAction> = mockk()
-        every { context.store } returns store
 
-        middleware.invoke(context, { _ -> }, InitAction)
+        middleware.invoke(store, { _ -> }, InitAction)
         this.advanceUntilIdle()
 
         val slot = slot<SearchAction.ApplicationSearchEnginesLoaded>()

@@ -33,6 +33,7 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.PermissionStorage
 import org.mozilla.fenix.settings.PhoneFeature
@@ -215,7 +216,11 @@ class TrustPanelMiddlewareTest {
             deviceFeature = PhoneFeature.CAMERA,
         )
 
-        val trustPanelState = spy(TrustPanelState(sitePermissions = null))
+        val mockSessionState: SessionState = mock()
+        val trustPanelState = TrustPanelState(
+            sitePermissions = null,
+            sessionState = mockSessionState,
+        )
         val store = createStore(
             trustPanelState = trustPanelState,
         )
@@ -225,7 +230,7 @@ class TrustPanelMiddlewareTest {
         // Ensure request permissions launcher is not accessed to request permission
         verify(requestPermissionsLauncher, never()).launch(any())
         // Ensure session state is not accessed to update permissions
-        verify(trustPanelState, never()).sessionState
+        verifyNoInteractions(mockSessionState)
     }
 
     @Test

@@ -6,11 +6,13 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.rule.ActivityTestRule
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
+import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.openAppFromExternalLink
 import org.mozilla.fenix.helpers.DataGenerationHelper.createCustomTabIntent
@@ -29,10 +31,7 @@ import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.customTabScreen
 import org.mozilla.fenix.ui.robots.enhancedTrackingProtection
 import org.mozilla.fenix.ui.robots.homeScreen
-import org.mozilla.fenix.ui.robots.navigationToolbar
 import org.mozilla.fenix.ui.robots.notificationShade
-import org.mozilla.fenix.ui.robots.openEditURLView
-import org.mozilla.fenix.ui.robots.searchScreen
 
 class CustomTabsTest : TestSetup() {
     private val customMenuItem = "TestMenuItem"
@@ -45,7 +44,10 @@ class CustomTabsTest : TestSetup() {
     private val loginPage = "https://mozilla-mobile.github.io/testapp/loginForm"
 
     @get:Rule
-    val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+    val composeTestRule =
+        AndroidComposeTestRule(
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
+        ) { it.activity }
 
     @get:Rule
     val intentReceiverActivityTestRule = ActivityTestRule(
@@ -68,23 +70,23 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
             fillAndSubmitLoginCredentials("mozilla", "firefox")
         }
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             verifySaveLoginPromptIsDisplayed()
-            clickPageObject(itemWithText("Save"))
+            clickPageObject(composeTestRule, itemWithText("Save"))
         }
 
-        openAppFromExternalLink(loginPage)
+        openAppFromExternalLink(composeTestRule, loginPage)
 
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openLoginsAndPasswordSubMenu {
-        }.openSavedLogins {
+        }.openSavedLogins(composeTestRule) {
             verifySecurityPromptForLogins()
             tapSetupLater()
             verifySavedLoginsSectionUsername("mozilla")
@@ -103,17 +105,15 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
-            longCLickAndCopyToolbarUrl()
+        customTabScreen(composeTestRule) {
+            verifyCustomTabUrl(customTabPage.url.toString())
+            longClickAndCopyToolbarUrl()
         }
 
-        openAppFromExternalLink(customTabPage.url.toString())
+        openAppFromExternalLink(composeTestRule, customTabPage.url.toString())
 
-        navigationToolbar {
-            openEditURLView()
-        }
-
-        searchScreen {
+        browserScreen(composeTestRule) {
+        }.openSearch {
             clickClearButton()
             longClickToolbar()
             clickPasteText()
@@ -135,11 +135,11 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }
 
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.clickDownloadLink(downloadFile) {
             verifyDownloadPrompt(downloadFile)
         }.clickDownload {
@@ -157,6 +157,7 @@ class CustomTabsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyCustomTabMenuItemsTest() {
+        val customMenuItem = "TestMenuItem"
         val customTabPage = mockWebServer.getGenericAsset(1)
 
         intentReceiverActivityTestRule.launchActivity(
@@ -166,17 +167,10 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
             verifyCustomTabCloseButton()
         }.openMainMenu {
-            verifyPoweredByTextIsDisplayed()
-            verifyCustomMenuItem(customMenuItem)
-            verifyDesktopSiteButtonExists()
-            verifyFindInPageButtonExists()
-            verifyOpenInBrowserButtonExists()
-            verifyBackButtonExists()
-            verifyForwardButtonExists()
-            verifyRefreshButtonExists()
+            verifyCustomTabsMainMenuItems(customMenuItem, true)
         }
     }
 
@@ -193,28 +187,12 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
             verifyCustomTabCloseButton()
         }.openMainMenu {
-        }.clickOpenInBrowserButton {
+        }.clickOpenInBrowserButtonFromRedesignedToolbar {
+            verifyPageContent(customTabPage.content)
             verifyTabCounter("1")
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2239548
-    @Test
-    fun shareCustomTabUsingToolbarButtonTest() {
-        val customTabPage = mockWebServer.getGenericAsset(1)
-
-        intentReceiverActivityTestRule.launchActivity(
-            createCustomTabIntent(
-                customTabPage.url.toString(),
-            ),
-        )
-
-        customTabScreen {
-        }.clickShareButton {
-            verifyShareTabLayout()
         }
     }
 
@@ -230,17 +208,16 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
+        customTabScreen(composeTestRule) {
             verifyCustomTabCloseButton()
             verifyCustomTabsSiteInfoButton()
             verifyCustomTabToolbarTitle(customTabPage.title)
             verifyCustomTabUrl(customTabPage.url.toString())
             verifyCustomTabActionButton(customTabActionButton)
-            verifyCustomTabsShareButton()
             verifyMainMenuButton()
             clickCustomTabCloseButton()
         }
-        homeScreen {
+        homeScreen(composeTestRule) {
             verifyHomeScreenAppBarItems()
         }
     }
@@ -257,25 +234,25 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        customTabScreen {
-            clickPageObject(itemWithText("PDF form file"))
-            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
+        customTabScreen(composeTestRule) {
+            clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
             waitForPageToLoad()
             verifyPDFReaderToolbarItems()
             verifyCustomTabCloseButton()
             verifyCustomTabsSiteInfoButton()
-            verifyCustomTabToolbarTitle("pdfForm.pdf")
+            verifyCustomTabToolbarTitle("Untitled document - pdfForm.pdf")
             verifyCustomTabUrl(pdfFormResource.url.toString())
-            verifyCustomTabsShareButton()
             verifyMainMenuButton()
             clickCustomTabCloseButton()
         }
-        homeScreen {
+        homeScreen(composeTestRule) {
             verifyHomeScreenAppBarItems()
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2239117
+    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=2006672"])
     @Test
     fun verifyCustomTabETPSheetAndToggleTest() {
         val customTabPage = mockWebServer.getGenericAsset(1)
@@ -287,19 +264,19 @@ class CustomTabsTest : TestSetup() {
             ),
         )
 
-        enhancedTrackingProtection {
-        }.openEnhancedTrackingProtectionSheet {
+        browserScreen(composeTestRule) {
+        }.openSiteSecuritySheet {
             verifyEnhancedTrackingProtectionSheetStatus(status = "ON", state = true)
         }.toggleEnhancedTrackingProtectionFromSheet {
             verifyEnhancedTrackingProtectionSheetStatus(status = "OFF", state = false)
-        }.closeEnhancedTrackingProtectionSheet {
+        }.closeSiteSecuritySheet(composeTestRule) {
         }
 
-        openAppFromExternalLink(customTabPage.url.toString())
+        openAppFromExternalLink(composeTestRule, customTabPage.url.toString())
 
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openEnhancedTrackingProtectionSubMenu {
             switchEnhancedTrackingProtectionToggle()
             verifyEnhancedTrackingProtectionOptionsEnabled(enabled = false)
@@ -307,7 +284,7 @@ class CustomTabsTest : TestSetup() {
 
         exitMenu()
 
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.goBack {
             // Actually exiting to the previously opened custom tab
         }

@@ -10,7 +10,7 @@ const { ExtensionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
 );
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 do_get_profile();

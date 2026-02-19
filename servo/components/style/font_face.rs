@@ -6,6 +6,7 @@
 //!
 //! [ff]: https://drafts.csswg.org/css-fonts/#at-font-face-rule
 
+use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::longhands::font_language_override;
@@ -18,10 +19,9 @@ use crate::values::specified::font::{
 };
 use crate::values::specified::url::SpecifiedUrl;
 use crate::values::specified::{Angle, NonNegativePercentage};
-use cssparser::UnicodeRange;
 use cssparser::{
-    AtRuleParser, CowRcStr, DeclarationParser, Parser, ParserState, QualifiedRuleParser,
-    RuleBodyItemParser, RuleBodyParser, SourceLocation,
+    match_ignore_ascii_case, AtRuleParser, CowRcStr, DeclarationParser, Parser, ParserState,
+    QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation, UnicodeRange,
 };
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};
@@ -686,7 +686,7 @@ macro_rules! font_face_descriptors {
             ///
             /// However both are required for the rule to represent an actual font face.
             #[cfg(feature = "servo")]
-            pub fn font_face(&self) -> Option<FontFace> {
+            pub fn font_face(&self) -> Option<FontFace<'_>> {
                 if $( self.$m_ident.is_some() )&&* {
                     Some(FontFace(self))
                 } else {

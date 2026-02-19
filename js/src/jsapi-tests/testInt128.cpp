@@ -41,38 +41,34 @@ constexpr Uint128 operator""_u128() {
 
   constexpr auto digits = std::array{DIGITS...};
 
-  // Add [[maybe_unused]] everywhere to please GCC <10.
-
-  [[maybe_unused]] constexpr auto isBinaryDigit = [](auto c) {
+  constexpr auto isBinaryDigit = [](auto c) {
     return (c >= '0' && c <= '1') || c == '\'';
   };
 
-  [[maybe_unused]] constexpr auto isOctalDigit = [](auto c) {
+  constexpr auto isOctalDigit = [](auto c) {
     return (c >= '0' && c <= '7') || c == '\'';
   };
 
-  [[maybe_unused]] constexpr auto isDigit = [](auto c) {
+  constexpr auto isDigit = [](auto c) {
     return mozilla::IsAsciiDigit(c) || c == '\'';
   };
 
-  [[maybe_unused]] constexpr auto isHexDigit = [](auto c) {
+  constexpr auto isHexDigit = [](auto c) {
     return mozilla::IsAsciiHexDigit(c) || c == '\'';
   };
 
-  [[maybe_unused]] constexpr auto isBinary =
-      [isBinaryDigit](auto zero, auto prefix, auto... rest) {
-        return zero == '0' && (prefix == 'b' || prefix == 'B') &&
-               (isBinaryDigit(rest) && ...);
-      };
+  constexpr auto isBinary = [isBinaryDigit](auto zero, auto prefix,
+                                            auto... rest) {
+    return zero == '0' && (prefix == 'b' || prefix == 'B') &&
+           (isBinaryDigit(rest) && ...);
+  };
 
-  [[maybe_unused]] constexpr auto isHex = [isHexDigit](auto zero, auto prefix,
-                                                       auto... rest) {
+  constexpr auto isHex = [isHexDigit](auto zero, auto prefix, auto... rest) {
     return zero == '0' && (prefix == 'x' || prefix == 'X') &&
            (isHexDigit(rest) && ...);
   };
 
-  [[maybe_unused]] constexpr auto binary =
-      [digits]() -> std::optional<Uint128> {
+  constexpr auto binary = [digits]() -> std::optional<Uint128> {
     auto value = Uint128{};
     for (size_t i = 2; i < digits.size(); ++i) {
       auto digit = digits[i];
@@ -89,7 +85,7 @@ constexpr Uint128 operator""_u128() {
     return value;
   };
 
-  [[maybe_unused]] constexpr auto octal = [digits]() -> std::optional<Uint128> {
+  constexpr auto octal = [digits]() -> std::optional<Uint128> {
     auto value = Uint128{};
     for (size_t i = 1; i < digits.size(); ++i) {
       auto digit = digits[i];
@@ -106,8 +102,7 @@ constexpr Uint128 operator""_u128() {
     return value;
   };
 
-  [[maybe_unused]] constexpr auto decimal =
-      [digits]() -> std::optional<Uint128> {
+  constexpr auto decimal = [digits]() -> std::optional<Uint128> {
     auto value = Uint128{};
     for (size_t i = 0; i < digits.size(); ++i) {
       auto digit = digits[i];
@@ -121,8 +116,7 @@ constexpr Uint128 operator""_u128() {
     return value;
   };
 
-  [[maybe_unused]] constexpr auto hexadecimal =
-      [digits]() -> std::optional<Uint128> {
+  constexpr auto hexadecimal = [digits]() -> std::optional<Uint128> {
     auto value = Uint128{};
     for (size_t i = 2; i < digits.size(); ++i) {
       auto digit = digits[i];

@@ -79,7 +79,7 @@ def create_tar_from_files(fp, files):
             # would be a glaring security hole if the archive were
             # uncompressed as root.
             if ti.mode & (stat.S_ISUID | stat.S_ISGID):
-                raise ValueError("cannot add file with setuid or setgid set: " "%s" % f)
+                raise ValueError("cannot add file with setuid or setgid set: %s" % f)
 
             # Set uid, gid, username, and group as deterministic values.
             ti.uid = 0

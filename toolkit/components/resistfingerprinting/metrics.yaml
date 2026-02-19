@@ -403,6 +403,43 @@ characteristics:
     data_sensitivity:
       - interaction
 
+  timezone_web:
+    type: string
+    description: >
+      The timezone string reported via the web using Intl API (e.g. America/New_York)
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005864
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005864
+    expires: never
+    data_sensitivity:
+      - interaction
+
+  timezone_offset_web:
+    type: quantity
+    unit: minutes
+    description: >
+      The timezone offset in minutes exposed to web content via getTimezoneOffset()
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005864
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005864
+    expires: never
+    data_sensitivity:
+      - interaction
+
   system_locale:
     type: string
     description: >
@@ -3378,6 +3415,26 @@ characteristics:
       # is more like 'technical' (per the Data Review), I'm marking highly sensitive.
       - highly_sensitive
 
+  math_ops_fdlibm_2:
+    type: text
+    description: >
+      Result of additional fingerprintable math operations, with fdlibm enabled
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005866
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005866
+    expires: never
+    data_sensitivity:
+      # Text metrics are _required_ to be web_activity or highly_sensitive, so even though this
+      # is more like 'technical' (per the Data Review), I'm marking highly sensitive.
+      - highly_sensitive
+
   keyboard_layout:
     type: string
     description: >
@@ -3842,6 +3899,60 @@ characteristics:
     data_sensitivity:
       - technical
 
+  os_distro:
+    type: string
+    description: >
+      User's OS distribution, as reported by lsb_release (Linux only, blank otherwise)
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005865
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005865
+    expires: never
+    data_sensitivity:
+      - technical
+
+  os_distro_id:
+    type: string
+    description: >
+      User's OS distribution, as reported by MOZ_DISTRIBUTION_ID
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005865
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005865
+    expires: never
+    data_sensitivity:
+      - technical
+
+  os_distro_version:
+    type: string
+    description: >
+      User's OS distribution version, as reported by lsb_release (Linux only, blank otherwise)
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005865
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005865
+    expires: never
+    data_sensitivity:
+      - technical
+
   cpu_model:
     type: string
     description: >
@@ -3872,6 +3983,52 @@ characteristics:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944933
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944933#c1
+    expires: never
+    data_sensitivity:
+      - technical
+
+  firefox_binary_arch:
+    type: string
+    description: >
+      Architecture of the Firefox binary itself (not the CPU). This can differ
+      from cpu_arch when running under emulation (e.g., x86-64 Firefox via
+      Rosetta 2 on ARM64 Mac) or when running 32-bit Firefox on 64-bit CPU.
+      Format: "xpcomabi:<abi>|is64bit:<bool>" where abi is from XPCOMABI
+      (e.g., "Darwin_x86_64-gcc3") and is64bit indicates 64-bit build.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005866
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005866
+    expires: never
+    data_sensitivity:
+      - technical
+
+  fpu_control_state:
+    type: string
+    description: >
+      The current FPU (Floating-Point Unit) rounding mode and precision settings.
+      Format depends on architecture:
+      - x86/x86-64: "std:X;x87:Y;sse:Z;prec:P" where X,Y,Z are rounding modes (0-3)
+        and P is precision (single/double/extended)
+      - ARM: "std:X;arm:Y" where X,Y are rounding modes (0-3)
+      Rounding modes: 0=nearest, 1=down/negative, 2=up/positive, 3=toward-zero
+      This helps identify unusual FPU configurations that may cause math variations.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005866
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005866
     expires: never
     data_sensitivity:
       - technical

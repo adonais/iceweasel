@@ -1310,8 +1310,8 @@ async function runTests(tests, options = {}) {
  * @param {boolean} remember - True to persist the permission to the
  *   SitePermissions database as SitePermissions.SCOPE_PERSISTENT. Note that
  *   callers are responsible for clearing this persistent permission.
- * @return {Promise}
- * @resolves {undefined} - Once the sharing is complete.
+ * @returns {Promise<void>}
+ *   Resolves once sharing is complete.
  */
 async function shareDevices(
   browser,

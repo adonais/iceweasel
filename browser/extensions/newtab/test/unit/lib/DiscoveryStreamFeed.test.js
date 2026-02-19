@@ -300,6 +300,60 @@ describe("DiscoveryStreamFeed", () => {
         DUMMY_ENDPOINT
       );
     });
+
+    it("should cast headers from a Headers object to JS object when using OHTTP", async () => {
+      sandbox
+        .stub(global.Services.prefs, "getStringPref")
+        .withArgs(
+          "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL"
+        )
+        .returns("https://relay.url")
+        .withArgs(
+          "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL"
+        )
+        .returns("https://config.url");
+
+      const fakeOhttpConfig = { config: "config" };
+      sandbox
+        .stub(global.ObliviousHTTP, "getOHTTPConfig")
+        .resolves(fakeOhttpConfig);
+
+      const ohttpResponse = {
+        json: () => Promise.resolve("ohttp response"),
+        ok: true,
+      };
+      const ohttpRequestStub = sandbox
+        .stub(global.ObliviousHTTP, "ohttpRequest")
+        .resolves(ohttpResponse);
+
+      // Allow the endpoint
+      feed.store.getState = () => ({
+        Prefs: {
+          values: {
+            [ENDPOINTS_PREF_NAME]: DUMMY_ENDPOINT,
+          },
+        },
+      });
+
+      const headers = new Headers();
+      headers.set("headername", "headervalue");
+
+      const result = await feed.fetchFromEndpoint(
+        DUMMY_ENDPOINT,
+        { headers },
+        true
+      );
+
+      assert.equal(result, "ohttp response");
+      assert.calledOnce(ohttpRequestStub);
+      assert.calledWithMatch(
+        ohttpRequestStub,
+        "https://relay.url",
+        fakeOhttpConfig,
+        DUMMY_ENDPOINT,
+        { headers: Object.fromEntries(headers), credentials: "omit" }
+      );
+    });
   });
 
   describe("#getOrCreateImpressionId", () => {
@@ -983,9 +1037,7 @@ describe("DiscoveryStreamFeed", () => {
             "unifiedAds.spocs.enabled": true,
             "discoverystream.placements.spocs": "newtab_stories_1",
             "discoverystream.placements.spocs.counts": "1",
-            trainhopConfig: {
-              marsPreFlight: { enabled: true },
-            },
+            "unifiedAds.ohttp.enabled": true,
           },
         },
       });
@@ -3330,6 +3382,7 @@ describe("DiscoveryStreamFeed", () => {
                 imageUrl: "sectionImageUrl",
                 isTimeSensitive: false,
                 publisher: "section publisher",
+                serverScore: 0.9,
                 receivedRank: 1,
                 title: "section title",
                 topic: "section topic",
@@ -3385,6 +3438,7 @@ describe("DiscoveryStreamFeed", () => {
               icon_src: "sectionIconUrl",
               isTimeSensitive: false,
               publisher: "section publisher",
+              server_score: 0.9,
               raw_image_src: "sectionImageUrl",
               received_rank: 1,
               recommended_at: 1755834072383,

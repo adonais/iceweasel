@@ -35,39 +35,34 @@ loader.lazyRequireGetter(
  *   angle.newAngle("-1TURN") === "-1TURN"; // true
  */
 
-function CssAngle(angleValue) {
-  this.newAngle(angleValue);
-}
+class CssAngle {
+  constructor(angleValue) {
+    this.newAngle(angleValue);
+  }
 
-module.exports.angleUtils = {
-  CssAngle,
-  classifyAngle,
-};
-
-CssAngle.prototype = {
   // Still keep trying to lazy load properties-db by lazily getting ANGLEUNIT
   get ANGLEUNIT() {
     return CSS_ANGLEUNIT;
-  },
+  }
 
-  _angleUnit: null,
-  _angleUnitUppercase: false,
+  _angleUnit = null;
+  _angleUnitUppercase = false;
 
   // The value as-authored.
-  authored: null,
+  authored = null;
   // A lower-cased copy of |authored|.
-  lowerCased: null,
+  lowerCased = null;
 
   get angleUnit() {
     if (this._angleUnit === null) {
       this._angleUnit = classifyAngle(this.authored);
     }
     return this._angleUnit;
-  },
+  }
 
   set angleUnit(unit) {
     this._angleUnit = unit;
-  },
+  }
 
   get valid() {
     const token = new InspectorCSSParserWrapper(this.authored).nextToken();
@@ -79,11 +74,11 @@ CssAngle.prototype = {
       token.tokenType === "Dimension" &&
       token.unit.toLowerCase() in this.ANGLEUNIT
     );
-  },
+  }
 
   get specialValue() {
     return SPECIALVALUES.has(this.lowerCased) ? this.authored : null;
-  },
+  }
 
   get deg() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -118,7 +113,7 @@ CssAngle.prototype = {
       unitStr = unitStr.toUpperCase();
     }
     return `${Math.round(degValue * 100) / 100}${unitStr}`;
-  },
+  }
 
   get rad() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -153,7 +148,7 @@ CssAngle.prototype = {
       unitStr = unitStr.toUpperCase();
     }
     return `${Math.round(radValue * 10000) / 10000}${unitStr}`;
-  },
+  }
 
   get grad() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -188,7 +183,7 @@ CssAngle.prototype = {
       unitStr = unitStr.toUpperCase();
     }
     return `${Math.round(gradValue * 100) / 100}${unitStr}`;
-  },
+  }
 
   get turn() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -223,7 +218,7 @@ CssAngle.prototype = {
       unitStr = unitStr.toUpperCase();
     }
     return `${Math.round(turnValue * 100) / 100}${unitStr}`;
-  },
+  }
 
   /**
    * Check whether the angle value is in the special list e.g.
@@ -244,7 +239,7 @@ CssAngle.prototype = {
       return "";
     }
     return false;
-  },
+  }
 
   /**
    * Change angle
@@ -266,7 +261,7 @@ CssAngle.prototype = {
     this.authoredAngleUnit = angle.substring(unitStartIdx, angle.length);
 
     return this;
-  },
+  }
 
   nextAngleUnit() {
     // Get a reordered array from the formats object
@@ -283,7 +278,7 @@ CssAngle.prototype = {
       }
     }
     return this.toString();
-  },
+  }
 
   /**
    * Return a string representing a angle
@@ -312,15 +307,15 @@ CssAngle.prototype = {
       angle = angle.toUpperCase();
     }
     return angle;
-  },
+  }
 
   /**
    * This method allows comparison of CssAngle objects using ===.
    */
   valueOf() {
     return this.deg;
-  },
-};
+  }
+}
 
 /**
  * Given a color, classify its type as one of the possible angle
@@ -350,3 +345,8 @@ function classifyAngle(value) {
 
   return CSS_ANGLEUNIT.deg;
 }
+
+module.exports.angleUtils = {
+  CssAngle,
+  classifyAngle,
+};

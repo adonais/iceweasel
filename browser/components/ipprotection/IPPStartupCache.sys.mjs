@@ -6,9 +6,9 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 const STATE_CACHE_PREF = "browser.ipProtection.stateCache";

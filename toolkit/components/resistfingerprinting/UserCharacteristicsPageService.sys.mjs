@@ -158,6 +158,7 @@ export class UserCharacteristicsPageService {
       [this.populateZoomPrefs, []],
       [this.populateDisabledMediaPrefs, []],
       [this.populateMathOps, []],
+      [this.populateMathOpsFdlibm2, []],
       [this.populateMappableData, [data.output]],
       [this.populateGamepads, [data.gamepads]],
       [this.populateClientInfo, []],
@@ -665,6 +666,8 @@ export class UserCharacteristicsPageService {
         "audioFrames",
         "audioRate",
         "audioChannels",
+        "timezoneWeb",
+        "timezoneOffsetWeb",
       ],
     };
 
@@ -722,6 +725,85 @@ export class UserCharacteristicsPageService {
     }
   }
 
+  async populateMathOpsFdlibm2() {
+    // IF YOU ADD ENTRIES TO THIS LIST, PLEASE ALSO UPDATE THE COUNT IN
+    // toolkit/components/resistfingerprinting/tests/browser/browser_usercharacteristics_math.js
+    const getResults = () => {
+      const results = [];
+
+      // Math constants
+      results.push(Math.PI);
+      results.push(Math.E);
+      results.push(Math.SQRT2);
+      results.push(Math.SQRT1_2);
+      results.push(Math.LN2);
+      results.push(Math.LN10);
+      results.push(Math.LOG2E);
+      results.push(Math.LOG10E);
+
+      // Intermediate values from operation 15: Math.pow(Math.PI, -100)
+      results.push(Math.pow(Math.PI, -100));
+
+      // Intermediate values from operation 16: Math.log(1e154 + Math.sqrt(1e154^2 - 1))
+      const v16 = 1e154;
+      results.push(v16);
+      results.push(v16 * v16);
+      const sqrt16 = Math.sqrt(v16 * v16 - 1);
+      results.push(sqrt16);
+      results.push(v16 + sqrt16);
+
+      // Intermediate values from operation 17: Math.log(1 + Math.sqrt(2))
+      const sqrt2 = Math.sqrt(2);
+      results.push(sqrt2);
+      results.push(1 + sqrt2);
+
+      // Intermediate values from operation 18: Math.log((1 + 0.5) / (1 - 0.5)) / 2
+      results.push(1 + 0.5);
+      results.push(1 - 0.5);
+      results.push((1 + 0.5) / (1 - 0.5));
+
+      // Intermediate values from operation 19: Math.exp(1) - 1 / Math.exp(1) / 2
+      const exp1 = Math.exp(1);
+      results.push(exp1);
+      results.push(1 / exp1);
+      results.push(1 / exp1 / 2);
+      results.push(exp1 - 1 / exp1 / 2);
+
+      // Intermediate values from operation 20: (Math.exp(1) + 1 / Math.exp(1)) / 2
+      results.push(exp1 + 1 / exp1);
+      results.push((exp1 + 1 / exp1) / 2);
+
+      // Intermediate values from operation 21: Math.exp(1) - 1
+      results.push(exp1 - 1);
+
+      // Intermediate values from operation 22: (Math.exp(2) - 1) / (Math.exp(2) + 1)
+      const exp2 = Math.exp(2);
+      results.push(exp2);
+      results.push(exp2 - 1);
+      results.push(exp2 + 1);
+      results.push((exp2 - 1) / (exp2 + 1));
+
+      // Intermediate values from operation 23: Math.log(1 + 10)
+      results.push(1 + 10);
+
+      // Additional illustrative values
+      results.push(Math.sqrt(3));
+      results.push(Math.sqrt(5));
+      results.push(Math.pow(2, 0.5));
+      results.push(Math.pow(Math.E, 2));
+      results.push(Math.log(Math.E));
+      results.push(Math.log(10));
+
+      return results;
+    };
+
+    const sandbox = Cu.Sandbox(null, {
+      alwaysUseFdlibm: true,
+    });
+    const results = Cu.evalInSandbox(`(${getResults.toString()})()`, sandbox);
+    Glean.characteristics.mathOpsFdlibm2.set(JSON.stringify(results));
+  }
+
   async populateClientInfo() {
     const buildID = Services.appinfo.appBuildID;
     const buildDate =
@@ -740,6 +822,19 @@ export class UserCharacteristicsPageService {
     Glean.characteristics.osVersion.set(
       Services.sysinfo.getProperty("version")
     );
+    if (Services.sysinfo.hasKey("distro")) {
+      Glean.characteristics.osDistro.set(
+        Services.sysinfo.getProperty("distro")
+      );
+    }
+    if (Services.sysinfo.hasKey("distroVersion")) {
+      Glean.characteristics.osDistroVersion.set(
+        Services.sysinfo.getProperty("distroVersion")
+      );
+    }
+    if (Services.appinfo.distributionID) {
+      Glean.characteristics.osDistroId.set(Services.appinfo.distributionID);
+    }
     Glean.characteristics.buildDate.set(buildDate);
   }
 
@@ -748,6 +843,20 @@ export class UserCharacteristicsPageService {
       await Services.sysinfo.processInfo.then(r => r.name)
     );
     Glean.characteristics.cpuArch.set(Services.sysinfo.get("arch"));
+
+    // Collect Firefox binary architecture (can differ from CPU arch)
+    // e.g., x86-64 Firefox via Rosetta 2 on ARM64 Mac
+    let binaryArch = "unknown";
+    try {
+      const xpcomAbi = Services.appinfo.XPCOMABI || "unknown";
+      const is64Bit = Services.appinfo.is64Bit ? "true" : "false";
+      // Concatenate both values for robustness
+      binaryArch = `xpcomabi:${xpcomAbi}|is64bit:${is64Bit}`;
+    } catch (e) {
+      lazy.console.error("Failed to get Firefox binary architecture:", e);
+      binaryArch = "error";
+    }
+    Glean.characteristics.firefoxBinaryArch.set(binaryArch);
   }
 
   async populateWebGlInfo(window, document, version, forceSoftwareRendering) {
@@ -1028,7 +1137,6 @@ export class UserCharacteristicsPageService {
       "media.av1.enabled",
       "media.encoder.webm.enabled",
       "media.mediasource.enabled",
-      "media.mediasource.mp4.enabled",
       "media.mediasource.webm.enabled",
       "media.mediasource.vp9.enabled",
     ];

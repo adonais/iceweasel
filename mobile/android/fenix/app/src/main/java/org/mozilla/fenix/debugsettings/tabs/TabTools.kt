@@ -32,9 +32,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import mozilla.components.browser.state.action.TabListAction
@@ -50,6 +48,7 @@ import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.tabstray.ext.isNormalTabInactive
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 @VisibleForTesting
 internal const val MAX_TABS_GENERATED = 1000
@@ -314,44 +313,28 @@ internal fun validateTextField(text: String): Int? {
     }
 }
 
-private data class TabToolsPreviewModel(
-    val inactiveTabsEnabled: Boolean = true,
-)
-
-private class TabToolsPreviewParameterProvider : PreviewParameterProvider<TabToolsPreviewModel> {
-    override val values: Sequence<TabToolsPreviewModel>
-        get() = sequenceOf(
-            TabToolsPreviewModel(
-                inactiveTabsEnabled = true,
-            ),
-            TabToolsPreviewModel(
-                inactiveTabsEnabled = false,
-            ),
-        )
-}
-
+@Preview
 @Composable
-@PreviewLightDark
 private fun TabToolsPreview(
-    @PreviewParameter(TabToolsPreviewParameterProvider::class) model: TabToolsPreviewModel,
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
 ) {
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         TabTools(
             store = BrowserStore(),
-            inactiveTabsEnabled = model.inactiveTabsEnabled,
+            inactiveTabsEnabled = true,
         )
     }
 }
 
-@Composable
 @Preview
-private fun TabToolsPrivatePreview(
-    @PreviewParameter(TabToolsPreviewParameterProvider::class) model: TabToolsPreviewModel,
+@Composable
+private fun TabToolsInactiveTabsDisabledPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
 ) {
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         TabTools(
             store = BrowserStore(),
-            inactiveTabsEnabled = model.inactiveTabsEnabled,
+            inactiveTabsEnabled = false,
         )
     }
 }

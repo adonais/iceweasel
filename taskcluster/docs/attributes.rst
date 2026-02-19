@@ -252,6 +252,12 @@ toolchain-artifact
 ==================
 For toolchain jobs, this is the path to the artifact for that toolchain.
 
+toolchain-resources
+===================
+For toolchain jobs, this is the list of paths that contribute to the toolchain's
+digest hash. These include the build script, any resources specified in the task
+definition, and the tooltool manifest (if present).
+
 toolchain-extract
 =================
 Control whether toolchain should be automatically extracted after download.

@@ -405,6 +405,11 @@ extern bool ToJSValue(JSContext* cx, const void* src, ValType type,
                       CoercionLevel level = CoercionLevel::Spec);
 template <typename Debug = NoDebug>
 extern bool ToJSValueMayGC(ValType type);
+
+#ifdef DEBUG
+void AssertEdgeSourceNotInsideNursery(void* vp);
+#endif
+
 }  // namespace wasm
 
 template <>
@@ -420,6 +425,13 @@ struct InternalBarrierMethods<wasm::AnyRef> {
   static MOZ_ALWAYS_INLINE void postBarrier(wasm::AnyRef* vp,
                                             const wasm::AnyRef prev,
                                             const wasm::AnyRef next) {
+    // This assumes that callers have already checked that |vp| is in the
+    // tenured heap. Don't use GCPtr<AnyRef> for things that could be in the
+    // nursery!
+#ifdef DEBUG
+    AssertEdgeSourceNotInsideNursery(vp);
+#endif
+
     // If the target needs an entry, add it.
     gc::StoreBuffer* sb;
     if (next.isGCThing() && (sb = next.toGCThing()->storeBuffer())) {
@@ -430,7 +442,7 @@ struct InternalBarrierMethods<wasm::AnyRef> {
       if (prev.isGCThing() && prev.toGCThing()->storeBuffer()) {
         return;
       }
-      sb->putWasmAnyRef(vp);
+      sb->putWasmAnyRefEdgeFromTenured(vp);
       return;
     }
     // Remove the prev entry if the new value does not need it.

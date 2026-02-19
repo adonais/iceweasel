@@ -13,6 +13,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
+#include "system_wrappers/include/clock.h"
 
 class nsISerialEventTarget;
 
@@ -26,7 +27,7 @@ class Image;
 namespace webrtc::videocapturemodule {
 class VideoCaptureFake : public webrtc::videocapturemodule::VideoCaptureImpl {
  public:
-  explicit VideoCaptureFake(nsISerialEventTarget* aTarget);
+  explicit VideoCaptureFake(Clock* clock, nsISerialEventTarget* aTarget);
   ~VideoCaptureFake() override;
 
   static webrtc::scoped_refptr<webrtc::VideoCaptureModule> Create(

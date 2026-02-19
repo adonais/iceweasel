@@ -154,7 +154,7 @@ const TEST_DATA = [
     input: "\r\n\r\n\r\n\r\n\r\n",
     expected: {
       urlbar: "",
-      title: "",
+      title: undefined,
       type: UrlbarUtils.RESULT_TYPE.SEARCH,
     },
   },

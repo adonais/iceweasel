@@ -991,10 +991,10 @@ void nsContainerFrame::DisplayOverflowContainers(
   }
 }
 
-void nsContainerFrame::DisplayAbsoluteContinuations(
+void nsContainerFrame::DisplayPushedAbsoluteFrames(
     nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
   for (nsIFrame* frame : GetChildList(FrameChildListID::Absolute)) {
-    if (frame->GetPrevInFlow()) {
+    if (frame->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
       BuildDisplayListForChild(aBuilder, frame, aLists);
     }
   }

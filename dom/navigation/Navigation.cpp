@@ -298,9 +298,7 @@ bool SupportsInterface(nsISupports* aSupports) {
 bool Navigation::HasEntriesAndEventsDisabled() const {
   Document* doc = GetAssociatedDocument();
   return !doc || !doc->IsCurrentActiveDocument() ||
-         doc->GetInitialStatus() == Document::InitialStatus::IsInitial ||
-         doc->GetInitialStatus() ==
-             Document::InitialStatus::IsInitialButExplicitlyOpened ||
+         doc->IsEverInitialDocument() ||
          doc->GetPrincipal()->GetIsNullPrincipal() ||
          // We explicitly disallow documents loaded through multipart and script
          // channels from having events or entries. See bug 1996218 and bug

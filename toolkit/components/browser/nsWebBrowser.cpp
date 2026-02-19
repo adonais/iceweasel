@@ -7,6 +7,10 @@
 // Local Includes
 #include "nsWebBrowser.h"
 
+// Hack: nsIOpenWindowInfo depends on this without being able to include it
+#include "mozilla/Assertions.h"
+#include "mozilla/dom/BrowserParent.h"
+
 // Helper Classes
 #include "nsGfxCIID.h"
 #include "nsWidgetsCID.h"
@@ -31,6 +35,7 @@
 #include "nsDocShell.h"
 #include "nsServiceManagerUtils.h"
 #include "WindowRenderer.h"
+#include "nsOpenWindowInfo.h"
 
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -80,9 +85,14 @@ nsIWidget* nsWebBrowser::EnsureWidget() {
 already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
     nsIWebBrowserChrome* aContainerWindow, nsIWidget* aParentWidget,
     dom::BrowsingContext* aBrowsingContext,
-    dom::WindowGlobalChild* aInitialWindowChild) {
+    dom::WindowGlobalChild* aInitialWindowChild,
+    nsIOpenWindowInfo* aOpenWindowInfo) {
+  MOZ_ASSERT(aOpenWindowInfo, "Must have openwindowinfo");
   MOZ_ASSERT_IF(aInitialWindowChild,
                 aInitialWindowChild->BrowsingContext() == aBrowsingContext);
+  MOZ_ASSERT_IF(aInitialWindowChild,
+                aInitialWindowChild->DocumentPrincipal() ==
+                    aOpenWindowInfo->PrincipalToInheritForAboutBlank());
 
   RefPtr<nsWebBrowser> browser = new nsWebBrowser(
       aBrowsingContext->IsContent() ? typeContentWrapper : typeChromeWrapper);
@@ -129,17 +139,14 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   // events from subframes. To solve that we install our own chrome event
   // handler that always gets called (even for subframes) for any bubbling
   // event.
-  nsresult rv = docShell->InitWindow(docShellParentWidget, 0, 0, 0, 0);
+  nsresult rv = docShell->InitWindow(docShellParentWidget, 0, 0, 0, 0,
+                                     aOpenWindowInfo, aInitialWindowChild);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }
 
   docShellTreeOwner->AddToWatcher();  // evil twin of Remove in SetDocShell(0)
   docShellTreeOwner->AddChromeListeners();
-
-  if (aInitialWindowChild) {
-    docShell->CreateDocumentViewerForActor(aInitialWindowChild);
-  }
 
   return browser.forget();
 }
@@ -838,15 +845,6 @@ nsWebBrowser::Cancel(nsresult aReason) {
 //*****************************************************************************
 // nsWebBrowser::nsIBaseWindow
 //*****************************************************************************
-
-NS_IMETHODIMP
-nsWebBrowser::InitWindow(nsIWidget* aParentWidget, int32_t aX, int32_t aY,
-                         int32_t aCX, int32_t aCY) {
-  // nsIBaseWindow::InitWindow and nsIBaseWindow::Create
-  // implementations have been merged into nsWebBrowser::Create
-  MOZ_DIAGNOSTIC_CRASH("Superceded by nsWebBrowser::Create()");
-  return NS_ERROR_NULL_POINTER;
-}
 
 NS_IMETHODIMP
 nsWebBrowser::Destroy() {

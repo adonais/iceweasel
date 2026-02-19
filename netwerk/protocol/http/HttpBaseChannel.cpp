@@ -53,6 +53,7 @@
 #include "mozilla/net/OpaqueResponseUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/StaticPrefs_javascript.h"
 #include "nsBufferedStreams.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -3232,6 +3233,14 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
       return NS_OK;
     }
 
+#ifdef NIGHTLY_BUILD
+    if (StaticPrefs::javascript_options_experimental_wasm_esm_integration()) {
+      if (nsContentUtils::HasWasmMimeTypeEssence(typeString)) {
+        return NS_OK;
+      }
+    }
+#endif
+
     ReportMimeTypeMismatch(aChannel, "BlockWorkerWithWrongMimeType", aURI,
                            contentType, Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
@@ -3240,6 +3249,14 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
   // ES6 modules require a strict MIME type check.
   if (internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE ||
       internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD) {
+#ifdef NIGHTLY_BUILD
+    if (StaticPrefs::javascript_options_experimental_wasm_esm_integration()) {
+      if (nsContentUtils::HasWasmMimeTypeEssence(typeString)) {
+        return NS_OK;
+      }
+    }
+#endif
+
     ReportMimeTypeMismatch(aChannel, "BlockModuleWithWrongMimeType", aURI,
                            contentType, Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
@@ -3279,6 +3296,14 @@ void WarnWrongMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
   if (nsContentUtils::IsJavascriptMIMEType(typeString)) {
     return;
   }
+
+#ifdef NIGHTLY_BUILD
+  if (StaticPrefs::javascript_options_experimental_wasm_esm_integration()) {
+    if (nsContentUtils::HasWasmMimeTypeEssence(typeString)) {
+      return;
+    }
+  }
+#endif
 
   ReportMimeTypeMismatch(aChannel, "WarnScriptWithWrongMimeType", aURI,
                          contentType, Report::Warning);

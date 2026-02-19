@@ -55,12 +55,12 @@ def run_crash_test(configuration, geckodriver, crash_callback):
 
         # Check that for both Marionette and Remote Agent the annotations are present
         extra_data = read_extra_file(file_map[".extra"])
-        assert (
-            extra_data.get("Marionette") == "1"
-        ), "Marionette entry is missing or invalid"
-        assert (
-            extra_data.get("RemoteAgent") == "1"
-        ), "RemoteAgent entry is missing or invalid"
+        assert extra_data.get("Marionette") == "1", (
+            "Marionette entry is missing or invalid"
+        )
+        assert extra_data.get("RemoteAgent") == "1", (
+            "RemoteAgent entry is missing or invalid"
+        )
 
         # Remove original minidump files from the profile directory
         remove_files(profile_minidump_path, file_map.values())
@@ -105,8 +105,8 @@ def verify_minidump_files(directory):
     }
 
     missing_extensions = required_extensions - file_map.keys()
-    assert (
-        not missing_extensions
-    ), f"Missing required files with extensions: {missing_extensions}"
+    assert not missing_extensions, (
+        f"Missing required files with extensions: {missing_extensions}"
+    )
 
     return file_map

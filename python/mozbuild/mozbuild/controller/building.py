@@ -55,10 +55,9 @@ Preferences.
 """.strip()
 
 
-INSTALL_TESTS_CLOBBER = "".join(
-    [
-        TextWrapper().fill(line) + "\n"
-        for line in """
+INSTALL_TESTS_CLOBBER = "".join([
+    TextWrapper().fill(line) + "\n"
+    for line in """
 The build system was unable to install tests because the CLOBBER file has \
 been updated. This means if you edited any test files, your changes may not \
 be picked up until a full/clobber build is performed.
@@ -73,8 +72,7 @@ and proceed with running tests. To do this run:
 
  $ touch {clobber_file}
 """.splitlines()
-    ]
-)
+])
 
 CLOBBER_REQUESTED_MESSAGE = """
 ===================
@@ -1153,7 +1151,7 @@ class BuildDriver(MozbuildObject):
             monitor.start()
 
             if directory is not None and not what:
-                print("Can only use -C/--directory with an explicit target " "name.")
+                print("Can only use -C/--directory with an explicit target name.")
                 return 1
 
             if directory is not None:
@@ -1259,14 +1257,12 @@ class BuildDriver(MozbuildObject):
 
             status = None
 
-            if not config_rc and any(
-                [
-                    self.backend_out_of_date(
-                        mozpath.join(self.topobjdir, "backend.%sBackend" % backend)
-                    )
-                    for backend in all_backends
-                ]
-            ):
+            if not config_rc and any([
+                self.backend_out_of_date(
+                    mozpath.join(self.topobjdir, "backend.%sBackend" % backend)
+                )
+                for backend in all_backends
+            ]):
                 print("Build configuration changed. Regenerating backend.")
                 args = [
                     config.substs["PYTHON3"],
@@ -1490,7 +1486,7 @@ class BuildDriver(MozbuildObject):
                         logging.WARNING,
                         "compiler_warning",
                         warning,
-                        "warning: {normpath}:{line}:{column} [{flag}] " "{message}",
+                        "warning: {normpath}:{line}:{column} [{flag}] {message}",
                     )
                 else:
                     self.log(
@@ -1532,9 +1528,9 @@ class BuildDriver(MozbuildObject):
             self.notify("Build complete" if not status else "Build failed")
 
         if status:
-            if what and any(
-                [target for target in what if target not in ("faster", "binaries")]
-            ):
+            if what and any([
+                target for target in what if target not in ("faster", "binaries")
+            ]):
                 print(
                     "Hey! Builds initiated with `mach build "
                     "$A_SPECIFIC_TARGET` may not always work, even if the "
@@ -1548,7 +1544,7 @@ class BuildDriver(MozbuildObject):
             # if excessive:
             #    print(EXCESSIVE_SWAP_MESSAGE)
 
-            print("To view a profile of the build, run |mach " "resource-usage|.")
+            print("To view a profile of the build, run |mach resource-usage|.")
 
         long_build = monitor.elapsed > 1200
 
@@ -1840,13 +1836,11 @@ class BuildDriver(MozbuildObject):
         return `True` if the clobber was required but not completed, and return `False` if
         the clobber was not required and not completed.
         """
-        auto_clobber = any(
-            [
-                env.get("AUTOCLOBBER", False),
-                (mozconfig["env"] or {}).get("added", {}).get("AUTOCLOBBER", False),
-                "AUTOCLOBBER=1" in (mozconfig["make_extra"] or []),
-            ]
-        )
+        auto_clobber = any([
+            env.get("AUTOCLOBBER", False),
+            (mozconfig["env"] or {}).get("added", {}).get("AUTOCLOBBER", False),
+            "AUTOCLOBBER=1" in (mozconfig["make_extra"] or []),
+        ])
         from mozbuild.base import BuildEnvironmentNotFoundException
 
         substs = dict()

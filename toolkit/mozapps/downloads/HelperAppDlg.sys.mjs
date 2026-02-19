@@ -455,7 +455,7 @@ export class nsUnknownContentTypeDialog {
    *          if set to true, this was a file entered by the user from a file picker.
    * @return  nsIFile
    *          the created file
-   * @throw   an error such as permission doesn't allow creation of
+   * @throws  an error such as permission doesn't allow creation of
    *          file, etc.
    */
   validateLeafName(

@@ -43,6 +43,7 @@
   }
 }
 
+toolbar[inactive="true"] .urlbar,
 #urlbar[actiontype="switchtab"][action-override] > .urlbar-input-container > #urlbar-label-box,
 #urlbar:not([actiontype="switchtab"], [actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box,
 #urlbar:not([actiontype="switchtab"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-switchtab,
@@ -50,8 +51,9 @@
 .urlbar-input-container[pageproxystate="invalid"] > #page-action-buttons > .urlbar-page-action,
 #identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box, #split-view-button),
 #urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > #urlbar-zoom-button,
-.urlbar:is(:not([usertyping]), :not([focused])) > .urlbar-input-container > .urlbar-go-button,
-.urlbar-revert-button-container {
+.urlbar:not([usertyping]) > .urlbar-input-container > .urlbar-go-button,
+.urlbar:not(#searchbar-new, [focused]) > .urlbar-input-container > .urlbar-go-button,
+#urlbar-revert-button-container {
   display: none;
 }
 
@@ -847,7 +849,7 @@
 
 /* Persisted Search revert button */
 
-.urlbar-revert-button {
+#urlbar-revert-button {
   list-style-image: url(chrome://global/skin/icons/defaultFavicon.svg);
   fill: var(--toolbarbutton-icon-fill-attention);
 
@@ -856,8 +858,8 @@
   }
 }
 
-.urlbar[persistsearchterms] > .urlbar-input-container {
-  > .urlbar-revert-button-container {
+#urlbar[persistsearchterms] > .urlbar-input-container {
+  > #urlbar-revert-button-container {
     display: inherit;
   }
 
@@ -1188,7 +1190,7 @@
 
 .searchmode-switcher-chicklet {
   background-color: var(--urlbar-box-bgcolor);
-  border-start-end-radius: var(--toolbarbutton-border-radius);
+  border-start-end-radius: var(--urlbar-inner-border-radius);
   border-end-end-radius: var(--urlbar-inner-border-radius);
   align-items: center;
   height: 100%;

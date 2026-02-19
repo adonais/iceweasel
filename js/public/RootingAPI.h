@@ -1249,6 +1249,8 @@ class MOZ_RAII Rooted : public detail::RootedTraits<T>::StackBase,
   T* address() { return &ptr; }
   const T* address() const { return &ptr; }
 
+  static constexpr size_t offsetOfPtr() { return offsetof(Rooted, ptr); }
+
  private:
   T ptr;
 

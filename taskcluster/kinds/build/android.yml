@@ -63,6 +63,9 @@ task-defaults:
             - linux64-node
             - sysroot-x86_64-linux-gnu
             - sysroot-wasm32-wasi
+            # 'embedded-uniffi-bindgen' and 'nimbus-fml' only needed for artifact builds, but it's not easy to make that conditional.
+            - linux64-embedded-uniffi-bindgen
+            - linux64-nimbus-fml
 
 android-arm/debug:
     description: "Android Arm Debug"

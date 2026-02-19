@@ -30,7 +30,7 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  */
 class RecentlyClosedTabsTest : TestSetup() {
     @get:Rule
-    val activityTestRule = AndroidComposeTestRule(
+    val composeTestRule = AndroidComposeTestRule(
         HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
     ) { it.activity }
 
@@ -45,26 +45,25 @@ class RecentlyClosedTabsTest : TestSetup() {
     fun openRecentlyClosedItemTest() {
         val website = mockWebServer.getGenericAsset(1)
 
-        homeScreen {
-        }.openNavigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(website.url) {
             mDevice.waitForIdle()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
             closeTab()
         }
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
         }.openRecentlyClosedTabs {
             waitForListToExist()
             registerAndCleanupIdlingResources(
-                RecyclerViewIdlingResource(activityTestRule.activity.findViewById(R.id.recently_closed_list), 1),
+                RecyclerViewIdlingResource(composeTestRule.activity.findViewById(R.id.recently_closed_list), 1),
             ) {
                 verifyRecentlyClosedTabsMenuView()
                 verifyRecentlyClosedTabsPageTitle("Test_Page_1")
                 verifyRecentlyClosedTabsUrl(website.url)
             }
-        }.clickRecentlyClosedItem("Test_Page_1") {
+        }.clickRecentlyClosedItem(composeTestRule, "Test_Page_1") {
             verifyUrl(website.url.toString())
         }
     }
@@ -77,20 +76,19 @@ class RecentlyClosedTabsTest : TestSetup() {
     fun deleteRecentlyClosedTabsItemTest() {
         val website = mockWebServer.getGenericAsset(1)
 
-        homeScreen {
-        }.openNavigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(website.url) {
             mDevice.waitForIdle()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
             closeTab()
         }
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
         }.openRecentlyClosedTabs {
             waitForListToExist()
             registerAndCleanupIdlingResources(
-                RecyclerViewIdlingResource(activityTestRule.activity.findViewById(R.id.recently_closed_list), 1),
+                RecyclerViewIdlingResource(composeTestRule.activity.findViewById(R.id.recently_closed_list), 1),
             ) {
                 verifyRecentlyClosedTabsMenuView()
             }
@@ -106,29 +104,29 @@ class RecentlyClosedTabsTest : TestSetup() {
         val firstPage = mockWebServer.getGenericAsset(1)
         val secondPage = mockWebServer.getGenericAsset(2)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.url) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openNewTab {
         }.submitQuery(secondPage.url.toString()) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openThreeDotMenu {
         }.closeAllTabs {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
         }.openRecentlyClosedTabs {
             waitForListToExist()
             longTapSelectItem(firstPage.url)
             longTapSelectItem(secondPage.url)
-            openActionBarOverflowOrOptionsMenu(activityTestRule.activity)
-        }.clickOpenInNewTab(activityTestRule) {
+            openActionBarOverflowOrOptionsMenu(composeTestRule.activity)
+        }.clickOpenInNewTab(composeTestRule) {
             // URL verification to be removed once https://bugzilla.mozilla.org/show_bug.cgi?id=1839179 is fixed.
-            browserScreen {
+            browserScreen(composeTestRule) {
                 verifyPageContent(secondPage.content)
                 verifyUrl(secondPage.url.toString())
-            }.openTabDrawer(activityTestRule) {
+            }.openTabDrawer(composeTestRule) {
                 verifyNormalBrowsingButtonIsSelected(true)
                 verifyExistingOpenTabs(firstPage.title, secondPage.title)
             }
@@ -142,29 +140,29 @@ class RecentlyClosedTabsTest : TestSetup() {
         val firstPage = mockWebServer.getGenericAsset(1)
         val secondPage = mockWebServer.getGenericAsset(2)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.url) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openNewTab {
         }.submitQuery(secondPage.url.toString()) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openThreeDotMenu {
         }.closeAllTabs {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
         }.openRecentlyClosedTabs {
             waitForListToExist()
             longTapSelectItem(firstPage.url)
             longTapSelectItem(secondPage.url)
-            openActionBarOverflowOrOptionsMenu(activityTestRule.activity)
-        }.clickOpenInPrivateTab(activityTestRule) {
+            openActionBarOverflowOrOptionsMenu(composeTestRule.activity)
+        }.clickOpenInPrivateTab(composeTestRule) {
             // URL verification to be removed once https://bugzilla.mozilla.org/show_bug.cgi?id=1839179 is fixed.
-            browserScreen {
+            browserScreen(composeTestRule) {
                 verifyPageContent(secondPage.content)
                 verifyUrl(secondPage.url.toString())
-            }.openTabDrawer(activityTestRule) {
+            }.openTabDrawer(composeTestRule) {
                 verifyPrivateBrowsingButtonIsSelected(true)
                 verifyExistingOpenTabs(firstPage.title, secondPage.title)
             }
@@ -181,18 +179,18 @@ class RecentlyClosedTabsTest : TestSetup() {
         val sharingApp = "Gmail"
         val urlString = "${firstPage.url}\n\n${secondPage.url}"
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.url) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openNewTab {
         }.submitQuery(secondPage.url.toString()) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openThreeDotMenu {
         }.closeAllTabs {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
         }.openRecentlyClosedTabs {
             waitForListToExist()
             longTapSelectItem(firstPage.url)
@@ -211,19 +209,21 @@ class RecentlyClosedTabsTest : TestSetup() {
         val firstPage = mockWebServer.getGenericAsset(1)
         val secondPage = mockWebServer.getGenericAsset(2)
 
-        homeScreen {}.togglePrivateBrowsingMode()
-        navigationToolbar {
+        homeScreen(composeTestRule) {
+        }.togglePrivateBrowsingMode()
+
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.url) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openNewTab {
         }.submitQuery(secondPage.url.toString()) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openThreeDotMenu {
         }.closeAllTabs {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
         }.openRecentlyClosedTabs {
             verifyEmptyRecentlyClosedTabsList()
         }
@@ -237,21 +237,21 @@ class RecentlyClosedTabsTest : TestSetup() {
         val firstPage = mockWebServer.getGenericAsset(1)
         val secondPage = mockWebServer.getGenericAsset(2)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.url) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openNewTab {
         }.submitQuery(secondPage.url.toString()) {
             waitForPageToLoad()
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
         }.openThreeDotMenu {
         }.closeAllTabs {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
         }.openRecentlyClosedTabs {
             waitForListToExist()
-        }.goBackToHistoryMenu {
+        }.goBackToHistoryMenu(composeTestRule) {
             clickDeleteAllHistoryButton()
             selectEverythingOption()
             confirmDeleteAllHistory()

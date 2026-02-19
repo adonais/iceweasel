@@ -14,6 +14,7 @@
     --background-color-box: light-dark(var(--color-white), var(--color-gray-80));
     --background-color-critical: light-dark(var(--color-red-0), var(--color-red-90));
     --background-color-information: light-dark(var(--color-blue-0), var(--color-blue-90));
+    --background-color-overlay: var(--color-black-alpha-50);
     --background-color-success: light-dark(var(--color-green-0), var(--color-green-90));
     --background-color-warning: light-dark(var(--color-yellow-0), var(--color-yellow-90));
     --promo-background-color: var(--background-color-box-info);
@@ -123,6 +124,16 @@
     --checkbox-size: var(--size-item-small); /* TODO Bug 1876537: Make this em-based, probably? */
 
     /** Color **/
+    --color-black: #000000;
+    --color-black-alpha-10: oklch(0 0 0 / 10%);
+    --color-black-alpha-20: oklch(0 0 0 / 20%);
+    --color-black-alpha-30: oklch(0 0 0 / 30%);
+    --color-black-alpha-40: oklch(0 0 0 / 40%);
+    --color-black-alpha-50: oklch(0 0 0 / 50%);
+    --color-black-alpha-60: oklch(0 0 0 / 60%);
+    --color-black-alpha-70: oklch(0 0 0 / 70%);
+    --color-black-alpha-80: oklch(0 0 0 / 80%);
+    --color-black-alpha-90: oklch(0 0 0 / 90%);
     --color-blue-0: oklch(97% 0.05 260);
     --color-blue-10: oklch(90% 0.13 260);
     --color-blue-20: oklch(83% 0.17 260);
@@ -229,6 +240,15 @@
     --color-violet-100: oklch(27% 0.1 290);
     --color-violet-110: oklch(20% 0.05 290);
     --color-white: #ffffff;
+    --color-white-alpha-10: oklch(1 0 0 / 10%);
+    --color-white-alpha-20: oklch(1 0 0 / 20%);
+    --color-white-alpha-30: oklch(1 0 0 / 30%);
+    --color-white-alpha-40: oklch(1 0 0 / 40%);
+    --color-white-alpha-50: oklch(1 0 0 / 50%);
+    --color-white-alpha-60: oklch(1 0 0 / 60%);
+    --color-white-alpha-70: oklch(1 0 0 / 70%);
+    --color-white-alpha-80: oklch(1 0 0 / 80%);
+    --color-white-alpha-90: oklch(1 0 0 / 90%);
     --color-yellow-0: oklch(97% 0.05 90);
     --color-yellow-10: oklch(93% 0.1 90);
     --color-yellow-20: oklch(86% 0.14 90);
@@ -307,6 +327,7 @@
     --text-color-disabled: color-mix(in srgb, currentColor 40%, transparent);
     --text-color-deemphasized: color-mix(in srgb, currentColor 69%, transparent);
     --text-color-error: light-dark(var(--color-red-70), var(--color-red-20));
+    --text-color-list-item-hover: var(--text-color);
   }
 }
 
@@ -325,6 +346,7 @@
       --background-color-canvas: Canvas;
       --background-color-critical: var(--background-color-canvas);
       --background-color-information: var(--background-color-canvas);
+      --background-color-list-item-hover: SelectedItem;
       --background-color-success: var(--background-color-canvas);
       --background-color-warning: var(--background-color-canvas);
 
@@ -354,6 +376,7 @@
       --text-color: CanvasText;
       --text-color-deemphasized: inherit;
       --text-color-error: inherit;
+      --text-color-list-item-hover: SelectedItemText;
     }
   }
 }

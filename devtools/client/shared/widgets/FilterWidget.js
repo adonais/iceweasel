@@ -107,50 +107,49 @@ const SPECIAL_VALUES = new Set(["none", "unset", "initial", "inherit"]);
  *
  * You can, however, use add/remove/update methods manually.
  * See each method's comments for more details
- *
- * @param {Node} el
- *        The widget container.
- * @param {string} value
- *        CSS filter value
  */
-function CSSFilterEditorWidget(el, value = "") {
-  this.doc = el.ownerDocument;
-  this.win = this.doc.defaultView;
-  this.el = el;
-  this._cssIsValid = (name, val) => {
-    return this.win.CSS.supports(name, val);
-  };
+class CSSFilterEditorWidget extends EventEmitter {
+  /**
+   * @param {Node} el
+   *        The widget container.
+   * @param {string} value
+   *        CSS filter value
+   */
+  constructor(el, value = "") {
+    super();
 
-  this._addButtonClick = this._addButtonClick.bind(this);
-  this._removeButtonClick = this._removeButtonClick.bind(this);
-  this._mouseMove = this._mouseMove.bind(this);
-  this._mouseUp = this._mouseUp.bind(this);
-  this._mouseDown = this._mouseDown.bind(this);
-  this._keyDown = this._keyDown.bind(this);
-  this._input = this._input.bind(this);
-  this._presetClick = this._presetClick.bind(this);
-  this._savePreset = this._savePreset.bind(this);
-  this._togglePresets = this._togglePresets.bind(this);
-  this._resetFocus = this._resetFocus.bind(this);
+    this.doc = el.ownerDocument;
+    this.win = this.doc.defaultView;
+    this.el = el;
+    this._cssIsValid = (name, val) => {
+      return this.win.CSS.supports(name, val);
+    };
 
-  // Passed to asyncStorage, requires binding
-  this.renderPresets = this.renderPresets.bind(this);
+    this._addButtonClick = this._addButtonClick.bind(this);
+    this._removeButtonClick = this._removeButtonClick.bind(this);
+    this._mouseMove = this._mouseMove.bind(this);
+    this._mouseUp = this._mouseUp.bind(this);
+    this._mouseDown = this._mouseDown.bind(this);
+    this._keyDown = this._keyDown.bind(this);
+    this._input = this._input.bind(this);
+    this._presetClick = this._presetClick.bind(this);
+    this._savePreset = this._savePreset.bind(this);
+    this._togglePresets = this._togglePresets.bind(this);
+    this._resetFocus = this._resetFocus.bind(this);
 
-  this._initMarkup();
-  this._buildFilterItemMarkup();
-  this._buildPresetItemMarkup();
-  this._addEventListeners();
+    // Passed to asyncStorage, requires binding
+    this.renderPresets = this.renderPresets.bind(this);
 
-  EventEmitter.decorate(this);
+    this._initMarkup();
+    this._buildFilterItemMarkup();
+    this._buildPresetItemMarkup();
+    this._addEventListeners();
 
-  this.filters = [];
-  this.setCssValue(value);
-  this.renderPresets();
-}
+    this.filters = [];
+    this.setCssValue(value);
+    this.renderPresets();
+  }
 
-exports.CSSFilterEditorWidget = CSSFilterEditorWidget;
-
-CSSFilterEditorWidget.prototype = {
   _initMarkup() {
     // The following structure is created:
     //   <div class="filters-list">
@@ -236,7 +235,7 @@ CSSFilterEditorWidget.prototype = {
     this.el.appendChild(content);
 
     this._populateFilterSelect();
-  },
+  }
 
   _destroyMarkup() {
     this._filterItemMarkup.remove();
@@ -244,12 +243,12 @@ CSSFilterEditorWidget.prototype = {
     this.el = this.filterList = this._filterItemMarkup = null;
     this.presetList = this.togglePresets = this.filterSelect = null;
     this.addPresetButton = null;
-  },
+  }
 
   destroy() {
     this._removeEventListeners();
     this._destroyMarkup();
-  },
+  }
 
   /**
    * Creates <option> elements for each filter definition
@@ -262,7 +261,7 @@ CSSFilterEditorWidget.prototype = {
       option.textContent = option.value = filter.name;
       select.appendChild(option);
     });
-  },
+  }
 
   /**
    * Creates a template for filter elements which is cloned and used in render
@@ -300,7 +299,7 @@ CSSFilterEditorWidget.prototype = {
     base.appendChild(removeButton);
 
     this._filterItemMarkup = base;
-  },
+  }
 
   _buildPresetItemMarkup() {
     const base = this.doc.createElementNS(XHTML_NS, "div");
@@ -318,7 +317,7 @@ CSSFilterEditorWidget.prototype = {
     base.appendChild(removeButton);
 
     this._presetItemMarkup = base;
-  },
+  }
 
   _addEventListeners() {
     this.addButton = this.el.querySelector("#add-filter");
@@ -339,7 +338,7 @@ CSSFilterEditorWidget.prototype = {
 
     // Used to workaround float-precision problems
     this.filterList.addEventListener("input", this._input);
-  },
+  }
 
   _removeEventListeners() {
     this.addButton.removeEventListener("click", this._addButtonClick);
@@ -358,11 +357,11 @@ CSSFilterEditorWidget.prototype = {
 
     // Used to workaround float-precision problems
     this.filterList.removeEventListener("input", this._input);
-  },
+  }
 
   _getFilterElementIndex(el) {
     return [...this.filterList.children].indexOf(el);
-  },
+  }
 
   _keyDown(e) {
     if (
@@ -430,7 +429,7 @@ CSSFilterEditorWidget.prototype = {
       input.setSelectionRange(selectionStart, selectionStart);
     }
     e.preventDefault();
-  },
+  }
 
   _input(e) {
     const filterEl = e.target.closest(".filter");
@@ -442,7 +441,7 @@ CSSFilterEditorWidget.prototype = {
       e.target.value = fixFloat(e.target.value);
     }
     this.updateValueAt(index, e.target.value);
-  },
+  }
 
   _mouseDown(e) {
     const filterEl = e.target.closest(".filter");
@@ -469,7 +468,7 @@ CSSFilterEditorWidget.prototype = {
 
       this.isDraggingLabel = true;
     }
-  },
+  }
 
   _addButtonClick() {
     const select = this.filterSelect;
@@ -481,7 +480,7 @@ CSSFilterEditorWidget.prototype = {
     this.add(key, null);
 
     this.render();
-  },
+  }
 
   _removeButtonClick(e) {
     const isRemoveButton = e.target.classList.contains("remove-button");
@@ -492,7 +491,7 @@ CSSFilterEditorWidget.prototype = {
     const filterEl = e.target.closest(".filter");
     const index = this._getFilterElementIndex(filterEl);
     this.removeAt(index);
-  },
+  }
 
   _mouseMove(e) {
     if (this.isReorderingFilter) {
@@ -500,7 +499,7 @@ CSSFilterEditorWidget.prototype = {
     } else if (this.isDraggingLabel) {
       this._dragLabel(e);
     }
-  },
+  }
 
   _dragFilterElement(e) {
     const rect = this.filterList.getBoundingClientRect();
@@ -550,7 +549,7 @@ CSSFilterEditorWidget.prototype = {
 
     const currentPosition = change * LIST_ITEM_HEIGHT;
     filterEl.startingY = e.pageY + currentPosition - delta;
-  },
+  }
 
   _dragLabel(e) {
     const dragging = this._dragging;
@@ -583,7 +582,7 @@ CSSFilterEditorWidget.prototype = {
     dragging.startX = e.pageX;
 
     this.updateValueAt(dragging.index, value);
-  },
+  }
 
   _mouseUp() {
     // Label-dragging is disabled on mouseup
@@ -603,7 +602,7 @@ CSSFilterEditorWidget.prototype = {
 
     this.emit("updated", this.getCssValue());
     this.render();
-  },
+  }
 
   _presetClick(e) {
     const el = e.target;
@@ -627,12 +626,12 @@ CSSFilterEditorWidget.prototype = {
         this.addPresetInput.value = p.name;
       }
     }, console.error);
-  },
+  }
 
   _togglePresets() {
     this.el.classList.toggle("show-presets");
     this.emit("render");
-  },
+  }
 
   _savePreset(e) {
     e.preventDefault();
@@ -656,7 +655,7 @@ CSSFilterEditorWidget.prototype = {
 
       this.setPresets(presets).then(this.renderPresets, console.error);
     }, console.error);
-  },
+  }
 
   /**
    * Workaround needed to reset the focus when using a HTML select inside a XUL panel.
@@ -664,7 +663,7 @@ CSSFilterEditorWidget.prototype = {
    */
   _resetFocus() {
     this.filterSelect.ownerDocument.defaultView.focus();
-  },
+  }
 
   /**
    * Clears the list and renders filters, binding required events.
@@ -745,7 +744,7 @@ CSSFilterEditorWidget.prototype = {
     }
 
     this.emit("render");
-  },
+  }
 
   renderPresets() {
     this.getPresets().then(presets => {
@@ -779,7 +778,7 @@ CSSFilterEditorWidget.prototype = {
 
       this.emit("render");
     });
-  },
+  }
 
   /**
    * returns definition of a filter as defined in filterList
@@ -792,7 +791,7 @@ CSSFilterEditorWidget.prototype = {
   _definition(name) {
     name = name.toLowerCase();
     return filterList.find(a => a.name === name);
-  },
+  }
 
   /**
    * Parses the CSS value specified, updating widget's filters
@@ -828,7 +827,7 @@ CSSFilterEditorWidget.prototype = {
 
     this.emit("updated", this.getCssValue());
     this.render();
-  },
+  }
 
   /**
    * Creates a new [name] filter record with value
@@ -892,7 +891,7 @@ CSSFilterEditorWidget.prototype = {
     }
 
     return index;
-  },
+  }
 
   /**
    * returns value + unit of the specified filter
@@ -914,7 +913,7 @@ CSSFilterEditorWidget.prototype = {
     }
 
     return filter.value + filter.unit;
-  },
+  }
 
   removeAt(index) {
     if (!this.filters[index]) {
@@ -924,7 +923,7 @@ CSSFilterEditorWidget.prototype = {
     this.filters.splice(index, 1);
     this.emit("updated", this.getCssValue());
     this.render();
-  },
+  }
 
   /**
    * Generates CSS filter value for filters of the widget
@@ -942,7 +941,7 @@ CSSFilterEditorWidget.prototype = {
       this._specialValue ||
       "none"
     );
-  },
+  }
 
   /**
    * Updates specified filter's value
@@ -973,7 +972,7 @@ CSSFilterEditorWidget.prototype = {
     filter.value = filter.unit ? fixFloat(value, true) : value;
 
     this.emit("updated", this.getCssValue());
-  },
+  }
 
   getPresets() {
     return asyncStorage.getItem("cssFilterPresets").then(presets => {
@@ -983,14 +982,16 @@ CSSFilterEditorWidget.prototype = {
 
       return presets;
     }, console.error);
-  },
+  }
 
   setPresets(presets) {
     return asyncStorage
       .setItem("cssFilterPresets", presets)
       .catch(console.error);
-  },
-};
+  }
+}
+
+exports.CSSFilterEditorWidget = CSSFilterEditorWidget;
 
 // Fixes JavaScript's float precision
 function fixFloat(a, number) {

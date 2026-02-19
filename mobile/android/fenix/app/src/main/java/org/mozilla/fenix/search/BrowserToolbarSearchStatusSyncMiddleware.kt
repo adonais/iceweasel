@@ -15,7 +15,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Ini
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
@@ -36,14 +36,14 @@ class BrowserToolbarSearchStatusSyncMiddleware(
     private var syncSearchActiveJob: Job? = null
 
     override fun invoke(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
         action: BrowserToolbarAction,
     ) {
         next(action)
 
         if (action is Init) {
-            syncSearchActive(context)
+            syncSearchActive(store)
         }
 
         if (action is ExitEditMode) {
@@ -54,15 +54,15 @@ class BrowserToolbarSearchStatusSyncMiddleware(
         }
     }
 
-    private fun syncSearchActive(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun syncSearchActive(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         syncSearchActiveJob = scope.launch {
             appStore.flow()
                 .distinctUntilChangedBy { it.searchState.isSearchActive }
                 .collect {
                     if (it.searchState.isSearchActive) {
-                        context.dispatch(EnterEditMode(browsingModeManager.mode.isPrivate))
+                        store.dispatch(EnterEditMode(browsingModeManager.mode.isPrivate))
                     } else {
-                        context.dispatch(ExitEditMode)
+                        store.dispatch(ExitEditMode)
                     }
                 }
         }

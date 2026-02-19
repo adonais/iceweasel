@@ -36,10 +36,10 @@ add_task(async function test_logins_decrypt_failure() {
   // These functions don't see the non-decryptable entries anymore.
   let savedLogins = await Services.logins.getAllLogins();
   Assert.equal(savedLogins.length, 0, "getAllLogins length");
-  await Assert.rejects(Services.logins.searchLoginsAsync({}), /is required/);
-  Assert.equal(Services.logins.searchLogins(newPropertyBag()).length, 0);
-  Assert.throws(
-    () => Services.logins.modifyLogin(logins[0], newPropertyBag()),
+  const result = await Services.logins.searchLoginsAsync({});
+  Assert.equal(result.length, 0);
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(logins[0], newPropertyBag()),
     /No matching logins/
   );
   Assert.throws(
@@ -69,8 +69,9 @@ add_task(async function test_logins_decrypt_failure() {
     ).length,
     1
   );
-  let matchData = newPropertyBag({ origin: "http://www.example.com" });
-  Assert.equal(Services.logins.searchLogins(matchData).length, 1);
+  let matchData = { origin: "http://www.example.com" };
+  const result2 = await Services.logins.searchLoginsAsync(matchData);
+  Assert.equal(result2.length, 1);
 
   // Removing single logins does not remove non-decryptable logins.
   for (let loginInfo of TestData.loginList()) {
@@ -119,12 +120,8 @@ add_task(async function test_add_logins_with_decrypt_failure() {
   await Services.logins.addLoginAsync(login);
 
   // We can search for this login by GUID.
-  let searchProp = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
-    Ci.nsIWritablePropertyBag2
-  );
-  searchProp.setPropertyAsAUTF8String("guid", login.guid);
-
-  equal(Services.logins.searchLogins(searchProp).length, 1);
+  const result = await Services.logins.searchLoginsAsync({ guid: login.guid });
+  equal(result.length, 1);
 
   // We should fail to re-add it as it remains good.
   await Assert.rejects(
@@ -141,11 +138,13 @@ add_task(async function test_add_logins_with_decrypt_failure() {
   resetPrimaryPassword();
 
   // We can no longer find it in our search.
-  equal(Services.logins.searchLogins(searchProp).length, 0);
+  const result1 = await Services.logins.searchLoginsAsync({ guid: login.guid });
+  equal(result1.length, 0);
 
   // So we should be able to re-add a login with that same GUID.
   await Services.logins.addLoginAsync(login);
-  equal(Services.logins.searchLogins(searchProp).length, 1);
+  const result2 = await Services.logins.searchLoginsAsync({ guid: login.guid });
+  equal(result2.length, 1);
 
   Services.logins.removeAllUserFacingLogins();
 });

@@ -1,0 +1,13 @@
+[DEFAULT]
+support-files = ["head.js"]
+prefs = ["dom.documentpip.enabled=true"]
+
+["browser_parent_has_pip_flag.js"]
+
+["browser_pip_closes_once.js"]
+
+["browser_pip_fullscreen_disallowed.js"]
+
+["browser_pip_ui.js"]
+
+["browser_sessionstore_ignore_dpip.js"]

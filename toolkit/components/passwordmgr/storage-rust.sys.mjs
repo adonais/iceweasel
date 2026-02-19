@@ -385,6 +385,13 @@ export class LoginManagerRustStorage {
     this.#storageAdapter.update(idToModify, newLogin);
   }
 
+  async modifyLoginAsync(oldLogin, newLoginData, _fromSync) {
+    let result = this.modifyLogin(oldLogin, newLoginData, _fromSync);
+
+    // Emulate being async:
+    return Promise.resolve(result);
+  }
+
   /**
    * Checks to see if the specified GUID already exists.
    */
@@ -421,7 +428,7 @@ export class LoginManagerRustStorage {
    * fails due to a corrupt entry, the login is not included in
    * the resulting array.
    *
-   * @resolve {nsILoginInfo[]}
+   * @returns {Promise<nsILoginInfo[]>}
    */
   async getAllLogins(includeDeleted) {
     // `includeDeleted` is currentlty unsupported

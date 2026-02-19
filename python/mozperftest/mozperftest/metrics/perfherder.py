@@ -31,23 +31,21 @@ class Perfherder(Layer):
     activated = False
 
     arguments = COMMON_ARGS
-    arguments.update(
-        {
-            "stats": {
-                "action": "store_true",
-                "default": False,
-                "help": "If set, browsertime statistics will be reported.",
-            },
-            "timestamp": {
-                "type": float,
-                "default": None,
-                "help": (
-                    "Timestamp to use for the perfherder data. Can be the "
-                    "current date or a past date if needed."
-                ),
-            },
-        }
-    )
+    arguments.update({
+        "stats": {
+            "action": "store_true",
+            "default": False,
+            "help": "If set, browsertime statistics will be reported.",
+        },
+        "timestamp": {
+            "type": float,
+            "default": None,
+            "help": (
+                "Timestamp to use for the perfherder data. Can be the "
+                "current date or a past date if needed."
+            ),
+        },
+    })
 
     def run(self, metadata):
         """Processes the given results into a perfherder-formatted data blob.

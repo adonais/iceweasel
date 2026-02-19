@@ -198,8 +198,7 @@ bool SVGFragmentIdentifier::ProcessMediaFragment(
 
 bool SVGFragmentIdentifier::ProcessFragmentIdentifier(
     Document* aDocument, const nsAString& aAnchorName) {
-  MOZ_ASSERT(aDocument->GetRootElement()->IsSVGElement(nsGkAtoms::svg),
-             "expecting an SVG root element");
+  MOZ_ASSERT(aDocument->GetSVGRootElement(), "expecting an SVG root element");
 
   auto* rootElement = SVGSVGElement::FromNode(aDocument->GetRootElement());
 

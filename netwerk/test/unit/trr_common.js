@@ -469,6 +469,8 @@ async function test_mode_1_and_4() {
 
 async function test_CNAME() {
   info("Checking that we follow a CNAME correctly");
+  // cnameHandler for dns-cname in head_trr doesn't currently suppport GET
+  Services.prefs.setBoolPref("network.trr.useGET", false);
   Services.dns.clearCache(true);
   // The dns-cname path alternates between sending us a CNAME pointing to
   // another domain, and an A record. If we follow the cname correctly, doing
@@ -504,6 +506,7 @@ async function test_CNAME() {
   setModeAndURI(3, "dns-cname-a");
 
   await new TRRDNSListener("cname-a.example.com", "9.8.7.6");
+  Services.prefs.clearUserPref("network.trr.useGET");
 }
 
 async function test_name_mismatch() {

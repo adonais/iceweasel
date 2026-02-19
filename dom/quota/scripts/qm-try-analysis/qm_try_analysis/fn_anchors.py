@@ -14,12 +14,10 @@ cached_functions = {}
 def getMetricsJson(src_url):
     if src_url.startswith("http"):
         info(f"Fetching source for function extraction: {src_url}")
-        metrics = subprocess.check_output(
-            [
-                path.join(path.dirname(path.realpath(__file__)), "fetch_fn_names.sh"),
-                src_url,
-            ]
-        )
+        metrics = subprocess.check_output([
+            path.join(path.dirname(path.realpath(__file__)), "fetch_fn_names.sh"),
+            src_url,
+        ])
     else:
         warning(f"Skip fetching source: {src_url}")
         metrics = ""
@@ -37,13 +35,11 @@ def getSpaceFunctionsRecursive(metrics_space):
         and metrics_space["name"]
         and metrics_space["name"] != "<anonymous>"
     ):
-        functions.append(
-            {
-                "name": metrics_space["name"],
-                "start_line": int(metrics_space["start_line"]),
-                "end_line": int(metrics_space["end_line"]),
-            }
-        )
+        functions.append({
+            "name": metrics_space["name"],
+            "start_line": int(metrics_space["start_line"]),
+            "end_line": int(metrics_space["end_line"]),
+        })
     for space in metrics_space["spaces"]:
         functions += getSpaceFunctionsRecursive(space)
     return functions

@@ -288,7 +288,7 @@ devtools.jar:
     content/debugger/src/components/QuickOpenModal.css (debugger/src/components/QuickOpenModal.css)
     content/debugger/src/components/ShortcutsModal.css (debugger/src/components/ShortcutsModal.css)
     content/debugger/src/components/WelcomeBox.css (debugger/src/components/WelcomeBox.css)
-    content/debugger/src/components/shared/AccessibleImage.css (debugger/src/components/shared/AccessibleImage.css)
+    content/debugger/src/components/shared/DebuggerImage.css (debugger/src/components/shared/DebuggerImage.css)
     content/debugger/src/components/shared/Accordion.css (debugger/src/components/shared/Accordion.css)
     content/debugger/src/components/shared/Badge.css (debugger/src/components/shared/Badge.css)
     content/debugger/src/components/shared/BracketArrow.css (debugger/src/components/shared/BracketArrow.css)

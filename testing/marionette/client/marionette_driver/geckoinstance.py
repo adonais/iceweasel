@@ -343,15 +343,13 @@ class GeckoInstance:
             args["preferences"]["remote.log.level"] = level
 
         if "-jsdebugger" in self.app_args:
-            args["preferences"].update(
-                {
-                    "devtools.browsertoolbox.panel": "jsdebugger",
-                    "devtools.chrome.enabled": True,
-                    "devtools.debugger.prompt-connection": False,
-                    "devtools.debugger.remote-enabled": True,
-                    "devtools.testing": True,
-                }
-            )
+            args["preferences"].update({
+                "devtools.browsertoolbox.panel": "jsdebugger",
+                "devtools.chrome.enabled": True,
+                "devtools.debugger.prompt-connection": False,
+                "devtools.debugger.remote-enabled": True,
+                "devtools.testing": True,
+            })
 
         if self.addons:
             args["addons"] = self.addons
@@ -420,13 +418,11 @@ class GeckoInstance:
 
         # environment variables needed for crashreporting
         # https://developer.mozilla.org/docs/Environment_variables_affecting_crash_reporting
-        env.update(
-            {
-                "MOZ_CRASHREPORTER": "1",
-                "MOZ_CRASHREPORTER_NO_REPORT": "1",
-                "MOZ_CRASHREPORTER_SHUTDOWN": "1",
-            }
-        )
+        env.update({
+            "MOZ_CRASHREPORTER": "1",
+            "MOZ_CRASHREPORTER_NO_REPORT": "1",
+            "MOZ_CRASHREPORTER_SHUTDOWN": "1",
+        })
 
         extra_args = ["-marionette", "-remote-allow-system-access"]
         args = {
@@ -520,7 +516,7 @@ class FennecInstance(GeckoInstance):
         required_prefs = deepcopy(FennecInstance.fennec_prefs)
         required_prefs.update(kwargs.get("prefs", {}))
 
-        super(FennecInstance, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.required_prefs.update(required_prefs)
 
         self.runner_class = FennecEmulatorRunner
@@ -602,7 +598,7 @@ class FennecInstance(GeckoInstance):
 
         :param clean: If True, also perform runner cleanup.
         """
-        super(FennecInstance, self).close(clean)
+        super().close(clean)
         if clean and self.runner and self.runner.device.connected:
             try:
                 self.runner.device.device.remove_forwards(f"tcp:{self.marionette_port}")
@@ -701,13 +697,13 @@ class DesktopInstance(GeckoInstance):
         required_prefs = deepcopy(DesktopInstance.desktop_prefs)
         required_prefs.update(kwargs.get("prefs", {}))
 
-        super(DesktopInstance, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.required_prefs.update(required_prefs)
 
 
 class ThunderbirdInstance(GeckoInstance):
     def __init__(self, *args, **kwargs):
-        super(ThunderbirdInstance, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         try:
             # Copied alongside in the test archive
             from .thunderbirdinstance import thunderbird_prefs

@@ -20,7 +20,9 @@
 #include "gfxCrashReporterUtils.h"
 #include "js/PropertyAndElement.h"  // JS_DefineElement
 #include "js/ScalarType.h"          // js::Scalar::Type
+#include "mozilla/Base64.h"
 #include "mozilla/EnumeratedRange.h"
+#include "mozilla/RandomNum.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_webgl.h"
@@ -49,6 +51,7 @@ namespace mozilla {
 
 namespace webgl {
 std::string SanitizeRenderer(const std::string&);
+std::string SanitizeVendor(const std::string&);
 }  // namespace webgl
 
 // -
@@ -1358,6 +1361,7 @@ UniquePtr<uint8_t[]> ClientWebGLContext::GetImageBuffer(
   const auto& premultAlpha = notLost->info.options.premultipliedAlpha;
   *out_imageSize = dataSurface->GetSize();
 
+  nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
   if (aExtractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
     return gfxUtils::GetImageBufferWithRandomNoise(
         dataSurface, premultAlpha, GetCookieJarSettings(), PrincipalOrNull(),
@@ -1385,6 +1389,7 @@ ClientWebGLContext::GetInputStream(
   RefPtr<gfx::DataSourceSurface> dataSurface = snapshot->GetDataSurface();
   const auto& premultAlpha = notLost->info.options.premultipliedAlpha;
 
+  nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     return gfxUtils::GetInputStreamWithRandomNoise(
         dataSurface, premultAlpha, mimeType, encoderOptions,
@@ -2401,7 +2406,8 @@ void ClientWebGLContext::GetParameter(JSContext* cx, GLenum pname,
 
       case LOCAL_GL_RENDERER: {
         bool allowRenderer = StaticPrefs::webgl_enable_renderer_query();
-        if (ShouldResistFingerprinting(RFPTarget::WebGLRenderInfo)) {
+        if (ShouldResistFingerprinting(RFPTarget::WebGLRenderInfo) ||
+            ShouldResistFingerprinting(RFPTarget::WebGLRendererConstant)) {
           allowRenderer = false;
         }
         if (allowRenderer) {
@@ -2441,7 +2447,8 @@ void ClientWebGLContext::GetParameter(JSContext* cx, GLenum pname,
 
         switch (pname) {
           case dom::WEBGL_debug_renderer_info_Binding::UNMASKED_RENDERER_WEBGL:
-            if (ShouldResistFingerprinting(RFPTarget::WebGLRenderInfo)) {
+            if (ShouldResistFingerprinting(RFPTarget::WebGLRenderInfo) ||
+                ShouldResistFingerprinting(RFPTarget::WebGLRendererConstant)) {
               ret = Some("Mozilla"_ns);
             } else {
               ret = GetUnmaskedRenderer();
@@ -2452,9 +2459,36 @@ void ClientWebGLContext::GetParameter(JSContext* cx, GLenum pname,
             break;
 
           case dom::WEBGL_debug_renderer_info_Binding::UNMASKED_VENDOR_WEBGL:
-            ret = ShouldResistFingerprinting(RFPTarget::WebGLRenderInfo)
-                      ? Some("Mozilla"_ns)
-                      : GetUnmaskedVendor();
+            if (ShouldResistFingerprinting(RFPTarget::WebGLRenderInfo)) {
+              ret = Some("Mozilla"_ns);
+            } else if (ShouldResistFingerprinting(
+                           RFPTarget::WebGLVendorRandomize)) {
+              // Generate "Mozilla <Base64(uint64)>"
+              auto randomValue = RandomUint64();
+              if (randomValue.isSome()) {
+                uint64_t value = randomValue.value();
+                nsCString base64;
+                nsresult rv =
+                    Base64Encode(reinterpret_cast<const char*>(&value),
+                                 sizeof(value), base64);
+                if (NS_SUCCEEDED(rv)) {
+                  ret = Some(std::string("Mozilla ") + base64.get());
+                } else {
+                  ret = Some("Mozilla"_ns);
+                }
+              } else {
+                ret = Some("Mozilla"_ns);
+              }
+            } else if (ShouldResistFingerprinting(
+                           RFPTarget::WebGLVendorConstant)) {
+              ret = Some("Mozilla"_ns);
+            } else {
+              ret = GetUnmaskedVendor();
+              if (ret &&
+                  ShouldResistFingerprinting(RFPTarget::WebGLVendorSanitize)) {
+                ret = Some(webgl::SanitizeVendor(*ret));
+              }
+            }
             break;
 
           default:
@@ -5354,26 +5388,30 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
 
       if (extraction == CanvasUtils::ImageExtraction::Placeholder) {
         dom::GeneratePlaceholderCanvasData(range->size(), range->Elements());
-      } else if (extraction == CanvasUtils::ImageExtraction::Randomize) {
-        const auto pii = webgl::PackingInfoInfo::For(desc.pi);
-        // DoReadPixels() requres pii to be Some().
-        MOZ_ASSERT(pii.isSome());
+      } else {
+        RecordCanvasUsage(CanvasExtractionAPI::ReadPixels,
+                          CSSIntSize(width, height));
+        if (extraction == CanvasUtils::ImageExtraction::Randomize) {
+          const auto pii = webgl::PackingInfoInfo::For(desc.pi);
+          // DoReadPixels() requres pii to be Some().
+          MOZ_ASSERT(pii.isSome());
 
-        // With WebGL, the alpha channel is always the last element (if it
-        // exists) in the pixel. With nsRFPService::RandomizeElements, we do
-        // random % (pii->elementsPerPixel - 1) + offset to get the channel
-        // we want to randomize. With the offset being 0, we avoid the last
-        // element, which is the alpha channel.
-        // If WebGL had ARGB or some other format where the alpha channel
-        // was not the last element, we would need to adjust the offset.
-        constexpr uint8_t alphaChannelOffset = 0;
-        bool hasAlphaChannel =
-            format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
-            format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
-        nsRFPService::RandomizeElements(
-            GetCookieJarSettings(), PrincipalOrNull(), range->data(),
-            range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
-            alphaChannelOffset, hasAlphaChannel);
+          // With WebGL, the alpha channel is always the last element (if it
+          // exists) in the pixel. With nsRFPService::RandomizeElements, we do
+          // random % (pii->elementsPerPixel - 1) + offset to get the channel
+          // we want to randomize. With the offset being 0, we avoid the last
+          // element, which is the alpha channel.
+          // If WebGL had ARGB or some other format where the alpha channel
+          // was not the last element, we would need to adjust the offset.
+          constexpr uint8_t alphaChannelOffset = 0;
+          bool hasAlphaChannel =
+              format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
+              format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
+          nsRFPService::RandomizeElements(
+              GetCookieJarSettings(), PrincipalOrNull(), range->data(),
+              range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
+              alphaChannelOffset, hasAlphaChannel);
+        }
       }
     }
   });

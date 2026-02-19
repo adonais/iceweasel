@@ -58,7 +58,8 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
   }
 
   {
-    Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction();
+    Result<EditActionResult, nsresult> result =
+        CanHandleHTMLEditSubAction(CheckSelectionInReplacedElement::No);
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING("HTMLEditor::CanHandleHTMLEditSubAction() failed");
       return result.unwrapErr();
@@ -145,12 +146,23 @@ nsresult HTMLEditor::AutoInsertLineBreakHandler::Run() {
 }
 
 nsresult HTMLEditor::AutoInsertLineBreakHandler::HandleInsertBRElement() {
-  const auto atStartOfSelection =
-      mHTMLEditor.GetFirstSelectionStartPoint<EditorDOMPoint>();
-  MOZ_ASSERT(atStartOfSelection.IsInContentNode());
+  const EditorDOMPoint pointToInsert = [&]() {
+    const auto atStartOfSelection =
+        mHTMLEditor.GetFirstSelectionStartPoint<EditorDOMPoint>();
+    MOZ_ASSERT(atStartOfSelection.IsInContentNode());
+    return HTMLEditUtils::GetPossiblePointToInsert(
+        atStartOfSelection, *nsGkAtoms::br, mEditingHost);
+  }();
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  MOZ_ASSERT(pointToInsert.IsInContentNode());
+
+  // XXX Should we check the preferred line break again?
+
   Result<CreateLineBreakResult, nsresult> insertLineBreakResultOrError =
       mHTMLEditor.InsertLineBreak(WithTransaction::Yes,
-                                  LineBreakType::BRElement, atStartOfSelection,
+                                  LineBreakType::BRElement, pointToInsert,
                                   nsIEditor::eNext);
   if (MOZ_UNLIKELY(insertLineBreakResultOrError.isErr())) {
     NS_WARNING(
@@ -326,14 +338,16 @@ HTMLEditor::AutoInsertLineBreakHandler::InsertLinefeed(
 
   // The node may not be able to have a text node so that we need to check it
   // here.
-  if (!pointToInsert.IsInTextNode() &&
-      !HTMLEditUtils::CanNodeContain(*pointToInsert.ContainerAs<nsIContent>(),
-                                     *nsGkAtoms::textTagName)) {
-    NS_WARNING(
-        "AutoInsertLineBreakHandler::InsertLinefeed() couldn't insert a "
-        "linefeed because the insertion position couldn't have text nodes");
-    return Err(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);
+  pointToInsert = HTMLEditUtils::GetPossiblePointToInsert(
+      pointToInsert, *nsGkAtoms::textTagName, aEditingHost);
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return Err(NS_ERROR_FAILURE);
   }
+  MOZ_ASSERT(pointToInsert.IsInContentNode());
+
+  // FIXME: If the computed point does not preformat linefeed, we should switch
+  // back to inserting a <br>.  However, I think it should be handled before
+  // calling this.
 
   AutoRestore<bool> disableListener(
       aHTMLEditor.EditSubActionDataRef().mAdjustChangedRangeFromListener);

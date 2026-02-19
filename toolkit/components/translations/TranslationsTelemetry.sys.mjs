@@ -432,6 +432,27 @@ export class TranslationsTelemetry {
       }
     );
   }
+
+  static onFeatureEnable() {
+    Glean.translationsFeature.enable.record();
+    TranslationsTelemetry.logEventToConsole(
+      TranslationsTelemetry.onFeatureEnable
+    );
+  }
+
+  static onFeatureDisable() {
+    Glean.translationsFeature.disable.record();
+    TranslationsTelemetry.logEventToConsole(
+      TranslationsTelemetry.onFeatureDisable
+    );
+  }
+
+  static onFeatureReset() {
+    Glean.translationsFeature.reset.record();
+    TranslationsTelemetry.logEventToConsole(
+      TranslationsTelemetry.onFeatureReset
+    );
+  }
 }
 
 /**

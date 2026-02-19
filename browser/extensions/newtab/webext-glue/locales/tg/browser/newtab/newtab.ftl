@@ -480,8 +480,10 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Гузариш ба Ф
 newtab-weather-menu-change-temperature-units-celsius = Гузариш ба Селсий
 newtab-weather-menu-hide-weather = Нинҳон кардани обу ҳаво дар варақаи нав
 newtab-weather-menu-learn-more = Маълумоти бештар
+newtab-weather-menu-detect-my-location = Ҷойгиршавии маро муайян кунед
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Айни ҳол маълумот дар бораи обу ҳаво дастнорас аст.
+newtab-weather-opt-in-see-weather = Шумо мехоҳед, ки маълумотро оид ба обу ҳавои макони худ бинед?
 newtab-weather-opt-in-not-now =
     .label = Ҳоло не
 newtab-weather-opt-in-yes =
@@ -664,6 +666,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Рӯйхати нав
+newtab-widget-section-title = Виҷетҳо
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Пинҳон кардани виҷетҳо
+    .aria-label = Пинҳон кардани ҳамаи виҷетҳо
+newtab-widget-section-maximize =
+    .title = Баркушодани виҷетҳо
+    .aria-label = Ҳамаи виҷетҳоро то андозаи пурра баркушоед
+newtab-widget-section-minimize =
+    .title = Ба ҳадди ақал сохтани виҷетҳо
+    .aria-label = Ҳамаи виҷетҳои худро то андозаи хурд шакл созед
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -686,8 +699,6 @@ newtab-widget-timer-menu-notifications = Хомӯш кардани огоҳно�
 newtab-widget-timer-menu-notifications-on = Фаъол кардани огоҳномаҳо
 newtab-widget-timer-menu-hide = Пинҳон кардани вақтсанҷ
 newtab-widget-timer-menu-learn-more = Маълумоти бештар
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Барои дидани маълумоти бештар, ҳаракат кунед
 newtab-widget-message-title = Бо истифода аз рӯйхатҳо ва вақтсанҷи дарунсохт диққати худро нигоҳ доред
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Аз ёдовариҳои фаврӣ то вазифаҳои ҳаррӯза ва аз ҷаласаҳои бодиққат то танаффусҳои бардавом — ҳар гуна вазифаҳоро дар сари вақт иҷро намоед.

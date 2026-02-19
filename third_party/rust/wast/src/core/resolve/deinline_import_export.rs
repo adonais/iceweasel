@@ -11,7 +11,7 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                     fields.push(export(f.span, name, ExportKind::Func, &mut f.id));
                 }
                 match f.kind {
-                    FuncKind::Import(import) => {
+                    FuncKind::Import(import, exact) => {
                         item = ModuleField::Import(Import {
                             span: f.span,
                             module: import.module,
@@ -20,7 +20,11 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                                 span: f.span,
                                 id: f.id,
                                 name: f.name,
-                                kind: ItemKind::Func(f.ty.clone()),
+                                kind: if exact {
+                                    ItemKind::FuncExact(f.ty.clone())
+                                } else {
+                                    ItemKind::Func(f.ty.clone())
+                                },
                             },
                         });
                     }
@@ -48,9 +52,17 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                     }
                     // If data is defined inline insert an explicit `data` module
                     // field here instead, switching this to a `Normal` memory.
-                    MemoryKind::Inline { is64, ref data } => {
+                    MemoryKind::Inline {
+                        is64,
+                        ref data,
+                        page_size_log2,
+                    } => {
                         let len = data.iter().map(|l| l.len()).sum::<usize>() as u64;
-                        let pages = (len + default_page_size() - 1) / default_page_size();
+                        let page_size = match page_size_log2 {
+                            Some(page_size_log2) => 2_u64.pow(page_size_log2),
+                            None => default_page_size(),
+                        };
+                        let pages = (len + page_size - 1) / page_size;
                         let kind = MemoryKind::Normal(MemoryType {
                             limits: Limits {
                                 is64,
@@ -58,7 +70,7 @@ pub fn run(fields: &mut Vec<ModuleField>) {
                                 max: Some(pages),
                             },
                             shared: false,
-                            page_size_log2: None,
+                            page_size_log2,
                         });
                         let data = match mem::replace(&mut m.kind, kind) {
                             MemoryKind::Inline { data, .. } => data,

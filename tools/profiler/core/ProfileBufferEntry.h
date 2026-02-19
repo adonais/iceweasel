@@ -8,7 +8,6 @@
 #define ProfileBufferEntry_h
 
 #include <cstdint>
-#include <cstdlib>
 #include <functional>
 #include <type_traits>
 #include "gtest/MozGtestFriend.h"

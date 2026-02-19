@@ -22,7 +22,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
  * Handles interactions between PasswordRulesParser and the "password-rules" Remote Settings collection
  *
  * @class PasswordRulesManagerParent
- * @extends {JSWindowActorParent}
+ * @augments {JSWindowActorParent}
  */
 export class PasswordRulesManagerParent extends JSWindowActorParent {
   /**

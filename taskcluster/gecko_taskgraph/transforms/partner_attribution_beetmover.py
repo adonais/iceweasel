@@ -24,26 +24,24 @@ from gecko_taskgraph.util.scriptworker import (
     get_beetmover_bucket_scope,
 )
 
-beetmover_description_schema = Schema(
-    {
-        # from the loader:
-        Optional("task-from"): str,
-        Optional("name"): str,
-        # from the from_deps transforms:
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        # depname is used in taskref's to identify the taskID of the unsigned things
-        Required("depname", default="build"): str,
-        # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
-        Optional("label"): str,
-        Required("partner-path"): str,
-        Optional("extra"): object,
-        Required("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("priority"): task_description_schema["priority"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+beetmover_description_schema = Schema({
+    # from the loader:
+    Optional("task-from"): str,
+    Optional("name"): str,
+    # from the from_deps transforms:
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    # depname is used in taskref's to identify the taskID of the unsigned things
+    Required("depname", default="build"): str,
+    # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
+    Optional("label"): str,
+    Required("partner-path"): str,
+    Optional("extra"): object,
+    Required("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("shipping-product"): task_description_schema["shipping-product"],
+    Optional("priority"): task_description_schema["priority"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 transforms = TransformSequence()
 transforms.add_validate(beetmover_description_schema)
@@ -124,19 +122,17 @@ def make_task_description(config, jobs):
 def generate_upstream_artifacts(attribution_task_kind, artifacts, partner_path):
     upstream_artifacts = []
     for artifact, partner, subpartner, platform, locale in artifacts:
-        upstream_artifacts.append(
-            {
-                "taskId": {"task-reference": f"<{attribution_task_kind}>"},
-                "taskType": "repackage",
-                "paths": [artifact],
-                "locale": partner_path.format(
-                    partner=partner,
-                    subpartner=subpartner,
-                    platform=platform,
-                    locale=locale,
-                ),
-            }
-        )
+        upstream_artifacts.append({
+            "taskId": {"task-reference": f"<{attribution_task_kind}>"},
+            "taskType": "repackage",
+            "paths": [artifact],
+            "locale": partner_path.format(
+                partner=partner,
+                subpartner=subpartner,
+                platform=platform,
+                locale=locale,
+            ),
+        })
 
     if not upstream_artifacts:
         raise Exception("Couldn't find any upstream artifacts.")

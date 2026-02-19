@@ -14,7 +14,6 @@
 #include <objbase.h>
 #include <shlwapi.h>
 #undef ParseURL
-#include <stdlib.h>
 #include <tuple>
 
 #include "mozilla/Assertions.h"

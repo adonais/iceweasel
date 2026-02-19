@@ -17,10 +17,6 @@ pref("accessibility.typeaheadfind.timeout", 5000);
 
 pref("app.support.baseURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/");
 
-#ifdef MOZ_UPDATER
-  pref("app.update.channel", "@MOZ_UPDATE_CHANNEL@");
-#endif
-
 // Prefs used by UpdateTimerManager (including blocklist pings) (bug 783909)
 pref("app.update.timerFirstInterval", 30000); // milliseconds
 pref("app.update.timerMinimumDelay", 30); // seconds
@@ -257,11 +253,6 @@ pref("formhelper.autozoom", true);
 // Optionally send web console output to logcat (bug 1415318)
 pref("geckoview.console.enabled", false);
 
-#ifdef NIGHTLY_BUILD
-  // Used for mocking data for GeckoView shopping tests, should use in addition with an automation check.
-  pref("geckoview.shopping.mock_test_response", false);
-#endif
-
 pref("image.cache.size", 1048576); // bytes
 
 // Inherit locale from the OS, used for multi-locale builds
@@ -299,16 +290,6 @@ pref("media.eme.require-app-approval", true);
 
 // Enable autoplay permission prompts (bug 1577596)
 pref("media.geckoview.autoplay.request", true);
-
-// Disable future downloads of OpenH264 on Android (bug 1548679)
-pref("media.gmp-gmpopenh264.autoupdate", false);
-
-// Keep OpenH264 if already installed before. (bug 1532578)
-pref("media.gmp-gmpopenh264.enabled", true);
-pref("media.gmp-gmpopenh264.visible", true);
-
-// Enable GMP support in the addon manager (bug 1089867)
-pref("media.gmp-provider.enabled", true);
 
 // Enable Widevine MediaKeySystem (bug 1306219)
 pref("media.mediadrm-widevinecdm.visible", true);

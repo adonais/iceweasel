@@ -2,7 +2,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# This file was copied from browser/components/aiwindow/ui/moz.build.
-
 browser.jar:
-  content/browser/aiwindow/ui/aiChatContent.html
+  content/browser/aiwindow/aiChatContent.html               (content/aiChatContent.html)
+  content/browser/aiwindow/aiWindow.html                    (content/aiWindow.html)
+
+  content/browser/aiwindow/assets/input-cta-arrow-icon.svg  (assets/input-cta-arrow-icon.svg)
+  content/browser/aiwindow/components/ai-chat-content.mjs   (components/ai-chat-content/ai-chat-content.mjs)
+  content/browser/aiwindow/components/ai-chat-content.css   (components/ai-chat-content/ai-chat-content.css)
+  content/browser/aiwindow/components/ai-chat-message.mjs   (components/ai-chat-message/ai-chat-message.mjs)
+  content/browser/aiwindow/components/ai-chat-message.css   (components/ai-chat-message/ai-chat-message.css)
+  content/browser/aiwindow/components/ai-chat-search-button.mjs (components/ai-chat-search-button/ai-chat-search-button.mjs)
+  content/browser/aiwindow/components/ai-chat-search-button.css (components/ai-chat-search-button/ai-chat-search-button.css)
+  content/browser/aiwindow/components/ai-window.mjs         (components/ai-window/ai-window.mjs)
+  content/browser/aiwindow/components/ai-window.css         (components/ai-window/ai-window.css)
+  content/browser/aiwindow/ai-window-content.css            (content/ai-window-content.css)
+  content/browser/aiwindow/components/input-cta.css         (components/input-cta/input-cta.css)
+  content/browser/aiwindow/components/input-cta.mjs         (components/input-cta/input-cta.mjs)
+  content/browser/aiwindow/assets/model-choice-1.svg        (assets/model-choice-1.svg)
+  content/browser/aiwindow/assets/model-choice-2.svg        (assets/model-choice-2.svg)
+  content/browser/aiwindow/assets/model-choice-3.svg        (assets/model-choice-3.svg)
+  content/browser/aiwindow/firstrun.html                    (content/firstrun.html)
+  content/browser/aiwindow/firstrun.css                     (content/firstrun.css)
+  content/browser/aiwindow/firstrun.js                      (content/firstrun.js)
+  content/browser/aiwindow/components/applied-memories-button.mjs   (components/ai-chat-content/chat-assistant-footer/applied-memories-button.mjs)
+  content/browser/aiwindow/components/applied-memories-button.css   (components/ai-chat-content/chat-assistant-footer/applied-memories-button.css)
+  content/browser/aiwindow/components/assistant-message-footer.mjs  (components/ai-chat-content/chat-assistant-footer/assistant-message-footer.mjs)
+  content/browser/aiwindow/components/assistant-message-footer.css  (components/ai-chat-content/chat-assistant-footer/assistant-message-footer.css)

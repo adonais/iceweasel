@@ -1801,15 +1801,14 @@ describe("ASRouter", () => {
         id: "firstRun",
       });
 
+      const [{ trigger }] =
+        ASRouterTargeting.findMatchingMessage.firstCall.args;
+
       assert.calledOnce(ASRouterTargeting.findMatchingMessage);
-      assert.deepEqual(
-        ASRouterTargeting.findMatchingMessage.firstCall.args[0].trigger,
-        {
-          id: "firstRun",
-          param: undefined,
-          context: { browserIsSelected: true },
-        }
-      );
+      assert.strictEqual(trigger.id, "firstRun");
+      assert.strictEqual(trigger.param, undefined);
+      assert.isObject(trigger.context);
+      assert.strictEqual(trigger.context.browserIsSelected, true);
     });
     it("should record telemetry information", async () => {
       const fakeTimerId = 42;

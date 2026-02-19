@@ -26,6 +26,7 @@ sealed class AcornSize {
      */
     val static50: Dp = 4.dp
     val static100: Dp = 8.dp
+    val static150: Dp = 12.dp
     val static200: Dp = 16.dp
     val static250: Dp = 20.dp
     val static300: Dp = 24.dp

@@ -2,22 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.check-bullet,
-.alert-bullet,
-.throbber-bullet {
+.status-ok::before,
+.status-alert::before,
+.status-loading::before {
   -moz-context-properties: fill;
-  display: inline-block;
-  vertical-align: text-top;
   height: var(--icon-size);
   width: var(--icon-size);
   margin-inline-end: var(--space-medium);
 }
-.check-bullet {
+
+.status-ok::before {
+  content: url("chrome://global/skin/icons/check-filled.svg");
   fill: var(--icon-color-success);
 }
 
-.alert-bullet {
+.status-alert::before {
+  content: url("chrome://global/skin/icons/warning.svg");
   fill: var(--icon-color-warning);
+}
+
+.status-loading::before {
+  content: url("chrome://global/skin/icons/loading.svg");
+  fill: currentColor;
 }
 
 small {
@@ -25,39 +31,45 @@ small {
   color: var(--text-color-deemphasized);
 }
 
-.status-container {
+.card-contents {
   display: flex;
 }
 
-.status-bullet-container {
-  display: flex;
+.status-text-container {
   flex-grow: 1;
+}
+
+ul {
+  display: flex;
   flex-direction: column;
   gap: var(--space-medium);
+  list-style-type: none;
+  margin-block: var(--space-medium) 0;
+  padding: 0;
 }
 
-.status-bullet {
+li {
   display: flex;
+}
+
+p {
   margin: 0;
-}
-
-.status-label-holder {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
 }
 
 a {
   color: inherit;
 }
 
-#heading {
-  font-size: var(--font-size-root);
-  font-weight: var(--heading-font-weight);
+a:hover,
+a:hover:active {
+  color: inherit;
+  text-decoration: none;
 }
 
-moz-card {
-  margin-block-end: var(--space-xxlarge);
+h3 {
+  font-size: var(--font-size-root);
+  font-weight: var(--heading-font-weight);
+  margin: 0;
 }
 
 .status-label-holder > moz-box-link {
@@ -66,4 +78,9 @@ moz-card {
 
 .status-image {
   margin-inline-start: var(--space-xsmall);
+  max-width: 100px;
+}
+
+.status-image:dir(rtl) {
+  transform: scaleX(-1);
 }

@@ -87,9 +87,12 @@ static const uint8_t MAGIC[] = "startupcache0002";
 // debug builds as it should be stable. If we exceed this number we should
 // just increase it.
 static const size_t STARTUP_CACHE_RESERVE_CAPACITY = 450;
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
 // This is a hard limit which we will assert on, to ensure that we don't
 // have some bug causing runaway cache growth.
 static const size_t STARTUP_CACHE_MAX_CAPACITY = 5000;
+#endif
 
 // Not const because we change it for gtests.
 static uint8_t STARTUP_CACHE_WRITE_TIMEOUT = 60;

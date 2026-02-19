@@ -24,14 +24,15 @@ using namespace webrtc;
 using namespace videocapturemodule;
 
 webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
-    const char* deviceUniqueIdUTF8) {
+    Clock* _Nonnull clock, const char* _Null_unspecified deviceUniqueIdUTF8) {
   if (StaticPrefs::media_getusermedia_camera_macavf_enabled_AtStartup()) {
-    return VideoCaptureAvFoundation::Create(deviceUniqueIdUTF8);
+    return VideoCaptureAvFoundation::Create(clock, deviceUniqueIdUTF8);
   }
-  return VideoCaptureIos::Create(deviceUniqueIdUTF8);
+  return VideoCaptureIos::Create(clock, deviceUniqueIdUTF8);
 }
 
-VideoCaptureIos::VideoCaptureIos() : is_capturing_(false) {
+VideoCaptureIos::VideoCaptureIos(Clock* _Nonnull clock)
+    : VideoCaptureImpl(clock), is_capturing_(false) {
   capability_.width = kDefaultWidth;
   capability_.height = kDefaultHeight;
   capability_.maxFPS = kDefaultFrameRate;
@@ -46,13 +47,13 @@ VideoCaptureIos::~VideoCaptureIos() {
 }
 
 webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureIos::Create(
-    const char* deviceUniqueIdUTF8) {
+    Clock* _Nonnull clock, const char* _Null_unspecified deviceUniqueIdUTF8) {
   if (!deviceUniqueIdUTF8[0]) {
     return NULL;
   }
 
   webrtc::scoped_refptr<VideoCaptureIos> capture_module(
-      new webrtc::RefCountedObject<VideoCaptureIos>());
+      new webrtc::RefCountedObject<VideoCaptureIos>(clock));
 
   const int32_t name_length = strlen(deviceUniqueIdUTF8);
   if (name_length >= kVideoCaptureUniqueNameLength) return nullptr;

@@ -54,63 +54,61 @@ ignored_js_src_dirs = [
 ]
 
 # We ignore #includes of these files, because they don't follow the usual rules.
-included_inclnames_to_ignore = set(
-    [
-        "ffi.h",  # generated in ctypes/libffi/
-        "devtools/Instruments.h",  # we ignore devtools/ in general
-        "diplomat_runtime.hpp",  # ICU4X
-        "double-conversion/double-conversion.h",  # strange MFBT case
-        "frontend/ReservedWordsGenerated.h",  # generated in $OBJDIR
-        "gc/StatsPhasesGenerated.h",  # generated in $OBJDIR
-        "gc/StatsPhasesGenerated.inc",  # generated in $OBJDIR
-        "icu4x/Calendar.hpp",  # ICU4X
-        "icu4x/Date.hpp",  # ICU4X
-        "icu4x/GraphemeClusterSegmenter.hpp",  # ICU4X
-        "icu4x/IsoDate.hpp",  # ICU4X
-        "icu4x/Locale.hpp",  # ICU4X
-        "icu4x/SentenceSegmenter.hpp",  # ICU4X
-        "icu4x/WordSegmenter.hpp",  # ICU4X
-        "jit/ABIFunctionTypeGenerated.h",  # generated in $OBJDIR"
-        "jit/AtomicOperationsGenerated.h",  # generated in $OBJDIR
-        "jit/CacheIROpsGenerated.h",  # generated in $OBJDIR
-        "jit/CacheIRAOTGenerated.h",  # generated in $OBJDIR
-        "jit/LIROpsGenerated.h",  # generated in $OBJDIR
-        "jit/MIROpsGenerated.h",  # generated in $OBJDIR
-        "js/PrefsGenerated.h",  # generated in $OBJDIR
-        "js/ProfilingCategoryList.h",  # comes from mozglue/baseprofiler
-        "mozilla/glue/Debug.h",  # comes from mozglue/misc, shadowed by <mozilla/Debug.h>
-        "jscustomallocator.h",  # provided by embedders;  allowed to be missing
-        "js-config.h",  # generated in $OBJDIR
-        "fdlibm.h",  # fdlibm
-        "FuzzerDefs.h",  # included without a path
-        "FuzzingInterface.h",  # included without a path
-        "mozmemory.h",  # included without a path
-        "mozmemory_stall.h",  # included without a path
-        "pratom.h",  # NSPR
-        "prcvar.h",  # NSPR
-        "prerror.h",  # NSPR
-        "prinit.h",  # NSPR
-        "prio.h",  # NSPR
-        "private/pprio.h",  # NSPR
-        "prlink.h",  # NSPR
-        "prlock.h",  # NSPR
-        "prprf.h",  # NSPR
-        "prthread.h",  # NSPR
-        "prtypes.h",  # NSPR
-        "selfhosted.out.h",  # generated in $OBJDIR
-        "shellmoduleloader.out.h",  # generated in $OBJDIR
-        "unicode/locid.h",  # ICU
-        "unicode/uchar.h",  # ICU
-        "unicode/uniset.h",  # ICU
-        "unicode/unistr.h",  # ICU
-        "unicode/utypes.h",  # ICU
-        "vtune/VTuneWrapper.h",  # VTune
-        "wasm/WasmBuiltinModuleGenerated.h",  # generated in $OBJDIR"
-        "zydis/ZydisAPI.h",  # Zydis
-        "xsum/xsum.h",  # xsum
-        "fmt/format.h",  # {fmt} main header
-    ]
-)
+included_inclnames_to_ignore = set([
+    "ffi.h",  # generated in ctypes/libffi/
+    "devtools/Instruments.h",  # we ignore devtools/ in general
+    "diplomat_runtime.hpp",  # ICU4X
+    "double-conversion/double-conversion.h",  # strange MFBT case
+    "frontend/ReservedWordsGenerated.h",  # generated in $OBJDIR
+    "gc/StatsPhasesGenerated.h",  # generated in $OBJDIR
+    "gc/StatsPhasesGenerated.inc",  # generated in $OBJDIR
+    "icu4x/Calendar.hpp",  # ICU4X
+    "icu4x/Date.hpp",  # ICU4X
+    "icu4x/GraphemeClusterSegmenter.hpp",  # ICU4X
+    "icu4x/IsoDate.hpp",  # ICU4X
+    "icu4x/Locale.hpp",  # ICU4X
+    "icu4x/SentenceSegmenter.hpp",  # ICU4X
+    "icu4x/WordSegmenter.hpp",  # ICU4X
+    "jit/ABIFunctionTypeGenerated.h",  # generated in $OBJDIR"
+    "jit/AtomicOperationsGenerated.h",  # generated in $OBJDIR
+    "jit/CacheIROpsGenerated.h",  # generated in $OBJDIR
+    "jit/CacheIRAOTGenerated.h",  # generated in $OBJDIR
+    "jit/LIROpsGenerated.h",  # generated in $OBJDIR
+    "jit/MIROpsGenerated.h",  # generated in $OBJDIR
+    "js/PrefsGenerated.h",  # generated in $OBJDIR
+    "mozilla/ProfilingCategoryList.h",  # comes from mozglue/baseprofiler
+    "mozilla/glue/Debug.h",  # comes from mozglue/misc, shadowed by <mozilla/Debug.h>
+    "jscustomallocator.h",  # provided by embedders;  allowed to be missing
+    "js-config.h",  # generated in $OBJDIR
+    "fdlibm.h",  # fdlibm
+    "FuzzerDefs.h",  # included without a path
+    "FuzzingInterface.h",  # included without a path
+    "mozmemory.h",  # included without a path
+    "mozmemory_stall.h",  # included without a path
+    "pratom.h",  # NSPR
+    "prcvar.h",  # NSPR
+    "prerror.h",  # NSPR
+    "prinit.h",  # NSPR
+    "prio.h",  # NSPR
+    "private/pprio.h",  # NSPR
+    "prlink.h",  # NSPR
+    "prlock.h",  # NSPR
+    "prprf.h",  # NSPR
+    "prthread.h",  # NSPR
+    "prtypes.h",  # NSPR
+    "selfhosted.out.h",  # generated in $OBJDIR
+    "shellmoduleloader.out.h",  # generated in $OBJDIR
+    "unicode/locid.h",  # ICU
+    "unicode/uchar.h",  # ICU
+    "unicode/uniset.h",  # ICU
+    "unicode/unistr.h",  # ICU
+    "unicode/utypes.h",  # ICU
+    "vtune/VTuneWrapper.h",  # VTune
+    "wasm/WasmBuiltinModuleGenerated.h",  # generated in $OBJDIR"
+    "zydis/ZydisAPI.h",  # Zydis
+    "xsum/xsum.h",  # xsum
+    "fmt/format.h",  # {fmt} main header
+])
 
 # JSAPI functions should be included through headers from js/public instead of
 # using the old, catch-all jsapi.h file.
@@ -126,19 +124,17 @@ deprecated_inclnames_in_header_excludes = {
 
 # These files have additional constraints on where they are #included, so we
 # ignore #includes of them when checking #include ordering.
-oddly_ordered_inclnames = set(
-    [
-        "ctypes/typedefs.h",  # Included multiple times in the body of ctypes/CTypes.h
-        # Included in the body of frontend/TokenStream.h
-        "frontend/ReservedWordsGenerated.h",
-        "gc/StatsPhasesGenerated.h",  # Included in the body of gc/Statistics.h
-        "gc/StatsPhasesGenerated.inc",  # Included in the body of gc/Statistics.cpp
-        "psapi.h",  # Must be included after "util/WindowsWrapper.h" on Windows
-        "machine/endian.h",  # Must be included after <sys/types.h> on BSD
-        "process.h",  # Windows-specific
-        "util/WindowsWrapper.h",  # Must precede other system headers(?)
-    ]
-)
+oddly_ordered_inclnames = set([
+    "ctypes/typedefs.h",  # Included multiple times in the body of ctypes/CTypes.h
+    # Included in the body of frontend/TokenStream.h
+    "frontend/ReservedWordsGenerated.h",
+    "gc/StatsPhasesGenerated.h",  # Included in the body of gc/Statistics.h
+    "gc/StatsPhasesGenerated.inc",  # Included in the body of gc/Statistics.cpp
+    "psapi.h",  # Must be included after "util/WindowsWrapper.h" on Windows
+    "machine/endian.h",  # Must be included after <sys/types.h> on BSD
+    "process.h",  # Windows-specific
+    "util/WindowsWrapper.h",  # Must precede other system headers(?)
+])
 
 # System headers which shouldn't be included directly, but instead use the
 # designated wrapper.
@@ -217,9 +213,7 @@ js/src/tests/style/BadIncludesOrder-inl.h:28:29: error:
             -> tests/style/HeaderCycleB1-inl.h
       -> tests/style/HeaderCycleB4-inl.h
 
-""".splitlines(
-    True
-)
+""".splitlines(True)
 
 actual_output = []
 
@@ -381,9 +375,7 @@ def check_style(enable_fixup):
 def module_name(name):
     """Strip the trailing .cpp, .h, or -inl.h from a filename."""
 
-    return (
-        name.replace("-inl.h", "").replace(".h", "").replace(".cpp", "")
-    )  # NOQA: E501
+    return name.replace("-inl.h", "").replace(".h", "").replace(".cpp", "")  # NOQA: E501
 
 
 def is_module_header(enclosing_inclname, header_inclname):

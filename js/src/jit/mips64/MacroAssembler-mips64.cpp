@@ -2662,8 +2662,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   assertStackAlignment(ABIStackAlignment);
 }
 
-void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
-                                     bool callFromWasm) {
+void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
   // Restore ra value (as stored in callWithABIPre()).
   loadPtr(Address(StackPointer, stackAdjust - sizeof(intptr_t)), ra);
 

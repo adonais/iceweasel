@@ -1104,7 +1104,7 @@ class Marionette:
         """
         if not self.instance:
             raise errors.MarionetteException(
-                "quit() can only be called " "on Gecko instances launched by Marionette"
+                "quit() can only be called on Gecko instances launched by Marionette"
             )
 
         quit_details = {"cause": "shutdown", "forced": False}
@@ -1164,8 +1164,9 @@ class Marionette:
 
         if quit_details.get("cause") not in (None, "shutdown"):
             raise errors.MarionetteException(
-                "Unexpected shutdown reason '{}' for "
-                "quitting the process.".format(quit_details["cause"])
+                "Unexpected shutdown reason '{}' for quitting the process.".format(
+                    quit_details["cause"]
+                )
             )
 
         return quit_details
@@ -1204,8 +1205,7 @@ class Marionette:
         """
         if not self.instance:
             raise errors.MarionetteException(
-                "restart() can only be called "
-                "on Gecko instances launched by Marionette"
+                "restart() can only be called on Gecko instances launched by Marionette"
             )
 
         context = self._send_message("Marionette:GetContext", key="value")
@@ -1299,8 +1299,9 @@ class Marionette:
 
         if restart_details.get("cause") not in (None, "restart"):
             raise errors.MarionetteException(
-                "Unexpected shutdown reason '{}' for "
-                "restarting the process".format(restart_details["cause"])
+                "Unexpected shutdown reason '{}' for restarting the process".format(
+                    restart_details["cause"]
+                )
             )
 
         return restart_details
@@ -2010,6 +2011,18 @@ class Marionette:
 
         return self._send_message("WebDriver:FindElements", body)
 
+    def generate_test_report(self, message, group=None):
+        """Generates a test report to be observed by registered reporting observers
+
+        :param message: The message string to be used as the body of the generated report
+        :param group: The name of the endpoint that will receive the report
+        """
+        body = {"message": message}
+        if group is not None:
+            body["group"] = group
+
+        self._send_message("Reporting:GenerateTestReport", body)
+
     def get_active_element(self):
         el_or_ref = self._send_message("WebDriver:GetActiveElement", key="value")
         return el_or_ref
@@ -2125,7 +2138,7 @@ class Marionette:
 
         data = self._send_message("WebDriver:TakeScreenshot", body, key="value")
 
-        if format == "base64" or format == "hash":
+        if format in {"base64", "hash"}:
             return data
         elif format == "binary":
             return base64.b64decode(data.encode("ascii"))

@@ -7,10 +7,14 @@ import {
   SettingElement,
   spread,
 } from "chrome://browser/content/preferences/widgets/setting-element.mjs";
+import { SettingControl } from "chrome://browser/content/preferences/widgets/setting-control.mjs";
 
-/** @import { SettingElementConfig } from "chrome://browser/content/preferences/widgets/setting-element.mjs" */
-/** @import { SettingControlConfig, SettingControlEvent } from "../setting-control/setting-control.mjs" */
-/** @import { Preferences } from "chrome://global/content/preferences/Preferences.mjs" */
+/**
+ * @import { SettingElementConfig } from "chrome://browser/content/preferences/widgets/setting-element.mjs"
+ * @import { SettingControlConfig, SettingControlEvent } from "../setting-control/setting-control.mjs"
+ * @import { Preferences } from "chrome://global/content/preferences/Preferences.mjs"
+ * @import { TemplateResult } from "chrome://global/content/vendor/lit.all.mjs";
+ */
 
 /**
  * @typedef {object} SettingGroupConfigExtensions
@@ -19,6 +23,8 @@ import {
  * @property {boolean} [inProgress]
  * Hide this section unless the browser.settings-redesign.enabled or
  * browser.settings-redesign.<groupid>.enabled prefs are true.
+ * @property {"default"|"always"|"never"} [card]
+ * Whether to use a card. Default: use a card after SRD or in a sub-pane.
  */
 /** @typedef {SettingElementConfig & SettingGroupConfigExtensions} SettingGroupConfig */
 
@@ -29,6 +35,7 @@ const CLICK_HANDLERS = new Set([
   "moz-box-link",
   "moz-button",
   "moz-box-group",
+  "moz-message-bar",
 ]);
 
 /**
@@ -43,6 +50,30 @@ const HiddenAttr = Object.freeze({
 });
 
 export class SettingGroup extends SettingElement {
+  static properties = {
+    config: { type: Object },
+    groupId: { type: String },
+    getSetting: { type: Function },
+    srdEnabled: { type: Boolean },
+    inSubPane: { type: Boolean },
+  };
+
+  static queries = {
+    allControlEls: { all: "setting-control" },
+    fieldsetEl: "moz-fieldset",
+  };
+
+  /**
+   * Immediate child control elements. See {@link SettingGroup.allControlEls} to
+   * get all ancestors.
+   */
+  get childControlEls() {
+    // @ts-expect-error bug 1997478
+    return [...this.fieldsetEl.children].filter(
+      child => child instanceof SettingControl
+    );
+  }
+
   constructor() {
     super();
 
@@ -55,17 +86,16 @@ export class SettingGroup extends SettingElement {
      * @type {SettingGroupConfig | undefined}
      */
     this.config = undefined;
+
+    /**
+     * Set by initSettingGroup based on browser.settings-redesign.enabled.
+     */
+    this.srdEnabled = false;
+    /**
+     * Set by setting-pane if this is a sub pane so we can render cards even if SRD is off.
+     */
+    this.inSubPane = false;
   }
-
-  static properties = {
-    config: { type: Object },
-    groupId: { type: String },
-    getSetting: { type: Function },
-  };
-
-  static queries = {
-    controlEls: { all: "setting-control" },
-  };
 
   createRenderRoot() {
     return this;
@@ -73,8 +103,7 @@ export class SettingGroup extends SettingElement {
 
   async handleVisibilityChange() {
     await this.updateComplete;
-    // @ts-expect-error bug 1997478
-    let hasVisibleControls = [...this.controlEls].some(el => !el.hidden);
+    let hasVisibleControls = this.childControlEls.some(el => !el.hidden);
     let groupbox = /** @type {XULElement} */ (this.closest("groupbox"));
     if (hasVisibleControls) {
       if (this.hasAttribute(HiddenAttr.Self)) {
@@ -98,7 +127,7 @@ export class SettingGroup extends SettingElement {
   async getUpdateComplete() {
     let result = await super.getUpdateComplete();
     // @ts-expect-error bug 1997478
-    await Promise.all([...this.controlEls].map(el => el.updateComplete));
+    await Promise.all([...this.allControlEls].map(el => el.updateComplete));
     return result;
   }
 
@@ -141,19 +170,34 @@ export class SettingGroup extends SettingElement {
     ></setting-control>`;
   }
 
+  /**
+   * @param {TemplateResult} content The content to render in a container.
+   */
+  containerTemplate(content) {
+    if (
+      (this.srdEnabled || this.inSubPane || this.config.card == "always") &&
+      this.config.card != "never"
+    ) {
+      return html`<moz-card>${content}</moz-card>`;
+    }
+    return content;
+  }
+
   render() {
     if (!this.config) {
       return "";
     }
-    return html`<moz-fieldset
-      .headingLevel=${this.config.headingLevel}
-      @change=${this.onChange}
-      @toggle=${this.onChange}
-      @click=${this.onClick}
-      @visibility-change=${this.handleVisibilityChange}
-      ${spread(this.getCommonPropertyMapping(this.config))}
-      >${this.config.items.map(item => this.itemTemplate(item))}</moz-fieldset
-    >`;
+    return this.containerTemplate(
+      html`<moz-fieldset
+        .headingLevel=${this.srdEnabled ? 2 : this.config.headingLevel}
+        @change=${this.onChange}
+        @toggle=${this.onChange}
+        @click=${this.onClick}
+        @visibility-change=${this.handleVisibilityChange}
+        ${spread(this.getCommonPropertyMapping(this.config))}
+        >${this.config.items.map(item => this.itemTemplate(item))}</moz-fieldset
+      >`
+    );
   }
 }
 customElements.define("setting-group", SettingGroup);

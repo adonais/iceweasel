@@ -14,6 +14,7 @@
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/LocaleNegotiation.h"
 #include "gc/GCContext.h"
 #include "js/PropertySpec.h"
 #include "vm/GlobalObject.h"
@@ -25,6 +26,7 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
+using namespace js::intl;
 
 using mozilla::AssertedCast;
 
@@ -52,6 +54,9 @@ const JSClass PluralRulesObject::class_ = {
 
 const JSClass& PluralRulesObject::protoClass_ = PlainObject::class_;
 
+static bool pluralRules_supportedLocalesOf(JSContext* cx, unsigned argc,
+                                           Value* vp);
+
 static bool pluralRules_toSource(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setString(cx->names().PluralRules);
@@ -59,8 +64,7 @@ static bool pluralRules_toSource(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static const JSFunctionSpec pluralRules_static_methods[] = {
-    JS_SELF_HOSTED_FN("supportedLocalesOf",
-                      "Intl_PluralRules_supportedLocalesOf", 1, 0),
+    JS_FN("supportedLocalesOf", pluralRules_supportedLocalesOf, 1, 0),
     JS_FS_END,
 };
 
@@ -516,5 +520,22 @@ bool js::intl_GetPluralCategories(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(index == categories.size());
 
   args.rval().setObject(*res);
+  return true;
+}
+
+/**
+ * Intl.PluralRules.supportedLocalesOf ( locales [ , options ] )
+ */
+static bool pluralRules_supportedLocalesOf(JSContext* cx, unsigned argc,
+                                           Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  // Steps 1-3.
+  auto* array = SupportedLocalesOf(cx, AvailableLocaleKind::PluralRules,
+                                   args.get(0), args.get(1));
+  if (!array) {
+    return false;
+  }
+  args.rval().setObject(*array);
   return true;
 }

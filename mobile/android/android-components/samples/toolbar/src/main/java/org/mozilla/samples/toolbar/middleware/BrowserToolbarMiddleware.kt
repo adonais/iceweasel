@@ -32,7 +32,7 @@ import mozilla.components.compose.browser.toolbar.store.EditState
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.samples.toolbar.R
 import org.mozilla.samples.toolbar.middleware.PageActionsEndInteractions.RefreshClicked
 import org.mozilla.samples.toolbar.middleware.PageOriginInteractions.PageOriginClicked
@@ -97,13 +97,13 @@ internal class BrowserToolbarMiddleware(
         set(value) { field = value.coerceAtLeast(0) }
 
     override fun invoke(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
         action: BrowserToolbarAction,
     ) {
         when (action) {
             is BrowserToolbarAction.Init -> {
-                store = context.store as BrowserToolbarStore
+                this.store = store as BrowserToolbarStore
 
                 next(
                     BrowserToolbarAction.Init(

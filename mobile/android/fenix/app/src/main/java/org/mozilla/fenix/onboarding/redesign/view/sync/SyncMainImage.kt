@@ -20,7 +20,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @Composable
 fun SyncMainImage() {
     Image(
-        painter = painterResource(R.drawable.android_sync_illustration),
+        painter = painterResource(R.drawable.nova_onboarding_sync),
         contentDescription = null, // Decorative only
     )
 }

@@ -8,6 +8,7 @@
 // compile it out so that people remember it exists.
 
 use crate::context::{CascadeInputs, SharedStyleContext};
+use crate::derives::*;
 use crate::dom::{OpaqueNode, TDocument, TElement, TNode};
 use crate::properties::animated_properties::{AnimationValue, AnimationValueMap};
 use crate::properties::longhands::animation_direction::computed_value::single_value::T as AnimationDirection;
@@ -52,7 +53,7 @@ pub struct PropertyAnimation {
 
 impl PropertyAnimation {
     /// Returns the given property longhand id.
-    pub fn property_id(&self) -> PropertyDeclarationId {
+    pub fn property_id(&self) -> PropertyDeclarationId<'_> {
         debug_assert_eq!(self.from.id(), self.to.id());
         self.from.id()
     }

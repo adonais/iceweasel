@@ -65,7 +65,6 @@ class StudiesView(
 
             // Use experimentParticipation for studies-specific settings
             experiments.experimentParticipation = isChecked
-            experiments.rolloutParticipation = isChecked
         }
         bindDescription()
 
@@ -95,7 +94,7 @@ class StudiesView(
     @VisibleForTesting
     internal fun bindDescription() {
         val sumoUrl = SupportUtils.getGenericSumoURLForTopic(OPT_OUT_STUDIES)
-        val description = context.getString(R.string.studies_description_3)
+        val description = context.getString(R.string.studies_description_4)
         val learnMore = context.getString(R.string.studies_learn_more)
         val rawText = "$description <a href=\"$sumoUrl\">$learnMore</a>"
         val text = HtmlCompat.fromHtml(rawText, HtmlCompat.FROM_HTML_MODE_COMPACT)

@@ -116,6 +116,7 @@
 /* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("sidebar.revamp") {
   #sidebar-splitter {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
     width: var(--space-medium);
     border-inline: calc((var(--space-medium) - var(--splitter-width)) / 2) solid transparent;
     background-clip: padding-box;

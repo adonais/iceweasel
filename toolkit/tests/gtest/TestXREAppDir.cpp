@@ -21,7 +21,6 @@
 #include "nsPrintfCString.h"
 
 #if defined(XP_UNIX)
-#  include <stdlib.h>
 #  include <unistd.h>
 #  include <sys/stat.h>
 #endif  // XP_UNIX

@@ -114,7 +114,7 @@ class TestFileSystemOriginInitialization : public FileSystemParentTest {
   static RefPtr<MockFileSystemQuotaClient> sQuotaClient;
 };
 
-MOZ_CONSTINIT RefPtr<MockFileSystemQuotaClient>
+constinit RefPtr<MockFileSystemQuotaClient>
     TestFileSystemOriginInitialization::sQuotaClient;
 
 TEST_F(TestFileSystemOriginInitialization, EmptyOriginDirectory) {

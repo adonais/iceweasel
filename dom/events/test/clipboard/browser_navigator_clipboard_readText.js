@@ -42,13 +42,6 @@ add_task(async function test_paste_button_position() {
 
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
-    // We intentionally turn off this a11y check, because the following click
-    // is send on an arbitrary web content that is not expected to be tested
-    // by itself with the browser mochitests, therefore this rule check shall
-    // be ignored by a11y-checks suite.
-    AccessibilityUtils.setEnv({
-      mustHaveAccessibleRule: false,
-    });
     const coordsOfClickInContentRelativeToScreenInDevicePixels =
       await promiseClickContentToTriggerClipboardReadText(browser, false);
     info(
@@ -57,7 +50,6 @@ add_task(async function test_paste_button_position() {
         ", " +
         coordsOfClickInContentRelativeToScreenInDevicePixels.y
     );
-    AccessibilityUtils.resetEnv();
 
     const pasteButtonCoordsRelativeToScreenInDevicePixels =
       await pasteButtonIsShown;
@@ -109,15 +101,7 @@ add_task(async function test_accepting_paste_button() {
 
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
-    // We intentionally turn off this a11y check, because the following click
-    // is send on an arbitrary web content that is not expected to be tested
-    // by itself with the browser mochitests, therefore this rule check shall
-    // be ignored by a11y-checks suite.
-    AccessibilityUtils.setEnv({
-      mustHaveAccessibleRule: false,
-    });
     await promiseClickContentToTriggerClipboardReadText(browser, false);
-    AccessibilityUtils.resetEnv();
     await pasteButtonIsShown;
     const pasteButtonIsHidden = promisePasteButtonIsHidden();
     const mutatedReadTextResultFromContentElement =
@@ -137,15 +121,7 @@ add_task(async function test_accepting_paste_button() {
 add_task(async function test_dismissing_paste_button() {
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
-    // We intentionally turn off this a11y check, because the following click
-    // is send on an arbitrary web content that is not expected to be tested
-    // by itself with the browser mochitests, therefore this rule check shall
-    // be ignored by a11y-checks suite.
-    AccessibilityUtils.setEnv({
-      mustHaveAccessibleRule: false,
-    });
     await promiseClickContentToTriggerClipboardReadText(browser, false);
-    AccessibilityUtils.resetEnv();
     await pasteButtonIsShown;
     const pasteButtonIsHidden = promisePasteButtonIsHidden();
     const mutatedReadTextResultFromContentElement =
@@ -171,15 +147,7 @@ add_task(
       kContentFileUrl,
       async function (browser) {
         const pasteButtonIsShown = promisePasteButtonIsShown();
-        // We intentionally turn off this a11y check, because the following click
-        // is send on an arbitrary web content that is not expected to be tested
-        // by itself with the browser mochitests, therefore this rule check shall
-        // be ignored by a11y-checks suite.
-        AccessibilityUtils.setEnv({
-          mustHaveAccessibleRule: false,
-        });
         await promiseClickContentToTriggerClipboardReadText(browser, true);
-        AccessibilityUtils.resetEnv();
         await pasteButtonIsShown;
         const mutatedReadTextResultFromContentElement =
           promiseMutatedReadTextResultFromContentElement(browser);
@@ -207,16 +175,8 @@ add_task(async function test_new_user_activation_shows_paste_button_again() {
 
     for (let i = 0; i < 2; ++i) {
       const pasteButtonIsShown = promisePasteButtonIsShown();
-      // We intentionally turn off this a11y check, because the following click
-      // is send on an arbitrary web content that is not expected to be tested
-      // by itself with the browser mochitests, therefore this rule check shall
-      // be ignored by a11y-checks suite.
-      AccessibilityUtils.setEnv({
-        mustHaveAccessibleRule: false,
-      });
       // A click initiates a new user activation.
       await promiseClickContentToTriggerClipboardReadText(browser, false);
-      AccessibilityUtils.resetEnv();
       await pasteButtonIsShown;
 
       const pasteButtonIsHidden = promisePasteButtonIsHidden();

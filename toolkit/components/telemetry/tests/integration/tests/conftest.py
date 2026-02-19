@@ -99,15 +99,15 @@ class Browser:
         self.addon_ids = []
 
     def disable_telemetry(self):
-        self.marionette.instance.profile.set_persistent_preferences(
-            {"datareporting.healthreport.uploadEnabled": False}
-        )
+        self.marionette.instance.profile.set_persistent_preferences({
+            "datareporting.healthreport.uploadEnabled": False
+        })
         self.marionette.set_pref("datareporting.healthreport.uploadEnabled", False)
 
     def enable_telemetry(self):
-        self.marionette.instance.profile.set_persistent_preferences(
-            {"datareporting.healthreport.uploadEnabled": True}
-        )
+        self.marionette.instance.profile.set_persistent_preferences({
+            "datareporting.healthreport.uploadEnabled": True
+        })
         self.marionette.set_pref("datareporting.healthreport.uploadEnabled", True)
 
     def get_client_id(self):

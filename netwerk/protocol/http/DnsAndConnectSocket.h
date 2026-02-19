@@ -49,8 +49,7 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
   NS_DECL_NSIDNSLISTENER
 
   DnsAndConnectSocket(nsHttpConnectionInfo* ci, nsAHttpTransaction* trans,
-                      uint32_t caps, bool speculative, bool isFromPredictor,
-                      bool urgentStart);
+                      uint32_t caps, bool speculative, bool urgentStart);
 
   [[nodiscard]] nsresult Init(ConnectionEntry* ent);
   void Abandon();
@@ -235,11 +234,6 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
   // If created with a non-null urgent transaction, remember it, so we can
   // mark the connection as urgent rightaway it's created.
   bool mUrgentStart;
-
-  // mIsFromPredictor is set if the socket originated from the network
-  // Predictor. It is used to gather telemetry data on used speculative
-  // connections from the predictor.
-  bool mIsFromPredictor;
 
   bool mAllow1918 = true;
 

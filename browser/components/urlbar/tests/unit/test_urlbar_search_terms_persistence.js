@@ -44,6 +44,19 @@ const PROVIDERS = [
       },
     ],
   },
+  {
+    id: "example3",
+    queryParamNames: ["q"],
+    searchPageRegexp: "^https://example3\\.com/",
+    includeParams: [],
+    excludeParams: [],
+  },
+  {
+    id: "example4",
+    queryParamNames: ["q"],
+    searchPageRegexp: "^https://example4\\.com/",
+    excludeParams: [],
+  },
 ];
 
 const TESTS = [
@@ -188,6 +201,28 @@ const TESTS = [
       },
     ],
   },
+  {
+    title: "Empty includeParams",
+    name: "example3",
+    cases: [
+      {
+        title: "With search query param value",
+        originalURI: "https://example3.com/?q=foo",
+        expected: "foo",
+      },
+    ],
+  },
+  {
+    title: "No includeParams",
+    name: "example4",
+    cases: [
+      {
+        title: "With search query param value",
+        originalURI: "https://example4.com/?q=foo",
+        expected: "foo",
+      },
+    ],
+  },
 ];
 
 add_setup(async function () {
@@ -235,6 +270,32 @@ add_setup(async function () {
         urls: {
           search: {
             base: "https://example2.com/",
+            searchTermParamName: "q",
+          },
+        },
+      },
+    },
+    {
+      recordType: "engine",
+      identifier: "example3",
+      base: {
+        name: "example3",
+        urls: {
+          search: {
+            base: "https://example3.com/",
+            searchTermParamName: "q",
+          },
+        },
+      },
+    },
+    {
+      recordType: "engine",
+      identifier: "example4",
+      base: {
+        name: "example4",
+        urls: {
+          search: {
+            base: "https://example4.com/",
             searchTermParamName: "q",
           },
         },

@@ -2111,7 +2111,7 @@ class UpdatePatch {
    * @param   patch
    *          A <patch> element to initialize this object with
    * @throws if patch has a size of 0
-   * @constructor
+   * @class
    */
   constructor(patch) {
     this._properties = {};
@@ -2324,7 +2324,7 @@ class Update {
    * @param   update
    *          An <update> element to initialize this object with
    * @throws if the update contains no patches
-   * @constructor
+   * @class
    */
   constructor(update) {
     this._patches = [];
@@ -2701,7 +2701,7 @@ export class UpdateService {
    * UpdateService
    * A Service for managing the discovery and installation of software updates.
    *
-   * @constructor
+   * @class
    */
   constructor() {
     LOG("Creating UpdateService");
@@ -4623,7 +4623,7 @@ export class UpdateManager {
   /**
    * A service to manage active and past updates.
    *
-   * @constructor
+   * @class
    */
   constructor() {
     this.internal = {
@@ -5973,7 +5973,7 @@ class Downloader {
    *          update mode.
    * @param   updateService
    *          The update service that created this downloader.
-   * @constructor
+   * @class
    */
   constructor(updateService) {
     LOG("Creating Downloader");

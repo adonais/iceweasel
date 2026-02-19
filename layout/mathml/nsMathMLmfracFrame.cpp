@@ -38,9 +38,9 @@ NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmfracFrame)
 
 nsMathMLmfracFrame::~nsMathMLmfracFrame() = default;
 
-eMathMLFrameType nsMathMLmfracFrame::GetMathMLFrameType() {
+MathMLFrameType nsMathMLmfracFrame::GetMathMLFrameType() {
   // frac is "inner" in TeXBook, Appendix G, rule 15e. See also page 170.
-  return eMathMLFrameType_Inner;
+  return MathMLFrameType::Inner;
 }
 
 uint8_t nsMathMLmfracFrame::ScriptIncrement(nsIFrame* aFrame) {
@@ -56,8 +56,8 @@ nsMathMLmfracFrame::TransmitAutomaticData() {
   // The TeXbook (Ch 17. p.141) says the numerator inherits the compression
   //  while the denominator is compressed
   if (!StaticPrefs::mathml_math_shift_enabled()) {
-    UpdatePresentationDataFromChildAt(1, 1, NS_MATHML_COMPRESSED,
-                                      NS_MATHML_COMPRESSED);
+    UpdatePresentationDataFromChildAt(1, 1, MathMLPresentationFlag::Compressed,
+                                      MathMLPresentationFlag::Compressed);
   }
 
   // If displaystyle is false, then scriptlevel is incremented, so notify the
@@ -71,7 +71,7 @@ nsMathMLmfracFrame::TransmitAutomaticData() {
 
   // if our numerator is an embellished operator, let its state bubble to us
   GetEmbellishDataFrom(mFrames.FirstChild(), mEmbellishData);
-  if (NS_MATHML_IS_EMBELLISH_OPERATOR(mEmbellishData.flags)) {
+  if (mEmbellishData.flags.contains(MathMLEmbellishFlag::EmbellishedOperator)) {
     // even when embellished, we need to record that <mfrac> won't fire
     // Stretch() on its embellished child
     mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;

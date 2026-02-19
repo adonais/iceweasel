@@ -517,6 +517,20 @@ async function openContextMenuInPopup(
   return contentAreaContextMenu;
 }
 
+// Ensure each test leaves the sidebar in its initial state when it completes
+const initialSidebarState = { ...SidebarController.getUIState(), command: "" };
+registerCleanupFunction(async function () {
+  const { ObjectUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/ObjectUtils.sys.mjs"
+  );
+  if (
+    !ObjectUtils.deepEqual(SidebarController.getUIState(), initialSidebarState)
+  ) {
+    info("Restoring to initial sidebar state");
+    await SidebarController.initializeUIState(initialSidebarState);
+  }
+});
+
 async function openContextMenuInSidebar(selector = "body") {
   let contentAreaContextMenu =
     SidebarController.browser.contentDocument.getElementById(

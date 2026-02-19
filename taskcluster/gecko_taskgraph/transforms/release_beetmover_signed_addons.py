@@ -33,27 +33,25 @@ logger = logging.getLogger(__name__)
 transforms = TransformSequence()
 
 
-beetmover_description_schema = Schema(
-    {
-        # attributes is used for enabling artifact-map by declarative artifacts
-        Required("attributes"): {str: object},
-        # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
-        Optional("label"): str,
-        # treeherder is allowed here to override any defaults we use for beetmover.  See
-        # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
-        # below transforms for defaults of various values.
-        Optional("treeherder"): task_description_schema["treeherder"],
-        Required("description"): str,
-        Required("worker-type"): optionally_keyed_by("release-level", str),
-        Required("run-on-projects"): [],
-        # locale is passed only for l10n beetmoving
-        Optional("locale"): str,
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+beetmover_description_schema = Schema({
+    # attributes is used for enabling artifact-map by declarative artifacts
+    Required("attributes"): {str: object},
+    # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
+    Optional("label"): str,
+    # treeherder is allowed here to override any defaults we use for beetmover.  See
+    # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
+    # below transforms for defaults of various values.
+    Optional("treeherder"): task_description_schema["treeherder"],
+    Required("description"): str,
+    Required("worker-type"): optionally_keyed_by("release-level", str),
+    Required("run-on-projects"): [],
+    # locale is passed only for l10n beetmoving
+    Optional("locale"): str,
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 @transforms.add
@@ -76,7 +74,7 @@ def resolve_keys(config, jobs):
                 field,
                 item_name=job["label"],
                 **{
-                    "release-level": release_level(config.params["project"]),
+                    "release-level": release_level(config.params),
                     "release-type": config.params["release_type"],
                     "project": config.params["project"],
                 },

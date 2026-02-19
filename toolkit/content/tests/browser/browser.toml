@@ -157,6 +157,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1995211
 ]
 
+["browser_findbar_hidden_reveal.js"]
+
 ["browser_findbar_hiddenframes.js"]
 
 ["browser_findbar_marks.js"]

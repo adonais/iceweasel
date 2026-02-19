@@ -676,7 +676,11 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 }
 
 /* IP Protection */
-#ipprotection-button.toolbarbutton-1 > .toolbarbutton-icon {
+#ipprotection-button > .toolbarbutton-icon {
   width: calc(2 * var(--toolbarbutton-inner-padding) + 35px);
   padding-block: 0;
+}
+
+toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon {
+  max-height: 16px;
 }

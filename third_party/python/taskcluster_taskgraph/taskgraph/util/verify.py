@@ -4,6 +4,7 @@
 
 
 import logging
+import os
 import re
 import sys
 import warnings
@@ -333,7 +334,7 @@ def verify_run_task_caches(task, taskgraph, scratch_pad, graph_config, parameter
     command = payload.get("command") or [""]
 
     main_command = command[0] if isinstance(command[0], str) else ""
-    run_task = main_command.endswith("run-task")
+    run_task = os.path.basename(main_command).startswith("run-task")
 
     for cache in payload.get("cache", {}).get(
         "task-reference", payload.get("cache", {})

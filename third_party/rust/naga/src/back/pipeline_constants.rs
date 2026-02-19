@@ -18,7 +18,8 @@ use crate::{
     Span, Statement, TypeInner, WithSpan,
 };
 
-#[cfg(no_std)]
+// Possibly unused if not compiled with no_std
+#[allow(unused_imports)]
 use num_traits::float::FloatCore as _;
 
 #[derive(Error, Debug, Clone)]
@@ -658,6 +659,19 @@ fn adjust_expr(new_pos: &HandleVec<Expression, Handle<Expression>>, expr: &mut E
         } => {
             adjust(query);
         }
+        Expression::CooperativeLoad { ref mut data, .. } => {
+            adjust(&mut data.pointer);
+            adjust(&mut data.stride);
+        }
+        Expression::CooperativeMultiplyAdd {
+            ref mut a,
+            ref mut b,
+            ref mut c,
+        } => {
+            adjust(a);
+            adjust(b);
+            adjust(c);
+        }
     }
 }
 
@@ -860,25 +874,13 @@ fn adjust_stmt(new_pos: &HandleVec<Expression, Handle<Expression>>, stmt: &mut S
                 crate::RayQueryFunction::Terminate => {}
             }
         }
-        Statement::MeshFunction(crate::MeshFunction::SetMeshOutputs {
-            ref mut vertex_count,
-            ref mut primitive_count,
-        }) => {
-            adjust(vertex_count);
-            adjust(primitive_count);
-        }
-        Statement::MeshFunction(
-            crate::MeshFunction::SetVertex {
-                ref mut index,
-                ref mut value,
-            }
-            | crate::MeshFunction::SetPrimitive {
-                ref mut index,
-                ref mut value,
-            },
-        ) => {
-            adjust(index);
-            adjust(value);
+        Statement::CooperativeStore {
+            ref mut target,
+            ref mut data,
+        } => {
+            adjust(target);
+            adjust(&mut data.pointer);
+            adjust(&mut data.stride);
         }
         Statement::Break
         | Statement::Continue

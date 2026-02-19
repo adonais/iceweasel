@@ -206,7 +206,7 @@ def add_common_arguments(parser):
         "--jsdebugger",
         dest="jsDebugger",
         action="store_true",
-        help="Waits for a devtools JS debugger to connect before " "starting the test.",
+        help="Waits for a devtools JS debugger to connect before starting the test.",
     )
     parser.add_argument(
         "--jsdebugger-port",
@@ -450,7 +450,7 @@ def add_remote_arguments(parser):
         action="store",
         type=str,
         dest="remoteTestRoot",
-        help="Remote directory to use as test root " "(eg. /data/local/tmp/test_root).",
+        help="Remote directory to use as test root (eg. /data/local/tmp/test_root).",
     )
 
 

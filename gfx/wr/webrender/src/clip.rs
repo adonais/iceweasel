@@ -98,9 +98,9 @@ use api::units::*;
 use crate::image_tiling::{self, Repetition};
 use crate::border::{ensure_no_corner_overlap, BorderRadiusAu};
 use crate::box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowClipSource, BoxShadowCacheKey};
+use crate::renderer::GpuBufferBuilderF;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::ellipse::Ellipse;
-use crate::gpu_cache::GpuCache;
 use crate::gpu_types::{BoxShadowStretchMode};
 use crate::intern;
 use crate::internal_types::{FastHashMap, FastHashSet, LayoutPrimitiveInfo};
@@ -1092,7 +1092,7 @@ impl ClipNodeInfo {
         &self,
         node: &ClipNode,
         clipped_rect: &LayoutRect,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
         resource_cache: &mut ResourceCache,
         mask_tiles: &mut Vec<VisibleMaskImageTile>,
         spatial_tree: &SpatialTree,
@@ -1158,7 +1158,7 @@ impl ClipNodeInfo {
                             if request_resources {
                                 resource_cache.request_image(
                                     req,
-                                    gpu_cache,
+                                    gpu_buffer,
                                 );
                             }
 
@@ -1176,7 +1176,7 @@ impl ClipNodeInfo {
                     visible_tiles = Some(tile_range_start..mask_tiles.len());
                 } else {
                     if request_resources {
-                        resource_cache.request_image(request, gpu_cache);
+                        resource_cache.request_image(request, gpu_buffer);
                     }
 
                     let tile_range_start = mask_tiles.len();
@@ -1499,7 +1499,7 @@ impl ClipStore {
         prim_to_pic_mapper: &SpaceMapper<LayoutPixel, PicturePixel>,
         pic_to_vis_mapper: &SpaceMapper<PicturePixel, VisPixel>,
         spatial_tree: &SpatialTree,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
         resource_cache: &mut ResourceCache,
         device_pixel_scale: DevicePixelScale,
         culling_rect: &VisRect,
@@ -1567,7 +1567,7 @@ impl ClipStore {
                     if let Some(instance) = node_info.create_instance(
                         node,
                         &local_bounding_rect,
-                        gpu_cache,
+                        gpu_buffer,
                         resource_cache,
                         &mut self.mask_tiles,
                         spatial_tree,

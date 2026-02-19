@@ -11,7 +11,6 @@
 #include <mozilla/DataMutex.h>
 #include <nsTArray.h>
 
-#include <cstdint>
 #include <thread>
 
 namespace mozilla {

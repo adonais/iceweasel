@@ -2,5 +2,12 @@
 prefs = [
   "browser.tabs.notes.enabled=true",
 ]
+support-files = [
+  "head.js",
+]
+
+["browser_tab_notes_adopt.js"]
 
 ["browser_tab_notes_menu.js"]
+
+["browser_tab_notes_telemetry.js"]

@@ -44,6 +44,10 @@ neterror-load-error-firewall = If your computer or network is protected by a fir
 neterror-load-osx-permission = If you are trying to load a local network page, please check that { -brand-short-name } has been granted Local Network permissions in the macOS Privacy & Security settings.
 
 neterror-http-error-page = Check to make sure you’ve typed the website address correctly.
+neterror-http-empty-response = Check to make sure you’ve typed the website address correctly and try again in a few moments.
+# Variables:
+#   $hostname (String) - Hostname of the website to which the user was trying to connect.
+neterror-http-empty-response-description = { $hostname } sent back an empty page.
 
 neterror-captive-portal = You must log in to this network before you can access the internet.
 
@@ -198,14 +202,19 @@ fp-neterror-offline-body-title = Looks like there’s a problem with your intern
 fp-neterror-connection-intro = { -brand-short-name } can’t create a secure connection to the server at { $hostname }.
 fp-neterror-offline-intro = { -brand-short-name } can’t connect to the server at <strong>{ $hostname }</strong>
 fp-neterror-coop-coep-intro = { -brand-short-name } didn’t load this page because it looks like the security configuration doesn’t match the previous page.
+fp-neterror-http-auth-disabled-intro = Someone pretending to be the site could try to steal things like your username, password, or email.
+fp-neterror-http-auth-disabled-secure-connection = This site requires a secure connection, and you can’t add an exception to visit it.
 
 fp-neterror-why-did-this-happen = Why did this happen?
 
 # This string appears after the following string: "What makes the site look dangerous?" (fp-certerror-why-site-dangerous)
 fp-neterror-cypher-overlap-why-dangerous-body = It looks like this site is using old software with known security issues.
+fp-neterror-http-auth-disabled-why-dangerous-body = { -brand-short-name } doesn’t trust { $hostname } because the connection isn’t secure.
 # This string appears after the following string: "What can you do about it?" (fp-certerror-what-can-you-do)
 fp-neterror-cypher-overlap-what-can-you-do-body = Make sure you’re using the latest version of { -brand-short-name }. Go to Help > About { -brand-short-name } in the menu. If you’re using the latest { -brand-short-name }, the problem is most likely with the site itself.
 fp-neterror-offline-what-can-you-do-body = Try connecting on a different device. Check your modem or router. Disconnect and reconnect to Wi-Fi.
+fp-neterror-http-auth-disabled-what-can-you-do-body = Try changing the URL to HTTPS. But it’s likely there’s a problem with the site itself.
 
 # This string appears after the following string: "Why did this happen?" (fp-neterror-why-did-this-happen)
 fp-neterror-coop-coep-why-did-this-happen-body = Sometimes websites set up protections for themselves from unwanted interactions with other sites.
+fp-learn-more-about-https-connections = Learn about HTTPS connections

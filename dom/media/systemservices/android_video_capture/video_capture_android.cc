@@ -118,9 +118,9 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM) {
 namespace videocapturemodule {
 
 webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
-    const char* deviceUniqueIdUTF8) {
+    Clock* clock, const char* deviceUniqueIdUTF8) {
   webrtc::scoped_refptr<VideoCaptureAndroid> implementation(
-      new webrtc::RefCountedObject<VideoCaptureAndroid>());
+      new webrtc::RefCountedObject<VideoCaptureAndroid>(clock));
   if (implementation->Init(deviceUniqueIdUTF8) != 0) {
     implementation = nullptr;
   }
@@ -146,8 +146,8 @@ void VideoCaptureAndroid::OnIncomingFrame(
   DeliverCapturedFrame(captureFrame);
 }
 
-VideoCaptureAndroid::VideoCaptureAndroid()
-    : VideoCaptureImpl(),
+VideoCaptureAndroid::VideoCaptureAndroid(Clock* clock)
+    : VideoCaptureImpl(clock),
       _deviceInfo(),
       _jCapturer(NULL),
       _captureStarted(false) {}

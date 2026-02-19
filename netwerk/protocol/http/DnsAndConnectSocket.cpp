@@ -64,12 +64,11 @@ static void NotifyActivity(nsHttpConnectionInfo* aConnInfo, uint32_t aSubtype) {
 DnsAndConnectSocket::DnsAndConnectSocket(nsHttpConnectionInfo* ci,
                                          nsAHttpTransaction* trans,
                                          uint32_t caps, bool speculative,
-                                         bool isFromPredictor, bool urgentStart)
+                                         bool urgentStart)
     : mTransaction(trans),
       mCaps(caps),
       mSpeculative(speculative),
       mUrgentStart(urgentStart),
-      mIsFromPredictor(isFromPredictor),
       mConnInfo(ci) {
   MOZ_ASSERT(ci && trans, "constructor with null arguments");
   LOG(("Creating DnsAndConnectSocket [this=%p trans=%p ent=%s key=%s]\n", this,

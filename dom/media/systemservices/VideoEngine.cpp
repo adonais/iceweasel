@@ -21,8 +21,6 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM);
 
 namespace mozilla::camera {
 
-#undef LOG
-#undef LOG_ENABLED
 mozilla::LazyLogModule gVideoEngineLog("VideoEngine");
 #define LOG(args) MOZ_LOG(gVideoEngineLog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(gVideoEngineLog, mozilla::LogLevel::Debug)
@@ -299,5 +297,8 @@ VideoEngine::~VideoEngine() {
   MOZ_ASSERT(mSharedCapturers.empty());
   MOZ_ASSERT(mIdToCapturerMap.empty());
 }
+
+#undef LOG
+#undef LOG_ENABLED
 
 }  // namespace mozilla::camera

@@ -307,25 +307,6 @@ impl StatementGraph {
                         crate::RayQueryFunction::Terminate => "RayQueryTerminate",
                     }
                 }
-                S::MeshFunction(crate::MeshFunction::SetMeshOutputs {
-                    vertex_count,
-                    primitive_count,
-                }) => {
-                    self.dependencies.push((id, vertex_count, "vertex_count"));
-                    self.dependencies
-                        .push((id, primitive_count, "primitive_count"));
-                    "SetMeshOutputs"
-                }
-                S::MeshFunction(crate::MeshFunction::SetVertex { index, value }) => {
-                    self.dependencies.push((id, index, "index"));
-                    self.dependencies.push((id, value, "value"));
-                    "SetVertex"
-                }
-                S::MeshFunction(crate::MeshFunction::SetPrimitive { index, value }) => {
-                    self.dependencies.push((id, index, "index"));
-                    self.dependencies.push((id, value, "value"));
-                    "SetPrimitive"
-                }
                 S::SubgroupBallot { result, predicate } => {
                     if let Some(predicate) = predicate {
                         self.dependencies.push((id, predicate, "predicate"));
@@ -420,6 +401,16 @@ impl StatementGraph {
                             crate::Direction::Y => "SubgroupQuadSwapY",
                             crate::Direction::Diagonal => "SubgroupQuadSwapDiagonal",
                         },
+                    }
+                }
+                S::CooperativeStore { target, data } => {
+                    self.dependencies.push((id, target, "target"));
+                    self.dependencies.push((id, data.pointer, "pointer"));
+                    self.dependencies.push((id, data.stride, "stride"));
+                    if data.row_major {
+                        "CoopStoreT"
+                    } else {
+                        "CoopStore"
                     }
                 }
             };
@@ -760,6 +751,18 @@ fn write_function_expressions(
                 edges.insert("", query);
                 let ty = if committed { "Committed" } else { "Candidate" };
                 (format!("get{ty}HitVertexPositions").into(), 4)
+            }
+            E::CooperativeLoad { ref data, .. } => {
+                edges.insert("pointer", data.pointer);
+                edges.insert("stride", data.stride);
+                let suffix = if data.row_major { "T " } else { "" };
+                (format!("coopLoad{suffix}").into(), 4)
+            }
+            E::CooperativeMultiplyAdd { a, b, c } => {
+                edges.insert("a", a);
+                edges.insert("b", b);
+                edges.insert("c", c);
+                ("cooperativeMultiplyAdd".into(), 4)
             }
         };
 

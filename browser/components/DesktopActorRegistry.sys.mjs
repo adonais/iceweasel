@@ -135,6 +135,9 @@ let JSWINDOWACTORS = {
       },
     },
     matches: ["about:messagepreview", "about:messagepreview?*"],
+    remoteTypes: ["privilegedabout"],
+    enablePreference:
+      "browser.newtabpage.activity-stream.asrouter.devtoolsEnabled",
   },
 
   AboutPrivateBrowsing: {
@@ -218,6 +221,23 @@ let JSWINDOWACTORS = {
     enablePreference: "browser.aboutwelcome.enabled",
   },
 
+  AIChatContent: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AIChatContentParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AIChatContentChild.sys.mjs",
+      events: {
+        "AIChatContent:DispatchSearch": { wantUntrusted: true },
+      },
+    },
+    allFrames: true,
+    matches: ["about:aichatcontent"],
+    enablePreference: "browser.aiwindow.enabled",
+  },
+
   BackupUI: {
     parent: {
       esModuleURI: "resource:///actors/BackupUIParent.sys.mjs",
@@ -235,7 +255,6 @@ let JSWINDOWACTORS = {
         "BackupUI:RestoreFromBackupChooseFile": { wantUntrusted: true },
         "BackupUI:EnableEncryption": { wantUntrusted: true },
         "BackupUI:DisableEncryption": { wantUntrusted: true },
-        "BackupUI:RerunEncryption": { wantUntrusted: true },
         "BackupUI:ShowBackupLocation": { wantUntrusted: true },
         "BackupUI:EditBackupLocation": { wantUntrusted: true },
         "BackupUI:SetEmbeddedComponentPersistentData": { wantUntrusted: true },
@@ -286,6 +305,7 @@ let JSWINDOWACTORS = {
       esModuleURI: "resource:///actors/CanonicalURLChild.sys.mjs",
       events: {
         DOMContentLoaded: {},
+        pageshow: {},
       },
     },
     enablePreference: "browser.tabs.notes.enabled",
@@ -506,6 +526,7 @@ let JSWINDOWACTORS = {
       "about:editprofile",
       "about:deleteprofile",
       "about:newprofile",
+      "about:opentabs",
     ],
   },
 
@@ -755,6 +776,14 @@ let JSWINDOWACTORS = {
     },
 
     allFrames: true,
+  },
+
+  TLSCertificateBinding: {
+    child: {
+      esModuleURI: "resource:///actors/TLSCertificateBindingChild.sys.mjs",
+    },
+
+    messageManagerGroups: ["browsers"],
   },
 
   UITour: {

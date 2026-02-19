@@ -190,20 +190,18 @@ def maketgg(monkeypatch):
         target_tasks_mod._target_task_methods["test_method"] = target_tasks_method
         monkeypatch.setattr(optimize_mod, "registry", fake_registry)
 
-        parameters = FakeParameters(
-            {
-                "_kinds": kinds,
-                "backstop": False,
-                "enable_always_target": False,
-                "level": 1,
-                "target_tasks_method": "test_method",
-                "test_manifest_loader": "default",
-                "try_mode": None,
-                "try_task_config": {},
-                "tasks_for": "hg-push",
-                "project": "mozilla-central",
-            }
-        )
+        parameters = FakeParameters({
+            "_kinds": kinds,
+            "backstop": False,
+            "enable_always_target": False,
+            "level": 1,
+            "target_tasks_method": "test_method",
+            "test_manifest_loader": "default",
+            "try_mode": None,
+            "try_task_config": {},
+            "tasks_for": "hg-push",
+            "project": "mozilla-central",
+        })
         parameters.update(params)
 
         monkeypatch.setattr(generator_mod, "load_graph_config", fake_load_graph_config)

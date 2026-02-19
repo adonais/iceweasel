@@ -18,12 +18,15 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.os.bundleOf
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDirections
+import androidx.navigation.findNavController
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.feature.intent.ext.getSessionId
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_PACKAGE
 import mozilla.components.support.utils.SafeIntent
+import mozilla.components.support.utils.ext.SETTINGS_SELECT_OPTION_KEY
+import mozilla.components.support.utils.ext.SETTINGS_SHOW_FRAGMENT_ARGS
 import mozilla.components.support.utils.toSafeIntent
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.HomeActivity
@@ -205,10 +208,17 @@ private fun Activity.openDefaultBrowserSumoPage(
             url = sumoDefaultBrowserUrl,
         )
     } else {
-        (this as HomeActivity).openToBrowserAndLoad(
+        val directions = getNavDirections(from)
+        if (directions != null) {
+            val navController = findNavController(R.id.container)
+            navController.navigate(directions)
+        }
+
+        components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
             searchTermOrURL = sumoDefaultBrowserUrl,
             newTab = true,
-            from = from,
+            forceSearch = false,
+            searchEngine = null,
             flags = flags,
         )
     }

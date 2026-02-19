@@ -112,8 +112,8 @@ const DEFAULT_TOGGLE_STYLES = {
  * @param {boolean} triggerFn Use the given function to open the pip window,
  *                  which runs in the parent process.
  *
- * @return Promise
- * @resolves With the Picture-in-Picture window when ready.
+ * @returns {Promise}
+ *   Resolves to the Picture-in-Picture window when ready.
  */
 async function triggerPictureInPicture(browser, videoID, triggerFn) {
   let domWindowOpened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
@@ -167,8 +167,8 @@ async function triggerPictureInPicture(browser, videoID, triggerFn) {
  *
  * @param {bool} expected True if we expect the message to be showing.
  *
- * @return Promise
- * @resolves When the checks have completed.
+ * @returns {Promise<void>}
+ *   Resolves when the checks have completed.
  */
 async function assertShowingMessage(browser, videoID, expected) {
   let showing = await SpecialPowers.spawn(browser, [videoID], async videoID => {
@@ -214,8 +214,8 @@ function assertVideoIsBeingCloned(browser, selector) {
  *
  * @param {Element} browser The <xul:browser> hosting the <video>(s) or the browsing context
  *
- * @return Promise
- * @resolves When each <video> is in the HAVE_ENOUGH_DATA readyState.
+ * @returns {Promise<void>}
+ *   Resolves when each <video> is in the HAVE_ENOUGH_DATA readyState.
  */
 async function ensureVideosReady(browser) {
   // PictureInPictureToggleChild waits for videos to fire their "canplay"
@@ -246,8 +246,8 @@ async function ensureVideosReady(browser) {
  * @param {object} toggleStyles Optional argument. See the documentation for the
  * DEFAULT_TOGGLE_STYLES object for a sense of what styleRules is expected to be.
  *
- * @return Promise
- * @resolves When the check has completed.
+ * @returns {Promise<void>}
+ *   Resolves when the check has completed.
  */
 async function toggleOpacityReachesThreshold(
   browser,
@@ -313,8 +313,8 @@ async function toggleOpacityReachesThreshold(
  * be one of the values in the TOGGLE_POLICIES from PictureInPictureControls.sys.mjs.
  * If undefined, this function will ensure no policy attribute is set.
  *
- * @return Promise
- * @resolves When the check has completed.
+ * @returns {Promise<void>}
+ *   Resolves when the check has completed.
  */
 async function assertTogglePolicy(
   browser,
@@ -368,8 +368,8 @@ async function assertTogglePolicy(
  * mouse button events to fire. False if we expect none of them to fire.
  * @param {bool} isExpectingClick True if the mouse events should include the
  * "click" event, which is only included when the primary mouse button is pressed.
- * @return Promise
- * @resolves When the check has completed.
+ * @returns {Promise<void>}
+ *   Resolves when the check has completed.
  */
 async function assertSawMouseEvents(
   browser,
@@ -407,8 +407,8 @@ async function assertSawMouseEvents(
  *
  * @param {Element} browser The <xul:browser> that will receive the mouse
  * events.
- * @return Promise
- * @resolves When the check has completed.
+ * @returns {Promise<void>}
+ *   Resolves when the check has completed.
  */
 async function assertSawClickEventOnly(browser) {
   let mouseEvents = await SpecialPowers.spawn(browser, [], async () => {
@@ -429,14 +429,14 @@ async function assertSawClickEventOnly(browser) {
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
  * @param {string} videoID The ID of the video that has the toggle.
  *
- * @return Promise
- * @resolves With the following Object structure:
+ * @returns {Promise}
+ *   Resolves with the following Object structure:
  *   {
  *     controls: <Boolean>,
  *   }
  *
- * Where controls represents whether or not the video has the default control set
- * displayed.
+ *   Where controls represents whether or not the video has the default control
+ *   set displayed.
  */
 async function prepareForToggleClick(browser, videoID) {
   // Synthesize a mouse move just outside of the video to ensure that
@@ -506,8 +506,8 @@ async function prepareForToggleClick(browser, videoID) {
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
  * @param {string} videoID The ID of the video that has the toggle.
  *
- * @return Promise
- * @resolves With the following Object structure:
+ * @returns {Promise}
+ *   Resolves with the following Object structure:
  *   {
  *     top: <Number>,
  *     left: <Number>,
@@ -632,9 +632,9 @@ async function hoverToggle(browser, videoID) {
  * before running the toggle test. The function is passed the opened
  * <xul:browser> as its only argument once the testURL has finished loading.
  *
- * @return Promise
- * @resolves When the test is complete and the tab with the loaded page is
- * removed.
+ * @returns {Promise<void>}
+ *   Resolves when the test is complete and the tab with the loaded page is
+ *   removed.
  */
 async function testToggle(testURL, expectations, prepFn = async () => {}) {
   await BrowserTestUtils.withNewTab(
@@ -680,8 +680,8 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
  * @param {object} toggleStyles Optional argument. See the documentation for the
  * DEFAULT_TOGGLE_STYLES object for a sense of what styleRules is expected to be.
  *
- * @return Promise
- * @resolves When the check for the toggle is complete.
+ * @returns {Promise<void>}
+ *   Resolves when the check for the toggle is complete.
  */
 async function testToggleHelper(
   browser,
@@ -860,8 +860,8 @@ async function testToggleHelper(
  *   The window that is expected to enter fullscreen mode.
  * @param asyncFn (Async Function)
  *   The async function to run to trigger the fullscreen switch.
- * @return Promise
- * @resolves When the fullscreen entering transition completes.
+ * @returns {Promise<void>}
+ *   Resolves when the fullscreen entering transition completes.
  */
 async function promiseFullscreenEntered(window, asyncFn) {
   let entered = BrowserTestUtils.waitForEvent(
@@ -899,8 +899,8 @@ async function promiseFullscreenEntered(window, asyncFn) {
  *   The window that is expected to exit fullscreen mode.
  * @param asyncFn (Async Function)
  *   The async function to run to trigger the fullscreen switch.
- * @return Promise
- * @resolves When the fullscreen exiting transition completes.
+ * @returns {Promise<void>}
+ *   Resolves when the fullscreen exiting transition completes.
  */
 async function promiseFullscreenExited(window, asyncFn) {
   let exited = BrowserTestUtils.waitForEvent(window, "MozDOMFullscreen:Exited");

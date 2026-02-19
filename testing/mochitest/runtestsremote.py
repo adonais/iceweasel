@@ -257,7 +257,7 @@ class MochiRemote(MochitestDesktop):
         return retVal
 
     def getChromeTestDir(self, options):
-        local = super(MochiRemote, self).getChromeTestDir(options)
+        local = super().getChromeTestDir(options)
         remote = self.remoteChromeTestDir
         if options.flavor == "chrome" and not self.chromePushed:
             self.log.info("pushing %s to %s on device..." % (local, remote))

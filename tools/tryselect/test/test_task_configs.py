@@ -127,7 +127,7 @@ TASK_CONFIG_TESTS = {
         (
             [
                 "--worker-override",
-                "b-linux=worker/pool" "--worker-suffix",
+                "b-linux=worker/pool--worker-suffix",
                 "b-linux=-dev",
             ],
             SystemExit,

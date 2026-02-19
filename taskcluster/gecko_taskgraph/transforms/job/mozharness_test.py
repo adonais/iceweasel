@@ -44,23 +44,21 @@ def get_variant(test_platform):
     return ""
 
 
-mozharness_test_run_schema = Schema(
-    {
-        Required("using"): "mozharness-test",
-        Required("test"): {
-            Required("test-platform"): str,
-            Required("mozharness"): test_description_schema["mozharness"],
-            Required("docker-image"): test_description_schema["docker-image"],
-            Required("loopback-video"): test_description_schema["loopback-video"],
-            Required("loopback-audio"): test_description_schema["loopback-audio"],
-            Required("max-run-time"): test_description_schema["max-run-time"],
-            Optional("retry-exit-status"): test_description_schema["retry-exit-status"],
-            Extra: object,
-        },
-        # Base work directory used to set up the task.
-        Optional("workdir"): str,
-    }
-)
+mozharness_test_run_schema = Schema({
+    Required("using"): "mozharness-test",
+    Required("test"): {
+        Required("test-platform"): str,
+        Required("mozharness"): test_description_schema["mozharness"],
+        Required("docker-image"): test_description_schema["docker-image"],
+        Required("loopback-video"): test_description_schema["loopback-video"],
+        Required("loopback-audio"): test_description_schema["loopback-audio"],
+        Required("max-run-time"): test_description_schema["max-run-time"],
+        Optional("retry-exit-status"): test_description_schema["retry-exit-status"],
+        Extra: object,
+    },
+    # Base work directory used to set up the task.
+    Optional("workdir"): str,
+})
 
 
 def test_packages_url(taskdesc):
@@ -120,38 +118,32 @@ def mozharness_test_on_docker(config, job, taskdesc):
     installer = installer_url(taskdesc)
 
     worker.setdefault("artifacts", [])
-    worker["artifacts"].extend(
-        [
-            {
-                "name": prefix,
-                "path": os.path.join("{workdir}/workspace".format(**run), path),
-                "type": "directory",
-                "expires-after": get_expiration(config, "default"),
-            }
-            for (prefix, path) in artifacts
-        ]
-    )
-    worker["artifacts"].append(
+    worker["artifacts"].extend([
         {
-            "name": "public/xsession-errors.log",
-            "path": "{workdir}/.xsession-errors".format(**run),
-            "type": "file",
+            "name": prefix,
+            "path": os.path.join("{workdir}/workspace".format(**run), path),
+            "type": "directory",
             "expires-after": get_expiration(config, "default"),
         }
-    )
+        for (prefix, path) in artifacts
+    ])
+    worker["artifacts"].append({
+        "name": "public/xsession-errors.log",
+        "path": "{workdir}/.xsession-errors".format(**run),
+        "type": "file",
+        "expires-after": get_expiration(config, "default"),
+    })
     docker_worker_add_artifacts(config, job, taskdesc)
 
     env = worker.setdefault("env", {})
-    env.update(
-        {
-            "MOZHARNESS_CONFIG": " ".join(mozharness["config"]),
-            "MOZHARNESS_SCRIPT": mozharness["script"],
-            "MOZILLA_BUILD_URL": {"artifact-reference": installer},
-            "NEED_WINDOW_MANAGER": "true",
-            "ENABLE_E10S": str(bool(test.get("e10s"))).lower(),
-            "WORKING_DIR": "/builds/worker",
-        }
-    )
+    env.update({
+        "MOZHARNESS_CONFIG": " ".join(mozharness["config"]),
+        "MOZHARNESS_SCRIPT": mozharness["script"],
+        "MOZILLA_BUILD_URL": {"artifact-reference": installer},
+        "NEED_WINDOW_MANAGER": "true",
+        "ENABLE_E10S": str(bool(test.get("e10s"))).lower(),
+        "WORKING_DIR": "/builds/worker",
+    })
 
     env["PYTHON"] = "python3"
 
@@ -298,14 +290,12 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
 
     # jittest doesn't have blob_upload_dir
     if test["test-name"] != "jittest":
-        artifacts.append(
-            {
-                "name": "public/test_info",
-                "path": "build/blobber_upload_dir",
-                "type": "directory",
-                "expires-after": get_expiration(config, "default"),
-            }
-        )
+        artifacts.append({
+            "name": "public/test_info",
+            "path": "build/blobber_upload_dir",
+            "type": "directory",
+            "expires-after": get_expiration(config, "default"),
+        })
 
     if is_bitbar or is_lambda:
         artifacts = [
@@ -365,33 +355,29 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
 
     # this list will get cleaned up / reduced / removed in bug 1354088
     if is_macosx:
-        env.update(
-            {
-                "LC_ALL": "en_US.UTF-8",
-                "LANG": "en_US.UTF-8",
-                "MOZ_NODE_PATH": "/usr/local/bin/node",
-                "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-                "SHELL": "/bin/bash",
-            }
-        )
+        env.update({
+            "LC_ALL": "en_US.UTF-8",
+            "LANG": "en_US.UTF-8",
+            "MOZ_NODE_PATH": "/usr/local/bin/node",
+            "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+            "SHELL": "/bin/bash",
+        })
     elif is_bitbar or is_lambda:
-        env.update(
-            {
-                "LANG": "en_US.UTF-8",
-                "MOZHARNESS_CONFIG": " ".join(mozharness["config"]),
-                "MOZHARNESS_SCRIPT": mozharness["script"],
-                "MOZHARNESS_URL": {
-                    "artifact-reference": "<build/public/build/mozharness.zip>"
-                },
-                "MOZILLA_BUILD_URL": {"artifact-reference": installer},
-                "NEED_XVFB": "false",
-                "XPCOM_DEBUG_BREAK": "warn",
-                "NO_FAIL_ON_TEST_ERRORS": "1",
-                "MOZ_HIDE_RESULTS_TABLE": "1",
-                "MOZ_NODE_PATH": "/usr/local/bin/node",
-                "TASKCLUSTER_WORKER_TYPE": job["worker-type"],
-            }
-        )
+        env.update({
+            "LANG": "en_US.UTF-8",
+            "MOZHARNESS_CONFIG": " ".join(mozharness["config"]),
+            "MOZHARNESS_SCRIPT": mozharness["script"],
+            "MOZHARNESS_URL": {
+                "artifact-reference": "<build/public/build/mozharness.zip>"
+            },
+            "MOZILLA_BUILD_URL": {"artifact-reference": installer},
+            "NEED_XVFB": "false",
+            "XPCOM_DEBUG_BREAK": "warn",
+            "NO_FAIL_ON_TEST_ERRORS": "1",
+            "MOZ_HIDE_RESULTS_TABLE": "1",
+            "MOZ_NODE_PATH": "/usr/local/bin/node",
+            "TASKCLUSTER_WORKER_TYPE": job["worker-type"],
+        })
 
     extra_config = {
         "installer_url": installer,

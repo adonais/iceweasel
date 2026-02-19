@@ -470,14 +470,20 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
       isManageable: true,
     };
 
+    let titleHighlights;
     if (suggestion.full_keyword) {
-      payload.title = suggestion.title;
-      payload.qsSuggestion = [
-        suggestion.full_keyword,
-        UrlbarUtils.HIGHLIGHT.SUGGESTED,
-      ];
+      let { value, highlights } =
+        lazy.QuickSuggest.getFullKeywordTitleAndHighlights({
+          tokens: queryContext.tokens,
+          highlightType: UrlbarUtils.HIGHLIGHT.SUGGESTED,
+          fullKeyword: suggestion.full_keyword,
+          title: suggestion.title,
+        });
+      payload.title = value;
+      titleHighlights = highlights;
     } else {
-      payload.title = [suggestion.title, UrlbarUtils.HIGHLIGHT.TYPED];
+      payload.title = suggestion.title;
+      titleHighlights = UrlbarUtils.HIGHLIGHT.TYPED;
       payload.shouldShowUrl = true;
     }
 
@@ -485,10 +491,10 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
       type: UrlbarUtils.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: !!suggestion.is_top_pick,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-        queryContext.tokens,
-        payload
-      ),
+      payload,
+      highlights: {
+        title: titleHighlights,
+      },
     });
   }
 

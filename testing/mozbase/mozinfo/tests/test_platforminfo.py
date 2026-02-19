@@ -245,17 +245,9 @@ def test_runtimes():
     assert platform_info.test_variant == "!e10s+xorigin"
 
     # combines multiple runtimes 2
-    test_settings["runtime"] = {"no-fission": True, "socketprocess_networking": True}
+    test_settings["runtime"] = {"no-fission": True}
     platform_info = PlatformInfo(test_settings)
-    assert platform_info.test_variant == "!fission+socketprocess_networking"
-
-    # combines multiple runtimes 3
-    test_settings["runtime"] = {
-        "socketprocess_networking": True,
-        "no-fission": True,
-    }
-    platform_info = PlatformInfo(test_settings)
-    assert platform_info.test_variant == "!fission+socketprocess_networking"
+    assert platform_info.test_variant == "!fission"
 
 
 if __name__ == "__main__":

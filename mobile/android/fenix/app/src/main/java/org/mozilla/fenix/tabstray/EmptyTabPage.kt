@@ -7,6 +7,7 @@ package org.mozilla.fenix.tabstray
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,7 +45,7 @@ internal fun EmptyTabPage(isPrivate: Boolean) {
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 80.dp),
-            color = FirefoxTheme.colors.textSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = FirefoxTheme.typography.body1,
         )
     }

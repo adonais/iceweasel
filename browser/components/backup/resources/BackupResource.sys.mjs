@@ -19,10 +19,32 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "places.history.enabled",
   true
 );
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "isSanitizeOnShutdownEnabled",
   "privacy.sanitize.sanitizeOnShutdown",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "isHistoryClearedOnShutdown2",
+  "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "useOldClearHistoryDialog",
+  "privacy.sanitize.useOldClearHistoryDialog",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "isHistoryClearedOnShutdown",
+  "privacy.clearOnShutdown.history",
   false
 );
 
@@ -245,12 +267,44 @@ export class BackupResource {
    *
    * @returns {boolean}
    */
-  static canBackupHistory() {
-    return (
-      !lazy.PrivateBrowsingUtils.permanentPrivateBrowsing &&
-      !lazy.isSanitizeOnShutdownEnabled &&
-      lazy.isBrowsingHistoryEnabled
-    );
+
+  /**
+   * Returns true if the resource is enabled for backup based on different
+   * browser preferences and configurations. Otherwise, returns false.
+   *
+   * @returns {boolean}
+   */
+  static get canBackupResource() {
+    // This is meant to be overridden if a resource requires checks; default is true.
+    return true;
+  }
+
+  /**
+   * Helper function to see if we are going to be backing up and restoring places.sqlite
+   *
+   * @returns {boolean}
+   */
+  static get backingUpPlaces() {
+    if (
+      lazy.PrivateBrowsingUtils.permanentPrivateBrowsing ||
+      !lazy.isBrowsingHistoryEnabled
+    ) {
+      return false;
+    }
+
+    if (!lazy.isSanitizeOnShutdownEnabled) {
+      return true;
+    }
+
+    if (!lazy.useOldClearHistoryDialog) {
+      if (lazy.isHistoryClearedOnShutdown2) {
+        return false;
+      }
+    } else if (lazy.isHistoryClearedOnShutdown) {
+      return false;
+    }
+
+    return true;
   }
 
   constructor() {}

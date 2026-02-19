@@ -34,12 +34,10 @@ class ToolbarBehaviorControllerTest {
     fun `Controller should check the status of the provided custom tab id`() {
         val customTabContent: ContentState = mock()
         val normalTabContent: ContentState = mock()
-        val state = spy(
-            BrowserState(
-                tabs = listOf(TabSessionState("123", normalTabContent)),
-                customTabs = listOf(CustomTabSessionState("ct", customTabContent, config = mock())),
-                selectedTabId = "123",
-            ),
+        val state = BrowserState(
+            tabs = listOf(TabSessionState("123", normalTabContent)),
+            customTabs = listOf(CustomTabSessionState("ct", customTabContent, config = mock())),
+            selectedTabId = "123",
         )
         val store = BrowserStore(state)
         val controller = ToolbarBehaviorController(mock(), store, "ct")
@@ -58,12 +56,10 @@ class ToolbarBehaviorControllerTest {
     fun `Controller should check the status of the currently selected tab if not initialized with a custom tab id`() {
         val customTabContent: ContentState = mock()
         val normalTabContent: ContentState = mock()
-        val state = spy(
-            BrowserState(
-                tabs = listOf(TabSessionState("123", normalTabContent)),
-                customTabs = listOf(CustomTabSessionState("ct", customTabContent, config = mock())),
-                selectedTabId = "123",
-            ),
+        val state = BrowserState(
+            tabs = listOf(TabSessionState("123", normalTabContent)),
+            customTabs = listOf(CustomTabSessionState("ct", customTabContent, config = mock())),
+            selectedTabId = "123",
         )
         val store = BrowserStore(state)
         val controller = ToolbarBehaviorController(mock(), store)

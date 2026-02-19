@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
@@ -23,8 +25,8 @@ object HomeSelectors {
     )
 
     val MAIN_MENU_BUTTON = Selector(
-        strategy = SelectorStrategy.ESPRESSO_BY_ID,
-        value = "menuButton",
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.content_description_menu),
         description = "Three Dot Menu",
         groups = listOf("requiredForPage"),
     )

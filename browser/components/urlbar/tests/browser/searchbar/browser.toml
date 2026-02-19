@@ -1,0 +1,16 @@
+[DEFAULT]
+support-files = [
+  "../head-common.js",
+  "head.js",
+]
+prefs = [
+  "browser.search.widget.new=true",
+]
+
+["browser_new_searchbar_init.js"]
+
+["browser_search.js"]
+
+["browser_searchModeSwitcher.js"]
+
+["browser_searchmode.js"]

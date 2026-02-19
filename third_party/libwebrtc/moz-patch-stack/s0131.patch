@@ -1,25 +1,32 @@
-From: Landry Breuil <landry@rhaalovely.net>
-Date: Mon, 27 Oct 2025 17:42:00 +0000
-Subject: Bug 1994630: fix build on OpenBSD/arm64 after bug 1988042 r=mjf
+From: Dan Baker <dbaker@mozilla.com>
+Date: Wed, 3 Dec 2025 09:44:00 -0700
+Subject: Bug 2000941 - (fix-412ea40eeb) ifdef out IID_IGraphicsCaptureSession6
+ as current windows build SDK does not include it
 
-we return false on BSD in Supports(), so no need to include something which doesn't exist
-
-Differential Revision: https://phabricator.services.mozilla.com/D268827
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6bcf80824ecafc424e41b136705ba08370d66254
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/cb3700134901dea40f70b2da11e35b3e861d0c3c
 ---
- rtc_base/cpu_info.cc | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules/desktop_capture/win/wgc_capture_session.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
-index b51c9e950e..d8469535c6 100644
---- a/rtc_base/cpu_info.cc
-+++ b/rtc_base/cpu_info.cc
-@@ -38,7 +38,7 @@
- #if defined(WEBRTC_ARCH_X86_FAMILY) && defined(_MSC_VER)
- #include <intrin.h>
+diff --git a/modules/desktop_capture/win/wgc_capture_session.cc b/modules/desktop_capture/win/wgc_capture_session.cc
+index 3037d471cc..763ae9c22d 100644
+--- a/modules/desktop_capture/win/wgc_capture_session.cc
++++ b/modules/desktop_capture/win/wgc_capture_session.cc
+@@ -276,6 +276,9 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
+   }
  #endif
--#if defined(WEBRTC_ARCH_ARM_FAMILY) && (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD))
-+#if defined(WEBRTC_ARCH_ARM_FAMILY) && defined(WEBRTC_LINUX)
- #include <asm/hwcap.h>
- #include <sys/auxv.h>
- #endif
+ 
++// Until Mozilla builds with SDK v10.0.26100.0 or newer, this
++// code will not build.
++#if !defined(WEBRTC_MOZILLA_BUILD)
+   // Windows 11 24H2 (10.0.26100.0) added
+   // `IGraphicsCaptureSession6::put_IncludeSecondaryWindows()`. See
+   // `wgc_include_secondary_windows()` in
+@@ -287,6 +290,7 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
+     session6->put_IncludeSecondaryWindows(
+         options.wgc_include_secondary_windows());
+   }
++#endif
+ 
+   allow_zero_hertz_ = options.allow_wgc_zero_hertz();
+ 

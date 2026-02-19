@@ -8,5 +8,5 @@
 
 <resources>
   <!-- Content description (not visible, for screen readers etc.): Description for the "tabs" button in the browser toolbar. -->
-  <string name="mozac_feature_tabs_toolbar_tabs_button">الألسنة</string>
+  <string name="mozac_feature_tabs_toolbar_tabs_button">التبويبات</string>
 </resources>

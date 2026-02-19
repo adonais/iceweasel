@@ -94,3 +94,99 @@ bool ShapeListObject::traceWeak(JSTracer* trc) {
 
   return length != 0;
 }
+
+const JSClass ShapeListWithOffsetsObject::class_ = {
+    "JIT ShapeList",
+    0,
+    &classOps_,
+};
+
+const JSClassOps ShapeListWithOffsetsObject::classOps_ = {
+    nullptr,                            // addProperty
+    nullptr,                            // delProperty
+    nullptr,                            // enumerate
+    nullptr,                            // newEnumerate
+    nullptr,                            // resolve
+    nullptr,                            // mayResolve
+    nullptr,                            // finalize
+    nullptr,                            // call
+    nullptr,                            // construct
+    ShapeListWithOffsetsObject::trace,  // trace
+};
+
+/* static */ ShapeListWithOffsetsObject* ShapeListWithOffsetsObject::create(
+    JSContext* cx) {
+  NativeObject* obj = NewTenuredObjectWithGivenProto(cx, &class_, nullptr);
+  if (!obj) {
+    return nullptr;
+  }
+
+  // Register this object so the GC can sweep its weak pointers.
+  if (!cx->zone()->registerObjectWithWeakPointers(obj)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  return &obj->as<ShapeListWithOffsetsObject>();
+}
+
+Shape* ShapeListWithOffsetsObject::getShape(uint32_t index) const {
+  Shape* shape = getShapeUnbarriered(index);
+  gc::ReadBarrier(shape);
+  return shape;
+}
+
+Shape* ShapeListWithOffsetsObject::getShapeUnbarriered(uint32_t index) const {
+  Value value = ListObject::get(index * 2);
+  return static_cast<Shape*>(value.toPrivate());
+}
+
+uint32_t ShapeListWithOffsetsObject::getOffset(uint32_t index) const {
+  Value value = ListObject::get(index * 2 + 1);
+  return value.toPrivateUint32();
+}
+
+uint32_t ShapeListWithOffsetsObject::numShapes() const {
+  MOZ_ASSERT(length() % 2 == 0);
+  return length() / 2;
+};
+
+void ShapeListWithOffsetsObject::trace(JSTracer* trc, JSObject* obj) {
+  if (trc->traceWeakEdges()) {
+    obj->as<ShapeListWithOffsetsObject>().traceWeak(trc);
+  }
+}
+
+bool ShapeListWithOffsetsObject::traceWeak(JSTracer* trc) {
+  uint32_t length = getDenseInitializedLength();
+  if (length == 0) {
+    return false;  // Object may be uninitialized.
+  }
+
+  const HeapSlot* src = elements_;
+  const HeapSlot* end = src + length;
+  HeapSlot* dst = elements_;
+  while (src != end) {
+    Shape* shape = static_cast<Shape*>(src[0].toPrivate());
+    uint32_t offset = src[1].toPrivateUint32();
+    MOZ_ASSERT(shape->is<Shape>());
+    if (TraceManuallyBarrieredWeakEdge(trc, &shape,
+                                       "ShapeListWithOffsetsObject shape")) {
+      dst[0].unbarrieredSet(PrivateValue(shape));
+      dst[1].unbarrieredSet(PrivateUint32Value(offset));
+      dst += 2;
+    }
+    src += 2;
+  }
+
+  MOZ_ASSERT(dst <= end);
+  uint32_t newLength = dst - elements_;
+  setDenseInitializedLength(newLength);
+
+  if (length != newLength) {
+    JitSpew(JitSpew_StubFolding, "Cleared %u/%u shapes from %p",
+            (length - newLength) / 2, (length) / 2, this);
+  }
+
+  return length != 0;
+}

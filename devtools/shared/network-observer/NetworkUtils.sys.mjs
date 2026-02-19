@@ -76,6 +76,7 @@ const LOAD_CAUSE_STRINGS = {
   [Ci.nsIContentPolicy.TYPE_FONT]: "font",
   [Ci.nsIContentPolicy.TYPE_MEDIA]: "media",
   [Ci.nsIContentPolicy.TYPE_WEBSOCKET]: "websocket",
+  [Ci.nsIContentPolicy.TYPE_WEB_TRANSPORT]: "webtransport",
   [Ci.nsIContentPolicy.TYPE_CSP_REPORT]: "csp",
   [Ci.nsIContentPolicy.TYPE_XSLT]: "xslt",
   [Ci.nsIContentPolicy.TYPE_BEACON]: "beacon",
@@ -866,7 +867,15 @@ async function decodeCompressedStream(stream, length, encodings) {
         _length,
         data
       ) {
-        resolve(String.fromCharCode.apply(this, data));
+        // `data`` might be a very large array, chunk calls to fromCharCode to
+        // avoid "RangeError: too many arguments provided for a function call".
+        const CHUNK_SIZE = 65536;
+        let result = "";
+        for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+          const chunk = data.slice(i, i + CHUNK_SIZE);
+          result += String.fromCharCode.apply(null, chunk);
+        }
+        resolve(result);
       },
     });
   });

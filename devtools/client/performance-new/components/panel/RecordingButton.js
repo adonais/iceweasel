@@ -63,7 +63,7 @@ const Localized = createFactory(
  * is only responsible for the actual act of stopping and starting recordings. It
  * also reacts to the changes of the recording state from external changes.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class RecordingButton extends PureComponent {
   _onStartButtonClick = () => {

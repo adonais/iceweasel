@@ -38,7 +38,9 @@ async function test_pane_visibility(win) {
   await selectHistoryMode(win, "custom");
 
   for (let id of customElementIds) {
-    let element = win.document.getElementById(id);
+    let element = win.document.querySelector(
+      `setting-group[groupid='history'] #${id}`
+    );
     ok(element, `the ${id} element should exist`);
     is_element_visible(
       element,
@@ -49,7 +51,9 @@ async function test_pane_visibility(win) {
   await selectHistoryMode(win, "remember");
 
   for (let id of customElementIds) {
-    let element = win.document.getElementById(id);
+    let element = win.document.querySelector(
+      `setting-group[groupid='history'] #${id}`
+    );
     ok(element, `the ${id} element should exist`);
     is_element_hidden(
       element,
@@ -150,6 +154,24 @@ async function test_dependent_elements(win) {
   check_independents(false);
 
   await selectHistoryMode(win, "remember");
+}
+
+async function test_dependent_elements_redesigned(win) {
+  let historymode = win.document.getElementById("historyMode");
+  ok(historymode, "history mode options should exist");
+
+  let customButton = win.document.getElementById("customHistoryButton");
+  ok(customButton, "advanced settings button should exist");
+
+  // button should only change in custom mode
+  ok(customButton.parentDisabled, "button is disabled in remember mode");
+
+  // setting the mode to custom shouldn't change anything
+  await selectRedesignedHistoryMode(win, "custom");
+  ok(!customButton.parentDisabled, "button is enabled in custom mode");
+
+  await selectRedesignedHistoryMode(win, "remember");
+  ok(customButton.parentDisabled, "button is disabled in remember mode");
 }
 
 async function test_dependent_cookie_elements(win) {
@@ -336,6 +358,31 @@ function test_historymode_retention(mode, expect) {
   };
 }
 
+function test_historymode_retention_redesign(mode, expect) {
+  return async function test_historymode_retention_fn(win) {
+    let historymode = win.document.getElementById("historyMode");
+    ok(historymode, "history mode menulist should exist");
+
+    if (
+      (historymode.value == "remember" && mode == "dontremember") ||
+      (historymode.value == "dontremember" && mode == "remember") ||
+      (historymode.value == "custom" && mode == "dontremember")
+    ) {
+      return;
+    }
+
+    if (expect !== undefined) {
+      is(
+        historymode.value,
+        expect,
+        "history mode is expected to remain " + expect
+      );
+    }
+
+    await selectRedesignedHistoryMode(win, mode);
+  };
+}
+
 function test_custom_retention(controlToChange, expect, valueIncrement) {
   return async function test_custom_retention_fn(win) {
     let historymode = win.document.getElementById("historyMode");
@@ -359,6 +406,46 @@ function test_custom_retention(controlToChange, expect, valueIncrement) {
         break;
       case "menulist":
         await selectHistoryMode(win, valueIncrement);
+        break;
+    }
+  };
+}
+
+function test_custom_retention_redesign(
+  controlToChange,
+  expect,
+  valueIncrement
+) {
+  return async function test_custom_retention_fn(win) {
+    let historymode = win.document.getElementById("historyMode");
+    ok(historymode, "history mode options should exist");
+
+    if (expect !== undefined) {
+      is(
+        historymode.value,
+        expect,
+        "history mode is expected to remain " + expect
+      );
+    }
+
+    await selectRedesignedHistoryMode(win, "custom");
+
+    // Navigate to the custom subpane
+    let paneChange = waitForPaneChange("history");
+    let customButton = win.document.getElementById("customHistoryButton");
+    customButton.click();
+    await paneChange;
+
+    controlToChange = win.document.querySelector(
+      `setting-group[groupid='historyAdvanced'] #${controlToChange}`
+    );
+    ok(controlToChange, "the control to change should exist");
+    switch (controlToChange.localName) {
+      case "moz-checkbox":
+        await updateCheckBoxElement(controlToChange, !controlToChange.checked);
+        break;
+      case "menulist":
+        await selectRedesignedHistoryMode(win, valueIncrement);
         break;
     }
   };

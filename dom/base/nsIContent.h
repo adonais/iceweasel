@@ -114,7 +114,8 @@ class nsIContent : public nsINode {
    * @note This method is safe to call on nodes that are not bound to a tree.
    */
   virtual void UnbindFromTree(UnbindContext&) = 0;
-  void UnbindFromTree(nsINode* aNewParent = nullptr);
+  void UnbindFromTree(nsINode* aNewParent = nullptr,
+                      const BatchRemovalState* aBatchState = nullptr);
 
   enum {
     /**
@@ -300,13 +301,6 @@ class nsIContent : public nsINode {
   virtual IMEState GetDesiredIMEState();
 
   /**
-   * Gets the ShadowRoot binding for this element.
-   *
-   * @return The ShadowRoot currently bound to this element.
-   */
-  inline mozilla::dom::ShadowRoot* GetShadowRoot() const;
-
-  /**
    * Gets the root of the node tree for this content if it is in a shadow tree.
    *
    * @return The ShadowRoot that is the root of the node tree.
@@ -407,7 +401,7 @@ class nsIContent : public nsINode {
    * element (through createElement() or cloneNode() generally) then add a
    * uint32_t aFromParser to the NS_NewXXX() constructor for your element and
    * have the parser pass the appropriate flags. See HTMLInputElement.cpp and
-   * nsHTMLContentSink::MakeContentObject().
+   * nsHtml5TreeBuilder::elementPopped().
    *
    * DO NOT USE THIS METHOD to get around the fact that it's hard to deal with
    * attributes dynamically.  If you make attributes affect your element from
@@ -429,7 +423,7 @@ class nsIContent : public nsINode {
    * element (through createElement() or cloneNode() generally) then add a
    * boolean aFromParser to the NS_NewXXX() constructor for your element and
    * have the parser pass true.  See HTMLInputElement.cpp and
-   * nsHTMLContentSink::MakeContentObject().
+   * nsHtml5TreeBuilder::elementPopped().
    *
    * @param aHaveNotified Whether there has been a
    *        ContentInserted/ContentAppended notification for this content node

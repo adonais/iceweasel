@@ -22,6 +22,7 @@
   </section>
   <section id="cropped-attribute"></section>
   <section class="pseudos">|</section>
+  <dialog>My Modal</dialog>
   <script>
     "use strict";
 
@@ -40,6 +41,9 @@
     const middle = Math.floor(collapseAttributeLength / 2);
     const cls = "-".repeat(middle) + strToMatch + "-".repeat(middle);
     croppedAttributeEl.classList.add(cls);
+
+    // show the dialog modal so the backdrop pseudo element node gets displayed
+    document.querySelector("dialog").showModal();
   </script>
 </body>
 </html>

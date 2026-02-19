@@ -1376,43 +1376,58 @@ class InstNOP : public Instruction {
 class InstReg : public Instruction {
  public:
   InstReg(OpcodeField op, Register rd, FunctionField ff)
-      : Instruction(op | RD(rd) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RD(rd) |
+                    static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, Register rs, Register rt, FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) |
+                    static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, Register rs, Register rt, Register rd,
           FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | RD(rd) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) | RD(rd) |
+                    static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, Register rs, Register rt, Register rd, uint32_t sa,
           FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | RD(rd) | SA(sa) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) | RD(rd) |
+                    SA(sa) | static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, RSField rs, Register rt, Register rd, uint32_t sa,
           FunctionField ff)
-      : Instruction(op | rs | RT(rt) | RD(rd) | SA(sa) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) |
+                    RT(rt) | RD(rd) | SA(sa) | static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, Register rs, RTField rt, Register rd, uint32_t sa,
           FunctionField ff)
-      : Instruction(op | RS(rs) | rt | RD(rd) | SA(sa) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) |
+                    static_cast<uint32_t>(rt) | RD(rd) | SA(sa) |
+                    static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, Register rs, uint32_t cc, Register rd, uint32_t sa,
           FunctionField ff)
-      : Instruction(op | RS(rs) | cc | RD(rd) | SA(sa) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | cc | RD(rd) | SA(sa) |
+                    static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, uint32_t code, FunctionField ff)
-      : Instruction(op | code | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | code |
+                    static_cast<uint32_t>(ff)) {}
   // for float point
   InstReg(OpcodeField op, RSField rs, Register rt, uint32_t fs)
-      : Instruction(op | rs | RT(rt) | FS(fs)) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) |
+                    RT(rt) | FS(fs)) {}
   InstReg(OpcodeField op, RSField rs, Register rt, FloatRegister rd)
-      : Instruction(op | rs | RT(rt) | RD(rd)) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) |
+                    RT(rt) | RD(rd)) {}
   InstReg(OpcodeField op, RSField rs, Register rt, FloatRegister rd,
           uint32_t sa, FunctionField ff)
-      : Instruction(op | rs | RT(rt) | RD(rd) | SA(sa) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) |
+                    RT(rt) | RD(rd) | SA(sa) | static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, RSField rs, Register rt, FloatRegister fs,
           FloatRegister fd, FunctionField ff)
-      : Instruction(op | rs | RT(rt) | RD(fs) | SA(fd) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) |
+                    RT(rt) | RD(fs) | SA(fd) | static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, RSField rs, FloatRegister ft, FloatRegister fs,
           FloatRegister fd, FunctionField ff)
-      : Instruction(op | rs | RT(ft) | RD(fs) | SA(fd) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) |
+                    RT(ft) | RD(fs) | SA(fd) | static_cast<uint32_t>(ff)) {}
   InstReg(OpcodeField op, RSField rs, FloatRegister ft, FloatRegister fd,
           uint32_t sa, FunctionField ff)
-      : Instruction(op | rs | RT(ft) | RD(fd) | SA(sa) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) |
+                    RT(ft) | RD(fd) | SA(sa) | static_cast<uint32_t>(ff)) {}
 
   uint32_t extractRS() {
     return extractBitField(RSShift + RSBits - 1, RSShift);
@@ -1437,17 +1452,22 @@ class InstImm : public Instruction {
   void extractImm16(BOffImm16* dest);
 
   InstImm(OpcodeField op, Register rs, Register rt, BOffImm16 off)
-      : Instruction(op | RS(rs) | RT(rt) | off.encode()) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) |
+                    off.encode()) {}
   InstImm(OpcodeField op, Register rs, RTField rt, BOffImm16 off)
-      : Instruction(op | RS(rs) | rt | off.encode()) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) |
+                    static_cast<uint32_t>(rt) | off.encode()) {}
   InstImm(OpcodeField op, RSField rs, uint32_t cc, BOffImm16 off)
-      : Instruction(op | rs | cc | off.encode()) {}
+      : Instruction(static_cast<uint32_t>(op) | static_cast<uint32_t>(rs) | cc |
+                    off.encode()) {}
   InstImm(OpcodeField op, Register rs, Register rt, Imm16 off)
-      : Instruction(op | RS(rs) | RT(rt) | off.encode()) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) |
+                    off.encode()) {}
   MOZ_IMPLICIT InstImm(uint32_t raw) : Instruction(raw) {}
   // For floating-point loads and stores.
   InstImm(OpcodeField op, Register rs, FloatRegister rt, Imm16 off)
-      : Instruction(op | RS(rs) | RT(rt) | off.encode()) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) |
+                    off.encode()) {}
 
   uint32_t extractOpcode() {
     return extractBitField(OpcodeShift + OpcodeBits - 1, OpcodeShift);
@@ -1476,7 +1496,8 @@ class InstImm : public Instruction {
 // Class for Jump type instructions.
 class InstJump : public Instruction {
  public:
-  InstJump(OpcodeField op, JOffImm26 off) : Instruction(op | off.encode()) {}
+  InstJump(OpcodeField op, JOffImm26 off)
+      : Instruction(static_cast<uint32_t>(op) | off.encode()) {}
 
   uint32_t extractImm26Value() {
     return extractBitField(Imm26Shift + Imm26Bits - 1, Imm26Shift);
@@ -1489,22 +1510,27 @@ class InstGS : public Instruction {
   // For indexed loads and stores.
   InstGS(OpcodeField op, Register rs, Register rt, Register rd, Imm8 off,
          FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | RD(rd) | off.encode(3) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) | RD(rd) |
+                    off.encode(3) | static_cast<uint32_t>(ff)) {}
   InstGS(OpcodeField op, Register rs, FloatRegister rt, Register rd, Imm8 off,
          FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | RD(rd) | off.encode(3) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) | RD(rd) |
+                    off.encode(3) | static_cast<uint32_t>(ff)) {}
   // For quad-word loads and stores.
   InstGS(OpcodeField op, Register rs, Register rt, Register rz, GSImm13 off,
          FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | RZ(rz) | off.encode(6) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) | RZ(rz) |
+                    off.encode(6) | static_cast<uint32_t>(ff)) {}
   InstGS(OpcodeField op, Register rs, FloatRegister rt, FloatRegister rz,
          GSImm13 off, FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | RZ(rz) | off.encode(6) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) | RZ(rz) |
+                    off.encode(6) | static_cast<uint32_t>(ff)) {}
   explicit InstGS(uint32_t raw) : Instruction(raw) {}
   // For floating-point unaligned loads and stores.
   InstGS(OpcodeField op, Register rs, FloatRegister rt, Imm8 off,
          FunctionField ff)
-      : Instruction(op | RS(rs) | RT(rt) | off.encode(6) | ff) {}
+      : Instruction(static_cast<uint32_t>(op) | RS(rs) | RT(rt) |
+                    off.encode(6) | ff) {}
 };
 
 inline bool IsUnaligned(const wasm::MemoryAccessDesc& access) {

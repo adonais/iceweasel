@@ -395,6 +395,7 @@ ReportingHeader::ParseReportToHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
     uint32_t endpointsLength;
     if (!JS::GetArrayLength(cx, endpoints, &endpointsLength) ||
         endpointsLength == 0) {
+      // TODO: should this clear the endpoint instead?
       LogToConsoleIncompleteItem(aChannel, aURI, groupName);
       continue;
     }
@@ -601,30 +602,48 @@ void ReportingHeader::GetEndpointForReport(
 void ReportingHeader::GetEndpointForReport(const nsAString& aGroupName,
                                            nsIPrincipal* aPrincipal,
                                            nsACString& aEndpointURI) {
+  return GetEndpointForReportIncludeSubdomains(
+      aGroupName, aPrincipal, /* includeSubdomains */ false, aEndpointURI);
+}
+/* static */
+void ReportingHeader::GetEndpointForReportIncludeSubdomains(
+    const nsAString& aGroupName, nsIPrincipal* aPrincipal,
+    bool aIncludeSubdomains, nsACString& aEndpointURI) {
   MOZ_ASSERT(aEndpointURI.IsEmpty());
 
   if (!gReporting) {
     return;
   }
 
-  nsAutoCString origin;
-  nsresult rv = aPrincipal->GetOrigin(origin);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
+  nsCOMPtr<nsIPrincipal> principal = aPrincipal;
+  bool mustHaveIncludeSubdomains = false;
 
-  Client* client = gReporting->mOrigins.Get(origin);
-  if (!client) {
-    return;
-  }
+  do {
+    nsAutoCString origin;
+    nsresult rv = principal->GetOrigin(origin);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
 
-  const auto [begin, end] = client->mGroups.NonObservingRange();
-  const auto foundIt = std::find_if(
-      begin, end,
-      [&aGroupName](const Group& group) { return group.mName == aGroupName; });
-  if (foundIt != end) {
-    GetEndpointForReportInternal(*foundIt, aEndpointURI);
-  }
+    Client* client = gReporting->mOrigins.Get(origin);
+    if (client) {
+      const auto [begin, end] = client->mGroups.NonObservingRange();
+      const auto foundIt = std::find_if(
+          begin, end,
+          [&aGroupName, mustHaveIncludeSubdomains](const Group& group) {
+            return group.mName == aGroupName &&
+                   (!mustHaveIncludeSubdomains || group.mIncludeSubdomains);
+          });
+      if (foundIt != end) {
+        GetEndpointForReportInternal(*foundIt, aEndpointURI);
+        return;
+      }
+    }
+
+    nsCOMPtr<nsIPrincipal> oldPrincipal = std::move(principal);
+    oldPrincipal->GetNextSubDomainPrincipal(getter_AddRefs(principal));
+    mustHaveIncludeSubdomains = true;
+  } while (principal && aIncludeSubdomains);
 
   // XXX More explicitly report an error if not found?
 }

@@ -250,7 +250,12 @@ class nsCocoaUtils {
    */
   static BOOL ShouldRestoreStateDueToLaunchAtLogin();
 
-  static void PrepareForNativeAppModalDialog();
+  /**
+   * Returns true if the application is ready to run an app modal dialog, false
+   * otherwise. This has to be balanced with a call to
+   * CleanUpAfterNativeAppModalDialog once the app modal dialog is closed.
+   */
+  static bool PrepareForNativeAppModalDialog();
   static void CleanUpAfterNativeAppModalDialog();
 
   // 3 utility functions to go from a frame of imgIContainer to CGImage and then

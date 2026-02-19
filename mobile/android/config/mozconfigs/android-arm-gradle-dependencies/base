@@ -18,6 +18,11 @@ ac_add_options --allow-insecure-gradle-repositories
 # Some dependencies may be conditionally-loaded (eg. semanticdb compiler plugins)
 ac_add_options --download-all-gradle-dependencies
 
+# `android-gradle-dependencies` runs with `--dry-run`, so we don't
+# need the _runtime_ `embedded-uniffi-bindgen` or `numbus-fml` dependencies.
+ac_add_options --without-embedded-uniffi-bindgen
+ac_add_options --without-nimbus-fml
+
 # From here on, just like ../android-arm/nightly.
 
 . "$topsrcdir/build/mozconfig.no-compile"

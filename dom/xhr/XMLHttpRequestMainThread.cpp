@@ -285,6 +285,7 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread(
       mLoadTransferred(0),
       mIsSystem(false),
       mIsAnon(false),
+      mAlreadyGotStopRequest(false),
       mResultJSON(JS::UndefinedValue()),
       mArrayBufferBuilder(new ArrayBufferBuilder()),
       mResultArrayBuffer(nullptr),
@@ -2239,9 +2240,17 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
   AUTO_PROFILER_LABEL("XMLHttpRequestMainThread::OnStopRequest", NETWORK);
 
   if (request != mChannel) {
-    // Can this still happen?
+    // This can happen when we have already faked an OnStopRequest earlier
+    // when synchronously canceling a sync XHR.
     return NS_OK;
   }
+
+  if (mAlreadyGotStopRequest) {
+    // This is needed to filter out the real, second call after faking one in
+    // SendInternal.
+    return NS_OK;
+  }
+  mAlreadyGotStopRequest = true;
 
   // Send the decoder the signal that we've hit the end of the stream,
   // but only when decoding text eagerly.
@@ -2623,6 +2632,8 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
                        loadFlags, nullptr, sandboxFlags);
   }
   NS_ENSURE_SUCCESS(rv, rv);
+
+  mAlreadyGotStopRequest = false;
 
   if (mCSPEventListener) {
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
@@ -3245,12 +3256,34 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
       return;
     }
 
+    nsresult channelStatus = NS_OK;
     nsAutoSyncOperation sync(suspendedDoc,
                              SyncOperationBehavior::eSuspendInput);
-    if (!SpinEventLoopUntil("XMLHttpRequestMainThread::SendInternal"_ns,
-                            [&]() { return !mFlagSyncLooping; })) {
+    if (!SpinEventLoopUntil("XMLHttpRequestMainThread::SendInternal"_ns, [&]() {
+          if (mFlagSyncLooping && mChannel) {
+            // The purpose of this check is to enable XHR channel cancelation
+            // upon navigating away from the page that is doing sync XHR
+            // to genuinely make the sync XHR go away within the same task.
+            mChannel->GetStatus(&channelStatus);
+            // Can't change mFlagSyncLooping to false, because other
+            // end-of-request code expects to be able to see it as true
+            // still even if we exit the loop early due to the channel
+            // getting canceled.
+          }
+          return !mFlagSyncLooping || NS_FAILED(channelStatus);
+        })) {
       aRv.Throw(NS_ERROR_UNEXPECTED);
       return;
+    }
+    if (NS_FAILED(channelStatus)) {
+      MOZ_ASSERT(mFlagSyncLooping);
+      // As mentioned above, when navigating away, we want channel cancelation
+      // to make the sync XHR go away within the same task. This also requires
+      // us to set the correct error result and dispatch events. So call
+      // OnStopRequest explicitly instead of the channel calling it after
+      // SendInternal has already completed.
+      // Consecutive OnStopRequests are blocked due to mAlreadyGotStopRequest
+      OnStopRequest(mChannel, channelStatus);
     }
 
     // Time expired... We should throw.

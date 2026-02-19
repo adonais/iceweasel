@@ -1123,6 +1123,7 @@ impl FontContext {
             scale,
             format: glyph_format,
             bytes: final_buffer,
+            is_packed_glyph: false,
         })
     }
 }

@@ -508,6 +508,8 @@ fail-if = [
 
 ["browser_net_throttling_cached.js"]
 
+["browser_net_throttling_disable_unblocks_requests.js"]
+
 ["browser_net_throttling_menu.js"]
 
 ["browser_net_throttling_profiles.js"]

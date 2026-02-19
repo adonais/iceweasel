@@ -36,23 +36,21 @@ from gecko_taskgraph.util.scriptworker import (
 logger = logging.getLogger(__name__)
 
 
-beetmover_description_schema = Schema(
-    {
-        # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
-        Required("label"): str,
-        Required("dependencies"): task_description_schema["dependencies"],
-        # treeherder is allowed here to override any defaults we use for beetmover.  See
-        # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
-        # below transforms for defaults of various values.
-        Optional("treeherder"): task_description_schema["treeherder"],
-        Optional("attributes"): task_description_schema["attributes"],
-        # locale is passed only for l10n beetmoving
-        Optional("locale"): str,
-        Required("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+beetmover_description_schema = Schema({
+    # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
+    Required("label"): str,
+    Required("dependencies"): task_description_schema["dependencies"],
+    # treeherder is allowed here to override any defaults we use for beetmover.  See
+    # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
+    # below transforms for defaults of various values.
+    Optional("treeherder"): task_description_schema["treeherder"],
+    Optional("attributes"): task_description_schema["attributes"],
+    # locale is passed only for l10n beetmoving
+    Optional("locale"): str,
+    Required("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 transforms = TransformSequence()
 
@@ -282,9 +280,9 @@ def strip_unwanted_langpacks_from_worker(config, jobs):
                 job["worker"]["artifact-map"].remove(map)
 
         for artifact in job["worker"].get("upstream-artifacts", []):
-            if not any(
-                [path.endswith("target.langpack.xpi") for path in artifact["paths"]]
-            ):
+            if not any([
+                path.endswith("target.langpack.xpi") for path in artifact["paths"]
+            ]):
                 continue
             if artifact["locale"] == "ja-JP-mac":
                 # This locale should only exist on mac

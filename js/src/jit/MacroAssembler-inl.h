@@ -1032,6 +1032,10 @@ void MacroAssembler::lookupMFBT(Register hashTable, Register hashCode,
                                 Match match) {
   // Inline implementation of |lookup| for mozilla::detail::HashTable
 
+  // If the hashtable is empty, we won't find an entry.
+  branch32(Assembler::Equal, Address(hashTable, Table::offsetOfEntryCount()),
+           Imm32(0), missing);
+
   // Compute the primary hash address:
   // HashNumber h1 = hash1(aKeyHash);
   Register hash1 = scratch5;

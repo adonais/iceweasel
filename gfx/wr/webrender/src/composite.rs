@@ -6,18 +6,22 @@ use api::{BorderRadius, ColorF, ExternalImageId, ImageBufferKind, ImageKey, Imag
 use api::units::*;
 use api::ColorDepth;
 use crate::image_source::resolve_image;
+use crate::picture::ResolvedSurfaceTexture;
+use crate::renderer::GpuBufferBuilderF;
 use euclid::Box2D;
-use crate::gpu_cache::GpuCache;
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
 use crate::internal_types::{FrameAllocator, FrameMemory, FrameVec, TextureSource};
-use crate::picture::{ImageDependency, ResolvedSurfaceTexture, TileCacheInstance, TileId, TileSurface};
+use crate::invalidation::compare::ImageDependency;
+use crate::tile_cache::{TileCacheInstance, TileSurface};
+use crate::tile_cache::TileId;
 use crate::prim_store::DeferredResolve;
 use crate::resource_cache::{ImageRequest, ResourceCache};
+use crate::segment::EdgeAaSegmentMask;
 use crate::util::{extract_inner_rect_safe, Preallocator, ScaleOffset};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::device::Device;
 use crate::space::SpaceMapper;
-use std::{ops, u64, os::raw::c_void};
+use std::{ops, u64, os::raw::c_void, hash};
 use std::num::NonZeroUsize;
 
 /*
@@ -102,7 +106,6 @@ pub enum CompositeTileSurface {
     Color {
         color: ColorF,
     },
-    Clear,
     ExternalSurface {
         external_surface_index: ResolvedExternalSurfaceIndex,
     },
@@ -136,7 +139,6 @@ bitflags! {
 pub enum TileKind {
     Opaque,
     Alpha,
-    Clear,
 }
 
 // Index in to the compositor transforms stored in `CompositeState`
@@ -177,8 +179,6 @@ pub fn tile_kind(surface: &CompositeTileSurface, is_opaque: bool) -> TileKind {
         // Color tiles are, by definition, opaque. We might support non-opaque color
         // tiles if we ever find pages that have a lot of these.
         CompositeTileSurface::Color { .. } => TileKind::Opaque,
-        // Clear tiles have a special bucket
-        CompositeTileSurface::Clear => TileKind::Clear,
         CompositeTileSurface::Texture { .. }
         | CompositeTileSurface::ExternalSurface { .. } => {
             // Texture surfaces get bucketed by opaque/alpha, for z-rejection
@@ -215,6 +215,7 @@ pub struct ExternalSurfaceDescriptor {
     pub local_clip_rect: PictureRect,
     pub clip_rect: DeviceRect,
     pub transform_index: CompositorTransformIndex,
+    pub compositor_clip_index: Option<CompositorClipIndex>,
     pub image_rendering: ImageRendering,
     pub z_id: ZBufferId,
     pub dependency: ExternalSurfaceDependency,
@@ -458,7 +459,6 @@ pub enum TileSurfaceKind {
     Color {
         color: ColorF,
     },
-    Clear,
 }
 
 impl From<&TileSurface> for TileSurfaceKind {
@@ -466,7 +466,6 @@ impl From<&TileSurface> for TileSurfaceKind {
         match surface {
             TileSurface::Texture { .. } => TileSurfaceKind::Texture,
             TileSurface::Color { color } => TileSurfaceKind::Color { color: *color },
-            TileSurface::Clear => TileSurfaceKind::Clear,
         }
     }
 }
@@ -619,9 +618,31 @@ pub struct CompositorTransform {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug)]
 pub struct CompositorClip {
     pub rect: DeviceRect,
     pub radius: BorderRadius,
+}
+
+#[derive(PartialEq, Debug)]
+pub struct CompositeRoundedCorner {
+    pub rect: LayoutRect,
+    pub radius: LayoutSize,
+    pub edge_flags: EdgeAaSegmentMask,
+}
+
+impl Eq for CompositeRoundedCorner {}
+
+impl hash::Hash for CompositeRoundedCorner {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.rect.min.x.to_bits().hash(state);
+        self.rect.min.y.to_bits().hash(state);
+        self.rect.max.x.to_bits().hash(state);
+        self.rect.max.y.to_bits().hash(state);
+        self.radius.width.to_bits().hash(state);
+        self.radius.height.to_bits().hash(state);
+        self.edge_flags.bits().hash(state);
+    }
 }
 
 /// The list of tiles to be drawn this frame
@@ -854,7 +875,7 @@ impl CompositeState {
         is_opaque: bool,
         device_clip_rect: DeviceRect,
         resource_cache: &ResourceCache,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
         deferred_resolves: &mut FrameVec<DeferredResolve>,
         clip_index: Option<CompositorClipIndex>,
     ) {
@@ -905,7 +926,7 @@ impl CompositeState {
                 &image_dependencies,
                 required_plane_count,
                 resource_cache,
-                gpu_cache,
+                gpu_buffer,
                 deferred_resolves,
             );
             if external_surface_index == ResolvedExternalSurfaceIndex::INVALID {
@@ -967,7 +988,7 @@ impl CompositeState {
         tile_cache: &TileCacheInstance,
         device_clip_rect: DeviceRect,
         resource_cache: &ResourceCache,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
         deferred_resolves: &mut FrameVec<DeferredResolve>,
     ) {
         let slice_transform = self.get_compositor_transform(tile_cache.transform_index);
@@ -983,7 +1004,7 @@ impl CompositeState {
                 tile_cache.compositor_clip,
                 backdrop_surface.device_rect,
             );
-    
+
             // Use the backdrop native surface we created and add that to the composite state.
             self.descriptor.surfaces.push(
                 CompositeSurfaceDescriptor {
@@ -1006,7 +1027,7 @@ impl CompositeState {
                 true,
                 device_clip_rect,
                 resource_cache,
-                gpu_cache,
+                gpu_buffer,
                 deferred_resolves,
                 tile_cache.compositor_clip,
             );
@@ -1087,14 +1108,21 @@ impl CompositeState {
             // For each compositor surface that was promoted, build the
             // information required for the compositor to draw it
             for compositor_surface in &sub_slice.compositor_surfaces {
+                let compositor_clip_index = if compositor_surface.descriptor.compositor_clip_index.is_some() {
+                    assert!(tile_cache.compositor_clip.is_none());
+                    compositor_surface.descriptor.compositor_clip_index
+                } else {
+                    tile_cache.compositor_clip
+                };
+
                 self.push_compositor_surface(
                     &compositor_surface.descriptor,
                     compositor_surface.is_opaque,
                     device_clip_rect,
                     resource_cache,
-                    gpu_cache,
+                    gpu_buffer,
                     deferred_resolves,
-                    tile_cache.compositor_clip,
+                    compositor_clip_index,
                 );
             }
         }
@@ -1136,7 +1164,7 @@ impl CompositeState {
         image_dependencies: &[ImageDependency; 3],
         required_plane_count: usize,
         resource_cache: &ResourceCache,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
         deferred_resolves: &mut FrameVec<DeferredResolve>,
     ) -> ResolvedExternalSurfaceIndex {
         let mut planes = [
@@ -1156,7 +1184,7 @@ impl CompositeState {
             let cache_item = resolve_image(
                 request,
                 resource_cache,
-                gpu_cache,
+                gpu_buffer,
                 deferred_resolves,
                 true,
             );
@@ -1615,6 +1643,8 @@ pub struct CompositorInputLayer {
     pub usage: CompositorSurfaceUsage,
     // If true, layer is opaque, blend can be disabled
     pub is_opaque: bool,
+    pub rounded_clip_rect: DeviceIntRect,
+    pub rounded_clip_radii: ClipRadius,
 }
 
 // Provides the parameters about the frame to the compositor implementation.
@@ -1656,6 +1686,8 @@ pub trait LayerCompositor {
         transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
         image_rendering: ImageRendering,
+        rounded_clip_rect: DeviceIntRect,
+        rounded_clip_radii: ClipRadius,
     );
 
     // Finish compositing this frame - commit the visual tree to the OS
@@ -1801,7 +1833,7 @@ impl Occluders {
             occluders: memory.new_vec(),
             scratch: OccludersScratchBuffers {
                 events: memory.new_vec(),
-                active: memory.new_vec(),    
+                active: memory.new_vec(),
             }
         }
     }

@@ -334,19 +334,21 @@ export class WeatherFeed {
         return [];
       }
 
-      if (geolocation.country_code) {
-        otherParams.country = geolocation.country_code;
-      }
-      let region = geolocation.region_code || geolocation.region;
-      if (region) {
-        otherParams.region = region;
-      }
-      let city = geolocation.city || geolocation.region;
-      if (city) {
-        otherParams.city = city;
-      }
-    }
+      const country = geolocation.country_code;
+      // Adding geolocation.city as an option for region to count for city-states (i.e. Singapore)
+      const region =
+        geolocation.region_code || geolocation.region || geolocation.city;
+      const city = geolocation.city || geolocation.region;
 
+      // Merino requires all three parameters (city, region, country) when query is not provided
+      if (!country || !region || !city) {
+        return [];
+      }
+
+      otherParams.country = country;
+      otherParams.region = region;
+      otherParams.city = city;
+    }
     const attempt = async (retry = 0) => {
       try {
         // Because this can happen after a timeout,

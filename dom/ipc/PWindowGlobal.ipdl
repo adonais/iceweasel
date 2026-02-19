@@ -147,6 +147,9 @@ parent:
   /// Send down initial document bit to the parent.
   [LazySend] async SetIsInitialDocument(bool aIsInitialDocument);
 
+  /// Indicate that the initial document is being navigated to.
+  [LazySend] async CommitToInitialDocument();
+
   // Attempts to perform a "Web Share".
   async Share(IPCWebShareData aData) returns (nsresult rv);
 

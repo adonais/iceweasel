@@ -29,24 +29,14 @@ export default {
       mapping: SELECTABLE_ERRORS,
       control: { type: "select" },
     },
-    rerunEncryptionErrorCode: {
-      options: Object.keys(SELECTABLE_ERRORS),
-      mapping: SELECTABLE_ERRORS,
-      control: { type: "select" },
-    },
   },
 };
 
-const Template = ({
-  type,
-  enableEncryptionErrorCode,
-  rerunEncryptionErrorCode,
-}) => html`
+const Template = ({ type, enableEncryptionErrorCode }) => html`
   <moz-card style="width: 23.94rem; position: relative;">
     <enable-backup-encryption
       type=${type}
       .enableEncryptionErrorCode=${enableEncryptionErrorCode}
-      .rerunEncryptionErrorCode=${rerunEncryptionErrorCode}
     ></enable-backup-encryption>
   </moz-card>
 `;
@@ -65,10 +55,4 @@ export const SetPasswordError = Template.bind({});
 SetPasswordError.args = {
   type: "set-password",
   enableEncryptionErrorCode: ERRORS.INVALID_PASSWORD,
-};
-
-export const ChangePasswordError = Template.bind({});
-ChangePasswordError.args = {
-  type: "change-password",
-  rerunEncryptionErrorCode: ERRORS.INVALID_PASSWORD,
 };

@@ -60,7 +60,7 @@ private val ALLOWED_SCHEMES_IN_SUBFRAME: List<String> = listOf(
 class AppLinksInterceptor(
     private val context: Context,
     private val engineSupportedSchemes: Set<String> = ENGINE_SUPPORTED_SCHEMES,
-    private val alwaysDeniedSchemes: Set<String> = ALWAYS_DENY_SCHEMES,
+    private val alwaysDeniedSchemes: AlwaysDeniedSchemes = AlwaysDeniedSchemes(ALWAYS_DENY_SCHEMES),
     private var launchInApp: () -> Boolean = { false },
     private val useCases: AppLinksUseCases = AppLinksUseCases(
         context,
@@ -102,7 +102,7 @@ class AppLinksInterceptor(
             // If scheme not in supported list then follow user preference
             !launchInApp() && !isPossibleAuthentication(tabSessionState) && engineSupportsScheme -> true
             // Never go to an external app when scheme is in blocklist
-            alwaysDeniedSchemes.contains(uriScheme) -> true
+            alwaysDeniedSchemes.shouldDeny(uriScheme) -> true
             else -> false
         }
 

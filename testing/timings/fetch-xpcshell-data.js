@@ -345,6 +345,7 @@ function createDataTables(jobResults) {
     messages: [],
     crashSignatures: [],
     components: [],
+    commitIds: [],
   };
 
   // Maps for O(1) string lookups
@@ -358,12 +359,14 @@ function createDataTables(jobResults) {
     messages: new Map(),
     crashSignatures: new Map(),
     components: new Map(),
+    commitIds: new Map(),
   };
 
   // Task info maps task ID index to repository and job name indexes
   const taskInfo = {
     repositoryIds: [],
     jobNameIds: [],
+    commitIds: [],
   };
 
   // Test info maps test ID index to test path and name indexes
@@ -400,6 +403,9 @@ function createDataTables(jobResults) {
 
     const jobNameId = findStringIndex("jobNames", result.jobName);
     const repositoryId = findStringIndex("repositories", result.repository);
+    const commitId = result.commitId
+      ? findStringIndex("commitIds", result.commitId)
+      : null;
 
     for (const timing of result.timings) {
       const fullPath = timing.path;
@@ -445,6 +451,7 @@ function createDataTables(jobResults) {
       if (taskInfo.repositoryIds[taskIdId] === undefined) {
         taskInfo.repositoryIds[taskIdId] = repositoryId;
         taskInfo.jobNameIds[taskIdId] = jobNameId;
+        taskInfo.commitIds[taskIdId] = commitId;
       }
 
       // Initialize test group if it doesn't exist
@@ -519,6 +526,7 @@ function sortStringTablesByFrequency(dataStructure) {
     messages: new Array(tables.messages.length).fill(0),
     crashSignatures: new Array(tables.crashSignatures.length).fill(0),
     components: new Array(tables.components.length).fill(0),
+    commitIds: new Array(tables.commitIds.length).fill(0),
   };
 
   // Count taskInfo references
@@ -530,6 +538,11 @@ function sortStringTablesByFrequency(dataStructure) {
   for (const repositoryId of taskInfo.repositoryIds) {
     if (repositoryId !== undefined) {
       frequencyCounts.repositories[repositoryId]++;
+    }
+  }
+  for (const commitId of taskInfo.commitIds) {
+    if (commitId !== null) {
+      frequencyCounts.commitIds[commitId]++;
     }
   }
 
@@ -557,10 +570,38 @@ function sortStringTablesByFrequency(dataStructure) {
         return;
       }
 
-      frequencyCounts.statuses[statusId] += statusGroup.taskIdIds.length;
+      // Handle both aggregated format (counts/hours) and detailed format (taskIdIds)
+      if (statusGroup.taskIdIds) {
+        // Check if taskIdIds is array of arrays (aggregated) or flat array (daily)
+        const isArrayOfArrays =
+          !!statusGroup.taskIdIds.length &&
+          Array.isArray(statusGroup.taskIdIds[0]);
 
-      for (const taskIdId of statusGroup.taskIdIds) {
-        frequencyCounts.taskIds[taskIdId]++;
+        if (isArrayOfArrays) {
+          // Aggregated format: array of arrays
+          const totalRuns = statusGroup.taskIdIds.reduce(
+            (sum, arr) => sum + arr.length,
+            0
+          );
+          frequencyCounts.statuses[statusId] += totalRuns;
+
+          for (const taskIdIdsArray of statusGroup.taskIdIds) {
+            for (const taskIdId of taskIdIdsArray) {
+              frequencyCounts.taskIds[taskIdId]++;
+            }
+          }
+        } else {
+          // Daily format: flat array
+          frequencyCounts.statuses[statusId] += statusGroup.taskIdIds.length;
+
+          for (const taskIdId of statusGroup.taskIdIds) {
+            frequencyCounts.taskIds[taskIdId]++;
+          }
+        }
+      } else if (statusGroup.counts) {
+        // Aggregated passing tests - count total runs
+        const totalRuns = statusGroup.counts.reduce((a, b) => a + b, 0);
+        frequencyCounts.statuses[statusId] += totalRuns;
       }
 
       if (statusGroup.messageIds) {
@@ -616,6 +657,7 @@ function sortStringTablesByFrequency(dataStructure) {
   const sortedTaskInfo = {
     repositoryIds: [],
     jobNameIds: [],
+    commitIds: [],
   };
 
   for (
@@ -630,6 +672,10 @@ function sortStringTablesByFrequency(dataStructure) {
     sortedTaskInfo.jobNameIds[newTaskIdId] = indexMaps.jobNames.get(
       taskInfo.jobNameIds[oldTaskIdId]
     );
+    sortedTaskInfo.commitIds[newTaskIdId] =
+      taskInfo.commitIds[oldTaskIdId] === null
+        ? null
+        : indexMaps.commitIds.get(taskInfo.commitIds[oldTaskIdId]);
   }
 
   // Remap testInfo indices
@@ -656,13 +702,36 @@ function sortStringTablesByFrequency(dataStructure) {
         return statusGroup;
       }
 
-      const remapped = {
-        taskIdIds: statusGroup.taskIdIds.map(oldId =>
+      // Handle aggregated format (counts/hours) differently from detailed format
+      if (statusGroup.counts) {
+        // Aggregated passing tests - no remapping needed
+        return {
+          counts: statusGroup.counts,
+          hours: statusGroup.hours,
+        };
+      }
+
+      // Check if this is aggregated format (array of arrays) or daily format (flat array)
+      const isArrayOfArrays =
+        !!statusGroup.taskIdIds.length &&
+        Array.isArray(statusGroup.taskIdIds[0]);
+
+      const remapped = {};
+
+      if (isArrayOfArrays) {
+        // Aggregated format: array of arrays with hours
+        remapped.taskIdIds = statusGroup.taskIdIds.map(taskIdIdsArray =>
+          taskIdIdsArray.map(oldId => indexMaps.taskIds.get(oldId))
+        );
+        remapped.hours = statusGroup.hours;
+      } else {
+        // Daily format: flat array with durations and timestamps
+        remapped.taskIdIds = statusGroup.taskIdIds.map(oldId =>
           indexMaps.taskIds.get(oldId)
-        ),
-        durations: statusGroup.durations,
-        timestamps: statusGroup.timestamps,
-      };
+        );
+        remapped.durations = statusGroup.durations;
+        remapped.timestamps = statusGroup.timestamps;
+      }
 
       // Remap message IDs for status groups that have messages
       if (statusGroup.messageIds) {
@@ -1198,6 +1267,457 @@ async function processDateData(targetDate, forceRefetch = false) {
   }
 }
 
+// eslint-disable-next-line complexity
+async function createAggregatedFailuresFile(dates) {
+  console.log(
+    `\n=== Creating aggregated failures file from ${dates.length} days ===`
+  );
+
+  const dailyFiles = [];
+  for (const date of dates) {
+    const filePath = path.join(OUTPUT_DIR, `xpcshell-${date}.json`);
+    if (fs.existsSync(filePath)) {
+      dailyFiles.push({ date, filePath });
+    }
+  }
+
+  if (dailyFiles.length === 0) {
+    console.log("No daily files found to aggregate");
+    return;
+  }
+
+  console.log(`Found ${dailyFiles.length} daily files to aggregate`);
+
+  const startDate = dates[dates.length - 1];
+  const endDate = dates[0];
+  const startTime = Math.floor(
+    new Date(startDate + "T00:00:00.000Z").getTime() / 1000
+  );
+
+  const mergedTables = {
+    jobNames: [],
+    testPaths: [],
+    testNames: [],
+    repositories: [],
+    statuses: [],
+    taskIds: [],
+    messages: [],
+    crashSignatures: [],
+    components: [],
+    commitIds: [],
+  };
+
+  const stringMaps = {
+    jobNames: new Map(),
+    testPaths: new Map(),
+    testNames: new Map(),
+    repositories: new Map(),
+    statuses: new Map(),
+    taskIds: new Map(),
+    messages: new Map(),
+    crashSignatures: new Map(),
+    components: new Map(),
+    commitIds: new Map(),
+  };
+
+  function addToMergedTable(tableName, value) {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    const map = stringMaps[tableName];
+    let index = map.get(value);
+    if (index === undefined) {
+      index = mergedTables[tableName].length;
+      mergedTables[tableName].push(value);
+      map.set(value, index);
+    }
+    return index;
+  }
+
+  const mergedTaskInfo = {
+    repositoryIds: [],
+    jobNameIds: [],
+    commitIds: [],
+  };
+
+  const mergedTestInfo = {
+    testPathIds: [],
+    testNameIds: [],
+    componentIds: [],
+  };
+
+  const testPathMap = new Map();
+  const mergedTestRuns = [];
+
+  for (let fileIdx = 0; fileIdx < dailyFiles.length; fileIdx++) {
+    const { date, filePath } = dailyFiles[fileIdx];
+    console.log(`Processing ${fileIdx + 1}/${dailyFiles.length}: ${date}...`);
+
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+
+    const dayStartTime = data.metadata.startTime;
+    const timeOffset = dayStartTime - startTime;
+
+    for (let testId = 0; testId < data.testRuns.length; testId++) {
+      const testGroup = data.testRuns[testId];
+      if (!testGroup) {
+        continue;
+      }
+
+      const testPathId = data.testInfo.testPathIds[testId];
+      const testNameId = data.testInfo.testNameIds[testId];
+      const componentId = data.testInfo.componentIds[testId];
+
+      const testPath = data.tables.testPaths[testPathId];
+      const testName = data.tables.testNames[testNameId];
+      const fullPath = testPath ? `${testPath}/${testName}` : testName;
+
+      let mergedTestId = testPathMap.get(fullPath);
+      if (mergedTestId === undefined) {
+        mergedTestId = mergedTestInfo.testPathIds.length;
+
+        const mergedTestPathId = addToMergedTable("testPaths", testPath);
+        const mergedTestNameId = addToMergedTable("testNames", testName);
+        const component =
+          componentId !== null ? data.tables.components[componentId] : null;
+        const mergedComponentId = addToMergedTable("components", component);
+
+        mergedTestInfo.testPathIds.push(mergedTestPathId);
+        mergedTestInfo.testNameIds.push(mergedTestNameId);
+        mergedTestInfo.componentIds.push(mergedComponentId);
+
+        testPathMap.set(fullPath, mergedTestId);
+        mergedTestRuns[mergedTestId] = [];
+      }
+
+      for (let statusId = 0; statusId < testGroup.length; statusId++) {
+        const statusGroup = testGroup[statusId];
+        if (!statusGroup) {
+          continue;
+        }
+
+        const status = data.tables.statuses[statusId];
+        const mergedStatusId = addToMergedTable("statuses", status);
+
+        if (!mergedTestRuns[mergedTestId][mergedStatusId]) {
+          mergedTestRuns[mergedTestId][mergedStatusId] = [];
+        }
+
+        const mergedStatusGroup = mergedTestRuns[mergedTestId][mergedStatusId];
+        const isPass = status.startsWith("PASS");
+
+        let absoluteTimestamp = 0;
+        for (let i = 0; i < statusGroup.taskIdIds.length; i++) {
+          absoluteTimestamp += statusGroup.timestamps[i];
+
+          // Skip platform-irrelevant tests (SKIP with run-if messages)
+          if (
+            status === "SKIP" &&
+            data.tables.messages[statusGroup.messageIds?.[i]]?.startsWith(
+              "run-if"
+            )
+          ) {
+            continue;
+          }
+
+          const taskIdId = statusGroup.taskIdIds[i];
+          const taskIdString = data.tables.taskIds[taskIdId];
+          const repositoryId = data.taskInfo.repositoryIds[taskIdId];
+          const jobNameId = data.taskInfo.jobNameIds[taskIdId];
+          const commitId = data.taskInfo.commitIds[taskIdId];
+
+          const repository = data.tables.repositories[repositoryId];
+          const jobName = data.tables.jobNames[jobNameId];
+          const commitIdString =
+            commitId !== null ? data.tables.commitIds[commitId] : null;
+
+          const mergedRepositoryId = addToMergedTable(
+            "repositories",
+            repository
+          );
+          const mergedJobNameId = addToMergedTable("jobNames", jobName);
+          const mergedCommitId = addToMergedTable("commitIds", commitIdString);
+
+          const run = {
+            repositoryId: mergedRepositoryId,
+            jobNameId: mergedJobNameId,
+            timestamp: absoluteTimestamp + timeOffset,
+            duration: statusGroup.durations[i],
+          };
+
+          mergedStatusGroup.push(run);
+
+          if (isPass) {
+            continue;
+          }
+
+          const mergedTaskIdId = addToMergedTable("taskIds", taskIdString);
+
+          if (mergedTaskInfo.repositoryIds[mergedTaskIdId] === undefined) {
+            mergedTaskInfo.repositoryIds[mergedTaskIdId] = mergedRepositoryId;
+            mergedTaskInfo.jobNameIds[mergedTaskIdId] = mergedJobNameId;
+            mergedTaskInfo.commitIds[mergedTaskIdId] = mergedCommitId;
+          }
+
+          run.taskIdId = mergedTaskIdId;
+
+          if (statusGroup.messageIds && statusGroup.messageIds[i] !== null) {
+            const message = data.tables.messages[statusGroup.messageIds[i]];
+            run.messageId = addToMergedTable("messages", message);
+          } else if (statusGroup.messageIds) {
+            run.messageId = null;
+          }
+
+          if (
+            statusGroup.crashSignatureIds &&
+            statusGroup.crashSignatureIds[i] !== null
+          ) {
+            const crashSig =
+              data.tables.crashSignatures[statusGroup.crashSignatureIds[i]];
+            run.crashSignatureId = addToMergedTable(
+              "crashSignatures",
+              crashSig
+            );
+          } else if (statusGroup.crashSignatureIds) {
+            run.crashSignatureId = null;
+          }
+
+          if (statusGroup.minidumps) {
+            run.minidump = statusGroup.minidumps[i];
+          }
+        }
+      }
+    }
+  }
+
+  function aggregateRunsByHour(
+    statusGroup,
+    includeMessages = false,
+    returnTaskIds = false
+  ) {
+    const buckets = new Map();
+    for (const run of statusGroup) {
+      const hourBucket = Math.floor(run.timestamp / 3600);
+      let key = hourBucket;
+
+      if (includeMessages && "messageId" in run) {
+        key = `${hourBucket}:m${run.messageId}`;
+      } else if (includeMessages && "crashSignatureId" in run) {
+        key = `${hourBucket}:c${run.crashSignatureId}`;
+      }
+
+      if (!buckets.has(key)) {
+        buckets.set(key, {
+          hour: hourBucket,
+          count: 0,
+          taskIdIds: [],
+          minidumps: [],
+          messageId: run.messageId,
+          crashSignatureId: run.crashSignatureId,
+        });
+      }
+      const bucket = buckets.get(key);
+      bucket.count++;
+      if (returnTaskIds && run.taskIdId !== undefined) {
+        bucket.taskIdIds.push(run.taskIdId);
+      }
+      if (returnTaskIds && "minidump" in run) {
+        bucket.minidumps.push(run.minidump ?? null);
+      }
+    }
+
+    const aggregated = Array.from(buckets.values()).sort((a, b) => {
+      if (a.hour !== b.hour) {
+        return a.hour - b.hour;
+      }
+      if (a.messageId !== b.messageId) {
+        if (a.messageId === null || a.messageId === undefined) {
+          return 1;
+        }
+        if (b.messageId === null || b.messageId === undefined) {
+          return -1;
+        }
+        return a.messageId - b.messageId;
+      }
+      if (a.crashSignatureId !== b.crashSignatureId) {
+        if (a.crashSignatureId === null || a.crashSignatureId === undefined) {
+          return 1;
+        }
+        if (b.crashSignatureId === null || b.crashSignatureId === undefined) {
+          return -1;
+        }
+        return a.crashSignatureId - b.crashSignatureId;
+      }
+      return 0;
+    });
+
+    const hours = [];
+    let previousBucket = 0;
+    for (const item of aggregated) {
+      hours.push(item.hour - previousBucket);
+      previousBucket = item.hour;
+    }
+
+    const result = {
+      hours,
+    };
+
+    if (returnTaskIds) {
+      result.taskIdIds = aggregated.map(a => a.taskIdIds);
+    } else {
+      result.counts = aggregated.map(a => a.count);
+    }
+
+    if (includeMessages) {
+      if (aggregated.some(a => "messageId" in a && a.messageId !== undefined)) {
+        result.messageIds = aggregated.map(a => a.messageId ?? null);
+      }
+      if (
+        aggregated.some(
+          a => "crashSignatureId" in a && a.crashSignatureId !== undefined
+        )
+      ) {
+        result.crashSignatureIds = aggregated.map(
+          a => a.crashSignatureId ?? null
+        );
+      }
+      if (returnTaskIds && aggregated.some(a => a.minidumps?.length)) {
+        result.minidumps = aggregated.map(a => a.minidumps);
+      }
+    }
+
+    return result;
+  }
+
+  console.log("Aggregating passing test runs by hour...");
+
+  const finalTestRuns = [];
+
+  for (let testId = 0; testId < mergedTestRuns.length; testId++) {
+    const testGroup = mergedTestRuns[testId];
+    if (!testGroup) {
+      continue;
+    }
+
+    finalTestRuns[testId] = [];
+
+    for (let statusId = 0; statusId < testGroup.length; statusId++) {
+      const statusGroup = testGroup[statusId];
+      if (!statusGroup || statusGroup.length === 0) {
+        continue;
+      }
+
+      const status = mergedTables.statuses[statusId];
+      const isPass = status.startsWith("PASS");
+
+      if (isPass) {
+        finalTestRuns[testId][statusId] = aggregateRunsByHour(statusGroup);
+      } else {
+        finalTestRuns[testId][statusId] = aggregateRunsByHour(
+          statusGroup,
+          true,
+          true
+        );
+      }
+    }
+  }
+
+  const testsWithFailures = finalTestRuns.filter(testGroup =>
+    testGroup?.some(
+      (sg, idx) => sg && !mergedTables.statuses[idx].startsWith("PASS")
+    )
+  ).length;
+
+  console.log("Sorting string tables by frequency...");
+
+  // Sort string tables by frequency for better compression
+  const dataStructure = {
+    tables: mergedTables,
+    taskInfo: mergedTaskInfo,
+    testInfo: mergedTestInfo,
+    testRuns: finalTestRuns,
+  };
+
+  const sortedData = sortStringTablesByFrequency(dataStructure);
+
+  const outputData = {
+    metadata: {
+      startDate,
+      endDate,
+      days: dates.length,
+      startTime,
+      generatedAt: new Date().toISOString(),
+      totalTestCount: mergedTestInfo.testPathIds.length,
+      testsWithFailures,
+      aggregatedFrom: dailyFiles.map(f => path.basename(f.filePath)),
+    },
+    tables: sortedData.tables,
+    taskInfo: sortedData.taskInfo,
+    testInfo: sortedData.testInfo,
+    testRuns: sortedData.testRuns,
+  };
+
+  const outputFileWithDetails = path.join(
+    OUTPUT_DIR,
+    "xpcshell-issues-with-taskids.json"
+  );
+  saveJsonFile(outputData, outputFileWithDetails);
+
+  // Create small file with all statuses aggregated
+  console.log("Creating small aggregated version...");
+
+  const smallTestRuns = sortedData.testRuns.map(testGroup => {
+    if (!testGroup) {
+      return testGroup;
+    }
+    return testGroup.map(statusGroup => {
+      if (!statusGroup) {
+        return statusGroup;
+      }
+      if (statusGroup.counts) {
+        return statusGroup;
+      }
+
+      const result = {
+        counts: statusGroup.taskIdIds.map(arr => arr.length),
+        hours: statusGroup.hours,
+      };
+
+      if (statusGroup.messageIds) {
+        result.messageIds = statusGroup.messageIds;
+      }
+
+      if (statusGroup.crashSignatureIds) {
+        result.crashSignatureIds = statusGroup.crashSignatureIds;
+      }
+
+      return result;
+    });
+  });
+
+  const smallOutput = {
+    metadata: outputData.metadata,
+    tables: {
+      testPaths: sortedData.tables.testPaths,
+      testNames: sortedData.tables.testNames,
+      statuses: sortedData.tables.statuses,
+      messages: sortedData.tables.messages,
+      crashSignatures: sortedData.tables.crashSignatures,
+      components: sortedData.tables.components,
+    },
+    testInfo: sortedData.testInfo,
+    testRuns: smallTestRuns,
+  };
+
+  const outputFileSmall = path.join(OUTPUT_DIR, "xpcshell-issues.json");
+  saveJsonFile(smallOutput, outputFileSmall);
+
+  console.log(
+    `Successfully created aggregated files with ${outputData.metadata.totalTestCount} tests`
+  );
+  console.log(`  Tests with failures: ${testsWithFailures}`);
+}
+
 async function main() {
   const forceRefetch = process.argv.includes("--force");
 
@@ -1272,6 +1792,11 @@ async function main() {
   for (const date of dates) {
     console.log(`\n=== Processing ${date} ===`);
     await processDateData(date, forceRefetch);
+  }
+
+  // Create aggregated failures file if processing multiple days
+  if (numDays > 1) {
+    await createAggregatedFailuresFile(dates);
   }
 
   // Create index file with available dates

@@ -174,15 +174,13 @@ def download_coverage_mapping(base_revision):
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
 
-        subprocess.check_call(
-            [
-                "tar",
-                "-xJf",
-                CHUNK_MAPPING_ARCHIVE,
-                "-C",
-                os.path.dirname(CHUNK_MAPPING_FILE),
-            ]
-        )
+        subprocess.check_call([
+            "tar",
+            "-xJf",
+            CHUNK_MAPPING_ARCHIVE,
+            "-C",
+            os.path.dirname(CHUNK_MAPPING_FILE),
+        ])
         os.remove(CHUNK_MAPPING_ARCHIVE)
         assert os.path.isfile(CHUNK_MAPPING_FILE)
         with open(CHUNK_MAPPING_TAG_FILE, "w") as f:
@@ -354,10 +352,10 @@ def filter_tasks_by_chunks(tasks, chunks):
             ):
                 continue
 
-            assert (
-                selected_task is None
-            ), "Only one task should be selected for a given platform-chunk couple ({} - {}), {} and {} were selected".format(  # noqa
-                platform, chunk, selected_task, task
+            assert selected_task is None, (
+                "Only one task should be selected for a given platform-chunk couple ({} - {}), {} and {} were selected".format(  # noqa
+                    platform, chunk, selected_task, task
+                )
             )
             selected_task = task
 

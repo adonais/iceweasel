@@ -242,6 +242,9 @@ bool GLBlitHelper::BlitDescriptor(const layers::SurfaceDescriptorD3D10& desc,
     case gfx::SurfaceFormat::B8G8R8X8:
     case gfx::SurfaceFormat::R8G8B8A8:
     case gfx::SurfaceFormat::R8G8B8X8:
+    case gfx::SurfaceFormat::R10G10B10A2_UINT32:
+    case gfx::SurfaceFormat::R10G10B10X2_UINT32:
+    case gfx::SurfaceFormat::R16G16B16A16F:
       yuv = false;
       break;
     case gfx::SurfaceFormat::NV12:

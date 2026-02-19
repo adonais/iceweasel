@@ -62,7 +62,7 @@ def parse_args():
         required=True,
         action="store",
         dest="tests_common",
-        help='Name of the "common" archive, a package to be used by all ' "harnesses.",
+        help='Name of the "common" archive, a package to be used by all harnesses.',
     )
     parser.add_argument(
         "--jsshell",

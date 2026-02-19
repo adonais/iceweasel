@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.settings.biometric.ui
 
-import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,9 +22,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.utils.getResolvedAttrResId
@@ -33,13 +32,10 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.isLargeWindow
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 private const val FILL_WIDTH_LARGE_WINDOW = 0.5f
 private const val FILL_WIDTH_DEFAULT = 1.0f
-private const val PHONE_WIDTH = 400
-private const val PHONE_HEIGHT = 640
-private const val TABLET_WIDTH = 700
-private const val TABLET_HEIGHT = 1280
 
 /**
  * A screen allowing users to unlock their logins.
@@ -141,20 +137,11 @@ private fun Footer(onUnlockClicked: () -> Unit, onLeaveClicked: () -> Unit) {
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun UnlockLoginsScreenPreview() = UnlockLoginsScreenContent(Theme.getTheme())
-
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, widthDp = PHONE_WIDTH, heightDp = PHONE_HEIGHT)
-@Composable
-private fun UnlockLoginsScreenPreviewPrivatePhone() = UnlockLoginsScreenContent(Theme.Private)
-
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, widthDp = TABLET_WIDTH, heightDp = TABLET_HEIGHT)
-@Composable
-private fun UnlockLoginsScreenPreviewPrivateTablet() = UnlockLoginsScreenContent(Theme.Private)
-
-@Composable
-private fun UnlockLoginsScreenContent(theme: Theme) {
+private fun UnlockLoginsScreenContent(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     FirefoxTheme(theme) {
         UnlockScreen(
             title = "Unlock to view your secure feature",

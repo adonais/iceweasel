@@ -124,6 +124,8 @@ export class FfiConverterOptionalString extends FfiConverterArrayBuffer {
 }
 
 
+
+
 /**
  * RemoteTabRecord
  */
@@ -134,13 +136,21 @@ export class RemoteTabRecord {
             urlHistory, 
             icon, 
             lastUsed, 
-            inactive= false
+            inactive= false, 
+            pinned= false, 
+            index= 0, 
+            windowId= "", 
+            tabGroupId= ""
         } = {
             title: undefined, 
             urlHistory: undefined, 
             icon: undefined, 
             lastUsed: undefined, 
-            inactive: undefined
+            inactive: undefined, 
+            pinned: undefined, 
+            index: undefined, 
+            windowId: undefined, 
+            tabGroupId: undefined
         }
     ) {
         try {
@@ -183,6 +193,38 @@ export class RemoteTabRecord {
             }
             throw e;
         }
+        try {
+            FfiConverterBoolean.checkType(pinned)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("pinned");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterUInt32.checkType(index)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("index");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(windowId)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("windowId");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(tabGroupId)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("tabGroupId");
+            }
+            throw e;
+        }
         /**
          * title
          */
@@ -196,13 +238,29 @@ export class RemoteTabRecord {
          */
         this.icon = icon;
         /**
-         * Number of ms since the unix epoch (as reported by the client's clock)
+         * lastUsed
          */
         this.lastUsed = lastUsed;
         /**
          * inactive
          */
         this.inactive = inactive;
+        /**
+         * pinned
+         */
+        this.pinned = pinned;
+        /**
+         * The index within the window_id.
+         */
+        this.index = index;
+        /**
+         * windowId
+         */
+        this.windowId = windowId;
+        /**
+         * tabGroupId
+         */
+        this.tabGroupId = tabGroupId;
     }
 
     equals(other) {
@@ -212,6 +270,10 @@ export class RemoteTabRecord {
             && this.icon == other.icon
             && this.lastUsed == other.lastUsed
             && this.inactive == other.inactive
+            && this.pinned == other.pinned
+            && this.index == other.index
+            && this.windowId == other.windowId
+            && this.tabGroupId == other.tabGroupId
         )
     }
 }
@@ -225,6 +287,10 @@ export class FfiConverterTypeRemoteTabRecord extends FfiConverterArrayBuffer {
             icon: FfiConverterOptionalString.read(dataStream),
             lastUsed: FfiConverterInt64.read(dataStream),
             inactive: FfiConverterBoolean.read(dataStream),
+            pinned: FfiConverterBoolean.read(dataStream),
+            index: FfiConverterUInt32.read(dataStream),
+            windowId: FfiConverterString.read(dataStream),
+            tabGroupId: FfiConverterString.read(dataStream),
         });
     }
     static write(dataStream, value) {
@@ -233,6 +299,10 @@ export class FfiConverterTypeRemoteTabRecord extends FfiConverterArrayBuffer {
         FfiConverterOptionalString.write(dataStream, value.icon);
         FfiConverterInt64.write(dataStream, value.lastUsed);
         FfiConverterBoolean.write(dataStream, value.inactive);
+        FfiConverterBoolean.write(dataStream, value.pinned);
+        FfiConverterUInt32.write(dataStream, value.index);
+        FfiConverterString.write(dataStream, value.windowId);
+        FfiConverterString.write(dataStream, value.tabGroupId);
     }
 
     static computeSize(value) {
@@ -242,6 +312,10 @@ export class FfiConverterTypeRemoteTabRecord extends FfiConverterArrayBuffer {
         totalSize += FfiConverterOptionalString.computeSize(value.icon);
         totalSize += FfiConverterInt64.computeSize(value.lastUsed);
         totalSize += FfiConverterBoolean.computeSize(value.inactive);
+        totalSize += FfiConverterBoolean.computeSize(value.pinned);
+        totalSize += FfiConverterUInt32.computeSize(value.index);
+        totalSize += FfiConverterString.computeSize(value.windowId);
+        totalSize += FfiConverterString.computeSize(value.tabGroupId);
         return totalSize
     }
 
@@ -287,6 +361,38 @@ export class FfiConverterTypeRemoteTabRecord extends FfiConverterArrayBuffer {
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".inactive");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterBoolean.checkType(value.pinned);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".pinned");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterUInt32.checkType(value.index);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".index");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.windowId);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".windowId");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.tabGroupId);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".tabGroupId");
             }
             throw e;
         }
@@ -336,6 +442,472 @@ export class FfiConverterSequenceTypeRemoteTabRecord extends FfiConverterArrayBu
     }
 }
 /**
+ * A tab-group, representing a session store `TabGroupStateData`.
+ */
+export class TabGroup {
+    constructor(
+        {
+            id, 
+            name, 
+            color, 
+            collapsed
+        } = {
+            id: undefined, 
+            name: undefined, 
+            color: undefined, 
+            collapsed: undefined
+        }
+    ) {
+        try {
+            FfiConverterString.checkType(id)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("id");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(name)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("name");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(color)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("color");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterBoolean.checkType(collapsed)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("collapsed");
+            }
+            throw e;
+        }
+        /**
+         * id
+         */
+        this.id = id;
+        /**
+         * name
+         */
+        this.name = name;
+        /**
+         * color
+         */
+        this.color = color;
+        /**
+         * collapsed
+         */
+        this.collapsed = collapsed;
+    }
+
+    equals(other) {
+        return (
+            this.id == other.id
+            && this.name == other.name
+            && this.color == other.color
+            && this.collapsed == other.collapsed
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeTabGroup extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new TabGroup({
+            id: FfiConverterString.read(dataStream),
+            name: FfiConverterString.read(dataStream),
+            color: FfiConverterString.read(dataStream),
+            collapsed: FfiConverterBoolean.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterString.write(dataStream, value.id);
+        FfiConverterString.write(dataStream, value.name);
+        FfiConverterString.write(dataStream, value.color);
+        FfiConverterBoolean.write(dataStream, value.collapsed);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterString.computeSize(value.id);
+        totalSize += FfiConverterString.computeSize(value.name);
+        totalSize += FfiConverterString.computeSize(value.color);
+        totalSize += FfiConverterBoolean.computeSize(value.collapsed);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof TabGroup)) {
+            throw new UniFFITypeError(`Expected 'TabGroup', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterString.checkType(value.id);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".id");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.name);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".name");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.color);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".color");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterBoolean.checkType(value.collapsed);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".collapsed");
+            }
+            throw e;
+        }
+    }
+}
+// Export the FFIConverter object to make external types work.
+export class FfiConverterMapStringTypeTabGroup extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        const len = dataStream.readInt32();
+        const map = new Map();
+        for (let i = 0; i < len; i++) {
+            const key = FfiConverterString.read(dataStream);
+            const value = FfiConverterTypeTabGroup.read(dataStream);
+            map.set(key, value);
+        }
+
+        return map;
+    }
+
+     static write(dataStream, map) {
+        dataStream.writeInt32(map.size);
+        for (const [key, value] of map) {
+            FfiConverterString.write(dataStream, key);
+            FfiConverterTypeTabGroup.write(dataStream, value);
+        }
+    }
+
+    static computeSize(map) {
+        // The size of the length
+        let size = 4;
+        for (const [key, value] of map) {
+            size += FfiConverterString.computeSize(key);
+            size += FfiConverterTypeTabGroup.computeSize(value);
+        }
+        return size;
+    }
+
+    static checkType(map) {
+        for (const [key, value] of map) {
+            try {
+                FfiConverterString.checkType(key);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("(key)");
+                }
+                throw e;
+            }
+
+            try {
+                FfiConverterTypeTabGroup.checkType(value);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart(`[${key}]`);
+                }
+                throw e;
+            }
+        }
+    }
+}
+export class FfiConverterTypeTimestamp extends FfiConverter {
+    static lift(value) {
+        return FfiConverterInt64.lift(value);
+    }
+
+    static lower(value) {
+        return FfiConverterInt64.lower(value);
+    }
+
+    static write(dataStream, value) {
+        FfiConverterInt64.write(dataStream, value);
+    }
+
+    static read(dataStream) {
+        const builtinVal = FfiConverterInt64.read(dataStream);
+        return builtinVal;
+    }
+
+    static computeSize(value) {
+        return FfiConverterInt64.computeSize(value);
+    }
+
+    static checkType(value) {
+        if (value === null || value === undefined) {
+            throw new TypeError("value is null or undefined");
+        }
+    }
+}
+
+/**
+ * WindowType
+ */
+export const WindowType = {
+    /**
+     * NORMAL
+     */
+    NORMAL: 0,
+};
+Object.freeze(WindowType);
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeWindowType extends FfiConverterArrayBuffer {
+    static #validValues = Object.values(WindowType)
+
+    static read(dataStream) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        switch (dataStream.readInt32()) {
+            case 1:
+                return WindowType.NORMAL
+            default:
+                throw new UniFFITypeError("Unknown WindowType variant");
+        }
+    }
+
+    static write(dataStream, value) {
+        // Use sequential indices (1-based) for the wire format to match the Rust scaffolding
+        if (value === WindowType.NORMAL) {
+            dataStream.writeInt32(1);
+            return;
+        }
+        throw new UniFFITypeError("Unknown WindowType variant");
+    }
+
+    static computeSize(value) {
+        return 4;
+    }
+
+    static checkType(value) {
+      // Check that the value is a valid enum variant
+      if (!this.#validValues.includes(value)) {
+          throw new UniFFITypeError(`${value} is not a valid value for WindowType`);
+      }
+    }
+}
+/**
+ * Window
+ */
+export class Window {
+    constructor(
+        {
+            id, 
+            lastUsed, 
+            index, 
+            windowType
+        } = {
+            id: undefined, 
+            lastUsed: undefined, 
+            index: undefined, 
+            windowType: undefined
+        }
+    ) {
+        try {
+            FfiConverterString.checkType(id)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("id");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeTimestamp.checkType(lastUsed)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("lastUsed");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterUInt32.checkType(index)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("index");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeWindowType.checkType(windowType)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("windowType");
+            }
+            throw e;
+        }
+        /**
+         * id
+         */
+        this.id = id;
+        /**
+         * lastUsed
+         */
+        this.lastUsed = lastUsed;
+        /**
+         * index
+         */
+        this.index = index;
+        /**
+         * windowType
+         */
+        this.windowType = windowType;
+    }
+
+    equals(other) {
+        return (
+            this.id == other.id
+            && this.lastUsed == other.lastUsed
+            && this.index == other.index
+            && this.windowType == other.windowType
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeWindow extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new Window({
+            id: FfiConverterString.read(dataStream),
+            lastUsed: FfiConverterTypeTimestamp.read(dataStream),
+            index: FfiConverterUInt32.read(dataStream),
+            windowType: FfiConverterTypeWindowType.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterString.write(dataStream, value.id);
+        FfiConverterTypeTimestamp.write(dataStream, value.lastUsed);
+        FfiConverterUInt32.write(dataStream, value.index);
+        FfiConverterTypeWindowType.write(dataStream, value.windowType);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterString.computeSize(value.id);
+        totalSize += FfiConverterTypeTimestamp.computeSize(value.lastUsed);
+        totalSize += FfiConverterUInt32.computeSize(value.index);
+        totalSize += FfiConverterTypeWindowType.computeSize(value.windowType);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof Window)) {
+            throw new UniFFITypeError(`Expected 'Window', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterString.checkType(value.id);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".id");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeTimestamp.checkType(value.lastUsed);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".lastUsed");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterUInt32.checkType(value.index);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".index");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterTypeWindowType.checkType(value.windowType);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".windowType");
+            }
+            throw e;
+        }
+    }
+}
+// Export the FFIConverter object to make external types work.
+export class FfiConverterMapStringTypeWindow extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        const len = dataStream.readInt32();
+        const map = new Map();
+        for (let i = 0; i < len; i++) {
+            const key = FfiConverterString.read(dataStream);
+            const value = FfiConverterTypeWindow.read(dataStream);
+            map.set(key, value);
+        }
+
+        return map;
+    }
+
+     static write(dataStream, map) {
+        dataStream.writeInt32(map.size);
+        for (const [key, value] of map) {
+            FfiConverterString.write(dataStream, key);
+            FfiConverterTypeWindow.write(dataStream, value);
+        }
+    }
+
+    static computeSize(map) {
+        // The size of the length
+        let size = 4;
+        for (const [key, value] of map) {
+            size += FfiConverterString.computeSize(key);
+            size += FfiConverterTypeWindow.computeSize(value);
+        }
+        return size;
+    }
+
+    static checkType(map) {
+        for (const [key, value] of map) {
+            try {
+                FfiConverterString.checkType(key);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("(key)");
+                }
+                throw e;
+            }
+
+            try {
+                FfiConverterTypeWindow.checkType(value);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart(`[${key}]`);
+                }
+                throw e;
+            }
+        }
+    }
+}
+/**
  * ClientRemoteTabs
  */
 export class ClientRemoteTabs {
@@ -345,13 +917,17 @@ export class ClientRemoteTabs {
             clientName, 
             deviceType, 
             lastModified, 
-            remoteTabs
+            remoteTabs, 
+            tabGroups, 
+            windows
         } = {
             clientId: undefined, 
             clientName: undefined, 
             deviceType: undefined, 
             lastModified: undefined, 
-            remoteTabs: undefined
+            remoteTabs: undefined, 
+            tabGroups: undefined, 
+            windows: undefined
         }
     ) {
         try {
@@ -394,8 +970,24 @@ export class ClientRemoteTabs {
             }
             throw e;
         }
+        try {
+            FfiConverterMapStringTypeTabGroup.checkType(tabGroups)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("tabGroups");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterMapStringTypeWindow.checkType(windows)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("windows");
+            }
+            throw e;
+        }
         /**
-         * clientId
+         * misnamed: this is the fxa_device_id of the client (which may or may not be the same as the corresponding ID in the `clients` collection)
          */
         this.clientId = clientId;
         /**
@@ -414,6 +1006,14 @@ export class ClientRemoteTabs {
          * remoteTabs
          */
         this.remoteTabs = remoteTabs;
+        /**
+         * tabGroups
+         */
+        this.tabGroups = tabGroups;
+        /**
+         * windows
+         */
+        this.windows = windows;
     }
 
     equals(other) {
@@ -423,6 +1023,8 @@ export class ClientRemoteTabs {
             && this.deviceType == other.deviceType
             && this.lastModified == other.lastModified
             && this.remoteTabs == other.remoteTabs
+            && this.tabGroups == other.tabGroups
+            && this.windows == other.windows
         )
     }
 }
@@ -436,6 +1038,8 @@ export class FfiConverterTypeClientRemoteTabs extends FfiConverterArrayBuffer {
             deviceType: FfiConverterTypeDeviceType.read(dataStream),
             lastModified: FfiConverterInt64.read(dataStream),
             remoteTabs: FfiConverterSequenceTypeRemoteTabRecord.read(dataStream),
+            tabGroups: FfiConverterMapStringTypeTabGroup.read(dataStream),
+            windows: FfiConverterMapStringTypeWindow.read(dataStream),
         });
     }
     static write(dataStream, value) {
@@ -444,6 +1048,8 @@ export class FfiConverterTypeClientRemoteTabs extends FfiConverterArrayBuffer {
         FfiConverterTypeDeviceType.write(dataStream, value.deviceType);
         FfiConverterInt64.write(dataStream, value.lastModified);
         FfiConverterSequenceTypeRemoteTabRecord.write(dataStream, value.remoteTabs);
+        FfiConverterMapStringTypeTabGroup.write(dataStream, value.tabGroups);
+        FfiConverterMapStringTypeWindow.write(dataStream, value.windows);
     }
 
     static computeSize(value) {
@@ -453,6 +1059,8 @@ export class FfiConverterTypeClientRemoteTabs extends FfiConverterArrayBuffer {
         totalSize += FfiConverterTypeDeviceType.computeSize(value.deviceType);
         totalSize += FfiConverterInt64.computeSize(value.lastModified);
         totalSize += FfiConverterSequenceTypeRemoteTabRecord.computeSize(value.remoteTabs);
+        totalSize += FfiConverterMapStringTypeTabGroup.computeSize(value.tabGroups);
+        totalSize += FfiConverterMapStringTypeWindow.computeSize(value.windows);
         return totalSize
     }
 
@@ -498,6 +1106,138 @@ export class FfiConverterTypeClientRemoteTabs extends FfiConverterArrayBuffer {
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".remoteTabs");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterMapStringTypeTabGroup.checkType(value.tabGroups);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".tabGroups");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterMapStringTypeWindow.checkType(value.windows);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".windows");
+            }
+            throw e;
+        }
+    }
+}
+/**
+ * LocalTabsInfo
+ */
+export class LocalTabsInfo {
+    constructor(
+        {
+            tabs, 
+            tabGroups, 
+            windows
+        } = {
+            tabs: undefined, 
+            tabGroups: undefined, 
+            windows: undefined
+        }
+    ) {
+        try {
+            FfiConverterSequenceTypeRemoteTabRecord.checkType(tabs)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("tabs");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterMapStringTypeTabGroup.checkType(tabGroups)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("tabGroups");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterMapStringTypeWindow.checkType(windows)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("windows");
+            }
+            throw e;
+        }
+        /**
+         * tabs
+         */
+        this.tabs = tabs;
+        /**
+         * tabGroups
+         */
+        this.tabGroups = tabGroups;
+        /**
+         * windows
+         */
+        this.windows = windows;
+    }
+
+    equals(other) {
+        return (
+            this.tabs == other.tabs
+            && this.tabGroups == other.tabGroups
+            && this.windows == other.windows
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeLocalTabsInfo extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new LocalTabsInfo({
+            tabs: FfiConverterSequenceTypeRemoteTabRecord.read(dataStream),
+            tabGroups: FfiConverterMapStringTypeTabGroup.read(dataStream),
+            windows: FfiConverterMapStringTypeWindow.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterSequenceTypeRemoteTabRecord.write(dataStream, value.tabs);
+        FfiConverterMapStringTypeTabGroup.write(dataStream, value.tabGroups);
+        FfiConverterMapStringTypeWindow.write(dataStream, value.windows);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterSequenceTypeRemoteTabRecord.computeSize(value.tabs);
+        totalSize += FfiConverterMapStringTypeTabGroup.computeSize(value.tabGroups);
+        totalSize += FfiConverterMapStringTypeWindow.computeSize(value.windows);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof LocalTabsInfo)) {
+            throw new UniFFITypeError(`Expected 'LocalTabsInfo', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterSequenceTypeRemoteTabRecord.checkType(value.tabs);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".tabs");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterMapStringTypeTabGroup.checkType(value.tabGroups);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".tabGroups");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterMapStringTypeWindow.checkType(value.windows);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".windows");
             }
             throw e;
         }
@@ -564,34 +1304,6 @@ export class FfiConverterTypeRemoteCommand extends FfiConverterArrayBuffer {
       if (!(value instanceof RemoteCommand)) {
         throw new UniFFITypeError(`${value} is not a subclass instance of RemoteCommand`);
       }
-    }
-}
-export class FfiConverterTypeTimestamp extends FfiConverter {
-    static lift(value) {
-        return FfiConverterInt64.lift(value);
-    }
-
-    static lower(value) {
-        return FfiConverterInt64.lower(value);
-    }
-
-    static write(dataStream, value) {
-        FfiConverterInt64.write(dataStream, value);
-    }
-
-    static read(dataStream) {
-        const builtinVal = FfiConverterInt64.read(dataStream);
-        return builtinVal;
-    }
-
-    static computeSize(value) {
-        return FfiConverterInt64.computeSize(value);
-    }
-
-    static checkType(value) {
-        if (value === null || value === undefined) {
-            throw new TypeError("value is null or undefined");
-        }
     }
 }
 // Export the FFIConverter object to make external types work.
@@ -1053,7 +1765,7 @@ export class RemoteCommandStore extends RemoteCommandStoreInterface {
         FfiConverterString.checkType(deviceId);
         FfiConverterTypeRemoteCommand.checkType(command);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            109, // uniffi_tabs_fn_method_remotecommandstore_add_remote_command
+            110, // uniffi_tabs_fn_method_remotecommandstore_add_remote_command
             FfiConverterTypeRemoteCommandStore.lowerReceiver(this),
             FfiConverterString.lower(deviceId),
             FfiConverterTypeRemoteCommand.lower(command),
@@ -1081,7 +1793,7 @@ export class RemoteCommandStore extends RemoteCommandStoreInterface {
         FfiConverterTypeRemoteCommand.checkType(command);
         FfiConverterTypeTimestamp.checkType(when);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            110, // uniffi_tabs_fn_method_remotecommandstore_add_remote_command_at
+            111, // uniffi_tabs_fn_method_remotecommandstore_add_remote_command_at
             FfiConverterTypeRemoteCommandStore.lowerReceiver(this),
             FfiConverterString.lower(deviceId),
             FfiConverterTypeRemoteCommand.lower(command),
@@ -1101,7 +1813,7 @@ export class RemoteCommandStore extends RemoteCommandStoreInterface {
     async getUnsentCommands() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            111, // uniffi_tabs_fn_method_remotecommandstore_get_unsent_commands
+            112, // uniffi_tabs_fn_method_remotecommandstore_get_unsent_commands
             FfiConverterTypeRemoteCommandStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1125,7 +1837,7 @@ export class RemoteCommandStore extends RemoteCommandStoreInterface {
         FfiConverterString.checkType(deviceId);
         FfiConverterTypeRemoteCommand.checkType(command);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            112, // uniffi_tabs_fn_method_remotecommandstore_remove_remote_command
+            113, // uniffi_tabs_fn_method_remotecommandstore_remove_remote_command
             FfiConverterTypeRemoteCommandStore.lowerReceiver(this),
             FfiConverterString.lower(deviceId),
             FfiConverterTypeRemoteCommand.lower(command),
@@ -1147,7 +1859,7 @@ export class RemoteCommandStore extends RemoteCommandStoreInterface {
        
         FfiConverterTypePendingCommand.checkType(command);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            113, // uniffi_tabs_fn_method_remotecommandstore_set_pending_command_sent
+            114, // uniffi_tabs_fn_method_remotecommandstore_set_pending_command_sent
             FfiConverterTypeRemoteCommandStore.lowerReceiver(this),
             FfiConverterTypePendingCommand.lower(command),
         )
@@ -1369,7 +2081,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async apply() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            114, // uniffi_tabs_fn_method_tabsbridgedengine_apply
+            115, // uniffi_tabs_fn_method_tabsbridgedengine_apply
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1389,7 +2101,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
        
         FfiConverterString.checkType(newSyncId);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            115, // uniffi_tabs_fn_method_tabsbridgedengine_ensure_current_sync_id
+            116, // uniffi_tabs_fn_method_tabsbridgedengine_ensure_current_sync_id
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
             FfiConverterString.lower(newSyncId),
         )
@@ -1407,7 +2119,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async lastSync() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            116, // uniffi_tabs_fn_method_tabsbridgedengine_last_sync
+            117, // uniffi_tabs_fn_method_tabsbridgedengine_last_sync
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1426,7 +2138,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
        
         FfiConverterString.checkType(clientData);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            117, // uniffi_tabs_fn_method_tabsbridgedengine_prepare_for_sync
+            118, // uniffi_tabs_fn_method_tabsbridgedengine_prepare_for_sync
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
             FfiConverterString.lower(clientData),
         )
@@ -1443,7 +2155,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async reset() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            118, // uniffi_tabs_fn_method_tabsbridgedengine_reset
+            119, // uniffi_tabs_fn_method_tabsbridgedengine_reset
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1460,7 +2172,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async resetSyncId() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            119, // uniffi_tabs_fn_method_tabsbridgedengine_reset_sync_id
+            120, // uniffi_tabs_fn_method_tabsbridgedengine_reset_sync_id
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1479,7 +2191,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
        
         FfiConverterInt64.checkType(lastSync);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            120, // uniffi_tabs_fn_method_tabsbridgedengine_set_last_sync
+            121, // uniffi_tabs_fn_method_tabsbridgedengine_set_last_sync
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
             FfiConverterInt64.lower(lastSync),
         )
@@ -1502,7 +2214,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
         FfiConverterInt64.checkType(newTimestamp);
         FfiConverterSequenceTypeTabsGuid.checkType(uploadedIds);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            121, // uniffi_tabs_fn_method_tabsbridgedengine_set_uploaded
+            122, // uniffi_tabs_fn_method_tabsbridgedengine_set_uploaded
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
             FfiConverterInt64.lower(newTimestamp),
             FfiConverterSequenceTypeTabsGuid.lower(uploadedIds),
@@ -1523,7 +2235,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
        
         FfiConverterSequenceString.checkType(incomingEnvelopesAsJson);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            122, // uniffi_tabs_fn_method_tabsbridgedengine_store_incoming
+            123, // uniffi_tabs_fn_method_tabsbridgedengine_store_incoming
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
             FfiConverterSequenceString.lower(incomingEnvelopesAsJson),
         )
@@ -1540,7 +2252,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async syncFinished() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            123, // uniffi_tabs_fn_method_tabsbridgedengine_sync_finished
+            124, // uniffi_tabs_fn_method_tabsbridgedengine_sync_finished
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1557,7 +2269,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async syncId() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            124, // uniffi_tabs_fn_method_tabsbridgedengine_sync_id
+            125, // uniffi_tabs_fn_method_tabsbridgedengine_sync_id
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1573,7 +2285,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async syncStarted() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            125, // uniffi_tabs_fn_method_tabsbridgedengine_sync_started
+            126, // uniffi_tabs_fn_method_tabsbridgedengine_sync_started
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1589,7 +2301,7 @@ export class TabsBridgedEngine extends TabsBridgedEngineInterface {
     async wipe() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            126, // uniffi_tabs_fn_method_tabsbridgedengine_wipe
+            127, // uniffi_tabs_fn_method_tabsbridgedengine_wipe
             FfiConverterTypeTabsBridgedEngine.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1717,12 +2429,20 @@ export class TabsStoreInterface {
       throw Error("registerWithSyncManager not implemented");
     }
     /**
-     * setLocalTabs
+     * An API for clients which know nothing about windows or tab groups.
      * @param {Array.<RemoteTabRecord>} remoteTabs
      */
     async setLocalTabs(
         remoteTabs) {
       throw Error("setLocalTabs not implemented");
+    }
+    /**
+     * More context-aware API for setting information about a tab like window and groups.
+     * @param {LocalTabsInfo} info
+     */
+    async setLocalTabsInfo(
+        info) {
+      throw Error("setLocalTabsInfo not implemented");
     }
 
 }
@@ -1754,7 +2474,7 @@ export class TabsStore extends TabsStoreInterface {
        
         FfiConverterString.checkType(path);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            127, // uniffi_tabs_fn_constructor_tabsstore_new
+            128, // uniffi_tabs_fn_constructor_tabsstore_new
             FfiConverterString.lower(path),
         )
         return handleRustResult(
@@ -1771,7 +2491,7 @@ export class TabsStore extends TabsStoreInterface {
     async bridgedEngine() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            128, // uniffi_tabs_fn_method_tabsstore_bridged_engine
+            129, // uniffi_tabs_fn_method_tabsstore_bridged_engine
             FfiConverterTypeTabsStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1787,7 +2507,7 @@ export class TabsStore extends TabsStoreInterface {
     async closeConnection() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            129, // uniffi_tabs_fn_method_tabsstore_close_connection
+            130, // uniffi_tabs_fn_method_tabsstore_close_connection
             FfiConverterTypeTabsStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1804,7 +2524,7 @@ export class TabsStore extends TabsStoreInterface {
     async getAll() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            130, // uniffi_tabs_fn_method_tabsstore_get_all
+            131, // uniffi_tabs_fn_method_tabsstore_get_all
             FfiConverterTypeTabsStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1821,7 +2541,7 @@ export class TabsStore extends TabsStoreInterface {
     async newRemoteCommandStore() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            131, // uniffi_tabs_fn_method_tabsstore_new_remote_command_store
+            132, // uniffi_tabs_fn_method_tabsstore_new_remote_command_store
             FfiConverterTypeTabsStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1837,7 +2557,7 @@ export class TabsStore extends TabsStoreInterface {
     async registerWithSyncManager() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            132, // uniffi_tabs_fn_method_tabsstore_register_with_sync_manager
+            133, // uniffi_tabs_fn_method_tabsstore_register_with_sync_manager
             FfiConverterTypeTabsStore.lowerReceiver(this),
         )
         return handleRustResult(
@@ -1848,7 +2568,7 @@ export class TabsStore extends TabsStoreInterface {
     }
 
     /**
-     * setLocalTabs
+     * An API for clients which know nothing about windows or tab groups.
      * @param {Array.<RemoteTabRecord>} remoteTabs
      */
     async setLocalTabs(
@@ -1856,9 +2576,29 @@ export class TabsStore extends TabsStoreInterface {
        
         FfiConverterSequenceTypeRemoteTabRecord.checkType(remoteTabs);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            133, // uniffi_tabs_fn_method_tabsstore_set_local_tabs
+            134, // uniffi_tabs_fn_method_tabsstore_set_local_tabs
             FfiConverterTypeTabsStore.lowerReceiver(this),
             FfiConverterSequenceTypeRemoteTabRecord.lower(remoteTabs),
+        )
+        return handleRustResult(
+            result,
+            (result) => undefined,
+            null,
+        )
+    }
+
+    /**
+     * More context-aware API for setting information about a tab like window and groups.
+     * @param {LocalTabsInfo} info
+     */
+    async setLocalTabsInfo(
+        info) {
+       
+        FfiConverterTypeLocalTabsInfo.checkType(info);
+        const result = await UniFFIScaffolding.callAsyncWrapper(
+            135, // uniffi_tabs_fn_method_tabsstore_set_local_tabs_info
+            FfiConverterTypeTabsStore.lowerReceiver(this),
+            FfiConverterTypeLocalTabsInfo.lower(info),
         )
         return handleRustResult(
             result,
@@ -1902,6 +2642,8 @@ export class FfiConverterTypeTabsStore extends FfiConverter {
         return 8;
     }
 }
+
+
 
 
 

@@ -63,13 +63,7 @@ $ds-width: 936px;
 
     a {
       color: var(--newtab-primary-action-background);
-
-      /**
-       * @backward-compat { version 146 }
-       *
-       * Replace this with `--font-weight-semibold` once 146 hits release.
-       */
-      font-weight: var(--heading-font-weight);
+      font-weight: var(--font-weight-semibold);
 
       &:is(:focus, :hover) {
         text-decoration: none;

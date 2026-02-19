@@ -20,7 +20,7 @@
       "box": {
         "@base": {
           "value": {
-            "light": "{color.white}",
+            "light": "{color.white.@base}",
             "dark": "{color.gray.80}",
             "prefersContrast": "{background.color.canvas}"
           }
@@ -42,7 +42,7 @@
         "value": {
           "prefersContrast": "Canvas",
           "brand": {
-            "light": "{color.white}",
+            "light": "{color.white.@base}",
             "dark": "{color.gray.90}"
           },
           "platform": {
@@ -76,6 +76,24 @@
           "light": "{color.yellow.0}",
           "dark": "{color.yellow.90}",
           "prefersContrast": "{background.color.canvas}"
+        }
+      },
+      "overlay": {
+        "value": "{color.black.alpha.50}"
+      },
+      "list": {
+        "item": {
+          "hover": {
+            "value": {
+              "brand": {
+                "default": "color-mix(in srgb, var(--color-accent-primary) 20%, transparent)"
+              },
+              "platform": {
+                "default": "color-mix(in srgb, currentColor 20%, transparent)"
+              },
+              "prefersContrast": "SelectedItem"
+            }
+          }
         }
       }
     }
@@ -508,7 +526,7 @@
         "destructive": {
           "@base": {
             "value": {
-              "light": "{color.white}",
+              "light": "{color.white.@base}",
               "dark": "{color.gray.100}",
               "forcedColors": "{button.text.color.primary.@base}"
             }
@@ -589,7 +607,7 @@
             "value": {
               "forcedColors": "ButtonFace",
               "brand": {
-                "light": "{color.white}",
+                "light": "{color.white.@base}",
                 "dark": "{color.gray.100}"
               },
               "platform": {
@@ -1003,7 +1021,72 @@
       }
     },
     "white": {
-      "value": "#ffffff"
+      "@base": {
+        "value": "#ffffff"
+      },
+      "alpha": {
+        "10": {
+          "value": "oklch(1 0 0 / 10%)"
+        },
+        "20": {
+          "value": "oklch(1 0 0 / 20%)"
+        },
+        "30": {
+          "value": "oklch(1 0 0 / 30%)"
+        },
+        "40": {
+          "value": "oklch(1 0 0 / 40%)"
+        },
+        "50": {
+          "value": "oklch(1 0 0 / 50%)"
+        },
+        "60": {
+          "value": "oklch(1 0 0 / 60%)"
+        },
+        "70": {
+          "value": "oklch(1 0 0 / 70%)"
+        },
+        "80": {
+          "value": "oklch(1 0 0 / 80%)"
+        },
+        "90": {
+          "value": "oklch(1 0 0 / 90%)"
+        }
+      }
+    },
+    "black": {
+      "@base": {
+        "value": "#000000"
+      },
+      "alpha": {
+        "10": {
+          "value": "oklch(0 0 0 / 10%)"
+        },
+        "20": {
+          "value": "oklch(0 0 0 / 20%)"
+        },
+        "30": {
+          "value": "oklch(0 0 0 / 30%)"
+        },
+        "40": {
+          "value": "oklch(0 0 0 / 40%)"
+        },
+        "50": {
+          "value": "oklch(0 0 0 / 50%)"
+        },
+        "60": {
+          "value": "oklch(0 0 0 / 60%)"
+        },
+        "70": {
+          "value": "oklch(0 0 0 / 70%)"
+        },
+        "80": {
+          "value": "oklch(0 0 0 / 80%)"
+        },
+        "90": {
+          "value": "oklch(0 0 0 / 90%)"
+        }
+      }
     },
     "accent": {
       "primary": {
@@ -1517,12 +1600,22 @@
             "value": {
               "forcedColors": "SelectedItemText",
               "brand": {
-                "light": "{color.white}",
+                "light": "{color.white.@base}",
                 "dark": "{color.gray.100}"
               },
               "platform": {
                 "default": "SelectedItemText"
               }
+            }
+          }
+        }
+      },
+      "list": {
+        "item": {
+          "hover": {
+            "value": {
+              "default": "{text.color.@base}",
+              "prefersContrast": "SelectedItemText"
             }
           }
         }

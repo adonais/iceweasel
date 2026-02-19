@@ -298,7 +298,6 @@ class ProfileSymbolicator:
 
         # Check if running in CI
         if "MOZ_AUTOMATION" in os.environ:
-
             moz_fetch = os.environ["MOZ_FETCHES_DIR"]
             symbolicator_path = Path(
                 moz_fetch, "symbolicator-cli", "symbolicator-cli.js"
@@ -314,9 +313,11 @@ class ProfileSymbolicator:
             # Bug 2000026: Temporarily use fallback symbolication for --extra-profiler-run
             # since those tasks don't have the toolchains for symbolicator-cli symbolication yet.
 
-            if not self._validate_symbolication_deps(
-                [symbolicator_path, samply_path, node_path]
-            ):
+            if not self._validate_symbolication_deps([
+                symbolicator_path,
+                samply_path,
+                node_path,
+            ]):
                 LOG.info(
                     "Symbolication dependencies not available, using fallback symbolication."
                 )
@@ -327,7 +328,6 @@ class ProfileSymbolicator:
                 breakpad_symbol_dir = self.options["symbolPaths"]["FIREFOX"]
 
                 with tempfile.TemporaryDirectory() as work_dir:
-
                     unsym_profile = Path(work_dir, "unsym_profile.json")
                     unsym_profile.write_text(
                         json.dumps(profile_json, ensure_ascii=False), encoding="utf-8"

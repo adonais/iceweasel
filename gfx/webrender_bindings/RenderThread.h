@@ -360,6 +360,8 @@ class RenderThread final {
   void SetBatteryInfo(const hal::BatteryInformation& aBatteryInfo);
   bool GetPowerIsCharging();
 
+  void BeginShaderWarmupIfNeeded();
+
  private:
   static size_t sRendererCount;
   static size_t sActiveRendererCount;

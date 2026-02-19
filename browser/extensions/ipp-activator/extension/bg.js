@@ -290,6 +290,10 @@ class IPPAddonActivator {
       return false;
     }
 
+    if (await browser.ippActivator.hasExclusion(url)) {
+      return false;
+    }
+
     let domain = info.baseDomain;
     let breakage = breakages.find(
       b => Array.isArray(b.domains) && b.domains.includes(info.baseDomain)

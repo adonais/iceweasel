@@ -2,28 +2,6 @@ const { TabGroupTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TabGroupTestUtils.sys.mjs"
 );
 
-function promiseTabLoadEvent(tab, url) {
-  info("Wait tab event: load");
-
-  function handle(loadedUrl) {
-    if (loadedUrl === "about:blank" || (url && loadedUrl !== url)) {
-      info(`Skipping spurious load event for ${loadedUrl}`);
-      return false;
-    }
-
-    info("Tab event received: load");
-    return true;
-  }
-
-  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
-
-  if (url) {
-    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url);
-  }
-
-  return loaded;
-}
-
 function updateTabContextMenu(tab) {
   let menu = document.getElementById("tabContextMenu");
   if (!tab) {

@@ -15,6 +15,7 @@ use super::generics::transform::IsParallelTo;
 use super::generics::{self, GreaterThanOrEqualToOne, NonNegative};
 use super::{CSSFloat, CSSInteger};
 use crate::context::QuirksMode;
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::specified::calc::CalcNode;
 use crate::values::{serialize_atom_identifier, serialize_number, AtomString};
@@ -23,9 +24,12 @@ use cssparser::{Parser, Token};
 use std::fmt::{self, Write};
 use std::ops::Add;
 use style_traits::values::specified::AllowedNumericType;
-use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss};
+use style_traits::{
+    CssString, CssWriter, NumericValue, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss,
+    ToTyped, TypedValue,
+};
 
-pub use self::align::{ContentDistribution, ItemPlacement, SelfAlignment, JustifyItems};
+pub use self::align::{ContentDistribution, ItemPlacement, JustifyItems, SelfAlignment};
 pub use self::angle::{AllowUnitlessZeroAngle, Angle};
 pub use self::animation::{
     AnimationComposition, AnimationDirection, AnimationDuration, AnimationFillMode,
@@ -43,7 +47,7 @@ pub use self::border::{
 pub use self::box_::{
     Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain, ContainIntrinsicSize,
     ContainerName, ContainerType, ContentVisibility, Display, Float, LineClamp, Overflow,
-    OverflowAnchor, OverflowClipBox, OverscrollBehavior, Perspective, PositionProperty, Resize,
+    OverflowAnchor, OverflowClipMargin, OverscrollBehavior, Perspective, PositionProperty, Resize,
     ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType,
     ScrollbarGutter, TouchAction, VerticalAlign, WillChange, WillChangeBits, WritingModeProperty,
     Zoom,
@@ -347,6 +351,14 @@ impl ToCss for Number {
         W: Write,
     {
         serialize_number(self.value, self.calc_clamping_mode.is_some(), dest)
+    }
+}
+
+impl ToTyped for Number {
+    fn to_typed(&self) -> Option<TypedValue> {
+        let value = self.value;
+        let unit = CssString::from("number");
+        Some(TypedValue::Numeric(NumericValue::Unit { value, unit }))
     }
 }
 

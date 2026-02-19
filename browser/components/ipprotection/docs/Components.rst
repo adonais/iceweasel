@@ -33,7 +33,6 @@ A diagram of all the main components is the following:
        IPPEnrollAndEntitleManager["Enroll & Entitle Manager"]
        IPPProxyManager
        UIHelper["UI Helper"]
-       IPPVPNAddonHelper["VPN Add-on Helper"]
        IPPAutoStart["Auto-Start Helper"]
        IPPEarlyStartupFilter["Early Startup Filter Helper"]
        IPPNimbusHelper["Nimbus Eligibility Helper"]
@@ -77,8 +76,8 @@ IPProtectionPanel
   Controls the feature’s panel UI.
 
 IPPExceptionsManager
-  Manages the exceptions UI and logic (for example, domain exclusions and
-  exceptions mode) in coordination with the panel and preferences.
+  Manages the exceptions UI and logic (for example, domain exclusions)
+  in coordination with the panel and preferences.
 
 IPProtectionService
   The main service. It is initialized during browser startup, initializes helpers
@@ -124,10 +123,6 @@ UIHelper
 AccountResetHelper
   Resets stored account information and stops the proxy when the account becomes
   unavailable.
-
-IPPVPNAddonHelper
-  Monitors the installation of the Mozilla VPN add‑on and removes the UI when
-  appropriate.
 
 IPPNimbusHelper
   Monitors the Nimbus feature (``NimbusFeatures.ipProtection``) and triggers a

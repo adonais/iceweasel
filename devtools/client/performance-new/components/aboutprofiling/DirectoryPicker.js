@@ -42,7 +42,7 @@ const Localized = createFactory(
  *
  *  [+] [-]
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class DirectoryPicker extends PureComponent {
   /** @param {Props} props */

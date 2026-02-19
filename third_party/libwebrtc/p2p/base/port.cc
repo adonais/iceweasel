@@ -121,6 +121,7 @@ Port::Port(const PortParametersRef& args,
       network_(args.network),
       min_port_(min_port),
       max_port_(max_port),
+      content_name_(args.content_name),
       component_(ICE_CANDIDATE_COMPONENT_DEFAULT),
       generation_(0),
       ice_username_fragment_(args.ice_username_fragment),
@@ -132,7 +133,10 @@ Port::Port(const PortParametersRef& args,
       shared_socket_(shared_socket),
       network_cost_(args.network->GetCost(env_.field_trials())),
       role_conflict_callback_(nullptr),
-      weak_factory_(this) {
+      weak_factory_(this),
+      unknown_address_trampoline_(this),
+      read_packet_trampoline_(this),
+      sent_packet_trampoline_(this) {
   RTC_DCHECK_RUN_ON(thread_);
   RTC_DCHECK(factory_ != nullptr);
   // TODO(pthatcher): Remove this old behavior once we're sure no one
@@ -149,11 +153,13 @@ Port::Port(const PortParametersRef& args,
   RTC_LOG(LS_INFO) << ToString() << ": Port created with network cost "
                    << network_cost_;
 
-  // This is a temporary solution to support SignalCandidateReady signals from
+  // This is a temporary solution to support sigslot signals from
   // downstream. We also register a method to send the callbacks in callback
   // list. This will no longer be needed once downstream stops using
-  // SignalCandidateReady.
+  // the sigslot directly.
   SignalCandidateReady.connect(this, &Port::SendCandidateReadyCallbackList);
+  SignalPortComplete.connect(this, &Port::SendPortCompleteCallbackList);
+  SignalPortError.connect(this, &Port::SendPortErrorCallbackList);
 }
 
 Port::~Port() {
@@ -311,7 +317,7 @@ bool Port::MaybeObfuscateAddress(const Candidate& c, bool is_final) {
 
 void Port::FinishAddingAddress(const Candidate& c, bool is_final) {
   candidates_.push_back(c);
-  SendCandidateReady(c);
+  SignalCandidateReady(this, c);
 
   PostAddAddress(is_final);
 }
@@ -320,6 +326,21 @@ void Port::PostAddAddress(bool is_final) {
   if (is_final) {
     SignalPortComplete(this);
   }
+}
+
+void Port::SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback) {
+  RTC_DCHECK_RUN_ON(thread_);
+  port_complete_callback_list_.AddReceiver(std::move(callback));
+}
+
+void Port::SendPortCompleteCallbackList(Port*) {
+  RTC_DCHECK_RUN_ON(thread_);
+  port_complete_callback_list_.Send(this);
+}
+
+void Port::SendPortErrorCallbackList(Port*) {
+  RTC_DCHECK_RUN_ON(thread_);
+  port_error_callback_list_.Send(this);
 }
 
 void Port::SubscribeCandidateError(
@@ -344,12 +365,9 @@ void Port::SendCandidateReadyCallbackList(Port*, const Candidate& candidate) {
   candidate_ready_callback_list_.Send(this, candidate);
 }
 
-void Port::SendCandidateReady(const Candidate& candidate) {
+void Port::SubscribePortError(absl::AnyInvocable<void(Port*)> callback) {
   RTC_DCHECK_RUN_ON(thread_);
-  // Once we remove SignalCandidateReady we'll replace the invocation of
-  // SignalCandidateReady callback with
-  // candidate_ready_callback_list_.Send(this, c);
-  SignalCandidateReady(this, candidate);
+  port_error_callback_list_.AddReceiver(std::move(callback));
 }
 
 void Port::AddOrReplaceConnection(Connection* conn) {
@@ -379,7 +397,7 @@ void Port::OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto) {
   const SocketAddress& addr = packet.source_address();
   // If the user has enabled port packets, just hand this over.
   if (enable_port_packets_) {
-    SignalReadPacket(this, data, size, addr);
+    NotifyReadPacket(this, data, size, addr);
     return;
   }
 
@@ -400,7 +418,7 @@ void Port::OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto) {
     // We need to signal an unknown address before we handle any role conflict
     // below. Otherwise there would be no candidate pair and TURN entry created
     // to send the error response in case of a role conflict.
-    SignalUnknownAddress(this, addr, proto, msg.get(), remote_username, false);
+    NotifyUnknownAddress(this, addr, proto, msg.get(), remote_username, false);
     // Check for role conflicts.
     if (!MaybeIceRoleConflict(addr, msg.get(), remote_username)) {
       RTC_LOG(LS_INFO) << "Received conflicting role from the peer.";
@@ -1063,6 +1081,47 @@ void Port::NotifyRoleConflict() {
   } else {
     SignalRoleConflict(this);
   }
+}
+
+void Port::SubscribeUnknownAddress(absl::AnyInvocable<void(PortInterface*,
+                                                           const SocketAddress&,
+                                                           ProtocolType,
+                                                           IceMessage*,
+                                                           const std::string&,
+                                                           bool)> callback) {
+  unknown_address_trampoline_.Subscribe(std::move(callback));
+}
+
+void Port::NotifyUnknownAddress(PortInterface* port,
+                                const SocketAddress& address,
+                                ProtocolType proto,
+                                IceMessage* msg,
+                                const std::string& rf,
+                                bool port_muxed) {
+  SignalUnknownAddress(port, address, proto, msg, rf, port_muxed);
+}
+
+void Port::SubscribeReadPacket(
+    absl::AnyInvocable<
+        void(PortInterface*, const char*, size_t, const SocketAddress&)>
+        callback) {
+  read_packet_trampoline_.Subscribe(std::move(callback));
+}
+
+void Port::NotifyReadPacket(PortInterface* port,
+                            const char* data,
+                            size_t size,
+                            const SocketAddress& remote_address) {
+  SignalReadPacket(port, data, size, remote_address);
+}
+
+void Port::SubscribeSentPacket(
+    absl::AnyInvocable<void(const SentPacketInfo&)> callback) {
+  sent_packet_trampoline_.Subscribe(std::move(callback));
+}
+
+void Port::NotifySentPacket(const SentPacketInfo& packet) {
+  SignalSentPacket(packet);
 }
 
 }  // namespace webrtc

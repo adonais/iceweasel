@@ -195,7 +195,7 @@ async function testProjectSearch(dbg) {
   // Then wait for all results to be fetched and the loader spin to hide
   await waitUntil(() => {
     return !dbg.win.document.querySelector(
-      ".project-text-search .search-field .loader.spin"
+      ".project-text-search .search-field .dbg-img-loader.spin"
     );
   });
   await dbg.actions.closeActiveSearch();

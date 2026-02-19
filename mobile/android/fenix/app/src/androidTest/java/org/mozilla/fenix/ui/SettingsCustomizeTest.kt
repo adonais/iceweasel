@@ -17,7 +17,6 @@ import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.restartApp
 import org.mozilla.fenix.helpers.TestHelper.verifyDarkThemeApplied
 import org.mozilla.fenix.helpers.TestHelper.verifyLightThemeApplied
-import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -48,9 +47,9 @@ class SettingsCustomizeTest : TestSetup() {
     @Test
     fun changeThemeOfTheAppTest() {
         // Goes through the settings and changes the default search engine, then verifies it changes.
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             verifyThemes()
             selectDarkMode()
@@ -63,25 +62,25 @@ class SettingsCustomizeTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/466571
     @Test
     fun setToolbarPositionTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             verifyAddressBarPositionPreference("Bottom")
             clickTopToolbarToggle()
             verifyAddressBarPositionPreference("Top")
         }.goBack {
-        }.goBack {
-            verifyAddressBarPosition(bottomPosition = false)
+        }.goBack(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = false)
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             clickBottomToolbarToggle()
             verifyAddressBarPositionPreference("Bottom")
             exitMenu()
         }
-        homeScreen {
-            verifyAddressBarPosition(bottomPosition = true)
+        homeScreen(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = true)
         }
     }
 
@@ -95,16 +94,16 @@ class SettingsCustomizeTest : TestSetup() {
         // Disable the back gesture from the edge of the screen on the device.
         enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             verifySwipeToolbarGesturePrefState(true)
             clickSwipeToolbarToSwitchTabToggle()
             verifySwipeToolbarGesturePrefState(false)
             exitMenu()
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstWebPage.url) {
         }.openTabDrawer(composeTestRule) {
         }.openNewTab {
@@ -119,9 +118,9 @@ class SettingsCustomizeTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1992289
     @Test
     fun pullToRefreshPreferenceTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             verifyPullToRefreshGesturePrefState(isEnabled = true)
             clickPullToRefreshToggle()
@@ -133,9 +132,9 @@ class SettingsCustomizeTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheDefaultAppIconSettingTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             verifyAppIconOption(composeTestRule, "Default")
         }
@@ -145,9 +144,9 @@ class SettingsCustomizeTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheAppIconSelectionPageTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             clickTheAppIconOption(composeTestRule)
             verifyAppIconSettingItems(composeTestRule)
@@ -158,9 +157,9 @@ class SettingsCustomizeTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheChangeAppIconButtonTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             verifyAppIconOption(composeTestRule, "Default")
             clickTheAppIconOption(composeTestRule)
@@ -169,9 +168,9 @@ class SettingsCustomizeTest : TestSetup() {
             clickTheChangeIconDialogButton(composeTestRule)
             restartApp(composeTestRule.activityRule)
         }
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             verifyAppIconOption(composeTestRule, "Dark")
         }

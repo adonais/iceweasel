@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/0aac94794aad2ddb6
  1 file changed, 6 insertions(+)
 
 diff --git a/modules/desktop_capture/win/wgc_capture_session.cc b/modules/desktop_capture/win/wgc_capture_session.cc
-index 01ec96b6c1..05c5bb4381 100644
+index 3969654bce..3037d471cc 100644
 --- a/modules/desktop_capture/win/wgc_capture_session.cc
 +++ b/modules/desktop_capture/win/wgc_capture_session.cc
 @@ -258,6 +258,11 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
@@ -32,5 +32,5 @@ index 01ec96b6c1..05c5bb4381 100644
    }
 +#endif
  
-   allow_zero_hertz_ = options.allow_wgc_zero_hertz();
- 
+   // Windows 11 24H2 (10.0.26100.0) added
+   // `IGraphicsCaptureSession6::put_IncludeSecondaryWindows()`. See

@@ -241,6 +241,14 @@ add_task(async function () {
   );
   checkHighlightedSearchResults(inspector, ["::marker"]);
 
+  await searchInMarkupView(inspector, "::backdrop");
+  is(
+    inspector.selection.nodeFront.displayName,
+    "::backdrop",
+    "The ::backdrop element is selected"
+  );
+  checkHighlightedSearchResults(inspector, ["::backdrop"]);
+
   // Search by the `content` declaration of the ::before and ::after pseudo elements
   await searchInMarkupView(inspector, "my_before_text");
   is(

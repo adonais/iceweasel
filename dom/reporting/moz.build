@@ -18,6 +18,8 @@ EXPORTS.mozilla.dom = [
     "ReportingObserver.h",
     "ReportingUtils.h",
     "TestingDeprecatedInterface.h",
+    "TestReportBody.h",
+    "TestReportGenerator.h",
 ]
 
 UNIFIED_SOURCES += [
@@ -34,6 +36,8 @@ UNIFIED_SOURCES += [
     "ReportingObserver.cpp",
     "ReportingUtils.cpp",
     "TestingDeprecatedInterface.cpp",
+    "TestReportBody.cpp",
+    "TestReportGenerator.cpp",
 ]
 
 IPDL_SOURCES += [

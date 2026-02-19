@@ -39,6 +39,9 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
@@ -152,7 +155,17 @@ fun AnimatedProgressBar(
         }
     }
 
-    Canvas(modifier.fillMaxWidth()) {
+    Canvas(
+        modifier
+            .fillMaxWidth()
+            .semantics {
+                progressBarRangeInfo = ProgressBarRangeInfo(
+                    current = animatedProgress.toFloat(),
+                    range = 0f..100f,
+                    steps = 100,
+                )
+            },
+    ) {
         val width = this.size.width
         val height = this.size.height
 

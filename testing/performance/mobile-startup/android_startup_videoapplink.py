@@ -119,15 +119,13 @@ class ImageAnalzer:
 
         # Bug 1927548 - Recording command doesn't use mozdevice shell because the mozdevice shell
         # outputs an adbprocess obj whose adbprocess.proc.kill() does not work when called
-        recording = subprocess.Popen(
-            [
-                "adb",
-                "shell",
-                "screenrecord",
-                "--bugreport",
-                video_location,
-            ]
-        )
+        recording = subprocess.Popen([
+            "adb",
+            "shell",
+            "screenrecord",
+            "--bugreport",
+            video_location,
+        ])
 
         # Start Profilers if enabled.
         self.profiler.start()
@@ -143,9 +141,12 @@ class ImageAnalzer:
         self.process_cpu_info(run)
         recording.kill()
         time.sleep(5)
-        self.device.command_output(
-            ["pull", "-a", video_location, os.environ["TESTING_DIR"]]
-        )
+        self.device.command_output([
+            "pull",
+            "-a",
+            video_location,
+            os.environ["TESTING_DIR"],
+        ])
 
         time.sleep(4)
         video_location = str(pathlib.Path(os.environ["TESTING_DIR"], self.video_name))
@@ -216,7 +217,7 @@ class ImageAnalzer:
         video_timestamp = self.video.get(cv2.CAP_PROP_POS_MSEC)
         if video_timestamp > MAX_STARTUP_TIME:
             raise ValueError(
-                f"Startup time of {video_timestamp/1000}s exceeds max time of {MAX_STARTUP_TIME/1000}s"
+                f"Startup time of {video_timestamp / 1000}s exceeds max time of {MAX_STARTUP_TIME / 1000}s"
             )
         return video_timestamp
 

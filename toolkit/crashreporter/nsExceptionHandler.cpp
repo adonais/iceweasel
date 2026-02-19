@@ -224,7 +224,7 @@ static CrashHelperClient* gCrashHelperClient
     MOZ_GUARDED_BY(gCrashHelperClientMutex) = nullptr;
 static google_breakpad::ExceptionHandler* gExceptionHandler = nullptr;
 static mozilla::Atomic<bool> gEncounteredChildException(false);
-MOZ_CONSTINIT static nsCString gServerURL;
+constinit static nsCString gServerURL;
 
 MOZ_RUNINIT static xpstring pendingDirectory;
 MOZ_RUNINIT static xpstring crashReporterPath;

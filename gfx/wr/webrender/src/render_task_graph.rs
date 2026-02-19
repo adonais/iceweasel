@@ -9,12 +9,14 @@
 
 use api::units::*;
 use api::ImageFormat;
-use crate::gpu_cache::{GpuCache, GpuCacheAddress};
+use crate::gpu_types::ImageSource;
 use crate::internal_types::{TextureSource, CacheTextureId, FastHashMap, FastHashSet, FrameId};
 use crate::internal_types::size_of_frame_vec;
 use crate::render_task::{StaticRenderTaskSurface, RenderTaskLocation, RenderTask};
 use crate::render_target::RenderTargetKind;
 use crate::render_task::{RenderTaskData, RenderTaskKind};
+use crate::renderer::GpuBufferAddress;
+use crate::renderer::GpuBufferBuilder;
 use crate::resource_cache::ResourceCache;
 use crate::texture_pack::GuillotineAllocator;
 use crate::prim_store::DeferredResolve;
@@ -280,7 +282,7 @@ impl RenderTaskGraphBuilder {
     pub fn end_frame(
         &mut self,
         resource_cache: &mut ResourceCache,
-        gpu_cache: &mut GpuCache,
+        gpu_buffers: &mut GpuBufferBuilder,
         deferred_resolves: &mut FrameVec<DeferredResolve>,
         max_shared_surface_size: i32,
         memory: &FrameMemory,
@@ -618,9 +620,9 @@ impl RenderTaskGraphBuilder {
         // considered to be immutable for the rest of the frame building process.
 
         for task in &mut graph.tasks {
-            // First check whether the render task texture and uv rects are managed
-            // externally. This is the case for image tasks and cached tasks. In both
-            // cases it results in a finding the information in the texture cache.
+            // Check whether the render task texture and uv rects are managed externally.
+            // This is the case for image tasks and cached tasks. In both cases it
+            // results in a finding the information in the texture cache.
             let cache_item = if let Some(ref cache_handle) = task.cache_handle {
                 Some(resolve_cached_render_task(
                     cache_handle,
@@ -630,7 +632,7 @@ impl RenderTaskGraphBuilder {
                 Some(resolve_image(
                     info.request,
                     resource_cache,
-                    gpu_cache,
+                    &mut gpu_buffers.f32,
                     deferred_resolves,
                     info.is_composited,
                 ))
@@ -639,12 +641,13 @@ impl RenderTaskGraphBuilder {
                 None
             };
 
-            if let Some(cache_item) = cache_item {
+            if let Some(cache_item) = &cache_item {
+                task.uv_rect_handle = gpu_buffers.f32.resolve_handle(cache_item.uv_rect_handle);
+
                 // Update the render task even if the item is invalid.
                 // We'll handle it later and it's easier to not have to
                 // deal with unexpected location variants like
                 // RenderTaskLocation::CacheRequest when we do.
-                task.uv_rect_handle = cache_item.uv_rect_handle;
                 if let RenderTaskLocation::CacheRequest { .. } = &task.location {
                     let source = cache_item.texture_id;
                     task.location = RenderTaskLocation::Static {
@@ -654,14 +657,25 @@ impl RenderTaskGraphBuilder {
                 }
             }
 
-            // Give the render task an opportunity to add any
-            // information to the GPU cache, if appropriate.
+            // This has to be done after we do the task location fixup above.
             let target_rect = task.get_target_rect();
 
-            task.write_gpu_blocks(
-                target_rect,
-                gpu_cache,
-            );
+            // If the uv rect is not managed externally, generate it now.
+            if cache_item.is_none() {
+                let image_source = ImageSource {
+                    p0: target_rect.min.to_f32(),
+                    p1: target_rect.max.to_f32(),
+                    user_data: [0.0; 4],
+                    uv_rect_kind: task.uv_rect_kind,
+                };
+
+                let uv_rect_handle = image_source.write_gpu_blocks(&mut gpu_buffers.f32);
+                task.uv_rect_handle = gpu_buffers.f32.resolve_handle(uv_rect_handle);
+            }
+
+            // Give the render task an opportunity to add any
+            // information to the GPU cache, if appropriate.
+            task.kind.write_gpu_blocks(gpu_buffers);
 
             graph.task_data.push(
                 task.kind.write_task_data(target_rect)
@@ -723,16 +737,14 @@ impl RenderTaskGraph {
     pub fn resolve_location(
         &self,
         task_id: impl Into<Option<RenderTaskId>>,
-        gpu_cache: &GpuCache,
-    ) -> Option<(GpuCacheAddress, TextureSource)> {
-        self.resolve_impl(task_id.into()?, gpu_cache)
+    ) -> Option<(GpuBufferAddress, TextureSource)> {
+        self.resolve_impl(task_id.into()?)
     }
 
     fn resolve_impl(
         &self,
         task_id: RenderTaskId,
-        gpu_cache: &GpuCache,
-    ) -> Option<(GpuCacheAddress, TextureSource)> {
+    ) -> Option<(GpuBufferAddress, TextureSource)> {
         let task = &self[task_id];
         let texture_source = task.get_texture_source();
 
@@ -740,7 +752,8 @@ impl RenderTaskGraph {
             return None;
         }
 
-        let uv_address = task.get_texture_address(gpu_cache);
+        let uv_address = task.get_texture_address();
+        assert!(uv_address.is_valid());
 
         Some((uv_address, texture_source))
     }
@@ -1095,19 +1108,20 @@ impl RenderTaskGraphBuilder {
         total_surface_count: usize,
         unique_surfaces: &[(i32, i32, ImageFormat)],
     ) {
-        use crate::internal_types::FrameStamp;
+        use crate::{internal_types::FrameStamp, renderer::{GpuBufferBuilderF, GpuBufferBuilderI}};
         use api::{DocumentId, IdNamespace};
 
         let mut rc = ResourceCache::new_for_testing();
-        let mut gc =  GpuCache::new();
 
         let mut frame_stamp = FrameStamp::first(DocumentId::new(IdNamespace(1), 1));
         frame_stamp.advance();
-        gc.prepare_for_frames();
-        gc.begin_frame(frame_stamp);
 
         let frame_memory = FrameMemory::fallback();
-        let g = self.end_frame(&mut rc, &mut gc, &mut frame_memory.new_vec(), 2048, &frame_memory);
+        let mut gpu_buffers = GpuBufferBuilder {
+            f32: GpuBufferBuilderF::new(&frame_memory, 0, FrameId::first()),
+            i32: GpuBufferBuilderI::new(&frame_memory, 0, FrameId::first()),
+        };
+        let g = self.end_frame(&mut rc, &mut gpu_buffers, &mut frame_memory.new_vec(), 2048, &frame_memory);
         g.print();
 
         assert_eq!(g.passes.len(), pass_count);

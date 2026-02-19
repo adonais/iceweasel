@@ -27,8 +27,6 @@ import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
  * Refer to the [baseline profile documentation](https://d.android.com/topic/performance/baselineprofiles)
  * for more information.
  *
- * Make sure `autosignReleaseWithDebugKey=true` is present in local.properties.
- *
  * Generate the baseline profile using this gradle task:
  * ```
  *  ./gradlew :benchmark:pixel6Api34BenchmarkAndroidTest -P android.testInstrumentationRunnerArguments.annotation=org.mozilla.fenix.benchmark.baselineprofile -P benchmarkTest -P disableOptimization

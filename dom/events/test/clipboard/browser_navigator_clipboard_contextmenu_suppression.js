@@ -366,6 +366,13 @@ if (
         set: [["middlemouse.paste", true]],
       });
 
+      // We intentionally turn off this a11y check, because the following click
+      // is send on an arbitrary web content that is not expected to be tested
+      // by itself with the browser mochitests, therefore this rule check shall
+      // be ignored by a11y-checks suite.
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
       await SpecialPowers.spawn(browser, [], async () => {
         EventUtils.synthesizeMouse(
           content.document.documentElement,
@@ -375,6 +382,7 @@ if (
           content.window
         );
       });
+      AccessibilityUtils.resetEnv();
     },
     true,
     "middle click"

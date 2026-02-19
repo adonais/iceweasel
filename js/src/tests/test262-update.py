@@ -14,17 +14,14 @@ from itertools import chain
 from operator import itemgetter
 
 # Skip all tests which use features not supported in SpiderMonkey.
-UNSUPPORTED_FEATURES = set(
-    [
-        "tail-call-optimization",
-        "Intl.Locale-info",  # Bug 1693576
-        "legacy-regexp",  # Bug 1306461
-        "source-phase-imports",
-        "source-phase-imports-module-source",
-        "import-defer",
-        "nonextensible-applies-to-private",  # Bug 1991478
-    ]
-)
+UNSUPPORTED_FEATURES = set([
+    "tail-call-optimization",
+    "Intl.Locale-info",  # Bug 1693576
+    "source-phase-imports",
+    "source-phase-imports-module-source",
+    "import-defer",
+    "nonextensible-applies-to-private",  # Bug 1991478
+])
 FEATURE_CHECK_NEEDED = {
     "Atomics": "!this.hasOwnProperty('Atomics')",
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
@@ -39,7 +36,7 @@ FEATURE_CHECK_NEEDED = {
     "upsert": "!Map.prototype.getOrInsertComputed",  # Bug 1986668
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  # Bug 1952253
 }
-RELEASE_OR_BETA = set()
+RELEASE_OR_BETA = set(["legacy-regexp"])
 SHELL_OPTIONS = {
     "ShadowRealm": "--enable-shadow-realms",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
@@ -319,7 +316,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         or isAsync
         or isNegative
         or testName.split(os.path.sep)[0] == "harness"
-    ), ("Missing async attribute in: %s" % testName)
+    ), "Missing async attribute in: %s" % testName
 
     # When the "module" attribute is set, the source code is module code.
     isModule = "module" in testRec
@@ -342,38 +339,29 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         else:
             releaseOrBeta = [f for f in testRec["features"] if f in RELEASE_OR_BETA]
             if releaseOrBeta:
-                refTestSkipIf.append(
-                    (
-                        "release_or_beta",
-                        "%s is not released yet" % ",".join(releaseOrBeta),
-                    )
-                )
+                refTestSkipIf.append((
+                    "release_or_beta",
+                    "%s is not released yet" % ",".join(releaseOrBeta),
+                ))
 
             featureCheckNeeded = [
                 f for f in testRec["features"] if f in FEATURE_CHECK_NEEDED
             ]
             if featureCheckNeeded:
-                refTestSkipIf.append(
-                    (
-                        "||".join(
-                            [FEATURE_CHECK_NEEDED[f] for f in featureCheckNeeded]
-                        ),
-                        "%s is not enabled unconditionally"
-                        % ",".join(featureCheckNeeded),
-                    )
-                )
+                refTestSkipIf.append((
+                    "||".join([FEATURE_CHECK_NEEDED[f] for f in featureCheckNeeded]),
+                    "%s is not enabled unconditionally" % ",".join(featureCheckNeeded),
+                ))
 
             if (
                 "Atomics" in testRec["features"]
                 and "SharedArrayBuffer" in testRec["features"]
             ):
-                refTestSkipIf.append(
-                    (
-                        "(this.hasOwnProperty('getBuildConfiguration')"
-                        "&&getBuildConfiguration('arm64-simulator'))",
-                        "ARM64 Simulator cannot emulate atomics",
-                    )
-                )
+                refTestSkipIf.append((
+                    "(this.hasOwnProperty('getBuildConfiguration')"
+                    "&&getBuildConfiguration('arm64-simulator'))",
+                    "ARM64 Simulator cannot emulate atomics",
+                ))
 
             shellOptions = {
                 SHELL_OPTIONS[f] for f in testRec["features"] if f in SHELL_OPTIONS
@@ -578,12 +566,10 @@ def process_test262(test262Dir, test262OutDir, strictTests, externManifests):
                 writeTestFile(test262OutDir, newFileName, newSource)
 
                 if externRefTest is not None:
-                    externManifests.append(
-                        {
-                            "name": newFileName,
-                            "reftest": externRefTest,
-                        }
-                    )
+                    externManifests.append({
+                        "name": newFileName,
+                        "reftest": externRefTest,
+                    })
 
         # Remove "sm/non262.js" because it overwrites our test harness with stub
         # functions.
@@ -785,12 +771,7 @@ def fetch_pr_files(inDir, outDir, prNumber, strictTests):
                 assert pageUrl.startswith("https://api.github.com/")
 
                 # Ensure the relative URL marker has the expected format.
-                assert (
-                    rel == 'rel="prev"'
-                    or rel == 'rel="next"'
-                    or rel == 'rel="first"'
-                    or rel == 'rel="last"'
-                )
+                assert rel in {'rel="prev"', 'rel="next"', 'rel="first"', 'rel="last"'}
 
                 # We only need the URL for the next page.
                 if rel == 'rel="next"':
@@ -879,13 +860,23 @@ def update_test262(args):
             return fetch_local_changes(inDir, outDir, srcDir, strictTests)
 
         if revision == "HEAD":
-            subprocess.check_call(
-                ["git", "clone", "--depth=1", "--branch=%s" % branch, url, inDir]
-            )
+            subprocess.check_call([
+                "git",
+                "clone",
+                "--depth=1",
+                "--branch=%s" % branch,
+                url,
+                inDir,
+            ])
         else:
-            subprocess.check_call(
-                ["git", "clone", "--single-branch", "--branch=%s" % branch, url, inDir]
-            )
+            subprocess.check_call([
+                "git",
+                "clone",
+                "--single-branch",
+                "--branch=%s" % branch,
+                url,
+                inDir,
+            ])
             subprocess.check_call(["git", "-C", inDir, "reset", "--hard", revision])
 
         # If a PR number is provided, fetches only the new and modified files

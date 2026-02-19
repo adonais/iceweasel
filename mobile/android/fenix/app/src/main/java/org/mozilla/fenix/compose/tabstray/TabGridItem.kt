@@ -31,7 +31,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.text.BidiFormatter
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
@@ -186,7 +187,7 @@ private fun TabContent(
                     selected = isSelected
                 },
             shape = RoundedCornerShape(dimensionResource(id = R.dimen.tab_tray_grid_item_border_radius)),
-            border = BorderStroke(1.dp, FirefoxTheme.colors.borderPrimary),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
             Column(
                 modifier = Modifier.background(FirefoxTheme.colors.layer2),
@@ -216,7 +217,7 @@ private fun TabContent(
                                 painter = painterResource(id = iconsR.drawable.mozac_ic_globe_24),
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
-                                tint = FirefoxTheme.colors.iconPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -238,7 +239,7 @@ private fun TabContent(
                             maxLines = 1,
                             softWrap = false,
                             style = TextStyle(
-                                color = FirefoxTheme.colors.textPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 textDirection = TextDirection.Content,
                             ),
                         )
@@ -246,20 +247,20 @@ private fun TabContent(
 
                     if (!multiSelectionEnabled) {
                         IconButton(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .testTag(TabsTrayTestTag.TAB_ITEM_CLOSE),
                             onClick = {
                                 onCloseClick(tab)
                             },
+                            contentDescription = stringResource(
+                                id = R.string.close_tab_title,
+                                tab.toDisplayTitle(),
+                            ),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .testTag(TabsTrayTestTag.TAB_ITEM_CLOSE),
                         ) {
                             Icon(
                                 painter = painterResource(id = iconsR.drawable.mozac_ic_cross_20),
-                                contentDescription = stringResource(
-                                    id = R.string.close_tab_title,
-                                    tab.toDisplayTitle(),
-                                ),
-                                tint = FirefoxTheme.colors.iconPrimary,
+                                contentDescription = null,
                             )
                         }
                     }

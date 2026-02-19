@@ -209,6 +209,12 @@ void GPUVideoTextureHost::NotifyNotUsed() {
   TextureHost::NotifyNotUsed();
 }
 
+void GPUVideoTextureHost::SetReadFence(Fence* aReadFence) {
+  if (EnsureWrappedTextureHost()) {
+    EnsureWrappedTextureHost()->SetReadFence(aReadFence);
+  }
+}
+
 BufferTextureHost* GPUVideoTextureHost::AsBufferTextureHost() {
   if (EnsureWrappedTextureHost()) {
     return EnsureWrappedTextureHost()->AsBufferTextureHost();

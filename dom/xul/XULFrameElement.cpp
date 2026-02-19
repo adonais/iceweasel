@@ -7,6 +7,7 @@
 #include "mozilla/dom/XULFrameElement.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/XULFrameElementBinding.h"
@@ -190,6 +191,11 @@ void XULFrameElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
     } else if (aName == nsGkAtoms::disablefullscreen && mFrameLoader) {
       if (auto* bc = mFrameLoader->GetExtantBrowsingContext()) {
         MOZ_ALWAYS_SUCCEEDS(bc->SetFullscreenAllowedByOwner(!aValue));
+      }
+    } else if (aName == nsGkAtoms::transparent && mFrameLoader &&
+               (!!aValue != !!aOldValue)) {
+      if (auto* bp = mFrameLoader->GetBrowserParent()) {
+        bp->NotifyTransparencyChanged();
       }
     }
   }

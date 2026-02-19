@@ -25,9 +25,9 @@ def handle_clippy_msg(config, line, log, base_path, files, lint_results):
             p = detail["target"]["src_path"]
             detail = detail["message"]
             if "level" in detail:
-                if (
-                    detail["level"] == "error" or detail["level"] == "failure-note"
-                ) and not detail["code"]:
+                if (detail["level"] in {"error", "failure-note"}) and not detail[
+                    "code"
+                ]:
                     log.debug(
                         "Error outside of clippy."
                         "This means that the build failed. Therefore, skipping this"

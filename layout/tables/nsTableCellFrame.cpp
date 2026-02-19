@@ -395,7 +395,7 @@ void nsTableCellFrame::AlignChildWithinCell(
     nscoord aMaxAscent, ForceAlignTopForTableCell aForceAlignTop) {
   MOZ_ASSERT(aForceAlignTop != ForceAlignTopForTableCell::Yes ||
                  PresContext()->IsPaginated(),
-             "We shouldn't force table-cells to do 'vertical-align:top' if "
+             "We shouldn't force table-cells to do top alignment if "
              "we're not in printing!");
 
   nsIFrame* const inner = Inner();
@@ -413,27 +413,27 @@ void nsTableCellFrame::AlignChildWithinCell(
   // Calculate the position for the inner frame, initializing to the origin.
   LogicalPoint kidPosition = paddingRect.Origin(innerWM);
 
-  // Apply CSS `vertical-align` to the block coordinate.
-  const auto verticalAlign = aForceAlignTop == ForceAlignTopForTableCell::Yes
-                                 ? StyleVerticalAlignKeyword::Top
-                                 : GetVerticalAlign();
-  switch (verticalAlign) {
-    case StyleVerticalAlignKeyword::Baseline:
+  // Apply table cell alignment to the block coordinate.
+  const auto alignment = aForceAlignTop == ForceAlignTopForTableCell::Yes
+                             ? TableCellAlignment::Top
+                             : GetTableCellAlignment();
+  switch (alignment) {
+    case TableCellAlignment::Baseline:
       if (auto baseline = GetCellBaseline()) {
         // Align the baseline of the child frame with the baselines of other
-        // children in the same row which have 'vertical-align: baseline'
+        // children in the same row which have baseline alignment
         kidPosition.B(innerWM) =
             paddingRect.BStart(innerWM) + aMaxAscent - *baseline;
         break;
       }
       // fallback to start alignment
       [[fallthrough]];
-    case StyleVerticalAlignKeyword::Top:
+    case TableCellAlignment::Top:
       // Leave kidPosition at the origin: the child frame will be aligned
       // with the padding rect's block-start.
       break;
 
-    case StyleVerticalAlignKeyword::Bottom:
+    case TableCellAlignment::Bottom:
       // Align the block-end of the child frame with the block-end of the
       // padding rect.
       kidPosition.B(innerWM) =
@@ -441,7 +441,7 @@ void nsTableCellFrame::AlignChildWithinCell(
       break;
 
     default:
-    case StyleVerticalAlignKeyword::Middle:
+    case TableCellAlignment::Middle:
       // Align the middle of the child frame with the middle of the cell's
       // padding rect.
       kidPosition.B(innerWM) =
@@ -486,17 +486,22 @@ bool nsTableCellFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
 
 // Per CSS 2.1, we map 'sub', 'super', 'text-top', 'text-bottom',
 // length, percentage, and calc() values to 'baseline'.
-StyleVerticalAlignKeyword nsTableCellFrame::GetVerticalAlign() const {
+TableCellAlignment nsTableCellFrame::GetTableCellAlignment() const {
   const StyleVerticalAlign& verticalAlign = StyleDisplay()->mVerticalAlign;
   if (verticalAlign.IsKeyword()) {
     auto value = verticalAlign.AsKeyword();
-    if (value == StyleVerticalAlignKeyword::Top ||
-        value == StyleVerticalAlignKeyword::Middle ||
-        value == StyleVerticalAlignKeyword::Bottom) {
-      return value;
+    switch (value) {
+      case StyleVerticalAlignKeyword::Top:
+        return TableCellAlignment::Top;
+      case StyleVerticalAlignKeyword::Middle:
+        return TableCellAlignment::Middle;
+      case StyleVerticalAlignKeyword::Bottom:
+        return TableCellAlignment::Bottom;
+      default:
+        break;
     }
   }
-  return StyleVerticalAlignKeyword::Baseline;
+  return TableCellAlignment::Baseline;
 }
 
 static bool CellHasVisibleContent(nsTableFrame* aTableFrame,

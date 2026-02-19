@@ -13,6 +13,7 @@
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/PolicyContainer.h"
 
+#include "imgLoader.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/IdleTaskRunner.h"
 #include "mozilla/Preferences.h"
@@ -107,6 +108,12 @@ class MOZ_RAII nsHtml5AutoFlush final {
           "How do we have mParser but the doc update isn't open?");
     }
     mExecutor->EndFlush();
+    if (mExecutor->IsComplete()) {
+      // `mExecutor->EndDocUpdate()` caused a call to `nsIParser::Terminate`,
+      // so now we should clear the whole op queue in order to be able to
+      // assert in the destructor of `nsHtml5TreeOpExecutor`.
+      mOpsToRemove = mExecutor->OpQueueLength();
+    }
     mExecutor->RemoveFromStartOfOpQueue(mOpsToRemove);
     // We might have missed a speculative load flush due to sync XHR
     mExecutor->FlushSpeculativeLoads();
@@ -158,7 +165,8 @@ nsHtml5TreeOpExecutor::WillParse() {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult nsHtml5TreeOpExecutor::WillBuildModel() {
+NS_IMETHODIMP
+nsHtml5TreeOpExecutor::WillBuildModel() {
   mDocument->AddObserver(this);
   WillBuildModelImpl();
   GetDocument()->BeginLoad();
@@ -186,9 +194,9 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
     }
   });
 
-  // This comes from nsXMLContentSink and nsHTMLContentSink
-  // If this parser has been marked as broken, treat the end of parse as
-  // forced termination.
+  // This comes from nsXMLContentSink and the old (now removed)
+  // nsHTMLContentSink. If this parser has been marked as broken, treat the end
+  // of parse as forced termination.
   DidBuildModelImpl(aTerminated || NS_FAILED(IsBroken()));
 
   bool destroying = true;
@@ -911,9 +919,7 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
     MOZ_ASSERT(sele->GetScriptDeferred() || sele->GetScriptAsync() ||
                sele->GetScriptIsModule() || sele->GetScriptIsImportMap() ||
                aScriptElement->AsElement()->HasAttr(nsGkAtoms::nomodule));
-    DebugOnly<bool> block = sele->AttemptToExecute();
-    MOZ_ASSERT(!block,
-               "Defer, async, module, importmap, or nomodule tried to block.");
+    sele->AttemptToExecute(nullptr /* aParser */);
     return;
   }
 
@@ -926,15 +932,10 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
   // Copied from nsXMLContentSink
   // Now tell the script that it's ready to go. This may execute the script
   // or return true, or neither if the script doesn't need executing.
-  bool block = sele->AttemptToExecute();
+  bool block = sele->AttemptToExecute(GetParser());
 
   // If the act of insertion evaluated the script, we're fine.
-  // Else, block the parser till the script has loaded.
-  if (block) {
-    if (mParser) {
-      GetParser()->BlockParser();
-    }
-  } else {
+  if (!block) {
     // mParser may have been nulled out by now, but the flusher deals
 
     // If this event isn't needed, it doesn't do anything. It is sometimes
@@ -1167,6 +1168,14 @@ bool nsHtml5TreeOpExecutor::ShouldPreloadURI(nsIURI* aURI) {
   return mPreloadedURLs.EnsureInserted(spec);
 }
 
+bool nsHtml5TreeOpExecutor::ImageTypeSupports(const nsAString& aType) {
+  if (aType.IsEmpty()) {
+    return true;
+  }
+  return imgLoader::SupportImageWithMimeType(
+      NS_ConvertUTF16toUTF8(aType), AcceptedMimeTypes::IMAGES_AND_DOCUMENTS);
+}
+
 dom::ReferrerPolicy nsHtml5TreeOpExecutor::GetPreloadReferrerPolicy(
     const nsAString& aReferrerPolicy) {
   dom::ReferrerPolicy referrerPolicy =
@@ -1239,12 +1248,13 @@ void nsHtml5TreeOpExecutor::PreloadImage(
     const nsAString& aURL, const nsAString& aCrossOrigin,
     const nsAString& aMedia, const nsAString& aSrcset, const nsAString& aSizes,
     const nsAString& aImageReferrerPolicy, bool aLinkPreload,
-    const nsAString& aFetchPriority) {
+    const nsAString& aFetchPriority, const nsAString& aType) {
   nsCOMPtr<nsIURI> baseURI = BaseURIForPreload();
   bool isImgSet = false;
   nsCOMPtr<nsIURI> uri =
       mDocument->ResolvePreloadImage(baseURI, aURL, aSrcset, aSizes, &isImgSet);
-  if (uri && ShouldPreloadURI(uri) && MediaApplies(aMedia)) {
+  if (uri && ShouldPreloadURI(uri) && MediaApplies(aMedia) &&
+      ImageTypeSupports(aType)) {
     // use document wide referrer policy
     mDocument->MaybePreLoadImage(uri, aCrossOrigin,
                                  GetPreloadReferrerPolicy(aImageReferrerPolicy),

@@ -26,20 +26,35 @@
 }
 
 /**
- * Titlebar drawing:
- *
- * GTK windows have both a window radius (exposed via the
+ * Titlebar drawing. GTK windows have both a window radius (exposed via the
  * `-moz-gtk-csd-titlebar-radius`) environment variable, and a window shadow
- * (which we can't read back from GTK). Note that the -moz-window-decorations
- * (in X11) or the compositor (in Wayland) does draw the shadow corners
- * already.
+ * (which we can't read back from GTK).
  */
 @media (-moz-gtk-csd-transparency-available) {
   :root[customtitlebar] {
     background-color: transparent;
 
     &[sizemode="normal"]:not([gtktiledwindow="true"]) {
-      /* This takes care of drawing our window decorations on X11 */
+      /* Firefox draws its contents to a child window, while GTK takes care of
+       * drawing the toplevel (which in most cases is just the window
+       * decorations).
+       *
+       * Due to how X11 child windows work, pixels painted by a child window will
+       * never be drawn by its toplevel, even in compositing window managers.
+       * That means that we need to draw the part of the decorations that fall
+       * into our client area ourselves, which is what this does.
+       *
+       * Alternatives to this would be:
+       *  * Using the XComposite extension
+       *  * Drawing to the toplevel window buffer directly
+       *  * Approximating the corners with gdk_window_shape_combine_region
+       *
+       * None of them being particularly appealing.
+       *
+       * On Wayland we render to a subsurface which gets properly composited
+       * atop our toplevel, so there's no issue there (MozWindowDecorations
+       * does nothing).
+       */
       -moz-default-appearance: -moz-window-decorations;
       appearance: auto;
 

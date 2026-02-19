@@ -30,7 +30,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.CustomTabMenuItem
 import mozilla.components.feature.addons.Addon
@@ -41,6 +41,7 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -306,10 +307,12 @@ private fun PoweredByFirefoxItem(modifier: Modifier = Modifier) {
     }
 }
 
-@PreviewLightDark
+@Preview
 @Composable
-private fun CustomTabMenuPreview() {
-    FirefoxTheme {
+private fun CustomTabMenuPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Column(
             modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.surface)
@@ -350,8 +353,10 @@ private fun CustomTabMenuPreview() {
 
 @Preview
 @Composable
-private fun CustomTabMenuPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun CustomTabMenuDisabledButtonsPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Column(
             modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.surface)

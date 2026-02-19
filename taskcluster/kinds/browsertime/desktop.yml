@@ -519,11 +519,6 @@ browsertime-benchmark:
                             .*64.*shippable.*/.*: [trunk]
                             .*nightlyasrelease.*: [autoland]
                             default: []
-                    custom-car:
-                        by-test-platform:
-                            linux.*shippable.*: [mozilla-central]
-                            windows.*-64.*shippable.*: [mozilla-central]
-                            default: []
                     default: []
             default:
                 by-app:

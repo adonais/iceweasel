@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { CryptoUtils } from "moz-src:///services/crypto/modules/utils.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import { FxAccountsStorageManager } from "resource://gre/modules/FxAccountsStorage.sys.mjs";
@@ -28,7 +27,8 @@ import {
   ON_DEVICE_DISCONNECTED_NOTIFICATION,
   POLL_SESSION,
   PREF_ACCOUNT_ROOT,
-  PREF_LAST_FXA_USER,
+  PREF_LAST_FXA_USER_EMAIL,
+  PREF_LAST_FXA_USER_UID,
   SERVER_ERRNO_TO_ERROR,
   log,
   logPII,
@@ -38,6 +38,7 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  CryptoUtils: "moz-src:///services/crypto/modules/utils.sys.mjs",
   FxAccountsClient: "resource://gre/modules/FxAccountsClient.sys.mjs",
   FxAccountsCommands: "resource://gre/modules/FxAccountsCommands.sys.mjs",
   FxAccountsConfig: "resource://gre/modules/FxAccountsConfig.sys.mjs",
@@ -1111,6 +1112,19 @@ FxAccountsInternal.prototype = {
     return Promise.all(promises);
   },
 
+  // We need to do a one-off migration of a preference to protect against
+  // accidentally merging sync data.
+  // We replace a previously hashed email with a hashed uid.
+  _migratePreviousAccountNameHashPref(uid) {
+    if (Services.prefs.prefHasUserValue(PREF_LAST_FXA_USER_EMAIL)) {
+      Services.prefs.setStringPref(
+        PREF_LAST_FXA_USER_UID,
+        lazy.CryptoUtils.sha256Base64(uid)
+      );
+      Services.prefs.clearUserPref(PREF_LAST_FXA_USER_EMAIL);
+    }
+  },
+
   async signOut(localOnly) {
     let sessionToken;
     let tokensToRevoke;
@@ -1119,6 +1133,7 @@ FxAccountsInternal.prototype = {
     if (data) {
       sessionToken = data.sessionToken;
       tokensToRevoke = data.oauthTokens;
+      this._migratePreviousAccountNameHashPref(data.uid);
     }
     await this.notifyObservers(ON_PRELOGOUT_NOTIFICATION);
     await this._signOutLocal();
@@ -1361,15 +1376,7 @@ FxAccountsInternal.prototype = {
     await this.notifyObservers(ON_DEVICE_DISCONNECTED_NOTIFICATION, data);
   },
 
-  _setLastUserPref(newEmail) {
-    Services.prefs.setStringPref(
-      PREF_LAST_FXA_USER,
-      CryptoUtils.sha256Base64(newEmail)
-    );
-  },
-
   async _handleEmailUpdated(newEmail) {
-    this._setLastUserPref(newEmail);
     await this.currentAccountState.updateUserAccountData({ email: newEmail });
   },
 

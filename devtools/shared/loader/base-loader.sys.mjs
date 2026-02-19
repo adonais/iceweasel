@@ -125,6 +125,7 @@ function Sandbox(options) {
       "crypto",
       "ChromeUtils",
       "CSS",
+      "CSSPositionTryDescriptors",
       "CSSRule",
       "CustomStateSet",
       "DOMParser",

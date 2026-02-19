@@ -35,6 +35,15 @@ size_t BaseCompiler::countMemRefsOnStk() {
   }
   return nRefs;
 }
+
+bool BaseCompiler::hasLiveRegsOnStk() {
+  for (Stk& v : stk_) {
+    if (v.isReg()) {
+      return true;
+    }
+  }
+  return false;
+}
 #endif
 
 template <typename T>

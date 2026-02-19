@@ -69,7 +69,7 @@ class Box {
 
   // Returns a slice, pointing to the data of this box. The lifetime of
   // the memory this slice points to matches the box's context's lifetime.
-  ByteSlice ReadAsSlice();
+  ByteSlice ReadAsSlice() const;
 
  private:
   bool Contains(MediaByteRange aRange) const;
@@ -89,7 +89,7 @@ class Box {
 // Ensure that the BoxReader doesn't outlive the BoxContext!
 class MOZ_RAII BoxReader {
  public:
-  explicit BoxReader(Box& aBox)
+  explicit BoxReader(const Box& aBox)
       : mData(aBox.ReadAsSlice()), mReader(mData.mBytes, mData.mSize) {}
   BufferReader* operator->() { return &mReader; }
 

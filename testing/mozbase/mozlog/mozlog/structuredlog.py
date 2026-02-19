@@ -135,8 +135,6 @@ def get_default_logger(component=None):
 
     :param component: The component name to tag log messages with
     """
-    global _default_logger_name
-
     if not _default_logger_name:
         return None
 

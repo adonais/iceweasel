@@ -60,8 +60,8 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
   }
 
   {
-    Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction(
-        CheckSelectionInReplacedElement::OnlyWhenNotInSameNode);
+    Result<EditActionResult, nsresult> result =
+        CanHandleHTMLEditSubAction(CheckSelectionInReplacedElement::No);
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING("HTMLEditor::CanHandleHTMLEditSubAction() failed");
       return result;
@@ -150,20 +150,15 @@ HTMLEditor::AutoInsertParagraphHandler::Run() {
   if (NS_WARN_IF(!pointToInsert.IsInContentNode())) {
     return Err(NS_ERROR_FAILURE);
   }
-  while (true) {
-    Element* element = pointToInsert.GetContainerOrContainerParentElement();
-    if (MOZ_UNLIKELY(!element)) {
-      return Err(NS_ERROR_FAILURE);
-    }
-    // If the element can have a <br> element (it means that the element or its
-    // container must be able to have <div> or <p> too), we can handle
-    // insertParagraph at the point.
-    if (HTMLEditUtils::CanNodeContain(*element, *nsGkAtoms::br)) {
-      break;
-    }
-    // Otherwise, try to insert paragraph at the parent.
-    pointToInsert = pointToInsert.ParentPoint();
+  // If the element can have a <br> element (it means that the element or its
+  // container must be able to have <div> or <p> too), we can handle
+  // insertParagraph at the point.
+  pointToInsert = HTMLEditUtils::GetPossiblePointToInsert(
+      pointToInsert, *nsGkAtoms::br, mEditingHost);
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return Err(NS_ERROR_FAILURE);
   }
+  MOZ_ASSERT(pointToInsert.IsInContentNode());
 
   if (mHTMLEditor.IsMailEditor()) {
     if (const RefPtr<Element> mailCiteElement =

@@ -29,12 +29,14 @@ struct StylePropertyTypedValueResult;
 
 namespace dom {
 
+class CSSStyleRule;
 class Element;
 class OwningUndefinedOrCSSStyleValue;
 
 class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
  public:
-  StylePropertyMapReadOnly(nsCOMPtr<nsISupports> aParent, bool aComputed);
+  StylePropertyMapReadOnly(Element* aElement, bool aComputed);
+  explicit StylePropertyMapReadOnly(CSSStyleRule* aRule);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(StylePropertyMapReadOnly)
@@ -74,21 +76,33 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
 
   class Declarations {
    public:
-    explicit Declarations(bool aComputed) : mComputed(aComputed) {}
+    enum class Kind : uint8_t {
+      Inline,
+      Computed,
+      Rule,
+    };
+    Declarations(Element* aElement, bool aComputed)
+        : mElement(aElement),
+          mKind(aComputed ? Kind::Computed : Kind::Inline) {}
 
-    // XXX This will have to be changed a bit when support for CSSStyleRule
-    // is added (There won't be Element in that case)
-    StylePropertyTypedValueResult Get(Element* aElement,
-                                      const nsACString& aProperty,
+    explicit Declarations(CSSStyleRule* aRule)
+        : mRule(aRule), mKind(Kind::Rule) {}
+
+    StylePropertyTypedValueResult Get(const nsACString& aProperty,
                                       ErrorResult& aRv) const;
 
+    void Unlink();
+
    private:
-    const bool mComputed;
+    union {
+      Element* mElement;
+      CSSStyleRule* mRule;
+    };
+    const Kind mKind;
   };
 
-  // XXX Make this RefPtr<Element>
   nsCOMPtr<nsISupports> mParent;
-  const Declarations mDeclarations;
+  Declarations mDeclarations;
 };
 
 }  // namespace dom

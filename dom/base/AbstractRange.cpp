@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/RangeUtils.h"
+#include "mozilla/SelectionMovementUtils.h"
 #include "mozilla/dom/AbstractRangeBinding.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/CrossShadowBoundaryRange.h"
@@ -634,4 +635,32 @@ bool AbstractRange::IsRootUAWidget(const nsINode* aRoot) {
   }
   return false;
 }
+
+already_AddRefed<StaticRange> AbstractRange::GetShrunkenRangeToVisibleLeaves()
+    const {
+  if (NS_WARN_IF(!IsPositioned()) || NS_WARN_IF(Collapsed()) ||
+      NS_WARN_IF(IsStaticRange() && !AsStaticRange()->IsValid())) {
+    return nullptr;
+  }
+
+  const RawRangeBoundary startBoundary =
+      SelectionMovementUtils::GetFirstVisiblePointAtLeaf(*this);
+  if (MOZ_UNLIKELY(!startBoundary.IsSet())) {
+    return nullptr;
+  }
+  const RawRangeBoundary endBoundary =
+      SelectionMovementUtils::GetLastVisiblePointAtLeaf(*this);
+  if (MOZ_UNLIKELY(!endBoundary.IsSet())) {
+    return nullptr;
+  }
+  IgnoredErrorResult error;
+  RefPtr<StaticRange> range =
+      StaticRange::Create(startBoundary, endBoundary, error);
+  if (NS_WARN_IF(error.Failed())) {
+    error.SuppressException();
+    return nullptr;
+  }
+  return range.forget();
+}
+
 }  // namespace mozilla::dom

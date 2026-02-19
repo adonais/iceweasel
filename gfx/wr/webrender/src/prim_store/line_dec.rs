@@ -7,9 +7,10 @@ use api::{
     LineOrientation, LineStyle, PremultipliedColorF, Shadow,
 };
 use api::units::*;
+use crate::gpu_types::ImageBrushPrimitiveData;
+use crate::renderer::GpuBufferWriterF;
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
-use crate::gpu_cache::GpuDataRequest;
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
@@ -78,28 +79,28 @@ impl LineDecorationData {
         common: &mut PrimTemplateCommonData,
         frame_state: &mut FrameBuildingState,
     ) {
-        if let Some(ref mut request) = frame_state.gpu_cache.request(&mut common.gpu_cache_handle) {
-            self.write_prim_gpu_blocks(request);
-        }
+        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3);
+        self.write_prim_gpu_blocks(&mut writer);
+        common.gpu_buffer_address = writer.finish();
     }
 
     fn write_prim_gpu_blocks(
         &self,
-        request: &mut GpuDataRequest
+        writer: &mut GpuBufferWriterF
     ) {
         match self.cache_key.as_ref() {
             Some(cache_key) => {
-                request.push(self.color.premultiplied());
-                request.push(PremultipliedColorF::WHITE);
-                request.push([
-                    cache_key.size.width.to_f32_px(),
-                    cache_key.size.height.to_f32_px(),
-                    0.0,
-                    0.0,
-                ]);
+                writer.push(&ImageBrushPrimitiveData {
+                    color: self.color.premultiplied(),
+                    background_color: PremultipliedColorF::WHITE,
+                    stretch_size: LayoutSize::new(
+                        cache_key.size.width.to_f32_px(),
+                        cache_key.size.height.to_f32_px(),
+                    ),
+                });
             }
             None => {
-                request.push(self.color.premultiplied());
+                writer.push_one(self.color.premultiplied());
             }
         }
     }
@@ -251,6 +252,6 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<LineDecoration>(), 20, "LineDecoration size changed");
-    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 60, "LineDecorationTemplate size changed");
+    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 56, "LineDecorationTemplate size changed");
     assert_eq!(mem::size_of::<LineDecorationKey>(), 40, "LineDecorationKey size changed");
 }

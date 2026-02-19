@@ -45,7 +45,10 @@ add_task(async function test_default_telemetry() {
   const engineInstance = await createEngine(RAW_PIPELINE_OPTIONS);
 
   info("Run the inference");
-  const inferencePromise = engineInstance.run({ data: "This gets echoed." });
+  const inferencePromise = engineInstance.run({
+    data: "This gets echoed.",
+    telemetryOptions: { attach: true },
+  });
 
   info("Wait for the pending downloads.");
   await remoteClients["ml-onnx-runtime"].resolvePendingDownloads(1);
@@ -58,11 +61,53 @@ add_task(async function test_default_telemetry() {
   );
 
   {
+    info("Test the run_inference_success_flow event");
+    const inferenceFlowEvents =
+      Glean.firefoxAiRuntime.runInferenceSuccessFlow.testGetValue();
+    Assert.ok(
+      inferenceFlowEvents && !!inferenceFlowEvents.length,
+      "At least one run_inference_success_flow event was recorded"
+    );
+    const lastInferenceEvent = inferenceFlowEvents.at(-1);
+    const { extra: inferenceExtra } = lastInferenceEvent;
+
+    // Helper to check that a number field is present and >= 0
+    const checkNumber = (key, isOptional = false) => {
+      const value = inferenceExtra[key];
+      if (isOptional && (value === null || value === undefined)) {
+        return; // Optional field not present is OK
+      }
+      Assert.notEqual(value, null, `${key} should be present`);
+      const number = Number(value); // Quantities are stored as strings
+      Assert.ok(!Number.isNaN(number), `${key} should be a number`);
+      Assert.greaterOrEqual(number, 0, `${key} should be >= 0`);
+    };
+
+    // Check flow_id is present
+    Assert.ok(inferenceExtra.flow_id, "flow_id should be present");
+
+    // Check all required timing/token metrics
+    checkNumber("tokenizing_time", true);
+    checkNumber("inference_time", true);
+    checkNumber("decoding_time", true);
+    checkNumber("input_tokens", true);
+    checkNumber("output_tokens", true);
+    checkNumber("time_to_first_token", true);
+    checkNumber("tokens_per_second", true);
+    checkNumber("time_per_output_token", true);
+  }
+
+  {
     info("Test the engine_run event");
-    await engineInstance.lastResourceRequest;
+    // await engineInstance.lastResourceRequest;
+    await res.telemetryPromise;
     const value = Glean.firefoxAiRuntime.engineRun.testGetValue();
-    Assert.equal(value?.length, 1, "One engine_run event was recorded");
-    const [{ extra }] = value;
+    Assert.ok(
+      value && !!value.length,
+      "At least one engine_run event was recorded"
+    );
+    const lastEngineRunEvent = value.at(-1);
+    const { extra } = lastEngineRunEvent;
     const checkNumber = key => {
       const value = extra[key];
       Assert.notEqual(value, null, `${key} should be present`);

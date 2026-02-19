@@ -233,6 +233,7 @@ class FinalizationQueueObject : public NativeObject {
   void setQueuedForCleanup(bool value);
 
   void setHasRegistry(bool newValue);
+  void clear();
 
   static FinalizationQueueObject* create(JSContext* cx,
                                          HandleObject cleanupCallback);

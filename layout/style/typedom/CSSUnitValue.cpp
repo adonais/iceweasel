@@ -7,6 +7,7 @@
 #include "mozilla/dom/CSSUnitValue.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/CSSPropertyId.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -58,8 +59,48 @@ void CSSUnitValue::GetUnit(nsCString& aRetVal) const { aRetVal = mUnit; }
 
 void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                          nsACString& aDest) const {
+  // XXX See:
+  // https://drafts.css-houdini.org/css-typed-om-1/#create-an-internal-representation
+  //
+  // The current |isValueOutOfRange| check implements only a minimal subset of
+  // the algorithm step that wraps out-of-range numeric values (e.g. negative
+  // perspective) in a calc() expression to keep them representable.
+  //
+  // This is a temporary solution until a more robust mechanism is added for
+  // handling range checks and value wrapping. The long-term plan is to move
+  // this logic to a dedicated FromTyped trait or similar infrastructure that
+  // can validate and construct internal representations in a property-aware
+  // and fully spec-compliant manner. See bug 2005142
+  const bool isValueOutOfRange = [](NonCustomCSSPropertyId aId, double aValue) {
+    switch (aId) {
+      case eCSSProperty_column_width:
+      case eCSSProperty_perspective:
+      case eCSSProperty_border_block_end_width:
+      case eCSSProperty_border_block_start_width:
+      case eCSSProperty_border_bottom_width:
+      case eCSSProperty_border_inline_end_width:
+      case eCSSProperty_border_inline_start_width:
+      case eCSSProperty_border_left_width:
+      case eCSSProperty_border_right_width:
+      case eCSSProperty_border_top_width:
+      case eCSSProperty_outline_width:
+        return aValue < 0;
+
+      default:
+        return false;
+    }
+  }(aPropertyId.mId, mValue);
+
+  if (isValueOutOfRange) {
+    aDest.Append("calc("_ns);
+  }
+
   aDest.AppendFloat(mValue);
   aDest.Append(mUnit);
+
+  if (isValueOutOfRange) {
+    aDest.Append(")"_ns);
+  }
 }
 
 CSSUnitValue& CSSStyleValue::GetAsCSSUnitValue() {

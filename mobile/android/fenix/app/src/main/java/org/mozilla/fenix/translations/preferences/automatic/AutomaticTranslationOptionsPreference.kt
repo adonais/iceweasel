@@ -15,11 +15,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Firefox Automatic Translation Options preference screen.
@@ -63,21 +64,12 @@ fun AutomaticTranslationOptionsPreference(
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun AutomaticTranslationOptionsPreview() {
-    FirefoxTheme {
-        AutomaticTranslationOptionsPreference(
-            selectedOption = AutomaticTranslationOptionPreference.AlwaysTranslate(),
-            onItemClick = {},
-        )
-    }
-}
-
-@Composable
 @Preview
-private fun AutomaticTranslationOptionsPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun AutomaticTranslationOptionsPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         AutomaticTranslationOptionsPreference(
             selectedOption = AutomaticTranslationOptionPreference.AlwaysTranslate(),
             onItemClick = {},

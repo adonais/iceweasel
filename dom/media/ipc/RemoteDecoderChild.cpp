@@ -14,10 +14,11 @@ RemoteDecoderChild::RemoteDecoderChild(RemoteMediaIn aLocation)
     : ShmemRecycleAllocator(this),
       mLocation(aLocation),
       mThread(GetCurrentSerialEventTarget()) {
-  MOZ_DIAGNOSTIC_ASSERT(
-      RemoteMediaManagerChild::GetManagerThread() &&
-          RemoteMediaManagerChild::GetManagerThread()->IsOnCurrentThread(),
-      "Must be created on the manager thread");
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  auto managerThread = RemoteMediaManagerChild::GetManagerThread();
+  MOZ_DIAGNOSTIC_ASSERT(managerThread);
+  MOZ_DIAGNOSTIC_ASSERT(managerThread->IsOnCurrentThread());
+#endif
 }
 
 RemoteDecoderChild::~RemoteDecoderChild() = default;

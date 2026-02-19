@@ -42,7 +42,7 @@ aarch64-unknown-linux-gnu)
     else
         export MACOSX_DEPLOYMENT_TARGET=10.15
     fi
-    MACOS_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.1.sdk
+    MACOS_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.2.sdk
     export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=-isysroot -C link-arg=$MACOS_SYSROOT -C link-arg=-fuse-ld=lld -C link-arg=--target=$TARGET $rust_lto_flags"
     export CC="$MOZ_FETCHES_DIR/clang/bin/clang"
     export CXX="$MOZ_FETCHES_DIR/clang/bin/clang++"
@@ -66,7 +66,12 @@ esac
 
 PATH="$MOZ_FETCHES_DIR/rustc/bin:$MOZ_FETCHES_DIR/clang/bin:$PATH"
 
-CRATE_PATH=$MOZ_FETCHES_DIR/${FETCH-$project}
+if [ -n "${CRATE_PATH}" ]; then
+  CRATE_PATH="${GECKO_PATH}/${CRATE_PATH}"
+else
+  CRATE_PATH=$MOZ_FETCHES_DIR/${FETCH-$project}
+fi
+
 WORKSPACE_ROOT=$(cd $CRATE_PATH; cargo metadata --format-version 1 --no-deps --locked 2> /dev/null | jq -r .workspace_root)
 
 if test ! -f $WORKSPACE_ROOT/Cargo.lock; then

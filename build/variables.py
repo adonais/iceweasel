@@ -97,7 +97,7 @@ def source_repo_header(output):
         changeset = get_hg_changeset(buildconfig.topsrcdir)
         if not changeset:
             raise Exception(
-                "could not resolve changeset; " "try setting MOZ_SOURCE_CHANGESET"
+                "could not resolve changeset; try setting MOZ_SOURCE_CHANGESET"
             )
 
     if changeset:

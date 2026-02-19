@@ -51,7 +51,7 @@ test path(s):
 Please check spelling and make sure there are mochitests living there.
 """.lstrip()
 
-SUPPORTED_APPS = ["firefox", "android", "thunderbird"]
+SUPPORTED_APPS = ["firefox", "android", "thunderbird", "ios"]
 
 parser = None
 
@@ -157,6 +157,27 @@ class MochitestRunner(MozbuildObject):
 
         return runtestsremote.run_test_harness(parser, options)
 
+    def run_ios_test(self, command_context, tests, **kwargs):
+        host_ret = verify_host_bin()
+        if host_ret != 0:
+            return host_ret
+
+        path = os.path.join(self.mochitest_dir, "runtestsremoteios.py")
+        load_source("runtestsremoteios", path)
+
+        import runtestsremoteios
+
+        options = Namespace(**kwargs)
+
+        from manifestparser import TestManifest
+
+        if tests and not options.manifestFile:
+            manifest = TestManifest()
+            manifest.tests.extend(tests)
+            options.manifestFile = manifest
+
+        return runtestsremoteios.run_test_harness(parser, options)
+
     def run_geckoview_junit_test(self, context, **kwargs):
         host_ret = verify_host_bin()
         if host_ret != 0:
@@ -204,6 +225,13 @@ def setup_argument_parser():
 
         # verify device and xre
         verify_android_device(build_obj, install=InstallIntent.NO, xre=True)
+
+    if conditions.is_ios(build_obj):
+        # On iOS, check for a connected device before running tests.
+        from mozrunner.devices.ios_device import verify_ios_device
+
+        # verify device and xre
+        verify_ios_device(build_obj, install=False, xre=True)
 
     global parser
     parser = MochitestArgumentParser()
@@ -414,8 +442,8 @@ def run_mochitest_general(
     # filtered tests to the mochitest harness. Mochitest harness will read
     # the master manifest in that case.
     if not resolve_tests:
-        for flavor in flavors:
-            key = (flavor, kwargs.get("subsuite"))
+        for flavor_name in flavors:
+            key = (flavor_name, kwargs.get("subsuite"))
             suites[key] = []
 
     if not suites:
@@ -473,12 +501,24 @@ def run_mochitest_general(
             kwargs["adbPath"] = get_adb_path(command_context)
 
         run_mochitest = mochitest.run_android_test
+    elif buildapp == "ios":
+        from mozrunner.devices.ios_device import verify_ios_device
+
+        app = kwargs.get("app")
+        if not app:
+            app = "org.mozilla.ios.GeckoTestBrowser"
+        install = not kwargs.get("no_install")
+
+        # verify installation
+        verify_ios_device(command_context, install=install, xre=False, app=app)
+
+        run_mochitest = mochitest.run_ios_test
     else:
         run_mochitest = mochitest.run_desktop_test
 
     overall = None
-    for (flavor, subsuite), tests in sorted(suites.items()):
-        suite_name, suite = get_suite_definition(flavor, subsuite)
+    for (test_flavor, subsuite), tests in sorted(suites.items()):
+        suite_name, suite = get_suite_definition(test_flavor, subsuite)
         if "test_paths" in suite["kwargs"]:
             del suite["kwargs"]["test_paths"]
 

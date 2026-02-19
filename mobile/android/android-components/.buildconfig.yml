@@ -716,6 +716,7 @@ projects:
     - components:support-base
     - components:support-images
     - components:support-ktx
+    - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-utils
@@ -782,6 +783,7 @@ projects:
     - components:support-base
     - components:support-images
     - components:support-ktx
+    - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-test-libstate
@@ -827,6 +829,7 @@ projects:
     - components:support-base
     - components:support-images
     - components:support-ktx
+    - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-test-libstate
@@ -943,6 +946,7 @@ projects:
     - components:support-base
     - components:support-images
     - components:support-ktx
+    - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-test-libstate
@@ -1122,6 +1126,7 @@ projects:
     - components:support-base
     - components:support-images
     - components:support-ktx
+    - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-test-libstate
@@ -1239,6 +1244,7 @@ projects:
     - components:support-base
     - components:support-images
     - components:support-ktx
+    - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-test-fakes
@@ -1612,6 +1618,7 @@ projects:
     - components:support-base
     - components:support-images
     - components:support-ktx
+    - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-utils
@@ -1788,7 +1795,6 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-digitalassetlinks
-    - components:service-firefox-relay
     - components:service-glean
     - components:service-location
     - components:service-nimbus
@@ -1911,6 +1917,29 @@ projects:
     - components:support-ktx
     - components:support-utils
     - components:tooling-lint
+    - components:ui-icons
+  components:samples-firefox-relay:
+    description: A simple app demoing Firefox Relay integration.
+    path: samples/firefox-relay
+    publish: false
+    upstream_dependencies:
+    - components:compose-base
+    - components:concept-base
+    - components:concept-fetch
+    - components:concept-storage
+    - components:concept-sync
+    - components:lib-dataprotect
+    - components:lib-fetch-httpurlconnection
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:service-firefox-accounts
+    - components:service-firefox-relay
+    - components:support-appservices
+    - components:support-base
+    - components:support-ktx
+    - components:support-utils
+    - components:tooling-lint
+    - components:ui-colors
     - components:ui-icons
   components:samples-glean:
     description: An app demoing how to use the Glean library to collect and send telemetry
@@ -2059,10 +2088,21 @@ projects:
     path: components/service/firefox-relay
     publish: false
     upstream_dependencies:
+    - components:compose-base
     - components:concept-base
     - components:concept-fetch
+    - components:concept-storage
+    - components:concept-sync
+    - components:lib-dataprotect
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:service-firefox-accounts
     - components:support-base
+    - components:support-ktx
+    - components:support-utils
     - components:tooling-lint
+    - components:ui-colors
+    - components:ui-icons
   components:service-glean:
     description: A client-side telemetry SDK for collecting metrics and sending them
       to the Mozilla telemetry service

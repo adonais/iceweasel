@@ -369,7 +369,7 @@ function openPreferences(cmdLine) {
   openBrowserWindow(cmdLine, lazy.gSystemPrincipal, "about:preferences");
 }
 
-async function doSearch(searchTerm, cmdLine) {
+async function doSearch(searchText, cmdLine) {
   // XXXbsmedberg: use handURIToExistingBrowser to obey tabbed-browsing
   // preferences, but need nsIBrowserDOMWindow extensions
   // Open the window immediately as BrowserContentHandler needs to
@@ -381,14 +381,16 @@ async function doSearch(searchTerm, cmdLine) {
     subject => subject == win
   );
 
-  lazy.SearchUIUtils.loadSearchFromCommandLine(
-    win,
-    searchTerm,
-    lazy.PrivateBrowsingUtils.isInTemporaryAutoStartMode ||
+  lazy.SearchUIUtils.loadSearch({
+    window: win,
+    searchText,
+    usePrivateWindow:
+      lazy.PrivateBrowsingUtils.isInTemporaryAutoStartMode ||
       lazy.PrivateBrowsingUtils.isWindowPrivate(win),
-    lazy.gSystemPrincipal,
-    win.gBrowser.selectedBrowser.policyContainer
-  ).catch(console.error);
+    triggeringPrincipal: lazy.gSystemPrincipal,
+    policyContainer: win.gBrowser.selectedBrowser.policyContainer,
+    sapSource: "system",
+  }).catch(console.error);
 }
 
 function spinForLastUpdateInstalled() {

@@ -224,6 +224,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         if (showSearch) {
             showToolbarWithIconButton(
                 title = toolbarTitle,
+                contentDescription = getString(R.string.settings_search_button_content_description),
                 iconResId = R.drawable.ic_search,
                 onClick = {
                     SettingsSearch.opened.record()
@@ -247,7 +248,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         args.preferenceToScrollTo?.let {
             scrollToPreference(it)
         }
-        profilerViewModel.updateProfilerActiveStatus()
         // Consider finish of `onResume` to be the point at which we consider this fragment as 'created'.
         creatingFragment = false
     }
@@ -480,12 +480,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 SettingsFragmentDirections.actionSettingsFragmentToLinkSharingFragment()
             }
 
+            resources.getString(R.string.pref_key_remote_improvements) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToRemoteImprovementsFragment()
+            }
+
             resources.getString(R.string.pref_key_open_links_in_apps) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToOpenLinksInAppsFragment()
             }
 
             resources.getString(R.string.pref_key_downloads) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToOpenDownloadsSettingsFragment()
+            }
+
+            resources.getString(R.string.pref_key_firefox_labs) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToFirefoxLabsFragment()
             }
 
             resources.getString(R.string.pref_key_sync_debug) -> {
@@ -577,6 +585,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             findPreference<Preference>(
                 getPreferenceKey(R.string.pref_key_sync_debug),
             )?.isVisible = showSecretDebugMenuThisSession
+            findPreference<Preference>(
+                getPreferenceKey(R.string.pref_key_firefox_labs),
+            )?.isVisible = enableFirefoxLabs
             preferenceStartProfiler?.isVisible = showSecretDebugMenuThisSession &&
                 (components.core.engine.profiler?.isProfilerActive() != null)
         }

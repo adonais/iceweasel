@@ -194,7 +194,7 @@ def emit_java(annotations, output_name):
     package, klass, is_kotlin = derive_package_and_class(output_name)
 
     enum = ",\n".join(
-        f"/** {javadoc_sanitize(data['description'])} */\n{name}(\"{name}\", \"{data.get('scope', 'client')}\")"
+        f'/** {javadoc_sanitize(data["description"])} */\n{name}("{name}", "{data.get("scope", "client")}")'
         for (name, data) in annotations
     )
 

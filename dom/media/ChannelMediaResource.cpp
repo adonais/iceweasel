@@ -411,7 +411,16 @@ nsresult ChannelMediaResource::OnChannelRedirect(nsIChannel* aOld,
   // OnChannelRedirect() is followed by OnStartRequest() where we will
   // call mSuspendAgent.Delegate().
   mChannel = aNew;
-  return SetupChannelHeaders(aOffset);
+  nsresult rv = SetupChannelHeaders(aOffset);
+  if (NS_SUCCEEDED(rv)) {
+    mSuspendAgent.RevokeIfManaged(aOld);
+  } else {
+    nsCString err;
+    GetErrorName(rv, err);
+    LOG("Veto redirect: fail to set up new channel: %s", err.get());
+    mChannel = aOld;
+  }
+  return rv;
 }
 
 nsresult ChannelMediaResource::CopySegmentToCache(
@@ -1063,6 +1072,15 @@ void ChannelSuspendAgent::Revoke() {
     mIsChannelSuspended = false;
   }
   mChannel = nullptr;
+}
+
+void ChannelSuspendAgent::RevokeIfManaged(nsIChannel* aChannel) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mChannel != aChannel) {
+    NS_WARNING("Not a managed channel");
+    return;
+  }
+  Revoke();
 }
 
 bool ChannelSuspendAgent::IsSuspended() {

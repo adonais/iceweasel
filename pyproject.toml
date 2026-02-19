@@ -1,6 +1,6 @@
 [tool.ruff]
-line-length = 99
-target-version = "py39"
+line-length = 88
+target-version = "py38"
 # See https://beta.ruff.rs/docs/rules/ for a full list of rules.
 lint.select = [
   "E", "W",    # pycodestyle
@@ -20,8 +20,8 @@ lint.ignore = [
   "PLC0206",   # dict-index-missing-items
   "PLC0415",   # `import` should be at the top-level of a file
 
-  # These are handled by black.
-  "E1", "E4", "E5", "W2", "W5",
+  # These are handled by ruff format.
+  "E1", "E4", "E5", "W1", "W2", "W5",
 ]
 builtins = ["gdb"]
 extend-include = ["*.configure"]
@@ -71,6 +71,9 @@ exclude = [
   "toolkit/mozapps",
   "toolkit/moz.configure",
   "toolkit/nss.configure",
+
+  # Can be removed once remaining CI workers updated past Python 3.8
+  "python/mozbuild/mozbuild/action/tooltool.py",
 
   # mako files are not really python files
   "*.mako.py",
@@ -133,3 +136,8 @@ exclude = [
 "python/mozbuild/mozbuild/util.py" = ["F821"]
 "testing/mozharness/mozharness/mozilla/testing/android.py" = ["F821"]
 "testing/mochitest/runtests.py" = ["F821"]
+
+[tool.ruff.format]
+# Enable preview mode for --output-format=json to get improved line/column reporting.
+# TODO: Remove preview once these features are in the stable release.
+preview = true

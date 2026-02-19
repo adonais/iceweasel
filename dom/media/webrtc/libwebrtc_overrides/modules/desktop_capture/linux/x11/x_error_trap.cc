@@ -6,8 +6,6 @@
 
 #include "modules/desktop_capture/linux/x11/x_error_trap.h"
 
-#include <stddef.h>
-
 #include <limits>
 
 #include "rtc_base/checks.h"

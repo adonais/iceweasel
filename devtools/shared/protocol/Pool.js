@@ -20,7 +20,7 @@ var EventEmitter = require("resource://devtools/shared/event-emitter.js");
  *   conn can be null if the subclass provides a conn property.
  * @param {string} [label]
  *   An optional label for the Pool.
- * @constructor
+ * @class
  */
 class Pool extends EventEmitter {
   constructor(conn, label) {

@@ -294,7 +294,7 @@ export class DownloadSpamProtection {
 /**
  * Represents a special Download object for download spam.
  *
- * @extends Download
+ * @augments Download
  */
 class DownloadSpam extends Download {
   constructor(url) {

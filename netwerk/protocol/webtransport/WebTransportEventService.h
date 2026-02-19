@@ -23,20 +23,30 @@ namespace net {
 class WebTransportEventService final : public nsIWebTransportEventService,
                                        public nsIObserver {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIWEBTRANSPORTEVENTSERVICE
 
   static already_AddRefed<WebTransportEventService> GetOrCreate();
+
+  using WebTransportEventListeners =
+      nsTArray<nsCOMPtr<nsIWebTransportEventListener>>;
+
+  void GetListeners(uint64_t aInnerWindowID,
+                    WebTransportEventListeners& aListeners) const;
+
+  void WebTransportSessionCreated(uint64_t aInnerWindowID,
+                                  uint64_t aHttpChannelId);
+
+  void WebTransportSessionClosed(uint64_t aInnerWindowID,
+                                 uint64_t aHttpChannelId, uint32_t aCode,
+                                 const nsAString& aReason);
 
  private:
   WebTransportEventService();
   ~WebTransportEventService();
 
   bool HasListeners() const;
-
-  using WebTransportEventListeners =
-      nsTArray<nsCOMPtr<nsIWebTransportEventListener>>;
 
   struct WindowListener {
     WebTransportEventListeners mListeners;

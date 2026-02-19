@@ -108,6 +108,8 @@ export class ContentSection extends React.PureComponent {
       mayHaveTopicSections,
       exitEventFired,
       onSubpanelToggle,
+      toggleSectionsMgmtPanel,
+      showSectionsMgmtPanel,
     } = this.props;
     const {
       topSitesEnabled,
@@ -303,6 +305,8 @@ export class ContentSection extends React.PureComponent {
                             exitEventFired={exitEventFired}
                             pocketEnabled={pocketEnabled}
                             onSubpanelToggle={onSubpanelToggle}
+                            togglePanel={toggleSectionsMgmtPanel}
+                            showPanel={showSectionsMgmtPanel}
                           />
                         )}
                       </div>

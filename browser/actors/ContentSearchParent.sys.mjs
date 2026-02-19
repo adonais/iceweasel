@@ -5,6 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
@@ -491,6 +492,88 @@ export let ContentSearch = {
         originAttributes: browser.contentPrincipal.originAttributes,
       });
     }
+  },
+
+  _onMessageSearchHandoff({ browser, data, actor }) {
+    let win = browser.ownerGlobal;
+    let text = data.text;
+    let urlBar = win.gURLBar;
+    let inPrivateBrowsing = lazy.PrivateBrowsingUtils.isBrowserPrivate(browser);
+    let searchEngine = inPrivateBrowsing
+      ? Services.search.defaultPrivateEngine
+      : Services.search.defaultEngine;
+    let isFirstChange = true;
+
+    // It's possible that this is a handoff from about:home / about:newtab,
+    // in which case we want to include the newtab_session_id in our call to
+    // urlBar.handoff. We have to jump through some unfortunate hoops to get
+    // that.
+    let newtabSessionId = null;
+    let newtabActor =
+      browser.browsingContext?.currentWindowGlobal?.getExistingActor(
+        "AboutNewTab"
+      );
+    if (newtabActor) {
+      const portID = newtabActor.getTabDetails()?.portID;
+      if (portID) {
+        newtabSessionId = lazy.AboutNewTab.activityStream.store.feeds
+          .get("feeds.telemetry")
+          ?.sessions.get(portID)?.session_id;
+      }
+    }
+
+    if (!text) {
+      urlBar.setHiddenFocus();
+    } else {
+      // Pass the provided text to the awesomebar
+      urlBar.handoff(text, searchEngine, newtabSessionId);
+      isFirstChange = false;
+    }
+
+    let checkFirstChange = () => {
+      // Check if this is the first change since we hidden focused. If it is,
+      // remove hidden focus styles, prepend the search alias and hide the
+      // in-content search.
+      if (isFirstChange) {
+        isFirstChange = false;
+        urlBar.removeHiddenFocus(true);
+        urlBar.handoff("", searchEngine, newtabSessionId);
+        actor.sendAsyncMessage("DisableSearch");
+        urlBar.removeEventListener("compositionstart", checkFirstChange);
+        urlBar.removeEventListener("paste", checkFirstChange);
+      }
+    };
+
+    let onKeydown = ev => {
+      // Check if the keydown will cause a value change.
+      if (ev.key.length === 1 && !ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        checkFirstChange();
+      }
+      // If the Esc button is pressed, we are done. Show in-content search and cleanup.
+      if (ev.key === "Escape") {
+        onDone();
+      }
+    };
+
+    let onDone = ev => {
+      // We are done. Show in-content search again and cleanup.
+      const forceSuppressFocusBorder = ev?.type === "mousedown";
+      urlBar.removeHiddenFocus(forceSuppressFocusBorder);
+
+      urlBar.removeEventListener("keydown", onKeydown);
+      urlBar.removeEventListener("mousedown", onDone);
+      urlBar.removeEventListener("blur", onDone);
+      urlBar.removeEventListener("compositionstart", checkFirstChange);
+      urlBar.removeEventListener("paste", checkFirstChange);
+
+      actor.sendAsyncMessage("ShowSearch");
+    };
+
+    urlBar.addEventListener("keydown", onKeydown);
+    urlBar.addEventListener("mousedown", onDone);
+    urlBar.addEventListener("blur", onDone);
+    urlBar.addEventListener("compositionstart", checkFirstChange);
+    urlBar.addEventListener("paste", checkFirstChange);
   },
 
   async _onObserve(eventItem) {

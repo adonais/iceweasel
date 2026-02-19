@@ -374,6 +374,16 @@ async function processJob(job) {
 
   const resourceUsage = extractResourceUsage(profile);
 
+  // Extract commit ID from profile.meta.sourceURL
+  // Format: "https://hg.mozilla.org/integration/autoland/rev/f37a6863f87aeeb870b16223045ea7614b1ba0a7"
+  let commitId = null;
+  if (profile.meta.sourceURL) {
+    const match = profile.meta.sourceURL.match(/\/rev\/([a-f0-9]+)$/i);
+    if (match) {
+      commitId = match[1];
+    }
+  }
+
   // Convert start_time to timestamp in seconds if it's a string
   const startTime =
     typeof job.start_time === "string"
@@ -388,6 +398,7 @@ async function processJob(job) {
     startTime,
     timings,
     resourceUsage,
+    commitId,
   };
 }
 

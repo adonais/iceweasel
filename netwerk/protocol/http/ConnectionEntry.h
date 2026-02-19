@@ -118,8 +118,8 @@ class ConnectionEntry : public SupportsWeakPtr {
                                   bool aIsHttp3 = false);
 
   nsresult CreateDnsAndConnectSocket(nsAHttpTransaction* trans, uint32_t caps,
-                                     bool speculative, bool isFromPredictor,
-                                     bool urgentStart, bool allow1918,
+                                     bool speculative, bool urgentStart,
+                                     bool allow1918,
                                      PendingTransactionInfo* pendingTransInfo);
 
   // Spdy sometimes resolves the address in the socket manager in order

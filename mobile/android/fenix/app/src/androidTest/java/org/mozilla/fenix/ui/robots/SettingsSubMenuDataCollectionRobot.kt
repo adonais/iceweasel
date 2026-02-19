@@ -58,7 +58,7 @@ class SettingsSubMenuDataCollectionRobot {
             itemWithDescription("Learn more about technical data Links available"),
             // Studies section
             itemContainingText(getStringResource(R.string.studies_data_category)),
-            itemContainingText(getStringResource(R.string.studies_title)),
+            itemContainingText(getStringResource(R.string.studies_title_2)),
             itemContainingText(studiesSummary),
             // Usage data section
             itemContainingText(getStringResource(R.string.usage_data_category)),
@@ -139,7 +139,7 @@ class SettingsSubMenuDataCollectionRobot {
 
     fun clickStudiesOption() {
         Log.i(TAG, "clickStudiesOption: Trying to click the \"Studies\" option")
-        itemContainingText(getStringResource(R.string.studies_title)).click()
+        itemContainingText(getStringResource(R.string.studies_title_2)).click()
         Log.i(TAG, "clickStudiesOption: Clicked the \"Studies\" option")
     }
 

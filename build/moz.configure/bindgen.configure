@@ -284,6 +284,7 @@ def bindgen_config_paths(clang, libclang, build_project):
 
 @depends(bindgen_config_paths.libclang, when=bindgen_config_paths)
 @checking("that libclang is new enough", lambda s: "yes" if s else "no")
+@imports(_from="__builtin__", _import="Exception")
 @imports(_from="ctypes", _import="CDLL")
 @imports(_from="textwrap", _import="dedent")
 def min_libclang_version(libclang):
@@ -293,7 +294,8 @@ def min_libclang_version(libclang):
         # Just accessing it should throw if not found.
         fun = lib.clang_getAddressSpace
         return True
-    except:
+    except Exception as e:
+        log.debug(e)
         die(
             dedent(
                 """\

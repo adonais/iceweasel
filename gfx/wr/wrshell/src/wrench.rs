@@ -615,7 +615,6 @@ impl YamlWriter {
                     DisplayItem::SetGradientStops => {}
                     DisplayItem::SetFilterOps => {}
                     DisplayItem::SetFilterData => {}
-                    DisplayItem::SetFilterPrimitives => {}
                     DisplayItem::SetPoints => {}
                     DisplayItem::PopAllShadows => {}
                     DisplayItem::ReuseItems(..) => {}
@@ -627,7 +626,6 @@ impl YamlWriter {
                     DisplayItem::Gradient(..) => {}
                     DisplayItem::RadialGradient(..) => {}
                     DisplayItem::ConicGradient(..) => {}
-                    DisplayItem::ClearRectangle(..) => {}
                     DisplayItem::Line(..) => {}
                     DisplayItem::HitTest(..) => {}
                     DisplayItem::PushReferenceFrame(..) => {}

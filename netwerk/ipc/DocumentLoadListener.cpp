@@ -16,6 +16,7 @@
 #include "mozilla/DynamicFpiNavigationHeuristic.h"
 #include "mozilla/Components.h"
 #include "mozilla/LoadInfo.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ResultVariant.h"
@@ -699,6 +700,11 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
                                 dom::ContentParent* aContentParent,
                                 nsresult* aRv) -> RefPtr<OpenPromise> {
   auto* loadingContext = GetLoadingBrowsingContext();
+
+  // Snapshot the referrer policy to be used when running the "create internal
+  // ancestor origins list".
+  aLoadInfo->SetFrameReferrerPolicySnapshot(
+      loadingContext->GetEmbedderFrameReferrerPolicy());
 
   MOZ_DIAGNOSTIC_ASSERT_IF(loadingContext->GetParent(),
                            loadingContext->GetParentWindowContext());
@@ -1690,6 +1696,43 @@ void DocumentLoadListener::SerializeRedirectData(
   MOZ_ALWAYS_SUCCEEDS(
       ipc::LoadInfoToLoadInfoArgs(redirectLoadInfo, &aArgs.loadInfo()));
 
+  if (StaticPrefs::dom_location_ancestorOrigins_enabled()) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    if (RefPtr bc = redirectLoadInfo->GetFrameBrowsingContext()) {
+      nsCOMPtr<nsIPrincipal> resultPrincipal;
+      // If this fails, we get an empty location.ancestorOrigins list
+      if (NS_SUCCEEDED(
+              nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+                  mChannel, getter_AddRefs(resultPrincipal)))) {
+        const auto referrerPolicy =
+            static_cast<LoadInfo*>(channelLoadInfo.get())
+                ->GetFrameReferrerPolicySnapshot();
+        bc->Canonical()->CreateRedactedAncestorOriginsList(resultPrincipal,
+                                                           referrerPolicy);
+      }
+
+      // convert principals to IPC data
+      constexpr auto prepareInfo =
+          [](nsIPrincipal* aPrincipal) -> Maybe<ipc::PrincipalInfo> {
+        if (aPrincipal == nullptr) {
+          return Nothing();
+        }
+        ipc::PrincipalInfo data;
+        return NS_SUCCEEDED(PrincipalToPrincipalInfo(aPrincipal, &data))
+                   ? Some(std::move(data))
+                   : Nothing();
+      };
+
+      // The ancestorOrigins list the document should ultimately have, that we
+      // send down with load args.
+      auto& ancestorOrigins = aArgs.loadInfo().ancestorOrigins();
+      for (const auto& ancestorPrincipal :
+           bc->Canonical()->GetPossiblyRedactedAncestorOriginsList()) {
+        ancestorOrigins.AppendElement(prepareInfo(ancestorPrincipal));
+      }
+    }
+  }
+
   mChannel->GetOriginalURI(getter_AddRefs(aArgs.originalURI()));
 
   // mChannel can be a nsHttpChannel as well as InterceptedHttpChannel so we
@@ -1893,10 +1936,10 @@ static RefPtr<dom::BrowsingContextCallbackReceivedPromise> SwitchToNewTab(
   RefPtr<nsOpenWindowInfo> openInfo = new nsOpenWindowInfo();
   openInfo->mBrowsingContextReadyCallback =
       new nsBrowsingContextReadyCallback(promise);
-  openInfo->mOriginAttributes = aLoadingBrowsingContext->OriginAttributesRef();
   openInfo->mParent = aLoadingBrowsingContext;
   openInfo->mForceNoOpener = true;
   openInfo->mIsRemote = true;
+  openInfo->mPrincipalToInheritForAboutBlank = triggeringPrincipal;
 
   // Do the actual work to open a new tab or window async.
   nsresult rv = NS_DispatchToMainThread(NS_NewRunnableFunction(

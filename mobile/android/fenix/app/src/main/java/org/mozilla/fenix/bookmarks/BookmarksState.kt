@@ -193,6 +193,8 @@ internal sealed class BookmarksSnackbarState {
     data object None : BookmarksSnackbarState()
     data object CantEditDesktopFolders : BookmarksSnackbarState()
     data class UndoDeletion(val guidsToDelete: List<String>) : BookmarksSnackbarState()
+    data class BookmarkMoved(val from: String, val to: String) : BookmarksSnackbarState()
+    data object SelectFolderFailed : BookmarksSnackbarState()
 }
 
 internal fun BookmarksSnackbarState.addGuidToDelete(guid: String) = when (this) {
@@ -225,9 +227,16 @@ internal data class BookmarksEditFolderState(
     val folder: BookmarkItem.Folder,
 )
 
+internal sealed class SelectFolderExpansionState {
+    data object None : SelectFolderExpansionState()
+    data object Closed : SelectFolderExpansionState()
+    data class Open(val children: List<SelectFolderItem>) : SelectFolderExpansionState()
+}
+
 internal data class SelectFolderItem(
     val indentation: Int,
     val folder: BookmarkItem.Folder,
+    val expansionState: SelectFolderExpansionState,
 ) {
     val guid: String
         get() = folder.guid
@@ -242,6 +251,18 @@ internal data class SelectFolderItem(
         get() = (16 * indentation).dp
 }
 
+internal fun List<SelectFolderItem>.flattenToList(): List<SelectFolderItem> =
+    if (isEmpty()) {
+        emptyList()
+    } else {
+        map {
+            listOf(it) + (
+                (it.expansionState as? SelectFolderExpansionState.Open)
+                ?.children?.flattenToList() ?: listOf()
+            )
+        }.flatten()
+    }
+
 /**
  * State representing the select folder subscreen.
  *
@@ -251,12 +272,26 @@ internal data class SelectFolderItem(
  * this represents the selection GUID for the nest select screen where the newly added folder is being
  * placed. Optional since this screen may never be displayed.
  * @property folders The folders to display.
+ * @property filteredFolders The currently filtered collection of [folders]
+ * @property searchQuery The term used to filter the folders displayed.
+ * @property isLoading State representing if the initial load or the search has completed.
+ * @property isSearching State representing if currently in search mode.
  */
 internal data class BookmarksSelectFolderState(
     val outerSelectionGuid: String,
     val innerSelectionGuid: String? = null,
     val folders: List<SelectFolderItem> = listOf(),
-) {
+    val filteredFolders: List<SelectFolderItem> = listOf(),
+    val searchQuery: String = "",
+    val isLoading: Boolean = true,
+    val isSearching: Boolean = false,
+    ) {
+    val visibleFolders: List<SelectFolderItem>
+        get() = if (isSearching) {
+            filteredFolders.map { it.copy(indentation = 0) }
+        } else {
+            folders
+        }
     val selectedGuid: String
         get() = innerSelectionGuid ?: outerSelectionGuid
 }

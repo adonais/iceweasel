@@ -4249,7 +4249,7 @@ void MacroAssembler::outOfLineTruncateSlow(FloatRegister src, Register dest,
     Push(InstanceReg);
     int32_t framePushedAfterInstance = framePushed();
 
-    setupWasmABICall();
+    setupWasmABICall(wasm::SymbolicAddress::ToInt32);
     passABIArg(src, ABIType::Float64);
 
     int32_t instanceOffset = framePushed() - framePushedAfterInstance;
@@ -4916,9 +4916,9 @@ void MacroAssembler::setupNativeABICall() {
   setupABICallHelper(ABIKind::System);
 }
 
-void MacroAssembler::setupWasmABICall() {
+void MacroAssembler::setupWasmABICall(wasm::SymbolicAddress builtin) {
   MOZ_ASSERT(IsCompilingWasm(), "non-wasm should use setupAlignedABICall");
-  setupABICallHelper(ABIKind::System);
+  setupABICallHelper(wasm::ABIForBuiltin(builtin));
   dynamicAlignment_ = false;
 }
 
@@ -5103,7 +5103,7 @@ CodeOffset MacroAssembler::callWithABI(wasm::BytecodeOffset bytecode,
   CodeOffset raOffset = call(
       wasm::CallSiteDesc(bytecode.offset(), wasm::CallSiteKind::Symbolic), imm);
 
-  callWithABIPost(stackAdjust, result, /* callFromWasm = */ true);
+  callWithABIPost(stackAdjust, result);
 
 #ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
   if (checkUnsafeCallWithABI) {
@@ -5119,7 +5119,7 @@ void MacroAssembler::callDebugWithABI(wasm::SymbolicAddress imm,
   uint32_t stackAdjust;
   callWithABIPre(&stackAdjust, /* callFromWasm = */ false);
   call(imm);
-  callWithABIPost(stackAdjust, result, /* callFromWasm = */ false);
+  callWithABIPost(stackAdjust, result);
 }
 
 // ===============================================================
@@ -5763,16 +5763,13 @@ void MacroAssembler::branchTestType(Condition cond, Register tag,
   }
 }
 
-void MacroAssembler::branchTestObjShapeList(
-    Condition cond, Register obj, Register shapeElements, Register shapeScratch,
-    Register endScratch, Register spectreScratch, Label* label) {
-  MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
-
+void MacroAssembler::branchTestObjShapeListImpl(
+    Register obj, Register shapeElements, size_t itemSize,
+    Register shapeScratch, Register endScratch, Register spectreScratch,
+    Label* fail) {
   bool needSpectreMitigations = spectreScratch != InvalidReg;
 
   Label done;
-  Label* onMatch = cond == Assembler::Equal ? label : &done;
-  Label* onNoMatch = cond == Assembler::Equal ? &done : label;
 
   // Load the object's shape pointer into shapeScratch, and prepare to compare
   // it with the shapes in the list. The shapes are stored as private values so
@@ -5783,7 +5780,7 @@ void MacroAssembler::branchTestObjShapeList(
   Address lengthAddr(shapeElements,
                      ObjectElements::offsetOfInitializedLength());
   load32(lengthAddr, endScratch);
-  branch32(Assembler::Equal, endScratch, Imm32(0), onNoMatch);
+  branch32(Assembler::Equal, endScratch, Imm32(0), fail);
   BaseObjectElementIndex endPtrAddr(shapeElements, endScratch);
   computeEffectiveAddress(endPtrAddr, endScratch);
 
@@ -5797,19 +5794,36 @@ void MacroAssembler::branchTestObjShapeList(
   if (needSpectreMitigations) {
     move32(Imm32(0), spectreScratch);
   }
-  branchPtr(Assembler::Equal, Address(shapeElements, 0), shapeScratch, onMatch);
+  branchPtr(Assembler::Equal, Address(shapeElements, 0), shapeScratch, &done);
   if (needSpectreMitigations) {
     spectreMovePtr(Assembler::Equal, spectreScratch, obj);
   }
 
   // Advance to next shape and loop if not finished.
-  addPtr(Imm32(sizeof(Value)), shapeElements);
+  addPtr(Imm32(itemSize), shapeElements);
   branchPtr(Assembler::Below, shapeElements, endScratch, &loop);
 
-  if (cond == Assembler::NotEqual) {
-    jump(label);
-  }
+  jump(fail);
   bind(&done);
+}
+
+void MacroAssembler::branchTestObjShapeList(
+    Register obj, Register shapeElements, Register shapeScratch,
+    Register endScratch, Register spectreScratch, Label* fail) {
+  branchTestObjShapeListImpl(obj, shapeElements, sizeof(Value), shapeScratch,
+                             endScratch, spectreScratch, fail);
+}
+
+void MacroAssembler::branchTestObjShapeListSetOffset(
+    Register obj, Register shapeElements, Register offset,
+    Register shapeScratch, Register endScratch, Register spectreScratch,
+    Label* fail) {
+  branchTestObjShapeListImpl(obj, shapeElements, 2 * sizeof(Value),
+                             shapeScratch, endScratch, spectreScratch, fail);
+
+  // The shapeElements register points to the matched shape (if found).
+  // The corresponding offset is saved in the array as the next value.
+  load32(Address(shapeElements, sizeof(Value)), offset);
 }
 
 void MacroAssembler::branchTestObjCompartment(Condition cond, Register obj,
@@ -7613,12 +7627,11 @@ void MacroAssembler::wasmNewStructObject(Register instance, Register result,
                       wasm::TypeDefInstanceData::offsetOfSuperTypeVector()),
           temp);
   storePtr(temp, Address(result, WasmArrayObject::offsetOfSuperTypeVector()));
-  storePtr(ImmWord(0),
-           Address(result, WasmStructObject::offsetOfOutlineData()));
 
   if (zeroFields) {
+    static_assert(wasm::WasmStructObject_Size_ASSUMED % sizeof(void*) == 0);
     MOZ_ASSERT(sizeBytes % sizeof(void*) == 0);
-    for (size_t i = WasmStructObject::offsetOfInlineData(); i < sizeBytes;
+    for (size_t i = wasm::WasmStructObject_Size_ASSUMED; i < sizeBytes;
          i += sizeof(void*)) {
       storePtr(ImmWord(0), Address(result, i));
     }
@@ -8027,8 +8040,7 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
                 &isObjectOrNull);
 
   // If we're not i31, object, or null, we must be a string
-  rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
-  lshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
+  andPtr(Imm32(int32_t(~wasm::AnyRef::TagMask)), src);
   storeValue(JSVAL_TYPE_STRING, src, dst);
   jump(&done);
 
@@ -10702,12 +10714,17 @@ void MacroAssembler::checkForMatchMFBT(Register hashTable, Register hashIndex,
   addPtr(capacityOffset, entries);
 
   // Load entries[hashIndex] into |scratch|
-  // TODO: support non-power-of-2 entry sizes
-  constexpr size_t EntrySize = sizeof(typename Table::Entry);
-  static_assert(mozilla::IsPowerOfTwo(EntrySize));
-  uint32_t shift = mozilla::FloorLog2(EntrySize);
-  lshiftPtr(Imm32(shift), hashIndex, scratch);
-
+  size_t EntrySize = sizeof(typename Table::Entry);
+  if (mozilla::IsPowerOfTwo(EntrySize)) {
+    uint32_t shift = mozilla::FloorLog2(EntrySize);
+    lshiftPtr(Imm32(shift), hashIndex, scratch);
+  } else {
+    // Note: this is provided as a fallback. Faster paths are possible for many
+    // non-power-of-two constants. If you add a use of this code that requires a
+    // non-power-of-two EntrySize, consider extending this code.
+    move32(hashIndex, scratch);
+    mulPtr(ImmWord(EntrySize), scratch);
+  }
   computeEffectiveAddress(BaseIndex(entries, scratch, Scale::TimesOne),
                           scratch);
 }

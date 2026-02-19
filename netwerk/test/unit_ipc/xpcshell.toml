@@ -22,7 +22,6 @@ support-files = [
   "!/netwerk/test/unit/test_headers.js",
   "!/netwerk/test/unit/test_httpsuspend.js",
   "!/netwerk/test/unit/test_post.js",
-  "!/netwerk/test/unit/test_predictor.js",
   "!/netwerk/test/unit/test_progress.js",
   "!/netwerk/test/unit/test_redirect_veto.js",
   "!/netwerk/test/unit/test_redirect-caching_canceled.js",
@@ -193,9 +192,6 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_post_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
-
-["test_predictor_wrap.js"]
-run-sequentially = ["os == 'mac'"] # frequent timeouts on Mac in parallel
 
 ["test_progress_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]

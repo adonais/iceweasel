@@ -1054,8 +1054,10 @@ struct ParamTraits<mozilla::layers::OverlayInfo> {
     WriteParam(aWriter, aParam.mYuy2Overlay);
     WriteParam(aWriter, aParam.mBgra8Overlay);
     WriteParam(aWriter, aParam.mRgb10a2Overlay);
+    WriteParam(aWriter, aParam.mRgba16fOverlay);
     WriteParam(aWriter, aParam.mSupportsVpSuperResolution);
     WriteParam(aWriter, aParam.mSupportsVpAutoHDR);
+    WriteParam(aWriter, aParam.mSupportsHDR);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -1064,8 +1066,10 @@ struct ParamTraits<mozilla::layers::OverlayInfo> {
            ReadParam(aReader, &aResult->mYuy2Overlay) &&
            ReadParam(aReader, &aResult->mBgra8Overlay) &&
            ReadParam(aReader, &aResult->mRgb10a2Overlay) &&
+           ReadParam(aReader, &aResult->mRgba16fOverlay) &&
            ReadParam(aReader, &aResult->mSupportsVpSuperResolution) &&
-           ReadParam(aReader, &aResult->mSupportsVpAutoHDR);
+           ReadParam(aReader, &aResult->mSupportsVpAutoHDR) &&
+           ReadParam(aReader, &aResult->mSupportsHDR);
   }
 };
 

@@ -1131,7 +1131,7 @@ class HTMLEditor final : public EditorBase,
    * XXX I think that `IsSelectionEditable()` is better name, but it's already
    *     in `EditorBase`...
    */
-  enum class CheckSelectionInReplacedElement { Yes, OnlyWhenNotInSameNode };
+  enum class CheckSelectionInReplacedElement { No, Yes, OnlyWhenNotInSameNode };
   Result<EditActionResult, nsresult> CanHandleHTMLEditSubAction(
       CheckSelectionInReplacedElement aCheckSelectionInReplacedElement =
           CheckSelectionInReplacedElement::Yes) const;

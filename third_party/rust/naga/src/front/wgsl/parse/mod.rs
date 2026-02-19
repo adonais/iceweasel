@@ -178,6 +178,7 @@ struct BindingParser<'a> {
     sampling: ParsedAttribute<crate::Sampling>,
     invariant: ParsedAttribute<bool>,
     blend_src: ParsedAttribute<Handle<ast::Expression<'a>>>,
+    per_primitive: ParsedAttribute<()>,
 }
 
 impl<'a> BindingParser<'a> {
@@ -238,6 +239,18 @@ impl<'a> BindingParser<'a> {
                 lexer.skip(Token::Separator(','));
                 lexer.expect(Token::Paren(')'))?;
             }
+            "per_primitive" => {
+                if !lexer
+                    .enable_extensions
+                    .contains(ImplementedEnableExtension::WgpuMeshShader)
+                {
+                    return Err(Box::new(Error::EnableExtensionNotEnabled {
+                        span: name_span,
+                        kind: ImplementedEnableExtension::WgpuMeshShader.into(),
+                    }));
+                }
+                self.per_primitive.set((), name_span)?;
+            }
             _ => return Err(Box::new(Error::UnknownAttribute(name_span))),
         }
         Ok(())
@@ -251,9 +264,10 @@ impl<'a> BindingParser<'a> {
             self.sampling.value,
             self.invariant.value.unwrap_or_default(),
             self.blend_src.value,
+            self.per_primitive.value,
         ) {
-            (None, None, None, None, false, None) => Ok(None),
-            (Some(location), None, interpolation, sampling, false, blend_src) => {
+            (None, None, None, None, false, None, None) => Ok(None),
+            (Some(location), None, interpolation, sampling, false, blend_src, per_primitive) => {
                 // Before handing over the completed `Module`, we call
                 // `apply_default_interpolation` to ensure that the interpolation and
                 // sampling have been explicitly specified on all vertex shader output and fragment
@@ -263,17 +277,18 @@ impl<'a> BindingParser<'a> {
                     interpolation,
                     sampling,
                     blend_src,
+                    per_primitive: per_primitive.is_some(),
                 }))
             }
-            (None, Some(crate::BuiltIn::Position { .. }), None, None, invariant, None) => {
+            (None, Some(crate::BuiltIn::Position { .. }), None, None, invariant, None, None) => {
                 Ok(Some(ast::Binding::BuiltIn(crate::BuiltIn::Position {
                     invariant,
                 })))
             }
-            (None, Some(built_in), None, None, false, None) => {
+            (None, Some(built_in), None, None, false, None, None) => {
                 Ok(Some(ast::Binding::BuiltIn(built_in)))
             }
-            (_, _, _, _, _, _) => Err(Box::new(Error::InconsistentBinding(span))),
+            (_, _, _, _, _, _, _) => Err(Box::new(Error::InconsistentBinding(span))),
         }
     }
 }
@@ -658,6 +673,14 @@ impl Parser {
                     ty_span: Span::UNDEFINED,
                 }))
             }
+            "coop_mat8x8" => ast::ConstructorType::PartialCooperativeMatrix {
+                columns: crate::CooperativeSize::Eight,
+                rows: crate::CooperativeSize::Eight,
+            },
+            "coop_mat16x16" => ast::ConstructorType::PartialCooperativeMatrix {
+                columns: crate::CooperativeSize::Sixteen,
+                rows: crate::CooperativeSize::Sixteen,
+            },
             "array" => ast::ConstructorType::PartialArray,
             "atomic"
             | "binding_array"
@@ -699,6 +722,19 @@ impl Parser {
                     rows,
                     ty,
                     ty_span,
+                }))
+            }
+            (
+                Token::Paren('<'),
+                ast::ConstructorType::PartialCooperativeMatrix { columns, rows },
+            ) => {
+                let (ty, ty_span, role) = self.cooperative_scalar_and_role(lexer, ctx)?;
+                Ok(Some(ast::ConstructorType::CooperativeMatrix {
+                    columns,
+                    rows,
+                    ty,
+                    ty_span,
+                    role,
                 }))
             }
             (Token::Paren('<'), ast::ConstructorType::PartialArray) => {
@@ -783,6 +819,11 @@ impl Parser {
             }
             // everything else must be handled later, since they can be hidden by user-defined functions.
             _ => {
+                let result_ty = if lexer.peek().0 == Token::Paren('<') {
+                    Some(self.singular_generic(lexer, ctx)?)
+                } else {
+                    None
+                };
                 let arguments = self.arguments(lexer, ctx)?;
                 ctx.unresolved.insert(ast::Dependency {
                     ident: name,
@@ -794,6 +835,7 @@ impl Parser {
                         span: name_span,
                     },
                     arguments,
+                    result_ty,
                 }
             }
         };
@@ -942,7 +984,7 @@ impl Parser {
                 } else if let Token::Paren('(') = lexer.peek().0 {
                     self.pop_rule_span(lexer);
                     return self.function_call(lexer, word, span, ctx);
-                } else if word == "bitcast" {
+                } else if ["bitcast", "coopLoad"].contains(&word) {
                     self.pop_rule_span(lexer);
                     return self.function_call(lexer, word, span, ctx);
                 } else {
@@ -1318,7 +1360,7 @@ impl Parser {
                     };
                     crate::AddressSpace::Storage { access }
                 }
-                _ => conv::map_address_space(class_str, span)?,
+                _ => conv::map_address_space(class_str, span, &lexer.enable_extensions)?,
             };
             lexer.expect(Token::Paren('>'))?;
         }
@@ -1437,6 +1479,22 @@ impl Parser {
         Ok((ty, span))
     }
 
+    /// Parses `<T,R>`, returning (T, span of T, R)
+    fn cooperative_scalar_and_role<'a>(
+        &mut self,
+        lexer: &mut Lexer<'a>,
+        ctx: &mut ExpressionContext<'a, '_, '_>,
+    ) -> Result<'a, (Handle<ast::Type<'a>>, Span, crate::CooperativeRole)> {
+        lexer.expect_generic_paren('<')?;
+        let start = lexer.start_byte_offset();
+        let ty = self.type_decl(lexer, ctx)?;
+        let ty_span = lexer.span_from(start);
+        lexer.expect(Token::Separator(','))?;
+        let role = lexer.next_cooperative_role()?;
+        lexer.expect_generic_paren('>')?;
+        Ok((ty, ty_span, role))
+    }
+
     fn matrix_with_type<'a>(
         &mut self,
         lexer: &mut Lexer<'a>,
@@ -1450,6 +1508,23 @@ impl Parser {
             rows,
             ty,
             ty_span,
+        })
+    }
+
+    fn cooperative_matrix_with_type<'a>(
+        &mut self,
+        lexer: &mut Lexer<'a>,
+        ctx: &mut ExpressionContext<'a, '_, '_>,
+        columns: crate::CooperativeSize,
+        rows: crate::CooperativeSize,
+    ) -> Result<'a, ast::Type<'a>> {
+        let (ty, ty_span, role) = self.cooperative_scalar_and_role(lexer, ctx)?;
+        Ok(ast::Type::CooperativeMatrix {
+            columns,
+            rows,
+            ty,
+            ty_span,
+            role,
         })
     }
 
@@ -1684,6 +1759,18 @@ impl Parser {
                 ty: ctx.new_scalar(Scalar::F16),
                 ty_span: Span::UNDEFINED,
             },
+            "coop_mat8x8" => self.cooperative_matrix_with_type(
+                lexer,
+                ctx,
+                crate::CooperativeSize::Eight,
+                crate::CooperativeSize::Eight,
+            )?,
+            "coop_mat16x16" => self.cooperative_matrix_with_type(
+                lexer,
+                ctx,
+                crate::CooperativeSize::Sixteen,
+                crate::CooperativeSize::Sixteen,
+            )?,
             "atomic" => {
                 let scalar = lexer.next_scalar_generic()?;
                 ast::Type::Atomic(scalar)
@@ -1691,7 +1778,7 @@ impl Parser {
             "ptr" => {
                 lexer.expect_generic_paren('<')?;
                 let (ident, span) = lexer.next_ident_with_span()?;
-                let mut space = conv::map_address_space(ident, span)?;
+                let mut space = conv::map_address_space(ident, span, &lexer.enable_extensions)?;
                 lexer.expect(Token::Separator(','))?;
                 let base = self.type_decl(lexer, ctx)?;
                 if let crate::AddressSpace::Storage { ref mut access } = space {
@@ -1915,15 +2002,87 @@ impl Parser {
                 }
             }
             "acceleration_structure" => {
+                if !lexer
+                    .enable_extensions
+                    .contains(ImplementedEnableExtension::WgpuRayQuery)
+                {
+                    return Err(Box::new(Error::EnableExtensionNotEnabled {
+                        kind: EnableExtension::Implemented(
+                            ImplementedEnableExtension::WgpuRayQuery,
+                        ),
+                        span,
+                    }));
+                }
                 let vertex_return = lexer.next_acceleration_structure_flags()?;
+                if !lexer
+                    .enable_extensions
+                    .contains(ImplementedEnableExtension::WgpuRayQueryVertexReturn)
+                    && vertex_return
+                {
+                    return Err(Box::new(Error::EnableExtensionNotEnabled {
+                        kind: EnableExtension::Implemented(
+                            ImplementedEnableExtension::WgpuRayQueryVertexReturn,
+                        ),
+                        span,
+                    }));
+                }
                 ast::Type::AccelerationStructure { vertex_return }
             }
             "ray_query" => {
+                if !lexer
+                    .enable_extensions
+                    .contains(ImplementedEnableExtension::WgpuRayQuery)
+                {
+                    return Err(Box::new(Error::EnableExtensionNotEnabled {
+                        kind: EnableExtension::Implemented(
+                            ImplementedEnableExtension::WgpuRayQuery,
+                        ),
+                        span,
+                    }));
+                }
                 let vertex_return = lexer.next_acceleration_structure_flags()?;
+                if !lexer
+                    .enable_extensions
+                    .contains(ImplementedEnableExtension::WgpuRayQueryVertexReturn)
+                    && vertex_return
+                {
+                    return Err(Box::new(Error::EnableExtensionNotEnabled {
+                        kind: EnableExtension::Implemented(
+                            ImplementedEnableExtension::WgpuRayQueryVertexReturn,
+                        ),
+                        span,
+                    }));
+                }
                 ast::Type::RayQuery { vertex_return }
             }
-            "RayDesc" => ast::Type::RayDesc,
-            "RayIntersection" => ast::Type::RayIntersection,
+            "RayDesc" => {
+                if !lexer
+                    .enable_extensions
+                    .contains(ImplementedEnableExtension::WgpuRayQuery)
+                {
+                    return Err(Box::new(Error::EnableExtensionNotEnabled {
+                        kind: EnableExtension::Implemented(
+                            ImplementedEnableExtension::WgpuRayQuery,
+                        ),
+                        span,
+                    }));
+                }
+                ast::Type::RayDesc
+            }
+            "RayIntersection" => {
+                if !lexer
+                    .enable_extensions
+                    .contains(ImplementedEnableExtension::WgpuRayQuery)
+                {
+                    return Err(Box::new(Error::EnableExtensionNotEnabled {
+                        kind: EnableExtension::Implemented(
+                            ImplementedEnableExtension::WgpuRayQuery,
+                        ),
+                        span,
+                    }));
+                }
+                ast::Type::RayIntersection
+            }
             _ => return Ok(None),
         }))
     }
@@ -2185,6 +2344,16 @@ impl Parser {
                         }
                         "var" => {
                             let _ = lexer.next();
+
+                            if lexer.skip(Token::Paren('<')) {
+                                let (class_str, span) = lexer.next_ident_with_span()?;
+                                if class_str != "function" {
+                                    return Err(Box::new(Error::InvalidLocalVariableAddressSpace(
+                                        span,
+                                    )));
+                                }
+                                lexer.expect(Token::Paren('>'))?;
+                            }
 
                             let name = lexer.next_ident()?;
                             let ty = if lexer.skip(Token::Separator(':')) {
@@ -2790,12 +2959,14 @@ impl Parser {
         // read attributes
         let mut binding = None;
         let mut stage = ParsedAttribute::default();
-        let mut compute_span = Span::new(0, 0);
+        let mut compute_like_span = Span::new(0, 0);
         let mut workgroup_size = ParsedAttribute::default();
         let mut early_depth_test = ParsedAttribute::default();
         let (mut bind_index, mut bind_group) =
             (ParsedAttribute::default(), ParsedAttribute::default());
         let mut id = ParsedAttribute::default();
+        let mut payload = ParsedAttribute::default();
+        let mut mesh_output = ParsedAttribute::default();
 
         let mut must_use: ParsedAttribute<Span> = ParsedAttribute::default();
 
@@ -2854,7 +3025,51 @@ impl Parser {
                 }
                 "compute" => {
                     stage.set(ShaderStage::Compute, name_span)?;
-                    compute_span = name_span;
+                    compute_like_span = name_span;
+                }
+                "task" => {
+                    if !lexer
+                        .enable_extensions
+                        .contains(ImplementedEnableExtension::WgpuMeshShader)
+                    {
+                        return Err(Box::new(Error::EnableExtensionNotEnabled {
+                            span: name_span,
+                            kind: ImplementedEnableExtension::WgpuMeshShader.into(),
+                        }));
+                    }
+                    stage.set(ShaderStage::Task, name_span)?;
+                    compute_like_span = name_span;
+                }
+                "mesh" => {
+                    if !lexer
+                        .enable_extensions
+                        .contains(ImplementedEnableExtension::WgpuMeshShader)
+                    {
+                        return Err(Box::new(Error::EnableExtensionNotEnabled {
+                            span: name_span,
+                            kind: ImplementedEnableExtension::WgpuMeshShader.into(),
+                        }));
+                    }
+                    stage.set(ShaderStage::Mesh, name_span)?;
+                    compute_like_span = name_span;
+
+                    lexer.expect(Token::Paren('('))?;
+                    mesh_output.set(lexer.next_ident_with_span()?, name_span)?;
+                    lexer.expect(Token::Paren(')'))?;
+                }
+                "payload" => {
+                    if !lexer
+                        .enable_extensions
+                        .contains(ImplementedEnableExtension::WgpuMeshShader)
+                    {
+                        return Err(Box::new(Error::EnableExtensionNotEnabled {
+                            span: name_span,
+                            kind: ImplementedEnableExtension::WgpuMeshShader.into(),
+                        }));
+                    }
+                    lexer.expect(Token::Paren('('))?;
+                    payload.set(lexer.next_ident_with_span()?, name_span)?;
+                    lexer.expect(Token::Paren(')'))?;
                 }
                 "workgroup_size" => {
                     lexer.expect(Token::Paren('('))?;
@@ -3020,13 +3235,16 @@ impl Parser {
                 )?;
                 Some(ast::GlobalDeclKind::Fn(ast::Function {
                     entry_point: if let Some(stage) = stage.value {
-                        if stage == ShaderStage::Compute && workgroup_size.value.is_none() {
-                            return Err(Box::new(Error::MissingWorkgroupSize(compute_span)));
+                        if stage.compute_like() && workgroup_size.value.is_none() {
+                            return Err(Box::new(Error::MissingWorkgroupSize(compute_like_span)));
                         }
+
                         Some(ast::EntryPoint {
                             stage,
                             early_depth_test: early_depth_test.value,
                             workgroup_size: workgroup_size.value,
+                            mesh_output_variable: mesh_output.value,
+                            task_payload: payload.value,
                         })
                     } else {
                         None

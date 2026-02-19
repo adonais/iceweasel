@@ -2662,20 +2662,18 @@ def generate_nsgkatomlist_h(output, *ignore):
         "#undef small\n"
         "#endif\n\n"
         "// GK_ATOM(identifier, string, hash, is_ascii_lower, gecko_type, atom_type)\n"
-        + "".join(
-            [
-                'GK_ATOM(%s, "%s", 0x%08x, %s, %s, %s)\n'
-                % (
-                    a.ident,
-                    a.string,
-                    a.hash,
-                    str(a.is_ascii_lowercase).lower(),
-                    a.ty,
-                    a.atom_type,
-                )
-                for a in STATIC_ATOMS
-            ]
-        )
+        + "".join([
+            'GK_ATOM(%s, "%s", 0x%08x, %s, %s, %s)\n'
+            % (
+                a.ident,
+                a.string,
+                a.hash,
+                str(a.is_ascii_lowercase).lower(),
+                a.ty,
+                a.atom_type,
+            )
+            for a in STATIC_ATOMS
+        ])
     )
 
 

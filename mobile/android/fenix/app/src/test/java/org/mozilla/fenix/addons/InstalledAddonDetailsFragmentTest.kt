@@ -19,7 +19,8 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.EnableSource
@@ -29,12 +30,9 @@ import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.BuildConfig
@@ -52,8 +50,7 @@ import mozilla.components.feature.addons.R as addonsR
 
 @RunWith(RobolectricTestRunner::class)
 class InstalledAddonDetailsFragmentTest {
-    @get:Rule
-    val coroutineRule = MainCoroutineRule()
+    private val testDispatcher = StandardTestDispatcher()
     private lateinit var fragment: InstalledAddonDetailsFragment
     private lateinit var addNewTabUseCase: TabsUseCases.AddNewTabUseCase
     private lateinit var loadUrlUseCase: SessionUseCases.DefaultLoadUrlUseCase
@@ -288,7 +285,7 @@ class InstalledAddonDetailsFragmentTest {
     }
 
     @Test
-    fun `GIVEN a not found addon WHEN binding THEN show an error message`() = runTestOnMain {
+    fun `GIVEN a not found addon WHEN binding THEN show an error message`() = runTest(testDispatcher) {
         val addon = mockAddon()
 
         coEvery { addonManager.getAddonByID(any()) } returns null
@@ -308,14 +305,15 @@ class InstalledAddonDetailsFragmentTest {
                 false,
             )
 
-        fragment.bindAddon(Dispatchers.Main)
+        fragment.bindAddon(testDispatcher, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify { fragment.showUnableToQueryAddonsMessage() }
         verify(exactly = 0) { fragment.bindUI() }
     }
 
     @Test
-    fun `GIVEN an addon WHEN binding THEN bind the UI`() = runTestOnMain {
+    fun `GIVEN an addon WHEN binding THEN bind the UI`() = runTest(testDispatcher) {
         val addon = mockAddon()
 
         coEvery { addonManager.getAddonByID(any()) } returns addon
@@ -334,7 +332,8 @@ class InstalledAddonDetailsFragmentTest {
                 false,
             )
 
-        fragment.bindAddon(Dispatchers.Main)
+        fragment.bindAddon(testDispatcher, testDispatcher)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify { fragment.bindUI() }
         verify(exactly = 0) { fragment.showUnableToQueryAddonsMessage() }

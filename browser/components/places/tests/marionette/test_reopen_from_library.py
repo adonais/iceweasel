@@ -10,7 +10,7 @@ from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 class TestReopenFromLibrary(WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
-        super(TestReopenFromLibrary, self).setUp()
+        super().setUp()
 
         self.original_showForNewBookmarks_pref = self.marionette.get_pref(
             "browser.bookmarks.editDialog.showForNewBookmarks"
@@ -29,7 +29,7 @@ class TestReopenFromLibrary(WindowManagerMixin, MarionetteTestCase):
 
         self.marionette.restart(in_app=False, clean=True)
 
-        super(TestReopenFromLibrary, self).tearDown()
+        super().tearDown()
 
     def test_open_bookmark_from_library_with_no_browser_window_open(self):
         bookmark_url = self.marionette.absolute_url("empty.html")

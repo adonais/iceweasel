@@ -5,7 +5,7 @@
 package org.mozilla.fenix.webcompat.middleware
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Webcompatreporting
 import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
@@ -20,7 +20,7 @@ class WebCompatReporterTelemetryMiddleware :
     Middleware<WebCompatReporterState, WebCompatReporterAction> {
 
     override fun invoke(
-        context: MiddlewareContext<WebCompatReporterState, WebCompatReporterAction>,
+        store: Store<WebCompatReporterState, WebCompatReporterAction>,
         next: (WebCompatReporterAction) -> Unit,
         action: WebCompatReporterAction,
     ) {
@@ -37,7 +37,7 @@ class WebCompatReporterTelemetryMiddleware :
 
             WebCompatReporterAction.SendReportClicked -> {
                 Webcompatreporting.send.record(
-                    Webcompatreporting.SendExtra(sentWithBlockedTrackers = context.state.includeEtpBlockedUrls),
+                    Webcompatreporting.SendExtra(sentWithBlockedTrackers = store.state.includeEtpBlockedUrls),
                 )
             }
 

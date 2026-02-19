@@ -176,24 +176,6 @@ function InitializeListFormat(listFormat, locales, options) {
 }
 
 /**
- * Returns the subset of the given locale list for which this locale list has a
- * matching (possibly fallback) locale. Locales appear in the same order in the
- * returned list as in the input list.
- */
-function Intl_ListFormat_supportedLocalesOf(locales /*, options*/) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  // Step 1.
-  var availableLocales = "ListFormat";
-
-  // Step 2.
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  // Step 3.
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-/**
  * StringListFromIterable ( iterable )
  */
 function StringListFromIterable(iterable, methodName) {

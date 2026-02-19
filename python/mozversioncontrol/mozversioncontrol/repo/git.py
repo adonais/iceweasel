@@ -56,7 +56,7 @@ class GitRepository(Repository):
     """An implementation of `Repository` for Git repositories."""
 
     def __init__(self, path: Path, git="git"):
-        super(GitRepository, self).__init__(path, tool=git)
+        super().__init__(path, tool=git)
 
     @property
     def name(self):
@@ -273,7 +273,7 @@ class GitRepository(Repository):
         if pattern.startswith("^"):
             magics += ["top"]
             pattern = pattern[1:]
-        return ":({0}){1}".format(",".join(magics), pattern)
+        return ":({}){}".format(",".join(magics), pattern)
 
     def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
         commit_range = "HEAD"  # All uncommitted changes.
@@ -415,24 +415,22 @@ class GitRepository(Repository):
         # adding or modifying the files from `changed_files`.
         # fast-import will output the sha1 for that temporary commit on stdout
         # (via `get-mark`).
-        fast_import = "\n".join(
-            [
-                f"commit refs/machtry/{branch}",
-                "mark :1",
-                f"author {author}",
-                f"committer {committer}",
-                data(commit_message),
-                f"from {current_head}",
-                "\n".join(
-                    f"M 100644 inline {path}\n{data(content)}"
-                    for path, content in (changed_files or {}).items()
-                ),
-                f"reset refs/machtry/{branch}",
-                "from 0000000000000000000000000000000000000000",
-                "get-mark :1",
-                "",
-            ]
-        )
+        fast_import = "\n".join([
+            f"commit refs/machtry/{branch}",
+            "mark :1",
+            f"author {author}",
+            f"committer {committer}",
+            data(commit_message),
+            f"from {current_head}",
+            "\n".join(
+                f"M 100644 inline {path}\n{data(content)}"
+                for path, content in (changed_files or {}).items()
+            ),
+            f"reset refs/machtry/{branch}",
+            "from 0000000000000000000000000000000000000000",
+            "get-mark :1",
+            "",
+        ])
 
         cmd = (str(self._tool), "fast-import", "--quiet")
         stdout = subprocess.check_output(

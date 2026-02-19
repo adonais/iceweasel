@@ -15,7 +15,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.search.SearchFragmentAction.Init
@@ -39,30 +39,29 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
     private var syncSearchQueryJob: Job? = null
 
     override fun invoke(
-        context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>,
+        store: Store<SearchFragmentState, SearchFragmentAction>,
         next: (SearchFragmentAction) -> Unit,
         action: SearchFragmentAction,
     ) {
+        next(action)
+
         if (action is Init) {
-            syncSearchStatus(context)
+            syncSearchStatus(store)
 
             if (toolbarStore.state.isEditMode()) {
-                syncUserQuery(context)
+                syncUserQuery(store)
             }
         }
-
-        next(action)
     }
 
-    private fun syncSearchStatus(context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>) {
-        syncSearchStartedJob?.cancel()
+    private fun syncSearchStatus(store: Store<SearchFragmentState, SearchFragmentAction>) {
         syncSearchStartedJob = scope.launch {
             toolbarStore.flow()
                 .distinctUntilChangedBy { it.mode }
                 .collect {
                     if (it.mode == Mode.EDIT) {
                         val editState = toolbarStore.state.editState
-                        context.dispatch(
+                        store.dispatch(
                             SearchStarted(
                                 selectedSearchEngine = null,
                                 isUserSelected = true,
@@ -72,7 +71,7 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
                             ),
                         )
 
-                        syncUserQuery(context)
+                        syncUserQuery(store)
                     } else {
                         stopSyncingUserQuery()
                     }
@@ -80,16 +79,16 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
         }
     }
 
-    private fun syncUserQuery(context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>) {
+    private fun syncUserQuery(store: Store<SearchFragmentState, SearchFragmentAction>) {
         syncSearchQueryJob?.cancel()
         syncSearchQueryJob = scope.launch {
             toolbarStore.flow()
                 .map { it.editState.query }
                 .distinctUntilChanged()
                 .collect { query ->
-                    val isSearchStartedForCurrentUrl = context.state.searchStartedForCurrentUrl
+                    val isSearchStartedForCurrentUrl = store.state.searchStartedForCurrentUrl
                     val isQueryPrefilled = toolbarStore.state.editState.isQueryPrefilled
-                    context.dispatch(
+                    store.dispatch(
                         SearchFragmentAction.UpdateQuery(
                             when (isSearchStartedForCurrentUrl && isQueryPrefilled) {
                                 true -> "" // consider a prefilled query for the current URL as not entered by user

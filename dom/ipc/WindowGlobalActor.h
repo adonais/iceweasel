@@ -11,6 +11,8 @@
 #include "mozilla/dom/JSActor.h"
 #include "mozilla/dom/JSActorManager.h"
 #include "mozilla/dom/WindowGlobalTypes.h"
+#include "nsILoadInfo.h"
+#include "nsIOpenWindowInfo.h"
 #include "nsISupports.h"
 #include "nsIURI.h"
 #include "nsString.h"

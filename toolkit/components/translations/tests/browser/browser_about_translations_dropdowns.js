@@ -84,9 +84,10 @@ add_task(
       mainUserInterface: false,
       sourceLanguageSelector: false,
       targetLanguageSelector: false,
+      copyButton: false,
       swapLanguagesButton: false,
-      sourceTextArea: false,
-      targetTextArea: false,
+      sourceSectionTextArea: false,
+      targetSectionTextArea: false,
       unsupportedInfoMessage: false,
     });
 

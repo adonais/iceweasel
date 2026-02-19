@@ -141,7 +141,9 @@ export var UITour = {
       {
         infoPanelOffsetX: 18,
         infoPanelPosition: "after_start",
-        query: "#searchbar",
+        query: Services.prefs.getBoolPref("browser.search.widget.new")
+          ? "#searchbar-new"
+          : "#searchbar",
         widgetName: "search-container",
       },
     ],
@@ -149,8 +151,12 @@ export var UITour = {
       "searchIcon",
       {
         query: aDocument => {
-          let searchbar = aDocument.getElementById("searchbar");
-          return searchbar.querySelector(".searchbar-search-button");
+          if (!Services.prefs.getBoolPref("browser.search.widget.new")) {
+            let searchbar = aDocument.getElementById("searchbar");
+            return searchbar.querySelector(".searchbar-search-button");
+          }
+          let searchbar = aDocument.getElementById("searchbar-new");
+          return searchbar.querySelector(".searchmode-switcher");
         },
         widgetName: "search-container",
       },
@@ -552,36 +558,10 @@ export var UITour = {
         targetPromise.then(target => {
           let searchbar = target.node;
           searchbar.value = data.term;
-          searchbar.updateGoButtonVisibility();
+          if (!Services.prefs.getBoolPref("browser.search.widget.new")) {
+            searchbar.updateGoButtonVisibility();
+          }
         });
-        break;
-      }
-
-      case "openSearchPanel": {
-        let targetPromise = this.getTarget(window, "search");
-        targetPromise
-          .then(target => {
-            let searchbar = target.node;
-
-            if (searchbar.textbox.open) {
-              this.sendPageCallback(browser, data.callbackID);
-            } else {
-              let onPopupShown = () => {
-                searchbar.textbox.popup.removeEventListener(
-                  "popupshown",
-                  onPopupShown
-                );
-                this.sendPageCallback(browser, data.callbackID);
-              };
-
-              searchbar.textbox.popup.addEventListener(
-                "popupshown",
-                onPopupShown
-              );
-              searchbar.openSuggestionsPanel();
-            }
-          })
-          .catch(console.error);
         break;
       }
 

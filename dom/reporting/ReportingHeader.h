@@ -80,6 +80,15 @@ class ReportingHeader final : public nsIObserver,
                                    nsIPrincipal* aPrincipal,
                                    nsACString& aEndpointURI);
 
+  // Used for network-error-logging
+  // If no endpoint is found for aPrincipal and aIncludeSubdomains is true
+  // we'll check all parent origins for groups that have mIncludeSubdomains
+  // equal to true.
+  static void GetEndpointForReportIncludeSubdomains(const nsAString& aGroupName,
+                                                    nsIPrincipal* aPrincipal,
+                                                    bool aIncludeSubdomains,
+                                                    nsACString& aEndpointURI);
+
   static void RemoveEndpoint(const nsAString& aGroupName,
                              const nsACString& aEndpointURL,
                              const mozilla::ipc::PrincipalInfo& aPrincipalInfo);

@@ -663,18 +663,13 @@ class VendorManifest(MozbuildObject):
             f.write(("".join(yaml)).encode("utf-8"))
 
     def spurious_check(self, revision, ignore_modified):
-        changed_files = set(
-            [
-                os.path.abspath(f)
-                for f in self.repository.get_changed_files(mode="staged")
-            ]
-        )
-        generated_files = set(
-            [
-                self.get_full_path(f)
-                for f in self.manifest["vendoring"].get("generated", [])
-            ]
-        )
+        changed_files = set([
+            os.path.abspath(f) for f in self.repository.get_changed_files(mode="staged")
+        ])
+        generated_files = set([
+            self.get_full_path(f)
+            for f in self.manifest["vendoring"].get("generated", [])
+        ])
         changed_files = set(changed_files) - generated_files
         if not changed_files:
             self.logInfo({"r": revision}, "Upstream {r} hasn't modified files locally.")
@@ -855,12 +850,15 @@ class VendorManifest(MozbuildObject):
             self.log(
                 logging.WARNING,
                 "header_files_warning",
-                {},
+                {
+                    "num_headers": len(header_files_to_add),
+                    "headers": header_files_to_add,
+                },
                 (
-                    "We found %s header files in the update, pass --add-to-exports if you want"
-                    + " to attempt to include them in EXPORTS blocks: %s"
-                )
-                % (len(header_files_to_add), header_files_to_add),
+                    "We found {num_headers} header files in the update, pass "
+                    + "--add-to-exports if you want to attempt to include them "
+                    + "in EXPORTS blocks: {header_files_to_add}"
+                ),
             )
 
         self.logInfo(
@@ -876,8 +874,8 @@ class VendorManifest(MozbuildObject):
                 self.log(
                     logging.ERROR,
                     "vendor",
-                    {},
-                    "Could not add %s to the appropriate moz.build file" % f,
+                    {"f": f},
+                    "Could not add {f} to the appropriate moz.build file",
                 )
                 should_abort = True
 
@@ -888,8 +886,8 @@ class VendorManifest(MozbuildObject):
                 self.log(
                     logging.ERROR,
                     "vendor",
-                    {},
-                    "Could not remove %s from the appropriate moz.build file" % f,
+                    {"f": f},
+                    "Could not remove {f} from the appropriate moz.build file",
                 )
                 should_abort = True
 
@@ -925,10 +923,12 @@ class VendorManifest(MozbuildObject):
                         "--input",
                         os.path.abspath(patch),
                         "--no-backup-if-mismatch",
+                        "--batch",
                     ]
                     self.run_process(
                         args=script,
                         log_name=script,
+                        ensure_exit_code=0,
                     )
                 except Exception as e:
                     # Check if reject file has content (patch failed)
@@ -938,8 +938,8 @@ class VendorManifest(MozbuildObject):
                         self.log(
                             logging.ERROR,
                             "vendor",
-                            {},
-                            f"Patch rejection details:\n{reject_content}",
+                            {"reject_content": reject_content},
+                            "Patch rejection details:\n{reject_content}",
                         )
                     raise e
                 finally:
@@ -956,5 +956,5 @@ class VendorManifest(MozbuildObject):
             )
             msgs.append("I am going to re-throw the exception now.")
             for m in msgs:
-                self.log(logging.WARN, "vendor", {}, m)
+                self.log(logging.WARN, "vendor", {"m": m}, "{m}")
             raise e

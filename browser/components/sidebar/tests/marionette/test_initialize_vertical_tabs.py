@@ -97,14 +97,12 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
 
     def test_vertical_widgets_in_area(self):
         # A clean startup in verticalTabs mode; we should get all the defaults
-        self.restart_with_prefs(
-            {
-                "sidebar.revamp": True,
-                "sidebar.verticalTabs": True,
-                customization_pref: None,
-                snapshot_pref: None,
-            }
-        )
+        self.restart_with_prefs({
+            "sidebar.revamp": True,
+            "sidebar.verticalTabs": True,
+            customization_pref: None,
+            snapshot_pref: None,
+        })
         horiz_tab_ids = self.get_area_widgets("AREA_TABSTRIP")
         vertical_tab_ids = self.get_area_widgets("AREA_VERTICAL_TABSTRIP")
 
@@ -153,13 +151,11 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
             "sidebar.revamp": True,
             "sidebar.verticalTabs": False,
         }
-        self.restart_with_prefs(
-            {
-                **fixture_prefs,
-                customization_pref: None,
-                snapshot_pref: None,
-            }
-        )
+        self.restart_with_prefs({
+            **fixture_prefs,
+            customization_pref: None,
+            snapshot_pref: None,
+        })
 
         # Add a widget at the start of the horizontal tabstrip
         # This is synchronous and should result in updating the UI and the saved state in uiCustomization pref
@@ -222,13 +218,11 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
             "sidebar.verticalTabs": True,
             "sidebar.visibility": "hide-sidebar",
         }
-        self.restart_with_prefs(
-            {
-                **fixture_prefs,
-                customization_pref: None,
-                snapshot_pref: None,
-            }
-        )
+        self.restart_with_prefs({
+            **fixture_prefs,
+            customization_pref: None,
+            snapshot_pref: None,
+        })
 
         pref_value = self.marionette.execute_script(
             """
@@ -265,12 +259,10 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
 
     def test_hide_drag_to_pin_promo_if_horizontal_tabs_pinned(self):
         # Pin a tab using the horizontal tabstrip.
-        self.restart_with_prefs(
-            {
-                "sidebar.revamp": False,
-                "sidebar.verticalTabs": False,
-            }
-        )
+        self.restart_with_prefs({
+            "sidebar.revamp": False,
+            "sidebar.verticalTabs": False,
+        })
         self.marionette.execute_async_script(
             """
             let resolve = arguments[0];

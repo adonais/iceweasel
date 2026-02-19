@@ -7,7 +7,7 @@ import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 import { connect } from "devtools/client/shared/vendor/react-redux";
 
-import AccessibleImage from "./AccessibleImage";
+import DebuggerImage from "./DebuggerImage";
 
 import { getSourceClassnames } from "../../utils/source";
 import { isSourceBlackBoxed } from "../../selectors/index";
@@ -17,23 +17,24 @@ class SourceIcon extends PureComponent {
     return {
       modifier: PropTypes.func,
       location: PropTypes.object.isRequired,
-      iconClass: PropTypes.string,
+      iconName: PropTypes.string,
     };
   }
 
   render() {
     const { modifier } = this.props;
-    let { iconClass } = this.props;
+    let { iconName } = this.props;
 
     if (modifier) {
-      const modified = modifier(iconClass);
+      const modified = modifier(iconName);
       if (!modified) {
         return null;
       }
-      iconClass = modified;
+      iconName = modified;
     }
-    return React.createElement(AccessibleImage, {
-      className: `source-icon ${iconClass}`,
+    return React.createElement(DebuggerImage, {
+      name: iconName,
+      className: "source-icon",
     });
   }
 }
@@ -44,9 +45,9 @@ export default connect((state, props) => {
 
   // This is the key function that will compute the icon type,
   // In addition to the "modifier" implemented by each callsite.
-  const iconClass = getSourceClassnames(location.source, isBlackBoxed);
+  const iconName = getSourceClassnames(location.source, isBlackBoxed);
 
   return {
-    iconClass,
+    iconName,
   };
 })(SourceIcon);

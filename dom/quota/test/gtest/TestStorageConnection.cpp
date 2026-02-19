@@ -185,8 +185,8 @@ class TestStorageConnection : public QuotaManagerDependencyFixture {
   };
   static std::unique_ptr<NSSInitContext, NSSInitContextDeleter> sNssContext;
 };
-MOZ_CONSTINIT std::unique_ptr<NSSInitContext,
-                              TestStorageConnection::NSSInitContextDeleter>
+constinit std::unique_ptr<NSSInitContext,
+                          TestStorageConnection::NSSInitContextDeleter>
     TestStorageConnection::sNssContext;
 
 TEST_F(TestStorageConnection, BaseVFS) {

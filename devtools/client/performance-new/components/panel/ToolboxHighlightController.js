@@ -30,7 +30,7 @@ const {
 const selectors = require("resource://devtools/client/performance-new/store/selectors.js");
 
 /**
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class ToolboxHighlightController extends PureComponent {
   /** @param {Props} prevProps */

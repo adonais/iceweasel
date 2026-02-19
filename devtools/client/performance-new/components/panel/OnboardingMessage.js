@@ -41,7 +41,7 @@ const ONBOARDING_PREF = "devtools.performance.new-panel-onboarding";
  * This component provides a temporary onboarding message for users migrating
  * from the old DevTools performance panel.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class OnboardingMessage extends PureComponent {
   /**

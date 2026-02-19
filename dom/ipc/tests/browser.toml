@@ -83,6 +83,8 @@ skip-if = [
 
 ["browser_subframesPreferUsed.js"]
 
+["browser_transparent.js"]
+
 ["browser_very_fission.js"]
 support-files = ["file_dummy.html"]
 run-if = [

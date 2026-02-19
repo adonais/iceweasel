@@ -18,7 +18,6 @@
 #include "nsHashKeys.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/Attributes.h"
 #include "TRRService.h"
 
 class nsAuthSSPI;
@@ -40,7 +39,7 @@ class DNSServiceWrapper final : public nsPIDNSService {
   nsPIDNSService* PIDNSService();
 
   mozilla::Mutex mLock{"DNSServiceWrapper.mLock"};
-  nsCOMPtr<nsIDNSService> mDNSServiceInUse;
+  nsCOMPtr<nsIDNSService> mDNSServiceInUse MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsIDNSService> mBackupDNSService;
 };
 
@@ -58,7 +57,7 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
 
   static already_AddRefed<nsIDNSService> GetXPCOMSingleton();
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
   bool GetOffline() const;
 
@@ -83,7 +82,7 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
   nsresult PreprocessHostname(bool aLocalDomain, const nsACString& aInput,
                               nsACString& aACE);
 
-  bool IsLocalDomain(const nsACString& aHostname) const;
+  bool IsLocalDomain(const nsACString& aHostname) const MOZ_REQUIRES(mLock);
 
   nsresult AsyncResolveInternal(
       const nsACString& aHostname, uint16_t type, nsIDNSService::DNSFlags flags,
@@ -106,25 +105,27 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
   // Locks the mutex and returns an addreffed resolver. May return null.
   already_AddRefed<nsHostResolver> GetResolverLocked();
 
-  RefPtr<nsHostResolver> mResolver;
+  RefPtr<nsHostResolver> mResolver MOZ_GUARDED_BY(mLock);
 
   // mLock protects access to mResolver, mLocalDomains, mIPv4OnlyDomains,
   // mFailedSVCDomainNames, and mMockHTTPSRRDomain.
-  mozilla::Mutex mLock MOZ_UNANNOTATED{"nsDNSServer.mLock"};
+  mozilla::Mutex mLock{"nsDNSServer.mLock"};
 
   // mIPv4OnlyDomains is a comma-separated list of domains for which only
   // IPv4 DNS lookups are performed. This allows the user to disable IPv6 on
   // a per-domain basis and work around broken DNS servers. See bug 68796.
-  nsCString mIPv4OnlyDomains;
+  nsCString mIPv4OnlyDomains MOZ_GUARDED_BY(mLock);
   nsCString mForceResolve;
-  nsCString mMockHTTPSRRDomain;
+  nsCString mMockHTTPSRRDomain MOZ_GUARDED_BY(mLock);
   mozilla::Atomic<bool, mozilla::Relaxed> mHasMockHTTPSRRDomainSet{false};
   bool mNotifyResolution = false;
   bool mForceResolveOn = false;
-  nsTHashSet<nsCString> mLocalDomains;
+  nsTHashSet<nsCString> mLocalDomains MOZ_GUARDED_BY(mLock);
   RefPtr<mozilla::net::TRRService> mTrrService;
 
-  nsClassHashtable<nsCStringHashKey, nsTArray<nsCString>> mFailedSVCDomainNames;
+  nsClassHashtable<nsCStringHashKey, nsTArray<nsCString>> mFailedSVCDomainNames
+      MOZ_GUARDED_BY(mLock);
+  ;
 };
 
 already_AddRefed<nsIDNSService> GetOrInitDNSService();

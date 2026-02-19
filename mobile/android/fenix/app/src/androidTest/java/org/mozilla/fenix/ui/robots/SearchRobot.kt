@@ -18,6 +18,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -25,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
@@ -41,21 +43,13 @@ import org.junit.Assert.assertTrue
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
 import org.mozilla.fenix.helpers.AppAndSystemHelper.isPackageInstalled
-import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
-import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.fenix.helpers.Constants.PackageName.GOOGLE_QUICK_SEARCH
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.SPEECH_RECOGNITION
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
-import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextContains
-import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextEquals
-import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
-import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectIsGone
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
@@ -70,60 +64,58 @@ import mozilla.components.feature.qr.R as qrR
 /**
  * Implementation of Robot Pattern for the search fragment.
  */
-class SearchRobot {
-    fun verifySearchView() = assertUIObjectExists(itemWithResId("$packageName:id/search_wrapper"))
+class SearchRobot(private val composeTestRule: ComposeTestRule) {
 
-    fun verifySearchToolbar(isDisplayed: Boolean) =
-        assertUIObjectExists(
-            itemWithResId("$packageName:id/mozac_browser_toolbar_edit_url_view"),
-            exists = isDisplayed,
-        )
-
-    fun verifyScanButtonVisibility(visible: Boolean = true) =
-        assertUIObjectExists(scanButton(), exists = visible)
+    fun verifySearchToolbar(isDisplayed: Boolean) {
+        if (isDisplayed) {
+            Log.i(TAG, "verifyScanButton: Trying to verify that the edit mode toolbar is displayed")
+            composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).assertIsDisplayed()
+            Log.i(TAG, "verifyScanButton: Verified that the edit mode toolbar is displayed")
+        } else {
+            Log.i(TAG, "verifyScanButton: Trying to verify that the edit mode toolbar is not displayed")
+            composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).assertIsNotDisplayed()
+            Log.i(TAG, "verifyScanButton: Verified that the edit mode toolbar is not displayed")
+        }
+    }
 
     @OptIn(ExperimentalTestApi::class)
-    fun verifyScanButtonWithComposableToolbar(composeTestRule: ComposeTestRule, isDisplayed: Boolean) {
+    fun verifyScanButton(isDisplayed: Boolean) {
         if (isDisplayed) {
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waiting for $waitingTime until the scan QR button is exists")
-            composeTestRule.waitUntilExactlyOneExists(hasContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)), waitingTime)
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waited for $waitingTime until the scan QR button is exists")
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Trying to verify that the scan QR button is displayed")
-            composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner))
+            Log.i(TAG, "verifyScanButton: Waiting for $waitingTime until the scan QR button is exists")
+            this@SearchRobot.composeTestRule.waitUntilExactlyOneExists(hasContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)), waitingTime)
+            Log.i(TAG, "verifyScanButton: Waited for $waitingTime until the scan QR button is exists")
+            Log.i(TAG, "verifyScanButton: Trying to verify that the scan QR button is displayed")
+            this@SearchRobot.composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner))
                 .assertIsDisplayed()
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Verified that the scan QR button is displayed")
+            Log.i(TAG, "verifyScanButton: Verified that the scan QR button is displayed")
         } else {
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waiting for $waitingTime until the scan QR button does not is exist")
-            composeTestRule.waitUntilDoesNotExist(hasContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)), waitingTime)
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waited for $waitingTime until the scan QR button does not is exist")
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Trying to verify that the scan QR button is not displayed")
-            composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner))
+            Log.i(TAG, "verifyScanButton: Waiting for $waitingTime until the scan QR button does not is exist")
+            this@SearchRobot.composeTestRule.waitUntilDoesNotExist(hasContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)), waitingTime)
+            Log.i(TAG, "verifyScanButton: Waited for $waitingTime until the scan QR button does not is exist")
+            Log.i(TAG, "verifyScanButton: Trying to verify that the scan QR button is not displayed")
+            this@SearchRobot.composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner))
                 .assertIsNotDisplayed()
-            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Verified that the scan QR button is not displayed")
+            Log.i(TAG, "verifyScanButton: Verified that the scan QR button is not displayed")
         }
     }
 
-    fun verifyVoiceSearchButtonVisibility(enabled: Boolean) =
-        assertUIObjectExists(voiceSearchButton(), exists = enabled)
-
-    fun verifyVoiceSearchButtonWithComposableToolbar(composeTestRule: ComposeTestRule, isDisplayed: Boolean) {
+    fun verifyVoiceSearchButton(isDisplayed: Boolean) {
         if (isDisplayed) {
-            Log.i(TAG, "verifyVoiceSearchButtonWithComposableToolbar: Trying to verify that the voice search button is displayed")
-            composeTestRule.onNodeWithContentDescription(getStringResource(R.string.voice_search_content_description))
+            Log.i(TAG, "verifyVoiceSearchButton: Trying to verify that the voice search button is displayed")
+            this@SearchRobot.composeTestRule.onNodeWithContentDescription(getStringResource(R.string.voice_search_content_description))
                 .assertIsDisplayed()
-            Log.i(TAG, "verifyVoiceSearchButtonWithComposableToolbar: Verified that the voice search button is displayed")
+            Log.i(TAG, "verifyVoiceSearchButton: Verified that the voice search button is displayed")
         } else {
-            Log.i(TAG, "verifyVoiceSearchButtonWithComposableToolbar: Trying to verify that the voice search button is not displayed")
-            composeTestRule.onNodeWithContentDescription(getStringResource(R.string.voice_search_content_description))
+            Log.i(TAG, "verifyVoiceSearchButton: Trying to verify that the voice search button is not displayed")
+            this@SearchRobot.composeTestRule.onNodeWithContentDescription(getStringResource(R.string.voice_search_content_description))
                 .assertIsNotDisplayed()
-            Log.i(TAG, "verifyVoiceSearchButtonWithComposableToolbar: Verified that the voice search button is not displayed")
+            Log.i(TAG, "verifyVoiceSearchButton: Verified that the voice search button is not displayed")
         }
     }
 
-    // Device or AVD requires a Google Services Android OS installation
     fun startVoiceSearch() {
         Log.i(TAG, "startVoiceSearch: Trying to click the voice search button button")
-        voiceSearchButton().click()
+        this@SearchRobot.composeTestRule.onNodeWithContentDescription(getStringResource(R.string.voice_search_content_description)).performClick()
         Log.i(TAG, "startVoiceSearch: Clicked the voice search button button")
         grantSystemPermission()
 
@@ -135,20 +127,6 @@ class SearchRobot {
         }
     }
 
-    fun startVoiceSearchWithComposableToolbar(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "startVoiceSearchWithComposableToolbar: Trying to click the voice search button button")
-        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.voice_search_content_description)).performClick()
-        Log.i(TAG, "startVoiceSearchWithComposableToolbar: Clicked the voice search button button")
-        grantSystemPermission()
-
-        if (isPackageInstalled(GOOGLE_QUICK_SEARCH)) {
-            Log.i(TAG, "startVoiceSearchWithComposableToolbar: $GOOGLE_QUICK_SEARCH is installed")
-            Log.i(TAG, "startVoiceSearchWithComposableToolbar: Trying to verify the intent to: $GOOGLE_QUICK_SEARCH")
-            Intents.intended(IntentMatchers.hasAction(SPEECH_RECOGNITION))
-            Log.i(TAG, "startVoiceSearchWithComposableToolbar: Verified the intent to: $GOOGLE_QUICK_SEARCH")
-        }
-    }
-
     fun closeVoiceSearchDialog() {
         Log.i(TAG, "closeVoiceSearchDialog: Trying to click device back button")
         mDevice.pressBack()
@@ -156,10 +134,10 @@ class SearchRobot {
     }
 
     @OptIn(ExperimentalTestApi::class)
-    fun verifyTheSuggestionsHeader(rule: ComposeTestRule, headerText: String) {
+    fun verifyTheSuggestionsHeader(headerText: String) {
         Log.i(TAG, "verifyTheFirefoxSuggestHeader: Trying to verify the Firefox Suggest header is displayed.")
-        rule.waitUntilExactlyOneExists(hasText(headerText), waitingTime)
-        rule.onNodeWithText(headerText).assertIsDisplayed()
+        this@SearchRobot.composeTestRule.waitUntilExactlyOneExists(hasText(headerText), waitingTime)
+        this@SearchRobot.composeTestRule.onNodeWithText(headerText).assertIsDisplayed()
         Log.i(TAG, "verifyTheFirefoxSuggestHeader: Verified the Firefox Suggest header is displayed.")
     }
 
@@ -169,7 +147,6 @@ class SearchRobot {
      */
     @OptIn(ExperimentalTestApi::class)
     fun verifySponsoredSuggestionsResults(
-        rule: ComposeTestRule,
         vararg searchSuggestions: String,
         searchTerm: String,
         shouldEditKeyword: Boolean = false,
@@ -177,7 +154,7 @@ class SearchRobot {
         shouldUseSearchShort: Boolean = false,
         searchEngineName: String = "",
     ) {
-        rule.waitForIdle()
+        this@SearchRobot.composeTestRule.waitForIdle()
         for (i in 1..RETRY_COUNT) {
             Log.i(TAG, "verifySponsoredSuggestionsResults: Started try #$i")
             try {
@@ -186,7 +163,7 @@ class SearchRobot {
                     closeSoftKeyboard()
                     Log.i(TAG, "verifySponsoredSuggestionsResults: Performed \"Close soft keyboard\" action")
                     Log.i(TAG, "verifySponsoredSuggestionsResults: Waiting for $waitingTime ms until $searchSuggestion search suggestion exists")
-                    rule.waitUntilExactlyOneExists(hasText(searchSuggestion), waitingTime)
+                    this@SearchRobot.composeTestRule.waitUntilExactlyOneExists(hasText(searchSuggestion), waitingTime)
                     Log.i(TAG, "verifySponsoredSuggestionsResults: Waited for $waitingTime ms until $searchSuggestion search suggestion exists")
                 }
 
@@ -197,7 +174,7 @@ class SearchRobot {
                     throw e
                 } else {
                     mDevice.pressBack()
-                    homeScreen {
+                    homeScreen(this@SearchRobot.composeTestRule) {
                     }.openSearch {
                         if (shouldUseSearchShort) {
                             clickSearchSelectorButton()
@@ -213,7 +190,7 @@ class SearchRobot {
         }
         for (searchSuggestion in searchSuggestions) {
             Log.i(TAG, "verifySponsoredSuggestionsResults: Trying to verify that $searchSuggestion search suggestion exists")
-            rule.onNodeWithText(searchSuggestion).assertIsDisplayed()
+            this@SearchRobot.composeTestRule.onNodeWithText(searchSuggestion).assertIsDisplayed()
             Log.i(TAG, "verifySponsoredSuggestionsResults: Verified that $searchSuggestion search suggestion exists")
         }
     }
@@ -223,8 +200,8 @@ class SearchRobot {
      * For sponsored suggestions, use [verifySponsoredSuggestionsResults].
      */
     @OptIn(ExperimentalTestApi::class)
-    fun verifySearchSuggestionsAreDisplayed(rule: ComposeTestRule, vararg searchSuggestions: String) {
-        rule.waitForIdle()
+    fun verifySearchSuggestionsAreDisplayed(vararg searchSuggestions: String) {
+        this@SearchRobot.composeTestRule.waitForIdle()
         for (searchSuggestion in searchSuggestions) {
             Log.i(
                 TAG,
@@ -239,8 +216,8 @@ class SearchRobot {
                 TAG,
                 "verifySearchSuggestionsAreDisplayed: Waiting for $waitingTime ms until $searchSuggestion search suggestion exists.",
             )
-            rule.waitUntilExactlyOneExists(hasText(searchSuggestion), waitingTime)
-            rule.onAllNodesWithTag("mozac.awesomebar.suggestion")
+            this@SearchRobot.composeTestRule.waitUntilExactlyOneExists(hasText(searchSuggestion), waitingTime)
+            this@SearchRobot.composeTestRule.onAllNodesWithTag("mozac.awesomebar.suggestion")
                 .assertAny(
                     hasText(searchSuggestion, substring = true),
                 )
@@ -251,13 +228,13 @@ class SearchRobot {
         }
     }
 
-    fun verifySuggestionsAreNotDisplayed(rule: ComposeTestRule, vararg searchSuggestions: String) {
+    fun verifySuggestionsAreNotDisplayed(vararg searchSuggestions: String) {
         Log.i(TAG, "verifySuggestionsAreNotDisplayed: Waiting for compose test rule to be idle")
-        rule.waitForIdle()
+        this@SearchRobot.composeTestRule.waitForIdle()
         Log.i(TAG, "verifySuggestionsAreNotDisplayed: Waited for compose test rule to be idle")
         for (searchSuggestion in searchSuggestions) {
             Log.i(TAG, "verifySuggestionsAreNotDisplayed: Trying to verify that there are no $searchSuggestion related search suggestions")
-            rule.onAllNodesWithTag("mozac.awesomebar.suggestions")
+            this@SearchRobot.composeTestRule.onAllNodesWithTag("mozac.awesomebar.suggestions")
                 .assertAny(
                     hasText(searchSuggestion)
                         .not(),
@@ -266,22 +243,16 @@ class SearchRobot {
         }
     }
 
-    fun verifySuggestionsWithComposableToolbarAreNotDisplayed(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "verifySuggestionsWithComposableToolbarAreNotDisplayed: Trying to verify that no search suggestions are displayed")
-        composeTestRule.onNodeWithTag("mozac.awesomebar.suggestions").assertIsNotDisplayed()
-        Log.i(TAG, "verifySuggestionsWithComposableToolbarAreNotDisplayed: Verified that no search suggestions are displayed")
-    }
-
     @OptIn(ExperimentalTestApi::class)
-    fun verifySearchSuggestionsCount(rule: ComposeTestRule, numberOfSuggestions: Int, searchTerm: String) {
+    fun verifySearchSuggestionsCount(numberOfSuggestions: Int, searchTerm: String) {
         for (i in 1..RETRY_COUNT) {
             Log.i(TAG, "verifySearchSuggestionsCount: Started try #$i")
             try {
                 Log.i(TAG, "verifySearchSuggestionsCount: Compose test rule is waiting for $waitingTime ms until the note count equals to: $numberOfSuggestions")
-                rule.waitUntilNodeCount(hasTestTag("mozac.awesomebar.suggestion"), numberOfSuggestions, waitingTime)
+                this@SearchRobot.composeTestRule.waitUntilNodeCount(hasTestTag("mozac.awesomebar.suggestion"), numberOfSuggestions, waitingTime)
                 Log.i(TAG, "verifySearchSuggestionsCount: Compose test rule waited for $waitingTime ms until the note count equals to: $numberOfSuggestions")
                 Log.i(TAG, "verifySearchSuggestionsCount: Trying to verify that the count of the search suggestions equals: $numberOfSuggestions")
-                rule.onAllNodesWithTag("mozac.awesomebar.suggestion").assertCountEquals(numberOfSuggestions)
+                this@SearchRobot.composeTestRule.onAllNodesWithTag("mozac.awesomebar.suggestion").assertCountEquals(numberOfSuggestions)
                 Log.i(TAG, "verifySearchSuggestionsCount: Verified that the count of the search suggestions equals: $numberOfSuggestions")
 
                 break
@@ -293,7 +264,7 @@ class SearchRobot {
                     Log.i(TAG, "verifySearchSuggestionsCount: Trying to click device back button")
                     mDevice.pressBack()
                     Log.i(TAG, "verifySearchSuggestionsCount: Clicked device back button")
-                    homeScreen {
+                    homeScreen(this@SearchRobot.composeTestRule) {
                     }.openSearch {
                         typeSearch(searchTerm)
                     }
@@ -302,31 +273,22 @@ class SearchRobot {
         }
     }
 
-    fun verifyAllowSuggestionsInPrivateModeDialog() =
-        assertUIObjectExists(
-            itemWithText(getStringResource(R.string.search_suggestions_onboarding_title)),
-            itemWithText(getStringResource(R.string.search_suggestions_onboarding_text)),
-            itemWithText("Learn more"),
-            itemWithText(getStringResource(R.string.search_suggestions_onboarding_allow_button)),
-            itemWithText(getStringResource(R.string.search_suggestions_onboarding_do_not_allow_button)),
-        )
-
-    fun verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Trying to verify that the private browsing search suggestion title is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_title), useUnmergedTree = true).assertIsDisplayed()
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Verified that the private browsing search suggestion title is displayed")
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Trying to verify that the private browsing search suggestion message is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_text), useUnmergedTree = true).assertIsDisplayed()
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Verified that the private browsing search suggestion message is displayed")
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Trying to verify that the \"Learn more\" link is displayed")
-        composeTestRule.onNodeWithContentDescription("Learn more Links available", useUnmergedTree = true).assertIsDisplayed()
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Verified that the \"Learn more\" link is displayed")
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Trying to verify that the \"Allow\" button is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_allow_button), useUnmergedTree = true).assertIsDisplayed()
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Verified that the \"Allow\" button is displayed")
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Trying to verify that the \"Don't allow\" button is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_do_not_allow_button), useUnmergedTree = true).assertIsDisplayed()
-        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar: Verified that the \"Don't allow\" button is displayed")
+    fun verifyAllowSuggestionsInPrivateModeDialog() {
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Trying to verify that the private browsing search suggestion title is displayed")
+        this@SearchRobot.composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_title), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Verified that the private browsing search suggestion title is displayed")
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Trying to verify that the private browsing search suggestion message is displayed")
+        this@SearchRobot.composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_text), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Verified that the private browsing search suggestion message is displayed")
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Trying to verify that the \"Learn more\" link is displayed")
+        this@SearchRobot.composeTestRule.onNodeWithContentDescription("Learn more Links available", useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Verified that the \"Learn more\" link is displayed")
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Trying to verify that the \"Allow\" button is displayed")
+        this@SearchRobot.composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_allow_button), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Verified that the \"Allow\" button is displayed")
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Trying to verify that the \"Don't allow\" button is displayed")
+        this@SearchRobot.composeTestRule.onNodeWithText(getStringResource(R.string.search_suggestions_onboarding_do_not_allow_button), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyAllowSuggestionsInPrivateModeDialog: Verified that the \"Don't allow\" button is displayed")
     }
 
     fun denySuggestionsInPrivateMode() {
@@ -345,95 +307,59 @@ class SearchRobot {
         Log.i(TAG, "allowSuggestionsInPrivateMode: Clicked the \"Allow\" button")
     }
 
-    fun verifySearchSelectorButton() = assertUIObjectExists(searchSelectorButton())
+    fun verifySearchSelectorButton() {
+        Log.i(TAG, "verifySearchSelectorButton: Trying to verify that the search selector button is displayed")
+        composeTestRule.onNodeWithTag(SEARCH_SELECTOR).assertIsDisplayed()
+        Log.i(TAG, "verifySearchSelectorButton: Verified that the search selector button is displayed")
+    }
 
     fun clickSearchSelectorButton() {
-        Log.i(TAG, "clickSearchSelectorButton: Waiting for $waitingTime ms for search selector button to exist")
-        searchSelectorButton().waitForExists(waitingTime)
-        Log.i(TAG, "clickSearchSelectorButton: Waited for $waitingTime ms for search selector button to exist")
         Log.i(TAG, "clickSearchSelectorButton: Trying to click the search selector button")
-        searchSelectorButton().click()
+        composeTestRule.onNodeWithTag(SEARCH_SELECTOR).performClick()
         Log.i(TAG, "clickSearchSelectorButton: Clicked the search selector button")
     }
 
-    fun clickSearchSelectorButtonWithComposableToolbar(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "clickSearchSelectorButtonWithComposableToolbar: Trying to click the search selector button")
-        composeTestRule.onNodeWithTag(SEARCH_SELECTOR).performClick()
-        Log.i(TAG, "clickSearchSelectorButtonWithComposableToolbar: Clicked the search selector button")
-    }
-
-    fun verifySearchEngineIcon(name: String) = assertUIObjectExists(itemWithDescription(name))
-
-    fun verifySearchEngineIconWithComposableToolbar(composeTestRule: ComposeTestRule, name: String) {
-        Log.i(TAG, "verifySearchEngineIconWithComposableToolbar: Trying to verify that search selector icon for: $name search engine is displayed")
+    fun verifySearchEngineIcon(name: String) {
+        Log.i(TAG, "verifySearchEngineIcon: Trying to verify that search selector icon for: $name search engine is displayed")
         composeTestRule.onNodeWithContentDescription(getStringResource(R.string.search_engine_selector_content_description, name)).assertIsDisplayed()
-        Log.i(TAG, "verifySearchEngineIconWithComposableToolbar: Verified that search selector icon for: $name search engine is displayed")
+        Log.i(TAG, "verifySearchEngineIcon: Verified that search selector icon for: $name search engine is displayed")
     }
 
-    fun verifySearchBarPlaceholder(text: String) {
-        Log.i(TAG, "verifySearchBarPlaceholder: Waiting for $waitingTime ms for the edit mode toolbar to exist")
-        browserToolbarEditView().waitForExists(waitingTime)
-        Log.i(TAG, "verifySearchBarPlaceholder: Waited for $waitingTime ms for the edit mode toolbar to exist")
-        assertItemTextEquals(browserToolbarEditView(), expectedText = text)
-    }
-
-    fun verifySearchBarPlaceholderWithComposableToolbar(
-        composeTestRule: ComposeTestRule,
-        searchHint: String,
-    ) {
-        Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Verify hint is $searchHint")
-        composeTestRule
+    fun verifySearchBarPlaceholder(searchHint: String) {
+        Log.i(TAG, "verifySearchBarPlaceholder: Verify hint is $searchHint")
+        this@SearchRobot.composeTestRule
             .onNodeWithTag(ADDRESSBAR_SEARCH_BOX)
             .assert(hasText(searchHint))
             .assertIsDisplayed()
-        Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Verification successful")
+        Log.i(TAG, "verifySearchBarPlaceholder: Verification successful")
     }
 
-    fun verifySearchShortcutListContains(vararg searchEngineName: String, shouldExist: Boolean = true) {
-        searchEngineName.forEach {
-            if (shouldExist) {
-                assertUIObjectExists(
-                    searchShortcutList().getChild(UiSelector().text(it)),
-                )
+    fun verifySearchShortcutList(vararg searchEngineNames: String, isSearchEngineDisplayed: Boolean) {
+        for (searchEngineName in searchEngineNames) {
+            if (isSearchEngineDisplayed) {
+                Log.i(TAG, "verifySearchShortcutList: Trying to verify the $searchEngineName search shortcut is displayed")
+                this@SearchRobot.composeTestRule.onNodeWithContentDescription(searchEngineName)
+                    .assertIsDisplayed()
+                Log.i(TAG, "verifySearchShortcutList: Verified the $searchEngineName search shortcut is displayed")
             } else {
-                assertUIObjectIsGone(searchShortcutList().getChild(UiSelector().text(it)))
+                Log.i(TAG, "verifySearchShortcutList: Trying to verify the $searchEngineName search shortcut is not displayed")
+                this@SearchRobot.composeTestRule.onNodeWithContentDescription(searchEngineName)
+                    .assertIsNotDisplayed()
+                Log.i(TAG, "verifySearchShortcutList: Verified the $searchEngineName search shortcut is not displayed")
             }
         }
     }
 
-    fun verifySearchShortcutListWithComposableToolbar(composeTestRule: ComposeTestRule, vararg searchEngineNames: String) {
-        for (searchEngineName in searchEngineNames) {
-            Log.i(TAG, "verifySearchShortcutListWithComposableToolbar: Trying to verify the $searchEngineName search shortcut is displayed")
-            composeTestRule.onNodeWithContentDescription(searchEngineName).assertIsDisplayed()
-            Log.i(TAG, "verifySearchShortcutListWithComposableToolbar: Verified the $searchEngineName search shortcut is displayed")
-        }
-    }
-
-    // New unified search UI search selector.
     fun selectTemporarySearchMethod(searchEngineName: String) {
         Log.i(TAG, "selectTemporarySearchMethod: Trying to click the $searchEngineName search shortcut")
-        searchShortcutList().getChild(UiSelector().text(searchEngineName)).click()
+        composeTestRule.onNodeWithContentDescription(searchEngineName).performClick()
         Log.i(TAG, "selectTemporarySearchMethod: Clicked the $searchEngineName search shortcut")
     }
 
-    fun selectTemporarySearchMethodWithComposableToolbar(composeTestRule: ComposeTestRule, searchEngineName: String) {
-        Log.i(TAG, "selectTemporarySearchMethodWithComposableToolbar: Trying to click the $searchEngineName search shortcut")
-        composeTestRule.onNodeWithContentDescription(searchEngineName).performClick()
-        Log.i(TAG, "selectTemporarySearchMethodWithComposableToolbar: Clicked the $searchEngineName search shortcut")
-    }
-
     fun clickScanButton() {
-        waitForAppWindowToBeUpdated()
-        assertUIObjectExists(scanButton())
-        Log.i(TAG, "clickScanButton: Trying to click the scan button and wait for $waitingTimeShort ms for a new window")
-        scanButton().clickAndWaitForNewWindow(waitingTimeShort)
-        Log.i(TAG, "clickScanButton: Clicked the scan button and waited for $waitingTimeShort ms for a new window")
-    }
-
-    fun clickScanButtonWithComposableToolbar(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "clickScanButtonWithComposableToolbar: Trying to click the scan button")
-        composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)).performClick()
-        Log.i(TAG, "clickScanButtonWithComposableToolbar: Clicked the scan button")
+        Log.i(TAG, "clickScanButton: Trying to click the scan button")
+        this@SearchRobot.composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)).performClick()
+        Log.i(TAG, "clickScanButton: Clicked the scan button")
     }
 
     fun clickDismissPermissionRequiredDialog() {
@@ -468,36 +394,18 @@ class SearchRobot {
     }
 
     fun typeSearch(searchTerm: String) {
-        Log.i(TAG, "typeSearch: Waiting for $waitingTime ms for the edit mode toolbar to exist")
-        browserToolbarEditView().waitForExists(waitingTime)
-        Log.i(TAG, "typeSearch: Waited for $waitingTime ms for the edit mode toolbar to exist")
         Log.i(TAG, "typeSearch: Trying to set the edit mode toolbar text to $searchTerm")
-        browserToolbarEditView().setText(searchTerm)
+        this@SearchRobot.composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextReplacement(searchTerm)
         Log.i(TAG, "typeSearch: Edit mode toolbar text was set to $searchTerm")
-        Log.i(TAG, "typeSearch: Waiting for device to be idle")
-        mDevice.waitForIdle()
-        Log.i(TAG, "typeSearch: Waited for device to be idle")
-    }
-
-    fun typeSearchWithComposableToolbar(composeTestRule: ComposeTestRule, searchTerm: String) {
-        Log.i(TAG, "typeSearchWithComposableToolbar: Trying to set the edit mode toolbar text to $searchTerm")
-        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextReplacement(searchTerm)
-        Log.i(TAG, "typeSearchWithComposableToolbar: Edit mode toolbar text was set to $searchTerm")
     }
 
     fun clickClearButton() {
         Log.i(TAG, "clickClearButton: Trying to click the clear button")
-        clearButton().click()
-        Log.i(TAG, "clickClearButton: Clicked the clear button")
-    }
-
-    fun clickClearButtonWithComposableToolbar(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "clickClearButtonWithComposableToolbar: Trying to click the clear button")
         composeTestRule.onNodeWithContentDescription(getStringResource(toolbarR.string.mozac_clear_button_description)).performClick()
-        Log.i(TAG, "clickClearButtonWithComposableToolbar: Clicked the clear button")
-        Log.i(TAG, "clickClearButtonWithComposableToolbar: Waiting for compose test rule to be idle")
+        Log.i(TAG, "clickClearButton: Clicked the clear button")
+        Log.i(TAG, "clickClearButton: Waiting for compose test rule to be idle")
         composeTestRule.waitForIdle()
-        Log.i(TAG, "clickClearButtonWithComposableToolbar: Waited for compose test rule to be idle")
+        Log.i(TAG, "clickClearButton: Waited for compose test rule to be idle")
     }
 
     fun tapOutsideToDismissSearchBar() {
@@ -512,12 +420,9 @@ class SearchRobot {
     }
 
     fun longClickToolbar() {
-        Log.i(TAG, "longClickToolbar: Waiting for $waitingTime ms for the toolbar to exist")
-        mDevice.findObject(UiSelector().resourceId("$packageName:id/toolbar"))
-            .waitForExists(waitingTime)
-        Log.i(TAG, "longClickToolbar: Waited for $waitingTime ms for the toolbar to exist")
+        composeTestRule.waitForIdle()
         Log.i(TAG, "longClickToolbar: Trying to perform long click on the toolbar")
-        mDevice.findObject(By.res("$packageName:id/toolbar")).click(LONG_CLICK_DURATION)
+        composeTestRule.onNodeWithTag("ADDRESSBAR_SEARCH_BOX").performTouchInput { longClick() }
         Log.i(TAG, "longClickToolbar: Performed long click on the toolbar")
     }
 
@@ -538,7 +443,7 @@ class SearchRobot {
                 if (i == RETRY_COUNT) {
                     throw e
                 } else {
-                    searchScreen {
+                    searchScreen(this@SearchRobot.composeTestRule) {
                     }.dismissSearchBar {
                     }.openSearch {
                         clickClearButton()
@@ -549,24 +454,19 @@ class SearchRobot {
         }
     }
 
-    fun verifyTranslatedFocusedNavigationToolbar(toolbarHintString: String) =
-        assertItemTextContains(browserToolbarEditView(), itemText = toolbarHintString)
+    fun verifyTranslatedNavigationToolbarHint(toolbarHintString: String) {
+        Log.i(TAG, "verifyTranslatedNavigationToolbarHint: Trying to verify that the translated toolbar has: $toolbarHintString as a hint")
+        composeTestRule.onNode(
+            hasText(toolbarHintString),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
+        Log.i(TAG, "verifyTranslatedNavigationToolbarHint: Verified that the translated toolbar has: $toolbarHintString as a hint")
+    }
 
-    fun verifyTypedToolbarText(expectedText: String, exists: Boolean) =
-        assertUIObjectExists(
-            itemWithResIdAndText("$packageName:id/mozac_browser_toolbar_edit_url_view", expectedText),
-            exists = exists,
-            waitingTime = waitingTimeShort,
-        )
+    fun verifyTypedToolbarText(expectedText: String, exists: Boolean) {
+        Log.i(TAG, "verifyTypedToolbarText: Verifying that text '$expectedText' exists?: $exists")
 
-    fun verifyTypedToolbarTextWithComposableToolbar(
-        composeTestRule: ComposeTestRule,
-        expectedText: String,
-        exists: Boolean,
-    ) {
-        Log.i(TAG, "verifyTypedToolbarTextWithComposableToolbar: Verifying that text '$expectedText' exists?: $exists")
-
-        val editToolbar = composeTestRule.onNode(
+        val editToolbar = this@SearchRobot.composeTestRule.onNode(
             hasTestTag(ADDRESSBAR_SEARCH_BOX) and hasText(expectedText),
             useUnmergedTree = true,
         )
@@ -576,7 +476,7 @@ class SearchRobot {
             false -> editToolbar.assertIsNotDisplayed()
         }
 
-        Log.i(TAG, "verifyTypedToolbarTextWithComposableToolbar: Verification successful.")
+        Log.i(TAG, "verifyTypedToolbarText: Verification successful.")
     }
 
     fun verifySearchBarPosition(bottomPosition: Boolean) {
@@ -603,82 +503,35 @@ class SearchRobot {
         }
     }
 
-    class Transition {
+    class Transition(private val composeTestRule: ComposeTestRule) {
         private lateinit var sessionLoadedIdlingResource: SessionLoadedIdlingResource
 
         fun dismissSearchBar(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
-            for (i in 0..1) {
-                try {
-                    Log.i(TAG, "dismissSearchBar: Trying to click device back button")
-                    mDevice.pressBack()
-                    Log.i(TAG, "dismissSearchBar: Clicked device back button")
-                    assertUIObjectIsGone(searchWrapper())
+            Log.i(TAG, "dismissSearchBar: Trying to click device back button")
+            mDevice.pressBack()
+            Log.i(TAG, "dismissSearchBar: Clicked device back button")
+            waitForAppWindowToBeUpdated()
 
-                    break
-                } catch (e: AssertionError) {
-                    if (i == 1) {
-                        throw e
-                    }
-                }
-            }
-
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
-        }
-
-        fun openBrowser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "openBrowser: Waiting for device to be idle")
-            mDevice.waitForIdle()
-            Log.i(TAG, "openBrowser: Waited for device to be idle")
-            Log.i(TAG, "openBrowser: Trying to set the edit mode toolbar text to: mozilla")
-            browserToolbarEditView().setText("mozilla\n")
-            Log.i(TAG, "openBrowser: Edit mode toolbar text was set to: mozilla")
-            Log.i(TAG, "openBrowser: Trying to click device enter button")
-            pressImeActionOnToolbarEditView()
-            Log.i(TAG, "openBrowser: Clicked device enter button")
-
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
 
         fun submitQuery(query: String, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            sessionLoadedIdlingResource = SessionLoadedIdlingResource()
-
-            Log.i(TAG, "submitQuery: Trying to set the edit mode toolbar text to: $query")
-            browserToolbarEditView().setText(query)
-            Log.i(TAG, "submitQuery: Edit mode toolbar text was set to: $query")
-            Log.i(TAG, "submitQuery: Trying to click device enter button")
-            pressImeActionOnToolbarEditView()
-            Log.i(TAG, "submitQuery: Clicked device enter button")
-
-            registerAndCleanupIdlingResources(sessionLoadedIdlingResource) {
-                assertUIObjectExists(itemWithResId("$packageName:id/browserLayout"))
-            }
-
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
-        fun submitQueryWithComposableToolbar(
-            composeTestRule: ComposeTestRule,
-            query: String,
-            interact: BrowserRobot.() -> Unit,
-        ): BrowserRobot.Transition {
-            Log.i(TAG, "submitQueryWithComposableToolbar: Trying to set toolbar text to: $query and pressing IME action")
+            Log.i(TAG, "submitQuery: Trying to set toolbar text to: $query and pressing IME action")
 
             composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).apply {
                 performTextReplacement(query)
                 performImeAction()
             }
-            Log.i(TAG, "submitQueryWithComposableToolbar: Toolbar text was set to: $query and IME action performed")
+            Log.i(TAG, "submitQuery: Toolbar text was set to: $query and IME action performed")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun clickSearchEngineSettings(interact: SettingsSubMenuSearchRobot.() -> Unit): SettingsSubMenuSearchRobot.Transition {
             Log.i(TAG, "clickSearchEngineSettings: Trying to click the \"Search settings\" button")
-            searchShortcutList().getChild(UiSelector().text("Search settings")).click()
+            composeTestRule.onNodeWithContentDescription(getStringResource(R.string.search_settings_menu_item)).performClick()
             Log.i(TAG, "clickSearchEngineSettings: Clicked the \"Search settings\" button")
 
             SettingsSubMenuSearchRobot().interact()
@@ -695,19 +548,19 @@ class SearchRobot {
                 Log.i(TAG, "clickSearchSuggestion: Clicked search suggestion: $searchSuggestion and waited for $waitingTimeShort ms for a new window")
             }
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
     }
 }
 
-fun searchScreen(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-    SearchRobot().interact()
-    return SearchRobot.Transition()
+fun searchScreen(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+    SearchRobot(composeTestRule).interact()
+    return SearchRobot.Transition(composeTestRule)
 }
 
 private fun browserToolbarEditView() =
-    mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
+    mDevice.findObject(UiSelector().resourceId(ADDRESSBAR_SEARCH_BOX))
 
 private fun pressImeActionOnToolbarEditView() {
     val context = appContext

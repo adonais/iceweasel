@@ -39,11 +39,11 @@
 #include "mozilla/ProfileJSONWriter.h"
 #include "mozilla/ProfilerUtils.h"
 #include "mozilla/ProgressLogger.h"
+#include "mozilla/SharedLibraries.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 #include "nsString.h"
-#include "SharedLibraries.h"
 #include "ProfileAdditionalInformation.h"
 
 #include <cstddef>

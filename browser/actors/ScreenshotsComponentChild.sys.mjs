@@ -221,8 +221,8 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
   /**
    * Resolves when the document is ready to have an overlay injected into it.
    *
-   * @returns {Promise}
-   * @resolves {boolean} true when document is ready or rejects
+   * @returns {Promise<boolean>}
+   *   Resolves to true when document is ready or rejects.
    */
   documentIsReady() {
     const document = this.document;

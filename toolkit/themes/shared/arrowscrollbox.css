@@ -38,7 +38,7 @@ toolbarbutton {
 
   > .toolbarbutton-icon {
     padding: var(--arrowscrollbox-scrollicon-padding, 0);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-border-radius-tokens */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--arrowscrollbox-scrollicon-border-radius, 0);
     background-color: var(--arrowscrollbox-scrollicon-background-color, transparent);
     transition: var(--arrowscrollbox-scrollicon-transition, none);

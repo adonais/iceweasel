@@ -166,8 +166,9 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
         // must be called.
         nat_factory_(vss_.get(), kNatUdpAddr, kNatTcpAddr),
         nat_socket_factory_(new BasicPacketSocketFactory(&nat_factory_)),
-        stun_server_(TestStunServer::Create(fss_.get(), kStunAddr, thread_)),
-        turn_server_(Thread::Current(),
+        stun_server_(TestStunServer::Create(env_, kStunAddr, *fss_, thread_)),
+        turn_server_(env_,
+                     Thread::Current(),
                      fss_.get(),
                      kTurnUdpIntAddr,
                      kTurnUdpExtAddr),
@@ -288,16 +289,29 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
       absl::string_view ice_pwd) {
     std::unique_ptr<PortAllocatorSession> session =
         allocator_->CreateSession(content_name, component, ice_ufrag, ice_pwd);
-    session->SignalPortReady.connect(this,
-                                     &BasicPortAllocatorTestBase::OnPortReady);
-    session->SignalPortsPruned.connect(
-        this, &BasicPortAllocatorTestBase::OnPortsPruned);
-    session->SignalCandidatesReady.connect(
-        this, &BasicPortAllocatorTestBase::OnCandidatesReady);
-    session->SignalCandidatesRemoved.connect(
-        this, &BasicPortAllocatorTestBase::OnCandidatesRemoved);
-    session->SignalCandidatesAllocationDone.connect(
-        this, &BasicPortAllocatorTestBase::OnCandidatesAllocationDone);
+    session->SubscribePortReady(
+        [this](PortAllocatorSession* session, PortInterface* port) {
+          OnPortReady(session, port);
+        });
+    session->SubscribePortsPruned(
+        [this](PortAllocatorSession* session,
+               const std::vector<PortInterface*>& ports) {
+          OnPortsPruned(session, ports);
+        });
+    session->SubscribeCandidatesReady(
+        [this](PortAllocatorSession* session,
+               const std::vector<Candidate>& candidate) {
+          OnCandidatesReady(session, candidate);
+        });
+    session->SubscribeCandidatesRemoved(
+        [this](PortAllocatorSession* session,
+               const std::vector<Candidate>& removed_candidates) {
+          OnCandidatesRemoved(session, removed_candidates);
+        });
+    session->SubscribeCandidatesAllocationDone(
+        [this](PortAllocatorSession* session) {
+          OnCandidatesAllocationDone(session);
+        });
     return session;
   }
 
@@ -473,9 +487,9 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
 
   void ResetWithStunServer(const SocketAddress& stun_server, bool with_nat) {
     if (with_nat) {
-      nat_server_.reset(new NATServer(
-          NAT_OPEN_CONE, thread_, vss_.get(), kNatUdpAddr, kNatTcpAddr, thread_,
-          vss_.get(), SocketAddress(kNatUdpAddr.ipaddr(), 0)));
+      nat_server_ = std::make_unique<NATServer>(
+          env_, NAT_OPEN_CONE, thread_, vss_.get(), kNatUdpAddr, kNatTcpAddr,
+          thread_, vss_.get(), SocketAddress(kNatUdpAddr.ipaddr(), 0));
     } else {
       nat_socket_factory_ =
           std::make_unique<BasicPacketSocketFactory>(fss_.get());

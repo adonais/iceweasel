@@ -10,6 +10,8 @@ import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,6 +49,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.ContentState
@@ -61,9 +64,12 @@ import org.mozilla.fenix.tabstray.browser.compose.createGridReorderState
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectGridPressAndDragGestures
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
+import org.mozilla.fenix.tabstray.ui.tabitems.GridItemThumbnailPadding
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabListItem
+import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.theme.FirefoxTheme
+import kotlin.math.max
 
 // Key for the span item at the bottom of the tray, used to make the item not reorderable.
 const val SPAN_ITEM_KEY = "span"
@@ -212,76 +218,96 @@ private fun TabGrid(
         }
     }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(count = numberOfGridColumns),
-        modifier = modifier
-            .fillMaxSize()
-            .detectGridPressAndDragGestures(
-                gridState = state,
-                reorderState = reorderState,
-                shouldLongPressToDrag = shouldLongPress,
+    BoxWithConstraints {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(count = numberOfGridColumns),
+            modifier = modifier
+                .fillMaxSize()
+                .detectGridPressAndDragGestures(
+                    gridState = state,
+                    reorderState = reorderState,
+                    shouldLongPressToDrag = shouldLongPress,
+                ),
+            state = state,
+            contentPadding = PaddingValues(
+                horizontal = if (LocalContext.current.isLandscape()) {
+                    52.dp
+                } else {
+                    FirefoxTheme.layout.space.static200
+                },
+                vertical = 24.dp,
             ),
-        state = state,
-        contentPadding = PaddingValues(
-            horizontal = if (LocalContext.current.isLandscape()) {
-                52.dp
-            } else {
-                FirefoxTheme.layout.space.static200
-            },
-            vertical = 24.dp,
-        ),
-        verticalArrangement = Arrangement.spacedBy(space = FirefoxTheme.layout.space.static200),
-        horizontalArrangement = Arrangement.spacedBy(space = FirefoxTheme.layout.space.static200),
-    ) {
-        header?.let {
-            item(key = HEADER_ITEM_KEY, span = { GridItemSpan(maxLineSpan) }) {
-                header()
-            }
-        }
-
-        itemsIndexed(
-            items = tabs,
-            key = { _, tab -> tab.id },
-        ) { index, tab ->
-            val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
-            val density = LocalDensity.current
-            val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-            val swipeState = remember(isInMultiSelectMode, !state.isScrollInProgress) {
-                SwipeToDismissState2(
-                    density = density,
-                    enabled = !isInMultiSelectMode && !state.isScrollInProgress,
-                    decayAnimationSpec = decayAnimationSpec,
-                    isRtl = isRtl,
-                )
-            }
-            val swipingActive by remember(swipeState.swipingActive) {
-                mutableStateOf(swipeState.swipingActive)
+            verticalArrangement = Arrangement.spacedBy(space = FirefoxTheme.layout.space.static200),
+            horizontalArrangement = Arrangement.spacedBy(space = horizontalGridPadding),
+        ) {
+            header?.let {
+                item(key = HEADER_ITEM_KEY, span = { GridItemSpan(maxLineSpan) }) {
+                    header()
+                }
             }
 
-            DragItemContainer(
-                state = reorderState,
-                position = index + if (header != null) 1 else 0,
-                key = tab.id,
-                swipingActive = swipingActive,
-            ) {
-                TabGridItem(
-                    tab = tab,
-                    isSelected = tab.id == selectedTabId,
-                    multiSelectionEnabled = isInMultiSelectMode,
-                    multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
-                    shouldClickListen = reorderState.draggingItemKey != tab.id,
-                    swipeState = swipeState,
-                    onCloseClick = onTabClose,
-                    onClick = onTabClick,
-                )
-            }
-        }
+            itemsIndexed(
+                items = tabs,
+                key = { _, tab -> tab.id },
+            ) { index, tab ->
+                val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
+                val density = LocalDensity.current
+                val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                val swipeState = remember(isInMultiSelectMode, !state.isScrollInProgress) {
+                    SwipeToDismissState2(
+                        density = density,
+                        enabled = !isInMultiSelectMode && !state.isScrollInProgress,
+                        decayAnimationSpec = decayAnimationSpec,
+                        isRtl = isRtl,
+                    )
+                }
+                val swipingActive by remember(swipeState.swipingActive) {
+                    mutableStateOf(swipeState.swipingActive)
+                }
 
-        item(key = SPAN_ITEM_KEY, span = { GridItemSpan(maxLineSpan) }) {
-            Spacer(modifier = Modifier.height(tabListBottomPadding))
+                DragItemContainer(
+                    state = reorderState,
+                    position = index + if (header != null) 1 else 0,
+                    key = tab.id,
+                    swipingActive = swipingActive,
+                ) {
+                    TabGridItem(
+                        tab = tab,
+                        thumbnailSizePx = thumbnailSizePx,
+                        isSelected = tab.id == selectedTabId,
+                        multiSelectionEnabled = isInMultiSelectMode,
+                        multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
+                        shouldClickListen = reorderState.draggingItemKey != tab.id,
+                        swipeState = swipeState,
+                        onCloseClick = onTabClose,
+                        onClick = onTabClick,
+                    )
+                }
+            }
+
+            item(key = SPAN_ITEM_KEY, span = { GridItemSpan(maxLineSpan) }) {
+                Spacer(modifier = Modifier.height(tabListBottomPadding))
+            }
         }
     }
 }
+
+private val horizontalGridPadding: Dp
+    @ReadOnlyComposable
+    @Composable
+    get() = FirefoxTheme.layout.space.static200
+
+private val BoxWithConstraintsScope.thumbnailSizePx: Int
+    @ReadOnlyComposable
+    @Composable
+    get() {
+        val density = LocalDensity.current
+        val totalSpacing = horizontalGridPadding * (numberOfGridColumns - 1) +
+                GridItemThumbnailPadding * numberOfGridColumns * 2
+        val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
+        val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
+        return max(thumbnailWidth, thumbnailHeight)
+    }
 
 @Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
 @Composable

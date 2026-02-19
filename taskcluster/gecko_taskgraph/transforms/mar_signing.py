@@ -62,14 +62,12 @@ def generate_complete_artifacts(job, kind):
     for artifact in job.attributes["release_artifacts"]:
         basename = os.path.basename(artifact)
         if basename in SIGNING_FORMATS[kind]:
-            upstream_artifacts.append(
-                {
-                    "taskId": {"task-reference": f"<{job.kind}>"},
-                    "taskType": "build",
-                    "paths": [artifact],
-                    "formats": SIGNING_FORMATS[kind][basename],
-                }
-            )
+            upstream_artifacts.append({
+                "taskId": {"task-reference": f"<{job.kind}>"},
+                "taskType": "build",
+                "paths": [artifact],
+                "formats": SIGNING_FORMATS[kind][basename],
+            })
 
     return upstream_artifacts
 
@@ -112,7 +110,8 @@ def make_task_description(config, jobs):
             upstream_artifacts = generate_complete_artifacts(dep_job, config.kind)
 
         is_shippable = job.get(
-            "shippable", dep_job.attributes.get("shippable")  # First check current job
+            "shippable",
+            dep_job.attributes.get("shippable"),  # First check current job
         )  # Then dep job for 'shippable'
         signing_type = get_signing_type_per_platform(
             build_platform, is_shippable, config

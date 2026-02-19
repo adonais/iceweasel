@@ -9,6 +9,7 @@ document.addEventListener(
     const lazy = {};
     ChromeUtils.defineESModuleGetters(lazy, {
       TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
+      TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
     });
     let mainPopupSet = document.getElementById("mainPopupSet");
     // eslint-disable-next-line complexity
@@ -86,7 +87,12 @@ document.addEventListener(
           break;
         case "context_addNote":
         case "context_editNote":
-          gBrowser.tabNoteMenu.openPanel(TabContextMenu.contextTab);
+          gBrowser.tabNoteMenu.openPanel(TabContextMenu.contextTab, {
+            telemetrySource: lazy.TabNotes.TELEMETRY_SOURCE.TAB_CONTEXT_MENU,
+          });
+          break;
+        case "context_deleteNote":
+          TabContextMenu.deleteTabNotes();
           break;
         case "context_moveToStart":
           gBrowser.moveTabsToStart(TabContextMenu.contextTab);

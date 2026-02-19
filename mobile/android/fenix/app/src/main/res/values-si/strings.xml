@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">සෙවුම් පද යොදන්න</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">ඔබගේ විවෘත පටිති මෙහි පෙන්වනු ඇත.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ඔබගේ විවෘත පටිති මෙහි පෙන්වනු ඇත.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">ඔබගේ පෞද්. පටිති මෙහි පෙන්වනු ඇත.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ඔබගේ පෞද්. පටිති මෙහි පෙන්වනු ඇත.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d ක් තෝරා ඇත</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -46,7 +46,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">බහු තේරීම් ප්‍රකාරයෙන් පිටවන්න</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">තේරූ පටිති එකතුවට සුරකින්න</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">තේරූ පටිති එකතුවට සුරකින්න</string>
   <!--
     Home - Bookmarks
 
@@ -194,9 +194,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">ගිණුමේ තොරතුරු</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">උදව්</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">උදව්</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">අළුත් දෑ</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">අළුත් දෑ</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">සැකසුම්</string>
   <!-- Browser menu button that opens a user's library -->
@@ -204,7 +204,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">වැඩතල අඩවිය</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">සාමාන්‍ය පටිත්තක අරින්න</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">සාමාන්‍ය පටිත්තක අරින්න</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">මුල් තිරයට දමන්න</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -230,7 +230,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s මගින් බල ගැන්වේ</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s මගින් බල ගැන්වේ</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -243,13 +243,13 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">යෙදුමෙහි අරින්න</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">කියවීමේ දැක්ම රිසිකරණය</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">කියවීමේ දැක්ම රිසිකරණය</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">එකතු</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">එකතු</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">සංස්කරණය</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">සංස්කරණය</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">මුල්පිටුව අභිරුචිකරණය</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">මුල්පිටුව අභිරුචිකරණය</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">පිවිසෙන්න</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
@@ -260,16 +260,12 @@
   <string name="browser_menu_new_private_tab">නව පෞද්. පටිත්ත</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">මුරපද</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">උදව්</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">සැකසුම්</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">දිගු වට්ටෝරු පත්‍රය වසන්න</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">දිගු වට්ටෝරු පත්‍රය වසන්න</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">සුරකින වට්ටෝරු පත්‍රය වසන්න</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">සුරකින වට්ටෝරු පත්‍රය වසන්න</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">මෙවලම් වට්ටෝරු පත්‍රය වසන්න</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">මෙවලම් වට්ටෝරු පත්‍රය වසන්න</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">අභිරුචි පටිති වට්ටෝරු පත්‍රය වසන්න</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -354,13 +350,6 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">ෆයර්ෆොක්ස් රහස්‍යතා දැන්වීම</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">ඔබට ආරක්‍ෂාව සලසන්නෙමු</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">දශලක්‍ෂ ගණනක් ෆයර්ෆොක්ස් වලට කැමති මන්දැයි සොයා බලන්න</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">බොහෝ තේරීම් සමඟ ආරක්‍ෂිතව පිරික්සන්න</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">අපගේ ලාභ නොලබන පිටුබලයක් සහිත අතිරික්සුව අන්තර්ජාලය පුරා ඔබව රහසින් ලුහුබඳින සමාගම් ස්වයංක්‍රීයව නවත්වයි.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
@@ -989,15 +978,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">පෞද්. පටිත්තක් යොදන්න</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">පෞද්ගලික</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">පෞද්ගලික</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">සමමුහූර්ත</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">සමමුහූර්ත</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">සියළු පටිති බෙදාගන්න</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">සියළු පටිති බෙදාගන්න</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">මෑත දී වසා දැමූ පටිති</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">මෑතදී වසා දැමූ</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">මෑතදී වසා දැමූ</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">ගිණුමේ සැකසුම්</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1005,11 +994,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">සියළු පටිති වසන්න</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">පොත්යොමුව</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">පොත්යොමුව</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">වසන්න</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">වසන්න</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">තේරූ පටිති බෙදාගන්න</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">තේරූ පටිති බෙදාගන්න</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">තේරූ පටිති වට්ටෝරුව</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -1516,7 +1505,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">ඔබ ප්‍රධාන වට්ටෝරුවෙන් \"ඉවත් වන්න\" තේරූ විට පිරික්සුම් දත්ත ස්වයංක්‍රීයව මකා දමයි</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">ඉවත් වන්න</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">ඉවත් වන්න</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">මකා දමන කාල පරාසය</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -1989,17 +1978,17 @@
   -->
   <string name="certificate_info_verified_by">සත්‍යාපනය: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">මකන්න</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">මකන්න</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">සංස්කරණය</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">සංස්කරණය</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">මකන්න</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">අවලංගු</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">මුරපද විකල්ප</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">මුරපද විකල්ප</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">වෙනස්කම් සුරකින්න</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">වෙනස්කම් සුරකින්න</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">මුරපදය සංස්කරණය</string>
   <!-- The page title for adding new password. -->

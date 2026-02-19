@@ -178,7 +178,7 @@ add_task(async function test_scopeDistinguishesTaskbarTabs() {
       );
     }, "/example/another/main");
   }, "/example/main");
-});
+}).skip(); // TODO bug 2000948
 
 async function usingManifest(aCallback, aLocation = "/") {
   const location = httpUrl("/taskbartabs-manifest.json");
@@ -197,7 +197,7 @@ async function usingManifest(aCallback, aLocation = "/") {
       let result = await TaskbarTabs.moveTabIntoTaskbarTab(tab);
 
       const uri = Services.io.newURI(httpUrl(aLocation));
-      const tt = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+      const tt = await TaskbarTabs.findTaskbarTab(uri, 0);
       is(
         await TaskbarTabsUtils.getTaskbarTabIdFromWindow(result.window),
         tt.id,

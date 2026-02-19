@@ -199,8 +199,8 @@ class NimbusPlugin implements Plugin<Project> {
         def rootProjectLayout = rootProject.layout
 
         return rootProject.tasks.register(taskName, NimbusAssembleToolsTask) { task ->
-            group "Nimbus"
-            description "Fetch the Nimbus FML tools from Application Services"
+            group = "Nimbus"
+            description = "Fetch the Nimbus FML tools from Application Services"
 
             def cacheDir = asVersionProvider.map { String version ->
                 def cachePath = new File(topsrcdir, ".gradle/caches/nimbus-fml/$version")

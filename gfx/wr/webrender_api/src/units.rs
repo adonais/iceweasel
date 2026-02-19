@@ -191,6 +191,15 @@ impl TexelRect {
             uv1: DevicePoint::new(-1.0, -1.0),
         }
     }
+
+    pub fn to_array(&self) -> [f32; 4] {
+        [
+            self.uv0.x,
+            self.uv0.y,
+            self.uv1.x,
+            self.uv1.y,
+        ]
+    }
 }
 
 impl Into<TexelRect> for DeviceIntRect {

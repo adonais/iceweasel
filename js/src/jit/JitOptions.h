@@ -66,6 +66,8 @@ struct DefaultJitOptions {
   bool disableRecoverIns;
   bool disableScalarReplacement;
   bool disableCacheIR;
+  bool disableStubFolding;
+  bool disableStubFoldingLoadsAndStores;
   bool disableSink;
   bool disableRedundantShapeGuards;
   bool disableRedundantGCBarriers;

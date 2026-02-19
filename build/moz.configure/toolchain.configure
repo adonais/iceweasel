@@ -105,7 +105,7 @@ def forced_pgo_optimization_level(target):
         return "-O3"
 
 
-@imports(_from="mozbuild.shellutil", _import="quote")
+@imports(_from="mozshellutil", _import="quote")
 def check_optimize_flags(src, flags):
     for flag in reversed(flags):
         if flag.startswith(("-O", "/O")):
@@ -122,7 +122,7 @@ def check_optimize_flags(src, flags):
 
 
 @depends("--enable-optimize", "MOZ_OPTIMIZE_FLAGS")
-@imports(_from="mozbuild.shellutil", _import="split")
+@imports(_from="mozshellutil", _import="split")
 def configured_moz_optimize_flags(enable_optimize, env_flags):
     if len(enable_optimize):
         return check_optimize_flags("--enable-optimize", split(enable_optimize[0]))
@@ -141,7 +141,7 @@ set_config("MOZ_OPTIMIZE", moz_optimize)
 @depends(
     target, moz_optimize, configured_moz_optimize_flags, forced_pgo_optimization_level
 )
-@imports(_from="mozbuild.shellutil", _import="split")
+@imports(_from="mozshellutil", _import="split")
 def moz_optimize_flags(
     target, moz_optimize, configured_moz_optimize_flags, forced_pgo_optimization_level
 ):
@@ -233,7 +233,7 @@ with only_when(host_is_osx | target_is_osx):
     )
 
     def mac_sdk_min_version():
-        return "26.1"
+        return "26.2"
 
     @depends(
         "--with-macos-sdk",
@@ -333,6 +333,8 @@ with only_when(target_is_ios):
         # aarch64-apple-ios is iphone
         # aarch64-apple-ios-sim is simulator
         return target.cpu == "x86_64" or target.raw_os == "ios-sim"
+
+    set_config("IPHONEOS_IS_SIMULATOR", target_is_ios_simulator)
 
     def ios_sdk_min_version():
         return "18.4"
@@ -630,7 +632,7 @@ def same_arch_different_bits():
     )
 
 
-@imports(_from="mozbuild.shellutil", _import="quote")
+@imports(_from="mozshellutil", _import="quote")
 @imports(_from="mozbuild.configure.constants", _import="OS_preprocessor_checks")
 def check_compiler(configure_cache, compiler, language, target, android_version):
     info = get_compiler_info(configure_cache, compiler, language)
@@ -1085,7 +1087,7 @@ set_config("SCCACHE_VERBOSE_STATS", sccache_verbose_stats)
 
 
 @depends("--with-compiler-wrapper", ccache)
-@imports(_from="mozbuild.shellutil", _import="split", _as="shell_split")
+@imports(_from="mozshellutil", _import="split", _as="shell_split")
 def compiler_wrapper(wrapper, ccache):
     if wrapper:
         raw_wrapper = wrapper[0]
@@ -1247,7 +1249,7 @@ def provided_program(env_var, when=None):
 
     @depends_if(env_var, when=when)
     @imports(_from="itertools", _import="takewhile")
-    @imports(_from="mozbuild.shellutil", _import="split", _as="shell_split")
+    @imports(_from="mozshellutil", _import="split", _as="shell_split")
     def provided(cmd):
         # Assume the first dash-prefixed item (and any subsequent items) are
         # command-line options, the item before the dash-prefixed item is
@@ -1489,7 +1491,7 @@ def compiler(
         host,
     )
     @checking("whether %s can be used" % what, lambda x: bool(x))
-    @imports(_from="mozbuild.shellutil", _import="quote")
+    @imports(_from="mozshellutil", _import="quote")
     @imports("os")
     def valid_compiler(
         configure_cache,
@@ -1714,7 +1716,7 @@ def compiler(
     if var in ("CC", "CXX", "HOST_CC", "HOST_CXX"):
         # FIXME: we should return a plain list here.
         @depends_if(valid_compiler)
-        @imports(_from="mozbuild.shellutil", _import="quote")
+        @imports(_from="mozshellutil", _import="quote")
         def value(x):
             return quote(*x.wrapper, x.compiler, *x.flags)
 
@@ -2297,7 +2299,7 @@ set_config("MOZ_DEBUG_SYMBOLS", depends_if("--enable-debug-symbols")(lambda _: T
 
 
 @depends("MOZ_DEBUG_FLAGS", "--enable-debug-symbols", default_debug_flags)
-@imports(_from="mozbuild.shellutil", _import="split")
+@imports(_from="mozshellutil", _import="split")
 def debug_flags(env_debug_flags, enable_debug_flags, default_debug_flags):
     # If MOZ_DEBUG_FLAGS is set, and --enable-debug-symbols is set to a value,
     # --enable-debug-symbols takes precedence. Note, the value of
@@ -2401,6 +2403,9 @@ set_define("_LIBCPP_INLINE_VISIBILITY", libcxx_override_visibility.empty)
 set_define("_LIBCPP_ALWAYS_INLINE", libcxx_override_visibility.empty)
 
 set_define("_LIBCPP_HIDE_FROM_ABI", libcxx_override_visibility.hide_from_abi)
+
+# TODO: remove this once we target C++23, where clang always define it, see bug 1880762
+set_define("_LIBCPP_REMOVE_TRANSITIVE_INCLUDES", True, when=using_libcxx)
 
 
 @depends(target, build_environment)
@@ -3950,7 +3955,7 @@ set_config("HTML_ACCEL_FLAGS", htmlaccel_config)
 
 
 @depends(c_compiler, compilation_flags, coverage_cflags, linker_flags)
-@imports(_from="mozbuild.shellutil", _import="split", _as="shellsplit")
+@imports(_from="mozshellutil", _import="split", _as="shellsplit")
 def extra_linker_flags(compiler, compilation_flags, coverage_cflags, linker_flags):
     if compiler.type != "clang-cl":
         return

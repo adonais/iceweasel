@@ -5,6 +5,7 @@
 #ifndef _SSRCGENERATOR_H_
 #define _SSRCGENERATOR_H_
 
+#include <cstdint>
 #include <set>
 
 namespace mozilla {

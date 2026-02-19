@@ -45,11 +45,6 @@ add_task(async function test_keyboard_navigation_in_panel() {
   let statusCard = content.statusCardEl;
 
   await expectFocusAfterKey("Tab", statusCard.connectionToggleEl);
-  await expectFocusAfterKey("Tab", content.upgradeEl.querySelector("a"));
-  await expectFocusAfterKey(
-    "Tab",
-    content.upgradeEl.querySelector("#upgrade-vpn-button")
-  );
 
   // Loop back around
   await expectFocusAfterKey(
@@ -59,12 +54,6 @@ add_task(async function test_keyboard_navigation_in_panel() {
     )
   );
   await expectFocusAfterKey("Tab", statusCard.connectionToggleEl);
-
-  await expectFocusAfterKey("ArrowDown", content.upgradeEl.querySelector("a"));
-  await expectFocusAfterKey(
-    "ArrowDown",
-    content.upgradeEl.querySelector("#upgrade-vpn-button")
-  );
 
   // Loop back around
   await expectFocusAfterKey(

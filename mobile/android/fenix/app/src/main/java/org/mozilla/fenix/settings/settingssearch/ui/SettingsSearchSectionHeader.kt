@@ -7,6 +7,8 @@ package org.mozilla.fenix.settings.settingssearch.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,12 +26,12 @@ fun SettingsSearchSectionHeader(title: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(all = 16.dp),
     ) {
         Text(
             text = title,
             style = FirefoxTheme.typography.headline8,
-            color = FirefoxTheme.colors.textSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -38,6 +40,8 @@ fun SettingsSearchSectionHeader(title: String) {
 @Composable
 private fun SettingsSearchSectionHeaderPreview() {
     FirefoxTheme {
-        SettingsSearchSectionHeader("General")
+        Surface {
+            SettingsSearchSectionHeader("General")
+        }
     }
 }

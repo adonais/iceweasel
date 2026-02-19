@@ -46,8 +46,6 @@
 #include "nsReadableUtils.h"
 #include "nsXULAppAPI.h"
 
-#include <stdlib.h>
-
 namespace mozilla {
 
 using Compression::LZ4;

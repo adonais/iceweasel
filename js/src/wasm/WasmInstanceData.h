@@ -52,9 +52,10 @@ struct TypeDefInstanceData {
       : typeDef(nullptr),
         superTypeVector(nullptr),
         shape(nullptr),
-        clasp(nullptr),
-        allocKind(gc::AllocKind::LIMIT),
-        unused(0) {}
+        clasp(nullptr) {
+    memset(&cached, 0, sizeof(cached));
+    cached.strukt.allocKind = gc::AllocKind::INVALID;
+  }
 
   // The canonicalized pointer to this type definition. This is kept alive by
   // the type context associated with the instance.
@@ -62,32 +63,34 @@ struct TypeDefInstanceData {
 
   // The supertype vector for this type definition.  This is also kept alive
   // by the type context associated with the instance.
-  //
   const wasm::SuperTypeVector* superTypeVector;
 
-  // The next four fields are only meaningful for, and used by, structs and
+  // The next three fields are only meaningful for, and used by, structs and
   // arrays.
   GCPtr<Shape*> shape;
   const JSClass* clasp;
-  // Only valid for structs.
-  gc::AllocKind allocKind;
 
-  // This union is only meaningful for structs and arrays, and should
-  // otherwise be set to zero:
-  //
-  // * if `typeDef` refers to a struct type, then it caches the value of
-  //   `typeDef->structType().size_` (a size in bytes)
-  //
-  // * if `typeDef` refers to an array type, then it caches the value of
-  //   `typeDef->arrayType().elementType_.size()` (also a size in bytes)
-  //
-  // This is so that allocators of structs and arrays don't need to chase from
-  // this TypeDefInstanceData through `typeDef` to find the value.
+  // This union is only meaningful for structs and arrays, and should otherwise
+  // be zeroed out.  It exists so that allocators of structs and arrays don't
+  // need to chase through `typeDef` to find this info.
   union {
-    uint32_t structTypeSize;
-    uint32_t arrayElemSize;
-    uint32_t unused;
-  };
+    struct {
+      // When `typeDef` refers to a struct type, these are copied unchanged
+      // from fields of the same name in StructType.
+      uint32_t payloadOffsetIL;
+      uint32_t totalSizeIL;
+      uint32_t totalSizeOOL;
+      uint32_t oolPointerOffset;
+      // Copied from StructType, and updated by GetFinalizedAllocKindForClass
+      // (see comment on StructType::allocKind_).
+      gc::AllocKind allocKind;
+    } strukt;
+    struct {
+      // When `typeDef` refers to an array type, this caches the value of
+      // `typeDef->arrayType().fieldType_.size()` (a size in bytes).
+      uint32_t elemSize;
+    } array;
+  } cached;
 
   static constexpr size_t offsetOfShape() {
     return offsetof(TypeDefInstanceData, shape);
@@ -96,7 +99,7 @@ struct TypeDefInstanceData {
     return offsetof(TypeDefInstanceData, superTypeVector);
   }
   static constexpr size_t offsetOfArrayElemSize() {
-    return offsetof(TypeDefInstanceData, arrayElemSize);
+    return offsetof(TypeDefInstanceData, cached.array.elemSize);
   }
 };
 
@@ -156,6 +159,16 @@ struct MemoryInstanceData {
   //
   // See "Linear memory addresses and bounds checking" in WasmMemory.cpp.
   uintptr_t boundsCheckLimit;
+
+  // The default boundsCheckLimit is used for standard page sizes and also 8-bit
+  // memory accesses on custom page sizes. These other limits are only used for
+  // accesses on memories with custom page sizes.
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  uintptr_t boundsCheckLimit16;
+  uintptr_t boundsCheckLimit32;
+  uintptr_t boundsCheckLimit64;
+  uintptr_t boundsCheckLimit128;
+#endif
 
   // Whether this memory is shared or not.
   bool isShared;

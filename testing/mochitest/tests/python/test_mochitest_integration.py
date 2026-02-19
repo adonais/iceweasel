@@ -321,12 +321,10 @@ def test_output_testfile_in_dupe_manifests(flavor, runtests, test_name, test_man
     # Explicitly provide a manifestFile property that includes the
     # two manifest files that share the same test file.
     extra_opts = {
-        "manifestFile": test_manifest(
-            [
-                "mochitest-dupemanifest-1.ini",
-                "mochitest-dupemanifest-2.ini",
-            ]
-        ),
+        "manifestFile": test_manifest([
+            "mochitest-dupemanifest-1.ini",
+            "mochitest-dupemanifest-2.ini",
+        ]),
         "runByManifest": True,
     }
 

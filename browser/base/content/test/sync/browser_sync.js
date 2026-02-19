@@ -31,7 +31,10 @@ add_setup(async function () {
   // when in the signed-out state, we need to set the state _before_ opening
   // the FxA menu (since the panel cannot be opened) in the signed out state.
   await SpecialPowers.pushPrefEnv({
-    set: [["identity.fxaccounts.toolbar.accessed", true]],
+    set: [
+      ["browser.urlbar.trustPanel.featureGate", false],
+      ["identity.fxaccounts.toolbar.accessed", true],
+    ],
   });
 });
 

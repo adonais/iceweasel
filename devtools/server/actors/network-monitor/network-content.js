@@ -37,7 +37,7 @@ const {
  * This actor manages all network functionality runnning
  * in the content process.
  *
- * @constructor
+ * @class
  */
 class NetworkContentActor extends Actor {
   constructor(conn, targetActor) {

@@ -7,7 +7,6 @@
 #include "RefMessageBodyService.h"
 
 #include <cstdint>
-#include <cstdlib>
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"

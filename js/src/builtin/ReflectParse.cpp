@@ -8,7 +8,6 @@
 
 #include "mozilla/DebugOnly.h"
 
-#include <stdlib.h>
 #include <utility>
 
 #include "jspubtd.h"

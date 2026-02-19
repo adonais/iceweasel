@@ -135,8 +135,6 @@ skip-if = [
 
 ["test_getUserMedia_mediaStreamTrackClone.html"]
 
-["test_getUserMedia_nonDefaultRate.html"]
-
 ["test_getUserMedia_peerIdentity.html"]
 
 ["test_getUserMedia_permission.html"]

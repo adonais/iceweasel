@@ -36,24 +36,23 @@ async function checkLoginInvalid(aLoginInfo, aExpectedError) {
   await Services.logins.addLoginAsync(testLogin);
 
   // Try to modify the existing login using nsILoginInfo and nsIPropertyBag.
-  Assert.throws(
-    () => Services.logins.modifyLogin(testLogin, aLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(testLogin, aLoginInfo),
     aExpectedError
   );
-  Assert.throws(
-    () =>
-      Services.logins.modifyLogin(
-        testLogin,
-        newPropertyBag({
-          origin: aLoginInfo.origin,
-          formActionOrigin: aLoginInfo.formActionOrigin,
-          httpRealm: aLoginInfo.httpRealm,
-          username: aLoginInfo.username,
-          password: aLoginInfo.password,
-          usernameField: aLoginInfo.usernameField,
-          passwordField: aLoginInfo.passwordField,
-        })
-      ),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(
+      testLogin,
+      newPropertyBag({
+        origin: aLoginInfo.origin,
+        formActionOrigin: aLoginInfo.formActionOrigin,
+        httpRealm: aLoginInfo.httpRealm,
+        username: aLoginInfo.username,
+        password: aLoginInfo.password,
+        usernameField: aLoginInfo.usernameField,
+        passwordField: aLoginInfo.passwordField,
+      })
+    ),
     aExpectedError
   );
 
@@ -306,24 +305,24 @@ add_task(async function test_modifyLogin_nsILoginInfo() {
   let differentLoginInfo = TestData.authLogin();
 
   // Trying to modify a login that does not exist should throw.
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, updatedLoginInfo),
     /No matching logins/
   );
 
   // Add the first form login, then modify it to match the second.
   await Services.logins.addLoginAsync(loginInfo);
-  Services.logins.modifyLogin(loginInfo, updatedLoginInfo);
+  await Services.logins.modifyLoginAsync(loginInfo, updatedLoginInfo);
 
   // The data should now match the second login.
   await LoginTestUtils.checkLogins([updatedLoginInfo]);
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, updatedLoginInfo),
     /No matching logins/
   );
 
   // The login can be changed to have a different type and origin.
-  Services.logins.modifyLogin(updatedLoginInfo, differentLoginInfo);
+  await Services.logins.modifyLoginAsync(updatedLoginInfo, differentLoginInfo);
   await LoginTestUtils.checkLogins([differentLoginInfo]);
 
   // It is now possible to add a login with the old type and origin.
@@ -331,8 +330,8 @@ add_task(async function test_modifyLogin_nsILoginInfo() {
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   // Modifying a login to match an existing one should not be possible.
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, differentLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, differentLoginInfo),
     /already exists/
   );
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
@@ -363,15 +362,15 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
   });
 
   // Trying to modify a login that does not exist should throw.
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, newPropertyBag()),
     /No matching logins/
   );
 
   // Add the first form login, then modify it to match the second, changing
   // only some of its properties and checking the behavior with an empty string.
   await Services.logins.addLoginAsync(loginInfo);
-  Services.logins.modifyLogin(
+  await Services.logins.modifyLoginAsync(
     loginInfo,
     newPropertyBag({
       username: "new username",
@@ -383,28 +382,30 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
 
   // The data should now match the second login.
   await LoginTestUtils.checkLogins([updatedLoginInfo]);
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, newPropertyBag()),
     /No matching logins/
   );
 
   // It is also possible to provide no properties to be modified.
-  Services.logins.modifyLogin(updatedLoginInfo, newPropertyBag());
+  await Services.logins.modifyLoginAsync(updatedLoginInfo, newPropertyBag());
 
   // Specifying a null property for a required value should throw.
-  Assert.throws(
-    () =>
-      Services.logins.modifyLogin(
-        loginInfo,
-        newPropertyBag({
-          usernameField: null,
-        })
-      ),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(
+      loginInfo,
+      newPropertyBag({
+        usernameField: null,
+      })
+    ),
     /No matching logins/
   );
 
   // The login can be changed to have a different type and origin.
-  Services.logins.modifyLogin(updatedLoginInfo, differentLoginProperties);
+  await Services.logins.modifyLoginAsync(
+    updatedLoginInfo,
+    differentLoginProperties
+  );
   await LoginTestUtils.checkLogins([differentLoginInfo]);
 
   // It is now possible to add a login with the old type and origin.
@@ -412,8 +413,8 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   // Modifying a login to match an existing one should not be possible.
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, differentLoginProperties),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, differentLoginProperties),
     /already exists/
   );
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);

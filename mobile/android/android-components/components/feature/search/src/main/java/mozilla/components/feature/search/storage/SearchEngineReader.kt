@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.search.storage
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -18,6 +19,7 @@ import mozilla.components.browser.icons.decoder.SvgIconDecoder
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.feature.search.middleware.SearchExtraParams
 import mozilla.components.support.images.DesiredSize
+import mozilla.components.support.locale.LocaleManager
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
@@ -53,13 +55,18 @@ internal val GENERAL_SEARCH_ENGINE_IDS = setOf(
 /**
  * A simple XML reader for search engine plugins.
  *
+ * @param context the [Context] used to resolve the current locale dynamically. The application
+ * context will be stored to ensure locale changes made by the user are reflected in search URLs.
  * @param type the [SearchEngine.Type] that the read [SearchEngine]s will get assigned.
  * @param searchExtraParams Optional search extra params.
  */
 internal class SearchEngineReader(
+    context: Context,
     private val type: SearchEngine.Type,
     private val searchExtraParams: SearchExtraParams? = null,
 ) {
+    private val applicationContext = context.applicationContext
+
     private class SearchEngineBuilder(
         private val type: SearchEngine.Type,
         private val identifier: String,
@@ -359,6 +366,8 @@ internal class SearchEngineReader(
         for (param in params) {
             if (param.value == "{partnerCode}") {
                 uriBuilder.appendQueryParameter(param.name, partnerCode)
+            } else if (param.value == "{acceptLanguages}") {
+                uriBuilder.appendQueryParameter(param.name, applicationContext.getAcceptLanguage())
             } else if (param.value != null) {
                 uriBuilder.appendQueryParameter(param.name, param.value)
             }
@@ -394,5 +403,10 @@ internal class SearchEngineReader(
             ) ?: defaultIcon
             else -> defaultIcon
         }
+    }
+
+    private fun Context.getAcceptLanguage(): String {
+        return LocaleManager.getCurrentLocale(this)?.toLanguageTag()
+            ?: LocaleManager.getSystemDefault().toLanguageTag()
     }
 }

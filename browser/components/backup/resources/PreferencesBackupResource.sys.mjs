@@ -80,15 +80,6 @@ export class PreferencesBackupResource extends BackupResource {
     ];
     await BackupResource.copyFiles(profilePath, stagingPath, simpleCopyFiles);
 
-    if (BackupResource.canBackupHistory()) {
-      const sqliteDatabases = ["permissions.sqlite", "content-prefs.sqlite"];
-      await BackupResource.copySqliteDatabases(
-        profilePath,
-        stagingPath,
-        sqliteDatabases
-      );
-    }
-
     // prefs.js is a special case - we have a helper function to flush the
     // current prefs state to disk off of the main thread.
     let prefsDestPath = PathUtils.join(stagingPath, "prefs.js");
@@ -186,8 +177,6 @@ export class PreferencesBackupResource extends BackupResource {
     const simpleCopyFiles = [
       "prefs.js",
       "xulstore.json",
-      "permissions.sqlite",
-      "content-prefs.sqlite",
       "containers.json",
       "handlers.json",
       "user.js",
@@ -220,8 +209,6 @@ export class PreferencesBackupResource extends BackupResource {
     const files = [
       "prefs.js",
       "xulstore.json",
-      "permissions.sqlite",
-      "content-prefs.sqlite",
       "containers.json",
       "handlers.json",
       "search.json.mozlz4",

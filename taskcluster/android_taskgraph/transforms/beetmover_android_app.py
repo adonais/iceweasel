@@ -102,15 +102,13 @@ def make_task_worker(config, tasks):
         locale = task["attributes"].get("locale")
         build_type = task["attributes"]["build-type"]
 
-        task["worker"].update(
-            {
-                "implementation": "beetmover",
-                "release-properties": craft_release_properties(config, task),
-                "artifact-map": generate_beetmover_artifact_map(
-                    config, task, platform=build_type, locale=locale
-                ),
-            }
-        )
+        task["worker"].update({
+            "implementation": "beetmover",
+            "release-properties": craft_release_properties(config, task),
+            "artifact-map": generate_beetmover_artifact_map(
+                config, task, platform=build_type, locale=locale
+            ),
+        })
 
         if locale:
             task["worker"]["locale"] = locale

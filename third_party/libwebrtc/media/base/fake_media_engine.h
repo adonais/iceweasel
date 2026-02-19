@@ -41,6 +41,7 @@
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/environment/environment.h"
+#include "api/field_trials_view.h"
 #include "api/frame_transformer_interface.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
@@ -822,8 +823,8 @@ class FakeVoiceEngine : public VoiceEngineInterface {
   bool StartAecDump(FileWrapper file, int64_t max_size_bytes) override;
   void StopAecDump() override;
   std::optional<AudioDeviceModule::Stats> GetAudioDeviceStats() override;
-  std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions()
-      const override;
+  std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions(
+      const FieldTrialsView* field_trials) const override;
   void SetRtpHeaderExtensions(
       std::vector<RtpHeaderExtensionCapability> header_extensions);
 
@@ -924,8 +925,8 @@ class FakeVideoEngine : public VideoEngineInterface {
   void SetSendCodecs(const std::vector<Codec>& codecs);
   void SetRecvCodecs(const std::vector<Codec>& codecs);
   bool SetCapture(bool capture);
-  std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions()
-      const override;
+  std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions(
+      const FieldTrialsView* field_trials) const override;
   void SetRtpHeaderExtensions(
       std::vector<RtpHeaderExtensionCapability> header_extensions);
 

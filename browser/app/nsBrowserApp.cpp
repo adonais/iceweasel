@@ -51,9 +51,9 @@
 
 #include "nsXPCOMPrivate.h"  // for MAXPATHLEN and XPCOM_DLL
 
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StartupTimeline.h"
-#include "BaseProfiler.h"
 
 #ifdef LIBFUZZER
 #  include "FuzzerDefs.h"
@@ -194,7 +194,7 @@ static bool HasFlag(int argc, char* argv[], const char* s) {
   return false;
 }
 
-MOZ_CONSTINIT Bootstrap::UniquePtr gBootstrap;
+constinit Bootstrap::UniquePtr gBootstrap;
 
 static int do_main(int argc, char* argv[], char* envp[]) {
   // Allow firefox.exe to launch XULRunner apps via -app <application.ini>

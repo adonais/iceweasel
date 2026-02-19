@@ -90,6 +90,29 @@ describe("PrefsFeed", () => {
     const [{ data }] = feed.store.dispatch.firstCall.args;
     assert.deepEqual(data.featureConfig, { prefsButtonIcon: "icon-foo" });
   });
+  it("should dispatch PREFS_INITIAL_VALUES with trainhopConfig", () => {
+    const testObject = {
+      meta: { isRollout: false },
+      value: {
+        type: "testExperiment",
+        payload: { enabled: true },
+      },
+    };
+    sandbox
+      .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+      .returns([testObject]);
+
+    feed.onAction({ type: at.INIT });
+
+    assert.equal(
+      feed.store.dispatch.firstCall.args[0].type,
+      at.PREFS_INITIAL_VALUES
+    );
+    const [{ data }] = feed.store.dispatch.firstCall.args;
+    assert.deepEqual(data.trainhopConfig, {
+      testExperiment: { enabled: true },
+    });
+  });
   it("should dispatch PREFS_INITIAL_VALUES with an empty object if no experiment is returned", () => {
     sandbox.stub(global.NimbusFeatures.newtab, "getAllVariables").returns(null);
     feed.onAction({ type: at.INIT });

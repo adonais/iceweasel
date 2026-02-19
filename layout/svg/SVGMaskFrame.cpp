@@ -89,7 +89,8 @@ already_AddRefed<SourceSurface> SVGMaskFrame::GetMaskForMaskedFrame(
     // The CTM of each frame referencing us can be different
     ISVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
     if (SVGFrame) {
-      SVGFrame->NotifySVGChanged(ISVGDisplayableFrame::TRANSFORM_CHANGED);
+      SVGFrame->NotifySVGChanged(
+          ISVGDisplayableFrame::ChangeFlag::TransformChanged);
       m = SVGUtils::GetTransformMatrixInUserSpace(kid) * m;
     }
 

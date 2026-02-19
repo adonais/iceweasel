@@ -26,9 +26,11 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.syncedtabs.OnSectionExpansionToggled
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.ui.syncedtabs.SyncedTabsList
 import org.mozilla.fenix.theme.FirefoxTheme
+import kotlin.Boolean
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabClick as OnSyncedTabClick
 import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabClose
@@ -43,6 +45,8 @@ private val EmptyPageWidth = 200.dp
  * @param onTabClick Invoked when the user clicks on a tab.
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onSignInClick Invoked when an unauthenticated user clicks to sign-in.
+ * @param expandedState The list of [SyncedTabsListItem] expansion states.
+ * @param onSectionExpansionToggled Invoked when a user toggles the section expansion.
  */
 @Composable
 internal fun SyncedTabsPage(
@@ -51,12 +55,16 @@ internal fun SyncedTabsPage(
     onTabClick: OnSyncedTabClick,
     onTabClose: OnSyncedTabClose,
     onSignInClick: () -> Unit,
+    expandedState: List<Boolean>,
+    onSectionExpansionToggled: OnSectionExpansionToggled,
 ) {
     if (isSignedIn) {
         SyncedTabsList(
             syncedTabs = syncedTabs,
             onTabClick = onTabClick,
             onTabCloseClick = onTabClose,
+            expandedState = expandedState,
+            onSectionExpansionToggled = onSectionExpansionToggled,
         )
     } else {
         UnauthenticatedSyncedTabsPage(onSignInClick = onSignInClick)

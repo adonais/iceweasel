@@ -8,7 +8,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
 #include <IOKit/IOKitLib.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/mount.h>
 #include <sys/param.h>

@@ -7,20 +7,17 @@
 
 #include "nsIURI.h"
 #include "nsISerializable.h"
-#include "nsISizeOf.h"
 #include "nsIURIMutator.h"
 #include "mozilla/net/MozURL.h"
 
 namespace mozilla {
 namespace net {
 
-class DefaultURI : public nsIURI, public nsISerializable, public nsISizeOf {
+class DefaultURI : public nsIURI, public nsISerializable {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIURI
   NS_DECL_NSISERIALIZABLE
-
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   class Mutator final : public nsIURIMutator, public nsISerializable {
     NS_DECL_ISUPPORTS

@@ -39,10 +39,10 @@ static const char16_t kInvisibleTimes = char16_t(0x2062);
 static const char16_t kInvisibleSeparator = char16_t(0x2063);
 static const char16_t kInvisiblePlus = char16_t(0x2064);
 
-eMathMLFrameType nsMathMLmoFrame::GetMathMLFrameType() {
+MathMLFrameType nsMathMLmoFrame::GetMathMLFrameType() {
   return NS_MATHML_OPERATOR_IS_INVISIBLE(mFlags)
-             ? eMathMLFrameType_OperatorInvisible
-             : eMathMLFrameType_OperatorOrdinary;
+             ? MathMLFrameType::OperatorInvisible
+             : MathMLFrameType::OperatorOrdinary;
 }
 
 // since a mouse click implies selection, we cannot just rely on the
@@ -196,7 +196,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
 
     // reset everything so that we don't keep outdated values around
     // in case of dynamic changes
-    mEmbellishData.flags = 0;
+    mEmbellishData.flags.clear();
     mEmbellishData.coreFrame = nullptr;
     mEmbellishData.leadingSpace = 0;
     mEmbellishData.trailingSpace = 0;
@@ -209,7 +209,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
       return;
     }
 
-    mEmbellishData.flags |= NS_MATHML_EMBELLISH_OPERATOR;
+    mEmbellishData.flags += MathMLEmbellishFlag::EmbellishedOperator;
     mEmbellishData.coreFrame = this;
 
     // there are two particular things that we also need to record so that if
@@ -223,10 +223,10 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     // default values from the Operator Dictionary were obtained in
     // ProcessTextData() and these special bits are always kept in mFlags
     if (NS_MATHML_OPERATOR_IS_ACCENT(mFlags)) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENT;
+      mEmbellishData.flags += MathMLEmbellishFlag::Accent;
     }
     if (NS_MATHML_OPERATOR_IS_MOVABLELIMITS(mFlags)) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_MOVABLELIMITS;
+      mEmbellishData.flags += MathMLEmbellishFlag::MovableLimits;
     }
 
     // see if the accent attribute is there
@@ -251,18 +251,18 @@ void nsMathMLmoFrame::ProcessOperatorData() {
             false, params);
       }();
       if (value.LowerCaseEqualsLiteral("true")) {
-        mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENT;
+        mEmbellishData.flags += MathMLEmbellishFlag::Accent;
       } else if (value.LowerCaseEqualsLiteral("false")) {
-        mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENT;
+        mEmbellishData.flags -= MathMLEmbellishFlag::Accent;
       }
     }
 
     // see if the movablelimits attribute is there
     mContent->AsElement()->GetAttr(nsGkAtoms::movablelimits, value);
     if (value.LowerCaseEqualsLiteral("true")) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_MOVABLELIMITS;
+      mEmbellishData.flags += MathMLEmbellishFlag::MovableLimits;
     } else if (value.LowerCaseEqualsLiteral("false")) {
-      mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_MOVABLELIMITS;
+      mEmbellishData.flags -= MathMLEmbellishFlag::MovableLimits;
     }
 
     // ---------------------------------------------------------------------
@@ -477,7 +477,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     if (value.LowerCaseEqualsLiteral("false")) {
       mFlags &= ~NS_MATHML_OPERATOR_FENCE;
     } else {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_FENCE;
+      mEmbellishData.flags += MathMLEmbellishFlag::Fence;
     }
   }
   mContent->AsElement()->GetAttr(nsGkAtoms::largeop, value);
@@ -491,7 +491,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     if (value.LowerCaseEqualsLiteral("false")) {
       mFlags &= ~NS_MATHML_OPERATOR_SEPARATOR;
     } else {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_SEPARATOR;
+      mEmbellishData.flags += MathMLEmbellishFlag::Separator;
     }
   }
   mContent->AsElement()->GetAttr(nsGkAtoms::symmetric, value);
@@ -603,11 +603,11 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
                          nsStretchDirection aStretchDirection,
                          nsBoundingMetrics& aContainerSize,
                          ReflowOutput& aDesiredStretchSize) {
-  if (NS_MATHML_STRETCH_WAS_DONE(mPresentationData.flags)) {
+  if (mPresentationData.flags.contains(MathMLPresentationFlag::StretchDone)) {
     NS_WARNING("it is wrong to fire stretch more than once on a frame");
     return NS_OK;
   }
-  mPresentationData.flags |= NS_MATHML_STRETCH_DONE;
+  mPresentationData.flags += MathMLPresentationFlag::StretchDone;
 
   nsIFrame* firstChild = mFrames.FirstChild();
 
@@ -801,12 +801,12 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   // special case for accents... keep them short to improve mouse operations...
   // an accent can only be the non-first child of <mover>, <munder>,
   // <munderover>
-  bool isAccent = NS_MATHML_EMBELLISH_IS_ACCENT(mEmbellishData.flags);
+  bool isAccent = mEmbellishData.flags.contains(MathMLEmbellishFlag::Accent);
   if (isAccent) {
     nsEmbellishData parentData;
     GetEmbellishDataFrom(GetParent(), parentData);
-    isAccent = (NS_MATHML_EMBELLISH_IS_ACCENTOVER(parentData.flags) ||
-                NS_MATHML_EMBELLISH_IS_ACCENTUNDER(parentData.flags)) &&
+    isAccent = (parentData.flags.contains(MathMLEmbellishFlag::AccentOver) ||
+                parentData.flags.contains(MathMLEmbellishFlag::AccentUnder)) &&
                parentData.coreFrame != this;
   }
   if (isAccent && firstChild) {

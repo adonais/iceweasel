@@ -408,7 +408,7 @@ void BlockReflowState::ReconstructMarginBefore(nsLineList::iterator aLine) {
 void BlockReflowState::AppendPushedFloatChain(nsIFrame* aFloatCont) {
   nsFrameList* pushedFloats = mBlock->EnsurePushedFloats();
   while (true) {
-    aFloatCont->AddStateBits(NS_FRAME_IS_PUSHED_FLOAT);
+    aFloatCont->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
     pushedFloats->AppendFrame(mBlock, aFloatCont);
     aFloatCont = aFloatCont->GetNextInFlow();
     if (!aFloatCont || aFloatCont->GetParent() != mBlock) {
@@ -511,12 +511,12 @@ bool BlockReflowState::AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
   MOZ_ASSERT(aFloat->GetParent(), "float must have parent");
   MOZ_ASSERT(aFloat->GetParent()->IsBlockFrameOrSubclass(),
              "float's parent must be block");
-  if (aFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT) ||
+  if (aFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW) ||
       aFloat->GetParent() != mBlock) {
-    MOZ_ASSERT(aFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT |
+    MOZ_ASSERT(aFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW |
                                        NS_FRAME_FIRST_REFLOW),
                "float should be in this block unless it was marked as "
-               "pushed float, or just inserted");
+               "pushed out-of-flow, or just inserted");
     MOZ_ASSERT(aFloat->GetParent()->FirstContinuation() ==
                mBlock->FirstContinuation());
     // If, in a previous reflow, the float was pushed entirely to
@@ -530,7 +530,7 @@ bool BlockReflowState::AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
     auto* floatParent = static_cast<nsBlockFrame*>(aFloat->GetParent());
     floatParent->StealFrame(aFloat);
 
-    aFloat->RemoveStateBits(NS_FRAME_IS_PUSHED_FLOAT);
+    aFloat->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
 
     // Appending is fine, since if a float was pushed to the next
     // page/column, all later floats were also pushed.

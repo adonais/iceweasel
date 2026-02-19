@@ -5,6 +5,7 @@
 package org.mozilla.fenix.tabstray
 
 import androidx.compose.runtime.Composable
+import org.mozilla.fenix.tabstray.syncedtabs.OnSectionExpansionToggled
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsList
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.syncedtabs.OnTabClick as OnSyncedTabClick
@@ -16,16 +17,22 @@ import org.mozilla.fenix.tabstray.syncedtabs.OnTabCloseClick as OnSyncedTabClose
  * @param syncedTabs The list of [SyncedTabsListItem] to display.
  * @param onTabClick Invoked when the user clicks on a tab.
  * @param onTabClose Invoked when the user clicks to close a tab.
+ * @param expandedState The list of [SyncedTabsListItem] expansion states.
+ * @param onSectionExpansionToggled Invoked when a user toggles the section expansion.
  */
 @Composable
 internal fun SyncedTabsPage(
     syncedTabs: List<SyncedTabsListItem>,
     onTabClick: OnSyncedTabClick,
     onTabClose: OnSyncedTabClose,
+    expandedState: List<Boolean>,
+    onSectionExpansionToggled: OnSectionExpansionToggled,
 ) {
     SyncedTabsList(
         syncedTabs = syncedTabs,
         onTabClick = onTabClick,
         onTabCloseClick = onTabClose,
+        expandedState = expandedState,
+        onSectionExpansionToggled = onSectionExpansionToggled,
     )
 }

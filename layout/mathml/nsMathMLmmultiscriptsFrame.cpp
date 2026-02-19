@@ -88,8 +88,9 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
   if (!StaticPrefs::mathml_math_shift_enabled()) {
     for (int32_t i = subScriptFrames.Length() - 1; i >= 0; i--) {
       childFrame = subScriptFrames[i];
-      PropagatePresentationDataFor(childFrame, NS_MATHML_COMPRESSED,
-                                   NS_MATHML_COMPRESSED);
+      PropagatePresentationDataFor(childFrame,
+                                   MathMLPresentationFlag::Compressed,
+                                   MathMLPresentationFlag::Compressed);
     }
   }
 
@@ -215,9 +216,10 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   nscoord supScriptShift;
   nsPresentationData presentationData;
   aFrame->GetPresentationData(presentationData);
-  bool compressed = StaticPrefs::mathml_math_shift_enabled()
-                        ? font->mMathShift == StyleMathShift::Compact
-                        : NS_MATHML_IS_COMPRESSED(presentationData.flags);
+  bool compressed =
+      StaticPrefs::mathml_math_shift_enabled()
+          ? font->mMathShift == StyleMathShift::Compact
+          : presentationData.flags.contains(MathMLPresentationFlag::Compressed);
   if (mathFont) {
     // Try and get the super script shift from the MATH table. Note that
     // contrary to TeX we only have two parameters.

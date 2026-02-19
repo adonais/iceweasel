@@ -449,6 +449,8 @@ std::vector<LayersId> APZCTreeManager::UpdateHitTestingTree(
   TreeBuildingState state(mRootLayersId, aOriginatingLayersId, testData,
                           aPaintSequenceNumber, testLoggingEnabled);
 
+  mRootContentApzcs.ClearAndRetainStorage();
+
   // We do this business with collecting the entire tree into an array because
   // otherwise it's very hard to determine which APZC instances need to be
   // destroyed. In the worst case, there are two scenarios: (a) a layer with an
@@ -573,6 +575,10 @@ std::vector<LayersId> APZCTreeManager::UpdateHitTestingTree(
           }
           if (apzc && node->IsPrimaryHolder()) {
             state.mScrollTargets[apzc->GetGuid()] = node;
+            if (aLayerMetrics.Metrics().IsRootContent()) {
+              mTreeLock.AssertCurrentThreadIn();  // for threadsafety analysis
+              mRootContentApzcs.AppendElement(apzc);
+            }
           }
 
           // Accumulate the CSS transform between layers that have an APZC.
@@ -752,6 +758,8 @@ std::vector<LayersId> APZCTreeManager::UpdateHitTestingTree(
                state.mNodesToDestroy[i]->GetApzc());
     state.mNodesToDestroy[i]->Destroy();
   }
+
+  SetFixedLayerMarginsOnRootContentApzcs(lock);
 
   APZCTM_LOG("APZCTreeManager (%p)\n", this);
   if (mRootNode && MOZ_LOG_TEST(sLog, LogLevel::Debug)) {
@@ -2772,6 +2780,7 @@ void APZCTreeManager::ClearTree() {
                                  nodesToDestroy.AppendElement(aNode);
                                });
 
+  mRootContentApzcs.Clear();
   for (size_t i = 0; i < nodesToDestroy.Length(); i++) {
     nodesToDestroy[i]->Destroy();
   }
@@ -3851,9 +3860,23 @@ void APZCTreeManager::SendSubtreeTransformsToChromeMainThread(
 
 void APZCTreeManager::SetFixedLayerMargins(ScreenIntCoord aTop,
                                            ScreenIntCoord aBottom) {
-  MutexAutoLock lock(mMapLock);
-  mCompositorFixedLayerMargins.top = ScreenCoord(aTop);
-  mCompositorFixedLayerMargins.bottom = ScreenCoord(aBottom);
+  {
+    MutexAutoLock lock(mMapLock);
+    mCompositorFixedLayerMargins.top = ScreenCoord(aTop);
+    mCompositorFixedLayerMargins.bottom = ScreenCoord(aBottom);
+  }
+  {
+    RecursiveMutexAutoLock lock(mTreeLock);
+    SetFixedLayerMarginsOnRootContentApzcs(lock);
+  }
+}
+
+void APZCTreeManager::SetFixedLayerMarginsOnRootContentApzcs(
+    const RecursiveMutexAutoLock& aProofOfTreeLock) {
+  ScreenMargin margins = GetCompositorFixedLayerMargins();
+  for (auto* apzc : mRootContentApzcs) {
+    apzc->SetFixedLayerMargins(margins);
+  }
 }
 
 ScreenPoint APZCTreeManager::ComputeFixedMarginsOffset(

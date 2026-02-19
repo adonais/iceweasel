@@ -169,7 +169,7 @@ def test_non_idiomatic_fix(lint, paths, create_temp_file):
     i += 1
     assert (
         results[i].message
-        == "instead of win10_2009 please use os == 'win' && os_version = '10.2009' && arch == 'x86_64'"
+        == "instead of win10_2009 please use os == 'win' && os_version == '10.2009' && arch == 'x86_64'"
     )
     assert results[i].level == WARNING
     i += 1

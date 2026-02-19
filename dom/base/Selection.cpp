@@ -3713,7 +3713,6 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
 
   nsINode* node = nullptr;
   uint32_t nodeOffset = 0;
-  nsIFrame* frame = nullptr;
 
   switch (aRegion) {
     case nsISelectionController::SELECTION_ANCHOR_REGION:
@@ -3732,12 +3731,14 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
 
   nsCOMPtr<nsIContent> content = do_QueryInterface(node);
   NS_ENSURE_TRUE(content.get(), nullptr);
-  uint32_t frameOffset = 0;
-  frame = SelectionMovementUtils::GetFrameForNodeOffset(
-      content, nodeOffset, mFrameSelection->GetHint(), &frameOffset);
-  if (!frame) return nullptr;
+  FrameAndOffset frameAndOffset = SelectionMovementUtils::GetFrameForNodeOffset(
+      content, nodeOffset, mFrameSelection->GetHint());
+  if (!frameAndOffset) {
+    return nullptr;
+  }
 
-  SelectionMovementUtils::AdjustFrameForLineStart(frame, frameOffset);
+  SelectionMovementUtils::AdjustFrameForLineStart(
+      frameAndOffset.mFrame, frameAndOffset.mOffsetInFrameContent);
 
   // Figure out what node type we have, then get the
   // appropriate rect for its nodeOffset.
@@ -3747,16 +3748,21 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
   if (isText) {
     nsIFrame* childFrame = nullptr;
     int32_t frameOffset = 0;
-    nsresult rv = frame->GetChildFrameContainingOffset(
+    nsresult rv = frameAndOffset->GetChildFrameContainingOffset(
+        // FIXME: nodeOffset is offset in content (same as node) but
+        // frameAndOffset.mFrame may be a frame for its descendant.  Therefore,
+        // frameAndOffset.mOffsetInFrameContent should be used here.
         nodeOffset, mFrameSelection->GetHint() == CaretAssociationHint::After,
         &frameOffset, &childFrame);
     if (NS_FAILED(rv)) return nullptr;
     if (!childFrame) return nullptr;
 
-    frame = childFrame;
+    frameAndOffset.mFrame = childFrame;
 
     // Get the coordinates of the offset into the text frame.
-    rv = GetCachedFrameOffset(frame, nodeOffset, pt);
+    rv = GetCachedFrameOffset(
+        frameAndOffset.mFrame,
+        static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent), pt);
     if (NS_FAILED(rv)) return nullptr;
   }
 
@@ -3767,7 +3773,7 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
   // The block position and size are set so as to fill the frame in that axis.
   // (i.e. block-position of 0, and block-size matching the frame's own block
   // size).
-  const WritingMode wm = frame->GetWritingMode();
+  const WritingMode wm = frameAndOffset->GetWritingMode();
   // Helper to determine the inline-axis position for the aRect outparam.
   auto GetInlinePosition = [&]() {
     if (isText) {
@@ -3779,20 +3785,20 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
     // inline-end edge (rather than physical end of inline axis)? (i.e. if we
     // have direction:rtl, maybe this code would want to return 0 instead of
     // height/width?)
-    return frame->ISize(wm);
+    return frameAndOffset->ISize(wm);
   };
 
   // Set the inline position and block-size. Leave inline size and block
   // position set to 0, as discussed above.
   if (wm.IsVertical()) {
     aRect->y = GetInlinePosition();
-    aRect->SetWidth(frame->BSize(wm));
+    aRect->SetWidth(frameAndOffset->BSize(wm));
   } else {
     aRect->x = GetInlinePosition();
-    aRect->SetHeight(frame->BSize(wm));
+    aRect->SetHeight(frameAndOffset->BSize(wm));
   }
 
-  return frame;
+  return frameAndOffset;
 }
 
 NS_IMETHODIMP
@@ -3880,10 +3886,6 @@ nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
     return NS_ERROR_FAILURE;
   }
 
-  // Scroll vertically to get the caret into view, but only if the container
-  // is perceived to be scrollable in that direction (i.e. there is a visible
-  // vertical scrollbar or the scroll range is at least one device pixel)
-  aVertical.mOnlyIfPerceivedScrollableDirection = true;
   presShell->ScrollFrameIntoView(frame, Some(rect), aVertical, aHorizontal,
                                  aScrollFlags);
   return NS_OK;
@@ -4233,7 +4235,7 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
   // we may have to swap the direction of movement.
   const PrimaryFrameData frameForFocus =
       GetPrimaryFrameForCaretAtFocusNode(visual);
-  if (frameForFocus.mFrame) {
+  if (frameForFocus) {
     if (visual) {
       // FYI: This was done during a call of GetPrimaryFrameForCaretAtFocusNode.
       // Therefore, this may not be intended by the original author.

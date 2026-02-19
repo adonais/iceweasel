@@ -8,6 +8,7 @@ package org.mozilla.fenix.ui.robots
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers
@@ -15,9 +16,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
-import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.TestHelper.mDevice
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.click
 import mozilla.components.feature.readerview.R as readerviewR
 
@@ -162,13 +163,14 @@ class ReaderViewRobot {
 
     class Transition {
 
-        fun closeAppearanceMenu(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "closeAppearanceMenu: Trying to click device back button")
+        fun closeReaderViewControlMenu(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "closeReaderViewControlMenu: Trying to click device back button")
             mDevice.pressBack()
-            Log.i(TAG, "closeAppearanceMenu: Clicked device back button")
+            Log.i(TAG, "closeReaderViewControlMenu: Clicked device back button")
+            waitForAppWindowToBeUpdated()
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun toggleSansSerif(interact: ReaderViewRobot.() -> Unit): Transition {

@@ -492,22 +492,18 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       }
 
       try {
-        let payload = {
-          engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
-          suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-          lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
-          tailPrefix,
-          tail: [tail, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-          tailOffsetIndex: tail ? entry.tailOffsetIndex : undefined,
-          keyword: [alias ? alias : undefined, UrlbarUtils.HIGHLIGHT.TYPED],
-          trending: entry.trending,
-          description: entry.description || undefined,
-          query: [searchString.trim(), UrlbarUtils.HIGHLIGHT.NONE],
-          icon: !entry.value ? await engine.getIconURL() : entry.icon,
-        };
-
-        if (entry.trending) {
-          payload.helpUrl = TRENDING_HELP_URL;
+        let query = searchString.trim();
+        let suggestion = entry.value;
+        let title;
+        let titleHighlight;
+        if (tail && entry.tailOffsetIndex >= 0) {
+          title = tail;
+          titleHighlight = UrlbarUtils.HIGHLIGHT.SUGGESTED;
+        } else if (suggestion) {
+          title = suggestion;
+          titleHighlight = UrlbarUtils.HIGHLIGHT.SUGGESTED;
+        } else {
+          title = query;
         }
 
         results.push(
@@ -515,10 +511,24 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
             type: UrlbarUtils.RESULT_TYPE.SEARCH,
             source: UrlbarUtils.RESULT_SOURCE.SEARCH,
             isRichSuggestion: !!entry.icon,
-            ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-              queryContext.tokens,
-              payload
-            ),
+            payload: {
+              title,
+              engine: engine.name,
+              suggestion,
+              lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
+              tailPrefix,
+              tail,
+              tailOffsetIndex: tail ? entry.tailOffsetIndex : undefined,
+              keyword: alias || undefined,
+              trending: entry.trending,
+              description: entry.description || undefined,
+              query,
+              icon: !entry.value ? await engine.getIconURL() : entry.icon,
+              helpUrl: entry.trending ? TRENDING_HELP_URL : undefined,
+            },
+            highlights: {
+              title: titleHighlight,
+            },
           })
         );
       } catch (err) {
@@ -641,15 +651,19 @@ function makeFormHistoryResult(queryContext, engine, entry) {
   return new lazy.UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-    ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+    payload: {
       engine: engine.name,
-      suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+      suggestion: entry.value,
+      title: entry.value,
       lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
       isBlockable: true,
       blockL10n: { id: "urlbar-result-menu-remove-from-history" },
       helpUrl:
         Services.urlFormatter.formatURLPref("app.support.baseURL") +
         "awesome-bar-result-menu",
-    }),
+    },
+    highlights: {
+      suggestion: UrlbarUtils.HIGHLIGHT.SUGGESTED,
+    },
   });
 }

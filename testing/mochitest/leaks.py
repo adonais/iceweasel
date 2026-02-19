@@ -118,13 +118,11 @@ class ShutdownLeaks:
         errors = []
         for test in self._parseLeakingTests():
             for url, count in self._zipLeakedWindows(test["leakedWindows"]):
-                errors.append(
-                    {
-                        "test": test["fileName"],
-                        "msg": "leaked %d window(s) until shutdown [url = %s]"
-                        % (count, url),
-                    }
-                )
+                errors.append({
+                    "test": test["fileName"],
+                    "msg": "leaked %d window(s) until shutdown [url = %s]"
+                    % (count, url),
+                })
                 failures += 1
 
             if test["leakedWindowsString"]:
@@ -134,24 +132,19 @@ class ShutdownLeaks:
                 )
 
             if test["leakedDocShells"]:
-                errors.append(
-                    {
-                        "test": test["fileName"],
-                        "msg": "leaked %d docShell(s) until shutdown"
-                        % (len(test["leakedDocShells"])),
-                    }
-                )
+                errors.append({
+                    "test": test["fileName"],
+                    "msg": "leaked %d docShell(s) until shutdown"
+                    % (len(test["leakedDocShells"])),
+                })
                 failures += 1
                 self.logger.info(
                     "TEST-INFO | %s | docShell(s) leaked: %s"
                     % (
                         test["fileName"],
-                        ", ".join(
-                            [
-                                "[pid = %s] [id = %s]" % x
-                                for x in test["leakedDocShells"]
-                            ]
-                        ),
+                        ", ".join([
+                            "[pid = %s] [id = %s]" % x for x in test["leakedDocShells"]
+                        ]),
                     )
                 )
 
@@ -244,9 +237,9 @@ class ShutdownLeaks:
             leakedWindows = [id for id in test["windows"] if id in self.leakedWindows]
             test["leakedWindows"] = [self.leakedWindows[id] for id in leakedWindows]
             test["hiddenWindowsCount"] = self.hiddenWindowsCount
-            test["leakedWindowsString"] = ", ".join(
-                ["[pid = %s] [serial = %s]" % x for x in leakedWindows]
-            )
+            test["leakedWindowsString"] = ", ".join([
+                "[pid = %s] [serial = %s]" % x for x in leakedWindows
+            ])
             test["leakedDocShells"] = [
                 id for id in test["docShells"] if id in self.leakedDocShells
             ]

@@ -87,6 +87,13 @@ class nsFieldSetFrame final : public nsContainerFrame {
    */
   nsContainerFrame* GetInner() const;
 
+  nsContainerFrame* GetContentInsertionFrame() override {
+    if (auto* inner = GetInner()) {
+      return inner->GetContentInsertionFrame();
+    }
+    return this;
+  }
+
   /**
    * Return the frame that represents the rendered legend if any.
    * https://html.spec.whatwg.org/multipage/rendering.html#rendered-legend

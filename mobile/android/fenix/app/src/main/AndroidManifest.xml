@@ -54,6 +54,12 @@
     This is NOT required for the adjust plugin. -->
     <uses-permission android:name="com.adjust.preinstall.READ_PERMISSION"/>
 
+    <uses-permission android:name="${applicationId}.permission.PROFILER_INTERNAL" />
+
+    <permission
+        android:name="${applicationId}.permission.PROFILER_INTERNAL"
+        android:protectionLevel="signature" />
+
     <application
         android:name=".FenixApplication"
         android:allowBackup="false"
@@ -497,7 +503,7 @@
 
         <activity
             android:name=".HomeActivity"
-            android:theme="@style/SplashScreen"
+            android:theme="@style/SplashScreenThemeBase"
             android:exported="true"
             android:configChanges="keyboard|keyboardHidden|mcc|mnc|orientation|screenSize|layoutDirection|smallestScreenSize|screenLayout"
             android:launchMode="singleTask"
@@ -762,14 +768,18 @@
         <service
             android:name=".perf.ProfilerService"
             android:foregroundServiceType="specialUse"
-            android:exported="true"
-            android:permission="android.permission.DUMP">
+            android:exported="false">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="This foreground service allows the profiler to stop through adb." />
-            <intent-filter>
-                <action android:name="mozilla.perf.action.STOP_PROFILING" />
-            </intent-filter>
+                android:value="Developer tool: Shows notification during performance profiling" />
         </service>
+
+        <provider
+            android:name=".perf.ProfilerProvider"
+            android:authorities="${applicationId}.profiler"
+            android:exported="false"
+            android:enabled="false"
+            android:readPermission="android.permission.DUMP"
+            android:grantUriPermissions="false" />
 
         <meta-data
             android:name="firebase_messaging_auto_init_enabled"

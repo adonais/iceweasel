@@ -14,7 +14,7 @@
 /**
  * Initialize a new `Emitter`.
  *
- * @api public
+ * @public
  */
 
 function Emitter(obj) {
@@ -28,7 +28,7 @@ function Emitter(obj) {
  *
  * @param {object} obj
  * @return {object}
- * @api private
+ * @private
  */
 
 function mixin(obj) {
@@ -44,7 +44,7 @@ function mixin(obj) {
  * @param {string} event
  * @param {Function} fn
  * @return {Emitter}
- * @api public
+ * @public
  */
 
 Emitter.prototype.on = function (event, fn) {

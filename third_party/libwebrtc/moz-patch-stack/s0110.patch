@@ -14,7 +14,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8b5653392e88ccd0c
  2 files changed, 5 insertions(+)
 
 diff --git a/video/config/video_encoder_config.h b/video/config/video_encoder_config.h
-index 7fda03ffa8..8ca8462dd0 100644
+index e647cd6beb..d1cc8c05cc 100644
 --- a/video/config/video_encoder_config.h
 +++ b/video/config/video_encoder_config.h
 @@ -26,6 +26,7 @@
@@ -25,7 +25,7 @@ index 7fda03ffa8..8ca8462dd0 100644
  
  namespace webrtc {
  
-@@ -153,6 +154,9 @@ class VideoEncoderConfig {
+@@ -158,6 +159,9 @@ class VideoEncoderConfig {
          int frame_height,
          const VideoEncoderConfig& encoder_config) = 0;
  
@@ -36,10 +36,10 @@ index 7fda03ffa8..8ca8462dd0 100644
      ~VideoStreamFactoryInterface() override {}
    };
 diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index 84670c4822..bbea307fb7 100644
+index d437837911..90c9f141aa 100644
 --- a/video/video_stream_encoder.cc
 +++ b/video/video_stream_encoder.cc
-@@ -1054,6 +1054,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
+@@ -1096,6 +1096,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
    std::vector<VideoStream> streams;
    if (encoder_config_.video_stream_factory) {
      // Note: only tests set their own EncoderStreamFactory...

@@ -6,12 +6,10 @@
 #ifndef nsSimpleURI_h__
 #define nsSimpleURI_h__
 
-#include "mozilla/MemoryReporting.h"
 #include "nsIURI.h"
 #include "nsISerializable.h"
 #include "nsString.h"
 #include "nsIClassInfo.h"
-#include "nsISizeOf.h"
 #include "nsIURIMutator.h"
 #include "nsISimpleURIMutator.h"
 
@@ -25,7 +23,7 @@ namespace net {
    0x470b,                                    \
    {0xb9, 0xb9, 0x9f, 0xd9, 0x46, 0x2b, 0x5e, 0x19}}
 
-class nsSimpleURI : public nsIURI, public nsISerializable, public nsISizeOf {
+class nsSimpleURI : public nsIURI, public nsISerializable {
  protected:
   nsSimpleURI() = default;
   virtual ~nsSimpleURI() = default;
@@ -40,15 +38,6 @@ class nsSimpleURI : public nsIURI, public nsISerializable, public nsISizeOf {
   // nsSimpleURI methods:
 
   bool Equals(nsSimpleURI* aOther) { return EqualsInternal(aOther, eHonorRef); }
-
-  // nsISizeOf
-  // Among the sub-classes that inherit (directly or indirectly) from
-  // nsSimpleURI, measurement of the following members may be added later if
-  // DMD finds it is worthwhile:
-  // - nsJSURI: mBaseURI
-  // - nsSimpleNestedURI: mInnerURI
-  // - nsBlobURI: mPrincipal
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
  protected:
   // enum used in a few places to specify how .ref attribute should be handled

@@ -19,7 +19,6 @@ import androidx.core.graphics.drawable.toDrawable
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.concept.base.crash.Breadcrumb
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.ext.components
 import com.google.android.material.R as materialR
 
@@ -74,8 +73,8 @@ abstract class FenixDialogFragment : AppCompatDialogFragment() {
 
     fun inflateRootView(container: ViewGroup? = null): View {
         val contextThemeWrapper = ContextThemeWrapper(
-            activity,
-            (activity as HomeActivity).themeManager.currentThemeResource,
+            requireContext(),
+            requireActivity().theme,
         )
         return LayoutInflater.from(contextThemeWrapper).inflate(
             layoutId,

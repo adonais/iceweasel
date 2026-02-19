@@ -4718,8 +4718,11 @@ nsresult HTMLEditor::SelectAllInternal() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   CommitComposition();
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+  const RefPtr<Document> doc = GetDocument();
+  if (NS_WARN_IF(!doc)) {
+    // The root caller should not use HTMLEditor in this case (mDocument won't
+    // be cleared except by the cycle collector).
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   auto GetBodyElementIfElementIsParentOfHTMLBody =
@@ -4734,9 +4737,9 @@ nsresult HTMLEditor::SelectAllInternal() {
                : const_cast<Element*>(&aElement);
   };
 
-  nsCOMPtr<nsIContent> selectionRootContent =
+  const nsCOMPtr<nsIContent> selectionRootContent =
       [&]() MOZ_CAN_RUN_SCRIPT -> nsIContent* {
-    RefPtr<Element> elementToBeSelected = [&]() -> Element* {
+    const RefPtr<Element> elementForComputingSelectionRoot = [&]() -> Element* {
       // If there is at least one selection range, we should compute the
       // selection root from the anchor node.
       if (SelectionRef().RangeCount()) {
@@ -4756,18 +4759,22 @@ nsresult HTMLEditor::SelectAllInternal() {
       if (Element* focusedElement = GetFocusedElement()) {
         return focusedElement;
       }
-      // of the body or document element.
-      Element* bodyOrDocumentElement = GetRoot();
-      NS_WARNING_ASSERTION(bodyOrDocumentElement,
-                           "There was no element in the document");
-      return bodyOrDocumentElement;
+      // Okay, there is no selection range and no focused element, let's select
+      // all of the body or the document element.
+      if (Element* const bodyElement = GetBodyElement()) {
+        return bodyElement;
+      }
+      return doc->GetDocumentElement();
     }();
+    if (MOZ_UNLIKELY(!elementForComputingSelectionRoot)) {
+      return nullptr;
+    }
 
     // Then, compute the selection root content to select all including
     // elementToBeSelected.
     RefPtr<PresShell> presShell = GetPresShell();
     nsIContent* computedSelectionRootContent =
-        elementToBeSelected->GetSelectionRootContent(
+        elementForComputingSelectionRoot->GetSelectionRootContent(
             presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
             nsINode::AllowCrossShadowBoundary::No);
     if (NS_WARN_IF(!computedSelectionRootContent)) {
@@ -4779,8 +4786,14 @@ nsresult HTMLEditor::SelectAllInternal() {
     return GetBodyElementIfElementIsParentOfHTMLBody(
         *computedSelectionRootContent->AsElement());
   }();
-  if (NS_WARN_IF(!selectionRootContent)) {
-    return NS_ERROR_FAILURE;
+  if (MOZ_UNLIKELY(!selectionRootContent)) {
+    // If there is no element in the document, the document node can have
+    // selection range whose container is the document node. However, Chrome
+    // does not handle "Select All" command in this case (if there is no
+    // selection range, no new range is created and if there is a collapsed
+    // range, the range won't be extended to select all children of the
+    // Document).  Let's follow it.
+    return NS_OK;
   }
 
   Maybe<Selection::AutoUserInitiated> userSelection;

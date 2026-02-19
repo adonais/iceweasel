@@ -664,6 +664,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nova listo
+newtab-widget-section-title = Komponantoj
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Kaŝi komponantojn
+    .aria-label = Kaŝi ĉiujn komponantojn
+newtab-widget-section-maximize =
+    .title = Malfaldi komponantojn
+    .aria-label = Malfaldi ĉiujn komponantojn al normala grando
+newtab-widget-section-minimize =
+    .title = Plejetigi komponantojn
+    .aria-label = Faldi ĉiujn komponantojn en kompakta grando
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -686,8 +697,6 @@ newtab-widget-timer-menu-notifications = Malŝalti sciigojn
 newtab-widget-timer-menu-notifications-on = Ŝalti sciigojn
 newtab-widget-timer-menu-hide = Kaŝi tempumilon
 newtab-widget-timer-menu-learn-more = Pli da informo
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Rulumu por vidi pli
 newtab-widget-message-title = Resti koncentrita danke al listoj kaj integrita tempumilo
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Rapidaj memorigaĵoj, ĉiutagaj farendaĵoj, koncentriĝaj seancoj kaj ripozaj paŭzoj — akurate plenumu taskojn.

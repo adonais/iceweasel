@@ -27,13 +27,6 @@
         <item name="android:windowLayoutInDisplayCutoutMode">default</item>
     </style>
 
-    <style name="SplashScreen" parent="SplashScreenThemeBase">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/animated_splash_screen</item>
-        <!-- Splash screen is animated to maximum 12 seconds -->
-        <item name="windowSplashScreenAnimationDuration">12000</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">default</item>
-    </style>
-
     <style name="BottomSheetPrivate" parent="BottomSheetBasePrivate">
         <item name="android:windowIsFloating">false</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

@@ -29,8 +29,15 @@ async function doHandoffTest({ trigger, assert }) {
   await doTest(async browser => {
     BrowserTestUtils.startLoadingURIString(browser, "about:newtab");
     await BrowserTestUtils.browserStopped(browser, "about:newtab");
-    await SpecialPowers.spawn(browser, [], function () {
-      const searchInput = content.document.querySelector(".fake-editable");
+    await SpecialPowers.spawn(browser, [], async function () {
+      await ContentTaskUtils.waitForCondition(() =>
+        content.document.querySelector("content-search-handoff-ui")
+      );
+      let handoffUI = content.document.querySelector(
+        "content-search-handoff-ui"
+      );
+      await handoffUI.updateComplete;
+      const searchInput = handoffUI.shadowRoot.querySelector(".fake-editable");
       searchInput.click();
     });
     EventUtils.synthesizeKey("x");

@@ -4,13 +4,14 @@
 
 //! Specified types for properties related to animations and transitions.
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::{NonCustomPropertyId, PropertyId, ShorthandId};
 use crate::values::generics::animation as generics;
 use crate::values::specified::{LengthPercentage, NonNegativeNumber, Time};
 use crate::values::{CustomIdent, DashedIdent, KeyframesName};
 use crate::Atom;
-use cssparser::Parser;
+use cssparser::{match_ignore_ascii_case, Parser};
 use std::fmt::{self, Write};
 use style_traits::{
     CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss,

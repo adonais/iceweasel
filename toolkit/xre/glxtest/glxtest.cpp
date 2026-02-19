@@ -28,7 +28,6 @@
 #include <vector>
 #include <stdint.h>
 #include <string.h>
-#include <stdarg.h>
 #include <gdk/gdk.h>
 
 #if defined(MOZ_ASAN) || defined(FUZZING)

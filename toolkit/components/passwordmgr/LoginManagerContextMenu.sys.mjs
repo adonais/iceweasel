@@ -23,10 +23,10 @@ export const LoginManagerContextMenu = {
    *        The origin of the document that the context menu was activated from.
    *        This isn't the same as the browser's top-level document origin
    *        when subframes are involved.
-   * @returns {DocumentFragment} a document fragment with all the login items.
+   * @returns Promise {DocumentFragment} a promise resolving to a document fragment with all the login items.
    */
-  addLoginsToMenu(inputElementIdentifier, browser, formOrigin) {
-    let foundLogins = this._findLogins(formOrigin);
+  async addLoginsToMenu(inputElementIdentifier, browser, formOrigin) {
+    let foundLogins = await this._findLogins(formOrigin);
 
     if (!foundLogins.length) {
       return null;
@@ -107,12 +107,12 @@ export const LoginManagerContextMenu = {
    *
    * @returns {nsILoginInfo[]} a login list
    */
-  _findLogins(formOrigin) {
+  async _findLogins(formOrigin) {
     let searchParams = {
       origin: formOrigin,
       schemeUpgrades: lazy.LoginHelper.schemeUpgrades,
     };
-    let logins = lazy.LoginHelper.searchLoginsWithObject(searchParams);
+    let logins = await Services.logins.searchLoginsAsync(searchParams);
     let resolveBy = ["scheme", "timePasswordChanged"];
     logins = lazy.LoginHelper.dedupeLogins(
       logins,

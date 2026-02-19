@@ -126,8 +126,7 @@ def _retry_on_http_errors(url, verify, params, errors):
                 )
             else:
                 raise
-    else:
-        raise Exception(f"Cannot connect to {url}!")
+    raise Exception(f"Cannot connect to {url}!")
 
 
 def get_sorted_releases(product, branch):

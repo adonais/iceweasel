@@ -11,6 +11,11 @@ support-files = [
   "sidebarpanels_click_test_page.html",
   "keyword_form.html",
 ]
+prefs = [
+  # Disable tab previews as some tests click on the toolbar.
+  "browser.tabs.hoverPreview.enabled=false",
+  "browser.tabs.groups.hoverPreview.enabled=false",
+]
 
 ["browser_addBookmarkForFrame.js"]
 skip-if = [

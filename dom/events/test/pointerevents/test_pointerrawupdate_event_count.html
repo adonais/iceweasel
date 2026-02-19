@@ -16,6 +16,7 @@ SimpleTest.requestCompleteLog();
 SimpleTest.waitForFocus(async () => {
   await SpecialPowers.pushPrefEnv({"set": [
     ["dom.event.pointer.rawupdate.enabled", true],
+    ["dom.event.pointer.rawupdate.movement.enabled", true],
     ["dom.events.coalesce.mousemove", true],
   ]});
 
@@ -115,6 +116,26 @@ SimpleTest.waitForFocus(async () => {
       stringifyPointerEvent(coalescedPointerMoveEvents[i]),
       `pointerrawupdate(${i++}): should have same values as coalesced pointermove events`
     );
+  }
+  {
+    const lastPoint = {x: pointerRawUpdateEvents[0].screenX, y: pointerRawUpdateEvents[0].screenY};
+    for (let i = 1; i < pointerRawUpdateEvents.length; i++) {
+      const event = pointerRawUpdateEvents[i];
+      isfuzzy(
+        event.movementX,
+        event.screenX - lastPoint.x,
+        1,
+        `pointerrawupdate[${i}].movementX (screenX: ${event.screenX}, lastPoint.x: ${lastPoint.x})`
+      );
+      isfuzzy(
+        event.movementY,
+        event.screenY - lastPoint.y,
+        1,
+        `pointerrawupdate[${i}].movementY (screenY: ${event.screenY}, lastPoint.y: ${lastPoint.y})`
+      );
+      lastPoint.x = event.screenX;
+      lastPoint.y = event.screenY;
+    }
   }
 
   info("Waiting for a click for waiting for stable state after the test...");

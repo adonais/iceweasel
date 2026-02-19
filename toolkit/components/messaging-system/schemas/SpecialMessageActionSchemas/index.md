@@ -136,6 +136,14 @@ window or tab closed before sign-in could be completed. In messaging surfaces us
 
 Encodes some information that the origin was from about:welcome by default.
 
+### `FXA_AIWINDOW_SIGNIN_FLOW`
+
+Opens a customized AI Window Firefox accounts sign-up or sign-in flow, and redirects user to AI Window after successful authentication.
+
+Returns a Promise that resolves to `true` if sign-in succeeded, or to `false` if the sign-in
+window or tab closed before sign-in could be completed.
+
+- args: (none)
 
 ### `SHOW_MIGRATION_WIZARD`
 

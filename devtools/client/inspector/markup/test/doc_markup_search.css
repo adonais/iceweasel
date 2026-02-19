@@ -12,3 +12,7 @@
   /* large number so the view-transition pseudo elements are available during the whole test */
   animation-duration: 3600s;
 }
+
+dialog::backdrop {
+  background-color: rgb(from hotpink r g b / 0.2);
+}

@@ -671,8 +671,6 @@ newtab-widget-timer-menu-notifications = Хабарламаларды сөнді
 newtab-widget-timer-menu-notifications-on = Хабарламаларды іске қосу
 newtab-widget-timer-menu-hide = Таймерді жасыру
 newtab-widget-timer-menu-learn-more = Көбірек білу
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Қосымша ақпарат алу үшін айналдырыңыз
 newtab-widget-message-title = Тізімдер мен кірістірілген таймер арқылы назарыңызды сақтаңыз
 newtab-promo-card-title = { -brand-product-name } қолдау
 newtab-promo-card-cta = Көбірек білу

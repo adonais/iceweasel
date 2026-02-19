@@ -9,7 +9,7 @@ const MAIN_PREF = "browser.search.suggest.enabled";
 const URLBAR_PREF = "browser.urlbar.suggest.searches";
 const TRENDING_PREF = "browser.urlbar.trending.featureGate";
 
-const TRENDING_CHECKBOX_ID = "showTrendingSuggestions";
+const TRENDING_CHECKBOX_ID = "showTrendingSuggestionsCheckbox";
 const SUGGESTIONED_CHECKBOX_ID = "suggestionsInSearchFieldsCheckbox";
 
 SearchTestUtils.init(this);
@@ -48,8 +48,7 @@ add_task(async function testSuggestionsDisabled() {
   Assert.ok(!trendingCheckbox.disabled, "Checkbox should not be disabled");
 
   // Disable search suggestions.
-  suggestionsCheckbox.checked = false;
-  suggestionsCheckbox.doCommand();
+  suggestionsCheckbox.click();
 
   await BrowserTestUtils.waitForCondition(
     () => trendingCheckbox.disabled,

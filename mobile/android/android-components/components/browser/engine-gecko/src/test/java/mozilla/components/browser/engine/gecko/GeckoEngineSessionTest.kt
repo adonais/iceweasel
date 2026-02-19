@@ -2412,7 +2412,18 @@ class GeckoEngineSessionTest {
             altText: String?,
             typeStr: String,
             srcUri: String?,
-        ) : GeckoSession.ContentDelegate.ContextElement(baseUri, linkUri, title, altText, typeStr, srcUri)
+        ) : GeckoSession.ContentDelegate.ContextElement(
+            baseUri,
+            linkUri,
+            title,
+            altText,
+            typeStr,
+            srcUri,
+            // textContent =
+            null,
+            // linkText =
+            null,
+        )
 
         delegate.onContextMenu(
             geckoSession,
@@ -2520,6 +2531,15 @@ class GeckoEngineSessionTest {
 
         result = engineSession.handleLongClick(null, TYPE_NONE, null)
         assertNull(result)
+
+        result = engineSession.handleLongClick(
+            elementSrc = null,
+            elementType = TYPE_NONE,
+            uri = "https://mozilla.org",
+            linkText = "Mozilla",
+        )
+        assertTrue(result is HitResult.UNKNOWN && result.src == "https://mozilla.org")
+        assertTrue(result is HitResult.UNKNOWN && result.linkText == "Mozilla")
     }
 
     @Test

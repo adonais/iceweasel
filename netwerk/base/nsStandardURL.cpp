@@ -1141,7 +1141,6 @@ NS_INTERFACE_MAP_BEGIN(nsStandardURL)
   if (aIID.Equals(kThisImplCID)) {
     foundInterface = static_cast<nsIURI*>(this);
   } else
-    NS_INTERFACE_MAP_ENTRY(nsISizeOf)
 NS_INTERFACE_MAP_END
 
 //----------------------------------------------------------------------------
@@ -3687,11 +3686,7 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   return true;
 }
 
-//----------------------------------------------------------------------------
-// nsStandardURL::nsISizeOf
-//----------------------------------------------------------------------------
-
-size_t nsStandardURL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+size_t nsStandardURL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
   return aMallocSizeOf(this) +
          mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
          mDisplayHost.SizeOfExcludingThisIfUnshared(aMallocSizeOf);

@@ -32,7 +32,6 @@
     <link rel="localization" href="browser/newtab/newtab.ftl" />
     <link rel="localization" href="toolkit/global/mozMessageBar.ftl" />
     <link rel="stylesheet" href="chrome://global/skin/design-system/tokens-brand.css">
-    <link rel="stylesheet" href="chrome://browser/content/contentSearchUI.css" />
     <link rel="stylesheet" href="chrome://newtab/content/css/activity-stream.css" />
   </head>
   <!-- Cached: {{ CACHE_TIME }} -->
@@ -53,5 +52,6 @@
     <script async type="module" src="chrome://global/content/elements/moz-select.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/moz-reorderable-list.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/panel-list.js"></script>
+    <script async type="module" src="chrome://global/content/elements/moz-support-link.mjs"></script>
   </body>
 </html>

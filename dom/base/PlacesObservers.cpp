@@ -67,7 +67,7 @@ using WeakNativeListeners =
 // Even if NotifyListeners is called any timing, we mange the notifications with
 // adding to this queue, then sending in sequence. This avoids sending nested
 // notifications while previous ones are still being sent.
-MOZ_CONSTINIT static nsTArray<Sequence<OwningNonNull<PlacesEvent>>>
+constinit static nsTArray<Sequence<OwningNonNull<PlacesEvent>>>
     gNotificationQueue;
 
 uint32_t GetEventTypeFlag(PlacesEventType aEventType) {

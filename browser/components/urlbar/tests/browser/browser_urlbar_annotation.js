@@ -71,9 +71,7 @@ function registerProvider(payload) {
       new UrlbarResult({
         type: UrlbarUtils.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        ...UrlbarResult.payloadAndSimpleHighlights([], {
-          ...payload,
-        }),
+        payload,
       }),
     ],
     priority: Infinity,

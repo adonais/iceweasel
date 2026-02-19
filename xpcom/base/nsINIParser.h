@@ -17,8 +17,6 @@
 #include "nsClassHashtable.h"
 #include "mozilla/UniquePtr.h"
 
-#include <stdio.h>
-
 class nsIFile;
 
 class nsINIParser {

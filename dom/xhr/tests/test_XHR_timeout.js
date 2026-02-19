@@ -50,13 +50,13 @@ function ok(bool, msg) {
  *                            reset the timeout.
  * @param {number} resetTo    (Optional) The delay to reset the timeout to.
  *
- * @note The actual testing takes place in handleEvent(event).
+ * Note: The actual testing takes place in handleEvent(event).
  * The requests are generated in startXHR().
  *
- * @note If resetAfter and resetTo are omitted, only the initial timeout setting
+ * Note: If resetAfter and resetTo are omitted, only the initial timeout setting
  * applies.
  *
- * @constructor
+ * @class
  * @implements DOMEventListener
  */
 function RequestTracker(async, id, timeLimit /*[, resetAfter, resetTo]*/) {

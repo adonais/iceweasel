@@ -104,6 +104,16 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
       return false;
     }
 
+    if (native_capturer == 0) {
+      Log.d(TAG, "startCapture: invalid native capturer pointer");
+      return false;
+    }
+
+    if (this.native_capturer != 0) {
+      Log.d(TAG, "startCapture: already started");
+      return true;
+    }
+
     cameraVideoCapturer.startCapture(width, height, max_mfps);
     try {
       capturerStarted.await();
@@ -122,6 +132,11 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
     Log.d(TAG, "stopCapture");
     if (cameraVideoCapturer == null) {
       return false;
+    }
+
+    if (native_capturer == 0) {
+      Log.d(TAG, "stopCapture: wasn't started");
+      return true;
     }
 
     native_capturer = 0;

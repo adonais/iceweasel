@@ -5,6 +5,8 @@
  */
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+/** @import { CanonicalURLParent } from "./CanonicalURLParent.sys.mjs" */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
@@ -25,9 +27,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-const EVENTS = ["CanonicalURL:Identified"];
-
-const TOPICS = ["TabNote:Created", "TabNote:Edited", "TabNote:Removed"];
+const EVENTS = [
+  "CanonicalURL:Identified",
+  "TabNote:Created",
+  "TabNote:Edited",
+  "TabNote:Removed",
+];
 
 /**
  * Orchestrates the tab notes life cycle.
@@ -50,8 +55,7 @@ class TabNotesControllerClass {
    */
   init() {
     if (lazy.TAB_NOTES_ENABLED) {
-      TOPICS.forEach(topicName => Services.obs.addObserver(this, topicName));
-      lazy.logConsole.debug("init", TOPICS);
+      lazy.TabNotes.init();
     } else {
       lazy.logConsole.info("Tab notes disabled");
     }
@@ -67,6 +71,7 @@ class TabNotesControllerClass {
   registerWindow(win) {
     if (lazy.TAB_NOTES_ENABLED) {
       EVENTS.forEach(eventName => win.addEventListener(eventName, this));
+      win.gBrowser.addTabsProgressListener(this);
       lazy.logConsole.debug("registerWindow", EVENTS, win);
     }
   }
@@ -80,6 +85,7 @@ class TabNotesControllerClass {
   unregisterWindow(win) {
     if (lazy.TAB_NOTES_ENABLED) {
       EVENTS.forEach(eventName => win.removeEventListener(eventName, this));
+      win.gBrowser.removeTabsProgressListener(this);
       lazy.logConsole.debug("unregisterWindow", EVENTS, win);
     }
   }
@@ -92,21 +98,12 @@ class TabNotesControllerClass {
    */
   quit() {
     if (lazy.TAB_NOTES_ENABLED) {
-      TOPICS.forEach(topicName => {
-        try {
-          Services.obs.removeObserver(this, topicName);
-        } catch (e) {
-          lazy.logConsole.warn(
-            `Failed to remove self from topic '${topicName}'`
-          );
-        }
-      });
-      lazy.logConsole.debug("quit", TOPICS);
+      lazy.TabNotes.deinit();
     }
   }
 
   /**
-   * @param {CanonicalURLIdentifiedEvent} event
+   * @param {CanonicalURLIdentifiedEvent|TabNoteCreatedEvent|TabNoteEditedEvent|TabNoteRemovedEvent} event
    */
   handleEvent(event) {
     switch (event.type) {
@@ -120,26 +117,25 @@ class TabNotesControllerClass {
           const gBrowser = browser.getTabBrowser();
           const tab = gBrowser.getTabForBrowser(browser);
           tab.canonicalUrl = canonicalUrl;
-          tab.hasTabNote = lazy.TabNotes.has(canonicalUrl);
+          lazy.TabNotes.has(tab).then(hasTabNote => {
+            tab.hasTabNote = hasTabNote;
+          });
+
           lazy.logConsole.debug("CanonicalURL:Identified", tab, canonicalUrl);
         }
         break;
-    }
-  }
-
-  /**
-   * @param {nsISupports} subject
-   * @param {string} topic
-   * @param {string} data
-   */
-  observe(subject, topic, data) {
-    switch (topic) {
       case "TabNote:Created":
         {
+          const { telemetrySource } = event.detail;
+          if (telemetrySource) {
+            Glean.tabNotes.added.record({
+              source: telemetrySource,
+            });
+          }
           // A new tab note was created for a specific canonical URL. Ensure that
           // all tabs with the same canonical URL also indicate that there is a
           // tab note.
-          const canonicalUrl = data;
+          const { canonicalUrl } = event.target;
           for (const win of lazy.BrowserWindowTracker.orderedWindows) {
             for (const tab of win.gBrowser.tabs) {
               if (tab.canonicalUrl == canonicalUrl) {
@@ -150,12 +146,36 @@ class TabNotesControllerClass {
           lazy.logConsole.debug("TabNote:Created", canonicalUrl);
         }
         break;
+      case "TabNote:Edited":
+        {
+          const { canonicalUrl } = event.target;
+          const { telemetrySource } = event.detail;
+          if (telemetrySource) {
+            Glean.tabNotes.edited.record({
+              source: telemetrySource,
+            });
+          }
+          lazy.logConsole.debug("TabNote:Edited", canonicalUrl);
+        }
+        break;
       case "TabNote:Removed":
         {
+          const { telemetrySource, note } = event.detail;
+          const now = Temporal.Now.instant();
+          const noteAgeHours = Math.round(
+            now.since(note.created).total("hours")
+          );
+          if (telemetrySource) {
+            Glean.tabNotes.deleted.record({
+              source: telemetrySource,
+              note_age_hours: noteAgeHours,
+            });
+          }
+
           // A new tab note was removed from a specific canonical URL. Ensure that
           // all tabs with the same canonical URL also indicate that there is no
           // longer a tab note.
-          const canonicalUrl = data;
+          const { canonicalUrl } = event.target;
           for (const win of lazy.BrowserWindowTracker.orderedWindows) {
             for (const tab of win.gBrowser.tabs) {
               if (tab.canonicalUrl == canonicalUrl) {
@@ -167,6 +187,83 @@ class TabNotesControllerClass {
         }
         break;
     }
+  }
+
+  /**
+   * Invoked by Tabbrowser after we register with `Tabbrowser.addProgressListener`.
+   *
+   * Clears the tab note icon and canonical URL from a tab when navigation starts
+   * within a tab.
+   *
+   * The CanonicalURL actor running in this tab's browser will report the canonical
+   * URL of the new destination in the browser, which will determine whether the
+   * new destination has an associated tab note.
+   *
+   * @type {TabbrowserWebProgressListener<"onLocationChange">}
+   */
+  onLocationChange(aBrowser, aWebProgress, aRequest, aLocation, aFlags) {
+    // Tab notes only apply to the top-level frames loaded in tabs.
+    if (!aWebProgress.isTopLevel) {
+      return;
+    }
+
+    if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
+      if (
+        aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_RELOAD ||
+        aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY
+      ) {
+        // User is reloading/returning to the same document via history. We
+        // can count on CanonicalURLChild to listen for `pageshow` and tell us
+        // about the canonical URL at the new location.
+        lazy.logConsole.debug(
+          "reload/history navigation, waiting for pageshow",
+          aLocation.spec
+        );
+        return;
+      }
+
+      if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_HASHCHANGE) {
+        // The web site modified the hash/fragment identifier part of the URL
+        // directly. TODO: determine how and whether to handle `hashchange`.
+        lazy.logConsole.debug("fragment identifier changed", aLocation.spec);
+        return;
+      }
+
+      if (aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_PUSHSTATE) {
+        // Web page is using `history.pushState()` to change URLs. There isn't
+        // a way for CanonicalURLChild to detect this in the content process,
+        // so we need to ask it to recalculate canonical URLs to see if they
+        // changed.
+        /** @type {CanonicalURLParent|undefined} */
+        let parent =
+          aBrowser.browsingContext?.currentWindowGlobal.getExistingActor(
+            "CanonicalURL"
+          );
+
+        if (parent) {
+          parent.sendAsyncMessage("CanonicalURL:Detect");
+          lazy.logConsole.debug(
+            "requesting CanonicalURL:Detect due to history.pushState",
+            aLocation.spec
+          );
+        }
+
+        return;
+      }
+
+      // General same document case: we are navigating in the same document,
+      // so the tab note indicator does not need to change.
+      return;
+    }
+
+    // General case: we are doing normal navigation to another URL, so we
+    // clear the canonical URL/tab note state on the tab and wait for
+    // `CanonicalURL:Identified` to tell us whether the new location has
+    // a tab note.
+    const tab = aBrowser.ownerGlobal.gBrowser.getTabForBrowser(aBrowser);
+    tab.canonicalUrl = undefined;
+    tab.hasTabNote = false;
+    lazy.logConsole.debug("clear tab note due to location change", tab);
   }
 }
 

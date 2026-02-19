@@ -67,6 +67,7 @@ class RemoteMediaDataEncoderChild final
   const nsCOMPtr<nsISerialEventTarget> mThread;
   const RemoteMediaIn mLocation;
   bool mRemoteCrashed = false;
+  bool mHasConstructed = false;
 
   MozPromiseHolder<PlatformEncoderModule::CreateEncoderPromise>
       mConstructPromise;

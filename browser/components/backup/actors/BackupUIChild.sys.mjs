@@ -125,15 +125,6 @@ export class BackupUIChild extends JSWindowActorChild {
       } else {
         target.disableEncryptionErrorCode = result.errorCode;
       }
-    } else if (event.type == "BackupUI:RerunEncryption") {
-      const target = event.target;
-
-      const result = await this.sendQuery("RerunEncryption", event.detail);
-      if (result.success) {
-        target.close();
-      } else {
-        target.rerunEncryptionErrorCode = result.errorCode;
-      }
     } else if (event.type == "BackupUI:ShowBackupLocation") {
       this.sendAsyncMessage("ShowBackupLocation");
     } else if (event.type == "BackupUI:EditBackupLocation") {

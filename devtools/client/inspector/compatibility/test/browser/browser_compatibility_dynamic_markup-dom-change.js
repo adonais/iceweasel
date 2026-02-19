@@ -22,10 +22,10 @@ const ISSUE_DEPRECATED = {
   experimental: false,
 };
 
-const ISSUE_SCROLLBAR_COLOR = {
+const ISSUE_NOT_DEPRECATED = {
   type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
-  property: "scrollbar-color",
-  url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
+  property: "overflow-anchor",
+  url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
   deprecated: false,
   experimental: false,
 };
@@ -39,7 +39,7 @@ const TEST_URI = `
   <body>
     <div></div>
     <div class="parent">
-      <div style="scrollbar-color: auto"></div>
+      <div style="overflow-anchor: auto"></div>
     </div>
   </body>
 `;
@@ -55,7 +55,7 @@ add_task(async function () {
   info("Check initial issues");
   await assertIssueList(allElementsPane, [
     ISSUE_DEPRECATED,
-    ISSUE_SCROLLBAR_COLOR,
+    ISSUE_NOT_DEPRECATED,
   ]);
 
   info("Delete node whose child node has CSS compatibility issue");

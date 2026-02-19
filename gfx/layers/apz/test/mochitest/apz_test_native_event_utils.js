@@ -1312,6 +1312,9 @@ function promiseMoveMouseAndScrollWheelOver(
   });
   if (waitForScroll) {
     p = p.then(() => {
+      info(
+        "Printing something here to avoid failure; see https://bugzilla.mozilla.org/show_bug.cgi?id=1776963"
+      );
       return promiseNativeWheelAndWaitForScrollEvent(
         target,
         dx,

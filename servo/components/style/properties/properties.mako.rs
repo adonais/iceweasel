@@ -23,6 +23,7 @@ use crate::parser::ParserContext;
 use crate::selector_parser::PseudoElement;
 use crate::stylist::Stylist;
 use style_traits::{CssStringWriter, CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, TypedValue, ToTyped};
+use crate::derives::*;
 use crate::stylesheets::{CssRuleType, CssRuleTypes, Origin};
 use crate::logical_geometry::{LogicalAxis, LogicalCorner, LogicalSide};
 use crate::use_counters::UseCounters;
@@ -39,6 +40,7 @@ use super::{
     LonghandIdSet, VariableDeclaration, CustomDeclaration,
     WideKeywordDeclaration, NonCustomPropertyIterator,
 };
+use debug_unreachable::debug_unreachable;
 
 <%!
     from collections import defaultdict
@@ -1236,7 +1238,7 @@ pub enum CountedUnknownProperty {
 impl CountedUnknownProperty {
     /// Parse the counted unknown property, for testing purposes only.
     pub fn parse_for_testing(property_name: &str) -> Option<Self> {
-        ascii_case_insensitive_phf_map! {
+        ::cssparser::ascii_case_insensitive_phf_map! {
             unknown_ids -> CountedUnknownProperty = {
                 % for property in data.counted_unknown_properties:
                 "${property.name}" => CountedUnknownProperty::${property.camel_case},
@@ -1256,7 +1258,7 @@ impl CountedUnknownProperty {
 impl PropertyId {
     /// Returns a given property from the given name, _regardless of whether it
     /// is enabled or not_, or Err(()) for unknown properties.
-    pub(super) fn parse_unchecked(
+    pub fn parse_unchecked(
         property_name: &str,
         use_counters: Option<&UseCounters>,
     ) -> Result<Self, ()> {
@@ -1266,7 +1268,7 @@ impl PropertyId {
             NonCustom(NonCustomPropertyId),
             CountedUnknown(CountedUnknownProperty),
         }
-        ascii_case_insensitive_phf_map! {
+        ::cssparser::ascii_case_insensitive_phf_map! {
             static_ids -> StaticId = {
                 % for i, property in enumerate(data.longhands + data.shorthands + data.all_aliases()):
                 "${property.name}" => StaticId::NonCustom(NonCustomPropertyId(${i})),
@@ -1411,6 +1413,7 @@ pub mod style_structs {
     use super::longhands;
     use std::hash::{Hash, Hasher};
     use crate::values::specified::color::ColorSchemeFlags;
+    use crate::derives::*;
 
     % for style_struct in data.active_style_structs():
         % if style_struct.name == "Font":

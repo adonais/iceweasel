@@ -272,7 +272,7 @@ summary {
  */
 .progress-icon-parent {
   /* stylelint rule disabled to support workaround for Bug 1671784 */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-border-radius-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: 0.01px;
   overflow: hidden;
   display: flex;

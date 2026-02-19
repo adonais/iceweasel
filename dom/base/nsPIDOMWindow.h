@@ -72,6 +72,7 @@ class WebIdentityHandler;
 class WindowContext;
 class WindowGlobalChild;
 class CustomElementRegistry;
+class DocumentPictureInPicture;
 enum class CallerType : uint32_t;
 }  // namespace mozilla::dom
 
@@ -629,6 +630,9 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   // Called when a CloseWatcher is removed from the manager
   void NotifyCloseWatcherRemoved();
 
+  virtual mozilla::dom::DocumentPictureInPicture*
+  GetExtantDocumentPictureInPicture() = 0;
+
  protected:
   void CreatePerformanceObjectIfNeeded();
 
@@ -875,11 +879,10 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
     return mDoc;
   }
 
-  // Set the window up with an about:blank document with the given principal and
-  // potentially a policyContainer and a COEP.
-  virtual void SetInitialPrincipal(
-      nsIPrincipal* aNewWindowPrincipal, nsIPolicyContainer* aPolicyContainer,
-      const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCoep) = 0;
+  // Set the window up with an about:blank document with the given principal.
+  // Base URI, COEP and PolicyContainer of the current document will be
+  // retained.
+  virtual void SetInitialPrincipal(nsIPrincipal* aNewWindowPrincipal) = 0;
 
   // Returns an object containing the window's state.  This also suspends
   // all running timeouts in the window.
@@ -1114,6 +1117,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   already_AddRefed<nsIBaseWindow> GetTreeOwnerWindow();
   already_AddRefed<nsIWebBrowserChrome> GetWebBrowserChrome();
 
+  virtual void UpdateParentTarget() = 0;
+
  protected:
   // Lazily instantiate an about:blank document if necessary, and if
   // we have what it takes to do so.
@@ -1121,8 +1126,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   void SetChromeEventHandlerInternal(
       mozilla::dom::EventTarget* aChromeEventHandler);
-
-  virtual void UpdateParentTarget() = 0;
 
   // These two variables are special in that they're set to the same
   // value on both the outer window and the current inner window. Make

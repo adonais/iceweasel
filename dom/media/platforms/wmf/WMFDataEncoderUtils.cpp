@@ -96,28 +96,14 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
 
 static already_AddRefed<MediaByteBuffer> ParseH264Parameters(
     const nsTArray<uint8_t>& aHeader, const bool aAsAnnexB) {
+  if (!aAsAnnexB) {
+    return AnnexB::ExtractExtraDataForAVCC(aHeader).forget();
+  }
   size_t length = aHeader.Length();
   auto annexB = MakeRefPtr<MediaByteBuffer>(length);
   PodCopy(annexB->Elements(), aHeader.Elements(), length);
   annexB->SetLength(length);
-  if (aAsAnnexB) {
-    return annexB.forget();
-  }
-
-  // Convert to avcC.
-  nsTArray<AnnexB::NALEntry> paramSets;
-  AnnexB::ParseNALEntries(
-      Span<const uint8_t>(annexB->Elements(), annexB->Length()), paramSets);
-
-  auto avcc = MakeRefPtr<MediaByteBuffer>();
-  AnnexB::NALEntry& sps = paramSets.ElementAt(0);
-  AnnexB::NALEntry& pps = paramSets.ElementAt(1);
-  const uint8_t* spsPtr = annexB->Elements() + sps.mOffset;
-  H264::WriteExtraData(
-      avcc, spsPtr[1], spsPtr[2], spsPtr[3],
-      Span<const uint8_t>(spsPtr, sps.mSize),
-      Span<const uint8_t>(annexB->Elements() + pps.mOffset, pps.mSize));
-  return avcc.forget();
+  return annexB.forget();
 }
 
 static uint32_t GetProfile(H264_PROFILE aProfileLevel) {

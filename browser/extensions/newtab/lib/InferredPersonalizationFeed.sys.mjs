@@ -171,6 +171,7 @@ export class InferredPersonalizationFeed {
           clicks: clickTotals,
           impressions: ivImpressions,
           model_id: inferredModel.model_id,
+          timeZoneOffset: lazy.NewTabUtils.getUtcOffset(),
         });
         return inferredInterests;
       }

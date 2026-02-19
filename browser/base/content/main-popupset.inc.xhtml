@@ -70,7 +70,15 @@
     <menuitem id="context_bookmarkTab"
               data-lazy-l10n-id="tab-context-bookmark-tab"/>
     <menuitem id="context_addNote" hidden="true" data-lazy-l10n-id="tab-context-add-note" />
-    <menuitem id="context_editNote" hidden="true" data-lazy-l10n-id="tab-context-edit-note" />
+    <menu id="context_updateNote"
+      hidden="true"
+      data-lazy-l10n-id="tab-context-update-note">
+      <menupopup id="tabUpdateOptionsMenu">
+        <menuitem id="context_editNote" data-lazy-l10n-id="tab-context-edit-note" />
+        <menuitem id="context_deleteNote" data-lazy-l10n-id="tab-context-delete-note" />
+      </menupopup>
+    </menu>
+
     <menu id="context_moveTabOptions"
           data-lazy-l10n-id="tab-context-move-tabs"
           data-l10n-args='{"tabCount": 1}'>
@@ -545,7 +553,7 @@
     <hbox id="ctrlTab-showAll-container" pack="center"/>
   </panel>
 
-  <!-- TODO: create lazily? -->
+  <!-- TODO Bug 2008627: create lazily? -->
   <panel id="tab-preview-panel"
          type="arrow"
          orient="vertical"
@@ -562,7 +570,21 @@
       </html:div>
     </html:div>
     <html:div class="tab-preview-thumbnail-container"></html:div>
+    <html:div class="tab-note-text-container"></html:div>
   </panel>
+
+  <!--
+    TODO Bug 2008627: put all of #tab-preview-panel in here, not just this button.
+    This is being lazy-loaded because otherwise it will eagerly load multiple svg
+    images on startup (see browser_startup_images.js).
+    -->
+  <html:template id="tabPreviewPanelTemplate">
+    <html:moz-box-button
+      class="tab-preview-add-note"
+      data-l10n-id="tab-context-add-note"
+      iconsrc="chrome://global/skin/icons/tab-notes.svg"
+    />
+  </html:template>
 
   <panel id="tabgroup-preview-panel"
          role="menu"

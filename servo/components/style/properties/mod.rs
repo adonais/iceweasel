@@ -20,6 +20,7 @@ pub mod generated {
 }
 
 use crate::custom_properties::{self, ComputedCustomProperties};
+use crate::derives::*;
 use crate::dom::AttributeProvider;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{CSSPropertyId, NonCustomCSSPropertyId, RefPtr};
@@ -30,7 +31,7 @@ use crate::stylesheets::Origin;
 use crate::stylist::Stylist;
 use crate::values::{computed, serialize_atom_name};
 use arrayvec::{ArrayVec, Drain as ArrayVecDrain};
-use cssparser::{Parser, ParserInput};
+use cssparser::{match_ignore_ascii_case, Parser, ParserInput};
 use rustc_hash::FxHashMap;
 use servo_arc::Arc;
 use std::{

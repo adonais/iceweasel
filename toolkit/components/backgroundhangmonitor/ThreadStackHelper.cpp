@@ -33,7 +33,6 @@
 #endif
 
 #include <string.h>
-#include <cstdlib>
 
 #ifdef XP_LINUX
 #  include <ucontext.h>

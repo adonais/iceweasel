@@ -4,6 +4,7 @@
 
 //! Generic types for CSS values related to length.
 
+use crate::derives::*;
 use crate::logical_geometry::PhysicalSide;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::position::TryTacticAdjustment;
@@ -39,6 +40,7 @@ use style_traits::{CssWriter, SpecifiedValueInfo};
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C, u8)]
+#[typed_value(derive_fields)]
 pub enum GenericLengthPercentageOrAuto<LengthPercent> {
     LengthPercentage(LengthPercent),
     Auto,

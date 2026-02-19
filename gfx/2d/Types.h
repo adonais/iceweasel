@@ -96,6 +96,14 @@ enum class SurfaceFormat : int8_t {
   Lab,
   Depth,
 
+  // LE packed 10bit per channel format primarily associated with HDR10 video.
+  R10G10B10A2_UINT32,  // 0bAARRRRRRRRRRGGGGGGGGGGBBBBBBBBBB
+  // Same as R10G10B10A2_UINT32 but with the alpha channel ignored.
+  R10G10B10X2_UINT32,  // 0b00RRRRRRRRRRGGGGGGGGGGBBBBBBBBBB
+  // 4 half-float (f16) components in RGBA order for HDR rendering, each is
+  // machine endian.
+  R16G16B16A16F,
+
   // This represents the unknown format.
   UNKNOWN,  // TODO: Replace uses with Maybe<SurfaceFormat>.
 
@@ -141,6 +149,8 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::B8G8R8A8:
     case SurfaceFormat::R8G8B8A8:
     case SurfaceFormat::A8R8G8B8:
+    case SurfaceFormat::R10G10B10A2_UINT32:
+    case SurfaceFormat::R16G16B16A16F:
       info.hasColor = true;
       info.hasAlpha = true;
       break;
@@ -151,6 +161,7 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::R8G8B8:
     case SurfaceFormat::B8G8R8:
     case SurfaceFormat::R5G6B5_UINT16:
+    case SurfaceFormat::R10G10B10X2_UINT32:
     case SurfaceFormat::R8G8:
     case SurfaceFormat::R16G16:
     case SurfaceFormat::HSV:
@@ -216,6 +227,15 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
 
     case SurfaceFormat::A8:
       info.bytesPerPixel = 1;
+      break;
+
+    case SurfaceFormat::R10G10B10A2_UINT32:
+    case SurfaceFormat::R10G10B10X2_UINT32:
+      info.bytesPerPixel = 4;
+      break;
+
+    case SurfaceFormat::R16G16B16A16F:
+      info.bytesPerPixel = 8;
       break;
 
     case SurfaceFormat::HSV:
@@ -302,9 +322,40 @@ static inline int BytesPerPixel(SurfaceFormat aFormat) {
       return 3 * sizeof(float);
     case SurfaceFormat::Depth:
       return sizeof(uint16_t);
-    default:
+    case SurfaceFormat::B8G8R8A8:
+    case SurfaceFormat::B8G8R8X8:
+    case SurfaceFormat::R8G8B8A8:
+    case SurfaceFormat::R8G8B8X8:
+    case SurfaceFormat::A8R8G8B8:
+    case SurfaceFormat::X8R8G8B8:
+    case SurfaceFormat::R10G10B10A2_UINT32:
+    case SurfaceFormat::R10G10B10X2_UINT32:
+    case SurfaceFormat::R16G16:
+      return 4;
+    case SurfaceFormat::R16G16B16A16F:
+      return 8;
+    case SurfaceFormat::R8G8:
+      return 2;
+    case SurfaceFormat::YUV420:
+    case SurfaceFormat::YUV420P10:
+    case SurfaceFormat::YUV422P10:
+    case SurfaceFormat::NV12:
+    case SurfaceFormat::NV16:
+    case SurfaceFormat::YUY2:
+      // These formats are not easily described in terms of bytes per pixel,
+      // technically 1.5 bytes per pixel on average, which is guaranteed by the
+      // width and height being multiples of 2.
+      return 0;
+    case SurfaceFormat::P016:
+    case SurfaceFormat::P010:
+      // Similar to NV12 but uint16 pixels.
+      return 0;
+    case SurfaceFormat::UNKNOWN:
+      MOZ_ASSERT_UNREACHABLE("unhandled gfx::SurfaceFormat::UNKNOWN");
       return 4;
   }
+  MOZ_ASSERT_UNREACHABLE("unhandled enum value for gfx::SurfaceFormat");
+  return 4;
 }
 
 inline bool IsOpaque(SurfaceFormat aFormat) {
@@ -314,6 +365,7 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::R8G8B8X8:
     case SurfaceFormat::X8R8G8B8:
     case SurfaceFormat::R5G6B5_UINT16:
+    case SurfaceFormat::R10G10B10X2_UINT32:
     case SurfaceFormat::R8G8B8:
     case SurfaceFormat::B8G8R8:
     case SurfaceFormat::R8G8:
@@ -326,9 +378,22 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::P016:
     case SurfaceFormat::YUY2:
       return true;
-    default:
+    case SurfaceFormat::B8G8R8A8:
+    case SurfaceFormat::R8G8B8A8:
+    case SurfaceFormat::A8R8G8B8:
+    case SurfaceFormat::R10G10B10A2_UINT32:
+    case SurfaceFormat::R16G16B16A16F:
+    case SurfaceFormat::A8:
+    case SurfaceFormat::A16:
+    case SurfaceFormat::R16G16:
+    case SurfaceFormat::YUV420P10:
+    case SurfaceFormat::YUV422P10:
+    case SurfaceFormat::NV16:
+    case SurfaceFormat::UNKNOWN:
       return false;
   }
+  MOZ_ASSERT_UNREACHABLE("unhandled enum value for gfx::SurfaceFormat");
+  return false;
 }
 
 // These are standardized Coding-independent Code Points
@@ -703,6 +768,19 @@ static inline uint32_t RescalingFactorForColorDepth(ColorDepth aColorDepth) {
       break;
   }
   return factor;
+}
+
+static inline bool IsHDRTransferFunction(
+    gfx::TransferFunction aTransferFunction) {
+  switch (aTransferFunction) {
+    case gfx::TransferFunction::PQ:
+    case gfx::TransferFunction::HLG:
+      return true;
+    case gfx::TransferFunction::BT709:
+    case gfx::TransferFunction::SRGB:
+      return false;
+  }
+  MOZ_CRASH("bad TransferFunction");
 }
 
 enum class ChromaSubsampling : uint8_t {

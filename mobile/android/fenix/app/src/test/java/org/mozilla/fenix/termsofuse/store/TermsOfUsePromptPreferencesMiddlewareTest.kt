@@ -8,7 +8,6 @@ import io.mockk.mockk
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Before
 import org.junit.Test
@@ -22,10 +21,6 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
     private lateinit var settings: Settings
 
     private lateinit var repository: DefaultTermsOfUsePromptRepository
-
-    private val context = mockk<MiddlewareContext<TermsOfUsePromptState, TermsOfUsePromptAction>>(
-        relaxed = true,
-    )
 
     private lateinit var middleware: TermsOfUsePromptPreferencesMiddleware
 
@@ -41,7 +36,7 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertAllPrefsDefault()
 
         middleware.invoke(
-            context = context,
+            store = mockk(),
             next = {},
             action = TermsOfUsePromptAction.OnAcceptClicked(Surface.HOMEPAGE_NEW_TAB),
         )
@@ -57,7 +52,7 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertAllPrefsDefault()
 
         middleware.invoke(
-            context = context,
+            store = mockk(),
             next = {},
             action = TermsOfUsePromptAction.OnRemindMeLaterClicked(Surface.HOMEPAGE_NEW_TAB),
         )
@@ -73,7 +68,7 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertAllPrefsDefault()
 
         middleware.invoke(
-            context = context,
+            store = mockk(),
             next = {},
             action = TermsOfUsePromptAction.OnPromptManuallyDismissed(Surface.HOMEPAGE_NEW_TAB),
         )
@@ -89,7 +84,7 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertAllPrefsDefault()
 
         middleware.invoke(
-            context = context,
+            store = mockk(),
             next = {},
             action = TermsOfUsePromptAction.OnPromptDismissed,
         )
@@ -105,7 +100,7 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertAllPrefsDefault()
 
         middleware.invoke(
-            context = context,
+            store = mockk(),
             next = {},
             action = TermsOfUsePromptAction.OnImpression(Surface.HOMEPAGE_NEW_TAB),
         )
@@ -134,7 +129,7 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertAllPrefsDefault()
 
         middleware.invoke(
-            context = context,
+            store = mockk(),
             next = {},
             action = action,
         )

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.uiautomator.UiSelector
@@ -32,14 +33,14 @@ class SyncSignInRobot {
         )
     }
 
-    class Transition {
+    class Transition(private val composeTestRule: ComposeTestRule) {
         fun goBack(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the navigate up button")
             goBackButton().click()
             Log.i(TAG, "goBack: Clicked the navigate up button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun goBackToHomeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
@@ -47,8 +48,8 @@ class SyncSignInRobot {
             goBackButton().click()
             Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up button")
 
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
     }
 }

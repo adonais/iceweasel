@@ -559,6 +559,10 @@
       "type": "boolean"
     },
 
+    "DisableRemoteImprovements": {
+      "type": "boolean"
+    },
+
     "DisableSafeMode": {
       "type": "boolean"
     },

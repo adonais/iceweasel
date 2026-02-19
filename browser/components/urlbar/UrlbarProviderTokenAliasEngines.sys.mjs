@@ -126,14 +126,18 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
           type: UrlbarUtils.RESULT_TYPE.SEARCH,
           source: UrlbarUtils.RESULT_SOURCE.SEARCH,
           hideRowLabel: true,
-          ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-            engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
-            keyword: [tokenAliases[0], UrlbarUtils.HIGHLIGHT.TYPED],
+          payload: {
+            engine: engine.name,
+            keyword: tokenAliases[0],
             keywords: tokenAliases.join(", "),
-            query: ["", UrlbarUtils.HIGHLIGHT.TYPED],
+            query: "",
             icon: await engine.getIconURL(),
             providesSearchMode: true,
-          }),
+          },
+          highlights: {
+            engine: UrlbarUtils.HIGHLIGHT.TYPED,
+            keyword: UrlbarUtils.HIGHLIGHT.TYPED,
+          },
         });
         if (instance != this.queryInstance) {
           break;
@@ -203,17 +207,18 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
               selectionEnd: value.length,
             },
             hideRowLabel: true,
-            ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-              queryContext.tokens,
-              {
-                engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
-                keyword: [aliasPreservingUserCase, UrlbarUtils.HIGHLIGHT.TYPED],
-                keywords: tokenAliases.join(", "),
-                query: ["", UrlbarUtils.HIGHLIGHT.TYPED],
-                icon: await engine.getIconURL(),
-                providesSearchMode: true,
-              }
-            ),
+            payload: {
+              engine: engine.name,
+              keyword: aliasPreservingUserCase,
+              keywords: tokenAliases.join(", "),
+              query: "",
+              icon: await engine.getIconURL(),
+              providesSearchMode: true,
+            },
+            highlights: {
+              engine: UrlbarUtils.HIGHLIGHT.TYPED,
+              keyword: UrlbarUtils.HIGHLIGHT.TYPED,
+            },
           });
         }
       }

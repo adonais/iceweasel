@@ -192,7 +192,7 @@ newtab-label-bookmarked = В закладках
 newtab-label-removed-bookmark = Закладка удалена
 newtab-label-recommended = Популярные
 newtab-label-saved = Сохранено в { -pocket-brand-name }
-newtab-label-download = Загружено
+newtab-label-download = Скачано
 # This string is used in the story cards to indicate sponsored content
 # Variables:
 #   $sponsorOrSource (string) - The name of a company or their domain
@@ -584,13 +584,13 @@ newtab-new-user-custom-wallpaper-cta = Попробовать сейчас
 
 ## Strings for download mobile highlight
 
-newtab-download-mobile-highlight-title = Скачать { -brand-product-name } для мобильных устройств
+newtab-download-mobile-highlight-title = Скачайте { -brand-product-name } для мобильных устройств
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = Отсканируйте код, чтобы безопасно работать в Интернете.
 newtab-download-mobile-highlight-body-variant-b = Продолжайте с того места, где вы остановились, при синхронизации вкладок, паролей и многого другого.
 newtab-download-mobile-highlight-body-variant-c = Знаете ли вы, что { -brand-product-name } можно брать с собой? Тот же браузер. У вас в кармане.
 newtab-download-mobile-highlight-image =
-    .aria-label = QR-код для загрузки { -brand-product-name } для мобильных устройств
+    .aria-label = QR-код для скачивания { -brand-product-name } для мобильных устройств
 
 ## Strings for shortcuts highlight
 
@@ -669,6 +669,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Новый список
+newtab-widget-section-title = Виджеты
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Скрыть виджеты
+    .aria-label = Скрыть все виджеты
+newtab-widget-section-maximize =
+    .title = Развернуть виджеты
+    .aria-label = Развернуть все виджеты до полного размера
+newtab-widget-section-minimize =
+    .title = Свернуть виджеты
+    .aria-label = Свернуть все виджеты до компактного размера
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -691,8 +702,6 @@ newtab-widget-timer-menu-notifications = Отключить уведомлени
 newtab-widget-timer-menu-notifications-on = Включить уведомления
 newtab-widget-timer-menu-hide = Скрыть таймер
 newtab-widget-timer-menu-learn-more = Подробнее
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Прокрутите, чтобы увидеть больше
 newtab-widget-message-title = Оставайтесь в фокусе с помощью списков и встроенного таймера
 # to-dos stands for "things to do".
 newtab-widget-message-copy = От быстрых напоминаний до ежедневных задач, от фокус-сессий до длительных перерывов - выполняйте задачи вовремя.

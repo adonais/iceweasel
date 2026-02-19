@@ -8,7 +8,7 @@
   --transition: 0.6s opacity, 0.6s scale, 0.6s rotate, 0.6s translate;
 
   position: relative;
-  border-radius: var(--space-small);
+  border-radius: var(--border-radius-medium);
   box-shadow: $shadow-large;
   padding: var(--space-xxlarge);
   max-width: 745px;
@@ -91,8 +91,8 @@
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--size-item-small);
-  margin: var(--size-item-large) auto;
+  gap: var(--space-large);
+  margin: var(--space-xxlarge) auto;
   justify-content: center;
   width: fit-content;
 

@@ -42,9 +42,7 @@ var xulRuntime = {{ shell: true }};
 var release_or_beta = getBuildConfiguration('release_or_beta');
 var isDebugBuild={str(self.isdebug).lower()};
 var Android={str(self.os == "Android").lower()};
-""".replace(
-            "\n", ""
-        )
+""".replace("\n", "")
 
     @classmethod
     def create(cls, jsdir):
@@ -283,20 +281,16 @@ def _build_manifest_script_entry(script_name, test):
     properties = []
     if test.terms:
         # Remove jsreftest internal terms.
-        terms = " ".join(
-            [
-                term
-                for term in test.terms.split()
-                if not (
-                    term == "module"
-                    or term == "async"
-                    or term.startswith("error:")
-                    or term.startswith("ignore-flag(")
-                    or term.startswith("shell-option(")
-                    or term == "test262-raw"
-                )
-            ]
-        )
+        terms = " ".join([
+            term
+            for term in test.terms.split()
+            if not (
+                term in {"module", "async", "test262-raw"}
+                or term.startswith("error:")
+                or term.startswith("ignore-flag(")
+                or term.startswith("shell-option(")
+            )
+        ])
         if terms:
             line.append(terms)
     if test.error:
@@ -514,7 +508,7 @@ def _parse_external_manifest(filename, relpath):
             if not matches:
                 matches = include_re.match(line)
                 if not matches:
-                    print("warning: unrecognized line in jstests.list:" f" {line}")
+                    print(f"warning: unrecognized line in jstests.list: {line}")
                     continue
 
                 include_file = matches.group("path")
@@ -535,13 +529,11 @@ def _parse_external_manifest(filename, relpath):
                 assert path.endswith("jstests.list")
                 path = path[: -len("jstests.list")]
 
-            entries.append(
-                {
-                    "path": path,
-                    "terms": matches.group("terms"),
-                    "comment": comment.strip(),
-                }
-            )
+            entries.append({
+                "path": path,
+                "terms": matches.group("terms"),
+                "comment": comment.strip(),
+            })
 
     # if one directory name is a prefix of another, we want the shorter one
     # first
@@ -568,16 +560,14 @@ def _apply_external_manifests(filename, testcase, entries, xul_tester):
 
 def _is_test_file(path_from_root, basename, filename, path_options):
     # Any file whose basename matches something in this set is ignored.
-    EXCLUDED = set(
-        (
-            "browser.js",
-            "shell.js",
-            "template.js",
-            "user.js",
-            "js-test-driver-begin.js",
-            "js-test-driver-end.js",
-        )
-    )
+    EXCLUDED = set((
+        "browser.js",
+        "shell.js",
+        "template.js",
+        "user.js",
+        "js-test-driver-begin.js",
+        "js-test-driver-end.js",
+    ))
 
     # Skip js files in the root test directory.
     if not path_from_root:

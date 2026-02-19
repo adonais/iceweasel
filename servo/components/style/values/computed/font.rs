@@ -4,6 +4,7 @@
 
 //! Computed values for font properties
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::animated::ToAnimatedValue;
 use crate::values::computed::{
@@ -21,7 +22,7 @@ use crate::values::specified::font::{
 use crate::values::specified::length::{FontBaseSize, LineHeightBase, NoCalcLength};
 use crate::values::CSSInteger;
 use crate::Atom;
-use cssparser::{serialize_identifier, CssStringWriter, Parser};
+use cssparser::{match_ignore_ascii_case, serialize_identifier, CssStringWriter, Parser};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use num_traits::abs;
 use num_traits::cast::AsPrimitive;
@@ -361,15 +362,13 @@ pub struct FontFamily {
 
 macro_rules! static_font_family {
     ($ident:ident, $family:expr) => {
-        lazy_static! {
-            static ref $ident: FontFamily = FontFamily {
-                families: FontFamilyList {
-                    list: crate::ArcSlice::from_iter_leaked(std::iter::once($family)),
-                },
-                is_system_font: false,
-                is_initial: false,
-            };
-        }
+        static $ident: std::sync::LazyLock<FontFamily> = std::sync::LazyLock::new(|| FontFamily {
+            families: FontFamilyList {
+                list: crate::ArcSlice::from_iter_leaked(std::iter::once($family)),
+            },
+            is_system_font: false,
+            is_initial: false,
+        });
     };
 }
 

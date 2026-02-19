@@ -8,12 +8,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
 * This dialog is used to prompt the user to confirm if they want to delete
@@ -52,21 +53,12 @@ fun DeleteDownloadFileDialog(
     )
 }
 
+@FlexibleWindowPreview
 @Composable
-@FlexibleWindowLightDarkPreview
-private fun DeleteDownloadFileDialogPreview() {
-    FirefoxTheme {
-        DeleteDownloadFileDialog(
-            onConfirmDelete = {},
-            onCancel = {},
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun DeleteDownloadFileDialogPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun DeleteDownloadFileDialogPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         DeleteDownloadFileDialog(
             onConfirmDelete = {},
             onCancel = {},

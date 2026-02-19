@@ -664,7 +664,7 @@ class JS_PUBLIC_API Dispatchable {
 };
 
 /**
- * Callbacks to dispatch a JS::Dispatchable to a JSContext's thread's event
+ * Callback to dispatch a JS::Dispatchable to a JSContext's thread's event
  * loop.
  *
  * The DispatchToEventLoopCallback set on a particular JSContext must accept
@@ -680,6 +680,9 @@ class JS_PUBLIC_API Dispatchable {
  * If a timeout manager is not available for given context, it should return
  * false, optionally with a warning message printed.
  *
+ * The callback accepts a closure that is the same as the one given by the call
+ * to JS::InitAsyncTaskCallbacks.
+ *
  * If the callback returns `true`, it must eventually run the given
  * Dispatchable; otherwise, SpiderMonkey may leak memory or hang.
  *
@@ -687,30 +690,113 @@ class JS_PUBLIC_API Dispatchable {
  * shutting down and is no longer accepting runnables. Shutting down is a
  * one-way transition: once the callback has rejected a runnable, it must reject
  * all subsequently submitted runnables as well.
- *
- * To establish a DispatchToEventLoopCallback, the embedding may either call
- * InitDispatchsToEventLoop to provide its own, or call js::UseInternalJobQueues
- * to select a default implementation built into SpiderMonkey. This latter
- * depends on the embedding to call js::RunJobs on the JavaScript thread to
- * process queued Dispatchables at appropriate times.
  */
 
 typedef bool (*DispatchToEventLoopCallback)(
     void* closure, js::UniquePtr<Dispatchable>&& dispatchable);
 
+/**
+ * Callback to dispatch a JS::Dispatchable to a JSContext's thread's event
+ * loop with a delay.
+ *
+ * The DelayedDispatchToEventLoopCallback set on a particular JSContext must
+ * accept JS::Dispatchable instances and arrange for their `run` methods to be
+ * called after the given delay on the JSContext's thread. This is used for
+ * cross-thread dispatch, so the callback itself must be safe to call from any
+ * thread. It cannot trigger a GC.
+ *
+ * The embeddings must have its own timeout manager to handle the delay.
+ * If a timeout manager is not available for given context, it should return
+ * false, optionally with a warning message printed.
+ *
+ * The callback accepts a closure that is the same as the one given by the call
+ * to JS::InitAsyncTaskCallbacks.
+ *
+ * If the callback returns `true`, it must eventually run the given
+ * Dispatchable; otherwise, SpiderMonkey may leak memory or hang.
+ *
+ * The callback may return `false` to indicate that the JSContext's thread is
+ * shutting down and is no longer accepting runnables. Shutting down is a
+ * one-way transition: once the callback has rejected a runnable, it must reject
+ * all subsequently submitted runnables as well.
+ */
+
 typedef bool (*DelayedDispatchToEventLoopCallback)(
     void* closure, js::UniquePtr<Dispatchable>&& dispatchable, uint32_t delay);
 
-extern JS_PUBLIC_API void InitDispatchsToEventLoop(
-    JSContext* cx, DispatchToEventLoopCallback callback,
-    DelayedDispatchToEventLoopCallback delayedCallback, void* closure);
+/**
+ * Callback to notify the embedder that a background task has begun. This can
+ * be used to keep the JSContext's thread alive if it's subject to garbage
+ * collection (e.g. as web workers are).
+ *
+ * This callback will be called on the same thread as the JSContext, but it
+ * must not perform any garbage collection or re-enter the engine.
+ *
+ * The passed dispatchable can be used to track the async task. Most async
+ * tasks will finish in a bounded amount of time, but some
+ * (i.e. Atomics.waitAsync) are not guaranteed to finish. These tasks may be
+ * canceled using JS::CancelAsyncTasks.
+ *
+ * The callback accepts a closure that is the same as the one given by the call
+ * to JS::InitAsyncTaskCallbacks.
+ */
+typedef void (*AsyncTaskStartedCallback)(void* closure,
+                                         Dispatchable* dispatchable);
 
 /**
- * When a JSRuntime is destroyed it implicitly cancels all async tasks in
- * progress, releasing any roots held by the task. However, this is not soon
- * enough for cycle collection, which needs to have roots dropped earlier so
- * that the cycle collector can transitively remove roots for a future GC. For
- * these and other cases, the set of pending async tasks can be canceled
+ * Callback to notify the embedder that a background task has finished. This can
+ * be used to keep the JSContext's thread alive if it's subject to garbage
+ * collection (e.g. as web workers are).
+ *
+ * This callback will be called on the same thread as the JSContext, but it
+ * must not perform any garbage collection or re-enter the engine.
+ *
+ * The passed dispatchable will be the same as the one given in
+ * AsyncTaskStartedCallback. See that callback for more information.
+ *
+ * The callback accepts a closure that is the same as the one given by the call
+ * to JS::InitAsyncTaskCallbacks.
+ */
+typedef void (*AsyncTaskFinishedCallback)(void* closure,
+                                          Dispatchable* dispatchable);
+
+/**
+ * Initialize the async task callbacks. Embedders must use this or else call
+ * js::UseInternalJobQueues to select a default implementation built into
+ * SpiderMonkey. This latter depends on the embedding to call js::RunJobs on
+ * the JavaScript thread to process queued Dispatchables at appropriate times.
+ *
+ * The dispatchCallback and delayedDispatchCallback are mandatory.
+ * asyncTaskStartedCallback and asyncTaskFinishedCallback are optional and may
+ * be null.
+ *
+ */
+extern JS_PUBLIC_API void InitAsyncTaskCallbacks(
+    JSContext* cx, DispatchToEventLoopCallback dispatchCallback,
+    DelayedDispatchToEventLoopCallback delayedDispatchCallback,
+    AsyncTaskStartedCallback asyncTaskStartedCallback,
+    AsyncTaskFinishedCallback asyncTaskFinishedCallback, void* closure);
+
+/**
+ * Cancel all cancellable async tasks. Some tasks may not be cancellable, and
+ * must be waited on through a call to JS::ShutdownAsyncTasks.
+ *
+ * This will fire JSAsyncTaskFinished callbacks for cancelled tasks.
+ */
+extern JS_PUBLIC_API void CancelAsyncTasks(JSContext* cx);
+
+/**
+ * Cancel all cancellable async tasks and block until non-cancellable tasks are
+ * finished.
+ *
+ * This will fire JSAsyncTaskFinished callbacks for all tasks, and there should
+ * be no outstanding tasks after this returns. All roots held by tasks will be
+ * released.
+ *
+ * Destroying a JSRuntime will implicitly perform this. However, this is not
+ * soon enough for cycle collection, which needs to have roots dropped earlier
+ * so that the cycle collector can transitively remove roots for a future GC.
+ * For these and other cases, the set of pending async tasks can be canceled
  * with this call earlier than JSRuntime destruction.
  */
 

@@ -43,7 +43,6 @@ class CfrMiddlewareTest {
     @Mock
     private lateinit var appStore: AppStore
 
-    @Mock
     private lateinit var appState: AppState
 
     @Mock
@@ -63,8 +62,9 @@ class CfrMiddlewareTest {
         whenever(settings.isCookieBannerEnable).thenReturn(true)
         whenever(settings.getCurrentCookieBannerOptionFromSharePref()).thenReturn(CookieBannerOption.CookieBannerRejectAll())
 
-        whenever(appStore.state).thenReturn(appState)
-        whenever(appState.showEraseTabsCfr).thenReturn(false)
+        val defaultScreen = org.mozilla.focus.state.Screen.Home
+        appState = AppState(screen = defaultScreen, showEraseTabsCfr = false)
+        whenever(appStore.state).thenAnswer { appState }
 
         cfrMiddleware = spy(CfrMiddleware(appStore, settings) { onboardingExperiment })
 
@@ -192,7 +192,7 @@ class CfrMiddlewareTest {
 
     @Test
     fun `GIVEN erase tabs CFR is shown WHEN TrackerBlockedAction is intercepted THEN showTrackingProtectionCfr is not dispatched`() {
-        whenever(appState.showEraseTabsCfr).thenReturn(true)
+        appState = appState.copy(showEraseTabsCfr = true)
         doReturn(false).`when`(cfrMiddleware).isMozillaUrl(any())
 
         val tab = createTab(tabId = 1, isSecure = true)

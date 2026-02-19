@@ -46,6 +46,7 @@ const MAXIMUM_NUMBER_OF_UNREMOVABLE_STAGING_ITEMS_PREF_NAME =
 const CREATED_MANAGED_PROFILES_PREF_NAME = "browser.profiles.created";
 const RESTORED_BACKUP_METADATA_PREF_NAME =
   "browser.backup.restored-backup-metadata";
+const SANITIZE_ON_SHUTDOWN_PREF_NAME = "privacy.sanitize.sanitizeOnShutdown";
 
 const SCHEMAS = Object.freeze({
   BACKUP_MANIFEST: 1,
@@ -210,7 +211,19 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "lastBackupFileName",
   LAST_BACKUP_FILE_NAME_PREF_NAME,
-  ""
+  "",
+  function onUpdateLastBackupFileName(_pref, _prevVal, newVal) {
+    let bs;
+    try {
+      bs = BackupService.get();
+    } catch (e) {
+      // This can throw if the BackupService hasn't initialized yet, which
+      // is a case we're okay to ignore.
+    }
+    if (bs) {
+      bs.onUpdateLastBackupFileName(newVal);
+    }
+  }
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -628,6 +641,26 @@ export class BackupService extends EventTarget {
   static #errorRetries = 0;
 
   /**
+   * Time to wait (in seconds) until the next backup attempt.
+   *
+   * This uses exponential backoff based on the number of consecutive
+   * failed backup attempts since the last successful backup.
+   *
+   * Backoff formula:
+   *   2^(retryCount) * 60
+   *
+   * Example:
+   *   If 2 backup attempts have failed since the last successful backup,
+   *   the next attempt will occur after:
+   *
+   *     2^2 * 60 = 240 seconds (4 minutes)
+   *
+   * This differs from minimumTimeBetweenBackupsSeconds, which is used to determine
+   * the time between successful backups.
+   */
+  static backoffSeconds = () => Math.pow(2, BackupService.#errorRetries) * 60;
+
+  /**
    * @typedef {object} EnabledStatus
    * @property {boolean} enabled
    *   True if the feature is enabled.
@@ -671,14 +704,6 @@ export class BackupService extends EventTarget {
         enabled: false,
         reason: "Archiving a profile disabled by user pref.",
         internalReason: "pref",
-      };
-    }
-
-    if (Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown")) {
-      return {
-        enabled: false,
-        reason: "Backup is disabled for users with sanitizeOnShutdown enabled.",
-        internalReason: "sanitizeOnShutdown",
       };
     }
 
@@ -744,14 +769,6 @@ export class BackupService extends EventTarget {
         enabled: false,
         reason: "Restoring a profile disabled by user pref.",
         internalReason: "pref",
-      };
-    }
-
-    if (Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown")) {
-      return {
-        enabled: false,
-        reason: "Backup is disabled for users with sanitizeOnShutdown enabled.",
-        internalReason: "sanitizeOnShutdown",
       };
     }
 
@@ -853,7 +870,7 @@ export class BackupService extends EventTarget {
     encryptionEnabled: false,
     /** @type {number?} Number of seconds since UNIX epoch */
     lastBackupDate: null,
-    lastBackupFileName: "",
+    lastBackupFileName: lazy.lastBackupFileName,
     supportBaseLink: Services.urlFormatter.formatURLPref("app.support.baseURL"),
     recoveryInProgress: false,
     /**
@@ -1117,7 +1134,7 @@ export class BackupService extends EventTarget {
     return [
       BACKUP_ARCHIVE_ENABLED_PREF_NAME,
       BACKUP_RESTORE_ENABLED_PREF_NAME,
-      "privacy.sanitize.sanitizeOnShutdown",
+      SANITIZE_ON_SHUTDOWN_PREF_NAME,
       CREATED_MANAGED_PROFILES_PREF_NAME,
     ];
   }
@@ -1238,12 +1255,15 @@ export class BackupService extends EventTarget {
   /**
    * Returns a reference to a BackupService singleton. If this is the first time
    * that this getter is accessed, this causes the BackupService singleton to be
-   * be instantiated.
+   * instantiated.
    *
    * @static
-   * @type {BackupService}
+   * @param {object} BackupResources
+   *   Optional object containing BackupResource classes to initialize the instance with.
+   * @returns {BackupService}
+   *   The BackupService singleton instance.
    */
-  static init() {
+  static init(BackupResources = DefaultBackupResources) {
     if (this.#instance) {
       return this.#instance;
     }
@@ -1251,12 +1271,28 @@ export class BackupService extends EventTarget {
     // If there is unsent restore telemetry, send it now.
     GleanPings.profileRestore.submit();
 
-    this.#instance = new BackupService(DefaultBackupResources);
+    this.#instance = new BackupService(BackupResources);
 
     this.#instance.checkForPostRecovery();
     this.#instance.initBackupScheduler();
     this.#instance.initStatusObservers();
     return this.#instance;
+  }
+
+  /**
+   * Clears the BackupService singleton instance.
+   * This should only be used in tests.
+   *
+   * @static
+   */
+  static uninit() {
+    if (this.#instance) {
+      lazy.logConsole.debug("Uninitting the BackupService");
+
+      this.#instance.uninitBackupScheduler();
+      this.#instance.uninitStatusObservers();
+      this.#instance = null;
+    }
   }
 
   /**
@@ -1528,6 +1564,13 @@ export class BackupService extends EventTarget {
             continue;
           }
 
+          if (!resourceClass.canBackupResource) {
+            lazy.logConsole.debug(
+              `We cannot backup ${resourceClass.key}. Skipping.`
+            );
+            continue;
+          }
+
           let resourcePath = PathUtils.join(stagingPath, resourceClass.key);
           await IOUtils.makeDirectory(resourcePath);
 
@@ -1695,7 +1738,6 @@ export class BackupService extends EventTarget {
           );
 
           let result = await this.createAndPopulateStagingFolder(profilePath);
-          this.#backupInProgress = true;
           currentStep = result.currentStep;
           if (result.error) {
             // Re-throw the error so we can catch it below for telemetry
@@ -1909,9 +1951,6 @@ export class BackupService extends EventTarget {
     await IOUtils.move(sourcePath, destPath);
 
     Services.prefs.setStringPref(LAST_BACKUP_FILE_NAME_PREF_NAME, FILENAME);
-    // It is expected that our caller will call stateUpdate(), so we skip doing
-    // that here. This is done via the backupInProgress setter in createBackup.
-    this.#_state.lastBackupFileName = FILENAME;
 
     for (let childFilePath of existingChildren) {
       let childFileName = PathUtils.filename(childFilePath);
@@ -3654,6 +3693,32 @@ export class BackupService extends EventTarget {
   }
 
   /**
+   * Updates lastBackupFileName in the backup service state. Should be called every time
+   * the value for browser.backup.scheduled.last-backup-file changes.
+   *
+   * @param {string} newLastBackupFileName
+   *    Name of the last known backup file
+   */
+  onUpdateLastBackupFileName(newLastBackupFileName) {
+    lazy.logConsole.debug(
+      `The last backup file name is being updated to ${newLastBackupFileName}`
+    );
+
+    this.#_state.lastBackupFileName = newLastBackupFileName;
+
+    if (!newLastBackupFileName) {
+      lazy.logConsole.debug(
+        `Looks like we've cleared the last backup file name, let's also clear the last backup date`
+      );
+
+      this.#_state.lastBackupDate = null;
+      Services.prefs.clearUserPref(LAST_BACKUP_TIMESTAMP_PREF_NAME);
+    }
+
+    this.stateUpdate();
+  }
+
+  /**
    * Returns the moz-icon URL of a file. To get the moz-icon URL, the
    * file path is convered to a fileURI. If there is a problem retreiving
    * the moz-icon due to an invalid file path, return null instead.
@@ -3849,8 +3914,7 @@ export class BackupService extends EventTarget {
 
   /**
    * Enables encryption for backups, allowing sensitive data to be backed up.
-   * Throws if encryption is already enabled. After enabling encryption, that
-   * state is written to disk.
+   * After enabling encryption, the state is written to disk.
    *
    * @throws Exception
    * @param {string} password
@@ -3862,14 +3926,6 @@ export class BackupService extends EventTarget {
    */
   async enableEncryption(password, profilePath = PathUtils.profileDir) {
     lazy.logConsole.debug("Enabling encryption.");
-    let encState = await this.loadEncryptionState(profilePath);
-    if (encState) {
-      throw new BackupError(
-        "Encryption is already enabled.",
-        ERRORS.ENCRYPTION_ALREADY_ENABLED
-      );
-    }
-
     if (!password) {
       throw new BackupError(
         "Cannot supply a blank password.",
@@ -3884,8 +3940,8 @@ export class BackupService extends EventTarget {
       );
     }
 
-    ({ instance: encState } =
-      await lazy.ArchiveEncryptionState.initialize(password));
+    let { instance: encState } =
+      await lazy.ArchiveEncryptionState.initialize(password);
     if (!encState) {
       throw new BackupError(
         "Failed to construct ArchiveEncryptionState",
@@ -3909,7 +3965,7 @@ export class BackupService extends EventTarget {
   }
 
   /**
-   * Disables encryption of backups. Throws is encryption is already disabled.
+   * Disables encryption of backups.
    *
    * @throws Exception
    * @param {string} [profilePath=PathUtils.profileDir]
@@ -3919,22 +3975,11 @@ export class BackupService extends EventTarget {
    */
   async disableEncryption(profilePath = PathUtils.profileDir) {
     lazy.logConsole.debug("Disabling encryption.");
-    let encState = await this.loadEncryptionState(profilePath);
-    if (!encState) {
-      throw new BackupError(
-        "Encryption is already disabled.",
-        ERRORS.ENCRYPTION_ALREADY_DISABLED
-      );
-    }
-
     let encStateFile = PathUtils.join(
       profilePath,
       BackupService.PROFILE_FOLDER_NAME,
       BackupService.ARCHIVE_ENCRYPTION_STATE_FILE
     );
-    // It'd be pretty strange, but not impossible, for something else to have
-    // gotten rid of the encryption state file at this point. We'll ignore it
-    // if that's the case.
     await IOUtils.remove(encStateFile, {
       ignoreAbsent: true,
       retryReadonly: true,
@@ -3999,16 +4044,8 @@ export class BackupService extends EventTarget {
       LAST_BACKUP_TIMESTAMP_PREF_NAME,
       0
     );
-    if (!lastBackupPrefValue) {
-      this.#_state.lastBackupDate = null;
-    } else {
-      this.#_state.lastBackupDate = lastBackupPrefValue;
-    }
 
-    this.#_state.lastBackupFileName = Services.prefs.getStringPref(
-      LAST_BACKUP_FILE_NAME_PREF_NAME,
-      ""
-    );
+    this.#_state.lastBackupDate = lastBackupPrefValue || null;
 
     this.stateUpdate();
 
@@ -4053,6 +4090,7 @@ export class BackupService extends EventTarget {
     Services.obs.addObserver(this.#observer, "session-cookie-changed");
     Services.obs.addObserver(this.#observer, "newtab-linkBlocked");
     Services.obs.addObserver(this.#observer, "quit-application-granted");
+    Services.prefs.addObserver(SANITIZE_ON_SHUTDOWN_PREF_NAME, this.#observer);
   }
 
   /**
@@ -4089,6 +4127,10 @@ export class BackupService extends EventTarget {
     Services.obs.removeObserver(this.#observer, "session-cookie-changed");
     Services.obs.removeObserver(this.#observer, "newtab-linkBlocked");
     Services.obs.removeObserver(this.#observer, "quit-application-granted");
+    Services.prefs.removeObserver(
+      SANITIZE_ON_SHUTDOWN_PREF_NAME,
+      this.#observer
+    );
     this.#observer = null;
 
     this.#regenerationDebouncer.disarm();
@@ -4163,6 +4205,11 @@ export class BackupService extends EventTarget {
           this.#debounceRegeneration();
         }
         break;
+      }
+      case "nsPref:changed": {
+        if (data == SANITIZE_ON_SHUTDOWN_PREF_NAME) {
+          this.#debounceRegeneration();
+        }
       }
     }
   }
@@ -4387,6 +4434,73 @@ export class BackupService extends EventTarget {
   }
 
   /**
+   * Decide whether we should attempt a backup now.
+   *
+   * @returns {boolean}
+   */
+  shouldAttemptBackup() {
+    let now = Math.floor(Date.now() / 1000);
+    const debugInfoStr = Services.prefs.getStringPref(
+      BACKUP_DEBUG_INFO_PREF_NAME,
+      ""
+    );
+
+    let parsed = null;
+    if (debugInfoStr) {
+      try {
+        parsed = JSON.parse(debugInfoStr);
+      } catch (e) {
+        lazy.logConsole.warn(
+          "Invalid backup debug-info pref; ignoring and allowing backup attempt.",
+          e
+        );
+        parsed = null;
+      }
+    }
+
+    const lastBackupAttempt = parsed?.lastBackupAttempt;
+    const hasErroredLastAttempt = Number.isFinite(lastBackupAttempt);
+
+    if (!hasErroredLastAttempt) {
+      lazy.logConsole.debug(
+        `There have been no errored last attempts, let's do a backup`
+      );
+      return true;
+    }
+
+    const secondsSinceLastAttempt = now - lastBackupAttempt;
+
+    if (lazy.isRetryDisabledOnIdle) {
+      // Let's add a buffer before restarting the retries. Dividing by 2
+      // since currently minimumTimeBetweenBackupsSeconds is set to 24 hours
+      // We want to approximately keep a backup for each day, so let's retry
+      // in about 12 hours again.
+      if (secondsSinceLastAttempt < lazy.minimumTimeBetweenBackupsSeconds / 2) {
+        lazy.logConsole.debug(
+          `Retrying is disabled, we have to wait for ${lazy.minimumTimeBetweenBackupsSeconds / 2}s to retry`
+        );
+        return false;
+      }
+      // Looks like we've waited enough, reset the retry states and try to create
+      // a backup again.
+      BackupService.#errorRetries = 0;
+      Services.prefs.clearUserPref(DISABLED_ON_IDLE_RETRY_PREF_NAME);
+
+      return true;
+    }
+
+    // Exponential backoff guard, avoids throttling the same error again and again
+    if (secondsSinceLastAttempt < BackupService.backoffSeconds()) {
+      lazy.logConsole.debug(
+        `backoff: elapsed ${secondsSinceLastAttempt}s < backoff ${BackupService.backoffSeconds()}s`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
    * Calls BackupService.createBackup at the next moment when the event queue
    * is not busy with higher priority events. This is intentionally broken out
    * into its own method to make it easier to stub out in tests.
@@ -4394,28 +4508,14 @@ export class BackupService extends EventTarget {
    * @param {object} [options]
    * @param {boolean} [options.deletePreviousBackup]
    * @param {string} [options.reason]
+   *
+   * @returns {Promise} A backup promise to hold onto
    */
   createBackupOnIdleDispatch({ deletePreviousBackup = true, reason }) {
-    let now = Math.floor(Date.now() / 1000);
-    let errorStateDebugInfo = Services.prefs.getStringPref(
-      BACKUP_DEBUG_INFO_PREF_NAME,
-      ""
-    );
-
-    // we retry failing backups every minimumTimeBetweenBackupsSeconds if
-    // isRetryDisabledOnIdle is true. If isRetryDisabledOnIdle is false,
-    // we retry on next idle until we hit backupRetryLimit and switch isRetryDisabledOnIdle to true
-    if (
-      lazy.isRetryDisabledOnIdle &&
-      errorStateDebugInfo &&
-      now - JSON.parse(errorStateDebugInfo).lastBackupAttempt <
-        lazy.minimumTimeBetweenBackupsSeconds
-    ) {
-      lazy.logConsole.debug(
-        `We've already retried in the last ${lazy.minimumTimeBetweenBackupsSeconds}s. Waiting for next valid idleDispatch to try again.`
-      );
+    if (!this.shouldAttemptBackup()) {
       return Promise.resolve();
     }
+
     // Determine path to old backup file
     const oldBackupFile = this.#_state.lastBackupFileName;
     const isScheduledBackupsEnabled = lazy.scheduledBackupsPref;
@@ -4441,8 +4541,10 @@ export class BackupService extends EventTarget {
 
         BackupService.#errorRetries += 1;
         if (BackupService.#errorRetries > lazy.backupRetryLimit) {
-          // We've had too many errors with retries, let's only backup on next timestamp
           Services.prefs.setBoolPref(DISABLED_ON_IDLE_RETRY_PREF_NAME, true);
+          // Next retry will be 24 hours later (backoffSeconds = 2^(11) * 60s),
+          // let's just restart our backoff heuristic
+          BackupService.#errorRetries = 0;
           Glean.browserBackup.backupThrottled.record();
         }
       } finally {
@@ -4580,7 +4682,7 @@ export class BackupService extends EventTarget {
   async showBackupLocation() {
     let backupFilePath = PathUtils.join(
       lazy.backupDirPref,
-      this.#_state.lastBackupFileName
+      lazy.lastBackupFileName
     );
     if (await IOUtils.exists(backupFilePath)) {
       new lazy.nsLocalFile(backupFilePath).reveal();
@@ -4614,7 +4716,7 @@ export class BackupService extends EventTarget {
     speedUpHeuristic = false,
   } = {}) {
     // Do we already have a backup for this browser? if so, we don't need to do any searching!
-    if (this.#_state.lastBackupFileName) {
+    if (lazy.lastBackupFileName) {
       return {
         found: true,
         multipleBackupsFound: false,
@@ -4855,13 +4957,7 @@ export class BackupService extends EventTarget {
             });
           }
 
-          this.#_state.lastBackupDate = null;
-          Services.prefs.clearUserPref(LAST_BACKUP_TIMESTAMP_PREF_NAME);
-
-          this.#_state.lastBackupFileName = "";
           Services.prefs.clearUserPref(LAST_BACKUP_FILE_NAME_PREF_NAME);
-
-          this.stateUpdate();
         } else {
           lazy.logConsole.log(
             "Not deleting last backup file, since none is known about."

@@ -8,16 +8,14 @@ import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
+import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.GlobalDependencyProvider
 import mozilla.components.service.pocket.helpers.assertClassVisibility
 import mozilla.components.service.pocket.stories.PocketStoriesUseCases
 import mozilla.components.service.pocket.stories.PocketStoriesUseCases.RefreshPocketStories
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
@@ -26,16 +24,13 @@ import kotlin.reflect.KVisibility
 @RunWith(AndroidJUnit4::class)
 class RefreshPocketWorkerTest {
 
-    @get:Rule
-    val mainCoroutineRule = MainCoroutineRule()
-
     @Test
     fun `GIVEN a RefreshPocketWorker THEN its visibility is internal`() {
         assertClassVisibility(RefreshPocketWorker::class, KVisibility.INTERNAL)
     }
 
     @Test
-    fun `GIVEN a RefreshPocketWorker WHEN stories are refreshed successfully THEN return success`() = runTestOnMain {
+    fun `GIVEN a RefreshPocketWorker WHEN stories are refreshed successfully THEN return success`() = runTest {
         val useCases: PocketStoriesUseCases = mock()
         val refreshStoriesUseCase: RefreshPocketStories = mock()
         doReturn(true).`when`(refreshStoriesUseCase).invoke()
@@ -48,7 +43,7 @@ class RefreshPocketWorkerTest {
     }
 
     @Test
-    fun `GIVEN a RefreshPocketWorker WHEN stories are could not be refreshed THEN work should be retried`() = runTestOnMain {
+    fun `GIVEN a RefreshPocketWorker WHEN stories are could not be refreshed THEN work should be retried`() = runTest {
         val useCases: PocketStoriesUseCases = mock()
         val refreshStoriesUseCase: RefreshPocketStories = mock()
         doReturn(false).`when`(refreshStoriesUseCase).invoke()

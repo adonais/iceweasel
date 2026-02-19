@@ -394,7 +394,7 @@ def validate_install_manifests(install_manifest_args):
         bits = arg.split(",")
         if len(bits) != 2:
             raise ValueError(
-                "Invalid format for --install-manifest: " "specify manifest,target_dir"
+                "Invalid format for --install-manifest: specify manifest,target_dir"
             )
         manifest_file, destination = [os.path.abspath(b) for b in bits]
         if not os.path.isfile(manifest_file):
@@ -603,30 +603,24 @@ class Dumper:
         ]
 
         if buildconfig.substs.get("MOZ_APP_VENDOR") is not None:
-            cmdline.extend(
-                [
-                    "--extra-info",
-                    "VENDOR " + buildconfig.substs["MOZ_APP_VENDOR"],
-                ]
-            )
+            cmdline.extend([
+                "--extra-info",
+                "VENDOR " + buildconfig.substs["MOZ_APP_VENDOR"],
+            ])
 
         if buildconfig.substs.get("MOZ_APP_BASENAME") is not None:
-            cmdline.extend(
-                [
-                    "--extra-info",
-                    "PRODUCTNAME " + buildconfig.substs["MOZ_APP_BASENAME"],
-                ]
-            )
+            cmdline.extend([
+                "--extra-info",
+                "PRODUCTNAME " + buildconfig.substs["MOZ_APP_BASENAME"],
+            ])
 
         # Add the build ID if it's present
         try:
             buildid = get_buildid()
-            cmdline.extend(
-                [
-                    "--extra-info",
-                    "BUILDID " + buildid,
-                ]
-            )
+            cmdline.extend([
+                "--extra-info",
+                "BUILDID " + buildid,
+            ])
         except Exception:
             pass
 
@@ -809,10 +803,7 @@ class Dumper:
                 print(
                     "PERFHERDER_DATA: %s" % json.dumps(perfherder_data), file=sys.stderr
                 )
-                if (
-                    "MOZ_AUTOMATION" in os.environ
-                    or "SNAPCRAFT_BUILD_INFO" in os.environ
-                ):
+                if "MOZ_AUTOMATION" in os.environ or "MOZ_SNAP_BUILD" in os.environ:
                     upload_dir = Path(os.environ.get("UPLOAD_DIR"))
                     upload_dir.mkdir(parents=True, exist_ok=True)
                     upload_path = upload_dir / "perfherder-data-compiler-metrics.json"
@@ -936,15 +927,13 @@ class Dumper_Linux(Dumper):
         file_dbg = file + ".dbg"
         if (
             subprocess.call([self.objcopy, "--only-keep-debug", file, file_dbg]) == 0
-            and subprocess.call(
-                [
-                    self.objcopy,
-                    "--remove-section",
-                    ".gnu_debuglink",
-                    "--add-gnu-debuglink=%s" % file_dbg,
-                    file,
-                ]
-            )
+            and subprocess.call([
+                self.objcopy,
+                "--remove-section",
+                ".gnu_debuglink",
+                "--add-gnu-debuglink=%s" % file_dbg,
+                file,
+            ])
             == 0
         ):
             rel_path = os.path.join(debug_file, guid, debug_file + ".dbg")
@@ -996,13 +985,11 @@ class Dumper_Mac(Dumper):
             cmdline = [self.dump_syms]
 
             cmdline.extend(arch.split())
-            cmdline.extend(
-                [
-                    "--inlines",
-                    "-j",
-                    "2",
-                ]
-            )
+            cmdline.extend([
+                "--inlines",
+                "-j",
+                "2",
+            ])
 
             if self.include_moz_extra_info:
                 cmdline.extend(self.dump_syms_extra_info())

@@ -159,26 +159,6 @@ function InitializeSegmenter(segmenter, locales, options) {
 }
 
 /**
- * Intl.Segmenter.supportedLocalesOf ( locales [, options ])
- *
- * Returns the subset of the given locale list for which this locale list has a
- * matching (possibly fallback) locale. Locales appear in the same order in the
- * returned list as in the input list.
- */
-function Intl_Segmenter_supportedLocalesOf(locales /*, options*/) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  // Step 1.
-  var availableLocales = "Segmenter";
-
-  // Step 2.
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  // Step 3.
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-/**
  * Intl.Segmenter.prototype.segment ( string )
  *
  * Create a new Segments object.

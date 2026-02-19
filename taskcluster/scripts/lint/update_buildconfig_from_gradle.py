@@ -35,9 +35,9 @@ def _get_upstream_deps_per_gradle_project(gradle_root, existing_build_config):
     # command line too long. If that happens, we'll need to split this list up and
     # run gradle more than once.
     cmd = list(_DEFAULT_GRADLE_COMMAND)
-    cmd.extend(
-        [f"{gradle_project}:dependencies" for gradle_project in sorted(gradle_projects)]
-    )
+    cmd.extend([
+        f"{gradle_project}:dependencies" for gradle_project in sorted(gradle_projects)
+    ])
 
     # Parsing output like this is not ideal but bhearsum couldn't find a way
     # to get the dependencies printed in a better format. If we could convince

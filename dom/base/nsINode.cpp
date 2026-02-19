@@ -2527,7 +2527,7 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify,
 
   // Invalidate cached array of child nodes
   InvalidateChildNodes();
-  aKid->UnbindFromTree(aNewParent);
+  aKid->UnbindFromTree(aNewParent, aState);
 }
 
 // When replacing, aRefChild is the content being replaced; when
@@ -3385,16 +3385,11 @@ inline static Element* FindMatchingElementWithId(
       aRoot.IsInUncomposedDoc() || aRoot.IsInShadowTree(),
       "Don't call me if the root is not in the document or in a shadow tree");
 
-  const nsTArray<Element*>* elements =
-      aContainingDocOrShadowRoot.GetAllElementsForId(aId);
-  if (!elements) {
-    // Nothing to do; we're done
-    return nullptr;
-  }
+  Span elements = aContainingDocOrShadowRoot.GetAllElementsForId(aId);
 
   // XXXbz: Should we fall back to the tree walk if |elements| is long,
   // for some value of "long"?
-  for (Element* element : *elements) {
+  for (Element* element : elements) {
     if (MOZ_UNLIKELY(element == &aRoot)) {
       continue;
     }
@@ -3554,7 +3549,7 @@ Element* nsINode::GetParentFlexElement() {
 
 Element* nsINode::GetNearestInclusiveOpenPopover() const {
   for (auto* el : InclusiveFlatTreeAncestorsOfType<Element>()) {
-    if (el->IsAutoPopover() && el->IsPopoverOpen()) {
+    if (el->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
       return el;
     }
   }
@@ -3564,12 +3559,12 @@ Element* nsINode::GetNearestInclusiveOpenPopover() const {
 Element* nsINode::GetNearestInclusiveTargetPopoverForInvoker() const {
   for (auto* el : InclusiveFlatTreeAncestorsOfType<Element>()) {
     if (auto* popover = el->GetEffectiveCommandForElement()) {
-      if (popover->IsAutoPopover() && popover->IsPopoverOpen()) {
+      if (popover->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
         return popover;
       }
     }
     if (auto* popover = el->GetEffectivePopoverTargetElement()) {
-      if (popover->IsAutoPopover() && popover->IsPopoverOpen()) {
+      if (popover->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
         return popover;
       }
     }
@@ -3622,7 +3617,8 @@ Element* nsINode::GetTopmostClickedPopover() const {
   if (!clickedPopover) {
     return invokedPopover;
   }
-  auto autoPopoverList = clickedPopover->OwnerDoc()->AutoPopoverList();
+  auto autoPopoverList =
+      clickedPopover->OwnerDoc()->PopoverListOf(PopoverAttributeState::Auto);
   for (Element* el : Reversed(autoPopoverList)) {
     if (el == clickedPopover || el == invokedPopover) {
       return el;
@@ -4151,10 +4147,6 @@ void nsINode::NotifyDevToolsOfRemovalsOfChildren() {
        child = child->GetNextSibling()) {
     nsContentUtils::NotifyDevToolsOfNodeRemoval(*child);
   }
-}
-
-ShadowRoot* nsINode::GetShadowRoot() const {
-  return IsContent() ? AsContent()->GetShadowRoot() : nullptr;
 }
 
 ShadowRoot* nsINode::GetShadowRootForSelection() const {

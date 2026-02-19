@@ -22,7 +22,7 @@ DEFAULT_TIMEOUT = 125
 
 class TestBrowserThread(threading.Thread):
     def __init__(self, raptor_instance, tests, names):
-        super(TestBrowserThread, self).__init__()
+        super().__init__()
         self.raptor_instance = raptor_instance
         self.tests = tests
         self.names = names
@@ -200,7 +200,7 @@ def test_post_startup_delay(
         debug_mode=debug_mode,
         post_startup_delay=post_startup_delay,
         conditioned_profile=conditioned_profile,
-        **options
+        **options,
     )
 
     assert perftest.post_startup_delay == expected_post_startup_delay

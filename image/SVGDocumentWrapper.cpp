@@ -63,7 +63,7 @@ void SVGDocumentWrapper::DestroyViewer() {
 }
 
 nsIFrame* SVGDocumentWrapper::GetRootLayoutFrame() const {
-  Element* rootElem = GetRootSVGElem();
+  Element* rootElem = GetSVGRootElement();
   return rootElem ? rootElem->GetPrimaryFrame() : nullptr;
 }
 
@@ -88,7 +88,7 @@ void SVGDocumentWrapper::UpdateViewportBounds(const nsIntSize& aViewportSize) {
 void SVGDocumentWrapper::FlushImageTransformInvalidation() {
   MOZ_ASSERT(!mIgnoreInvalidation, "shouldn't be reentrant");
 
-  SVGSVGElement* svgElem = GetRootSVGElem();
+  SVGSVGElement* svgElem = GetSVGRootElement();
   if (!svgElem) {
     return;
   }
@@ -158,7 +158,7 @@ void SVGDocumentWrapper::StopAnimation() {
 }
 
 void SVGDocumentWrapper::ResetAnimation() {
-  SVGSVGElement* svgElem = GetRootSVGElem();
+  SVGSVGElement* svgElem = GetSVGRootElement();
   if (!svgElem) {
     return;
   }
@@ -167,12 +167,12 @@ void SVGDocumentWrapper::ResetAnimation() {
 }
 
 float SVGDocumentWrapper::GetCurrentTimeAsFloat() const {
-  SVGSVGElement* svgElem = GetRootSVGElem();
+  SVGSVGElement* svgElem = GetSVGRootElement();
   return svgElem ? svgElem->GetCurrentTimeAsFloat() : 0.0f;
 }
 
 void SVGDocumentWrapper::SetCurrentTime(float aTime) {
-  SVGSVGElement* svgElem = GetRootSVGElem();
+  SVGSVGElement* svgElem = GetSVGRootElement();
   if (svgElem && svgElem->GetCurrentTimeAsFloat() != aTime) {
     svgElem->SetCurrentTime(aTime);
   }
@@ -231,7 +231,7 @@ SVGDocumentWrapper::Observe(nsISupports* aSubject, const char* aTopic,
                             const char16_t* aData) {
   if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
     // Sever ties from rendering observers to helper-doc's root SVG node
-    SVGSVGElement* svgElem = GetRootSVGElem();
+    SVGSVGElement* svgElem = GetSVGRootElement();
     if (svgElem) {
       SVGObserverUtils::RemoveAllRenderingObservers(svgElem);
     }
@@ -374,22 +374,13 @@ SVGDocument* SVGDocumentWrapper::GetDocument() const {
   return doc->AsSVGDocument();
 }
 
-SVGSVGElement* SVGDocumentWrapper::GetRootSVGElem() const {
+SVGSVGElement* SVGDocumentWrapper::GetSVGRootElement() const {
   if (!mViewer) {
     return nullptr;  // Can happen during destruction
   }
 
   Document* doc = mViewer->GetDocument();
-  if (!doc) {
-    return nullptr;  // Can happen during destruction
-  }
-
-  Element* rootElem = mViewer->GetDocument()->GetRootElement();
-  if (!rootElem || !rootElem->IsSVGElement(nsGkAtoms::svg)) {
-    return nullptr;
-  }
-
-  return static_cast<SVGSVGElement*>(rootElem);
+  return doc ? doc->GetSVGRootElement() : nullptr;
 }
 
 }  // namespace image

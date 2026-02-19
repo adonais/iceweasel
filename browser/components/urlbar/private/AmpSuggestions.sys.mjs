@@ -110,10 +110,25 @@ export class AmpSuggestions extends SuggestProvider {
       this.#replaceSuggestionTemplates(normalized);
     }
 
+    let isTopPick =
+      lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") &&
+      lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") <=
+        queryContext.trimmedLowerCaseSearchString.length;
+
+    let { value: title, highlights: titleHighlights } =
+      lazy.QuickSuggest.getFullKeywordTitleAndHighlights({
+        tokens: queryContext.tokens,
+        highlightType: isTopPick
+          ? lazy.UrlbarUtils.HIGHLIGHT.TYPED
+          : lazy.UrlbarUtils.HIGHLIGHT.SUGGESTED,
+        fullKeyword: normalized.fullKeyword,
+        title: normalized.title,
+      });
+
     let payload = {
       url: normalized.url,
       originalUrl: normalized.rawUrl,
-      title: normalized.title,
+      title,
       requestId: normalized.requestId,
       urlTimestampIndex: normalized.urlTimestampIndex,
       sponsoredImpressionUrl: normalized.impressionUrl,
@@ -124,18 +139,6 @@ export class AmpSuggestions extends SuggestProvider {
       isBlockable: true,
       isManageable: true,
     };
-
-    let isTopPick =
-      lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") &&
-      lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") <=
-        queryContext.trimmedLowerCaseSearchString.length;
-
-    payload.qsSuggestion = [
-      normalized.fullKeyword,
-      isTopPick
-        ? lazy.UrlbarUtils.HIGHLIGHT.TYPED
-        : lazy.UrlbarUtils.HIGHLIGHT.SUGGESTED,
-    ];
 
     let resultParams = {};
     if (isTopPick) {
@@ -158,10 +161,10 @@ export class AmpSuggestions extends SuggestProvider {
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isRichSuggestion: true,
       ...resultParams,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-        queryContext.tokens,
-        payload
-      ),
+      payload,
+      highlights: {
+        title: titleHighlights,
+      },
     });
   }
 

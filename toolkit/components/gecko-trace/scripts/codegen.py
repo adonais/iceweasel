@@ -79,10 +79,10 @@ def load_schema_index():
     with open(index) as f:
         index_src = f.read()
 
-    global gecko_trace_files
-    exec(index_src, globals())
+    namespace = {}
+    exec(index_src, namespace)
 
-    return [str(Path(topsrcdir) / x) for x in gecko_trace_files]  # type: ignore
+    return [str(Path(topsrcdir) / x) for x in namespace["gecko_trace_files"]]
 
 
 @memoize

@@ -31,7 +31,6 @@ UNIFIED_SOURCES += [
     "nsProgressFrame.cpp",
     "nsRangeFrame.cpp",
     "nsSearchControlFrame.cpp",
-    "nsSelectsAreaFrame.cpp",
     "nsTextControlFrame.cpp",
 ]
 

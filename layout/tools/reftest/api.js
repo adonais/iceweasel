@@ -128,7 +128,7 @@ this.reftest = class extends ExtensionAPI {
       "chrome,dialog=no,left=800,height=200,width=200,all",
       null
     );
-    dummy.onload = async function () {
+    dummy.setTimeout(async function () {
       // Close pre-existing window
       win.close();
 
@@ -149,7 +149,7 @@ this.reftest = class extends ExtensionAPI {
         "chrome,dialog=no,all",
         {}
       );
-    };
+    }, 0);
   }
 
   onShutdown() {

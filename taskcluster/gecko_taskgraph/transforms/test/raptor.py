@@ -15,55 +15,49 @@ from gecko_taskgraph.util.perftest import is_external_browser
 transforms = TransformSequence()
 task_transforms = TransformSequence()
 
-raptor_description_schema = Schema(
-    {
-        # Raptor specific configs.
-        Optional("raptor"): {
-            Optional("activity"): optionally_keyed_by("app", str),
-            Optional("apps"): optionally_keyed_by("test-platform", "subtest", [str]),
-            Optional("binary-path"): optionally_keyed_by("app", str),
-            Optional("run-visual-metrics"): optionally_keyed_by(
-                "app", "test-platform", bool
-            ),
-            Optional("subtests"): optionally_keyed_by("app", "test-platform", list),
-            Optional("test"): str,
-            Optional("test-url-param"): optionally_keyed_by(
-                "subtest", "test-platform", str
-            ),
-            Optional("lull-schedule"): optionally_keyed_by(
-                "subtest", "test-platform", str
-            ),
-            Optional("network-conditions"): optionally_keyed_by("subtest", list),
-        },
-        # Configs defined in the 'test_description_schema'.
-        Optional("max-run-time"): optionally_keyed_by(
-            "app", "subtest", "test-platform", test_description_schema["max-run-time"]
+raptor_description_schema = Schema({
+    # Raptor specific configs.
+    Optional("raptor"): {
+        Optional("activity"): optionally_keyed_by("app", str),
+        Optional("apps"): optionally_keyed_by("test-platform", "subtest", [str]),
+        Optional("binary-path"): optionally_keyed_by("app", str),
+        Optional("run-visual-metrics"): optionally_keyed_by(
+            "app", "test-platform", bool
         ),
-        Optional("run-on-projects"): optionally_keyed_by(
-            "app",
-            "test-name",
-            "raptor.test",
-            "subtest",
-            "variant",
-            test_description_schema["run-on-projects"],
+        Optional("subtests"): optionally_keyed_by("app", "test-platform", list),
+        Optional("test"): str,
+        Optional("test-url-param"): optionally_keyed_by(
+            "subtest", "test-platform", str
         ),
-        Optional("variants"): test_description_schema["variants"],
-        Optional("target"): optionally_keyed_by(
-            "app", test_description_schema["target"]
-        ),
-        Optional("tier"): optionally_keyed_by(
-            "app", "raptor.test", "subtest", "variant", test_description_schema["tier"]
-        ),
-        Required("test-name"): test_description_schema["test-name"],
-        Required("test-platform"): test_description_schema["test-platform"],
-        Required("require-signed-extensions"): test_description_schema[
-            "require-signed-extensions"
-        ],
-        Required("treeherder-symbol"): test_description_schema["treeherder-symbol"],
-        # Any unrecognized keys will be validated against the test_description_schema.
-        Extra: object,
-    }
-)
+        Optional("lull-schedule"): optionally_keyed_by("subtest", "test-platform", str),
+        Optional("network-conditions"): optionally_keyed_by("subtest", list),
+    },
+    # Configs defined in the 'test_description_schema'.
+    Optional("max-run-time"): optionally_keyed_by(
+        "app", "subtest", "test-platform", test_description_schema["max-run-time"]
+    ),
+    Optional("run-on-projects"): optionally_keyed_by(
+        "app",
+        "test-name",
+        "raptor.test",
+        "subtest",
+        "variant",
+        test_description_schema["run-on-projects"],
+    ),
+    Optional("variants"): test_description_schema["variants"],
+    Optional("target"): optionally_keyed_by("app", test_description_schema["target"]),
+    Optional("tier"): optionally_keyed_by(
+        "app", "raptor.test", "subtest", "variant", test_description_schema["tier"]
+    ),
+    Required("test-name"): test_description_schema["test-name"],
+    Required("test-platform"): test_description_schema["test-platform"],
+    Required("require-signed-extensions"): test_description_schema[
+        "require-signed-extensions"
+    ],
+    Required("treeherder-symbol"): test_description_schema["treeherder-symbol"],
+    # Any unrecognized keys will be validated against the test_description_schema.
+    Extra: object,
+})
 
 transforms.add_validate(raptor_description_schema)
 
@@ -211,12 +205,10 @@ def handle_network_conditions(config, tests):
             mozharness = new_test.setdefault("mozharness", {})
             extra_options = mozharness.setdefault("extra-options", [])
 
-            extra_options.extend(
-                [
-                    f"--browsertime-arg=network_type={network_type}",
-                    f"--browsertime-arg=pkt_loss_rate={packet_loss_rate}",
-                ]
-            )
+            extra_options.extend([
+                f"--browsertime-arg=network_type={network_type}",
+                f"--browsertime-arg=pkt_loss_rate={packet_loss_rate}",
+            ])
 
             new_test["test-name"] += f"-{subtest}-{network_type}-{packet_loss_rate}"
             new_test["try-name"] += f"-{subtest}-{network_type}-{packet_loss_rate}"
@@ -468,21 +460,17 @@ def setup_internal_artifacts(config, tasks):
             task["worker"]["os"] == "linux-bitbar"
             or task["worker"]["os"] == "linux-lambda"
         ):
-            task["worker"].setdefault("artifacts", []).append(
-                {
-                    "name": "perftest",
-                    "path": "workspace/build/perftest",
-                    "type": "directory",
-                }
-            )
+            task["worker"].setdefault("artifacts", []).append({
+                "name": "perftest",
+                "path": "workspace/build/perftest",
+                "type": "directory",
+            })
         else:
-            task["worker"].setdefault("artifacts", []).append(
-                {
-                    "name": "perftest",
-                    "path": "build/perftest",
-                    "type": "directory",
-                }
-            )
+            task["worker"].setdefault("artifacts", []).append({
+                "name": "perftest",
+                "path": "build/perftest",
+                "type": "directory",
+            })
         yield task
 
 
@@ -514,22 +502,20 @@ def select_tasks_to_lambda(config, tasks):
                     task["tags"]["os"] = "linux-lambda"
                     task["worker"]["os"] = "linux-lambda"
                     task["worker-type"] = "t-lambda-perf-a55"
-                    task["worker"]["env"][
-                        "TASKCLUSTER_WORKER_TYPE"
-                    ] = "t-lambda-perf-a55"
+                    task["worker"]["env"]["TASKCLUSTER_WORKER_TYPE"] = (
+                        "t-lambda-perf-a55"
+                    )
                     cmds = []
                     for cmd in task["worker"]["command"]:
                         # Bug 1981862 - issues with condprof setup @ lambdatest
-                        cmds.append(
-                            [
-                                c.replace(
-                                    "/builds/taskcluster/script.py",
-                                    "/home/ltuser/taskcluster/script.py",
-                                )
-                                for c in cmd
-                                if not c.startswith("--conditioned-profile")
-                            ]
-                        )
+                        cmds.append([
+                            c.replace(
+                                "/builds/taskcluster/script.py",
+                                "/home/ltuser/taskcluster/script.py",
+                            )
+                            for c in cmd
+                            if not c.startswith("--conditioned-profile")
+                        ])
                     task["worker"]["command"] = cmds
                     task["worker"]["env"]["DISABLE_USB_POWER_METER_RESET"] = "1"
         yield task

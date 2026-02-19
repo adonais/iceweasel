@@ -20,10 +20,10 @@ class FFmpegEncoderModule final : public PlatformEncoderModule {
  public:
   virtual ~FFmpegEncoderModule() = default;
 
-  static void Init(FFmpegLibWrapper* aLib);
+  static void Init(const FFmpegLibWrapper* aLib);
 
   static already_AddRefed<PlatformEncoderModule> Create(
-      FFmpegLibWrapper* aLib) {
+      const FFmpegLibWrapper* aLib) {
     RefPtr<PlatformEncoderModule> pem = new FFmpegEncoderModule(aLib);
     return pem.forget();
   }
@@ -41,7 +41,7 @@ class FFmpegEncoderModule final : public PlatformEncoderModule {
       const RefPtr<TaskQueue>& aTaskQueue) const override;
 
  protected:
-  explicit FFmpegEncoderModule(FFmpegLibWrapper* aLib) : mLib(aLib) {
+  explicit FFmpegEncoderModule(const FFmpegLibWrapper* aLib) : mLib(aLib) {
     MOZ_ASSERT(mLib);
   }
 

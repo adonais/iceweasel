@@ -304,7 +304,7 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
   const mainThreadItem = findSourceTreeThreadByName(dbg, "Main Thread");
   ok(mainThreadItem, "Found the thread item for the main thread");
   ok(
-    mainThreadItem.querySelector("span.img.window"),
+    mainThreadItem.querySelector("span.dbg-img-window"),
     "The thread has the window icon"
   );
 
@@ -350,7 +350,7 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
   const workerThreadItem = findSourceTreeThreadByName(dbg, "same-url.sjs");
   ok(workerThreadItem, "Found the thread item for the worker");
   ok(
-    workerThreadItem.querySelector("span.img.worker"),
+    workerThreadItem.querySelector("span.dbg-img-worker"),
     "The thread has the worker icon"
   );
 
@@ -484,7 +484,7 @@ add_task(async function testSourceTreeWithWebExtensionContentScript() {
   );
   ok(contentScriptGroupItem, "Found the group item for the content script");
   ok(
-    contentScriptGroupItem.querySelector("span.img.extension"),
+    contentScriptGroupItem.querySelector("span.dbg-img-extension"),
     "The group has the extension icon"
   );
   assertSourceIcon(dbg, "content_script.js", "javascript");
@@ -554,8 +554,10 @@ add_task(async function testSourceTreeWithEncodedPaths() {
   is(
     // We don't have any specific class on the folder item, so let's target the folder
     // icon next sibling, which is the directory label.
-    findElementWithSelector(dbg, ".sources-panel .node .folder + .label")
-      .innerText,
+    findElementWithSelector(
+      dbg,
+      ".sources-panel .node .dbg-img-folder + .label"
+    ).innerText,
     "my folder",
     "folder name is decoded in the tree"
   );

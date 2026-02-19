@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Ingresar términos de búsqueda</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Tus pestañas abiertas se mostrarán aquí.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Tus pestañas abiertas se mostrarán aquí.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Tus pestañas privadas se mostrarán aquí.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Tus pestañas privadas se mostrarán aquí.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Navegación privada</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Salir del modo de selección múltiple</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Guardar pestañas seleccionadas en la colección</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Guardar pestañas seleccionadas en la colección</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Tomar pestañas desde cualquier dispositivo</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Extensiones</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Tenés extensiones instaladas, pero no habilitadas</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Tenés extensiones instaladas, pero no habilitadas</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Administrar extensiones</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Información de la cuenta</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Ayuda</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Ayuda</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">¿Qué hay de nuevo?</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">¿Qué hay de nuevo?</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Ajustes</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Sitio de escritorio</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Abrir en una pestaña normal</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Abrir en una pestaña normal</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Agregar a pantalla de inicio</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">DESARROLLADO POR %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">DESARROLLADO POR %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Abrir en la aplicación</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Personalizar vista de lectura</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Personalizar vista de lectura</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Personalizar vista de lectura</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Agregar</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Agregar</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Editar</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Editar</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Personalizar inicio</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Personalizar inicio</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Iniciar sesión</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Cerrar menú</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navegación</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Ayuda</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Configuración</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Cerrar hoja del menú de extensiones</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Cerrar hoja del menú de extensiones</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Cerra hoja del menú guardar</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Cerra hoja del menú guardar</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Cerrar hoja del menú herramientas</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Cerrar hoja del menú herramientas</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Cerrar hoja del menú pestaña personalizada</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -327,8 +323,10 @@
   <string name="browser_menu_save_as_pdf_2">Guardar como PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Traducir página</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Resumir página</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Informar sitio roto…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Informar sitio roto…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Informar sitio roto</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -438,6 +436,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: selector de buscador</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">%1$s eliminado del historial</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Eliminar esta entrada del historial</string>
   <!--
     Home onboarding
 
@@ -452,19 +454,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Aviso de privacidad de Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Nos encanta mantenerte seguro</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Descubrí por qué millones aman Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Navegación segura con más opciones</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Nuestro navegador respaldado sin fines de lucro ayuda a evitar que las empresas te sigan en secreto por la web.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Más de 100 millones de personas protegen su privacidad eligiendo un navegador respaldado por una organización sin fines de lucro.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">¿Rastreadores conocidos? Bloqueados automáticamente. ¿Extensiones? Probá las 700. ¿PDFs? Nuestro lector incorporado los hace fáciles de administrar.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Establecer como navegador predeterminado</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +545,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Administrar</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Iniciá el navegador Android definitivo</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Iniciá el navegador Android definitivo</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Cargar sitios rápido como un rayo</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Cargar sitios rápido como un rayo</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Protección contra rastreo automática</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Protección contra rastreo automática</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Miles de personalizaciones</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Miles de personalizaciones</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Al continuar, aceptás los %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Al continuar, aceptás los %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Términos de uso de Firefox</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Términos de uso de Firefox</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox se preocupa por tu privacidad. Conocé más en nuestra %1$s.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox se preocupa por tu privacidad. Conocé más en nuestra %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Nota de privacidad</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Nota de privacidad</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Para ayudar a mejorar el navegador, Firefox envía datos de diagnóstico e interacción a Mozilla. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Para ayudar a mejorar el navegador, Firefox envía datos de diagnóstico e interacción a Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Administrar configuraciones</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Administrar configuraciones</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Continuar</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Continuar</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">¿Dónde querés que esté la barra de direcciones?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">¿Dónde querés que esté la barra de direcciones?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Continuar</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Continuar</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Ayudanos a hacer crecer a Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Ayudanos a hacer crecer a Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Compartí con los socios de marketing de Mozilla cómo descubriste Firefox y lo usás. Estos datos nunca serán vendidos.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Compartí con los socios de marketing de Mozilla cómo descubriste Firefox y lo usás. Estos datos nunca serán vendidos.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Como usamos los datos</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Como usamos los datos</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Confirmar</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Confirmar</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Obtener protección contra rastreo automática por defecto</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Obtener protección contra rastreo automática por defecto</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Un toque ayuda a evitar que las empresas espíen tus clics.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Un toque ayuda a evitar que las empresas espíen tus clics.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Sincronizá donde sea que usés Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Sincronizá donde sea que usés Firefox</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Obtené marcadores, pestañas y contraseñas en cualquier dispositivo. Todo protegido con cifrado.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Obtené marcadores, pestañas y contraseñas en cualquier dispositivo. Todo protegido con cifrado.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Iniciar sincronización</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Iniciar sincronización</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">No ahora</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">No ahora</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Ayúdanos a hacer crecer a Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +618,48 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Continuar</string>
+  <string name="nova_onboarding_continue_button">Continuar</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">No ahora</string>
+  <string name="nova_onboarding_negative_button">No ahora</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Prepárate para correr libre</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Preparate para navegar libremente</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Rápido, seguro y no te traicionará.\nLa navegación ahora es mejor.</string>
+  <string name="nova_onboarding_tou_subtitle">Rápido, seguro y no te traicionará.\nLa navegación ahora es mejor.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Al continuar, aceptás los %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_1">Al continuar, aceptás los %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Términos de uso de Firefox</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Términos de uso de Firefox</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox se preocupa por tu privacidad. Conocé más en nuestra %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox se preocupa por tu privacidad. Conocé más en nuestra %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Nota de privacidad</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Nota de privacidad</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Para ayudar a mejorar el navegador, Firefox envía datos de diagnóstico e interacción a Mozilla. %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Para ayudar a mejorar el navegador, Firefox envía datos de diagnóstico e interacción a Mozilla. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Administrar preferencias</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Administrar preferencias</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Decile adiós a los rastreadores siniestros</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Abrir todos los enlaces con privacidad integrada</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Protegemos tus datos y bloqueamos automáticamente las empresas para que no espíen tus clics.</string>
+  <string name="nova_onboarding_set_to_default_subtitle">Protegemos tus datos y bloqueamos automáticamente a las empresas para que no espíen tus clics.</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Establecer como navegador predeterminado</string>
+  <string name="nova_onboarding_set_to_default_button">Establecer como navegador predeterminado</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Elegí tu barra de direcciones</string>
+  <string name="nova_onboarding_toolbar_selection_title">Elegí tu barra de direcciones</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Parte superior</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">Parte superior</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Parte inferior</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">Parte inferior</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Elegí tu tema</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +669,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Oscuro</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Continuá instantáneamente desde donde lo dejaste</string>
+  <string name="nova_onboarding_sync_title">Continuá instantáneamente desde donde lo dejaste</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">Llevate marcadores, contraseñas y más a cualquier dispositivo en un instante. Tus datos personales se mantienen seguros y protegidos con cifrado.</string>
+  <string name="nova_onboarding_sync_subtitle">Llevate marcadores, contraseñas y más a cualquier dispositivo en un instante. Tus datos personales se mantienen seguros y protegidos con cifrado.</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Iniciar sincronización</string>
+  <string name="nova_onboarding_sync_button">Iniciar sincronización</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Ayudanos a crear una mejor internet</string>
+  <string name="nova_onboarding_marketing_title">Ayudanos a crear una mejor internet</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Compartí con los socios de marketing de Mozilla cómo descubriste Firefox y lo usás. Estos datos nunca serán vendidos. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Compartí con los socios de marketing de Mozilla cómo descubriste Firefox y lo usás. Estos datos nunca serán vendidos. %1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Como usamos los datos</string>
+  <string name="nova_onboarding_marketing_body_link_text">Como usamos los datos</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Las notificaciones te ayudan a mantenerte más seguro con Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Descubrí las últimas funciones de privacidad de Firefox para estar siempre al día sobre cómo mantenerte protegido.</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Activar notificaciones</string>
+  <string name="nova_onboarding_notifications_button">Activar notificaciones</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Hacer que cada búsqueda sea más privada</string>
+  <string name="nova_onboarding_add_search_widget_title">Hacer que cada búsqueda sea más privada</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">Comencé cada búsqueda desde la pantalla de inicio de tu teléfono y tené la seguridad de que las protecciones automáticas de Firefox te cubren las espaldas.</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Comenzá cada búsqueda desde la pantalla de inicio de tu teléfono y tené la seguridad de que las protecciones automáticas de Firefox te cubren las espaldas.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Agregar widget de Firefox</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Agregar widget de Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -781,6 +774,8 @@
   <string name="preferences_search">Buscar</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Buscadores</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Widget en pantalla de inicio</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Sugerencias de buscadores</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -972,6 +967,15 @@
   <string name="preferences_open_links_in_apps_ask">Preguntar antes de abrir</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Nunca</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Almacenamiento de archivos</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Ubicación de descarga predeterminada</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">No tiene permiso para usar esta carpeta. Pruebe elegir una diferente.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Administrar descargas con otra aplicación</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1137,8 +1141,6 @@
   <string name="alternative_app_icon_group_solid_colors">Colores lisos</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Degradé</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Otros</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Destacados</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1505,11 +1507,27 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Activo</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Probá funciones e ideas antes de que estén disponibles para todos.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Probá funciones e ideas antes de que estén disponibles para todos.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox selecciona usuarios al azar para probar las funcionalidades, lo que mejora la calidad para todos.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Instalar y ejecutar estudios</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Instalar y ejecutar estudios</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Permitir estudios de funcionalidades</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Conocer más</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Permitir mejoras remotas</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox mejorará las funciones, el rendimiento y la estabilidad entre actualizaciones. Los cambios se aplicaron remotamente.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Conocer más</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Mejoras remotas</string>
   <!--
     Sessions
 
@@ -1544,17 +1562,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Agregar pestaña privada</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Privado</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privado</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sincronizar</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sincronizar</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Buscar en tus pestañas</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Compartir todas las pestañas</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Compartir todas las pestañas</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Pestañas recientemente cerradas</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Recientemente cerrados</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Recientemente cerrados</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Configuración de la cuenta</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1570,11 +1588,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Cancelar</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Marcador</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Marcador</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Marcar pestañas seleccionadas</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Cerrar</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Cerrar</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Cerrar las pestañas seleccionadas</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1600,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Agregar a la colección</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Compartir pestañas seleccionadas</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Compartir pestañas seleccionadas</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menú de pestañas seleccionadas</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1721,8 @@
   <string name="download_delete_item">Borrar</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Navegar hacia atrás</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Navegar a Configuración de descargas</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Ir atrás y cerrar búsqueda</string>
   <!--
@@ -1720,12 +1740,25 @@
   <string name="download_share_url">Compartir URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Compartir archivo</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Renombrar archivo</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">¿Estás seguro de querer borrar los ítems seleccionados?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Borrar</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Cancelar</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Renombrar archivo</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Nombre</string>
+  <string name="download_rename_dialog_confirm_button">Guardar</string>
+  <string name="download_rename_dialog_cancel_button">Cancelar</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">No se puede renombrar el archivo</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Este archivo no puede ser renombrado debido a restricciones del sistema o de almacenamiento.</string>
+  <string name="download_rename_error_dismiss_button">Aceptar</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">En proceso</string>
   <!--
@@ -1918,6 +1951,8 @@
   <string name="bookmark_error_edit_bookmark">No se pudo editar el marcador</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">EDIT</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Seleccionar</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Mover</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1998,6 +2033,10 @@
   <string name="select_bookmark_search_button_content_description">Buscar carpetas</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Menú ítem para %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Expandir la carpeta: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Cerrar la carpeta: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Cerrar marcadores</string>
   <!-- Title for the bookmark list empty state -->
@@ -2200,7 +2239,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Iniciar sesión en Sync</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Iniciar sesión</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Iniciar sesión</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Enviar a todos los dispositivos</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2399,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Elimina automáticamente los datos de navegación cuando seleccionás \"Salir\" en el menú principal</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Salir</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Salir</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Intervalo de tiempo para borrar</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2824,6 +2863,20 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menú ordenar contraseñas</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Máscaras de correo electrónico</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Sugerir máscaras de correo electrónico</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Oculte su correo electrónico real para proteger la bandeja de entrada del spam. Algunos sitios no soportan máscaras de correo electrónico.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Conocer más</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Administrar máscaras de correo electrónico</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3059,9 +3112,9 @@
   -->
   <string name="certificate_info_verified_by">Verificado por: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Eliminar</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Eliminar</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Editar</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Editar</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">¿Estás seguro de que querés eliminar esta contraseña?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3122,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Cancelar</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Opciones de contraseña</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Opciones de contraseña</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">El campo de texto editable para la dirección del sitio web.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">El campo de texto editable para la dirección del sitio web.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">El campo de texto editable para el nombre de usuario.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">El campo de texto editable para el nombre de usuario.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">El campo de texto editable para la contraseña.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">El campo de texto editable para la contraseña.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Guardar cambios.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Guardar cambios.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Editar contraseña</string>
   <!-- The page title for adding new password. -->
@@ -4002,6 +4055,8 @@
   <string name="settings_search_no_results_title">No apareció nada</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">¿Probar una búsqueda diferente?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Botón de búsqueda de configuración</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

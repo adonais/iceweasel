@@ -9,8 +9,6 @@
 
 #include <string.h>
 
-#include <cstdint>
-
 #include "ErrorList.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"

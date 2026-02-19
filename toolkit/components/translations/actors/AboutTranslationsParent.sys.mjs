@@ -33,10 +33,15 @@ export class AboutTranslationsParent extends JSWindowActorParent {
   #languageDisplayNames = null;
 
   actorCreated() {
+    lazy.TranslationsParent.ensurePrefObservers();
     this.#boundObserve = this.#observe.bind(this);
     Services.obs.addObserver(
       this.#boundObserve,
       "translations:model-records-changed"
+    );
+    Services.obs.addObserver(
+      this.#boundObserve,
+      "translations:enabled-state-changed"
     );
   }
 
@@ -46,15 +51,39 @@ export class AboutTranslationsParent extends JSWindowActorParent {
         this.#boundObserve,
         "translations:model-records-changed"
       );
+      Services.obs.removeObserver(
+        this.#boundObserve,
+        "translations:enabled-state-changed"
+      );
       this.#boundObserve = null;
     }
     this.#isDestroyed = true;
   }
 
-  #observe(subject, topic) {
+  /**
+   * Observes notifications for about:translations updates.
+   *
+   * @param {nsISupports} _subject
+   * @param {string} topic
+   * @param {string} data
+   *
+   * @see {nsIObserver}
+   */
+  #observe(_subject, topic, data) {
+    if (this.#isDestroyed) {
+      return;
+    }
+
     switch (topic) {
       case "translations:model-records-changed": {
         this.sendAsyncMessage("AboutTranslations:RebuildTranslator");
+        break;
+      }
+      case "translations:enabled-state-changed": {
+        this.sendAsyncMessage("AboutTranslations:EnabledStateChanged", {
+          enabled: data === "enabled",
+        });
+        break;
       }
     }
   }
@@ -109,6 +138,9 @@ export class AboutTranslationsParent extends JSWindowActorParent {
       }
       case "AboutTranslations:IsTranslationsEngineSupported": {
         return lazy.TranslationsParent.getIsTranslationsEngineSupported();
+      }
+      case "AboutTranslations:GetEnabledState": {
+        return lazy.TranslationsParent.AIFeature.isEnabled;
       }
       case "AboutTranslations:OpenSupportPage": {
         const browser = this.browsingContext.top.embedderElement;

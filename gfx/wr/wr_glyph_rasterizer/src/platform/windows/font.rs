@@ -644,6 +644,7 @@ impl FontContext {
             scale: (if bitmaps { y_scale.recip() } else { 1.0 }) as f32,
             format,
             bytes: bgra_pixels,
+            is_packed_glyph: false,
         })
     }
 }

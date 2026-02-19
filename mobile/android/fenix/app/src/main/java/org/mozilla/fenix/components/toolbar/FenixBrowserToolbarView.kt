@@ -17,12 +17,13 @@ import mozilla.components.browser.state.state.ExternalAppType
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.toolbar.ScrollableToolbar
 import mozilla.components.support.ktx.android.view.findViewInHierarchy
+import mozilla.components.support.utils.KeyboardState
+import mozilla.components.support.utils.ext.isKeyboardVisible
+import mozilla.components.support.utils.keyboardAsState
 import mozilla.components.ui.widgets.behavior.DependencyGravity.Bottom
 import mozilla.components.ui.widgets.behavior.DependencyGravity.Top
 import mozilla.components.ui.widgets.behavior.EngineViewScrollingBehavior
 import mozilla.components.ui.widgets.behavior.EngineViewScrollingBehaviorFactory
-import org.mozilla.fenix.compose.utils.KeyboardState
-import org.mozilla.fenix.compose.utils.keyboardAsState
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -39,7 +40,9 @@ abstract class FenixBrowserToolbarView(
 ) : ScrollableToolbar {
 
     init {
-        setupShowingToolbarsAfterKeyboardHidden()
+        if (!settings.shouldUseMinimalBottomToolbarWhenEnteringText) {
+            setupShowingToolbarsAfterKeyboardHidden()
+        }
     }
 
     abstract val layout: View
@@ -79,8 +82,10 @@ abstract class FenixBrowserToolbarView(
     }
 
     override fun enableScrolling() {
-        (layout.layoutParams as CoordinatorLayout.LayoutParams).apply {
-            (behavior as? EngineViewScrollingBehavior)?.enableScrolling()
+        if (!parent.isKeyboardVisible()) {
+            (layout.layoutParams as CoordinatorLayout.LayoutParams).apply {
+                (behavior as? EngineViewScrollingBehavior)?.enableScrolling()
+            }
         }
     }
 

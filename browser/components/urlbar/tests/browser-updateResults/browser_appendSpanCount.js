@@ -87,7 +87,6 @@ add_task(async function viewUpdateAppendHidden() {
       payload: {
         title,
         url,
-        displayUrl: "http://example.com/" + title,
       },
     });
   });

@@ -47,26 +47,6 @@ const FAKE_ONNX_MODEL_ARGS = {
   taskName: "task_onnx",
 };
 
-function createRandomBlob(blockSize = 8, count = 1) {
-  const blocks = Array.from({ length: count }, () =>
-    Uint32Array.from(
-      { length: blockSize / 4 },
-      () => Math.random() * 4294967296
-    )
-  );
-  return new Blob(blocks, { type: "application/octet-stream" });
-}
-
-function createBlob(size = 8) {
-  return createRandomBlob(size);
-}
-
-function stripLastUsed(data) {
-  return data.map(({ lastUsed: _unusedLastUsed, ...rest }) => {
-    return rest;
-  });
-}
-
 /**
  * Test the MOZ_ALLOW_EXTERNAL_ML_HUB environment variable
  */
@@ -604,29 +584,6 @@ add_task(async function testTooFewParts() {
 // IndexedDB tests
 
 /**
- * Helper function to initialize the cache
- */
-async function initializeCache() {
-  const dbName = `modelFiles-${crypto.randomUUID()}`;
-  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
-  await OPFS.getDirectoryHandle(dbName, { create: true });
-  return await IndexedDBCache.init({ dbName });
-}
-
-/**
- * Helper function to delete the cache database
- */
-async function deleteCache(cache) {
-  await cache.dispose();
-  await TestIndexedDBCache.deleteDatabaseAndWait(cache.dbName).catch(() => {});
-  try {
-    await OPFS.remove(cache.dbName, { recursive: true });
-  } catch (e) {
-    // can be empty
-  }
-}
-
-/**
  * Test the initialization and creation of the IndexedDBCache instance.
  */
 add_task(async function test_Init() {
@@ -1044,11 +1001,11 @@ add_task(async function test_deleteNonMatchingModelRevisions() {
     }),
   ]);
 
-  await hub.deleteNonMatchingModelRevisions({
+  await hub.deleteNonMatchingModelRevisions(
     taskName,
-    modelWithHostname: `${hostname}/org/model2`,
-    targetRevision: "v3",
-  });
+    `${hostname}/org/model2`,
+    "v3"
+  );
 
   const [retrievedData, headers] = await cache.getFile({
     model: `${hostname}/org/model`,
@@ -1650,6 +1607,8 @@ add_task(async function test_DeleteFileByEngines() {
   const testData = createBlob();
   const engineOne = "engine-1";
   const engineTwo = "engine-2";
+  const model = "org/model";
+  const revision = "v1";
 
   // a file is stored by engineOne
   await cache.put({
@@ -1676,6 +1635,10 @@ add_task(async function test_DeleteFileByEngines() {
     "The retrieved data should match the stored data."
   );
 
+  // We should have two engines associated with the model file
+  let retrievedFiles = await cache.listFiles({ model, revision });
+  Assert.equal(retrievedFiles.metadata.engineIds.length, 2);
+
   // if we delete the model by engineOne, it will still be around for engineTwo
   await cache.deleteFilesByEngine({ engineId: engineOne });
 
@@ -1690,6 +1653,11 @@ add_task(async function test_DeleteFileByEngines() {
     testData,
     "The retrieved data should match the stored data."
   );
+
+  // We should now have one engine associated with the model file
+  retrievedFiles = await cache.listFiles({ model, revision });
+  Assert.equal(retrievedFiles.metadata.engineIds.length, 1);
+  Assert.equal(retrievedFiles.metadata.engineIds[0], engineTwo);
 
   // now deleting via engineTwo
   await cache.deleteFilesByEngine({ engineId: engineTwo });
@@ -1706,6 +1674,10 @@ add_task(async function test_DeleteFileByEngines() {
     null,
     "The data for the deleted model should not exist."
   );
+
+  // Now we should have no more engine
+  Assert.equal(await cache._testGetData(cache.enginesStoreName), null);
+
   await deleteCache(cache);
 });
 
@@ -1734,6 +1706,18 @@ add_task(async function test_ModelHub_DeleteFileByEngines() {
     headers: null,
   });
 
+  // We should have at least one file
+  const dataBeforeDelete = await cache.getFile({
+    engineId: engineOne,
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+  });
+  Assert.notEqual(dataBeforeDelete, null, "The data should exist");
+
+  // We should have at least one engine
+  Assert.notEqual(await cache._testGetData(cache.enginesStoreName), null);
+
   await hub.deleteFilesByEngine({ engineId: engineOne });
 
   // at this point we should not have anymore files
@@ -1748,6 +1732,11 @@ add_task(async function test_ModelHub_DeleteFileByEngines() {
     null,
     "The data for the deleted model should not exist."
   );
+
+  // The engine should be removed from the model/revision/file engine list.
+  // In our case, this means we should have no entry in the engine list since it is
+  // the last
+  Assert.equal(await cache._testGetData(cache.enginesStoreName), null);
 
   await deleteCache(cache);
 });

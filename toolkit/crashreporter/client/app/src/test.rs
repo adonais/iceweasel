@@ -1114,6 +1114,43 @@ fn persistent_settings() {
 }
 
 #[test]
+fn partial_settings_default() {
+    let mut test = GuiTest::new();
+    test.files.add_dir("data_dir").add_file(
+        "data_dir/crashreporter_settings.json",
+        "{\"include_url\":false}",
+    );
+    test.run(|interact| {
+        interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
+    });
+    test.assert_files()
+        .saved_settings(Settings {
+            submit_report: true,
+            include_url: false,
+            test_hardware: true,
+        })
+        .submitted();
+}
+
+#[test]
+fn corrupt_settings_default() {
+    let mut test = GuiTest::new();
+    test.files
+        .add_dir("data_dir")
+        .add_file("data_dir/crashreporter_settings.json", "not valid json");
+    test.run(|interact| {
+        interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
+    });
+    test.assert_files()
+        .saved_settings(Settings {
+            submit_report: true,
+            include_url: true,
+            test_hardware: true,
+        })
+        .submitted();
+}
+
+#[test]
 fn send_memtest_output() {
     let mut test = GuiTest::new();
     test.config.run_memtest = true;

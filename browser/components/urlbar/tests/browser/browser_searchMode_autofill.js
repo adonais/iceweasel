@@ -9,9 +9,12 @@
 "use strict";
 
 add_setup(async function () {
-  for (let i = 0; i < 5; i++) {
-    await PlacesTestUtils.addVisits([{ uri: "http://example.com/" }]);
-  }
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
   let defaultEngine = Services.search.getEngineByName("Example");

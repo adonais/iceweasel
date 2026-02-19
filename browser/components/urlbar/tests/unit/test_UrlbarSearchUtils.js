@@ -9,26 +9,62 @@ const { updateAppInfo } = ChromeUtils.importESModule(
   "resource://testing-common/AppInfo.sys.mjs"
 );
 
+const SEARCH_CONFIG = [
+  {
+    recordType: "engine",
+    identifier: "testdefault",
+    base: {
+      name: "Default Engine",
+      urls: {
+        search: {
+          base: "https://www.example.com/search",
+          searchTermParamName: "q",
+        },
+      },
+    },
+  },
+  {
+    // For testing add/remove app provided engine.
+    recordType: "engine",
+    identifier: "aliased",
+    base: {
+      name: "Aliased Engine",
+      urls: {
+        search: {
+          base: "https://aliased.example.com/search",
+          searchTermParamName: "q",
+        },
+      },
+      aliases: ["aliased"],
+    },
+  },
+  {
+    recordType: "defaultEngines",
+    globalDefault: "testdefault",
+    specificDefaults: [],
+  },
+];
+
 let baconEngineExtension;
 
 add_setup(async function () {
   updateAppInfo({
     name: "firefox",
   });
-});
 
-add_task(async function () {
-  await UrlbarSearchUtils.init();
   // Tell the search service we are running in the US.  This also has the
   // desired side-effect of preventing our geoip lookup.
   Services.prefs.setCharPref("browser.search.region", "US");
 
-  Services.search.restoreDefaultEngines();
-  Services.search.resetToAppDefaultEngine();
+  SearchTestUtils.setRemoteSettingsConfig(SEARCH_CONFIG);
+  await Services.search.init();
+
+  await UrlbarSearchUtils.init();
 });
 
 add_task(async function search_engine_match() {
   let engine = await Services.search.getDefault();
+  Assert.equal(engine.name, "Default Engine", "Default engine is correct.");
   let domain = engine.searchUrlDomain;
   let token = domain.substr(0, 1);
   let matchedEngine = (
@@ -40,7 +76,7 @@ add_task(async function search_engine_match() {
 add_task(async function no_match() {
   Assert.equal(
     0,
-    (await UrlbarSearchUtils.enginesForDomainPrefix("test")).length
+    (await UrlbarSearchUtils.enginesForDomainPrefix("nomatchprefix")).length
   );
 });
 
@@ -192,19 +228,19 @@ add_task(async function remove_search_engine_nomatch() {
   );
 });
 
-add_task(async function test_builtin_aliased_search_engine_match() {
-  let engine = await UrlbarSearchUtils.engineForAlias("@google");
+add_task(async function test_app_provided_aliased_search_engine_match() {
+  let engine = await UrlbarSearchUtils.engineForAlias("@aliased");
   Assert.ok(engine);
-  Assert.equal(engine.name, "Google");
+  Assert.equal(engine.name, "Aliased Engine");
   let promiseTopic = promiseSearchTopic("engine-changed");
   await Promise.all([Services.search.removeEngine(engine), promiseTopic]);
-  let matchedEngine = await UrlbarSearchUtils.engineForAlias("@google");
+  let matchedEngine = await UrlbarSearchUtils.engineForAlias("@aliased");
   Assert.ok(!matchedEngine);
   engine.hidden = false;
   await TestUtils.waitForCondition(() =>
-    UrlbarSearchUtils.engineForAlias("@google")
+    UrlbarSearchUtils.engineForAlias("@aliased")
   );
-  engine = await UrlbarSearchUtils.engineForAlias("@google");
+  engine = await UrlbarSearchUtils.engineForAlias("@aliased");
   Assert.ok(engine);
 });
 

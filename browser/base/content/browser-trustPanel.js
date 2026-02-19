@@ -5,6 +5,7 @@
 /* import-globals-from browser-siteProtections.js */
 
 ChromeUtils.defineESModuleGetters(this, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
@@ -111,6 +112,7 @@ const SMARTBLOCK_EMBED_INFO = [
 class TrustPanel {
   #state = null;
   #secInfo = null;
+  #host = null;
   #uri = null;
   #uriHasHost = null;
   #pageExtensionPolicy = null;
@@ -173,10 +175,18 @@ class TrustPanel {
     this.showPopup({ event, openingReason: "shieldButtonClicked" });
   }
 
-  onContentBlockingEvent(event, _webProgress, _isSimulated, _previousState) {
-    if (!this.#enabled) {
+  async onContentBlockingEvent(
+    event,
+    webProgress,
+    _isSimulated,
+    _previousState
+  ) {
+    // Only accept contentblocking events for uris that we initialised `updateIdentity`
+    // with, this can go wrong if trustpanel is enabled mid page load.
+    if (!this.#enabled || webProgress.browsingContext.currentURI != this.#uri) {
       return;
     }
+
     // First update all our internal state based on the allowlist and the
     // different blockers:
     this.anyDetected = false;
@@ -198,6 +208,10 @@ class TrustPanel {
       blocker.activated = blocker.isBlocking(event);
       this.anyDetected = this.anyDetected || blocker.isDetected(event);
       this.anyBlocking = this.anyBlocking || blocker.activated;
+    }
+
+    if (this.#popup) {
+      await this.#updatePopup();
     }
   }
 
@@ -247,9 +261,10 @@ class TrustPanel {
     }
   }
 
-  showPopup(opts = {}) {
+  async showPopup(opts = {}) {
     this.#initializePopup();
-    this.#updatePopup();
+    await this.#updatePopup();
+
     this.#openingReason = opts.reason;
 
     let anchor = document.getElementById("trust-icon-container");
@@ -309,24 +324,28 @@ class TrustPanel {
       icon.classList.add("inactive");
     }
 
+    icon.setAttribute("tooltiptext", this.#tooltipText());
     icon.classList.toggle("chickletShown", this.#isSecureInternalUI);
   }
 
   async #updatePopup() {
-    let secureConnection = this.#isSecurePage();
-    let connection = secureConnection ? "secure" : "not-secure";
-
-    this.#popup.setAttribute("connection", connection);
+    this.#host = BrowserUtils.formatURIForDisplay(this.#uri, {
+      onlyBaseDomain: true,
+    });
+    this.#popup.setAttribute("connection", this.#connectionState());
     this.#popup.setAttribute(
       "tracking-protection",
       this.#trackingProtectionStatus()
     );
 
+    await this.#updateMainView();
+  }
+
+  async #updateMainView() {
+    let secureConnection = this.#isSecurePage();
     let assets = this.#trackingProtectionEnabled
       ? ETP_ENABLED_ASSETS
       : ETP_DISABLED_ASSETS;
-    let host = window.gIdentityHandler.getHostForDisplay();
-    this.host = host;
 
     if (this.#uri) {
       let favicon = await PlacesUtils.favicons.getFaviconForPage(this.#uri);
@@ -341,12 +360,12 @@ class TrustPanel {
       this.#trackingProtectionEnabled
         ? "trustpanel-etp-toggle-on"
         : "trustpanel-etp-toggle-off",
-      { host }
+      { host: this.#host }
     );
 
     let hostElement = document.getElementById("trustpanel-popup-host");
-    hostElement.setAttribute("value", host);
-    hostElement.setAttribute("tooltiptext", host);
+    hostElement.setAttribute("value", this.#host);
+    hostElement.setAttribute("tooltiptext", this.#host);
 
     document.l10n.setAttributes(
       document.getElementById("trustpanel-etp-label"),
@@ -371,47 +390,41 @@ class TrustPanel {
         : "trustpanel-connection-label-insecure"
     );
 
-    let canHandle = ContentBlockingAllowList.canHandle(
-      window.gBrowser.selectedBrowser
+    this.#updateAttribute(
+      document.getElementById("trustpanel-blocker-section"),
+      "hidden",
+      !this.anyDetected
     );
-    document
-      .getElementById("trustpanel-toggle")
-      .toggleAttribute("disabled", !canHandle);
-    document
-      .getElementById("trustpanel-toggle-section")
-      .toggleAttribute("disabled", !canHandle);
+    await this.#updateBlockerView();
+  }
 
-    if (!this.anyDetected) {
-      document.getElementById("trustpanel-blocker-section").hidden = true;
-    } else {
-      let count = this.#fetchSmartBlocked().length;
-      let blocked = [];
-      let detected = [];
+  async #updateBlockerView() {
+    let count = this.#fetchSmartBlocked().length;
+    let blocked = [];
+    let detected = [];
 
-      for (let blocker of Object.values(this.#blockers)) {
-        if (blocker.isBlocking(this.#lastEvent)) {
-          blocked.push(blocker);
-          count += await blocker.getBlockerCount();
-        } else if (blocker.isDetected(this.#lastEvent)) {
-          detected.push(blocker);
-        }
+    for (let blocker of Object.values(this.#blockers)) {
+      if (blocker.isBlocking(this.#lastEvent)) {
+        blocked.push(blocker);
+        count += await blocker.getBlockerCount();
+      } else if (blocker.isDetected(this.#lastEvent)) {
+        detected.push(blocker);
       }
-
-      document.l10n.setArgs(
-        document.getElementById("trustpanel-blocker-section-header"),
-        { count }
-      );
-      this.#addButtons("trustpanel-blocked", blocked, true);
-      this.#addButtons("trustpanel-detected", detected, false);
-
-      document
-        .getElementById("trustpanel-blocker-section")
-        .removeAttribute("hidden");
-
-      document
-        .getElementById("trustpanel-smartblock-section")
-        .toggleAttribute("hidden", !this.#addSmartblockEmbedToggles());
     }
+
+    this.#addButtons("trustpanel-blocked", blocked, true);
+    this.#addButtons("trustpanel-detected", detected, false);
+
+    document
+      .getElementById("trustpanel-smartblock-section")
+      .toggleAttribute("hidden", !this.#addSmartblockEmbedToggles());
+
+    // This element is in the main view but updated in case
+    // any content blocking events were missed.
+    document.l10n.setArgs(
+      document.getElementById("trustpanel-blocker-section-header"),
+      { count }
+    );
   }
 
   async #showSecurityPopup() {
@@ -443,7 +456,7 @@ class TrustPanel {
     document.l10n.setAttributes(
       document.getElementById("trustpanel-securityInformationView"),
       "trustpanel-site-information-header",
-      { host: this.host }
+      { host: this.#host }
     );
 
     let customRoot = this.#isSecureConnection ? this.#hasCustomRoot() : false;
@@ -484,8 +497,9 @@ class TrustPanel {
     document.l10n.setAttributes(
       document.getElementById("trustpanel-blockerView"),
       "trustpanel-blocker-header",
-      { host: this.host }
+      { host: this.#host }
     );
+    await this.#updateBlockerView();
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-blockerView", event.target);
@@ -850,7 +864,7 @@ class TrustPanel {
     if (this.#isEV) {
       let iData = this.#getIdentityData();
       owner = iData.subjectOrg;
-      verifier = this._identityIconLabel.tooltipText;
+      verifier = this.#tooltipText();
 
       // Build an appropriate supplemental block out of whatever location data we have
       if (iData.city) {
@@ -1269,6 +1283,9 @@ class TrustPanel {
   }
 
   async observe(subject, topic) {
+    if (!this.#enabled) {
+      return;
+    }
     switch (topic) {
       case "smartblock:open-protections-panel": {
         if (gBrowser.selectedBrowser.browserId !== subject.browserId) {

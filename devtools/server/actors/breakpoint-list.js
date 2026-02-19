@@ -23,7 +23,7 @@ const { BREAKPOINTS, XHR_BREAKPOINTS, EVENT_BREAKPOINTS } = SUPPORTED_DATA;
  * will be forwarded to the WatcherActor to populate the shared session data available to
  * all DevTools targets.
  *
- * @constructor
+ * @class
  */
 class BreakpointListActor extends Actor {
   constructor(watcherActor) {

@@ -365,7 +365,11 @@ static uint32_t gLastTouchID = 0;
 // throw it away otherwise.
 MOZ_RUNINIT static GUniquePtr<GdkEventCrossing> sStoredLeaveNotifyEvent;
 
-#define NS_WINDOW_TITLE_MAX_LENGTH 4095
+// GDK's MAX_WL_BUFFER_SIZE is 4083 (4096 minus header, string
+// argument length and NUL byte). Here truncates the string length
+// further to prevent Wayland protocol message size limit exceeded
+// errors.  See bug 2001083.
+#define NS_WINDOW_TITLE_MAX_LENGTH 2048
 
 // cursor cache
 static GdkCursor* gCursorCache[eCursorCount];
@@ -427,7 +431,6 @@ nsWindow::nsWindow()
       mHasMappedToplevel(false),
       mPanInProgress(false),
       mPendingBoundsChange(false),
-      mPendingBoundsChangeMayChangeCsdMargin(false),
       mTitlebarBackdropState(false),
       mAlwaysOnTop(false),
       mIsTransparent(false),
@@ -479,7 +482,7 @@ nsWindow::nsWindow()
 
 bool nsWindow::WaylandPipEnabled() const {
 #ifdef MOZ_WAYLAND
-  return mIsPIPWindow &&
+  return mPiPType == PiPType::MediaPiP &&
          StaticPrefs::widget_wayland_experimental_pip_enabled_AtStartup() &&
          GdkIsWaylandDisplay() && WaylandDisplayGet()->GetPipShell();
 #else
@@ -606,8 +609,8 @@ void nsWindow::DispatchResized() {
 
 #ifdef MOZ_WAYLAND
   if (mSurface) {
-    LOG("  WaylanSurface unscaled size [%d, %d]", mClientArea.Size().width,
-        mClientArea.Size().height);
+    LOG("  WaylandSurface unscaled size [%d, %d]", mClientArea.width,
+        mClientArea.height);
     mSurface->SetSize(mClientArea.Size());
   }
 #endif
@@ -618,11 +621,10 @@ void nsWindow::DispatchResized() {
   }
 
   if (mWidgetListener) {
-    mWidgetListener->WindowResized(this, clientSize.width, clientSize.height);
+    mWidgetListener->WindowResized(this, clientSize);
   }
   if (mAttachedWidgetListener) {
-    mAttachedWidgetListener->WindowResized(this, clientSize.width,
-                                           clientSize.height);
+    mAttachedWidgetListener->WindowResized(this, clientSize);
   }
 }
 
@@ -1112,21 +1114,20 @@ DesktopIntRect nsWindow::ToDesktopPixels(const LayoutDeviceIntRect& aRect) {
 void nsWindow::ResizeInt(const Maybe<DesktopIntPoint>& aMove,
                          DesktopIntSize aSize) {
   LOG("nsWindow::ResizeInt w:%d h:%d\n", aSize.width, aSize.height);
-
-  const bool moved =
-      aMove && (*aMove != mLastMoveRequest || mClientArea.TopLeft() != *aMove);
+  auto currentBounds = GetScreenBoundsUnscaled();
+  const bool moved = aMove && (*aMove != mLastMoveRequest ||
+                               currentBounds.TopLeft() != *aMove);
   if (moved) {
     LOG("  with move to left:%d top:%d", aMove->x.value, aMove->y.value);
     mLastMoveRequest = *aMove;
   }
 
-  const bool resized = aSize != mLastSizeRequest || mClientArea.Size() != aSize;
-#if MOZ_LOGGING
+  const bool resized =
+      aSize != mLastSizeRequest || currentBounds.Size() != aSize;
   LOG("  resized %d aSize [%d, %d] mLastSizeRequest [%d, %d] "
-      "mClientArea [%d, %d]",
+      "bounds [%d, %d]",
       resized, aSize.width, aSize.height, mLastSizeRequest.width,
-      mLastSizeRequest.height, mClientArea.width, mClientArea.height);
-#endif
+      mLastSizeRequest.height, currentBounds.width, currentBounds.height);
 
   mLastSizeRequest = aSize;
 
@@ -1614,50 +1615,6 @@ void nsWindow::WaylandPopupHierarchyCalculatePositions() {
                              GTK_WINDOW(popup->mWaylandPopupPrev->mShell));
     popup = popup->mWaylandPopupNext;
   }
-
-  popup = this;
-  while (popup) {
-    // Anchored window has mPopupPosition already calculated against
-    // its parent, no need to recalculate.
-    LOG("  popup [%p] bounds [%d, %d] -> [%d x %d]", popup,
-        (int)(popup->mClientArea.x), (int)(popup->mClientArea.y),
-        (int)(popup->mClientArea.width), (int)(popup->mClientArea.height));
-#ifdef MOZ_LOGGING
-    if (LOG_ENABLED()) {
-      if (nsMenuPopupFrame* popupFrame = GetPopupFrame()) {
-        auto r = LayoutDeviceRect::FromAppUnitsRounded(
-            popupFrame->GetRect(),
-            popupFrame->PresContext()->AppUnitsPerDevPixel());
-        LOG("  popup [%p] layout [%d, %d] -> [%d x %d]", popup, r.x, r.y,
-            r.width, r.height);
-      }
-    }
-#endif
-    if (popup->WaylandPopupIsFirst()) {
-      LOG("  popup [%p] has toplevel as parent", popup);
-      popup->mRelativePopupPosition = popup->mPopupPosition;
-    } else {
-      if (popup->mPopupAnchored) {
-        LOG("  popup [%p] is anchored", popup);
-        if (!popup->mPopupMatchesLayout) {
-          NS_WARNING("Anchored popup does not match layout!");
-        }
-      }
-      GdkPoint parent = popup->WaylandGetParentPosition();
-
-      LOG("  popup [%p] uses transformed coordinates\n", popup);
-      LOG("    parent position [%d, %d]\n", parent.x, parent.y);
-      LOG("    popup position [%d, %d]\n", popup->mPopupPosition.x,
-          popup->mPopupPosition.y);
-
-      popup->mRelativePopupPosition.x = popup->mPopupPosition.x - parent.x;
-      popup->mRelativePopupPosition.y = popup->mPopupPosition.y - parent.y;
-    }
-    LOG("  popup [%p] transformed popup coordinates from [%d, %d] to [%d, %d]",
-        popup, popup->mPopupPosition.x, popup->mPopupPosition.y,
-        popup->mRelativePopupPosition.x, popup->mRelativePopupPosition.y);
-    popup = popup->mWaylandPopupNext;
-  }
 }
 
 bool nsWindow::WaylandPopupIsContextMenu() {
@@ -1699,7 +1656,7 @@ bool nsWindow::WaylandPopupIsFirst() {
   return !mWaylandPopupPrev || !mWaylandPopupPrev->mWaylandToplevel;
 }
 
-nsWindow* nsWindow::GetEffectiveParent() {
+nsWindow* nsWindow::GetEffectiveParent() const {
   GtkWindow* parentGtkWindow = gtk_window_get_transient_for(GTK_WINDOW(mShell));
   if (!parentGtkWindow || !GTK_IS_WIDGET(parentGtkWindow)) {
     return nullptr;
@@ -1707,15 +1664,19 @@ nsWindow* nsWindow::GetEffectiveParent() {
   return get_window_for_gtk_widget(GTK_WIDGET(parentGtkWindow));
 }
 
-GdkPoint nsWindow::WaylandGetParentPosition() {
-  GdkPoint topLeft = {0, 0};
+DesktopIntPoint nsWindow::WaylandGetParentPosition() const {
+  MOZ_ASSERT(IsPopup());
   nsWindow* window = GetEffectiveParent();
-  if (window->IsPopup()) {
-    auto offset = window->WidgetToScreenOffsetUnscaled();
-    topLeft = GdkPoint{offset.x, offset.y};
+  if (NS_WARN_IF(!window) || !window->IsPopup()) {
+    return {0, 0};
   }
-  LOG("nsWindow::WaylandGetParentPosition() [%d, %d]\n", topLeft.x, topLeft.y);
-  return topLeft;
+  // If our parent is a popup, offset to our toplevel bounds (note that in
+  // Wayland there's no global coordinate space, so our "screen" offset is
+  // really relative to the origin of our toplevel).
+  DesktopIntPoint offset = window->WidgetToScreenOffsetUnscaled();
+  LOG("nsWindow::WaylandGetParentPosition() [%d, %d]\n", offset.x.value,
+      offset.y.value);
+  return offset;
 }
 
 #ifdef MOZ_LOGGING
@@ -2075,9 +2036,8 @@ void nsWindow::WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize) {
     }
   }
   if (aMove) {
-    auto pos = ToLayoutDevicePixels(mClientArea);
-    LOG("  needPositionUpdate, bounds [%d, %d]", pos.x, pos.y);
-    NotifyWindowMoved(pos.x, pos.y, ByMoveToRect::Yes);
+    LOG("  needPositionUpdate, bounds [%d, %d]", mClientArea.x, mClientArea.y);
+    NotifyWindowMoved(mClientArea.TopLeft(), ByMoveToRect::Yes);
   }
 }
 
@@ -2119,7 +2079,7 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
 
   const GdkRectangle finalGdkRect = [&] {
     GdkRectangle finalRect = *aFinalSize;
-    GdkPoint parent = WaylandGetParentPosition();
+    DesktopIntPoint parent = WaylandGetParentPosition();
     finalRect.x += parent.x;
     finalRect.y += parent.y;
     return finalRect;
@@ -2129,28 +2089,25 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   // perfectly round-trip. Compare gdk rects to check whether size or positions
   // have changed from what we'd request otherwise, in order to avoid
   // flickering.
-  const GdkRectangle currentGdkRect{mClientArea.x, mClientArea.y,
-                                    mClientArea.width, mClientArea.height};
+  const auto currentRect = mClientArea;
   auto scale = GdkCeiledScaleFactor();
   auto IsSubstantiallyDifferent = [=](gint a, gint b) {
     return std::abs(a - b) > scale;
   };
 
   const bool needsPositionUpdate =
-      IsSubstantiallyDifferent(finalGdkRect.x, currentGdkRect.x) ||
-      IsSubstantiallyDifferent(finalGdkRect.y, currentGdkRect.y);
+      IsSubstantiallyDifferent(finalGdkRect.x, currentRect.x) ||
+      IsSubstantiallyDifferent(finalGdkRect.y, currentRect.y);
   const bool needsSizeUpdate =
-      IsSubstantiallyDifferent(finalGdkRect.width, currentGdkRect.width) ||
-      IsSubstantiallyDifferent(finalGdkRect.height, currentGdkRect.height);
+      IsSubstantiallyDifferent(finalGdkRect.width, currentRect.width) ||
+      IsSubstantiallyDifferent(finalGdkRect.height, currentRect.height);
   const DesktopIntRect newClientArea = DesktopIntRect(
       finalGdkRect.x, finalGdkRect.y, finalGdkRect.width, finalGdkRect.height);
 
-  LOG("  orig gdk [%d, %d] -> [%d x %d]", currentGdkRect.x, currentGdkRect.y,
-      currentGdkRect.width, currentGdkRect.height);
+  LOG("  orig gdk [%d, %d] -> [%d x %d]", currentRect.x, currentRect.y,
+      currentRect.width, currentRect.height);
   LOG("  new gdk [%d, %d] -> [%d x %d]\n", finalGdkRect.x, finalGdkRect.y,
       finalGdkRect.width, finalGdkRect.height);
-  LOG("  orig mClientArea [%d, %d] -> [%d x %d]", mClientArea.x, mClientArea.y,
-      mClientArea.width, mClientArea.height);
   LOG("  new mClientArea [%d, %d] -> [%d x %d]", newClientArea.x,
       newClientArea.y, newClientArea.width, newClientArea.height);
 
@@ -2223,22 +2180,19 @@ bool nsWindow::IsPopupDirectionRTL() {
 // It's used when we position noautihode popup and we don't use xdg_positioner.
 // See Bug 1718867
 void nsWindow::WaylandPopupSetDirectPosition() {
-  GdkRectangle rect{mLastMoveRequest.x, mLastMoveRequest.y,
-                    mLastSizeRequest.width, mLastSizeRequest.height};
+  const DesktopIntRect newRect(mLastMoveRequest, mLastSizeRequest);
 
-  LOG("nsWindow::WaylandPopupSetDirectPosition %d,%d -> %d x %d\n", rect.x,
-      rect.y, rect.width, rect.height);
+  LOG("nsWindow::WaylandPopupSetDirectPosition %s", ToString(newRect).c_str());
 
-  mPopupPosition = {rect.x, rect.y};
-  mClientArea.MoveTo(mLastMoveRequest);
-  mClientArea.SizeTo(mLastSizeRequest);
+  mClientArea = newRect;
 
   if (mIsDragPopup) {
-    gtk_window_move(GTK_WINDOW(mShell), rect.x, rect.y);
-    gtk_window_resize(GTK_WINDOW(mShell), rect.width, rect.height);
+    gtk_window_move(GTK_WINDOW(mShell), newRect.x, newRect.y);
+    gtk_window_resize(GTK_WINDOW(mShell), newRect.width, newRect.height);
     // DND window is placed inside container so we need to make hard size
     // request to ensure parent container is resized too.
-    gtk_widget_set_size_request(GTK_WIDGET(mShell), rect.width, rect.height);
+    gtk_widget_set_size_request(GTK_WIDGET(mShell), newRect.width,
+                                newRect.height);
     return;
   }
 
@@ -2253,33 +2207,33 @@ void nsWindow::WaylandPopupSetDirectPosition() {
   }
 
   int parentWidth = gdk_window_get_width(gdkWindow);
-  int popupWidth = rect.width;
+  int popupWidth = newRect.width;
 
   int x;
   gdk_window_get_position(gdkWindow, &x, nullptr);
 
+  auto pos = newRect.TopLeft();
   // If popup is bigger than main window just center it.
   if (popupWidth > parentWidth) {
-    mPopupPosition.x = -(parentWidth - popupWidth) / 2 + x;
+    pos.x = -(parentWidth - popupWidth) / 2 + x;
   } else {
-    if (mPopupPosition.x < x) {
+    if (pos.x < x) {
       // Stick with left window edge if it's placed too left
-      mPopupPosition.x = x;
-    } else if (mPopupPosition.x + popupWidth > parentWidth + x) {
+      pos.x = x;
+    } else if (pos.x + popupWidth > parentWidth + x) {
       // Stick with right window edge otherwise
-      mPopupPosition.x = parentWidth + x - popupWidth;
+      pos.x = parentWidth + x - popupWidth;
     }
   }
 
-  LOG("  set position [%d, %d]\n", mPopupPosition.x, mPopupPosition.y);
-  gtk_window_move(GTK_WINDOW(mShell), mPopupPosition.x, mPopupPosition.y);
+  LOG("  set position [%d, %d]\n", pos.x.value, pos.y.value);
+  gtk_window_move(GTK_WINDOW(mShell), pos.x, pos.y);
 
-  LOG("  set size [%d, %d]\n", rect.width, rect.height);
-  gtk_window_resize(GTK_WINDOW(mShell), rect.width, rect.height);
+  LOG("  set size [%d, %d]\n", newRect.width, newRect.height);
+  gtk_window_resize(GTK_WINDOW(mShell), newRect.width, newRect.height);
 
-  if (mPopupPosition.x != rect.x) {
-    mClientArea.MoveTo(mPopupPosition.x, mPopupPosition.y);
-    LOG("  setting new client area [%d, %d]\n", mClientArea.x, mClientArea.y);
+  if (pos.x != newRect.x) {
+    mClientArea.MoveTo(pos);
     WaylandPopupPropagateChangesToLayout(/* move */ true, /* resize */ false);
   }
 }
@@ -2299,15 +2253,21 @@ bool nsWindow::WaylandPopupFitsToplevelWindow() {
 
   int parentWidth = gdk_window_get_width(toplevelGdkWindow);
   int parentHeight = gdk_window_get_height(toplevelGdkWindow);
-  LOG("  parent size %d x %d", parentWidth, parentHeight);
+  DesktopIntRect parentWidgetRect(0, 0, parentWidth, parentHeight);
 
-  GdkRectangle requestedRect{mLastMoveRequest.x, mLastMoveRequest.y,
-                             mLastSizeRequest.width, mLastSizeRequest.height};
-  LOG("  popup topleft %d, %d size %d x %d", requestedRect.x, requestedRect.y,
-      requestedRect.width, requestedRect.height);
-  bool fits = requestedRect.x >= 0 && requestedRect.y >= 0 &&
-              requestedRect.x + requestedRect.width <= parentWidth &&
-              requestedRect.y + requestedRect.height <= parentHeight;
+  nsWindow* parentWindow = get_window_for_gtk_widget(GTK_WIDGET(parent));
+  if (!parentWindow) {
+    return false;
+  }
+
+  LOG("  parent size %d x %d", parentWindow->mClientArea.width,
+      parentWindow->mClientArea.height);
+
+  DesktopIntRect popupRect(mLastMoveRequest, mLastSizeRequest);
+  LOG("  popup topleft %d, %d size %d x %d", popupRect.x, popupRect.y,
+      popupRect.width, popupRect.height);
+
+  bool fits = parentWindow->mClientArea.Contains(popupRect);
   LOG("  fits %d", fits);
   return fits;
 }
@@ -2333,19 +2293,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
     mWaylandApplyPopupPositionBeforeShow = false;
   }
 
-  // We expect all Wayland popus have zero margin. If not, just position
-  // it as is and throw an error message.
-  if (!mClientMargin.IsAllZero()) {
-    gfxCriticalNoteOnce << "Invalid non-zero margin for WaylandPopup!";
-    if (aMove) {
-      gtk_window_move(GTK_WINDOW(mShell), mLastMoveRequest.x,
-                      mLastMoveRequest.y);
-    }
-    if (aResize) {
-      gtk_window_resize(GTK_WINDOW(mShell), mLastSizeRequest.width,
-                        mLastSizeRequest.height);
-    }
-  }
+  MOZ_ASSERT(mClientMargin.IsAllZero());
 
   if (mWaitingForMoveToRectCallback) {
     LOG("  waiting for move to rect, scheduling");
@@ -2363,12 +2311,12 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   mResizedAfterMoveToRect = false;
 
   bool trackedInHierarchy = WaylandPopupConfigure();
-  // Read popup position from layout if it was moved or newly created.
+  // Read popup position from layout if it was moved.
   // This position is used by move-to-rect method as we need anchor and other
   // info to place popup correctly.
   // We need WaylandPopupConfigure() to be called before to have all needed
   // popup info in place (mainly the anchored flag).
-  if (aMove || !mPopupMoveToRectParams.mAnchorSet) {
+  if (aMove) {
     mPopupMoveToRectParams = WaylandPopupGetPositionFromLayout();
   }
   if (!trackedInHierarchy) {
@@ -2391,13 +2339,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   // Mark popup as changed as we're updating position/size.
   mPopupChanged = true;
 
-  // Save popup position for former re-calculations when popup hierarchy
-  // is changed.
-  LOG("  popup position changed from [%d, %d] to [%d, %d]\n", mPopupPosition.x,
-      mPopupPosition.y, rect.x, rect.y);
-  mPopupPosition = {rect.x, rect.y};
-  mClientArea.MoveTo(mLastMoveRequest);
-  mClientArea.SizeTo(mLastSizeRequest);
+  mClientArea = DesktopIntRect(mLastMoveRequest, mLastSizeRequest);
 
   UpdateWaylandPopupHierarchy();
 }
@@ -2563,10 +2505,6 @@ nsWindow::WaylandPopupGetPositionFromLayout() {
     anchorAlign = -anchorAlign;
   }
 
-  // Although we have mPopupPosition / mRelativePopupPosition here
-  // we can't use it. move-to-rect needs anchor rectangle to position a popup
-  // but we have only a point from Resize().
-  //
   // So we need to extract popup position from nsMenuPopupFrame() and duplicate
   // the layout work here.
   LayoutDeviceIntRect anchorRect;
@@ -2705,20 +2643,19 @@ bool nsWindow::WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor,
   }
 
   if (!mPopupMoveToRectParams.mAnchorSet) {
-    LOG("  can't use move-to-rect due missing anchor");
-    return false;
+    mPopupMoveToRectParams = WaylandPopupGetPositionFromLayout();
   }
+
   // Update popup layout coordinates from layout by recent popup hierarchy
   // (calculate correct position according to parent window)
   // and convert to Gtk coordinates.
   DesktopIntRect anchorRect =
       ToDesktopPixels(mPopupMoveToRectParams.mAnchorRect);
   if (!WaylandPopupIsFirst()) {
-    GdkPoint parent = WaylandGetParentPosition();
-    LOG("  subtract parent position from anchor [%d, %d]\n", parent.x,
-        parent.y);
-    anchorRect.x -= parent.x;
-    anchorRect.y -= parent.y;
+    DesktopIntPoint parent = WaylandGetParentPosition();
+    LOG("  subtract parent position from anchor [%d, %d]\n", parent.x.value,
+        parent.y.value);
+    anchorRect.MoveBy(-parent);
   }
 
   *aPopupAnchor = GdkRectangle{anchorRect.x, anchorRect.y, anchorRect.width,
@@ -2826,16 +2763,13 @@ void nsWindow::WaylandPopupMoveImpl() {
   }
 
   LOG("nsWindow::WaylandPopupMove");
-  LOG("  original widget popup position [%d, %d]\n", mPopupPosition.x,
-      mPopupPosition.y);
-  LOG("  relative widget popup position [%d, %d]\n", mRelativePopupPosition.x,
-      mRelativePopupPosition.y);
   LOG("  popup use move to rect %d", mPopupUseMoveToRect);
 
   WaylandPopupPrepareForMove();
 
   if (!mPopupUseMoveToRect) {
-    WaylandPopupMovePlain(mRelativePopupPosition.x, mRelativePopupPosition.y);
+    auto pos = mLastMoveRequest - WaylandGetParentPosition();
+    WaylandPopupMovePlain(pos.x, pos.y);
     // Layout already should be aware of our bounds, since we didn't change it
     // from the widget side for flipping or so.
     return;
@@ -3374,10 +3308,10 @@ LayoutDeviceIntCoord GetXWindowBorder(GdkWindow* aWin) {
                           top corner, so matches CSD size - (40,40).
 */
 #ifdef MOZ_X11
-void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
-  LOG("RecomputeBoundsX11(%d)", aMayChangeCsdMargin);
+auto nsWindow::Bounds::ComputeX11(const nsWindow* aWindow) -> Bounds {
+  LOG_WIN(aWindow, "Bounds::ComputeX11()");
 
-  auto* toplevel = GetToplevelGdkWindow();
+  auto* toplevel = aWindow->GetToplevelGdkWindow();
 
   // Window position and size with window decoration AND system titlebar.
   auto GetFrameTitlebarBounds = [&](GdkWindow* aWin) {
@@ -3385,10 +3319,13 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
     gdk_window_get_frame_extents(aWin, &b);
     if (gtk_check_version(3, 24, 35) &&
         gdk_window_get_window_type(aWin) == GDK_WINDOW_TEMP) {
+      LOG_WIN(
+          aWindow,
+          "  GetFrameTitlebarBounds gtk 3.24.35 & GDK_WINDOW_TEMP workaround");
       // Workaround for https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4820
       // Bug 1775017 Gtk < 3.24.35 returns scaled values for
       // override redirected window on X11.
-      double scale = FractionalScaleFactor();
+      double scale = aWindow->FractionalScaleFactor();
       return DesktopIntRect(int(round(b.x / scale)), int(round(b.y / scale)),
                             int(round(b.width / scale)),
                             int(round(b.height / scale)));
@@ -3396,10 +3333,11 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
     auto result = DesktopIntRect(b.x, b.y, b.width, b.height);
     if (gtk_check_version(3, 24, 50)) {
       if (auto border = GetXWindowBorder(aWin)) {
+        LOG_WIN(aWindow, "  GetFrameTitlebarBounds gtk 3.24.50 workaround");
         // Workaround for
         // https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/8423
         // Bug 1958174 Gtk doesn't account for window border sizes on X11.
-        double scale = FractionalScaleFactor();
+        double scale = aWindow->FractionalScaleFactor();
         result.width += 2 * border / scale;
         result.height += 2 * border / scale;
       }
@@ -3407,72 +3345,82 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
     return result;
   };
 
-  // Window position and size with decoration byt WITHOUT system titlebar.
+  // Window position and size with decoration but WITHOUT system titlebar.
   auto GetBounds = [&](GdkWindow* aWin) {
     GdkRectangle b{0};
-    if (IsTopLevelWidget() && aWin == toplevel) {
+    if (aWindow->IsTopLevelWidget() && aWin == toplevel) {
       // We want the up-to-date size from the X server, not the last configure
       // event size, to avoid spurious resizes on e.g. sizemode changes.
       gdk_window_get_geometry(aWin, nullptr, nullptr, &b.width, &b.height);
       gdk_window_get_origin(aWin, &b.x, &b.y);
-      return DesktopIntRect(b.x, b.y, b.width, b.height);
+    } else {
+      gdk_window_get_position(aWin, &b.x, &b.y);
+      b.width = gdk_window_get_width(aWin);
+      b.height = gdk_window_get_height(aWin);
     }
-    gdk_window_get_position(aWin, &b.x, &b.y);
-    b.width = gdk_window_get_width(aWin);
-    b.height = gdk_window_get_height(aWin);
     return DesktopIntRect(b.x, b.y, b.width, b.height);
   };
 
   const auto toplevelBoundsWithTitlebar = GetFrameTitlebarBounds(toplevel);
-  const auto toplevelBounds = GetBounds(toplevel);
+  LOG_WIN(aWindow, "  toplevelBoundsWithTitlebar %s",
+          ToString(toplevelBoundsWithTitlebar).c_str());
 
-  // Unscaled bounds include decorations and titlebar (X11)
-  DesktopIntRect finalBounds = [&] {
-    auto bounds = toplevelBoundsWithTitlebar;
-    // The toplevelBoundsWithTitlebar should always really be as wide as the
-    // toplevel bounds, but when opening multiple windows in quick succession on
-    // X11 they might not (see bug 1988787). This prevents having a really small
-    // window in such case.
-    bounds.width = std::max(bounds.width, toplevelBounds.width);
-    bounds.height = std::max(bounds.height, toplevelBounds.height);
-    return bounds;
-  }();
-
-  const bool decorated =
-      IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
-  if (!decorated) {
-    mClientMargin = {};
-  } else if (aMayChangeCsdMargin) {
-    // TODO: Do we really need so complex margin calculation on X11?
-    const DesktopIntRect clientRectRelativeToFrame = [&] {
-      auto topLevelBoundsRelativeToFrame = toplevelBounds;
-      topLevelBoundsRelativeToFrame -= toplevelBoundsWithTitlebar.TopLeft();
-      if (!mGdkWindow) {
-        return topLevelBoundsRelativeToFrame;
-      }
-      auto gdkWindowBounds = GetBounds(mGdkWindow);
-      if (gdkWindowBounds.X() < 0 || gdkWindowBounds.Y() < 0 ||
-          gdkWindowBounds.Width() <= 1 || gdkWindowBounds.Height() <= 1) {
-        // If we don't have gdkwindow bounds, assume we take the whole toplevel.
-        return topLevelBoundsRelativeToFrame;
-      }
-      // gdkWindowBounds is relative to topLevelBounds already.
-      return gdkWindowBounds + topLevelBoundsRelativeToFrame.TopLeft();
-    }();
-
-    mClientMargin = DesktopIntRect(DesktopIntPoint(), finalBounds.Size()) -
-                    clientRectRelativeToFrame;
-    mClientMargin.EnsureAtLeast(DesktopIntMargin());
-  } else {
-    // Assume the client margin remains the same.
+  if (aWindow->GetSizeMode() == nsSizeMode_Fullscreen) {
+    // In order to avoid spurious extra resizes during fullscreen transitions,
+    // we assume we're not decorated.
+    return {.mClientArea = toplevelBoundsWithTitlebar, .mClientMargin = {}};
   }
 
-  mClientArea = finalBounds;
-  mClientArea.Deflate(mClientMargin);
+  const auto toplevelBounds = GetBounds(toplevel);
+  LOG_WIN(aWindow, "  toplevelBounds %s", ToString(toplevelBounds).c_str());
+
+  // Offset from system decoration to gtk decoration.
+  const auto systemDecorationOffset = [&] {
+    auto offset =
+        toplevelBounds.TopLeft() - toplevelBoundsWithTitlebar.TopLeft();
+    // If the WM sends us broken values, try to clamp to something sensible.
+    // The offset will never be more than the bounds difference, nor negative.
+    // See bug 2001722 for an example where this happened.
+    offset.x =
+        std::max(std::min(int32_t(offset.x), toplevelBoundsWithTitlebar.width -
+                                                 toplevelBounds.width),
+                 0);
+    offset.y =
+        std::max(std::min(int32_t(offset.y), toplevelBoundsWithTitlebar.height -
+                                                 toplevelBounds.height),
+                 0);
+    return offset;
+  }();
+
+  Bounds result;
+  // This is relative to our parent window, that is, to topLevelBounds.
+  result.mClientArea = GetBounds(aWindow->GetGdkWindow());
+  // Make it relative to topLevelBoundsWithTitlebar
+  result.mClientArea.MoveBy(systemDecorationOffset);
+  LOG_WIN(aWindow, "  mClientArea %s", ToString(result.mClientArea).c_str());
+
+  if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
+      result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
+    // If we don't have gdkwindow bounds, assume we take the whole toplevel
+    // except system decorations.
+    result.mClientArea =
+        DesktopIntRect(systemDecorationOffset, toplevelBounds.Size());
+  }
+
+  result.mClientMargin =
+      DesktopIntRect(DesktopIntPoint(), toplevelBoundsWithTitlebar.Size()) -
+      result.mClientArea;
+  result.mClientMargin.EnsureAtLeast(DesktopIntMargin());
+
+  // We want mClientArea in global coordinates. We derive everything from here,
+  // so move it to global coords.
+  result.mClientArea.MoveBy(toplevelBoundsWithTitlebar.TopLeft());
+  return result;
 }
 #endif
 #ifdef MOZ_WAYLAND
-void nsWindow::RecomputeBoundsWayland(bool aMayChangeCsdMargin) {
+auto nsWindow::Bounds::ComputeWayland(const nsWindow* aWindow) -> Bounds {
+  LOG_WIN(aWindow, "Bounds::ComputeWayland()");
   auto GetBounds = [&](GdkWindow* aWin) {
     GdkRectangle b{0};
     gdk_window_get_position(aWin, &b.x, &b.y);
@@ -3481,75 +3429,60 @@ void nsWindow::RecomputeBoundsWayland(bool aMayChangeCsdMargin) {
     return DesktopIntRect(b.x, b.y, b.width, b.height);
   };
 
-  const auto toplevelBounds = GetBounds(GetToplevelGdkWindow());
-  mClientArea = GetBounds(mGdkWindow);
+  const auto toplevelBounds = GetBounds(aWindow->GetToplevelGdkWindow());
+  LOG_WIN(aWindow, "  toplevelBounds %s", ToString(toplevelBounds).c_str());
 
-  LOG("RecomputeBoundsWayland(%d) GetBounds(mGdkWindow) [%d,%d] -> [%d x %d] "
-      "GetBounds(mShell) [%d,%d] -> [%d x %d]",
-      aMayChangeCsdMargin, mClientArea.x, mClientArea.y, mClientArea.width,
-      mClientArea.height, toplevelBounds.x, toplevelBounds.y,
-      toplevelBounds.width, toplevelBounds.height);
-
-  if (mClientArea.X() < 0 || mClientArea.Y() < 0 || mClientArea.Width() <= 1 ||
-      mClientArea.Height() <= 1) {
-    // If we don't have gdkwindow bounds, assume we take the whole toplevel.
-    mClientArea = toplevelBounds;
+  if (aWindow->GetSizeMode() == nsSizeMode_Fullscreen) {
+    return {.mClientArea = toplevelBounds, .mClientMargin = {}};
   }
 
-  const bool decorated =
-      IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
-  if (!decorated) {
-    mClientMargin = {};
-  } else if (aMayChangeCsdMargin) {
-    mClientMargin =
-        DesktopIntRect(DesktopIntPoint(), toplevelBounds.Size()) - mClientArea;
-    mClientMargin.EnsureAtLeast(DesktopIntMargin());
-  } else {
-    // Assume the client margin remains the same.
+  Bounds result;
+  result.mClientArea = GetBounds(aWindow->GetGdkWindow());
+  LOG_WIN(aWindow, "  bounds %s", ToString(result.mClientArea).c_str());
+
+  if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
+      result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
+    // If we don't have gdkwindow bounds yet, assume we take the whole toplevel.
+    result.mClientArea = toplevelBounds;
   }
+
+  result.mClientMargin =
+      DesktopIntRect(DesktopIntPoint(), toplevelBounds.Size()) -
+      result.mClientArea;
+  result.mClientMargin.EnsureAtLeast(DesktopIntMargin());
+  return result;
 }
 #endif
 
-void nsWindow::RecomputeBounds(bool aMayChangeCsdMargin, bool aScaleChange) {
-  LOG("RecomputeBounds() margin %d scale change %d", aMayChangeCsdMargin,
-      aScaleChange);
-
-  if (aMayChangeCsdMargin || !mPendingBoundsChangeMayChangeCsdMargin) {
-    mPendingBoundsChange = false;
-    mPendingBoundsChangeMayChangeCsdMargin = false;
+auto nsWindow::Bounds::Compute(const nsWindow* aWindow) -> Bounds {
+#ifdef MOZ_X11
+  if (GdkIsX11Display()) {
+    return ComputeX11(aWindow);
   }
+#endif
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    return ComputeWayland(aWindow);
+  }
+#endif
+  MOZ_ASSERT_UNREACHABLE("How?");
+  return {};
+}
+
+void nsWindow::RecomputeBounds(bool aScaleChange) {
+  LOG("RecomputeBounds() scale change %d", aScaleChange);
+  mPendingBoundsChange = false;
 
   auto* toplevel = GetToplevelGdkWindow();
   if (!toplevel || mIsDestroyed) {
     return;
   }
 
-  const auto oldClientArea = mClientArea;
   const auto oldMargin = mClientMargin;
-
-#ifdef MOZ_X11
-  if (GdkIsX11Display()) {
-    RecomputeBoundsX11(aMayChangeCsdMargin);
-  }
-#endif
-#ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
-    RecomputeBoundsWayland(aMayChangeCsdMargin);
-  }
-#endif
-
-#ifdef MOZ_LOGGING
-  if (LOG_ENABLED()) {
-    if (mHasReceivedSizeAllocate) {
-      if (!(mClientArea == mReceivedClientArea)) {
-        LOG("Received and calculated client areas are different! received %s "
-            "calculated %s",
-            ToString(mReceivedClientArea).c_str(),
-            ToString(mClientArea).c_str());
-      }
-    }
-  }
-#endif
+  const auto oldClientArea = mClientArea;
+  const auto newBounds = Bounds::Compute(this);
+  mClientArea = newBounds.mClientArea;
+  mClientMargin = newBounds.mClientMargin;
 
   if (IsPopup()) {
     // Popup windows is not moved by the window manager, and so any change in
@@ -3589,14 +3522,13 @@ void nsWindow::RecomputeBounds(bool aMayChangeCsdMargin, bool aScaleChange) {
 
   // We need to send WindowMoved even if only the client margins changed
   // so that BrowserParent picks up the new offsets.
-  const bool moved = aScaleChange || aMayChangeCsdMargin ||
+  const bool moved = aScaleChange || clientMarginsChanged ||
                      oldClientArea.TopLeft() != mClientArea.TopLeft();
-  const bool resized = aScaleChange || aMayChangeCsdMargin ||
+  const bool resized = aScaleChange || clientMarginsChanged ||
                        oldClientArea.Size() != mClientArea.Size();
 
   if (moved) {
-    auto pos = ToLayoutDevicePixels(mClientArea.TopLeft());
-    NotifyWindowMoved(pos.x, pos.y);
+    NotifyWindowMoved(GetScreenBoundsUnscaled().TopLeft());
   }
   if (resized) {
     DispatchResized();
@@ -3607,7 +3539,7 @@ gboolean nsWindow::OnPropertyNotifyEvent(GtkWidget* aWidget,
                                          GdkEventProperty* aEvent) {
   if (aEvent->atom == gdk_atom_intern("_NET_FRAME_EXTENTS", FALSE)) {
     LOG("OnPropertyNotifyEvent(_NET_FRAME_EXTENTS)");
-    SchedulePendingBounds(MayChangeCsdMargin::Yes);
+    SchedulePendingBounds();
     return FALSE;
   }
   if (!mGdkWindow) {
@@ -4244,11 +4176,14 @@ gboolean nsWindow::OnShellConfigureEvent(GdkEventConfigure* aEvent) {
 
 #ifdef MOZ_LOGGING
   if (LOG_ENABLED()) {
-    auto scale = FractionalScaleFactor();
-    LOG("nsWindow::OnShellConfigureEvent() [%d,%d] -> [%d x %d] scale %.2f "
-        "(scaled size %.2f x %.2f)\n",
-        aEvent->x, aEvent->y, aEvent->width, aEvent->height, scale,
-        aEvent->width * scale, aEvent->height * scale);
+    auto widgetArea =
+        DesktopIntRect(aEvent->x, aEvent->y, aEvent->width, aEvent->height);
+    auto scaledWidgetArea = ToLayoutDevicePixels(widgetArea);
+    LOG("nsWindow::OnShellConfigureEvent() [%d, %d] -> [%d x %d] scale %.2f "
+        "(scaled size %d x %d)\n",
+        widgetArea.x, widgetArea.y, widgetArea.width, widgetArea.height,
+        FractionalScaleFactor(), scaledWidgetArea.width,
+        scaledWidgetArea.height);
   }
 #endif
 
@@ -4265,57 +4200,54 @@ gboolean nsWindow::OnShellConfigureEvent(GdkEventConfigure* aEvent) {
     return FALSE;
   }
 
-  // X11 calc bounds from outer window while Wayland uses
-  // container size after container allocation event.
-  if (GdkIsX11Display()) {
-    SchedulePendingBounds(MayChangeCsdMargin::No);
+  // We generally want to recalculate bounds whenever we get the container
+  // size-allocate event (OnContainerSizeAllocate). Unfortunately some changes
+  // like window moves or tiling might get us a toplevel configure event, but
+  // not a container size-allocate (understandably), so we need to recompute
+  // bounds still.
+  if (IsTopLevelWidget()) {
+    SchedulePendingBounds();
   }
   return FALSE;
 }
 
 void nsWindow::OnContainerSizeAllocate(GtkAllocation* aAllocation) {
-  LOG("nsWindow::OnContainerSizeAllocate [%d,%d] -> [%d x %d] scaled [%.2f] "
-      "[%.2f x %.2f]",
-      aAllocation->x, aAllocation->y, aAllocation->width, aAllocation->height,
-      FractionalScaleFactor(), aAllocation->width * FractionalScaleFactor(),
-      aAllocation->height * FractionalScaleFactor());
-
   mHasReceivedSizeAllocate = true;
-  mReceivedClientArea = DesktopIntRect(aAllocation->x, aAllocation->y,
-                                       aAllocation->width, aAllocation->height);
+  const auto clientArea = DesktopIntRect(
+      aAllocation->x, aAllocation->y, aAllocation->width, aAllocation->height);
+#ifdef MOZ_LOGGING
+  if (LOG_ENABLED()) {
+    auto scaledClientAread = ToLayoutDevicePixels(clientArea);
+    LOG("nsWindow::OnContainerSizeAllocate [%d,%d] -> [%d x %d] scaled [%.2f] "
+        "[%d x %d]",
+        aAllocation->x, aAllocation->y, aAllocation->width, aAllocation->height,
+        FractionalScaleFactor(), scaledClientAread.width,
+        scaledClientAread.height);
+  }
+#endif
 
-  // Bounds will get updated on the main configure.
-  // Gecko permits running nested event loops during processing of events,
-  // GtkWindow callers of gtk_widget_size_allocate expect the signal handlers
-  // to return sometime in the near future.
-  // Also, this runs for both top level size_allocate and MozContainer size
-  // allocate, so even if the client bounds are the same, we need to recompute
-  // the bounds because the client margin might not.
-  SchedulePendingBounds(MayChangeCsdMargin::Yes);
+  SchedulePendingBounds();
 
   // Invalidate the new part of the window now for the pending paint to
   // minimize background flashes (GDK does not do this for external
   // renewClientSizes of toplevels.)
-  if (mClientArea.Size() == mReceivedClientArea.Size()) {
+  if (mClientArea.Size() == clientArea.Size()) {
     return;
   }
 
-  if (mClientArea.width < mReceivedClientArea.width) {
+  if (mClientArea.width < clientArea.width) {
     GdkRectangle rect{mClientArea.width, 0,
-                      mReceivedClientArea.width - mClientArea.width,
-                      mReceivedClientArea.height};
+                      clientArea.width - mClientArea.width, clientArea.height};
     gdk_window_invalidate_rect(mGdkWindow, &rect, FALSE);
   }
-  if (mClientArea.height < mReceivedClientArea.height) {
-    GdkRectangle rect{0, mClientArea.height, mReceivedClientArea.width,
-                      mReceivedClientArea.height - mClientArea.height};
+  if (mClientArea.height < clientArea.height) {
+    GdkRectangle rect{0, mClientArea.height, clientArea.width,
+                      clientArea.height - mClientArea.height};
     gdk_window_invalidate_rect(mGdkWindow, &rect, FALSE);
   }
 }
 
-void nsWindow::SchedulePendingBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
-  mPendingBoundsChangeMayChangeCsdMargin |=
-      aMayChangeCsdMargin == MayChangeCsdMargin::Yes;
+void nsWindow::SchedulePendingBounds() {
   if (mPendingBoundsChange) {
     return;
   }
@@ -4327,7 +4259,11 @@ void nsWindow::SchedulePendingBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
 void nsWindow::MaybeRecomputeBounds() {
   LOG("MaybeRecomputeBounds %d", mPendingBoundsChange);
   if (mPendingBoundsChange) {
-    RecomputeBounds(mPendingBoundsChangeMayChangeCsdMargin);
+    // Make sure GTK has laid out our child window / mContainer properly,
+    // so that we don't get broken client margins, and in order to avoid
+    // spurious resize events.
+    gtk_container_check_resize(GTK_CONTAINER(mShell));
+    RecomputeBounds();
   }
 }
 
@@ -4456,7 +4392,7 @@ Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
     const LayoutDeviceIntPoint& aPoint) {
   // Don't allow resizing maximized/fullscreen windows, nor add extra resizing
   // margins on non PiP windows.
-  if (mSizeMode != nsSizeMode_Normal || !mIsPIPWindow) {
+  if (mSizeMode != nsSizeMode_Normal || mPiPType != PiPType::MediaPiP) {
     return Nothing();
   }
 
@@ -4627,7 +4563,7 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
     // If we set resize cursor on widget level keep it locked and prevent layout
     // to switch it back to default (by synthetic mouse events for instance)
     // until resize is finished. This affects PIP windows only.
-    if (mIsPIPWindow) {
+    if (mPiPType == PiPType::MediaPiP) {
       mWidgetCursorLocked = true;
     }
     return;
@@ -5075,9 +5011,9 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
     DispatchContextMenuEventFromMouseEvent(domButton, aEvent, refPoint);
   }
 
-  // Open window manager menu on PIP window to allow user
+  // Open window manager menu on Media PiP window to allow user
   // to place it on top / all workspaces.
-  if (mAlwaysOnTop && aEvent->button == 3) {
+  if (mPiPType == PiPType::MediaPiP && aEvent->button == 3) {
     TryToShowNativeWindowMenu(aEvent);
   }
 }
@@ -5564,7 +5500,6 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
   }
 
   auto oldSizeMode = mSizeMode;
-  auto oldIsTiled = mIsTiled;
   if (aEvent->new_window_state & GDK_WINDOW_STATE_ICONIFIED) {
     LOG("\tIconified\n");
     mSizeMode = nsSizeMode_Minimized;
@@ -5617,23 +5552,24 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     return result;
   }();
 
-  const bool fullscreenChanging =
-      mSizeMode != oldSizeMode && (mSizeMode == nsSizeMode_Fullscreen ||
-                                   oldSizeMode == nsSizeMode_Fullscreen);
-
-  if (mSizeMode != oldSizeMode || mIsTiled != oldIsTiled) {
-    // When going to fullscreen to non-fullscreen our client margin may change
-    // without other notifications (because we assume fullscreen windows are not
-    // decorated).
-    RecomputeBounds(/* MayChangeCSDMargin */ fullscreenChanging);
-  }
   if (mSizeMode != oldSizeMode) {
+    const bool fullscreenChanging = mSizeMode == nsSizeMode_Fullscreen ||
+                                    oldSizeMode == nsSizeMode_Fullscreen;
+    if (fullscreenChanging) {
+      // As a special-case when going in / out of fullscreen mode we recompute
+      // bounds synchronously. This avoids spurious resizes when going into
+      // fullscreen mode if the relevant configure hasn't happened yet or what
+      // not.
+      RecomputeBounds();
+    }
     if (mWidgetListener) {
       mWidgetListener->SizeModeChanged(mSizeMode);
     }
-    if (fullscreenChanging && mCompositorWidgetDelegate) {
-      mCompositorWidgetDelegate->NotifyFullscreenChanged(mSizeMode ==
-                                                         nsSizeMode_Fullscreen);
+    if (fullscreenChanging) {
+      if (mCompositorWidgetDelegate) {
+        mCompositorWidgetDelegate->NotifyFullscreenChanged(
+            mSizeMode == nsSizeMode_Fullscreen);
+      }
     }
   }
 }
@@ -5715,7 +5651,7 @@ void nsWindow::RefreshScale(bool aRefreshScreen, bool aForceRefresh) {
     return;
   }
 
-  RecomputeBounds(/* MayChangeCsdMargin */ true, /* ScaleChanged*/ true);
+  RecomputeBounds(/* ScaleChanged*/ true);
 
   if (PresShell* presShell = GetPresShell()) {
     presShell->BackingScaleFactorChanged();
@@ -6265,9 +6201,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     mGtkWindowDecoration = GetSystemGtkWindowDecoration();
   }
 
-  // Don't use transparency for PictureInPicture windows.
+  // Don't use transparency for Media PictureInPicture windows.
   bool toplevelNeedsAlphaVisual = false;
-  if (mWindowType == WindowType::TopLevel && !mIsPIPWindow) {
+  if (mWindowType == WindowType::TopLevel && mPiPType != PiPType::MediaPiP) {
     toplevelNeedsAlphaVisual = IsToplevelWindowTransparent();
   }
 
@@ -6311,8 +6247,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     gtk_window_resize(GTK_WINDOW(mShell), mClientArea.width,
                       mClientArea.height);
   }
-  if (mIsPIPWindow) {
-    LOG("  Is PIP window\n");
+  if (mPiPType == PiPType::MediaPiP) {
+    LOG("  Is Media PiP window\n");
     gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_UTILITY);
   } else if (mIsAlert) {
     LOG("  Is alert window\n");
@@ -6428,7 +6364,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   // alwaysontop windows are generally used for peripheral indicators,
   // so we don't focus them by default.
-  if (mAlwaysOnTop) {
+  const bool shouldFocus = !mAlwaysOnTop || mPiPType == PiPType::DocumentPiP;
+  if (!shouldFocus) {
     gtk_window_set_focus_on_map(GTK_WINDOW(mShell), FALSE);
   }
 
@@ -6452,7 +6389,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   // make sure this is the focus widget in the container
   gtk_widget_show(container);
 
-  if (!mAlwaysOnTop) {
+  if (shouldFocus) {
     gtk_widget_grab_focus(container);
   }
 
@@ -6623,7 +6560,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                    nullptr);
 
   LOG("  nsWindow type %d %s\n", int(mWindowType),
-      mIsPIPWindow ? "PIP window" : "");
+      mPiPType == PiPType::MediaPiP
+          ? "Media PiP window"
+          : (mPiPType == PiPType::DocumentPiP ? "Document PiP window" : ""));
   LOG("  mShell %p (window %p) mContainer %p mGdkWindow %p XID 0x%lx\n", mShell,
       GetToplevelGdkWindow(), mContainer, mGdkWindow, GetX11Window());
 
@@ -6799,10 +6738,7 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   if (aMoved && GdkIsX11Display() && IsPopup() &&
       !gtk_widget_get_visible(GTK_WIDGET(mShell))) {
     mX11HiddenPopupPositioned = true;
-    mPopupPosition = {moveResizeRect.x, moveResizeRect.y};
     mClientArea.MoveTo(mLastMoveRequest);
-    LOG("  store position of hidden popup window [%d, %d]", mPopupPosition.x,
-        mPopupPosition.y);
   }
 
   if (IsWaylandPopup()) {
@@ -6856,8 +6792,7 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
     }
     if (aMoved) {
       mClientArea.MoveTo(mLastMoveRequest);
-      auto pos = ToLayoutDevicePixels(mLastMoveRequest);
-      NotifyWindowMoved(pos.x, pos.y);
+      NotifyWindowMoved(mClientArea.TopLeft());
     }
     if (aResized) {
       DispatchResized();
@@ -6913,15 +6848,19 @@ void nsWindow::NativeShow(bool aAction) {
 
     if (IsWaylandPopup()) {
       mPopupClosed = false;
-      if (WaylandPopupConfigure()) {
+      const bool trackedInHierarchy = WaylandPopupConfigure();
+      if (trackedInHierarchy) {
         AddWindowToPopupHierarchy();
-        UpdateWaylandPopupHierarchy();
-        if (mPopupClosed) {
-          return;
-        }
       }
       if (mWaylandApplyPopupPositionBeforeShow) {
+        // NOTE(emilio): This will end up calling UpdateWaylandPopupHierarchy if
+        // needed.
         NativeMoveResize(/* move */ true, /* resize */ false);
+      } else if (trackedInHierarchy) {
+        UpdateWaylandPopupHierarchy();
+      }
+      if (mPopupClosed) {
+        return;
       }
     }
     // Set up usertime/startupID metadata for the created window.
@@ -6952,9 +6891,9 @@ void nsWindow::NativeShow(bool aAction) {
 #endif
     }
     if (mX11HiddenPopupPositioned) {
-      LOG("  re-position hidden popup window [%d, %d]", mPopupPosition.x,
-          mPopupPosition.y);
-      gtk_window_move(GTK_WINDOW(mShell), mPopupPosition.x, mPopupPosition.y);
+      LOG("  re-position hidden popup window [%d, %d]", mClientArea.x,
+          mClientArea.y);
+      gtk_window_move(GTK_WINDOW(mShell), mClientArea.x, mClientArea.y);
       mX11HiddenPopupPositioned = false;
     }
   } else {
@@ -7227,7 +7166,7 @@ void nsWindow::UpdateOpaqueRegionInternal() {
 }
 
 bool nsWindow::IsChromeWindowTitlebar() {
-  return mDrawInTitlebar && !mIsPIPWindow &&
+  return mDrawInTitlebar && mPiPType != PiPType::MediaPiP &&
          mWindowType == WindowType::TopLevel;
 }
 
@@ -7478,7 +7417,7 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
         mSizeMode != nsSizeMode_Minimized) {
       mLastSizeModeBeforeFullscreen = mSizeMode;
     }
-    if (mIsPIPWindow) {
+    if (mPiPType == PiPType::MediaPiP) {
       gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_NORMAL);
       if (gUseAspectRatio) {
         mAspectRatioSaved = mAspectRatio;
@@ -7500,7 +7439,7 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
 
     gtk_window_unfullscreen(GTK_WINDOW(mShell));
 
-    if (mIsPIPWindow && gUseAspectRatio) {
+    if (mPiPType == PiPType::MediaPiP && gUseAspectRatio) {
       mAspectRatio = mAspectRatioSaved;
       // ApplySizeConstraints();
     }
@@ -9021,7 +8960,7 @@ void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
 }
 
 bool nsWindow::IsAlwaysUndecoratedWindow() const {
-  if (mIsPIPWindow || gKioskMode) {
+  if (mPiPType == PiPType::MediaPiP || gKioskMode) {
     return true;
   }
   if (mWindowType == WindowType::Dialog &&
@@ -9170,7 +9109,7 @@ gint nsWindow::GdkCeiledScaleFactor() {
   return ScreenHelperGTK::GetGTKMonitorScaleFactor();
 }
 
-double nsWindow::FractionalScaleFactor() {
+double nsWindow::FractionalScaleFactor() const {
 #ifdef MOZ_WAYLAND
   if (mSurface) {
     auto scale = mSurface->GetScale();
@@ -9588,8 +9527,6 @@ nsWindow::GtkWindowDecoration nsWindow::GetSystemGtkWindowDecoration() {
   }();
   return sGtkWindowDecoration;
 }
-
-int32_t nsWindow::RoundsWidgetCoordinatesTo() { return GdkCeiledScaleFactor(); }
 
 void nsWindow::GetCompositorWidgetInitData(
     mozilla::widget::CompositorWidgetInitData* aInitData) {

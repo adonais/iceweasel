@@ -48,6 +48,7 @@ function add_common_setup() {
   add_setup(async function () {
     await SpecialPowers.pushPrefEnv({
       set: [
+        ["browser.urlbar.trustPanel.featureGate", false],
         [PREFS.NEW_REPORT_ENDPOINT, NEW_REPORT_ENDPOINT_TEST_URL],
 
         // set touch events to auto-detect, as the pref gets set to 1 somewhere

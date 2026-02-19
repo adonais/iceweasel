@@ -11,6 +11,15 @@
     "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs"
   );
 
+  const OVERFLOW_WARNING_THRESHOLD = 980;
+  const OVERFLOW_MAX_THRESHOLD = 1000;
+
+  const OverflowState = {
+    NONE: "none",
+    WARN: "warn",
+    OVERFLOW: "overflow",
+  };
+
   class MozTabbrowserTabNoteMenu extends MozXULElement {
     static markup = /*html*/ `
     <panel
@@ -45,19 +54,25 @@
           ></html:textarea>
         </html:div>
 
-        <html:moz-button-group
-            class="tab-note-create-actions tab-note-create-mode-only"
-            id="tab-note-default-actions">
-            <html:moz-button
-                id="tab-note-editor-button-cancel"
-                data-l10n-id="tab-note-editor-button-cancel">
-            </html:moz-button>
-            <html:moz-button
-                type="primary"
-                id="tab-note-editor-button-save"
-                data-l10n-id="tab-note-editor-button-save">
-            </html:moz-button>
-        </html:moz-button-group>
+        <html:div
+          class="panel-action-row">
+          <html:div
+            id="tab-note-overflow-indicator">
+          </html:div>
+          <html:moz-button-group
+              class="tab-note-create-actions tab-note-create-mode-only"
+              id="tab-note-default-actions">
+              <html:moz-button
+                  id="tab-note-editor-button-cancel"
+                  data-l10n-id="tab-note-editor-button-cancel">
+              </html:moz-button>
+              <html:moz-button
+                  type="primary"
+                  id="tab-note-editor-button-save"
+                  data-l10n-id="tab-note-editor-button-save">
+              </html:moz-button>
+          </html:moz-button-group>
+        </html:div>
 
     </panel>
        `;
@@ -66,8 +81,15 @@
     #panel;
     #noteField;
     #titleNode;
+    /** @type {MozTabbrowserTab} */
     #currentTab = null;
+    /** @type {boolean} */
     #createMode;
+    #cancelButton;
+    #saveButton;
+    #overflowIndicator;
+    /** @type {TabNoteTelemetrySource|null} */
+    #telemetrySource = null;
 
     connectedCallback() {
       if (this.#initialized) {
@@ -81,21 +103,21 @@
       this.#panel = this.querySelector("panel");
       this.#noteField = document.getElementById("tab-note-text");
       this.#titleNode = document.getElementById("tab-note-editor-title");
+      this.#cancelButton = this.querySelector("#tab-note-editor-button-cancel");
+      this.#saveButton = this.querySelector("#tab-note-editor-button-save");
+      this.#overflowIndicator = this.querySelector(
+        "#tab-note-overflow-indicator"
+      );
 
-      this.querySelector("#tab-note-editor-button-cancel").addEventListener(
-        "click",
-        () => {
-          this.#panel.hidePopup();
-        }
-      );
-      this.querySelector("#tab-note-editor-button-save").addEventListener(
-        "click",
-        () => {
-          this.saveNote();
-        }
-      );
+      this.#cancelButton.addEventListener("click", () => {
+        this.#panel.hidePopup();
+      });
+      this.#saveButton.addEventListener("click", () => {
+        this.saveNote();
+      });
       this.#panel.addEventListener("keypress", this);
       this.#panel.addEventListener("popuphidden", this);
+      this.#noteField.addEventListener("input", this);
 
       this.#initialized = true;
     }
@@ -111,14 +133,21 @@
           this.#panel.hidePopup();
           break;
         case KeyEvent.DOM_VK_RETURN:
-          this.saveNote();
+          if (!event.shiftKey) {
+            this.saveNote();
+          }
           break;
       }
+    }
+
+    on_input() {
+      this.#updatePanel();
     }
 
     on_popuphidden() {
       this.#currentTab = null;
       this.#noteField.value = "";
+      this.#telemetrySource = null;
     }
 
     get createMode() {
@@ -146,39 +175,90 @@
       return "bottomleft topleft";
     }
 
-    openPanel(tab) {
-      this.#currentTab = tab;
-      let url = this.#currentTab.canonicalUrl;
+    #updatePanel() {
+      const inputLength = this.#noteField.value.length;
+      let overflow;
+      if (inputLength > OVERFLOW_MAX_THRESHOLD) {
+        overflow = OverflowState.OVERFLOW;
+      } else if (inputLength > OVERFLOW_WARNING_THRESHOLD) {
+        overflow = OverflowState.WARN;
+      } else {
+        overflow = OverflowState.NONE;
+      }
 
-      if (url) {
-        let note = TabNotes.get(url);
+      this.#saveButton.disabled =
+        overflow == OverflowState.OVERFLOW || !inputLength;
+
+      if (overflow != OverflowState.NONE) {
+        this.#panel.setAttribute("overflow", overflow);
+        this.#overflowIndicator.innerText =
+          gBrowser.tabLocalization.formatValueSync(
+            "tab-note-editor-character-limit",
+            {
+              totalCharacters: inputLength,
+              maxAllowedCharacters: OVERFLOW_MAX_THRESHOLD,
+            }
+          );
+      } else {
+        this.#panel.removeAttribute("overflow");
+      }
+
+      // Manually adjust panel height and scroll behaviour to compensate for input size
+      // CSS has a `field-sizing` attribute that does this automatically,
+      // but it is not yet supported.
+      // TODO bug2006439: Replace this with `field-sizing` after the implementation of bug1832409
+      this.#noteField.style.height = "auto";
+      this.#noteField.style.height = `${this.#noteField.scrollHeight}px`;
+    }
+
+    /**
+     * @param {MozTabbrowserTab} tab
+     *   The tab whose note this panel will control.
+     * @param {object} [options]
+     * @param {TabNoteTelemetrySource} [options.telemetrySource]
+     *   The UI surface that requested to open this panel.
+     */
+    openPanel(tab, options = {}) {
+      if (!TabNotes.isEligible(tab)) {
+        return;
+      }
+      this.#currentTab = tab;
+      this.#telemetrySource = options.telemetrySource;
+
+      this.#updatePanel();
+
+      TabNotes.get(tab).then(note => {
         if (note) {
           this.createMode = false;
-          this.#noteField.value = note;
+          this.#noteField.value = note.text;
         } else {
           this.createMode = true;
         }
-      } else {
-        this.createMode = true;
-      }
-      this.#panel.addEventListener(
-        "popupshown",
-        () => {
-          this.#noteField.focus();
-        },
-        {
-          once: true,
-        }
-      );
-      this.#panel.openPopup(tab, {
-        position: this.#panelPosition,
+
+        this.#panel.addEventListener(
+          "popupshown",
+          () => {
+            this.#noteField.focus();
+          },
+          {
+            once: true,
+          }
+        );
+        this.#panel.openPopup(tab, {
+          position: this.#panelPosition,
+        });
       });
     }
 
     saveNote() {
-      let url = this.#currentTab.canonicalUrl;
       let note = this.#noteField.value;
-      TabNotes.set(url, note);
+
+      if (TabNotes.isEligible(this.#currentTab) && note.length) {
+        TabNotes.set(this.#currentTab, note, {
+          telemetrySource: this.#telemetrySource,
+        });
+      }
+
       this.#panel.hidePopup();
     }
   }

@@ -1,15 +1,15 @@
 [versions]
 # AGP
-android-gradle-plugin = "8.13.1" # Keep lint version in sync
-android-lint = "31.13.1"
+android-gradle-plugin = "8.13.2" # Keep lint version in sync
+android-lint = "31.13.2"
 
 # Kotlin
 coroutines = "1.10.2"
-kotlin = "2.2.21"
+kotlin = "2.3.0"
 serialization = "1.9.0"
 
 # AndroidX
-activity = "1.12.1"
+activity = "1.12.2"
 annotation = "1.9.1"
 annotation-experimental = "1.5.1"
 appcompat = "1.7.1"
@@ -42,7 +42,7 @@ profileinstaller = "1.4.0"
 recyclerview = "1.4.0"
 room = "2.8.4"
 savedstate = "1.4.0"
-swiperefreshlayout = "1.1.0"
+swiperefreshlayout = "1.2.0"
 transition = "1.6.0"
 viewpager2 = "1.1.0"
 window = "1.5.1"
@@ -52,22 +52,22 @@ work = "2.11.0"
 accompanist = "0.37.3"
 firebase-messaging = "25.0.1"
 installreferrer = "2.2"
-ksp = "2.3.3"
+ksp = "2.3.4"
 material = "1.13.0"
-osslicenses-plugin = "0.10.7"
+osslicenses-plugin = "0.10.10"
 play-review = "2.0.2"
 play-services-ads-id = "18.2.0"
 play-services-base = "18.9.0"
 play-services-fido = "21.2.0"
-protobuf = "4.33.0" # Keep Protobuf in sync with the version used by AppServices.
+protobuf = "4.33.2" # Keep Protobuf in sync with the version used by AppServices.
 
 # Gradle plugins
 jacoco = "0.8.14"
-kotlin-dsl = "5.2.0"
-protobuf-plugin = "0.9.5"
+kotlin-dsl = "6.4.1"
+protobuf-plugin = "0.9.6"
 python-envs-plugin = "0.0.31"
 semanticdb-javac = "0.11.1"
-semanticdb-kotlinc = "0.7.0"
+semanticdb-kotlinc = "0.8.2"
 tomlj = "1.1.1"
 
 # Linters
@@ -88,20 +88,20 @@ androidx-test-orchestrator = "1.6.1"
 androidx-test-runner = "1.7.0"
 androidx-test-uiautomator = "2.3.0"
 junit4 = "4.13.2"
-junit6 = "6.0.1"
+junit6 = "6.0.2"
 leakcanary = "2.14"
-mockito = "5.20.0"
-mockk = "1.14.6"
+mockito = "5.21.0"
+mockk = "1.14.7"
 robolectric = "4.16"
 
 # Third party libraries
-adjust = "5.4.6"
+adjust = "5.5.0"
 androidsvg = "1.4"
 disklrucache = "2.0.2"
 jna = "5.18.1"
 okhttp = "4.12.0"
 okio = "3.15.0"
-sentry = "8.27.1"
+sentry = "8.29.0"
 zxing = "3.5.4"
 
 [libraries]
@@ -119,6 +119,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # AndroidX
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "annotation" }
 androidx-annotation-experimental = { group = "androidx.annotation", name = "annotation-experimental", version.ref = "annotation-experimental" }

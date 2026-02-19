@@ -200,5 +200,9 @@
       "space.bilibili.com",
       "live.bilibili.com"
     ]
+  },
+  "humblebundle": {
+    "queryParams": ["hmb_source", "hmb_medium", "hmb_campaign"],
+    "topLevelSites": ["www.humblebundle.com"]
   }
 }

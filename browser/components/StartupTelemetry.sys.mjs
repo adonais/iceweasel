@@ -75,6 +75,7 @@ export let StartupTelemetry = {
       () => this.startupConditions(),
       () => this.httpsOnlyState(),
       () => this.globalPrivacyControl(),
+      () => this.isGlobalAiControlBlocking(),
     ];
     if (this._willUseExpensiveTelemetry) {
       tasks.push(() => lazy.PlacesDBUtils.telemetry());
@@ -356,6 +357,19 @@ export let StartupTelemetry = {
     Services.prefs.addObserver(FEATURE_PREF_ENABLED, _checkGPCPref);
     Services.prefs.addObserver(FUNCTIONALITY_PREF_ENABLED, _checkGPCPref);
     _checkGPCPref();
+  },
+
+  isGlobalAiControlBlocking() {
+    const GLOBAL_AI_PREF = "browser.ai.control.default";
+    const _checkGlobalAiPref = async () => {
+      const isBlocked =
+        Services.prefs.getStringPref(GLOBAL_AI_PREF, null) === "blocked";
+
+      Glean.browser.globalAiControlIsBlocking.set(isBlocked);
+    };
+
+    Services.prefs.addObserver(GLOBAL_AI_PREF, _checkGlobalAiPref);
+    _checkGlobalAiPref();
   },
 
   // check if the launcher was used to open firefox

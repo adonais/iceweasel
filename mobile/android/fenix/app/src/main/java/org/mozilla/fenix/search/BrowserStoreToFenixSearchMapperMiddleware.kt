@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
@@ -37,23 +36,23 @@ class BrowserStoreToFenixSearchMapperMiddleware(
     private var observeBrowserSearchStateJob: Job? = null
 
     override fun invoke(
-        context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>,
+        store: Store<SearchFragmentState, SearchFragmentAction>,
         next: (SearchFragmentAction) -> Unit,
         action: SearchFragmentAction,
     ) {
         next(action)
 
         if (action is Init) {
-            observeBrowserSearchState(context)
+            observeBrowserSearchState(store)
         }
     }
 
-    private fun observeBrowserSearchState(context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>) {
+    private fun observeBrowserSearchState(store: Store<SearchFragmentState, SearchFragmentAction>) {
         observeBrowserSearchStateJob = browserStore.observeWhileActive {
             map { it.search }
                 .distinctUntilChanged()
                 .collect { searchState ->
-                    context.dispatch(
+                    store.dispatch(
                         UpdateSearchState(searchState, true),
                     )
                 }

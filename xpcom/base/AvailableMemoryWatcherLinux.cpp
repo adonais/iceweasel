@@ -18,24 +18,11 @@
 #include "nsString.h"
 #include <cstring>
 #include <cstdio>
+#if !defined(ANDROID)
+#  include "nsIPSIProvider.h"
+#endif
 
 namespace mozilla {
-
-/* PSIInfo struct holds parsed data from /proc/pressure/memory
- *
- * The values in /proc/pressure/memory are floating point numbers, but
- * PSIInfo has integer members.
- */
-struct PSIInfo {
-  unsigned long some_avg10 = 0;
-  unsigned long some_avg60 = 0;
-  unsigned long some_avg300 = 0;
-  unsigned long some_total = 0;
-  unsigned long full_avg10 = 0;
-  unsigned long full_avg60 = 0;
-  unsigned long full_avg300 = 0;
-  unsigned long full_total = 0;
-};
 
 // Read PSI (Pressure Stall Information) data from /proc/pressure/memory
 static nsresult ReadPSIFile(const char* aPSIPath, PSIInfo& aResult) {
@@ -106,6 +93,9 @@ class nsAvailableMemoryWatcher final
     : public nsITimerCallback,
       public nsINamed,
       public nsAvailableMemoryWatcherBase,
+#if !defined(ANDROID)
+      public nsIPSIProvider,
+#endif
       public nsIAvailableMemoryWatcherTestingLinux {
  public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -119,6 +109,10 @@ class nsAvailableMemoryWatcher final
 
   void HandleLowMemory();
   void MaybeHandleHighMemory();
+
+#if !defined(ANDROID)
+  NS_IMETHOD GetCachedPSIInfo(mozilla::PSIInfo& aResult) override;
+#endif
 
  private:
   ~nsAvailableMemoryWatcher();
@@ -167,6 +161,31 @@ nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
 
 nsAvailableMemoryWatcher::~nsAvailableMemoryWatcher() {}
 
+NS_IMETHODIMP
+nsAvailableMemoryWatcher::GetCachedPSIInfo(mozilla::PSIInfo& aResult) {
+  MutexAutoLock lock(mMutex);
+  aResult = mPSIInfo;
+  return NS_OK;
+}
+
+// Public API to get latest cached PSI snapshot from the singleton
+// This returns the PSI data that was last collected by the watcher
+nsresult GetLastPSISnapshot(PSIInfo& aResult) {
+  RefPtr<nsIAvailableMemoryWatcherBase> watcher =
+      nsAvailableMemoryWatcherBase::GetSingleton();
+  if (!watcher) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsCOMPtr<nsIPSIProvider> provider = do_QueryInterface(watcher);
+
+  if (!provider) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  return provider->GetCachedPSIInfo(aResult);
+}
+
 nsresult nsAvailableMemoryWatcher::Init() {
   nsresult rv = nsAvailableMemoryWatcherBase::Init();
   if (NS_FAILED(rv)) {
@@ -207,7 +226,7 @@ already_AddRefed<nsAvailableMemoryWatcherBase> CreateAvailableMemoryWatcher() {
 
 NS_IMPL_ISUPPORTS_INHERITED(nsAvailableMemoryWatcher,
                             nsAvailableMemoryWatcherBase, nsITimerCallback,
-                            nsIObserver, nsINamed,
+                            nsIObserver, nsINamed, nsIPSIProvider,
                             nsIAvailableMemoryWatcherTestingLinux);
 
 void nsAvailableMemoryWatcher::StopPolling(const MutexAutoLock&)

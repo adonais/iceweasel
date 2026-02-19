@@ -680,7 +680,6 @@ function makeExpectedDefaultMerinoResult({ suggestion }) {
       isSponsored: !!suggestion.is_sponsored,
       title: suggestion.title,
       url: suggestion.url,
-      displayUrl: suggestion.url.replace(/^https:\/\//, ""),
       icon: suggestion.icon,
       descriptionL10n: suggestion.is_sponsored
         ? { id: "urlbar-result-action-sponsored" }

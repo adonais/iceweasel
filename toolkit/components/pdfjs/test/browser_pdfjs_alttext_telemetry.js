@@ -22,6 +22,7 @@ const altTextPref = "pdfjs.enableAltText";
 const guessAltTextPref = "pdfjs.enableGuessAltText";
 const newFlowPref = "pdfjs.enableUpdatedAddImage";
 const browserMLPref = "browser.ml.enable";
+const altTextModelDownloadPref = "pdfjs.enableAltTextModelDownload";
 
 add_setup(async function () {
   MockFilePicker.init(window.browsingContext);
@@ -67,6 +68,7 @@ add_task(async function test_telemetry_new_alt_text_settings() {
           [guessAltTextPref, true],
           [newFlowPref, true],
           [browserMLPref, true],
+          [altTextModelDownloadPref, true],
         ],
       });
 
@@ -181,6 +183,7 @@ add_task(async function test_telemetry_new_alt_text_dialog() {
           [guessAltTextPref, true],
           [newFlowPref, true],
           [browserMLPref, true],
+          [altTextModelDownloadPref, true],
         ],
       });
 
@@ -409,6 +412,7 @@ add_task(async function test_telemetry_new_alt_text_count() {
           [guessAltTextPref, true],
           [newFlowPref, true],
           [browserMLPref, true],
+          [altTextModelDownloadPref, true],
         ],
       });
 

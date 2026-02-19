@@ -39,7 +39,7 @@ function LOG(string, alwaysLog = false) {
  *  A manager for timers. Manages timers that fire over long periods of time
  *  (e.g. days, weeks, months).
  *
- *  @constructor
+ *  @class
  */
 export function TimerManager() {
   Services.obs.addObserver(this, "profile-before-change");

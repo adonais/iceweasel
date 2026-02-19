@@ -4,6 +4,9 @@
 const { LinkPreview } = ChromeUtils.importESModule(
   "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
 );
+const { MLUninstallService } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/Utils.sys.mjs"
+);
 const { Region } = ChromeUtils.importESModule(
   "resource://gre/modules/Region.sys.mjs"
 );
@@ -765,13 +768,8 @@ add_task(async function test_link_preview_error_rendered() {
   ok(ogErrorEl1, "og-error-message shown with isMissingDataErrorState = true");
   is(
     ogErrorEl1.getAttribute("data-l10n-id"),
-    "link-preview-generation-error-missing-data",
+    "link-preview-generation-error-missing-data-v2",
     "Correct fluent ID for missing data error"
-  );
-  is(
-    ogErrorEl1.textContent.trim(),
-    "We can’t generate key points for this webpage.",
-    "Correct localized message for missing data error"
   );
 
   // Switch to a "generation error"

@@ -8,6 +8,7 @@ import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -51,8 +52,11 @@ import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
+import org.mozilla.fenix.ext.openToBrowser
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelMiddleware
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelNavigationMiddleware
@@ -90,11 +94,13 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { isGranted: Map<String, Boolean> -> permissionsCallback.invoke(isGranted) }
 
+    private lateinit var browsingModeManager: BrowsingModeManager
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         (super.onCreateDialog(savedInstanceState) as BottomSheetDialog).apply {
             setOnShowListener {
                 val safeActivity = activity ?: return@setOnShowListener
-                val browsingModeManager = (safeActivity as HomeActivity).browsingModeManager
+                browsingModeManager = (safeActivity as HomeActivity).browsingModeManager
 
                 val navigationBarColor = if (browsingModeManager.mode.isPrivate) {
                     ContextCompat.getColor(context, R.color.fx_mobile_private_layer_color_3)
@@ -130,7 +136,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                         isSecured = args.isSecured,
                         websiteUrl = args.url,
                         websiteTitle = args.title,
-                        certificateName = args.certificateName,
+                        certificate = args.certificate,
                     ),
                     sessionState = components.core.store.state.findTabOrCustomTab(args.sessionId),
                     settings = settings,
@@ -284,6 +290,17 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                 },
                                 onToggleablePermissionClick = { websitePermission: WebsitePermission.Toggleable ->
                                     store.dispatch(TrustPanelAction.TogglePermission(websitePermission))
+                                },
+                                onViewCertificateClick = { certificate ->
+                                    val bytes = certificate.getEncoded()
+                                    val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP or Base64.NO_PADDING)
+                                    findNavController().openToBrowser()
+                                    requireComponents.useCases.tabsUseCases.addTab(
+                                        "about:certificate?cert=${Uri.encode(base64)}",
+                                        parentId = sessionState?.id,
+                                        contextId = sessionState?.contextId,
+                                        private = browsingModeManager.mode.isPrivate,
+                                    )
                                 },
                             )
                         }

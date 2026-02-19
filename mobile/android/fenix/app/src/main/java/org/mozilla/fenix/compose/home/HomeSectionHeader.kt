@@ -27,13 +27,14 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.wallpapers.Wallpaper
 import mozilla.components.ui.icons.R as iconsR
 
@@ -151,25 +152,12 @@ private fun HomeSectionHeaderContent(
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun HomeSectionsHeaderPreview() {
-    FirefoxTheme {
-        Surface {
-            HomeSectionHeader(
-                headerText = stringResource(R.string.home_bookmarks_title),
-                modifier = Modifier.padding(horizontal = FirefoxTheme.layout.size.static300),
-                description = stringResource(R.string.home_bookmarks_show_all_content_description),
-                onButtonClick = {},
-            )
-        }
-    }
-}
-
-@Composable
 @Preview
-private fun HomeSectionsHeaderPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun HomeSectionsHeaderPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             HomeSectionHeader(
                 headerText = stringResource(R.string.home_bookmarks_title),

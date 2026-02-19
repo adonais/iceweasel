@@ -47,7 +47,10 @@ internal fun HomepageCard(
     HomepageCard(
         modifier = modifier,
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
         elevation = elevation,
         border = border,
         content = content,

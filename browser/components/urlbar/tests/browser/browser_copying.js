@@ -660,7 +660,12 @@ add_task(async function includingProtocol() {
   await PlacesTestUtils.clearInputHistory();
   SpecialPowers.pushPrefEnv({ set: [["browser.urlbar.trimHttps", true]] });
 
-  await PlacesTestUtils.addVisits(["https://example.com/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   // If the url is autofilled, the protocol should be included in the copied
@@ -672,7 +677,7 @@ add_task(async function includingProtocol() {
   });
   Assert.ok(
     (await UrlbarTestUtils.getDetailsOfResultAt(window, 0)).autofill,
-    "The first result should be aufotill suggestion"
+    "The first result should be autofill suggestion"
   );
 
   window.goDoCommand("cmd_selectAll");

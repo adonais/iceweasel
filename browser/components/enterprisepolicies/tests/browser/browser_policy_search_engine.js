@@ -10,6 +10,9 @@ ChromeUtils.defineESModuleGetters(this, {
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
 add_task(async function test_setup() {
+  SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", false]],
+  });
   await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => {
     gCUITestUtils.removeSearchBar();

@@ -32,6 +32,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ProgressListener: "chrome://remote/content/shared/Navigate.sys.mjs",
   PromptListener:
     "chrome://remote/content/shared/listeners/PromptListener.sys.mjs",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
   SessionDataMethod:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   setDefaultAndAssertSerializationOptions:
@@ -134,6 +135,7 @@ export const OriginType = {
 };
 
 const TIMEOUT_SET_HISTORY_INDEX = 1000;
+const TIMEOUT_WAIT_FOR_VISIBILITY = 250;
 
 /**
  * Enum of user prompt types supported by the browsingContext.handleUserPrompt
@@ -173,6 +175,17 @@ const WaitCondition = {
   None: "none",
   Interactive: "interactive",
   Complete: "complete",
+};
+
+/**
+ * An enum that specifies the scope of a browsing context.
+ *
+ * @readonly
+ * @enum {string}
+ */
+export const MozContextScope = {
+  CHROME: "chrome",
+  CONTENT: "content",
 };
 
 /**
@@ -318,7 +331,7 @@ class BrowsingContextModule extends RootBiDiModule {
       // Bug 1884142: It's not supported on Android for the TestRunner package.
       const selectedBrowser = lazy.TabManager.getBrowserForTab(selectedTab);
       activated.push(
-        this.#waitForVisibilityChange(selectedBrowser.browsingContext)
+        this.#waitForVisibilityState(selectedBrowser.browsingContext, "hidden")
       );
     }
 
@@ -541,13 +554,7 @@ class BrowsingContextModule extends RootBiDiModule {
       lazy.pprint`Expected "promptUnload" to be a boolean, got ${promptUnload}`
     );
 
-    const context = lazy.NavigableManager.getBrowsingContextById(contextId);
-    if (!context) {
-      throw new lazy.error.NoSuchFrameError(
-        `Browsing Context with id ${contextId} not found`
-      );
-    }
-
+    const context = this._getNavigable(contextId);
     lazy.assert.topLevel(
       context,
       lazy.pprint`Browsing context with id ${contextId} is not top-level`
@@ -686,7 +693,7 @@ class BrowsingContextModule extends RootBiDiModule {
       );
     }
 
-    let waitForVisibilityChangePromise;
+    let waitForVisibilityStatePromise;
     switch (type) {
       case "window": {
         const newWindow = await lazy.windowManager.openBrowserWindow({
@@ -717,8 +724,9 @@ class BrowsingContextModule extends RootBiDiModule {
 
           // Create the promise immediately, but await it later in parallel with
           // waitForInitialNavigationCompleted.
-          waitForVisibilityChangePromise = this.#waitForVisibilityChange(
-            lazy.TabManager.getBrowserForTab(selectedTab).browsingContext
+          waitForVisibilityStatePromise = this.#waitForVisibilityState(
+            lazy.TabManager.getBrowserForTab(selectedTab).browsingContext,
+            "hidden"
           );
         }
 
@@ -750,7 +758,7 @@ class BrowsingContextModule extends RootBiDiModule {
           unloadTimeout: 5000,
         }
       ),
-      waitForVisibilityChangePromise,
+      waitForVisibilityStatePromise,
       blocker.promise,
     ]);
 
@@ -769,11 +777,25 @@ class BrowsingContextModule extends RootBiDiModule {
     // Force a reflow by accessing `clientHeight` (see Bug 1847044).
     browser.parentElement.clientHeight;
 
+    if (!background && !lazy.AppInfo.isAndroid) {
+      // See Bug 2002097, on slow platforms, the newly created tab might not be
+      // visible immediately.
+      await this.#waitForVisibilityState(
+        browser.browsingContext,
+        "visible",
+        // Waiting for visibility can potentially be racy. If several contexts
+        // are created in parallel, we might not be able to catch the document
+        // in the expected state.
+        { timeout: TIMEOUT_WAIT_FOR_VISIBILITY * lazy.getTimeoutMultiplier() }
+      );
+    }
+
     return {
       context: lazy.NavigableManager.getIdForBrowser(browser),
     };
   }
 
+  /* eslint-disable jsdoc/valid-types */
   /**
    * An object that holds the WebDriver Bidi browsing context information.
    *
@@ -793,7 +815,12 @@ class BrowsingContextModule extends RootBiDiModule {
    *     reached yet.
    * @property {string} clientWindow
    *     The id of the window the browsing context belongs to.
+   * @property {string=} "moz:name"
+   *     Name of the browsing context.
+   * @property {MozContextScope=} "moz:scope"
+   *     The scope of the browsing context.
    */
+  /* eslint-enable jsdoc/valid-types */
 
   /**
    * An object that holds the WebDriver Bidi browsing context tree information.
@@ -805,7 +832,7 @@ class BrowsingContextModule extends RootBiDiModule {
    */
 
   /**
-   * Returns a tree of all browsing contexts that are descendents of the
+   * Returns a tree of all browsing contexts that are descendants of the
    * given context, or all top-level contexts when no root is provided.
    *
    * @param {object=} options
@@ -814,6 +841,9 @@ class BrowsingContextModule extends RootBiDiModule {
    *     the whole tree is returned.
    * @param {string=} options.root
    *     Id of the root browsing context.
+   * @param {MozContextScope=} options."moz:scope"
+   *     The scope from which browsing contexts are retrieved. This
+   *     parameter cannot be used when a root browsing context is specified.
    *
    * @returns {BrowsingContextGetTreeResult}
    *     Tree of browsing context information.
@@ -821,13 +851,31 @@ class BrowsingContextModule extends RootBiDiModule {
    *     If the browsing context cannot be found.
    */
   getTree(options = {}) {
-    const { maxDepth = null, root: rootId = null } = options;
+    const {
+      maxDepth = null,
+      root: rootId = null,
+      "moz:scope": scope = null,
+    } = options;
 
     if (maxDepth !== null) {
       lazy.assert.positiveInteger(
         maxDepth,
         lazy.pprint`Expected "maxDepth" to be a positive integer, got ${maxDepth}`
       );
+    }
+
+    if (scope !== null) {
+      const contextScopes = Object.values(MozContextScope);
+      lazy.assert.that(
+        _scope => contextScopes.includes(_scope),
+        `Expected "moz:scope" to be one of ${contextScopes}, ` +
+          lazy.pprint`got ${scope}`
+      )(scope);
+
+      if (scope != MozContextScope.CONTENT) {
+        // By default only content browsing contexts are allowed.
+        lazy.assert.hasSystemAccess();
+      }
     }
 
     let contexts;
@@ -838,12 +886,30 @@ class BrowsingContextModule extends RootBiDiModule {
         rootId,
         lazy.pprint`Expected "root" to be a string, got ${rootId}`
       );
-      contexts = [this._getNavigable(rootId)];
+
+      if (scope) {
+        // At the moment we only allow to set a specific scope
+        // when querying at the top-level.
+        throw new lazy.error.InvalidArgumentError(
+          `"root" and "moz:scope" are mutual exclusive`
+        );
+      }
+
+      contexts = [this._getNavigable(rootId, { supportsChromeScope: true })];
     } else {
-      // Return all top-level browsing contexts.
-      contexts = lazy.TabManager.getBrowsers().map(
-        browser => browser.browsingContext
-      );
+      switch (scope) {
+        case MozContextScope.CHROME: {
+          // Return all browsing contexts related to chrome windows.
+          contexts = lazy.windowManager.windows.map(win => win.browsingContext);
+          break;
+        }
+        default: {
+          // Return all top-level browsing contexts.
+          contexts = lazy.TabManager.getBrowsers().map(
+            browser => browser.browsingContext
+          );
+        }
+      }
     }
 
     const contextsInfo = contexts.map(context => {
@@ -2139,14 +2205,20 @@ class BrowsingContextModule extends RootBiDiModule {
   #onPromptClosed = (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.userPromptClosed")) {
       const { contentBrowser, detail } = data;
-      const navigableId = lazy.NavigableManager.getIdForBrowser(contentBrowser);
+      // TODO: Bug 2007385. Use only browsingContext from event details when the support for Android is added.
+      const browsingContext = lazy.AppInfo.isAndroid
+        ? contentBrowser.browsingContext
+        : detail.browsingContext;
+
+      const navigableId =
+        lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
 
       if (navigableId === null) {
         return;
       }
 
       lazy.logger.trace(
-        `[${contentBrowser.browsingContext.id}] Prompt closed (type: "${
+        `[${browsingContext.id}] Prompt closed (type: "${
           detail.promptType
         }", accepted: "${detail.accepted}")`
       );
@@ -2159,7 +2231,7 @@ class BrowsingContextModule extends RootBiDiModule {
       };
 
       this.#emitContextEventForBrowsingContext(
-        contentBrowser.browsingContext.id,
+        browsingContext.id,
         "browsingContext.userPromptClosed",
         params
       );
@@ -2171,12 +2243,18 @@ class BrowsingContextModule extends RootBiDiModule {
       const { contentBrowser, prompt } = data;
       const type = prompt.promptType;
 
+      // TODO: Bug 2007385. We can remove this fallback
+      // when we have support for browsing context property on Android.
+      const browsingContext = lazy.AppInfo.isAndroid
+        ? contentBrowser.browsingContext
+        : data.browsingContext;
+
       prompt.getText().then(text => {
         // We need the text to identify a user prompt when it gets
         // randomly opened. Because on Android the text is asynchronously
         // retrieved lets delay the logging without making the handler async.
         lazy.logger.trace(
-          `[${contentBrowser.browsingContext.id}] Prompt opened (type: "${
+          `[${browsingContext.id}] Prompt opened (type: "${
             prompt.promptType
           }", text: "${text}")`
         );
@@ -2188,7 +2266,8 @@ class BrowsingContextModule extends RootBiDiModule {
         return;
       }
 
-      const navigableId = lazy.NavigableManager.getIdForBrowser(contentBrowser);
+      const navigableId =
+        lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
 
       const session = lazy.getWebDriverSessionById(
         this.messageHandler.sessionId
@@ -2207,7 +2286,7 @@ class BrowsingContextModule extends RootBiDiModule {
       }
 
       this.#emitContextEventForBrowsingContext(
-        contentBrowser.browsingContext.id,
+        browsingContext.id,
         "browsingContext.userPromptOpened",
         eventPayload
       );
@@ -2373,11 +2452,12 @@ class BrowsingContextModule extends RootBiDiModule {
     }
   }
 
-  #waitForVisibilityChange(browsingContext) {
+  #waitForVisibilityState(browsingContext, expectedState, options = {}) {
+    const { timeout } = options;
     return this._forwardToWindowGlobal(
       "_awaitVisibilityState",
       browsingContext.id,
-      { value: "hidden" },
+      { value: expectedState, timeout },
       { retryOnAbort: true }
     );
   }
@@ -2529,6 +2609,7 @@ class BrowsingContextModule extends RootBiDiModule {
  * @param {number=} options.maxDepth
  *     Depth of the browsing context tree to traverse. If not specified
  *     the whole tree is returned.
+ *
  * @returns {BrowsingContextInfo}
  *     The information about the browsing context.
  */
@@ -2537,19 +2618,24 @@ export const getBrowsingContextInfo = (context, options = {}) => {
 
   let children = null;
   if (maxDepth === null || maxDepth > 0) {
-    children = context.children.map(context =>
-      getBrowsingContextInfo(context, {
+    // Bug 1996311: When executed for chrome browsing contexts as
+    // well include embedded browsers and their browsing context tree.
+    children = context.children.map(childContext =>
+      getBrowsingContextInfo(childContext, {
         maxDepth: maxDepth === null ? maxDepth : maxDepth - 1,
         includeParentId: false,
       })
     );
   }
 
-  const userContext = lazy.UserContextManager.getIdByBrowsingContext(context);
+  const chromeWindow =
+    lazy.windowManager.getChromeWindowForBrowsingContext(context);
   const originalOpener =
     context.crossGroupOpener !== null
       ? lazy.NavigableManager.getIdForBrowsingContext(context.crossGroupOpener)
       : null;
+  const userContext = lazy.UserContextManager.getIdByBrowsingContext(context);
+
   const contextInfo = {
     children,
     context: lazy.NavigableManager.getIdForBrowsingContext(context),
@@ -2560,7 +2646,7 @@ export const getBrowsingContextInfo = (context, options = {}) => {
     originalOpener: originalOpener === undefined ? null : originalOpener,
     url: context.currentURI.spec,
     userContext,
-    clientWindow: lazy.windowManager.getIdForBrowsingContext(context),
+    clientWindow: lazy.windowManager.getIdForWindow(chromeWindow),
   };
 
   if (includeParentId) {
@@ -2569,6 +2655,16 @@ export const getBrowsingContextInfo = (context, options = {}) => {
       context.parent
     );
     contextInfo.parent = parentId;
+  }
+
+  if (lazy.RemoteAgent.allowSystemAccess) {
+    contextInfo["moz:scope"] = context.isContent
+      ? MozContextScope.CONTENT
+      : MozContextScope.CHROME;
+
+    if ("name" in context) {
+      contextInfo["moz:name"] = context.name;
+    }
   }
 
   return contextInfo;

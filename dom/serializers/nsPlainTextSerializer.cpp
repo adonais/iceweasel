@@ -136,24 +136,27 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
       // ASCII space at the tail.
       const Maybe<uint32_t> originalNextGoodSpace = nextGoodSpace;
       while (*nextGoodSpace > 0 &&
-             mContent.CharAt(*nextGoodSpace - 1) == 0x20) {
-        nextGoodSpace = Some(*nextGoodSpace - 1);
+             mContent.CharAt(*nextGoodSpace - 1) == u' ') {
+        *nextGoodSpace -= 1;
       }
       if (*nextGoodSpace == 0) {
         // Restore the original nextGoodSpace.
         nextGoodSpace = originalNextGoodSpace;
       }
-
       width += GetUnicharStringWidth(Span<const char16_t>(
           mContent.get() + goodSpace, *nextGoodSpace - goodSpace));
       if (prefixwidth + width > aWrapColumn) {
-        // The next break point makes the width exceeding the wrap column, so
-        // goodSpace is what we want.
+        // The next break point makes the width exceeding the wrap column, or
+        // there was a newline, so goodSpace is what we want.
         break;
       }
       goodSpace = AssertedCast<int32_t>(*nextGoodSpace);
+      if (mContent.CharAt(*nextGoodSpace) == u'\n') {
+        // If we hit a newline, also stop looking now, but account for it.
+        goodSpace += 1;
+        break;
+      }
     }
-
     return goodSpace;
   }
 
@@ -319,17 +322,27 @@ void nsPlainTextSerializer::HardWrapString(nsAString& aString,
   settings.Init(aFlags, aWrapColumn);
 
   // Line breaker will do the right thing, no need to split manually.
-  CurrentLine line;
-  line.mContent.Assign(aString);
-
   nsAutoString output;
   {
     OutputManager manager(aFlags, output);
-    PerformWrapAndOutputCompleteLines(settings, line, manager,
-                                      /* aUseLineBreaker = */ true, nullptr);
+    CurrentLine line;
+    bool first = true;
+    for (const auto& content : aString.Split(u'\n')) {
+      if (first) {
+        first = false;
+      } else {
+        manager.Flush(line);
+        manager.AppendLineBreak();
+      }
+      line.mContent.Assign(content);
+      PerformWrapAndOutputCompleteLines(settings, line, manager,
+                                        /* aUseLineBreaker = */ true,
+                                        /* aAllowBonusWidth = */ false,
+                                        nullptr);
+    }
     manager.Flush(line);
   }
-  aString.Assign(output);
+  aString.Assign(std::move(output));
 }
 
 NS_IMETHODIMP
@@ -1273,23 +1286,26 @@ static bool IsSpaceStuffable(const char16_t* s) {
 
 void nsPlainTextSerializer::PerformWrapAndOutputCompleteLines(
     const Settings& aSettings, CurrentLine& aLine, OutputManager& aOutput,
-    bool aUseLineBreaker, nsPlainTextSerializer* aSerializer) {
+    bool aUseLineBreaker, bool aAllowBonusWidth,
+    nsPlainTextSerializer* aSerializer) {
   if (!aSettings.MayWrap()) {
     return;
   }
 
   // Yes, wrap!
-  // The "+4" is to avoid wrap lines that only would be a couple
-  // of letters too long. We give this bonus only if the
-  // wrapcolumn is more than 20.
   const uint32_t wrapColumn = aSettings.GetWrapColumn();
-  uint32_t bonuswidth = (wrapColumn > 20) ? 4 : 0;
+  // The "+4" is to avoid wrap lines that only would be a couple of letters too
+  // long. We give this bonus only if the wrapColumn is more than 20.
+  // FIXME(emilio): This option seems rather broken. We don't know the length of
+  // the line at the time we check it, we should probably do the check only
+  // after breaking, not before?
+  const uint32_t bonusWidth = (wrapColumn > 20 && aAllowBonusWidth) ? 4 : 0;
   while (!aLine.mContent.IsEmpty()) {
     const uint32_t prefixwidth = aLine.DeterminePrefixWidth();
     // The width of the line as it will appear on the screen (approx.).
     const uint32_t currentLineContentWidth =
         GetUnicharStringWidth(aLine.mContent);
-    if (currentLineContentWidth + prefixwidth <= wrapColumn + bonuswidth) {
+    if (currentLineContentWidth + prefixwidth <= wrapColumn + bonusWidth) {
       break;
     }
 
@@ -1358,7 +1374,8 @@ void nsPlainTextSerializer::PerformWrapAndOutputCompleteLines(
 
 void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
   PerformWrapAndOutputCompleteLines(mSettings, mCurrentLine, *mOutputManager,
-                                    mUseLineBreaker, this);
+                                    mUseLineBreaker,
+                                    /* aAllowBonusWidth = */ true, this);
 }
 
 /**

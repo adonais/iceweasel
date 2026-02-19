@@ -12,9 +12,10 @@ def test_strategy_validation():
     args = parser.parse_args(["--strategy", "relevant_tests"])
     assert args.strategy == "gecko_taskgraph.optimize:tryselect.relevant_tests"
 
-    args = parser.parse_args(
-        ["--strategy", "gecko_taskgraph.optimize:experimental.relevant_tests"]
-    )
+    args = parser.parse_args([
+        "--strategy",
+        "gecko_taskgraph.optimize:experimental.relevant_tests",
+    ])
     assert args.strategy == "gecko_taskgraph.optimize:experimental.relevant_tests"
 
     with pytest.raises(SystemExit):

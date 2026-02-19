@@ -20,7 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.icons.IconRequest
@@ -30,6 +30,7 @@ import mozilla.components.compose.base.utils.inComposePreview
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 internal val FAVICON_ROUNDED_CORNER_SHAPE = RoundedCornerShape(2.dp)
 
@@ -176,24 +177,12 @@ private fun FaviconPlaceholder(
     )
 }
 
-@Composable
-@PreviewLightDark
-private fun FaviconPreview() {
-    FirefoxTheme {
-        Favicon(
-            url = "www.mozilla.com",
-            size = 64.dp,
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .padding(all = FirefoxTheme.layout.space.static200),
-        )
-    }
-}
-
-@Composable
 @Preview
-private fun FaviconPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun FaviconPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Favicon(
             url = "www.mozilla.com",
             size = 64.dp,

@@ -439,8 +439,7 @@ void MacroAssembler::call(ImmPtr imm) { MOZ_CRASH(); }
 
 void MacroAssembler::call(JitCode* c) { MOZ_CRASH(); }
 
-void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
-                                     bool callFromWasm) {
+void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
   MOZ_CRASH();
 }
 

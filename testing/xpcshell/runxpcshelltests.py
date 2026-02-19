@@ -70,13 +70,11 @@ TBPL_RETRY = 4  # defined in mozharness
 # are needed for custom CPU/memory configurations
 NUM_THREADS = int(cpu_count() * 2.5)
 
-EXPECTED_LOG_ACTIONS = set(
-    [
-        "crash_reporter_init",
-        "test_status",
-        "log",
-    ]
-)
+EXPECTED_LOG_ACTIONS = set([
+    "crash_reporter_init",
+    "test_status",
+    "log",
+])
 
 # --------------------------------------------------------------
 # TODO: this is a hack for mozbase without virtualenv, remove with bug 849900
@@ -188,7 +186,7 @@ class XPCShellTestThread(Thread):
         if retry is None:
             # Retry in CI, but report results without retry when run locally to
             # avoid confusion and ease local debugging.
-            self.retry = os.environ.get("MOZ_AUTOMATION", 0) != 0
+            self.retry = os.environ.get("MOZ_AUTOMATION") is not None
         self.verbose = verbose
         self.usingTSan = usingTSan
         self.usingCrashReporter = usingCrashReporter
@@ -740,9 +738,10 @@ class XPCShellTestThread(Thread):
             if "message" in line:
                 line["message"] = self.fix_text_output(line["message"])
             if "xpcshell_process" in line:
-                line["thread"] = " ".join(
-                    [current_thread().name, line["xpcshell_process"]]
-                )
+                line["thread"] = " ".join([
+                    current_thread().name,
+                    line["xpcshell_process"],
+                ])
             else:
                 line["thread"] = current_thread().name
             self.log.log_raw(line)
@@ -913,15 +912,17 @@ class XPCShellTestThread(Thread):
         # 3) Arguments for the test file
         self.command.extend(self.buildCmdTestFile(path))
         self.command.extend(["-e", 'const _TEST_NAME = "%s";' % name])
-        self.command.extend(
-            ["-e", 'const _EXPECTED = "%s";' % self.test_object["expected"]]
-        )
+        self.command.extend([
+            "-e",
+            'const _EXPECTED = "%s";' % self.test_object["expected"],
+        ])
 
         # 4) Arguments for code coverage
         if self.jscovdir:
-            self.command.extend(
-                ["-e", 'const _JSCOV_DIR = "%s";' % self.jscovdir.replace("\\", "/")]
-            )
+            self.command.extend([
+                "-e",
+                'const _JSCOV_DIR = "%s";' % self.jscovdir.replace("\\", "/"),
+            ])
 
         # 5) Runtime arguments
         if "debug" in self.test_object:
@@ -1452,13 +1453,13 @@ class XPCShellTests:
             self.env["DYLD_LIBRARY_PATH"] = os.path.join(
                 os.path.dirname(self.xrePath), "MacOS"
             )
-        else:  # unix or linux?
-            if "LD_LIBRARY_PATH" not in self.env or self.env["LD_LIBRARY_PATH"] is None:
-                self.env["LD_LIBRARY_PATH"] = self.xrePath
-            else:
-                self.env["LD_LIBRARY_PATH"] = ":".join(
-                    [self.xrePath, self.env["LD_LIBRARY_PATH"]]
-                )
+        elif "LD_LIBRARY_PATH" not in self.env or self.env["LD_LIBRARY_PATH"] is None:
+            self.env["LD_LIBRARY_PATH"] = self.xrePath
+        else:
+            self.env["LD_LIBRARY_PATH"] = ":".join([
+                self.xrePath,
+                self.env["LD_LIBRARY_PATH"],
+            ])
 
         usingASan = "asan" in self.mozInfo and self.mozInfo["asan"]
         usingTSan = "tsan" in self.mozInfo and self.mozInfo["tsan"]
@@ -1497,16 +1498,15 @@ class XPCShellTests:
         if self.interactive:
             pStdout = None
             pStderr = None
+        elif self.debuggerInfo and self.debuggerInfo.interactive:
+            pStdout = None
+            pStderr = None
         else:
-            if self.debuggerInfo and self.debuggerInfo.interactive:
+            if sys.platform == "os2emx":
                 pStdout = None
-                pStderr = None
             else:
-                if sys.platform == "os2emx":
-                    pStdout = None
-                else:
-                    pStdout = PIPE
-                pStderr = STDOUT
+                pStdout = PIPE
+            pStderr = STDOUT
         return pStdout, pStderr
 
     def verifyDirPath(self, dirname):
@@ -1936,7 +1936,6 @@ class XPCShellTests:
         """
         Run xpcshell tests.
         """
-        global gotSIGINT
 
         # Number of times to repeat test(s) in --verify mode
         VERIFY_REPEAT = 10

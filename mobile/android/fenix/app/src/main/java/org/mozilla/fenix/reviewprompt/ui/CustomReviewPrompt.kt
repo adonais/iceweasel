@@ -36,9 +36,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.lib.state.ext.observeAsState
@@ -51,6 +51,7 @@ import org.mozilla.fenix.reviewprompt.CustomReviewPromptState.Rate
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Prompt that can show either:
@@ -263,12 +264,14 @@ private fun FeedbackStep(onLeaveFeedbackButtonClick: () -> Unit, modifier: Modif
 // *** Code below used for previews only *** //
 
 @OptIn(ExperimentalMaterial3Api::class)
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun BottomSheetPreview() {
+private fun BottomSheetPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         BottomSheet(
             sheetState = sheetState,
             customReviewPromptState = PrePrompt,
@@ -282,12 +285,14 @@ private fun BottomSheetPreview() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@PreviewLightDark
+@Preview
 @Composable
-private fun PrePromptPreview() {
+private fun PrePromptPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         BottomSheet(
             sheetState = sheetState,
             customReviewPromptState = PrePrompt,
@@ -301,12 +306,14 @@ private fun PrePromptPreview() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@PreviewLightDark
+@Preview
 @Composable
-private fun RatePromptPreview() {
+private fun RatePromptPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         BottomSheet(
             sheetState = sheetState,
             customReviewPromptState = Rate,
@@ -320,12 +327,14 @@ private fun RatePromptPreview() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@PreviewLightDark
+@Preview
 @Composable
-private fun FeedbackPromptPreview() {
+private fun FeedbackPromptPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         BottomSheet(
             sheetState = sheetState,
             customReviewPromptState = Feedback,
@@ -338,46 +347,12 @@ private fun FeedbackPromptPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-private fun FeedbackPromptPrivatePreview() {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    FirefoxTheme(theme = Theme.Private) {
-        BottomSheet(
-            sheetState = sheetState,
-            customReviewPromptState = Feedback,
-            onDismissRequest = {},
-            onNegativePrePromptButtonClick = {},
-            onPositivePrePromptButtonClick = {},
-            onRateButtonClick = {},
-            onLeaveFeedbackButtonClick = {},
-        )
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun FoxEmojiButtonPreview() {
-    FirefoxTheme {
-        Surface {
-            FoxEmojiButton(
-                emoji = painterResource(R.drawable.review_prompt_positive_button),
-                label = "It’s great!",
-                onClick = {},
-                modifier = Modifier
-                    .padding(16.dp)
-                    .width(176.dp),
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun FoxEmojiButtonPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun FoxEmojiButtonPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             FoxEmojiButton(
                 emoji = painterResource(R.drawable.review_prompt_positive_button),
@@ -392,45 +367,17 @@ private fun FoxEmojiButtonPrivatePreview() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@PreviewLightDark
-@Composable
-private fun InteractiveBottomSheetPreview() {
-    val store = CustomReviewPromptStore(PrePrompt)
-    val promptState by store.observeAsState(PrePrompt) { it }
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    FirefoxTheme {
-        BottomSheet(
-            sheetState = sheetState,
-            customReviewPromptState = promptState,
-            onDismissRequest = {},
-            onNegativePrePromptButtonClick = {
-                store.dispatch(CustomReviewPromptAction.PositivePrePromptButtonClicked)
-            },
-            onPositivePrePromptButtonClick = {
-                store.dispatch(CustomReviewPromptAction.NegativePrePromptButtonClicked)
-            },
-            onRateButtonClick = {
-                store.dispatch(CustomReviewPromptAction.RateButtonClicked)
-            },
-            onLeaveFeedbackButtonClick = {
-                store.dispatch(CustomReviewPromptAction.LeaveFeedbackButtonClicked)
-            },
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-private fun InteractiveBottomSheetPrivatePreview() {
+private fun InteractiveBottomSheetPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val store = CustomReviewPromptStore(PrePrompt)
     val promptState by store.observeAsState(PrePrompt) { it }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         BottomSheet(
             sheetState = sheetState,
             customReviewPromptState = promptState,

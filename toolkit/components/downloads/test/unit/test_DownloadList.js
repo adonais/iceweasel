@@ -23,7 +23,7 @@ Services.prefs.setBoolPref(
 /**
  * Returns a Date in the past usable to add expirable visits.
  *
- * @note Expiration ignores any visit added in the last 7 days, but it's
+ * Note: Expiration ignores any visit added in the last 7 days, but it's
  *       better be safe against DST issues, by going back one day more.
  */
 function getExpirableDate() {

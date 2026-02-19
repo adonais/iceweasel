@@ -1,0 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: inline-flex;
+  width: 100%;
+}
+
+.multiline-editor {
+  flex: 1;
+}
+
+.multiline-editor .ProseMirror {
+  height: 100%;
+}
+
+.multiline-editor .ProseMirror:focus {
+  outline: none;
+}
+
+.multiline-editor .ProseMirror p {
+  margin: 0;
+  padding: 0;
+}
+
+/* Force empty paragraphs to not collapse */
+.multiline-editor .ProseMirror p BR.ProseMirror-trailingBreak,
+.multiline-editor .ProseMirror p br.ProseMirror-trailingBreak {
+  display: inline-flex;
+}
+
+.multiline-editor .ProseMirror p.placeholder::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  pointer-events: none;
+  color: var(--text-color-deemphasized);
+  user-select: none;
+}

@@ -427,7 +427,7 @@ exports.releaseLayoutChangesObserver = releaseLayoutChangesObserver;
 /**
  * Reports any reflow that occurs in the targetActor's docshells.
  *
- * @extends Observable
+ * @augments Observable
  * @param {WindowGlobalTargetActor} targetActor
  * @param {Function} callback Executed everytime a reflow occurs
  */
@@ -470,7 +470,7 @@ ReflowObserver.prototype.QueryInterface = ChromeUtils.generateQI([
 /**
  * Reports window resize events on the targetActor's windows.
  *
- * @extends Observable
+ * @augments Observable
  * @param {WindowGlobalTargetActor} targetActor
  * @param {Function} callback Executed everytime a resize occurs
  */

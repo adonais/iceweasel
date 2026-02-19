@@ -20,7 +20,7 @@ class WebPlatformTestsRunnerSetup(MozbuildObject):
     default_log_type = "mach"
 
     def __init__(self, *args, **kwargs):
-        super(WebPlatformTestsRunnerSetup, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._here = os.path.join(self.topsrcdir, "testing", "web-platform")
         kwargs["tests_root"] = os.path.join(self._here, "tests")
         sys.path.insert(0, kwargs["tests_root"])

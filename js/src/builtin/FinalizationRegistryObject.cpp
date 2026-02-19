@@ -720,6 +720,13 @@ void FinalizationQueueObject::setHasRegistry(bool newValue) {
   setReservedSlot(HasRegistrySlot, BooleanValue(newValue));
 }
 
+void FinalizationQueueObject::clear() {
+  MOZ_ASSERT(!hasRegistry());
+  if (FinalizationRecordVector* records = recordsToBeCleanedUp()) {
+    records->clear();
+  }
+}
+
 bool FinalizationQueueObject::hasRegistry() const {
   return getReservedSlot(HasRegistrySlot).toBoolean();
 }
@@ -825,9 +832,11 @@ bool FinalizationQueueObject::cleanupQueuedRecords(
   //    b. Remove cell from finalizationRegistry.[[Cells]].
   //    c. Perform ? Call(callback, undefined, « cell.[[HeldValue]] »).
 
+  FinalizationRecordVector* records = queue->recordsToBeCleanedUp();
+  MOZ_ASSERT_IF(!queue->hasRegistry(), records->empty());
+
   RootedValue heldValue(cx);
   RootedValue rval(cx);
-  FinalizationRecordVector* records = queue->recordsToBeCleanedUp();
   while (!records->empty()) {
     FinalizationRecordObject* record = records->popCopy();
     MOZ_ASSERT(!record->isInRecordMap());

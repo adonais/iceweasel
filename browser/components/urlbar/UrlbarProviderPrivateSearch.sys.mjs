@@ -106,13 +106,17 @@ export class UrlbarProviderPrivateSearch extends UrlbarProvider {
       type: UrlbarUtils.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       suggestedIndex: 1,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
-        query: [searchString, UrlbarUtils.HIGHLIGHT.NONE],
+      payload: {
+        engine: engine.name,
+        query: searchString,
+        title: searchString,
         icon,
         inPrivateWindow: true,
         isPrivateEngine,
-      }),
+      },
+      highlights: {
+        engine: UrlbarUtils.HIGHLIGHT.TYPED,
+      },
     });
     addCallback(this, result);
   }

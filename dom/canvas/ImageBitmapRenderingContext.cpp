@@ -195,12 +195,18 @@ mozilla::UniquePtr<uint8_t[]> ImageBitmapRenderingContext::GetImageBuffer(
 
   UniquePtr<uint8_t[]> ret = gfx::SurfaceToPackedBGRA(data);
 
-  if (ret && ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    nsRFPService::RandomizePixels(
-        GetCookieJarSettings(), PrincipalOrNull(), ret.get(),
-        data->GetSize().width, data->GetSize().height,
-        data->GetSize().width * data->GetSize().height * 4,
-        gfx::SurfaceFormat::A8R8G8B8_UINT32);
+  if (ret) {
+    nsRFPService::PotentiallyDumpImage(
+        PrincipalOrNull(), ret.get(), data->GetSize().width,
+        data->GetSize().height,
+        data->GetSize().width * data->GetSize().height * 4);
+    if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
+      nsRFPService::RandomizePixels(
+          GetCookieJarSettings(), PrincipalOrNull(), ret.get(),
+          data->GetSize().width, data->GetSize().height,
+          data->GetSize().width * data->GetSize().height * 4,
+          gfx::SurfaceFormat::A8R8G8B8_UINT32);
+    }
   }
   return ret;
 }

@@ -415,8 +415,7 @@ static bool ExecuteInExtensibleLexicalEnvironment(
     JSContext* cx, HandleScript scriptArg,
     Handle<ExtensibleLexicalEnvironmentObject*> env) {
   CHECK_THREAD(cx);
-  cx->check(env);
-  cx->check(scriptArg);
+  cx->check(env, scriptArg);
   MOZ_RELEASE_ASSERT(scriptArg->hasNonSyntacticScope());
 
   RootedValue rval(cx);

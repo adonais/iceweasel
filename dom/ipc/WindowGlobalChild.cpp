@@ -58,6 +58,8 @@ WindowGlobalChild::WindowGlobalChild(dom::WindowContext* aWindowContext,
       mDocumentURI(aDocumentURI) {
   MOZ_DIAGNOSTIC_ASSERT(mWindowContext);
   MOZ_DIAGNOSTIC_ASSERT(mDocumentPrincipal);
+  MOZ_DIAGNOSTIC_ASSERT(mDocumentPrincipal->GetIsLocalIpAddress() ==
+                        mWindowContext->IsLocalIP());
 
   if (!mDocumentURI) {
     NS_NewURI(getter_AddRefs(mDocumentURI), "about:blank");
@@ -75,6 +77,20 @@ WindowGlobalChild::WindowGlobalChild(dom::WindowContext* aWindowContext,
       BrowsingContext()->BrowserId(), InnerWindowId(),
       nsContentUtils::TruncatedURLForDisplay(aDocumentURI, 1024),
       embedderInnerWindowID, BrowsingContext()->UsePrivateBrowsing());
+}
+
+void VerifyStoragePrincipalMatchesDocumentPrincipal(WindowGlobalInit aInit) {
+  // WindowGlobalParent::CreateDisconnected performs similar checks in
+  // SetDocumentStoragePrincipal. If they fail, the parent process crashes.
+  // Let's ensure we crash in content instead, and assert each condition
+  // separately to find out what fails. See bug 2003449.
+  nsCString noSuffix, storageNoSuffix;
+  aInit.principal()->GetOriginNoSuffix(noSuffix);
+  aInit.storagePrincipal()->GetOriginNoSuffix(storageNoSuffix);
+  MOZ_RELEASE_ASSERT(noSuffix == storageNoSuffix);
+  MOZ_RELEASE_ASSERT(
+      aInit.principal()->OriginAttributesRef().EqualsIgnoringPartitionKey(
+          aInit.storagePrincipal()->OriginAttributesRef()));
 }
 
 already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
@@ -122,6 +138,8 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
     MOZ_DIAGNOSTIC_ASSERT(bc->AncestorsAreCurrent());
     MOZ_DIAGNOSTIC_ASSERT(bc->IsInProcess());
+
+    VerifyStoragePrincipalMatchesDocumentPrincipal(init);
 
     ManagedEndpoint<PWindowGlobalParent> endpoint =
         browserChild->OpenPWindowGlobalEndpoint(wgc);

@@ -124,6 +124,13 @@ RefPtr<FetchDecodedImagePromise> FetchDecodedImage(
     return FetchDecodedImagePromise::CreateAndReject(rv, __func__);
   }
 
+  return FetchDecodedImage(aURI, channel, aSize);
+}
+
+RefPtr<FetchDecodedImagePromise> FetchDecodedImage(nsIURI* aURI,
+                                                   nsIChannel* aChannel,
+                                                   gfx::IntSize aSize) {
+  nsresult rv;
   nsCOMPtr<imgITools> imgTools =
       do_GetService("@mozilla.org/image/tools;1", &rv);
   if (NS_FAILED(rv)) {
@@ -135,7 +142,7 @@ RefPtr<FetchDecodedImagePromise> FetchDecodedImage(
   RefPtr<FetchDecodedImageHelper> helper =
       new FetchDecodedImageHelper(aSize, promise);
 
-  rv = imgTools->DecodeImageFromChannelAsync(aURI, channel, helper, helper);
+  rv = imgTools->DecodeImageFromChannelAsync(aURI, aChannel, helper, helper);
   if (NS_FAILED(rv)) {
     helper->OnError(rv);
   }

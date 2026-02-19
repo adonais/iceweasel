@@ -140,10 +140,10 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
     doc->ProcessNewLiveRegions();
   }
 
-  if ((eventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED ||
-       eventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
-       eventType == nsIAccessibleEvent::EVENT_NAME_CHANGE) &&
-      !aEvent->FromUserInput()) {
+  if (((eventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED ||
+        eventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED) &&
+       !aEvent->FromUserInput()) ||
+      eventType == nsIAccessibleEvent::EVENT_NAME_CHANGE) {
     for (LocalAccessible* container = aEvent->GetAccessible(); container;
          container = container->LocalParent()) {
       if (container->HasOwnContent() && IsLiveRegion(container->GetContent())) {

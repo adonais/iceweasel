@@ -268,10 +268,10 @@ static Directionality ComputeAutoDirectionality(Element* aElement,
  * https://html.spec.whatwg.org/#auto-directionality step 2
  */
 Directionality ComputeAutoDirectionFromAssignedNodes(
-    HTMLSlotElement* aSlot, const nsTArray<RefPtr<nsINode>>& assignedNodes,
+    HTMLSlotElement* aSlot, Span<const RefPtr<nsINode>> aAssignedNodes,
     bool aNotify) {
   // Step 2.1. For each node child of element's assigned nodes:
-  for (const RefPtr<nsINode>& assignedNode : assignedNodes) {
+  for (const RefPtr<nsINode>& assignedNode : aAssignedNodes) {
     // Step 2.1.1. Let childDirection be null.
     Directionality childDirection = Directionality::Unset;
 
@@ -316,7 +316,7 @@ static Directionality ComputeAutoDirectionality(Element* aElement,
   // Step 2. If element is a slot element whose root is a shadow root and
   // element's assigned nodes are not empty:
   if (auto* slot = HTMLSlotElement::FromNode(aElement)) {
-    const nsTArray<RefPtr<nsINode>>& assignedNodes = slot->AssignedNodes();
+    const Span assignedNodes = slot->AssignedNodes();
     if (!assignedNodes.IsEmpty()) {
       MOZ_ASSERT(slot->IsInShadowTree());
       return ComputeAutoDirectionFromAssignedNodes(slot, assignedNodes,

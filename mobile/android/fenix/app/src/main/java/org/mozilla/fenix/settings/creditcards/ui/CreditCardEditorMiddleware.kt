@@ -15,7 +15,7 @@ import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.NewCreditCardFields
 import mozilla.components.concept.storage.UpdatableCreditCardFields
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.support.utils.creditCardIIN
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.CreditCards
@@ -42,16 +42,16 @@ internal class CreditCardEditorMiddleware(
 ) : Middleware<CreditCardEditorState, CreditCardEditorAction> {
 
     override fun invoke(
-        context: MiddlewareContext<CreditCardEditorState, CreditCardEditorAction>,
+        store: Store<CreditCardEditorState, CreditCardEditorAction>,
         next: (CreditCardEditorAction) -> Unit,
         action: CreditCardEditorAction,
     ) {
         next(action)
         when (action) {
-            is CreditCardEditorAction.Initialization -> action.handleInitAction(context)
-            is DeleteDialogAction -> action.handleDeleteDialog(context)
+            is CreditCardEditorAction.Initialization -> action.handleInitAction(store)
+            is DeleteDialogAction -> action.handleDeleteDialog(store)
 
-            is CreditCardEditorAction.Save -> handleSaveAction(context)
+            is CreditCardEditorAction.Save -> handleSaveAction(store)
             is CreditCardEditorAction.NavigateBack,
             is CreditCardEditorAction.Cancel,
                 -> navigateBack()
@@ -61,12 +61,12 @@ internal class CreditCardEditorMiddleware(
     }
 
     private fun DeleteDialogAction.handleDeleteDialog(
-        context: MiddlewareContext<CreditCardEditorState, CreditCardEditorAction>,
+        store: Store<CreditCardEditorState, CreditCardEditorAction>,
     ) {
         when (this) {
             DeleteDialogAction.Confirm -> {
                 coroutineScope.launch(ioDispatcher) {
-                    storage.deleteCreditCard(context.state.guid)
+                    storage.deleteCreditCard(store.state.guid)
 
                     withContext(mainDispatcher) {
                         navigateBack()
@@ -84,9 +84,9 @@ internal class CreditCardEditorMiddleware(
     }
 
     private fun handleSaveAction(
-        context: MiddlewareContext<CreditCardEditorState, CreditCardEditorAction>,
+        store: Store<CreditCardEditorState, CreditCardEditorAction>,
     ) {
-        val state = context.state
+        val state = store.state
 
         if (!state.showCardNumberError && !state.showNameOnCardError) {
             addOrUpdateCard(state)
@@ -142,14 +142,14 @@ internal class CreditCardEditorMiddleware(
     }
 
     private fun CreditCardEditorAction.Initialization.handleInitAction(
-        context: MiddlewareContext<CreditCardEditorState, CreditCardEditorAction>,
+        store: Store<CreditCardEditorState, CreditCardEditorAction>,
     ) {
         when (this) {
             is CreditCardEditorAction.Initialization.InitStarted -> {
                 if (creditCard != null) {
-                    initializeFromCard(context, creditCard)
+                    initializeFromCard(store, creditCard)
                 } else {
-                    initializeFromScratch(context)
+                    initializeFromScratch(store)
                 }
             }
 
@@ -158,10 +158,10 @@ internal class CreditCardEditorMiddleware(
     }
 
     private fun initializeFromScratch(
-        context: MiddlewareContext<CreditCardEditorState, CreditCardEditorAction>,
+        store: Store<CreditCardEditorState, CreditCardEditorAction>,
     ) {
-        val state = context.state
-        context.store.dispatch(
+        val state = store.state
+        store.dispatch(
             CreditCardEditorAction.Initialization.InitCompleted(
                 state = state.copy(
                     expiryMonths = calendarDataProvider.months(),
@@ -176,11 +176,11 @@ internal class CreditCardEditorMiddleware(
     }
 
     private fun initializeFromCard(
-        context: MiddlewareContext<CreditCardEditorState, CreditCardEditorAction>,
+        store: Store<CreditCardEditorState, CreditCardEditorAction>,
         creditCard: CreditCard,
     ) {
         coroutineScope.launch(ioDispatcher) {
-            val state = context.state
+            val state = store.state
             val crypto = storage.getCreditCardCrypto()
 
             val plainTextCardNumber = crypto.decrypt(
@@ -190,7 +190,7 @@ internal class CreditCardEditorMiddleware(
 
             val years = calendarDataProvider.years(creditCard.expiryYear)
 
-            context.store.dispatch(
+            store.dispatch(
                 CreditCardEditorAction.Initialization.InitCompleted(
                     state = state.copy(
                         guid = creditCard.guid,

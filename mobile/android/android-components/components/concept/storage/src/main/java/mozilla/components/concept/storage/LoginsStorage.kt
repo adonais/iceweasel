@@ -63,6 +63,18 @@ data class Login(
      * Time of last password change in milliseconds from the unix epoch.
      */
     val timePasswordChanged: Long = 0L,
+    /**
+     * Time of last breach in milliseconds from the unix epoch.
+     * A breach indicates that the login's origin has been found in a known data breach.
+     * This timestamp represents when the breach affecting this login's origin was last detected.
+     * Note: Breach information is ingested on Desktop.
+     */
+    val timeOfLastBreach: Long? = null,
+    /**
+     * Time of last breach alert dismissal in milliseconds from the unix epoch.
+     * This field is set on Desktop when a user discards the warning message of the breach.
+     */
+    val timeLastBreachAlertDismissed: Long? = null,
 ) {
     /**
      * Converts [Login] into a [LoginEntry].

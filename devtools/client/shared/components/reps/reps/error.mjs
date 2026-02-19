@@ -123,18 +123,22 @@ function getErrorName(props) {
  * Returns a React element reprensenting the Error stacktrace, i.e.
  * transform error.stack from:
  *
+ * ```
  * semicolon@debugger eval code:1:109
  * jkl@debugger eval code:1:63
  * asdf@debugger eval code:1:28
  *
  * @debugger eval code:1:227
+ * ```
  *
  * Into a column layout:
  *
+ * ```
  * semicolon  (<anonymous>:8:10)
  * jkl        (<anonymous>:5:10)
  * asdf       (<anonymous>:2:10)
  *            (<anonymous>:11:1)
+ * ```
  */
 function getStacktraceElements(props, preview) {
   const stack = [];

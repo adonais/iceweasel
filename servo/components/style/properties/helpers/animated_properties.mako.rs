@@ -25,6 +25,7 @@ use std::ptr;
 use std::mem;
 use rustc_hash::FxHashMap;
 use super::ComputedValues;
+use crate::derives::*;
 use crate::properties::OwnedPropertyDeclarationId;
 use crate::dom::AttributeProvider;
 use crate::values::animated::{Animate, Procedure, ToAnimatedValue, ToAnimatedZero};
@@ -36,6 +37,7 @@ use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::effects::Filter;
 use void::{self, Void};
 use crate::properties_and_values::value::CustomAnimatedValue;
+use debug_unreachable::debug_unreachable;
 
 /// Convert NonCustomCSSPropertyId to TransitionProperty
 #[cfg(feature = "gecko")]

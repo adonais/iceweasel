@@ -21,7 +21,7 @@
     />
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/global/mozMessageBar.ftl" />
-    <link rel="localization" href="locales-preview/aboutTranslations.ftl" />
+    <link rel="localization" href="toolkit/about/aboutTranslations.ftl" />
     <script
       type="module"
       src="chrome://global/content/translations/about-translations.mjs"
@@ -29,6 +29,10 @@
     <script
       type="module"
       src="chrome://global/content/elements/moz-message-bar.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-select.mjs"
     ></script>
   </head>
 
@@ -84,50 +88,74 @@
     </header>
 
     <section id="about-translations-main-user-interface">
-      <select
+      <moz-select
         id="about-translations-source-select"
         class="about-translations-select"
         disabled
       >
-        <option
-          id="about-translations-detect-language-option"
-          data-l10n-id="about-translations-detect-default"
+        <moz-option
+          id="about-translations-detect-language-label-option"
+          data-l10n-id="about-translations-detect-default-label"
           value="detect"
-        ></option>
-      </select>
+        ></moz-option>
+      </moz-select>
 
       <moz-button
         id="about-translations-swap-languages-button"
         type="ghost icon"
         data-l10n-id="about-translations-swap-languages"
-        disabled=""
+        disabled
       >
         <div id="about-translations-swap-langauges-icon"></div>
       </moz-button>
 
-      <select
+      <moz-select
         id="about-translations-target-select"
         class="about-translations-select"
         disabled
       >
-        <option data-l10n-id="about-translations-select" value=""></option>
-      </select>
+        <moz-option
+          data-l10n-id="about-translations-select-label"
+          value=""
+        ></moz-option>
+      </moz-select>
 
-      <div id="about-translations-input-section">
+      <div id="about-translations-source-section">
         <textarea
           id="about-translations-source-textarea"
           class="about-translations-textarea"
           data-l10n-id="about-translations-input-placeholder"
           spellcheck="false"
         ></textarea>
+        <div id="about-translations-source-actions">
+          <moz-button
+            id="about-translations-clear-button"
+            type="ghost icon"
+            data-l10n-id="about-translations-clear-button"
+            tabindex="-1"
+            hidden
+          ></moz-button>
+        </div>
       </div>
       <div id="about-translations-empty-section"></div>
-      <textarea
-        id="about-translations-target-textarea"
-        class="about-translations-textarea"
-        data-l10n-id="about-translations-result-placeholder"
-        readonly
-      ></textarea>
+      <div id="about-translations-target-section">
+        <textarea
+          id="about-translations-target-textarea"
+          class="about-translations-textarea"
+          data-l10n-id="about-translations-output-placeholder"
+          readonly
+        ></textarea>
+        <div id="about-translations-target-actions">
+          <moz-button
+            id="about-translations-copy-button"
+            type="ghost"
+            iconSrc="chrome://global/skin/icons/edit-copy.svg"
+            data-l10n-id="about-translations-copy-button-default"
+            data-l10n-attrs="label"
+            disabled
+          ></moz-button>
+        </div>
+      </div>
     </section>
   </body>
 </html>

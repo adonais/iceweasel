@@ -23,6 +23,7 @@ browser {
 
 #header {
   align-items: center;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--sidebar-background-color);
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -60,17 +61,6 @@ browser {
       --caret-anchor: right;
     }
   }
-
-  /* Hide some content, e.g., dropdown, when onboarding exists */
-  #multi-stage-message-root + & {
-    select {
-      background-image: none;
-    }
-
-    #header-more {
-      display: none;
-    }
-  }
 }
 
 #header-close {
@@ -88,7 +78,7 @@ browser {
 }
 
 #multi-stage-message-root {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--background-color-overlay);
   display: flex;
   flex-direction: column;
   inset: 0;
@@ -97,8 +87,8 @@ browser {
 
   .onboardingContainer {
     height: unset;
-    margin: var(--space-large);
-    margin-top: max(36px, 10vh - 31px);
+    margin: auto var(--space-large);
+    min-height: unset;
   }
 
   .screen {
@@ -231,6 +221,12 @@ browser {
     color: var(--text-color-deemphasized);
     font-size: 0.8em;
   }
+
+  + #header,
+  + #browser-container,
+  + #summarize-btn-container {
+    display: none;
+  }
 }
 
 #summarize-btn-container {
@@ -241,6 +237,7 @@ browser {
   .badge {
     --badge-background-color-new: var(--color-green-40);
 
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background: var(--badge-background-color-new);
     border-radius: var(--border-radius-small);
     color: var(--button-text-color-primary-hover);
@@ -260,11 +257,6 @@ browser {
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media (not -moz-pref("browser.ml.chat.page")) or -moz-pref("browser.ml.chat.provider", "") {
-    display: none;
-  }
-
-  /* Hide footer when onboarding exists */
-  #multi-stage-message-root ~ & {
     display: none;
   }
 }

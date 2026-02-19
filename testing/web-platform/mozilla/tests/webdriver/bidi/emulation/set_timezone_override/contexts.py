@@ -5,15 +5,13 @@ pytestmark = pytest.mark.asyncio
 pytest_plugins = "tests.bidi.emulation.conftest"
 
 
-@pytest.mark.capabilities(
-    {
-        "moz:firefoxOptions": {
-            "prefs": {
-                "dom.ipc.processCount": 1,
-            },
+@pytest.mark.capabilities({
+    "moz:firefoxOptions": {
+        "prefs": {
+            "dom.ipc.processCount": 1,
         },
-    }
-)
+    },
+})
 async def test_timezone_override_isolated_in_browsing_context(
     bidi_session, get_current_timezone, some_timezone, another_timezone
 ):

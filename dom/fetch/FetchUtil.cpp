@@ -653,7 +653,7 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
 NS_IMPL_ISUPPORTS(JSStreamConsumer, nsIInputStreamCallback)
 
 // static
-MOZ_CONSTINIT nsCString FetchUtil::WasmAltDataType;
+constinit nsCString FetchUtil::WasmAltDataType;
 
 // static
 void FetchUtil::InitWasmAltDataType() {
@@ -700,9 +700,13 @@ bool FetchUtil::StreamResponseToJS(JSContext* aCx, JS::Handle<JSObject*> aObj,
       break;
   }
 
+  // For WASM, the Content-Type must be exactly "application/wasm" with no
+  // parameters. Check the raw header value before parsing normalizes it.
+  ErrorResult result;
   nsAutoCString mimeType;
-  nsAutoCString mixedCaseMimeType;  // unused
-  response->GetMimeType(mimeType, mixedCaseMimeType);
+  response->GetInternalHeaders()->Get("Content-Type"_ns, mimeType, result);
+  MOZ_ALWAYS_TRUE(!result.Failed());
+  ToLowerCase(mimeType);
 
   if (!mimeType.EqualsASCII(requiredMimeType)) {
     JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,

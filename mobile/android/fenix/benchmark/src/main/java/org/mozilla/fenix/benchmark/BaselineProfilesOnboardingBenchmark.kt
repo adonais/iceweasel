@@ -24,8 +24,6 @@ import org.mozilla.fenix.benchmark.utils.revokeNotificationPermission
  * a Baseline Profile is. It does this by comparing [CompilationMode.None], which represents the
  * app with no Baseline Profiles optimizations, and [CompilationMode.Partial], which uses Baseline Profiles.
  *
- * Before running make sure `autosignReleaseWithDebugKey=true` is present in local.properties.
- *
  * Run this benchmark to see startup measurements and captured system traces for verifying
  * the effectiveness of your Baseline Profiles. You can run it directly from Android
  * Studio as an instrumentation test that logs the benchmark metrics with links to the Perfetto traces,

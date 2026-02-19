@@ -231,7 +231,7 @@ var DownloadsPanel = {
   /**
    * Indicates whether the panel is showing.
    *
-   * @note this includes the hiding state.
+   * Note: this includes the hiding state.
    */
   get isPanelShowing() {
     return this._waitingDataForOpen || this.panel.state != "closed";
@@ -1133,7 +1133,6 @@ var DownloadsView = {
     dataTransfer.effectAllowed = "copyMove";
     let spec = NetUtil.newURI(file).spec;
     dataTransfer.setData("text/uri-list", spec);
-    dataTransfer.setData("text/plain", spec);
     dataTransfer.addElement(element);
 
     aEvent.stopPropagation();

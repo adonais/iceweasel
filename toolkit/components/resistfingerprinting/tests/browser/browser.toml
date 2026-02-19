@@ -82,6 +82,13 @@ support-files = ["file_pdf.pdf"]
 
 ["browser_usercharacteristics_gamepads.js"]
 
+["browser_usercharacteristics_linux_distro.js"]
+skip-if = ["os != 'linux'"]
+
+["browser_usercharacteristics_math.js"]
+
+["browser_usercharacteristics_timezone.js"]
+
 ["browser_worker_granular_overrides.js"]
 
 ["browser_worker_overrides.js"]

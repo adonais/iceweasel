@@ -51,7 +51,7 @@ h2 {
 }
 
 .inner-border {
-  border: $border-secondary;
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius-small);
   height: 100%;
   inset-inline-start: 0;
@@ -83,7 +83,7 @@ h2 {
 }
 
 .actions {
-  border-top: $border-secondary;
+  border-block-start: 1px solid var(--border-color);
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -96,7 +96,7 @@ h2 {
 .button,
 .actions button {
   background-color: var(--newtab-button-secondary-color);
-  border: $border-primary;
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius-small);
   color: inherit;
   cursor: pointer;
@@ -170,6 +170,7 @@ input {
 @import '../components/Widgets/Widgets';
 @import '../components/Widgets/Lists/Lists';
 @import '../components/Widgets/FocusTimer/FocusTimer';
+@import '../components/Widgets/WeatherForecast/WeatherForecast';
 
 // Discovery Stream Components
 @import '../components/DiscoveryStreamComponents/CardGrid/CardGrid';
@@ -186,7 +187,6 @@ input {
 @import '../components/DiscoveryStreamComponents/DSMessage/DSMessage';
 @import '../components/DiscoveryStreamImpressionStats/ImpressionStats';
 @import '../components/DiscoveryStreamComponents/DSEmptyState/DSEmptyState';
-@import '../components/DiscoveryStreamComponents/DSThumbsUpDownButtons/DSThumbsUpDownButtons';
 @import '../components/DiscoveryStreamComponents/PrivacyLink/PrivacyLink';
 @import '../components/DiscoveryStreamComponents/TopicsWidget/TopicsWidget';
 @import '../components/DiscoveryStreamComponents/FeatureHighlight/FeatureHighlight';

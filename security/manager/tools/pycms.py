@@ -55,7 +55,7 @@ class UnknownDirectiveError(Error):
     directives."""
 
     def __init__(self, directive):
-        super(UnknownDirectiveError, self).__init__()
+        super().__init__()
         self.directive = directive
 
     def __str__(self):

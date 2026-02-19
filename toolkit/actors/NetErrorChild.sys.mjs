@@ -21,6 +21,7 @@ export class NetErrorChild extends RemotePageChild {
     const exportableFunctions = [
       "RPMGetAppBuildID",
       "RPMGetHostForDisplay",
+      "RPMGetInnermostAsciiHost",
       "RPMRecordGleanEvent",
       "RPMCheckAlternateHostAvailable",
       "RPMGetHttpResponseHeader",
@@ -76,6 +77,21 @@ export class NetErrorChild extends RemotePageChild {
     // page's URI - we want the URI of the page that failed to load.
     let uri = document.mozDocumentURIIfNotForErrorPages;
     return lazy.BrowserUtils.formatURIForDisplay(uri);
+  }
+
+  /**
+   * Use this to get the ascii host for the load that showed an error.
+   * Do NOT rely on `document.location.href` or similar as it will not work
+   * reliably for nested URLs like view-source.
+   *
+   * @returns {string} ASCII (potentially punycode) version of the hostname.
+   */
+  RPMGetInnermostAsciiHost() {
+    let uri = this.contentWindow.document.mozDocumentURIIfNotForErrorPages;
+    if (uri instanceof Ci.nsINestedURI) {
+      uri = uri.QueryInterface(Ci.nsINestedURI).innermostURI;
+    }
+    return uri.asciiHost;
   }
 
   RPMGetAppBuildID() {

@@ -447,7 +447,7 @@ void nsTableRowFrame::UpdateBSize(nscoord aBSize, nsTableFrame* aTableFrame,
     SetContentBSize(aBSize);
   }
 
-  if (aCellFrame->HasVerticalAlignBaseline()) {
+  if (aCellFrame->HasTableCellAlignmentBaseline()) {
     if (auto ascent = aCellFrame->GetCellBaseline()) {
       // see if this is a long ascender
       if (mMaxCellAscent < *ascent) {

@@ -487,15 +487,45 @@ class CrashReporter internal constructor(
         @Volatile
         private var instance: CrashReporter? = null
 
+        private var deferredInitializer: (() -> CrashReporter)? = null
+
         @VisibleForTesting
         internal fun reset() {
             instance = null
+            deferredInitializer = null
+        }
+
+        /**
+         * Register a deferred initializer that will be called lazily when [requireInstance] is accessed.
+         * This allows processes to register crash reporting setup without immediately initializing
+         * the CrashReporter and its dependencies.
+         *
+         * Note: This will not register the [Thread.UncaughtExceptionHandler] and is primarily for
+         * cases where we access the crash database or uploader.
+         *
+         * @param initializer A function that returns a configured and installed CrashReporter instance.
+         */
+        fun registerDeferredInitializer(initializer: () -> CrashReporter) = synchronized(this) {
+            deferredInitializer = initializer
         }
 
         internal val requireInstance: CrashReporter
-            get() = instance ?: throw IllegalStateException(
-                "You need to call install() on your CrashReporter instance from Application.onCreate().",
-            )
+            get() = synchronized(this) {
+                instance?.let { return it }
+
+                deferredInitializer?.let { initializer ->
+                    return initializer().also {
+                        it.logger.info("Ran deferred CrashReporter initializer")
+                        instance = it
+                        deferredInitializer = null
+                    }
+                }
+
+                throw IllegalStateException(
+                    "You need to call install() or registerDeferredInitializer() on your" +
+                        " CrashReporter from Application.onCreate().",
+                )
+            }
     }
 }
 

@@ -8,8 +8,6 @@
 
 #include "nsICODecoder.h"
 
-#include <stdlib.h>
-
 #include <utility>
 
 #include "RasterImage.h"

@@ -30,6 +30,7 @@
 #include "mozilla/dom/VideoStreamTrack.h"
 #include "mozilla/dom/WakeLock.h"
 #include "mozilla/dom/power/PowerManagerService.h"
+#include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
@@ -70,6 +71,64 @@ nsresult HTMLVideoElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
   nsresult rv = const_cast<HTMLVideoElement*>(this)->CopyInnerTo(it);
   if (NS_SUCCEEDED(rv)) {
     kungFuDeathGrip.swap(*aResult);
+  }
+  return rv;
+}
+
+nsresult HTMLVideoElement::CopyInnerTo(Element* aDest) {
+  nsresult rv = HTMLMediaElement::CopyInnerTo(aDest);
+  NS_ENSURE_SUCCESS(rv, rv);
+  HTMLVideoElement* dest = static_cast<HTMLVideoElement*>(aDest);
+
+  // Cloning into a static document indicates we are creating a clone for
+  // printing purposes only.
+  //
+  // If we are making a clone for printing, also clone a frame of video.
+  // Avoid using GetVideoFrameContainer on this object, because that may
+  // create a new video container for no reason.
+  if (aDest->OwnerDoc()->IsStaticDocument() && mVideoFrameContainer) {
+    // We can expect the source video to have frames, unless the decoder
+    // has been suspended. When that happens, all frames are cleared.
+    // Otherwise, even if the media is not seekable, once a frame is
+    // decoded there should always be images available.
+    //
+    // When the decoder is suspended, we will only get fake frames.
+    // This situation is similar to when JS needs a frame to use in,
+    // eg., nsLayoutUtils::SurfaceFromElement() via drawImage().
+    //
+    // TODO: As an alternative, we could asynchronously resume decoding
+    // and dispatch an event to copy an image when that succeeds.
+    //
+    // See bug 1295921 for synchronous decoding support:
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1295921#c208
+    AutoTArray<ImageContainer::OwningImage, 10> images;
+    mVideoFrameContainer->GetImageContainer()->GetCurrentImages(&images);
+    if (images.IsEmpty()) {
+      LOG("no video images, printing with a suspended video decoder?");
+      return rv;
+    }
+
+    // Ask for the video frame container only after we know we have a current
+    // image from the source.
+    // GetVideoFrameContainer might create a new video frame container,
+    // which would be pointless if we won't be able to create any video data.
+    VideoFrameContainer* const dstVideo = dest->GetVideoFrameContainer();
+    NS_ENSURE_TRUE(dstVideo, rv);
+
+    // Make a copy of the first image. This ensures we don't hold onto any
+    // output buffers from a decoder while print preview is open.
+    RefPtr<gfx::DataSourceSurface> dstSurface(CopyImage(images[0].mImage));
+    if (!dstSurface) {
+      MOZ_LOG(gMediaElementLog, LogLevel::Error,
+              ("failed to copy video image"));
+      return rv;
+    }
+    RefPtr<layers::SourceSurfaceImage> dstImage =
+        MakeAndAddRef<layers::SourceSurfaceImage>(dstSurface.get());
+
+    dstVideo->SetCurrentFrame(dstImage->GetSize(), dstImage, TimeStamp(),
+                              media::TimeUnit::Invalid(),
+                              media::TimeUnit::Invalid());
   }
   return rv;
 }
@@ -490,6 +549,32 @@ bool HTMLVideoElement::SetVisualCloneSource(
     return true;
   }
   return false;
+}
+
+/* static */
+already_AddRefed<gfx::DataSourceSurface> HTMLVideoElement::CopyImage(
+    layers::Image* aImage) {
+  RefPtr<gfx::SourceSurface> surface = aImage->GetAsSourceSurface();
+  if (!surface) {
+    return nullptr;
+  }
+
+  RefPtr<gfx::DataSourceSurface> data = surface->GetDataSurface();
+  if (!data) {
+    return nullptr;
+  }
+
+  gfx::DataSourceSurface::ScopedMap read(data, gfx::DataSourceSurface::READ);
+  if (!read.IsMapped()) {
+    return nullptr;
+  }
+
+  RefPtr<gfx::DataSourceSurface> copy = gfx::CreateDataSourceSurfaceFromData(
+      data->GetSize(), data->GetFormat(), read.GetData(), read.GetStride());
+
+  MOZ_ASSERT_IF(copy, data->GetSize() == copy->GetSize());
+  MOZ_ASSERT_IF(copy, data->GetFormat() == copy->GetFormat());
+  return copy.forget();
 }
 
 /* static */

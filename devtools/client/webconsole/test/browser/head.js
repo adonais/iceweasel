@@ -29,12 +29,12 @@ var {
 
 var WCUL10n = require("resource://devtools/client/webconsole/utils/l10n.js");
 const DOCS_GA_PARAMS = `?${new URLSearchParams({
-  utm_source: "mozilla",
+  utm_source: "devtools",
   utm_medium: "firefox-console-errors",
   utm_campaign: "default",
 })}`;
 const GA_PARAMS = `?${new URLSearchParams({
-  utm_source: "mozilla",
+  utm_source: "devtools",
   utm_medium: "devtools-webconsole",
   utm_campaign: "default",
 })}`;

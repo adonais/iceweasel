@@ -7,7 +7,7 @@ package org.mozilla.fenix.reviewprompt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.settings.SupportUtils
 
 /**
@@ -19,11 +19,11 @@ class CustomReviewPromptNavigationMiddleware(
 ) : Middleware<CustomReviewPromptState, CustomReviewPromptAction> {
 
     override fun invoke(
-        context: MiddlewareContext<CustomReviewPromptState, CustomReviewPromptAction>,
+        store: Store<CustomReviewPromptState, CustomReviewPromptAction>,
         next: (CustomReviewPromptAction) -> Unit,
         action: CustomReviewPromptAction,
     ) {
-        val events = (context.store as CustomReviewPromptStore).navigationEvents
+        val events = (store as CustomReviewPromptStore).navigationEvents
         when (action) {
             CustomReviewPromptAction.RateButtonClicked -> {
                 scope.launch {

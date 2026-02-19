@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
@@ -35,10 +36,12 @@ class WebControlsTest : TestSetup() {
     private val phoneLink = "tel://1234567890"
 
     @get:Rule
-    val activityTestRule = HomeActivityTestRule(
+    val composeTestRule = AndroidComposeTestRule(
+        HomeActivityTestRule(
         shouldUseBottomToolbar = true,
         isOpenInAppBannerEnabled = false,
-    )
+        ),
+    ) { it.activity }
 
     @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
@@ -52,16 +55,16 @@ class WebControlsTest : TestSetup() {
         val currentYear = currentDate.year
         val htmlControlsPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(htmlControlsPage.url) {
-            clickPageObject(itemWithResId("calendar"))
-            clickPageObject(itemContainingText("CANCEL"))
-            clickPageObject(itemWithResId("submitDate"))
+            clickPageObject(composeTestRule, itemWithResId("calendar"))
+            clickPageObject(composeTestRule, itemContainingText("CANCEL"))
+            clickPageObject(composeTestRule, itemWithResId("submitDate"))
             verifyNoDateIsSelected()
-            clickPageObject(itemWithResId("calendar"))
-            clickPageObject(itemWithDescription("$currentMonth $currentDay"))
-            clickPageObject(itemContainingText("Set"))
-            clickPageObject(itemWithResId("submitDate"))
+            clickPageObject(composeTestRule, itemWithResId("calendar"))
+            clickPageObject(composeTestRule, itemWithDescription("$currentMonth $currentDay"))
+            clickPageObject(composeTestRule, itemContainingText("Set"))
+            clickPageObject(composeTestRule, itemWithResId("submitDate"))
             verifySelectedDate()
         }
     }
@@ -71,16 +74,16 @@ class WebControlsTest : TestSetup() {
     fun verifyClockFormInteractionsTest() {
         val htmlControlsPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(htmlControlsPage.url) {
-            clickPageObject(itemWithResId("clock"))
-            clickPageObject(itemContainingText("Cancel"))
-            clickPageObject(itemWithResId("submitTime"))
+            clickPageObject(composeTestRule, itemWithResId("clock"))
+            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemWithResId("submitTime"))
             verifyNoTimeIsSelected(hour, minute)
-            clickPageObject(itemWithResId("clock"))
+            clickPageObject(composeTestRule, itemWithResId("clock"))
             selectTime(hour, minute)
-            clickPageObject(itemContainingText("OK"))
-            clickPageObject(itemWithResId("submitTime"))
+            clickPageObject(composeTestRule, itemContainingText("OK"))
+            clickPageObject(composeTestRule, itemWithResId("submitTime"))
             verifySelectedTime(hour, minute)
         }
     }
@@ -90,17 +93,17 @@ class WebControlsTest : TestSetup() {
     fun verifyColorPickerInteractionsTest() {
         val htmlControlsPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(htmlControlsPage.url) {
-            clickPageObject(itemWithResId("colorPicker"))
-            clickPageObject(itemWithDescription(colorHexValue))
-            clickPageObject(itemContainingText("CANCEL"))
-            clickPageObject(itemWithResId("submitColor"))
+            clickPageObject(composeTestRule, itemWithResId("colorPicker"))
+            clickPageObject(composeTestRule, itemWithDescription(colorHexValue))
+            clickPageObject(composeTestRule, itemContainingText("CANCEL"))
+            clickPageObject(composeTestRule, itemWithResId("submitColor"))
             verifyColorIsNotSelected(colorHexValue)
-            clickPageObject(itemWithResId("colorPicker"))
-            clickPageObject(itemWithDescription(colorHexValue))
-            clickPageObject(itemContainingText("SET"))
-            clickPageObject(itemWithResId("submitColor"))
+            clickPageObject(composeTestRule, itemWithResId("colorPicker"))
+            clickPageObject(composeTestRule, itemWithDescription(colorHexValue))
+            clickPageObject(composeTestRule, itemContainingText("SET"))
+            clickPageObject(composeTestRule, itemWithResId("submitColor"))
             verifySelectedColor(colorHexValue)
         }
     }
@@ -110,11 +113,11 @@ class WebControlsTest : TestSetup() {
     fun verifyDropdownMenuInteractionsTest() {
         val htmlControlsPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(htmlControlsPage.url) {
-            clickPageObject(itemWithResId("dropDown"))
-            clickPageObject(itemContainingText("The National"))
-            clickPageObject(itemWithResId("submitOption"))
+            clickPageObject(composeTestRule, itemWithResId("dropDown"))
+            clickPageObject(composeTestRule, itemContainingText("The National"))
+            clickPageObject(composeTestRule, itemWithResId("submitOption"))
             verifySelectedDropDownOption("The National")
         }
     }
@@ -124,12 +127,12 @@ class WebControlsTest : TestSetup() {
     fun verifyEmailLinkTest() {
         val externalLinksPage = mockWebServer.externalLinksAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
-            clickPageObject(itemContainingText("Email link"))
+            clickPageObject(composeTestRule, itemContainingText("Email link"))
             waitForAppWindowToBeUpdated()
-            clickPageObject(itemWithResIdAndText("android:id/button1", "Open"))
-            assertNativeAppOpens(Constants.PackageName.GMAIL_APP, emailLink)
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button1", "Open"))
+            assertNativeAppOpens(composeTestRule, Constants.PackageName.GMAIL_APP, emailLink)
         }
     }
 
@@ -138,12 +141,12 @@ class WebControlsTest : TestSetup() {
     fun verifyTelephoneLinkTest() {
         val externalLinksPage = mockWebServer.externalLinksAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
-            clickPageObject(itemContainingText("Telephone link"))
+            clickPageObject(composeTestRule, itemContainingText("Telephone link"))
             waitForAppWindowToBeUpdated()
-            clickPageObject(itemWithResIdAndText("android:id/button1", "Open"))
-            assertNativeAppOpens(Constants.PackageName.PHONE_APP, phoneLink)
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button1", "Open"))
+            assertNativeAppOpens(composeTestRule, Constants.PackageName.PHONE_APP, phoneLink)
         }
     }
 }

@@ -5,6 +5,7 @@
 # some parts of this originally taken from /testing/talos/talos/output.py
 
 """output raptor test results"""
+
 import copy
 import json
 import os
@@ -148,13 +149,11 @@ class PerftestOutput(metaclass=ABCMeta):
                 "subtests": subtests,
             }
             if data_set.get("summarize-values", True):
-                suite.update(
-                    {
-                        "lowerIsBetter": True,
-                        "unit": data_set["unit"],
-                        "alertThreshold": 2.0,
-                    }
-                )
+                suite.update({
+                    "lowerIsBetter": True,
+                    "unit": data_set["unit"],
+                    "alertThreshold": 2.0,
+                })
 
             for result in self.results:
                 if result["name"] == data_set["test"]:
@@ -297,9 +296,9 @@ class PerftestOutput(metaclass=ABCMeta):
             self.summarized_results["os"] = {"name": self.os_name}
             self._set_platform_version()
             if self.os_platform_version:
-                self.summarized_results["os"][
-                    "platform_version"
-                ] = self.os_platform_version
+                self.summarized_results["os"]["platform_version"] = (
+                    self.os_platform_version
+                )
 
         total_perfdata = 0
         if output_perf_data:
@@ -577,9 +576,9 @@ class PerftestOutput(metaclass=ABCMeta):
                 if not isinstance(value, Iterable):
                     updated_metric = [value]
                 # pylint: disable=W1633
-                _subtests[metric]["replicates"].extend(
-                    [round(x, 3) for x in updated_metric]
-                )
+                _subtests[metric]["replicates"].extend([
+                    round(x, 3) for x in updated_metric
+                ])
 
         vals = []
         subtests = []
@@ -742,14 +741,14 @@ class PerftestOutput(metaclass=ABCMeta):
                         "replicates": [],
                     }
                 # pylint: disable=W1633
-                _subtests[sub]["replicates"].extend(
-                    [float(round(x, 3)) for x in replicates]
-                )
+                _subtests[sub]["replicates"].extend([
+                    float(round(x, 3)) for x in replicates
+                ])
 
         vals = []
-        for name, test in _subtests.items():
-            test["value"] = filters.mean(test["replicates"])
-            vals.append([test["value"], name])
+        for name, subtest_data in _subtests.items():
+            subtest_data["value"] = filters.mean(subtest_data["replicates"])
+            vals.append([subtest_data["value"], name])
 
         # pylint W1656
         return list(_subtests.values()), sorted(vals, reverse=True)
@@ -1011,9 +1010,9 @@ class PerftestOutput(metaclass=ABCMeta):
                         "replicates": [],
                     }
                 # pylint: disable=W1633
-                _subtests[sub]["replicates"].extend(
-                    [float(round(x, 3)) for x in replicates]
-                )
+                _subtests[sub]["replicates"].extend([
+                    float(round(x, 3)) for x in replicates
+                ])
 
         vals = []
         subtests = []
@@ -1084,9 +1083,9 @@ class PerftestOutput(metaclass=ABCMeta):
                         "replicates": [],
                     }
                 # pylint: disable=W1633
-                _subtests[sub]["replicates"].extend(
-                    [float(round(x, 3)) for x in replicates]
-                )
+                _subtests[sub]["replicates"].extend([
+                    float(round(x, 3)) for x in replicates
+                ])
 
         subtests = []
         vals = []
@@ -1165,9 +1164,9 @@ class PerftestOutput(metaclass=ABCMeta):
                         "replicates": [],
                     }
                 # pylint: disable=W1633
-                _subtests[sub]["replicates"].extend(
-                    [float(round(x, 3)) for x in replicates]
-                )
+                _subtests[sub]["replicates"].extend([
+                    float(round(x, 3)) for x in replicates
+                ])
 
         vals = []
         subtests = []
@@ -1414,12 +1413,10 @@ class RaptorOutput(PerftestOutput):
                     subtests.append(new_subtest)
 
             elif test["type"] == "benchmark":
-                if any(
-                    [
-                        "youtube-playback" in measurement
-                        for measurement in test["measurements"].keys()
-                    ]
-                ):
+                if any([
+                    "youtube-playback" in measurement
+                    for measurement in test["measurements"].keys()
+                ]):
                     subtests, vals = self.parseYoutubePlaybackPerformanceOutput(test)
                 elif "assorted-dom" in test["measurements"]:
                     subtests, vals = self.parseAssortedDomOutput(test)

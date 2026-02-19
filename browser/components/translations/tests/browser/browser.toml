@@ -8,23 +8,41 @@ support-files = [
 
 ["browser_translations_about_preferences_manage_downloaded_languages.js"]
 
-["browser_translations_about_preferences_settings_always_translate_languages.js"]
+["browser_translations_about_settings_main_page_offer_checkbox.js"]
 
-["browser_translations_about_preferences_settings_download_languages_all_ui.js"]
+["browser_translations_about_settings_subpage_always_translate_langs_a11y.js"]
 
-["browser_translations_about_preferences_settings_download_languages_error_ui.js"]
+["browser_translations_about_settings_subpage_always_translate_langs_basic.js"]
 
-["browser_translations_about_preferences_settings_download_languages_ui.js"]
+["browser_translations_about_settings_subpage_always_translate_langs_modify.js"]
 
-["browser_translations_about_preferences_settings_never_translate_languages.js"]
+["browser_translations_about_settings_subpage_always_translate_langs_observe.js"]
 
-["browser_translations_about_preferences_settings_never_translate_sites.js"]
+["browser_translations_about_settings_subpage_back_button.js"]
 
-["browser_translations_about_preferences_settings_ui.js"]
+["browser_translations_about_settings_subpage_default.js"]
 
-["browser_translations_about_preferences_settings_ui_keyboard_a11y.js"]
+["browser_translations_about_settings_subpage_download_langs_basic.js"]
 
-["browser_translations_about_preferences_settings_ui_tab.js"]
+["browser_translations_about_settings_subpage_download_langs_delete_confirmation.js"]
+
+["browser_translations_about_settings_subpage_download_langs_errors.js"]
+
+["browser_translations_about_settings_subpage_download_langs_reset_states.js"]
+
+["browser_translations_about_settings_subpage_download_langs_sorting.js"]
+
+["browser_translations_about_settings_subpage_never_translate_langs_a11y.js"]
+
+["browser_translations_about_settings_subpage_never_translate_langs_basic.js"]
+
+["browser_translations_about_settings_subpage_never_translate_langs_modify.js"]
+
+["browser_translations_about_settings_subpage_never_translate_langs_observe.js"]
+
+["browser_translations_about_settings_subpage_never_translate_sites_basic.js"]
+
+["browser_translations_about_settings_subpage_never_translate_sites_observe.js"]
 
 ["browser_translations_e2e_full_page_translate_with_lexical_shortlist.js"]
 

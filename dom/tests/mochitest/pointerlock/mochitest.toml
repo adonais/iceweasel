@@ -9,6 +9,7 @@ support-files = [
 
 ["test_pointerlock-api.html"]
 tags = "fullscreen"
+scheme = "https"
 support-files = [
   "file_pointerlock-api.html",
   "file_pointerlock-api-with-shadow.html",

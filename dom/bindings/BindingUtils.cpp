@@ -33,6 +33,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
@@ -3804,7 +3805,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   // Technically, per spec, a window always has a document.  In Gecko, a
   // sufficiently torn-down window might not, so check for that case.  We're
   // going to need a document to create an element.
-  Document* doc = window->GetExtantDoc();
+  RefPtr<Document> doc = window->GetExtantDoc();
   if (!doc) {
     rv.Throw(NS_ERROR_UNEXPECTED);
     return false;
@@ -3847,7 +3848,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   }
 
   // Step 3.
-  CustomElementDefinition* definition =
+  RefPtr<CustomElementDefinition> definition =
       registry->LookupCustomElementDefinition(aCx, newTarget);
   if (!definition) {
     rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
@@ -3947,6 +3948,21 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
   // Steps 7 and 8.
   JS::Rooted<JSObject*> desiredProto(aCx);
+
+  // Check which construction path we're taking before running any JS.
+  // This determines whether we need AutoConstructionDepth protection.
+  nsTArray<RefPtr<Element>>& constructionStack = definition->mConstructionStack;
+  const bool isDirectConstruction = constructionStack.IsEmpty();
+
+  // For direct construction (not upgrade), create AutoConstructionDepth before
+  // GetDesiredProto. This ensures mConstructionDepth is incremented before any
+  // re-entrant JS can run via Proxy traps, preventing desynchronization with
+  // mPrefixStack which may be pushed by nsContentUtils::NewXULOrHTMLElement.
+  mozilla::Maybe<AutoConstructionDepth> autoDepth;
+  if (isDirectConstruction) {
+    autoDepth.emplace(definition);
+  }
+
   if (!GetDesiredProto(aCx, args, aProtoId, aCreator, &desiredProto)) {
     return false;
   }
@@ -3957,14 +3973,12 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   // one branch and steps 9-12 on another branch, then common up the "return
   // element" work.
   RefPtr<Element> element;
-  nsTArray<RefPtr<Element>>& constructionStack = definition->mConstructionStack;
-  if (constructionStack.IsEmpty()) {
+  if (isDirectConstruction) {
     // Step 8.
     // Now we go to construct an element.  We want to do this in global's
     // realm, not caller realm (the normal constructor behavior),
     // just in case those elements create JS things.
     JSAutoRealm ar(aCx, global.Get());
-    AutoConstructionDepth acd(definition);
 
     RefPtr<NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
         definition->mLocalName, definition->mPrefixStack.LastElement(), ns,

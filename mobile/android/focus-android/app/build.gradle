@@ -22,8 +22,8 @@ if (findProject(":geckoview") != null) {
 apply from: versionCodeGradle
 
 import com.android.build.api.variant.FilterConfiguration
+import com.google.android.gms.oss.licenses.plugin.DependencyTask
 import groovy.json.JsonOutput
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static org.gradle.api.tasks.testing.TestResult.ResultType
 
@@ -90,10 +90,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             matchingFallbacks = ['release']
 
-            if (gradle.hasProperty("localProperties.autosignReleaseWithDebugKey") ||
-                gradle.mozconfig.substs.DEVELOPER_OPTIONS) {
-                println ("All builds will be automatically signed with the debug key")
-                signingConfig signingConfigs.debug
+            // If building locally, just use debug signing. In official automation builds, the
+            // files are signed using a separate service and not within gradle.
+            if (!gradle.mozconfig.substs.MOZ_AUTOMATION) {
+                signingConfig = signingConfigs.debug
             }
 
             if (gradle.hasProperty("localProperties.debuggable") ||
@@ -243,15 +243,6 @@ nimbus {
 }
 
 dependencies {
-    // We pick up JNA transitively by way of Glean, which is currently on version 5.14.0.
-    // However, we need to force version 5.17.0 due to Google Play's 16KB page size requirement.
-    // JNA 5.15.0+ crashes on Android <7, however, so it can't be bumped in Glean at this time.
-    // Therefore, manually force the use of version 5.17.0 at the app level since we only support
-    // running on Android 8+ now anyway. This can be removed once Glean updates.
-    constraints {
-        implementation(libs.jna)
-    }
-
     implementation project(':components:browser-domains')
     implementation project(':components:browser-engine-gecko')
     implementation project(':components:browser-errorpages')
@@ -670,6 +661,16 @@ tasks.register('printVariants') {
         ])
         println 'variants: ' + JsonOutput.toJson(variants.get())
     }
+}
+
+// Fix for Gradle 9 strictness: Ensure CleanUp runs before DependencyTask
+tasks.withType(DependencyTask).configureEach { task ->
+    // The OSS plugin creates a "LicensesCleanUp" task for every "DependencyTask"
+    // e.g., nightlyOssDependencyTask -> nightlyOssLicensesCleanUp
+    def cleanUpTaskName = task.name.replace("DependencyTask", "LicensesCleanUp")
+
+    // make the dependency task depend on its cleanup task.
+    task.dependsOn(tasks.named(cleanUpTaskName))
 }
 
 afterEvaluate {

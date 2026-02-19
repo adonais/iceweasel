@@ -217,7 +217,7 @@ def get_stack_fixer_function(utilityPath, symbolsPath, hideErrors=False):
     if not mozinfo.info.get("debug"):
         return None
 
-    if os.getenv("MOZ_DISABLE_STACK_FIX", 0):
+    if os.getenv("MOZ_DISABLE_STACK_FIX"):
         print(
             "WARNING: No stack-fixing will occur because MOZ_DISABLE_STACK_FIX is set"
         )

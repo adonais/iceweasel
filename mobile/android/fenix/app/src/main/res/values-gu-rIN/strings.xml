@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">ખાનગી %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -20,9 +20,9 @@
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">શોધ અથવા સરનામું દાખલ કરો</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">તમારા ખુલ્લા ટેબ અહીં બતાવવામાં આવશે.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">તમારા ખુલ્લા ટેબ અહીં બતાવવામાં આવશે.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">તમારા ખાનગી ટૅબ્સ અહીં બતાવવામાં આવશે.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">તમારા ખાનગી ટૅબ્સ અહીં બતાવવામાં આવશે.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d પસંદ કરેલ</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -34,7 +34,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">મલ્ટિસિલેક્ટ મોડમાંથી બહાર નીકળો</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">પસંદ કરેલા ટૅબ્સને સંગ્રહમાં સાચવો</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">પસંદ કરેલા ટૅબ્સને સંગ્રહમાં સાચવો</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">ખાનગી બ્રાઉઝિંગ વિશે સામાન્ય માન્યતાઓ</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
@@ -60,9 +60,9 @@
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
   <string name="browser_menu_stop">અટકાવો</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">મદદ</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">મદદ</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">નવું શું છે</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">નવું શું છે</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">સેટિંગ્સ</string>
   <!-- Browser menu toggle that requests a desktop site -->
@@ -84,7 +84,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s દ્વારા સંચાલિત</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s દ્વારા સંચાલિત</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -286,7 +286,7 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">ખાનગી ટેબ ઉમેરો</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">ખાનગી</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">ખાનગી</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">બધી ટૅબ્સ બંધ કરો</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
@@ -572,7 +572,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">જ્યારે તમે મુખ્ય મેનૂમાંથી \"Quit\" પસંદ કરો છો ત્યારે બ્રાઉઝિંગ ડેટા આપમેળે કાઢી નાખે છે</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">બંધ કરો</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">બંધ કરો</string>
   <!-- Dialog message to the user asking to delete browsing data. %s is the name of the app (for example "Firefox"). -->
   <string name="delete_browsing_data_prompt_message_3">%s પસંદ કરેલી બ્રાઉઝિંગ માહિતીને કાઢી નાખશે.</string>
   <!-- Text for the cancel button for the data deletion dialog -->
@@ -758,7 +758,7 @@
   -->
   <string name="certificate_info_verified_by">દ્વારા ચકાસાયેલ: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">કાઢી નાંખો</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">કાઢી નાંખો</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

@@ -40,7 +40,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
       makeSearchResult(context, {
@@ -58,7 +58,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
       makeSearchResult(context, {
@@ -76,7 +76,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
       makeSearchResult(context, {
@@ -94,7 +94,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -109,7 +109,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -124,7 +124,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -156,7 +156,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
-        fallbackTitle: query,
+        title: query,
         heuristic: true,
       }),
     ],
@@ -171,7 +171,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -195,7 +195,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}`,
-        fallbackTitle: `${query}`,
+        title: `${query}`,
         iconUri: "page-icon:http://mozilla.org/",
         heuristic: true,
       }),
@@ -244,7 +244,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
       makeSearchResult(context, {
@@ -262,7 +262,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}`,
-        fallbackTitle: `${query}`,
+        title: `${query}`,
         iconUri: "page-icon:http://firefox/",
         heuristic: true,
       }),
@@ -282,7 +282,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}`,
-        fallbackTitle: `${query}`,
+        title: `${query}`,
         iconUri: "page-icon:http://mozilla/",
         heuristic: true,
       }),
@@ -299,7 +299,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -314,7 +314,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -335,7 +335,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -350,7 +350,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
-        fallbackTitle: query,
+        title: query,
         heuristic: true,
       }),
     ],
@@ -440,7 +440,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -455,7 +455,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -470,7 +470,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -516,7 +516,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
-        fallbackTitle: query,
+        title: query,
         heuristic: true,
       }),
     ],
@@ -531,7 +531,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
-        fallbackTitle: query,
+        title: query,
         heuristic: true,
       }),
     ],
@@ -682,7 +682,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
       makeSearchResult(context, {
@@ -718,7 +718,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://user:pass@not-host/",
-        fallbackTitle: "user:pass@not-host/",
+        title: "user:pass@not-host/",
         heuristic: true,
       }),
     ],
@@ -733,7 +733,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://user@192.168.0.1/",
-        fallbackTitle: "user@192.168.0.1/",
+        title: "user@192.168.0.1/",
         heuristic: true,
       }),
       makeSearchResult(context, {
@@ -761,7 +761,7 @@ add_task(async function () {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         uri: `http://test.xn--e1afmkfd.com/`,
-        displayUrl: `test.пример.com`,
+        title: "test.пример.com",
         heuristic: true,
         iconUri: "page-icon:http://test.xn--e1afmkfd.com/",
       }),
@@ -792,7 +792,7 @@ add_task(async function dont_fixup_urls_with_at_symbol() {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://Lorem%20Ipsum%20@mozilla.org/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -805,7 +805,7 @@ add_task(async function dont_fixup_urls_with_at_symbol() {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `https://Lorem%20Ipsum%20@mozilla.org/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
     ],
@@ -819,13 +819,20 @@ add_task(async function dont_fixup_urls_with_at_symbol() {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
-        fallbackTitle: `${query}/`,
+        title: `${query}/`,
         heuristic: true,
       }),
       makeSearchResult(context, {
         engineName: SUGGESTIONS_ENGINE_NAME,
       }),
     ],
+  });
+
+  query = "";
+  context = createContext(query, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [],
   });
 });
 

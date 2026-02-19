@@ -20,7 +20,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  11 files changed, 27 insertions(+), 27 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index cbfc05f243..ba0be681c7 100644
+index 14d1caaa01..7bce8fab51 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -444,12 +444,12 @@ config("common_config") {
@@ -172,10 +172,10 @@ index ac862c65a8..e66ed2796e 100644
    } else {
      sources += [ "spl_sqrt_floor.c" ]
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 4d7dc5d9cb..847e5ccbea 100644
+index 633bae0cfa..830528d5e5 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
-@@ -123,7 +123,7 @@ rtc_library("aec3") {
+@@ -126,7 +126,7 @@ rtc_library("aec3") {
    ]
  
    defines = []
@@ -184,7 +184,7 @@ index 4d7dc5d9cb..847e5ccbea 100644
      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
      cflags = [ "-mfpu=neon" ]
    }
-@@ -161,7 +161,7 @@ rtc_library("aec3") {
+@@ -165,7 +165,7 @@ rtc_library("aec3") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -193,7 +193,7 @@ index 4d7dc5d9cb..847e5ccbea 100644
      deps += [ ":aec3_avx2" ]
    }
  }
-@@ -252,7 +252,7 @@ rtc_source_set("fft_data") {
+@@ -256,7 +256,7 @@ rtc_source_set("fft_data") {
    ]
  }
  
@@ -263,7 +263,7 @@ index e90ef0e06a..0e96125f40 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index f45c664600..4c4366dad2 100644
+index 693e45ff8b..faa88d3543 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")
@@ -276,7 +276,7 @@ index f45c664600..4c4366dad2 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 88e0441d9e..00032f4476 100644
+index 63f36cc466..f4ce4559aa 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -156,13 +156,13 @@ declare_args() {

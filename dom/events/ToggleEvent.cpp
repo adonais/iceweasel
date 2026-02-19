@@ -39,6 +39,7 @@ already_AddRefed<ToggleEvent> ToggleEvent::Constructor(
   e->InitEvent(aType, aEventInitDict.mBubbles, aEventInitDict.mCancelable);
   e->mOldState = aEventInitDict.mOldState;
   e->mNewState = aEventInitDict.mNewState;
+  e->mSource = aEventInitDict.mSource;
   e->SetTrusted(trusted);
   e->SetComposed(aEventInitDict.mComposed);
   return e.forget();

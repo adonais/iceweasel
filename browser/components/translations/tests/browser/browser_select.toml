@@ -6,6 +6,8 @@ support-files = [
   "!/toolkit/components/translations/tests/browser/translations-test.mjs",
 ]
 
+["browser_translations_select_ai_feature.js"]
+
 ["browser_translations_select_context_menu_engine_unsupported.js"]
 
 ["browser_translations_select_context_menu_feature_disabled.js"]

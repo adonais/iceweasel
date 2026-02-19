@@ -23,7 +23,7 @@ extern mozilla::LazyLogModule sFFmpegVideoLog;
 namespace mozilla {
 
 D3D11TextureWrapper::D3D11TextureWrapper(AVFrame* aAVFrame,
-                                         FFmpegLibWrapper* aLib,
+                                         const FFmpegLibWrapper* aLib,
                                          ID3D11Texture2D* aTexture,
                                          const gfx::SurfaceFormat aFormat,
                                          const unsigned int aArrayIdx,

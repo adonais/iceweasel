@@ -447,7 +447,7 @@ void FFmpegLibWrapper::UpdateLogLevel() {
 }
 
 #ifdef MOZ_WIDGET_GTK
-bool FFmpegLibWrapper::IsVAAPIAvailable() {
+bool FFmpegLibWrapper::IsVAAPIAvailable() const {
 #  define VA_FUNC_LOADED(func) ((func) != nullptr)
   return VA_FUNC_LOADED(avcodec_get_hw_config) &&
          VA_FUNC_LOADED(av_hwdevice_ctx_alloc) &&

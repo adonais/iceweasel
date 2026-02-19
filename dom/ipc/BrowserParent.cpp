@@ -572,19 +572,18 @@ BrowserBridgeParent* BrowserParent::GetBrowserBridgeParent() const {
 
 BrowserHost* BrowserParent::GetBrowserHost() const { return mBrowserHost; }
 
+bool BrowserParent::IsTransparent() const {
+  return mFrameElement && mFrameElement->HasAttr(nsGkAtoms::transparent) &&
+         nsContentUtils::IsChromeDoc(mFrameElement->OwnerDoc());
+}
+
 ParentShowInfo BrowserParent::GetShowInfo() {
   TryCacheDPIAndScale();
+  nsAutoString name;
   if (mFrameElement) {
-    nsAutoString name;
     mFrameElement->GetAttr(nsGkAtoms::name, name);
-    bool isTransparent =
-        nsContentUtils::IsChromeDoc(mFrameElement->OwnerDoc()) &&
-        mFrameElement->HasAttr(nsGkAtoms::transparent);
-    return ParentShowInfo(name, false, isTransparent, mDPI, mRounding,
-                          mDefaultScale.scale);
   }
-
-  return ParentShowInfo(u""_ns, false, false, mDPI, mRounding,
+  return ParentShowInfo(name, false, IsTransparent(), mDPI, mRounding,
                         mDefaultScale.scale);
 }
 
@@ -3083,9 +3082,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyContentBlockingEvent(
     const Maybe<
         mozilla::ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
         aReason,
-    const Maybe<mozilla::ContentBlockingNotifier::CanvasFingerprinter>&
-        aCanvasFingerprinter,
-    const Maybe<bool>& aCanvasFingerprinterKnownText) {
+    const Maybe<CanvasFingerprintingEvent>& aCanvasFingerprintingEvent) {
   RefPtr<BrowsingContext> bc = GetBrowsingContext();
 
   if (!bc || bc->IsDiscarded()) {
@@ -3109,9 +3106,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyContentBlockingEvent(
       aRequestData.matchedList());
   request->SetCanceledReason(aRequestData.canceledReason());
 
-  wgp->NotifyContentBlockingEvent(
-      aEvent, request, aBlocked, aTrackingOrigin, aTrackingFullHashes, aReason,
-      aCanvasFingerprinter, aCanvasFingerprinterKnownText);
+  wgp->NotifyContentBlockingEvent(aEvent, request, aBlocked, aTrackingOrigin,
+                                  aTrackingFullHashes, aReason,
+                                  aCanvasFingerprintingEvent);
 
   return IPC_OK();
 }
@@ -3717,6 +3714,12 @@ void BrowserParent::NotifyResolutionChanged() {
   // that case.
   (void)SendUIResolutionChanged(mDPI, mRounding,
                                 mDPI < 0 ? -1.0 : mDefaultScale.scale);
+}
+
+void BrowserParent::NotifyTransparencyChanged() {
+  if (!mIsDestroyed) {
+    (void)SendTransparencyChanged(IsTransparent());
+  }
 }
 
 bool BrowserParent::CanCancelContentJS(

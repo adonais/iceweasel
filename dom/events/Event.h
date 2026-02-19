@@ -360,6 +360,7 @@ class Event : public nsISupports, public nsWrapperCache {
   double TimeStamp();
 
   EventTarget* GetOriginalTarget() const;
+  EventTarget* GetOriginalTarget(CallerType aCallerType) const;
   EventTarget* GetExplicitOriginalTarget() const;
   EventTarget* GetComposedTarget() const;
 

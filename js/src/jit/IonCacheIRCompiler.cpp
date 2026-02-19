@@ -1639,7 +1639,7 @@ bool IonCacheIRCompiler::emitLoadStringCharResult(
     volatileRegs.takeUnchecked(output);
     masm.PushRegsInMask(volatileRegs);
 
-    using Fn = JSLinearString* (*)(JSContext* cx, int32_t code);
+    using Fn = JSLinearString* (*)(JSContext * cx, int32_t code);
     masm.setupUnalignedABICall(scratch2);
     masm.loadJSContext(scratch2);
     masm.passABIArg(scratch2);
@@ -2154,7 +2154,6 @@ bool IonCacheIRCompiler::emitCallStringObjectConcatResult(ValOperandId lhsId,
 
 bool IonCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
                                                      ObjOperandId calleeId,
-                                                     CompletionKind kind,
                                                      uint32_t calleeNargs) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoSaveLiveRegisters save(*this);
@@ -2192,23 +2191,21 @@ bool IonCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
   masm.loadJitCodeRaw(callee, callee);
   masm.callJit(callee);
 
-  if (kind != CompletionKind::Throw) {
-    // Verify that the return value is an object.
-    Label success;
-    masm.branchTestObject(Assembler::Equal, JSReturnOperand, &success);
+  // Verify that the return value is an object.
+  Label success;
+  masm.branchTestObject(Assembler::Equal, JSReturnOperand, &success);
 
-    // We can reuse the same stub frame, but we first have to pop the arguments
-    // from the previous call.
-    uint32_t framePushedAfterCall = masm.framePushed();
-    masm.freeStack(masm.framePushed() - stubFramePushed);
+  // We can reuse the same stub frame, but we first have to pop the arguments
+  // from the previous call.
+  uint32_t framePushedAfterCall = masm.framePushed();
+  masm.freeStack(masm.framePushed() - stubFramePushed);
 
-    masm.push(Imm32(int32_t(CheckIsObjectKind::IteratorReturn)));
-    using Fn = bool (*)(JSContext*, CheckIsObjectKind);
-    callVM<Fn, ThrowCheckIsObject>(masm);
+  masm.push(Imm32(int32_t(CheckIsObjectKind::IteratorReturn)));
+  using Fn = bool (*)(JSContext*, CheckIsObjectKind);
+  callVM<Fn, ThrowCheckIsObject>(masm);
 
-    masm.bind(&success);
-    masm.setFramePushed(framePushedAfterCall);
-  }
+  masm.bind(&success);
+  masm.setFramePushed(framePushedAfterCall);
 
   // Restore the frame pointer and stack pointer.
   masm.loadPtr(Address(FramePointer, 0), FramePointer);

@@ -34,6 +34,10 @@ AVCodecID GetFFmpegEncoderCodecId<LIBAV_VER>(CodecType aCodec) {
       return AV_CODEC_ID_H264;
     }
 
+    if (aCodec == CodecType::H265) {
+      return AV_CODEC_ID_HEVC;
+    }
+
     if (aCodec == CodecType::AV1) {
       return AV_CODEC_ID_AV1;
     }
@@ -69,16 +73,16 @@ AVCodec* FFmpegDataEncoder<LIBAV_VER>::FindSoftwareEncoder(
       continue;
     }
 
+    if (codec->capabilities & AV_CODEC_CAP_HARDWARE) {
+      continue;
+    }
+
     // Prioritize libx264 for now since it's the only h264 codec we tested.
     // Once libopenh264 is supported, we can simply use the first one we find.
     if (aCodecId == AV_CODEC_ID_H264 && strcmp(codec->name, "libx264") != 0) {
       if (!fallbackCodec) {
         fallbackCodec = codec;
       }
-      continue;
-    }
-
-    if (codec->capabilities & AV_CODEC_CAP_HARDWARE) {
       continue;
     }
 

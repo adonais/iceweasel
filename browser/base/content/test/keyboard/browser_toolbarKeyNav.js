@@ -123,6 +123,7 @@ add_setup(async function () {
       ["test.wait300msAfterTabSwitch", true],
       // TODO: Reenable in https://bugzilla.mozilla.org/show_bug.cgi?id=1923388
       ["browser.urlbar.scotchBonnet.enableOverride", false],
+      ["browser.urlbar.trustPanel.featureGate", false],
       ["browser.toolbars.keyboard_navigation", true],
       ["accessibility.tabfocus", 7],
       // Taskbar Tabs' page action is controlled by a pref that differs across
@@ -130,6 +131,7 @@ add_setup(async function () {
       // onorous and creates issues with existing tests without improving test
       // coverage, so disable it herein.
       ["browser.taskbarTabs.enabled", false],
+      ["browser.search.widget.new", false],
     ],
   });
   resetToolbarWithoutDevEditionButtons();

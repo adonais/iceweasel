@@ -13,11 +13,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.appstate.VoiceSearchAction
@@ -26,12 +25,11 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class VoiceSearchFeatureTest {
-    @get:Rule
-    val mainCoroutineRule = MainCoroutineRule()
-
+    private val testDispatcher = StandardTestDispatcher()
     private val appStore = spyk(AppStore())
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> = mockk(relaxed = true)
-    private val feature = VoiceSearchFeature(testContext, appStore, voiceSearchLauncher)
+    private val feature =
+        VoiceSearchFeature(testContext, appStore, voiceSearchLauncher, testDispatcher)
 
     @Before
     fun setup() {
@@ -39,25 +37,27 @@ class VoiceSearchFeatureTest {
     }
 
     @Test
-    fun `GIVEN a voice input request WHEN no activity is available to handle it THEN dispatches return a null result`() = runTestOnMain {
+    fun `GIVEN a voice input request WHEN no activity is available to handle it THEN dispatches return a null result`() = runTest(testDispatcher) {
         every { voiceSearchLauncher.launch(any()) } throws ActivityNotFoundException()
 
         appStore.dispatch(VoiceInputRequested)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify { appStore.dispatch(VoiceSearchAction.VoiceInputResultReceived(null)) }
     }
 
     @Test
-    fun `GIVEN SecurityException WHEN launching voice search THEN dispatches VoiceInputResultReceived null`() = runTestOnMain {
+    fun `GIVEN SecurityException WHEN launching voice search THEN dispatches VoiceInputResultReceived null`() = runTest(testDispatcher) {
         every { voiceSearchLauncher.launch(any()) } throws SecurityException()
 
         appStore.dispatch(VoiceSearchAction.VoiceInputRequested)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify { appStore.dispatch(VoiceSearchAction.VoiceInputResultReceived(null)) }
     }
 
     @Test
-    fun `GIVEN successful result WHEN handleVoiceSearchResult is called THEN dispatches VoiceInputResultReceived with search terms`() = runTestOnMain {
+    fun `GIVEN successful result WHEN handleVoiceSearchResult is called THEN dispatches VoiceInputResultReceived with search terms`() = runTest(testDispatcher) {
         val intent = mockk<Intent>()
         val results = arrayListOf("search term")
         every { intent.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS) } returns results
@@ -68,7 +68,7 @@ class VoiceSearchFeatureTest {
     }
 
     @Test
-    fun `GIVEN cancelled or failed result WHEN handleVoiceSearchResult is called THEN dispatches VoiceInputResultReceived with null`() = runTestOnMain {
+    fun `GIVEN cancelled or failed result WHEN handleVoiceSearchResult is called THEN dispatches VoiceInputResultReceived with null`() = runTest(testDispatcher) {
         feature.handleVoiceSearchResult(Activity.RESULT_CANCELED, null)
         verify { appStore.dispatch(VoiceSearchAction.VoiceInputResultReceived(null)) }
     }

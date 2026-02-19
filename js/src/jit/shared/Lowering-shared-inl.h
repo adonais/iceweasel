@@ -54,7 +54,7 @@ void LIRGeneratorShared::define(
   lir->getDef(0)->setVirtualRegister(vreg);
   lir->setMir(mir);
   mir->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 template <size_t X, size_t Y>
@@ -95,7 +95,7 @@ void LIRGeneratorShared::defineInt64Fixed(
 
   lir->setMir(mir);
   mir->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 template <size_t Ops, size_t Temps>
@@ -149,7 +149,7 @@ void LIRGeneratorShared::defineInt64ReuseInput(
 
   lir->setMir(mir);
   mir->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 template <size_t Ops, size_t Temps>
@@ -191,7 +191,7 @@ void LIRGeneratorShared::defineBoxReuseInput(
 
   lir->setMir(mir);
   mir->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 template <size_t Temps>
@@ -216,7 +216,7 @@ void LIRGeneratorShared::defineBox(
   lir->setMir(mir);
 
   mir->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 template <size_t Ops, size_t Temps>
@@ -246,7 +246,7 @@ void LIRGeneratorShared::defineInt64(
   lir->setMir(mir);
 
   mir->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 void LIRGeneratorShared::defineReturn(LInstruction* lir, MDefinition* mir) {
@@ -323,7 +323,7 @@ void LIRGeneratorShared::defineReturn(LInstruction* lir, MDefinition* mir) {
   }
 
   mir->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 #ifdef DEBUG
@@ -660,13 +660,11 @@ LDefinition LIRGeneratorShared::tempCopy(MDefinition* input,
   return t;
 }
 
-template <typename T>
-void LIRGeneratorShared::annotate(T* ins) {
+void LIRGeneratorShared::annotate(LNode* ins) {
   ins->setId(lirGraph_.getInstructionId());
 }
 
-template <typename T>
-void LIRGeneratorShared::add(T* ins, MInstruction* mir) {
+void LIRGeneratorShared::addUnchecked(LInstruction* ins, MInstruction* mir) {
   MOZ_ASSERT(!ins->isPhi());
   current->add(ins);
   if (mir) {

@@ -8,9 +8,9 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
-  <string name="app_name_private_5">%s Privat</string>
+  <string name="app_name_private_5">%s pribadi</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
-  <string name="app_name_private_4">%s (Privat)</string>
+  <string name="app_name_private_4">%s (Pribadi)</string>
   <!--
     Home Fragment
 
@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Masukkan istilah pencarian</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Tab terbuka Anda akan ditampilkan di sini.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Tab terbuka Anda akan ditampilkan di sini.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Tab privat Anda akan muncul di sini.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Tab privat Anda akan muncul di sini.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Penjelajahan pribadi</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Keluar mode seleksi ganda</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Simpan tab terpilih ke koleksi</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Simpan tab terpilih ke koleksi</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Ambil tab dari perangkat apa pun</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Ekstensi</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Anda memiliki ekstensi yang terpasang, tetapi tidak diaktifkan</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Anda memiliki ekstensi yang terpasang, tetapi tidak diaktifkan</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Kelola ekstensi</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Info akun</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Bantuan</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Bantuan</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Yang Baru</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Yang Baru</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Setelan</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Situs desktop</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Buka di tab biasa</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Buka di tab biasa</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Tambahkan ke Beranda</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">DITENAGAI OLEH %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">DITENAGAI OLEH %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Buka di Aplikasi</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Ubahsuai tampilan pembaca</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Ubahsuai tampilan pembaca</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Sesuaikan Tampilan Pembaca</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Tambahkan</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Tambahkan</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Ubah</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Ubah</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Ubahsuai halaman beranda</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Ubahsuai halaman beranda</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Masuk</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Tutup menu</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigasi</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Bantuan</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Pengaturan</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Tutup lembar menu ekstensi</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Tutup lembar menu ekstensi</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Tutup lembar menu simpan</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Tutup lembar menu simpan</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Tutup lembar menu alat</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Tutup lembar menu alat</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Tutup lembar menu tab ubahan</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -328,7 +324,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Terjemahkan laman</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Laporkan situs rusak…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Laporkan situs rusak…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Laporkan situs yang rusak</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -438,6 +434,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: pemilih mesin pencari</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">Dihapus %1$s dari riwayat</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Hapus entri riwayat ini</string>
   <!--
     Home onboarding
 
@@ -452,19 +452,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Pemberitahuan privasi Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Kami senang menjaga Anda tetap aman</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Cari tahu mengapa jutaan orang menyukai Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Penjelajahan aman dengan lebih banyak pilihan</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Peramban nirlaba kami membantu menghentikan perusahaan secara diam-diam mengikuti Anda di web.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Lebih dari 100 juta orang melindungi privasi mereka dengan memilih peramban yang didukung oleh organisasi nirlaba.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Pelacak yang dikenal? Diblokir secara otomatis. Ekstensi? Coba semua 700. PDF? Pembaca bawaan kami membuatnya mudah dikelola.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Setel sebagai peramban baku</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +543,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Kelola</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Luncurkan peramban Android terbaik</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Luncurkan peramban Android terbaik</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Muat situs secepat kilat</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Muat situs secepat kilat</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Perlindungan pelacakan otomatis</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Perlindungan pelacakan otomatis</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Ribuan penyesuaian</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Ribuan penyesuaian</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Dengan melanjutkan, Anda menyetujui %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Dengan melanjutkan, Anda menyetujui %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Ketentuan Penggunaan Firefox</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Ketentuan Penggunaan Firefox</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox peduli dengan privasi Anda. Pelajari lebih lanjut di %1$s kami.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox peduli dengan privasi Anda. Pelajari lebih lanjut di %1$s kami.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Pemberitahuan Privasi</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Pemberitahuan Privasi</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Untuk membantu meningkatkan peramban, Firefox mengirimkan data diagnostik dan interaksi ke Mozilla. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Untuk membantu meningkatkan peramban, Firefox mengirimkan data diagnostik dan interaksi ke Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Kelola Pengaturan</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Kelola Pengaturan</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Lanjutkan</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Lanjutkan</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">Di mana Anda ingin bilah alamat Anda?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Di mana Anda ingin bilah alamat Anda?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Lanjutkan</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Lanjutkan</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Bantu kami menumbuhkan Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Bantu kami menumbuhkan Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Bagaimana kami menggunakan data</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Bagaimana kami menggunakan data</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Konfirmasi</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Konfirmasi</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Dapatkan perlindungan pelacakan otomatis secara baku</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Dapatkan perlindungan pelacakan otomatis secara baku</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Satu ketukan membantu menghentikan perusahaan memata-matai klik Anda.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Satu ketukan membantu menghentikan perusahaan memata-matai klik Anda.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Sinkronkan di mana pun Anda menggunakan Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Sinkronkan di mana pun Anda menggunakan Firefox</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Dapatkan markah, tab, dan kata sandi di perangkat apa pun. Semua dilindungi dengan enkripsi.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Dapatkan markah, tab, dan kata sandi di perangkat apa pun. Semua dilindungi dengan enkripsi.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Mulai menyinkronkan</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Mulai menyinkronkan</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Jangan sekarang</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Jangan sekarang</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Bantu kami menumbuhkan Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +616,46 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Lanjutkan</string>
+  <string name="nova_onboarding_continue_button">Lanjutkan</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Jangan sekarang</string>
+  <string name="nova_onboarding_negative_button">Jangan sekarang</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Bersiaplah untuk berlari bebas</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Cepat, aman, dan tidak akan menjual Anda.\nPenjelajahan menjadi lebih baik.</string>
+  <string name="nova_onboarding_tou_subtitle">Cepat, aman, dan tidak akan menjual Anda.\nPenjelajahan menjadi lebih baik.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Dengan melanjutkan, Anda menyetujui %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_1">Dengan melanjutkan, Anda menyetujui %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Ketentuan Penggunaan Firefox</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Ketentuan Penggunaan Firefox</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox peduli dengan privasi Anda. Pelajari lebih lanjut di %1$s kami.</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox peduli dengan privasi Anda. Pelajari lebih lanjut di %1$s kami.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Pemberitahuan Privasi</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Pemberitahuan Privasi</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Untuk membantu meningkatkan peramban, Firefox mengirimkan data diagnostik dan interaksi ke Mozilla. %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Untuk membantu meningkatkan peramban, Firefox mengirimkan data diagnostik dan interaksi ke Mozilla. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Kelola pengaturan</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Kelola pengaturan</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Ucapkan selamat tinggal pada pelacak menyeramkan</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Kami melindungi data Anda dan secara otomatis memblokir perusahaan dari memata-matai klik Anda.</string>
+  <string name="nova_onboarding_set_to_default_subtitle">Kami melindungi data Anda dan secara otomatis memblokir perusahaan dari memata-matai klik Anda.</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Jadikan peramban baku</string>
+  <string name="nova_onboarding_set_to_default_button">Jadikan peramban baku</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Pilih bilah alamat Anda</string>
+  <string name="nova_onboarding_toolbar_selection_title">Pilih bilah alamat Anda</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Puncak</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">Puncak</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Dasar</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">Dasar</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Pilih tema Anda</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +665,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Gelap</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Langsung lanjutkan dari tempat yang terakhir Anda tinggalkan</string>
+  <string name="nova_onboarding_sync_title">Langsung lanjutkan dari tempat yang terakhir Anda tinggalkan</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">Dapatkan markah, kata sandi, dan lainnya di perangkat apa pun dalam sekejap. Data pribadi Anda tetap aman dan terlindungi dengan enkripsi.</string>
+  <string name="nova_onboarding_sync_subtitle">Dapatkan markah, kata sandi, dan lainnya di perangkat apa pun dalam sekejap. Data pribadi Anda tetap aman dan terlindungi dengan enkripsi.</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Mulai menyinkronkan</string>
+  <string name="nova_onboarding_sync_button">Mulai menyinkronkan</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Bantu kami membangun internet yang lebih baik</string>
+  <string name="nova_onboarding_marketing_title">Bantu kami membangun internet yang lebih baik</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual. %1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Bagaimana kami menggunakan data</string>
+  <string name="nova_onboarding_marketing_body_link_text">Bagaimana kami menggunakan data</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Notifikasi membantu Anda tetap aman dengan Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Temukan fitur privasi terbaru di Firefox sehingga Anda selalu mendapatkan informasi terbaru tentang cara tetap terlindungi.</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Hidupkan notifikasi</string>
+  <string name="nova_onboarding_notifications_button">Hidupkan notifikasi</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Jadikan setiap pencarian lebih pribadi</string>
+  <string name="nova_onboarding_add_search_widget_title">Jadikan setiap pencarian lebih pribadi</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">Mulai setiap pencarian dari layar beranda ponsel Anda dan ketahuilah bahwa perlindungan otomatis Firefox mendukung Anda.</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Mulai setiap pencarian dari layar beranda ponsel Anda dan ketahuilah bahwa perlindungan otomatis Firefox mendukung Anda.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Tambahkan widget Firefox</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Tambahkan widget Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -781,6 +770,8 @@
   <string name="preferences_search">Cari</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Mesin pencari</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Widget layar beranda</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Saran dari mesin pencari</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -972,6 +963,15 @@
   <string name="preferences_open_links_in_apps_ask">Tanyakan sebelum buka</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Jangan pernah</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Penyimpanan berkas</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Lokasi unduh baku</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">Anda tidak memiliki izin untuk menggunakan folder ini. Coba pilih yang lain.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Kelola unduhan dengan aplikasi lain</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1137,8 +1137,6 @@
   <string name="alternative_app_icon_group_solid_colors">Warna rata</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Gradien</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Lainnya</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Unggulan</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1505,11 +1503,27 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Aktif</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Cobalah fitur dan ide sebelum dirilis ke semua orang.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Cobalah fitur dan ide sebelum dirilis ke semua orang.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox secara acak memilih pengguna untuk menguji fitur, yang meningkatkan kualitas untuk semua orang.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Pasang dan jalankan studi</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Pasang dan jalankan studi</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Izinkan studi fitur</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Pelajari lebih lanjut</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Izinkan peningkatan jarak jauh</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox akan meningkatkan fitur, kinerja, dan stabilitas antar pembaruan. Perubahan diterapkan dari jarak jauh.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Pelajari lebih lanjut</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Peningkatan jarak jauh</string>
   <!--
     Sessions
 
@@ -1544,17 +1558,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Tambah tab pribadi</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Pribadi</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Pribadi</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sinkron</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sinkron</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Cari tab Anda</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Bagikan semua tab</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Bagikan semua tab</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Tab yang baru saja ditutup</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Baru saja ditutup</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Baru saja ditutup</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Setelan akun</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1570,11 +1584,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Batal</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Markah</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Markah</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Markahi tab yang dipilih</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Tutup</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Tutup</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Tutup tab yang dipilih</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1596,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Tambahkan ke koleksi</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Bagikan tab terpilih</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Bagikan tab terpilih</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menu tab terpilih</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1717,8 @@
   <string name="download_delete_item">Hapus</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Arahkan kembali</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Navigasikan ke Pengaturan Unduh</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Kembali dan tutup pencarian</string>
   <!--
@@ -1726,6 +1742,12 @@
   <string name="download_delete_multi_select_dialog_confirm">Hapus</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Batal</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Ganti nama berkas</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Nama</string>
+  <string name="download_rename_dialog_confirm_button">Simpan</string>
+  <string name="download_rename_dialog_cancel_button">Batal</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Sedang berlangsung</string>
   <!--
@@ -1918,6 +1940,8 @@
   <string name="bookmark_error_edit_bookmark">Tidak dapat mengedit markah</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">EDIT</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Pilih</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Pindah</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1998,6 +2022,10 @@
   <string name="select_bookmark_search_button_content_description">Cari folder</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Item Menu untuk %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Bentangkan folder: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Tutup folder: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Tutup markah</string>
   <!-- Title for the bookmark list empty state -->
@@ -2200,7 +2228,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Masuk ke Sync</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Masuk</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Masuk</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Kirim ke semua peranti</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2388,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Otomatis menghapus data penjelajahan ketika Anda memilih \"Keluar\" pada menu utama</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Keluar</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Keluar</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Rentang waktu untuk menghapus</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2824,6 +2852,20 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menu urutkan kata sandi</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Topeng surel</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Sarankan topeng surel</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Sembunyikan surel asli Anda untuk melindungi kotak masuk Anda dari spam. Beberapa situs tidak mendukung topeng surel.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Pelajari lebih lanjut</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Kelola topeng surel</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3059,9 +3101,9 @@
   -->
   <string name="certificate_info_verified_by">Diverifikasi oleh: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Hapus</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Hapus</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Ubah</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Ubah</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Anda yakin ingin menghapus sandi ini?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3111,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Batal</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Opsi kata sandi</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Opsi kata sandi</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Bidang teks yang dapat diedit untuk alamat situs web.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Bidang teks yang dapat diedit untuk alamat situs web.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Bidang teks yang dapat diedit untuk nama pengguna.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Bidang teks yang dapat diedit untuk nama pengguna.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Bidang teks yang dapat diedit untuk sandi.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Bidang teks yang dapat diedit untuk sandi.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Simpan perubahan.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Simpan perubahan.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Edit sandi</string>
   <!-- The page title for adding new password. -->
@@ -4002,6 +4044,8 @@
   <string name="settings_search_no_results_title">Tidak ada yang muncul</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Mungkin mencoba pencarian lain?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Tombol pencarian pengaturan</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

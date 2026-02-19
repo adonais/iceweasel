@@ -1472,7 +1472,7 @@ class EngineObserverTest {
 
         val observer = createEngineObserver(store = store, scope = this)
         val mediaSessionController: MediaSession.Controller = mock()
-        val metaData: MediaSession.Metadata = mock()
+        val metaData: MediaSession.Metadata = MediaSession.Metadata(getArtwork = { null })
 
         observer.onMediaActivated(mediaSessionController)
         observer.onMediaMetadataChanged(metaData)
@@ -1502,7 +1502,7 @@ class EngineObserverTest {
 
         val observer = createEngineObserver(store = store, scope = this)
         val mediaSessionController: MediaSession.Controller = mock()
-        val playbackState: MediaSession.PlaybackState = mock()
+        val playbackState: MediaSession.PlaybackState = MediaSession.PlaybackState.PLAYING
 
         observer.onMediaActivated(mediaSessionController)
         observer.onMediaPlaybackStateChanged(playbackState)
@@ -1532,16 +1532,16 @@ class EngineObserverTest {
 
         val observer = createEngineObserver(store = store, scope = this)
         val mediaSessionController: MediaSession.Controller = mock()
-        val features: MediaSession.Feature = mock()
+        val playFeature: MediaSession.Feature = MediaSession.Feature(1L)
 
         observer.onMediaActivated(mediaSessionController)
-        observer.onMediaFeatureChanged(features)
+        observer.onMediaFeatureChanged(playFeature)
         advanceUntilIdle()
 
         val observedMediaSessionState = store.state.findTab("mozilla")?.mediaSessionState
         assertNotNull(observedMediaSessionState)
         assertEquals(mediaSessionController, observedMediaSessionState?.controller)
-        assertEquals(features, observedMediaSessionState?.features)
+        assertEquals(playFeature, observedMediaSessionState?.features)
     }
 
     @Test
@@ -1562,7 +1562,7 @@ class EngineObserverTest {
 
         val observer = createEngineObserver(store = store, scope = this)
         val mediaSessionController: MediaSession.Controller = mock()
-        val positionState: MediaSession.PositionState = mock()
+        val positionState: MediaSession.PositionState = MediaSession.PositionState()
 
         observer.onMediaActivated(mediaSessionController)
         observer.onMediaPositionStateChanged(positionState)
@@ -1621,7 +1621,7 @@ class EngineObserverTest {
 
         val observer = createEngineObserver(store = store, scope = this)
         val mediaSessionController: MediaSession.Controller = mock()
-        val elementMetadata: MediaSession.ElementMetadata = mock()
+        val elementMetadata: MediaSession.ElementMetadata = MediaSession.ElementMetadata()
 
         observer.onMediaActivated(mediaSessionController)
         observer.onMediaFullscreenChanged(true, elementMetadata)
@@ -1648,7 +1648,7 @@ class EngineObserverTest {
         )
 
         val observer = createEngineObserver(store = store, scope = this)
-        val elementMetadata: MediaSession.ElementMetadata = mock()
+        val elementMetadata: MediaSession.ElementMetadata = MediaSession.ElementMetadata()
 
         observer.onMediaFullscreenChanged(true, elementMetadata)
 

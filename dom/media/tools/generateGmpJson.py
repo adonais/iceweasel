@@ -32,9 +32,14 @@ def fetch_url_for_cdms(cdms, urlParams):
                     "{} expected https scheme '{}'".format(cdm["target"], redirectUrl)
                 )
 
-            sanitizedUrl = urlunparse(
-                (parsedUrl.scheme, parsedUrl.netloc, parsedUrl.path, None, None, None)
-            )
+            sanitizedUrl = urlunparse((
+                parsedUrl.scheme,
+                parsedUrl.netloc,
+                parsedUrl.path,
+                None,
+                None,
+                None,
+            ))
 
             # Note that here we modify the returned URL from the
             # component update service because it returns a preferred

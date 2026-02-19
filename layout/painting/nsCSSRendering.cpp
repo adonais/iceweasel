@@ -1042,11 +1042,12 @@ void nsCSSRendering::PaintNonThemedOutline(nsPresContext* aPresContext,
   PrintAsStringNewline();
 }
 
-void nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
-                                DrawTarget* aDrawTarget,
-                                const nsRect& aFocusRect, nscolor aColor) {
+nsCSSBorderRenderer nsCSSRendering::GetBorderRendererForFocus(
+    nsIFrame* aForFrame, DrawTarget* aDrawTarget, const nsRect& aFocusRect,
+    nscolor aColor) {
+  auto* pc = aForFrame->PresContext();
   nscoord oneCSSPixel = nsPresContext::CSSPixelsToAppUnits(1);
-  nscoord oneDevPixel = aPresContext->DevPixelsToAppUnits(1);
+  nscoord oneDevPixel = pc->DevPixelsToAppUnits(1);
 
   Rect focusRect(NSRectToRect(aFocusRect, oneDevPixel));
 
@@ -1066,15 +1067,9 @@ void nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
   // something that CSS can style, this function will then have access
   // to a ComputedStyle and can use the same logic that PaintBorder
   // and PaintOutline do.)
-  //
-  // WebRender layers-free mode don't use PaintFocus function. Just assign
-  // the backface-visibility to true for this case.
-  nsCSSBorderRenderer br(aPresContext, aDrawTarget, focusRect, focusRect,
-                         focusStyles, focusWidths, focusRadii, focusColors,
-                         true, Nothing());
-  br.DrawBorders();
-
-  PrintAsStringNewline();
+  return nsCSSBorderRenderer(pc, aDrawTarget, focusRect, focusRect, focusStyles,
+                             focusWidths, focusRadii, focusColors,
+                             !aForFrame->BackfaceIsHidden(), Nothing());
 }
 
 // Thebes Border Rendering Code End
@@ -4207,11 +4202,10 @@ void nsCSSRendering::PaintDecorationLine(
 void nsCSSRendering::PaintDecorationLineInternal(
     nsIFrame* aFrame, DrawTarget& aDrawTarget,
     const PaintDecorationLineParams& aParams, Rect aRect) {
-  Float lineThickness = std::max(NS_round(aParams.lineSize.height), 1.0);
-
+  const Float lineThickness = aParams.lineSize.height;
   DeviceColor color = ToDeviceColor(aParams.color);
   ColorPattern colorPat(color);
-  StrokeOptions strokeOptions(lineThickness);
+  StrokeOptions strokeOptions(aParams.lineSize.height);
   DrawOptions drawOptions;
 
   Float dash[2];
@@ -4489,8 +4483,7 @@ Rect nsCSSRendering::DecorationLineToPath(
     return path;
   }
 
-  Float lineThickness = std::max(NS_round(aParams.lineSize.height), 1.0);
-
+  const Float lineThickness = aParams.lineSize.height;
   // The block-direction position should be set to the middle of the line.
   if (aParams.vertical) {
     rect.x += lineThickness / 2;
@@ -4546,8 +4539,7 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
   // and horizontal coordinates at the end if vertical was requested.
   gfxRect r(left, 0, right - left, 0);
 
-  gfxFloat lineThickness = NS_round(aParams.lineSize.height);
-  lineThickness = std::max(lineThickness, 1.0);
+  const gfxFloat lineThickness = aParams.lineSize.height;
   gfxFloat defaultLineThickness = NS_round(aParams.defaultLineThickness);
   defaultLineThickness = std::max(defaultLineThickness, 1.0);
 

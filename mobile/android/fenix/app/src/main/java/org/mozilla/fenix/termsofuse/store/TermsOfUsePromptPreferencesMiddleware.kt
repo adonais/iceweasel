@@ -5,7 +5,7 @@
 package org.mozilla.fenix.termsofuse.store
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 
 /**
  * [Middleware] that reacts to various [TermsOfUsePromptAction]s
@@ -16,7 +16,7 @@ class TermsOfUsePromptPreferencesMiddleware(
     private val repository: TermsOfUsePromptRepository,
 ) : Middleware<TermsOfUsePromptState, TermsOfUsePromptAction> {
     override fun invoke(
-        context: MiddlewareContext<TermsOfUsePromptState, TermsOfUsePromptAction>,
+        store: Store<TermsOfUsePromptState, TermsOfUsePromptAction>,
         next: (TermsOfUsePromptAction) -> Unit,
         action: TermsOfUsePromptAction,
     ) {

@@ -169,6 +169,10 @@ html|input:disabled {
   .help-button {
     appearance: auto;
     -moz-default-appearance: -moz-mac-help-button;
+
+    .button-text {
+      visibility: hidden;
+    }
   }
 }
 

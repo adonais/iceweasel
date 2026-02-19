@@ -20,47 +20,41 @@ args = parser.parse_args()
 
 output = args.out_dir + "/api.txt"
 
-sp.check_call(
-    [
-        args.javadoc,
-        "-doclet",
-        "org.mozilla.doclet.ApiDoclet",
-        "-docletpath",
-        args.doclet_jar,
-        "-subpackages",
-        "org.mozilla.test",
-        "-sourcepath",
-        args.java_root,
-        "-root-dir",
-        args.java_root,
-        "-skip-class-regex",
-        "TestSkippedClass$:^org.mozilla.test.TestClass.TestSkippedClass2$",
-        "-output",
-        output,
-    ]
-)
+sp.check_call([
+    args.javadoc,
+    "-doclet",
+    "org.mozilla.doclet.ApiDoclet",
+    "-docletpath",
+    args.doclet_jar,
+    "-subpackages",
+    "org.mozilla.test",
+    "-sourcepath",
+    args.java_root,
+    "-root-dir",
+    args.java_root,
+    "-skip-class-regex",
+    "TestSkippedClass$:^org.mozilla.test.TestClass.TestSkippedClass2$",
+    "-output",
+    output,
+])
 
-result = sp.call(
-    [
-        "python3",
-        "../apilint/src/main/resources/diff.py",
-        "--existing",
-        args.expected,
-        "--local",
-        output,
-    ]
-)
+result = sp.call([
+    "python3",
+    "../apilint/src/main/resources/diff.py",
+    "--existing",
+    args.expected,
+    "--local",
+    output,
+])
 
-result_map = sp.call(
-    [
-        "python3",
-        "../apilint/src/main/resources/diff.py",
-        "--existing",
-        args.expected_map,
-        "--local",
-        output + ".map",
-    ]
-)
+result_map = sp.call([
+    "python3",
+    "../apilint/src/main/resources/diff.py",
+    "--existing",
+    args.expected_map,
+    "--local",
+    output + ".map",
+])
 
 # result == 0 from `diff` means that the files are identical
 if result != 0 or result_map != 0:

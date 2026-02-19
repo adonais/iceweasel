@@ -237,6 +237,7 @@ impl super::Validator {
                 Self::validate_global_variable_handle(task_payload, global_variables)?;
             }
             if let Some(ref mesh_info) = entry_point.mesh_info {
+                Self::validate_global_variable_handle(mesh_info.output_variable, global_variables)?;
                 validate_type(mesh_info.vertex_output_type)?;
                 validate_type(mesh_info.primitive_output_type)?;
                 for ov in mesh_info
@@ -393,6 +394,7 @@ impl super::Validator {
             crate::TypeInner::Scalar { .. }
             | crate::TypeInner::Vector { .. }
             | crate::TypeInner::Matrix { .. }
+            | crate::TypeInner::CooperativeMatrix { .. }
             | crate::TypeInner::ValuePointer { .. }
             | crate::TypeInner::Atomic { .. }
             | crate::TypeInner::Image { .. }
@@ -661,6 +663,12 @@ impl super::Validator {
             } => {
                 handle.check_dep(query)?;
             }
+            crate::Expression::CooperativeLoad { ref data, .. } => {
+                handle.check_dep(data.pointer)?.check_dep(data.stride)?;
+            }
+            crate::Expression::CooperativeMultiplyAdd { a, b, c } => {
+                handle.check_dep(a)?.check_dep(b)?.check_dep(c)?;
+            }
         }
         Ok(())
     }
@@ -815,22 +823,6 @@ impl super::Validator {
                 }
                 Ok(())
             }
-            crate::Statement::MeshFunction(func) => match func {
-                crate::MeshFunction::SetMeshOutputs {
-                    vertex_count,
-                    primitive_count,
-                } => {
-                    validate_expr(vertex_count)?;
-                    validate_expr(primitive_count)?;
-                    Ok(())
-                }
-                crate::MeshFunction::SetVertex { index, value }
-                | crate::MeshFunction::SetPrimitive { index, value } => {
-                    validate_expr(index)?;
-                    validate_expr(value)?;
-                    Ok(())
-                }
-            },
             crate::Statement::SubgroupBallot { result, predicate } => {
                 validate_expr_opt(predicate)?;
                 validate_expr(result)?;
@@ -863,6 +855,12 @@ impl super::Validator {
                     crate::GatherMode::QuadSwap(_) => {}
                 }
                 validate_expr(result)?;
+                Ok(())
+            }
+            crate::Statement::CooperativeStore { target, ref data } => {
+                validate_expr(target)?;
+                validate_expr(data.pointer)?;
+                validate_expr(data.stride)?;
                 Ok(())
             }
             crate::Statement::Break

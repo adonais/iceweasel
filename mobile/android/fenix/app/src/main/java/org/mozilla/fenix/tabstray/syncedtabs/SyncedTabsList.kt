@@ -25,8 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -46,8 +44,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.storage.sync.Tab as SyncTab
 import mozilla.components.ui.icons.R as iconsR
 
-private const val EXPANDED_BY_DEFAULT = true
-
 /**
  * A lambda invoked when the user clicks on a synced tab in the [SyncedTabsList].
  */
@@ -59,11 +55,18 @@ typealias OnTabClick = (tab: SyncTab) -> Unit
 typealias OnTabCloseClick = (deviceId: String, tab: SyncTab) -> Unit
 
 /**
+ * A lambda invoked when the expands a section in the [SyncedTabsList].
+ */
+typealias OnSectionExpansionToggled = (index: Int) -> Unit
+
+/**
  * Top-level list UI for displaying Synced Tabs in the Tabs Tray.
  *
  * @param syncedTabs The tab UI items to be displayed.
  * @param onTabClick The lambda for handling clicks on synced tabs.
  * @param onTabCloseClick The lambda for handling clicks on a synced tab's close button.
+ * @param expandedState A list of expanded state properties for the synced tabs.
+ * @param onSectionExpansionToggled A lambda for handling section expansion/collapse.
  */
 @SuppressWarnings("LongMethod", "CognitiveComplexMethod")
 @Composable
@@ -71,11 +74,10 @@ fun SyncedTabsList(
     syncedTabs: List<SyncedTabsListItem>,
     onTabClick: OnTabClick,
     onTabCloseClick: OnTabCloseClick,
+    expandedState: List<Boolean>,
+    onSectionExpansionToggled: OnSectionExpansionToggled,
 ) {
     val listState = rememberLazyListState()
-    val expandedState =
-        remember(syncedTabs) { syncedTabs.map { EXPANDED_BY_DEFAULT }.toMutableStateList() }
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -92,7 +94,7 @@ fun SyncedTabsList(
                             headerText = syncedTabItem.displayName,
                             expanded = sectionExpanded,
                         ) {
-                            expandedState[index] = !sectionExpanded
+                            onSectionExpansionToggled(index)
                         }
                     }
 
@@ -295,12 +297,15 @@ private fun SyncedTabsErrorPreview() {
 @Composable
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun SyncedTabsListPreview() {
+    val syncedTabList = getFakeSyncedTabList()
     FirefoxTheme {
         Surface {
             SyncedTabsList(
-                syncedTabs = getFakeSyncedTabList(),
+                syncedTabs = syncedTabList,
                 onTabClick = { println("Tab clicked") },
                 onTabCloseClick = { _, _ -> println("Tab closed") },
+                expandedState = syncedTabList.map { true },
+                onSectionExpansionToggled = {},
             )
         }
     }
@@ -333,7 +338,8 @@ internal fun getFakeSyncedTabList(): List<SyncedTabsListItem> = listOf(
 /**
  * Helper function to create a [SyncedTabsListItem.Tab] for previewing.
  */
-private fun generateFakeTab(
+@VisibleForTesting
+internal fun generateFakeTab(
     tabName: String,
     tabUrl: String,
     action: SyncedTabsListItem.Tab.Action = SyncedTabsListItem.Tab.Action.None,

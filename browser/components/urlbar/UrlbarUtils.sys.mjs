@@ -183,9 +183,9 @@ export var UrlbarUtils = {
   // Whether a result should be highlighted up to the point the user has typed
   // or after that point.
   HIGHLIGHT: Object.freeze({
-    NONE: 0,
     TYPED: 1,
     SUGGESTED: 2,
+    ALL: 3,
   }),
 
   // UrlbarProviderPlaces's autocomplete results store their titles and tags
@@ -407,6 +407,7 @@ export var UrlbarUtils = {
    *     TYPED: match ranges matching the tokens; or
    *     SUGGESTED: match ranges for words not matching the tokens and the
    *                endings of words that start with a token.
+   *     ALL: match all ranges of str.
    * @returns {Array} An array: [
    *            [matchIndex_0, matchLength_0],
    *            [matchIndex_1, matchLength_1],
@@ -416,6 +417,14 @@ export var UrlbarUtils = {
    *          The array is sorted by match indexes ascending.
    */
   getTokenMatches(tokens, str, highlightType) {
+    if (highlightType == this.HIGHLIGHT.ALL) {
+      return [[0, str.length]];
+    }
+
+    if (!tokens?.length) {
+      return [];
+    }
+
     // Only search a portion of the string, because not more than a certain
     // amount of characters are visible in the UI, matching over what is visible
     // would be expensive and pointless.
@@ -772,7 +781,7 @@ export var UrlbarUtils = {
       Services.io.speculativeConnect(
         uri,
         window.gBrowser.contentPrincipal,
-        null,
+        window.docShell.QueryInterface(Ci.nsIInterfaceRequestor),
         false
       );
     } catch (ex) {
@@ -1735,7 +1744,7 @@ export var UrlbarUtils = {
    *   The text content to give the node.
    * @param {Array} highlights
    *   Array of highlights as returned by `UrlbarUtils.getTokenMatches()` or
-   *   `UrlbarResult.payloadAndSimpleHighlights()`.
+   *   `UrlbarResult.getDisplayableValueAndHighlights()`.
    */
   addTextContentWithHighlights(parentNode, textContent, highlights) {
     parentNode.textContent = "";
@@ -1872,9 +1881,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
           },
         },
       },
-      displayUrl: {
-        type: "string",
-      },
       frecency: {
         type: "number",
       },
@@ -1912,9 +1918,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "string",
       },
       descriptionL10n: L10N_SCHEMA,
-      displayUrl: {
-        type: "string",
-      },
       engine: {
         type: "string",
       },
@@ -1999,14 +2002,8 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       dismissalKey: {
         type: "string",
       },
-      displayUrl: {
-        type: "string",
-      },
       dupedHeuristic: {
         type: "boolean",
-      },
-      fallbackTitle: {
-        type: "string",
       },
       frecency: {
         type: "number",
@@ -2040,9 +2037,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "string",
       },
       provider: {
-        type: "string",
-      },
-      qsSuggestion: {
         type: "string",
       },
       requestId: {
@@ -2106,9 +2100,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
     type: "object",
     required: ["keyword", "url"],
     properties: {
-      displayUrl: {
-        type: "string",
-      },
       icon: {
         type: "string",
       },
@@ -2156,9 +2147,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
     required: ["device", "url", "lastUsed"],
     properties: {
       device: {
-        type: "string",
-      },
-      displayUrl: {
         type: "string",
       },
       icon: {
@@ -3397,7 +3385,7 @@ export class L10nCache {
    *   If this is set, apply substring highlighting to the corresponding l10n
    *   arguments in `args`. Each value in this object should be an array of
    *   highlights as returned by `UrlbarUtils.getTokenMatches()` or
-   *   `UrlbarResult.payloadAndSimpleHighlights()`.
+   *   `UrlbarResult.getDisplayableValueAndHighlights()`.
    * @param {string} [options.attribute]
    *   If the string applies to an attribute on the element, pass the name of
    *   the attribute. The string in the Fluent file should define a value for

@@ -34,9 +34,15 @@ class NeckoChild : public PNeckoChild {
   PWebrtcTCPSocketChild* AllocPWebrtcTCPSocketChild(const Maybe<TabId>& tabId);
   bool DeallocPWebrtcTCPSocketChild(PWebrtcTCPSocketChild* aActor);
 
+  PCacheEntryWriteHandleChild* AllocPCacheEntryWriteHandleChild(
+      PHttpChannelChild* channel);
+  bool DeallocPCacheEntryWriteHandleChild(PCacheEntryWriteHandleChild* aActor);
+
   PAltDataOutputStreamChild* AllocPAltDataOutputStreamChild(
       const nsACString& type, const int64_t& predictedSize,
-      PHttpChannelChild* channel);
+      const mozilla::Maybe<mozilla::NotNull<PHttpChannelChild*>>& channel,
+      const mozilla::Maybe<mozilla::NotNull<PCacheEntryWriteHandleChild*>>&
+          handle);
   bool DeallocPAltDataOutputStreamChild(PAltDataOutputStreamChild* aActor);
 
   PCookieServiceChild* AllocPCookieServiceChild();
@@ -66,12 +72,6 @@ class NeckoChild : public PNeckoChild {
   PWebSocketEventListenerChild* AllocPWebSocketEventListenerChild(
       const uint64_t& aInnerWindowID);
   bool DeallocPWebSocketEventListenerChild(PWebSocketEventListenerChild*);
-
-  /* Predictor Messsages */
-  mozilla::ipc::IPCResult RecvPredOnPredictPrefetch(
-      nsIURI* aURI, const uint32_t& aHttpStatus);
-  mozilla::ipc::IPCResult RecvPredOnPredictPreconnect(nsIURI* aURI);
-  mozilla::ipc::IPCResult RecvPredOnPredictDNS(nsIURI* aURI);
 
   mozilla::ipc::IPCResult RecvSpeculativeConnectRequest();
   mozilla::ipc::IPCResult RecvNetworkChangeNotification(nsCString const& type);

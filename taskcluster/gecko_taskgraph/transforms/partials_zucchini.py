@@ -4,6 +4,7 @@
 """
 Transform the partials task into an actual task description.
 """
+
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.treeherder import inherit_treeherder_from_dep
@@ -78,15 +79,13 @@ def make_task_description(config, tasks):
         task["worker"]["env"]["TO_MAR_TASK_ID"] = {
             "task-reference": f"<{dep_task.kind}>"
         }
-        extra_params.extend(
-            [
-                f"--arch={architecture(build_platform)}",
-                f"--locale={build_locale}",
-                # This isn't a great approach to resolving the source URL of to_mar, but it's the same as
-                # It's only being used to fill manifest.json information, the actual file is downloaded via run-task
-                f"--to_mar_url=https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/$TO_MAR_TASK_ID/artifacts/{to_mar_path}",
-            ]
-        )
+        extra_params.extend([
+            f"--arch={architecture(build_platform)}",
+            f"--locale={build_locale}",
+            # This isn't a great approach to resolving the source URL of to_mar, but it's the same as
+            # It's only being used to fill manifest.json information, the actual file is downloaded via run-task
+            f"--to_mar_url=https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/$TO_MAR_TASK_ID/artifacts/{to_mar_path}",
+        ])
         # Add a space from the last command + list of extra_params
         task["run"]["command"] += " " + " ".join(extra_params)
 

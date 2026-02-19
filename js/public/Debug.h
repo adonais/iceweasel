@@ -29,6 +29,8 @@ class Debugger;
 extern JS_PUBLIC_API bool JS_DefineDebuggerObject(JSContext* cx,
                                                   JS::HandleObject obj);
 
+extern JS_PUBLIC_API const char* JS_GetLastOOMStackTrace(JSContext* cx);
+
 // If the JS execution tracer is running, this will generate a
 // ENTRY_KIND_LABEL_ENTER entry with the specified label.
 // The consumer of the trace can then, for instance, correlate all code running

@@ -1252,7 +1252,7 @@ bool AntiTrackingUtils::IsThirdPartyContext(BrowsingContext* aBrowsingContext) {
     if (!parentDocShell) {
       return true;
     }
-    Document* parentDoc = parentDocShell->GetDocument();
+    Document* parentDoc = parentDocShell->GetExtantDocument();
     if (!parentDoc || parentDoc->GetSandboxFlags() & SANDBOXED_ORIGIN) {
       return true;
     }

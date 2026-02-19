@@ -461,15 +461,13 @@ void MacroAssemblerMIPSShared::ma_mod_mask(Register src, Register dest,
   // Check the hold to see if we need to negate the result.
   ma_b(hold, hold, &done, NotSigned, ShortJump);
 
-  // If the hold was non-zero, negate the result to be in line with
-  // what JS wants
   if (negZero != nullptr) {
     // Jump out in case of negative zero.
-    ma_b(hold, hold, negZero, Zero);
-    ma_negu(dest, dest);
-  } else {
-    ma_negu(dest, dest);
+    ma_b(dest, dest, negZero, Zero);
   }
+  // If the hold was non-zero, negate the result to be in line with
+  // what JS wants
+  ma_negu(dest, dest);
 
   bind(&done);
 }

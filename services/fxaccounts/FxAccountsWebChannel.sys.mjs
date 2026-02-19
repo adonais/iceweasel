@@ -30,7 +30,8 @@ import {
   COMMAND_FIREFOX_VIEW,
   OAUTH_CLIENT_ID,
   ON_PROFILE_CHANGE_NOTIFICATION,
-  PREF_LAST_FXA_USER,
+  PREF_LAST_FXA_USER_UID,
+  PREF_LAST_FXA_USER_EMAIL,
   WEBCHANNEL_ID,
   log,
   logPII,
@@ -152,7 +153,7 @@ function getErrorDetails(error) {
  *     The ID of the WebChannel
  *     @param {string} options.helpers
  *     Helpers functions. Should only be passed in for testing.
- * @constructor
+ * @class
  */
 export function FxAccountsWebChannel(options) {
   if (!options) {
@@ -300,16 +301,15 @@ FxAccountsWebChannel.prototype = {
         {
           let response = { command, messageId: message.messageId };
           // If browser profiles are not enabled, then we use the old merge sync dialog
-          if (!lazy.SelectableProfileService?.isEnabled) {
-            response.data = { ok: this._helpers.shouldAllowRelink(data.email) };
+          if (!this._helpers._selectableProfilesEnabled()) {
+            response.data = { ok: this._helpers.shouldAllowRelink(data) };
             this._channel.send(response, sendingContext);
             break;
           }
           // In the new sync warning, we give users a few more options to
           // control what they want to do with their sync data
-          let result = await this._helpers.promptProfileSyncWarningIfNeeded(
-            data.email
-          );
+          let result =
+            await this._helpers.promptProfileSyncWarningIfNeeded(data);
           switch (result.action) {
             case "create-profile":
               lazy.SelectableProfileService.createNewProfile();
@@ -517,9 +517,10 @@ FxAccountsWebChannelHelpers.prototype = {
   // (This is sync-specific, so ideally would be in sync's identity module,
   // but it's a little more seamless to do here, and sync is currently the
   // only fxa consumer, so...
-  shouldAllowRelink(acctName) {
+  shouldAllowRelink(acctData) {
     return (
-      !this._needRelinkWarning(acctName) || this._promptForRelink(acctName)
+      !this._needRelinkWarning(acctData) ||
+      this._promptForRelink(acctData.email)
     );
   },
 
@@ -530,14 +531,15 @@ FxAccountsWebChannelHelpers.prototype = {
    * @returns {string} - The corresponding option the user pressed. Can be either:
    * cancel, continue, switch-profile, or create-profile
    */
-  async promptProfileSyncWarningIfNeeded(acctEmail) {
+  async promptProfileSyncWarningIfNeeded(acctData) {
     // Was a previous account signed into this profile or is there another profile currently signed in
     // to the account we're signing into
-    let profileLinkedWithAcct =
-      await this._getProfileAssociatedWithAcct(acctEmail);
-    if (this._needRelinkWarning(acctEmail) || profileLinkedWithAcct) {
+    let profileLinkedWithAcct = acctData.uid
+      ? await this._getProfileAssociatedWithAcct(acctData.uid)
+      : null;
+    if (this._needRelinkWarning(acctData) || profileLinkedWithAcct) {
       return this._promptForProfileSyncWarning(
-        acctEmail,
+        acctData.email,
         profileLinkedWithAcct
       );
     }
@@ -664,7 +666,7 @@ FxAccountsWebChannelHelpers.prototype = {
     log.debug(`storing info for services ${Object.keys(requestedServices)}`);
     accountData.requestedServices = JSON.stringify(requestedServices);
 
-    this.setPreviousAccountNameHashPref(accountData.email);
+    this.setPreviousAccountHashPref(accountData.uid);
 
     // For scenarios like user is logged in via third-party but wants
     // to enable sync (password) the server will send an additional login command
@@ -679,17 +681,16 @@ FxAccountsWebChannelHelpers.prototype = {
   },
 
   /**
-   * Logins in to sync by completing an OAuth flow
+   * Logs in to sync by completing an OAuth flow
    *
    * @param {object} oauthData: The oauth code and state as returned by the server
    */
   async oauthLogin(oauthData) {
     log.debug("Webchannel is completing the oauth flow");
-    const { uid, sessionToken, email, requestedServices } =
+    const { uid, sessionToken, requestedServices } =
       await this._fxAccounts._internal.getUserAccountData([
         "uid",
         "sessionToken",
-        "email",
         "requestedServices",
       ]);
     // First we finish the ongoing oauth flow
@@ -704,7 +705,7 @@ FxAccountsWebChannelHelpers.prototype = {
     await this._fxAccounts._internal.destroyOAuthToken({ token: refreshToken });
 
     // Remember the account for future merge warnings etc.
-    this.setPreviousAccountNameHashPref(email);
+    this.setPreviousAccountHashPref(uid);
 
     if (!scopedKeys) {
       log.info(
@@ -864,6 +865,7 @@ FxAccountsWebChannelHelpers.prototype = {
       // This capability is for telling FxA that the current build can accept
       // accounts without passwords/sync keys (third-party auth)
       keys_optional: true,
+      can_link_account_uid: true,
       engines,
     };
   },
@@ -899,26 +901,22 @@ FxAccountsWebChannelHelpers.prototype = {
   },
 
   /**
-   * Get the hash of account name of the previously signed in account
-   */
-  getPreviousAccountNameHashPref() {
-    try {
-      return Services.prefs.getStringPref(PREF_LAST_FXA_USER);
-    } catch (_) {
-      return "";
-    }
-  },
-
-  /**
-   * Given an account name, set the hash of the previously signed in account
+   * Remember that a particular account id was previously signed in to this device.
    *
-   * @param acctName the account name of the user's account.
+   * @param uid the account uid
    */
-  setPreviousAccountNameHashPref(acctName) {
+  setPreviousAccountHashPref(uid) {
+    if (!uid) {
+      throw new Error("No uid specified");
+    }
     Services.prefs.setStringPref(
-      PREF_LAST_FXA_USER,
-      lazy.CryptoUtils.sha256Base64(acctName)
+      PREF_LAST_FXA_USER_UID,
+      lazy.CryptoUtils.sha256Base64(uid)
     );
+    // This should not be necessary but exists just to be safe, to avoid
+    // any possibility we somehow end up with *both* prefs set and each indicating
+    // a different account.
+    Services.prefs.clearUserPref(PREF_LAST_FXA_USER_EMAIL);
   },
 
   /**
@@ -955,10 +953,46 @@ FxAccountsWebChannelHelpers.prototype = {
    *
    * @private
    */
-  _needRelinkWarning(acctName) {
-    let prevAcctHash = this.getPreviousAccountNameHashPref();
+  _needRelinkWarning(acctData) {
+    // This code *never* expects both PREF_LAST_FXA_USER_EMAIL and PREF_LAST_FXA_USER_UID.
+    // * If we have PREF_LAST_FXA_USER_EMAIL it means we were signed out before we migrated
+    //   to UID, and can't learn that UID, so have no UID pref set.
+    // * If the UID pref exists, our code since that landed will never write to the
+    //   PREF_LAST_FXA_USER_EMAIL pref.
+    // The only way both could be true would be something catastrophic, such as our
+    // "migrate to uid at sign-out" code somehow died between writing the UID and
+    // clearing the email.
+    //
+    // Therefore, we don't even try to handle both being set, but do prefer the UID
+    // because that must have been written by the new code paths introduced for that pref.
+    const lastUid = Services.prefs.getStringPref(PREF_LAST_FXA_USER_UID, "");
+    if (lastUid) {
+      // A special case here is for when no uid is specified by the server - that means the
+      // server is about to create a new account. Therefore, the new account can't possibly
+      // match.
+      return (
+        !acctData.uid || lastUid != lazy.CryptoUtils.sha256Base64(acctData.uid)
+      );
+    }
+
+    // no uid pref, check if there's an EMAIL pref (which means a user previously signed out
+    // before we landed this uid-aware code, so only know their email.)
+    const lastEmail = Services.prefs.getStringPref(
+      PREF_LAST_FXA_USER_EMAIL,
+      ""
+    );
     return (
-      prevAcctHash && prevAcctHash != lazy.CryptoUtils.sha256Base64(acctName)
+      lastEmail && lastEmail != lazy.CryptoUtils.sha256Base64(acctData.email)
+    );
+  },
+
+  // Does this install have multiple profiles available? The SelectableProfileService
+  // being enabled isn't enough, because this doesn't tell us whether a new profile
+  // as actually created!
+  _selectableProfilesEnabled() {
+    return (
+      lazy.SelectableProfileService?.isEnabled &&
+      lazy.SelectableProfileService?.hasCreatedSelectableProfiles()
     );
   },
 
@@ -974,10 +1008,10 @@ FxAccountsWebChannelHelpers.prototype = {
   /**
    * Checks if a profile is associated with the given account email.
    *
-   * @param {string} acctEmail - The email of the account to check.
+   * @param {string} acctUid - The uid of the account to check.
    * @returns {Promise<SelectableProfile|null>} - The profile associated with the account, or null if none.
    */
-  async _getProfileAssociatedWithAcct(acctEmail) {
+  async _getProfileAssociatedWithAcct(acctUid) {
     let profiles = await this._getAllProfiles();
     let currentProfileName = await this._getCurrentProfileName();
     for (let profile of profiles) {
@@ -990,7 +1024,7 @@ FxAccountsWebChannelHelpers.prototype = {
       let signedInUser = await this._readJSONFileAsync(signedInUserPath);
       if (
         signedInUser?.accountData &&
-        signedInUser.accountData.email === acctEmail
+        signedInUser.accountData.uid === acctUid
       ) {
         // The account is signed into another profile
         return profile;
@@ -1021,7 +1055,7 @@ FxAccountsWebChannelHelpers.prototype = {
    *
    * @private
    */
-  _promptForRelink(acctName) {
+  _promptForRelink(acctEmail) {
     let [continueLabel, title, heading, description] =
       lazy.l10n.formatValuesSync([
         { id: "sync-setup-verify-continue" },
@@ -1030,7 +1064,7 @@ FxAccountsWebChannelHelpers.prototype = {
         {
           id: "sync-setup-verify-description",
           args: {
-            email: acctName,
+            email: acctEmail,
           },
         },
       ]);
@@ -1251,7 +1285,7 @@ FxAccountsWebChannelHelpers.prototype = {
   ) {
     let variant;
 
-    if (!lazy.SelectableProfileService?.isEnabled) {
+    if (!this._selectableProfilesEnabled()) {
       // Old merge dialog
       variant = "old-merge";
     } else if (isAccountLoggedIntoAnotherProfile) {

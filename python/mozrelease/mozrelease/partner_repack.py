@@ -442,7 +442,7 @@ class RepackLinux(RepackBase):
         repack_info,
         **kwargs,
     ):
-        super(RepackLinux, self).__init__(
+        super().__init__(
             build,
             partner_dir,
             build_dir,
@@ -454,7 +454,7 @@ class RepackLinux(RepackBase):
         self.uncompressed_build = build.replace(".xz", "")
 
     def unpackBuild(self):
-        super(RepackLinux, self).unpackBuild()
+        super().unpackBuild()
         target_path = Path(self.uncompressed_build)
         unpack_cmd = f"xz -c -d {self.build} > {target_path.absolute()}"
         shellCommand(unpack_cmd)
@@ -465,7 +465,7 @@ class RepackLinux(RepackBase):
             sys.exit(1)
 
     def copyFiles(self):
-        super(RepackLinux, self).copyFiles(LINUX_DEST_DIR)
+        super().copyFiles(LINUX_DEST_DIR)
 
     def repackBuild(self):
         if options.quiet:
@@ -489,7 +489,7 @@ class RepackMac(RepackBase):
         repack_info,
         **kwargs,
     ):
-        super(RepackMac, self).__init__(
+        super().__init__(
             build,
             partner_dir,
             build_dir,
@@ -501,7 +501,7 @@ class RepackMac(RepackBase):
         self.uncompressed_build = build.replace(".gz", "")
 
     def unpackBuild(self):
-        super(RepackMac, self).unpackBuild()
+        super().unpackBuild()
         gunzip_cmd = "gunzip %s" % self.build
         shellCommand(gunzip_cmd)
         if not Path(self.uncompressed_build).exists():
@@ -523,7 +523,7 @@ class RepackMac(RepackBase):
         sys.exit(1)
 
     def copyFiles(self):
-        super(RepackMac, self).copyFiles(Path(self.appName) / MAC_DEST_DIR)
+        super().copyFiles(Path(self.appName) / MAC_DEST_DIR)
 
     def repackBuild(self):
         if options.quiet:
@@ -552,7 +552,7 @@ class RepackWin(RepackBase):
         repack_info,
         **kwargs,
     ):
-        super(RepackWin, self).__init__(
+        super().__init__(
             build,
             partner_dir,
             build_dir,
@@ -563,7 +563,7 @@ class RepackWin(RepackBase):
         )
 
     def copyFiles(self):
-        super(RepackWin, self).copyFiles(WINDOWS_DEST_DIR)
+        super().copyFiles(WINDOWS_DEST_DIR)
 
     def repackBuild(self):
         if options.quiet:
@@ -596,7 +596,7 @@ class RepackWin(RepackBase):
             z.close()
 
     def stage(self):
-        super(RepackWin, self).stage()
+        super().stage()
         setup_dest = Path(str(self.final_build).replace("target.zip", "setup.exe"))
         if "replacement_setup_exe" in self.repack_info:
             log.info("Overriding setup.exe with custom copy")

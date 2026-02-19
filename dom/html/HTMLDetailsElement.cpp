@@ -169,7 +169,10 @@ bool HTMLDetailsElement::HandleCommandInternal(Element* aSource,
     return true;
   }
 
-  MOZ_ASSERT(StaticPrefs::dom_element_commandfor_on_details_enabled());
+  if (!StaticPrefs::dom_element_commandfor_on_details_enabled()) {
+    return false;
+  }
+
   if (aCommand == Command::Toggle) {
     ToggleOpen();
     return true;

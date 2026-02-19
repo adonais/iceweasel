@@ -10,18 +10,13 @@ import mozilla.components.browser.state.state.ReaderState
 import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ToolbarPopupWindowTest {
-
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
 
     @Test
     fun `getUrlForClipboard should get the right URL`() {

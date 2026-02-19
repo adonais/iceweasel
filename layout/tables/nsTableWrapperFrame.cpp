@@ -407,11 +407,6 @@ Maybe<StyleCaptionSide> nsTableWrapperFrame::GetCaptionSide() const {
   return Some(GetCaption()->StyleTableBorder()->mCaptionSide);
 }
 
-StyleVerticalAlignKeyword nsTableWrapperFrame::GetCaptionVerticalAlign() const {
-  const auto& va = GetCaption()->StyleDisplay()->mVerticalAlign;
-  return va.IsKeyword() ? va.AsKeyword() : StyleVerticalAlignKeyword::Top;
-}
-
 nscoord nsTableWrapperFrame::ComputeFinalBSize(
     const LogicalSize& aInnerSize, const LogicalSize& aCaptionSize,
     const LogicalMargin& aCaptionMargin, const WritingMode aWM) const {

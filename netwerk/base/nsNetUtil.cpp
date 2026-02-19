@@ -107,6 +107,7 @@
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/MozSrcProtocolHandler.h"
 #include "mozilla/net/ExtensionProtocolHandler.h"
+#include "mozilla/net/MozNewTabWallpaperProtocolHandler.h"
 #include "mozilla/net/PageThumbProtocolHandler.h"
 #include "mozilla/net/SFVService.h"
 #include "nsICookieService.h"
@@ -1987,6 +1988,15 @@ nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
 
     RefPtr<mozilla::net::PageThumbProtocolHandler> handler =
         mozilla::net::PageThumbProtocolHandler::GetSingleton();
+    if (!handler) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+    return handler->NewURI(aSpec, aCharset, aBaseURI, aURI);
+  }
+
+  if (scheme.EqualsLiteral("moz-newtab-wallpaper")) {
+    RefPtr<mozilla::net::MozNewTabWallpaperProtocolHandler> handler =
+        mozilla::net::MozNewTabWallpaperProtocolHandler::GetSingleton();
     if (!handler) {
       return NS_ERROR_NOT_AVAILABLE;
     }

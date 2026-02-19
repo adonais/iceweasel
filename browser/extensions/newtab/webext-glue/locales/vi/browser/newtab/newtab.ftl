@@ -667,6 +667,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Danh sách mới
+newtab-widget-section-title = Widget
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Ẩn widget
+    .aria-label = Ẩn tất cả widget
+newtab-widget-section-maximize =
+    .title = Mở rộng widget
+    .aria-label = Mở rộng tất cả widget thành kích thước đầy đủ
+newtab-widget-section-minimize =
+    .title = Thu nhỏ widget
+    .aria-label = Thu nhỏ tất cả widget thành kích thước nhỏ gọn
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -689,8 +700,6 @@ newtab-widget-timer-menu-notifications = Tắt thông báo
 newtab-widget-timer-menu-notifications-on = Bật thông báo
 newtab-widget-timer-menu-hide = Ẩn bộ hẹn giờ
 newtab-widget-timer-menu-learn-more = Tìm hiểu thêm
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Cuộn để biết thêm
 newtab-widget-message-title = Giữ tập trung với danh sách và bộ đếm thời gian tích hợp
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Từ những lời nhắc nhở nhanh đến những việc cần làm hàng ngày, các buổi tập trung đến những giờ nghỉ giải lao — hãy tập trung vào nhiệm vụ và đúng giờ.

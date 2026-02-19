@@ -56,6 +56,7 @@
 #include "jit/riscv64/extension/base-assembler-riscv.h"
 #include "jit/riscv64/extension/base-riscv-i.h"
 #include "jit/riscv64/extension/extension-riscv-a.h"
+#include "jit/riscv64/extension/extension-riscv-b.h"
 #include "jit/riscv64/extension/extension-riscv-c.h"
 #include "jit/riscv64/extension/extension-riscv-d.h"
 #include "jit/riscv64/extension/extension-riscv-f.h"
@@ -71,6 +72,22 @@
 #include "wasm/WasmTypeDecls.h"
 namespace js {
 namespace jit {
+
+class RVFlags final {
+ public:
+  static void Init();
+
+  static bool FlagsHaveBeenComputed() { return sComputed; }
+
+  static bool HasZbaExtension() { return sZbaExtension; }
+
+  static bool HasZbbExtension() { return sZbbExtension; }
+
+ private:
+  static inline bool sZbaExtension = false;
+  static inline bool sZbbExtension = false;
+  static inline bool sComputed = false;
+};
 
 struct ScratchFloat32Scope : public AutoFloatRegisterScope {
   explicit ScratchFloat32Scope(MacroAssembler& masm)
@@ -119,6 +136,7 @@ typedef js::jit::AssemblerBufferWithConstantPools<
 class Assembler : public AssemblerShared,
                   public AssemblerRISCVI,
                   public AssemblerRISCVA,
+                  public AssemblerRISCVB,
                   public AssemblerRISCVF,
                   public AssemblerRISCVD,
                   public AssemblerRISCVM,
@@ -361,17 +379,19 @@ class Assembler : public AssemblerShared,
   Register getStackPointer() const { return StackPointer; }
   void flushBuffer() {}
   static int disassembleInstr(Instr instr, bool enable_spew = false);
-  int target_at(BufferOffset pos, bool is_internal);
-  static int target_at(Instruction* instruction, BufferOffset pos,
-                       bool is_internal, Instruction* instruction2 = nullptr);
-  uint32_t next_link(Label* label, bool is_internal);
-  static uint64_t target_address_at(Instruction* pos);
-  static void set_target_value_at(Instruction* pc, uint64_t target);
+  int jumpChainTargetAt(BufferOffset pos, bool is_internal);
+  static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
+                               bool is_internal,
+                               Instruction* instruction2 = nullptr);
+  BufferOffset jumpChainGetNextLink(BufferOffset pos, bool is_internal);
+  uint32_t jumpChainUseNextLink(Label* label, bool is_internal);
+  static uint64_t jumpChainTargetAddressAt(Instruction* pos);
+  static void jumpChainSetTargetValueAt(Instruction* pc, uint64_t target);
   // Returns true if the target was successfully assembled and spewed.
-  bool target_at_put(BufferOffset pos, BufferOffset target_pos,
-                     bool trampoline = false);
-  int32_t branch_offset_helper(Label* L, OffsetSize bits);
-  int32_t branch_long_offset(Label* L);
+  bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
+                            bool trampoline = false);
+  int32_t branchOffsetHelper(Label* L, OffsetSize bits);
+  int32_t branchLongOffsetHelper(Label* L);
 
   // Determines if Label is bound and near enough so that branch instruction
   // can be used to reach it, instead of jump instruction.
@@ -487,6 +507,10 @@ class Assembler : public AssemblerShared,
     }
     MOZ_CRASH("unexpected mode");
   }
+
+  static bool HasZbaExtension() { return RVFlags::HasZbaExtension(); }
+
+  static bool HasZbbExtension() { return RVFlags::HasZbbExtension(); }
 
   void verifyHeapAccessDisassembly(uint32_t begin, uint32_t end,
                                    const Disassembler::HeapAccess& heapAccess) {

@@ -294,6 +294,7 @@ private fun OnboardingContent(
                     onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
                     onCustomizeThemeClick = onCustomizeThemeButtonClick,
                     onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
+                    shouldShowElevation = false,
                 )
                 OnboardingPageForType(
                     type = pageUiState.type,

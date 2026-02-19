@@ -59,7 +59,6 @@
 #include "nsDebug.h"
 #include "nsISupports.h"
 #include "nsXPCOM.h"
-#include "SharedLibraries.h"
 #include "VTuneProfiler.h"
 #include "ETWTools.h"
 
@@ -70,6 +69,7 @@
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/AutoProfilerLabel.h"
 #include "mozilla/BaseAndGeckoProfilerDetail.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
@@ -84,6 +84,7 @@
 #include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/ProfilerBandwidthCounter.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/SharedLibraries.h"
 #include "mozilla/Services.h"
 #include "mozilla/StackWalk.h"
 #include "mozilla/Try.h"
@@ -96,7 +97,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
-#include "BaseProfiler.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIDocShell.h"
@@ -5350,7 +5350,7 @@ void SamplerThread::SpyOnUnregisteredThreads() {
       /* aWindowInfo = */ nsTArray<WindowInfo>{},
       /* aUtilityInfo = */ nsTArray<UtilityInfo>{},
       /* aChild = */ 0
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
       ,
       /* aChildTask = */ MACH_PORT_NULL
 #endif  // XP_DARWIN
@@ -5647,9 +5647,22 @@ static void NotifyObservers(const char* aTopic,
     return;
   }
 
+  // Notify C++ observers through the ObserverService
   if (nsCOMPtr<nsIObserverService> os = services::GetObserverService()) {
     os->NotifyObservers(aSubject, aTopic, nullptr);
   }
+
+#if defined(GP_OS_android)
+  // In the parent process, notify the GeckoJavaSampler when the profiler is
+  // started / stopped.
+  if (XRE_IsParentProcess()) {
+    if (strcmp(aTopic, "profiler-started") == 0) {
+      java::GeckoJavaSampler::NotifyProfilerStateChanged(true);
+    } else if (strcmp(aTopic, "profiler-stopped") == 0) {
+      java::GeckoJavaSampler::NotifyProfilerStateChanged(false);
+    }
+  }
+#endif
 }
 
 [[nodiscard]] static RefPtr<GenericPromise> NotifyProfilerStarted(

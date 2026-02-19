@@ -10,7 +10,7 @@ from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
 class TestSafeBrowsingWarningPages(WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
-        super(TestSafeBrowsingWarningPages, self).setUp()
+        super().setUp()
 
         self.urls = [
             # Unwanted software URL
@@ -50,7 +50,7 @@ class TestSafeBrowsingWarningPages(WindowManagerMixin, MarionetteTestCase):
             self.remove_permission("https://www.itisatrap.org", "safe-browsing")
             self.close_all_tabs()
         finally:
-            super(TestSafeBrowsingWarningPages, self).tearDown()
+            super().tearDown()
 
     def test_warning_pages(self):
         for unsafe_page in self.urls:

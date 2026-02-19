@@ -14,7 +14,7 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/StackWalk.h"
 
-#include "BaseProfiler.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/BaseProfilerMarkers.h"
 #include "platform.h"
 #include "ProfileBuffer.h"

@@ -125,8 +125,9 @@ def lint(paths, config, fix=None, **lintargs):
                                     f"  {metric_name}:", group_files
                                 )
                             else:
-                                lineno, file_path = None, (
-                                    group_files[0] if group_files else None
+                                lineno, file_path = (
+                                    None,
+                                    (group_files[0] if group_files else None),
                                 )
 
                         if file_path:

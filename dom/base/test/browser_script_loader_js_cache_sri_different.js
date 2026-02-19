@@ -211,27 +211,12 @@ add_task(async function testMemoryCache_DifferentSRI() {
             ev("load:diskcache", "file_js_cache_large.js"),
             ev("load:fallback", "file_js_cache_large.js"),
             ev("load:source", "file_js_cache_large.js"),
+            // At this point, the necko's fetch count is 3,
+            // because of the following:
+            //   * 0-th item's source load
+            //   * this items's diskcache load
+            //   * this items's source load
             ev("memorycache:saved", "file_js_cache_large.js"),
-            ev("evaluate:classic", "file_js_cache_large.js"),
-            // Disk cache's fetch count is not incremented for non-first
-            // load, and the fetch count here doesn't hit the minimum.
-            ev("diskcache:noschedule"),
-          ],
-        },
-        {
-          file: "file_js_cache_large.js",
-          sri: "sha512-NN5Pp0blZjckIohQdMbZwclYHNV3QXnL/UiR1R0h66KMc2zRCgfFQ56zpTd8UCYB/RkAQ6HUbPzlGr8JWUp6AQ==",
-          events: [
-            ev("load:memorycache", "file_js_cache_large.js"),
-            ev("evaluate:classic", "file_js_cache_large.js"),
-            ev("diskcache:noschedule"),
-          ],
-        },
-        {
-          file: "file_js_cache_large.js",
-          sri: "sha512-NN5Pp0blZjckIohQdMbZwclYHNV3QXnL/UiR1R0h66KMc2zRCgfFQ56zpTd8UCYB/RkAQ6HUbPzlGr8JWUp6AQ==",
-          events: [
-            ev("load:memorycache", "file_js_cache_large.js"),
             ev("evaluate:classic", "file_js_cache_large.js"),
             ev("diskcache:noschedule"),
           ],
@@ -296,6 +281,7 @@ add_task(async function testMemoryCache_DifferentSRI() {
             ev("load:diskcache", "file_js_cache_large.js"),
             ev("load:fallback", "file_js_cache_large.js"),
             ev("load:source", "file_js_cache_large.js"),
+            // At this point, the necko's fetch count is 3.
             ev("memorycache:saved", "file_js_cache_large.js"),
             ev("evaluate:module", "file_js_cache_large.js"),
             ev("diskcache:noschedule"),
@@ -307,7 +293,7 @@ add_task(async function testMemoryCache_DifferentSRI() {
           events: [
             ev("load:memorycache", "file_js_cache_large.js"),
             ev("evaluate:module", "file_js_cache_large.js"),
-            ev("diskcache:noschedule"),
+            ev("diskcache:saved", "file_js_cache_large.js", false),
           ],
         },
       ],

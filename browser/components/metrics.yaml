@@ -1017,3 +1017,39 @@ browser:
     data_sensitivity:
       - technical
     expires: never
+
+  global_ai_control_is_blocking:
+    type: boolean
+    lifetime: application
+    description: |
+      Status of the global AI enhancements setting.
+      When true, enhancements are blocked.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2013077
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2013077
+    notification_emails:
+      - nimbus-team@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    send_in_pings:
+      - metrics
+
+  global_ai_control_toggled:
+    type: event
+    description: Emitted when the global AI enhancements setting is toggled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012214
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012214
+    notification_emails:
+      - nimbus-team@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys:
+      blocked:
+        type: boolean
+        description: >
+          The state of the "Block AI Enhancements" toggle.

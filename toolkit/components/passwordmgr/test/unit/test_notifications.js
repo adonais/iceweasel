@@ -99,7 +99,7 @@ add_task(async function test_notifications() {
 
     expectedNotification = "modifyLogin";
     expectedData = [testuser1, testuser2];
-    Services.logins.modifyLogin(testuser1, testuser2);
+    await Services.logins.modifyLoginAsync(testuser1, testuser2);
     Assert.equal(expectedNotification, null);
     await LoginTestUtils.checkLogins([testuser2]);
 

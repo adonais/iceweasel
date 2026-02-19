@@ -365,6 +365,7 @@ already_AddRefed<Notification> Notification::ValidateAndCreate(
   MOZ_ASSERT(aGlobal);
 
   SetUseCounterIf(aOptions.mNavigate.WasPassed(), navigate);
+  SetUseCounterIf(aOptions.mImage.WasPassed(), image);
   SetUseCounterIf(aOptions.mBadge.WasPassed(), badge);
   SetUseCounterIf(aOptions.mVibrate.WasPassed(), vibrate);
   SetUseCounterIf(aOptions.mTimestamp.WasPassed(), timestamp);

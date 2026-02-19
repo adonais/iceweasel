@@ -95,7 +95,7 @@ class ChecksumsGenerator(BaseScript, VirtualenvMixin):
         self.file_prefix = self._get_file_prefix()
 
     def _pre_config_lock(self, rw_config):
-        super(ChecksumsGenerator, self)._pre_config_lock(rw_config)
+        super()._pre_config_lock(rw_config)
 
         # These defaults are set here rather in the config because default
         # lists cannot be completely overidden, only appended to.

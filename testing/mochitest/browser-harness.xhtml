@@ -146,11 +146,21 @@
           return;
         }
 
+        // Use task name as subtest if available
+        let subtest = this.scope?.SimpleTest?._currentTaskName || null;
+
+        // Combine assertion name with exception details if present
+        let message = result.name;
+        if (result.msg) {
+          message += " - " + result.msg;
+        }
+
         this.dumper.structuredLogger.testStatus(this.path,
-                                                result.name,
+                                                subtest,
                                                 result.status,
                                                 result.expected,
-                                                result.msg);
+                                                message,
+                                                result.stack || null);
         let markerName = "TEST-";
         if (result.pass) {
           markerName += result.todo ? "KNOWN-FAIL" : "PASS";
@@ -158,11 +168,7 @@
         else {
           markerName += "UNEXPECTED-" + result.status;
         }
-        let markerText = result.name;
-        if (result.msg) {
-          markerText += " - " + result.msg;
-        }
-        ChromeUtils.addProfilerMarker(markerName, {category: "Test"}, markerText);
+        ChromeUtils.addProfilerMarker(markerName, {category: "Test"}, message);
       },
 
       setDuration: function setDuration(duration) {

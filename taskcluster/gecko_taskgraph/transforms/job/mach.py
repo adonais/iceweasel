@@ -10,26 +10,24 @@ from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 
-mach_schema = Schema(
-    {
-        Required("using"): "mach",
-        # The mach command (omitting `./mach`) to run
-        Required("mach"): taskref_or_string,
-        # The sparse checkout profile to use. Value is the filename relative to the
-        # directory where sparse profiles are defined (build/sparse-profiles/).
-        Optional("sparse-profile"): Any(str, None),
-        # if true, perform a checkout of a comm-central based branch inside the
-        # gecko checkout
-        Required("comm-checkout"): bool,
-        # Prepend the specified ENV variables to the command. This can be useful
-        # if the value of the ENV needs to be interpolated with another ENV.
-        Optional("prepend-env"): {str: str},
-        # Base work directory used to set up the task.
-        Optional("workdir"): str,
-        # Use the specified caches.
-        Optional("use-caches"): Any(bool, [str]),
-    }
-)
+mach_schema = Schema({
+    Required("using"): "mach",
+    # The mach command (omitting `./mach`) to run
+    Required("mach"): taskref_or_string,
+    # The sparse checkout profile to use. Value is the filename relative to the
+    # directory where sparse profiles are defined (build/sparse-profiles/).
+    Optional("sparse-profile"): Any(str, None),
+    # if true, perform a checkout of a comm-central based branch inside the
+    # gecko checkout
+    Required("comm-checkout"): bool,
+    # Prepend the specified ENV variables to the command. This can be useful
+    # if the value of the ENV needs to be interpolated with another ENV.
+    Optional("prepend-env"): {str: str},
+    # Base work directory used to set up the task.
+    Optional("workdir"): str,
+    # Use the specified caches.
+    Optional("use-caches"): Any(bool, [str]),
+})
 
 
 defaults = {

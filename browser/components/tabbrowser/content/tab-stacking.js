@@ -117,7 +117,7 @@
           isPinned ? numPinned : undefined
         );
 
-        if (this._isContainerVerticalPinnedGrid(draggedTab)) {
+        if (this._tabbrowserTabs.isContainerVerticalPinnedGrid(draggedTab)) {
           // Update both translate axis for pinned vertical expanded tabs
           if (oldTranslateX > 0 && translateOffsetX > tabWidth / 2) {
             newTranslateX += tabWidth;
@@ -202,9 +202,10 @@
           !shouldCreateGroupOnDrop &&
           !shouldDropIntoCollapsedTabGroup &&
           !isTabGroupLabel(draggedTab) &&
+          !isSplitViewWrapper(draggedTab) &&
           !shouldPin &&
           !shouldUnpin;
-        if (this._isContainerVerticalPinnedGrid(draggedTab)) {
+        if (this._tabbrowserTabs.isContainerVerticalPinnedGrid(draggedTab)) {
           shouldTranslate &&=
             (oldTranslateX && oldTranslateX != newTranslateX) ||
             (oldTranslateY && oldTranslateY != newTranslateY);
@@ -324,6 +325,10 @@
         gBrowser.adoptTabGroup(draggedTab.group, {
           elementIndex: this._getDropIndex(event),
         });
+      } else if (isSplitViewWrapper(draggedTab)) {
+        gBrowser.adoptSplitView(draggedTab, {
+          elementIndex: this._getDropIndex(event),
+        });
       } else if (draggedTab) {
         // Move the tabs into this window. To avoid multiple tab-switches in
         // the original window, the selected tab should be adopted last.
@@ -441,7 +446,7 @@
           "Cannot move together a mix of pinned and unpinned tabs."
         );
       }
-      let isGrid = this._isContainerVerticalPinnedGrid(tab);
+      let isGrid = this._tabbrowserTabs.isContainerVerticalPinnedGrid(tab);
       let animate = !gReduceMotion;
 
       tab._moveTogetherSelectedTabsData = {
@@ -650,7 +655,7 @@
       }
       let isPinned = tab.pinned;
       let dragAndDropElements = this._tabbrowserTabs.dragAndDropElements;
-      let isGrid = this._isContainerVerticalPinnedGrid(tab);
+      let isGrid = this._tabbrowserTabs.isContainerVerticalPinnedGrid(tab);
       let periphery = document.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
@@ -726,7 +731,7 @@
           });
       }
 
-      // Use .tab-group-label-container or .tabbrowser-tab for size/position
+      // Use .tab-group-label-container, tab-split-view-wrapper or .tabbrowser-tab for size/position
       // calculations.
       let rect =
         window.windowUtils.getBoundsWithoutFlushing(tabStripItemElement);
@@ -1242,9 +1247,8 @@
               dropElement?.currentIndex ?? dropElement.elementIndex;
           } else {
             dropBefore = false;
-            let lastVisibleTabInGroup = overlappedGroup.tabs.findLast(
-              tab => tab.visible
-            );
+            let lastVisibleTabInGroup =
+              overlappedGroup.tabsAndSplitViews.findLast(ele => ele.visible);
             newDropElementIndex =
               (lastVisibleTabInGroup?.currentIndex ??
                 lastVisibleTabInGroup.elementIndex) + 1;
@@ -1573,9 +1577,11 @@
       let pinnedDropIndicator = draggedTabDocument.getElementById(
         "pinned-drop-indicator"
       );
+      let draggedTabContainer =
+        draggedTabDocument.ownerGlobal.gBrowser.tabContainer;
       pinnedDropIndicator.removeAttribute("visible");
       pinnedDropIndicator.removeAttribute("interactive");
-      draggedTabDocument.ownerGlobal.gBrowser.tabContainer.style.maxWidth = "";
+      draggedTabContainer.style.maxWidth = "";
       let allTabs = draggedTabDocument.getElementsByClassName("tabbrowser-tab");
       for (let tab of allTabs) {
         tab.style.width = "";
@@ -1598,7 +1604,7 @@
         label.style.pointerEvents = "";
         label.removeAttribute("dragtarget");
       }
-      for (let label of draggedTabDocument.getElementsByClassName(
+      for (let label of draggedTabContainer.getElementsByClassName(
         "tab-group-label"
       )) {
         delete label.currentIndex;
@@ -1627,11 +1633,22 @@
       );
       arrowScrollbox.scrollbox.style.height = "";
       arrowScrollbox.scrollbox.style.width = "";
-      for (let groupLabel of draggedTabDocument.getElementsByClassName(
+      for (let groupLabel of draggedTabContainer.getElementsByClassName(
         "tab-group-label-container"
       )) {
         groupLabel.style.left = "";
         groupLabel.style.top = "";
+      }
+      for (let splitviewWrapper of draggedTabContainer.getElementsByTagName(
+        "tab-split-view-wrapper"
+      )) {
+        splitviewWrapper.style.width = "";
+        splitviewWrapper.style.maxWidth = "";
+        splitviewWrapper.style.height = "";
+        splitviewWrapper.style.left = "";
+        splitviewWrapper.style.top = "";
+        splitviewWrapper.style.pointerEvents = "";
+        splitviewWrapper.removeAttribute("dragtarget");
       }
     }
   };

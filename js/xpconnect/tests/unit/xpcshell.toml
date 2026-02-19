@@ -281,6 +281,8 @@ skip-if = [
 ["test_nuke_sandbox_event_listeners.js"]
 
 ["test_nuke_webextension_wrappers.js"]
+# bug 1865028
+skip-if = ["true"]
 
 ["test_onGarbageCollection-01.js"]
 head = "head_ongc.js"

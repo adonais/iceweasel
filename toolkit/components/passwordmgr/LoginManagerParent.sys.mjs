@@ -1084,7 +1084,7 @@ export class LoginManagerParent extends JSWindowActorParent {
     const prompter = this._getPrompter(browser);
 
     if (!canMatchExistingLogin) {
-      prompter.promptToChangePasswordWithUsernames(
+      await prompter.promptToChangePasswordWithUsernames(
         promptBrowser,
         logins,
         formLogin
@@ -1383,7 +1383,7 @@ export class LoginManagerParent extends JSWindowActorParent {
       ) {
         lazy.log("Updating auto-saved login.");
 
-        Services.logins.modifyLogin(
+        await Services.logins.modifyLoginAsync(
           existingLogin,
           lazy.LoginHelper.newPropertyBag({
             password: formLogin.password,

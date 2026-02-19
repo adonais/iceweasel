@@ -21,8 +21,8 @@
 // If your file only uses particular APIs (e.g., only markers), please consider
 // including only the needed headers instead of this one, to reduce compilation
 // dependencies.
-#include "BaseProfiler.h"
 #include "ProfileAdditionalInformation.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/ProfilerCounts.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"

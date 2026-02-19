@@ -1,6 +1,9 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+/**
+ * @import { Setting } from "chrome://global/content/preferences/Setting.mjs"
+ */
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
@@ -127,7 +130,9 @@ async function openPreferencesViaOpenPreferencesAPI(aPane, aOptions) {
 
   if (!newTabBrowser.contentWindow) {
     await BrowserTestUtils.waitForEvent(newTabBrowser, "Initialized", true);
-    await BrowserTestUtils.waitForEvent(newTabBrowser.contentWindow, "load");
+    if (newTabBrowser.contentDocument.readyState != "complete") {
+      await BrowserTestUtils.waitForEvent(newTabBrowser.contentWindow, "load");
+    }
     await finalPrefPaneLoaded;
   }
 
@@ -688,6 +693,54 @@ async function selectHistoryMode(win, value) {
   await popupHiddenPromise;
 }
 
+/**
+ * Select the given history mode in the redesigned privacy pane.
+ *
+ * @param {Window} win - The preferences window which contains the
+ * dropdown.
+ * @param {string} value - The history mode to select.
+ */
+async function selectRedesignedHistoryMode(win, value) {
+  let historyMode = win.document.querySelector(
+    "setting-group[groupid='history2'] #historyMode"
+  );
+  let updated = waitForSettingControlChange(historyMode);
+
+  let optionItems = Array.from(historyMode.children);
+  let targetItem = optionItems.find(option => option.value == value);
+  if (!targetItem) {
+    throw new Error(
+      "Could not find history mode popup item for value: " + value
+    );
+  }
+
+  if (historyMode.value == value) {
+    return;
+  }
+
+  targetItem.click();
+  await updated;
+}
+
+async function updateCheckBoxElement(checkbox, value) {
+  ok(checkbox, "the " + checkbox.id + " checkbox should exist");
+  is_element_visible(
+    checkbox,
+    "the " + checkbox.id + " checkbox should be visible"
+  );
+
+  // No need to click if we're already in the desired state.
+  if (checkbox.checked === value) {
+    return;
+  }
+
+  // Scroll into view for click to succeed.
+  checkbox.scrollIntoView();
+
+  // Toggle the state.
+  await EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.ownerGlobal);
+}
+
 async function updateCheckBox(win, id, value) {
   let checkbox = win.document.getElementById(id);
   ok(checkbox, "the " + id + " checkbox should exist");
@@ -705,13 +758,22 @@ async function updateCheckBox(win, id, value) {
   await EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.ownerGlobal);
 }
 
-function waitForSettingChange(setting) {
-  return new Promise(resolve => {
+/**
+ * @param {Setting} setting The setting to wait on.
+ * @param {() => any} [triggerFn]
+ * An optional function to call that will trigger the change.
+ */
+function waitForSettingChange(setting, triggerFn) {
+  let changePromise = new Promise(resolve => {
     setting.on("change", function handler() {
       setting.off("change", handler);
       resolve();
     });
   });
+  if (triggerFn) {
+    triggerFn();
+  }
+  return changePromise;
 }
 
 async function waitForSettingControlChange(control) {
@@ -732,3 +794,111 @@ async function waitForPaneChange(paneId) {
     : `pane${paneId[0].toUpperCase()}${paneId.substring(1)}`;
   is(event.detail.category, expectId, "Loaded the correct pane");
 }
+
+function getControl(doc, id) {
+  let control = doc.getElementById(id);
+  ok(control, `Control ${id} exists`);
+  return control;
+}
+
+function synthesizeClick(el) {
+  let target = el.buttonEl ?? el.inputEl ?? el;
+  target.scrollIntoView({ block: "center" });
+  EventUtils.synthesizeMouseAtCenter(target, {}, target.ownerGlobal);
+}
+
+function getControlWrapper(doc, id) {
+  return getControl(doc, id).closest("setting-control");
+}
+
+async function openEtpPage() {
+  await openPreferencesViaOpenPreferencesAPI("etp", { leaveOpen: true });
+  let doc = gBrowser.contentDocument;
+  await BrowserTestUtils.waitForCondition(
+    () => doc.getElementById("contentBlockingCategoryRadioGroup"),
+    "Wait for the ETP advanced radio group to render"
+  );
+  return {
+    win: gBrowser.contentWindow,
+    doc,
+    tab: gBrowser.selectedTab,
+  };
+}
+
+async function openEtpCustomizePage() {
+  await openPreferencesViaOpenPreferencesAPI("etpCustomize", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.contentDocument;
+  await BrowserTestUtils.waitForCondition(
+    () => doc.getElementById("etpAllowListBaselineEnabledCustom"),
+    "Wait for the ETP customize controls to render"
+  );
+  return {
+    win: gBrowser.contentWindow,
+    doc,
+  };
+}
+
+async function changeMozSelectValue(selectEl, value) {
+  let control = selectEl.control;
+  let changePromise = waitForSettingControlChange(control);
+  selectEl.value = value;
+  selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+  await changePromise;
+}
+
+async function clickEtpBaselineCheckboxWithConfirm(
+  doc,
+  controlId,
+  prefName,
+  expectedValue,
+  buttonNumClick
+) {
+  let checkbox = getControl(doc, controlId);
+
+  let promptPromise = PromptTestUtils.handleNextPrompt(
+    gBrowser.selectedBrowser,
+    { modalType: Services.prompt.MODAL_TYPE_CONTENT },
+    { buttonNumClick }
+  );
+
+  let prefChangePromise = null;
+  if (buttonNumClick === 1) {
+    prefChangePromise = waitForAndAssertPrefState(
+      prefName,
+      expectedValue,
+      `${prefName} updated`
+    );
+  }
+
+  synthesizeClick(checkbox);
+
+  await promptPromise;
+
+  if (prefChangePromise) {
+    await prefChangePromise;
+  }
+
+  is(
+    checkbox.checked,
+    expectedValue,
+    `Checkbox ${controlId} should be ${expectedValue}`
+  );
+
+  return checkbox;
+}
+
+// Ensure each test leaves the sidebar in its initial state when it completes
+const initialSidebarState = { ...SidebarController.getUIState(), command: "" };
+registerCleanupFunction(async function () {
+  const { ObjectUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/ObjectUtils.sys.mjs"
+  );
+  if (
+    !ObjectUtils.deepEqual(SidebarController.getUIState(), initialSidebarState)
+  ) {
+    info("Restoring to initial sidebar state");
+    await SidebarController.initializeUIState(initialSidebarState);
+  }
+});

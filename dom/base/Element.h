@@ -150,6 +150,7 @@ class Optional;
 enum class CallerType : uint32_t;
 enum class ReferrerPolicy : uint8_t;
 enum class FetchPriority : uint8_t;
+enum class PopoverAttributeState : uint8_t;
 }  // namespace dom
 }  // namespace mozilla
 
@@ -610,7 +611,7 @@ class Element : public FragmentOrElement {
     return CreatePopoverData();
   }
 
-  bool IsAutoPopover() const;
+  bool IsPopoverOpenedInMode(PopoverAttributeState aMode) const;
   bool IsPopoverOpen() const;
 
   void SetAssociatedPopover(nsGenericHTMLElement& aPopover);
@@ -619,7 +620,8 @@ class Element : public FragmentOrElement {
   /**
    * https://html.spec.whatwg.org/multipage/popover.html#topmost-popover-ancestor
    */
-  Element* GetTopmostPopoverAncestor(const Element* aInvoker,
+  Element* GetTopmostPopoverAncestor(PopoverAttributeState aMode,
+                                     const Element* aInvoker,
                                      bool isPopover) const;
 
   ElementAnimationData* GetAnimationData() const {
@@ -1069,6 +1071,32 @@ class Element : public FragmentOrElement {
    * notified of the attribute change
    */
   nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify);
+
+  /**
+   * Swap an attribute value. This is a public wrapper that ensures bloom
+   * filter updates are performed correctly. For kNameSpaceID_None attributes,
+   * this will automatically update the bloom filter and propagate changes to
+   * parent elements.
+   *
+   * @param aLocalName the local name of the attribute
+   * @param aValue the value to swap (will contain old value on return)
+   * @param aHadValue set to true if attribute existed, false otherwise
+   */
+  nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
+                          bool* aHadValue);
+
+  /**
+   * Swap an attribute value. This is a public wrapper that ensures bloom
+   * filter updates are performed correctly. For kNameSpaceID_None attributes,
+   * this will automatically update the bloom filter and propagate changes to
+   * parent elements.
+   *
+   * @param aName the node info of the attribute
+   * @param aValue the value to swap (will contain old value on return)
+   * @param aHadValue set to true if attribute existed, false otherwise
+   */
+  nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
+                          bool* aHadValue);
 
   /**
    * Get the namespace / name / prefix of a given attribute.
@@ -2333,6 +2361,16 @@ class Element : public FragmentOrElement {
   MOZ_CAN_RUN_SCRIPT
   void FireBeforematchEvent(ErrorResult& aRv);
 
+  void PropagateBloomFilterToParents();
+  void UpdateSubtreeBloomFilterForClass(const nsAttrValue* aClassValue);
+  void UpdateSubtreeBloomFilterForAttribute(nsAtom* aAttribute);
+  uint64_t GetSubtreeBloomFilter() const {
+    return mAttrs.GetSubtreeBloomFilter();
+  }
+#ifdef DEBUG
+  void VerifySubtreeBloomFilter() const;
+#endif
+
  protected:
   enum class ReparseAttributes { No, Yes };
   /**
@@ -2454,6 +2492,10 @@ inline mozilla::dom::Element* nsINode::GetPreviousElementSibling() const {
   }
 
   return nullptr;
+}
+
+inline mozilla::dom::ShadowRoot* nsINode::GetShadowRoot() const {
+  return IsElement() ? AsElement()->GetShadowRoot() : nullptr;
 }
 
 inline mozilla::dom::Element* nsINode::GetAsElementOrParentElement() const {

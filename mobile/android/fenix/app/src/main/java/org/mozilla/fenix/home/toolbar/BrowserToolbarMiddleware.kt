@@ -45,7 +45,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
@@ -132,7 +131,7 @@ class BrowserToolbarMiddleware(
 
     @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     override fun invoke(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
         action: BrowserToolbarAction,
     ) {
@@ -140,16 +139,16 @@ class BrowserToolbarMiddleware(
             is Init -> {
                 next(action)
 
-                if (context.state.mode == Mode.DISPLAY) {
-                    observeSearchStateUpdates(context)
+                if (store.state.mode == Mode.DISPLAY) {
+                    observeSearchStateUpdates(store)
                 }
 
-                updatePageOrigin(context)
-                updateEndBrowserActions(context)
-                updateNavigationActions(context)
-                updateToolbarActionsBasedOnOrientation(context)
-                updateTabsCount(context)
-                updateMenuHighlight(context)
+                updatePageOrigin(store)
+                updateEndBrowserActions(store)
+                updateNavigationActions(store)
+                updateToolbarActionsBasedOnOrientation(store)
+                updateTabsCount(store)
+                updateMenuHighlight(store)
             }
 
             is EnterEditMode -> {
@@ -161,7 +160,7 @@ class BrowserToolbarMiddleware(
             is ExitEditMode -> {
                 next(action)
 
-                observeSearchStateUpdates(context)
+                observeSearchStateUpdates(store)
             }
 
             is MenuClicked -> {
@@ -199,11 +198,11 @@ class BrowserToolbarMiddleware(
                 next(action)
             }
             is AddNewTab -> {
-                openNewTab(context, Normal)
+                openNewTab(store, Normal)
                 next(action)
             }
             is AddNewPrivateTab -> {
-                openNewTab(context, Private)
+                openNewTab(store, Private)
                 next(action)
             }
 
@@ -212,7 +211,7 @@ class BrowserToolbarMiddleware(
                 appStore.dispatch(SearchStarted())
             }
             is PasteFromClipboardClicked -> {
-                openNewTab(context, searchTerms = clipboard.text)
+                openNewTab(store, searchTerms = clipboard.text)
             }
             is LoadFromClipboardClicked -> {
                 clipboard.extractURL()?.let {
@@ -233,22 +232,22 @@ class BrowserToolbarMiddleware(
     }
 
     private fun openNewTab(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         browsingMode: BrowsingMode? = null,
         searchTerms: String? = null,
     ) {
         browsingMode?.let { browsingModeManager.mode = it }
-        context.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms ?: "")))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms ?: "")))
         appStore.dispatch(SearchStarted())
     }
 
-    private fun observeSearchStateUpdates(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun observeSearchStateUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         syncCurrentSearchEngineJob?.cancel()
         syncCurrentSearchEngineJob = appStore.observeWhileActive {
             distinctUntilChangedBy { it.searchState.selectedSearchEngine?.searchEngine }
                 .collect {
                     it.searchState.selectedSearchEngine?.let {
-                        updateStartPageActions(context, it.searchEngine)
+                        updateStartPageActions(store, it.searchEngine)
                     }
                 }
         }
@@ -258,7 +257,7 @@ class BrowserToolbarMiddleware(
             distinctUntilChangedBy { it.search.searchEngineShortcuts }
                 .collect {
                     updateStartPageActions(
-                        context = context,
+                        store = store,
                         selectedSearchEngine = reconcileSelectedEngine(),
                     )
                 }
@@ -271,16 +270,16 @@ class BrowserToolbarMiddleware(
     }
 
     private fun updateStartPageActions(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         selectedSearchEngine: SearchEngine?,
-    ) = context.dispatch(
+    ) = store.dispatch(
         PageActionsStartUpdated(
             buildStartPageActions(selectedSearchEngine),
         ),
     )
 
-    private fun updatePageOrigin(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) =
-        context.dispatch(
+    private fun updatePageOrigin(store: Store<BrowserToolbarState, BrowserToolbarAction>) =
+        store.dispatch(
             PageOriginUpdated(
                 PageOrigin(
                     hint = R.string.search_hint,
@@ -292,8 +291,8 @@ class BrowserToolbarMiddleware(
             ),
         )
 
-    private fun updateEndBrowserActions(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
-        context.dispatch(
+    private fun updateEndBrowserActions(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        store.dispatch(
             BrowserActionsEndUpdated(
                 buildEndBrowserActions(),
             ),
@@ -329,8 +328,8 @@ class BrowserToolbarMiddleware(
         }
     }
 
-    private fun updateNavigationActions(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
-        context.dispatch(
+    private fun updateNavigationActions(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        store.dispatch(
             NavigationActionsUpdated(
                 buildNavigationActions(),
             ),
@@ -410,33 +409,33 @@ class BrowserToolbarMiddleware(
     }
 
     private fun updateToolbarActionsBasedOnOrientation(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
     ) {
         appStore.observeWhileActive {
             distinctUntilChangedBy { it.orientation }
                 .collect {
-                    updateEndBrowserActions(context)
-                    updateNavigationActions(context)
+                    updateEndBrowserActions(store)
+                    updateNavigationActions(store)
                 }
         }
     }
 
-    private fun updateTabsCount(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun updateTabsCount(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         browserStore.observeWhileActive {
             distinctUntilChangedBy { it.tabs.size }
                 .collect {
-                    updateEndBrowserActions(context)
-                    updateNavigationActions(context)
+                    updateEndBrowserActions(store)
+                    updateNavigationActions(store)
                 }
         }
     }
 
-    private fun updateMenuHighlight(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun updateMenuHighlight(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         appStore.observeWhileActive {
             distinctUntilChangedBy { it.supportedMenuNotifications.isNotEmpty() }
                 .collect {
-                    updateEndBrowserActions(context)
-                    updateNavigationActions(context)
+                    updateEndBrowserActions(store)
+                    updateNavigationActions(store)
                 }
         }
     }

@@ -176,7 +176,7 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
       self->mResponsePromises =
           fetchService->Fetch(AsVariant(FetchService::WorkerFetchArgs(
               {self->mRequest.clonePtr(), self->mPrincipalInfo,
-               self->mWorkerScript, self->mClientInfo, self->mController,
+               self->mWorkerScript, *self->mClientInfo, self->mController,
                self->mCookieJarSettings, self->mNeedOnDataAvailable,
                self->mCSPEventListener, self->mAssociatedBrowsingContextID,
                self->mBackgroundEventTarget, self->mID,
@@ -189,6 +189,7 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
           fetchService->Fetch(AsVariant(FetchService::MainThreadFetchArgs({
               self->mRequest.clonePtr(),
               self->mPrincipalInfo,
+              *self->mClientInfo,
               self->mCookieJarSettings,
               self->mNeedOnDataAvailable,
               self->mCSPEventListener,

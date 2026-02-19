@@ -658,6 +658,26 @@ messaging_system.attribution:
     send_in_pings:
       - messaging-system
 
+  msclkid:
+    type: string
+    lifetime: ping
+    description: |
+      A string containing the attribution for a Microsoft Store Ads Campaign ID.
+      This differs from a Campaign ID originating from a Microsoft Store URL
+      containing attribution.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2004494
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D275328
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dmosedale@mozilla.com
+      - pmcmanis@mozilla.com
+    expires: never
+    send_in_pings:
+      - messaging-system
+
   dlsource:
     type: string
     lifetime: ping

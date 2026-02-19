@@ -44,6 +44,8 @@ skip-if = [
 
 ["test_previous_dedicated.js"]
 
+["test_profile_descriptor_and_localdir.js"]
+
 ["test_profile_reset.js"]
 
 ["test_remove.js"]

@@ -24,6 +24,8 @@ ChromeUtils.defineESModuleGetters(this, {
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
@@ -998,7 +1000,7 @@ add_task(async function check_current_tab_installed_as_web_app() {
       "no taskbar tab exists yet"
     );
 
-    const tt = await TaskbarTabs.findOrCreateTaskbarTab(
+    const { taskbarTab } = await TaskbarTabs.findOrCreateTaskbarTab(
       Services.io.newURI(kUri),
       0
     );
@@ -1016,7 +1018,7 @@ add_task(async function check_current_tab_installed_as_web_app() {
       );
     });
 
-    await TaskbarTabs.removeTaskbarTab(tt.id);
+    await TaskbarTabs.removeTaskbarTab(taskbarTab.id);
     is(
       await ASRouterTargeting.Environment.currentTabInstalledAsWebApp,
       false,
@@ -2372,6 +2374,63 @@ add_task(async function check_profileGroupIdTargeting() {
     message,
     "should select correct item by profile group id"
   );
+});
+
+add_task(async function check_currentProfileIdTargeting() {
+  is(
+    typeof ASRouterTargeting.Environment.currentProfileId,
+    "string",
+    "Should return a string"
+  );
+
+  const message = {
+    id: "foo",
+    targeting: `currentProfileId == "test-profile-id"`,
+  };
+
+  const result = await ASRouterTargeting.findMatchingMessage({
+    messages: [message],
+    context: { currentProfileId: "test-profile-id" },
+  });
+
+  is(result, message, "should select correct item by profile id");
+});
+
+add_task(async function check_profileGroupProfileCountTargeting() {
+  await pushPrefs(
+    ["browser.profiles.enabled", false],
+    ["browser.profiles.created", false]
+  );
+  const resultFalse =
+    await ASRouterTargeting.Environment.profileGroupProfileCount;
+
+  is(typeof resultFalse, "number", "Should return a number");
+
+  is(resultFalse, 0, "should be zero because profiles are disabled");
+
+  await pushPrefs(
+    ["browser.profiles.enabled", true],
+    ["browser.profiles.created", true]
+  );
+
+  const expected = await SelectableProfileService.getProfileCount();
+  const resultTrue =
+    await ASRouterTargeting.Environment.profileGroupProfileCount;
+
+  is(resultTrue, expected, "it should be equal to the profile group count");
+
+  const message = {
+    id: "foo",
+    targeting: `profileGroupProfileCount == "${expected}"`,
+  };
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "should select correct item by number of profiles in the group"
+  );
+
+  //Clean up the prefs
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_buildId() {

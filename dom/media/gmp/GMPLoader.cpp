@@ -6,8 +6,6 @@
 
 #include "GMPLoader.h"
 
-#include <stdio.h>
-
 #include "gmp-entrypoints.h"
 #include "nsExceptionHandler.h"
 #include "prenv.h"

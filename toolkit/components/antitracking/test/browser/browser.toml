@@ -132,6 +132,10 @@ support-files= [
 
 ["browser_partitionedABA.js"]
 
+["browser_partitionedABBredirectToABAServiceWorkers.js"]
+
+["browser_partitionedABOpen.js"]
+
 ["browser_partitionedABnavigatestToAA.js"]
 
 ["browser_partitionedBlobSubresources.js"]

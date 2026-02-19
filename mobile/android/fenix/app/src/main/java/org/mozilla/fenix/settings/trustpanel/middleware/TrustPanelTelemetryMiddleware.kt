@@ -5,7 +5,7 @@
 package org.mozilla.fenix.settings.trustpanel.middleware
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
@@ -19,11 +19,11 @@ import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
 class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelAction> {
 
     override fun invoke(
-        context: MiddlewareContext<TrustPanelState, TrustPanelAction>,
+        store: Store<TrustPanelState, TrustPanelAction>,
         next: (TrustPanelAction) -> Unit,
         action: TrustPanelAction,
     ) {
-        val currentState = context.state
+        val currentState = store.state
 
         next(action)
 

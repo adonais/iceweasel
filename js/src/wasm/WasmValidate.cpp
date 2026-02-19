@@ -2800,7 +2800,8 @@ static bool DecodeLimitBound(Decoder& d, AddressType addressType,
   return true;
 }
 
-static bool DecodeLimits(Decoder& d, LimitsKind kind, Limits* limits) {
+static bool DecodeLimits(Decoder& d, CodeMetadata* codeMeta, LimitsKind kind,
+                         Limits* limits) {
   uint8_t flags;
   if (!d.readFixedU8(&flags)) {
     return d.fail("expected flags");
@@ -2855,6 +2856,28 @@ static bool DecodeLimits(Decoder& d, LimitsKind kind, Limits* limits) {
     limits->maximum.emplace(maximum);
   }
 
+  if (kind == LimitsKind::Memory) {
+    limits->pageSize = PageSize::Standard;
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+    if (flags & uint8_t(LimitsFlags::HasCustomPageSize)) {
+      if (!codeMeta->customPageSizesEnabled()) {
+        return d.fail("custom page sizes are disabled");
+      }
+
+      uint32_t customPageSize;
+      if (!d.readVarU32(&customPageSize)) {
+        return d.fail("failed to decode custom page size");
+      }
+
+      if (customPageSize == static_cast<uint32_t>(PageSize::Tiny)) {
+        limits->pageSize = PageSize::Tiny;
+      } else if (customPageSize != static_cast<uint32_t>(PageSize::Standard)) {
+        return d.fail("bad custom page size");
+      }
+    }
+#endif
+  }
+
   return true;
 }
 
@@ -2890,7 +2913,7 @@ static bool DecodeTableType(Decoder& d, CodeMetadata* codeMeta, bool isImport) {
   }
 
   Limits limits;
-  if (!DecodeLimits(d, LimitsKind::Table, &limits)) {
+  if (!DecodeLimits(d, codeMeta, LimitsKind::Table, &limits)) {
     return false;
   }
 
@@ -2954,11 +2977,12 @@ static bool DecodeMemoryTypeAndLimits(Decoder& d, CodeMetadata* codeMeta,
   }
 
   Limits limits;
-  if (!DecodeLimits(d, LimitsKind::Memory, &limits)) {
+  if (!DecodeLimits(d, codeMeta, LimitsKind::Memory, &limits)) {
     return false;
   }
 
-  uint64_t maxField = MaxMemoryPagesValidation(limits.addressType);
+  uint64_t maxField =
+      MaxMemoryPagesValidation(limits.addressType, limits.pageSize);
 
   if (limits.initial > maxField) {
     return d.fail("initial memory size too big");
@@ -4094,7 +4118,7 @@ static bool DecodeDataSection(Decoder& d, CodeMetadata* codeMeta,
       return d.fail("expected segment size");
     }
 
-    if (segRange.length > MaxDataSegmentLengthPages * PageSize) {
+    if (segRange.length > MaxDataSegmentLengthPages * StandardPageSizeBytes) {
       return d.fail("segment size too big");
     }
 

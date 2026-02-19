@@ -597,3 +597,7 @@ bool ADTSDemuxer::ADTSSniffer(const uint8_t* aData, const uint32_t aLength) {
 }
 
 }  // namespace mozilla
+
+#undef LOG
+#undef ADTSLOG
+#undef ADTSLOGV

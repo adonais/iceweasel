@@ -7,7 +7,6 @@
 #include "VideoStreamFactory.h"
 
 #include <stdint.h>
-#include <stdio.h>
 
 #include <algorithm>
 #include <cmath>

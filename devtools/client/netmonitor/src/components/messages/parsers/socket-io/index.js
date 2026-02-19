@@ -77,7 +77,7 @@ const BINARY_ACK = 6;
  * A socket.io Decoder instance
  *
  * @return {object} decoder
- * @api public
+ * @public
  */
 
 function Decoder() {
@@ -97,7 +97,7 @@ Emitter(Decoder.prototype);
  *
  * @param {object} packet
  * @return {BinaryReconstructor} initialized reconstructor
- * @api private
+ * @private
  */
 
 function BinaryReconstructor(packet) {
@@ -112,7 +112,7 @@ function BinaryReconstructor(packet) {
  * @param {Buffer | ArrayBuffer} binData - the raw binary data received
  * @return {null | object} returns null if more binary data is expected or
  *   a reconstructed packet object if all buffers have been received.
- * @api private
+ * @private
  */
 
 BinaryReconstructor.prototype.takeBinaryData = function (binData) {
@@ -129,7 +129,7 @@ BinaryReconstructor.prototype.takeBinaryData = function (binData) {
 /**
  * Cleans up binary packet reconstruction variables.
  *
- * @api private
+ * @private
  */
 
 BinaryReconstructor.prototype.finishedReconstruction = function () {
@@ -142,7 +142,7 @@ BinaryReconstructor.prototype.finishedReconstruction = function () {
  *
  * @param {string} obj - encoded packet
  * @return {object} packet
- * @api public
+ * @public
  */
 
 Decoder.prototype.add = function (obj) {
@@ -183,7 +183,7 @@ Decoder.prototype.add = function (obj) {
  *
  * @param {string} str
  * @return {object} packet
- * @api private
+ * @private
  */
 // eslint-disable-next-line complexity
 function decodeString(str) {
@@ -273,7 +273,7 @@ function tryParse(str) {
 /**
  * Deallocates a parser's resources
  *
- * @api public
+ * @public
  */
 
 Decoder.prototype.destroy = function () {

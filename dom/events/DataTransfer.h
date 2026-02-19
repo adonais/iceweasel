@@ -107,6 +107,8 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
                nsITransferable* aTransferable);
   DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
                const nsAString& aString);
+  DataTransfer(nsISupports* aParent, nsIClipboard::ClipboardType aClipboardType,
+               nsIClipboardDataSnapshot* aClipboardDataSnapshot);
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -123,6 +125,18 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   static already_AddRefed<DataTransfer> Constructor(
       const GlobalObject& aGlobal);
+
+  /**
+   * This creates a DataTransfer by calling nsIClipboard::GetDataSnapshot() to
+   * obtain an nsIClipboardDataSnapshot first, in order to trigger the security
+   * checks, i.e. showing a paste contextmenu to request user confirmation if
+   * the clipboard data originated from a cross-origin page. All of that is
+   * handled in the parent process, so we spin the event loop here to wait for
+   * the result.
+   */
+  MOZ_CAN_RUN_SCRIPT
+  static already_AddRefed<DataTransfer> WaitForClipboardDataSnapshotAndCreate(
+      nsPIDOMWindowOuter* aWindow, nsIPrincipal* aSubjectPrincipal);
 
   /**
    * The actual effect that will be used, and should always be one of the

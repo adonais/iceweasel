@@ -30,6 +30,8 @@ const TAB_CHANGE_EVENTS = Object.freeze([
   "TabOpen",
   "TabPinned",
   "TabUnpinned",
+  "SplitViewCreated",
+  "SplitViewRemoved",
 ]);
 const TAB_RECENCY_CHANGE_EVENTS = Object.freeze([
   "activate",
@@ -252,6 +254,8 @@ class OpenTabsTarget extends EventTarget {
     tabContainer.addEventListener("TabPinned", this);
     tabContainer.addEventListener("TabUnpinned", this);
     tabContainer.addEventListener("TabSelect", this);
+    tabContainer.addEventListener("SplitViewCreated", this);
+    tabContainer.addEventListener("SplitViewRemoved", this);
     win.addEventListener("activate", this);
     win.addEventListener("sizemodechange", this);
 
@@ -284,6 +288,8 @@ class OpenTabsTarget extends EventTarget {
       tabContainer.removeEventListener("TabPinned", this);
       tabContainer.removeEventListener("TabSelect", this);
       tabContainer.removeEventListener("TabUnpinned", this);
+      tabContainer.removeEventListener("SplitViewCreated", this);
+      tabContainer.removeEventListener("SplitViewRemoved", this);
       win.removeEventListener("activate", this);
       win.removeEventListener("sizemodechange", this);
 

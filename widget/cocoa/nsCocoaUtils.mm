@@ -324,21 +324,32 @@ BOOL nsCocoaUtils::ShouldRestoreStateDueToLaunchAtLogin() {
   return NO;
 }
 
-void nsCocoaUtils::PrepareForNativeAppModalDialog() {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+static bool sIsActivelyShowingAppModalDialog = false;
+
+bool nsCocoaUtils::PrepareForNativeAppModalDialog() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (sIsActivelyShowingAppModalDialog) {
+    return false;
+  }
+  sIsActivelyShowingAppModalDialog = true;
 
   if (!NSApp.active) {
     // Early exit if the app isn't active. This is because we can't safely
     // set the NSApp.mainMenu property in such a case. We early exit so we
     // also don't invoke any side effects.
-    return;
+    return true;
   }
 
   // Don't do anything if this is embedding. We'll assume that if there is no
   // hidden window we shouldn't do anything, and that should cover the embedding
   // case.
   nsMenuBarX* hiddenWindowMenuBar = nsMenuUtilsX::GetHiddenWindowMenuBar();
-  if (!hiddenWindowMenuBar) return;
+  if (!hiddenWindowMenuBar) {
+    return true;
+  }
 
   // First put up the hidden window menu bar so that app menu event handling is
   // correct.
@@ -366,11 +377,19 @@ void nsCocoaUtils::PrepareForNativeAppModalDialog() {
   [NSApp setMainMenu:newMenuBar];
   [newMenuBar release];
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  return true;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(sIsActivelyShowingAppModalDialog = false);
 }
 
 void nsCocoaUtils::CleanUpAfterNativeAppModalDialog() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!sIsActivelyShowingAppModalDialog) {
+    return;
+  }
 
   // Don't do anything if this is embedding. We'll assume that if there is no
   // hidden window we shouldn't do anything, and that should cover the embedding
@@ -386,6 +405,8 @@ void nsCocoaUtils::CleanUpAfterNativeAppModalDialog() {
   } else {
     [WindowDelegate paintMenubarForWindow:mainWindow];
   }
+
+  sIsActivelyShowingAppModalDialog = false;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }

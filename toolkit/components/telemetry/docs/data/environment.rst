@@ -423,8 +423,6 @@ The following is a partial list of `collected preferences <https://searchfox.org
 
 - ``extensions.quarantinedDomains.enabled``: Whether "Quarantined Domains" is enabled.
 
-- ``extensions.manifestV3.enabled``: Whether `"manifest_version": 3` extensions should be allowed to install successfully.
-
 - ``media.gmp-gmpopenh264.enabled``: Whether OpenH264 is enabled.
 
 - ``media.gmp-gmpopenh264.lastDownload``: When OpenH264 was last downloaded as seconds since Jan 1, 1970.

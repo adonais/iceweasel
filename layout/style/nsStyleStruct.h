@@ -514,9 +514,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
 
   mozilla::StyleRect<mozilla::StyleMargin> mMargin;
   mozilla::StyleRect<mozilla::StyleLength> mScrollMargin;
-  // TODO: Add support for overflow-clip-margin: <visual-box> and maybe
-  // per-axis/side clipping, see https://github.com/w3c/csswg-drafts/issues/7245
-  mozilla::StyleLength mOverflowClipMargin;
+  // TODO: Add support per-axis/side clipping, see
+  // https://github.com/w3c/csswg-drafts/issues/7245
+  mozilla::StyleOverflowClipMargin mOverflowClipMargin;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding {

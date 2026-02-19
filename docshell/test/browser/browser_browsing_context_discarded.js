@@ -66,8 +66,8 @@ add_task(async function subframe() {
     [],
     () => {
       const iframe = content.document.createElement("iframe");
+      iframe.src = "https://example.com/";
       content.document.body.appendChild(iframe);
-      iframe.contentWindow.location = "https://example.com/";
       return iframe.browsingContext;
     }
   );
@@ -97,6 +97,14 @@ add_task(async function subframe() {
 
 add_task(async function replaceToplevel() {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+  // Force load about:blank such that BC::HasLoadedNonInitialDocument is true
+  // which means it's BFCache eligible and will be replaced
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:blank");
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
+    wantLoad: "about:blank",
+  });
+
   const browsingContext = tab.linkedBrowser.browsingContext;
 
   const expected = new Map([[browsingContext, "replace"]]);

@@ -30,6 +30,7 @@ void DecoderDoctorLogger::Init() {
   }
 }
 
+#ifndef RELEASE_OR_BETA
 // First DDLogShutdowner sets sLogState to scShutdown, to prevent further
 // logging.
 struct DDLogShutdowner {
@@ -53,6 +54,7 @@ struct DDLogDeleter {
   }
 };
 static StaticAutoPtr<DDLogDeleter> sDDLogDeleter;
+#endif
 
 /* static */
 void DecoderDoctorLogger::PanicInternal(const char* aReason, bool aDontBlock) {

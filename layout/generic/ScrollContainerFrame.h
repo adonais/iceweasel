@@ -1053,13 +1053,8 @@ class ScrollContainerFrame : public nsContainerFrame,
   ScrollContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                        nsIFrame::ClassID aID, bool aIsRoot);
   ~ScrollContainerFrame();
-  void SetSuppressScrollbarUpdate(bool aSuppress) {
-    mSuppressScrollbarUpdate = aSuppress;
-  }
   bool GuessHScrollbarNeeded(const ScrollReflowInput& aState);
   bool GuessVScrollbarNeeded(const ScrollReflowInput& aState);
-
-  bool IsScrollbarUpdateSuppressed() const { return mSuppressScrollbarUpdate; }
 
   // Return whether we're in an "initial" reflow.  Some reflows with
   // NS_FRAME_FIRST_REFLOW set are NOT "initial" as far as we're concerned.
@@ -1295,8 +1290,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   // We need this if a scrollbar frame is recreated.
   void ReloadChildFrames();
 
-  // NOTE: Use GetScrollStylesFromFrame() if you want to know `overflow`
-  // and `overflow-behavior` properties.
+  // NOTE: Use GetScrollStyles() if you want `overflow` property info.
   nsIFrame* GetFrameForStyle() const;
 
   // Compute all scroll snap related information and store eash snap target
@@ -1450,10 +1444,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool mDidHistoryRestore : 1;
   // Is this the scrollframe for the document's viewport?
   bool mIsRoot : 1;
-  // If true, don't try to layout the scrollbars in Reflow().  This can be
-  // useful if multiple passes are involved, because we don't want to place the
-  // scrollbars at the wrong size.
-  bool mSuppressScrollbarUpdate : 1;
   // If true, we skipped a scrollbar layout due to mSuppressScrollbarUpdate
   // being set at some point.  That means we should lay out scrollbars even if
   // it might not strictly be needed next time mSuppressScrollbarUpdate is

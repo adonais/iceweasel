@@ -25,13 +25,11 @@ async def does_unsupported_popup_appear(client, credentials):
     sign_in.click()
 
     for _ in range(10):
-        captcha, unsupported, expired = client.await_first_element_of(
-            [
-                client.css(CAPTCHA_CSS),
-                client.css(UNSUPPORTED_CSS),
-                client.css(EXPIRED_CSS),
-            ]
-        )
+        captcha, unsupported, expired = client.await_first_element_of([
+            client.css(CAPTCHA_CSS),
+            client.css(UNSUPPORTED_CSS),
+            client.css(EXPIRED_CSS),
+        ])
         if captcha:
             print("\a")  # beep to let the user know to do the captcha
             client.await_element_hidden(client.css(CAPTCHA_CSS), timeout=90)

@@ -36,10 +36,30 @@ class AudioStreamTrack : public MediaStreamTrack {
   void RemoveAudioOutput(void* aKey);
   void SetAudioOutputVolume(void* aKey, float aVolume);
 
+  // Use AddConsumerPort instead of ForwardTrackContentsTo when possible, since
+  // it handles CrossGraphPort creation automatically. Must be balanced with a
+  // corresponding RemoveConsumerPort call.
+  already_AddRefed<MediaInputPort> AddConsumerPort(ProcessedMediaTrack* aTrack);
+  void RemoveConsumerPort(MediaInputPort* aPort);
+
   // WebIDL
   void GetKind(nsAString& aKind) override { aKind.AssignLiteral("audio"); }
 
   void GetLabel(nsAString& aLabel, CallerType aCallerType) override;
+
+ protected:
+  void SetReadyState(MediaStreamTrackState aState) override;
+
+ private:
+  // Main thread only
+  struct CrossGraphConnection {
+    UniquePtr<CrossGraphPort> mPort;
+    size_t mRefCount;
+
+    explicit CrossGraphConnection(UniquePtr<CrossGraphPort> aPort)
+        : mPort(std::move(aPort)), mRefCount(1) {}
+  };
+  nsTArray<CrossGraphConnection> mCrossGraphs;
 };
 
 }  // namespace mozilla::dom

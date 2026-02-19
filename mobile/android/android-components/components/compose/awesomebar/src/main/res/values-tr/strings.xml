@@ -9,4 +9,6 @@
 <resources>
   <!-- Description for the button to accept the search suggestion and continue editing the search. -->
   <string name="mozac_browser_awesomebar_edit_suggestion">Öneriyi kabul et ve düzenle</string>
+  <!-- Description for the button to remove the search suggestion from the displayed results. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion">Öneriyi sil</string>
 </resources>

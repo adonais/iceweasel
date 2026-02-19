@@ -11,13 +11,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.GleanMetrics.SettingsSearch
 import org.mozilla.fenix.R
@@ -48,11 +48,15 @@ import org.mozilla.fenix.theme.FirefoxTheme
  *
  * @param store [SettingsSearchStore] for the screen.
  * @param onBackClick Callback for when the back button is clicked.
+ * @param isSearchFocused Whether the search bar is currently focused.
+ * @param onSearchFocusChange Callback for when the search bar's focus state changes.
  */
 @Composable
 fun SettingsSearchScreen(
     store: SettingsSearchStore,
     onBackClick: () -> Unit,
+    isSearchFocused: Boolean,
+    onSearchFocusChange: (Boolean) -> Unit,
 ) {
     val state by store.observeAsComposableState { it }
     Scaffold(
@@ -61,6 +65,8 @@ fun SettingsSearchScreen(
                 SettingsSearchBar(
                     store = store,
                     onBackClick = onBackClick,
+                    isSearchFocused = isSearchFocused,
+                    onSearchFocusChange = onSearchFocusChange,
                 )
                 HorizontalDivider()
             }
@@ -119,7 +125,7 @@ private fun SettingsSearchMessageContent(
             text = displayMessage,
             textAlign = TextAlign.Center,
             style = FirefoxTheme.typography.body2,
-            color = FirefoxTheme.colors.textSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -203,8 +209,8 @@ private fun RecentSearchesContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
-                .padding(start = 16.dp, top = 12.dp, bottom = 8.dp),
+                .heightIn(min = 50.dp)
+                .padding(start = 16.dp, top = 12.dp, bottom = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -218,13 +224,13 @@ private fun RecentSearchesContent(
                     store.dispatch(SettingsSearchAction.ClearRecentSearchesClicked)
                 },
                 colors = ButtonDefaults.textButtonColors(),
-                modifier = Modifier,
+                modifier = Modifier.heightIn(min = 48.dp),
                 enabled = true,
             ) {
                Text(
                    text = stringResource(R.string.settings_search_clear_recent_searches_message),
                    color = colorResource(RECENT_SEARCHES_CLEAR_RECENTS_TEXT_COLOR),
-                   style = AcornTheme.typography.button,
+                   style = FirefoxTheme.typography.button,
                    maxLines = 1,
                )
             }
@@ -299,6 +305,8 @@ private fun SettingsSearchScreenInitialStatePreview() {
         SettingsSearchScreen(
             store = SettingsSearchStore(),
             onBackClick = {},
+            isSearchFocused = false,
+            onSearchFocusChange = {},
         )
     }
 }
@@ -333,6 +341,8 @@ private fun SettingsSearchScreenWithRecentsPreview() {
         SettingsSearchScreen(
             store = storeWithRecents,
             onBackClick = {},
+            isSearchFocused = false,
+            onSearchFocusChange = {},
         )
     }
 }
@@ -390,6 +400,8 @@ private fun SettingsSearchScreenWithResultsPreview() {
         SettingsSearchScreen(
             store = storeWithResults,
             onBackClick = {},
+            isSearchFocused = false,
+            onSearchFocusChange = {},
         )
     }
 }
@@ -410,10 +422,12 @@ private fun SettingsSearchScreenNoResultsPreview() {
         SettingsSearchScreen(
             store = storeWithNoResults,
             onBackClick = {},
+            isSearchFocused = false,
+            onSearchFocusChange = {},
         )
     }
 }
 
-private val RECENT_SEARCHES_HEADER_TEXT_COLOR = mozilla.components.ui.colors.R.color.photonDarkGrey05
+private val RECENT_SEARCHES_HEADER_TEXT_COLOR = mozilla.components.ui.colors.R.color.photonLightGrey40
 private val RECENT_SEARCHES_CLEAR_RECENTS_TEXT_COLOR = mozilla.components.ui.colors.R.color.photonViolet70
 private const val VERTICAL_BIAS_OFFSET_IMAGE_MESSAGE = -0.33f

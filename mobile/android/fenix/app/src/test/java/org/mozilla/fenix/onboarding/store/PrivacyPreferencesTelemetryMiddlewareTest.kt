@@ -5,7 +5,7 @@
 package org.mozilla.fenix.onboarding.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.testing.GleanTestRule
 import org.junit.Assert.assertEquals
@@ -26,9 +26,6 @@ class PrivacyPreferencesTelemetryMiddlewareTest {
     @get:Rule
     val gleanTestRule = GleanTestRule(testContext)
 
-    @Mock
-    private lateinit var context: MiddlewareContext<PrivacyPreferencesState, PrivacyPreferencesAction>
-
     private lateinit var middleware: PrivacyPreferencesTelemetryMiddleware
 
     @Before
@@ -42,7 +39,7 @@ class PrivacyPreferencesTelemetryMiddlewareTest {
         assertNull(Onboarding.privacyPreferencesModalCrashReportingEnabled.testGetValue())
 
         middleware.invoke(
-            context,
+            store = mock(),
             {},
             PrivacyPreferencesAction.CrashReportingPreferenceUpdatedTo(true),
         )
@@ -59,7 +56,7 @@ class PrivacyPreferencesTelemetryMiddlewareTest {
         assertNull(Onboarding.privacyPreferencesModalUsageDataEnabled.testGetValue())
 
         middleware.invoke(
-            context,
+            store = mock(),
             {},
             PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo(true),
         )
@@ -76,7 +73,7 @@ class PrivacyPreferencesTelemetryMiddlewareTest {
         assertNull(Onboarding.privacyPreferencesModalCrashReportingLearnMore.testGetValue())
 
         middleware.invoke(
-            context,
+            store = mock(),
             {},
             PrivacyPreferencesAction.CrashReportingLearnMore,
         )
@@ -91,7 +88,7 @@ class PrivacyPreferencesTelemetryMiddlewareTest {
         assertNull(Onboarding.privacyPreferencesModalUsageDataLearnMore.testGetValue())
 
         middleware.invoke(
-            context,
+            store = mock(),
             {},
             PrivacyPreferencesAction.UsageDataUserLearnMore,
         )

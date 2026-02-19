@@ -10,11 +10,11 @@ from io import StringIO
 
 from buildconfig import topsrcdir
 from mozpack import path as mozpath
+from mozshellutil import quote as shell_quote
 from mozunit import MockedOpen, main
 
 from common import ConfigureTestSandbox, ensure_exe_extension, fake_short_path
 from mozbuild.configure import ConfigureError, ConfigureSandbox
-from mozbuild.shellutil import quote as shell_quote
 
 
 class TestChecksConfigure(unittest.TestCase):
@@ -535,8 +535,7 @@ class TestChecksConfigure(unittest.TestCase):
                 """
             DEBUG: a: Looking for known-a
             ERROR: Paths provided to find_program must be a list of strings, not %r
-        """
-                % mozpath.dirname(self.OTHER_A)
+        """ % mozpath.dirname(self.OTHER_A)
             ),
         )
 
@@ -1144,9 +1143,10 @@ class TestChecksConfigure(unittest.TestCase):
                 },
             )
 
-        with MockedOpen(
-            {"default-key": "default-id default-key\n", "key": "fake-id fake-key\n"}
-        ):
+        with MockedOpen({
+            "default-key": "default-id default-key\n",
+            "key": "fake-id fake-key\n",
+        }):
             config, output, status = self.get_result(
                 "id_and_secret_keyfile('Bing API', default='default-key')",
                 args=["--with-bing-api-keyfile=key"],

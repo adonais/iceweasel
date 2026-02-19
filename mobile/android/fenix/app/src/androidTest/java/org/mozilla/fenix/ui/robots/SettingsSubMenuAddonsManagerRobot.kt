@@ -69,7 +69,7 @@ import mozilla.components.feature.addons.R as addonsR
  * Implementation of Robot Pattern for the Addons Management Settings.
  */
 
-class SettingsSubMenuAddonsManagerRobot {
+class SettingsSubMenuAddonsManagerRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyAddonsListIsDisplayed(shouldBeDisplayed: Boolean) =
         assertUIObjectExists(addonsList(), exists = shouldBeDisplayed)
 
@@ -140,10 +140,10 @@ class SettingsSubMenuAddonsManagerRobot {
                 break
             } catch (e: NoMatchingViewException) {
                 Log.i(TAG, "clickInstallAddon: NoMatchingViewException caught, executing fallback methods")
-                addonsMenu {
+                addonsMenu(composeTestRule) {
                 }.goBackToHomeScreen {
                 }.openThreeDotMenu {
-                }.openAddonsManagerMenu {
+                }.clickExtensionsButton {
                 }
             }
         }
@@ -171,9 +171,9 @@ class SettingsSubMenuAddonsManagerRobot {
                     throw e
                 } else {
                     restartApp(activityTestRule)
-                    homeScreen {
+                    homeScreen(composeTestRule) {
                     }.openThreeDotMenu {
-                    }.openAddonsManagerMenu {
+                    }.clickExtensionsButton {
                         waitForAddonsListProgressBarToBeGone()
                         scrollToAddon(addonName)
                         clickInstallAddon(addonName)
@@ -273,9 +273,9 @@ class SettingsSubMenuAddonsManagerRobot {
     }
 
     fun installAddon(addonName: String, activityTestRule: HomeActivityIntentTestRule) {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openAddonsManagerMenu {
+        }.clickExtensionsButton {
             waitForAddonsListProgressBarToBeGone()
             clickInstallAddon(addonName)
             verifyAddonPermissionPrompt(addonName)
@@ -285,9 +285,9 @@ class SettingsSubMenuAddonsManagerRobot {
     }
 
     fun installAddonInPrivateMode(addonName: String, activityTestRule: HomeActivityIntentTestRule) {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openAddonsManagerMenu {
+        }.clickExtensionsButton {
             waitForAddonsListProgressBarToBeGone()
             clickInstallAddon(addonName)
             verifyAddonPermissionPrompt(addonName)
@@ -382,10 +382,10 @@ class SettingsSubMenuAddonsManagerRobot {
                     mDevice.pressBack()
                     Log.i(TAG, "verifyTheRecommendedAddons: Clicked device back button to dismiss the main menu")
                     waitForAppWindowToBeUpdated()
-                    browserScreen {
-                    }.openThreeDotMenu(composeTestRule) {
+                    browserScreen(composeTestRule) {
+                    }.openThreeDotMenu {
                         verifyTryRecommendedExtensionButton()
-                    }.openExtensionsFromMainMenu {
+                    }.clickExtensionsButton {
                     }
                 }
             }
@@ -415,10 +415,10 @@ class SettingsSubMenuAddonsManagerRobot {
                     mDevice.pressBack()
                     Log.i(TAG, "installRecommendedAddon: Clicked device back button to dismiss the main menu")
                     waitForAppWindowToBeUpdated()
-                    browserScreen {
-                    }.openThreeDotMenu(composeTestRule) {
+                    browserScreen(composeTestRule) {
+                    }.openThreeDotMenu {
                         verifyTryRecommendedExtensionButton()
-                    }.openExtensionsFromMainMenu {
+                    }.clickExtensionsButton {
                         recommendedExtensionTitle = getRecommendedExtensionTitle(composeTestRule)
                     }
                 }
@@ -467,14 +467,14 @@ class SettingsSubMenuAddonsManagerRobot {
         ).assertIsDisplayed()
         Log.i(TAG, "verifyInstalledExtension: Verified that extension: $extensionTitle is displayed")
     }
-    class Transition {
+    class Transition(private val composeTestRule: ComposeTestRule) {
         fun goBackToHomeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             Log.i(TAG, "goBackToHomeScreen: Trying to click navigate up toolbar button")
             onView(allOf(withContentDescription("Navigate up"))).click()
             Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up toolbar button")
 
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
 
         fun goBackToBrowser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -482,8 +482,8 @@ class SettingsSubMenuAddonsManagerRobot {
             onView(allOf(withContentDescription("Navigate up"))).click()
             Log.i(TAG, "goBackToBrowser: Clicked the navigate up toolbar button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun openDetailedMenuForAddon(
@@ -503,7 +503,7 @@ class SettingsSubMenuAddonsManagerRobot {
             Log.i(TAG, "openDetailedMenuForAddon: Clicked the $addonName add-on")
 
             SettingsSubMenuAddonsManagerAddonDetailedMenuRobot().interact()
-            return SettingsSubMenuAddonsManagerAddonDetailedMenuRobot.Transition()
+            return SettingsSubMenuAddonsManagerAddonDetailedMenuRobot.Transition(composeTestRule)
         }
 
         fun clickExtensionsPromotionBannerLearnMoreLink(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -513,8 +513,8 @@ class SettingsSubMenuAddonsManagerRobot {
             ).performClick()
             Log.i(TAG, "clickExtensionsPromotionBannerLearnMoreLink: Clicked the \"Learn more\" link")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun clickDiscoverMoreExtensionsButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -522,8 +522,8 @@ class SettingsSubMenuAddonsManagerRobot {
             composeTestRule.onNode(hasText(getStringResource(R.string.browser_menu_discover_more_extensions)), useUnmergedTree = true).performClick()
             Log.i(TAG, "clickDiscoverMoreExtensionsButton: Clicked the \"Discover more extensions\" link")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
     }
 
@@ -579,9 +579,9 @@ class SettingsSubMenuAddonsManagerRobot {
     }
 }
 
-fun addonsMenu(interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
-    SettingsSubMenuAddonsManagerRobot().interact()
-    return SettingsSubMenuAddonsManagerRobot.Transition()
+fun addonsMenu(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
+    SettingsSubMenuAddonsManagerRobot(composeTestRule).interact()
+    return SettingsSubMenuAddonsManagerRobot.Transition(composeTestRule)
 }
 
 private fun scrollToAddon(addonName: String) {

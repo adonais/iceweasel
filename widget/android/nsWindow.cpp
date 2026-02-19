@@ -131,7 +131,7 @@ static mozilla::LazyLogModule sGVSupportLog("GeckoViewSupport");
 // All the toplevel windows that have been created; these are in
 // stacking order, so the window at gTopLevelWindows[0] is the topmost
 // one.
-MOZ_CONSTINIT static nsTArray<nsWindow*> gTopLevelWindows;
+constinit static nsTArray<nsWindow*> gTopLevelWindows;
 
 static const double kTouchResampleVsyncAdjustMs = 5.0;
 
@@ -2510,11 +2510,11 @@ void nsWindow::DoResize(double aX, double aY, double aWidth, double aHeight,
   bool needSizeDispatch = mBounds.Size() != oldBounds.Size();
 
   if (needSizeDispatch) {
-    OnSizeChanged(mBounds.Size().ToUnknownSize());
+    OnSizeChanged(mBounds.Size());
   }
 
   if (needPositionDispatch) {
-    NotifyWindowMoved(mBounds.x, mBounds.y);
+    NotifyWindowMoved(mBounds.TopLeft());
   }
 
   // Should we skip honoring aRepaint here?
@@ -2842,21 +2842,20 @@ void nsWindow::UpdateDragImage(java::sdk::Bitmap::LocalRef aBitmap) {
   }
 }
 
-void nsWindow::OnSizeChanged(const gfx::IntSize& aSize) {
+void nsWindow::OnSizeChanged(const LayoutDeviceIntSize& aSize) {
   ALOG("nsWindow: %p OnSizeChanged [%d %d]", (void*)this, aSize.width,
        aSize.height);
 
   if (mWidgetListener) {
-    mWidgetListener->WindowResized(this, aSize.width, aSize.height);
+    mWidgetListener->WindowResized(this, aSize);
   }
 
   if (mAttachedWidgetListener) {
-    mAttachedWidgetListener->WindowResized(this, aSize.width, aSize.height);
+    mAttachedWidgetListener->WindowResized(this, aSize);
   }
 
   if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->NotifyClientSizeChanged(
-        LayoutDeviceIntSize::FromUnknownSize(aSize));
+    mCompositorWidgetDelegate->NotifyClientSizeChanged(aSize);
   }
 }
 

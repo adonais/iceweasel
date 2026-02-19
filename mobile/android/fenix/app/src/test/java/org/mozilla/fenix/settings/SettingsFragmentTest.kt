@@ -11,17 +11,15 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
@@ -35,9 +33,6 @@ import java.io.IOException
 
 @RunWith(RobolectricTestRunner::class)
 class SettingsFragmentTest {
-
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
     private val settingsFragment = SettingsFragment()
 
     @Before
@@ -62,7 +57,7 @@ class SettingsFragmentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `Add-on collection override pref is visible if debug menu active and feature is enabled`() = runTestOnMain {
+    fun `Add-on collection override pref is visible if debug menu active and feature is enabled`() = runTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
@@ -94,7 +89,7 @@ class SettingsFragmentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `Install add-on from file pref is visible if debug menu active and feature is enabled`() = runTestOnMain {
+    fun `Install add-on from file pref is visible if debug menu active and feature is enabled`() = runTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
@@ -121,7 +116,7 @@ class SettingsFragmentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `Add-on collection override pref is visible if already configured and feature is enabled`() = runTestOnMain {
+    fun `Add-on collection override pref is visible if already configured and feature is enabled`() = runTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
@@ -162,7 +157,7 @@ class SettingsFragmentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `Add-on collection override pref is not visible if feature is disabled`() = runTestOnMain {
+    fun `Add-on collection override pref is not visible if feature is disabled`() = runTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 

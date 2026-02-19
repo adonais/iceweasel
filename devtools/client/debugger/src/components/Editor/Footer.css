@@ -59,7 +59,7 @@
   fill: var(--theme-selection-color);
 }
 
-.source-footer .blackboxed .img.blackBox {
+.source-footer .blackboxed .dbg-img.dbg-img-blackBox {
   background-color: #806414;
 }
 

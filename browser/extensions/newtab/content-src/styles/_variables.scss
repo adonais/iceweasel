@@ -46,7 +46,9 @@ $email-input-invalid: var(--color-red-10);
 $newtab-wordmark-default-color: #20123A;
 $newtab-wordmark-darktheme-color: rgb(251, 251, 254);
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
 $in-content-page-color: var(--text-color);
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
 $in-content-page-color-dark: var(--text-color);
 
 // -------------------------------------------------------------------------- //
@@ -134,6 +136,7 @@ $debug-breakpoint-colors: (
   ultra-wide: violet
 );
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
 $section-title-font-size: var(--font-size-large);
 
 $card-width: $grid-unit-small * 2 + $base-gutter;
@@ -162,8 +165,6 @@ $context-menu-font-size: inherit;
 // $context-menu-border-radius: 5px;
 $context-menu-outer-padding: 5px;
 $context-menu-item-padding: 3px 12px;
-
-$error-fallback-font-size: var(--font-size-small);
 
 $image-path: 'chrome://newtab/content/data/content/assets/';
 
@@ -195,7 +196,7 @@ $customize-menu-border-tint: 1px solid rgba(0, 0, 0, 15%);
     background-image: url('chrome://global/skin/icons/more.svg');
     background-position: 50.1%;
     border: 0;
-    outline: $border-primary;
+    outline: 1px solid var(--border-color);
     outline-width: 0;
     border-radius: var(--border-radius-circle);
     cursor: pointer;

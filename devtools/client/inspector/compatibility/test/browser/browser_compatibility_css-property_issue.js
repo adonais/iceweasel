@@ -13,7 +13,7 @@ const TEST_URI = `
   <style>
   body {
     color: blue;
-    scrollbar-color: gold;
+    text-box-edge: text;
     user-modify: read-only;
     background-repeat-x: repeat;
   }
@@ -29,8 +29,8 @@ const TEST_URI = `
 const TEST_DATA_SELECTED = [
   {
     type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
-    property: "scrollbar-color",
-    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
+    property: "text-box-edge",
+    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/text-box-edge",
     deprecated: false,
     experimental: false,
   },

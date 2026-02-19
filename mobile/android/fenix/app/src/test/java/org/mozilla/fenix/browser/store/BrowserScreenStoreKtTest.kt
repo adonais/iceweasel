@@ -4,30 +4,20 @@
 
 package org.mozilla.fenix.browser.store
 
-import androidx.fragment.app.FragmentManager
-import io.mockk.mockk
 import mozilla.components.concept.engine.translate.Language
 import mozilla.components.lib.state.Middleware
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.PageTranslationStatus
 import org.mozilla.fenix.browser.ReaderModeStatus
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CancelPrivateDownloadsOnPrivateTabsClosedAccepted
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ClosingLastPrivateTab
 import org.mozilla.fenix.browser.store.BrowserScreenAction.PageTranslationStatusUpdated
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ReaderModeStatusUpdated
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
 class BrowserScreenStoreKtTest {
-    @get:Rule
-    val mainCoroutineRule = MainCoroutineRule()
-    private val fragmentManager: FragmentManager = mockk()
 
     @Test
     fun `WHEN the last private tab is closed THEN reset whether cancelling all private downloads was accepted`() {

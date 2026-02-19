@@ -107,10 +107,15 @@ export class GuardianClient {
       });
       const finalEndpoint = waitUntilURL(browser, url => {
         const urlObj = new URL(url);
+        if (url === "about:blank") {
+          return false;
+        }
         if (!allowedOrigins.includes(urlObj.origin)) {
           browser.stop();
           browser.remove();
-          throw new Error(`URL origin ${urlObj.origin} is not allowed.`);
+          throw new Error(
+            `URL ${url} with origin ${urlObj.origin} is not allowed.`
+          );
         }
         if (
           finalizerURLs.some(
@@ -168,6 +173,7 @@ export class GuardianClient {
     const response = await this.withToken(async token => {
       return await fetch(this.#tokenURL, {
         method: "GET",
+        cache: "no-cache",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -271,44 +277,65 @@ export class GuardianClient {
  *
  * Immutable after creation.
  */
-export class ProxyPass {
+export class ProxyPass extends EventTarget {
+  #body = {
+    /** Not Before */
+    nbf: 0,
+    /** Expiration */
+    exp: 0,
+  };
   /**
    * @param {string} token - The JWT to use for authentication.
-   * @param {number} until - The timestamp until which the token is valid.
    */
-  constructor(token, until) {
-    if (typeof token !== "string" || typeof until !== "number") {
-      throw new TypeError("Invalid arguments for ProxyPass constructor");
+  constructor(token) {
+    super();
+    if (typeof token !== "string") {
+      throw new TypeError(
+        "Invalid arguments for ProxyPass constructor, token is not a string"
+      );
     }
     this.token = token;
-    this.until = until;
-    this.from = Date.now();
-    const [header, body] = this.token.split(".");
+    // Contains [header.body.signature]
+    const parts = this.token.split(".");
+    if (parts.length !== 3) {
+      throw new TypeError("Invalid token format");
+    }
     try {
-      const parses = [header, body].every(json =>
-        JSON.parse(atob(json) != null)
-      );
-      if (!parses) {
-        throw new TypeError("Invalid token format");
+      const body = JSON.parse(atob(parts[1]));
+      if (
+        !lazy.JsonSchemaValidator.validate(body, ProxyPass.bodySchema).valid
+      ) {
+        throw new TypeError("Token body does not match schema");
       }
+      this.#body = body;
     } catch (error) {
       throw new TypeError("Invalid token format: " + error.message);
     }
-    Object.freeze(this);
-  }
-  isValid() {
-    const now = Date.now();
-    return this.until > now;
   }
 
-  shouldRotate() {
-    if (!this.isValid) {
+  isValid(now = Temporal.Now.instant()) {
+    // If the remaining duration is zero or positive, the pass is still valid.
+    return (
+      Temporal.Instant.compare(now, this.from) >= 0 &&
+      Temporal.Instant.compare(now, this.until) < 0
+    );
+  }
+
+  shouldRotate(now = Temporal.Now.instant()) {
+    if (!this.isValid(now)) {
       return true;
     }
-    const totalLifespan = this.until - this.from;
-    const rotationPoint =
-      this.from + totalLifespan * (ProxyPass.ROTATION_PERCENTAGE / 100);
-    return Date.now() > rotationPoint;
+    return Temporal.Instant.compare(now, this.rotationTimePoint) >= 0;
+  }
+
+  get from() {
+    // nbf is in seconds since epoch
+    return Temporal.Instant.fromEpochMilliseconds(this.#body.nbf * 1000);
+  }
+
+  get until() {
+    // exp is in seconds since epoch
+    return Temporal.Instant.fromEpochMilliseconds(this.#body.exp * 1000);
   }
 
   /**
@@ -327,24 +354,6 @@ export class ProxyPass {
     }
 
     try {
-      // Get cache_control max-age value
-      const cache_control = response.headers
-        .get("cache-control")
-        ?.match(/max-age=(\d+)/)?.[1];
-
-      if (!cache_control) {
-        console.error("Missing or invalid Cache-Control header");
-        return null;
-      }
-
-      const max_age = parseInt(cache_control, 10);
-      if (isNaN(max_age)) {
-        console.error("Invalid max-age value in Cache-Control header");
-        return null;
-      }
-
-      const until = Date.now() + max_age * 1000;
-
       // Parse JSON response
       const responseData = await response.json();
       const token = responseData?.token;
@@ -353,19 +362,61 @@ export class ProxyPass {
         console.error("Missing or invalid token in response");
         return null;
       }
-
-      return new ProxyPass(token, until);
+      return new ProxyPass(token);
     } catch (error) {
       console.error("Error parsing proxy pass response:", error);
       return null;
     }
   }
+  /**
+   * @type {Temporal.Instant} - The Point in time when the token should be rotated.
+   */
+  get rotationTimePoint() {
+    return this.until.subtract(ProxyPass.ROTATION_TIME);
+  }
 
   asBearerToken() {
     return `Bearer ${this.token}`;
   }
+  // Rotate 10 Minutes from the End Time
+  static ROTATION_TIME = Temporal.Duration.from({ minutes: 10 });
 
-  static ROTATION_PERCENTAGE = 90; // 0-100 % - how long in the duration until the pass should be rotated.
+  static get bodySchema() {
+    return {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      title: "JWT Claims",
+      type: "object",
+      properties: {
+        sub: {
+          type: "string",
+          description: "Subject identifier",
+        },
+        aud: {
+          type: "string",
+          format: "uri",
+          description: "Audience for which the token is intended",
+        },
+        iat: {
+          type: "integer",
+          description: "Issued-at time (seconds since Unix epoch)",
+        },
+        nbf: {
+          type: "integer",
+          description: "Not-before time (seconds since Unix epoch)",
+        },
+        exp: {
+          type: "integer",
+          description: "Expiration time (seconds since Unix epoch)",
+        },
+        iss: {
+          type: "string",
+          description: "Issuer identifier",
+        },
+      },
+      required: ["sub", "aud", "iat", "nbf", "exp", "iss"],
+      additionalProperties: true,
+    };
+  }
 }
 
 /**

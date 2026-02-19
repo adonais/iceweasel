@@ -37,7 +37,7 @@ class nsMathMLmrowFrame final : public nsMathMLContainerFrame {
     return TransmitAutomaticDataForMrowLikeElement();
   }
 
-  eMathMLFrameType GetMathMLFrameType() override;
+  MathMLFrameType GetMathMLFrameType() override;
 
   bool IsMrowLike() override {
     // <mrow> elements with a single child are treated identically to the case

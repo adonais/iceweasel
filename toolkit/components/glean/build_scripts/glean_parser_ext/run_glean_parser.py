@@ -124,9 +124,9 @@ def parse(args, interesting_yamls=None):
             with open(cache_file, "rb") as cache:
                 cached_objects, cached_options = pickle.load(cache)
                 objects.update(cached_objects)
-                assert (
-                    options is None or cached_options == options
-                ), "consistent options"
+                assert options is None or cached_options == options, (
+                    "consistent options"
+                )
                 options = options or cached_options
         return objects, options
 
@@ -372,12 +372,10 @@ def output_gifft_map(output_fd, probe_type, all_objs, cpp_fd, options):
                         sys.exit(1)
                     ids_to_probes[get_metric_id(metric)] = info
                 # If we don't support a mirror for this metric type: build error.
-                elif not any(
-                    [
-                        metric.type in types_for_probe
-                        for types_for_probe in GIFFT_TYPES.values()
-                    ]
-                ):
+                elif not any([
+                    metric.type in types_for_probe
+                    for types_for_probe in GIFFT_TYPES.values()
+                ]):
                     print(
                         f"Glean metric {category_name}.{metric.name} is of type {metric.type}"
                         " which can't be mirrored (we don't know how).",

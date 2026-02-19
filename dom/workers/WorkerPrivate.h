@@ -61,7 +61,8 @@ class nsIThreadInternal;
 
 namespace JS {
 struct RuntimeStats;
-}
+class Dispatchable;
+}  // namespace JS
 
 namespace mozilla {
 class ThrottledEventQueue;
@@ -1208,6 +1209,9 @@ class WorkerPrivate final
   void IncreaseWorkerFinishedRunnableCount() { ++mWorkerFinishedRunnableCount; }
   void DecreaseWorkerFinishedRunnableCount() { --mWorkerFinishedRunnableCount; }
 
+  void JSAsyncTaskStarted(JS::Dispatchable* aDispatchable);
+  void JSAsyncTaskFinished(JS::Dispatchable* aDispatchable);
+
   void RunShutdownTasks();
 
   bool CancelBeforeWorkerScopeConstructed() const {
@@ -1714,6 +1718,9 @@ class WorkerPrivate final
 
   Atomic<uint32_t> mTopLevelWorkerFinishedRunnableCount;
   Atomic<uint32_t> mWorkerFinishedRunnableCount;
+
+  // A set of active JS async tasks that should prevent idle shutdown.
+  HashMap<JS::Dispatchable*, RefPtr<StrongWorkerRef>> mPendingJSAsyncTasks;
 
   TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mMutex);
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;

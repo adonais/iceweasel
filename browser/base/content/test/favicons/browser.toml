@@ -91,6 +91,12 @@ support-files = [
   "file_favicon.png^headers^",
 ]
 
+["browser_favicon_svg.js"]
+support-files = [
+  "file_favicon_svg.html",
+  "file_favicon.svg"
+]
+
 ["browser_icon_discovery.js"]
 
 ["browser_invalid_href_fallback.js"]

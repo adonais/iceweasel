@@ -15,6 +15,7 @@ use std::os::fd::RawFd;
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
+    process,
     ptr::null_mut,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -388,15 +389,18 @@ pub unsafe extern "C" fn crash_helper_rendezvous(client_endpoint: RawAncillaryDa
     };
 
     let join_handle = thread::spawn(move || {
-        if let Ok(message) = connector.recv_reply::<messages::ChildProcessRegistered>() {
-            CrashHelperClient::prepare_for_minidump(message.crash_helper_pid);
-            assert!(
-                CHILD_IPC_ENDPOINT
-                    .set(Box::new(connector.into_raw_ancillary()))
-                    .is_ok(),
-                "The crash_helper_rendezvous() function must only be called once"
-            );
-            return;
+        if let Ok(message) = connector.recv_reply::<messages::ChildProcessRendezVous>() {
+            let res = CrashHelperClient::prepare_for_minidump(message.crash_helper_pid);
+            let message = messages::ChildProcessRendezVousReply::new(res, process::id() as Pid);
+            if let Ok(_) = connector.send_message(message) {
+                assert!(
+                    CHILD_IPC_ENDPOINT
+                        .set(Box::new(connector.into_raw_ancillary()))
+                        .is_ok(),
+                    "The crash_helper_rendezvous() function must only be called once"
+                );
+                return;
+            }
         }
 
         RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);

@@ -44,9 +44,11 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
    * Whether this provider should be invoked for the given context.
    * If this method returns false, the providers manager won't start a query
    * with this provider, to save on resources.
+   *
+   * @param {UrlbarQueryContext} queryContext
    */
-  async isActive() {
-    return true;
+  async isActive(queryContext) {
+    return !!queryContext.searchString.length;
   }
 
   /**
@@ -162,10 +164,10 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
           type: UrlbarUtils.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
           heuristic: true,
-          ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-            fallbackTitle: [searchUrl, UrlbarUtils.HIGHLIGHT.NONE],
-            url: [searchUrl, UrlbarUtils.HIGHLIGHT.NONE],
-          }),
+          payload: {
+            title: searchUrl,
+            url: searchUrl,
+          },
         });
       }
 
@@ -224,11 +226,11 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
       type: UrlbarUtils.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       heuristic: true,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        fallbackTitle: [displayURL, UrlbarUtils.HIGHLIGHT.NONE],
-        url: [escapedURL, UrlbarUtils.HIGHLIGHT.NONE],
+      payload: {
+        title: displayURL,
+        url: escapedURL,
         icon: iconUri,
-      }),
+      },
     });
   }
 
@@ -276,14 +278,16 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
       });
     }
 
+    query = query.trimStart();
     return new lazy.UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       heuristic: true,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        query: [query.trimStart(), UrlbarUtils.HIGHLIGHT.NONE],
-        keyword: [firstToken, UrlbarUtils.HIGHLIGHT.NONE],
-      }),
+      payload: {
+        query,
+        title: query,
+        keyword: firstToken,
+      },
     });
   }
 
@@ -324,12 +328,13 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
       type: UrlbarUtils.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
+      payload: {
+        engine: engine.name,
         icon: UrlbarUtils.ICON.SEARCH_GLASS,
-        query: [query, UrlbarUtils.HIGHLIGHT.NONE],
-        keyword: keyword ? [keyword, UrlbarUtils.HIGHLIGHT.NONE] : undefined,
-      }),
+        query,
+        title: query,
+        keyword,
+      },
     });
   }
 }

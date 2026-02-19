@@ -10,7 +10,12 @@
 add_setup(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
-  await PlacesTestUtils.addVisits(["https://example.com/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();
   });

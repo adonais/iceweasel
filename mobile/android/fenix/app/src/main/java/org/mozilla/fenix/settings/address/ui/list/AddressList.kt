@@ -12,9 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.concept.storage.Address
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.IconListItem
@@ -22,6 +22,7 @@ import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.settings.address.ext.getAddressLabel
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -78,24 +79,12 @@ private val addresses = listOf(
     ),
 )
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun AddressListPreview() {
-    FirefoxTheme {
-        Surface {
-            AddressList(
-                addresses = addresses,
-                onAddressClick = {},
-                onAddAddressButtonClick = {},
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun AddressListPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun AddressListPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             AddressList(
                 addresses = addresses,

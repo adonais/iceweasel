@@ -697,6 +697,8 @@ skip-if = [
 ]
 
 ["test_ext_storage_session.js"]
+
+["test_ext_storage_session_on_crash.js"]
 skip-if = [
   "isolated_process", # Bug 1709961
 ]

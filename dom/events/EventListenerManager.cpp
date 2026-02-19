@@ -62,6 +62,7 @@
 #include "nsPIWindowRoot.h"
 #include "nsPrintfCString.h"
 #include "nsSandboxFlags.h"
+#include "nsScreen.h"
 #include "xpcpublic.h"
 
 namespace mozilla {
@@ -464,6 +465,16 @@ void EventListenerManager::AddEventListenerInternal(
       case eFormRadioStateChange:
         nsContentUtils::SetMayHaveFormRadioStateChangeListeners();
         break;
+      case eMozOrientationChange:
+        if (nsScreen* screen = mTarget->GetAsScreen()) {
+          if (nsPIDOMWindowOuter* outer = screen->GetOuter()) {
+            if (Document* doc = outer->GetExtantDoc()) {
+              doc->WarnOnceAbout(
+                  DeprecatedOperations::eMozorientationchangeDeprecated);
+            }
+          }
+        }
+        break;
       default:
         // XXX Use NS_ASSERTION here to print resolvedEventMessage since
         //     MOZ_ASSERT can take only string literal, not pointer to
@@ -550,6 +561,10 @@ void EventListenerManager::AddEventListenerInternal(
                                      ToChar(resolvedEventMessage))
                          .get());
         NS_ASSERTION(aTypeAtom != nsGkAtoms::onMozMousePixelScroll,
+                     nsPrintfCString("resolvedEventMessage=%s",
+                                     ToChar(resolvedEventMessage))
+                         .get());
+        NS_ASSERTION(aTypeAtom != nsGkAtoms::onmozorientationchange,
                      nsPrintfCString("resolvedEventMessage=%s",
                                      ToChar(resolvedEventMessage))
                          .get());

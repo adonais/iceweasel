@@ -26,67 +26,67 @@ loader.lazyRequireGetter(
  * Represents a connection to this debugging global from a client.
  * Manages a set of actors and actor pools, allocates actor ids, and
  * handles incoming requests.
- *
- * @param prefix string
- *        All actor IDs created by this connection should be prefixed
- *        with prefix.
- * @param transport transport
- *        Packet transport for the debugging protocol.
- * @param socketListener SocketListener
- *        SocketListener which accepted the transport.
- *        If this is null, the transport is not that was accepted by SocketListener.
  */
-function DevToolsServerConnection(prefix, transport, socketListener) {
-  this._prefix = prefix;
-  this._transport = transport;
-  this._transport.hooks = this;
-  this._nextID = 1;
-  this._socketListener = socketListener;
-
-  this._actorPool = new Pool(this, "server-connection");
-  this._extraPools = [this._actorPool];
-
-  // Responses to a given actor must be returned the the client
-  // in the same order as the requests that they're replying to, but
-  // Implementations might finish serving requests in a different
-  // order.  To keep things in order we generate a promise for each
-  // request, chained to the promise for the request before it.
-  // This map stores the latest request promise in the chain, keyed
-  // by an actor ID string.
-  this._actorResponses = new Map();
-
-  /*
-   * We can forward packets to other servers, if the actors on that server
-   * all use a distinct prefix on their names. This is a map from prefixes
-   * to transports: it maps a prefix P to a transport T if T conveys
-   * packets to the server whose actors' names all begin with P + "/".
+class DevToolsServerConnection {
+  /**
+   * @param {string} prefix
+   *        All actor IDs created by this connection should be prefixed
+   *        with prefix.
+   * @param {Transport} transport
+   *        Packet transport for the debugging protocol.
+   * @param {SocketListener} socketListener
+   *        SocketListener which accepted the transport.
+   *        If this is null, the transport is not that was accepted by SocketListener.
    */
-  this._forwardingPrefixes = new Map();
+  constructor(prefix, transport, socketListener) {
+    this._prefix = prefix;
+    this._transport = transport;
+    this._transport.hooks = this;
+    this._nextID = 1;
+    this._socketListener = socketListener;
 
-  EventEmitter.decorate(this);
-}
-exports.DevToolsServerConnection = DevToolsServerConnection;
+    this._actorPool = new Pool(this, "server-connection");
+    this._extraPools = [this._actorPool];
 
-DevToolsServerConnection.prototype = {
-  _prefix: null,
+    // Responses to a given actor must be returned the the client
+    // in the same order as the requests that they're replying to, but
+    // Implementations might finish serving requests in a different
+    // order.  To keep things in order we generate a promise for each
+    // request, chained to the promise for the request before it.
+    // This map stores the latest request promise in the chain, keyed
+    // by an actor ID string.
+    this._actorResponses = new Map();
+
+    /*
+     * We can forward packets to other servers, if the actors on that server
+     * all use a distinct prefix on their names. This is a map from prefixes
+     * to transports: it maps a prefix P to a transport T if T conveys
+     * packets to the server whose actors' names all begin with P + "/".
+     */
+    this._forwardingPrefixes = new Map();
+
+    EventEmitter.decorate(this);
+  }
+
+  _prefix = null;
   get prefix() {
     return this._prefix;
-  },
+  }
 
-  _transport: null,
+  _transport = null;
   get transport() {
     return this._transport;
-  },
+  }
 
   close(options) {
     if (this._transport) {
       this._transport.close(options);
     }
-  },
+  }
 
   send(packet) {
     this.transport.send(packet);
-  },
+  }
 
   /**
    * Used when sending a bulk reply from an actor.
@@ -95,23 +95,23 @@ DevToolsServerConnection.prototype = {
    */
   startBulkSend(header) {
     return this.transport.startBulkSend(header);
-  },
+  }
 
   allocID(prefix) {
     return this.prefix + (prefix || "") + this._nextID++;
-  },
+  }
 
   /**
    * Add a map of actor IDs to the connection.
    */
   addActorPool(actorPool) {
     this._extraPools.push(actorPool);
-  },
+  }
 
   /**
    * Remove a previously-added pool of actors to the connection.
    *
-   * @param Pool actorPool
+   * @param {Pool} actorPool
    *        The Pool instance you want to remove.
    */
   removeActorPool(actorPool) {
@@ -139,28 +139,28 @@ DevToolsServerConnection.prototype = {
     if (index > -1) {
       this._extraPools.splice(index, 1);
     }
-  },
+  }
 
   /**
    * Add an actor to the default actor pool for this connection.
    */
   addActor(actor) {
     this._actorPool.manage(actor);
-  },
+  }
 
   /**
    * Remove an actor to the default actor pool for this connection.
    */
   removeActor(actor) {
     this._actorPool.unmanage(actor);
-  },
+  }
 
   /**
    * Match the api expected by the protocol library.
    */
   unmanage(actor) {
     return this.removeActor(actor);
-  },
+  }
 
   /**
    * Look up an actor implementation for an actorID.  Will search
@@ -180,7 +180,7 @@ DevToolsServerConnection.prototype = {
     }
 
     return null;
-  },
+  }
 
   _getOrCreateActor(actorID) {
     try {
@@ -207,7 +207,7 @@ DevToolsServerConnection.prototype = {
       this.transport.send(this._unknownError(actorID, prefix, error));
     }
     return null;
-  },
+  }
 
   poolFor(actorID) {
     for (const pool of this._extraPools) {
@@ -216,7 +216,7 @@ DevToolsServerConnection.prototype = {
       }
     }
     return null;
-  },
+  }
 
   _unknownError(from, prefix, error) {
     const errorString = prefix + ": " + DevToolsUtils.safeErrorString(error);
@@ -230,7 +230,7 @@ DevToolsServerConnection.prototype = {
       error: "unknownError",
       message: errorString,
     };
-  },
+  }
 
   _queueResponse(from, type, responseOrPromise) {
     const pendingResponse =
@@ -266,7 +266,7 @@ DevToolsServerConnection.prototype = {
       });
 
     this._actorResponses.set(from, responsePromise);
-  },
+  }
 
   /**
    * This function returns whether the connection was accepted by passed SocketListener.
@@ -277,7 +277,7 @@ DevToolsServerConnection.prototype = {
    */
   isAcceptedBy(socketListener) {
     return this._socketListener === socketListener;
-  },
+  }
 
   /* Forwarding packets to other transports based on actor name prefixes. */
 
@@ -290,15 +290,15 @@ DevToolsServerConnection.prototype = {
    *
    * This overrides any prior forwarding for |prefix|.
    *
-   * @param prefix string
+   * @param {string} prefix
    *    The actor name prefix, not including the '/'.
-   * @param transport object
+   * @param {object} transport
    *    A packet transport to which we should forward packets to actors
    *    whose names begin with |(prefix + '/').|
    */
   setForwarding(prefix, transport) {
     this._forwardingPrefixes.set(prefix, transport);
-  },
+  }
 
   /*
    * Stop forwarding messages to actors whose names begin with
@@ -313,20 +313,20 @@ DevToolsServerConnection.prototype = {
     if (this.rootActor) {
       this.send(this.rootActor.forwardingCancelled(prefix));
     }
-  },
+  }
 
   sendActorEvent(actorID, eventName, event = {}) {
     event.from = actorID;
     event.type = eventName;
     this.send(event);
-  },
+  }
 
   // Transport hooks.
 
   /**
    * Called by DebuggerTransport to dispatch incoming packets as appropriate.
    *
-   * @param packet object
+   * @param {object} packet
    *        The incoming packet.
    */
   onPacket(packet) {
@@ -396,7 +396,7 @@ DevToolsServerConnection.prototype = {
     if (ret) {
       this._queueResponse(packet.to, packet.type, ret);
     }
-  },
+  }
 
   /**
    * Called by the DebuggerTransport to dispatch incoming bulk packets as
@@ -467,7 +467,7 @@ DevToolsServerConnection.prototype = {
     if (ret) {
       this._queueResponse(actorKey, type, ret);
     }
-  },
+  }
 
   /**
    * Called by DebuggerTransport when the underlying stream is closed.
@@ -504,7 +504,7 @@ DevToolsServerConnection.prototype = {
     this.rootActor = null;
     this._transport = null;
     DevToolsServer._connectionClosed(this);
-  },
+  }
 
   dumpPool(pool, output = [], dumpedPools) {
     const actorIds = [];
@@ -531,7 +531,7 @@ DevToolsServerConnection.prototype = {
     children.forEach(childPool =>
       this.dumpPool(childPool, output, dumpedPools)
     );
-  },
+  }
 
   /*
    * Debugging helper for inspecting the state of the actor pools.
@@ -543,5 +543,7 @@ DevToolsServerConnection.prototype = {
     this._extraPools.forEach(pool => this.dumpPool(pool, output, dumpedPools));
 
     return output;
-  },
-};
+  }
+}
+
+exports.DevToolsServerConnection = DevToolsServerConnection;

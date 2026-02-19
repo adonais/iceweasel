@@ -32,20 +32,19 @@ const {
  * This object doesn't depend on the panel UI and can be created
  * and used even if the Network panel UI doesn't exist.
  */
-function NetMonitorAPI() {
-  EventEmitter.decorate(this);
+class NetMonitorAPI extends EventEmitter {
+  constructor() {
+    super();
 
-  // Connector to the backend.
-  this.connector = new Connector();
+    // Connector to the backend.
+    this.connector = new Connector();
 
-  // List of listeners for `devtools.network.onRequestFinished` WebExt API
-  this._requestFinishedListeners = new Set();
+    // List of listeners for `devtools.network.onRequestFinished` WebExt API
+    this._requestFinishedListeners = new Set();
 
-  // Bind event handlers
-  this.onPayloadReady = this.onPayloadReady.bind(this);
-}
-
-NetMonitorAPI.prototype = {
+    // Bind event handlers
+    this.onPayloadReady = this.onPayloadReady.bind(this);
+  }
   async connect(toolbox) {
     // Bail out if already connected.
     if (this.toolbox) {
@@ -73,7 +72,7 @@ NetMonitorAPI.prototype = {
     };
 
     await this.connector.connect(connection, this.actions, this.store.getState);
-  },
+  }
 
   /**
    * Clean up (unmount from DOM, remove listeners, disconnect).
@@ -86,7 +85,7 @@ NetMonitorAPI.prototype = {
     if (this.harExportConnector) {
       this.harExportConnector.disconnect();
     }
-  },
+  }
 
   // HAR
 
@@ -105,7 +104,7 @@ NetMonitorAPI.prototype = {
     };
 
     return HarExporter.getHar(options);
-  },
+  }
 
   /**
    * Support for `devtools.network.onRequestFinished`. A hook for
@@ -148,14 +147,14 @@ NetMonitorAPI.prototype = {
         requestId: resource.actor,
       })
     );
-  },
+  }
 
   /**
    * Support for `Request.getContent` WebExt API (lazy loading response body)
    */
   async fetchResponseContent(requestId) {
     return this.connector.requestData(requestId, "responseContent");
-  },
+  }
 
   /**
    * Add listener for `onRequestFinished` events.
@@ -167,15 +166,15 @@ NetMonitorAPI.prototype = {
    */
   addRequestFinishedListener(listener) {
     this._requestFinishedListeners.add(listener);
-  },
+  }
 
   removeRequestFinishedListener(listener) {
     this._requestFinishedListeners.delete(listener);
-  },
+  }
 
   hasRequestFinishedListeners() {
     return this._requestFinishedListeners.size > 0;
-  },
+  }
 
   /**
    * Separate connector for HAR export.
@@ -197,7 +196,7 @@ NetMonitorAPI.prototype = {
 
     await this.harExportConnectorReady;
     return this.harExportConnector;
-  },
+  }
 
   /**
    * Resends a given network request
@@ -211,7 +210,7 @@ NetMonitorAPI.prototype = {
     // Send custom request with same url, headers and body as the request
     // with the given requestId.
     this.store.dispatch(Actions.sendCustomRequest(requestId));
-  },
-};
+  }
+}
 
 exports.NetMonitorAPI = NetMonitorAPI;

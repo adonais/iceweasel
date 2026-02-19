@@ -206,7 +206,11 @@ export default class MozBoxGroup extends MozLitElement {
           "last",
           i == this.listItems.length - 1 && !footerNode
         );
+        item.removeAttribute("tabindex");
       });
+      if (!this.#tabbable) {
+        this.#tabbable = true;
+      }
     }
 
     if (

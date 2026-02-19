@@ -22,14 +22,11 @@ import { Weather } from "../../Weather/Weather.jsx";
 
 // Prefs
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
-const PREF_SECTIONS_CARDS_THUMBS_UP_DOWN_ENABLED =
-  "discoverystream.sections.cards.thumbsUpDown.enabled";
 const PREF_SECTIONS_PERSONALIZATION_ENABLED =
   "discoverystream.sections.personalization.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
-const PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 const PREF_INTEREST_PICKER_ENABLED =
   "discoverystream.sections.interestPicker.enabled";
 const PREF_VISIBLE_SECTIONS =
@@ -202,9 +199,6 @@ function CardSection({
 
   const showTopics = prefs[PREF_TOPICS_ENABLED];
   const mayHaveSectionsCards = prefs[PREF_SECTIONS_CARDS_ENABLED];
-  const mayHaveSectionsCardsThumbsUpDown =
-    prefs[PREF_SECTIONS_CARDS_THUMBS_UP_DOWN_ENABLED];
-  const mayHaveThumbsUpDown = prefs[PREF_THUMBS_UP_DOWN_ENABLED];
   const selectedTopics = prefs[PREF_TOPICS_SELECTED];
   const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
@@ -234,10 +228,6 @@ function CardSection({
 
   // Ref to hold the section element
   const sectionRefs = useIntersectionObserver(handleIntersection);
-
-  // Only show thumbs up/down buttons if both default thumbs and sections thumbs prefs are enabled
-  const mayHaveCombinedThumbsUpDown =
-    mayHaveSectionsCardsThumbsUpDown && mayHaveThumbsUpDown;
 
   const onFollowClick = useCallback(() => {
     const updatedSectionData = {
@@ -453,7 +443,6 @@ function CardSection({
               received_rank={rec.received_rank}
               format={rec.format}
               alt_text={rec.alt_text}
-              mayHaveThumbsUpDown={mayHaveCombinedThumbsUpDown}
               mayHaveSectionsCards={mayHaveSectionsCards}
               showTopics={shouldShowLabels}
               selectedTopics={selectedTopics}
@@ -469,6 +458,7 @@ function CardSection({
               isTimeSensitive={rec.isTimeSensitive}
               tabIndex={index === focusedIndex ? 0 : -1}
               onFocus={() => onCardFocus(index)}
+              attribution={rec.attribution}
             />
           );
           return [card];

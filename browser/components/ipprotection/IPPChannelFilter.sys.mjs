@@ -5,6 +5,8 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
+  IPPExceptionsManager:
+    "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs",
   ProxyService: {
     service: "@mozilla.org/network/protocol-proxy-service;1",
     iid: Ci.nsIProtocolProxyService,
@@ -262,6 +264,15 @@ export class IPPChannelFilter {
       const origin = uri.prePath; // scheme://host[:port]
 
       if (!this.proxyInfo && this.#essentialOrigins.has(origin)) {
+        return true;
+      }
+
+      let loadingPrincipal = channel.loadInfo?.loadingPrincipal;
+      let hasExclusion =
+        loadingPrincipal &&
+        lazy.IPPExceptionsManager.hasExclusion(loadingPrincipal);
+
+      if (hasExclusion) {
         return true;
       }
 

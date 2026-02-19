@@ -720,3 +720,8 @@ bool nsJARURI::Deserialize(const URIParams& aParams) {
 
   return true;
 }
+
+size_t nsJARURI::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
+  // We don't need to calculate this unless it shows up in DMD.
+  return 0;
+};

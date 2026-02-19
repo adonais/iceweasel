@@ -333,7 +333,7 @@ PasswordStore.prototype = {
     prop.setPropertyAsAUTF8String("guid", newID);
 
     let oldLogin = await this._getLoginFromGUID(oldID);
-    this.storage.modifyLogin(oldLogin, prop, true);
+    await this.storage.modifyLoginAsync(oldLogin, prop, true);
   },
 
   async itemExists(id) {
@@ -425,7 +425,7 @@ PasswordStore.prototype = {
 
     loginItem.everSynced = true;
 
-    this.storage.modifyLogin(loginItem, newinfo, true);
+    await this.storage.modifyLoginAsync(loginItem, newinfo, true);
   },
 
   async wipe() {

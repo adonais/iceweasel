@@ -373,6 +373,15 @@ LoginManagerAuthPrompter.prototype = {
   /**
    * Looks up a username and password in the database. Will prompt the user
    * with a dialog, even if a username and password are found.
+   *
+   * Returns a promise, resolving to an object containing the result as well as
+   * the password and username:
+   * Eg:
+   * {
+   *    ok: true,
+   *    username: "user",
+   *    password: "secure",
+   * }
    */
   async asyncPromptUsernameAndPassword(
     aDialogTitle,
@@ -403,13 +412,10 @@ LoginManagerAuthPrompter.prototype = {
       }
 
       // Look for existing logins.
-      // We don't use searchLoginsAsync here and in asyncPromptPassword
-      // because of bug 1848682
-      let matchData = lazy.LoginHelper.newPropertyBag({
+      foundLogins = await Services.logins.searchLoginsAsync({
         origin,
         httpRealm: realm,
       });
-      foundLogins = Services.logins.searchLogins(matchData);
 
       // XXX Like the original code, we can't deal with multiple
       // account selection. (bug 227632)
@@ -446,12 +452,20 @@ LoginManagerAuthPrompter.prototype = {
     );
 
     if (!ok || !canRememberLogin) {
-      return ok;
+      return {
+        ok,
+        username: aUsername.value,
+        password: aPassword.value,
+      };
     }
 
     if (!aPassword.value) {
       this.log("No password entered, so won't offer to save.");
-      return ok;
+      return {
+        ok,
+        username: aUsername.value,
+        password: aPassword.value,
+      };
     }
 
     // XXX We can't prompt with multiple logins yet (bug 227632), so
@@ -475,7 +489,7 @@ LoginManagerAuthPrompter.prototype = {
     } else if (aPassword.value != selectedLogin.password) {
       // update password
       this.log(`Updating password for ${realm}.`);
-      this._updateLogin(selectedLogin, newLogin);
+      await this._updateLogin(selectedLogin, newLogin);
     } else {
       this.log("Login unchanged, no further action needed.");
       Services.logins.recordPasswordUse(
@@ -486,7 +500,11 @@ LoginManagerAuthPrompter.prototype = {
       );
     }
 
-    return ok;
+    return {
+      ok,
+      username: aUsername.value,
+      password: aPassword.value,
+    };
   },
 
   /**
@@ -496,6 +514,14 @@ LoginManagerAuthPrompter.prototype = {
    * If a password is not found in the database, the user will be prompted
    * with a dialog with a text field and ok/cancel buttons. If the user
    * allows it, then the password will be saved in the database.
+   *
+   * Returns a promise, resolving to an object containing the result as well as
+   * the password:
+   * Eg:
+   * {
+   *    ok: true,
+   *    password: "secure",
+   * }
    */
   async asyncPromptPassword(
     aDialogTitle,
@@ -523,11 +549,10 @@ LoginManagerAuthPrompter.prototype = {
         Services.logins.getLoginSavingEnabled(origin);
       if (!aPassword.value) {
         // Look for existing logins.
-        let matchData = lazy.LoginHelper.newPropertyBag({
+        let foundLogins = await Services.logins.searchLoginsAsync({
           origin,
           httpRealm: realm,
         });
-        let foundLogins = Services.logins.searchLogins(matchData);
 
         // XXX Like the original code, we can't deal with multiple
         // account selection (bug 227632). We can deal with finding the
@@ -535,9 +560,13 @@ LoginManagerAuthPrompter.prototype = {
         // just return the first match.
         for (var i = 0; i < foundLogins.length; ++i) {
           if (foundLogins[i].username == username) {
-            aPassword.value = foundLogins[i].password;
             // wallet returned straight away, so this mimics that code
-            return true;
+            aPassword.value = foundLogins[i].password;
+            // returning the found password
+            return {
+              ok: true,
+              password: aPassword.value,
+            };
           }
         }
       }
@@ -564,7 +593,11 @@ LoginManagerAuthPrompter.prototype = {
       await Services.logins.addLoginAsync(newLogin);
     }
 
-    return ok;
+    // returning the provided password
+    return {
+      ok,
+      password: aPassword.value,
+    };
   },
 
   /* ---------- nsIAuthPrompt helpers ---------- */
@@ -863,7 +896,7 @@ LoginManagerAuthPrompter.prototype = {
 
   /* ---------- Internal Methods ---------- */
 
-  _updateLogin(login, aNewLogin) {
+  async _updateLogin(login, aNewLogin) {
     var now = Date.now();
     var propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
       Ci.nsIWritablePropertyBag
@@ -880,7 +913,7 @@ LoginManagerAuthPrompter.prototype = {
     propBag.setProperty("timesUsedIncrement", 1);
     // Note that we don't call `recordPasswordUse` so we won't potentially record
     // both a use and a save/update. See bug 1640096.
-    Services.logins.modifyLogin(login, propBag);
+    await Services.logins.modifyLoginAsync(login, propBag);
   },
 
   /**

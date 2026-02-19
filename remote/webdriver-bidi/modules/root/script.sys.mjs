@@ -447,9 +447,15 @@ class ScriptModule extends RootBiDiModule {
     }
 
     const { contextId, realmId, sandbox } = this.#assertTarget(target);
-    const context = await this.#getContextFromTarget({ contextId, realmId });
+    const context = await this.#getContextFromTarget({
+      contextId,
+      realmId,
+      supportsChromeScope: true,
+    });
+
     const serializationOptionsWithDefaults =
       lazy.setDefaultAndAssertSerializationOptions(serializationOptions);
+
     const evaluationResult = await this._forwardToWindowGlobal(
       "callFunctionDeclaration",
       context.id,
@@ -562,9 +568,15 @@ class ScriptModule extends RootBiDiModule {
     this.#assertResultOwnership(resultOwnership);
 
     const { contextId, realmId, sandbox } = this.#assertTarget(target);
-    const context = await this.#getContextFromTarget({ contextId, realmId });
+    const context = await this.#getContextFromTarget({
+      contextId,
+      realmId,
+      supportsChromeScope: true,
+    });
+
     const serializationOptionsWithDefaults =
       lazy.setDefaultAndAssertSerializationOptions(serializationOptions);
+
     const evaluationResult = await this._forwardToWindowGlobal(
       "evaluateExpression",
       context.id,
@@ -870,9 +882,13 @@ class ScriptModule extends RootBiDiModule {
     return rv;
   }
 
-  async #getContextFromTarget({ contextId, realmId }) {
+  async #getContextFromTarget({
+    contextId,
+    realmId,
+    supportsChromeScope = false,
+  }) {
     if (contextId !== null) {
-      return this._getNavigable(contextId);
+      return this._getNavigable(contextId, { supportsChromeScope });
     }
 
     const destination = {
@@ -880,11 +896,11 @@ class ScriptModule extends RootBiDiModule {
         type: lazy.ContextDescriptorType.All,
       },
     };
-    const realms = await this.#getRealmInfos(destination);
-    const realm = realms.find(el => el.realm == realmId);
+    const realmInfos = await this.#getRealmInfos(destination);
+    const realm = realmInfos.find(info => info.realm == realmId);
 
     if (realm && realm.context !== null) {
-      return this._getNavigable(realm.context);
+      return this._getNavigable(realm.context, { supportsChromeScope });
     }
 
     throw new lazy.error.NoSuchFrameError(`Realm with id ${realmId} not found`);

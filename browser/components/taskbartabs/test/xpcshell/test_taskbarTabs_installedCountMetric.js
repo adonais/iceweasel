@@ -36,13 +36,15 @@ add_task(async function test_installedCounterMetric() {
 
   equal(value(), 0, "No taskbar tabs exist yet");
 
-  const tt1 = await TaskbarTabs.findOrCreateTaskbarTab(
+  const tt1 = await createTaskbarTab(
+    TaskbarTabs,
     Services.io.newURI("https://example.com"),
     0
   );
   equal(value(), 1, "First new taskbar tab was accounted for");
 
-  const tt2 = await TaskbarTabs.findOrCreateTaskbarTab(
+  const tt2 = await createTaskbarTab(
+    TaskbarTabs,
     Services.io.newURI("https://example.edu"),
     0
   );

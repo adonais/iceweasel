@@ -22,6 +22,9 @@ function testHtmlCopyEncoder () {
 
   var node = document.getElementById('draggable');
 
+  const includeCommonAncestor = SpecialPowers.getBoolPref(
+    "dom.serializer.includeCommonAncestor.enabled"
+  );
 
   // in the following tests, we must use the OutputLFLineBreak flag, to avoid
   // to have the default line break of the platform in the result, so the test
@@ -46,21 +49,27 @@ function testHtmlCopyEncoder () {
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputSelectionOnly);
   encoder.setSelection(select);
   out = encoder.encodeToString();
-  expected = "<div style=\"display: none\">\n\n<div id=\"draggable\" ondragstart=\"doDragStartSelection(event)\">This is a <em>draggable</em> bit of text.</div>\n\n</div>";
+  expected = `${includeCommonAncestor ? "<div style=\"display: none\">\n\n<div id=\"draggable\" ondragstart=\"doDragStartSelection(event)\">" : ""}` +
+             `This is a <em>draggable</em> bit of text.` +
+             `${includeCommonAncestor ? "</div>\n\n</div>" : ""}`;
   is(out, expected, "test selection");
 
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputAbsoluteLinks | de.OutputEncodeHTMLEntities | de.OutputSelectionOnly | de.OutputRaw);
   encoder.setSelection(select);
   var outContext = {value:''}, outInfo = {value:''};
   out = encoder.encodeToStringWithContext(outContext, outInfo);
-  expected = "<div style=\"display: none\">\n\n<div id=\"draggable\" ondragstart=\"doDragStartSelection(event)\">This is a <em>draggable</em> bit of text.</div>\n\n</div>";
+  expected = `${includeCommonAncestor ? "<div style=\"display: none\">\n\n<div id=\"draggable\" ondragstart=\"doDragStartSelection(event)\">" : ""}` +
+             `This is a <em>draggable</em> bit of text.` +
+             `${includeCommonAncestor ? "</div>\n\n</div>" : ""}`;
   is(out, expected, "test encodeToStringWithContext with selection ");
 
   node.nextSibling.data="\nfoo bar\n";
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputSelectionOnly);
   encoder.setSelection(select);
   out = encoder.encodeToString();
-  expected = "<div id=\"draggable\" ondragstart=\"doDragStartSelection(event)\">This is a <em>draggable</em> bit of text.</div>";
+  expected = `${includeCommonAncestor ? "<div id=\"draggable\" ondragstart=\"doDragStartSelection(event)\">" : ""}` +
+             `This is a <em>draggable</em> bit of text.` +
+             `${includeCommonAncestor ? "</div>" : ""}`;
   is(out, expected, "test selection with additional data");
 
   node = document.getElementById('aList');
@@ -71,7 +80,9 @@ function testHtmlCopyEncoder () {
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputSelectionOnly);
   encoder.setSelection(select);
   out = encoder.encodeToString();
-  expected = '<ol id=\"aList\">\n   <li>Lorem ipsum dolor</li>\n  <li>sit amet, <strong>consectetuer</strong> </li>\n  <li>adipiscing elit</li>\n  <li>Nam eu sapien. Sed viverra lacus. Donec quis ipsum. Nunc cursus aliquet lectus. Nunc vitae eros. Class</li>\n  <li>aptent taciti</li>\n</ol>';
+  expected = `${includeCommonAncestor ? "<ol id=\"aList\">" : ""}` +
+             `\n   <li>Lorem ipsum dolor</li>\n  <li>sit amet, <strong>consectetuer</strong> </li>\n  <li>adipiscing elit</li>\n  <li>Nam eu sapien. Sed viverra lacus. Donec quis ipsum. Nunc cursus aliquet lectus. Nunc vitae eros. Class</li>\n  <li>aptent taciti</li>\n` +
+             `${includeCommonAncestor ? "</ol>" : ""}`;
   is(out, expected, "test list selection");
 
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputSelectionOnly);
@@ -151,7 +162,9 @@ function testHtmlCopyEncoder () {
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputSelectionOnly);
   encoder.setSelection(select);
   out = encoder.encodeToString();
-  expected = '<ol id=\"aList\">\n   <li value=\"8\">Lorem ipsum dolor</li>\n  <li>sit amet, <strong>consectetuer</strong> </li>\n  <li>adipiscing elit</li>\n  <li>Nam eu sapien. Sed viverra lacus. Donec quis ipsum. Nunc cursus aliquet lectus. Nunc vitae eros. Class</li>\n  <li>aptent taciti</li>\n</ol>';
+  expected = `${includeCommonAncestor ? "<ol id=\"aList\">" : ""}` +
+             `\n   <li value=\"8\">Lorem ipsum dolor</li>\n  <li>sit amet, <strong>consectetuer</strong> </li>\n  <li>adipiscing elit</li>\n  <li>Nam eu sapien. Sed viverra lacus. Donec quis ipsum. Nunc cursus aliquet lectus. Nunc vitae eros. Class</li>\n  <li>aptent taciti</li>\n` +
+             `${includeCommonAncestor ? "</ol>" : ""}`;
   is(out, expected, "test list selection with a value on a LI");
 
   //test Bug 436703

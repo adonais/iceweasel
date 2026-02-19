@@ -61,7 +61,6 @@ NS_INTERFACE_TABLE_HEAD(nsSimpleURI)
   if (aIID.Equals(kThisSimpleURIImplementationCID)) {
     foundInterface = static_cast<nsIURI*>(this);
   } else
-    NS_INTERFACE_MAP_ENTRY(nsISizeOf)
 NS_INTERFACE_MAP_END
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -637,11 +636,13 @@ nsSimpleURI::GetAsciiHost(nsACString& result) {
   return NS_OK;
 }
 
-//----------------------------------------------------------------------------
-// nsSimpleURI::nsISizeOf
-//----------------------------------------------------------------------------
-
-size_t nsSimpleURI::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+// Among the sub-classes that inherit (directly or indirectly) from
+// nsSimpleURI, measurement of the following members may be added later if
+// DMD finds it is worthwhile:
+// - nsJSURI: mBaseURI
+// - nsSimpleNestedURI: mInnerURI
+// - nsBlobURI: mPrincipal
+size_t nsSimpleURI::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
   return aMallocSizeOf(this) +
          mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
 }

@@ -8,7 +8,6 @@
 #define __IPC_GLUE_IPCMESSAGEUTILSSPECIALIZATIONS_H__
 
 #include <cstdint>
-#include <cstdlib>
 #include <limits>
 #include <set>
 #include <type_traits>

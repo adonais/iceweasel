@@ -17,7 +17,6 @@ const BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME =
 const BACKUP_RESTORE_ENABLED_PREF_NAME = "browser.backup.restore.enabled";
 const BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME =
   "browser.backup.restore.overridePlatformCheck";
-const SANITIZE_ON_SHUTDOWN_PREF_NAME = "privacy.sanitize.sanitizeOnShutdown";
 const SELECTABLE_PROFILES_CREATED_PREF_NAME = "browser.profiles.created";
 
 add_setup(async () => {
@@ -114,18 +113,6 @@ add_task(async function test_archive_policy() {
     },
     // At startup, there wouldn't have been a spurious call.
     startup: 0,
-  });
-});
-
-add_task(async function test_archive_sanitize_on_shutdown() {
-  await archiveTemplate({
-    internalReason: "sanitizeOnShutdown",
-    async disable() {
-      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, true);
-    },
-    async enable() {
-      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, false);
-    },
   });
 });
 
@@ -257,18 +244,6 @@ add_task(async function test_restore_policy() {
     },
     // At startup, there wouldn't have been a spurious call.
     startup: 0,
-  });
-});
-
-add_task(async function test_restore_sanitize_on_shutdown() {
-  await restoreTemplate({
-    internalReason: "sanitizeOnShutdown",
-    async disable() {
-      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, true);
-    },
-    async enable() {
-      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, false);
-    },
   });
 });
 

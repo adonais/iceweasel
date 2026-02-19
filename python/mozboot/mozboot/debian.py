@@ -65,7 +65,10 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         command.extend(packages)
         return (
             subprocess.run(
-                command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                command,
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             ).returncode
             == 0
         )

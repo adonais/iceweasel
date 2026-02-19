@@ -101,9 +101,11 @@ const int16_t CRASH_X64CFI_SAVE_XMM128_FAR = 18;
 const int16_t CRASH_X64CFI_EPILOG = 19;
 const int16_t CRASH_X64CFI_EOF = 20;
 #endif
+#ifdef MOZ_PHC
 const int16_t CRASH_PHC_USE_AFTER_FREE = 21;
 const int16_t CRASH_PHC_DOUBLE_FREE = 22;
 const int16_t CRASH_PHC_BOUNDS_VIOLATION = 23;
+#endif
 #if XP_WIN
 const int16_t CRASH_HEAP_CORRUPTION = 24;
 #endif

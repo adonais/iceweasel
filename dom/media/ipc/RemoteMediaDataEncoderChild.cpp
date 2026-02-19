@@ -83,6 +83,7 @@ RemoteMediaDataEncoderChild::Construct() {
       [self = RefPtr{this}](MediaResult aResult) {
         LOGD("[{}] Construct resolved code={}", fmt::ptr(self.get()),
              aResult.Description());
+        self->mHasConstructed = true;
         self->mConstructPromise.Resolve(self, __func__);
         if (!self->mInitPromise.IsEmpty()) {
           self->DoSendInit();
@@ -101,6 +102,8 @@ RemoteMediaDataEncoderChild::Construct() {
 }
 
 void RemoteMediaDataEncoderChild::DoSendInit() {
+  MOZ_ASSERT(mHasConstructed);
+
   LOGD("[{}] Init send", fmt::ptr(this));
   SendInit()->Then(
       mThread, __func__,
@@ -143,7 +146,11 @@ RefPtr<MediaDataEncoder::InitPromise> RemoteMediaDataEncoderChild::Init() {
         // create promise and wait for that first. This can happen if the owner
         // created the encoder via RemoteEncoderModule's CreateAudioEncoder or
         // CreateVideoEncoder instead of AsyncCreateEncoder.
-        if (self->mConstructPromise.IsEmpty()) {
+        //
+        // mConstructPromise might not have been created yet either because we
+        // may have delayed dispatching related to the process launching.
+        // mHasConstructed will be set when the construct IPDL call returns.
+        if (self->mHasConstructed) {
           self->DoSendInit();
         } else {
           LOGD("[{}] Init deferred, still constructing", fmt::ptr(self.get()));

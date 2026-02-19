@@ -111,8 +111,7 @@ void InterceptedHttpChannel::AsyncOpenInternal() {
         mURI, requestMethod, mPriority, mChannelId, NetworkLoadType::LOAD_START,
         mChannelCreationTimestamp, mLastStatusReported, 0, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
-        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), mStatus);
+        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(), this, mStatus);
   }
 
   // If an error occurs in this file we must ensure mListener callbacks are
@@ -546,9 +545,8 @@ InterceptedHttpChannel::Cancel(nsresult aStatus) {
         mURI, requestMethod, priority, mChannelId, NetworkLoadType::LOAD_CANCEL,
         mLastStatusReported, TimeStamp::Now(), size, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
-        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), mStatus, &mTransactionTimings,
-        std::move(mSource));
+        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(), this, mStatus,
+        &mTransactionTimings, std::move(mSource));
   }
 
   MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(aStatus));
@@ -780,9 +778,8 @@ InterceptedHttpChannel::ResetInterception(bool aBypass) {
         mURI, requestMethod, priority, mChannelId,
         NetworkLoadType::LOAD_REDIRECT, mLastStatusReported, TimeStamp::Now(),
         size, kCacheUnknown, mLoadInfo->GetInnerWindowID(),
-        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), mStatus, &mTransactionTimings,
-        std::move(mSource), httpVersion, responseStatus,
+        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(), this, mStatus,
+        &mTransactionTimings, std::move(mSource), httpVersion, responseStatus,
         Some(nsDependentCString(contentType.get())), mURI, flags,
         newBaseChannel->ChannelId());
   }
@@ -1230,9 +1227,8 @@ InterceptedHttpChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
         mURI, requestMethod, priority, mChannelId, NetworkLoadType::LOAD_STOP,
         mLastStatusReported, TimeStamp::Now(), size, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
-        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(),
-        mClassOfService.Flags(), mStatus, &mTransactionTimings,
-        std::move(mSource), httpVersion, responseStatus,
+        mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(), this, mStatus,
+        &mTransactionTimings, std::move(mSource), httpVersion, responseStatus,
         Some(nsDependentCString(contentType.get())));
   }
 
@@ -1478,6 +1474,15 @@ NS_IMETHODIMP
 InterceptedHttpChannel::GetAlternativeDataType(nsACString& aType) {
   if (mSynthesizedCacheInfo) {
     return mSynthesizedCacheInfo->GetAlternativeDataType(aType);
+  }
+  return NS_ERROR_NOT_AVAILABLE;
+}
+
+NS_IMETHODIMP
+InterceptedHttpChannel::GetCacheEntryWriteHandle(
+    nsICacheEntryWriteHandle** _retval) {
+  if (mSynthesizedCacheInfo) {
+    return mSynthesizedCacheInfo->GetCacheEntryWriteHandle(_retval);
   }
   return NS_ERROR_NOT_AVAILABLE;
 }

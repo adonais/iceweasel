@@ -25,7 +25,6 @@
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
 
-#undef LOG
 mozilla::LazyLogModule gMediaParentLog("MediaParent");
 #define LOG(args) MOZ_LOG(gMediaParentLog, mozilla::LogLevel::Debug, args)
 
@@ -529,6 +528,8 @@ bool DeallocPMediaParent(media::PMediaParent* aActor) {
 }
 
 }  // namespace mozilla::media
+
+#undef LOG
 
 // Instantiate templates to satisfy linker
 template class mozilla::media::Parent<mozilla::media::NonE10s>;

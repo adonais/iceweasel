@@ -8,7 +8,6 @@
 #define mozilla_dom_localstorage_LSSnapshot_h
 
 #include <cstdint>
-#include <cstdlib>
 
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"

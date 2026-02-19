@@ -2126,53 +2126,5 @@ Rect DrawTargetCairo::GetUserSpaceClip() const {
               clipY2 - clipY1);  // Narrowing of doubles to floats
 }
 
-#ifdef MOZ_X11
-bool BorrowedXlibDrawable::Init(DrawTarget* aDT) {
-  MOZ_ASSERT(aDT, "Caller should check for nullptr");
-  MOZ_ASSERT(!mDT, "Can't initialize twice!");
-  mDT = aDT;
-  mDrawable = X11None;
-
-#  ifdef CAIRO_HAS_XLIB_SURFACE
-  if (aDT->GetBackendType() != BackendType::CAIRO || aDT->IsTiledDrawTarget()) {
-    return false;
-  }
-
-  DrawTargetCairo* cairoDT = static_cast<DrawTargetCairo*>(aDT);
-  cairo_surface_t* surf = cairo_get_group_target(cairoDT->mContext);
-  if (cairo_surface_get_type(surf) != CAIRO_SURFACE_TYPE_XLIB) {
-    return false;
-  }
-  cairo_surface_flush(surf);
-
-  cairoDT->WillChange();
-
-  mDisplay = cairo_xlib_surface_get_display(surf);
-  mDrawable = cairo_xlib_surface_get_drawable(surf);
-  mScreen = cairo_xlib_surface_get_screen(surf);
-  mVisual = cairo_xlib_surface_get_visual(surf);
-  mSize.width = cairo_xlib_surface_get_width(surf);
-  mSize.height = cairo_xlib_surface_get_height(surf);
-
-  double x = 0, y = 0;
-  cairo_surface_get_device_offset(surf, &x, &y);
-  mOffset = Point(x, y);
-
-  return true;
-#  else
-  return false;
-#  endif
-}
-
-void BorrowedXlibDrawable::Finish() {
-  DrawTargetCairo* cairoDT = static_cast<DrawTargetCairo*>(mDT);
-  cairo_surface_t* surf = cairo_get_group_target(cairoDT->mContext);
-  cairo_surface_mark_dirty(surf);
-  if (mDrawable) {
-    mDrawable = X11None;
-  }
-}
-#endif
-
 }  // namespace gfx
 }  // namespace mozilla

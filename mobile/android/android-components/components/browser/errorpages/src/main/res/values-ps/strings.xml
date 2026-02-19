@@ -46,7 +46,7 @@
   <!-- The document title and heading of the error page shown when a file cannot be loaded because of a detected data corruption. -->
   <string name="mozac_browser_errorpages_corrupted_content_title">د منځپانګې د خرابوالي تېروتنه</string>
   <!-- The error message shown when shown when a file cannot be loaded because of a detected data corruption. -->
-  <string name="mozac_browser_errorpages_corrupted_content_message"><![CDATA[<p>هغه پاڼه چې تاسو یې د کتلو هڅه کوئ نه شي ښودل کېدای، ځکه چې د مالوماتو د لېږد پر مهال یوه تېروتنه وموندل شوه.</p>\n<ul> <li>مهرباني وکړئ د دې ستونزې د خبر ورکولو لپاره د وېب پاڼې له خاوندانو سره اړیکه ونیسئ.</li> </ul>]]></string>
+  <string name="mozac_browser_errorpages_corrupted_content_message"><![CDATA[<p>هغه پاڼه چې تاسو یې د کتلو هڅه کوئ نه شي ښودل کېدای، ځکه چې د مالوماتو د لېږد پر مهال یوه تېروتنه وموندل شوه.</p>\n<ul>\n<li>مهرباني وکړئ د دې ستونزې د خبر ورکولو لپاره د وېب پاڼې له خاوندانو سره اړیکه ونیسئ.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_content_crashed_title">منځپانګه خرابه شوه</string>
   <!-- The document title and heading of an error page. -->

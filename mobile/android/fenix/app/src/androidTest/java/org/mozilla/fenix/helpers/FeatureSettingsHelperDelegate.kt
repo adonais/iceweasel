@@ -48,7 +48,6 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
         isUseNewCrashReporterDialog = settings.useNewCrashReporterDialog,
         isTabSwipeCFREnabled = settings.hasShownTabSwipeCFR,
         isTermsOfServiceAccepted = settings.hasAcceptedTermsOfService,
-        isComposeLoginsEnabled = settings.enableComposeLogins,
         openLinksInApp = getOpenLinksInApp(settings),
         tabManagerOpeningAnimationEnabled = settings.tabManagerOpeningAnimationEnabled,
         hasSeenBrowserToolbarCFR = settings.hasSeenBrowserToolbarCFR,
@@ -78,7 +77,6 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     override var isUseNewCrashReporterDialog: Boolean by updatedFeatureFlags::isUseNewCrashReporterDialog
     override var isTabSwipeCFREnabled: Boolean by updatedFeatureFlags::isTabSwipeCFREnabled
     override var isTermsOfServiceAccepted: Boolean by updatedFeatureFlags::isTermsOfServiceAccepted
-    override var isComposeLoginsEnabled: Boolean by updatedFeatureFlags::isComposeLoginsEnabled
     override var openLinksInExternalApp: OpenLinksInApp by updatedFeatureFlags::openLinksInApp
     override var tabManagerOpeningAnimationEnabled: Boolean by updatedFeatureFlags::tabManagerOpeningAnimationEnabled
     override var hasSeenBrowserToolbarCFR: Boolean by updatedFeatureFlags::hasSeenBrowserToolbarCFR
@@ -118,7 +116,6 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
         settings.useNewCrashReporterDialog = featureFlags.isUseNewCrashReporterDialog
         settings.hasShownTabSwipeCFR = !featureFlags.isTabSwipeCFREnabled
         settings.hasAcceptedTermsOfService = featureFlags.isTermsOfServiceAccepted
-        settings.enableComposeLogins = featureFlags.isComposeLoginsEnabled
         setOpenLinksInApp(featureFlags.openLinksInApp)
         settings.tabManagerOpeningAnimationEnabled = featureFlags.tabManagerOpeningAnimationEnabled
         settings.hasSeenBrowserToolbarCFR = featureFlags.hasSeenBrowserToolbarCFR
@@ -146,7 +143,6 @@ private data class FeatureFlags(
     var isUseNewCrashReporterDialog: Boolean,
     var isTabSwipeCFREnabled: Boolean,
     var isTermsOfServiceAccepted: Boolean,
-    var isComposeLoginsEnabled: Boolean,
     var openLinksInApp: OpenLinksInApp,
     var tabManagerOpeningAnimationEnabled: Boolean,
     var hasSeenBrowserToolbarCFR: Boolean,

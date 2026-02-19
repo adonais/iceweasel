@@ -5,7 +5,7 @@
 package org.mozilla.fenix.iconpicker
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.GleanMetrics.AppIconSelection
 
 /**
@@ -13,7 +13,7 @@ import org.mozilla.fenix.GleanMetrics.AppIconSelection
  */
 class AppIconTelemetryMiddleware : Middleware<AppIconState, AppIconAction> {
     override fun invoke(
-        context: MiddlewareContext<AppIconState, AppIconAction>,
+        store: Store<AppIconState, AppIconAction>,
         next: (AppIconAction) -> Unit,
         action: AppIconAction,
     ) {

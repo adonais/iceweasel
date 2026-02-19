@@ -1278,6 +1278,10 @@ class MediaTrackGraph {
    * get the existing NativeInputTrackMain thread only.*/
   NativeInputTrack* GetNativeInputTrackMainThread();
 
+  /* Return a positive monotonically increasing graph-unique generation id for
+   * AudioInputProcessingParamsRequest::mGeneration. */
+  int ProcessingParamsGeneration() { return ++mProcessingParamsGeneration; }
+
  protected:
   explicit MediaTrackGraph(TrackRate aSampleRate,
                            CubebUtils::AudioDeviceID aPrimaryOutputDeviceID)
@@ -1306,6 +1310,10 @@ class MediaTrackGraph {
    * This is the device specified when creating the graph.
    */
   const CubebUtils::AudioDeviceID mPrimaryOutputDeviceID;
+
+  /* A monotonically increasing graph-unique generation for
+   * AudioInputProcessingParamsRequest::mGeneration. */
+  int mProcessingParamsGeneration = 0;
 };
 
 inline void MediaTrack::AssertOnGraphThread() const {

@@ -119,6 +119,7 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/DocumentPictureInPicture.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTarget.h"
@@ -1273,6 +1274,7 @@ void nsGlobalWindowInner::FreeInnerObjects() {
 
   mConsole = nullptr;
   mCookieStore = nullptr;
+  mDocumentPiP = nullptr;
 
   mPaintWorklet = nullptr;
 
@@ -1468,6 +1470,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCrypto)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mConsole)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCookieStore)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPiP)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPaintWorklet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExternal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIntlUtils)
@@ -1838,6 +1841,11 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
 
   if (!mWindowGlobalChild) {
     mWindowGlobalChild = WindowGlobalChild::Create(this);
+  } else {
+    // If the window global existed before the window, it must've come from the
+    // AboutBlankInitializer
+    MOZ_ASSERT(NS_IsAboutBlankAllowQueryAndFragment(GetDocumentURI()),
+               "AboutBlankInitializer should only be used with about:blank");
   }
   MOZ_ASSERT(!GetWindowContext()->HasBeenUserGestureActivated(),
              "WindowContext should always not have user gesture activation at "
@@ -1912,7 +1920,7 @@ nsresult nsGlobalWindowInner::EnsureClientSource() {
 
   // Try to get the reserved client from the LoadInfo.  A Client is
   // reserved at the start of the channel load if there is not an
-  // initial about:blank document that will be reused.  It is also
+  // initial uncommitted about:blank whose window will be reused. It is also
   // created if the channel load encounters a cross-origin redirect.
   if (loadInfo) {
     UniquePtr<ClientSource> reservedClient =
@@ -7398,6 +7406,14 @@ already_AddRefed<CookieStore> nsGlobalWindowInner::CookieStore() {
   return do_AddRef(mCookieStore);
 }
 
+DocumentPictureInPicture* nsGlobalWindowInner::DocumentPictureInPicture() {
+  if (!mDocumentPiP) {
+    mDocumentPiP = MakeRefPtr<class DocumentPictureInPicture>(this);
+  }
+
+  return mDocumentPiP;
+}
+
 bool nsGlobalWindowInner::IsSecureContext() const {
   JS::Realm* realm = js::GetNonCCWObjectRealm(GetWrapperPreserveColor());
   return JS::GetIsSecureContext(realm);
@@ -7499,19 +7515,6 @@ Worklet* nsGlobalWindowInner::GetPaintWorklet(ErrorResult& aRv) {
   }
 
   return mPaintWorklet;
-}
-
-void nsGlobalWindowInner::GetRegionalPrefsLocales(
-    nsTArray<nsString>& aLocales) {
-  MOZ_ASSERT(mozilla::intl::LocaleService::GetInstance());
-
-  AutoTArray<nsCString, 10> rpLocales;
-  mozilla::intl::LocaleService::GetInstance()->GetRegionalPrefsLocales(
-      rpLocales);
-
-  for (const auto& loc : rpLocales) {
-    aLocales.AppendElement(NS_ConvertUTF8toUTF16(loc));
-  }
 }
 
 void nsGlobalWindowInner::GetWebExposedLocales(nsTArray<nsString>& aLocales) {

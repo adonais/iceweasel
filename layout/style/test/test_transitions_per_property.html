@@ -950,7 +950,7 @@ const pathFunctionTests = [
   {
     start: "path('M 10 10 A 10 20 30 1 0 140 450')",
     end: "path('M 10 10 A 50 60 70 0 1 380 290')",
-    expected: ["path", '"M 10 10 A 20 30 40 1 0 200 410"']
+    expected: ["path", '"M 10 10 A 20 30 40 1 1 200 410"']
   },
   // mix relative and absolute coordinates
   {
@@ -2748,8 +2748,8 @@ function test_background_position_coord_transition(prop) {
  * Common tests for 'background-position', 'background-size', and other
  * properties that take CSS value-type 'position' or 'bg-size'.
  *
- *  @arg prop The name of the property
- *  @arg doesPropTakeListValues
+ *  @param prop The name of the property
+ *  @param doesPropTakeListValues
  *         If false, the property is assumed to just take a single 'position' or
  *         'bg-size' value. If true, the property is assumed to also accept
  *         comma-separated list of such values.

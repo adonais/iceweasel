@@ -10,6 +10,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Services.h"
 #include "nsISupportsPrimitives.h"
+#include "mozilla/StaticMutex.h"
 
 namespace mozilla {
 namespace net {
@@ -17,13 +18,84 @@ namespace net {
 namespace {
 
 StaticRefPtr<WebTransportEventService> gWebTransportEventService;
+static StaticMutex sLock;
 
 }  // anonymous namespace
+
+class WebTransportBaseRunnable : public Runnable {
+ public:
+  WebTransportBaseRunnable(uint64_t aInnerWindowID, uint64_t aHttpChannelId)
+      : Runnable("net::WebTransportBaseRunnable"),
+        mInnerWindowID(aInnerWindowID),
+        mHttpChannelId(aHttpChannelId),
+        mService(WebTransportEventService::GetOrCreate()) {}
+
+  NS_IMETHOD Run() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(mService);
+
+    WebTransportEventService::WebTransportEventListeners listeners;
+    mService->GetListeners(mInnerWindowID, listeners);
+
+    for (uint32_t i = 0; i < listeners.Length(); ++i) {
+      DoWork(listeners[i]);
+    }
+
+    return NS_OK;
+  }
+
+ protected:
+  ~WebTransportBaseRunnable() = default;
+
+  virtual void DoWork(nsIWebTransportEventListener* aListener) = 0;
+
+  uint64_t mInnerWindowID;
+  uint64_t mHttpChannelId;
+  RefPtr<WebTransportEventService> mService;
+};
+
+class WebTransportSessionCreatedRunnable final
+    : public WebTransportBaseRunnable {
+ public:
+  WebTransportSessionCreatedRunnable(uint64_t aInnerWindowID,
+                                     uint64_t aHttpChannelId)
+      : WebTransportBaseRunnable(aInnerWindowID, aHttpChannelId) {}
+
+ private:
+  virtual void DoWork(nsIWebTransportEventListener* aListener) override {
+    DebugOnly<nsresult> rv =
+        aListener->WebTransportSessionCreated(mHttpChannelId);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "WebTransport Session Created failed");
+  }
+};
+
+class WebTransportSessionClosedRunnable final
+    : public WebTransportBaseRunnable {
+ public:
+  WebTransportSessionClosedRunnable(uint64_t aInnerWindowID,
+                                    uint64_t aHttpChannelId, uint32_t aCode,
+                                    const nsAString& aReason)
+      : WebTransportBaseRunnable(aInnerWindowID, aHttpChannelId),
+        mCode(aCode),
+        mReason(aReason) {}
+
+ private:
+  virtual void DoWork(nsIWebTransportEventListener* aListener) override {
+    DebugOnly<nsresult> rv =
+        aListener->WebTransportSessionClosed(mHttpChannelId, mCode, mReason);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "WebTransport Session Closed failed");
+  }
+
+  uint32_t mCode;
+  const nsString mReason;
+};
 
 /* static */
 already_AddRefed<WebTransportEventService>
 WebTransportEventService::GetOrCreate() {
-  MOZ_ASSERT(NS_IsMainThread());
+  StaticMutexAutoLock lock(sLock);
 
   if (!gWebTransportEventService) {
     gWebTransportEventService = new WebTransportEventService();
@@ -43,13 +115,45 @@ NS_IMPL_ADDREF(WebTransportEventService)
 NS_IMPL_RELEASE(WebTransportEventService)
 
 WebTransportEventService::WebTransportEventService() : mCountListeners(0) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    obs->AddObserver(this, "xpcom-shutdown", false);
-    obs->AddObserver(this, "inner-window-destroyed", false);
+  if (NS_IsMainThread()) {
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->AddObserver(this, "xpcom-shutdown", false);
+      obs->AddObserver(this, "inner-window-destroyed", false);
+    }
+  } else {
+    gWebTransportEventService = nullptr;
   }
+}
+
+void WebTransportEventService::WebTransportSessionCreated(
+    uint64_t aInnerWindowID, uint64_t aHttpChannelId) {
+  // Let's continue only if we have some listeners.
+  if (!HasListeners()) {
+    return;
+  }
+
+  RefPtr<WebTransportSessionCreatedRunnable> runnable =
+      new WebTransportSessionCreatedRunnable(aInnerWindowID, aHttpChannelId);
+  DebugOnly<nsresult> rv =
+      NS_IsMainThread() ? runnable->Run() : NS_DispatchToMainThread(runnable);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Dispatch failed");
+}
+
+void WebTransportEventService::WebTransportSessionClosed(
+    uint64_t aInnerWindowID, uint64_t aHttpChannelId, uint32_t aCode,
+    const nsAString& aReason) {
+  // Let's continue only if we have some listeners.
+  if (!HasListeners()) {
+    return;
+  }
+
+  RefPtr<WebTransportSessionClosedRunnable> runnable =
+      new WebTransportSessionClosedRunnable(aInnerWindowID, aHttpChannelId,
+                                            aCode, aReason);
+  DebugOnly<nsresult> rv =
+      NS_IsMainThread() ? runnable->Run() : NS_DispatchToMainThread(runnable);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Dispatch failed");
 }
 
 WebTransportEventService::~WebTransportEventService() {
@@ -148,6 +252,20 @@ bool WebTransportEventService::HasListeners() const {
   return !!mCountListeners;
 }
 
+void WebTransportEventService::GetListeners(
+    uint64_t aInnerWindowID,
+    WebTransportEventService::WebTransportEventListeners& aListeners) const {
+  MOZ_ASSERT(NS_IsMainThread());
+  aListeners.Clear();
+
+  WindowListener* listener = mWindows.Get(aInnerWindowID);
+  if (!listener) {
+    return;
+  }
+
+  aListeners.AppendElements(listener->mListeners);
+}
+
 void WebTransportEventService::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   if (gWebTransportEventService) {
@@ -158,6 +276,7 @@ void WebTransportEventService::Shutdown() {
     }
 
     mWindows.Clear();
+    StaticMutexAutoLock lock(sLock);
     gWebTransportEventService = nullptr;
   }
 }

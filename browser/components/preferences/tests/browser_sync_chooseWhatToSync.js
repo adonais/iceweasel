@@ -409,7 +409,7 @@ async function runWithCWTSDialog(test) {
   let promiseSubDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml"
   );
-  gBrowser.contentWindow.gSyncPane._chooseWhatToSync(true);
+  gBrowser.contentWindow.SyncHelpers._chooseWhatToSync(true);
 
   let win = await promiseSubDialogLoaded;
 

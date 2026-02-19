@@ -7,6 +7,7 @@ HIDDEN_IMAGES_CSS = ".anime_list.shadow.lazy"
 async def are_wrong_images_hidden(client):
     await client.navigate(URL, wait="none")
     client.execute_script("window.scrollTo(0, 200)")
+    await client.stall(1)
     # The site hides images with a class .lazy {display:none}, so we can check
     # if any of those images are onscreen and should be lacking that CSS class.
     return client.execute_script(

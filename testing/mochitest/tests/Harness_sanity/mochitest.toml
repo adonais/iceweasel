@@ -24,6 +24,8 @@ support-files = "file_spawn.html"
 
 ["test_SpecialPowersSpawnChrome.html"]
 
+["test_SpecialPowersStructuredClone.html"]
+
 ["test_TestsRunningAfterSimpleTestFinish.html"]
 skip-if = [
   "true", # depends on fix for bug 1048446

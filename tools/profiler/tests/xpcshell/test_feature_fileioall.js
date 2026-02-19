@@ -92,9 +92,9 @@ add_task(async () => {
 
 /**
  * @typedef {object} TestConfig
- * @prop {Array} features The list of profiler features
- * @prop {string[]} threadsFilter The list of threads to profile
- * @prop {string} filename A filename to trigger a write operation
+ * @property {Array} features The list of profiler features
+ * @property {string[]} threadsFilter The list of threads to profile
+ * @property {string} filename A filename to trigger a write operation
  */
 
 /**

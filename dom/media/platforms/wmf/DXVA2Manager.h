@@ -63,15 +63,17 @@ class DXVA2Manager {
   virtual HRESULT ConfigureForSize(IMFMediaType* aInputType,
                                    gfx::YUVColorSpace aColorSpace,
                                    gfx::ColorRange aColorRange,
-                                   gfx::ColorDepth aColorDepth, uint32_t aWidth,
-                                   uint32_t aHeight) {
+                                   gfx::ColorDepth aColorDepth,
+                                   gfx::TransferFunction aTransferFunction,
+                                   uint32_t aWidth, uint32_t aHeight) {
     return S_OK;
   }
   virtual HRESULT ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
                                    gfx::YUVColorSpace aColorSpace,
                                    gfx::ColorRange aColorRange,
-                                   gfx::ColorDepth aColorDepth, uint32_t aWidth,
-                                   uint32_t aHeight) {
+                                   gfx::ColorDepth aColorDepth,
+                                   gfx::TransferFunction aTransferFunction,
+                                   uint32_t aWidth, uint32_t aHeight) {
     // Not implemented!
     MOZ_CRASH("ConfigureForSize not implemented on this manager.");
     return E_FAIL;

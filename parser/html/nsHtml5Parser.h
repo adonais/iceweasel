@@ -23,13 +23,25 @@
 #include "nsHtml5StreamListener.h"
 #include "nsCharsetSource.h"
 
-class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
+class nsHtml5Parser final : public nsIParser,
+                            public nsSupportsWeakReference,
+                            public nsIStreamListener {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5Parser, nsIParser)
 
   nsHtml5Parser();
+
+  // about:blank-only
+  NS_IMETHOD OnStartRequest(nsIRequest* aRequest) override;
+
+  // about:blank-only and exists only for interface compat.
+  NS_IMETHOD OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInStream,
+                             uint64_t aSourceOffset, uint32_t aLength) override;
+
+  // about:blank-only and exists only for interface compat.
+  NS_IMETHOD OnStopRequest(nsIRequest* aRequest, nsresult aStatus) override;
 
   /* Start nsIParser */
   /**
@@ -177,6 +189,12 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
    */
   virtual bool IsScriptCreated() override;
 
+  /**
+   * True iff this is an about:blank-mode HTML5 parser
+   * (i.e. a parser for non-initial about:blank).
+   */
+  virtual bool IsAboutBlankMode() override;
+
   /* End nsIParser  */
 
   // Not from an external interface
@@ -233,6 +251,12 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   virtual ~nsHtml5Parser();
 
   // State variables
+
+  /**
+   * This parser is parsing (non-initial) about:blank for viewing (not View
+   * Source or data)
+   */
+  bool mAboutBlankMode;
 
   /**
    * Whether the last character tokenized was a carriage return (for CRLF)

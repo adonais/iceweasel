@@ -270,7 +270,7 @@ nsresult txMozillaXMLOutput::endElement() {
         {
           nsAutoMicroTask mt;
         }
-        bool block = sele->AttemptToExecute();
+        bool block = sele->AttemptToExecute(nullptr /* aParser */);
         // If the act of insertion evaluated the script, we're fine.
         // Else, add this script element to the array of loading scripts.
         if (block) {

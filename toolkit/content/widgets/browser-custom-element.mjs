@@ -1866,8 +1866,7 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
    * @param {boolean|undefined} fullViewport
    *   True if the viewport rect should be captured. If this is true, the
    *   x, y, w and h parameters are ignored. Defaults to false.
-   * @returns {Promise}
-   * @resolves {ImageBitmap}
+   * @returns {Promise<ImageBitmap>}
    */
   async drawSnapshot(x, y, w, h, scale, backgroundColor, fullViewport = false) {
     let rect = fullViewport ? null : new DOMRect(x, y, w, h);

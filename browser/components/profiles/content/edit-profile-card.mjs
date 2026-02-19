@@ -419,6 +419,7 @@ export class EditProfileCard extends MozLitElement {
       id="themes"
       value=${this.profile.themeId}
       data-l10n-id="edit-profile-page-theme-header-2"
+      headingLevel="2"
       name="theme"
       @change=${this.handleThemeChange}
     >

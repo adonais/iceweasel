@@ -12,6 +12,8 @@ use super::{
         data_type::DataType, Component as SyntaxComponent, ComponentName, Descriptor, Multiplier,
     },
 };
+use crate::custom_properties::ComputedValue as ComputedPropertyValue;
+use crate::derives::*;
 use crate::properties;
 use crate::stylesheets::{CssRuleType, Origin, UrlExtraData};
 use crate::values::{
@@ -19,7 +21,6 @@ use crate::values::{
     computed::{self, ToComputedValue},
     specified, CustomIdent,
 };
-use crate::custom_properties::ComputedValue as ComputedPropertyValue;
 use crate::{
     dom::AttributeProvider,
     parser::{Parse, ParserContext},
@@ -239,6 +240,37 @@ impl<Component> Value<Component> {
     }
 }
 
+impl<L, N, P, LP, C, Image, U, Integer, A, T, R, Transform>
+    Value<GenericValueComponent<L, N, P, LP, C, Image, U, Integer, A, T, R, Transform>>
+where
+    Self: ToCss,
+{
+    fn serialization_types(&self) -> (TokenSerializationType, TokenSerializationType) {
+        match &self.v {
+            ValueInner::Component(component) => component.serialization_types(),
+            ValueInner::Universal(_) => unreachable!(),
+            ValueInner::List(list) => list
+                .components
+                .first()
+                .map_or(Default::default(), |f| f.serialization_types()),
+        }
+    }
+
+    /// Convert to an untyped variable value.
+    pub fn to_variable_value(&self) -> ComputedPropertyValue {
+        if let ValueInner::Universal(ref value) = self.v {
+            return (**value).clone();
+        }
+        let serialization_types = self.serialization_types();
+        ComputedPropertyValue::new(
+            self.to_css_string(),
+            &self.url_data,
+            serialization_types.0,
+            serialization_types.1,
+        )
+    }
+}
+
 /// A specified registered custom property value.
 #[derive(
     Animate, ToComputedValue, ToResolvedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq, ToShmem,
@@ -321,17 +353,6 @@ impl SpecifiedValue {
 }
 
 impl ComputedValue {
-    fn serialization_types(&self) -> (TokenSerializationType, TokenSerializationType) {
-        match &self.v {
-            ValueInner::Component(component) => component.serialization_types(),
-            ValueInner::Universal(_) => unreachable!(),
-            ValueInner::List(list) => list
-                .components
-                .first()
-                .map_or(Default::default(), |f| f.serialization_types()),
-        }
-    }
-
     fn to_declared_value(&self) -> properties::CustomDeclarationValue {
         if let ValueInner::Universal(ref var) = self.v {
             return properties::CustomDeclarationValue::Unparsed(Arc::clone(var));
@@ -350,19 +371,6 @@ impl ComputedValue {
         }
     }
 
-    /// Convert to an untyped variable value.
-    pub fn to_variable_value(&self) -> ComputedPropertyValue {
-        if let ValueInner::Universal(ref value) = self.v {
-            return (**value).clone();
-        }
-        let serialization_types = self.serialization_types();
-        ComputedPropertyValue::new(
-            self.to_css_string(),
-            &self.url_data,
-            serialization_types.0,
-            serialization_types.1,
-        )
-    }
 }
 
 /// Whether the computed value parsing should allow computationaly dependent values like 3em or
@@ -527,7 +535,7 @@ impl<'a> Parser<'a> {
                         )),
                     );
                 };
-                debug_assert_matches!(multiplier, Multiplier::Space);
+                debug_assert_eq!(multiplier, Multiplier::Space);
                 loop {
                     values.push(SpecifiedValueComponent::TransformFunction(
                         specified::Transform::parse(context, input)?,

@@ -2,8 +2,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
-"""Python usage, esp. virtualenv.
-"""
+"""Python usage, esp. virtualenv."""
 
 import errno
 import json
@@ -141,7 +140,7 @@ class VirtualenvMixin:
 
     def __init__(self, *args, **kwargs):
         self._virtualenv_modules = []
-        super(VirtualenvMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def register_virtualenv_module(
         self,
@@ -160,9 +159,14 @@ class VirtualenvMixin:
         See the documentation for install_module for how the arguments are
         applied.
         """
-        self._virtualenv_modules.append(
-            (name, url, method, requirements, optional, editable)
-        )
+        self._virtualenv_modules.append((
+            name,
+            url,
+            method,
+            requirements,
+            optional,
+            editable,
+        ))
 
     def query_virtualenv_path(self):
         """Determine the absolute path to the virtualenv."""
@@ -174,7 +178,7 @@ class VirtualenvMixin:
         p = self.config["virtualenv_path"]
         if not p:
             self.fatal(
-                "virtualenv_path config option not set; " "this should never happen"
+                "virtualenv_path config option not set; this should never happen"
             )
 
         if os.path.isabs(p):
@@ -202,13 +206,11 @@ class VirtualenvMixin:
         if self.site_packages_path:
             return self.site_packages_path
         python = self.query_python_path()
-        self.site_packages_path = self.get_output_from_command(
-            [
-                python,
-                "-c",
-                "from sysconfig; print(sysconfig.get_paths()['purelib'])",
-            ]
-        )
+        self.site_packages_path = self.get_output_from_command([
+            python,
+            "-c",
+            "from sysconfig; print(sysconfig.get_paths()['purelib'])",
+        ])
         return self.site_packages_path
 
     def package_versions(
@@ -816,7 +818,7 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ResourceMonitoringMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.register_virtualenv_module("psutil>=5.9.0", method="pip", optional=True)
         self.register_virtualenv_module("jsonschema==2.5.1", method="pip")
@@ -964,30 +966,23 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
             overall = []
 
             if cpu_percent:
-                overall.append(
-                    {
-                        "name": "cpu_percent",
-                        "value": cpu_percent,
-                    }
-                )
+                overall.append({
+                    "name": "cpu_percent",
+                    "value": cpu_percent,
+                })
 
-            overall.extend(
-                [
-                    {"name": "io_write_bytes", "value": io.write_bytes},
-                    {"name": "io.read_bytes", "value": io.read_bytes},
-                    {"name": "io_write_time", "value": io.write_time},
-                    {"name": "io_read_time", "value": io.read_time},
-                ]
-            )
+            overall.extend([
+                {"name": "io_write_bytes", "value": io.write_bytes},
+                {"name": "io.read_bytes", "value": io.read_bytes},
+                {"name": "io_write_time", "value": io.write_time},
+                {"name": "io_read_time", "value": io.read_time},
+            ])
 
-            suites.append(
-                {
-                    "name": "%s.overall" % perfherder_name,
-                    "extraOptions": perfherder_options
-                    + self.perfherder_resource_options(),
-                    "subtests": overall,
-                }
-            )
+            suites.append({
+                "name": "%s.overall" % perfherder_name,
+                "extraOptions": perfherder_options + self.perfherder_resource_options(),
+                "subtests": overall,
+            })
 
             for phase in rm.phases.keys():
                 phase_duration = rm.phases[phase][1] - rm.phases[phase][0]
@@ -999,24 +994,18 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
                 ]
                 cpu_percent = rm.aggregate_cpu_percent(phase=phase, per_cpu=False)
                 if cpu_percent is not None:
-                    subtests.append(
-                        {
-                            "name": "cpu_percent",
-                            "value": rm.aggregate_cpu_percent(
-                                phase=phase, per_cpu=False
-                            ),
-                        }
-                    )
+                    subtests.append({
+                        "name": "cpu_percent",
+                        "value": rm.aggregate_cpu_percent(phase=phase, per_cpu=False),
+                    })
 
                 # We don't report I/O during each step because measured I/O
                 # is system I/O and that I/O can be delayed (e.g. writes will
                 # buffer before being flushed and recorded in our metrics).
-                suites.append(
-                    {
-                        "name": "%s.%s" % (perfherder_name, phase),
-                        "subtests": subtests,
-                    }
-                )
+                suites.append({
+                    "name": "%s.%s" % (perfherder_name, phase),
+                    "subtests": subtests,
+                })
 
             data = {
                 "framework": {"name": "job_resource_usage"},

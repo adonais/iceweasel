@@ -1690,6 +1690,52 @@ static bool TestComposedMoves() {
   return true;
 }
 
+static bool TestBeginEnd() {
+  for ([[maybe_unused]] auto v : static_cast<Maybe<int>>(Nothing())) {
+    MOZ_CRASH("Nothing should not be iterated");
+  }
+
+  for (auto v : Some(42)) {
+    MOZ_RELEASE_ASSERT(v == 42, "Some(42) should be iterated");
+  }
+
+  Maybe<int> maybe;
+  for ([[maybe_unused]] auto v : maybe) {
+    MOZ_CRASH("Nothing should not be iterated");
+  }
+
+  maybe = Some(42);
+
+  for (auto v : maybe) {
+    MOZ_RELEASE_ASSERT(v == 42, "Some(42) should be iterated");
+  }
+
+  maybe = Nothing();
+
+  for ([[maybe_unused]] auto v : maybe) {
+    MOZ_CRASH("Nothing should not be iterated");
+  }
+
+  int v = 42;
+  Maybe<int*> maybePtr;
+  for ([[maybe_unused]] auto* v : maybePtr) {
+    MOZ_CRASH("Nothing should not be iterated");
+  }
+
+  maybePtr = Some(&v);
+
+  for (auto* v : maybePtr) {
+    MOZ_RELEASE_ASSERT(*v == 42, "Some(address) should be iterated");
+  }
+
+  maybePtr = Nothing();
+  for ([[maybe_unused]] auto* v : maybePtr) {
+    MOZ_CRASH("Nothing should not be iterated");
+  }
+
+  return true;
+}
+
 // These are quasi-implementation details, but we assert them here to prevent
 // backsliding to earlier times when Maybe<T> for smaller T took up more space
 // than T's alignment required.
@@ -1722,6 +1768,7 @@ int main() {
   RUN_TEST(TestAndThen);
   RUN_TEST(TestOrElse);
   RUN_TEST(TestComposedMoves);
+  RUN_TEST(TestBeginEnd);
 
   return 0;
 }

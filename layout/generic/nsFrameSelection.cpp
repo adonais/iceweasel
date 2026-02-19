@@ -803,7 +803,7 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
       Caret::IsVisualMovement(aExtendSelection, aMovementStyle);
   const PrimaryFrameData frameForFocus =
       sel->GetPrimaryFrameForCaretAtFocusNode(visualMovement);
-  if (!frameForFocus.mFrame) {
+  if (!frameForFocus) {
     return NS_ERROR_FAILURE;
   }
   if (visualMovement) {
@@ -1104,8 +1104,7 @@ void nsFrameSelection::BidiLevelFromMove(PresShell* aPresShell,
 
 void nsFrameSelection::BidiLevelFromClick(nsIContent* aNode,
                                           uint32_t aContentOffset) {
-  nsIFrame* clickInFrame = nullptr;
-  clickInFrame = SelectionMovementUtils::GetFrameForNodeOffset(
+  nsIFrame* clickInFrame = SelectionMovementUtils::GetFrameForNodeOffset(
       aNode, aContentOffset, mCaret.mHint);
   if (!clickInFrame) {
     return;
@@ -1184,30 +1183,33 @@ void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
       amount = eSelectEndLine;
     }
 
-    uint32_t offset;
-    nsIFrame* frame = SelectionMovementUtils::GetFrameForNodeOffset(
-        aOffsets.content, aOffsets.offset, CaretAssociationHint::After,
-        &offset);
+    FrameAndOffset frameAndOffset =
+        SelectionMovementUtils::GetFrameForNodeOffset(
+            aOffsets.content, aOffsets.offset, CaretAssociationHint::After);
 
     PeekOffsetOptions peekOffsetOptions{};
     if (aStopAtScroller == StopAtScroller::Yes) {
       peekOffsetOptions += PeekOffsetOption::StopAtScroller;
     }
-    if (frame && amount == eSelectWord && direction == eDirPrevious) {
+    if (frameAndOffset && amount == eSelectWord && direction == eDirPrevious) {
       // To avoid selecting the previous word when at start of word,
       // first move one character forward.
-      PeekOffsetStruct charPos(eSelectCharacter, eDirNext,
-                               static_cast<int32_t>(offset), nsPoint(0, 0),
-                               peekOffsetOptions);
-      if (NS_SUCCEEDED(frame->PeekOffset(&charPos))) {
-        frame = charPos.mResultFrame;
-        offset = charPos.mContentOffset;
+      PeekOffsetStruct charPos(
+          eSelectCharacter, eDirNext,
+          static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent),
+          nsPoint(0, 0), peekOffsetOptions);
+      if (NS_SUCCEEDED(frameAndOffset->PeekOffset(&charPos))) {
+        frameAndOffset = {charPos.mResultFrame,
+                          static_cast<uint32_t>(charPos.mContentOffset)};
       }
     }
 
-    PeekOffsetStruct pos(amount, direction, static_cast<int32_t>(offset),
-                         nsPoint(0, 0), peekOffsetOptions);
-    if (frame && NS_SUCCEEDED(frame->PeekOffset(&pos)) && pos.mResultContent) {
+    PeekOffsetStruct pos(
+        amount, direction,
+        static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent),
+        nsPoint(0, 0), peekOffsetOptions);
+    if (frameAndOffset && NS_SUCCEEDED(frameAndOffset->PeekOffset(&pos)) &&
+        pos.mResultContent) {
       aOffsets.content = pos.mResultContent;
       aOffsets.offset = pos.mContentOffset;
     }
@@ -1982,20 +1984,20 @@ nsresult nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,
   WritingMode wm;
   const PrimaryFrameData frameForFocus =
       sel->GetPrimaryFrameForCaretAtFocusNode(true);
-  if (frameForFocus.mFrame) {
+  if (frameForFocus) {
     // FYI: Setting the caret association hint was done during a call of
     // GetPrimaryFrameForCaretAtFocusNode.  Therefore, this may not be intended
     // by the original author.
     sel->GetFrameSelection()->SetHint(frameForFocus.mHint);
 
-    if (!frameForFocus.mFrame->Style()->IsTextCombined()) {
-      wm = frameForFocus.mFrame->GetWritingMode();
+    if (!frameForFocus->Style()->IsTextCombined()) {
+      wm = frameForFocus->GetWritingMode();
     } else {
       // Using different direction for horizontal-in-vertical would
       // make it hard to navigate via keyboard. Inherit the moving
       // direction from its parent.
-      MOZ_ASSERT(frameForFocus.mFrame->IsTextFrame());
-      wm = frameForFocus.mFrame->GetParent()->GetWritingMode();
+      MOZ_ASSERT(frameForFocus->IsTextFrame());
+      wm = frameForFocus->GetParent()->GetWritingMode();
       MOZ_ASSERT(wm.IsVertical(),
                  "Text combined "
                  "can only appear in vertical text");

@@ -1841,6 +1841,106 @@ static bool ValidateCurrentNode(nsRange* aRange, RangeSubtreeIterator& aIter) {
   return !before && !after;
 }
 
+/**
+ * Delete unnecessary data from aCharacterData which must be the container of
+ * aStartRef or aEndRef. Then, this returns a clone node of aCharacterData if
+ * aCloneCutContent is true.
+ */
+static already_AddRefed<nsINode> CutCharacterData(
+    CharacterData& aCharacterData, const RangeBoundary& aStartRef,
+    const RangeBoundary& aEndRef, bool aCloneCutContent, ErrorResult& aRv) {
+  MOZ_ASSERT(&aCharacterData == aStartRef.GetContainer() ||
+             &aCharacterData == aEndRef.GetContainer());
+
+  const uint32_t startOffset =
+      *aStartRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+  const uint32_t endOffset =
+      *aEndRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+  if (aStartRef.GetContainer() == aEndRef.GetContainer()) {
+    // This range is completely contained within a single text node.
+    // Delete or extract the data between startOffset and endOffset.
+    if (*aEndRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets) <=
+        *aStartRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets)) {
+      return nullptr;
+    }
+    nsCOMPtr<nsINode> clone;
+    if (aCloneCutContent) {
+      nsAutoString cutValue;
+      aCharacterData.SubstringData(startOffset, endOffset - startOffset,
+                                   cutValue, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return nullptr;
+      }
+      clone = aCharacterData.CloneNode(false, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return nullptr;
+      }
+      clone->SetNodeValueInternal(cutValue, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return nullptr;
+      }
+    }
+
+    aCharacterData.DeleteData(startOffset, endOffset - startOffset, aRv);
+    return clone.forget();
+  }
+
+  if (&aCharacterData == aStartRef.GetContainer()) {
+    // Delete or extract everything after startOffset.
+    const uint32_t dataLength = aCharacterData.TextDataLength();
+    if (dataLength < startOffset) {
+      return nullptr;
+    }
+    nsCOMPtr<nsINode> clone;
+    if (aCloneCutContent) {
+      nsAutoString cutValue;
+      aCharacterData.SubstringData(startOffset, dataLength, cutValue, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return nullptr;
+      }
+      clone = aCharacterData.CloneNode(false, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return nullptr;
+      }
+      clone->SetNodeValueInternal(cutValue, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return nullptr;
+      }
+    }
+
+    aCharacterData.DeleteData(startOffset, dataLength, aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
+    return clone.forget();
+  }
+
+  MOZ_ASSERT(&aCharacterData == aEndRef.GetContainer());
+  // Delete or extract everything before endOffset.
+  nsCOMPtr<nsINode> clone;
+  if (aCloneCutContent) {
+    nsAutoString cutValue;
+    aCharacterData.SubstringData(0, endOffset, cutValue, aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
+    clone = aCharacterData.CloneNode(false, aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
+    clone->SetNodeValueInternal(cutValue, aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
+  }
+
+  aCharacterData.DeleteData(0, endOffset, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+  return clone.forget();
+}
+
 void nsRange::CutContents(DocumentFragment** aFragment,
                           ElementHandler aElementHandler, ErrorResult& aRv) {
   if (aFragment && aElementHandler) {
@@ -1881,16 +1981,15 @@ void nsRange::CutContents(DocumentFragment** aFragment,
   // Save the range end points locally to avoid interference
   // of Range gravity during our edits!
 
-  nsCOMPtr<nsINode> startContainer = GetMayCrossShadowBoundaryStartContainer();
+  const RangeBoundary startRef = MayCrossShadowBoundaryStartRef();
+  const RangeBoundary endRef = MayCrossShadowBoundaryEndRef();
+
   // `GetCommonAncestorContainer()` above ensures the range is positioned, hence
-  // there have to be valid offsets.
-
-  const uint32_t startOffset = *MayCrossShadowBoundaryStartRef().Offset(
-      RangeBoundary::OffsetFilter::kValidOffsets);
-
-  nsCOMPtr<nsINode> endContainer = GetMayCrossShadowBoundaryEndContainer();
-  const uint32_t endOffset = *MayCrossShadowBoundaryEndRef().Offset(
-      RangeBoundary::OffsetFilter::kValidOffsets);
+  // there have to be valid offsets. Fix them in startRef/endRef right now.
+  const uint32_t startOffset =
+      *startRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+  const uint32_t endOffset =
+      *endRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
 
   if (retval) {
     // For extractContents(), abort early if there's a doctype (bug 719533).
@@ -1906,10 +2005,10 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       // has a common ancestor with start and end, hence both have to be
       // comparable to it.
       if (doctype &&
-          *nsContentUtils::ComparePointsWithIndices(startContainer, startOffset,
-                                                    doctype, 0) < 0 &&
-          *nsContentUtils::ComparePointsWithIndices(doctype, 0, endContainer,
-                                                    endOffset) < 0) {
+          *nsContentUtils::ComparePointsWithIndices(
+              startRef.GetContainer(), startOffset, doctype, 0) < 0 &&
+          *nsContentUtils::ComparePointsWithIndices(
+              doctype, 0, endRef.GetContainer(), endOffset) < 0) {
         aRv.ThrowHierarchyRequestError("Start or end position isn't valid.");
         return;
       }
@@ -1940,15 +2039,13 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
   iter.First();
 
-  bool handled = false;
-
   // With the exception of text nodes that contain one of the range
   // end points, the subtree iterator should only give us back subtrees
   // that are completely contained between the range's end points.
 
   while (!iter.IsDone()) {
     nsCOMPtr<nsINode> nodeToResult;
-    nsCOMPtr<nsINode> node = iter.GetCurrentNode();
+    const nsCOMPtr<nsINode> node = iter.GetCurrentNode();
 
     // Before we delete anything, advance the iterator to the next node that's
     // not a descendant of this one.  XXX It's a bit silly to iterate through
@@ -1962,154 +2059,99 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       nextNode = iter.GetCurrentNode();
     }
 
-    handled = false;
-
-    // If it's CharacterData, make sure we might need to delete
-    // part of the data, instead of removing the whole node.
-    //
-    // XXX_kin: We need to also handle ProcessingInstruction
-    // XXX_kin: according to the spec.
-
-    if (auto charData = CharacterData::FromNode(node)) {
-      uint32_t dataLength = 0;
-
-      if (node == startContainer) {
-        if (node == endContainer) {
-          // This range is completely contained within a single text node.
-          // Delete or extract the data between startOffset and endOffset.
-
-          if (endOffset > startOffset) {
-            if (retval) {
-              nsAutoString cutValue;
-              charData->SubstringData(startOffset, endOffset - startOffset,
-                                      cutValue, aRv);
-              if (NS_WARN_IF(aRv.Failed())) {
-                return;
-              }
-              nsCOMPtr<nsINode> clone = node->CloneNode(false, aRv);
-              if (NS_WARN_IF(aRv.Failed())) {
-                return;
-              }
-              clone->SetNodeValueInternal(cutValue, aRv);
-              if (NS_WARN_IF(aRv.Failed())) {
-                return;
-              }
-              nodeToResult = clone;
-            }
-
-            nsMutationGuard guard;
-            charData->DeleteData(startOffset, endOffset - startOffset, aRv);
-            if (NS_WARN_IF(aRv.Failed())) {
-              return;
-            }
-            if (guard.Mutated(0) && !ValidateCurrentNode(this, iter)) {
-              aRv.Throw(NS_ERROR_UNEXPECTED);
-              return;
-            }
-          }
-
-          handled = true;
-        } else {
-          // Delete or extract everything after startOffset.
-
-          dataLength = charData->Length();
-
-          if (dataLength >= startOffset) {
-            if (retval) {
-              nsAutoString cutValue;
-              charData->SubstringData(startOffset, dataLength, cutValue, aRv);
-              if (NS_WARN_IF(aRv.Failed())) {
-                return;
-              }
-              nsCOMPtr<nsINode> clone = node->CloneNode(false, aRv);
-              if (NS_WARN_IF(aRv.Failed())) {
-                return;
-              }
-              clone->SetNodeValueInternal(cutValue, aRv);
-              if (NS_WARN_IF(aRv.Failed())) {
-                return;
-              }
-              nodeToResult = clone;
-            }
-
-            nsMutationGuard guard;
-            charData->DeleteData(startOffset, dataLength, aRv);
-            if (NS_WARN_IF(aRv.Failed())) {
-              return;
-            }
-            if (guard.Mutated(0) && !ValidateCurrentNode(this, iter)) {
-              aRv.Throw(NS_ERROR_UNEXPECTED);
-              return;
-            }
-          }
-
-          handled = true;
-        }
-      } else if (node == endContainer) {
-        // Delete or extract everything before endOffset.
-        if (retval) {
-          nsAutoString cutValue;
-          charData->SubstringData(0, endOffset, cutValue, aRv);
-          if (NS_WARN_IF(aRv.Failed())) {
-            return;
-          }
-          nsCOMPtr<nsINode> clone = node->CloneNode(false, aRv);
-          if (NS_WARN_IF(aRv.Failed())) {
-            return;
-          }
-          clone->SetNodeValueInternal(cutValue, aRv);
-          if (NS_WARN_IF(aRv.Failed())) {
-            return;
-          }
-          nodeToResult = clone;
-        }
-
+    if (node == startRef.GetContainer() || node == endRef.GetContainer()) {
+      // If it's CharacterData, make sure we might need to delete
+      // part of the data, instead of removing the whole node.
+      //
+      // XXX_kin: We need to also handle ProcessingInstruction
+      // XXX_kin: according to the spec.
+      if (auto* const charData = CharacterData::FromNode(node)) {
         nsMutationGuard guard;
-        charData->DeleteData(0, endOffset, aRv);
-        if (NS_WARN_IF(aRv.Failed())) {
+        nodeToResult =
+            CutCharacterData(*charData, startRef, endRef, !!retval, aRv);
+        if (MOZ_UNLIKELY(aRv.Failed())) {
           return;
         }
+        // FYI: Cutting some data from a CharacterData shouldn't cause any other
+        // mutations of the composed tree.  Therefore, basically, we should be
+        // able to skip this check.  However, the accessible caret may update
+        // its caret and that appears as some numbers of mutations.  Therefore,
+        // this expensive validation needs to run if the accessible caret is now
+        // enabled.
         if (guard.Mutated(0) && !ValidateCurrentNode(this, iter)) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
-        handled = true;
-      }
-    }
-
-    if (!handled && (node == endContainer || node == startContainer)) {
-      if (node && node->IsElement() &&
-          ((node == endContainer && endOffset == 0) ||
-           (node == startContainer &&
-            node->AsElement()->GetChildCount() == startOffset))) {
-        if (retval) {
-          nodeToResult = node->CloneNode(false, aRv);
-          if (aRv.Failed()) {
-            return;
+      } else if (auto* const element = Element::FromNode(node)) {
+        // If the start boundary is the end of the start container which is an
+        // element, RangeSubtreeIterator iterates the start container element as
+        // the first node.  Otherwise, and the end boundary is the start of the
+        // end container which is an element, RangeSubtreeIterator iterates the
+        // end container element as the last node.
+        if ((element == endRef.GetContainer() && endRef.IsStartOfContainer()) ||
+            (element == startRef.GetContainer() &&
+             startRef.IsEndOfContainer())) {
+          // Then, we want to return the empty cloned container since nothing is
+          // selected by this range in the element.  However, we don't want to
+          // delete the element itself.
+          // Note that even if the start/end container is a void element like
+          // <img>, <input>, etc, we anyway clone the void element so that the
+          // replaced content will be duplicated without deleting them from the
+          // DOM.  This behavior matches with Chrome 142 and Safari 26.1.
+          if (retval) {
+            nodeToResult = element->CloneNode(false, aRv);
+            if (aRv.Failed()) {
+              return;
+            }
           }
+        } else {
+          // The current node is an element and the start or end container of
+          // the range and the offset is middle of the element.  However,
+          // RangeSubtreeIterator should not iterate this because of outside of
+          // the range. I.e., this should never happen.
+          MOZ_DIAGNOSTIC_ASSERT(
+              false, "The container shouldn't be iterated due to out of range");
+          continue;  // Just ignore the illegal case in the release channel.
         }
-        handled = true;
+      } else {
+        // The current node which is the same as the start container or the end
+        // container of the range is not a CharacterData nor an element but the
+        // node is the start or end container of the range.  This should be an
+        // illegal case too.
+        MOZ_ASSERT(node == startRef.GetContainer() ||
+                   node == endRef.GetContainer());
+        MOZ_ASSERT(!node->IsCharacterData() && !node->IsElement());
+        NS_WARNING(
+            nsPrintfCString("Unexpected type of content node (%s) is iterated "
+                            "by RangeSubtreeIterator",
+                            mozilla::ToString(*node).c_str())
+                .get());
+        MOZ_DIAGNOSTIC_ASSERT(false,
+                              "Unexpected type of content node is iterated by "
+                              "RangeSubtreeIterator");
+        continue;  // Just ignore the illegal case in the release channel.
       }
-    }
-
-    if (!handled) {
-      // Node was not handled above, so it must be completely contained
+    } else {
+      // The current node is completely in the range so that we can remove it
+      // from the document.
+      MOZ_ASSERT(node != startRef.GetContainer() &&
+                 node != endRef.GetContainer());
+      // When this is called, the current node must be completely contained
       // within the range.
       if (aElementHandler && node->IsElement()) {
-        // This is an element, and the caller specified a handler for it, so use
-        // it.
+        // This is an element, and the caller specified a handler for it, so
+        // use it.
         MOZ_ASSERT(!aFragment, "Fragment requested when ElementHandler given?");
         nsMutationGuard guard;
-        auto* element = node->AsElement();
+        auto* const element = node->AsElement();
         aElementHandler(element);
-        // No need to validate - we know this node is an element, so any case
-        // that may cause the node to fail to validate is covered by the
-        // mutation guard.
-        if (guard.Mutated(0)) {
+        // No need to validate - we know this node is an element, so any
+        // case that may cause the node to fail to validate is covered by
+        // the mutation guard.
+        if (MOZ_UNLIKELY(guard.Mutated(0))) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
-        handled = true;
       } else {
         // Otherwise, just remove it from the tree.
         nodeToResult = node;
@@ -2164,7 +2206,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       }
 
       nsMutationGuard guard;
-      nsCOMPtr<nsINode> parent = nodeToResult->GetParentNode();
+      const bool isCloneNode = !nodeToResult->GetParentNode();
       if (closestAncestor) {
         closestAncestor->AppendChild(*nodeToResult, aRv);
       } else {
@@ -2173,23 +2215,40 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
-      if (guard.Mutated(parent ? 2 : 1) && !ValidateCurrentNode(this, iter)) {
+      // If the node is a clone, its removal is not happen.  Therefore, only the
+      // connecting mutation should be counted.
+      // If the node is in the document, both it's removal from the document
+      // and connecting to the new parent should be counted.
+      //
+      // When removing the node from document, DevTools may break on the removal
+      // and the user may modify the DOM.  Additionally, when the removing node
+      // contains subdocuments, its `unload` and `beforeunload` are fired
+      // synchronously.  Then, the unloading is also counted as mutations.
+      // Finally, if there is accessible caret, its mutations are also counted.
+      // Therefore, we often need to run the expensive validation here.
+      if (NS_WARN_IF(guard.Mutated(isCloneNode ? 1 : 2) &&
+                     !ValidateCurrentNode(this, iter))) {
         aRv.Throw(NS_ERROR_UNEXPECTED);
         return;
       }
     } else if (nodeToResult) {
-      nsMutationGuard guard;
-      nsCOMPtr<nsINode> node = nodeToResult;
-      nsCOMPtr<nsINode> parent = node->GetParentNode();
-      if (parent) {
-        parent->RemoveChild(*node, aRv);
-        if (aRv.Failed()) {
+      if (const nsCOMPtr<nsINode> parent = nodeToResult->GetParentNode()) {
+        nsMutationGuard guard;
+        parent->RemoveChild(*nodeToResult, aRv);
+        if (MOZ_UNLIKELY(aRv.Failed())) {
           return;
         }
-      }
-      if (guard.Mutated(1) && !ValidateCurrentNode(this, iter)) {
-        aRv.Throw(NS_ERROR_UNEXPECTED);
-        return;
+        // When removing the node from document, DevTools may break on the
+        // removal and the user may modify the DOM.  Additionally, when the
+        // removing node contains subdocuments, its `unload` and `beforeunload`
+        // are fired synchronously.  Then, the unloading is also counted as
+        // mutations.  Finally, if there is accessible caret, its mutations are
+        // also counted.  Therefore, we often need to run the expensive
+        // validation here.
+        if (NS_WARN_IF(guard.Mutated(1) && !ValidateCurrentNode(this, iter))) {
+          aRv.Throw(NS_ERROR_UNEXPECTED);
+          return;
+        }
       }
     }
 

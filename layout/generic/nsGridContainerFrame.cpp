@@ -5498,13 +5498,13 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
     }
   }
 
-  if (aGridRI.mFrame->IsAbsoluteContainer()) {
+  if (auto* absCB = aGridRI.mFrame->GetAbsoluteContainingBlock();
+      absCB && absCB->PrepareAbsoluteFrames(aGridRI.mFrame)) {
     // 10.1. With a Grid Container as Containing Block
     // https://drafts.csswg.org/css-grid-2/#abspos-items
     // We only resolve definite lines here; we'll align auto positions to the
     // grid container later during reflow.
-    const nsFrameList& children =
-        aGridRI.mFrame->GetChildList(aGridRI.mFrame->GetAbsoluteListID());
+    const nsFrameList& children = absCB->GetChildList();
     const int32_t offsetToColZero = int32_t(mExplicitGridOffsetCol) - 1;
     const int32_t offsetToRowZero = int32_t(mExplicitGridOffsetRow) - 1;
     // Untranslate the grid again temporarily while resolving abs.pos. lines.
@@ -9320,7 +9320,8 @@ void nsGridContainerFrame::ReflowAbsoluteChildren(
     nsReflowStatus& aStatus) {
   WritingMode wm = aGridRI.mReflowInput->GetWritingMode();
   auto* absoluteContainer = GetAbsoluteContainingBlock();
-  // We have prepared the absolute frames when initializing GridReflowInput.
+  // We have prepared the absolute frames in Grid::PlaceGridItems() or in
+  // GridReflowInput::InitializeForContinuation().
   if (!absoluteContainer || !absoluteContainer->HasAbsoluteFrames()) {
     return;
   }
@@ -10282,7 +10283,7 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayAbsoluteContinuations(aBuilder, aLists);
+    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 
   // Our children are all grid-level boxes, which behave the same as

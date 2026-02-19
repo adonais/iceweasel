@@ -19,8 +19,10 @@ typedef unsigned char tis_char;
  * select a binary compatible C type for the expat C code to use.
  */
 #  ifdef __cplusplus
+#    include <uchar.h>
 typedef char16_t th_char;
 #  else
+#    include <stdint.h>
 typedef uint16_t th_char;
 #  endif
 #  define TH_THAIBEGIN_ 0x0e00

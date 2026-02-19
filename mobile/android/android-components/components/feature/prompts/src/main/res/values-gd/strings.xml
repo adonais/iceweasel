@@ -59,6 +59,8 @@
   <string name="mozac_feature_prompts_deny">Diùlt</string>
   <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
   <string name="mozac_feature_prompts_popup_dialog_title">A bheil thu airson cead fosglaidh a thoirt dhan làrach?</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">A bheil thu airson ath-stiùireadh chun na làraich seo a cheadachadh?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">A bheil thu cinnteach?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->

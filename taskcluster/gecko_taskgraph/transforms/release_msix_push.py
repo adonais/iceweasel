@@ -13,24 +13,22 @@ from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import release_level
 from gecko_taskgraph.util.scriptworker import add_scope_prefix
 
-push_msix_description_schema = Schema(
-    {
-        Required("name"): str,
-        Required("task-from"): task_description_schema["task-from"],
-        Required("dependencies"): task_description_schema["dependencies"],
-        Required("description"): task_description_schema["description"],
-        Required("treeherder"): task_description_schema["treeherder"],
-        Required("run-on-projects"): task_description_schema["run-on-projects"],
-        Required("worker-type"): optionally_keyed_by("release-level", str),
-        Required("worker"): object,
-        Optional("scopes"): [str],
-        Required("shipping-phase"): task_description_schema["shipping-phase"],
-        Required("shipping-product"): task_description_schema["shipping-product"],
-        Optional("extra"): task_description_schema["extra"],
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+push_msix_description_schema = Schema({
+    Required("name"): str,
+    Required("task-from"): task_description_schema["task-from"],
+    Required("dependencies"): task_description_schema["dependencies"],
+    Required("description"): task_description_schema["description"],
+    Required("treeherder"): task_description_schema["treeherder"],
+    Required("run-on-projects"): task_description_schema["run-on-projects"],
+    Required("worker-type"): optionally_keyed_by("release-level", str),
+    Required("worker"): object,
+    Optional("scopes"): [str],
+    Required("shipping-phase"): task_description_schema["shipping-phase"],
+    Required("shipping-product"): task_description_schema["shipping-product"],
+    Optional("extra"): task_description_schema["extra"],
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 transforms = TransformSequence()
 transforms.add_validate(push_msix_description_schema)
@@ -59,9 +57,9 @@ def make_task_description(config, jobs):
             job,
             "worker-type",
             item_name=job["name"],
-            **{"release-level": release_level(config.params["project"])},
+            **{"release-level": release_level(config.params)},
         )
-        if release_level(config.params["project"]) == "production":
+        if release_level(config.params) == "production":
             job.setdefault("scopes", []).append(
                 add_scope_prefix(
                     config,

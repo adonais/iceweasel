@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.dsl)
 }
 
-buildDir = "${gradle.mozconfig.topobjdir}/gradle/build/mobile/android/android-components/plugins/dependencies"
+layout.buildDirectory.set(file("${gradle.mozconfig.topobjdir}/gradle/build/mobile/android/android-components/plugins/dependencies"))
 
 repositories {
         gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->

@@ -3456,6 +3456,7 @@ static bool IsResumableMIRType(MIRType type) {
     case MIRType::Elements:
     case MIRType::Pointer:
     case MIRType::WasmAnyRef:
+    case MIRType::WasmStructData:
     case MIRType::WasmArrayData:
     case MIRType::StackResults:
       return false;
@@ -3572,20 +3573,8 @@ void jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer,
       MInstruction* ins = *iter;
       for (size_t i = 0, e = ins->numOperands(); i < e; ++i) {
         MDefinition* op = ins->getOperand(i);
-        MBasicBlock* opBlock = op->block();
-        MOZ_ASSERT(opBlock->dominates(*block),
-                   "Instruction is not dominated by its operands");
-
-        // If the operand is an instruction in the same block, check
-        // that it comes first.
-        if (opBlock == *block && !op->isPhi()) {
-          MInstructionIterator opIter = block->begin(op->toInstruction());
-          do {
-            ++opIter;
-            MOZ_ASSERT(opIter != block->end(),
-                       "Operand in same block as instruction does not precede");
-          } while (*opIter != ins);
-        }
+        MOZ_ASSERT(op->dominates(ins),
+                   "instruction is not dominated by its operands");
       }
       AssertIfResumableInstruction(ins);
       if (MResumePoint* resume = ins->resumePoint()) {
@@ -5296,7 +5285,7 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
             otherIter = FindObjectToIteratorUse(SkipIterObjectUnbox(receiver));
           }
 
-          if (!otherIter || !otherIter->block()->dominates(ins->block())) {
+          if (!otherIter || !otherIter->dominates(ins)) {
             continue;
           }
         }

@@ -237,6 +237,9 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   void writeRawPointerField(const void* ptr) {
     addStubField(uintptr_t(ptr), StubField::Type::RawPointer);
   }
+  void writeICScriptField(const ICScript* icScript) {
+    addStubField(uintptr_t(icScript), StubField::Type::ICScript);
+  }
   void writeIdField(jsid id) {
     addStubField(id.asRawBits(), StubField::Type::Id);
   }
@@ -393,8 +396,9 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   size_t stubDataSize() const { return stubDataSize_; }
   void copyStubData(uint8_t* dest) const;
   bool stubDataEquals(const uint8_t* stubData) const;
-  bool stubDataEqualsIgnoring(const uint8_t* stubData,
-                              uint32_t ignoreOffset) const;
+  bool stubDataEqualsIgnoringShapeAndOffset(
+      const uint8_t* stubData, uint32_t shapeFieldOffset,
+      mozilla::Maybe<uint32_t> offsetFieldOffset) const;
 
   bool operandIsDead(uint32_t operandId, uint32_t currentInstruction) const {
     if (operandId >= operandLastUsed_.length()) {
@@ -727,6 +731,12 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   void guardMultipleShapes(ObjOperandId obj, ListObject* shapes) {
     MOZ_ASSERT(shapes->length() > 0);
     guardMultipleShapes_(obj, shapes);
+  }
+
+  Int32OperandId guardMultipleShapesToOffset(ObjOperandId obj,
+                                             ListObject* shapes) {
+    MOZ_ASSERT(shapes->length() > 0);
+    return guardMultipleShapesToOffset_(obj, shapes);
   }
 
   friend class CacheIRCloner;

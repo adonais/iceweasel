@@ -150,8 +150,8 @@ void HTMLTableSectionElement::MapAttributesIntoRule(
                              (float)value->GetIntegerValue());
     }
   }
-  nsGenericHTMLElement::MapDivAlignAttributeInto(aBuilder);
-  nsGenericHTMLElement::MapVAlignAttributeInto(aBuilder);
+  nsGenericHTMLElement::MapTableCellHAlignAttributeInto(aBuilder);
+  nsGenericHTMLElement::MapTableVAlignAttributeInto(aBuilder);
   nsGenericHTMLElement::MapBackgroundAttributesInto(aBuilder);
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }

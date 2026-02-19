@@ -458,7 +458,7 @@ class nsDisplayImage final : public nsPaintedDisplayItem {
 
   nsRect GetBounds(bool* aSnap) const {
     *aSnap = true;
-    return Frame()->GetContentRectRelativeToSelf() + ToReferenceFrame();
+    return Frame()->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
   }
 
   nsRect GetBounds(nsDisplayListBuilder*, bool* aSnap) const final {

@@ -8328,7 +8328,8 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
       return Nothing();
   }
 
-  wr::WrClipChainId clipChainId = aBuilder.DefineClipChain({clipId}, true);
+  wr::WrClipChainId clipChainId = aBuilder.DefineClipChain(
+      {&clipId, 1}, aBuilder.CurrentClipChainIdIfNotRoot());
 
   return Some(clipChainId);
 }
@@ -8394,7 +8395,8 @@ static Maybe<wr::WrClipChainId> CreateWRClipPathAndMasks(
   wr::WrClipId clipId =
       aBuilder.DefineImageMaskClip(mask.ref(), points, fillRule);
 
-  wr::WrClipChainId clipChainId = aBuilder.DefineClipChain({clipId}, true);
+  wr::WrClipChainId clipChainId = aBuilder.DefineClipChain(
+      {&clipId, 1}, aBuilder.CurrentClipChainIdIfNotRoot());
 
   return Some(clipChainId);
 }
@@ -8690,7 +8692,10 @@ bool nsDisplayFilters::CreateWebRenderCommands(
         mFrame->PresContext()->AppUnitsPerDevPixel());
     auto clipId =
         aBuilder.DefineRectClip(Nothing(), wr::ToLayoutRect(devPxRect));
-    clipChainId = aBuilder.DefineClipChain({clipId}, true).id;
+    clipChainId = aBuilder
+                      .DefineClipChain({&clipId, 1},
+                                       aBuilder.CurrentClipChainIdIfNotRoot())
+                      .id;
   } else {
     clipChainId = aBuilder.CurrentClipChainId();
   }
@@ -8865,7 +8870,7 @@ PaintTelemetry::AutoRecordPaint::~AutoRecordPaint() {
 }
 
 static nsIFrame* GetSelfOrPlaceholderFor(nsIFrame* aFrame) {
-  if (aFrame->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
     return aFrame;
   }
 
@@ -8890,10 +8895,10 @@ nsDisplayListBuilder::AutoBuildingDisplayList::AutoBuildingDisplayList(
     : mBuilder(aBuilder),
       mPrevFrame(aBuilder->mCurrentFrame),
       mPrevReferenceFrame(aBuilder->mCurrentReferenceFrame),
-      mPrevOffset(aBuilder->mCurrentOffsetToReferenceFrame),
-      mPrevAdditionalOffset(aBuilder->mAdditionalOffset),
       mPrevVisibleRect(aBuilder->mVisibleRect),
       mPrevDirtyRect(aBuilder->mDirtyRect),
+      mPrevOffset(aBuilder->mCurrentOffsetToReferenceFrame),
+      mPrevAdditionalOffset(aBuilder->mAdditionalOffset),
       mPrevCompositorHitTestInfo(aBuilder->mCompositorHitTestInfo),
       mPrevAncestorHasApzAwareEventHandler(
           aBuilder->mAncestorHasApzAwareEventHandler),

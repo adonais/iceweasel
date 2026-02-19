@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Nhập từ tìm kiếm</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Các thẻ đang mở của bạn sẽ được hiển thị ở đây.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Các thẻ đang mở của bạn sẽ được hiển thị ở đây.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Các thẻ riêng tư của bạn sẽ được hiển thị ở đây.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Các thẻ riêng tư của bạn sẽ được hiển thị ở đây.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Duyệt web riêng tư</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Thoát chế độ nhiều lựa chọn</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Lưu các thẻ đã chọn vào bộ sưu tập</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Lưu các thẻ đã chọn vào bộ sưu tập</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Lấy các thẻ từ bất cứ thiết bị nào</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Tiện ích</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Bạn đã cài đặt tiện ích mở rộng nhưng chưa bật</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Bạn đã cài đặt tiện ích mở rộng nhưng chưa bật</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Quản lý tiện ích</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Thông tin tài khoản</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Trợ giúp</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Trợ giúp</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Có gì mới</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Có gì mới</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Cài đặt</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Trang web cho máy tính</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Mở trong thẻ thông thường</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Mở trong thẻ thông thường</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Thêm vào màn hình chính</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">ĐƯỢC HỖ TRỢ BỞI %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ĐƯỢC HỖ TRỢ BỞI %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Mở trong ứng dụng</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Tùy chỉnh chế độ đọc</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Tùy chỉnh chế độ đọc</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Tùy chỉnh chế độ đọc</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Thêm</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Thêm</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Chỉnh sửa</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Chỉnh sửa</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Tùy biến trang chủ</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Tùy biến trang chủ</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Đăng nhập</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Đóng menu</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Điều hướng</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Trợ giúp</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Cài đặt</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Đóng bảng menu tiện ích</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Đóng bảng menu tiện ích</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Đóng bảng menu lưu</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Đóng bảng menu lưu</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Đóng bảng menu công cụ</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Đóng bảng menu công cụ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Đóng bảng menu thẻ tuỳ chỉnh</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -327,8 +323,10 @@
   <string name="browser_menu_save_as_pdf_2">Lưu dưới dạng PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Dịch trang</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Tóm tắt trang</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Báo cáo trang web bị hỏng…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Báo cáo trang web bị hỏng…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Báo cáo trang web bị hỏng</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -438,6 +436,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: lựa chọn công cụ tìm kiếm</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">Đã xoá %1$s khỏi lịch sử</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Xoá mục lịch sử này</string>
   <!--
     Home onboarding
 
@@ -452,19 +454,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Thông báo về quyền riêng tư Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Chúng tôi thích giữ an toàn cho bạn</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Tìm hiểu lý do tại sao hàng triệu người thích Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Duyệt web an toàn với nhiều lựa chọn hơn</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Trình duyệt được hỗ trợ phi lợi nhuận của chúng tôi giúp ngăn các công ty bí mật theo dõi bạn trên web.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Hơn 100 triệu người bảo vệ quyền riêng tư của mình bằng cách chọn trình duyệt được hỗ trợ bởi tổ chức phi lợi nhuận.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Trình theo dõi được biết đến? Sẽ bị chặn tự động. Tiện ích mở rộng? Hãy thử tất cả 700 cái. Đọc PDF? Trình đọc tích hợp của chúng tôi giúp bạn dễ dàng quản lý chúng.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Đặt làm trình duyệt mặc định</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +545,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Quản lý</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Khởi chạy trình duyệt Android tối ưu nhất</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Khởi chạy trình duyệt Android tối ưu nhất</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Tải trang web nhanh như chớp</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Tải trang web nhanh như chớp</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Trình chống theo dõi tự động</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Trình chống theo dõi tự động</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Hàng ngàn tùy chỉnh</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Hàng ngàn tùy chỉnh</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Bằng cách tiếp tục, bạn đã đồng ý với %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Bằng cách tiếp tục, bạn đã đồng ý với %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Điều khoản sử dụng Firefox</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Điều khoản sử dụng Firefox</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox quan tâm đến quyền riêng tư của bạn. Tìm hiểu thêm trong %1$s của chúng tôi.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox quan tâm đến quyền riêng tư của bạn. Tìm hiểu thêm trong %1$s của chúng tôi.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Thông báo về quyền riêng tư</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Thông báo về quyền riêng tư</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Để giúp cải thiện trình duyệt, Firefox gửi dữ liệu chẩn đoán và tương tác tới Mozilla. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Để giúp cải thiện trình duyệt, Firefox gửi dữ liệu chẩn đoán và tương tác tới Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Quản lý cài đặt</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Quản lý cài đặt</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Tiếp tục</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Tiếp tục</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">Bạn muốn để thanh địa chỉ ở đâu?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Bạn muốn để thanh địa chỉ ở đâu?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Tiếp tục</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Tiếp tục</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Giúp chúng tôi phát triển Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Giúp chúng tôi phát triển Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Chia sẻ cách bạn khám phá ra Firefox và bạn sử dụng nó với các đối tác tiếp thị của Mozilla. Dữ liệu này không bao giờ được bán.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Chia sẻ cách bạn khám phá ra Firefox và bạn sử dụng nó với các đối tác tiếp thị của Mozilla. Dữ liệu này không bao giờ được bán.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Cách chúng tôi sử dụng dữ liệu</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Cách chúng tôi sử dụng dữ liệu</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Xác nhận</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Xác nhận</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Nhận trình chống theo dõi tự động theo mặc định</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Nhận trình chống theo dõi tự động theo mặc định</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Chỉ cần một cú nhấp có thể ngăn các công ty theo dõi lượt nhấp chuột của bạn.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Chỉ cần một cú nhấp có thể ngăn các công ty theo dõi lượt nhấp chuột của bạn.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Đồng bộ hóa mọi nơi bạn sử dụng Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Đồng bộ hóa mọi nơi bạn sử dụng Firefox</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Nhận dấu trang, thẻ và mật khẩu trên mọi thiết bị. Tất cả đều được bảo vệ bằng mã hóa.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Nhận dấu trang, thẻ và mật khẩu trên mọi thiết bị. Tất cả đều được bảo vệ bằng mã hóa.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Bắt đầu đồng bộ hóa</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Bắt đầu đồng bộ hóa</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Không phải bây giờ</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Không phải bây giờ</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Giúp chúng tôi phát triển Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +618,48 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Tiếp tục</string>
+  <string name="nova_onboarding_continue_button">Tiếp tục</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Không phải bây giờ</string>
+  <string name="nova_onboarding_negative_button">Không phải bây giờ</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Sẵn sàng để tự do bứt phá</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Nhanh chóng, an toàn và không bán đứng bạn.\nTrải nghiệm duyệt web giờ đây đã trở nên tốt hơn.</string>
+  <string name="nova_onboarding_tou_subtitle">Nhanh chóng, an toàn và không bán đứng bạn.\nTrải nghiệm duyệt web giờ đây đã trở nên tốt hơn.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Bằng cách tiếp tục, bạn đã đồng ý với %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_1">Bằng cách tiếp tục, bạn đã đồng ý với %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Điều khoản sử dụng Firefox</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Điều khoản sử dụng Firefox</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox quan tâm đến quyền riêng tư của bạn. Tìm hiểu thêm trong %1$s của chúng tôi.</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox quan tâm đến quyền riêng tư của bạn. Tìm hiểu thêm trong %1$s của chúng tôi.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Thông báo về quyền riêng tư</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Thông báo về quyền riêng tư</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Để giúp cải thiện trình duyệt, Firefox gửi dữ liệu chẩn đoán và tương tác tới Mozilla. %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Để giúp cải thiện trình duyệt, Firefox gửi dữ liệu chẩn đoán và tương tác tới Mozilla. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Quản lý cài đặt</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Quản lý cài đặt</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Nói lời tạm biệt với những kẻ theo dõi đáng sợ</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Mở tất cả liên kết của bạn với tính năng bảo mật tích hợp sẵn</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Chúng tôi bảo vệ dữ liệu của bạn và tự động chặn các công ty theo dõi hoạt động của bạn.</string>
+  <string name="nova_onboarding_set_to_default_subtitle">Chúng tôi bảo vệ dữ liệu của bạn và tự động chặn các công ty theo dõi hoạt động của bạn.</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Đặt làm trình duyệt mặc định</string>
+  <string name="nova_onboarding_set_to_default_button">Đặt làm trình duyệt mặc định</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Chọn thanh địa chỉ của bạn</string>
+  <string name="nova_onboarding_toolbar_selection_title">Chọn thanh địa chỉ của bạn</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Trên cùng</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">Trên cùng</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Dưới cùng</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">Dưới cùng</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Chọn chủ đề của bạn</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +669,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Tối</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Bắt đầu tức thì từ nơi bạn đã dừng lại</string>
+  <string name="nova_onboarding_sync_title">Bắt đầu tức thì từ nơi bạn đã dừng lại</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">Truy cập nhanh chóng dấu trang, mật khẩu và nhiều thông tin khác trên mọi thiết bị. Dữ liệu cá nhân của bạn luôn được bảo mật nhờ mã hóa.</string>
+  <string name="nova_onboarding_sync_subtitle">Truy cập nhanh chóng dấu trang, mật khẩu và nhiều thông tin khác trên mọi thiết bị. Dữ liệu cá nhân của bạn luôn được bảo mật nhờ mã hóa.</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Bắt đầu đồng bộ hóa</string>
+  <string name="nova_onboarding_sync_button">Bắt đầu đồng bộ hóa</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Giúp chúng tôi xây dựng internet tốt hơn</string>
+  <string name="nova_onboarding_marketing_title">Giúp chúng tôi xây dựng internet tốt hơn</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Chia sẻ cách bạn khám phá ra Firefox và bạn sử dụng nó với các đối tác tiếp thị của Mozilla. Dữ liệu này không bao giờ được bán. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Chia sẻ cách bạn khám phá ra Firefox và bạn sử dụng nó với các đối tác tiếp thị của Mozilla. Dữ liệu này không bao giờ được bán. %1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Cách chúng tôi sử dụng dữ liệu</string>
+  <string name="nova_onboarding_marketing_body_link_text">Cách chúng tôi sử dụng dữ liệu</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Thông báo giúp bạn an toàn hơn với Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Khám phá các tính năng bảo mật mới nhất trong Firefox để bạn luôn được cập nhật về cách thức bảo vệ bản thân.</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Bật thông báo</string>
+  <string name="nova_onboarding_notifications_button">Bật thông báo</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Tăng tính riêng tư cho mọi tìm kiếm</string>
+  <string name="nova_onboarding_add_search_widget_title">Tăng tính riêng tư cho mọi tìm kiếm</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">Hãy bắt đầu mọi tìm kiếm từ màn hình chính của điện thoại và yên tâm rằng các tính năng bảo vệ tự động của Firefox sẽ luôn hỗ trợ bạn.</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Hãy bắt đầu mọi tìm kiếm từ màn hình chính của điện thoại và yên tâm rằng các tính năng bảo vệ tự động của Firefox sẽ luôn hỗ trợ bạn.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Thêm Firefox widget</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Thêm Firefox widget</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -781,6 +774,8 @@
   <string name="preferences_search">Tìm kiếm</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Công cụ tìm kiếm</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Widget màn hình chính</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Đề xuất từ công cụ tìm kiếm</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -972,6 +967,15 @@
   <string name="preferences_open_links_in_apps_ask">Hỏi trước khi mở</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Không bao giờ</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Lưu trữ tập tin</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Vị trí tải xuống mặc định</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">Bạn không có quyền sử dụng thư mục này. Hãy thử chọn một thư mục khác.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Quản lý tải xuống bằng ứng dụng khác</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1137,8 +1141,6 @@
   <string name="alternative_app_icon_group_solid_colors">Màu</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Gradient</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Khác</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Nổi bật</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1505,11 +1507,27 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Hoạt động</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Hãy thử các tính năng và ý tưởng trước khi chúng được phát hành cho mọi người.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Hãy thử các tính năng và ý tưởng trước khi chúng được phát hành cho mọi người.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox chọn ngẫu nhiên người dùng để thử nghiệm các tính năng, từ đó nâng cao chất lượng cho tất cả mọi người.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Cài đặt và chạy nghiên cứu</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Cài đặt và chạy nghiên cứu</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Cho phép chạy nghiên cứu các tính năng</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Tìm hiểu thêm</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Cho phép cải tiến từ xa</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox sẽ cải thiện các tính năng, hiệu năng và độ ổn định giữa các bản cập nhật. Các thay đổi được áp dụng từ xa.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Tìm hiểu thêm</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Cải tiến từ xa</string>
   <!--
     Sessions
 
@@ -1544,17 +1562,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Thêm thẻ riêng tư</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Riêng tư</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Riêng tư</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Đồng bộ hóa</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Đồng bộ hóa</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Tìm kiếm thẻ của bạn</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Chia sẻ tất cả các thẻ</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Chia sẻ tất cả các thẻ</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Các thẻ đã đóng gần đây</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Đã đóng gần đây</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Đã đóng gần đây</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Cài đặt tài khoản</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1570,11 +1588,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Hủy bỏ</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Đánh dấu</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Đánh dấu</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Đánh dấu các thẻ đã chọn</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Đóng</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Đóng</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Đóng thẻ đã chọn</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1600,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Thêm vào bộ sưu tập</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Chia sẻ các thẻ đã chọn</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Chia sẻ các thẻ đã chọn</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menu thẻ đã chọn</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1721,8 @@
   <string name="download_delete_item">Xóa</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Điều hướng quay lại</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Truy cập vào cài đặt Tải xuống</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Quay lại và đóng tìm kiếm</string>
   <!--
@@ -1720,12 +1740,25 @@
   <string name="download_share_url">Chia sẻ URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Chia sẻ tập tin</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Đổi tên tập tin</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Bạn có chắc muốn xóa các mục đã chọn không?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Xóa</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Hủy bỏ</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Đổi tên tập tin</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Tên</string>
+  <string name="download_rename_dialog_confirm_button">Lưu</string>
+  <string name="download_rename_dialog_cancel_button">Hủy bỏ</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Không thể đổi tên tập tin</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Không thể đổi tên tập tin này do các hạn chế về hệ thống hoặc dung lượng lưu trữ.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Trong tiến trình</string>
   <!--
@@ -1918,6 +1951,8 @@
   <string name="bookmark_error_edit_bookmark">Không thể chỉnh sửa dấu trang</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">CHỈNH SỬA</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Chọn</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Di chuyển</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1998,6 +2033,10 @@
   <string name="select_bookmark_search_button_content_description">Tìm kiếm thư mục</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Mục menu cho %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Mở rộng thư mục: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Đóng thư mục: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Đóng dấu trang</string>
   <!-- Title for the bookmark list empty state -->
@@ -2200,7 +2239,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Đăng nhập để đồng bộ hóa</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Đăng nhập</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Đăng nhập</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Gửi đến tất cả các thiết bị</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2399,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Tự động xóa dữ liệu duyệt khi bạn chọn \"Thoát\" từ menu chính</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Thoát</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Thoát</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Khoảng thời gian để xóa</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2824,6 +2863,20 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menu sắp xếp mật khẩu</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Email ẩn danh</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Gợi ý email ẩn danh</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Ẩn email thật của bạn để bảo vệ hộp thư đến khỏi thư rác. Một số trang web không hỗ trợ email ẩn danh.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Tìm hiểu thêm</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Quản lý email ẩn danh</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3059,9 +3112,9 @@
   -->
   <string name="certificate_info_verified_by">Được xác minh bởi: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Xóa</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Xóa</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Chỉnh sửa</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Chỉnh sửa</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Bạn có chắc chắn muốn xóa mật khẩu này?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3122,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Hủy bỏ</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Cài đặt mật khẩu</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Cài đặt mật khẩu</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Trường văn bản có thể chỉnh sửa cho địa chỉ trang web.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Trường văn bản có thể chỉnh sửa cho địa chỉ trang web.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Trường văn bản có thể chỉnh sửa cho tên người dùng.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Trường văn bản có thể chỉnh sửa cho tên người dùng.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Trường văn bản có thể chỉnh sửa cho mật khẩu.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Trường văn bản có thể chỉnh sửa cho mật khẩu.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Lưu thay đổi.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Lưu thay đổi.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Chỉnh sửa mật khẩu</string>
   <!-- The page title for adding new password. -->
@@ -4002,6 +4055,8 @@
   <string name="settings_search_no_results_title">Không có gì cả</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Có lẽ bạn nên thử tìm kiếm khác?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Nút tìm kiếm cài đặt</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

@@ -175,6 +175,9 @@ struct WeakTargetHasher {
     return StableCellHasher<Cell*>::hash(l.toGCThing());
   }
   static bool match(const Key& k, const Lookup& l) {
+    if (k.type() != l.type()) {
+      return false;
+    }
     if (l.isSymbol()) {
       return k.toSymbol() == l.toSymbol();
     }

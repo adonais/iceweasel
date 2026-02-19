@@ -26,7 +26,7 @@ index 26080d9abc..4df8681a9b 100644
  # These are the targets to skip header checking by default. The files in targets
  # matching these patterns (see "gn help label_pattern" for format) will not have
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 6dcbc2bb33..6896edbc34 100644
+index b1772a67c6..71b65d27c3 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -52,11 +52,11 @@ index 3bd0bfb79f..b7561e53b6 100644
  
  rtc_library("encoded_frame") {
 diff --git a/webrtc.gni b/webrtc.gni
-index a8990f9c97..70238c3891 100644
+index d7edd19b90..c84213867e 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
-@@ -486,8 +486,8 @@ all_poison_types = [
-   "software_video_codecs",
+@@ -489,8 +489,8 @@ all_poison_types = [
+   "default_neural_residual_echo_estimator",
  ]
  
 -absl_include_config = "//third_party/abseil-cpp:absl_include_config"

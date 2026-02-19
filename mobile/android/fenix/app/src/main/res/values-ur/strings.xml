@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">نجی %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -20,9 +20,9 @@
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">پتہ تلاش یا داخل کریں</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">آپ کے کھلے ٹیبز یہاں دکھائے جائیں گے۔</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">آپ کے کھلے ٹیبز یہاں دکھائے جائیں گے۔</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">آپ کے نجی ٹیبز یہاں دکھائے جائیں گے۔</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">آپ کے نجی ٹیبز یہاں دکھائے جائیں گے۔</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d منتخب کیا گیا</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -34,7 +34,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">ملٹی سکرین موڈ سے نکلیں</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">منتخب کردہ ٹیب کو مجموعہ میں محفوظ کریں</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">منتخب کردہ ٹیب کو مجموعہ میں محفوظ کریں</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s ءMozilla کے ذریعہ تیار کیا گیا ہے۔</string>
   <!-- Private Browsing -->
@@ -109,9 +109,9 @@
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
   <string name="browser_menu_stop">روکیں</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">مدد</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">مدد</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">نیا کیا ہے</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">نیا کیا ہے</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">سیٹنگز</string>
   <!-- Browser menu button that opens a user's library -->
@@ -137,7 +137,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">ان کے ذریعہ %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ان کے ذریعہ %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -150,11 +150,11 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">ایپ میں کھولیں</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">ریڈر ویو کو حسب ضرورت بنائیں۔</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">ریڈر ویو کو حسب ضرورت بنائیں۔</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">اضافہ کریں</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">اضافہ کریں</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">تدوین کریں</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">تدوین کریں</string>
   <!--
     Browser Toolbar
 
@@ -502,15 +502,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">نجی ٹیب شامل کریں</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">نجی</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">نجی</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">سنک</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">سنک</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">تمام ٹیبز شیئر کریں</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">تمام ٹیبز شیئر کریں</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">حالیہ بند کیے گئے ٹیبز</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">حالیہ بند کی گئی</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">حالیہ بند کی گئی</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">اکاؤنٹ کی سیٹنگز</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -518,11 +518,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">تمام ٹیب بند کریں</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">بک مارک</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">بک مارک</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">بند كریں</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">بند كریں</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">منتخب شدہ ٹیبز کا اشتراک کریں</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">منتخب شدہ ٹیبز کا اشتراک کریں</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">منتخب کردہ ٹیبز مینو</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -857,7 +857,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">جب آپ مین مینو سے \"چھوڑیں\" کو منتخب کرتے ہیں تو براؤزنگ کا ڈیٹا خودبخود حذف ہو جاتا ہے</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">بند کریں</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">بند کریں</string>
   <!-- Dialog message to the user asking to delete browsing data. %s is the name of the app (for example "Firefox"). -->
   <string name="delete_browsing_data_prompt_message_3">%s منتخب شدہ براؤزنگ کے کوائف کو حذف کر دے گا۔</string>
   <!-- Text for the cancel button for the data deletion dialog -->
@@ -1149,9 +1149,9 @@
   -->
   <string name="certificate_info_verified_by">توثیق کردہ برائے: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">حذف کریں</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">حذف کریں</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">تدوین کریں</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">تدوین کریں</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">حذف کریں</string>
   <!-- The error message in add login view when hostname field is blank. -->

@@ -2,6 +2,7 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.isNetworkConnected
@@ -21,7 +22,7 @@ import org.mozilla.fenix.ui.robots.homeScreen
 
 class PocketTest : TestSetup() {
     @get:Rule(order = 0)
-    val activityTestRule =
+    val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityTestRule(
                 isRecentTabsFeatureEnabled = false,
@@ -42,10 +43,10 @@ class PocketTest : TestSetup() {
         // Workaround to make sure the Pocket articles are populated before starting the tests.
         for (i in 1..RETRY_COUNT) {
             try {
-                homeScreen {
+                homeScreen(composeTestRule) {
                 }.openThreeDotMenu {
-                }.openSettings {
-                }.goBack {
+                }.clickSettingsButton {
+                }.goBack(composeTestRule) {
                     verifyThoughtProvokingStories(true)
                 }
 
@@ -64,16 +65,17 @@ class PocketTest : TestSetup() {
     @Test
     fun verifyPocketSectionTest() {
         runWithCondition(isNetworkConnected()) {
-            homeScreen {
+            homeScreen(composeTestRule) {
                 verifyThoughtProvokingStories(true)
-                verifyPocketRecommendedStoriesItems(activityTestRule)
+                verifyPocketRecommendedStoriesItems()
                 // Sponsored Pocket stories are only advertised for a limited time.
                 // See also known issue https://bugzilla.mozilla.org/show_bug.cgi?id=1828629
                 // verifyPocketSponsoredStoriesItems(2, 8)
             }.openThreeDotMenu {
-            }.openCustomizeHome {
+            }.clickSettingsButton {
+            }.openHomepageSubMenu {
                 clickPocketButton()
-            }.goBackToHomeScreen {
+            }.goBackToHomeScreen(composeTestRule) {
                 verifyThoughtProvokingStories(false)
             }
         }
@@ -81,9 +83,10 @@ class PocketTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2252513
     @Test
+    @Ignore("Disabled due to test instability - see Bug 2010926")
     fun openPocketStoryItemTest() {
         runWithCondition(isNetworkConnected()) {
-            homeScreen {
+            homeScreen(composeTestRule) {
                 verifyThoughtProvokingStories(true)
             }.clickPocketStoryItem(1) {
                 verifyUrl(Constants.STORIES_UTM_PARAM)

@@ -241,6 +241,13 @@ export class SearchSettings {
   }
 
   /**
+   * Test-only function to reset the settings.
+   */
+  _testResetSettings() {
+    this.#resetSettings(false);
+  }
+
+  /**
    * Queues writing the settings until after SETTINGS_INVALIDATION_DELAY. If there
    * is a currently queued task then it will be restarted.
    */

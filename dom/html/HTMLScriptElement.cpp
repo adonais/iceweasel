@@ -65,7 +65,7 @@ nsresult HTMLScriptElement::BindToTree(BindContext& aContext,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (IsInComposedDoc()) {
-    MaybeProcessScript();
+    MaybeProcessScript(nullptr /* aParser */);
   }
 
   return NS_OK;

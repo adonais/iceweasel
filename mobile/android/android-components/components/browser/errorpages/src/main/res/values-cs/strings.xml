@@ -88,7 +88,7 @@
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">Adresa nenalezena</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
-  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>URL adresa neodpovídá známému serveru a nelze ji načíst.</p>\n<ul>\n<li>Zkontrolujte, že je adresa napsaná správně a neobsahuje chyby jako <strong>ww</strong>.example.com místo <strong>www</strong>.example.com.</li>\n<li>Pokud se vám nezobrazují ani ostatní stránky, zkontrolujte své připojení přes mobilní data nebo Wi-Fi.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Adresa URL neodpovídá známému serveru a nelze ji načíst.</p>\n<ul>\n<li>Zkontrolujte, že je adresa napsaná správně a neobsahuje chyby jako <strong>ww</strong>.example.com místo <strong>www</strong>.example.com.</li>\n<li>Pokud se vám nezobrazují ani ostatní stránky, zkontrolujte své připojení přes mobilní data nebo Wi-Fi.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_no_internet_title_2">Zdá se, že došlo k problému s připojením k internetu</string>
   <!-- The main body text of this error page. It will be shown beneath the title -->
@@ -132,9 +132,9 @@
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_harmful_uri_message"><![CDATA[<p>Stránka %1$s byla nahlášena jako útočná a byla zablokována na základě vašeho bezpečnostního nastavení.</p>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problém s klamavou stránkou</string>
+  <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problém s podvodnou stránkou</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
-  <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Tato webová stránka na serveru %1$s byla nahlášena jako klamavá a byla zablokována na základě vašeho bezpečnostního nastavení.</p>]]></string>
+  <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Tato webová stránka na serveru %1$s byla nahlášena jako podvodná a byla zablokována na základě vašeho bezpečnostního nastavení.</p>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_harmful_addon_uri_title">Stránka byla z důvodu vaší bezpečnosti zablokována</string>
   <!-- The %1$s will be replaced by the malicious website URL -->

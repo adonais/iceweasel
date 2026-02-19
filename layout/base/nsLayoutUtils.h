@@ -3062,7 +3062,7 @@ class nsLayoutUtils {
    *   assigned to first frame on the next line if such a next line exists, null
    *   otherwise.
    */
-  static bool IsInvisibleBreak(nsINode* aNode,
+  static bool IsInvisibleBreak(const nsINode* aNode,
                                nsIFrame** aNextLineFrame = nullptr);
 
   static nsRect ComputeSVGOriginBox(mozilla::dom::SVGViewportElement*);

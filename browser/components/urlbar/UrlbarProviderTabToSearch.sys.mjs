@@ -379,7 +379,7 @@ function makeResult(context, engine, satisfiesAutofillThreshold = false) {
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     suggestedIndex: 1,
-    ...lazy.UrlbarResult.payloadAndSimpleHighlights(context.tokens, {
+    payload: {
       engine: engine.name,
       isGeneralPurposeEngine: engine.isGeneralPurposeEngine,
       searchUrlDomainWithoutSuffix: searchUrlDomainWithoutSuffix(engine),
@@ -387,7 +387,7 @@ function makeResult(context, engine, satisfiesAutofillThreshold = false) {
       icon: UrlbarUtils.ICON.SEARCH_GLASS,
       query: "",
       satisfiesAutofillThreshold,
-    }),
+    },
   });
 }
 

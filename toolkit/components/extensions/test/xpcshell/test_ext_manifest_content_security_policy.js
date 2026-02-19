@@ -2,7 +2,6 @@
 /* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
-Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 AddonTestUtils.init(this);
 
 add_task(async function test_manifest_csp() {

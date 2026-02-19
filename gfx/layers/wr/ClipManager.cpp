@@ -23,8 +23,7 @@
 static mozilla::LazyLogModule sClipLog("wr.clip");
 #define CLIP_LOG(...) MOZ_LOG(sClipLog, LogLevel::Debug, (__VA_ARGS__))
 
-namespace mozilla {
-namespace layers {
+namespace mozilla::layers {
 
 ClipManager::ClipManager() : mManager(nullptr), mBuilder(nullptr) {}
 
@@ -202,13 +201,12 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
   // In most cases we can combine the leaf of the clip chain with the clip rect
   // of the display item. This reduces the number of clip items, which avoids
   // some overhead further down the pipeline.
-  bool separateLeaf = false;
-  if (clip && clip->mASR == asr && clip->mClip.GetRoundedRectCount() == 0) {
-    // Container display items are not currently supported because the clip
-    // rect of a stacking context is not handled the same as normal display
-    // items.
-    separateLeaf = !aItem->GetChildren();
-  }
+  // Container display items are not currently supported because the clip
+  // rect of a stacking context is not handled the same as normal display
+  // items.
+  const bool separateLeaf = clip && clip->mASR == asr &&
+                            clip->mClip.GetRoundedRectCount() == 0 &&
+                            !aItem->GetChildren();
 
   // Zoom display items report their bounds etc using the parent document's
   // APD because zoom items act as a conversion layer between the two different
@@ -672,59 +670,53 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
 Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
     const DisplayItemClipChain* aChain, int32_t aAppUnitsPerDevPixel) {
   MOZ_ASSERT(!mCacheStack.empty());
-  AutoTArray<wr::WrClipId, 6> allClipIds;
-  ClipIdMap& cache = mCacheStack.top();
-  // Iterate through the clips in the current item's clip chain, define them
-  // in WR, and put their IDs into |clipIds|.
-  for (const DisplayItemClipChain* chain = aChain; chain;
-       chain = chain->mParent) {
-    MOZ_DIAGNOSTIC_ASSERT(chain->mOnStack || !chain->mASR ||
-                          chain->mASR->mFrame);
-
-    if (!chain->mClip.HasClip()) {
-      // This item in the chain is a no-op, skip over it
-      continue;
-    }
-
-    auto emplaceResult = cache.try_emplace(chain);
-    auto& chainClipIds = emplaceResult.first->second;
-    if (!emplaceResult.second) {
-      // Found it in the currently-active cache, so just use the id we have for
-      // it.
-      CLIP_LOG("cache[%p] => hit\n", chain);
-      allClipIds.AppendElements(chainClipIds);
-      continue;
-    }
-
-    LayoutDeviceRect clip = LayoutDeviceRect::FromAppUnits(
-        chain->mClip.GetClipRect(), aAppUnitsPerDevPixel);
-    AutoTArray<wr::ComplexClipRegion, 6> wrRoundedRects;
-    chain->mClip.ToComplexClipRegions(aAppUnitsPerDevPixel, wrRoundedRects);
-
-    wr::WrSpatialId space = GetSpatialId(chain->mASR);
-    // Define the clip
-    space = SpatialIdAfterOverride(space);
-
-    auto rectClipId =
-        mBuilder->DefineRectClip(Some(space), wr::ToLayoutRect(clip));
-    CLIP_LOG("cache[%p] <= %zu\n", chain, rectClipId.id);
-    chainClipIds.AppendElement(rectClipId);
-
-    for (const auto& complexClip : wrRoundedRects) {
-      auto complexClipId =
-          mBuilder->DefineRoundedRectClip(Some(space), complexClip);
-      CLIP_LOG("cache[%p] <= %zu\n", chain, complexClipId.id);
-      chainClipIds.AppendElement(complexClipId);
-    }
-
-    allClipIds.AppendElements(chainClipIds);
-  }
-
-  if (allClipIds.IsEmpty()) {
+  if (!aChain) {
     return Nothing();
   }
 
-  return Some(mBuilder->DefineClipChain(allClipIds));
+  ClipIdMap& cache = mCacheStack.top();
+  MOZ_DIAGNOSTIC_ASSERT(aChain->mOnStack || !aChain->mASR ||
+                        aChain->mASR->mFrame);
+
+  if (auto iter = cache.find(aChain); iter != cache.end()) {
+    // Found it in the currently-active cache, so just use the id we have for
+    // it.
+    CLIP_LOG("cache[%p] => hit\n", aChain);
+    return iter->second.mWrChainID;
+  }
+
+  const auto parentChain =
+      DefineClipChain(aChain->mParent, aAppUnitsPerDevPixel);
+  if (!aChain->mClip.HasClip()) {
+    cache[aChain] = {parentChain};
+    // This item in the chain is a no-op, skip over it
+    return parentChain;
+  }
+
+  auto clip = LayoutDeviceRect::FromAppUnits(aChain->mClip.GetClipRect(),
+                                             aAppUnitsPerDevPixel);
+  AutoTArray<wr::ComplexClipRegion, 6> wrRoundedRects;
+  aChain->mClip.ToComplexClipRegions(aAppUnitsPerDevPixel, wrRoundedRects);
+  wr::WrSpatialId space = GetSpatialId(aChain->mASR);
+  // Define the clip
+  space = SpatialIdAfterOverride(space);
+  // Iterate through the clips in the current item's clip chain, define them
+  // in WR, and put their IDs into |clipIds|.
+  AutoTArray<wr::WrClipId, 6> clipChainClipIds;
+  auto rectClipId =
+      mBuilder->DefineRectClip(Some(space), wr::ToLayoutRect(clip));
+  CLIP_LOG("cache[%p] <= %zu\n", aChain, rectClipId.id);
+  clipChainClipIds.AppendElement(rectClipId);
+
+  for (const auto& complexClip : wrRoundedRects) {
+    auto complexClipId =
+        mBuilder->DefineRoundedRectClip(Some(space), complexClip);
+    CLIP_LOG("cache[%p] <= %zu\n", aChain, complexClipId.id);
+    clipChainClipIds.AppendElement(complexClipId);
+  }
+  auto id = Some(mBuilder->DefineClipChain(clipChainClipIds, parentChain));
+  cache[aChain] = {id};
+  return id;
 }
 
 ClipManager::~ClipManager() {
@@ -778,5 +770,4 @@ wr::WrSpaceAndClipChain ClipManager::ItemClips::GetSpaceAndClipChain() const {
   return spaceAndClipChain;
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  // namespace mozilla::layers

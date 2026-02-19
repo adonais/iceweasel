@@ -167,9 +167,10 @@ void HeadlessWidget::Show(bool aState) {
   LOG(("HeadlessWidget::Show [%p] state %d\n", (void*)this, aState));
 
   // Top-level window and dialogs are activated/raised when shown.
-  // NB: alwaysontop windows are generally used for peripheral indicators,
-  //     so we don't focus them by default.
-  if (aState && !mAlwaysOnTop &&
+  // NB: alwaysontop windows are generally used for peripheral indicators.
+  //     So we don't focus them by default unless they are a Document
+  //     Picture-in-Picture.
+  if (aState && (!mAlwaysOnTop || mPiPType == PiPType::DocumentPiP) &&
       (mWindowType == WindowType::TopLevel ||
        mWindowType == WindowType::Dialog)) {
     RaiseWindow();
@@ -222,7 +223,7 @@ void HeadlessWidget::MoveInternal(int32_t aX, int32_t aY) {
   }
 
   mBounds.MoveTo(aX, aY);
-  NotifyWindowMoved(aX, aY);
+  NotifyWindowMoved(mBounds.TopLeft());
 }
 
 LayoutDeviceIntPoint HeadlessWidget::WidgetToScreenOffset() {
@@ -263,11 +264,10 @@ void HeadlessWidget::ResizeInternal(int32_t aWidth, int32_t aHeight,
     mCompositorWidget->NotifyClientSizeChanged(mBounds.Size());
   }
   if (mWidgetListener) {
-    mWidgetListener->WindowResized(this, mBounds.Width(), mBounds.Height());
+    mWidgetListener->WindowResized(this, mBounds.Size());
   }
   if (mAttachedWidgetListener) {
-    mAttachedWidgetListener->WindowResized(this, mBounds.Width(),
-                                           mBounds.Height());
+    mAttachedWidgetListener->WindowResized(this, mBounds.Size());
   }
 }
 

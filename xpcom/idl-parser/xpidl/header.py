@@ -195,7 +195,7 @@ def paramlistAsNative(m, empty="void", return_param=True):
         ):
             t = m.params[paramIter].type
             # Strings can't be optional, so this shouldn't happen, but let's make sure:
-            if t == "AString" or t == "ACString" or t == "AUTF8String":
+            if t in {"AString", "ACString", "AUTF8String"}:
                 break
             l[paramIter] += " = nullptr"
             paramIter -= 1
@@ -448,7 +448,7 @@ def infallibleDecl(member):
     realtype = member.realtype.nativeType("in")
     tmpl = builtin_infallible_tmpl
 
-    if member.realtype.kind != "builtin" and member.realtype.kind != "cenum":
+    if member.realtype.kind not in {"builtin", "cenum"}:
         assert realtype.endswith(" *"), "bad infallible type"
         tmpl = refcnt_infallible_tmpl
         realtype = realtype[:-2]  # strip trailing pointer
@@ -557,15 +557,13 @@ def write_interface(iface, fd):
     else:
         implclass = "_MYCLASS_"
 
-    names.update(
-        {
-            "defname": defname,
-            "macroname": iface.name.upper(),
-            "name": iface.name,
-            "iid": iface.attributes.uuid,
-            "implclass": implclass,
-        }
-    )
+    names.update({
+        "defname": defname,
+        "macroname": iface.name.upper(),
+        "name": iface.name,
+        "iid": iface.attributes.uuid,
+        "implclass": implclass,
+    })
 
     fd.write(iface_header % names)
 

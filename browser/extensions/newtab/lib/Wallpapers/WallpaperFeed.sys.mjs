@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BasePromiseWorker: "resource://gre/modules/PromiseWorker.sys.mjs",
@@ -37,10 +39,20 @@ const RS_FALLBACK_BASE_URL =
 export class WallpaperFeed {
   #customBackgroundObjectURL = null;
 
+  // @backward-compat { version 148 } This newtab train-hop compatibility
+  // shim can be removed once Firefox 148 makes it to the release channel.
+  #usesProtocolHandler =
+    Services.vc.compare(AppConstants.MOZ_APP_VERSION, "148.0a1") >= 0;
+
   constructor() {
     this.loaded = false;
     this.wallpaperClient = null;
     this._onSync = this.onSync.bind(this);
+  }
+
+  // Constructs a moz-newtab-wallpaper:// URI for the given wallpaper UUID.
+  getWallpaperURL(uuid) {
+    return `moz-newtab-wallpaper://${uuid}`;
   }
 
   /**
@@ -99,6 +111,15 @@ export class WallpaperFeed {
   }
 
   async updateWallpapers(isStartup = false) {
+    // @backward-compat { version 148 } This newtab train-hop compatibility
+    // shim can be removed once Firefox 148 makes it to the release channel.
+    if (!this.#usesProtocolHandler) {
+      if (this.#customBackgroundObjectURL) {
+        URL.revokeObjectURL(this.#customBackgroundObjectURL);
+        this.#customBackgroundObjectURL = null;
+      }
+    }
+
     let uuid = Services.prefs.getStringPref(
       PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,
       ""
@@ -109,35 +130,43 @@ export class WallpaperFeed {
       ""
     );
 
-    if (this.#customBackgroundObjectURL) {
-      URL.revokeObjectURL(this.#customBackgroundObjectURL);
-      this.#customBackgroundObjectURL = null;
-    }
-
     if (uuid && selectedWallpaper === "custom") {
-      const wallpaperDir = PathUtils.join(PathUtils.profileDir, "wallpaper");
-      const filePath = PathUtils.join(wallpaperDir, uuid);
-
-      try {
-        let testFile = await IOUtils.getFile(filePath);
-
-        if (!testFile) {
-          throw new Error("File does not exist");
-        }
-
-        let imageFile = await File.createFromNsIFile(testFile);
-        this.#customBackgroundObjectURL = URL.createObjectURL(imageFile);
+      // @backward-compat { version 148 } This newtab train-hop compatibility
+      // shim can be removed once Firefox 148 makes it to the release channel.
+      if (this.#usesProtocolHandler) {
+        const wallpaperURI = this.getWallpaperURL(uuid);
 
         this.store.dispatch(
           ac.BroadcastToContent({
             type: at.WALLPAPERS_CUSTOM_SET,
-            data: this.#customBackgroundObjectURL,
+            data: wallpaperURI,
           })
         );
-      } catch (error) {
-        console.warn(`Wallpaper file not found: ${error.message}`);
-        Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
-        return;
+      } else {
+        const wallpaperDir = PathUtils.join(PathUtils.profileDir, "wallpaper");
+        const filePath = PathUtils.join(wallpaperDir, uuid);
+
+        try {
+          let testFile = await IOUtils.getFile(filePath);
+
+          if (!testFile) {
+            throw new Error("File does not exist");
+          }
+
+          let imageFile = await File.createFromNsIFile(testFile);
+          this.#customBackgroundObjectURL = URL.createObjectURL(imageFile);
+
+          this.store.dispatch(
+            ac.BroadcastToContent({
+              type: at.WALLPAPERS_CUSTOM_SET,
+              data: this.#customBackgroundObjectURL,
+            })
+          );
+        } catch (error) {
+          console.warn(`Wallpaper file not found: ${error.message}`);
+          Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
+          return;
+        }
       }
     } else {
       this.store.dispatch(
@@ -281,19 +310,32 @@ export class WallpaperFeed {
 
       await IOUtils.write(filePath, uint8Array, { tmpPath: `${filePath}.tmp` });
 
-      if (this.#customBackgroundObjectURL) {
-        URL.revokeObjectURL(this.#customBackgroundObjectURL);
-        this.#customBackgroundObjectURL = null;
+      // @backward-compat { version 148 } This newtab train-hop compatibility
+      // shim can be removed once Firefox 148 makes it to the release channel.
+      if (this.#usesProtocolHandler) {
+        const wallpaperURI = this.getWallpaperURL(uuid);
+
+        this.store.dispatch(
+          ac.BroadcastToContent({
+            type: at.WALLPAPERS_CUSTOM_SET,
+            data: wallpaperURI,
+          })
+        );
+      } else {
+        if (this.#customBackgroundObjectURL) {
+          URL.revokeObjectURL(this.#customBackgroundObjectURL);
+          this.#customBackgroundObjectURL = null;
+        }
+
+        this.#customBackgroundObjectURL = URL.createObjectURL(file);
+
+        this.store.dispatch(
+          ac.BroadcastToContent({
+            type: at.WALLPAPERS_CUSTOM_SET,
+            data: this.#customBackgroundObjectURL,
+          })
+        );
       }
-
-      this.#customBackgroundObjectURL = URL.createObjectURL(file);
-
-      this.store.dispatch(
-        ac.BroadcastToContent({
-          type: at.WALLPAPERS_CUSTOM_SET,
-          data: this.#customBackgroundObjectURL,
-        })
-      );
 
       this.store.dispatch(
         ac.SetPref("newtabWallpapers.customWallpaper.theme", wallpaperTheme)

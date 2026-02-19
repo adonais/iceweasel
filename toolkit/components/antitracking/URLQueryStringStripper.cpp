@@ -467,6 +467,11 @@ int URLQueryStringStripper::TryStripValue(const nsACString& aHost,
 nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
     nsIURI* aURI, nsIURI** aStrippedURI, int& aStripCount, bool aDry,
     bool aStripNestedURIs) {
+  if (!StaticPrefs::privacy_query_stripping_strip_on_share_enabled()) {
+    aStripCount = 0;
+    return NS_OK;
+  }
+
   nsAutoCString query;
   nsresult rv = aURI->GetQuery(query);
   NS_ENSURE_SUCCESS(rv, rv);

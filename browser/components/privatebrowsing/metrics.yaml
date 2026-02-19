@@ -67,6 +67,7 @@ aboutprivatebrowsing:
       - https://bugzil.la/1922609
       - https://bugzil.la/1952111
       - https://bugzil.la/1984459
+      - https://bugzil.la/2005390
     data_reviews: &aboutprivatebrowsing_click_data_reviews
       - https://bugzil.la/1709344
       - https://bugzil.la/1754635
@@ -76,10 +77,11 @@ aboutprivatebrowsing:
       - https://bugzil.la/1871197
       - https://phabricator.services.mozilla.com/D225937
       - https://bugzil.la/1984459
+      - https://bugzil.la/2005390
     notification_emails: &aboutprivatebrowsing_click_emails
       - emz@mozilla.com
       - tihuang@mozilla.com
-    expires: 149
+    expires: 160
     no_lint:
       - COMMON_PREFIX
     telemetry_mirror: Aboutprivatebrowsing_Click_InfoLink
@@ -94,7 +96,7 @@ aboutprivatebrowsing:
     bugs: *aboutprivatebrowsing_click_bugs
     data_reviews: *aboutprivatebrowsing_click_data_reviews
     notification_emails: *aboutprivatebrowsing_click_emails
-    expires: 149
+    expires: 160
     no_lint:
       - COMMON_PREFIX
     telemetry_mirror: Aboutprivatebrowsing_Click_PromoLink
@@ -109,7 +111,7 @@ aboutprivatebrowsing:
     bugs: *aboutprivatebrowsing_click_bugs
     data_reviews: *aboutprivatebrowsing_click_data_reviews
     notification_emails: *aboutprivatebrowsing_click_emails
-    expires: 149
+    expires: 160
     no_lint:
       - COMMON_PREFIX
     telemetry_mirror: Aboutprivatebrowsing_Click_DismissButton

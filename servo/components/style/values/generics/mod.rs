@@ -5,6 +5,7 @@
 //! Generic types that share their serialization implementations
 //! for both specified and computed values.
 
+use crate::derives::*;
 use crate::Zero;
 use std::ops::Add;
 
@@ -59,6 +60,7 @@ pub mod url;
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed_value(derive_fields)]
 pub struct NonNegative<T>(pub T);
 
 /// A trait to clamp a negative value to another.

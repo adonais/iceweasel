@@ -9,7 +9,7 @@
  */
 
 /*
- * Created on Mon Nov 24 15:06:20 2025 from UCD data files with version info:
+ * Created on Mon Dec 15 17:23:16 2025 from UCD data files with version info:
  *
 
 # Unicode Character Database
@@ -30,9 +30,6 @@
 
 This directory contains final data files
 for the Unicode Character Database, for Version 17.0.0 of the Unicode Standard.
-
-# IdentifierStatus.txt
-# Date: 2025-08-01, 18:11:48 GMT
 
 # Unihan_Variants.txt
 # Date: 2025-07-24 00:00:00 GMT [KL]

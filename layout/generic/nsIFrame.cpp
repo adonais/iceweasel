@@ -2767,6 +2767,19 @@ static void ApplyOverflowClipping(
       haveRadii ? &radii : nullptr);
 }
 
+static Sides ToSkipSides(PhysicalAxes aClipAxes) {
+  SideBits result{};
+  if (!aClipAxes.contains(PhysicalAxis::Vertical)) {
+    result |= SideBits::eTop;
+    result |= SideBits::eBottom;
+  }
+  if (!aClipAxes.contains(PhysicalAxis::Horizontal)) {
+    result |= SideBits::eLeft;
+    result |= SideBits::eRight;
+  }
+  return Sides(result);
+}
+
 bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
     const PhysicalAxes aClipAxes, nsRect& aOutRect,
     nsRectCornerRadii& aOutRadii) const {
@@ -2776,12 +2789,8 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
   // comboboxes which make their display text (an inline frame) have clipping.
   MOZ_ASSERT(!aClipAxes.isEmpty());
   MOZ_ASSERT(ShouldApplyOverflowClipping(StyleDisplay()) == aClipAxes);
-  // Only deflate the padding if we clip to the content-box in that axis.
-  nsMargin boxMargin = -GetUsedBorder();
-  auto clipMargin = OverflowClipMargin(aClipAxes);
-  boxMargin += nsMargin(clipMargin.height, clipMargin.width, clipMargin.height,
-                        clipMargin.width);
-  boxMargin.ApplySkipSides(GetSkipSides());
+  auto boxMargin = OverflowClipMargin(aClipAxes, /* aAllowNegative = */ true);
+  boxMargin.ApplySkipSides(GetSkipSides() | ToSkipSides(aClipAxes));
 
   aOutRect = nsRect(nsPoint(), GetSize());
   aOutRect.Inflate(boxMargin);
@@ -2806,21 +2815,32 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
   return true;
 }
 
-nsSize nsIFrame::OverflowClipMargin(PhysicalAxes aClipAxes) const {
-  nsSize result;
+nsMargin nsIFrame::OverflowClipMargin(PhysicalAxes aClipAxes,
+                                      bool aAllowNegative) const {
+  nsMargin result;
   if (aClipAxes.isEmpty()) {
     return result;
   }
   const auto& margin = StyleMargin()->mOverflowClipMargin;
-  if (margin.IsZero()) {
+  if (!aAllowNegative && margin.offset.IsZero()) {
     return result;
   }
-  nscoord marginAu = margin.ToAppUnits();
-  if (aClipAxes.contains(PhysicalAxis::Horizontal)) {
-    result.width = marginAu;
+  switch (margin.visual_box) {
+    case StyleOverflowClipMarginBox::BorderBox:
+      break;
+    case StyleOverflowClipMarginBox::PaddingBox:
+      result = -GetUsedBorder();
+      break;
+    case StyleOverflowClipMarginBox::ContentBox:
+      result = -GetUsedBorderAndPadding();
+      break;
   }
-  if (aClipAxes.contains(PhysicalAxis::Vertical)) {
-    result.height = marginAu;
+  if (!margin.offset.IsZero()) {
+    nscoord marginAu = margin.offset.ToAppUnits();
+    result += nsMargin(marginAu, marginAu, marginAu, marginAu);
+  }
+  if (!aAllowNegative) {
+    result.EnsureAtLeast(nsMargin());
   }
   return result;
 }
@@ -3212,11 +3232,13 @@ void nsIFrame::BuildDisplayListForStackingContext(
   const bool combines3DTransformWithAncestors =
       (extend3DContext || isTransformed) && Combines3DTransformWithAncestors();
 
-  Maybe<nsDisplayListBuilder::AutoPreserves3DContext> autoPreserves3DContext;
+  UniquePtr<nsDisplayListBuilder::AutoPreserves3DContext>
+      autoPreserves3DContext;
   if (extend3DContext && !combines3DTransformWithAncestors) {
     // Start a new preserves3d context to keep informations on
     // nsDisplayListBuilder.
-    autoPreserves3DContext.emplace(aBuilder);
+    autoPreserves3DContext =
+        MakeUnique<nsDisplayListBuilder::AutoPreserves3DContext>(aBuilder);
     // Save dirty rect on the builder to avoid being distorted for
     // multiple transforms along the chain.
     aBuilder->SavePreserves3DRect();
@@ -4320,12 +4342,12 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
       aBuilder->ClearWillChangeBudgetStatus(child);
     }
 
-    // If 'child' is a pushed float then it's owned by a block that's not an
-    // ancestor of the placeholder, and it will be painted by that block and
+    // If 'child' is a pushed out-of-flow then it's owned by a block that's not
+    // an ancestor of the placeholder, and it will be painted by that block and
     // should not be painted through the placeholder. Also recheck
     // NS_FRAME_TOO_DEEP_IN_FRAME_TREE and NS_FRAME_IS_NONDISPLAY.
     static const nsFrameState skipFlags =
-        (NS_FRAME_IS_PUSHED_FLOAT | NS_FRAME_TOO_DEEP_IN_FRAME_TREE |
+        (NS_FRAME_IS_PUSHED_OUT_OF_FLOW | NS_FRAME_TOO_DEEP_IN_FRAME_TREE |
          NS_FRAME_IS_NONDISPLAY);
     if (child->HasAnyStateBits(skipFlags) || nsLayoutUtils::IsPopup(child)) {
       return;
@@ -4374,13 +4396,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     // it acts like inline-block or inline-table. Therefore it is a
     // pseudo-stacking-context.
     pseudoStackingContext = true;
-  }
-
-  const nsStyleDisplay* ourDisp = StyleDisplay();
-  // Don't paint our children if the theme object is a leaf.
-  if (IsThemed(ourDisp) && !PresContext()->Theme()->WidgetIsContainer(
-                               ourDisp->EffectiveAppearance())) {
-    return;
   }
 
   // Since we're now sure that we're adding this frame to the display list
@@ -5321,14 +5336,14 @@ nsresult nsIFrame::SelectByTypeAtPoint(const nsPoint& aPoint,
     return NS_ERROR_FAILURE;
   }
 
-  uint32_t offset;
-  nsIFrame* frame = SelectionMovementUtils::GetFrameForNodeOffset(
-      offsets.content, offsets.offset, offsets.associate, &offset);
-  if (!frame) {
+  FrameAndOffset frameAndOffset = SelectionMovementUtils::GetFrameForNodeOffset(
+      offsets.content, offsets.offset, offsets.associate);
+  if (!frameAndOffset) {
     return NS_ERROR_FAILURE;
   }
-  return frame->PeekBackwardAndForwardForSelection(
-      aBeginAmountType, aEndAmountType, static_cast<int32_t>(offset),
+  return frameAndOffset->PeekBackwardAndForwardForSelection(
+      aBeginAmountType, aEndAmountType,
+      static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent),
       aBeginAmountType != eSelectWord, aSelectFlags);
 }
 
@@ -10736,8 +10751,9 @@ static nsRect ComputeOutlineInnerRect(
   }
 
   auto overflowClipAxes = aFrame->ShouldApplyOverflowClipping(disp);
-  auto overflowClipMargin = aFrame->OverflowClipMargin(overflowClipAxes);
-  if (overflowClipAxes == kPhysicalAxesBoth && overflowClipMargin == nsSize()) {
+  auto overflowClipMargin = aFrame->OverflowClipMargin(
+      overflowClipAxes, /* aAllowNegative = */ false);
+  if (overflowClipAxes == kPhysicalAxesBoth && overflowClipMargin.IsAllZero()) {
     return u;
   }
 
@@ -11016,8 +11032,9 @@ bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
   // since the overflow area should include the entire border-box, just set it
   // to the border-box size here.
   if (!overflowClipAxes.isEmpty()) {
-    aOverflowAreas.ApplyClipping(bounds, overflowClipAxes,
-                                 OverflowClipMargin(overflowClipAxes));
+    aOverflowAreas.ApplyClipping(
+        bounds, overflowClipAxes,
+        OverflowClipMargin(overflowClipAxes, /* aAllowNegative = */ false));
   }
 
   ComputeAndIncludeOutlineArea(this, aOverflowAreas, aNewSize);
@@ -12274,25 +12291,25 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
     const nsStyleDisplay* aDisp) const {
   MOZ_ASSERT(aDisp == StyleDisplay(), "Wrong display struct");
 
-  // 'contain:paint', which we handle as 'overflow:clip' here. Except for
-  // scrollframes we don't need contain:paint to add any clipping, because
-  // the scrollable frame will already clip overflowing content, and because
-  // 'contain:paint' should prevent all means of escaping that clipping
-  // (e.g. because it forms a fixed-pos containing block).
-  if (aDisp->IsContainPaint() && !IsScrollContainerFrame() &&
-      SupportsContainLayoutAndPaint()) {
+  if (IsScrollContainerOrSubclass()) {
+    // Scrollers deal with overflow on their own.
+    return {};
+  }
+
+  // 'contain:paint', which we handle as 'overflow:clip' here. 'contain:paint'
+  // should prevent all means of escaping that clipping (e.g. because it forms a
+  // fixed-pos containing block).
+  if (aDisp->IsContainPaint() && SupportsContainLayoutAndPaint()) {
     return kPhysicalAxesBoth;
   }
 
-  // and overflow:hidden that we should interpret as clip
-  if (aDisp->mOverflowX == StyleOverflow::Hidden &&
-      aDisp->mOverflowY == StyleOverflow::Hidden) {
+  // and overflow: scrollable that we should interpret as clip
+  if (aDisp->IsScrollableOverflow()) {
     // REVIEW: these are the frame types that set up clipping.
     LayoutFrameType type = Type();
     switch (type) {
       case LayoutFrameType::CheckboxRadio:
       case LayoutFrameType::ComboboxControl:
-      case LayoutFrameType::ListControl:
       case LayoutFrameType::Progress:
       case LayoutFrameType::Range:
       case LayoutFrameType::SubDocument:
@@ -12300,45 +12317,50 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
       case LayoutFrameType::SVGInnerSVG:
       case LayoutFrameType::SVGOuterSVG:
       case LayoutFrameType::SVGSymbol:
-      case LayoutFrameType::Table:
-      case LayoutFrameType::TableCell:
       case LayoutFrameType::Image:
+      case LayoutFrameType::TableCell:
         return kPhysicalAxesBoth;
+      case LayoutFrameType::Table:
+        // Tables, for legacy reasons only clip when hidden in both directions,
+        // and treat all other scrollable overflow values as `visible`.
+        // This is (somewhat, since other browsers make this change at
+        // computed-value time, see bug 1918789) interoperable css2-era
+        // behavior. We might be able to change this, but not today.
+        // See layout/reftests/table-overflow/bug785684-x.html
+        return aDisp->mOverflowX == StyleOverflow::Hidden &&
+                       aDisp->mOverflowY == StyleOverflow::Hidden
+                   ? kPhysicalAxesBoth
+                   : PhysicalAxes();
       case LayoutFrameType::TextInput:
         // It has an anonymous scroll container frame that handles any overflow.
         return PhysicalAxes();
       default:
         break;
     }
+    if (IsSuppressedScrollableBlockForPrint()) {
+      return kPhysicalAxesBoth;
+    }
   }
 
-  // clip overflow:clip, except for nsListControlFrame which is
-  // a ScrollContainerFrame sub-class.
-  if (MOZ_UNLIKELY((aDisp->mOverflowX == mozilla::StyleOverflow::Clip ||
-                    aDisp->mOverflowY == mozilla::StyleOverflow::Clip) &&
-                   !IsListControlFrame())) {
+  if (aDisp->mOverflowX == StyleOverflow::Clip ||
+      aDisp->mOverflowY == StyleOverflow::Clip) {
     // FIXME: we could use GetViewportScrollStylesOverrideElement() here instead
     // if that worked correctly in a print context. (see bug 1654667)
     const auto* element = Element::FromNodeOrNull(GetContent());
     if (!element ||
         !PresContext()->ElementWouldPropagateScrollStyles(*element)) {
       PhysicalAxes axes;
-      if (aDisp->mOverflowX == mozilla::StyleOverflow::Clip) {
+      if (aDisp->mOverflowX == StyleOverflow::Clip) {
         axes += PhysicalAxis::Horizontal;
       }
-      if (aDisp->mOverflowY == mozilla::StyleOverflow::Clip) {
+      if (aDisp->mOverflowY == StyleOverflow::Clip) {
         axes += PhysicalAxis::Vertical;
       }
       return axes;
     }
   }
 
-  if (HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    return PhysicalAxes();
-  }
-
-  return IsSuppressedScrollableBlockForPrint() ? kPhysicalAxesBoth
-                                               : PhysicalAxes();
+  return PhysicalAxes();
 }
 
 bool nsIFrame::IsSuppressedScrollableBlockForPrint() const {

@@ -7,16 +7,20 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  GuardianClient: "resource:///modules/ipprotection/GuardianClient.sys.mjs",
+  GuardianClient:
+    "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs",
   IPPEnrollAndEntitleManager:
-    "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
-  IPPHelpers: "resource:///modules/ipprotection/IPProtectionHelpers.sys.mjs",
-  IPPNimbusHelper: "resource:///modules/ipprotection/IPPNimbusHelper.sys.mjs",
-  IPPOptOutHelper: "resource:///modules/ipprotection/IPPOptOutHelper.sys.mjs",
-  IPPSignInWatcher: "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs",
-  IPPStartupCache: "resource:///modules/ipprotection/IPPStartupCache.sys.mjs",
-  IPPVPNAddonHelper:
-    "resource:///modules/ipprotection/IPPVPNAddonHelper.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
+  IPPHelpers:
+    "moz-src:///browser/components/ipprotection/IPProtectionHelpers.sys.mjs",
+  IPPNimbusHelper:
+    "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs",
+  IPPOptOutHelper:
+    "moz-src:///browser/components/ipprotection/IPPOptOutHelper.sys.mjs",
+  IPPSignInWatcher:
+    "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
+  IPPStartupCache:
+    "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });
@@ -167,14 +171,6 @@ class IPProtectionServiceSingleton extends EventTarget {
     // Maybe we have to use the cached state, because we are not initialized yet.
     if (!lazy.IPPStartupCache.isStartupCompleted) {
       return lazy.IPPStartupCache.state;
-    }
-
-    // If the VPN add-on is installed...
-    if (
-      lazy.IPPVPNAddonHelper.vpnAddonDetected &&
-      lazy.IPPEnrollAndEntitleManager.hasUpgraded
-    ) {
-      return IPProtectionStates.UNAVAILABLE;
     }
 
     // For non authenticated users, we can check if they are eligible (the UI

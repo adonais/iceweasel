@@ -390,7 +390,7 @@ class ScriptMixin(PlatformMixin):
         for ffrec in win32api.FindFiles("\\\\?\\" + path + "\\*.*"):
             file_attr = ffrec[0]
             name = ffrec[8]
-            if name == "." or name == "..":
+            if name in {".", ".."}:
                 continue
             full_name = os.path.join(path, name)
 
@@ -671,8 +671,7 @@ class ScriptMixin(PlatformMixin):
         filter_partial = functools.partial(fnmatch.filter, namelist)
         entries = itertools.chain(*map(filter_partial, extract_dirs or ["*"]))
 
-        for entry in entries:
-            yield entry
+        yield from entries
 
     def unzip(self, compressed_file, extract_to, extract_dirs="*", verbose=False):
         """This method allows to extract a zip file without writing to disk first.
@@ -1040,7 +1039,7 @@ class ScriptMixin(PlatformMixin):
             if overwrite == "clobber" or not os.path.exists(dest):
                 self.rmtree(dest)
                 shutil.copytree(src, dest)
-            elif overwrite == "no_overwrite" or overwrite == "overwrite_if_exists":
+            elif overwrite in {"no_overwrite", "overwrite_if_exists"}:
                 files = os.listdir(src)
                 for f in files:
                     abs_src_f = os.path.join(src, f)
@@ -1338,8 +1337,7 @@ class ScriptMixin(PlatformMixin):
                     )
                     time.sleep(sleeptime)
                     sleeptime = sleeptime * 2
-                    if sleeptime > max_sleeptime:
-                        sleeptime = max_sleeptime
+                    sleeptime = min(sleeptime, max_sleeptime)
 
     def query_env(
         self,
@@ -1595,12 +1593,11 @@ class ScriptMixin(PlatformMixin):
             if partial_env:
                 self.info("Using partial env: %s" % pprint.pformat(partial_env))
                 env = self.query_env(partial_env=partial_env)
+        elif hasattr(self, "previous_env") and env == self.previous_env:
+            self.info("Using env: (same as previous command)")
         else:
-            if hasattr(self, "previous_env") and env == self.previous_env:
-                self.info("Using env: (same as previous command)")
-            else:
-                self.info("Using env: %s" % pprint.pformat(env))
-                self.previous_env = env
+            self.info("Using env: %s" % pprint.pformat(env))
+            self.previous_env = env
 
         if output_parser is None:
             parser = OutputParser(
@@ -2092,7 +2089,7 @@ class BaseScript(ScriptMixin, LogMixin):
         **kwargs,
     ):
         self._return_code = 0
-        super(BaseScript, self).__init__()
+        super().__init__()
 
         self.log_obj = None
         self.abs_dirs = None
@@ -2251,7 +2248,7 @@ class BaseScript(ScriptMixin, LogMixin):
         )
         cfg_files_dump_config["not_from_cfg_file"] = not_from_file_dict
         self.action_message(
-            "Not from any config file (default_config, " "cmd line options, etc)"
+            "Not from any config file (default_config, cmd line options, etc)"
         )
         self.info(pprint.pformat(not_from_file_dict))
 
@@ -2399,16 +2396,14 @@ class BaseScript(ScriptMixin, LogMixin):
                 start = time.monotonic()
                 self.run_action(action)
                 end = time.monotonic()
-                perfherder_data["suites"].append(
-                    {
-                        "name": action,
-                        "value": end - start,
-                        "lowerIsBetter": True,
-                        "unit": "s",
-                        "shouldAlert": False,
-                        "subtests": [],
-                    }
-                )
+                perfherder_data["suites"].append({
+                    "name": action,
+                    "value": end - start,
+                    "lowerIsBetter": True,
+                    "unit": "s",
+                    "shouldAlert": False,
+                    "subtests": [],
+                })
         except Exception:
             self.fatal("Uncaught exception: %s" % traceback.format_exc())
         finally:

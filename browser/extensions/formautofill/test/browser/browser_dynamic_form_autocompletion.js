@@ -223,7 +223,7 @@ add_task(
 
         await waitForAutofill(
           browser,
-          selectorToTriggerAutocompletion,
+          selectorToTriggerAutocompletion + "-after-form-change",
           elementValueToVerifyAutofill
         );
         info(
@@ -235,7 +235,6 @@ add_task(
         const expectedAdditionalFieldsNotFilled = {
           fields: [
             { fieldName: "name", autofill: "John R. Smith" },
-            { fieldName: "email", autofill: TEST_ADDRESS_1.email },
             { fieldName: "tel", autofill: TEST_ADDRESS_1.tel },
             { fieldName: "country", autofill: TEST_ADDRESS_1.country },
             {
@@ -257,6 +256,7 @@ add_task(
               fieldName: "postal-code",
               autofill: TEST_ADDRESS_1["postal-code"],
             },
+            { fieldName: "email", autofill: TEST_ADDRESS_1.email },
           ],
         };
         const actor =

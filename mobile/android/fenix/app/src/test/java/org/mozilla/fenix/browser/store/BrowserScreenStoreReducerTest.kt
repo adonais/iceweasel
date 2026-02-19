@@ -9,13 +9,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CancelPrivateDownloadsOnPrivateTabsClosedAccepted
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ClosingLastPrivateTab
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CustomTabColorsUpdated
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
 class BrowserScreenStoreReducerTest {
     @Test
     fun `WHEN closing the last private tab THEN reset the state of accepting the risks`() {

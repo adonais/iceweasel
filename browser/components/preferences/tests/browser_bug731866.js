@@ -11,8 +11,9 @@ const backupSectionDisabled = !(
   SpecialPowers.getBoolPref("browser.backup.archive.enabled") ||
   SpecialPowers.getBoolPref("browser.backup.restore.enabled")
 );
-const ipProtectionExperiment = SpecialPowers.getStringPref(
-  "browser.ipProtection.variant"
+const ipProtectionEnabled = SpecialPowers.getBoolPref(
+  "browser.ipProtection.enabled",
+  false
 );
 const profilesGroupDisabled = !SelectableProfileService.isEnabled;
 const updatePrefContainers = ["updatesCategory", "updateApp"];
@@ -83,11 +84,8 @@ function checkElements(expectedPane) {
       continue;
     }
 
-    // IP Protection is only enabled by browser.ipProtection.variant = beta
-    if (
-      element.id === "dataIPProtectionGroup" &&
-      ipProtectionExperiment !== "beta"
-    ) {
+    // IP Protection section is gated by browser.ipProtection.enabled
+    if (element.id === "dataIPProtectionGroup" && !ipProtectionEnabled) {
       is_element_hidden(element, "Disabled ipProtection should be hidden");
       continue;
     }

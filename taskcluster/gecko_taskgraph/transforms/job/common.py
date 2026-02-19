@@ -16,13 +16,11 @@ SECRET_SCOPE = "secrets:get:project/releng/{trust_domain}/{kind}/level-{level}/{
 
 
 def add_artifacts(config, job, taskdesc, path):
-    taskdesc["worker"].setdefault("artifacts", []).append(
-        {
-            "name": get_artifact_prefix(taskdesc),
-            "path": path,
-            "type": "directory",
-        }
-    )
+    taskdesc["worker"].setdefault("artifacts", []).append({
+        "name": get_artifact_prefix(taskdesc),
+        "path": path,
+        "type": "directory",
+    })
 
 
 def docker_worker_add_artifacts(config, job, taskdesc):
@@ -103,42 +101,36 @@ def support_vcs_checkout(config, job, taskdesc, repo_configs):
     CACHES["checkout"]["cache_name"] = get_cache_name
 
     env = taskdesc["worker"].setdefault("env", {})
-    env.update(
-        {
-            "HG_STORE_PATH": hgstore,
-            "REPOSITORIES": json.dumps(
-                {repo.prefix: repo.name for repo in repo_configs.values()}
-            ),
-        }
-    )
+    env.update({
+        "HG_STORE_PATH": hgstore,
+        "REPOSITORIES": json.dumps({
+            repo.prefix: repo.name for repo in repo_configs.values()
+        }),
+    })
     for repo_config in repo_configs.values():
-        env.update(
-            {
-                f"{repo_config.prefix.upper()}_{key}": value
-                for key, value in {
-                    "BASE_REPOSITORY": repo_config.base_repository,
-                    "HEAD_REPOSITORY": repo_config.head_repository,
-                    "HEAD_REV": repo_config.head_rev,
-                    "HEAD_REF": repo_config.head_ref,
-                    "REPOSITORY_TYPE": repo_config.type,
-                    "SSH_SECRET_NAME": repo_config.ssh_secret_name,
-                }.items()
-                if value is not None
-            }
-        )
+        env.update({
+            f"{repo_config.prefix.upper()}_{key}": value
+            for key, value in {
+                "BASE_REPOSITORY": repo_config.base_repository,
+                "HEAD_REPOSITORY": repo_config.head_repository,
+                "HEAD_REV": repo_config.head_rev,
+                "HEAD_REF": repo_config.head_ref,
+                "REPOSITORY_TYPE": repo_config.type,
+                "SSH_SECRET_NAME": repo_config.ssh_secret_name,
+            }.items()
+            if value is not None
+        })
         if repo_config.ssh_secret_name:
             taskdesc["scopes"].append(f"secrets:get:{repo_config.ssh_secret_name}")
 
     gecko_path = env.setdefault("GECKO_PATH", geckodir)
 
     if "comm_base_repository" in config.params:
-        taskdesc["worker"]["env"].update(
-            {
-                "COMM_BASE_REPOSITORY": config.params["comm_base_repository"],
-                "COMM_HEAD_REPOSITORY": config.params["comm_head_repository"],
-                "COMM_HEAD_REV": config.params["comm_head_rev"],
-            }
-        )
+        taskdesc["worker"]["env"].update({
+            "COMM_BASE_REPOSITORY": config.params["comm_base_repository"],
+            "COMM_HEAD_REPOSITORY": config.params["comm_head_repository"],
+            "COMM_HEAD_REV": config.params["comm_head_rev"],
+        })
     elif job["run"].get("comm-checkout", False):
         raise Exception(
             "Can't checkout from comm-* repository if not given a repository."
@@ -198,27 +190,21 @@ def add_tooltool(config, job, taskdesc, internal=False):
             "{workdir}/tooltool-cache".format(**job["run"]),
         )
 
-        taskdesc["worker"].setdefault("env", {}).update(
-            {
-                "TOOLTOOL_CACHE": "{workdir}/tooltool-cache".format(**job["run"]),
-            }
-        )
+        taskdesc["worker"].setdefault("env", {}).update({
+            "TOOLTOOL_CACHE": "{workdir}/tooltool-cache".format(**job["run"]),
+        })
     elif not internal:
         return
 
     taskdesc["worker"]["taskcluster-proxy"] = True
-    taskdesc["scopes"].extend(
-        [
-            "project:releng:services/tooltool/api/download/public",
-        ]
-    )
+    taskdesc["scopes"].extend([
+        "project:releng:services/tooltool/api/download/public",
+    ])
 
     if internal:
-        taskdesc["scopes"].extend(
-            [
-                "project:releng:services/tooltool/api/download/internal",
-            ]
-        )
+        taskdesc["scopes"].extend([
+            "project:releng:services/tooltool/api/download/internal",
+        ])
 
 
 def get_expiration(config, policy="default"):

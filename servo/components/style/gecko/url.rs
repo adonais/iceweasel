@@ -4,6 +4,7 @@
 
 //! Common handling for the specified value CSS url() values.
 
+use crate::derives::*;
 use crate::gecko_bindings::bindings;
 use crate::gecko_bindings::structs;
 use crate::parser::{Parse, ParserContext};
@@ -16,7 +17,7 @@ use servo_arc::Arc;
 use std::collections::HashMap;
 use std::fmt::{self, Write};
 use std::mem::ManuallyDrop;
-use std::sync::RwLock;
+use std::sync::{LazyLock, RwLock};
 use style_traits::{CssWriter, ParseError, ToCss};
 use to_shmem::{SharedMemoryBuilder, ToShmem};
 
@@ -381,10 +382,7 @@ impl ToCss for ComputedUrl {
     }
 }
 
-lazy_static! {
-    /// A table mapping CssUrlData objects to their lazily created LoadData
-    /// objects.
-    static ref LOAD_DATA_TABLE: RwLock<HashMap<LoadDataKey, Box<LoadData>>> = {
-        Default::default()
-    };
-}
+/// A table mapping CssUrlData objects to their lazily created LoadData
+/// objects.
+static LOAD_DATA_TABLE: LazyLock<RwLock<HashMap<LoadDataKey, Box<LoadData>>>> =
+    LazyLock::new(|| Default::default());

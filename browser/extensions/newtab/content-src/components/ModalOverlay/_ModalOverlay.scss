@@ -51,7 +51,7 @@ $modal-scrollbar-z-index: 1100;
   h2 {
     color: var(--newtab-text-primary-color);
     text-align: center;
-    margin-block-start: var(--space-xxlarge);;
+    margin-block-start: var(--space-xxlarge);
     font-size: var(--font-size-xxlarge);
 
     @media(width <= 960px) {
@@ -65,7 +65,7 @@ $modal-scrollbar-z-index: 1100;
   }
 
   .footer {
-    border-top: $border-secondary;
+    border-block-start: 1px solid var(--border-color);
     border-radius: var(--border-radius-small);
     height: 70px;
     width: 100%;

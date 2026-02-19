@@ -24,31 +24,27 @@ dummy_secret_schema = {
     Optional("json"): bool,
 }
 
-gradlew_schema = Schema(
-    {
-        Required("using"): "gradlew",
-        Optional("pre-gradlew"): [[str]],
-        Required("gradlew"): [str],
-        Optional("post-gradlew"): [[str]],
-        # Base work directory used to set up the task.
-        Required("workdir"): str,
-        Optional("use-caches"): Any(bool, [str]),
-        Optional("secrets"): [secret_schema],
-        Optional("dummy-secrets"): [dummy_secret_schema],
-    }
-)
+gradlew_schema = Schema({
+    Required("using"): "gradlew",
+    Optional("pre-gradlew"): [[str]],
+    Required("gradlew"): [str],
+    Optional("post-gradlew"): [[str]],
+    # Base work directory used to set up the task.
+    Required("workdir"): str,
+    Optional("use-caches"): Any(bool, [str]),
+    Optional("secrets"): [secret_schema],
+    Optional("dummy-secrets"): [dummy_secret_schema],
+})
 
-run_commands_schema = Schema(
-    {
-        Required("using"): "run-commands",
-        Optional("pre-commands"): [[str]],
-        Required("commands"): [[taskref_or_string]],
-        Required("workdir"): str,
-        Optional("use-caches"): Any(bool, [str]),
-        Optional("secrets"): [secret_schema],
-        Optional("dummy-secrets"): [dummy_secret_schema],
-    }
-)
+run_commands_schema = Schema({
+    Required("using"): "run-commands",
+    Optional("pre-commands"): [[str]],
+    Required("commands"): [[taskref_or_string]],
+    Required("workdir"): str,
+    Optional("use-caches"): Any(bool, [str]),
+    Optional("secrets"): [secret_schema],
+    Optional("dummy-secrets"): [dummy_secret_schema],
+})
 
 
 @run_job_using("docker-worker", "run-commands", schema=run_commands_schema)
@@ -78,15 +74,13 @@ def configure_gradlew(config, job, taskdesc):
 
     fetches_dir = "/builds/worker/fetches"
     topsrc_dir = "/builds/worker/checkouts/gecko"
-    worker.setdefault("env", {}).update(
-        {
-            "ANDROID_SDK_ROOT": path.join(fetches_dir, "android-sdk-linux"),
-            "GRADLE_USER_HOME": path.join(
-                topsrc_dir, "mobile/android/gradle/dotgradle-offline"
-            ),
-            "MOZ_BUILD_DATE": config.params["moz_build_date"],
-        }
-    )
+    worker.setdefault("env", {}).update({
+        "ANDROID_SDK_ROOT": path.join(fetches_dir, "android-sdk-linux"),
+        "GRADLE_USER_HOME": path.join(
+            topsrc_dir, "mobile/android/gradle/dotgradle-offline"
+        ),
+        "MOZ_BUILD_DATE": config.params["moz_build_date"],
+    })
     worker["env"].setdefault(
         "MOZCONFIG",
         path.join(
@@ -103,14 +97,12 @@ def configure_gradlew(config, job, taskdesc):
         for secret in run.pop("dummy-secrets", [])
     ]
     secrets = [_generate_secret_command(secret) for secret in run.get("secrets", [])]
-    worker["env"].update(
-        {
-            "PRE_GRADLEW": _convert_commands_to_string(run.pop("pre-gradlew", [])),
-            "GET_SECRETS": _convert_commands_to_string(dummy_secrets + secrets),
-            "GRADLEW_ARGS": " ".join(run.pop("gradlew")),
-            "POST_GRADLEW": _convert_commands_to_string(run.pop("post-gradlew", [])),
-        }
-    )
+    worker["env"].update({
+        "PRE_GRADLEW": _convert_commands_to_string(run.pop("pre-gradlew", [])),
+        "GET_SECRETS": _convert_commands_to_string(dummy_secrets + secrets),
+        "GRADLEW_ARGS": " ".join(run.pop("gradlew")),
+        "POST_GRADLEW": _convert_commands_to_string(run.pop("post-gradlew", [])),
+    })
     run["command"] = (
         "/builds/worker/checkouts/gecko/taskcluster/scripts/builder/build-android.sh"
     )

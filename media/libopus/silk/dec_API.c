@@ -158,7 +158,7 @@ opus_int silk_Decode(                                   /* O    Returns error co
     opus_int has_side;
     opus_int stereo_to_mono;
 #ifdef ENABLE_OSCE_BWE
-    ALLOC(resamp_buffer, 3 * MAX_FRAME_LENGTH, opus_int16);
+    VARDECL( opus_int16, resamp_buffer );
 #endif
     SAVE_STACK;
 
@@ -382,6 +382,10 @@ opus_int silk_Decode(                                   /* O    Returns error co
     ALLOC( samplesOut2_tmp, *nSamplesOut, opus_int16 );
     resample_out_ptr = samplesOut2_tmp;
 
+#ifdef ENABLE_OSCE_BWE
+    ALLOC(resamp_buffer, 3 * MAX_FRAME_LENGTH, opus_int16);
+#endif
+
     for( n = 0; n < silk_min( decControl->nChannelsAPI, decControl->nChannelsInternal ); n++ ) {
 
 #ifdef ENABLE_OSCE_BWE
@@ -405,7 +409,8 @@ opus_int silk_Decode(                                   /* O    Returns error co
             }
         } else {
             ret += silk_resampler( &channel_state[ n ].resampler_state, resample_out_ptr, &samplesOut1_tmp[ n ][ 1 ], nSamplesOutDec );
-            if (decControl->prev_osce_extended_mode == OSCE_MODE_SILK_BBWE) {
+            if (decControl->prev_osce_extended_mode == OSCE_MODE_SILK_BBWE && decControl->internalSampleRate == 16000) {
+                /* fade out if internal sample rate did not change */
                 osce_bwe(&psDec->osce_model, &channel_state[ n ].osce_bwe,
                     resamp_buffer, &samplesOut1_tmp[ n ][ 1 ], nSamplesOutDec, arch);
                 /* cross-fade with upsampled signal */

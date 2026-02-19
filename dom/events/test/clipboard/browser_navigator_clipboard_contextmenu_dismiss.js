@@ -15,6 +15,67 @@ async function readText(aBrowser) {
   });
 }
 
+add_task(async function test_context_menu_dimiss_tab_close() {
+  let pasteButtonIsHidden;
+  await BrowserTestUtils.withNewTab(kContentFileUrl, async aBrowser => {
+    info(`Randomized text to avoid overlappings with other tests`);
+    await promiseWritingRandomTextToClipboard();
+
+    info(`Wait for paste context menu is shown`);
+    let pasteButtonIsShown = promisePasteButtonIsShown();
+    let readTextRequest = readText(aBrowser);
+    await pasteButtonIsShown;
+
+    pasteButtonIsHidden = promisePasteButtonIsHidden();
+    info("Close tab");
+  });
+
+  info(`Wait for paste context menu is hidden`);
+  await pasteButtonIsHidden;
+});
+
+add_task(async function test_context_menu_dimiss_tab_switch() {
+  await BrowserTestUtils.withNewTab(kContentFileUrl, async aBrowser => {
+    info(`Randomized text to avoid overlappings with other tests`);
+    await promiseWritingRandomTextToClipboard();
+
+    info(`Wait for paste context menu is shown`);
+    let pasteButtonIsShown = promisePasteButtonIsShown();
+    await readText(aBrowser);
+    await pasteButtonIsShown;
+
+    info("Switch tab");
+    let pasteButtonIsHidden = promisePasteButtonIsHidden();
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+    info(`Wait for paste context menu is hidden`);
+    await pasteButtonIsHidden;
+
+    BrowserTestUtils.removeTab(tab);
+  });
+});
+
+add_task(async function test_context_menu_dimiss_browser_window_switch() {
+  await BrowserTestUtils.withNewTab(kContentFileUrl, async aBrowser => {
+    info(`Randomized text to avoid overlappings with other tests`);
+    await promiseWritingRandomTextToClipboard();
+
+    info(`Wait for paste context menu is shown`);
+    let pasteButtonIsShown = promisePasteButtonIsShown();
+    await readText(aBrowser);
+    await pasteButtonIsShown;
+
+    info("Switch browser window");
+    let pasteButtonIsHidden = promisePasteButtonIsHidden();
+    let newWin = await BrowserTestUtils.openNewBrowserWindow();
+
+    info(`Wait for paste context menu is hidden`);
+    await pasteButtonIsHidden;
+
+    await BrowserTestUtils.closeWindow(newWin);
+  });
+});
+
 add_task(async function test_context_menu_dimiss_tab_navigate() {
   await BrowserTestUtils.withNewTab(kContentFileUrl, async aBrowser => {
     info(`Randomized text to avoid overlappings with other tests`);

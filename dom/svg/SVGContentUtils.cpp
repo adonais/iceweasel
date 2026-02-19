@@ -182,7 +182,7 @@ void SVGContentUtils::GetStrokeOptions(AutoStrokeOptions* aStrokeOptions,
     const nsStyleSVG* styleSVG = computedStyle->StyleSVG();
 
     bool checkedDashAndStrokeIsDashed = false;
-    if (aFlags != eIgnoreStrokeDashing) {
+    if (!aFlags.contains(StrokeOptionFlag::IgnoreStrokeDashing)) {
       DashState dashState =
           GetStrokeDashData(aStrokeOptions, aElement, styleSVG, aContextPaint);
 

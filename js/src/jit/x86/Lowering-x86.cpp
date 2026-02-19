@@ -80,7 +80,7 @@ void LIRGenerator::visitBox(MBox* box) {
   lir->setDef(0, LDefinition(vreg, LDefinition::GENERAL));
   lir->setDef(1, LDefinition::BogusTemp());
   box->setVirtualRegister(vreg);
-  add(lir);
+  addUnchecked(lir);
 }
 
 void LIRGenerator::visitUnbox(MUnbox* unbox) {

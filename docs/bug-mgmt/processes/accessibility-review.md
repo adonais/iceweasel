@@ -1,7 +1,4 @@
 # Accessibility Review
-:::{important}
-Review requests must be submitted by *December 1, 2025* for consideration before the end-of-year holidays. Reviews submitted after this date may not receive feedback until January 2026.
-:::
 
 ## Introduction
 At Mozilla, accessibility is a fundamental part of our mission to ensure the

@@ -951,20 +951,18 @@ class MOZ_STACK_CLASS CommonAncestors final {
         return;
       }
 
-      Maybe<uint32_t> childIndex;
+      bool found = false;
       if constexpr (aKind == TreeKind::Flat) {
         if (auto* slot = HTMLSlotElement::FromNode(mClosestCommonAncestor)) {
-          auto index = slot->AssignedNodes().IndexOf(child);
-          if (index != nsTArray<RefPtr<nsINode>>::NoIndex) {
-            childIndex = Some(index);
-          }
+          auto span = slot->AssignedNodes();
+          found = span.IndexOf(child) != span.npos;
         }
       }
 
-      if (childIndex.isNothing()) {
-        childIndex = mClosestCommonAncestor->ComputeIndexOf(child);
+      if (!found) {
+        found = mClosestCommonAncestor->ComputeIndexOf(child).isSome();
       }
-      if (MOZ_LIKELY(childIndex.isSome())) {
+      if (MOZ_LIKELY(found)) {
         return;
       }
       const Maybe<size_t> index =
@@ -3373,11 +3371,27 @@ Maybe<int32_t> nsContentUtils::CompareChildNodes(
       const auto* slot = aChild1->AsContent()->GetAssignedSlot();
       MOZ_ASSERT(slot);
 
-      auto child1Index = slot->AssignedNodes().IndexOf(aChild1);
-      auto child2Index = slot->AssignedNodes().IndexOf(aChild2);
+      constexpr auto NoIndex = size_t(-1);
+      auto child1Index = NoIndex;
+      auto child2Index = NoIndex;
+      size_t index = 0;
+      for (nsINode* node : slot->AssignedNodes()) {
+        if (node == aChild1) {
+          child1Index = index;
+          if (child2Index != NoIndex) {
+            break;
+          }
+        } else if (node == aChild2) {
+          child2Index = index;
+          if (child1Index != NoIndex) {
+            break;
+          }
+        }
+        index++;
+      }
 
-      MOZ_ASSERT(child1Index != nsTArray<RefPtr<nsINode>>::NoIndex);
-      MOZ_ASSERT(child2Index != nsTArray<RefPtr<nsINode>>::NoIndex);
+      MOZ_ASSERT(child1Index != NoIndex);
+      MOZ_ASSERT(child2Index != NoIndex);
 
       return Some(child1Index < child2Index ? -1 : 1);
     }
@@ -3554,15 +3568,12 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
     return Some(!aOffset1 ? 0 : 1);
   }
 
-#ifdef DEBUG
-  if (!isFlatAndSlotted) {
-    MOZ_ASSERT(parentNode->GetLastChild());
-  }
-#endif
+  MOZ_ASSERT_IF(!isFlatAndSlotted, parentNode->GetLastChild());
   const nsIContent& lastChild = [parentNode]() -> const nsIContent& {
     if constexpr (aKind == TreeKind::Flat) {
       if (const HTMLSlotElement* slot = HTMLSlotElement::FromNode(parentNode)) {
-        return *slot->AssignedNodes().LastElement()->AsContent();
+        auto assigned = slot->AssignedNodes();
+        return *assigned[assigned.Length() - 1]->AsContent();
       }
     }
 
@@ -8679,6 +8690,15 @@ bool nsContentUtils::HasCssMimeTypeEssence(const nsAString& aMimeType) {
   nsString contentType, contentCharset;
   if (MimeType::Parse(aMimeType, contentType, contentCharset)) {
     return contentType.LowerCaseEqualsLiteral("text/css");
+  }
+  return false;
+}
+
+// https://html.spec.whatwg.org/#fetch-a-single-module-script, 13.6
+bool nsContentUtils::HasWasmMimeTypeEssence(const nsAString& aMimeType) {
+  nsString contentType, contentCharset;
+  if (MimeType::Parse(aMimeType, contentType, contentCharset)) {
+    return contentType.LowerCaseEqualsLiteral("application/wasm");
   }
   return false;
 }

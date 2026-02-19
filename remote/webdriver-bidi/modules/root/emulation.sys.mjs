@@ -14,8 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
-  SessionDataMethod:
-    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   UserContextManager:
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
@@ -213,100 +211,21 @@ class EmulationModule extends RootBiDiModule {
       };
     }
 
-    if (contextIds !== null && userContextIds !== null) {
-      throw new lazy.error.InvalidArgumentError(
-        `Providing both "contexts" and "userContexts" arguments is not supported`
-      );
-    }
+    const { navigables, userContexts } = this.#getEmulationTargets(
+      contextIds,
+      userContextIds
+    );
 
-    const navigables = new Set();
-    const userContexts = new Set();
-    if (contextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        contextIds,
-        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
-      );
-
-      for (const contextId of contextIds) {
-        lazy.assert.string(
-          contextId,
-          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
-        );
-
-        const context = this._getNavigable(contextId);
-
-        lazy.assert.topLevel(
-          context,
-          `Browsing context with id ${contextId} is not top-level`
-        );
-
-        navigables.add(context);
-      }
-    } else if (userContextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        userContextIds,
-        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
-      );
-
-      for (const userContextId of userContextIds) {
-        lazy.assert.string(
-          userContextId,
-          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
-        );
-
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
-
-        userContexts.add(internalId);
-
-        // Prepare the list of navigables to update.
-        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
-          tab => {
-            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
-            navigables.add(contentBrowser.browsingContext);
-          }
-        );
-      }
-    } else {
-      throw new lazy.error.InvalidArgumentError(
-        `At least one of "contexts" or "userContexts" arguments should be provided`
-      );
-    }
-
-    const sessionDataItems = [];
-    if (userContextIds !== null) {
-      for (const userContext of userContexts) {
-        sessionDataItems.push({
-          category: "geolocation-override",
-          moduleName: "_configuration",
-          values: [coordinates],
-          contextDescriptor: {
-            type: lazy.ContextDescriptorType.UserContext,
-            id: userContext,
-          },
-          method: lazy.SessionDataMethod.Add,
-        });
-      }
-    } else {
-      for (const navigable of navigables) {
-        sessionDataItems.push({
-          category: "geolocation-override",
-          moduleName: "_configuration",
-          values: [coordinates],
-          contextDescriptor: {
-            type: lazy.ContextDescriptorType.TopBrowsingContext,
-            id: navigable.browserId,
-          },
-          method: lazy.SessionDataMethod.Add,
-        });
-      }
-    }
+    const sessionDataItems = this.#generateSessionDataUpdate({
+      category: "geolocation-override",
+      contextOverride: contextIds !== null,
+      hasGlobalOverride: false,
+      navigables,
+      resetValue: null,
+      userContexts,
+      userContextOverride: userContextIds !== null,
+      value: coordinates,
+    });
 
     if (sessionDataItems.length) {
       // TODO: Bug 1953079. Saving the geolocation override in the session data works fine
@@ -315,22 +234,16 @@ class EmulationModule extends RootBiDiModule {
       await this.messageHandler.updateSessionData(sessionDataItems);
     }
 
-    const commands = [];
-
-    for (const navigable of navigables) {
-      commands.push(
-        this._forwardToWindowGlobal(
-          "_setGeolocationOverride",
-          navigable.id,
-          {
-            coordinates,
-          },
-          { retryOnAbort: true }
-        )
-      );
-    }
-
-    await Promise.all(commands);
+    await this.#applyOverride({
+      async: true,
+      callback: this.#applyGeolocationOverride.bind(this),
+      category: "geolocation-override",
+      contextIds,
+      navigables,
+      resetValue: null,
+      userContextIds,
+      value: coordinates,
+    });
   }
 
   /**
@@ -385,71 +298,10 @@ class EmulationModule extends RootBiDiModule {
       }
     }
 
-    if (contextIds !== null && userContextIds !== null) {
-      throw new lazy.error.InvalidArgumentError(
-        `Providing both "contexts" and "userContexts" arguments is not supported`
-      );
-    }
-
-    const navigables = new Set();
-    const userContexts = new Set();
-    if (contextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        contextIds,
-        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
-      );
-
-      for (const contextId of contextIds) {
-        lazy.assert.string(
-          contextId,
-          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
-        );
-
-        const context = this._getNavigable(contextId);
-
-        lazy.assert.topLevel(
-          context,
-          `Browsing context with id ${contextId} is not top-level`
-        );
-
-        navigables.add(context);
-      }
-    } else if (userContextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        userContextIds,
-        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
-      );
-
-      for (const userContextId of userContextIds) {
-        lazy.assert.string(
-          userContextId,
-          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
-        );
-
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
-
-        userContexts.add(internalId);
-
-        // Prepare the list of navigables to update.
-        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
-          tab => {
-            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
-            navigables.add(contentBrowser.browsingContext);
-          }
-        );
-      }
-    } else {
-      throw new lazy.error.InvalidArgumentError(
-        `At least one of "contexts" or "userContexts" arguments should be provided`
-      );
-    }
+    const { navigables, userContexts } = this.#getEmulationTargets(
+      contextIds,
+      userContextIds
+    );
 
     const sessionDataItems = this.#generateSessionDataUpdate({
       category: "locale-override",
@@ -556,100 +408,21 @@ class EmulationModule extends RootBiDiModule {
       orientationOverride = null;
     }
 
-    if (contextIds !== null && userContextIds !== null) {
-      throw new lazy.error.InvalidArgumentError(
-        `Providing both "contexts" and "userContexts" arguments is not supported`
-      );
-    }
+    const { navigables, userContexts } = this.#getEmulationTargets(
+      contextIds,
+      userContextIds
+    );
 
-    const navigables = new Set();
-    const userContexts = new Set();
-    if (contextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        contextIds,
-        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
-      );
-
-      for (const contextId of contextIds) {
-        lazy.assert.string(
-          contextId,
-          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
-        );
-
-        const context = this._getNavigable(contextId);
-
-        lazy.assert.topLevel(
-          context,
-          `Browsing context with id ${contextId} is not top-level`
-        );
-
-        navigables.add(context);
-      }
-    } else if (userContextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        userContextIds,
-        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
-      );
-
-      for (const userContextId of userContextIds) {
-        lazy.assert.string(
-          userContextId,
-          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
-        );
-
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
-
-        userContexts.add(internalId);
-
-        // Prepare the list of navigables to update.
-        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
-          tab => {
-            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
-            navigables.add(contentBrowser.browsingContext);
-          }
-        );
-      }
-    } else {
-      throw new lazy.error.InvalidArgumentError(
-        `At least one of "contexts" or "userContexts" arguments should be provided`
-      );
-    }
-
-    const sessionDataItems = [];
-    if (userContextIds !== null) {
-      for (const userContext of userContexts) {
-        sessionDataItems.push({
-          category: "screen-orientation-override",
-          moduleName: "_configuration",
-          values: [orientationOverride],
-          contextDescriptor: {
-            type: lazy.ContextDescriptorType.UserContext,
-            id: userContext,
-          },
-          method: lazy.SessionDataMethod.Add,
-        });
-      }
-    } else {
-      for (const navigable of navigables) {
-        sessionDataItems.push({
-          category: "screen-orientation-override",
-          moduleName: "_configuration",
-          values: [orientationOverride],
-          contextDescriptor: {
-            type: lazy.ContextDescriptorType.TopBrowsingContext,
-            id: navigable.browserId,
-          },
-          method: lazy.SessionDataMethod.Add,
-        });
-      }
-    }
+    const sessionDataItems = this.#generateSessionDataUpdate({
+      category: "screen-orientation-override",
+      contextOverride: contextIds !== null,
+      hasGlobalOverride: false,
+      navigables,
+      resetValue: null,
+      userContexts,
+      userContextOverride: userContextIds !== null,
+      value: orientationOverride,
+    });
 
     if (sessionDataItems.length) {
       // TODO: Bug 1953079. Saving the screen orientation override in the session data works fine
@@ -658,12 +431,15 @@ class EmulationModule extends RootBiDiModule {
       await this.messageHandler.updateSessionData(sessionDataItems);
     }
 
-    for (const navigable of navigables) {
-      this._setEmulatedScreenOrientation({
-        context: navigable,
-        orientationOverride,
-      });
-    }
+    this.#applyOverride({
+      callback: this._setEmulatedScreenOrientation,
+      category: "screen-orientation-override",
+      contextIds,
+      navigables,
+      resetValue: null,
+      userContextIds,
+      value: orientationOverride,
+    });
   }
 
   /**
@@ -722,71 +498,10 @@ class EmulationModule extends RootBiDiModule {
       );
     }
 
-    if (contextIds !== null && userContextIds !== null) {
-      throw new lazy.error.InvalidArgumentError(
-        `Providing both "contexts" and "userContexts" arguments is not supported`
-      );
-    }
-
-    const navigables = new Set();
-    const userContexts = new Set();
-    if (contextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        contextIds,
-        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
-      );
-
-      for (const contextId of contextIds) {
-        lazy.assert.string(
-          contextId,
-          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
-        );
-
-        const context = this._getNavigable(contextId);
-
-        lazy.assert.topLevel(
-          context,
-          `Browsing context with id ${contextId} is not top-level`
-        );
-
-        navigables.add(context);
-      }
-    } else if (userContextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        userContextIds,
-        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
-      );
-
-      for (const userContextId of userContextIds) {
-        lazy.assert.string(
-          userContextId,
-          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
-        );
-
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
-
-        userContexts.add(internalId);
-
-        // Prepare the list of navigables to update.
-        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
-          tab => {
-            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
-            navigables.add(contentBrowser.browsingContext);
-          }
-        );
-      }
-    } else {
-      throw new lazy.error.InvalidArgumentError(
-        `At least one of "contexts" or "userContexts" arguments should be provided`
-      );
-    }
+    const { navigables, userContexts } = this.#getEmulationTargets(
+      contextIds,
+      userContextIds
+    );
 
     const sessionDataItems = this.#generateSessionDataUpdate({
       category: "screen-settings-override",
@@ -871,71 +586,10 @@ class EmulationModule extends RootBiDiModule {
       }
     }
 
-    if (contextIds !== null && userContextIds !== null) {
-      throw new lazy.error.InvalidArgumentError(
-        `Providing both "contexts" and "userContexts" arguments is not supported`
-      );
-    }
-
-    const navigables = new Set();
-    const userContexts = new Set();
-    if (contextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        contextIds,
-        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
-      );
-
-      for (const contextId of contextIds) {
-        lazy.assert.string(
-          contextId,
-          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
-        );
-
-        const context = this._getNavigable(contextId);
-
-        lazy.assert.topLevel(
-          context,
-          `Browsing context with id ${contextId} is not top-level`
-        );
-
-        navigables.add(context);
-      }
-    } else if (userContextIds !== null) {
-      lazy.assert.isNonEmptyArray(
-        userContextIds,
-        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
-      );
-
-      for (const userContextId of userContextIds) {
-        lazy.assert.string(
-          userContextId,
-          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
-        );
-
-        const internalId =
-          lazy.UserContextManager.getInternalIdById(userContextId);
-
-        if (internalId === null) {
-          throw new lazy.error.NoSuchUserContextError(
-            `User context with id: ${userContextId} doesn't exist`
-          );
-        }
-
-        userContexts.add(internalId);
-
-        // Prepare the list of navigables to update.
-        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
-          tab => {
-            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
-            navigables.add(contentBrowser.browsingContext);
-          }
-        );
-      }
-    } else {
-      throw new lazy.error.InvalidArgumentError(
-        `At least one of "contexts" or "userContexts" arguments should be provided`
-      );
-    }
+    const { navigables, userContexts } = this.#getEmulationTargets(
+      contextIds,
+      userContextIds
+    );
 
     const sessionDataItems = this.#generateSessionDataUpdate({
       category: "timezone-override",
@@ -1108,15 +762,15 @@ class EmulationModule extends RootBiDiModule {
    * @param {BrowsingContext} options.context
    *     Top-level browsing context object which is a target
    *     for the screen orientation override.
-   * @param {(object|null)} options.orientationOverride
+   * @param {(object|null)} options.value
    *     Screen orientation object which have to override
    *     screen settings.
    *     Null value resets the override.
    */
   _setEmulatedScreenOrientation(options) {
-    const { context, orientationOverride } = options;
-    if (orientationOverride) {
-      const { angle, type } = orientationOverride;
+    const { context, value } = options;
+    if (value) {
+      const { angle, type } = value;
       context.setOrientationOverride(type, angle);
     } else {
       context.resetOrientationOverride();
@@ -1237,6 +891,31 @@ class EmulationModule extends RootBiDiModule {
     }
   }
 
+  /**
+   * Apply the geolocation override to the top-level browsing context.
+   *
+   * @param {object} options
+   * @param {BrowsingContext} options.context
+   *     Top-level browsing context object which is a target
+   *     for the geolocation override.
+   * @param {(GeolocationCoordinates|null)} options.value
+   *     Geolocation coordinates which have to override
+   *     the return result of geolocation APIs.
+   *     Null value resets the override.
+   */
+  #applyGeolocationOverride(options) {
+    const { context, value } = options;
+
+    return this._forwardToWindowGlobal(
+      "_setGeolocationOverride",
+      context.id,
+      {
+        coordinates: value,
+      },
+      { retryOnAbort: true }
+    );
+  }
+
   async #applyOverride(options) {
     const {
       async = false,
@@ -1343,6 +1022,97 @@ class EmulationModule extends RootBiDiModule {
     }
 
     return sessionDataItems;
+  }
+
+  /**
+   * Return value for #getEmulationTargets.
+   *
+   * @typedef {object} EmulationTargets
+   *
+   * @property {Set<Navigable>} navigables
+   * @property {Set<number>} userContexts
+   */
+
+  /**
+   * Validates the provided browsing contexts or user contexts and resolves them
+   * to a set of navigables.
+   *
+   * @param {Array<string>|null} contextIds
+   *     Optional list of browsing context ids.
+   * @param {Array<string>|null} userContextIds
+   *     Optional list of user context ids.
+   *
+   * @returns {EmulationTargets}
+   */
+  #getEmulationTargets(contextIds, userContextIds) {
+    if (contextIds !== null && userContextIds !== null) {
+      throw new lazy.error.InvalidArgumentError(
+        `Providing both "contexts" and "userContexts" arguments is not supported`
+      );
+    }
+
+    const navigables = new Set();
+    const userContexts = new Set();
+
+    if (contextIds !== null) {
+      lazy.assert.isNonEmptyArray(
+        contextIds,
+        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
+      );
+
+      for (const contextId of contextIds) {
+        lazy.assert.string(
+          contextId,
+          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
+        );
+
+        const context = this._getNavigable(contextId);
+
+        lazy.assert.topLevel(
+          context,
+          `Browsing context with id ${contextId} is not top-level`
+        );
+
+        navigables.add(context);
+      }
+    } else if (userContextIds !== null) {
+      lazy.assert.isNonEmptyArray(
+        userContextIds,
+        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
+      );
+
+      for (const userContextId of userContextIds) {
+        lazy.assert.string(
+          userContextId,
+          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
+        );
+
+        const internalId =
+          lazy.UserContextManager.getInternalIdById(userContextId);
+
+        if (internalId === null) {
+          throw new lazy.error.NoSuchUserContextError(
+            `User context with id: ${userContextId} doesn't exist`
+          );
+        }
+
+        userContexts.add(internalId);
+
+        // Prepare the list of navigables to update.
+        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
+          tab => {
+            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
+            navigables.add(contentBrowser.browsingContext);
+          }
+        );
+      }
+    } else {
+      throw new lazy.error.InvalidArgumentError(
+        `At least one of "contexts" or "userContexts" arguments should be provided`
+      );
+    }
+
+    return { navigables, userContexts };
   }
 
   #getOverrideValue(params, resetValue = "") {

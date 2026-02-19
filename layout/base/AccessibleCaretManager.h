@@ -27,6 +27,7 @@ struct nsPoint;
 
 namespace mozilla {
 class PresShell;
+struct FrameAndOffset;  // defined in SelectionMovementUtils.h
 namespace dom {
 class Element;
 class Selection;
@@ -222,17 +223,13 @@ class AccessibleCaretManager {
   void SetSelectionDirection(nsDirection aDir) const;
 
   /**
-   * Return a frame and offset in aOutContent where the meaningful start of
-   * aRange.  E.g., if aRange starts with non-selectable elements, this returns
-   * the first selectable content's frame and its start offset.
+   * Return a frame and offset where to put the first accessible caret in the
+   * selection mode. The result may be a non-selectable frame which is for a
+   * child of a selectable content.  If aOutContent is set and its pointee is
+   * different from the frame content of the result, it means that the result is
+   * the child at aOutContent and aOutOffsetInContent.
    *
    * @param aRange      The range, typically the first range of `Selection`.
-   * @param aOutOffsetInFrameContent
-   *                    Must not be nullptr. If the result is not nullptr, this
-   *                    will be set to the offset in result->GetContent().
-   *                    NOTE: {result->GetContent(), *aOutOffsetInFrameContent}
-   *                    means that it's the start boundary of visible/meaningful
-   *                    selection start boundary at a leaf node like a `Text`.
    * @param aOutContent [optional] If set, this will be set to the first
    *                    selectable container in aRange. It's typically a
    *                    container element.
@@ -242,26 +239,30 @@ class AccessibleCaretManager {
    *                    NOTE: {*aOutContent, *aOutOffsetInContent} means that
    *                    it's the start boundary of actual selectable range at a
    *                    container element.
-   * @return            The first meaningful frame whose content is selected by
-   *                    aRange. Typically, a text frame or a image frame.
+   * @return            mFrame is the first meaningful frame whose content is
+   *                    selected by aRange. Typically, a text frame or a image
+   *                    frame. Or a container frame which is not selectable but
+   *                    its parent is selectable.
+   *                    mOffsetInFrameContent is the offset in
+   *                    mFrame->GetContent().
+   *                    I.e, if mFrame->GetContent() is not a void element,
+   *                    {mFrame->GetContent(), mOffsetInFrameContent} means that
+   *                    it's the start boundary of visible/meaningful selection
+   *                    start boundary at a leaf node like a `Text` or position
+   *                    at the first non-selectable element in selectable node.
    */
-  nsIFrame* GetFrameForRangeStart(nsRange& aRange,
-                                  int32_t* aOutOffsetInFrameContent,
-                                  nsIContent** aOutContent = nullptr,
-                                  int32_t* aOutOffsetInContent = nullptr) const;
+  FrameAndOffset GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+      nsRange& aRange, nsIContent** aOutContent = nullptr,
+      int32_t* aOutOffsetInContent = nullptr) const;
 
   /**
-   * Return a frame and offset in aOutContent where the meaningful end of
-   * aRange.  E.g., if aRange ends with non-selectable elements, this returns
-   * the last selectable content's frame and its end offset.
+   * Return a frame and offset where to put the last accessible caret in the
+   * selection mode. The result may be a non-selectable frame which is for a
+   * child of a selectable content.  If aOutContent is set and its pointee is
+   * different from the frame content of the result, it means that the result is
+   * the previous sibling of a child at aOutContent and aOutOffsetInContent.
    *
    * @param aRange      The range, typically the last range of `Selection`.
-   * @param aOutOffsetInFrameContent
-   *                    Must not be nullptr. If the result is not nullptr, this
-   *                    will be set to the offset in result->GetContent().
-   *                    NOTE: {result->GetContent(), *aOutOffsetInFrameContent}
-   *                    means that it's the end boundary of visible/meaningful
-   *                    selection end boundary at a leaf node like a `Text`.
    * @param aOutContent [optional] If set, this will be set to the last
    *                    selectable container in aRange. It's typically a
    *                    container element.
@@ -271,13 +272,21 @@ class AccessibleCaretManager {
    *                    NOTE: {*aOutContent, *aOutOffsetInContent} means that
    *                    it's the end boundary of actual selectable range at a
    *                    container element.
-   * @return            The last meaningful frame whose content is selected by
-   *                    aRange. Typically, a text frame or a image frame.
+   * @return            mFrame is the last meaningful frame whose content is
+   *                    selected by aRange. Typically, a text frame or a image
+   *                    frame. Or a container frame which is not selectable but
+   *                    its parent is selectable.
+   *                    mOffsetInFrameContent is the offset in
+   *                    mFrame->GetContent().
+   *                    I.e, if mFrame->GetContent() is not a void element,
+   *                    {mFrame->GetContent(), mOffsetInFrameContent} means that
+   *                    it's the end boundary of visible/meaningful selection
+   *                    end boundary at a leaf node like a `Text` or position at
+   *                    the last non-selectable element in selectable node.
    */
-  nsIFrame* GetFrameForRangeEnd(nsRange& aRange,
-                                int32_t* aOutOffsetInFrameContent,
-                                nsIContent** aOutContent = nullptr,
-                                int32_t* aOutOffsetInContent = nullptr) const;
+  FrameAndOffset GetLastVisibleLeafFrameOrUnselectableChildFrame(
+      nsRange& aRange, nsIContent** aOutContent = nullptr,
+      int32_t* aOutOffsetInContent = nullptr) const;
 
   MOZ_CAN_RUN_SCRIPT nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;

@@ -73,26 +73,24 @@ def target_task_set():
 @pytest.fixture
 def full_task_set(target_task_set):
     full_task_set = deepcopy(target_task_set)
-    full_task_set.update(
-        {
-            "test/bar-opt": {
-                "kind": "test",
-                "label": "test/bar-opt",
-                "attributes": {},
-                "task": {},
-                "optimization": {},
-                "dependencies": {},
-            },
-            "test/bar-debug": {
-                "kind": "test",
-                "label": "test/bar-debug",
-                "attributes": {},
-                "task": {},
-                "optimization": {},
-                "dependencies": {},
-            },
-        }
-    )
+    full_task_set.update({
+        "test/bar-opt": {
+            "kind": "test",
+            "label": "test/bar-opt",
+            "attributes": {},
+            "task": {},
+            "optimization": {},
+            "dependencies": {},
+        },
+        "test/bar-debug": {
+            "kind": "test",
+            "label": "test/bar-debug",
+            "attributes": {},
+            "task": {},
+            "optimization": {},
+            "dependencies": {},
+        },
+    })
     return full_task_set
 
 
@@ -686,8 +684,8 @@ def full_task_set(target_task_set):
             "fuzzy",
             [
                 ["try", "fuzzy", "--save", "foo", "-q", "'foo", "--rebuild", "5"],
-                ["try", "fuzzy", "--preset", "foo", "-q" "'build"],
-                ["try", "fuzzy", "--preset", "foo", "-xq" "'opt"],
+                ["try", "fuzzy", "--preset", "foo", "-q'build"],
+                ["try", "fuzzy", "--preset", "foo", "-xq'opt"],
             ],
             dedent(
                 """

@@ -338,6 +338,8 @@ static void PrintHelpAndExit(int status = 0) {
       "  gcbarriers    Redundant GC barrier elimination\n"
       "  loadkeys      Loads used as property keys\n"
       "  stubfolding   CacheIR stub folding\n"
+      "  stubfolding-details   Same as stubfolding, but with spewing of stub "
+      "content.\n"
       "  logs          JSON visualization logging\n"
       "  logs-sync     Same as logs, but flushes between each pass (sync. "
       "compiled functions only).\n"
@@ -446,6 +448,9 @@ void jit::CheckLogging() {
       EnableChannel(JitSpew_MarkLoadsUsedAsPropertyKeys);
     } else if (IsFlag(found, "stubfolding")) {
       EnableChannel(JitSpew_StubFolding);
+    } else if (IsFlag(found, "stubfolding-details")) {
+      EnableChannel(JitSpew_StubFolding);
+      EnableChannel(JitSpew_StubFoldingDetails);
     } else if (IsFlag(found, "logs")) {
       EnableIonDebugAsyncLogging();
     } else if (IsFlag(found, "logs-sync")) {

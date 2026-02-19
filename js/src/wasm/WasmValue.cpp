@@ -900,3 +900,10 @@ Value wasm::UnboxFuncRef(FuncRef val) {
   result.setObjectOrNull(fn);
   return result;
 }
+
+#ifdef DEBUG
+void wasm::AssertEdgeSourceNotInsideNursery(void* vp) {
+  Nursery& nursery = TlsContext.get()->runtime()->gc.nursery();
+  MOZ_ASSERT(!nursery.isInside(vp));
+}
+#endif

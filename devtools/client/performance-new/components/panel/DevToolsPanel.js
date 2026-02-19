@@ -63,7 +63,7 @@ const panelWindow = /** @type {PanelWindow} */ (anyWindow);
 /**
  * This is the top level component for the DevTools panel.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class DevToolsPanel extends PureComponent {
   render() {

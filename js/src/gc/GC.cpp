@@ -2895,7 +2895,7 @@ bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
    * GCReason::XPCONNECT_SHUTDOWN GCs we can remove the extra check.
    */
   if (!isShutdownGC() && reason != JS::GCReason::XPCONNECT_SHUTDOWN) {
-    StartHandlingCompressionsOnGC(rt);
+    StartOffThreadCompressionsOnGC(rt, isShrinkingGC());
   }
 
   return true;
@@ -3887,6 +3887,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 }
 
 void GCRuntime::setGrayBitsInvalid() {
+  waitBackgroundSweepEnd();
   grayBitsValid = false;
   atomMarking.unmarkAllGrayReferences(this);
 }

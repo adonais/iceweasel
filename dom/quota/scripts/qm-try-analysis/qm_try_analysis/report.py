@@ -191,9 +191,9 @@ def report_qm_failures(key, stacksfile, open_modified, workdir):
             continue
 
         search_string = " ".join(filter(None, match.groups()))
-        search_results = bugzilla_client.search_bugs(
-            [{"product": "Core", "summary": search_string}]
-        )["bugs"]
+        search_results = bugzilla_client.search_bugs([
+            {"product": "Core", "summary": search_string}
+        ])["bugs"]
 
         if bug_id := reduce(search_results, by=anchor):
             info(f'Found bug {BUGZILLA_BUG_URL + str(bug_id)} for anchor "{anchor}".')

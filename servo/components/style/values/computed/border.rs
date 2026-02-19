@@ -4,6 +4,7 @@
 
 //! Computed types for CSS values related to borders.
 
+use crate::derives::*;
 use crate::properties::{LogicalGroupId, LonghandId};
 use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
 use crate::values::computed::length::{
@@ -29,6 +30,7 @@ pub type LineWidth = Au;
 /// A computed value for border-width (and the like).
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToTyped, From)]
 #[repr(transparent)]
+#[typed_value(derive_fields)]
 pub struct BorderSideWidth(pub Au);
 
 impl BorderSideWidth {

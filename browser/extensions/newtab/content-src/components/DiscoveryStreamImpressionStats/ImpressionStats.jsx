@@ -79,6 +79,7 @@ export class ImpressionStats extends React.PureComponent {
                 // Keep the 0-based position, can be adjusted by the telemetry
                 // sender if necessary.
                 position: card.pos,
+                attribution: card.attribution,
               },
             })
           );
@@ -105,6 +106,7 @@ export class ImpressionStats extends React.PureComponent {
             received_rank: link.received_rank,
             topic: link.topic,
             features: link.features,
+            attribution: link.attribution,
             ...(link.format
               ? { format: link.format }
               : {

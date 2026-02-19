@@ -358,8 +358,10 @@ inline uintptr_t Cell::address() const {
 ChunkBase* Cell::chunk() const {
   uintptr_t addr = uintptr_t(this);
   MOZ_ASSERT(addr % CellAlignBytes == 0);
-  addr &= ~ChunkMask;
-  return reinterpret_cast<ChunkBase*>(addr);
+  auto* chunk = reinterpret_cast<ChunkBase*>(addr & ~ChunkMask);
+  MOZ_ASSERT(chunk->isNurseryChunk() ||
+             chunk->kind == ChunkKind::TenuredArenas);
+  return chunk;
 }
 
 inline StoreBuffer* Cell::storeBuffer() const { return chunk()->storeBuffer; }

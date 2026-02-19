@@ -5,8 +5,6 @@
 #ifndef jit_riscv64_extension_Extension_riscv_m_h_
 #define jit_riscv64_extension_Extension_riscv_m_h_
 
-#include <stdint.h>
-
 #include "jit/riscv64/extension/base-assembler-riscv.h"
 #include "jit/riscv64/Register-riscv64.h"
 namespace js {

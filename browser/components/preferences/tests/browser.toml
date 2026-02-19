@@ -23,6 +23,8 @@ run-if = [
   "updater",
 ]
 
+["browser_aiFeatures.js"]
+
 ["browser_application_xml_handle_internally.js"]
 
 ["browser_applications_selection.js"]
@@ -52,6 +54,8 @@ support-files = ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.
 ["browser_bug1547020_lockedDownloadDir.js"]
 
 ["browser_bug1579418.js"]
+
+["browser_capability_filter.js"]
 
 ["browser_cert_export.js"]
 
@@ -104,6 +108,12 @@ skip-if = [
 ["browser_downloads.js"]
 
 ["browser_ensure_prefs_bindings_initted.js"]
+
+["browser_etp_advanced.js"]
+
+["browser_etp_customize_1.js"]
+
+["browser_etp_customize_2.js"]
 
 ["browser_etp_exceptions_dialog.js"]
 
@@ -241,12 +251,22 @@ skip-if = [
 
 ["browser_privacypane_2.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
+]
+
+["browser_privacypane_2_srd.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
 ]
 
 ["browser_privacypane_3.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
+]
+
+["browser_privacypane_3_srd.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
 ]
 
 ["browser_proxy_backup.js"]
@@ -308,7 +328,7 @@ skip-if = [
 
 ["browser_search_within_preferences_1.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov"
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov",
 ]
 
 ["browser_search_within_preferences_2.js"]
@@ -351,6 +371,8 @@ support-files = [
 
 ["browser_sync_pairing.js"]
 
+["browser_sync_settings_ui.js"]
+
 ["browser_tabs_open_external_next_to_active_tab.js"]
 
 ["browser_trendingsuggestions.js"]
@@ -358,6 +380,8 @@ support-files = [
 ["browser_usage_telemetry.js"]
 
 ["browser_warning_permanent_private_browsing.js"]
+
+["browser_warning_permanent_private_browsing_srd.js"]
 
 ["browser_windows_launch_on_login.js"]
 run-if = [

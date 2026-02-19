@@ -563,13 +563,13 @@ class ListManifestParser:
             self.error(f"line {lineno} does not match: {line}")
             return result
         if os.path.basename(words[n - 1]) != url_ref:
-            self.error(f"words[n-1] not url_ref: {words[n-1]} != {url_ref}")
+            self.error(f"words[n-1] not url_ref: {words[n - 1]} != {url_ref}")
             return result
         if os.path.basename(words[n - 2]) != url:
-            self.error(f"words[n-2] not url: {words[n-2]} != {url}")
+            self.error(f"words[n-2] not url: {words[n - 2]} != {url}")
             return result
         if words[n - 3] != test_type:
-            self.error(f"words[n-3] not '{test_type}': {words[n-3]}")
+            self.error(f"words[n-3] not '{test_type}': {words[n - 3]}")
             return result
         d_min = 0
         d_max = 0
@@ -609,13 +609,13 @@ class ListManifestParser:
         d_max2 = int((1.0 + MARGIN) * d_max)
         if d_max2 > d_max:
             self.info(
-                f"Increased max difference from {d_max} by {int(MARGIN*100)}% to {d_max2}"
+                f"Increased max difference from {d_max} by {int(MARGIN * 100)}% to {d_max2}"
             )
             d_max = d_max2
         p_max2 = int((1.0 + MARGIN) * p_max)
         if p_max2 > p_max:
             self.info(
-                f"Increased differing pixels from {p_max} by {int(MARGIN*100)}% to {p_max2}"
+                f"Increased differing pixels from {p_max} by {int(MARGIN * 100)}% to {p_max2}"
             )
             p_max = p_max2
         if comment:

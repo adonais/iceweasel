@@ -282,6 +282,12 @@ function run() {
     expression_should_be_known("display-mode: " + type);
   });
 
+  if (SpecialPowers.getBoolPref("dom.documentpip.enabled")) {
+    expression_should_be_known("display-mode: picture-in-picture");
+  } else {
+    expression_should_not_be_known("display-mode: picture-in-picture");
+  }
+
   expression_should_not_be_known("display-mode: invalid")
 
   var content_div = document.getElementById("content");

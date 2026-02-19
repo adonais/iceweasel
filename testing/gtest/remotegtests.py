@@ -413,9 +413,7 @@ class AppWaiter:
 
 class remoteGtestOptions(argparse.ArgumentParser):
     def __init__(self):
-        super(remoteGtestOptions, self).__init__(
-            usage="usage: %prog [options] test_filter"
-        )
+        super().__init__(usage="usage: %prog [options] test_filter")
         self.add_argument(
             "--package",
             dest="package",

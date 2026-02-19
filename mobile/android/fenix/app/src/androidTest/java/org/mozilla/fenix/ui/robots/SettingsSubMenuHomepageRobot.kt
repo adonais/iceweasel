@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers
@@ -390,13 +391,13 @@ class SettingsSubMenuHomepageRobot {
 
     class Transition {
 
-        fun goBackToHomeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun goBackToHomeScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             Log.i(TAG, "goBackToHomeScreen: Trying to click the navigate up toolbar button")
             goBackButton().click()
             Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up toolbar button")
 
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
 
         fun goBack(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
@@ -408,7 +409,7 @@ class SettingsSubMenuHomepageRobot {
             return SettingsRobot.Transition()
         }
 
-        fun clickSnackBarViewButton(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun clickSnackBarViewButton(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             Log.i(TAG, "clickSnackBarViewButton: Waiting for $waitingTimeShort ms for \"VIEW\" snackbar button to exist")
             mDevice.findObject(UiSelector().text("VIEW")).waitForExists(waitingTimeShort)
             Log.i(TAG, "clickSnackBarViewButton: Waited for $waitingTimeShort ms for \"VIEW\" snackbar button to exist")
@@ -416,8 +417,8 @@ class SettingsSubMenuHomepageRobot {
             mDevice.findObject(UiSelector().text("VIEW")).click()
             Log.i(TAG, "clickSnackBarViewButton: Clicked the \"VIEW\" snackbar button")
 
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
     }
 }

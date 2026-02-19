@@ -483,6 +483,16 @@ bool Code::createManyLazyEntryStubs(const WriteGuard& guard,
 
   *stubBlockIndex = guard->blocks.length();
 
+  if (!guard->lazyExports.reserve(guard->lazyExports.length() +
+                                  funcExportIndices.length()) ||
+      !addCodeBlock(guard, std::move(stubCodeBlock), nullptr)) {
+    return false;
+  }
+
+  // Everything after this point must be guaranteed to succeed. A failure after
+  // this point can leave things in an inconsistent state, and be observed if we
+  // retry to create a lazy stub.
+
   uint32_t codeRangeIndex = 0;
   for (uint32_t funcExportIndex : funcExportIndices) {
     const FuncExport& fe = funcExports[funcExportIndex];
@@ -511,17 +521,17 @@ bool Code::createManyLazyEntryStubs(const WriteGuard& guard,
       MOZ_ASSERT(oldKind == CodeBlockKind::SharedStubs ||
                  oldKind == CodeBlockKind::BaselineTier);
       guard->lazyExports[exportIndex] = std::move(lazyExport);
-    } else if (!guard->lazyExports.insert(
-                   guard->lazyExports.begin() + exportIndex,
-                   std::move(lazyExport))) {
-      return false;
+    } else {
+      // We reserved memory earlier, this should not fail.
+      MOZ_RELEASE_ASSERT(guard->lazyExports.insert(
+          guard->lazyExports.begin() + exportIndex, std::move(lazyExport)));
     }
   }
 
-  stubCodeBlock->sendToProfiler(*codeMeta_, *codeTailMeta_, codeMetaForAsmJS_,
-                                FuncIonPerfSpewerSpan(),
-                                FuncBaselinePerfSpewerSpan());
-  return addCodeBlock(guard, std::move(stubCodeBlock), nullptr);
+  guard->blocks[*stubBlockIndex]->sendToProfiler(
+      *codeMeta_, *codeTailMeta_, codeMetaForAsmJS_, FuncIonPerfSpewerSpan(),
+      FuncBaselinePerfSpewerSpan());
+  return true;
 }
 
 bool Code::createOneLazyEntryStub(const WriteGuard& guard,
@@ -787,10 +797,28 @@ bool Code::addCodeBlock(const WriteGuard& guard, UniqueCodeBlock block,
 
   CodeBlock* blockPtr = block.get();
   size_t codeBlockIndex = guard->blocks.length();
-  return guard->blocks.append(std::move(block)) &&
-         guard->blocksLinkData.append(std::move(maybeLinkData)) &&
-         blockMap_.insert(blockPtr) &&
-         blockPtr->initialize(*this, codeBlockIndex);
+
+  if (!guard->blocks.reserve(guard->blocks.length() + 1) ||
+      !guard->blocksLinkData.reserve(guard->blocksLinkData.length() + 1)) {
+    return false;
+  }
+
+  // If anything fails here, be careful to reset our state back so that we are
+  // not in an inconsistent state.
+  if (!blockPtr->initialize(*this, codeBlockIndex)) {
+    return false;
+  }
+
+  if (!blockMap_.insert(blockPtr)) {
+    // We don't need to deinitialize the blockPtr, because that will be
+    // automatically handled by its destructor.
+    return false;
+  }
+
+  guard->blocks.infallibleAppend(std::move(block));
+  guard->blocksLinkData.infallibleAppend(std::move(maybeLinkData));
+
+  return true;
 }
 
 SharedCodeSegment Code::createFuncCodeSegmentFromPool(

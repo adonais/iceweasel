@@ -16,7 +16,7 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
 
 class TextFragmentsTest : TestSetup() {
     @get:Rule
-    val activityTestRule = AndroidComposeTestRule(
+    val composeTestRule = AndroidComposeTestRule(
         HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
     ) { it.activity }
 
@@ -30,11 +30,12 @@ class TextFragmentsTest : TestSetup() {
         val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(textFragmentLink.toUri()) {
             verifyTextFragmentsPageContent("Firefox")
         }.openThreeDotMenu {
-        }.openAddToHomeScreen {
+            clickTheMoreButton()
+        }.clickAddToHomeScreenButton {
             clickAddShortcutButton()
             clickSystemHomeScreenShortcutAddButton()
         }.openHomeScreenShortcut(genericPage.title) {
@@ -49,15 +50,15 @@ class TextFragmentsTest : TestSetup() {
         val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(textFragmentLink.toUri()) {
             verifyTextFragmentsPageContent("Firefox")
-        }.openTabDrawer(activityTestRule) {
+        }.openTabDrawer(composeTestRule) {
             closeTabWithTitle(genericPage.title)
         }
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
             verifyHistoryItemExists(true, genericPage.title)
         }.openWebsite(textFragmentLink.toUri()) {
             verifyTextFragmentsPageContent("Firefox")
@@ -71,19 +72,19 @@ class TextFragmentsTest : TestSetup() {
         val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(textFragmentLink.toUri()) {
             verifyTextFragmentsPageContent("Firefox")
         }.openThreeDotMenu {
-        }.bookmarkPage {
+        }.clickBookmarkThisPageButton {
         }
-        browserScreen {
-        }.openTabDrawer(activityTestRule) {
+        browserScreen(composeTestRule) {
+        }.openTabDrawer(composeTestRule) {
             closeTabWithTitle(genericPage.title)
         }
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(activityTestRule) {
+        }.clickBookmarksButton {
             verifyBookmarkTitle(genericPage.title)
         }.openBookmarkWithTitle(genericPage.title) {
             verifyTextFragmentsPageContent("Firefox")
@@ -97,7 +98,7 @@ class TextFragmentsTest : TestSetup() {
         val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(textFragmentLink.toUri()) {
             verifyTextFragmentsPageContent("Firefox")
         }.openThreeDotMenu {

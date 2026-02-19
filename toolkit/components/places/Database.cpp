@@ -1353,8 +1353,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
-      if (currentSchemaVersion < 84) {
-        rv = MigrateV84Up();
+      // The schema 84 migration was the same as 85, we had to re-run it to
+      // correct issues with origin frecency.
+
+      if (currentSchemaVersion < 85) {
+        rv = MigrateV85Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
@@ -2285,8 +2288,9 @@ nsresult Database::MigrateV83Up() {
   return NS_OK;
 }
 
-nsresult Database::MigrateV84Up() {
-  // Recalculate frecency due to changing calculate_frecency.
+nsresult Database::MigrateV85Up() {
+  // Recalculate frecency due to changing frecency and giving too high a bonus
+  // for non-typed URLs.
   nsresult rv = mMainConn->ExecuteSimpleSQL(
       "UPDATE moz_origins "
       "SET recalc_frecency = 1 "

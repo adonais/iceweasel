@@ -168,30 +168,19 @@ export class AboutPreferences {
    */
 
   /**
-   * @backward-compat { version 146 }
-   *
-   * The `web-search` DOM node will not exist until Fx146+ so we have
-   * to fall back to the `search` DOM node. Adding this shim causes
-   * renderPreferenceSection to have too many statements. We can remove
-   * this eslint exception once we are in Fx146+.
+   * We can remove this eslint exception once the Settings redesign is complete.
+   * In fact, we can probably remove this entire method.
    */
   // eslint-disable-next-line max-statements
   renderPreferenceSection(sectionData, document, Preferences) {
-    /**
-     * @backward-compat { version 146 }
-     *
-     * We have to potentially re-assign the `id` if it is `web-search`.
-     * We should restore `id` back to a const after Fx146+.
-     */
-
     /* Do not render old-style settings if new settings UI is enabled - this is needed to avoid
      * registering prefs twice and ensuing errors */
     if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       return;
     }
 
-    let { id } = sectionData;
     const {
+      id,
       pref: prefData,
       maxRows,
       rowsPref,
@@ -218,19 +207,6 @@ export class AboutPreferences {
     // Don't show any sections that we don't want to expose in preferences UI
     if (shouldHidePref) {
       return;
-    }
-
-    /**
-     * @backward-compat { version 146 }
-     *
-     * The `web-search` DOM node will not exist until Fx146+ so fall
-     * back to the `search` DOM node until then.
-     */
-    if (id === "web-search") {
-      let webSearchBox = document.getElementById(id);
-      if (!webSearchBox) {
-        id = "search";
-      }
     }
 
     // Add the main preference for turning on/off a section

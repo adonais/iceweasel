@@ -219,7 +219,7 @@ class AboutFragment(
             AboutPageItem(
                 AboutItem.ExternalLink(
                     PRIVACY_NOTICE,
-                    SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE),
+                    SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE),
                 ),
                 getString(R.string.about_privacy_notice),
             ),

@@ -87,20 +87,6 @@ export class AddonSuggestions extends SuggestProvider {
       }
     }
 
-    const payload = {
-      url: url.href,
-      originalUrl: suggestion.url,
-      shouldShowUrl: true,
-      // Rust uses `iconUrl` but Merino uses `icon`.
-      icon: suggestion.iconUrl ?? suggestion.icon,
-      title: suggestion.title,
-      description: suggestion.description,
-      bottomTextL10n: {
-        id: "firefox-suggest-addons-recommended",
-      },
-      helpUrl: lazy.QuickSuggest.HELP_URL,
-    };
-
     return new lazy.UrlbarResult({
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
@@ -109,10 +95,19 @@ export class AddonSuggestions extends SuggestProvider {
       isRichSuggestion: true,
       richSuggestionIconSize: 24,
       showFeedbackMenu: true,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-        queryContext.tokens,
-        payload
-      ),
+      payload: {
+        url: url.href,
+        originalUrl: suggestion.url,
+        shouldShowUrl: true,
+        // Rust uses `iconUrl` but Merino uses `icon`.
+        icon: suggestion.iconUrl ?? suggestion.icon,
+        title: suggestion.title,
+        description: suggestion.description,
+        bottomTextL10n: {
+          id: "firefox-suggest-addons-recommended",
+        },
+        helpUrl: lazy.QuickSuggest.HELP_URL,
+      },
     });
   }
 

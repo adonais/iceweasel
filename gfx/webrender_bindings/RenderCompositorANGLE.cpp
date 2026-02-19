@@ -1008,7 +1008,7 @@ bool RenderCompositorANGLE::UsePartialPresent() { return mUsePartialPresent; }
 
 bool RenderCompositorANGLE::RequestFullRender() {
   // XXX Remove when partial update is supported.
-  if (UseLayerCompositor() && mDCLayerTree->SupportsDCompositionTexture()) {
+  if (UseLayerCompositor() && mDCLayerTree->UseDCLayerDCompositionTexture()) {
     return true;
   }
   return mFullRender;

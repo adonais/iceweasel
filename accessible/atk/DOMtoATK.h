@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <glib.h>
-#include <cstdint>
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "nsCharTraits.h"
 #include "nsString.h"

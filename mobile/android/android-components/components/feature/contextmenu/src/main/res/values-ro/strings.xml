@@ -21,6 +21,8 @@
   <string name="mozac_feature_contextmenu_share_image">Partajează imaginea</string>
   <!-- Text for context menu item to copy the link to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_link">Copiază linkul</string>
+  <!-- Text for context menu item to copy the link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_copy_link_text">Copiază textul linkului</string>
   <!-- Text for context menu item to copy the URL pointing to the image to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_image_location">Copiază locația imaginii</string>
   <!-- Text for context menu item to save / download the image. -->
@@ -35,6 +37,8 @@
   <string name="mozac_feature_contextmenu_snackbar_new_private_tab_opened">Filă privată nouă deschisă</string>
   <!-- Text for confirmation "snackbar" shown after copying a link or image URL to the clipboard. -->
   <string name="mozac_feature_contextmenu_snackbar_link_copied">Linkul a fost copiat în clipboard</string>
+  <!-- Text for confirmation "snackbar" shown after copying a link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_snackbar_link_text_copied">Textul linkului a fost copiat în clipboard</string>
   <!-- Action shown in a "snacbkar" after opening a new/private tab. Clicking this action will switch to the newly opened tab. -->
   <string name="mozac_feature_contextmenu_snackbar_action_switch">Comută</string>
   <!-- Text for context menu item to open the link in an external app. -->

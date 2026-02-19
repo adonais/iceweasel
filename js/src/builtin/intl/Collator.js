@@ -247,26 +247,6 @@ function InitializeCollator(collator, locales, options) {
 }
 
 /**
- * Returns the subset of the given locale list for which this locale list has a
- * matching (possibly fallback) locale. Locales appear in the same order in the
- * returned list as in the input list.
- *
- * Spec: ECMAScript Internationalization API Specification, 10.2.2.
- */
-function Intl_Collator_supportedLocalesOf(locales /*, options*/) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  // Step 1.
-  var availableLocales = "Collator";
-
-  // Step 2.
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  // Step 3.
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-/**
  * Collator internal properties.
  *
  * Spec: ECMAScript Internationalization API Specification, 9.1 and 10.2.3.

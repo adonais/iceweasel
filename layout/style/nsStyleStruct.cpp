@@ -396,7 +396,8 @@ nsStyleMargin::nsStyleMargin()
     : mMargin(StyleRectWithAllSides(
           StyleMargin::LengthPercentage(LengthPercentage::Zero()))),
       mScrollMargin(StyleRectWithAllSides(StyleLength{0.})),
-      mOverflowClipMargin(StyleLength::Zero()) {
+      mOverflowClipMargin(
+          {StyleLength::Zero(), StyleOverflowClipMarginBox::PaddingBox}) {
   MOZ_COUNT_CTOR(nsStyleMargin);
 }
 
@@ -1606,41 +1607,57 @@ static bool GradientItemsAreOpaque(
 
 template <>
 bool StyleGradient::IsOpaque() const {
-  if (IsLinear()) {
-    return GradientItemsAreOpaque(AsLinear().items.AsSpan());
+  switch (tag) {
+    case Tag::Linear:
+      return GradientItemsAreOpaque(AsLinear().items.AsSpan());
+    case Tag::Radial:
+      return GradientItemsAreOpaque(AsRadial().items.AsSpan());
+    case Tag::Conic:
+      return GradientItemsAreOpaque(AsConic().items.AsSpan());
   }
-  if (IsRadial()) {
-    return GradientItemsAreOpaque(AsRadial().items.AsSpan());
-  }
-  return GradientItemsAreOpaque(AsConic().items.AsSpan());
+  MOZ_ASSERT_UNREACHABLE("Unexpected gradient type");
+  return false;
 }
 
 template <>
 bool StyleImage::IsOpaque() const {
-  if (IsImageSet()) {
-    return FinalImage().IsOpaque();
+  switch (tag) {
+    case Tag::ImageSet:
+      return FinalImage().IsOpaque();
+    case Tag::Gradient:
+      return AsGradient()->IsOpaque();
+    case Tag::Url: {
+      if (!IsComplete()) {
+        return false;
+      }
+      MOZ_ASSERT(GetImageRequest(), "should've returned earlier above");
+      nsCOMPtr<imgIContainer> imageContainer;
+      GetImageRequest()->GetImage(getter_AddRefs(imageContainer));
+      MOZ_ASSERT(imageContainer, "IsComplete() said image container is ready");
+      return imageContainer->WillDrawOpaqueNow();
+    }
+    case Tag::CrossFade:
+      for (const auto& el : AsCrossFade()->elements.AsSpan()) {
+        if (el.image.IsColor()) {
+          if (el.image.AsColor().MaybeTransparent()) {
+            return false;
+          }
+          continue;
+        }
+        MOZ_ASSERT(el.image.IsImage());
+        if (!el.image.AsImage().IsOpaque()) {
+          return false;
+        }
+      }
+      return true;
+    case Tag::LightDark:
+      MOZ_FALLTHROUGH_ASSERT("Should be computed already");
+    case Tag::Element:
+    case Tag::MozSymbolicIcon:
+    case Tag::None:
+      break;
   }
-
-  if (!IsComplete()) {
-    return false;
-  }
-
-  if (IsGradient()) {
-    return AsGradient()->IsOpaque();
-  }
-
-  if (IsElement() || IsMozSymbolicIcon()) {
-    return false;
-  }
-
-  MOZ_ASSERT(IsImageRequestType(), "unexpected image type");
-  MOZ_ASSERT(GetImageRequest(), "should've returned earlier above");
-
-  nsCOMPtr<imgIContainer> imageContainer;
-  GetImageRequest()->GetImage(getter_AddRefs(imageContainer));
-  MOZ_ASSERT(imageContainer, "IsComplete() said image container is ready");
-
-  return imageContainer->WillDrawOpaqueNow();
+  return false;
 }
 
 template <>

@@ -19,7 +19,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.webextension.WebExtensionInstallException
 import mozilla.components.feature.addons.Addon
 import mozilla.components.support.ktx.android.content.appVersionName
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertFalse
@@ -268,7 +267,14 @@ class WebExtensionPromptFeatureTest {
     @Test
     fun `GIVEN Optional Permissions WHEN handleAfterInstallationRequest is called THEN handleOptionalPermissionsRequest is called`() {
         webExtensionPromptFeature.start()
-        val request = mockk<WebExtensionPromptRequest.AfterInstallation.Permissions.Optional>(relaxed = true)
+
+        val request = mockk<WebExtensionPromptRequest.AfterInstallation.Permissions.Optional>(relaxed = true) {
+            every { extension } returns mockk(relaxed = true) {
+                every { getMetadata() } returns mockk(relaxed = true) {
+                    every { updateDate } returns "2023-10-27T10:15:30.500Z"
+                }
+            }
+        }
 
         webExtensionPromptFeature.handleAfterInstallationRequest(request)
 

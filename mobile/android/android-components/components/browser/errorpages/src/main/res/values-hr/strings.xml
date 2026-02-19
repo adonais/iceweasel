@@ -20,7 +20,7 @@
   <!-- The document title and heading of the error page shown when a website sends has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">Sigurna veza nije uspjela</string>
   <!-- The error message shown when a website sends has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[<ul>\n<li>Možda se radi o problemu s postavkama na poslužitelju ili možda netko pokušava oponašati ovaj poslužitelj.</li>\n<li>Ako u prošlosti nije bilo problema sa spajanjem na ovaj poslužitelj, moguće je da se radi o privremenoj grešci, stoga pokušaj ponovo kasnije.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[<ul>\n<li>Možda se radi o problemu s postavkama na serveru ili možda netko pokušava oponašati ovaj server.</li>\n<li>Ako u prošlosti nije bilo problema sa spajanjem na ovaj server, moguće je da se radi o privremenoj grešci, stoga pokušaj ponovo kasnije.</li>\n</ul>]]></string>
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website has an invalid SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_advanced">Napredno …</string>
   <!-- The advanced certificate information shown when a website sends has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->

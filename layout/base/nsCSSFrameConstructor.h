@@ -17,7 +17,6 @@
 #include "mozilla/ContainStyleScopeManager.h"
 #include "mozilla/FunctionRef.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ScrollStyles.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
@@ -100,11 +99,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   mozilla::ViewportFrame* ConstructRootFrame();
 
  private:
-  enum Operation { CONTENTAPPEND, CONTENTINSERT };
-
   // aChild is the child being inserted for inserts, and the first
-  // child being appended for appends.
-  void ConstructLazily(Operation aOperation, nsIContent* aChild);
+  // child being appended for appends. All the nodes in the range are
+  // guaranteed to have the same flat tree parent.
+  void ConstructLazily(nsIContent* aStartChild, nsIContent* aEndChild);
 
 #ifdef DEBUG
   void CheckBitsForLazyFrameConstruction(nsIContent* aParent);
@@ -140,12 +138,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
      * It's undefined if mParentFrame is null.
      */
     nsIContent* mContainer;
-
-    /**
-     * Whether it is required to insert children one-by-one instead of as a
-     * range.
-     */
-    bool IsMultiple() const;
   };
 
   /**
@@ -1904,10 +1896,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   // rebuild the entire subtree when we insert or append new content under
   // aFrame.
   //
-  // This is similar to WipeContainingBlock(), but is called before constructing
-  // any frame construction items. Any container frames which need reframing
-  // regardless of the content inserted or appended can add a check in this
-  // method.
+  // This is similar to WipeContainingBlock(), but is called
+  // before constructing any frame construction items. Any container frames
+  // which need reframing regardless of the content inserted or appended can add
+  // a check in this method.
   //
   // @return true if we reconstructed the insertion parent frame; false
   // otherwise
@@ -1917,12 +1909,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   // because we're doing something like adding block kids to an inline frame
   // (and therefore need an {ib} split).  aPrevSibling must be correct, even in
   // aIsAppend cases.  Passing aIsAppend false even when an append is happening
-  // is ok in terms of correctness, but can lead to unnecessary reframing.  If
-  // aIsAppend is true, then the caller MUST call
-  // nsCSSFrameConstructor::AppendFramesToParent (as opposed to
-  // nsFrameManager::InsertFrames directly) to add the new frames.
-  // @return true if we reconstructed the containing block, false
-  // otherwise
+  // is ok in terms of correctness, but can lead to unnecessary reframing.
+  //
+  // @return true if we reconstructed the containing block, false otherwise.
   bool WipeContainingBlock(nsFrameConstructorState& aState,
                            nsIFrame* aContainingBlock, nsIFrame* aFrame,
                            FrameConstructionItemList& aItems, bool aIsAppend,
@@ -2027,14 +2016,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void CheckForFirstLineInsertion(nsIFrame* aParentFrame,
                                   nsFrameList& aFrameList);
 
-  /**
-   * Find the next frame for appending to a given insertion point.
-   *
-   * We're appending, so this is almost always null, except for a few edge
-   * cases.
-   */
-  nsIFrame* FindNextSiblingForAppend(const InsertionPoint&);
-
   // The direction in which we should look for siblings.
   enum class SiblingDirection {
     Forward,
@@ -2051,65 +2032,34 @@ class nsCSSFrameConstructor final : public nsFrameManager {
    *
    * @param aIter should be positioned such that aIter.GetPreviousChild()
    *          is the first content to search for frames
-   * @param aTargetContentDisplay the CSS display enum for the content aIter
-   *          points to if already known. It will be filled in if needed.
    */
   template <SiblingDirection>
-  nsIFrame* FindSibling(
-      const mozilla::dom::FlattenedChildIterator& aIter,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+  nsIFrame* FindSibling(const mozilla::dom::FlattenedChildIterator& aIter);
 
   // Helper for the implementation of FindSibling.
   //
   // Beware that this function does mutate the iterator.
   template <SiblingDirection>
-  nsIFrame* FindSiblingInternal(
-      mozilla::dom::FlattenedChildIterator&, nsIContent* aTargetContent,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+  nsIFrame* FindSiblingInternal(mozilla::dom::FlattenedChildIterator&);
 
   // An alias of FindSibling<SiblingDirection::Forward>.
-  nsIFrame* FindNextSibling(
-      const mozilla::dom::FlattenedChildIterator& aIter,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
-  // An alias of FindSibling<SiblingDirection::Backwards>.
+  nsIFrame* FindNextSibling(const mozilla::dom::FlattenedChildIterator& aIter);
+  // An alias of FindSibling<SiblingDirection::Backward>.
   nsIFrame* FindPreviousSibling(
-      const mozilla::dom::FlattenedChildIterator& aIter,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+      const mozilla::dom::FlattenedChildIterator& aIter);
 
-  // Given a potential first-continuation sibling frame for aTargetContent,
-  // verify that it is an actual valid sibling for it, and return the
-  // appropriate continuation the new frame for aTargetContent should be
-  // inserted next to.
-  nsIFrame* AdjustSiblingFrame(
-      nsIFrame* aSibling, nsIContent* aTargetContent,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay,
-      SiblingDirection aDirection);
+  // Given a potential first-continuation sibling frame, return the
+  // appropriate continuation the new frame should be inserted next to.
+  nsIFrame* AdjustSiblingFrame(nsIFrame* aSibling, SiblingDirection);
 
   // Find the right previous sibling for an insertion.  This also updates the
   // parent frame to point to the correct continuation of the parent frame to
   // use, and returns whether this insertion is to be treated as an append.
   // aChild is the child being inserted.
-  // aIsRangeInsertSafe returns whether it is safe to do a range insert with
-  // aChild being the first child in the range. It is the callers'
-  // responsibility to check whether a range insert is safe with regards to
-  // fieldsets.
-  // The skip parameters are used to ignore a range of children when looking
-  // for a sibling. All nodes starting from aStartSkipChild and up to but not
-  // including aEndSkipChild will be skipped over when looking for sibling
-  // frames. Skipping a range can deal with shadow DOM, but not when there are
-  // multiple insertion points.
+  // It is the callers' responsibility to check whether a range insert is safe
+  // with regards to fieldsets / tables.
   nsIFrame* GetInsertionPrevSibling(InsertionPoint* aInsertion,  // inout
-                                    nsIContent* aChild, bool* aIsAppend,
-                                    bool* aIsRangeInsertSafe,
-                                    nsIContent* aStartSkipChild = nullptr,
-                                    nsIContent* aEndSkipChild = nullptr);
-
-  // see if aContent and aSibling are legitimate siblings due to restrictions
-  // imposed by table columns
-  // XXXbz this code is generally wrong, since the frame for aContent
-  // may be constructed based on tag, not based on aDisplay!
-  bool IsValidSibling(nsIFrame* aSibling, nsIContent* aContent,
-                      mozilla::Maybe<mozilla::StyleDisplay>& aDisplay);
+                                    nsIContent* aChild, bool* aIsAppend);
 
   void QuotesDirty();
   void CountersDirty();

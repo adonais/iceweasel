@@ -9,6 +9,9 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", false]],
+  });
   await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => {
     gCUITestUtils.removeSearchBar();
@@ -50,7 +53,11 @@ add_task(async function test_support_toolbar_field_properties() {
 
   let fields = [
     document.querySelector("#urlbar > .urlbar-background"),
-    document.getElementById("searchbar"),
+    document.querySelector(
+      Services.prefs.getBoolPref("browser.search.widget.new")
+        ? "#searchbar-new > .urlbar-background"
+        : "#searchbar"
+    ),
   ].filter(field => {
     let bounds = field.getBoundingClientRect();
     return bounds.width > 0 && bounds.height > 0;

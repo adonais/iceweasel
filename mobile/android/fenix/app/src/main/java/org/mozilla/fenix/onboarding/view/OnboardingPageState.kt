@@ -21,6 +21,7 @@ import org.mozilla.fenix.compose.LinkTextState
  * @property toolbarOptions Optional list of toolbar selection options.
  * @property marketingData Optional marketing page data.
  * @property onRecordImpressionEvent Callback for recording impression event.
+ * @property shouldShowElevation Whether to show elevation/shadow for the page card.
  */
 data class OnboardingPageState(
     @param:DrawableRes val imageRes: Int,
@@ -34,6 +35,7 @@ data class OnboardingPageState(
     val toolbarOptions: List<ToolbarOption>? = null,
     val marketingData: OnboardingMarketingData? = null,
     val onRecordImpressionEvent: () -> Unit = {},
+    val shouldShowElevation: Boolean = true,
 )
 
 /**

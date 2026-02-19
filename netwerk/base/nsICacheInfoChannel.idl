@@ -24,6 +24,23 @@ interface nsIInputStreamReceiver : nsISupports
   void onInputStreamReady(in nsIInputStream aStream);
 };
 
+
+/**
+ * A light variant of nsICacheInfoChannel, retrievable from
+ * nsICacheInfoChannel::getCacheEntryWriteHandle.
+ *
+ * When an alternate data is written asynchronously after the response,
+ * this can be used in order to avoid keeping the channels alive longer.
+ */
+[scriptable, builtinclass, uuid(0da1249c-d5f5-494e-842b-2c3197c92511)]
+interface nsICacheEntryWriteHandle : nsISupports
+{
+  /**
+   * Same as nsICacheInfoChannel::openAlternativeOutputStream.
+   */
+  nsIAsyncOutputStream openAlternativeOutputStream(in ACString type, in long long predictedSize);
+};
+
 [scriptable, builtinclass, uuid(72c34415-c6eb-48af-851f-772fa9ee5972)]
 interface nsICacheInfoChannel : nsISupports
 {
@@ -190,6 +207,11 @@ interface nsICacheInfoChannel : nsISupports
    * input stream and delivers it to the receiver.
    */
   void getOriginalInputStream(in nsIInputStreamReceiver aReceiver);
+
+  /**
+   * Get a handle to open the alternative output stream for later use.
+   */
+  nsICacheEntryWriteHandle getCacheEntryWriteHandle();
 
   /**
    * Opens and returns an output stream that a consumer may use to save an

@@ -15,12 +15,12 @@ fieldset {
 legend {
   padding: 0;
   font-weight: var(--font-weight-semibold);
-  display: inline-flex;
+  display: flex;
   gap: var(--space-small);
   align-items: baseline;
 
-  &:has(+ #description) {
-    display: flex;
+  &:has(+ a, + slot[name="support-link"]:has-slotted) {
+    display: inline-flex;
   }
 
   /* Hack to handle vertical alignment in cases where we have an icon + heading
@@ -35,7 +35,7 @@ legend {
   width: var(--icon-size);
   height: var(--icon-size);
   -moz-context-properties: fill;
-  fill: var(--icon-color);
+  fill: currentColor;
   align-self: center;
 }
 
@@ -48,9 +48,9 @@ h6 {
   margin: 0;
 }
 
-#description {
+.description {
   margin: 0;
-  margin-block-start: var(--space-xxsmall);
+  margin-block-start: var(--space-xsmall);
   color: var(--text-color-deemphasized);
 }
 
@@ -66,7 +66,7 @@ h6 {
     column-gap: var(--space-medium);
   }
 
-  :is(legend, #description) ~ & {
+  :is(legend, .description) ~ & {
     margin-top: var(--space-small);
 
     :host([hasheading]) & {

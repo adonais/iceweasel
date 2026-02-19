@@ -18,7 +18,6 @@
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/UpdateImageHelper.h"
 #include "mozilla/PerfStats.h"
 #include "nsDisplayList.h"
 #include "nsLayoutUtils.h"

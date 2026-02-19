@@ -48,6 +48,10 @@ ID
 # lint-ignore-next-line: syntax-difference
 !testing/web-platform/tests/tools/third_party/**/*.egg-info
 
+# Ignore pywebsocket3 intermediate files.
+testing/web-platform/tests/tools/third_party/pywebsocket3/pywebsocket3.egg-info
+testing/web-platform/tests/tools/third_party/pywebsocket3/build
+
 # Vim swap files.
 .*.sw[a-z]
 .sw[a-z]
@@ -361,6 +365,7 @@ browser/components/storybook/node_modules/
 browser/components/storybook/storybook-static/
 browser/components/storybook/.storybook/chrome-map.js
 browser/components/storybook/custom-elements.json
+browser/components/storybook/component-status/components.json
 
 # Ignore design-system node_modules
 toolkit/themes/shared/design-system/node_modules/
@@ -390,3 +395,8 @@ toolkit/crashreporter/minidump-analyzer/target/
 
 # Ignore personal preferences files
 CLAUDE.local.md
+.claude/settings.local.json
+
+# Ignore .json.gz (typically profiles) in the root directory
+# lint-ignore-next-line: git-only
+/*.json.gz

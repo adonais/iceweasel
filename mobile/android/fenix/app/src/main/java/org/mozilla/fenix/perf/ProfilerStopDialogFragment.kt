@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.fragment.app.DialogFragment
@@ -43,7 +44,6 @@ class ProfilerStopDialogFragment : DialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         profilerViewModel.resetUiState()
-        profilerViewModel.updateProfilerActiveStatus()
         super.onDismiss(dialog)
         if (activity is StopProfilerActivity) {
             activity?.finish()
@@ -106,25 +106,35 @@ class ProfilerStopDialogFragment : DialogFragment() {
             }
         }
     }
+}
 
-    @Composable
-    private fun UrlWarningCard(
-        onStopAndSave: () -> Unit,
-        onStopWithoutSaving: () -> Unit,
+@Composable
+private fun UrlWarningCard(
+    onStopAndSave: () -> Unit,
+    onStopWithoutSaving: () -> Unit,
+) {
+    BaseProfilerDialogContent(
+        titleText = stringResource(R.string.profiler_url_warning),
+        negativeActionText = stringResource(R.string.profiler_start_cancel),
+        onNegativeAction = onStopWithoutSaving,
+        positiveActionText = stringResource(R.string.profiler_as_url),
+        onPositiveAction = onStopAndSave,
     ) {
-        BaseProfilerDialogContent(
-            titleText = stringResource(R.string.profiler_url_warning),
-            negativeActionText = stringResource(R.string.profiler_start_cancel),
-            onNegativeAction = onStopWithoutSaving,
-            positiveActionText = stringResource(R.string.profiler_as_url),
-            onPositiveAction = onStopAndSave,
-        ) {
-            Text(
-                text = stringResource(R.string.profiler_url_warning_explained),
-                color = FirefoxTheme.colors.textPrimary,
-                fontWeight = FontWeight.Medium,
-                fontSize = 15.sp,
-            )
-        }
+        Text(
+            text = stringResource(R.string.profiler_url_warning_explained),
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+        )
+    }
+}
+
+@Composable
+@PreviewLightDark
+private fun UrlWarningCardPreview() {
+    FirefoxTheme {
+        UrlWarningCard(
+            onStopAndSave = {},
+            onStopWithoutSaving = {},
+        )
     }
 }

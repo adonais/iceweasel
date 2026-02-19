@@ -19,6 +19,9 @@ export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 export SNAP_ARCH=amd64
 export SNAPCRAFT_BUILD_INFO=1
+# Used to discern this Docker build, done by Mozilla, from the 'normal',
+# production snap build.
+export MOZ_SNAP_BUILD=1
 
 export PATH=$PATH:$HOME/.local/bin/
 unset MOZ_AUTOMATION

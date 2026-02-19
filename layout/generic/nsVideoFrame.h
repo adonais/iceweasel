@@ -49,7 +49,9 @@ class nsVideoFrame : public nsContainerFrame,
 
   /* get the size of the video's display */
   mozilla::IntrinsicSize GetIntrinsicSize() final;
+  mozilla::IntrinsicSize GetIntrinsicSize(bool aIgnoreContainment) const;
   mozilla::AspectRatio GetIntrinsicRatio() const final;
+  mozilla::AspectRatio GetIntrinsicRatio(bool aIgnoreContainment) const;
   SizeComputationResult ComputeSize(
       const SizeComputationInput& aSizingInput, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
@@ -60,6 +62,8 @@ class nsVideoFrame : public nsContainerFrame,
 
   nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
                          mozilla::IntrinsicISizeType aType) final;
+
+  nsRect GetDestRect(const nsRect& aContentBox) const;
 
   void Destroy(DestroyContext&) final;
 

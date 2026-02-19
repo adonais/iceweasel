@@ -15,7 +15,7 @@ export interface Attachment {
   // e.g. "2f7c0f7bbc...ca79f0850c4de",
   hash: string;
   // e.g. 5047568,
-  size: string;
+  size: number;
   // e.g. "lex.50.50.deen.s2t.bin",
   filename: string;
   // e.g. "main-workspace/translations-models/316ebb3a-0682-42cc-8e73-a3ba4bbb280f.bin",

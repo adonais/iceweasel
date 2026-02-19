@@ -188,6 +188,13 @@ class AbstractRange : public nsISupports,
    */
   static bool IsRootUAWidget(const nsINode* aRoot);
 
+  /**
+   * Return a shrunken range computed by
+   * SelectionMoveUtils::GetFirstVisiblePointAtLeaf() and
+   * SelectionMoveUtils::GetLastVisiblePointAtLeaf().
+   */
+  already_AddRefed<StaticRange> GetShrunkenRangeToVisibleLeaves() const;
+
  protected:
   template <typename SPT, typename SRT, typename EPT, typename ERT,
             typename RangeType>

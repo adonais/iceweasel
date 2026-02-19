@@ -866,11 +866,14 @@ this.tabs = class extends ExtensionAPIPersistent {
 
             if (
               createProperties.url &&
-              createProperties.url !== window.BROWSER_NEW_TAB_URL
+              createProperties.url !== window.BROWSER_NEW_TAB_URL &&
+              !createProperties.url.startsWith("about:blank")
             ) {
               // We can't wait for a location change event for about:newtab,
               // since it may be pre-rendered, in which case its initial
               // location change event has already fired.
+              // The same goes for about:blank, since the initial blank document
+              // is loaded synchronously.
 
               // Mark the tab as initializing, so that operations like
               // `executeScript` wait until the requested URL is loaded in

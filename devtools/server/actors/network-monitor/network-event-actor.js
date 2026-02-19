@@ -47,7 +47,7 @@ function isFileChannel(channel) {
 /**
  * Creates an actor for a network event.
  *
- * @constructor
+ * @class
  * @param {DevToolsServerConnection} conn
  *        The connection into which this Actor will be added.
  * @param {object} sessionContext

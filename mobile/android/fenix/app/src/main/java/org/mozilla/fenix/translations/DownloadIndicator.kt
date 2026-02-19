@@ -26,13 +26,14 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.modifier.animateRotation
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -134,10 +135,12 @@ fun DownloadIndicator(
     )
 }
 
+@Preview
 @Composable
-@PreviewLightDark
-private fun DownloadIconIndicatorPreview() {
-    FirefoxTheme {
+private fun DownloadIconIndicatorPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             DownloadIconIndicator(
                 icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
@@ -149,25 +152,12 @@ private fun DownloadIconIndicatorPreview() {
     }
 }
 
-@Composable
 @Preview
-private fun DownloadIconIndicatorPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
-        Surface {
-            DownloadIconIndicator(
-                icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
-                contentDescription = stringResource(
-                    id = R.string.translations_bottom_sheet_translating_in_progress,
-                ),
-            )
-        }
-    }
-}
-
 @Composable
-@PreviewLightDark
-private fun DownloadInProgressIndicatorPreview() {
-    FirefoxTheme {
+private fun DownloadInProgressIndicatorPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             DownloadInProgressIndicator(
                 contentDescription = stringResource(
@@ -178,41 +168,12 @@ private fun DownloadInProgressIndicatorPreview() {
     }
 }
 
-@Composable
 @Preview
-private fun DownloadInProgressIndicatorPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
-        Surface {
-            DownloadInProgressIndicator(
-                contentDescription = stringResource(
-                    id = R.string.translations_bottom_sheet_translating_in_progress,
-                ),
-            )
-        }
-    }
-}
-
 @Composable
-@PreviewLightDark
-private fun DownloadIndicatorPreview() {
-    FirefoxTheme {
-        Surface {
-            DownloadIndicator(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                text = stringResource(id = R.string.translations_bottom_sheet_translating_in_progress),
-                contentDescription = stringResource(
-                    id = R.string.translations_bottom_sheet_translating_in_progress_content_description,
-                ),
-                icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
-            )
-        }
-    }
-}
-
-@Composable
-@Preview
-private fun DownloadIndicatorPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun DownloadIndicatorPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             DownloadIndicator(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),

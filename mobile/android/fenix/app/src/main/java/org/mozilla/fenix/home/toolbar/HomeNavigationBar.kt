@@ -19,9 +19,9 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
 import mozilla.components.lib.state.ext.observeAsState
+import mozilla.components.support.utils.KeyboardState
+import mozilla.components.support.utils.keyboardAsState
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.utils.KeyboardState
-import org.mozilla.fenix.compose.utils.keyboardAsState
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 

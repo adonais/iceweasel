@@ -6,8 +6,6 @@
 
 #include "debugger/DebuggerMemory.h"
 
-#include <stdlib.h>
-
 #include "jsapi.h"
 
 #include "builtin/MapObject.h"

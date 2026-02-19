@@ -102,10 +102,9 @@ def show_kinds(options):
             overrides={"target-kinds": target_kinds},
             strict=False,
         )
-    else:
+    elif target_kinds:
         # Parameters object already exists (from tests)
-        if target_kinds:
-            parameters["target-kinds"] = target_kinds
+        parameters["target-kinds"] = target_kinds
 
     tgg = get_taskgraph_generator(options.get("root"), parameters)
     kind_graph = tgg.kind_graph
@@ -324,13 +323,11 @@ def show_taskgraph(options):
     for param in parameters[:]:
         if isinstance(param, str) and os.path.isdir(param):
             parameters.remove(param)
-            parameters.extend(
-                [
-                    p.as_posix()
-                    for p in Path(param).iterdir()
-                    if p.suffix in (".yml", ".json")
-                ]
-            )
+            parameters.extend([
+                p.as_posix()
+                for p in Path(param).iterdir()
+                if p.suffix in (".yml", ".json")
+            ])
 
     logdir = None
     if len(parameters) > 1:
@@ -354,11 +351,9 @@ def show_taskgraph(options):
 
         # Reload taskgraph modules to pick up changes and clear global state.
         for mod in sys.modules.copy():
-            if (
-                mod != __name__
-                and mod != "taskgraph.main"
-                and mod.split(".", 1)[0].endswith(("taskgraph", "mozbuild"))
-            ):
+            if mod not in {__name__, "taskgraph.main"} and mod.split(".", 1)[
+                0
+            ].endswith(("taskgraph", "mozbuild")):
                 del sys.modules[mod]
 
         # Ensure gecko_taskgraph is ahead of taskcluster_taskgraph in sys.path.

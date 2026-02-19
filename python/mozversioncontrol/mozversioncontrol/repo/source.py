@@ -17,7 +17,7 @@ class SrcRepository(Repository):
     """An implementation of `Repository` for Git repositories."""
 
     def __init__(self, path: Path, src="src"):
-        super(SrcRepository, self).__init__(path, tool=None)
+        super().__init__(path, tool=None)
 
     @property
     def name(self):

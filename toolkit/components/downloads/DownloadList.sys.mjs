@@ -154,8 +154,8 @@ export class DownloadList {
    * returned array does not change when downloads are added or removed, though
    * the Download objects it contains are still updated in real time.
    *
-   * @return {Promise}
-   * @resolves An array of Download objects.
+   * @returns {Promise}
+   *   Resolves to an array of Download objects.
    * @rejects JavaScript exception.
    */
   async getAll() {
@@ -165,7 +165,7 @@ export class DownloadList {
   /**
    * Adds a new download to the end of the items list.
    *
-   * @note When a download is added to the list, its "onchange" event is
+   * Note: When a download is added to the list, its "onchange" event is
    *       registered by the list, thus it cannot be used to monitor the
    *       download.  To receive change notifications for downloads that are
    *       added to the list, use the addView method to register for
@@ -174,8 +174,8 @@ export class DownloadList {
    * @param download
    *        The Download object to add.
    *
-   * @return {Promise}
-   * @resolves When the download has been added.
+   * @returns {Promise<void>}
+   *   Resolves when the download has been added.
    * @rejects JavaScript exception.
    */
   async add(download) {
@@ -196,8 +196,8 @@ export class DownloadList {
    * @param download
    *        The Download object to remove.
    *
-   * @return {Promise}
-   * @resolves When the download has been removed.
+   * @returns {Promise<void>}
+   *   Resolves when the download has been removed.
    * @rejects JavaScript exception.
    */
   async remove(download) {
@@ -374,7 +374,7 @@ export class DownloadCombinedList extends DownloadList {
   /**
    * Adds a new download to the end of the items list.
    *
-   * @note When a download is added to the list, its "onchange" event is
+   * Note: When a download is added to the list, its "onchange" event is
    *       registered by the list, thus it cannot be used to monitor the
    *       download.  To receive change notifications for downloads that are
    *       added to the list, use the addView method to register for
@@ -383,8 +383,8 @@ export class DownloadCombinedList extends DownloadList {
    * @param download
    *        The Download object to add.
    *
-   * @return {Promise}
-   * @resolves When the download has been added.
+   * @returns {Promise<void>}
+   *   Resolves when the download has been added.
    * @rejects JavaScript exception.
    */
   add(download) {
@@ -415,8 +415,8 @@ export class DownloadCombinedList extends DownloadList {
    * @param download
    *        The Download object to remove.
    *
-   * @return {Promise}
-   * @resolves When the download has been removed.
+   * @returns {Promise<void>}
+   *   Resolves when the download has been removed.
    * @rejects JavaScript exception.
    */
   remove(download) {
@@ -506,8 +506,8 @@ export class DownloadSummary {
    * @param list
    *        Underlying DownloadList whose contents should be summarized.
    *
-   * @return {Promise}
-   * @resolves When the view on the underlying list has been registered.
+   * @returns {Promise<void>}
+   *   Resolves when the view on the underlying list has been registered.
    * @rejects JavaScript exception.
    */
   async bindToList(list) {

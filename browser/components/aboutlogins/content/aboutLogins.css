@@ -90,7 +90,7 @@ login-item[data-editing="true"] + login-intro,
   position: fixed;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--background-color-overlay);
 }
 
 body > section {

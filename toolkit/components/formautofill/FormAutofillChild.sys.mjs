@@ -925,13 +925,13 @@ export class FormAutofillChild extends JSWindowActorChild {
     this.showPopupIfEmpty(focusedElement, fieldName);
   }
 
-  async fillFields(focusedId, elementIds, profile) {
+  async fillFields(focusedId, elementIds, profile, isFormChange) {
     let result = new Map();
     let handler;
     try {
       Services.obs.notifyObservers(null, "autofill-fill-starting");
       handler = this.#getHandlerByElementId(elementIds[0]);
-      handler.fillFields(focusedId, elementIds, profile);
+      handler.fillFields(focusedId, elementIds, profile, isFormChange);
 
       // Return the autofilled result to the parent. The result
       // is used by both tests and telemetry.

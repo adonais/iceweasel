@@ -14,8 +14,8 @@
  *
  * @param {object} modifiers The properties to pass to synthesizeMouseAtCenter.
  *
- * @returns Promise
- * @resolves With the context menu DOM node once opened.
+ * @returns {Promise}
+ *   Resolves with the context menu DOM node once opened.
  */
 async function openContextMenu(
   browser,
@@ -42,8 +42,7 @@ async function openContextMenu(
  * @param {Element} contextMenu The content area context menu opened with
  * openContextMenu.
  *
- * @returns Promise
- * @resolves With undefined
+ * @returns {Promise<void>}
  */
 async function closeContextMenu(contextMenu) {
   let popupHiddenPromise = BrowserTestUtils.waitForEvent(

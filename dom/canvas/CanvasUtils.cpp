@@ -5,7 +5,6 @@
 
 #include "CanvasUtils.h"
 
-#include <stdarg.h>
 #include <stdlib.h>
 
 #include "WebGL2Context.h"

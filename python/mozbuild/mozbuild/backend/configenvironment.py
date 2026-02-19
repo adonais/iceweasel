@@ -11,8 +11,8 @@ from pathlib import Path
 from types import ModuleType
 
 import mozpack.path as mozpath
+from mozshellutil import quote as shell_quote
 
-from mozbuild.shellutil import quote as shell_quote
 from mozbuild.util import (
     FileAvoidWrite,
     ReadOnlyDict,
@@ -150,12 +150,10 @@ class ConfigEnvironment:
         self.bin_suffix = self.substs.get("BIN_SUFFIX", "")
 
         global_defines = [name for name in self.defines]
-        self.substs["ACDEFINES"] = " ".join(
-            [
-                "-D%s=%s" % (name, shell_quote(self.defines[name]).replace("$", "$$"))
-                for name in sorted(global_defines)
-            ]
-        )
+        self.substs["ACDEFINES"] = " ".join([
+            "-D%s=%s" % (name, shell_quote(self.defines[name]).replace("$", "$$"))
+            for name in sorted(global_defines)
+        ])
 
         def serialize(name, obj):
             if isinstance(obj, str):
@@ -165,13 +163,11 @@ class ConfigEnvironment:
             raise Exception("Unhandled type %s for %s", type(obj), str(name))
 
         self.substs["ALLSUBSTS"] = "\n".join(
-            sorted(
-                [
-                    "%s = %s" % (name, serialize(name, self.substs[name]))
-                    for name in self.substs
-                    if self.substs[name]
-                ]
-            )
+            sorted([
+                "%s = %s" % (name, serialize(name, self.substs[name]))
+                for name in self.substs
+                if self.substs[name]
+            ])
         )
         self.substs["ALLEMPTYSUBSTS"] = "\n".join(
             sorted(["%s =" % name for name in self.substs if not self.substs[name]])
@@ -334,13 +330,10 @@ class PartialConfigEnvironment:
         defines = config["defines"].copy()
 
         global_defines = [name for name in config["defines"]]
-        acdefines = " ".join(
-            [
-                "-D%s=%s"
-                % (name, shell_quote(config["defines"][name]).replace("$", "$$"))
-                for name in sorted(global_defines)
-            ]
-        )
+        acdefines = " ".join([
+            "-D%s=%s" % (name, shell_quote(config["defines"][name]).replace("$", "$$"))
+            for name in sorted(global_defines)
+        ])
         substs["ACDEFINES"] = acdefines
 
         all_defines = OrderedDict()

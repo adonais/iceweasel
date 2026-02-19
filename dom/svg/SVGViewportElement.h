@@ -82,7 +82,10 @@ class SVGViewportElement : public SVGGraphicsElement {
 
   void UpdateHasChildrenOnlyTransform();
 
-  enum ChildrenOnlyTransformChangedFlags { eDuringReflow = 1 };
+  enum class ChildrenOnlyTransformChangedFlag { DuringReflow };
+
+  using ChildrenOnlyTransformChangedFlags =
+      EnumSet<ChildrenOnlyTransformChangedFlag>;
 
   /**
    * This method notifies the style system that the overflow rects of our
@@ -94,7 +97,8 @@ class SVGViewportElement : public SVGGraphicsElement {
    * GetAttributeChangeHint is because we need to act on non-attribute (e.g.
    * currentScale) changes in addition to attribute (e.g. viewBox) changes.
    */
-  void ChildrenOnlyTransformChanged(uint32_t aFlags = 0);
+  void ChildrenOnlyTransformChanged(
+      ChildrenOnlyTransformChangedFlags aFlags = {});
 
   gfx::Matrix GetViewBoxTransform() const;
 

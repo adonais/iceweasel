@@ -13,7 +13,6 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.StrictMode
 import android.os.SystemClock
 import android.util.Log.INFO
-import androidx.annotation.OpenForTesting
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationManagerCompat
@@ -131,14 +130,20 @@ private const val BYTES_TO_MEGABYTES_CONVERSION = 1024.0 * 1024.0
 @Suppress("Registered", "TooManyFunctions", "LargeClass")
 open class FenixApplication : LocaleAwareApplication(), Provider {
     init {
-        recordOnInit() // DO NOT MOVE ANYTHING ABOVE HERE: the timing of this measurement is critical.
+        // [TIMER] Record startup timestamp as early as reasonable with some degree of consistency.
+        //
+        // Measured after:
+        //  - Static class initializers
+        //  - Kotlin companion-object-init blocks
+        //
+        // but before:
+        //  - ContentProvider initialization
+        //  - Application.onCreate
+        //
+        StartupTimeline.onApplicationInit()
     }
 
     private val logger = Logger("FenixApplication")
-
-    internal val isDeviceRamAboveThreshold by lazy {
-        isDeviceRamAboveThreshold()
-    }
 
     open val components by lazy { Components(this) }
 
@@ -147,130 +152,169 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
 
     override fun onCreate() {
         super.onCreate()
-        initialize()
+        initializeFenixProcess()
     }
 
     /**
-     * Initializes Fenix and all required subsystems such as Nimbus, Glean and Gecko.
+     * Process-level initialization for Fenix and its services. Sets up required native subsystems
+     * such as Nimbus, Glean and Gecko. Note that Robolectric tests override this with an empty
+     * implementation that skips this initialization.
      */
-    fun initialize() {
-        // We measure ourselves to avoid a call into Glean before its loaded.
+    @SuppressLint("NewApi")
+    protected open fun initializeFenixProcess() {
+        // [TIMER] Record the start of the [PerfStartup.applicationOnCreate] metric here. Do this
+        // manually because Glean has not started initializing yet. Note that by this point the
+        // content providers from Fenix and its libraries have run their initializers already.
         val start = SystemClock.elapsedRealtimeNanos()
 
-        setupInAllProcesses()
+        // Capture A-C logs to Android logcat. Note that gecko maybe directly post to logcat
+        // regardless of what we do here.
+        Log.addSink(FenixLogSink(logsDebug = Config.channel.isDebug, AndroidLogSink()))
 
-        // If the main process crashes before we've reached visual completeness, we consider it to
-        // be a startup crash and fork into the recovery flow. The activity that is responsible for
-        // that flow is hosted in a separate process, which means that we avoid the majority of
-        // initialization work that is done in `setupInMainProcess`
-        // Please see the README.md in the fenix/startupCrash package for more information.
-        if (!isMainProcess()) {
-            // If this is not the main process then do not continue with the initialization here. Everything that
-            // follows only needs to be done in our app's main process and should not be done in other processes like
-            // a GeckoView child process or the crash handling process. Most importantly we never want to end up in a
-            // situation where we create a GeckoRuntime from the Gecko child process.
-            return
-        }
+        // Register a deferred initializer for crash reporting that will be called lazily when
+        // CrashReporter.requireInstance is first accessed. This allows all processes to register
+        // the initializer without immediately constructing the Components object and its dependencies.
+        // Non-main processes genera
 
-        // DO NOT ADD ANYTHING ABOVE HERE.
-        // Note: That the startup crash recovery flow is hosted in a different process,
-        // so this call will be avoided in that case
-        setupInMainProcessOnly()
-        // DO NOT ADD ANYTHING UNDER HERE.
+        // Some of our non-main processes are for CrashReporter business and need to know our
+        // configuration from Fenix (the Analytics object). To avoid the Gecko processes that don't
+        // need this from initializing the Components/Objects/CrashReporter we register a lazy
+        // initializer so only processes that need it setup this Fenix code.
+        //
+        // Note: This doesn't setup any [UncaughtExceptionHandler].
+        // Note: Gecko processes have their own crash handling mechanisms.
+        CrashReporter.registerDeferredInitializer(::setupCrashReporting)
 
-        // DO NOT MOVE ANYTHING BELOW THIS elapsedRealtimeNanos CALL.
-        val stop = SystemClock.elapsedRealtimeNanos()
-        val durationMillis = TimeUnit.NANOSECONDS.toMillis(stop - start)
+        // While this [initializeFenixProcess] method is run for _all processes_ in the app, we only
+        // do global initialization for the _main process_ here. This main process initialization
+        // includes setting up native libraries and global 'components' instances.
+        //
+        // Note: If a crash happens during this initialization (before visual completeness), then
+        //       the [StartupCrashActivity] may be launched in a separate process. See the README.md
+        //       in fenix/startupCrash for more information.
+        //
+        // Note: Gecko service processes don't use Nimbus or the Kotlin components. They also do
+        //       their own loading of Gecko libraries.
+        //
+        // Note: The A-C / Fenix crash service processes are responsible for their own setup and
+        //       should minimize their dependencies to avoid also crashing.
+        runOnlyInMainProcess {
+            // Initialization is split into two phases based on if libmegazord is fully initialized.
+            setupEarlyMain()
+            setupPostMegazord()
 
-        // We avoid blocking the main thread on startup by calling into Glean on the background thread.
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+            // [TIMER] Record the end of the `PerfStartup.applicationOnCreate` metric. Note that
+            // glean will queue this if the backend is still starting up.
+            val stop = SystemClock.elapsedRealtimeNanos()
+            val durationMillis = TimeUnit.NANOSECONDS.toMillis(stop - start)
             PerfStartup.applicationOnCreate.accumulateSamples(listOf(durationMillis))
         }
     }
 
+    // Begin initialization of Glean if we have data-upload consent, otherwise we will have to
+    // wait until we do. Note that Glean initialization is asynchronous any may not be finished
+    // when this method returns.
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    @VisibleForTesting
-    protected open fun initializeGlean() {
-        val settings = settings()
-        // We delay the Glean initialization until, we have user consent (After onboarding).
+    private fun maybeInitializeGlean() {
+        // We delay the Glean initialization until we have user consent from onboarding.
         // If onboarding is disabled (when in local builds), continue to initialize Glean.
         if (components.fenixOnboarding.userHasBeenOnboarded() || !FeatureFlags.onboardingFeatureEnabled) {
-            initializeGlean(this, logger, settings.isTelemetryEnabled, components.core.client)
-        }
-
-        // We avoid blocking the main thread on startup by setting startup metrics on the background thread.
-        val store = components.core.store
-        GlobalScope.launch(IO) {
-            setStartupMetrics(store, settings)
+            initializeGlean(this, logger, settings().isTelemetryEnabled, components.core.client)
         }
     }
 
-    @SuppressLint("NewApi")
-    @VisibleForTesting
-    protected open fun setupInAllProcesses() {
-        // See Bug 1969818: Crash reporting requires updates to be compatible with
-        // isolated content process.
-        if (!android.os.Process.isIsolated()) {
-            setupCrashReporting()
-        }
-        // We want the log messages of all builds to go to Android logcat
-        Log.addSink(FenixLogSink(logsDebug = Config.channel.isDebug, AndroidLogSink()))
-    }
-
-    @VisibleForTesting
-    protected open fun setupInMainProcessOnly() {
-        // ⚠️ DO NOT ADD ANYTHING ABOVE THIS LINE.
-        // Especially references to the engine/BrowserStore which can alter the app initialization.
-        // See: https://github.com/mozilla-mobile/fenix/issues/26320
+    /**
+     * This phase of main-process initialization runs before application-services is fully setup
+     * so care must be taken. This phases begins loading the Nimbus, Glean, Gecko libraries.
+     *
+     * By the end of this, application-services, Nimbus and Gecko are initialized. Glean may or may
+     * not be initialized.
+     */
+    private fun setupEarlyMain() {
+        // ⚠️ The sequence of CrashReporter / Nimbus / Engine / Glean is particularly subtle due to
+        // interdependencies among them.
         //
-        // We can initialize Nimbus before Glean because Glean will queue messages
-        // before it's initialized.
+        // - We want the CrashReporter as soon as reasonable to give the best visibility. Note that
+        //   CrashReporter records Nimbus experiment list when a crash happens so it has a lazy
+        //   dependency on Nimbus.
+        //
+        // - Nimbus should be initialized quite early to ensure consistent experiment values are
+        //   applied. In particular, we want to do it before Engine so that we have the right values
+        //   before pages load. See: https://github.com/mozilla-mobile/fenix/issues/26320
+        //
+        // - Glean will queue (most) messages before being started so it is safe for Nimbus to begin
+        //   before Glean does and any metrics will be processed once Glean is ready.
+
+        // Setup the crash reporter and register the [UncaughtExceptionHandler].
+        setupCrashReporting()
+
+        // Begin application-services initialization. The megazord contains Nimbus, but not Glean.
+        setupMegazordInitial()
+
+        // Initialize Nimbus and its backend.
         initializeNimbus()
 
         ProfilerMarkerFactProcessor.create { components.core.engine.profiler }.register()
 
-        run {
-            // Make sure the engine is initialized and ready to use.
-            components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
-                components.core.engine.warmUp()
-            }
+        // Ensure the Engine instance is initialized such that it can receive commands. Note
+        // that full initialization is typically running off-thread and it may be a while
+        // before pages can begin to render.
+        components.core.engine.warmUp()
 
-            initializeGlean()
+        // Kick off initialization of Glean backend off-thread. Glean will continue to queue
+        // metric samples until the backend is ready. If we don't have data-upload consent then
+        // this will be a no-op and initialization may be attempted after onboarding.
+        maybeInitializeGlean()
 
-            // Attention: Do not invoke any code from a-s in this scope.
-            val megazordSetup = finishSetupMegazord()
+        // Initialize the [BrowserStore] so that [setStartupMetrics] can reference this.
+        // Note: This is a historical artifact and should be revisited.
+        val store = components.core.store
 
-            setDayNightTheme()
-            components.strictMode.enableStrictMode(true)
-            warmBrowsersCache()
-
-            initializeWebExtensionSupport()
-
-            // Make sure to call this function before registering a storage worker
-            // (e.g. components.core.historyStorage.registerStorageMaintenanceWorker())
-            // as the storage maintenance worker needs a places storage globally when
-            // it is needed while the app is not running and WorkManager wakes up the app
-            // for the periodic task.
-            GlobalPlacesDependencyProvider.initialize(components.core.historyStorage)
-
-            GlobalSyncedTabsCommandsProvider.initialize(lazy { components.backgroundServices.syncedTabsCommands })
-
-            initializeRemoteSettingsSupport()
-
-            restoreBrowserState()
-            restoreDownloads()
-            restoreMessaging()
-
-            // Just to make sure it is impossible for any application-services pieces
-            // to invoke parts of itself that require complete megazord initialization
-            // before that process completes, we wait here, if necessary.
-            if (!megazordSetup.isCompleted) {
-                runBlockingIncrement { megazordSetup.await() }
-            }
+        // StartupMetrics accesses shared preferences so do this off thread.
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch(IO) {
+            setStartupMetrics(store, settings())
         }
 
+        // Start setup for concept-fetch networking in megazord. This runs off-thread, but we wait
+        // before for its completion synchronously.
+        val megazordDeferred = setupMegazordNetwork()
+
+        setDayNightTheme()
+        components.strictMode.enableStrictMode(true)
+        warmBrowsersCache()
+
+        initializeWebExtensionSupport()
+
+        // Make sure to call this function before registering a storage worker
+        // (e.g. components.core.historyStorage.registerStorageMaintenanceWorker())
+        // as the storage maintenance worker needs a places storage globally when
+        // it is needed while the app is not running and WorkManager wakes up the app
+        // for the periodic task.
+        GlobalPlacesDependencyProvider.initialize(components.core.historyStorage)
+
+        GlobalSyncedTabsCommandsProvider.initialize(lazy { components.backgroundServices.syncedTabsCommands })
+
+        initializeRemoteSettingsSupport()
+
+        restoreBrowserState()
+        restoreDownloads()
+        restoreMessaging()
+
+        // [IMPORTANT] Don't progress further until application-services is actually ready to go.
+        // This makes it easier to reason about behaviour and avoids issues in the Rust code.
+        runBlockingIncrement { megazordDeferred.await() }
+    }
+
+    /**
+     * The remainder of main-process initialization happens here now that we have ensured the
+     * application-services initialization is completed. This also queues a bunch of follow-up
+     * work to the visualCompletenessQueue that will be run after the Activity has started
+     * rendering.
+     */
+    private fun setupPostMegazord() {
         setupLeakCanary()
+
         if (components.fenixOnboarding.userHasBeenOnboarded()) {
             startMetricsIfEnabled(
                 logger = logger,
@@ -283,6 +327,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         } else {
             components.distributionIdManager.startAdjustIfSkippingConsentScreen()
         }
+
         setupPush()
 
         GlobalFxSuggestDependencyProvider.initialize(components.fxSuggest.storage)
@@ -294,6 +339,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         components.appStartReasonProvider.registerInAppOnCreate(this)
         components.startupActivityLog.registerInAppOnCreate(this)
         components.appLinkIntentLaunchTypeProvider.registerInAppOnCreate(this)
+
         initVisualCompletenessQueueAndQueueTasks()
 
         ProcessLifecycleOwner.get().lifecycle.addObservers(
@@ -512,8 +558,8 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
     }
 
-    private fun setupCrashReporting() {
-        components
+    private fun setupCrashReporting(): CrashReporter {
+        return components
             .analytics
             .crashReporter
             .install(this, ::handleCaughtException)
@@ -532,9 +578,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
     }
 
-    protected open fun initializeNimbus() {
-        beginSetupMegazord()
-
+    private fun initializeNimbus() {
         // This lazily constructs the Nimbus object…
         val nimbus = components.nimbus.sdk
         // … which we then can populate the feature configuration.
@@ -555,7 +599,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
      * engine for networking. This should do the minimum work necessary as it is done on the main
      * thread, early in the app startup sequence.
      */
-    private fun beginSetupMegazord() {
+    private fun setupMegazordInitial() {
         // Rust components must be initialized at the very beginning, before any other Rust call, ...
         AppServicesInitializer.init(
             AppServicesConfig(components.analytics.crashReporter),
@@ -563,7 +607,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    private fun finishSetupMegazord(): Deferred<Unit> {
+    private fun setupMegazordNetwork(): Deferred<Unit> {
         return GlobalScope.async(IO) {
             if (Config.channel.isDebug) {
                 RustHttpConfig.allowEmulatorLoopback()
@@ -588,9 +632,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
 
         logger.info("onTrimMemory(), level=$level, main=${isMainProcess()}")
 
-        // See Bug 1969818: Crash reporting requires updates to be compatible with
-        // isolated content process.
-        if (!android.os.Process.isIsolated()) {
+        runOnlyInMainProcess {
             components.analytics.crashReporter.recordCrashBreadcrumb(
                 Breadcrumb(
                     category = "Memory",
@@ -602,9 +644,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                     level = Breadcrumb.Level.INFO,
                 ),
             )
-        }
 
-        runOnlyInMainProcess {
             components.core.icons.onTrimMemory(level)
             components.core.store.dispatch(SystemAction.LowMemoryAction(level))
         }
@@ -904,7 +944,9 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
 
     private fun Long.toRoundedMegabytes(): Long = (this / BYTES_TO_MEGABYTES_CONVERSION).roundToLong()
 
-    private fun isDeviceRamAboveThreshold() = deviceRamApproxMegabytes() > RAM_THRESHOLD_MEGABYTES
+    internal val isDeviceRamAboveThreshold by lazy {
+        deviceRamApproxMegabytes() > RAM_THRESHOLD_MEGABYTES
+    }
 
     @Suppress("CyclomaticComplexMethod")
     private fun setPreferenceMetrics(
@@ -995,9 +1037,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         reportHomeScreenMetrics(settings)
     }
 
-    @VisibleForTesting
-    @OpenForTesting
-    internal open fun setAutofillMetrics() {
+    private fun setAutofillMetrics() {
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch(IO) {
             try {
@@ -1045,14 +1085,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         CustomizeHome.pocket.set(settings.showPocketRecommendationsFeature)
         CustomizeHome.sponsoredPocket.set(settings.showPocketSponsoredStories)
         CustomizeHome.contile.set(settings.showContileFeature)
-    }
-
-    private fun recordOnInit() {
-        // This gets called by more than one process. Ideally we'd only run this in the main process
-        // but the code to check which process we're in crashes because the Context isn't valid yet.
-        //
-        // This method is not covered by our internal crash reporting: be very careful when modifying it.
-        StartupTimeline.onApplicationInit() // DO NOT MOVE ANYTHING ABOVE HERE: the timing is critical.
     }
 
     override fun onConfigurationChanged(config: android.content.res.Configuration) {

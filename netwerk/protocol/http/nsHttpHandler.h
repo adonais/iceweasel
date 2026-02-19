@@ -226,7 +226,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   FrameCheckLevel GetEnforceH1Framing() { return mEnforceH1Framing; }
 
   nsHttpAuthCache* AuthCache(bool aPrivate) {
-    return aPrivate ? &mPrivateAuthCache : &mAuthCache;
+    return aPrivate ? mPrivateAuthCache : mAuthCache;
   }
   nsHttpConnectionMgr* ConnMgr() {
     MOZ_ASSERT_IF(nsIOService::UseSocketProcess(), XRE_IsSocketProcess());
@@ -560,8 +560,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsMainThreadPtrHandle<nsISiteSecurityService> mSSService;
 
   // the authentication credentials cache
-  nsHttpAuthCache mAuthCache;
-  nsHttpAuthCache mPrivateAuthCache;
+  RefPtr<nsHttpAuthCache> mAuthCache;
+  RefPtr<nsHttpAuthCache> mPrivateAuthCache;
 
   // the connection manager
   RefPtr<HttpConnectionMgrShell> mConnMgr;

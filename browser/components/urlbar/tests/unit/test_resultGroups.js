@@ -1572,6 +1572,6 @@ function makeIndexRange(startIndex, count) {
 function setResultGroups(resultGroups) {
   sandbox.restore();
   if (resultGroups) {
-    sandbox.stub(UrlbarPrefs, "resultGroups").get(() => resultGroups);
+    sandbox.stub(UrlbarPrefs, "getResultGroups").returns(resultGroups);
   }
 }

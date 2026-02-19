@@ -99,8 +99,8 @@
 nsXREDirProvider* gDirServiceProvider = nullptr;
 nsIFile* gDataDirHomeLocal = nullptr;
 nsIFile* gDataDirHome = nullptr;
-MOZ_CONSTINIT nsCOMPtr<nsIFile> gDataDirProfileLocal{};
-MOZ_CONSTINIT nsCOMPtr<nsIFile> gDataDirProfile{};
+constinit nsCOMPtr<nsIFile> gDataDirProfileLocal{};
+constinit nsCOMPtr<nsIFile> gDataDirProfile{};
 
 #if defined(MOZ_WIDGET_GTK)
 nsXREDirProvider::legacyOrXDGHomeTelemetry gXdgTelemetry =

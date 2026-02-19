@@ -13,6 +13,7 @@
 #include "nsPIWindowWatcher.h"
 #include "nsPIDOMWindow.h"
 #include "AppWindow.h"
+#include "nsOpenWindowInfo.h"
 
 #include "mozilla/widget/InitData.h"
 #include "nsWidgetsCID.h"
@@ -27,6 +28,7 @@
 #include "nsIWebNavigation.h"
 #include "nsIWindowlessBrowser.h"
 
+#include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StartupTimeline.h"
@@ -424,11 +426,21 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, uint32_t aChromeMask,
     browsingContext->SetPrivateBrowsing(true);
   }
 
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  if (aIsChrome) {
+    openWindowInfo->mPrincipalToInheritForAboutBlank =
+        nsContentUtils::GetSystemPrincipal();
+  } else {
+    openWindowInfo->mPrincipalToInheritForAboutBlank =
+        NullPrincipal::CreateWithoutOriginAttributes();
+  }
+
   /* Next, we create an instance of nsWebBrowser. Instances of this class have
    * an associated doc shell, which is what we're interested in.
    */
-  nsCOMPtr<nsIWebBrowser> browser = nsWebBrowser::Create(
-      stub, widget, browsingContext, nullptr /* initialWindowChild */);
+  nsCOMPtr<nsIWebBrowser> browser =
+      nsWebBrowser::Create(stub, widget, browsingContext,
+                           nullptr /* initialWindowChild */, openWindowInfo);
 
   if (NS_WARN_IF(!browser)) {
     NS_ERROR("Couldn't create instance of nsWebBrowser!");
@@ -510,9 +522,15 @@ nsresult nsAppShellService::JustCreateTopWindow(
                      nsIWebBrowserChrome::CHROME_STATUSBAR;
   if (widgetInitData.mWindowType == widget::WindowType::Dialog &&
       ((aChromeMask & pipMask) == pipMask) && !(aChromeMask & barMask)) {
-    widgetInitData.mPIPWindow = true;
+    widgetInitData.mPiPType = mozilla::widget::PiPType::MediaPiP;
   }
 #endif
+
+  if (widgetInitData.mWindowType == widget::WindowType::TopLevel &&
+      (aChromeMask & nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) ==
+          nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) {
+    widgetInitData.mPiPType = mozilla::widget::PiPType::DocumentPiP;
+  }
 
   // alert=yes is expected to be used along with dialogs, not other window
   // types.
@@ -585,9 +603,30 @@ nsresult nsAppShellService::JustCreateTopWindow(
   }
   widgetInitData.mIsPrivate = isPrivateBrowsingWindow;
 
-  nsresult rv =
-      window->Initialize(parent, center ? aParent : nullptr, aInitialWidth,
-                         aInitialHeight, aIsHiddenWindow, widgetInitData);
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  // Eagerly create an about:blank content viewer with the right principal
+  // here, rather than letting it happen in the upcoming call to
+  // SetInitialPrincipal. This avoids creating the about:blank document and
+  // then blowing it away with a second one, which can cause problems for the
+  // top-level chrome window case. See bug 789773.
+  // Toplevel chrome windows always have a system principal, so ensure the
+  // initial window is created with that principal.
+  // We need to do this even when creating a chrome window to load a content
+  // window, see bug 799348 comment 13 for details about what previously
+  // happened here due to it using the subject principal.
+  if (nsContentUtils::IsInitialized()) {  // Sometimes this happens really
+                                          // early. See bug 793370.
+    MOZ_DIAGNOSTIC_ASSERT(
+        nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
+        "Previously, this method would use the subject principal rather than "
+        "hardcoding the system principal");
+    openWindowInfo->mPrincipalToInheritForAboutBlank =
+        nsContentUtils::GetSystemPrincipal();
+  }
+
+  nsresult rv = window->Initialize(
+      parent, center ? aParent : nullptr, aInitialWidth, aInitialHeight,
+      aIsHiddenWindow, widgetInitData, openWindowInfo);
 
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -610,36 +649,6 @@ nsresult nsAppShellService::JustCreateTopWindow(
                             nsIWebBrowserChrome::CHROME_REMOTE_WINDOW);
     docShell->SetRemoteSubframes(aChromeMask &
                                  nsIWebBrowserChrome::CHROME_FISSION_WINDOW);
-
-    // Eagerly create an about:blank content viewer with the right principal
-    // here, rather than letting it happen in the upcoming call to
-    // SetInitialPrincipal. This avoids creating the about:blank document and
-    // then blowing it away with a second one, which can cause problems for the
-    // top-level chrome window case. See bug 789773.
-    // Toplevel chrome windows always have a system principal, so ensure the
-    // initial window is created with that principal.
-    // We need to do this even when creating a chrome window to load a content
-    // window, see bug 799348 comment 13 for details about what previously
-    // happened here due to it using the subject principal.
-    if (nsContentUtils::IsInitialized()) {  // Sometimes this happens really
-                                            // early. See bug 793370.
-      MOZ_DIAGNOSTIC_ASSERT(
-          nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
-          "Previously, this method would use the subject principal rather than "
-          "hardcoding the system principal");
-      // Use the system principal as the storage principal too until the new
-      // window finishes navigating and gets a real storage principal.
-      rv = docShell->CreateAboutBlankDocumentViewer(
-          nsContentUtils::GetSystemPrincipal(),
-          nsContentUtils::GetSystemPrincipal(),
-          /* aPolicyContainer = */ nullptr, /* aBaseURI = */ nullptr,
-          /* aIsInitialDocument = */ true);
-      NS_ENSURE_SUCCESS(rv, rv);
-      RefPtr<dom::Document> doc = docShell->GetDocument();
-      NS_ENSURE_TRUE(!!doc, NS_ERROR_FAILURE);
-      MOZ_ASSERT(doc->IsInitialDocument(),
-                 "Document should be an initial document");
-    }
 
     // Begin loading the URL provided.
     if (aUrl) {
@@ -715,8 +724,15 @@ nsAppShellService::RegisterTopLevelWindow(nsIAppWindow* aWindow) {
       nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
       "Previously, this method would use the subject principal rather than "
       "hardcoding the system principal");
-  domWindow->SetInitialPrincipal(nsContentUtils::GetSystemPrincipal(), nullptr,
-                                 Nothing());
+#ifdef DEBUG
+  mozilla::dom::Document* doc = domWindow->GetDoc();
+  if (doc) {
+    MOZ_ASSERT(doc->GetPrincipal() == nsContentUtils::GetSystemPrincipal(),
+               "Wrong principal!");
+  } else {
+    MOZ_ASSERT(false, "How come there was no doc?");
+  }
+#endif
 
   // tell the window mediator about the new window
   nsCOMPtr<nsIWindowMediator> mediator(

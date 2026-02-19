@@ -34,7 +34,7 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
 
 class TopSitesTest : TestSetup() {
     @get:Rule
-    val activityIntentTestRule = AndroidComposeTestRule(
+    val composeTestRule = AndroidComposeTestRule(
         HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true),
     ) { it.activity }
 
@@ -47,20 +47,20 @@ class TopSitesTest : TestSetup() {
     fun addAWebsiteAsATopSiteTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
             verifyPageContent(defaultWebPage.content)
         }.openThreeDotMenu {
-            expandMenuFully()
-            verifyAddToShortcutsButton(shouldExist = true)
-        }.addToFirefoxHome {
+            clickTheMoreButton()
+            verifyAddToShortcutsButton(isDisplayed = true)
+        }.clickAddToShortcutsButton {
             verifySnackBarText(getStringResource(R.string.snackbar_added_to_shortcuts))
-        }.goToHomescreen(activityIntentTestRule) {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, defaultWebPage.title)
+        }.goToHomescreen {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(defaultWebPage.title)
         }
     }
 
@@ -71,19 +71,19 @@ class TopSitesTest : TestSetup() {
 
         MockBrowserDataHelper.addPinnedSite(
             Pair(webPage.title, webPage.url.toString()),
-            activityTestRule = activityIntentTestRule.activityRule,
+            activityTestRule = composeTestRule.activityRule,
         )
 
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, webPage.title)
-        }.openTopSiteTabWithTitle(activityIntentTestRule, title = webPage.title) {
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(webPage.title)
+        }.openTopSiteTabWithTitle(title = webPage.title) {
             verifyUrl(webPage.url.toString().replace("http://", ""))
-        }.goToHomescreen(activityIntentTestRule) {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, webPage.title) {
-            verifyTopSiteContextMenuItems(activityIntentTestRule)
+        }.goToHomescreen {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(webPage.title)
+        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
+            verifyTopSiteContextMenuItems()
             // Dismiss context menu popup
             mDevice.pressBack()
         }
@@ -96,16 +96,16 @@ class TopSitesTest : TestSetup() {
 
         MockBrowserDataHelper.addPinnedSite(
             Pair(webPage.title, webPage.url.toString()),
-            activityTestRule = activityIntentTestRule.activityRule,
+            activityTestRule = composeTestRule.activityRule,
         )
 
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, webPage.title) {
-            verifyTopSiteContextMenuItems(activityIntentTestRule)
-        }.openTopSiteInPrivateTab(activityIntentTestRule) {
-            verifyCurrentPrivateSession(activityIntentTestRule.activity.applicationContext)
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(webPage.title)
+        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
+            verifyTopSiteContextMenuItems()
+        }.openTopSiteInPrivateTab {
+            verifyCurrentPrivateSession(composeTestRule.activity.applicationContext)
         }
     }
 
@@ -118,18 +118,18 @@ class TopSitesTest : TestSetup() {
 
         MockBrowserDataHelper.addPinnedSite(
             Pair(webPage.title, webPage.url.toString()),
-            activityTestRule = activityIntentTestRule.activityRule,
+            activityTestRule = composeTestRule.activityRule,
         )
 
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, webPage.title) {
-            verifyTopSiteContextMenuItems(activityIntentTestRule)
-        }.editTopSite(activityIntentTestRule, newPageTitle, newWebPageURL.url.toString()) {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, newPageTitle)
-        }.openTopSiteTabWithTitle(activityIntentTestRule, title = newPageTitle) {
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(webPage.title)
+        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
+            verifyTopSiteContextMenuItems()
+        }.editTopSite(newPageTitle, newWebPageURL.url.toString()) {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(newPageTitle)
+        }.openTopSiteTabWithTitle(title = newPageTitle) {
             verifyUrl(newWebPageURL.url.toString())
         }
     }
@@ -141,15 +141,15 @@ class TopSitesTest : TestSetup() {
 
         MockBrowserDataHelper.addPinnedSite(
             Pair(webPage.title, webPage.url.toString()),
-            activityTestRule = activityIntentTestRule.activityRule,
+            activityTestRule = composeTestRule.activityRule,
         )
 
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, webPage.title) {
-            verifyTopSiteContextMenuItems(activityIntentTestRule)
-        }.editTopSite(activityIntentTestRule, newPageTitle, "gl") {
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(webPage.title)
+        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
+            verifyTopSiteContextMenuItems()
+        }.editTopSite(newPageTitle, "gl") {
             verifyTopSiteContextMenuUrlErrorMessage()
         }
     }
@@ -161,16 +161,16 @@ class TopSitesTest : TestSetup() {
 
         MockBrowserDataHelper.addPinnedSite(
             Pair(webPage.title, webPage.url.toString()),
-            activityTestRule = activityIntentTestRule.activityRule,
+            activityTestRule = composeTestRule.activityRule,
         )
 
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, webPage.title) {
-            verifyTopSiteContextMenuItems(activityIntentTestRule)
-        }.removeTopSite(activityIntentTestRule) {
-            verifyNotExistingTopSiteItem(activityIntentTestRule, webPage.title)
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(webPage.title)
+        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
+            verifyTopSiteContextMenuItems()
+        }.removeTopSite {
+            verifyNotExistingTopSiteItem(webPage.title)
         }
     }
 
@@ -181,18 +181,19 @@ class TopSitesTest : TestSetup() {
 
         MockBrowserDataHelper.addPinnedSite(
             Pair(webPage.title, webPage.url.toString()),
-            activityTestRule = activityIntentTestRule.activityRule,
+            activityTestRule = composeTestRule.activityRule,
         )
 
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, webPage.title)
-        }.openTopSiteTabWithTitle(activityIntentTestRule, webPage.title) {
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(webPage.title)
+        }.openTopSiteTabWithTitle(webPage.title) {
         }.openThreeDotMenu {
+            clickTheMoreButton()
             verifyRemoveFromShortcutsButton()
-        }.clickRemoveFromShortcuts {
-        }.goToHomescreen(activityIntentTestRule) {
-            verifyNotExistingTopSiteItem(activityIntentTestRule, webPage.title)
+        }.clickRemoveFromShortcutsButton {
+        }.goToHomescreen {
+            verifyNotExistingTopSiteItem(webPage.title)
         }
     }
 
@@ -200,10 +201,10 @@ class TopSitesTest : TestSetup() {
     // Expected for en-us defaults
     @Test
     fun verifyENLocalesDefaultTopSitesListTest() {
-        homeScreen {
-            verifyExistingTopSitesList(activityIntentTestRule)
+        homeScreen(composeTestRule) {
+            verifyExistingTopSitesList()
             defaultTopSitesList.values.forEach { value ->
-                verifyExistingTopSitesTabs(activityIntentTestRule, value)
+                verifyExistingTopSitesTabs(value)
             }
         }
     }
@@ -215,20 +216,20 @@ class TopSitesTest : TestSetup() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         for (i in 0..1) {
-            navigationToolbar {
+            navigationToolbar(composeTestRule) {
             }.enterURLAndEnterToBrowser(defaultWebPage.url) {
                 waitForPageToLoad()
             }
         }
 
-        browserScreen {
-        }.goToHomescreen(activityIntentTestRule) {
-            verifyExistingTopSitesList(activityIntentTestRule)
-            verifyExistingTopSitesTabs(activityIntentTestRule, defaultWebPage.title)
-        }.openContextMenuOnTopSitesWithTitle(activityIntentTestRule, defaultWebPage.title) {
-        }.removeTopSite(activityIntentTestRule) {
+        browserScreen(composeTestRule) {
+        }.goToHomescreen {
+            verifyExistingTopSitesList()
+            verifyExistingTopSitesTabs(defaultWebPage.title)
+        }.openContextMenuOnTopSitesWithTitle(defaultWebPage.title) {
+        }.removeTopSite {
         }.openThreeDotMenu {
-        }.openHistory {
+        }.clickHistoryButton {
             verifyEmptyHistoryView()
         }
     }

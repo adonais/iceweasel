@@ -1,0 +1,13 @@
+[DEFAULT]
+support-files = [
+  "head.js",
+  "ai-window-prompts-remote-settings-snapshot.json",
+]
+prefs = [
+  "browser.aiwindow.enabled=true",
+]
+
+["browser_getCurrentTabMetadata.js"]
+["browser_get_page_content.js"]
+window_attributes = "ai-window"
+["browser_utils_loadConfig.js"]

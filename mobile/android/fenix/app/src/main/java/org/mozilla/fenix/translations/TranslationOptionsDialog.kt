@@ -27,7 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.concept.engine.translate.TranslationError
 import org.mozilla.fenix.R
@@ -37,6 +37,7 @@ import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import java.util.Locale
 import mozilla.components.ui.icons.R as iconsR
 
@@ -239,28 +240,12 @@ fun getTranslationOptionsList(): List<TranslationSwitchItem> {
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun TranslationSettingsPreview() {
-    FirefoxTheme {
-        Surface {
-            Column {
-                TranslationOptionsDialog(
-                    translationOptionsList = getTranslationOptionsList(),
-                    showGlobalSettings = true,
-                    onBackClicked = {},
-                    onTranslationSettingsClicked = {},
-                    aboutTranslationClicked = {},
-                )
-            }
-        }
-    }
-}
-
-@Composable
 @Preview
-private fun TranslationSettingsPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun TranslationSettingsPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             Column {
                 TranslationOptionsDialog(

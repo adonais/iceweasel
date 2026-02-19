@@ -194,6 +194,15 @@ class AbsoluteContainingBlock {
    */
   void StealFrame(nsIFrame* aFrame);
 
+  /**
+   * Move any frame in our pushed absolute list into our absolute child list, if
+   * it is a first-in-flow, or if its prev-in-flow is not present in our
+   * absolute child list.
+   *
+   * @param aDelegatingFrame the frame that owns us.
+   */
+  void DrainPushedChildList(const nsIFrame* aDelegatingFrame);
+
   // Stores the abspos frames that have been placed in this containing block.
   nsFrameList mAbsoluteFrames;
 

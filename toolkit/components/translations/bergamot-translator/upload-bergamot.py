@@ -190,7 +190,7 @@ class RemoteSettings:
         print("📦 Packages in the workspace:")
         for record in workspace_records["data"]:
             if record["name"] == "bergamot-translator":
-                print(f'   - bergamot-translator@{record["version"]}')
+                print(f"   - bergamot-translator@{record['version']}")
 
         print(f"✅ Version {self.version} does not conflict, ready for uploading.")
 

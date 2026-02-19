@@ -36,7 +36,7 @@ class StructuredOutputParser(OutputParser):
         self.suite_category = kwargs.pop("suite_category", None)
 
         tbpl_compact = kwargs.pop("log_compact", False)
-        super(StructuredOutputParser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.allow_crashes = kwargs.pop("allow_crashes", False)
 
         mozlog = self._get_mozlog_module()
@@ -61,7 +61,7 @@ class StructuredOutputParser(OutputParser):
 
     def _handle_unstructured_output(self, line, log_output=True):
         self.log_output = log_output
-        return super(StructuredOutputParser, self).parse_single_line(line)
+        return super().parse_single_line(line)
 
     def parse_single_line(self, line):
         """Parses a line of log output from the child process and passes

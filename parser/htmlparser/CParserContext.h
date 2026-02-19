@@ -13,7 +13,6 @@
 #define __CParserContext
 
 #include "nsIParser.h"
-#include "nsIDTD.h"
 #include "nsIRequest.h"
 #include "nsScanner.h"
 #include "nsString.h"
@@ -26,10 +25,23 @@ class nsITokenizer;
  * data in a parsercontext. Hey, that what it's for!
  */
 
+/**
+ * Legacy enum kept around for now to accommodate fragment vs. not fragment
+ * paths in nsParser.
+ */
+enum eAutoDetectResult {
+  eUnknownDetect,
+  ePrimaryDetect,
+};
+
+/**
+ * Legacy enum kept around for now to accommodate fragment vs. not fragment
+ * paths in nsParser.
+ */
+enum nsDTDMode { eDTDMode_full_standards, eDTDMode_autodetect };
+
 class CParserContext {
  public:
-  enum eContextType { eCTURL, eCTString };
-
   CParserContext(nsIURI* aURI, eParserCommands aCommand);
   CParserContext(const nsAString& aBuffer, eParserCommands aCommand,
                  bool aLastBuffer);
@@ -48,7 +60,6 @@ class CParserContext {
 
   eParserDocType mDocType;
   eStreamState mStreamListenerState;
-  eContextType mContextType;
   eAutoDetectResult mAutoDetectStatus = eUnknownDetect;
   eParserCommands mParserCommand;
 

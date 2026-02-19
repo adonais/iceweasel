@@ -4,7 +4,7 @@ from webdriver.error import UnexpectedAlertOpenException
 URL = "https://xmgl.ccccltd.cn/a/login"
 
 UNSUPPORTED_TEXT = "请使用基于Chrome内核52版本以上的浏览器访问本系统"
-LOGIN_CSS = "#main"
+LOGIN_CSS = "#login_form2"
 
 
 @pytest.mark.asyncio

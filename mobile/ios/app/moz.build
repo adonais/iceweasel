@@ -7,6 +7,10 @@
 with Files("**"):
     BUG_COMPONENT = ("GeckoView", "General")
 
+# We can't include TargetConditionals.h in geckoview-prefs.js, so fake the
+# TARGET_OS_SIMULATOR define based on config.
+DEFINES["TARGET_OS_SIMULATOR"] = 1 if CONFIG["IPHONEOS_IS_SIMULATOR"] else 0
+
 JS_PREFERENCE_PP_FILES += [
     "mobile.js",
 ]

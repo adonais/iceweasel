@@ -1,0 +1,31 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: inline-flex;
+}
+
+moz-button.input-cta {
+  --button-background-color-disabled: var(--color-gray-20);
+  --button-text-color: white;
+  --button-text-color-disabled: white;
+  --button-text-color-hover: white;
+  --button-text-color-active: white;
+  --button-text-color-selected: white;
+  --button-border-radius: var(--border-radius-circle);
+
+  border-radius: var(--button-border-radius);
+}
+
+moz-button[type="default"].input-cta::part(button) {
+  padding-inline: var(--space-xxlarge);
+}
+
+moz-button[type="split"].input-cta {
+  background: linear-gradient(260deg, rgba(255, 183, 148, 0.8) -45%, rgba(181, 62, 175, 0.8) 65%, rgba(131, 62, 181, 0.8) 150%);
+}
+
+moz-button[type="split"].input-cta::part(chevron-button) {
+  padding-inline-end: var(--space-xsmall);
+}

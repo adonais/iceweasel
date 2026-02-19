@@ -42,4 +42,3 @@ browser.jar:
    content/browser/preferences/dialogs/translationExceptions.xhtml
    content/browser/preferences/dialogs/translationExceptions.js
    content/browser/preferences/dialogs/translations.xhtml
-   content/browser/preferences/dialogs/translations.js

@@ -14,6 +14,7 @@ use super::{
 };
 use crate::context::QuirksMode;
 use crate::custom_properties;
+use crate::derives::*;
 use crate::dom::DummyAttributeProvider;
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
 use crate::parser::ParserContext;
@@ -258,6 +259,15 @@ pub struct PropertyDeclarationBlock {
 
     /// The set of properties that are present in the block.
     property_ids: PropertyDeclarationIdSet,
+}
+
+impl PartialEq for PropertyDeclarationBlock {
+    fn eq(&self, other: &Self) -> bool {
+        // property_ids must be equal if declarations are equal, so we don't
+        // need to compare them explicitly.
+        self.declarations == other.declarations
+            && self.declarations_importance == other.declarations_importance
+    }
 }
 
 /// Iterator over `(PropertyDeclaration, Importance)` pairs.

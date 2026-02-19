@@ -672,12 +672,17 @@ class LogModuleManager {
         }
       };
 
+      nsAutoCString levelAndName;
+      levelAndName.AppendASCII(ToLogStr(aLevel));
+      levelAndName.AppendLiteral("/");
+      levelAndName.AppendASCII(aName);
       profiler_add_marker(
           "LogMessages", geckoprofiler::category::OTHER,
           {aStart ? MarkerTiming::IntervalUntilNowFrom(*aStart)
                   : MarkerTiming::InstantNow(),
            MarkerStack::MaybeCapture(mCaptureProfilerStack)},
-          LogMarker{}, ProfilerString8View::WrapNullTerminatedString(aName),
+          LogMarker{},
+          ProfilerString8View::WrapNullTerminatedString(levelAndName.get()),
           ProfilerString8View::WrapNullTerminatedString(aLogMessage));
     }
 

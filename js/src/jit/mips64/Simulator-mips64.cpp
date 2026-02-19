@@ -566,8 +566,9 @@ class MipsDebugger {
 
  private:
   // We set the breakpoint code to 0xfffff to easily recognize it.
-  static const Instr kBreakpointInstr = op_special | ff_break | 0xfffff << 6;
-  static const Instr kNopInstr = op_special | ff_sll;
+  static const Instr kBreakpointInstr =
+      static_cast<uint32_t>(op_special) | ff_break | 0xfffff << 6;
+  static const Instr kNopInstr = static_cast<uint32_t>(op_special) | ff_sll;
 
   Simulator* sim_;
 

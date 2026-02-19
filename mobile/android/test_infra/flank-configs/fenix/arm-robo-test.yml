@@ -22,9 +22,6 @@ gcloud:
     - model: MediumPhone.arm
       version: 32
       locale: en_US
-    - model: redfin
-      version: 30
-      locale: en_US
     - model: oriole
       version: 31
       locale: en_US

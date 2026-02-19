@@ -12,6 +12,8 @@
 #include "nsIScriptLoaderObserver.h"
 #include "nsStubMutationObserver.h"
 
+class nsIParser;
+
 namespace mozilla::dom {
 
 /**
@@ -47,7 +49,7 @@ class ScriptElement : public nsIScriptElement, public nsStubMutationObserver {
    */
   virtual bool HasExternalScriptContent() = 0;
 
-  virtual bool MaybeProcessScript() override;
+  virtual bool MaybeProcessScript(nsCOMPtr<nsIParser> aParser) override;
 
   virtual MOZ_CAN_RUN_SCRIPT nsresult
   GetTrustedTypesCompliantInlineScriptText(nsString& aSourceText) override;

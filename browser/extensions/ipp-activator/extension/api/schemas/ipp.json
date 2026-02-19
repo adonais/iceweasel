@@ -106,6 +106,19 @@
             "description": "The URL to analyze."
           }
         ]
+      },
+      {
+        "name": "hasExclusion",
+        "type": "function",
+        "description": "Return true if this URL has ipp-vpn permission set to DENY.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "url",
+            "type": "string",
+            "description": "The URL to analyze."
+          }
+        ]
       }
     ],
     "events": [

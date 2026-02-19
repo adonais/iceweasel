@@ -26,7 +26,7 @@ struct FFmpegLibWrapper;
 // which can help avoid significant playback stutter.
 class D3D11TextureWrapper final {
  public:
-  D3D11TextureWrapper(AVFrame* aAVFrame, FFmpegLibWrapper* aLib,
+  D3D11TextureWrapper(AVFrame* aAVFrame, const FFmpegLibWrapper* aLib,
                       ID3D11Texture2D* aTexture,
                       const gfx::SurfaceFormat aFormat,
                       const unsigned int aArrayIdx,
@@ -43,7 +43,7 @@ class D3D11TextureWrapper final {
   const std::function<void()> mReleaseMethod;
 
  private:
-  FFmpegLibWrapper* mLib;
+  const FFmpegLibWrapper* mLib;
   ID3D11Texture2D* mTexture;
   AVBufferRef* mHWAVBuffer;
 };

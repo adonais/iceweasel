@@ -57,6 +57,7 @@ static const char SandboxPolicyGPU[] = R"SANDBOX_LITERAL(
     (sysctl-name "kern.osproductversion")
     (sysctl-name "kern.version")
     (sysctl-name "kern.hostname")
+    (sysctl-name "kern.hv_vmm_present")
     (sysctl-name "hw.machine")
     (sysctl-name "hw.memsize")
     (sysctl-name "hw.model")
@@ -186,6 +187,18 @@ static const char SandboxPolicyGPU[] = R"SANDBOX_LITERAL(
     (iokit-property "MetalPluginClassName")
     (iokit-property "gpu-core-count"))
 
+  ; VM compatibility
+  (with-filter (iokit-registry-entry-class "IOPlatformDevice")
+    (allow iokit-get-properties
+      (iokit-property "product-id")
+      (iokit-property "soc-generation")
+      (iokit-property "IORegistryEntryPropertyKeys")
+      (iokit-property "ean-storage-present")))
+  (with-filter (iokit-registry-entry-class "IOService")
+    (allow iokit-get-properties
+      (iokit-property "housing-color")
+      (iokit-property "syscfg-v2-data")))
+
   (allow iokit-set-properties
     (require-all
       (iokit-connection "IODisplay")
@@ -206,7 +219,6 @@ static const char SandboxPolicyGPU[] = R"SANDBOX_LITERAL(
     (iokit-user-client-class "IOSurfaceSendRight")
     (iokit-user-client-class "IOFramebufferSharedUserClient")
     (iokit-user-client-class "AGPMClient")
-    (iokit-user-client-class "AppleGraphicsControlClient")
     (iokit-user-client-class "IOHIDParamUserClient")
     (iokit-user-client-class "RootDomainUserClient")
     (iokit-user-client-class "AppleMGPUPowerControlClient")

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components
 
 import android.content.Context
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -28,6 +29,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
@@ -54,6 +56,7 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHigh
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.onboarding.FenixOnboarding
 
+@RunWith(AndroidJUnit4::class)
 class AppStoreTest {
     private lateinit var context: Context
     private lateinit var accountManager: FxaAccountManager

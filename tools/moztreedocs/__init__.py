@@ -186,12 +186,10 @@ class _SphinxManager:
         # tree (Bug 1557020). The page is no longer referenced within the index
         # tree, thus we shall check categorisation only if complete tree is being rebuilt.
         if app.srcdir == self.topsrcdir:
-            indexes = set(
-                [
-                    os.path.normpath(os.path.join(p, "index"))
-                    for p in toplevel_trees.keys()
-                ]
-            )
+            indexes = set([
+                os.path.normpath(os.path.join(p, "index"))
+                for p in toplevel_trees.keys()
+            ])
             # Format categories like indexes
             cats = "\n".join(CATEGORIES.values()).split("\n")
             # Remove heading spaces

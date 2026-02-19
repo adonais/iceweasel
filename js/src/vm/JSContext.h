@@ -151,6 +151,7 @@ enum class InterruptReason : uint32_t {
   AttachOffThreadCompilations = 1 << 2,
   CallbackUrgent = 1 << 3,
   CallbackCanWait = 1 << 4,
+  OOMStackTrace = 1 << 5,
 };
 
 enum class ShouldCaptureStack { Maybe, Always };
@@ -396,6 +397,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   JSRuntime* runtime() { return runtime_; }
   const JSRuntime* runtime() const { return runtime_; }
 
+  static size_t offsetOfRuntime() {
+    return offsetof(JSContext, runtime_) +
+           js::UnprotectedData<JSRuntime*>::offsetOfValue();
+  }
   static size_t offsetOfRealm() { return offsetof(JSContext, realm_); }
 
   friend class JS::AutoSaveExceptionState;
@@ -705,6 +710,12 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 #endif
   }
 
+  // OOM stack trace buffer management
+  void unsetOOMStackTrace();
+  const char* getOOMStackTrace() const;
+  bool hasOOMStackTrace() const;
+  void captureOOMStackTrace();
+
   js::ContextData<int32_t> reportGranularity; /* see vm/Probes.h */
 
   js::ContextData<js::AutoResolving*> resolvingList;
@@ -923,6 +934,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   // that's fine.
   void requestInterrupt(js::InterruptReason reason);
   bool handleInterrupt();
+  bool handleInterruptNoCallbacks();
 
   MOZ_ALWAYS_INLINE bool hasAnyPendingInterrupt() const {
     static_assert(sizeof(interruptBits_) == sizeof(uint32_t),
@@ -976,6 +988,14 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ContextData<JS::PromiseRejectionTrackerCallback>
       promiseRejectionTrackerCallback;
   js::ContextData<void*> promiseRejectionTrackerCallbackData;
+
+  // Pre-allocated buffer for storing out-of-memory stack traces.
+  // This buffer is allocated during context initialization to avoid
+  // allocation during OOM conditions. The buffer stores a formatted
+  // stack trace string that can be retrieved by privileged JavaScript.
+  static constexpr size_t OOMStackTraceBufferSize = 4096;
+  js::ContextData<char*> oomStackTraceBuffer_;
+  js::ContextData<bool> oomStackTraceBufferValid_;
 
   JSObject* getIncumbentGlobal(JSContext* cx);
   bool enqueuePromiseJob(JSContext* cx, js::HandleFunction job,
@@ -1219,11 +1239,7 @@ class MOZ_RAII AutoSetBypassCSPForDebugger {
   ~AutoSetBypassCSPForDebugger() { cx->bypassCSPForDebugger = oldValue; }
 };
 
-enum UnsafeABIStrictness {
-  NoExceptions,
-  AllowPendingExceptions,
-  AllowThrownExceptions
-};
+enum UnsafeABIStrictness { NoExceptions, AllowPendingExceptions };
 
 // Should be used in functions called directly from JIT code (with
 // masm.callWithABI). This assert invariants in debug builds. Resets

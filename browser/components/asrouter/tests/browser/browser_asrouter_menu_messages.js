@@ -486,6 +486,7 @@ add_task(async function test_trigger() {
       context: {
         source: MenuMessage.SOURCES.APP_MENU,
         browserIsSelected: true,
+        isAIWindow: false,
       },
     }),
     "sendTriggerMessage was called when opening the AppMenu panel."
@@ -501,6 +502,7 @@ add_task(async function test_trigger() {
       context: {
         source: MenuMessage.SOURCES.PXI_MENU,
         browserIsSelected: true,
+        isAIWindow: false,
       },
     }),
     "sendTriggerMessage was called when opening the PXI panel."

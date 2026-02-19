@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">ကိုယ်ပိုင် %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -28,9 +28,9 @@
   <!-- Placeholder text shown in search bar when using tabs search -->
   <string name="tab_search_hint">တပ်ဗ်များ ရှာမည်</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">သင့်ဖွင့်ထားသည့်တက်ဗ်များကို ဤနေရာတွင် ပြမည်။</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">သင့်ဖွင့်ထားသည့်တက်ဗ်များကို ဤနေရာတွင် ပြမည်။</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">သင်၏ သီးသန့် တက်ဗ်များ ဤနေရာမှာ ပြရန်။</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">သင်၏ သီးသန့် တက်ဗ်များ ဤနေရာမှာ ပြရန်။</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d ခု ရွေးချယ်ထားပြီး</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -42,7 +42,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">multiselect mode ကိုပိတ်ပါ</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">စုဆောင်းမှု သို့ တက်ဗ်များ သိမ်းရန်</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">စုဆောင်းမှု သို့ တက်ဗ်များ သိမ်းရန်</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s ကို Mozilla မှ ထုတ်လုပ်သည်။</string>
   <!-- Private Browsing -->
@@ -104,9 +104,9 @@
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
   <string name="browser_menu_stop">ရပ်ပါ</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">အကူအညီ</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">အကူအညီ</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">ဘာထူးသလဲ</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">ဘာထူးသလဲ</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">အပြင်အဆင်များ</string>
   <!-- Browser menu button that opens a user's library -->
@@ -132,7 +132,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s မှ ထောက်ပံ့ထားသည်</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s မှ ထောက်ပံ့ထားသည်</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -145,11 +145,11 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">အက်ပ်ထဲတွင်ဖွင့်ပါ</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">စာဖတ်သူ မြင်ကွင်းကို စိတ်ကြိုက် ပြင်ဆင်ပါ</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">စာဖတ်သူ မြင်ကွင်းကို စိတ်ကြိုက် ပြင်ဆင်ပါ</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">ထည့်ပါ</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">ထည့်ပါ</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">ပြင်ဆင်</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">ပြင်ဆင်</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">ပက်စ်ဝေါ့များ</string>
   <!--
@@ -486,15 +486,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">သီးသန့် တက်ဗ် ထည့်</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">သီးသန့်</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">သီးသန့်</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">ထပ်တူပြု ပြိုင်တူအသုံးပြုခြင်း</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">ထပ်တူပြု ပြိုင်တူအသုံးပြုခြင်း</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">တက်ဗ်များ အားလုံး မျှဝေရန်</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">တက်ဗ်များ အားလုံး မျှဝေရန်</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">လတ်တလော ပိတ်ခဲ့သည့် တက်ဗ်များ</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">လတ်တလော ပိတ်လိုက်သည်များ</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">လတ်တလော ပိတ်လိုက်သည်များ</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">အကောင့် ဆက်တင်များ</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -502,11 +502,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">တက်ဗ်များ အားလုံး ပိတ်ရန်</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">စာမှတ်</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">စာမှတ်</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">ပိတ်ပါ</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">ပိတ်ပါ</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">ရွေးချယ်ထားသော တပ်ဗ် များကို မျှဝေပါ</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ရွေးချယ်ထားသော တပ်ဗ် များကို မျှဝေပါ</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">ရွေးချယ်ထားသော တပ်ဗ် များ မီနူး</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -843,7 +843,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">ပင်မမန်နူးမှ \"Quit\" ကိုသင်ရွေးလျှင် ရှာဖွေအချက်အလက်များကိုအလိုအလျောက်ဖျက်ပါမည်။</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">ထွက်ရန်</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">ထွက်ရန်</string>
   <!-- Dialog message to the user asking to delete browsing data. %s is the name of the app (for example "Firefox"). -->
   <string name="delete_browsing_data_prompt_message_3">%s သည် ရွေးချယ်ထားသောရှာဖွေအချက်အလက်ကို ဖျက်လိမ့်မည်။</string>
   <!-- Text for the cancel button for the data deletion dialog -->
@@ -1146,9 +1146,9 @@
   -->
   <string name="certificate_info_verified_by">%1$s မှစစ်ဆေးပြီး။</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">ဖျက်ပါ</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">ဖျက်ပါ</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">ပြင်ရန်</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">ပြင်ရန်</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">ဖျက်ပါ</string>
   <!-- Voice search button content description -->

@@ -91,14 +91,20 @@ class NavigableManagerClass {
     let browsingContext;
 
     if (this.#chromeNavigables.hasId(id)) {
+      // Chrome browsing context
       browsingContext = this.#chromeNavigables.getObject(id);
     } else {
+      // Content browsing context
       const browser = this.getBrowserById(id);
       if (browser) {
-        // top-level browsing context
+        // Top-level browsing context
         browsingContext = browser.browsingContext;
       } else {
-        browsingContext = BrowsingContext.get(id);
+        // Content child browsing contexts
+        const context = BrowsingContext.get(id);
+        if (context && context.isContent && context.parent) {
+          browsingContext = context;
+        }
       }
     }
 

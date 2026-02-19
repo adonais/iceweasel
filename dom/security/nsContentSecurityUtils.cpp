@@ -1345,6 +1345,7 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "about:logins"_ns,
     "about:newprofile"_ns,
     "about:newtab"_ns,
+    "about:opentabs"_ns,
     "about:preferences"_ns,
     "about:privatebrowsing"_ns,
     "about:processes"_ns,

@@ -453,13 +453,8 @@ add_task(async function () {
           '</span>' +
           '<span class="ruleview-color">white</span>' +
         '</span>',
-      computed:
-        // prettier-ignore
-        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="white" class="color-swatch-container">' +
-          '<span class="inspector-swatch inspector-colorswatch" style="background-color:white">' +
-          '</span>' +
-          '<span class="ruleview-color">white</span>' +
-        '</span>',
+      // Computed value isn't displayed when it's the same as we put in the header
+      computed: null,
       // The starting-style rule is overridden, so we don't show a starting-style section in the tooltip
       startingStyle: null,
     }

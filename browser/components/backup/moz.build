@@ -32,6 +32,7 @@ EXTRA_JS_MODULES.backup += [
     "MeasurementUtils.sys.mjs",
     "resources/AddonsBackupResource.sys.mjs",
     "resources/BackupResource.sys.mjs",
+    "resources/BookmarksBackupResource.sys.mjs",
     "resources/CookiesBackupResource.sys.mjs",
     "resources/CredentialsAndSecurityBackupResource.sys.mjs",
     "resources/FormHistoryBackupResource.sys.mjs",
@@ -39,4 +40,5 @@ EXTRA_JS_MODULES.backup += [
     "resources/PlacesBackupResource.sys.mjs",
     "resources/PreferencesBackupResource.sys.mjs",
     "resources/SessionStoreBackupResource.sys.mjs",
+    "resources/SiteSettingsBackupResource.sys.mjs",
 ]

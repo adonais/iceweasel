@@ -5,7 +5,13 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml");
-pref("gfx.webrender.software", true);
+
+// Use software webrender on simulator due to missing APIs.
+#if TARGET_OS_SIMULATOR
+  pref("gfx.webrender.software", true);
+#endif
+
+// Enable the restricted sandbox for content processes.
 pref("security.sandbox.content.level", 1);
 
 // Complete the page load progress bar at different places according to this pref.

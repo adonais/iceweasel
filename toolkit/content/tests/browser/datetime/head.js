@@ -58,7 +58,7 @@ class DateTimeTestHelper {
       });
     }
     this.panel = await shown;
-    this.frame = this.panel.querySelector("#dateTimePopupFrame");
+    this.frame = this.panel.querySelector("#DateTimePickerPanelPopupFrame");
   }
 
   promisePickerClosed() {
@@ -296,7 +296,7 @@ async function testCalendarBtnAttribute(attr, val, presenceOnly = false) {
  *
  * @param {string} key: A keyboard Event.key that will be synthesized
  * @param {object} document: Reference to the content document
- *                 of the #dateTimePopupFrame
+ *                 of the #DateTimePickerPanelPopupFrame
  * @param {number} tabs: How many times "Tab" key should be pressed
  *                 to move a keyboard focus to a needed spinner
  *                 (1 for month/default and 2 for year)

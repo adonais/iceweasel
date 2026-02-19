@@ -341,17 +341,6 @@ var BootstrapMonitor = {
   },
 };
 
-function isNightlyChannel() {
-  var channel = Services.prefs.getCharPref("app.update.channel", "default");
-
-  return (
-    channel != "aurora" &&
-    channel != "beta" &&
-    channel != "release" &&
-    channel != "esr"
-  );
-}
-
 async function restartWithLocales(locales) {
   Services.locale.requestedLocales = locales;
   await promiseRestartManager();

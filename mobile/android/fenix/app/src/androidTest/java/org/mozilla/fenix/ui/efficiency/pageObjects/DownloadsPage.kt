@@ -23,7 +23,7 @@ class DownloadsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
             to = pageName,
             steps = listOf(
                 NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON),
+                NavigationStep.Click(MainMenuSelectors.DOWLOADS_BUTTON),
             ),
         )
     }

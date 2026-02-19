@@ -175,11 +175,11 @@ export class StyleEditorUI extends EventEmitter {
   /**
    * Initiates the style editor ui creation, and start to track TargetCommand updates.
    *
-   * @params {object} options
-   * @params {object} options.stylesheetToSelect
-   * @params {StyleSheetResource} options.stylesheetToSelect.stylesheet
-   * @params {Integer} options.stylesheetToSelect.line
-   * @params {Integer} options.stylesheetToSelect.column
+   * @param {object} options
+   * @param {object} options.stylesheetToSelect
+   * @param {StyleSheetResource} options.stylesheetToSelect.stylesheet
+   * @param {Integer} options.stylesheetToSelect.line
+   * @param {Integer} options.stylesheetToSelect.column
    */
   async initialize(options = {}) {
     this.createUI();
@@ -472,8 +472,8 @@ export class StyleEditorUI extends EventEmitter {
   /**
    * Opens the Options Popup Menu
    *
-   * @params {number} screenX
-   * @params {number} screenY
+   * @param {number} screenX
+   * @param {number} screenY
    *   Both obtained from the event object, used to position the popup
    */
   #onOptionsButtonClick = ({ screenX, screenY }) => {
@@ -1446,6 +1446,23 @@ export class StyleEditorUI extends EventEmitter {
           type.append(
             this.#panelDoc.createTextNode(`${rule.positionTryName}\u00A0`)
           );
+        } else if (rule.type === "custom-media") {
+          const parts = [];
+          const { customMediaName, customMediaQuery } = rule;
+          for (let i = 0, len = customMediaQuery.length; i < len; i++) {
+            const media = customMediaQuery[i];
+            const queryEl = this.#panelDoc.createElementNS(HTML_NS, "span");
+            queryEl.textContent = media.text;
+            if (!media.matches) {
+              queryEl.classList.add("media-condition-unmatched");
+            }
+            parts.push(queryEl);
+            if (len > 1 && i !== len - 1) {
+              parts.push(", ");
+            }
+          }
+
+          type.append(`${customMediaName} `, ...parts);
         }
 
         const cond = this.#panelDoc.createElementNS(HTML_NS, "span");

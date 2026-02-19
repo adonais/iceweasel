@@ -192,7 +192,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   bool HasSlots() const { return !mSlotMap.IsEmpty(); };
   HTMLSlotElement* GetDefaultSlot() const {
     SlotArray* list = mSlotMap.Get(u""_ns);
-    return list ? (*list)->ElementAt(0) : nullptr;
+    return list ? (*list).AsSpan()[0] : nullptr;
   }
 
   void PartAdded(const Element&);

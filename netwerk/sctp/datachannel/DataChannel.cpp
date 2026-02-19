@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <stdio.h>
-#include <stdlib.h>
 
 #ifdef XP_WIN
 #  include <winsock.h>  // for htonl, htons, ntohl, ntohs
@@ -270,11 +269,13 @@ bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
       if (id != INVALID_STREAM) {
         channel->SetStream(id);
         mChannels.Insert(channel);
-        DC_DEBUG(("%p: Inserting auto-selected id %u", this,
-                  static_cast<unsigned>(id)));
+        DC_DEBUG(("%p: Inserting auto-selected id %u for channel %p", this,
+                  static_cast<unsigned>(id), channel.get()));
         mStreamIds.InsertElementSorted(id);
         hasStreamId.AppendElement(std::move(channel));
       } else {
+        DC_WARN(("%p: Could not find id for channel %p, calling AnnounceClosed",
+                 this, channel.get()));
         // Spec language is very similar to AnnounceClosed, the differences
         // being a lack of a closed check at the top, a different error event,
         // and no removal of the channel from the [[DataChannels]] slot.
@@ -443,6 +444,7 @@ int DataChannelConnection::SendControlMessage(DataChannel& aChannel,
 // Returns a POSIX error code.
 int DataChannelConnection::SendOpenAckMessage(DataChannel& aChannel) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
+  DC_INFO(("%p: Sending DataChannel open ack, channel %p", this, &aChannel));
   struct rtcweb_datachannel_ack ack = {};
   ack.msg_type = DATA_CHANNEL_ACK;
 
@@ -451,6 +453,8 @@ int DataChannelConnection::SendOpenAckMessage(DataChannel& aChannel) {
 
 // Returns a POSIX error code.
 int DataChannelConnection::SendOpenRequestMessage(DataChannel& aChannel) {
+  DC_INFO(
+      ("%p: Sending DataChannel open request, channel %p", this, &aChannel));
   const nsACString& label = aChannel.mLabel;
   const nsACString& protocol = aChannel.mProtocol;
   const bool unordered = !aChannel.mOrdered;
@@ -658,6 +662,10 @@ void DataChannelConnection::HandleOpenAckMessage(
            channel.get(), stream, channel->mWaitingForAck ? 1 : 0));
 
   channel->mWaitingForAck = false;
+
+  // Either externally negotiated or we sent Open
+  channel->AnnounceOpen();
+  OnStreamOpen(stream);
 }
 
 // Caller must ensure that length <= SIZE_MAX
@@ -980,10 +988,11 @@ void DataChannelConnection::OpenFinish(RefPtr<DataChannel> aChannel) {
   aChannel->mSendStreamNeedsReset = true;
   aChannel->mRecvStreamNeedsReset = true;
 
-  // Either externally negotiated or we sent Open
-  // FIX?  Move into DOMDataChannel?  I don't think we can send it yet here
-  aChannel->AnnounceOpen();
-  OnStreamOpen(stream);
+  if (aChannel->mNegotiated) {
+    // Either externally negotiated or we sent Open
+    aChannel->AnnounceOpen();
+    OnStreamOpen(stream);
+  }
 }
 
 nsISerialEventTarget* DataChannelConnection::GetIOThread() {
@@ -1032,8 +1041,8 @@ void DataChannelConnection::SetState(DataChannelConnectionState aState) {
   }
 }
 
-void DataChannelConnection::SendDataMessage(uint16_t aStream, nsACString&& aMsg,
-                                            bool aIsBinary) {
+void DataChannelConnection::SendDataMessage(DataChannel& aChannel,
+                                            nsACString&& aMsg, bool aIsBinary) {
   // Could be main, could be a worker
 
   nsCString temp(std::move(aMsg));
@@ -1041,14 +1050,9 @@ void DataChannelConnection::SendDataMessage(uint16_t aStream, nsACString&& aMsg,
   mSTS->Dispatch(
       NS_NewCancelableRunnableFunction(
           __func__,
-          [this, self = RefPtr<DataChannelConnection>(this), aStream,
-           msg = std::move(temp), aIsBinary]() mutable {
-            RefPtr<DataChannel> channel = FindChannelByStream(aStream);
-            if (!channel) {
-              // Must have closed due to a transport error?
-              return;
-            }
-
+          [this, self = RefPtr<DataChannelConnection>(this),
+           channel = RefPtr(&aChannel), msg = std::move(temp),
+           aIsBinary]() mutable {
             Maybe<uint16_t> maxRetransmissions;
             Maybe<uint16_t> maxLifetimeMs;
 
@@ -1256,7 +1260,14 @@ bool DataChannelConnection::Channels::Remove(
     return mChannels.RemoveElement(aChannel);
   }
 
-  return mChannels.RemoveElementSorted(aChannel, IdComparator());
+  auto index = mChannels.BinaryIndexOf(aChannel->mStream, IdComparator());
+  if (index != ChannelArray::NoIndex) {
+    if (mChannels[index].get() == aChannel.get()) {
+      mChannels.RemoveElementAt(index);
+      return true;
+    }
+  }
+  return false;
 }
 
 RefPtr<DataChannel> DataChannelConnection::Channels::Get(uint16_t aId) const {
@@ -1513,7 +1524,7 @@ void DataChannel::SendBuffer(nsCString&& aMsg, bool aBinary) {
          aBinary](
             const GenericNonExclusivePromise::ResolveOrRejectValue&) mutable {
           if (mConnection) {
-            mConnection->SendDataMessage(mStream, std::move(msg), aBinary);
+            mConnection->SendDataMessage(*this, std::move(msg), aBinary);
             return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
           }
           return GenericNonExclusivePromise::CreateAndResolve(false, __func__);
@@ -1522,7 +1533,7 @@ void DataChannel::SendBuffer(nsCString&& aMsg, bool aBinary) {
     UnsetMessagesSentPromiseWhenSettled();
     return;
   }
-  mConnection->SendDataMessage(mStream, std::move(aMsg), aBinary);
+  mConnection->SendDataMessage(*this, std::move(aMsg), aBinary);
 }
 
 void DataChannel::SendBinaryBlob(nsIInputStream* aBlob) {
@@ -1540,7 +1551,7 @@ void DataChannel::SendBinaryBlob(nsIInputStream* aBlob) {
         if (NS_SUCCEEDED(NS_ReadInputStreamToString(blob, data, -1))) {
           if (mConnection) {
             // This dispatches to STS, which is when we're supposed to resolve
-            mConnection->SendDataMessage(mStream, std::move(data), true);
+            mConnection->SendDataMessage(*this, std::move(data), true);
           }
           blob->Close();
           return GenericNonExclusivePromise::CreateAndResolve(true, __func__);

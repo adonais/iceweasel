@@ -20,6 +20,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import androidx.test.espresso.Espresso
@@ -381,7 +382,7 @@ object AppAndSystemHelper {
         }
     }
 
-    fun assertNativeAppOpens(appPackageName: String, url: String = "") {
+    fun assertNativeAppOpens(composeTestRule: ComposeTestRule, appPackageName: String, url: String = "") {
         if (isPackageInstalled(appPackageName)) {
             Log.i(TAG, "assertNativeAppOpens: Waiting for the device to be idle $waitingTimeShort ms.")
             mDevice.waitForIdle(waitingTimeShort)
@@ -398,7 +399,7 @@ object AppAndSystemHelper {
             forceCloseApp(appPackageName)
         } else {
             Log.i(TAG, "assertNativeAppOpens: Trying to verify the page redirect URL.")
-            BrowserRobot().verifyUrl(url)
+            BrowserRobot(composeTestRule).verifyUrl(url)
             Log.i(TAG, "assertNativeAppOpens: Verified the page redirect URL.")
         }
     }
@@ -664,24 +665,46 @@ object AppAndSystemHelper {
         Log.i(TAG, "verifyKeyboardVisibility: Verified the keyboard is visible.")
     }
 
-    fun openAppFromExternalLink(url: String) {
-        val context = InstrumentationRegistry.getInstrumentation().getTargetContext()
-        val intent = Intent().apply {
-            action = Intent.ACTION_VIEW
-            data = url.toUri()
+    fun openAppFromExternalLink(
+        composeTestRule: AndroidComposeTestRule<HomeActivityIntentTestRule, HomeActivity>,
+        url: String,
+    ) {
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
             `package` = TestHelper.packageName
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
+
         try {
-            Log.i(TAG, "openAppFromExternalLink: Trying to start the activity from an external intent.")
-            context.startActivity(intent)
-            Log.i(TAG, "openAppFromExternalLink: Activity started from an external intent.")
-        } catch (ex: ActivityNotFoundException) {
-            Log.i(TAG, "openAppFromExternalLink: Exception caught. Trying to start the activity from a null intent.")
-            intent.setPackage(null)
-            context.startActivity(intent)
-            Log.i(TAG, "openAppFromExternalLink: Started the activity from a null intent.")
+            // Case 1: The app is already running and Compose has a host activity.
+            // Launch the external intent from the existing activity so the
+            // ComposeTestRule can properly track the Compose hierarchy.
+            Log.i(TAG, "openAppFromExternalLink: Host activity exists, launching external intent from activity.")
+            composeTestRule.activity.startActivity(intent)
+        } catch (e: IllegalStateException) {
+            // Case 2: The host activity was finished (cold start scenario).
+            // ComposeTestRule no longer has an activity, so we fall back to
+            // launching the intent from the instrumentation context.
+            Log.i(TAG, "openAppFromExternalLink: No host activity found. Launching external intent from instrumentation context.")
+
+            val context = InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+
+            try {
+                context.startActivity(intent)
+                Log.i(TAG, "openAppFromExternalLink: Activity started from instrumentation context.")
+            } catch (ex: ActivityNotFoundException) {
+                // Fallback in case the explicit package cannot handle the intent.
+                Log.i(TAG, "openAppFromExternalLink: ActivityNotFoundException caught. Retrying with null package.")
+                intent.`package` = null
+                context.startActivity(intent)
+                Log.i(TAG, "openAppFromExternalLink: Activity started with null package.")
+            }
         }
+
+        // Ensure Compose has fully settled before any UI assertions or robot actions.
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "openAppFromExternalLink: Compose is idle and ready for assertions.")
     }
 
     /**

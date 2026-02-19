@@ -14,7 +14,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/Likely.h"
-#include <stdarg.h>
 
 #ifdef DEBUG
 #  include "mozilla/ErrorNames.h"

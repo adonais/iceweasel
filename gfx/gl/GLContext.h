@@ -9,7 +9,6 @@
 
 #include <bitset>
 #include <stdint.h>
-#include <stdio.h>
 #include <stack>
 #include <vector>
 
@@ -811,8 +810,14 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   }
 
   void InvalidateFramebuffer(GLenum target) {
+#ifdef XP_IOS
+    // LOCAL_GL_DEPTH_STENCIL_ATTACHMENT cannot be invalidated on iOS.
+    constexpr auto ATTACHMENTS = make_array(GLenum{LOCAL_GL_COLOR_ATTACHMENT0});
+#else
     constexpr auto ATTACHMENTS = make_array(GLenum{LOCAL_GL_COLOR_ATTACHMENT0},
                                             LOCAL_GL_DEPTH_STENCIL_ATTACHMENT);
+#endif
+
     fInvalidateFramebuffer(target, ATTACHMENTS.size(), ATTACHMENTS.data());
   }
 

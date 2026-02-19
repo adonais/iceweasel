@@ -32,7 +32,7 @@ ChromeUtils.defineESModuleGetters(
  *   http://www.softwareishard.com/blog/firebug/
  *      nsitraceablechannel-intercept-http-traffic/
  *
- * @constructor
+ * @class
  * @param {object} httpActivity
  *        HttpActivity object associated with this request. See NetworkObserver
  *        more information.

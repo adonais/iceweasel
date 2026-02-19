@@ -41,7 +41,8 @@
 #include "nsError.h"             // for NS_SUCCEEDED
 #include "nsGkAtoms.h"           // for nsGkAtoms, nsGkAtoms::a, etc.
 #include "nsHTMLTags.h"
-#include "nsIContentInlines.h"   // for nsIContent::IsInDesignMode(), etc.
+#include "nsIContentInlines.h"  // for nsIContent::IsInDesignMode(), etc.
+#include "nsIObjectLoadingContent.h"
 #include "nsLiteralString.h"     // for NS_LITERAL_STRING
 #include "nsNameSpaceManager.h"  // for kNameSpaceID_None
 #include "nsPrintfCString.h"     // nsPringfCString
@@ -675,6 +676,42 @@ bool HTMLEditUtils::IsMailCiteElement(const Element& aElement) {
   }
 
   return false;
+}
+
+bool HTMLEditUtils::IsReplacedElement(const Element& aElement) {
+  if (!aElement.IsHTMLElement()) {
+    // FIXME: Well known SVG, MathML elements should be tested here.
+    return false;
+  }
+  if (aElement.IsHTMLElement(nsGkAtoms::input)) {
+    return !aElement.AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                 nsGkAtoms::hidden, eIgnoreCase);
+  }
+  if (HTMLEditUtils::IsFormWidgetElement(aElement)) {
+    return true;
+  }
+  // <object> is a special element, it shows its subtree when it does not load
+  // its content.
+  if (aElement.IsHTMLElement(nsGkAtoms::object)) {
+    const nsCOMPtr<nsIObjectLoadingContent> objectLoadingContent =
+        do_QueryInterface(const_cast<Element*>(&aElement));
+    uint32_t displayedType = nsIObjectLoadingContent::TYPE_FALLBACK;
+    if (MOZ_LIKELY(objectLoadingContent)) {
+      objectLoadingContent->GetDisplayedType(&displayedType);
+    }
+    return displayedType != nsIObjectLoadingContent::TYPE_FALLBACK;
+  }
+  return aElement.IsAnyOfHTMLElements(
+      nsGkAtoms::audio,
+      // In strictly speaking, <br> is not a replaced element, but treating it
+      // as a replaced element makes HTMLEditor and its peers simpler.
+      nsGkAtoms::br, nsGkAtoms::canvas, nsGkAtoms::embed, nsGkAtoms::iframe,
+      nsGkAtoms::img,
+      // <optgroup> and <option> are not replaced element actually but they
+      // are treated as so for the compatibility with Chrome.
+      // XXX I wonder if we can treat them as so only when they are in
+      // <select>.
+      nsGkAtoms::optgroup, nsGkAtoms::option, nsGkAtoms::video);
 }
 
 bool HTMLEditUtils::IsFormWidgetElement(const nsIContent& aContent) {
@@ -1406,13 +1443,17 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
   if (
       // If it's not a container such as an <hr> or <br>, etc, it should be
       // treated as not empty.
+      // XXX I think <input type="hidden"> should not be treated as a special
+      // element since it's invisible. Treating invisible elements as special
+      // ones causes changing the behavior with the invisible thing so that the
+      // users may report the different behavior as a bug.
       !IsContainerNode(*aNode.AsContent()) ||
       // If it's a named anchor, we shouldn't treat it as empty because it
       // has special meaning even if invisible.
       IsNamedAnchorElement(*aNode.AsContent()) ||
-      // Form widgets should be treated as not empty because they have special
-      // meaning even if invisible.
-      IsFormWidgetElement(*aNode.AsContent())) {
+      // Replaced elements should be treated as not empty because they have
+      // visible content.
+      IsReplacedElement(*aNode.AsElement())) {
     return false;
   }
 

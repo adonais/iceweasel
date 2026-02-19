@@ -793,6 +793,7 @@ urlbar:
       Corresponds to the value of the `browser.urlbar.maxRichResults` pref.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817196
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2014318
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817196
     data_sensitivity:
@@ -802,6 +803,7 @@ urlbar:
     expires: never
     send_in_pings:
       - events
+      - metrics
 
   pref_suggest_all:
     lifetime: application
@@ -812,6 +814,7 @@ urlbar:
       `browser.urlbar.suggest.quicksuggest.all` pref.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995574
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2014318
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995574
     data_sensitivity:
@@ -821,6 +824,7 @@ urlbar:
     expires: never
     send_in_pings:
       - events
+      - metrics
 
   pref_suggest_online_available:
     lifetime: application
@@ -833,6 +837,7 @@ urlbar:
       Suggest introduced in 146 with Terms of Use and OHTTP.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2014318
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
     data_sensitivity:
@@ -842,6 +847,7 @@ urlbar:
     expires: never
     send_in_pings:
       - events
+      - metrics
 
   pref_suggest_online_enabled:
     lifetime: application
@@ -855,6 +861,7 @@ urlbar:
       Suggest introduced in 146 with Terms of Use and OHTTP.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2014318
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
     data_sensitivity:
@@ -864,6 +871,7 @@ urlbar:
     expires: never
     send_in_pings:
       - events
+      - metrics
 
   pref_suggest_sponsored:
     lifetime: application
@@ -875,6 +883,7 @@ urlbar:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1847855
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1849726
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2014318
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1847855
     data_sensitivity:
@@ -884,6 +893,7 @@ urlbar:
     expires: never
     send_in_pings:
       - events
+      - metrics
 
   pref_suggest_topsites:
     lifetime: application
@@ -893,6 +903,7 @@ urlbar:
       Corresponds to the value of the `browser.urlbar.suggest.topsites` pref.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817196
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2014318
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817196
     data_sensitivity:
@@ -902,22 +913,7 @@ urlbar:
     expires: never
     send_in_pings:
       - events
-
-  pref_switch_tabs_search_all_containers:
-    lifetime: application
-    type: boolean
-    description: >
-      Whether the "Switch to Tab" feature searches across all containers.
-      Corresponds to the value of the `browser.urlbar.switchTabs.searchAllContainers` pref.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1974961
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1974961
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: 149
+      - metrics
 
   autofill_deletion:
     type: counter

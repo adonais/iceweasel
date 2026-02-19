@@ -1320,6 +1320,19 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       NS_ERROR("Failed to get user's SID.");
       LOG_E("Failed to get user's SID. %lx", ::GetLastError());
     }
+
+    // Required for GetUserGeoID, which is used to get timezone information.
+    bool geoRuleSet =
+        config->AllowRegistryRead(L"HKEY_CURRENT_USER") ==
+            sandbox::SBOX_ALL_OK &&
+        config->AllowRegistryRead(
+            L"HKEY_CURRENT_USER\\Control Panel\\International\\Geo") ==
+            sandbox::SBOX_ALL_OK;
+    if (!geoRuleSet) {
+      NS_ERROR("Failed to add rule for International Geo.");
+      LOG_E("Failed (ResultCode %d) to add rule for International Geo.",
+            result);
+    }
   }
 }
 
@@ -1411,7 +1424,12 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
       sandboxing::UserFontConfigHelper configHelper(
           LR"(Software\Microsoft\Windows NT\CurrentVersion\Fonts)",
           *sWindowsProfileDir, *sLocalAppDataDir, *sRoamingAppDataDir);
-      configHelper.AddRules(trackingConfig);
+      if (!configHelper.AddRules(trackingConfig)) {
+        // We've run out of space for font rules, so fall back to
+        // USER_INTERACTIVE to maintain access to all user fonts.
+        SANDBOX_SUCCEED_OR_CRASH(config->SetTokenLevel(
+            initialTokenLevel, sandbox::USER_INTERACTIVE));
+      }
     }
   }
 }

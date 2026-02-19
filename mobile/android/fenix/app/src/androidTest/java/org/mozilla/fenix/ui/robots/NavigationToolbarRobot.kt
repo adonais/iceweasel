@@ -9,9 +9,11 @@ package org.mozilla.fenix.ui.robots
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.view.KeyEvent
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -19,22 +21,22 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextReplacement
-import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.AppNotIdleException
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
-import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isCompletelyDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -44,17 +46,14 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.SEARCH_SELECTOR
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.TABS_COUNTER
 import org.hamcrest.CoreMatchers.allOf
-import org.junit.Assert.assertTrue
 import org.mozilla.fenix.R
-import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
-import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
-import org.mozilla.fenix.helpers.HomeActivityComposeTestRule
-import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextEquals
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectIsGone
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
@@ -67,11 +66,9 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
-import org.mozilla.fenix.helpers.TestHelper.waitForObjects
-import org.mozilla.fenix.helpers.click
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.helpers.matchers.hasItemsCount
-import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import mozilla.components.browser.menu.R as menuR
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.ui.tabcounter.R as tabcounterR
@@ -79,7 +76,7 @@ import mozilla.components.ui.tabcounter.R as tabcounterR
 /**
  * Implementation of Robot Pattern for the URL toolbar.
  */
-class NavigationToolbarRobot {
+class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyUrl(url: String) {
         Log.i(TAG, "verifyUrl: Trying to verify toolbar text matches $url")
         onView(withId(toolbarR.id.mozac_browser_toolbar_url_view)).check(matches(withText(url)))
@@ -88,10 +85,9 @@ class NavigationToolbarRobot {
 
     fun verifyTabButtonShortcutMenuItems() {
         Log.i(TAG, "verifyTabButtonShortcutMenuItems: Trying to verify tab counter shortcut options")
-        onView(withId(menuR.id.mozac_browser_menu_recyclerView))
-            .check(matches(hasDescendant(withText("Close tab"))))
-            .check(matches(hasDescendant(withText("New private tab"))))
-            .check(matches(hasDescendant(withText("New tab"))))
+        composeTestRule.onNodeWithText("Close tab", useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("New private tab", useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("New tab", useUnmergedTree = true).assertIsDisplayed()
         Log.i(TAG, "verifyTabButtonShortcutMenuItems: Verified tab counter shortcut options")
     }
 
@@ -113,14 +109,42 @@ class NavigationToolbarRobot {
         Log.i(TAG, "verifyTabButtonShortcutMenuItemsForPrivateHomescreen: Verified tab counter shortcut options")
     }
 
-    fun verifyReaderViewDetected(exists: Boolean = false) {
-        assertUIObjectExists(readerViewToggle(), exists = exists)
+    fun verifyReaderViewToolbarButton(isDisplayed: Boolean = false) {
+        waitForAppWindowToBeUpdated()
+        if (isDisplayed) {
+            Log.i(TAG, "verifyReaderViewToolbarButton: Trying to verify that the reader view toolbar button is displayed")
+            composeTestRule.onNodeWithContentDescription(
+                getStringResource(R.string.browser_menu_read),
+                useUnmergedTree = true,
+            ).assertIsDisplayed()
+            Log.i(TAG, "verifyReaderViewToolbarButton: Verified that the reader view toolbar button is displayed")
+        } else {
+            Log.i(TAG, "verifyReaderViewToolbarButton: Trying to verify that the reader view toolbar button is not displayed")
+            composeTestRule.onNodeWithContentDescription(
+                getStringResource(R.string.browser_menu_read),
+                useUnmergedTree = true,
+            ).assertIsNotDisplayed()
+            Log.i(TAG, "verifyReaderViewToolbarButton: Verified that the reader view toolbar button is not displayed")
+        }
     }
 
-    fun toggleReaderView() {
-        Log.i(TAG, "toggleReaderView: Trying to click the reader view button")
-        readerViewToggle().click()
-        Log.i(TAG, "toggleReaderView: Clicked the reader view button")
+    fun clickReaderViewToolbarButton(isReaderViewEnabled: Boolean) {
+        if (isReaderViewEnabled) {
+            Log.i(TAG, "clickReaderViewToolbarButton: Trying to click the \"Close reader view\" toolbar button")
+            composeTestRule.onNodeWithContentDescription(
+                getStringResource(R.string.browser_menu_read_close),
+                useUnmergedTree = true,
+            ).performClick()
+            Log.i(TAG, "clickReaderViewToolbarButton: Clicked the \"Close reader view\" toolbar button")
+        } else {
+            Log.i(TAG, "clickReaderViewToolbarButton: Trying to click the \"Reader view\" toolbar button")
+            composeTestRule.onNodeWithContentDescription(
+                getStringResource(R.string.browser_menu_read),
+                useUnmergedTree = true,
+            ).performClick()
+            Log.i(TAG, "clickReaderViewToolbarButton: Clicked the \"Reader view\" toolbar button")
+        }
+        waitForAppWindowToBeUpdated()
     }
 
     fun verifyClipboardSuggestionsAreDisplayed(link: String = "", shouldBeDisplayed: Boolean) {
@@ -172,30 +196,16 @@ class NavigationToolbarRobot {
             ),
         )
 
-    // New unified search UI selector
-    fun verifySearchBarPlaceholder(text: String) {
-        Log.i(TAG, "verifySearchBarPlaceholder: Waiting for $waitingTime ms for the toolbar to exist")
-        homeUrlBar().waitForExists(waitingTime)
-        Log.i(TAG, "verifySearchBarPlaceholder: Waited for $waitingTime ms for the toolbar to exist")
-        assertItemTextEquals(homeUrlBar(), expectedText = text)
-    }
-
-    fun verifySearchBarPlaceholderWithComposableToolbar(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Trying to verify that the search bar place holder is \"Search or enter address\"")
+    fun verifySearchBarPlaceholder() {
+        Log.i(TAG, "verifySearchBarPlaceholder: Trying to verify that the search bar place holder is \"Search or enter address\"")
         composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).assert(hasContentDescription("Search or enter address"))
-        Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Verified that the search bar place holder is \"Search or enter address\"")
+        Log.i(TAG, "verifySearchBarPlaceholder: Verified that the search bar place holder is \"Search or enter address\"")
     }
 
-    // New unified search UI selector
-    fun verifyDefaultSearchEngine(engineName: String) =
-        assertUIObjectExists(
-            searchSelectorButton().getChild(UiSelector().descriptionStartsWith(engineName)),
-        )
-
-    fun verifyDefaultSearchEngineWithComposableToolbar(composeTestRule: ComposeTestRule, engineName: String) {
-        Log.i(TAG, "verifyDefaultSearchEngineWithComposableToolbar: Trying to verify that default search engine is: $engineName is displayed")
+    fun verifyDefaultSearchEngine(engineName: String) {
+        Log.i(TAG, "verifyDefaultSearchEngine: Trying to verify that default search engine is: $engineName is displayed")
         composeTestRule.onNodeWithContentDescription(getStringResource(R.string.search_engine_selector_content_description, engineName)).assertIsDisplayed()
-        Log.i(TAG, "verifyDefaultSearchEngineWithComposableToolbar: Verified that default search engine is: $engineName is displayed")
+        Log.i(TAG, "verifyDefaultSearchEngine: Verified that default search engine is: $engineName is displayed")
     }
 
     fun verifyTextSelectionOptions(vararg textSelectionOptions: String) {
@@ -224,9 +234,9 @@ class NavigationToolbarRobot {
                     break
                 } catch (e: AssertionError) {
                     Log.i(TAG, "verifyTranslationButton: AssertionError caught, executing fallback methods")
-                    navigationToolbar {
+                    browserScreen(composeTestRule) {
                     }.openThreeDotMenu {
-                    }.refreshPage { }
+                    }.clickRefreshButton { }
                 }
             }
         } else {
@@ -306,54 +316,26 @@ class NavigationToolbarRobot {
         Log.i(TAG, "verifyNavBarBarPosition: Verified the toolbar navbar position is at the bottom: $isAtBottom.")
     }
 
-    class Transition {
+    class Transition(private val composeTestRule: ComposeTestRule) {
         private lateinit var sessionLoadedIdlingResource: SessionLoadedIdlingResource
 
         fun enterURLAndEnterToBrowser(
             url: Uri,
             interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
-            sessionLoadedIdlingResource = SessionLoadedIdlingResource()
-
-            openEditURLView()
-            Log.i(TAG, "enterURLAndEnterToBrowser: Trying to set toolbar text to: $url")
-            awesomeBar().setText(url.toString())
-            Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
-            Log.i(TAG, "enterURLAndEnterToBrowser: Trying to press device enter button")
-            pressImeActionOnAwesomeBar()
-            Log.i(TAG, "enterURLAndEnterToBrowser: Pressed device enter button")
-
-            registerAndCleanupIdlingResources(sessionLoadedIdlingResource) {
-                Log.i(TAG, "enterURLAndEnterToBrowser: Trying to assert that home screen layout or download button or the total cookie protection contextual hint exist")
-                assertTrue(
-                    itemWithResId("$packageName:id/browserLayout").waitForExists(waitingTime) ||
-                        itemWithResId("$packageName:id/download_button").waitForExists(waitingTime) ||
-                        itemWithResId("cfr.dismiss").waitForExists(waitingTime),
-                )
-                Log.i(TAG, "enterURLAndEnterToBrowser: Asserted that home screen layout or download button or the total cookie protection contextual hint exist")
-            }
-
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
-        fun enterURLAndEnterToBrowserWithComposableToolbar(
-            composeTestRule: ComposeTestRule,
-            url: Uri,
-            interact: BrowserRobot.() -> Unit,
-        ): BrowserRobot.Transition {
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to click navigation toolbar")
+            Log.i(TAG, "enterURLAndEnterToBrowser: Trying to click navigation toolbar")
             composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).onLast().performClick()
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Clicked navigation toolbar")
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to set toolbar text to: $url and perform IME action")
+            Log.i(TAG, "enterURLAndEnterToBrowser: Clicked navigation toolbar")
+            Log.i(TAG, "enterURLAndEnterToBrowser: Trying to set toolbar text to: $url and perform IME action")
             composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).apply {
                 performTextReplacement(url.toString())
                 performImeAction()
             }
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Toolbar text was set to: $url and IME action performed")
+            Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url and IME action performed")
+            waitForAppWindowToBeUpdated()
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun enterURL(
@@ -370,113 +352,22 @@ class NavigationToolbarRobot {
             pressImeActionOnAwesomeBar()
             Log.i(TAG, "enterURLAndEnterToBrowser: Pressed device enter button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
-        fun openTabCrashReporter(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            val crashUrl = "about:crashcontent"
-
-            sessionLoadedIdlingResource = SessionLoadedIdlingResource()
-
-            openEditURLView()
-            Log.i(TAG, "openTabCrashReporter: Trying to set toolbar text to: $crashUrl")
-            awesomeBar().setText(crashUrl)
-            Log.i(TAG, "openTabCrashReporter: Toolbar text was set to: $crashUrl")
-            Log.i(TAG, "openTabCrashReporter: Trying to press device enter button")
-            pressImeActionOnAwesomeBar()
-            Log.i(TAG, "openTabCrashReporter: Pressed device enter button")
-
-            registerAndCleanupIdlingResources(sessionLoadedIdlingResource) {
-                Log.i(TAG, "openTabCrashReporter: Trying to find the tab crasher image")
-                mDevice.findObject(UiSelector().resourceId("$packageName:id/crash_tab_image"))
-                Log.i(TAG, "openTabCrashReporter: Found the tab crasher image")
-            }
-
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
-        fun openThreeDotMenu(interact: ThreeDotMenuMainRobot.() -> Unit): ThreeDotMenuMainRobot.Transition {
-            mDevice.waitNotNull(Until.findObject(By.res("$packageName:id/mozac_browser_toolbar_menu")), waitingTime)
-            Log.i(TAG, "openThreeDotMenu: Trying to click the main menu button")
-            threeDotButton().click()
-            Log.i(TAG, "openThreeDotMenu: Clicked the main menu button")
-
-            ThreeDotMenuMainRobot().interact()
-            return ThreeDotMenuMainRobot.Transition()
-        }
-
-        fun openTabDrawer(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
-            for (i in 1..Constants.RETRY_COUNT) {
-                try {
-                    Log.i(TAG, "openTabDrawer: Started try #$i")
-                    mDevice.waitForObjects(
-                        mDevice.findObject(
-                            UiSelector()
-                                .resourceId("$packageName:id/mozac_browser_toolbar_browser_actions"),
-                        ),
-                        waitingTime,
-                    )
-                    Log.i(TAG, "openTabDrawer: Trying to click the tabs tray button")
-                    tabTrayButton().click()
-                    Log.i(TAG, "openTabDrawer: Clicked the tabs tray button")
-                    Log.i(TAG, "openTabDrawer: Trying to verify that the tabs tray exists")
-                    composeTestRule.onNodeWithTag(TabsTrayTestTag.TABS_TRAY).assertExists()
-                    Log.i(TAG, "openTabDrawer: Verified that the tabs tray exists")
-
-                    break
-                } catch (e: AssertionError) {
-                    Log.i(TAG, "openTabDrawer: AssertionError caught, executing fallback methods")
-                    if (i == Constants.RETRY_COUNT) {
-                        throw e
-                    } else {
-                        Log.i(TAG, "openTabDrawer: Waiting for device to be idle")
-                        mDevice.waitForIdle()
-                        Log.i(TAG, "openTabDrawer: Waited for device to be idle")
-                    }
-                }
-            }
-            Log.i(TAG, "openTabDrawer: Trying to verify the tabs tray new tab FAB button exists")
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertExists()
-            Log.i(TAG, "openTabDrawer: Verified the tabs tray new tab FAB button exists")
-
-            TabDrawerRobot(composeTestRule).interact()
-            return TabDrawerRobot.Transition(composeTestRule)
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun visitLinkFromClipboard(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "visitLinkFromClipboard: Waiting for $waitingTimeShort ms for clear address button to exist")
-            if (clearAddressBarButton().waitForExists(waitingTimeShort)) {
-                Log.i(TAG, "visitLinkFromClipboard: Waited for $waitingTimeShort ms for clear address button to exist")
-                Log.i(TAG, "visitLinkFromClipboard: Trying to click the clear address button")
-                clearAddressBarButton().click()
-                Log.i(TAG, "visitLinkFromClipboard: Clicked the clear address button")
-            }
-
-            mDevice.waitNotNull(
-                Until.findObject(By.res("$packageName:id/clipboard_title")),
-                waitingTime,
-            )
-
-            // On Android 12 or above we don't SHOW the URL unless the user requests to do so.
-            // See for more information https://github.com/mozilla-mobile/fenix/issues/22271
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                mDevice.waitNotNull(
-                    Until.findObject(By.res("$packageName:id/clipboard_url")),
-                    waitingTime,
-                )
-            }
+            composeTestRule.onNodeWithText(getStringResource(R.string.awesomebar_clipboard_title)).assertIsDisplayed()
             Log.i(TAG, "visitLinkFromClipboard: Trying to click the fill link from clipboard button")
-            fillLinkButton().click()
+            composeTestRule.onNodeWithText(getStringResource(R.string.awesomebar_clipboard_title)).performClick()
             Log.i(TAG, "visitLinkFromClipboard: Clicked the fill link from clipboard button")
-
+            waitForAppWindowToBeUpdated()
             Log.i(TAG, "visitLinkFromClipboard: Trying to press device enter button")
-            mDevice.pressEnter()
+            onView(isRoot()).perform(ViewActions.pressKey(KeyEvent.KEYCODE_ENTER))
             Log.i(TAG, "visitLinkFromClipboard: Pressed device enter button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun goBackToHomeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
@@ -487,8 +378,8 @@ class NavigationToolbarRobot {
             mDevice.waitForWindowUpdate(packageName, waitingTimeShort)
             Log.i(TAG, "goBackToHomeScreen: Waited for $waitingTimeShort ms for $packageName window to be updated")
 
-            HomeScreenRobot().interact()
-            return HomeScreenRobot.Transition()
+            HomeScreenRobot(composeTestRule).interact()
+            return HomeScreenRobot.Transition(composeTestRule)
         }
 
         fun goBackToBrowserScreen(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -499,122 +390,74 @@ class NavigationToolbarRobot {
             mDevice.waitForWindowUpdate(packageName, waitingTimeShort)
             Log.i(TAG, "goBackToBrowserScreen: Waited for $waitingTimeShort ms for $packageName window to be updated")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun openTabButtonShortcutsMenu(interact: NavigationToolbarRobot.() -> Unit): Transition {
-            mDevice.waitNotNull(Until.findObject(By.res("$packageName:id/counter_root")))
             Log.i(TAG, "openTabButtonShortcutsMenu: Trying to long click the tab counter button")
-            tabsCounter().perform(longClick())
+            composeTestRule.onNodeWithTag(TABS_COUNTER).performTouchInput {
+                down(center)
+                advanceEventTime(10000)
+                up()
+            }
             Log.i(TAG, "openTabButtonShortcutsMenu: Long clicked the tab counter button")
 
-            NavigationToolbarRobot().interact()
-            return Transition()
+            NavigationToolbarRobot(composeTestRule).interact()
+            return Transition(composeTestRule)
         }
 
         fun closeTabFromShortcutsMenu(interact: NavigationToolbarRobot.() -> Unit): Transition {
-            Log.i(TAG, "closeTabFromShortcutsMenu: Waiting for device to be idle for $waitingTime ms")
-            mDevice.waitForIdle(waitingTime)
-            Log.i(TAG, "closeTabFromShortcutsMenu: Waited for device to be idle for $waitingTime ms")
             Log.i(TAG, "closeTabFromShortcutsMenu: Trying to click the \"Close tab\" button")
-            onView(withId(menuR.id.mozac_browser_menu_recyclerView))
-                .perform(
-                    RecyclerViewActions.actionOnItem<RecyclerView.ViewHolder>(
-                        hasDescendant(
-                            withText("Close tab"),
-                        ),
-                        ViewActions.click(),
-                    ),
-                )
+            composeTestRule.onNodeWithText("Close tab", useUnmergedTree = true).performClick()
             Log.i(TAG, "closeTabFromShortcutsMenu: Clicked the \"Close tab\" button")
 
-            NavigationToolbarRobot().interact()
-            return Transition()
+            NavigationToolbarRobot(composeTestRule).interact()
+            return Transition(composeTestRule)
         }
 
         fun openNewTabFromShortcutsMenu(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-            Log.i(TAG, "openNewTabFromShortcutsMenu: Waiting for device to be idle for $waitingTime ms")
-            mDevice.waitForIdle(waitingTime)
-            Log.i(TAG, "openNewTabFromShortcutsMenu: Waited for device to be idle for $waitingTime ms")
             Log.i(TAG, "openNewTabFromShortcutsMenu: Trying to click the \"New tab\" button")
-            onView(withId(menuR.id.mozac_browser_menu_recyclerView))
-                .perform(
-                    RecyclerViewActions.actionOnItem<RecyclerView.ViewHolder>(
-                        hasDescendant(
-                            withText("New tab"),
-                        ),
-                        ViewActions.click(),
-                    ),
-                )
+            composeTestRule.onNodeWithText("New tab", useUnmergedTree = true).performClick()
             Log.i(TAG, "openNewTabFromShortcutsMenu: Clicked the \"New tab\" button")
 
-            SearchRobot().interact()
-            return SearchRobot.Transition()
+            SearchRobot(composeTestRule).interact()
+            return SearchRobot.Transition(composeTestRule)
         }
 
         fun openNewPrivateTabFromShortcutsMenu(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-            Log.i(TAG, "openNewPrivateTabFromShortcutsMenu: Waiting for device to be idle for $waitingTime ms")
-            mDevice.waitForIdle(waitingTime)
-            Log.i(TAG, "openNewPrivateTabFromShortcutsMenu: Waited for device to be idle for $waitingTime ms")
             Log.i(TAG, "openNewPrivateTabFromShortcutsMenu: Trying to click the \"New private tab\" button")
-            onView(withId(menuR.id.mozac_browser_menu_recyclerView))
-                .perform(
-                    RecyclerViewActions.actionOnItem<RecyclerView.ViewHolder>(
-                        hasDescendant(
-                            withText("New private tab"),
-                        ),
-                        ViewActions.click(),
-                    ),
-                )
+            composeTestRule.onNodeWithText("New private tab", useUnmergedTree = true).performClick()
             Log.i(TAG, "openNewPrivateTabFromShortcutsMenu: Clicked the \"New private tab\" button")
 
-            SearchRobot().interact()
-            return SearchRobot.Transition()
-        }
-
-        fun clickUrlbar(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-            Log.i(TAG, "clickUrlbar: Trying to click the toolbar")
-            urlBar().click()
-            Log.i(TAG, "clickUrlbar: Clicked the toolbar")
-            Log.i(TAG, "clickUrlbar: Waiting for $waitingTime ms for the edit mode toolbar to exist")
-            mDevice.findObject(
-                UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"),
-            ).waitForExists(waitingTime)
-            Log.i(TAG, "clickUrlbar: Waited for $waitingTime ms for the edit mode toolbar to exist")
-
-            SearchRobot().interact()
-            return SearchRobot.Transition()
+            SearchRobot(composeTestRule).interact()
+            return SearchRobot.Transition(composeTestRule)
         }
 
         @OptIn(ExperimentalTestApi::class)
-        fun clickURLBarWithComposableToolbar(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-            Log.i(TAG, "clickURLBarWithComposableToolbar: Waiting for $waitingTime until the URL bar to exist")
+        fun clickURLBar(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+            Log.i(TAG, "clickURLBar: Waiting for $waitingTime until the URL bar to exist")
             composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_URL_BOX), waitingTime)
-            Log.i(TAG, "clickURLBarWithComposableToolbar: Waited for $waitingTime until the URL bar to exist")
-            Log.i(TAG, "clickURLBarWithComposableToolbar: Trying to click navigation toolbar")
+            Log.i(TAG, "clickURLBar: Waited for $waitingTime until the URL bar to exist")
+            Log.i(TAG, "clickURLBar: Trying to click navigation toolbar")
             composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).performClick()
-            Log.i(TAG, "clickURLBarWithComposableToolbar: Clicked navigation toolbar")
+            Log.i(TAG, "clickURLBar: Clicked navigation toolbar")
             composeTestRule.waitForIdle()
 
-            SearchRobot().interact()
-            return SearchRobot.Transition()
+            SearchRobot(composeTestRule).interact()
+            return SearchRobot.Transition(composeTestRule)
         }
 
         fun clickSearchSelectorButton(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-            Log.i(TAG, "clickSearchSelectorButton: Waiting for $waitingTime ms for the search selector button to exist")
-            searchSelectorButton().waitForExists(waitingTime)
-            Log.i(TAG, "clickSearchSelectorButton: Waited for $waitingTime ms for the search selector button to exist")
             Log.i(TAG, "clickSearchSelectorButton: Trying to click the search selector button")
-            searchSelectorButton().click()
+            composeTestRule.onNodeWithTag(SEARCH_SELECTOR).performClick()
             Log.i(TAG, "clickSearchSelectorButton: Clicked the search selector button")
 
-            SearchRobot().interact()
-            return SearchRobot.Transition()
+            SearchRobot(composeTestRule).interact()
+            return SearchRobot.Transition(composeTestRule)
         }
 
         fun clickTranslateButton(
-            composeTestRule: ComposeTestRule,
             isPageTranslated: Boolean = false,
             originalLanguage: String = "",
             translatedLanguage: String = "",
@@ -636,7 +479,7 @@ class NavigationToolbarRobot {
 
         // New navbar design home screen search button
         @OptIn(ExperimentalTestApi::class)
-        fun clickHomeScreenSearchButton(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+        fun clickHomeScreenSearchButton(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
             Log.i(TAG, "clickHomeScreenSearchButton: Waiting for $waitingTime ms for the search button to exist.")
             composeTestRule.waitUntilAtLeastOneExists(hasContentDescription("Search or enter address"))
             Log.i(TAG, "clickHomeScreenSearchButton: Waited for $waitingTime ms for the search button to exist.")
@@ -644,20 +487,15 @@ class NavigationToolbarRobot {
             composeTestRule.onNodeWithContentDescription("Search or enter address").performClick()
             Log.i(TAG, "clickHomeScreenSearchButton: Clicked the nav bar search button.")
 
-            SearchRobot().interact()
-            return SearchRobot.Transition()
+            SearchRobot(composeTestRule).interact()
+            return SearchRobot.Transition(composeTestRule)
         }
 
         fun openUnifiedTrustPanel(interact: UnifiedTrustPanelRobot.() -> Unit): UnifiedTrustPanelRobot.Transition {
-            Log.i(TAG, "openUnifiedTrustPanel: Waiting for $waitingTime ms for site security button to exist")
-            itemWithResId("$packageName:id/mozac_browser_toolbar_site_info_indicator").waitForExists(waitingTime)
-            Log.i(TAG, "openUnifiedTrustPanel: Waited for $waitingTime ms for site security button to exist")
-            Log.i(TAG, "openUnifiedTrustPanel: Trying to click site security button")
-            itemWithResId("$packageName:id/mozac_browser_toolbar_site_info_indicator").click()
-            Log.i(TAG, "openUnifiedTrustPanel: Clicked site security button")
-            Log.i(TAG, "openUnifiedTrustPanel: Waiting for $waitingTime for the unified trust panel to exist")
-            itemWithResId("$packageName:id/design_bottom_sheet").waitForExists(waitingTime)
-            Log.i(TAG, "openUnifiedTrustPanel: Waited for $waitingTime for the unified trust panel to exist")
+            Log.i(TAG, "openSiteSecuritySheet: Trying to click the site security toolbar button and wait for $waitingTime ms for a new window")
+            composeTestRule.onNodeWithContentDescription("Site information").performClick()
+            Log.i(TAG, "openSiteSecuritySheet: Clicked the site security toolbar button and waited for $waitingTime ms for a new window")
+            waitForAppWindowToBeUpdated()
 
             UnifiedTrustPanelRobot().interact()
             return UnifiedTrustPanelRobot.Transition()
@@ -665,9 +503,9 @@ class NavigationToolbarRobot {
     }
 }
 
-fun navigationToolbar(interact: NavigationToolbarRobot.() -> Unit): NavigationToolbarRobot.Transition {
-    NavigationToolbarRobot().interact()
-    return NavigationToolbarRobot.Transition()
+fun navigationToolbar(composeTestRule: ComposeTestRule, interact: NavigationToolbarRobot.() -> Unit): NavigationToolbarRobot.Transition {
+    NavigationToolbarRobot(composeTestRule).interact()
+    return NavigationToolbarRobot.Transition(composeTestRule)
 }
 
 fun openEditURLView() {

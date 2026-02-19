@@ -16,6 +16,7 @@
     /** Background Color **/
     --background-color-box-info: light-dark(var(--color-gray-20), var(--color-gray-80));
     --background-color-canvas: light-dark(var(--color-white), var(--color-gray-90));
+    --background-color-list-item-hover: color-mix(in srgb, var(--color-accent-primary) 20%, transparent);
     --table-row-background-color-alternate: light-dark(#f0f0f4, var(--color-gray-80)); /* TODO Bug 1821203 - Gray use needs to be consolidated */
 
     /** Border **/

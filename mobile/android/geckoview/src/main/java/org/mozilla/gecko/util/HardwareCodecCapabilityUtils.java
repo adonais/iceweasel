@@ -41,8 +41,8 @@ public final class HardwareCodecCapabilityUtils {
     "OMX.rk."
   };
   private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
-  // List of supported HW H.264 codecs.
-  private static final String[] supportedH264HwCodecPrefixes = {
+  // List of supported HW AV1/HEVC/H.264 codecs.
+  private static final String[] supportedGenericHwCodecPrefixes = {
     "OMX.qcom.",
     "OMX.Intel.",
     "OMX.Exynos.",
@@ -303,8 +303,10 @@ public final class HardwareCodecCapabilityUtils {
   // Check if MIME type string has HW prefix (encode or decode, VP8, VP9, and H264)
   private static String[] getSupportedHWCodecPrefixes(
       final String aMimeType, final boolean aIsEncoder) {
-    if (aMimeType.equals(H264_MIME_TYPE)) {
-      return supportedH264HwCodecPrefixes;
+    if (aMimeType.equals(H264_MIME_TYPE)
+        || aMimeType.equals(HEVC_MIME_TYPE)
+        || aMimeType.equals(AV1_MIME_TYPE)) {
+      return supportedGenericHwCodecPrefixes;
     }
     if (aMimeType.equals(VP9_MIME_TYPE)) {
       return supportedVp9HwCodecPrefixes;
@@ -318,7 +320,9 @@ public final class HardwareCodecCapabilityUtils {
   // Return list of HW codec prefixes (encode or decode, VP8, VP9, and H264)
   private static String[] getAllSupportedHWCodecPrefixes(final boolean aIsEncoder) {
     final Set<String> prefixes = new HashSet<>();
-    final String[] mimeTypes = {H264_MIME_TYPE, VP8_MIME_TYPE, VP9_MIME_TYPE};
+    final String[] mimeTypes = {
+      H264_MIME_TYPE, HEVC_MIME_TYPE, AV1_MIME_TYPE, VP8_MIME_TYPE, VP9_MIME_TYPE
+    };
     for (final String mt : mimeTypes) {
       prefixes.addAll(Arrays.asList(getSupportedHWCodecPrefixes(mt, aIsEncoder)));
     }
@@ -333,6 +337,16 @@ public final class HardwareCodecCapabilityUtils {
   @WrapForJNI
   public static boolean hasHWVP9(final boolean aIsEncoder) {
     return getHWCodecCapability(VP9_MIME_TYPE, aIsEncoder);
+  }
+
+  @WrapForJNI
+  public static boolean hasHWAV1(final boolean aIsEncoder) {
+    return getHWCodecCapability(AV1_MIME_TYPE, aIsEncoder);
+  }
+
+  @WrapForJNI
+  public static boolean hasHWHEVC(final boolean aIsEncoder) {
+    return getHWCodecCapability(HEVC_MIME_TYPE, aIsEncoder);
   }
 
   @WrapForJNI

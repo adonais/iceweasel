@@ -313,7 +313,7 @@ nsIWidget::nsIWidget(BorderStyle aBorderStyle)
       mIsFullyOccluded(false),
       mNeedFastSnaphot(false),
       mCurrentPanGestureBelongsToSwipe(false),
-      mIsPIPWindow(false) {
+      mPiPType(PiPType::NoPiP) {
 #ifdef NOISY_WIDGET_LEAKS
   gNumWidgets++;
   printf("WIDGETS+ = %d\n", gNumWidgets);
@@ -458,7 +458,7 @@ void nsIWidget::BaseCreate(nsIWidget* aParent,
   mPopupLevel = aInitData.mPopupLevel;
   mPopupType = aInitData.mPopupHint;
   mHasRemoteContent = aInitData.mHasRemoteContent;
-  mIsPIPWindow = aInitData.mPIPWindow;
+  mPiPType = aInitData.mPiPType;
 
   mParent = aParent;
   if (mParent) {
@@ -1896,15 +1896,21 @@ void nsIWidget::NotifyWindowDestroyed() {
   }
 }
 
-void nsIWidget::NotifyWindowMoved(int32_t aX, int32_t aY,
+void nsIWidget::NotifyWindowMoved(const LayoutDeviceIntPoint& aPoint,
                                   ByMoveToRect aByMoveToRect) {
   if (mWidgetListener) {
-    mWidgetListener->WindowMoved(this, aX, aY, aByMoveToRect);
+    mWidgetListener->WindowMoved(this, aPoint, aByMoveToRect);
   }
 
   if (mIMEHasFocus && IMENotificationRequestsRef().WantPositionChanged()) {
     NotifyIME(IMENotification(IMEMessage::NOTIFY_IME_OF_POSITION_CHANGE));
   }
+}
+
+void nsIWidget::NotifyWindowMoved(const DesktopIntPoint& aPoint,
+                                  ByMoveToRect aByMoveToRect) {
+  return NotifyWindowMoved(
+      LayoutDeviceIntPoint::Round(aPoint * GetDesktopToDeviceScale()));
 }
 
 void nsIWidget::NotifySizeMoveDone() {
@@ -2311,7 +2317,7 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
 
   // Ignore swipe-to-navigation in PiP window.
-  if (mIsPIPWindow) {
+  if (mPiPType != PiPType::NoPiP) {
     return event;
   }
 
@@ -2357,7 +2363,7 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
 
 bool nsIWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
   // Ignore swipe-to-navigation in PiP window.
-  if (mIsPIPWindow) {
+  if (mPiPType != PiPType::NoPiP) {
     return false;
   }
 

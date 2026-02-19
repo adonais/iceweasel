@@ -5,10 +5,27 @@ ChromeUtils.defineESModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
+const TOPSITES = "about:robots";
+const CONFIG = [
+  { identifier: "engine1" },
+  { identifier: "engine2" },
+  { identifier: "engine3" },
+];
+
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
+    set: [
+      ["browser.urlbar.scotchBonnet.enableOverride", true],
+      ["browser.urlbar.suggest.topsites", true],
+      ["browser.newtabpage.activity-stream.default.sites", TOPSITES],
+    ],
   });
+  await PlacesUtils.history.clear();
+  // Use top sites to make sure the results panel opens even on empty queries.
+  await updateTopSites(
+    sites => sites && sites.length == 1 && sites[0].url == TOPSITES
+  );
+  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG);
 });
 
 add_task(
@@ -199,28 +216,6 @@ async function test_navigate_switcher(navKey, navTimes, searchMode) {
   await UrlbarTestUtils.assertSearchMode(window, null);
 }
 
-// TODO: Don't let tests depend on the actual search config.
-let googleSearchMode = {
-  engineName: "Google",
-  entry: "searchbutton",
-  isGeneralPurposeEngine: true,
-  isPreview: false,
-  source: 3,
-};
-let amazonSearchMode = {
-  engineName: "Amazon.com",
-  entry: "searchbutton",
-  isGeneralPurposeEngine: true,
-  isPreview: false,
-};
-let bingSearchMode = {
-  engineName: "Bing",
-  entry: "searchbutton",
-  isGeneralPurposeEngine: true,
-  isPreview: false,
-  source: 3,
-};
-
 add_task(async function test_keyboard_nav() {
   await test_open_switcher("KEY_Enter");
   await test_open_switcher(" ");
@@ -229,9 +224,25 @@ add_task(async function test_keyboard_nav() {
   await test_dont_open_switcher("a");
   await test_dont_open_switcher("x");
 
-  await test_navigate_switcher("KEY_ArrowDown", 1, googleSearchMode);
-  await test_navigate_switcher("KEY_ArrowDown", 2, amazonSearchMode);
-  await test_navigate_switcher("KEY_ArrowDown", 3, bingSearchMode);
+  let searchModeTemplate = {
+    entry: "searchbutton",
+    isGeneralPurposeEngine: true,
+    isPreview: false,
+    source: 3,
+  };
+
+  await test_navigate_switcher("KEY_ArrowDown", 1, {
+    engineName: "engine1",
+    ...searchModeTemplate,
+  });
+  await test_navigate_switcher("KEY_ArrowDown", 2, {
+    engineName: "engine2",
+    ...searchModeTemplate,
+  });
+  await test_navigate_switcher("KEY_ArrowDown", 3, {
+    engineName: "engine3",
+    ...searchModeTemplate,
+  });
 });
 
 add_task(async function test_open_switcher_with_page() {

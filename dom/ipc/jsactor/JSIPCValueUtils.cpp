@@ -57,6 +57,14 @@ bool JSActorSupportsTypedSend(const nsACString& aName) {
     return false;
   }
 
+  // Using the new serializer for the devtools DAMP tests causes performance
+  // regressions. Devtools uses complex messages that are difficult to type, so
+  // we're probably not losing much by giving up entirely on typing it.
+  // See bug 2007393.
+  if (aName == "DevToolsProcess" || aName == "BrowserToolboxDevToolsProcess") {
+    return false;
+  }
+
   // Send messages from these actors untyped. Their messages are complex, so
   // using IPDL serialization might cause problems, and the actors have a lot
   // of privilege, so type checking won't add much safety.

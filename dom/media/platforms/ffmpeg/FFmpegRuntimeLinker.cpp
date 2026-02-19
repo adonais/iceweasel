@@ -19,14 +19,17 @@ const char* FFmpegRuntimeLinker::sLinkStatusLibraryName = "";
 template <int V>
 class FFmpegDecoderModule {
  public:
-  static void Init(FFmpegLibWrapper*);
-  static already_AddRefed<PlatformDecoderModule> Create(FFmpegLibWrapper*);
+  static void Init(const FFmpegLibWrapper*);
+  static already_AddRefed<PlatformDecoderModule> Create(
+      const FFmpegLibWrapper*);
 };
 
 template <int V>
 class FFmpegEncoderModule {
  public:
-  static already_AddRefed<PlatformEncoderModule> Create(FFmpegLibWrapper*);
+  static void Init(const FFmpegLibWrapper*);
+  static already_AddRefed<PlatformEncoderModule> Create(
+      const FFmpegLibWrapper*);
 };
 
 static FFmpegLibWrapper sLibAV;
@@ -98,31 +101,40 @@ bool FFmpegRuntimeLinker::Init() {
           switch (sLibAV.mVersion) {
             case 53:
               FFmpegDecoderModule<53>::Init(&sLibAV);
+              FFmpegEncoderModule<53>::Init(&sLibAV);
               break;
             case 54:
               FFmpegDecoderModule<54>::Init(&sLibAV);
+              FFmpegEncoderModule<54>::Init(&sLibAV);
               break;
             case 55:
             case 56:
               FFmpegDecoderModule<55>::Init(&sLibAV);
+              FFmpegEncoderModule<55>::Init(&sLibAV);
               break;
             case 57:
               FFmpegDecoderModule<57>::Init(&sLibAV);
+              FFmpegEncoderModule<57>::Init(&sLibAV);
               break;
             case 58:
               FFmpegDecoderModule<58>::Init(&sLibAV);
+              FFmpegEncoderModule<58>::Init(&sLibAV);
               break;
             case 59:
               FFmpegDecoderModule<59>::Init(&sLibAV);
+              FFmpegEncoderModule<59>::Init(&sLibAV);
               break;
             case 60:
               FFmpegDecoderModule<60>::Init(&sLibAV);
+              FFmpegEncoderModule<60>::Init(&sLibAV);
               break;
             case 61:
               FFmpegDecoderModule<61>::Init(&sLibAV);
+              FFmpegEncoderModule<61>::Init(&sLibAV);
               break;
             case 62:
               FFmpegDecoderModule<62>::Init(&sLibAV);
+              FFmpegEncoderModule<62>::Init(&sLibAV);
               break;
           }
           return true;

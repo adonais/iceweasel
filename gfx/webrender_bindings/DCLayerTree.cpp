@@ -419,8 +419,19 @@ bool DCLayerTree::InitializeVideoOverlaySupport() {
                                  &info->mBgra8OverlaySupportFlags);
     output3->CheckOverlaySupport(DXGI_FORMAT_R10G10B10A2_UNORM, mDevice,
                                  &info->mRgb10a2OverlaySupportFlags);
+    output3->CheckOverlaySupport(DXGI_FORMAT_R16G16B16A16_FLOAT, mDevice,
+                                 &info->mRgba16fOverlaySupportFlags);
 
-    if (FlagsSupportsOverlays(info->mNv12OverlaySupportFlags)) {
+    if (FlagsSupportsOverlays(info->mRgb10a2OverlaySupportFlags)) {
+      info->mSupportsHDR = true;
+    }
+
+    if (FlagsSupportsOverlays(info->mRgba16fOverlaySupportFlags)) {
+      info->mSupportsHDR = true;
+    }
+
+    if (!info->mSupportsHardwareOverlays &&
+        FlagsSupportsOverlays(info->mNv12OverlaySupportFlags)) {
       // NV12 format is preferred if it's supported.
       info->mOverlayFormatUsed = DXGI_FORMAT_NV12;
       info->mSupportsHardwareOverlays = true;
@@ -431,16 +442,6 @@ bool DCLayerTree::InitializeVideoOverlaySupport() {
       // If NV12 isn't supported, fallback to YUY2 if it's supported.
       info->mOverlayFormatUsed = DXGI_FORMAT_YUY2;
       info->mSupportsHardwareOverlays = true;
-    }
-
-    // RGB10A2 overlay is used for displaying HDR content. In Intel's
-    // platform, RGB10A2 overlay is enabled only when
-    // DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 is supported.
-    if (FlagsSupportsOverlays(info->mRgb10a2OverlaySupportFlags)) {
-      if (!CheckOverlayColorSpaceSupport(
-              DXGI_FORMAT_R10G10B10A2_UNORM,
-              DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020, output, mDevice))
-        info->mRgb10a2OverlaySupportFlags = 0;
     }
 
     // Early out after the first output that reports overlay support. All
@@ -848,7 +849,7 @@ void DCLayerTree::CreateSwapChainSurface(wr::NativeSurfaceId aId,
   MOZ_RELEASE_ASSERT(it == mDCSurfaces.end());
 
   UniquePtr<DCSurface> surface;
-  if (SupportsDCompositionTexture()) {
+  if (UseDCLayerDCompositionTexture()) {
     surface = MakeUnique<DCLayerDCompositionTexture>(aSize, aIsOpaque, this);
     if (!surface->Initialize()) {
       gfxCriticalNote << "Failed to initialize DCLayerDCompositionTexture: "
@@ -961,11 +962,25 @@ DCSurface* DCExternalSurfaceWrapper::EnsureSurfaceForExternalImage(
   RenderTextureHost* texture =
       RenderThread::Get()->GetRenderTexture(aExternalImage);
   if (texture && texture->AsRenderDXGITextureHost()) {
-    mSurface.reset(new DCSurfaceVideo(mIsOpaque, mDCLayerTree));
-    if (!mSurface->Initialize()) {
-      gfxCriticalNote << "Failed to initialize DCSurfaceVideo: "
-                      << wr::AsUint64(aExternalImage);
-      mSurface = nullptr;
+    auto format = texture->GetFormat();
+    if (format == gfx::SurfaceFormat::B8G8R8A8 ||
+        format == gfx::SurfaceFormat::B8G8R8X8) {
+      MOZ_ASSERT(RenderDXGITextureHost::UseDCompositionTextureOverlay(format));
+      mSurface.reset(
+          new DCSurfaceDCompositionTextureOverlay(mIsOpaque, mDCLayerTree));
+      if (!mSurface->Initialize()) {
+        gfxCriticalNote
+            << "Failed to initialize DCSurfaceDCompositionTextureOverlay: "
+            << wr::AsUint64(aExternalImage);
+        mSurface = nullptr;
+      }
+    } else {
+      mSurface.reset(new DCSurfaceVideo(mIsOpaque, mDCLayerTree));
+      if (!mSurface->Initialize()) {
+        gfxCriticalNote << "Failed to initialize DCSurfaceVideo: "
+                        << wr::AsUint64(aExternalImage);
+        mSurface = nullptr;
+      }
     }
   } else if (texture && texture->AsRenderDcompSurfaceTextureHost()) {
     mSurface.reset(new DCSurfaceHandle(mIsOpaque, mDCLayerTree));
@@ -1097,6 +1112,9 @@ void DCExternalSurfaceWrapper::PresentExternalSurface(gfx::Matrix& aTransform) {
     }
   } else if (auto* surface = mSurface->AsDCSurfaceHandle()) {
     surface->PresentSurfaceHandle();
+  } else if (auto* surface =
+                 mSurface->AsDCSurfaceDCompositionTextureOverlay()) {
+    surface->Present();
   }
 }
 
@@ -1320,34 +1338,11 @@ bool DCLayerTree::SupportsSwapChainTearing() {
   return supported;
 }
 
-bool DCLayerTree::SupportsDCompositionTexture() {
-  RefPtr<ID3D11Device> device = mDevice;
-  RefPtr<IDCompositionDevice2> compositionDevice = mCompositionDevice;
-  static const bool supported = [device, compositionDevice] {
-    const auto dcomp4 = QI<IDCompositionDevice4>::From(compositionDevice.get());
-    if (!dcomp4) {
-      return false;
-    }
-
-    BOOL supportCompositionTexture = FALSE;
-    HRESULT hr = dcomp4->CheckCompositionTextureSupport(
-        device, &supportCompositionTexture);
-    if (FAILED(hr)) {
-      return false;
-    }
-
-    if (supportCompositionTexture == FALSE) {
-      return false;
-    }
-
-    return true;
-  }();
-
+bool DCLayerTree::UseDCLayerDCompositionTexture() {
   if (!gfx::gfxVars::WebRenderLayerCompositorDCompTexture()) {
     return false;
   }
-
-  return supported;
+  return gfx::DeviceManagerDx::Get()->CanUseDCompositionTexture();
 }
 
 DXGI_FORMAT DCLayerTree::GetOverlayFormatForSDR() {
@@ -1384,9 +1379,13 @@ layers::OverlayInfo DCLayerTree::GetOverlayInfo() {
   info.mRgb10a2Overlay =
       FlagsToOverlaySupportType(sGpuOverlayInfo->mRgb10a2OverlaySupportFlags,
                                 /* aSoftwareOverlaySupported */ false);
+  info.mRgba16fOverlay =
+      FlagsToOverlaySupportType(sGpuOverlayInfo->mRgba16fOverlaySupportFlags,
+                                /* aSoftwareOverlaySupported */ false);
 
   info.mSupportsVpSuperResolution = sGpuOverlayInfo->mSupportsVpSuperResolution;
   info.mSupportsVpAutoHDR = sGpuOverlayInfo->mSupportsVpAutoHDR;
+  info.mSupportsHDR = sGpuOverlayInfo->mSupportsHDR;
 
   return info;
 }
@@ -2178,6 +2177,53 @@ void DCLayerCompositionSurface::Present(const wr::DeviceIntRect* aDirtyRects,
   mEGLSurface = EGL_NO_SURFACE;
 }
 
+DCSurfaceDCompositionTextureOverlay::DCSurfaceDCompositionTextureOverlay(
+    bool aIsOpaque, DCLayerTree* aDCLayerTree)
+    : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false, aIsOpaque,
+                aDCLayerTree) {}
+
+DCSurfaceDCompositionTextureOverlay::~DCSurfaceDCompositionTextureOverlay() {}
+
+void DCSurfaceDCompositionTextureOverlay::AttachExternalImage(
+    wr::ExternalImageId aExternalImage) {
+  auto* texture = RenderThread::Get()->GetRenderTexture(aExternalImage);
+  if (!texture) {
+    return;
+  }
+  mRenderTextureHost = texture;
+}
+
+void DCSurfaceDCompositionTextureOverlay::Present() {
+  if (!mRenderTextureHost) {
+    return;
+  }
+
+  // Content is not updated
+  if (mPrevRenderTextureHost == mRenderTextureHost) {
+    return;
+  }
+
+  const auto textureHost = mRenderTextureHost->AsRenderDXGITextureHost();
+  RefPtr<IDCompositionTexture> dcompTexture =
+      textureHost->GetDCompositionTexture();
+  if (!dcompTexture) {
+    gfxCriticalNote << "Failed to get DCompTexture";
+    RenderThread::Get()->NotifyWebRenderError(
+        WebRenderError::DCOMP_TEXTURE_OVERLAY);
+    return;
+  }
+
+  const auto alphaMode =
+      mIsOpaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
+  dcompTexture->SetAlphaMode(alphaMode);
+  //  XXX
+  //  dcompTexture->SetColorSpace();
+
+  mContentVisual->SetContent(dcompTexture);
+  mPrevRenderTextureHost = mRenderTextureHost;
+  mDCLayerTree->SetPendingCommet();
+}
+
 DCSurfaceVideo::DCSurfaceVideo(bool aIsOpaque, DCLayerTree* aDCLayerTree)
     : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false, aIsOpaque,
                 aDCLayerTree),
@@ -2192,10 +2238,15 @@ DCSurfaceVideo::~DCSurfaceVideo() {
 }
 
 bool IsYUVSwapChainFormat(DXGI_FORMAT aFormat) {
-  if (aFormat == DXGI_FORMAT_NV12 || aFormat == DXGI_FORMAT_YUY2) {
-    return true;
+  switch (aFormat) {
+    case DXGI_FORMAT_P010:
+    case DXGI_FORMAT_P016:
+    case DXGI_FORMAT_NV12:
+    case DXGI_FORMAT_YUY2:
+      return true;
+    default:
+      return false;
   }
-  return false;
 }
 
 void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
@@ -2216,11 +2267,31 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
     return;
   }
 
+  // If the content format is HDR, we will want to use more than 8bit.
+  mContentIsHDR = false;
+  if (texture) {
+    const auto format = texture->GetFormat();
+    nsPrintfCString str("AttachExternalImage: SurfaceFormat %d", (int)format);
+    PROFILER_MARKER_TEXT("DCSurfaceVideo", GRAPHICS, {}, str);
+    switch (format) {
+      case gfx::SurfaceFormat::R10G10B10A2_UINT32:
+      case gfx::SurfaceFormat::R10G10B10X2_UINT32:
+      case gfx::SurfaceFormat::R16G16B16A16F:
+      case gfx::SurfaceFormat::P010:
+      case gfx::SurfaceFormat::P016:
+        mContentIsHDR = true;
+        break;
+      default:
+        break;
+    }
+  }
+
   // XXX if software decoded video frame format is nv12, it could be used as
   // video overlay.
   if (!texture || !texture->AsRenderDXGITextureHost() ||
       ((texture->GetFormat() != gfx::SurfaceFormat::NV12) &&
-       (texture->GetFormat() != gfx::SurfaceFormat::P010))) {
+       (texture->GetFormat() != gfx::SurfaceFormat::P010) &&
+       (texture->GetFormat() != gfx::SurfaceFormat::P016))) {
     gfxCriticalNote << "Unsupported RenderTexture for overlay: "
                     << gfx::hexa(texture);
     return;
@@ -2253,7 +2324,7 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
   // could be done by VideoProcessor
   bool scaleVideoAtVideoProcessor = false;
   if (StaticPrefs::gfx_webrender_dcomp_video_vp_scaling_win_AtStartup() &&
-      aTransform.PreservesAxisAlignedRectangles()) {
+      aTransform.IsTranslation()) {
     gfx::Size scaledSize = gfx::Size(mVideoSize) * aTransform.ScaleFactors();
     gfx::IntSize size(int32_t(std::round(scaledSize.width)),
                       int32_t(std::round(scaledSize.height)));
@@ -2288,7 +2359,7 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
   const bool driverSupportsAutoHDR =
       GetVpAutoHDRSupported(vendorId, mDCLayerTree->GetVideoContext(),
                             mDCLayerTree->GetVideoProcessor());
-  const bool contentIsHDR = false;  // XXX for now, only non-HDR is supported.
+  const bool contentIsHDR = mContentIsHDR;
   const bool monitorIsHDR =
       gfx::DeviceManagerDx::Get()->WindowHDREnabled(mDCLayerTree->GetHwnd());
   const bool powerIsCharging = RenderThread::Get()->GetPowerIsCharging();
@@ -2296,6 +2367,9 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
   bool useVpAutoHDR = gfx::gfxVars::WebRenderOverlayVpAutoHDR() &&
                       !contentIsHDR && monitorIsHDR && driverSupportsAutoHDR &&
                       powerIsCharging && !mVpAutoHDRFailed;
+
+  bool useHDR =
+      gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR && monitorIsHDR;
 
   if (profiler_thread_is_being_profiled_for_markers()) {
     nsPrintfCString str(
@@ -2314,10 +2388,13 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
     mSwapChainSize = swapChainSize;
     mIsDRM = isDRM;
 
-    auto swapChainFormat = GetSwapChainFormat(useVpAutoHDR);
+    auto swapChainFormat = GetSwapChainFormat(useVpAutoHDR, useHDR);
     bool useYUVSwapChain = IsYUVSwapChainFormat(swapChainFormat);
     if (useYUVSwapChain) {
       // Tries to create YUV SwapChain
+      nsPrintfCString str("Creating video swapchain for YUV as DXGI format %d",
+                          (int)swapChainFormat);
+      PROFILER_MARKER_TEXT("DCSurfaceVideo", GRAPHICS, {}, str);
       CreateVideoSwapChain(swapChainFormat);
       if (!mVideoSwapChain) {
         mFailedYuvSwapChain = true;
@@ -2328,6 +2405,9 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
     }
     // Tries to create RGB SwapChain
     if (!mVideoSwapChain) {
+      nsPrintfCString str("Creating video swapchain for RGB as DXGI format %d",
+                          (int)swapChainFormat);
+      PROFILER_MARKER_TEXT("DCSurfaceVideo", GRAPHICS, {}, str);
       CreateVideoSwapChain(swapChainFormat);
     }
     if (!mVideoSwapChain && useVpAutoHDR) {
@@ -2336,13 +2416,19 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
 
       // Disable VpAutoHDR
       useVpAutoHDR = false;
-      swapChainFormat = GetSwapChainFormat(useVpAutoHDR);
+      swapChainFormat = GetSwapChainFormat(useVpAutoHDR, useHDR);
+      nsPrintfCString str(
+          "Creating video swapchain for RGB as DXGI format %d after fallback "
+          "from VpAutoHDR",
+          (int)swapChainFormat);
+      PROFILER_MARKER_TEXT("DCSurfaceVideo", GRAPHICS, {}, str);
       CreateVideoSwapChain(swapChainFormat);
     }
   }
 
   aTransform = transform;
   mUseVpAutoHDR = useVpAutoHDR;
+  mUseHDR = useHDR;
 
   return needsToPresent;
 }
@@ -2472,8 +2558,12 @@ void DCSurfaceVideo::OnCompositorEndFrame(int aFrameId, uint32_t aDurationMs) {
   mRenderTextureHostUsageInfo->OnCompositorEndFrame(aFrameId, aDurationMs);
 }
 
-DXGI_FORMAT DCSurfaceVideo::GetSwapChainFormat(bool aUseVpAutoHDR) {
+DXGI_FORMAT DCSurfaceVideo::GetSwapChainFormat(bool aUseVpAutoHDR,
+                                               bool aUseHDR) {
   if (aUseVpAutoHDR) {
+    return DXGI_FORMAT_R16G16B16A16_FLOAT;
+  }
+  if (aUseHDR) {
     return DXGI_FORMAT_R16G16B16A16_FLOAT;
   }
   if (mFailedYuvSwapChain || !mDCLayerTree->SupportsHardwareOverlays()) {
@@ -2543,8 +2633,8 @@ bool DCSurfaceVideo::CreateVideoSwapChain(DXGI_FORMAT aSwapChainFormat) {
 
 // TODO: Replace with YUVRangedColorSpace
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVColorSpace aYUVColorSpace,
-    const gfx::ColorRange aColorRange) {
+    const gfx::YUVColorSpace aYUVColorSpace, const gfx::ColorRange aColorRange,
+    const bool aContentIsHDR) {
   if (aYUVColorSpace == gfx::YUVColorSpace::BT601) {
     if (aColorRange == gfx::ColorRange::FULL) {
       return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
@@ -2558,12 +2648,35 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
       return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
     }
   } else if (aYUVColorSpace == gfx::YUVColorSpace::BT2020) {
+    // This is a probably-temporary internal workaround for the lack of access
+    // to mTransferFunction - BT2020 seems to always be used with PQ transfer
+    // function defined by BT2100 and STMPE 2084, we've/ been making this same
+    // assumption on macOS for quite some time, so if it was not universally
+    // true, hopefully bugs would have been filed.
+    //
+    // But ideally we'd plumb mTransferFunction through the various structs
+    // instead, which is a more delicate refactor.
+    if (StaticPrefs::gfx_color_management_hdr_video_assume_rec2020_uses_pq() &&
+        StaticPrefs::gfx_color_management_hdr_video()) {
+      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+    }
     if (aColorRange == gfx::ColorRange::FULL) {
-      // XXX Add SMPTEST2084 handling. HDR content is not handled yet by
-      // video overlay.
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+      if (aContentIsHDR && StaticPrefs::gfx_color_management_hdr_video()) {
+        // DXGI doesn't have a full range PQ YCbCr format, hopefully we won't
+        // have to deal with this case.
+        gfxCriticalNoteOnce
+            << "GetSourceDXGIColorSpace: DXGI has no full range "
+               "BT2020 PQ YCbCr format, using studio range instead";
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+      } else {
+        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+      }
     } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      if (aContentIsHDR && StaticPrefs::gfx_color_management_hdr_video()) {
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+      } else {
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      }
     }
   }
 
@@ -2571,9 +2684,49 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
 }
 
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVRangedColorSpace aYUVColorSpace) {
+    const gfx::YUVRangedColorSpace aYUVColorSpace, const bool aContentIsHDR) {
   const auto info = FromYUVRangedColorSpace(aYUVColorSpace);
-  return GetSourceDXGIColorSpace(info.space, info.range);
+  return GetSourceDXGIColorSpace(info.space, info.range, aContentIsHDR);
+}
+
+static Maybe<DXGI_COLOR_SPACE_TYPE> GetOutputDXGIColorSpace(
+    DXGI_FORMAT aSwapChainFormat, DXGI_COLOR_SPACE_TYPE aInputColorSpace,
+    bool aUseVpAutoHDR) {
+  switch (aSwapChainFormat) {
+    case DXGI_FORMAT_NV12:
+    case DXGI_FORMAT_YUY2:
+      return Some(aInputColorSpace);
+    case DXGI_FORMAT_P010:
+    case DXGI_FORMAT_P016:
+      return Some(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+    case DXGI_FORMAT_R16G16B16A16_FLOAT:
+      return Some(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+    case DXGI_FORMAT_R10G10B10A2_UNORM:
+      if (aInputColorSpace == DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020) {
+        // YCbCr BT2100 PQ HDR video being converted to RGB10A2
+        return Some(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+      } else if (aInputColorSpace ==
+                     DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020 ||
+                 aInputColorSpace ==
+                     DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020) {
+        return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
+      }
+      return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+    case DXGI_FORMAT_R8G8B8A8_UNORM:
+    case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+    case DXGI_FORMAT_B8G8R8A8_UNORM:
+    case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+    case DXGI_FORMAT_B8G8R8X8_UNORM:
+    case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+      // Refactor note - not sure if mUseVpAutoHDR is ever true here,
+      // it may only ever use DXGI_FORMAT_R16G16B16A16_FLOAT.
+      if (aUseVpAutoHDR) {
+        return Some(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+      }
+      return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+    default:
+      return Nothing();
+  }
 }
 
 bool DCSurfaceVideo::CallVideoProcessorBlt() {
@@ -2586,7 +2739,7 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   const auto texture = mRenderTextureHost->AsRenderDXGITextureHost();
 
   Maybe<DXGI_COLOR_SPACE_TYPE> sourceColorSpace =
-      GetSourceDXGIColorSpace(texture->GetYUVColorSpace());
+      GetSourceDXGIColorSpace(texture->GetYUVColorSpace(), mContentIsHDR);
   if (sourceColorSpace.isNothing()) {
     gfxCriticalNote << "Unsupported color space";
     return false;
@@ -2632,18 +2785,16 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   videoContext1->VideoProcessorSetStreamColorSpace1(videoProcessor, 0,
                                                     inputColorSpace);
 
-  DXGI_COLOR_SPACE_TYPE outputColorSpace =
-      IsYUVSwapChainFormat(mSwapChainFormat)
-          ? inputColorSpace
-          : DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-
-  if (mUseVpAutoHDR) {
-    outputColorSpace = mSwapChainFormat == DXGI_FORMAT_R16G16B16A16_FLOAT
-                           ? DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709
-                           : DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+  Maybe<DXGI_COLOR_SPACE_TYPE> outputColorSpace =
+      GetOutputDXGIColorSpace(mSwapChainFormat, inputColorSpace, mUseVpAutoHDR);
+  if (outputColorSpace.isNothing()) {
+    gfxCriticalNoteOnce << "Unrecognized DXGI mSwapChainFormat, unsure of "
+                           "correct DXGI colorspace: "
+                        << gfx::hexa(mSwapChainFormat);
+    return false;
   }
 
-  hr = swapChain3->SetColorSpace1(outputColorSpace);
+  hr = swapChain3->SetColorSpace1(outputColorSpace.ref());
   if (FAILED(hr)) {
     gfxCriticalNoteOnce << "SetColorSpace1 failed: " << gfx::hexa(hr);
     RenderThread::Get()->NotifyWebRenderError(
@@ -2651,7 +2802,7 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
     return false;
   }
   videoContext1->VideoProcessorSetOutputColorSpace1(videoProcessor,
-                                                    outputColorSpace);
+                                                    outputColorSpace.ref());
 
   D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc = {};
   inputDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
@@ -2777,6 +2928,7 @@ void DCSurfaceVideo::ReleaseDecodeSwapChainResources() {
     mSwapChainSurfaceHandle = 0;
   }
   mUseVpAutoHDR = false;
+  mUseHDR = false;
 }
 
 DCSurfaceHandle::DCSurfaceHandle(bool aIsOpaque, DCLayerTree* aDCLayerTree)

@@ -87,7 +87,10 @@ add_task(async function test_reencrypt_mixed_mechanism() {
   Services.prefs.setIntPref("security.sdr.mechanism", 0);
 
   // Reencrypt single login with different mechanism
-  Services.logins.modifyLogin(EXPECTED_LOGINS[0], EXPECTED_LOGINS[0].clone());
+  await Services.logins.modifyLoginAsync(
+    EXPECTED_LOGINS[0],
+    EXPECTED_LOGINS[0].clone()
+  );
 
   Services.prefs.setIntPref("security.sdr.mechanism", 1);
 
@@ -111,7 +114,7 @@ add_task(async function test_reencrypt_race() {
 
   newLogins[0] = EXPECTED_LOGINS[1].clone();
   newLogins[0].password = "different password";
-  await Services.logins.modifyLogin(EXPECTED_LOGINS[1], newLogins[0]);
+  await Services.logins.modifyLoginAsync(EXPECTED_LOGINS[1], newLogins[0]);
 
   await reencryptionPromise;
 

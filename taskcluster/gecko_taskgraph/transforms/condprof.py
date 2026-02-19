@@ -14,26 +14,24 @@ from voluptuous import Optional
 from gecko_taskgraph.transforms.job import job_description_schema
 from gecko_taskgraph.transforms.task import task_description_schema
 
-diff_description_schema = Schema(
-    {
-        # default is settled, but add 'full' to get both
-        Optional("scenarios"): [str],
-        Optional("description"): task_description_schema["description"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("fetches"): job_description_schema["fetches"],
-        Optional("index"): task_description_schema["index"],
-        Optional("task-from"): str,
-        Optional("name"): str,
-        Optional("run"): job_description_schema["run"],
-        Optional("run-on-projects"): task_description_schema["run-on-projects"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-        Optional("scopes"): task_description_schema["scopes"],
-        Optional("treeherder"): task_description_schema["treeherder"],
-        Optional("use-python"): job_description_schema["use-python"],
-        Optional("worker"): job_description_schema["worker"],
-        Optional("worker-type"): task_description_schema["worker-type"],
-    }
-)
+diff_description_schema = Schema({
+    # default is settled, but add 'full' to get both
+    Optional("scenarios"): [str],
+    Optional("description"): task_description_schema["description"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("fetches"): job_description_schema["fetches"],
+    Optional("index"): task_description_schema["index"],
+    Optional("task-from"): str,
+    Optional("name"): str,
+    Optional("run"): job_description_schema["run"],
+    Optional("run-on-projects"): task_description_schema["run-on-projects"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+    Optional("scopes"): task_description_schema["scopes"],
+    Optional("treeherder"): task_description_schema["treeherder"],
+    Optional("use-python"): job_description_schema["use-python"],
+    Optional("worker"): job_description_schema["worker"],
+    Optional("worker-type"): task_description_schema["worker-type"],
+})
 
 transforms = TransformSequence()
 transforms.add_validate(diff_description_schema)

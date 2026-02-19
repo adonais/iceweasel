@@ -30,6 +30,10 @@ add_task(async function test_focus_browser() {
 
       await BrowserTestUtils.synthesizeMouseAtCenter("#target", {}, browser);
       let newWin = await newWinPromise;
+
+      // Set up listener for focus event to bubble up on the window
+      let focusPromise = BrowserTestUtils.waitForEvent(newWin, "focus", true);
+
       await BrowserTestUtils.waitForContentEvent(
         newWin.gBrowser.selectedBrowser,
         "MozAfterPaint"
@@ -41,6 +45,9 @@ add_task(async function test_focus_browser() {
         Glean.browserTimings.startupTimeline.delayedStartupStarted.testGetValue(),
         "Delayed startup timings in correct order."
       );
+
+      // Wait for the focus event to occur
+      await focusPromise;
 
       let focusedElement = Services.focus.getFocusedElementForWindow(
         newWin,

@@ -14,13 +14,15 @@
   <html:h1 data-l10n-id="privacy-header"/>
 </hbox>
 
+<html:setting-group hidden="true" groupid="securityPrivacyStatus" data-category="panePrivacy" />
+<html:setting-group hidden="true" groupid="securityPrivacyWarnings" data-category="panePrivacy" />
+
 <!-- Enhanced Tracking Protection Status Section -->
 <html:setting-group groupid="etpStatus" data-category="panePrivacy" data-subcategory="etpStatus" hidden="true"></html:setting-group>
 
 <!-- Tracking / Content Blocking -->
-<groupbox id="trackingGroup" data-category="panePrivacy" hidden="true" aria-describedby="contentBlockingDescription" class="highlighting-group">
+<groupbox id="trackingGroup" data-category="panePrivacy" data-srd-groupid="etpBanner" hidden="true" aria-describedby="contentBlockingDescription" class="highlighting-group">
   <label id="contentBlockingHeader"><html:h2 data-l10n-id="content-blocking-enhanced-tracking-protection"/></label>
-  <html:setting-group groupid="securityPrivacyStatus"/>
   <vbox data-subcategory="trackingprotection">
     <hbox align="start">
       <image id="trackingProtectionShield"/>
@@ -391,10 +393,11 @@
     </vbox>
   </vbox>
 </groupbox>
-<groupbox id="nonTechnicalPrivacyGroup" data-category="panePrivacy" hidden="true">
+<groupbox id="nonTechnicalPrivacyGroup" data-category="panePrivacy" hidden="true" data-srd-groupid="nonTechnicalPrivacy2">
   <label id="nonTechnicalPrivacyHeader"><html:h2 data-l10n-id="non-technical-privacy-header" class="section-heading"/></label>
-  <html:setting-group groupid="nonTechnicalPrivacy"/>
+  <html:setting-group groupid="nonTechnicalPrivacy" />
 </groupbox>
+<html:setting-group groupid="nonTechnicalPrivacy2" data-category="panePrivacy" hidden="true"/>
 
 <!-- Firefox VPN - IP Protection -->
 <groupbox id="dataIPProtectionGroup" data-category="panePrivacy" hidden="true">
@@ -402,10 +405,11 @@
 </groupbox>
 
 
-<groupbox id="siteDataGroup" data-category="panePrivacy" hidden="true" aria-describedby="totalSiteDataSize">
+<groupbox id="siteDataGroup" data-category="panePrivacy" hidden="true" aria-describedby="totalSiteDataSize" data-srd-groupid="cookiesAndSiteData2">
   <label><html:h2 data-l10n-id="sitedata-header"/></label>
   <html:setting-group groupid="cookiesAndSiteData"/>
 </groupbox>
+<html:setting-group groupid="cookiesAndSiteData2" data-category="panePrivacy" hidden="true" />
 
 <!-- Cookie Banner Handling -->
 <groupbox id="cookieBannerHandlingGroup" data-category="panePrivacy" data-subcategory="cookiebanner" hidden="true">
@@ -560,23 +564,24 @@
 
 <groupbox id="paymentsGroupBox"
           data-category="panePrivacy"
-          data-subcategory="form-autofill" hidden="true">
+          data-subcategory="payment-methods-autofill" hidden="true">
   <label><html:h2 data-l10n-id="autofill-payment-methods-title" class="subsection-heading"/></label>
   <html:setting-group data-subcategory="credit-card-autofill" groupid="payments"/>
 </groupbox>
 
 <groupbox id="addressesGroupBox"
           data-category="panePrivacy"
-          data-subcategory="form-autofill" hidden="true">
+          data-subcategory="addresses-autofill" hidden="true">
   <label><html:h2 data-l10n-id="autofill-addresses-title" class="subsection-heading"/></label>
   <html:setting-group data-subcategory="address-autofill" groupid="addresses"/>
 </groupbox>
 
 <!-- History -->
-<groupbox id="historyGroup" data-category="panePrivacy" hidden="true" aria-describedby="totalSiteDataSize">
+<groupbox id="historyGroup" data-category="panePrivacy" hidden="true" aria-describedby="totalSiteDataSize" data-srd-groupid="history2">
   <label><html:h2 data-l10n-id="history-header"/></label>
   <html:setting-group groupid="history"/>
 </groupbox>
+<html:setting-group groupid="history2"  data-category="panePrivacy" hidden="true"/>
 
 <hbox id="permissionsCategory"
       class="subcategory"
@@ -671,6 +676,18 @@
       </description>
 #endif # MOZ_NORMANDY
     </vbox>
+#ifdef MOZ_NORMANDY
+    <checkbox id="enableNimbusRollouts"
+              data-l10n-id="nimbus-rollouts-enabled"
+              preference="nimbus.rollouts.enabled"/>
+    <description class="indent tip-caption">
+      <html:span data-l10n-id="nimbus-rollouts-enabled-description" />
+      <html:a is="moz-support-link"
+              id="enableRolloutsLearnMore"
+              class="learnMore"
+              support-page="remote-improvements" />
+    </description>
+#endif # MOZ_NORMANDY
 
     <checkbox id="submitUsagePingBox"
               data-l10n-id="collection-usage-ping"

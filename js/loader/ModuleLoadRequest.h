@@ -104,6 +104,12 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   void LoadFinished();
 
+#ifdef NIGHTLY_BUILD
+  void SetHasWasmMimeTypeEssence() { mHasWasmMimeTypeEssence = true; }
+
+  bool HasWasmMimeTypeEssence() { return mHasWasmMimeTypeEssence; }
+#endif
+
   void SetErroredLoadingImports() {
     MOZ_ASSERT(IsDynamicImport());
     MOZ_ASSERT(IsFetching() || IsCompiling());
@@ -119,6 +125,11 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   // Is this the top level request for a dynamic module import?
   const bool mIsDynamicImport;
+
+#ifdef NIGHTLY_BUILD
+  // We can only distinguish JavaScript and Wasm modules by mime type essence.
+  bool mHasWasmMimeTypeEssence = false;
+#endif
 
   // A flag (for dynamic import) that indicates the module script is
   // successfully fetched and compiled, but its dependencies are failed to load.

@@ -34,21 +34,19 @@ def _download_zip(distdir, arch):
     }
 
     dest = mozpath.join(distdir, "input", arch)
-    subprocess.check_call(
-        [
-            sys.executable,
-            mozpath.join(buildconfig.topsrcdir, "mach"),
-            "artifact",
-            "install",
-            "--job",
-            jobs[arch],
-            "--distdir",
-            dest,
-            "--no-tests",
-            "--no-process",
-            "--maven-zip",
-        ]
-    )
+    subprocess.check_call([
+        sys.executable,
+        mozpath.join(buildconfig.topsrcdir, "mach"),
+        "artifact",
+        "install",
+        "--job",
+        jobs[arch],
+        "--distdir",
+        dest,
+        "--no-tests",
+        "--no-process",
+        "--maven-zip",
+    ])
     return mozpath.join(dest, "target.maven.zip")
 
 

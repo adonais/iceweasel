@@ -175,6 +175,7 @@ using mozilla::dom::UserActivation::Modifiers from "mozilla/dom/UserActivation.h
 using mozilla::dom::PrivateAttributionImpressionType from "mozilla/dom/PrivateAttributionIPCUtils.h";
 using nsIClipboard::ClipboardType from "nsIClipboard.h";
 using nsIUrlClassifierFeature::listType from "nsIUrlClassifierFeature.h";
+using mozilla::dom::ReferrerPolicy from "mozilla/dom/ReferrerPolicyBinding.h";
 
 #ifdef MOZ_WMF_CDM
 using nsIOriginStatusEntry from "nsIWindowsMediaFoundationCDMOriginsListService.h";
@@ -1969,6 +1970,14 @@ child:
 parent:
     async SetContainerFeaturePolicy(MaybeDiscardedBrowsingContext aContainerContext,
                                     MaybeFeaturePolicyInfo aContainerFeaturePolicyInfo);
+
+    // Notify parent process that aContext must update its ancestor origins list
+    // This is only used for about:blank, because for normal navigations 
+    // the internal ancestor origins list will be created during load.
+    async UpdateAncestorOriginsList(MaybeDiscardedBrowsingContext aContext);
+
+    // Bookkeep referrer policy of the embedding iframe (if any) in the parent process for browsing contexts
+    async SetReferrerPolicyForEmbedderFrame(MaybeDiscardedBrowsingContext aBrowsingContext, ReferrerPolicy aPolicy);
 
     // Obtain an icon from the system widget toolkit, in nsIconDecoder
     // format.  Not supported (or needed) on all platforms; see the

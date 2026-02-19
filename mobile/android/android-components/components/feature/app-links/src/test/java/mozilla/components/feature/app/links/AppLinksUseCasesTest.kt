@@ -357,7 +357,7 @@ class AppLinksUseCasesTest {
     fun `A intent scheme denied should return no app intent`() {
         val uri = "intent://details/#Intent"
         val context = createContext(Triple(uri, appPackage, ""))
-        val subject = AppLinksUseCases(context, { true }, alwaysDeniedSchemes = setOf("intent"))
+        val subject = AppLinksUseCases(context, { true }, alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf("intent")))
 
         val redirect = subject.interceptedAppLinkRedirect.invoke(uri)
 

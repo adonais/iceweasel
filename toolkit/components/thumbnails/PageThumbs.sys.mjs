@@ -50,9 +50,10 @@ const TaskUtils = {
   /**
    * Read the bytes from a blob, asynchronously.
    *
-   * @return {Promise}
-   * @resolve {ArrayBuffer} In case of success, the bytes contained in the blob.
-   * @reject {DOMException} In case of error, the underlying DOMException.
+   * @return {Promise<ArrayBuffer>}
+   *   Resolves to the bytes contained in the blob.
+   * @rejects {DOMException}
+   *   In case of error, the underlying DOMException.
    */
   readBlob: function readBlob(blob) {
     return new Promise((resolve, reject) => {
@@ -180,8 +181,8 @@ export var PageThumbs = {
    *
    * @param aBrowser The <browser> to capture a thumbnail from.
    * @param aArgs See captureToCanvas for accepted arguments.
-   * @return {Promise}
-   * @resolve {Blob} The thumbnail, as a Blob.
+   * @return {Promise<Blob>}
+   *   Resolves to the thumbnail, as a Blob.
    */
   captureToBlob: function PageThumbs_captureToBlob(aBrowser, aArgs) {
     if (!this._prefEnabled()) {

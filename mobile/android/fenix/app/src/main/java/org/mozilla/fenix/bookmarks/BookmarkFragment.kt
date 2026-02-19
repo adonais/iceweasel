@@ -85,7 +85,7 @@ class BookmarkFragment : Fragment() {
                 val toolbarStore = buildToolbarStore()
                 val searchStore = buildSearchStore(toolbarStore)
                 val buildStore = { composeNavController: NavHostController ->
-                    val homeActivity = (requireActivity() as HomeActivity)
+                    val appStore = requireComponents.appStore
                     val navController = this@BookmarkFragment.findNavController()
 
                     val store by fragmentStore(
@@ -111,6 +111,7 @@ class BookmarkFragment : Fragment() {
                                 BookmarksSyncMiddleware(requireComponents.backgroundServices.syncStore, lifecycleScope),
                                 BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, lifecycleScope),
                                 BookmarksMiddleware(
+                                    lifecycleScope = lifecycleScope,
                                     bookmarksStorage = requireContext().bookmarkStorage,
                                     clipboardManager = requireActivity().getSystemService(),
                                     addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
@@ -120,8 +121,7 @@ class BookmarkFragment : Fragment() {
                                         false
                                     } else {
                                             navController
-                                                .previousBackStackEntry?.destination?.id ==
-                                                    R.id.homeFragment
+                                                .previousBackStackEntry?.destination?.id == R.id.homeFragment
                                     },
                                     getNavController = { composeNavController },
                                     exitBookmarks = { navController.popBackStack() },
@@ -158,7 +158,7 @@ class BookmarkFragment : Fragment() {
                                         ) ?: ""
                                     },
                                     getBrowsingMode = {
-                                        homeActivity.browsingModeManager.mode
+                                        appStore.state.mode
                                     },
                                     saveBookmarkSortOrder = {
                                         requireContext().settings().bookmarkListSortOrder =

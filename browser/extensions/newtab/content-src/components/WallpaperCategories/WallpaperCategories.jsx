@@ -46,11 +46,14 @@ export class _WallpaperCategories extends React.PureComponent {
     this.focusCategory = this.focusCategory.bind(this);
     this.handleUpload = this.handleUpload.bind(this);
     this.handleBack = this.handleBack.bind(this);
+    this.handleWallpaperListEntered =
+      this.handleWallpaperListEntered.bind(this);
     this.getRGBColors = this.getRGBColors.bind(this);
     this.prefersHighContrastQuery = null;
     this.prefersDarkQuery = null;
     this.categoryRef = []; // store references for wallpaper category list
     this.wallpaperRef = []; // store reference for wallpaper selection list
+    this.arrowButtonRef = React.createRef(); // Used to focus arrow button when category opens
     this.customColorPickerRef = React.createRef(); // Used to determine contrast icon color for custom color picker
     this.customColorInput = React.createRef(); // Used to determine contrast icon color for custom color picker
     this.state = {
@@ -186,7 +189,7 @@ export class _WallpaperCategories extends React.PureComponent {
     if (event.key === "Tab") {
       if (event.shiftKey) {
         event.preventDefault();
-        this.backToMenuButton?.focus();
+        this.arrowButtonRef.current?.focus();
       } else {
         event.preventDefault(); // prevent tabbing within wallpaper selection. We should only be using the Tab key to tab between groups
       }
@@ -378,6 +381,10 @@ export class _WallpaperCategories extends React.PureComponent {
         this.focusCategory(this.state.focusedCategoryIndex);
       });
     });
+  }
+
+  handleWallpaperListEntered() {
+    this.arrowButtonRef.current?.focus();
   }
 
   // Record user interaction when changing wallpaper and reseting wallpaper to default
@@ -648,15 +655,14 @@ export class _WallpaperCategories extends React.PureComponent {
           timeout={300}
           classNames="wallpaper-list"
           unmountOnExit={true}
+          onEntered={this.handleWallpaperListEntered}
         >
           <section className="category wallpaper-list ignore-color-mode">
             <button
+              ref={this.arrowButtonRef}
               className="arrow-button"
               data-l10n-id={activeCategoryFluentID}
               onClick={this.handleBack}
-              ref={el => {
-                this.backToMenuButton = el;
-              }}
             />
             <div
               role="grid"

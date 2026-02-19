@@ -541,6 +541,16 @@ WebConsoleCommandsManager.register({
         // Calling owner.window.Array.from() doesn't work without accessing the
         // wrappedJSObject, so just loop through the results instead.
         for (let i = 0, len = nodes.length; i < len; i++) {
+          // If we have a native anonymous element, it's seen as a cross-origin object
+          // and can't be added to result. We could waive `result` to avoid this exception,
+          // but those nodes would show up as `Restricted` (See Bug 2006913), so it's not
+          // really useful. If we'd have a proper rendering for those, ideally we'd use
+          // the Inspector Walker filter to see if a node should be skipped or not
+          // and we could add the node here.
+          if (nodes[i].isNativeAnonymous) {
+            continue;
+          }
+
           result.push(nodes[i]);
         }
 

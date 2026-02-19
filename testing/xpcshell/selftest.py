@@ -445,7 +445,7 @@ class XPCShellTestsTests(unittest.TestCase):
     """
 
     def __init__(self, name):
-        super(XPCShellTestsTests, self).__init__(name)
+        super().__init__(name)
         from buildconfig import substs
         from mozbuild.base import MozbuildObject
 
@@ -1494,9 +1494,9 @@ add_test({
         Check that the manifest entry overrides the explicit default.
         """
         self.writeFile("test_notHeadlessWhenFalseInManifest.js", HEADLESS_FALSE)
-        self.writeManifest(
-            [("test_notHeadlessWhenFalseInManifest.js", "headless = false")]
-        )
+        self.writeManifest([
+            ("test_notHeadlessWhenFalseInManifest.js", "headless = false")
+        ])
         self.assertTestResult(True, headless=True)
 
 

@@ -142,9 +142,9 @@ def test_requirements_txt_install_requires_hashes(
         pytest.fail("Expected CalledProcessError to be raised due to missing hashes")
     except subprocess.CalledProcessError as e:
         error_output = e.stderr if e.stderr else ""
-        assert (
-            "hash" in error_output.lower()
-        ), f"Expected hash error in stderr, got: {error_output}"
+        assert "hash" in error_output.lower(), (
+            f"Expected hash error in stderr, got: {error_output}"
+        )
 
 
 def test_requirements_txt_installs_with_hashes(run_create_venv_with_pthfile):

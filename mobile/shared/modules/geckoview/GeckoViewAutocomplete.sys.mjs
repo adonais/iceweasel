@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   GeckoViewPrompter: "resource://gre/modules/GeckoViewPrompter.sys.mjs",
   AddressRecord: "resource://gre/modules/shared/AddressRecord.sys.mjs",
+  CreditCardRecord: "resource://gre/modules/shared/CreditCardRecord.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "LoginInfo", () =>
@@ -265,7 +266,7 @@ export class CreditCard {
   }
 
   toGecko() {
-    return {
+    let creditCard = {
       version: this.version,
       "cc-name": this.name,
       "cc-number": this.number,
@@ -274,6 +275,10 @@ export class CreditCard {
       "cc-type": this.type,
       guid: this.guid,
     };
+
+    lazy.CreditCardRecord.computeFields(creditCard);
+
+    return creditCard;
   }
 }
 

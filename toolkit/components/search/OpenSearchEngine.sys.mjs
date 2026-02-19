@@ -196,12 +196,6 @@ export class OpenSearchEngine extends SearchEngine {
    */
   #setEngineData(data, originAttributes) {
     let name = data.name.trim();
-    if (Services.search.getEngineByName(name)) {
-      throw Components.Exception(
-        "Found a duplicate engine",
-        Ci.nsISearchService.ERROR_DUPLICATE_ENGINE
-      );
-    }
 
     this._name = name;
     this._queryCharset = data.queryCharset ?? "UTF-8";

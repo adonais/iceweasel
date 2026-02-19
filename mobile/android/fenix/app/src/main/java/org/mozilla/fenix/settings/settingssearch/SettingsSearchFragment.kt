@@ -9,6 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.coroutineScope
@@ -32,11 +36,15 @@ class SettingsSearchFragment : Fragment() {
         settingsSearchStore = buildSettingsSearchStore()
         (activity as? AppCompatActivity)?.supportActionBar?.hide()
         FirefoxTheme {
+            var isSearchFocused by rememberSaveable { mutableStateOf(true) }
+
             SettingsSearchScreen(
                 store = settingsSearchStore,
                 onBackClick = {
                     findNavController().popBackStack()
                 },
+                isSearchFocused = isSearchFocused,
+                onSearchFocusChange = { isSearchFocused = it },
             )
         }
     }

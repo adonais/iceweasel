@@ -13,6 +13,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/nsVideoFrame.h"
 #include "nsContentUtils.h"
@@ -151,9 +152,8 @@ void LargestContentfulPaint::MaybeProcessImageForElementTiming(
     return;
   }
 
-  nsPresContext* pc =
-      aElement->GetPresContext(Element::PresContextFor::eForComposedDoc);
-  if (!pc) {
+  nsPresContext* pc = document->GetPresContext();
+  if (!pc || pc->HasStoppedGeneratingLCP()) {
     return;
   }
 

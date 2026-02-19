@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Inserta is tèrmines de chirca</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Is ischedas abertas tuas ant a èssere ammustradas inoghe.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Is ischedas abertas tuas ant a èssere ammustradas inoghe.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Is ischedas privadas tuas ant a èssere ammustradas inoghe.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Is ischedas privadas tuas ant a èssere ammustradas inoghe.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Navigatzione privada</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Essi de sa modalidade de seletzione mùltiple</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Sarva is ischedas seletzionadas a sa colletzione</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Sarva is ischedas seletzionadas a sa colletzione</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Piga ischedas dae cale si siat dispositivu</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -206,7 +206,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Estensiones</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Tenes estensiones installadas, ma no ativadas</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Tenes estensiones installadas, ma no ativadas</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Gesti is estensiones</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -227,9 +227,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Informatziones de su contu</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Agiudu</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Agiudu</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Novidades</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Novidades</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Cunfiguratzione</string>
   <!-- Browser menu button that opens a user's library -->
@@ -237,7 +237,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Situ de iscrivania</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Aberi in un’ischeda normale</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Aberi in un’ischeda normale</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Agiunghe a s’ischermu printzipale</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -265,7 +265,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">FUNTZIONAT GRÀTZIAS A %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">FUNTZIONAT GRÀTZIAS A %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -278,15 +278,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Aberi in s’aplicatzione</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Personaliza sa visualizatzione de letura</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Personaliza sa visualizatzione de letura</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Personaliza sa visualizatzione de letura</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Agiunghe</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Agiunghe</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Modìfica</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Modìfica</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Personaliza sa pàgina printzipale</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Personaliza sa pàgina printzipale</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Identìfica·ti</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -305,16 +305,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Serra su menù</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigatzione</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Agiudu</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Cunfiguratzione</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Serra su pannellu de su menù de estensiones</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serra su pannellu de su menù de estensiones</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Serra su pannellu de menù de sarvamentu</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serra su pannellu de menù de sarvamentu</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Serra su pannellu de menù de ainas</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serra su pannellu de menù de ainas</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Serra su pannellu de menù de ischedas personalizadas</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -326,7 +322,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Tradue sa pàgina</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Sinnala unu situ chi non funtzionat…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Sinnala unu situ chi non funtzionat…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Sinnala unu situ chi non funtzionat</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -450,17 +446,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Avisu de riservadesa de Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Nos praghet a t’amparare</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Iscoberi pro ite Firefox praghet a milliones de persones</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Navigatzione segura cun prus optziones</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Su navigadore nostru isvilupadu chena iscopu de lucru agiudat a blocare is aziendas chi iscrocant is fainas tuas in su web.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Prus de 100 milliones de persones amparant sa riservadesa issoro seberende unu navigadore creadu dae un’organizatzione chena iscopu de lucru.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Cunfigura comente navigadore predefinidu</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -548,58 +535,58 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Gesti</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Avia su navigadore definitivu pro Android</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Avia su navigadore definitivu pro Android</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Càrriga sitos a sa lestresa de sa lughe</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Càrriga sitos a sa lestresa de sa lughe</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Amparu automàticu contra a is sighiduras</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Amparu automàticu contra a is sighiduras</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Mìgias de personalizatziones</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Mìgias de personalizatziones</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Si sighis, atzetas is %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Si sighis, atzetas is %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">cunditziones de su servìtziu de Firefox</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">cunditziones de su servìtziu de Firefox</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox si òcupat de sa riservadesa tua. Àteras informatziones in s’%1$s nostru.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox si òcupat de sa riservadesa tua. Àteras informatziones in s’%1$s nostru.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">avisu de riservadesa</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">avisu de riservadesa</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Pro agiudare a megiorare su navigadore, Firefox imbiat datos de diagnòsticu e de interatziones cun Mozilla. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Pro agiudare a megiorare su navigadore, Firefox imbiat datos de diagnòsticu e de interatziones cun Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Gesti sa cunfiguratzione</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Gesti sa cunfiguratzione</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Sighi</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Sighi</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">In ue boles tènnere sa barra de indiritzos?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">In ue boles tènnere sa barra de indiritzos?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Sighi</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Sighi</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Agiuda·nos a fàghere crèschere Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Agiuda·nos a fàghere crèschere Firefox</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Comente impreamus is datos</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Comente impreamus is datos</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Cunfirma</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Cunfirma</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Amparu contra a is sighiduras in automàticu</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Amparu contra a is sighiduras in automàticu</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Cun unu tocu ebbia podes impedire a is aziendas chi ispient in ue incarcas.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Cun unu tocu ebbia podes impedire a is aziendas chi ispient in ue incarcas.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Sincroniza dae onni logu cun Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Sincroniza dae onni logu cun Firefox</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Atzede a is ischedas, craes e sinnalibros tuos dae cale si siat dispositivu. Totu est amparadu cun tzifradu.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Atzede a is ischedas, craes e sinnalibros tuos dae cale si siat dispositivu. Totu est amparadu cun tzifradu.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Avia sa sincronizatzione</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Avia sa sincronizatzione</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Immoe nono</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Immoe nono</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Agiuda·nos a fàghere crèschere Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
@@ -1011,8 +998,6 @@
   <string name="alternative_app_icon_option_momo_subtitle">Creada dae @heyheymomodraws</string>
   <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
   <string name="alternative_app_icon_group_solid_colors">Colores uniformes</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Àteras</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Boles modificare s’icona de s’aplicatzione?</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
@@ -1352,9 +1337,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Ativos</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Proa funtziones e ideas in antis chi siant publicadas pro totus.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Proa funtziones e ideas in antis chi siant publicadas pro totus.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Installa e faghe istùdios</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Installa e faghe istùdios</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Àteras informatziones</string>
   <!--
@@ -1391,15 +1376,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Agiunghe un’ischeda privada</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Privada</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privada</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sincroniza</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sincroniza</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Cumpartzi totu is ischedas</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Cumpartzi totu is ischedas</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Ischedas serradas de reghente</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Serradas de reghente</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Serradas de reghente</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Cunfiguratzione de su contu</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1407,11 +1392,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Serra totu is ischedas</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Agiunghe a is sinnalibros</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Agiunghe a is sinnalibros</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Pone is ischedas seletzionadas in is sinnalibros</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Serra</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Serra</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Serra is ischedas seletzionadas</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1419,7 +1404,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Agiunghe a sa colletzione</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Cumpartzi is ischedas seletzionadas</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Cumpartzi is ischedas seletzionadas</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menù de ischedas seletzionadas</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -2005,7 +1990,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Identìfica·ti a Sync</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Identìfica·ti</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Identìfica·ti</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Imbia a totu is dispositivos</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2154,7 +2139,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Cantzellat is datos de navigatzione in automàticu cando seletzionas “Essi” dae su menù printzipale</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Essi</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Essi</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Perìodu de tempus pro cantzellare</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2795,9 +2780,9 @@
   -->
   <string name="certificate_info_verified_by">Averiguadu dae: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Cantzella</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Cantzella</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Modìfica</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Modìfica</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Seguru chi boles cantzellare custa crae?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -2805,15 +2790,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Annulla</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Optziones de is craes</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Optziones de is craes</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Campu de testu editàbile pro s’indiritzu de su situ web.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Campu de testu editàbile pro s’indiritzu de su situ web.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Campu de testu editàbile pro su nòmine de utente.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Campu de testu editàbile pro su nòmine de utente.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Campu de testu editàbile pro sa crae.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Campu de testu editàbile pro sa crae.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Sarva is modìficas.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Sarva is modìficas.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Modìfica sa crae</string>
   <!-- The page title for adding new password. -->

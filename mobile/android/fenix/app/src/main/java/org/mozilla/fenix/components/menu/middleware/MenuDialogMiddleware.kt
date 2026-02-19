@@ -25,7 +25,6 @@ import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.ui.widgets.withCenterAlignedButtons
@@ -100,23 +99,23 @@ class MenuDialogMiddleware(
     private val logger = Logger("MenuDialogMiddleware")
 
     override fun invoke(
-        context: MiddlewareContext<MenuState, MenuAction>,
+        store: Store<MenuState, MenuAction>,
         next: (MenuAction) -> Unit,
         action: MenuAction,
     ) {
-        val currentState = context.state
+        val currentState = store.state
 
         when (action) {
-            is MenuAction.InitAction -> initialize(context.store)
-            is MenuAction.AddBookmark -> addBookmark(context.store)
-            is MenuAction.AddShortcut -> addShortcut(context.store)
-            is MenuAction.RemoveShortcut -> removeShortcut(context.store)
+            is MenuAction.InitAction -> initialize(store)
+            is MenuAction.AddBookmark -> addBookmark(store)
+            is MenuAction.AddShortcut -> addShortcut(store)
+            is MenuAction.RemoveShortcut -> removeShortcut(store)
             is MenuAction.DeleteBrowsingDataAndQuit -> deleteBrowsingDataAndQuit()
             is MenuAction.FindInPage -> launchFindInPage()
             is MenuAction.DismissMenuBanner -> dismissMenuBanner()
-            is MenuAction.OpenInApp -> openInApp(context.store)
+            is MenuAction.OpenInApp -> openInApp(store)
             is MenuAction.OpenInFirefox -> openInFirefox()
-            is MenuAction.InstallAddon -> installAddon(context.store, action.addon)
+            is MenuAction.InstallAddon -> installAddon(store, action.addon)
             is MenuAction.InstallAddonSuccess -> installAddonSuccess()
             is MenuAction.CustomMenuItemAction -> customMenuItemAction(action.intent, action.url)
             is MenuAction.ToggleReaderView -> toggleReaderView(state = currentState)

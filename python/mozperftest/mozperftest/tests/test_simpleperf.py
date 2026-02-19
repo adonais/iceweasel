@@ -178,7 +178,7 @@ def test_simpleperf_setup_without_path(mock_exists):
 
     # Verify simpleperf path was set correctly.
     expected_path = mock_ndk / "simpleperf"
-    assert profiler.get_arg("path") == str(expected_path)
+    assert profiler.get_arg("path") == expected_path
 
     # Verify binary was installed.
     mock_exists.assert_called_once_with(
@@ -441,10 +441,10 @@ def test_local_simpleperf_symbolicate(tmp_path):
 
     # Mock files
     (mock_perf_data_path := output_dir / "mock_perf-0.data").write_text("mock-data")
-    (mock_work_dir_path / "profile-0-unsymbolicated.json").write_text(
+    (output_dir / "profile-0-unsymbolicated.json").write_text(
         "mock-unsymbolicated-profile"
     )
-    (mock_work_dir_path / "profile-0.json").write_text("mock-symbolicated-profile")
+    (output_dir / "profile-0.json").write_text("mock-symbolicated-profile")
 
     # Mock args
     profiler.set_arg("symbol-path", symbol_dir)
@@ -478,7 +478,7 @@ def test_local_simpleperf_symbolicate(tmp_path):
         profiler.teardown()
 
         # Verify the temporary work directory is deleted
-        mock_rmtree.assert_called_once_with(mock_work_dir_path)
+        mock_rmtree.assert_not_called()
 
         # Expected process calls
         expected_import = call(
@@ -488,7 +488,7 @@ def test_local_simpleperf_symbolicate(tmp_path):
                 str(mock_perf_data_path),
                 "--save-only",
                 "-o",
-                str(mock_work_dir_path / "profile-0-unsymbolicated.json"),
+                str(output_dir / "profile-0-unsymbolicated.json"),
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -500,7 +500,7 @@ def test_local_simpleperf_symbolicate(tmp_path):
             [
                 "samply",
                 "load",
-                str(mock_work_dir_path / "profile-0-unsymbolicated.json"),
+                str(output_dir / "profile-0-unsymbolicated.json"),
                 "--no-open",
                 "--breakpad-symbol-dir",
                 str(symbol_dir),
@@ -517,9 +517,9 @@ def test_local_simpleperf_symbolicate(tmp_path):
                 str(node_path),
                 str(symbolicator_dir / "symbolicator-cli.js"),
                 "--input",
-                str(mock_work_dir_path / "profile-0-unsymbolicated.json"),
+                str(output_dir / "profile-0-unsymbolicated.json"),
                 "--output",
-                str(mock_work_dir_path / "profile-0.json"),
+                str(output_dir / "profile-0.json"),
                 "--server",
                 "http://127.0.0.1:3000",
             ],
@@ -580,9 +580,7 @@ def test_local_simpleperf_symbolicate_timeout(tmp_path):
     ) as mock_popen, mock.patch(
         "mozperftest.system.simpleperf.find_node_executable",
         return_value=[str(node_path)],
-    ), mock.patch.object(
-        profiler, "_cleanup"
-    ) as mock_cleanup:
+    ), mock.patch.object(profiler, "_cleanup") as mock_cleanup:
         # Mock processes
         import_process = make_mock_process(context=True)
 
@@ -600,9 +598,9 @@ def test_local_simpleperf_symbolicate_timeout(tmp_path):
                 str(node_path),
                 str(symbolicator_dir / "symbolicator-cli.js"),
                 "--input",
-                str(mock_work_dir_path / "profile-0-unsymbolicated.json"),
+                str(output_dir / "profile-0-unsymbolicated.json"),
                 "--output",
-                str(mock_work_dir_path / "profile-0.json"),
+                str(output_dir / "profile-0.json"),
                 "--server",
                 "http://127.0.0.1:3000",
             ],
@@ -617,7 +615,7 @@ def test_local_simpleperf_symbolicate_timeout(tmp_path):
         assert expected_symbolicator not in mock_popen.call_args_list
 
         # Check for clean exit
-        mock_rmtree.assert_called_once()
+        mock_rmtree.assert_not_called()
         mock_cleanup.assert_called_once()
 
 
@@ -681,13 +679,10 @@ def test_ci_simpleperf_symbolicate(tmp_path):
         },
         clear=False,
     ), mock.patch("mozperftest.system.simpleperf.ON_TRY", True), mock.patch(
-        "tempfile.mkdtemp", return_value=str(mock_work_dir_path)
-    ), mock.patch(
+        "mozperftest.utils.ON_TRY", True
+    ), mock.patch("tempfile.mkdtemp", return_value=str(mock_work_dir_path)), mock.patch(
         "shutil.rmtree"
-    ) as mock_rmtree, mock.patch(
-        "subprocess.Popen"
-    ) as mock_popen:
-
+    ) as mock_rmtree, mock.patch("subprocess.Popen") as mock_popen:
         # Mock processes
         import_process = make_mock_process(context=True)
 
@@ -706,7 +701,7 @@ def test_ci_simpleperf_symbolicate(tmp_path):
         profiler.teardown()
 
         # Verify the temporary work directory is deleted
-        mock_rmtree.assert_called_once_with(mock_work_dir_path)
+        mock_rmtree.assert_called_once()
 
         # Verify proper .zip extraction
         mock_symbol_path = (
@@ -828,6 +823,8 @@ def test_ci_simpleperf_symbolicate_timeout(tmp_path):
 
     # Test timeout error in CI
     with mock.patch("mozperftest.system.simpleperf.ON_TRY", True), mock.patch(
+        "mozperftest.utils.ON_TRY", True
+    ), mock.patch(
         "tempfile.mkdtemp", return_value=str(mock_work_dir_path)
     ), mock.patch.dict(
         os.environ,
@@ -835,17 +832,12 @@ def test_ci_simpleperf_symbolicate_timeout(tmp_path):
             "MOZ_FETCHES_DIR": str(mock_fetch_path),
         },
         clear=False,
-    ), mock.patch(
-        "shutil.rmtree"
-    ) as mock_rmtree, mock.patch(
+    ), mock.patch("shutil.rmtree") as mock_rmtree, mock.patch(
         "subprocess.Popen"
     ) as mock_popen, mock.patch(
         "mozperftest.system.simpleperf.find_node_executable",
         return_value=[str(node_path)],
-    ), mock.patch.object(
-        profiler, "_cleanup"
-    ) as mock_cleanup:
-
+    ), mock.patch.object(profiler, "_cleanup") as mock_cleanup:
         # Mock processes
         import_process = make_mock_process(context=True)
 

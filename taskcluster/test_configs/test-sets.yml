@@ -33,12 +33,12 @@ web-platform-tests:
     - web-platform-tests-eme
 
 web-platform-tests-2404-tsan:
-    # - web-platform-tests
+    - web-platform-tests
     - web-platform-tests-crashtest
     - web-platform-tests-print-reftest
     - web-platform-tests-reftest
     - web-platform-tests-wdspec
-    # - web-platform-tests-canvas
+    - web-platform-tests-canvas
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
 

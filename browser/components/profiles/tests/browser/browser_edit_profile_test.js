@@ -282,6 +282,15 @@ add_task(async function test_edit_profile_theme() {
 
         await editProfileCard.updateComplete;
 
+        let themesPicker = editProfileCard.themesPicker;
+
+        Assert.ok(themesPicker, "Themes picker should exist");
+        Assert.equal(
+          themesPicker.headingLevel,
+          2,
+          "Themes picker should have headingLevel of 2"
+        );
+
         let defaultThemeCard = editProfileCard.themesPicker.querySelector(
           "moz-visual-picker-item[value='default-theme@mozilla.org']"
         );

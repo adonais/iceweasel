@@ -18,7 +18,7 @@ const {
  * This actor manages all network functionality running
  * in the parent process.
  *
- * @constructor
+ * @class
  */
 class NetworkParentActor extends Actor {
   constructor(watcherActor) {

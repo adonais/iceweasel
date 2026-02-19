@@ -29,7 +29,7 @@ class TbplFormatter(BaseFormatter):
     """
 
     def __init__(self, compact=False, summary_on_shutdown=False, **kwargs):
-        super(TbplFormatter, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.suite_start_time = None
         self.test_start_times = {}
         self.buffer = None
@@ -42,7 +42,7 @@ class TbplFormatter(BaseFormatter):
     def __call__(self, data):
         if self.summary_on_shutdown:
             self.summary(data)
-        return super(TbplFormatter, self).__call__(data)
+        return super().__call__(data)
 
     @property
     def compact(self):
@@ -61,9 +61,11 @@ class TbplFormatter(BaseFormatter):
         if subtract_context:
             count -= len(self.buffer)
         self.subtests_count = 0
-        return self._log(
-            {"level": "INFO", "message": "." * count, "component": component}
-        )
+        return self._log({
+            "level": "INFO",
+            "message": "." * count,
+            "component": component,
+        })
 
     @output_subtests
     def log(self, data):
@@ -215,7 +217,7 @@ class TbplFormatter(BaseFormatter):
         )
 
     def _format_status(self, data):
-        message = "- " + data["message"] if "message" in data else ""
+        message = data.get("message", "")
         if "stack" in data:
             message += "\n%s" % data["stack"]
         if message and message[-1] == "\n":
@@ -223,28 +225,43 @@ class TbplFormatter(BaseFormatter):
 
         status = data["status"]
 
+        subtest = data["subtest"]
+
         if "expected" in data:
             if status in data.get("known_intermittent", []):
                 status = "KNOWN-INTERMITTENT-%s" % status
             else:
                 if not message:
-                    message = "- expected %s" % data["expected"]
-                failure_line = "TEST-UNEXPECTED-%s | %s | %s %s\n" % (
+                    message = "expected %s" % data["expected"]
+                # When there's a subtest, format as: "subtest - message"
+                # Otherwise just use the message as-is
+                if subtest:
+                    subtest_msg = subtest + " - " + message
+                else:
+                    subtest_msg = message
+                failure_line = "TEST-UNEXPECTED-%s | %s | %s\n" % (
                     status,
                     data["test"],
-                    data["subtest"],
-                    message,
+                    subtest_msg,
                 )
                 if data["expected"] != "PASS":
                     info_line = "TEST-INFO | expected %s\n" % data["expected"]
                     return failure_line + info_line
                 return failure_line
 
-        return "TEST-%s | %s | %s %s\n" % (
+        # When there's a subtest, format as: "subtest - message"
+        # Otherwise just use the message as-is
+        if subtest:
+            subtest_msg = subtest
+            if message:
+                subtest_msg += " - " + message
+        else:
+            subtest_msg = message
+
+        return "TEST-%s | %s | %s\n" % (
             status,
             data["test"],
-            data["subtest"],
-            message,
+            subtest_msg,
         )
 
     def test_end(self, data):

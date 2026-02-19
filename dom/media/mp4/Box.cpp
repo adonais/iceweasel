@@ -195,7 +195,7 @@ bool Box::Read(nsTArray<uint8_t>* aDest, const MediaByteRange& aRange) const {
   return true;
 }
 
-ByteSlice Box::ReadAsSlice() {
+ByteSlice Box::ReadAsSlice() const {
   if (!mContext || mRange.IsEmpty()) {
     return ByteSlice{nullptr, 0};
   }

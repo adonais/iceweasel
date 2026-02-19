@@ -59,6 +59,14 @@ async function setupTest({ ...args } = {}) {
 }
 
 /**
+ * Call recordTargetingContext and submit nimbusTargetingContext ping
+ */
+async function recordTargetingContextAndSubmit() {
+  await recordTargetingContext();
+  GleanPings.nimbusTargetingContext.submit();
+}
+
+/**
  * Return an object containing each nimbus_targeting_context metric mapped to
  * its recorded value.
  *
@@ -206,7 +214,7 @@ add_task(async function testNimbusTargetingContextAllKeysPresent() {
         `nimbusTargetingContext.${metric} was recorded ${JSON.stringify(values[metric])}`
       );
     }
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   manager.unenroll("experiment");
   manager.unenroll("rollout");
@@ -231,7 +239,7 @@ add_task(async function testNimbusTargetingEnvironmentUserSetPrefs() {
       !prefs.includes("nimbus.testing.testSetString"),
       "nimbus.testing.testInt is not set and not in telemetry"
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   // This pref is a fallbackPref, so should not appear in the list.
   Services.prefs.setIntPref("nimbus.testing.testInt", 123);
@@ -252,7 +260,7 @@ add_task(async function testNimbusTargetingEnvironmentUserSetPrefs() {
       prefs.includes("nimbus.testing.testSetString"),
       "nimbus.testing.testSetString is set and in telemetry"
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   Services.prefs.deleteBranch("nimbus.testing.testInt");
   Services.prefs.deleteBranch("nimbus.testing.testSetString");
@@ -275,7 +283,7 @@ add_task(async function testNimbusTargetingEnvironmentPrefValues() {
       !Object.hasOwn(prefs, PREF_KEY),
       `${PREF} not set and not present in telemetry`
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   Services.prefs.getDefaultBranch(null).setStringPref(PREF, "default");
 
@@ -288,7 +296,7 @@ add_task(async function testNimbusTargetingEnvironmentPrefValues() {
       "default",
       `${PREF} set on the default branch and present in telemetry`
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   Services.prefs.setStringPref(PREF, "user");
 
@@ -301,7 +309,7 @@ add_task(async function testNimbusTargetingEnvironmentPrefValues() {
       "user",
       `${PREF} set on the user branch and present in telemetry`
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   Services.prefs.deleteBranch(PREF);
 
@@ -323,7 +331,7 @@ add_task(async function testExperimentMetrics() {
     Assert.deepEqual(values.activeExperiments, []);
     Assert.deepEqual(values.activeRollouts, []);
     Assert.deepEqual(values.enrollmentsMap, []);
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   await manager.enroll(
     NimbusTestUtils.factories.recipe.withFeatureConfig("experiment-1", {
@@ -371,7 +379,7 @@ add_task(async function testExperimentMetrics() {
         { experimentSlug: "rollout-1", branchSlug: "rollout" },
       ].sort()
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   manager.unenroll("experiment-1", { reason: "test" });
   manager.unenroll("experiment-2", { reason: "test" });
@@ -392,7 +400,7 @@ add_task(async function testExperimentMetrics() {
         { experimentSlug: "rollout-1", branchSlug: "rollout" },
       ].sort()
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   await cleanup();
 });
@@ -423,7 +431,7 @@ add_task(async function testErrorMetrics() {
       !Object.hasOwn(prefs, PREF_KEY),
       `${PREF_KEY} not set and not present in telemetry`
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   info(
     "testing prefs with the wrong type are recorded in the pref_type_errors metric"
@@ -441,7 +449,7 @@ add_task(async function testErrorMetrics() {
       !Object.hasOwn(prefs, PREF_KEY),
       "nimbus.qa.pref-1 not set and not present in telemetry"
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   Services.prefs.deleteBranch(PREF);
 
@@ -465,7 +473,7 @@ add_task(async function testErrorMetrics() {
     assertRecordingFailures({
       attrEvalErrors: ["currentDate", "isFirstStartup"],
     });
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   await cleanup();
 
@@ -514,7 +522,7 @@ add_task(async function testRecordingErrors() {
       null,
       "The targetingContextValue metric is not recorded by default."
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   // We triggered glean to record error metrics. Ensure that we don't double count.
   Services.fog.testResetFOG();
@@ -576,7 +584,7 @@ add_task(async function testRecordingErrors() {
       ],
       "activeExperiments should have the invalid value in the targetingContextValue metric"
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   await cleanup();
 
@@ -604,7 +612,7 @@ add_task(async function testAddonsInfo() {
       [],
       "No recorded addon info"
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   const ext1 = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
@@ -629,7 +637,7 @@ add_task(async function testAddonsInfo() {
       "hasInstalledAddons is true"
     );
     Assert.deepEqual(values.addonsInfo.addons, [ext1.id], "Has one addon");
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   const ext2 = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
@@ -658,7 +666,7 @@ add_task(async function testAddonsInfo() {
       [ext1.id, ext2.id].sort(),
       "Has two addons"
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   await ext1.unload();
   await ext2.unload();
@@ -680,7 +688,7 @@ add_task(async function testAddonsInfo() {
       [],
       "No recorded addon info"
     );
-  }, recordTargetingContext);
+  }, recordTargetingContextAndSubmit);
 
   await cleanup();
 });

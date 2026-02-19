@@ -384,19 +384,19 @@ clang-17:
         repo: https://github.com/llvm/llvm-project
         revision: 6009708b4367171ccdbf4b5905cb6a803753fe18
 
-clang-19:
-    description: clang 19.1.7 source code
-    fetch:
-        type: git
-        repo: https://github.com/llvm/llvm-project
-        revision: cd708029e0b2869e80abe31ddb175f7c35361f90
-
 clang-20:
     description: clang 20.1.8 source code
     fetch:
         type: git
         repo: https://github.com/llvm/llvm-project
         revision: 87f0227cb60147a26a1eeb4fb06e3b505e9c7261
+
+clang-21:
+    description: clang 21.1.7 source code
+    fetch:
+        type: git
+        repo: https://github.com/llvm/llvm-project
+        revision: 292dc2b86f66e39f4b85ec8b185fd8b60f5213ce
 
 clang-trunk:
     description: clang main branch source code
@@ -410,13 +410,13 @@ clang-trunk:
 # We build stable rust from source so the resulting compiler acts as a nightly
 # rust compiler, allowing to use unstable features like -Zbuild-std and
 # sanitizers.
-rust-1.82.0:
-    description: Rust 1.82.0 source code
+rust-1.90.0:
+    description: Rust 1.90.0 source code
     fetch:
         type: git
         include-dot-git: true
         repo: https://github.com/rust-lang/rust/
-        revision: f6e511eec7342f59a25f7c0534f1dbea00d01b14
+        revision: 1159e78c4747b02ef996e55082b704c09b970588
 
 rust-nightly:
     description: Rust nightly source code
@@ -561,7 +561,7 @@ samply:
     fetch:
         type: git
         repo: https://github.com/mstange/samply
-        revision: da75c28f367454c621e690eeb4e44ec2ebb29a78
+        revision: c947d6339a9bea6c5659c6317796c5061d0fd7e6
 
 nodejs-12-linux64:
     description: nodejs 12 for x64 linux
@@ -766,7 +766,7 @@ mozilla-pdf.js:
     fetch:
         type: git
         repo: https://github.com/mozilla/pdf.js
-        revision: 81cf42df470f85eb60150bdffca380e3eee79c08
+        revision: 2ac8185956b0e222cbb798a9d455e82bca954462
 
 xmlstarlet-1.6.1:
     description: xmlstarlet for Android Performance Tests

@@ -41,7 +41,7 @@ export var FileUtils = {
    * @param   modeFlags
    *          (optional) File open flags. Can be undefined.
    * @returns nsIFileOutputStream to write to.
-   * @note The stream is initialized with the DEFER_OPEN behavior flag.
+   * Note: The stream is initialized with the DEFER_OPEN behavior flag.
    *       See nsIFileOutputStream.
    */
   openFileOutputStream: function FileUtils_openFileOutputStream(
@@ -62,7 +62,7 @@ export var FileUtils = {
    * @param   modeFlags
    *          (optional) File open flags. Can be undefined.
    * @returns nsIFileOutputStream to write to.
-   * @note The stream is initialized with the DEFER_OPEN behavior flag.
+   * Note: The stream is initialized with the DEFER_OPEN behavior flag.
    *       See nsIFileOutputStream.
    *       OpeanAtomicFileOutputStream is generally better than openSafeFileOutputStream
    *       baecause flushing is not needed in most of the issues.
@@ -85,7 +85,7 @@ export var FileUtils = {
    * @param   modeFlags
    *          (optional) File open flags. Can be undefined.
    * @returns nsIFileOutputStream to write to.
-   * @note The stream is initialized with the DEFER_OPEN behavior flag.
+   * Note: The stream is initialized with the DEFER_OPEN behavior flag.
    *       See nsIFileOutputStream.
    */
   openSafeFileOutputStream: function FileUtils_openSafeFileOutputStream(

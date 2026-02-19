@@ -108,6 +108,12 @@ export default class MozSelect extends MozBaseInputElement {
    * Internal - populates the select element with options from the light DOM slot.
    */
   populateOptions() {
+    if (!this.slotRef.value) {
+      this.options = [];
+      this.usePanelList = false;
+      return;
+    }
+
     let options = [];
 
     for (const node of this.slotRef.value.assignedNodes()) {
@@ -118,6 +124,10 @@ export default class MozSelect extends MozBaseInputElement {
           iconSrc: node.getAttribute("iconsrc"),
           disabled: node.getAttribute("disabled") !== null,
           hidden: node.getAttribute("hidden") !== null,
+        });
+      } else if (node.localName === "hr") {
+        options.push({
+          separator: true,
         });
       }
     }
@@ -269,17 +279,19 @@ export default class MozSelect extends MozBaseInputElement {
         this.hasDescription ? undefined : this.ariaDescription
       )}
     >
-      ${this.options.map(
-        option => html`
-          <option
-            value=${option.value}
-            .selected=${option.value == this.value}
-            ?disabled=${option.disabled}
-            ?hidden=${option.hidden}
-          >
-            ${option.label}
-          </option>
-        `
+      ${this.options.map(option =>
+        option.separator
+          ? html`<hr />`
+          : html`
+              <option
+                value=${option.value}
+                .selected=${option.value == this.value}
+                ?disabled=${option.disabled}
+                ?hidden=${option.hidden}
+              >
+                ${option.label}
+              </option>
+            `
       )}
     </select>`;
   }
@@ -316,20 +328,21 @@ export default class MozSelect extends MozBaseInputElement {
       @click=${this.handlePanelChange}
       @hidden=${this.handlePanelHidden}
     >
-      ${this.options.map(
-        option =>
-          html`<panel-item
-            .value=${option.value}
-            ?selected=${option.value == this.value}
-            ?disabled=${option.disabled}
-            ?hidden=${option.hidden}
-            icon=${ifDefined(option.iconSrc)}
-            style=${option.iconSrc
-              ? `--select-item-icon-url: url(${option.iconSrc})`
-              : ""}
-          >
-            ${option.label}
-          </panel-item>`
+      ${this.options.map(option =>
+        option.separator
+          ? html`<hr />`
+          : html`<panel-item
+              .value=${option.value}
+              ?selected=${option.value == this.value}
+              ?disabled=${option.disabled}
+              ?hidden=${option.hidden}
+              icon=${ifDefined(option.iconSrc)}
+              style=${option.iconSrc
+                ? `--select-item-icon-url: url(${option.iconSrc})`
+                : ""}
+            >
+              ${option.label}
+            </panel-item>`
       )}
     </panel-list>`;
   }

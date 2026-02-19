@@ -974,7 +974,7 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     privacyLinkElement.setAttribute(
       "href",
       CreditCardSaveDoorhanger.spotlightURL ||
-        "about:preferences#privacy-form-autofill"
+        "about:preferences#privacy-payment-methods-autofill"
     );
 
     const linkId = `autofill-options-link${

@@ -258,8 +258,6 @@ fn(async (t) => {
   assert(adapter !== null);
 
   const limitInfo = getDefaultLimitsForCTS()[limit];
-  // MAINTENANCE_TODO: Remove this skip when compatibility limits are merged into spec.
-  t.skipIf(limitInfo === undefined, 'limit is currently compatibility only');
   let value = -1;
   let result = -1;
   switch (limitValue) {
@@ -278,6 +276,20 @@ fn(async (t) => {
   }
 
   const requiredLimits = { [limit]: value };
+
+  if (
+  limit === 'maxStorageBuffersInFragmentStage' ||
+  limit === 'maxStorageBuffersInVertexStage')
+  {
+    requiredLimits['maxStorageBuffersPerShaderStage'] = value;
+  }
+
+  if (
+  limit === 'maxStorageTexturesInFragmentStage' ||
+  limit === 'maxStorageTexturesInVertexStage')
+  {
+    requiredLimits['maxStorageTexturesPerShaderStage'] = value;
+  }
 
   const device = await t.requestDeviceTracked(adapter, { requiredLimits });
   assert(device !== null);
@@ -323,8 +335,6 @@ fn(async (t) => {
   assert(adapter !== null);
 
   const limitInfo = getDefaultLimitsForCTS();
-  // MAINTENANCE_TODO: Remove this skip when compatibility limits are merged into spec.
-  t.skipIf(limitInfo[limit] === undefined, 'limit is currently compatibility only');
   const value = adapter.limits[limit] * mul + add;
   const requiredLimits = {
     [limit]: clamp(value, { min: 0, max: limitInfo[limit].maximumValue })
@@ -371,9 +381,6 @@ fn(async (t) => {
   const adapter = await gpu.requestAdapter();
   assert(adapter !== null);
   const limitInfo = getDefaultLimitsForCTS()[limit];
-  // MAINTENANCE_TODO: Remove this skip when compatibility limits are merged into spec.
-  t.skipIf(limitInfo === undefined, 'limit is currently compatibility only');
-
   const requiredLimits = {
     [limit]: value
   };
@@ -431,9 +438,6 @@ fn(async (t) => {
   assert(adapter !== null);
 
   const limitInfo = getDefaultLimitsForCTS()[limit];
-  // MAINTENANCE_TODO: Remove this skip when compatibility limits are merged into spec.
-  t.skipIf(limitInfo === undefined, 'limit is currently compatibility only');
-
   const value = limitInfo.default * mul + add;
   const requiredLimits = {
     [limit]: clamp(value, { min: 0, max: limitInfo.maximumValue })

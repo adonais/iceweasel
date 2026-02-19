@@ -2,96 +2,69 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-export var DateTimePickerPanel = class {
+import { InputPickerPanelCommon } from "./InputPickerPanelCommon.sys.mjs";
+
+/** @import {OpenPickerInfo} from "./InputPickerPanelCommon.sys.mjs" */
+
+const TIME_PICKER_WIDTH = "13em";
+const TIME_PICKER_HEIGHT = "22em";
+const DATE_PICKER_WIDTH = "24em";
+const DATE_PICKER_HEIGHT = "27em";
+const DATETIME_PICKER_WIDTH = "40em";
+const DATETIME_PICKER_HEIGHT = "27em";
+
+export class DateTimePickerPanel extends InputPickerPanelCommon {
   constructor(element) {
-    this.element = element;
-
-    this.TIME_PICKER_WIDTH = "13em";
-    this.TIME_PICKER_HEIGHT = "22em";
-    this.DATE_PICKER_WIDTH = "24em";
-    this.DATE_PICKER_HEIGHT = "27em";
-    this.DATETIME_PICKER_WIDTH = "40em";
-    this.DATETIME_PICKER_HEIGHT = "27em";
+    super(element, "chrome://global/content/datetimepicker.xhtml");
   }
 
-  get dateTimePopupFrame() {
-    let frame = this.element.querySelector("#dateTimePopupFrame");
-    if (!frame) {
-      frame = this.element.ownerDocument.createXULElement("iframe");
-      frame.id = "dateTimePopupFrame";
-      this.element.appendChild(frame);
-    }
-    return frame;
-  }
-
-  openPicker(type, rect, detail) {
+  /**
+   * Picker window initialization function called when opening the picker
+   *
+   * @param {string} type The input element type
+   * @returns {OpenPickerInfo}
+   */
+  openPickerImpl(type) {
     if (
       type == "datetime-local" &&
       !Services.prefs.getBoolPref("dom.forms.datetime.timepicker")
     ) {
       type = "date";
     }
-    this.pickerState = {};
-    // TODO: Resize picker according to content zoom level
-    this.element.style.fontSize = "10px";
-    this.type = type;
-    this.detail = detail;
-    this.dateTimePopupFrame.addEventListener("load", this, true);
-    this.dateTimePopupFrame.setAttribute(
-      "src",
-      "chrome://global/content/datetimepicker.xhtml"
-    );
     switch (type) {
       case "time": {
-        this.dateTimePopupFrame.style.width = this.TIME_PICKER_WIDTH;
-        this.dateTimePopupFrame.style.height = this.TIME_PICKER_HEIGHT;
-        break;
+        return {
+          type,
+          width: TIME_PICKER_WIDTH,
+          height: TIME_PICKER_HEIGHT,
+        };
       }
       case "date": {
-        this.dateTimePopupFrame.style.width = this.DATE_PICKER_WIDTH;
-        this.dateTimePopupFrame.style.height = this.DATE_PICKER_HEIGHT;
-        break;
+        return {
+          type,
+          width: DATE_PICKER_WIDTH,
+          height: DATE_PICKER_HEIGHT,
+        };
       }
       case "datetime-local": {
-        this.dateTimePopupFrame.style.width = this.DATETIME_PICKER_WIDTH;
-        this.dateTimePopupFrame.style.height = this.DATETIME_PICKER_HEIGHT;
-        break;
+        return {
+          type,
+          width: DATETIME_PICKER_WIDTH,
+          height: DATETIME_PICKER_HEIGHT,
+        };
       }
     }
-    this.element.openPopupAtScreenRect(
-      "after_start",
-      rect.left,
-      rect.top,
-      rect.width,
-      rect.height,
-      false,
-      false
-    );
+    throw new Error(`Unexpected type ${type}`);
   }
 
-  closePicker(clear) {
-    if (clear) {
-      this.element.dispatchEvent(new CustomEvent("DateTimePickerValueCleared"));
-    }
-    this.pickerState = {};
-    this.type = undefined;
-    this.dateTimePopupFrame.removeEventListener("load", this, true);
-    this.dateTimePopupFrame.contentWindow.removeEventListener("message", this);
-    this.dateTimePopupFrame.setAttribute("src", "");
-    this.element.hidePopup();
-  }
-
-  setPopupValue(data) {
-    const detail = data.value;
-    // Month value from input box starts from 1 instead of 0
-    detail.month = detail.month == undefined ? undefined : detail.month - 1;
-    this.postMessageToPicker({
-      name: "PickerSetValue",
-      detail,
-    });
-  }
-
-  initPicker(detail) {
+  /**
+   * Popup frame initialization function called when the picker window is loaded
+   *
+   * @param {string} type The picker type
+   * @param {object} detail The argument from the child actor's openPickerImpl
+   * @returns An argument object to pass to the popup frame
+   */
+  initPickerImpl(type, detail) {
     let locale = new Services.intl.Locale(
       Services.locale.webExposedLocales[0],
       {
@@ -109,7 +82,7 @@ export var DateTimePickerPanel = class {
 
     const { year, month, day, hour, minute } = detail.value;
     const flattenDetail = {
-      type: this.type,
+      type,
       year,
       // Month value from input box starts from 1 instead of 0
       month: month == undefined ? undefined : month - 1,
@@ -125,7 +98,7 @@ export var DateTimePickerPanel = class {
       stepBase: detail.stepBase,
     };
 
-    if (this.type !== "time") {
+    if (type !== "time") {
       const { firstDayOfWeek, weekends } = this.getCalendarInfo(locale);
 
       const monthDisplayNames = new Services.intl.DisplayNames(locale, {
@@ -153,75 +126,33 @@ export var DateTimePickerPanel = class {
         weekdayStrings,
       });
     }
-    this.postMessageToPicker({
-      name: "PickerInit",
-      detail: flattenDetail,
-    });
+    return flattenDetail;
   }
 
   /**
-   * @param {boolean} passAllValues: Pass spinner values regardless if they've been set/changed or not
+   * Input element state updater function called when the picker value is changed
+   *
+   * @param {string} type
+   * @param {object} pickerState
    */
-  setInputBoxValue(passAllValues) {
-    const value = {
-      year: this.pickerState.year,
-      month: this.pickerState.month,
-      day: this.pickerState.day,
-      hour: this.pickerState.hour,
-      minute: this.pickerState.minute,
-    };
-    if (this.type !== "date") {
-      const isNoValueSet =
-        this.pickerState.isHourSet ||
-        this.pickerState.isMinuteSet ||
-        this.pickerState.isDayPeriodSet;
-      if (!passAllValues || isNoValueSet) {
-        value.hour =
-          this.pickerState.isHourSet || this.pickerState.isDayPeriodSet
-            ? value.hour
-            : undefined;
-        value.minute = this.pickerState.isMinuteSet ? value.minute : undefined;
-      }
+  sendPickerValueChangedImpl(type, pickerState) {
+    let { year, month, day, hour, minute } = pickerState;
+    if (month !== undefined) {
+      // Month value from input box starts from 1 instead of 0
+      month += 1;
     }
-    this.sendPickerValueChanged(value);
-  }
-
-  sendPickerValueChanged(value) {
-    let detail = {};
-    switch (this.type) {
+    switch (type) {
       case "time": {
-        detail = {
-          hour: value.hour,
-          minute: value.minute,
-        };
-        break;
+        return { hour, minute };
       }
       case "date": {
-        detail = {
-          year: value.year,
-          // Month value from input box starts from 1 instead of 0
-          month: value.month == undefined ? undefined : value.month + 1,
-          day: value.day,
-        };
-        break;
+        return { year, month, day };
       }
       case "datetime-local": {
-        detail = {
-          year: value.year,
-          // Month value from input box starts from 1 instead of 0
-          month: value.month == undefined ? undefined : value.month + 1,
-          day: value.day,
-          hour: value.hour,
-          minute: value.minute,
-        };
-        break;
+        return { year, month, day, hour, minute };
       }
     }
-    this.element.dispatchEvent(
-      new CustomEvent("DateTimePickerValueChanged", {
-        detail,
-      })
-    );
+    throw new Error(`Unexpected type ${type}`);
   }
 
   getCalendarInfo(locale) {
@@ -244,46 +175,4 @@ export var DateTimePickerPanel = class {
       weekends,
     };
   }
-
-  handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "load": {
-        this.initPicker(this.detail);
-        this.dateTimePopupFrame.contentWindow.addEventListener("message", this);
-        break;
-      }
-      case "message": {
-        this.handleMessage(aEvent);
-        break;
-      }
-    }
-  }
-
-  handleMessage(aEvent) {
-    if (
-      !this.dateTimePopupFrame.contentDocument.nodePrincipal.isSystemPrincipal
-    ) {
-      return;
-    }
-
-    switch (aEvent.data.name) {
-      case "PickerPopupChanged": {
-        this.pickerState = aEvent.data.detail;
-        this.setInputBoxValue();
-        break;
-      }
-      case "ClosePopup": {
-        this.closePicker(aEvent.data.detail);
-        break;
-      }
-    }
-  }
-
-  postMessageToPicker(data) {
-    if (
-      this.dateTimePopupFrame.contentDocument.nodePrincipal.isSystemPrincipal
-    ) {
-      this.dateTimePopupFrame.contentWindow.postMessage(data, "*");
-    }
-  }
-};
+}

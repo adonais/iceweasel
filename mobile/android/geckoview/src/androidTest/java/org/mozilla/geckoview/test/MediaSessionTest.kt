@@ -388,6 +388,7 @@ class MediaSessionTest : BaseSessionTest() {
         sessionRule.waitForResult(completedStep11)
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1679779")
     @Test
     fun defaultMetadataPlayback() {
         val onActivatedCalled = arrayOf(GeckoResult<Void>())

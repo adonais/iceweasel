@@ -99,7 +99,7 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
   // ISVGSVGFrame interface:
-  void NotifyViewportOrTransformChanged(uint32_t aFlags) override;
+  void NotifyViewportOrTransformChanged(ChangeFlags aFlags) override;
 
   // ISVGDisplayableFrame methods:
   void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,

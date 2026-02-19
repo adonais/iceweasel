@@ -12,7 +12,6 @@ import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CancelPrivateDownloadsOnPrivateTabsClosedAccepted
@@ -34,7 +33,7 @@ class BrowserScreenMiddleware(
 ) : Middleware<BrowserScreenState, BrowserScreenAction> {
 
     override fun invoke(
-        context: MiddlewareContext<BrowserScreenState, BrowserScreenAction>,
+        store: Store<BrowserScreenState, BrowserScreenAction>,
         next: (BrowserScreenAction) -> Unit,
         action: BrowserScreenAction,
     ) {
@@ -43,7 +42,7 @@ class BrowserScreenMiddleware(
                 next(action)
 
                 showCancelledDownloadWarning(
-                    store = context.store,
+                    store = store,
                     downloadCount = action.inProgressPrivateDownloads,
                     tabId = action.tabId,
                 )

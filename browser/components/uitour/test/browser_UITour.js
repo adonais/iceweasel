@@ -466,7 +466,9 @@ var tests = [
 
     is(
       popup.anchorNode,
-      document.getElementById("searchbar"),
+      Services.prefs.getBoolPref("browser.search.widget.new")
+        ? document.getElementById("searchbar-new")
+        : document.getElementById("searchbar"),
       "Popup should be anchored to the searchbar"
     );
     is(title.textContent, "search title", "Popup should have correct title");

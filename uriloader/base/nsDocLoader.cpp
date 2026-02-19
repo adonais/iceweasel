@@ -756,8 +756,19 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
        alive long enough to survive this function call. */
     nsCOMPtr<nsIDocumentLoader> kungFuDeathGrip(this);
 
+    nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
+    // Force load if
+    // - we are currently in the synchronous load path of the docshell, i.e. we
+    // are completing the initial about:blank load
+    // - and Document::EndLoad was already called (we're likely called from
+    // there right now).
+    const bool forceInitialSyncLoad = doc &&
+                                      doc->InitialAboutBlankLoadCompleting() &&
+                                      !doc->IsExpectingEndLoad();
+    MOZ_ASSERT_IF(forceInitialSyncLoad, !mIsFlushingLayout);
+
     // Don't flush layout if we're still busy.
-    if (IsBusy()) {
+    if (IsBusy() && !forceInitialSyncLoad) {
       return;
     }
 
@@ -792,8 +803,11 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
     //
     // Note, mDocumentRequest can be null while mDocumentOpenedButNotLoaded is
     // false if the flushing above re-entered this method.
-    if (IsBusy() || (!mDocumentRequest && !mDocumentOpenedButNotLoaded &&
-                     !mIsLoadingJavascriptURI)) {
+    const bool hasActiveLoad = mDocumentRequest ||
+                               mDocumentOpenedButNotLoaded ||
+                               mIsLoadingJavascriptURI;
+    MOZ_ASSERT_IF(forceInitialSyncLoad, hasActiveLoad);
+    if ((IsBusy() && !forceInitialSyncLoad) || !hasActiveLoad) {
       return;
     }
 

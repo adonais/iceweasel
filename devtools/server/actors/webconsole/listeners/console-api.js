@@ -15,7 +15,7 @@ const {
  * The window.console API observer. This allows the window.console API messages
  * to be sent to the remote Web Console instance.
  *
- * @constructor
+ * @class
  * @param nsIDOMWindow window
  *        Optional - the window object for which we are created. This is used
  *        for filtering out messages that belong to other windows.

@@ -9,50 +9,27 @@ ChromeUtils.defineESModuleGetters(this, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
 });
 
-const CONTAINER_ID = "firefoxSuggestContainer";
 const ONLINE_ENABLED_TOGGLE_ID = "firefoxSuggestOnlineEnabledToggle";
-const ONLINE_ENABLED_LEARN_MORE_ID = "firefoxSuggestOnlineEnabledLearnMore";
-const LEARN_MORE_ID = "firefoxSuggestLearnMore";
 const BUTTON_RESTORE_DISMISSED_ID = "restoreDismissedSuggestions";
 
 // Maps `SETTINGS_UI` values to expected visibility state objects. See
 // `assertSuggestVisibility()` in `head.js` for info on the state objects.
 const EXPECTED = {
   [QuickSuggest.SETTINGS_UI.FULL]: {
-    [LEARN_MORE_ID]: { isVisible: true },
-    [CONTAINER_ID]: { isVisible: true },
     [ONLINE_ENABLED_TOGGLE_ID]: { isVisible: true },
-    [ONLINE_ENABLED_LEARN_MORE_ID]: { isVisible: true },
     locationBarGroupHeader: {
       isVisible: true,
-      l10nId: "addressbar-header-firefox-suggest-1",
-    },
-    locationBarSuggestionLabel: {
-      isVisible: true,
-      l10nId: "addressbar-suggest-firefox-suggest-1",
+      l10nId: "addressbar-header-firefox-suggest-2",
     },
   },
   [QuickSuggest.SETTINGS_UI.NONE]: {
-    [LEARN_MORE_ID]: { isVisible: false },
-    [CONTAINER_ID]: { isVisible: false },
-    locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
-    locationBarSuggestionLabel: {
-      isVisible: true,
-      l10nId: "addressbar-suggest-1",
-    },
+    locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header-1" },
   },
   [QuickSuggest.SETTINGS_UI.OFFLINE_ONLY]: {
-    [LEARN_MORE_ID]: { isVisible: true },
-    [CONTAINER_ID]: { isVisible: true },
     [ONLINE_ENABLED_TOGGLE_ID]: { isVisible: false },
-    [ONLINE_ENABLED_LEARN_MORE_ID]: { isVisible: false },
     locationBarGroupHeader: {
       isVisible: true,
-      l10nId: "addressbar-header-firefox-suggest-1",
-    },
-    locationBarSuggestionLabel: {
-      isVisible: true,
-      l10nId: "addressbar-suggest-firefox-suggest-1",
+      l10nId: "addressbar-header-firefox-suggest-2",
     },
   },
 };
@@ -243,6 +220,7 @@ add_task(async function toggling_all_firefoxsuggest_disables_other_options() {
   );
 
   allCheckbox.click();
+  await allCheckbox.parentElement.updateComplete;
 
   Assert.ok(!allCheckbox.checked, "firefoxSuggestAll should now be unchecked");
   Assert.ok(sponsoredCheckbox.disabled, "sponsoredCheckbox should be disabled");
@@ -252,6 +230,7 @@ add_task(async function toggling_all_firefoxsuggest_disables_other_options() {
   );
 
   allCheckbox.click();
+  await allCheckbox.parentElement.updateComplete;
 
   Assert.ok(allCheckbox.checked, "firefoxSuggestAll should be checked");
   Assert.ok(

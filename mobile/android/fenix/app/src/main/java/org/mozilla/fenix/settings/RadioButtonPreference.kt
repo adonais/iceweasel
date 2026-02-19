@@ -60,6 +60,18 @@ open class RadioButtonPreference @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Sets the default checked state used when no persisted value exists for this key.
+     *
+     * This only updates the fallback used by `preferences.getBoolean(key, defaultValue)`.
+     * It does not persist a value or notify listeners.
+     *
+     * @param defaultValue `true` to make the radio button checked by default, `false` otherwise.
+     */
+    fun setDefaultValue(defaultValue: Boolean) {
+        this.defaultValue = defaultValue
+    }
+
     override fun addToRadioGroup(radioButton: GroupableRadioButton) {
         radioGroups.add(radioButton)
     }

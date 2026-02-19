@@ -29,7 +29,6 @@ import mozilla.components.browser.state.state.content.DownloadState.Status.COMPL
 import mozilla.components.browser.state.state.content.DownloadState.Status.FAILED
 import mozilla.components.feature.downloads.AbstractFetchDownloadService.Companion.ACTION_REMOVE_PRIVATE_DOWNLOAD
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import mozilla.components.support.base.android.DefaultPowerManagerInfoProvider
 import mozilla.components.support.base.android.StartForegroundService
@@ -58,19 +57,19 @@ class DownloadMiddleware(
     private var scope = CoroutineScope(coroutineContext)
 
     override fun invoke(
-        context: MiddlewareContext<BrowserState, BrowserAction>,
+        store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
         action: BrowserAction,
     ) {
         when (action) {
-            is DownloadAction.RemoveDownloadAction -> removeDownload(action.downloadId, context.store)
+            is DownloadAction.RemoveDownloadAction -> removeDownload(action.downloadId, store)
             is DownloadAction.RemoveAllDownloadsAction -> removeDownloads()
-            is DownloadAction.UpdateDownloadAction -> updateDownload(action.download, context)
-            is DownloadAction.RestoreDownloadsStateAction -> restoreDownloads(context.store)
-            is DownloadAction.RemoveDeletedDownloads -> removeDeletedDownloads(context.store)
-            is ContentAction.CancelDownloadAction -> closeDownloadResponse(context.store, action.sessionId)
+            is DownloadAction.UpdateDownloadAction -> updateDownload(action.download, store)
+            is DownloadAction.RestoreDownloadsStateAction -> restoreDownloads(store)
+            is DownloadAction.RemoveDeletedDownloads -> removeDeletedDownloads(store)
+            is ContentAction.CancelDownloadAction -> closeDownloadResponse(store, action.sessionId)
             is DownloadAction.AddDownloadAction -> {
-                if (!action.download.private && !saveDownload(context.store, action.download)) {
+                if (!action.download.private && !saveDownload(store, action.download)) {
                     // The download was already added before, so we are ignoring this request.
                     logger.debug(
                         "Ignored add action for ${action.download.id} " +
@@ -89,13 +88,13 @@ class DownloadMiddleware(
         when (action) {
             is TabListAction.RemoveAllTabsAction,
             is TabListAction.RemoveAllPrivateTabsAction,
-            -> removePrivateNotifications(context.store)
+            -> removePrivateNotifications(store)
             is TabListAction.RemoveTabsAction,
             is TabListAction.RemoveTabAction,
             -> {
-                val privateTabs = context.store.state.getNormalOrPrivateTabs(private = true)
+                val privateTabs = store.state.getNormalOrPrivateTabs(private = true)
                 if (privateTabs.isEmpty()) {
-                    removePrivateNotifications(context.store)
+                    removePrivateNotifications(store)
                 }
             }
             is DownloadAction.AddDownloadAction -> sendDownloadIntent(action.download)
@@ -142,9 +141,9 @@ class DownloadMiddleware(
         downloadStorage.removeAllDownloads()
     }
 
-    private fun updateDownload(updated: DownloadState, context: MiddlewareContext<BrowserState, BrowserAction>) {
+    private fun updateDownload(updated: DownloadState, store: Store<BrowserState, BrowserAction>) {
         if (updated.private) return
-        context.state.downloads[updated.id]?.let { old ->
+        store.state.downloads[updated.id]?.let { old ->
             // To not overwhelm the storage, we only send updates that are relevant,
             // we only care about properties, that we are stored on the storage.
             if (!DownloadStorage.isSameDownload(old, updated)) {

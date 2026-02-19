@@ -31,8 +31,42 @@ enum class ExceptionStackBehavior : bool {
 
 extern JS_PUBLIC_API bool JS_IsExceptionPending(JSContext* cx);
 
+// [SMDOC] Out Of Memory (OOM) Handling
+//
+// Many functions in SpiderMonkey can throw exceptions, and sometimes
+// the exception thrown is out of memory. Unlike other exceptions,
+// this is not an object, but rather the literal string "out of memory".
+//
+// **Out of Memory handling in SpiderMonkey is best-effort!**
+//
+// While the developers of SpiderMonkey do attempt to convert various scenarios
+// into OutOfMemory calls, such that embedders can attempt to do some sort of
+// recovery, we do not guarantee this in all cases.
+//
+// There are some places where attempting to convey OOM is challenging
+// or where it would leave the engine in a state with invariants
+// no longer holding. In those cases **the process will crash**.
+//
+// An example, though not comprehensive, signal of this to a curious
+// reader would be AutoEnterOOMUnsafeRegion, which flags various
+// places developers have indicated that crashing is better than
+// throwing OOM.
+//
+// Currently we endeavour to always throw out-of-memory when we
+// encounter GC heap limits. We also will sometimes throw OOM
+// exceptions for things which are not really OOM: For example
+// our executable code limits.
+//
+// It is important to not rely on OOM generation in SpiderMonkey
+// as your only reliability measure, as it is not guaranteed.
+
+// Check for pending out of memory exception.
 extern JS_PUBLIC_API bool JS_IsThrowingOutOfMemory(JSContext* cx);
 
+// Try and get the pending exception. This can return false
+// if there is no pending exception -or- if there is a problem
+// attempting to produce the exception (for example if wrapping
+// the exception fails.)
 extern JS_PUBLIC_API bool JS_GetPendingException(JSContext* cx,
                                                  JS::MutableHandleValue vp);
 

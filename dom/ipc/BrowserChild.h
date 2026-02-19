@@ -48,6 +48,7 @@ class nsIWebProgress;
 class nsPIDOMWindowInner;
 class nsWebBrowser;
 class nsDocShellLoadState;
+class nsIOpenWindowInfo;
 
 template <typename T>
 class nsTHashtable;
@@ -168,7 +169,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
                bool aIsTopLevel);
 
   MOZ_CAN_RUN_SCRIPT nsresult Init(mozIDOMWindowProxy* aParent,
-                                   WindowGlobalChild* aInitialWindowChild);
+                                   WindowGlobalChild* aInitialWindowChild,
+                                   nsIOpenWindowInfo* aOpenWindowInfo);
 
   /** Return a BrowserChild with the given attributes. */
   static already_AddRefed<BrowserChild> Create(
@@ -523,6 +525,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
                                                   const int32_t& aRounding,
                                                   const double& aScale);
 
+  mozilla::ipc::IPCResult RecvTransparencyChanged(const bool& aIsTransparent);
+
   mozilla::ipc::IPCResult RecvHandleAccessKey(const WidgetKeyboardEvent& aEvent,
                                               nsTArray<uint32_t>&& aCharCodes);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -700,9 +704,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const Maybe<
           ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
           aReason,
-      const Maybe<ContentBlockingNotifier::CanvasFingerprinter>&
-          aCanvasFingerprinter,
-      const Maybe<bool> aCanvasFingerprinterKnownText);
+      const Maybe<CanvasFingerprintingEvent>& aCanvasFingerprintingEvent);
 
   already_AddRefed<nsIDragSession> GetDragSession();
   void SetDragSession(nsIDragSession* aSession);

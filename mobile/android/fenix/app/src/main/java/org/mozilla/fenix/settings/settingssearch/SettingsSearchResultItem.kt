@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -66,21 +68,22 @@ fun SettingsSearchResultItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
+            .heightIn(min = 64.dp)
             .clickable(onClick = onClick)
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(
             text = displayTitle,
             style = FirefoxTheme.typography.subtitle1,
             maxLines = 1,
-            color = FirefoxTheme.colors.textPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
         )
+
         if (displaySubtitle.isNotBlank()) {
             Text(
                 text = displaySubtitle,
                 style = FirefoxTheme.typography.caption,
-                color = FirefoxTheme.colors.textSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
             Spacer(modifier = Modifier.height(8.dp))

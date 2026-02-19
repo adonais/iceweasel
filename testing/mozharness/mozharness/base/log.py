@@ -626,7 +626,7 @@ class SimpleFileLogger(BaseLogger):
         log_format="%(asctime)s %(levelname)8s - %(message)s",
         logger_name="Simple",
         log_dir="logs",
-        **kwargs
+        **kwargs,
     ):
         """SimpleFileLogger constructor. Calls its superclass constructor,
         creates a new logger instance and log an init message.
@@ -647,7 +647,7 @@ class SimpleFileLogger(BaseLogger):
             logger_name=logger_name,
             log_format=log_format,
             log_dir=log_dir,
-            **kwargs
+            **kwargs,
         )
         self.new_logger()
         self.init_message()
@@ -673,7 +673,7 @@ class MultiFileLogger(BaseLogger):
         log_format="%(asctime)s %(levelname)8s - %(message)s",
         log_dir="logs",
         log_to_raw=True,
-        **kwargs
+        **kwargs,
     ):
         """MultiFileLogger constructor. Calls its superclass constructor,
         creates a new logger instance and log an init message.
@@ -697,7 +697,7 @@ class MultiFileLogger(BaseLogger):
             log_format=log_format,
             log_to_raw=log_to_raw,
             log_dir=log_dir,
-            **kwargs
+            **kwargs,
         )
 
         self.new_logger()
@@ -731,7 +731,7 @@ class ConsoleLogger(BaseLogger):
         log_format="%(levelname)8s - %(message)s",
         log_date_format="%H:%M:%S",
         logger_name="Console",
-        **kwargs
+        **kwargs,
     ):
         """ConsoleLogger constructor. Calls its superclass constructor,
         creates a new logger instance and log an init message.

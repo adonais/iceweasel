@@ -103,13 +103,13 @@ TimeZoneObject* js::temporal::CreateTimeZoneObject(
     return nullptr;
   }
 
-  object->setFixedSlot(TimeZoneObject::IDENTIFIER_SLOT,
-                       StringValue(identifier));
+  object->initFixedSlot(TimeZoneObject::IDENTIFIER_SLOT,
+                        StringValue(identifier));
 
-  object->setFixedSlot(TimeZoneObject::PRIMARY_IDENTIFIER_SLOT,
-                       StringValue(primaryIdentifier));
+  object->initFixedSlot(TimeZoneObject::PRIMARY_IDENTIFIER_SLOT,
+                        StringValue(primaryIdentifier));
 
-  object->setFixedSlot(TimeZoneObject::OFFSET_MINUTES_SLOT, UndefinedValue());
+  object->initFixedSlot(TimeZoneObject::OFFSET_MINUTES_SLOT, UndefinedValue());
 
   return object;
 }
@@ -139,14 +139,14 @@ static TimeZoneObject* CreateTimeZoneObject(JSContext* cx,
     return nullptr;
   }
 
-  object->setFixedSlot(TimeZoneObject::IDENTIFIER_SLOT,
-                       StringValue(identifier));
+  object->initFixedSlot(TimeZoneObject::IDENTIFIER_SLOT,
+                        StringValue(identifier));
 
-  object->setFixedSlot(TimeZoneObject::PRIMARY_IDENTIFIER_SLOT,
-                       UndefinedValue());
+  object->initFixedSlot(TimeZoneObject::PRIMARY_IDENTIFIER_SLOT,
+                        UndefinedValue());
 
-  object->setFixedSlot(TimeZoneObject::OFFSET_MINUTES_SLOT,
-                       Int32Value(offsetMinutes));
+  object->initFixedSlot(TimeZoneObject::OFFSET_MINUTES_SLOT,
+                        Int32Value(offsetMinutes));
 
   return object;
 }

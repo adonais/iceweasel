@@ -13,7 +13,7 @@ import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.experiments.nimbus.internal.FeatureHolder
 import org.mozilla.focus.GleanMetrics.CookieBanner
@@ -38,7 +38,7 @@ class CfrMiddleware(
     private var tpExposureAlreadyRecorded = false
 
     override fun invoke(
-        context: MiddlewareContext<BrowserState, BrowserAction>,
+        store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
         action: BrowserAction,
     ) {
@@ -46,7 +46,7 @@ class CfrMiddleware(
 
         if (onboardingProvider().value().isCfrEnabled) {
             showCookieBannerCfr(action)
-            showTrackingProtectionCfr(action, context.state)
+            showTrackingProtectionCfr(action, store.state)
         }
     }
 

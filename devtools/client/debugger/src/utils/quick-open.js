@@ -57,6 +57,7 @@ export function formatSourceForList(
   isBlackBoxed,
   projectDirectoryRoot
 ) {
+  const prefix = "dbg-img-";
   const relativeUrlWithQuery = `${getRelativeUrl(
     source,
     projectDirectoryRoot
@@ -68,8 +69,8 @@ export function formatSourceForList(
     title: source.shortName,
     subtitle,
     icon: hasTabOpened
-      ? "tab result-item-icon"
-      : `result-item-icon ${getSourceClassnames(source, isBlackBoxed)}`,
+      ? `tab ${prefix}result-item-icon`
+      : `result-item-icon ${prefix}${getSourceClassnames(source, isBlackBoxed)}`,
     id: source.id,
     url: source.url,
     source,

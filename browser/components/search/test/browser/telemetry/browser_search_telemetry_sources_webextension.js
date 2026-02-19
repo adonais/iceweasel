@@ -35,10 +35,6 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.suggest.searches", true],
-      [
-        "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar",
-        true,
-      ],
       // Ensure to add search suggestion telemetry as search_suggestion not search_formhistory.
       ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
     ],

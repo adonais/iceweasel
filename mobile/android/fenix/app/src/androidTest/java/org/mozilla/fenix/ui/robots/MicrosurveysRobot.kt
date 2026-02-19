@@ -31,12 +31,13 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 
 @OptIn(ExperimentalTestApi::class)
 class MicrosurveysRobot {
-    fun verifySurveyButton() = assertUIObjectExists(itemContainingText(getStringResource(R.string.preferences_take_survey)))
+    fun verifySurveyButton(composeTestRule: ComposeTestRule) {
+        composeTestRule.onNodeWithText(getStringResource(R.string.preferences_take_survey), useUnmergedTree = true).assertIsDisplayed()
+    }
 
-    fun verifySurveyNoThanksButton() =
-        assertUIObjectExists(
-            itemContainingText(getStringResource(R.string.preferences_not_take_survey)),
-        )
+    fun verifySurveyNoThanksButton(composeTestRule: ComposeTestRule) {
+        composeTestRule.onNodeWithText(getStringResource(R.string.preferences_not_take_survey), useUnmergedTree = true).assertIsDisplayed()
+    }
 
     fun verifyHomeScreenSurveyCloseButton(exists: Boolean) =
         assertUIObjectExists(itemWithDescription("Close"), exists = exists)
@@ -170,17 +171,14 @@ class MicrosurveysRobot {
         verifyHomeScreenSurveyCloseButton(exists)
     }
 
-    class Transition {
+    class Transition(private val composeTestRule: ComposeTestRule) {
         fun clickSurveyButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "clickSurveyButton: Waiting for $waitingTime for the survey button to exist")
-            surveyButton().waitForExists(waitingTime)
-            Log.i(TAG, "clickSurveyButton: Waited for $waitingTime for the survey button to exist")
             Log.i(TAG, "clickSurveyButton: Trying to click the survey button")
-            surveyButton().click()
+            composeTestRule.onNodeWithText(getStringResource(R.string.preferences_take_survey), useUnmergedTree = true).performClick()
             Log.i(TAG, "clickSurveyButton: Clicked the survey button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun clickNoThanksSurveyButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -191,8 +189,8 @@ class MicrosurveysRobot {
             surveyNoThanksButton().click()
             Log.i(TAG, "clickNoThanksSurveyButton: Clicked the \"No thanks\" button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun clickHomeScreenSurveyCloseButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -203,8 +201,8 @@ class MicrosurveysRobot {
             homescreenSurveyCloseButton().click()
             Log.i(TAG, "clickHomeScreenSurveyCloseButton: Clicked the close survey button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun collapseSurveyByTappingBackButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -215,15 +213,15 @@ class MicrosurveysRobot {
             mDevice.waitForIdle()
             Log.i(TAG, "collapseSurveyByTappingBackButton: Waited for device to be idle")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
     }
 }
 
-fun surveyScreen(interact: MicrosurveysRobot.() -> Unit): MicrosurveysRobot.Transition {
+fun surveyScreen(composeTestRule: ComposeTestRule, interact: MicrosurveysRobot.() -> Unit): MicrosurveysRobot.Transition {
     MicrosurveysRobot().interact()
-    return MicrosurveysRobot.Transition()
+    return MicrosurveysRobot.Transition(composeTestRule)
 }
 
 private fun surveyButton() =

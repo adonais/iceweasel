@@ -35,6 +35,7 @@ WebTransportParent::~WebTransportParent() {
 
 void WebTransportParent::Create(
     const nsAString& aURL, nsIPrincipal* aPrincipal,
+    const uint64_t& aBrowsingContextID,
     const mozilla::Maybe<IPCClientInfo>& aClientInfo, const bool& aDedicated,
     const bool& aRequireUnreliable, const uint32_t& aCongestionControl,
     nsTArray<WebTransportHash>&& aServerCertHashes,
@@ -92,13 +93,14 @@ void WebTransportParent::Create(
       [self = RefPtr{this}, uri = std::move(uri),
        dedicated = true /* aDedicated, see BUG 1915735.*/,
        nsServerCertHashes = std::move(nsServerCertHashes),
-       principal = RefPtr{aPrincipal},
+       principal = RefPtr{aPrincipal}, browsingContextID = aBrowsingContextID,
        flags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
        clientInfo = aClientInfo] {
         LOG(("WebTransport %p AsyncConnect", self.get()));
         if (NS_FAILED(self->mWebTransport->AsyncConnectWithClient(
-                uri, dedicated, std::move(nsServerCertHashes), principal, flags,
-                self, clientInfo, nsIWebTransport::HTTPVersion::h3))) {
+                uri, dedicated, std::move(nsServerCertHashes), principal,
+                browsingContextID, flags, self, clientInfo,
+                nsIWebTransport::HTTPVersion::h3))) {
           LOG(("AsyncConnect failure; we should get OnSessionClosed"));
         }
       });
@@ -722,6 +724,16 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   // synchronously via WebTransportSessionEventListener::OnMaxDatagramSize
   // interface
   mWebTransport->GetMaxDatagramSize();
+  return IPC_OK();
+}
+
+::mozilla::ipc::IPCResult WebTransportParent::RecvGetHttpChannelID(
+    GetHttpChannelIDResolver&& aResolver) {
+  LOG(("WebTransportParent Channel ID"));
+  MOZ_ASSERT(mWebTransport);
+  uint64_t aHttpChannelId;
+  mWebTransport->GetHttpChannelID(&aHttpChannelId);
+  aResolver(aHttpChannelId);
   return IPC_OK();
 }
 

@@ -779,8 +779,6 @@ impl core::fmt::Debug for DebugFlags {
 /// uniquely identifies a primitive template by key.
 #[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub enum PrimitiveKeyKind {
-    /// Clear an existing rect, used for special effects on some platforms.
-    Clear,
     ///
     Rectangle {
         ///
@@ -860,4 +858,13 @@ pub enum TextureCacheCategory {
     Standalone,
     PictureTile,
     RenderTarget,
+}
+
+/// For debugging purposes
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum RenderCommandInfo {
+    RenderTarget { kind: String, size: DeviceIntSize },
+    DrawCall { shader: String, instances: u32 },
 }

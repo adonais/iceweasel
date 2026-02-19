@@ -1069,19 +1069,13 @@ class WindowsDllDetourPatcher final
         // INC r32
         origBytes += 1;
       } else if (*origBytes == 0x83) {
-        uint8_t mod = static_cast<uint8_t>(origBytes[1]) & kMaskMod;
-        uint8_t rm = static_cast<uint8_t>(origBytes[1]) & kMaskRm;
-        if (mod == kModReg) {
-          // ADD|OR|ADC|SBB|AND|SUB|XOR|CMP r, imm8
-          origBytes += 3;
-        } else if (mod == kModDisp8 && rm != kRmNeedSib) {
-          // ADD|OR|ADC|SBB|AND|SUB|XOR|CMP [r+disp8], imm8
-          origBytes += 4;
-        } else {
-          // bail
-          MOZ_ASSERT_UNREACHABLE("Unrecognized bit opcode sequence");
+        // ADD|OR|ADC|SBB|AND|SUB|XOR|CMP on imm8
+        int len = CountModRmSib(origBytes + 1);
+        if (len < 0) {
+          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
+        COPY_CODES(len + 2);  // 1 for 0x83, 1 for imm8
       } else if (*origBytes == 0x68) {
         // PUSH with 4-byte operand
         origBytes += 5;
@@ -1304,16 +1298,14 @@ class WindowsDllDetourPatcher final
         if (*origBytes == 0x81 && (origBytes[1] & 0xf8) == 0xe8) {
           // sub r, dword
           COPY_CODES(6);
-        } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0xe8) {
-          // sub r, byte
-          COPY_CODES(3);
-        } else if (*origBytes == 0x83 &&
-                   (origBytes[1] & (kMaskMod | kMaskReg)) == kModReg) {
-          // add r, byte
-          COPY_CODES(3);
-        } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0x60) {
-          // and [r+d], imm8
-          COPY_CODES(5);
+        } else if (*origBytes == 0x83) {
+          // ADD|OR|ADC|SBB|AND|SUB|XOR|CMP on imm8
+          int len = CountModRmSib(origBytes + 1);
+          if (len < 0) {
+            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+            return;
+          }
+          COPY_CODES(len + 2);  // 1 for 0x83, 1 for imm8
         } else if (*origBytes == 0x2b && (origBytes[1] & kMaskMod) == kModReg) {
           // sub r64, r64
           COPY_CODES(2);
@@ -1541,9 +1533,14 @@ class WindowsDllDetourPatcher final
         // bit shifts/rotates : (SA|SH|RO|RC)(R|L) r32
         // (e.g. 0xd1 0xe0 is SAL, 0xd1 0xc8 is ROR)
         COPY_CODES(2);
-      } else if (*origBytes == 0x83 && (origBytes[1] & kMaskMod) == kModReg) {
-        // ADD|OR|ADC|SBB|AND|SUB|XOR|CMP r, imm8
-        COPY_CODES(3);
+      } else if (*origBytes == 0x83) {
+        // ADD|OR|ADC|SBB|AND|SUB|XOR|CMP on imm8
+        int len = CountModRmSib(origBytes + 1);
+        if (len < 0) {
+          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+          return;
+        }
+        COPY_CODES(len + 2);  // 1 for 0x83, 1 for imm8
       } else if (*origBytes == 0xc3) {
         // ret
         COPY_CODES(1);
@@ -1645,9 +1642,6 @@ class WindowsDllDetourPatcher final
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
-      } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0x60) {
-        // and [r+d], imm8
-        COPY_CODES(5);
       } else if (*origBytes == 0xc6) {
         // mov [r+d], imm8
         int len = CountModRmSib(origBytes + 1);

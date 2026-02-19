@@ -8,21 +8,27 @@ It should have no false positive, and allows for false negative.
 Principle
 ---------
 
-This linter works by looking for mfbt headers included in any C, Objective-C or
+This linter has two parts:
+
+First part works by looking for mfbt headers included in any C, Objective-C or
 C++ file. For each of this header, it consults an abstract API description file
 and checks if any symbol (be it macro, function, global variable, type
 definition, operator) described in the API is actually used in the source. If
 not it reports the error.
 
-The lookup for symbol is textual, which makes it very fast (no build required),
-preprocessor-agnostic (all configuration are honored, no header generation
-required), at the expense of including comments etc.
+Second part works in a similar manner but for standard C++ headers.
+
+In both cases, the lookup for symbol is textual, which makes it very fast (no
+build required), preprocessor-agnostic (all configuration are honored, no header
+generation required), at the expense of including comments etc.
 
 API Description
 ---------------
 
-The description file is manually maintained in :searchfox:`API Description (YAML)
-<tools/lint/includes/api.yml>`.
+The MFBT description file is manually maintained in :searchfox:`MFBT API Description (YAML)
+<mfbt/api.yml>`. The C++ standard headers are described in
+:searchfox:`C++ STL Description (Py) <tools/lint/includes/std.py>`.
+
 It is basically a mapping from header name to a set of symbols, classified by
 type (macro, function etc).
 
@@ -60,5 +66,6 @@ Sources
 -------
 
 * :searchfox:`Linter Configuration (YAML) <tools/lint/includes.yml>`
-* :searchfox:`API Description (YAML) <tools/lint/includes/api.yml>`
+* :searchfox:`MFBT API Description (YAML) <mfbt/api.yml>`
+* :searchfox:`C++ STL Description (Py) <tools/lint/includes/std.py>`
 * :searchfox:`Source <tools/lint/includes/__init__.py>`

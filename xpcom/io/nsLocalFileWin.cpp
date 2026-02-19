@@ -182,7 +182,7 @@ nsresult nsLocalFile::RevealFile(const nsString& aResolvedPath) {
 }
 
 // static
-bool nsLocalFile::CheckForReservedFileName(const nsString& aFileName) {
+bool nsLocalFile::CheckForReservedFileName(const nsAString& aFileName) {
   static const nsLiteralString forbiddenNames[] = {
       u"COM1"_ns, u"COM2"_ns, u"COM3"_ns, u"COM4"_ns, u"COM5"_ns,  u"COM6"_ns,
       u"COM7"_ns, u"COM8"_ns, u"COM9"_ns, u"LPT1"_ns, u"LPT2"_ns,  u"LPT3"_ns,

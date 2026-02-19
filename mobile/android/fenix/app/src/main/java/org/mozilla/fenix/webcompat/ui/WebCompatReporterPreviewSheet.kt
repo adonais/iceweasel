@@ -29,13 +29,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,18 +123,12 @@ private fun WebCompatReporterPreviewSheetContent() {
     )
 }
 
-@Composable
-@PreviewLightDark
-private fun WebCompatReporterSheetPreview() {
-    FirefoxTheme {
-        WebCompatReporterPreviewSheetContent()
-    }
-}
-
-@Composable
 @Preview
-private fun WebCompatReporterSheetPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun WebCompatReporterSheetPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         WebCompatReporterPreviewSheetContent()
     }
 }

@@ -8,10 +8,13 @@
 #import <UIKit/UIWindow.h>
 
 #include "mozilla/Components.h"
+#include "mozilla/dom/Document.h"
 #include "nsIObserverService.h"
 #include "gfxPlatform.h"
+#include "nsAppRunner.h"
 #include "nsAppShell.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManager.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsObjCExceptions.h"
 #include "nsString.h"
@@ -21,11 +24,13 @@
 #include "nsThreadUtils.h"
 #include "nsMemoryPressure.h"
 #include "nsServiceManagerUtils.h"
+#include "mozilla/widget/EventDispatcher.h"
 #include "mozilla/widget/ScreenManager.h"
 #include "ScreenHelperUIKit.h"
 #include "mozilla/Hal.h"
 #include "HeadlessScreenHelper.h"
 #include "nsWindow.h"
+#include "nsXREDirProvider.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -35,6 +40,8 @@ nsAppShell* nsAppShell::gAppShell = NULL;
 #define ALOG(args...)    \
   fprintf(stderr, args); \
   fprintf(stderr, "\n")
+
+static void ApplicationWillTerminate(bool aCallExit);
 
 // AppShellDelegate
 //
@@ -56,7 +63,7 @@ nsAppShell* nsAppShell::gAppShell = NULL;
 
 - (void)applicationWillTerminate:(UIApplication*)application {
   ALOG("[AppShellDelegate applicationWillTerminate:]");
-  nsAppShell::gAppShell->WillTerminate();
+  ApplicationWillTerminate(/* aCallExit */ false);
 }
 
 - (void)applicationDidBecomeActive:(UIApplication*)application {
@@ -83,9 +90,9 @@ nsAppShell::nsAppShell()
       mDelegate(NULL),
       mCFRunLoop(NULL),
       mCFRunLoopSource(NULL),
+      mUsingNativeEventLoop(false),
       mRunningEventLoop(false),
-      mTerminated(false),
-      mNotifiedWillTerminate(false) {
+      mTerminated(false) {
   gAppShell = this;
 }
 
@@ -111,6 +118,8 @@ nsAppShell::~nsAppShell() {
 //
 // public
 nsresult nsAppShell::Init() {
+  mUsingNativeEventLoop = XRE_UseNativeEventProcessing();
+
   mAutoreleasePool = [[NSAutoreleasePool alloc] init];
 
   // Add a CFRunLoopSource to the main native run loop.  The source is
@@ -149,6 +158,10 @@ nsresult nsAppShell::Init() {
       mozilla::services::GetObserverService();
   if (obsServ) {
     obsServ->AddObserver(this, "profile-after-change", false);
+    obsServ->AddObserver(this, "quit-application-granted", false);
+    if (XRE_IsParentProcess()) {
+      obsServ->AddObserver(this, "chrome-document-loaded", false);
+    }
   }
 
   return rv;
@@ -156,6 +169,8 @@ nsresult nsAppShell::Init() {
 
 NS_IMETHODIMP nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
                                   const char16_t* aData) {
+  AssertIsOnMainThread();
+
   bool removeObserver = false;
   if (!strcmp(aTopic, "profile-after-change")) {
     // Gecko on iOS follows the iOS app model where it never stops until it is
@@ -167,6 +182,24 @@ NS_IMETHODIMP nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
       appStartup->EnterLastWindowClosingSurvivalArea();
     }
     removeObserver = true;
+  } else if (!strcmp(aTopic, "quit-application-granted")) {
+    // We are told explicitly to quit, perhaps due to
+    // nsIAppStartup::Quit being called. We should release our hold on
+    // nsIAppStartup and let it continue to quit.
+    nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
+    if (appStartup) {
+      appStartup->ExitLastWindowClosingSurvivalArea();
+    }
+    removeObserver = true;
+  } else if (!strcmp(aTopic, "chrome-document-loaded")) {
+    // Set the global ready state and enable the window event dispatcher
+    // for this particular GeckoView.
+    nsCOMPtr<dom::Document> doc = do_QueryInterface(aSubject);
+    MOZ_ASSERT(doc);
+    if (const RefPtr<nsWindow> window = nsWindow::From(doc->GetWindow())) {
+      RefPtr<EventDispatcher> dispatcher = window->GetEventDispatcher();
+      dispatcher->Activate();
+    }
   } else {
     return nsBaseAppShell::Observe(aSubject, aTopic, aData);
   }
@@ -196,27 +229,10 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
   self->Release();
 }
 
-// WillTerminate
-//
-// public
-void nsAppShell::WillTerminate() {
-  mNotifiedWillTerminate = true;
-  if (mTerminated) return;
-  mTerminated = true;
-  // We won't get another chance to process events
-  NS_ProcessPendingEvents(NS_GetCurrentThread());
-
-  // Unless we call nsBaseAppShell::Exit() here, it might not get called
-  // at all.
-  nsBaseAppShell::Exit();
-}
-
 // ScheduleNativeEventCallback
 //
 // protected virtual
 void nsAppShell::ScheduleNativeEventCallback() {
-  if (mTerminated) return;
-
   NS_ADDREF_THIS();
 
   // This will invoke ProcessGeckoEvents on the main thread.
@@ -265,7 +281,7 @@ nsAppShell::Run(void) {
   ALOG("nsAppShell::Run");
 
   nsresult rv = NS_OK;
-  if (XRE_UseNativeEventProcessing()) {
+  if (mUsingNativeEventLoop) {
     char argv[1][4] = {"app"};
     UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
     // UIApplicationMain doesn't exit. :-(
@@ -281,5 +297,52 @@ nsAppShell::Exit(void) {
   if (mTerminated) return NS_OK;
 
   mTerminated = true;
+
+  if (mUsingNativeEventLoop) {
+    // Dispatch a native event to the main queue to terminate. XPCOM doesn't
+    // like being shut down from within an XPCOM runnable, so we cannot use
+    // `NS_DispatchToMainThread` here.
+    dispatch_async(dispatch_get_main_queue(), ^{
+      ApplicationWillTerminate(true);
+    });
+    return NS_OK;
+  }
+
   return nsBaseAppShell::Exit();
+}
+
+static bool gNotifiedWillTerminate = false;
+
+static void ApplicationWillTerminate(bool aCallExit) {
+  if (std::exchange(gNotifiedWillTerminate, true)) {
+    return;
+  }
+
+  // Perform the steps which would normally happen after nsAppShell::Run, such
+  // as `~ScopedXPCOMStartup`, as UIApplicationMain will never shutdown.
+  if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
+    // Ensure quit notifications have fired to start the shutdown process, and
+    // notify listeners.
+    bool userAllowedQuit;
+    appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+
+    appStartup->DestroyHiddenWindow();
+  }
+
+  gDirServiceProvider->DoShutdown();
+
+  WriteConsoleLog();
+
+  // Release the final reference to the `nsIServiceManager` which is being held
+  // by `ScopedXPCOMStartup`, as we will never destroy that object.
+  nsIServiceManager* servMgr = nsComponentManagerImpl::gComponentManager;
+  NS_ShutdownXPCOM(servMgr);
+
+  // Matches the ScopedLogger initialized in `XRE_main` which will never be
+  // cleaned up.
+  NS_LogTerm();
+
+  if (aCallExit) {
+    _exit(0);
+  }
 }

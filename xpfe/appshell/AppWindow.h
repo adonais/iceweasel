@@ -40,6 +40,7 @@
 
 class nsAtom;
 class nsXULTooltipListener;
+class nsIOpenWindowInfo;
 
 namespace mozilla {
 class PresShell;
@@ -88,11 +89,10 @@ class AppWindow final : public nsIBaseWindow,
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
     mozilla::PresShell* GetPresShell() override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
-    bool WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y,
+    void WindowMoved(nsIWidget*, const LayoutDeviceIntPoint&,
                      ByMoveToRect) override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
-    bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
-                       int32_t aHeight) override;
+    void WindowResized(nsIWidget*, const LayoutDeviceIntSize&) override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
     bool RequestWindowClose(nsIWidget* aWidget) override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -134,7 +134,8 @@ class AppWindow final : public nsIBaseWindow,
   // AppWindow methods...
   nsresult Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
                       int32_t aInitialWidth, int32_t aInitialHeight,
-                      bool aIsHiddenWindow, widget::InitData& widgetInitData);
+                      bool aIsHiddenWindow, widget::InitData& widgetInitData,
+                      nsIOpenWindowInfo* aOpenWindowInfo);
 
   nsDocShell* GetDocShell() { return mDocShell; }
 
@@ -147,9 +148,9 @@ class AppWindow final : public nsIBaseWindow,
   nsIAppWindow* GetAppWindow() { return this; }
   mozilla::PresShell* GetPresShell();
   MOZ_CAN_RUN_SCRIPT
-  bool WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY);
+  void WindowMoved(nsIWidget*, const mozilla::LayoutDeviceIntPoint&);
   MOZ_CAN_RUN_SCRIPT
-  bool WindowResized(nsIWidget* aWidget, int32_t aWidth, int32_t aHeight);
+  void WindowResized(nsIWidget*, const mozilla::LayoutDeviceIntSize&);
   MOZ_CAN_RUN_SCRIPT bool RequestWindowClose(nsIWidget* aWidget);
   MOZ_CAN_RUN_SCRIPT void SizeModeChanged(nsSizeMode aSizeMode);
   MOZ_CAN_RUN_SCRIPT void FullscreenWillChange(bool aInFullscreen);

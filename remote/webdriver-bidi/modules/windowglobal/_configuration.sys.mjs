@@ -174,7 +174,7 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
           },
           params: {
             context: this.messageHandler.context,
-            orientationOverride: this.#screenOrientationOverride,
+            value: this.#screenOrientationOverride,
           },
         });
       }
@@ -263,6 +263,23 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
     return null;
   }
 
+  async #onConfigurationComplete(window) {
+    // parser blocking doesn't work for initial about:blank, so ensure
+    // browsing_context.create waits for configuration to complete
+    if (window.document.isInitialDocument) {
+      await this.messageHandler.forwardCommand({
+        moduleName: "browsingContext",
+        commandName: "_onConfigurationComplete",
+        destination: {
+          type: lazy.RootMessageHandler.type,
+        },
+        params: {
+          navigable: this.messageHandler.context,
+        },
+      });
+    }
+  }
+
   #updatePreloadScripts(sessionData) {
     this.#preloadScripts.clear();
 
@@ -299,8 +316,14 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       ].includes(category) &&
       !this.messageHandler.context.parent
     ) {
+      let geolocationOverridePerContext = null;
+      let geolocationOverridePerUserContext = null;
+
       let localeOverridePerContext = null;
       let localeOverridePerUserContext = null;
+
+      let screenOrientationOverridePerContext = null;
+      let screenOrientationOverridePerUserContext = null;
 
       let screenSettingsOverridePerContext = null;
       let screenSettingsOverridePerUserContext = null;
@@ -319,7 +342,16 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
 
         switch (category) {
           case "geolocation-override": {
-            this.#geolocationConfiguration = value;
+            switch (contextDescriptor.type) {
+              case lazy.ContextDescriptorType.TopBrowsingContext: {
+                geolocationOverridePerContext = value;
+                break;
+              }
+              case lazy.ContextDescriptorType.UserContext: {
+                geolocationOverridePerUserContext = value;
+                break;
+              }
+            }
             break;
           }
           case "viewport-overrides": {
@@ -348,6 +380,19 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
             }
             break;
           }
+          case "screen-orientation-override": {
+            switch (contextDescriptor.type) {
+              case lazy.ContextDescriptorType.TopBrowsingContext: {
+                screenOrientationOverridePerContext = value;
+                break;
+              }
+              case lazy.ContextDescriptorType.UserContext: {
+                screenOrientationOverridePerUserContext = value;
+                break;
+              }
+            }
+            break;
+          }
           case "screen-settings-override": {
             switch (contextDescriptor.type) {
               case lazy.ContextDescriptorType.TopBrowsingContext: {
@@ -359,10 +404,6 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
                 break;
               }
             }
-            break;
-          }
-          case "screen-orientation-override": {
-            this.#screenOrientationOverride = value;
             break;
           }
           case "timezone-override": {
@@ -402,12 +443,29 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       // Now from these items we have to choose the one that would take precedence.
       // The order is the user context item overrides the global one, and the browsing context overrides the user context item.
       switch (category) {
+        case "geolocation-override": {
+          this.#geolocationConfiguration = this.#findCorrectOverrideValue(
+            "object",
+            geolocationOverridePerContext,
+            geolocationOverridePerUserContext
+          );
+          break;
+        }
         case "locale-override": {
           this.#localeOverride = this.#findCorrectOverrideValue(
             "string",
             localeOverridePerContext,
             localeOverridePerUserContext
           );
+          break;
+        }
+        case "screen-orientation-override": {
+          this.#screenOrientationOverride = this.#findCorrectOverrideValue(
+            "object",
+            screenOrientationOverridePerContext,
+            screenOrientationOverridePerUserContext
+          );
+
           break;
         }
         case "screen-settings-override": {
@@ -439,23 +497,6 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
           break;
         }
       }
-    }
-  }
-
-  async #onConfigurationComplete(window) {
-    // parser blocking doesn't work for initial about:blank, so ensure
-    // browsing_context.create waits for configuration to complete
-    if (window.location.href.startsWith("about:blank")) {
-      await this.messageHandler.forwardCommand({
-        moduleName: "browsingContext",
-        commandName: "_onConfigurationComplete",
-        destination: {
-          type: lazy.RootMessageHandler.type,
-        },
-        params: {
-          navigable: this.messageHandler.context,
-        },
-      });
     }
   }
 }

@@ -433,6 +433,8 @@ identity-clear-site-data =
 identity-connection-not-secure-security-view = You are not securely connected to this site.
 identity-connection-verified = You are securely connected to this site.
 identity-ev-owner-label = Certificate issued to:
+# "qualified" here refers to the qualified website authentication certificate presented by the site.
+identity-etsi = Qualified as specified in Regulation (EU) 2024/1183.
 identity-description-custom-root2 = Mozilla does not recognize this certificate issuer. It may have been added from your operating system or by an administrator.
 identity-remove-cert-exception =
     .label = Remove Exception
@@ -793,6 +795,9 @@ urlbar-searchmode-default =
 # Label shown on the top of Searchmode Switcher popup. After this label, the
 # available search engines will be listed.
 urlbar-searchmode-popup-description = This time search with:
+# Label shown on the top of Searchmode Switcher popup when the search engine won't automatically
+# reset after submitting.
+urlbar-searchmode-popup-sticky-description = Search with:
 urlbar-searchmode-popup-search-settings-menuitem =
     .label = Search Settings
 
@@ -1418,9 +1423,9 @@ trustpanel-blocker-header =
 ## Variables
 ##  $count (String): the number of trackers blocked.
 
-trustpanel-blocker-section-header = { $count ->
-  [one] <span>{ $count }</span> Tracker blocked on this site
-  *[other] <span>{ $count }</span> Trackers blocked on this site
+trustpanel-blocker-section-header2 = { $count ->
+  [one] <span data-l10n-name="count">{ $count }</span> Tracker blocked on this site
+  *[other] <span data-l10n-name="count">{ $count }</span> Trackers blocked on this site
 }
 trustpanel-blocker-description = { -brand-product-name } thinks companies should follow you less. So we block as many as we can.
 trustpanel-blocked-header = { -brand-product-name } blocked these things for you:

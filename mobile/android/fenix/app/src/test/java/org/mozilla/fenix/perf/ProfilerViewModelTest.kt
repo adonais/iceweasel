@@ -39,7 +39,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowApplication
 
-@OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ProfilerViewModelTest {
 
@@ -213,6 +213,7 @@ class ProfilerViewModelTest {
 
         viewModel.initiateProfilerStartProcess(settings)
         every { mockProfiler.isProfilerActive() } returns true
+
         advanceUntilIdle()
 
         collectionJob.cancel()
@@ -220,17 +221,12 @@ class ProfilerViewModelTest {
         val expectedSequence = listOf(
             ProfilerUiState.Idle::class,
             ProfilerUiState.Starting::class,
-            ProfilerUiState.ShowToast::class,
-            ProfilerUiState.Running::class,
         )
+
         val actualSequence = collectedStates.map { it::class }
         assertEquals("The sequence of UI states was not as expected", expectedSequence, actualSequence)
 
         verify { mockProfiler.startProfiler(settings.threads, settings.features) }
-
-        val startedServiceIntent = shadowApplication.nextStartedService
-        assertNotNull("A service should have been started", startedServiceIntent)
-        assertEquals(ProfilerService.ACTION_START_PROFILING, startedServiceIntent.action)
     }
 
     @Test
@@ -250,8 +246,6 @@ class ProfilerViewModelTest {
         assertNull((lastState as ProfilerUiState.Finished).profileUrl)
 
         verify(exactly = 0) { mockProfiler.stopProfiler(any(), any()) }
-        val startedServiceIntent = shadowApplication.nextStartedService
-        assertNull("No service should have been started", startedServiceIntent)
     }
 
     @Test
@@ -294,9 +288,6 @@ class ProfilerViewModelTest {
         verify { mockProfiler.stopProfiler(any(), any()) }
         verify { mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication) }
         verify { mockProfilerUtils.finishProfileSave(mockApplication, expectedUrl, any()) }
-        val startedServiceIntent = shadowApplication.nextStartedService
-        assertNotNull("A service should have been started to stop profiling", startedServiceIntent)
-        assertEquals(ProfilerService.ACTION_STOP_PROFILING, startedServiceIntent.action)
     }
 
     @Test
@@ -335,9 +326,6 @@ class ProfilerViewModelTest {
 
         verify { mockProfiler.stopProfiler(any(), any()) }
         verify(exactly = 0) { mockProfilerUtils.saveProfileUrlToClipboard(any(), any()) }
-        val startedServiceIntent = shadowApplication.nextStartedService
-        assertNotNull("Intent for stopping service was not captured", startedServiceIntent)
-        assertEquals(ProfilerService.ACTION_STOP_PROFILING, startedServiceIntent.action)
     }
 
     @Test
@@ -387,9 +375,6 @@ class ProfilerViewModelTest {
         verify { mockProfiler.stopProfiler(any(), any()) }
         verify { mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication) }
         verify(exactly = 0) { mockProfilerUtils.finishProfileSave(any(), any(), any()) }
-        val startedServiceIntent = shadowApplication.nextStartedService
-        assertNotNull("A service should have been started", startedServiceIntent)
-        assertEquals(ProfilerService.ACTION_STOP_PROFILING, startedServiceIntent.action)
     }
 
     @Test
@@ -426,36 +411,6 @@ class ProfilerViewModelTest {
 
         verify { mockProfiler.stopProfiler(any(), any()) }
         verify(exactly = 0) { mockProfilerUtils.saveProfileUrlToClipboard(any(), any()) }
-        val startedServiceIntent = shadowApplication.nextStartedService
-        assertNotNull("Intent for stopping service was not captured", startedServiceIntent)
-        assertEquals(ProfilerService.ACTION_STOP_PROFILING, startedServiceIntent.action)
-    }
-
-    @Test
-    fun `WHEN the profiler's active status changes THEN the ViewModel's status updates accordingly`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = false,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
-
-        val collectedStates = mutableListOf<Boolean>()
-        val collectJob = launch {
-            viewModel.isProfilerActive.toList(collectedStates)
-        }
-        advanceUntilIdle()
-
-        every { mockProfiler.isProfilerActive() } returns true
-        viewModel.updateProfilerActiveStatus()
-        advanceUntilIdle()
-
-        every { mockProfiler.isProfilerActive() } returns false
-        viewModel.updateProfilerActiveStatus()
-        advanceUntilIdle()
-
-        collectJob.cancel()
-
-        assertEquals(listOf(false, true, false), collectedStates)
     }
 
     @Test

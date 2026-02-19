@@ -73,6 +73,10 @@
                      data-l10n-id="appmenuitem-history"
                      closemenu="none"
                      />
+      <toolbarbutton id="appMenu-chats-history-button"
+                     class="subviewbutton"
+                     data-l10n-id="menu-history-chats"
+                     command="Tools:ChatsHistory"/>
       <toolbarbutton id="appMenu-downloads-button"
                      class="subviewbutton"
                      data-l10n-id="appmenuitem-downloads"
@@ -850,6 +854,19 @@
              data-l10n-id="ipprotection-site-settings-title"
              data-l10n-attrs="title">
     <vbox id="PanelUI-ipprotection-site-settings-content" class="panel-subview-body"/>
+  </panelview>
+
+  <panelview id="ai-window-toggle-view" class="PanelUI-subView">
+    <vbox class="panel-subview-body">
+      <toolbarbutton id="ai-window-switch-classic"
+                    class="subviewbutton"
+                    data-l10n-id="ai-window-toggleview-switch-classic"
+                    hidden="true"/>
+      <toolbarbutton id="ai-window-switch-ai"
+                    class="subviewbutton"
+                    data-l10n-id="ai-window-toggleview-switch-ai"
+                    hidden="true"/>
+    </vbox>
   </panelview>
 
 #include ../../components/reportbrokensite/content/reportBrokenSitePanel.inc.xhtml

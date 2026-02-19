@@ -20,6 +20,13 @@ class PresShell;
 class ScrollContainerFrame;
 }  // namespace mozilla
 
+enum class TableCellAlignment : uint8_t {
+  Top,
+  Middle,
+  Bottom,
+  Baseline,
+};
+
 /**
  * nsTableCellFrame
  * data structure to maintain information about a single table cell's frame
@@ -129,14 +136,12 @@ class nsTableCellFrame : public nsContainerFrame,
                             mozilla::ForceAlignTopForTableCell aForceAlignTop);
 
   /*
-   * Get the value of vertical-align adjusted for CSS 2's rules for a
-   * table cell, which means the result is always
-   * StyleVerticalAlignKeyword::{Top,Middle,Bottom,Baseline}.
+   * Map the CSS vertical-align to the corresponding table cell alignment value.
    */
-  virtual mozilla::StyleVerticalAlignKeyword GetVerticalAlign() const;
+  virtual TableCellAlignment GetTableCellAlignment() const;
 
-  bool HasVerticalAlignBaseline() const {
-    return GetVerticalAlign() == mozilla::StyleVerticalAlignKeyword::Baseline &&
+  bool HasTableCellAlignmentBaseline() const {
+    return GetTableCellAlignment() == TableCellAlignment::Baseline &&
            !GetContentEmpty();
   }
 

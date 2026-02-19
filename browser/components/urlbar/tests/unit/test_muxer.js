@@ -588,9 +588,9 @@ add_task(async function test_badHeuristicsGroups_notFirst_4() {
  *   The expected results.
  */
 async function doBadHeuristicGroupsTest(resultGroups, expectedResults) {
-  sandbox.stub(UrlbarPrefs, "resultGroups").get(() => {
-    return { children: resultGroups };
-  });
+  sandbox
+    .stub(UrlbarPrefs, "getResultGroups")
+    .returns({ children: resultGroups });
 
   let provider = registerBasicTestProvider(BAD_HEURISTIC_RESULTS);
   let context = createContext("foo", { providers: [provider.name] });

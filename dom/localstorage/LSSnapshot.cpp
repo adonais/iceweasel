@@ -15,7 +15,6 @@
 
 // Global includes
 #include <cstdint>
-#include <cstdlib>
 #include <new>
 #include <utility>
 

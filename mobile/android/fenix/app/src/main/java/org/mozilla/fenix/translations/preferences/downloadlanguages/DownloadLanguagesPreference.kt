@@ -42,7 +42,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.concept.engine.translate.Language
 import mozilla.components.concept.engine.translate.LanguageModel
@@ -57,6 +57,7 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.translations.DownloadIconIndicator
 import org.mozilla.fenix.translations.DownloadInProgressIndicator
 import java.util.Locale
@@ -612,24 +613,12 @@ internal fun getLanguageListPreference(): List<DownloadLanguageItemPreference> {
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun DownloadLanguagesPreferencePreview() {
-    FirefoxTheme {
-        DownloadLanguagesPreference(
-            downloadLanguageItemPreferences = getLanguageListPreference(),
-            learnMoreUrl = "https://www.mozilla.org",
-            fileSizeFormatter = DefaultFileSizeFormatter(LocalContext.current),
-            onLearnMoreClicked = {},
-            onItemClick = {},
-        )
-    }
-}
-
-@Composable
 @Preview
-private fun DownloadLanguagesPreferencePrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun DownloadLanguagesPreferencePreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         DownloadLanguagesPreference(
             downloadLanguageItemPreferences = getLanguageListPreference(),
             learnMoreUrl = "https://www.mozilla.org",

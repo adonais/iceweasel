@@ -481,54 +481,54 @@
     <string name="onboarding_term_of_service_line_three_link_text">Manage</string>
 
     <!-- Terms of use (ToU) onboarding redesign title. -->
-    <string name="onboarding_redesign_tou_title">Launch the ultimate Android browser</string>
+    <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Launch the ultimate Android browser</string>
     <!-- Terms of use (ToU) first subheader. -->
-    <string name="onboarding_redesign_tou_subheader_one">Load sites lightning fast</string>
+    <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Load sites lightning fast</string>
     <!-- Terms of use (ToU) second subheader. -->
-    <string name="onboarding_redesign_tou_subheader_two">Automatic tracking protection</string>
+    <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Automatic tracking protection</string>
     <!-- Terms of use (ToU) third subheader. -->
-    <string name="onboarding_redesign_tou_subheader_three">Thousands of customizations</string>
+    <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Thousands of customizations</string>
     <!-- Terms of use (ToU) first body text. %1$s is replaced by an active link,
         using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”). -->
-    <string name="onboarding_redesign_tou_body_one">By continuing, you agree to the %1$s.</string>
+    <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">By continuing, you agree to the %1$s.</string>
     <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-    <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Firefox Terms of Use</string>
+    <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Firefox Terms of Use</string>
     <!-- Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
         %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”). -->
-    <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox cares about your privacy. Learn more in our %1$s.</string>
+    <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox cares about your privacy. Learn more in our %1$s.</string>
     <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-    <string name="onboarding_redesign_tou_body_two_link_text">Privacy Notice</string>
+    <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Privacy Notice</string>
     <!-- Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
         %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”). -->
-    <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla. %1$s</string>
+    <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla. %1$s</string>
     <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-    <string name="onboarding_redesign_tou_body_three_link_text">Manage Settings</string>
+    <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Manage Settings</string>
     <!-- Terms of use (ToU) onboarding page continue button label. -->
-    <string name="onboarding_redesign_tou_agree_and_continue_button_label">Continue</string>
+    <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Continue</string>
     <!-- Onboarding header for the toolbar selection card. -->
-    <string name="onboarding_redesign_customize_toolbar_title">Where do you want your address bar?</string>
+    <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Where do you want your address bar?</string>
     <!-- Onboarding label for 'Continue' button. -->
-    <string name="onboarding_redesign_continue_button">Continue</string>
+    <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Continue</string>
     <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-    <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Help us grow Firefox</string>
+    <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Help us grow Firefox</string>
     <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-    <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold.</string>
+    <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold.</string>
     <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-    <string name="onboarding_marketing_redesign_learn_more">How we use the data</string>
+    <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">How we use the data</string>
     <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-    <string name="onboarding_marketing_redesign_positive_button">Confirm</string>
+    <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Confirm</string>
     <!-- Set to default browser onboarding redesign title. -->
-    <string name="onboarding_redesign_set_default_browser_title">Get automatic tracking protection by default</string>
+    <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Get automatic tracking protection by default</string>
     <!-- Set to default browser onboarding redesign body. -->
-    <string name="onboarding_redesign_set_default_browser_body">One tap helps stop companies spying on your clicks.</string>
+    <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">One tap helps stop companies spying on your clicks.</string>
     <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-    <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Sync everywhere you use Firefox</string>
+    <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Sync everywhere you use Firefox</string>
     <!-- Sync onboarding redesign body. -->
-    <string name="onboarding_redesign_sync_body">Get bookmarks, tabs, and passwords on any device. All protected with encryption.</string>
+    <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Get bookmarks, tabs, and passwords on any device. All protected with encryption.</string>
     <!-- Sync onboarding redesign positive button text. -->
-    <string name="onboarding_redesign_sync_positive_button">Start syncing</string>
+    <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Start syncing</string>
     <!-- Sync onboarding redesign negative button text. -->
-    <string name="onboarding_redesign_sync_negative_button">Not now</string>
+    <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Not now</string>
     <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
     <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Help us grow Firefox</string>
     <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -545,6 +545,112 @@
     <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold.</string>
     <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
     <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Agree and start browsing</string>
+
+    <!-- ==== Project "Nova" onboarding strings ==== -->
+
+    <!-- "Continue" onboarding button. -->
+    <string name="nova_onboarding_continue_button" >Continue</string>
+
+    <!-- "Not now" onboarding button. -->
+    <string name="nova_onboarding_negative_button">Not now</string>
+
+    <!-- Terms of use (ToU) onboarding title. -->
+    <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Get ready to run free</string>
+
+    <!-- Terms of use (ToU) onboarding subtitle. -->
+    <string name="nova_onboarding_tou_subtitle">Speedy, safe, and won’t sell you out.\nBrowsing just got better.</string>
+
+    <!-- Terms of use (ToU) onboarding body line one.
+        %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”). -->
+    <string name="nova_onboarding_tou_body_line_1">By continuing, you agree to the %1$s.</string>
+
+    <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+    <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Firefox Terms of Use</string>
+
+    <!-- Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+        %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”). -->
+    <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox cares about your privacy. Learn more in our %1$s.</string>
+
+    <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+    <string name="nova_onboarding_tou_body_line_2_link_text">Privacy Notice</string>
+
+    <!-- Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+        %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”). -->
+    <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla. %1$s</string>
+
+    <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+    <string name="nova_onboarding_tou_body_line_3_link_text">Manage settings</string>
+
+    <!-- "Set to default" onboarding title. -->
+    <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Say goodbye to creepy trackers</string>
+    <!-- "Set to default" onboarding title. -->
+    <string name="nova_onboarding_set_to_default_title_2">Open all your links with built-in privacy</string>
+
+    <!-- "Set to default" onboarding subtitle. -->
+    <string name="nova_onboarding_set_to_default_subtitle">We protect your data and automatically block companies from spying on your clicks.</string>
+
+    <!-- "Set to default" onboarding button. -->
+    <string name="nova_onboarding_set_to_default_button">Set as default browser</string>
+
+    <!-- Toolbar selection onboarding title. -->
+    <string name="nova_onboarding_toolbar_selection_title">Choose your address bar</string>
+
+    <!-- Toolbar selection onboarding "top" option label. -->
+    <string name="nova_onboarding_toolbar_selection_top_label">Top</string>
+
+    <!-- Toolbar selection onboarding "bottom" option label. -->
+    <string name="nova_onboarding_toolbar_selection_bottom_label">Bottom</string>
+
+    <!-- Theme selection onboarding title. -->
+    <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Pick your theme</string>
+
+    <!-- Theme selection onboarding "automatic" option label. -->
+    <string name="nova_onboarding_theme_selection_automatic_label" tools:ignore="UnusedResources">Automatic</string>
+
+    <!-- Theme selection onboarding "light" option label. -->
+    <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">Light</string>
+
+    <!-- Theme selection onboarding "dark" option label. -->
+    <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Dark</string>
+
+    <!-- Sync onboarding title. -->
+    <string name="nova_onboarding_sync_title">Instantly pick up where you left off</string>
+
+    <!-- Sync onboarding subtitle. -->
+    <string name="nova_onboarding_sync_subtitle">Grab bookmarks, passwords, and more on any device in a snap. Your personal data stays safe and secure with encryption.</string>
+
+    <!-- Sync onboarding button. -->
+    <string name="nova_onboarding_sync_button">Start syncing</string>
+
+    <!-- Marketing onboarding title. -->
+    <string name="nova_onboarding_marketing_title">Help us build a better internet</string>
+
+    <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+        %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”). -->
+    <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold. %1$s</string>
+
+    <!-- Marketing onboarding body link text. -->
+    <string name="nova_onboarding_marketing_body_link_text">How we use the data</string>
+
+    <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
+    <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Notifications help you stay safer with Firefox</string>
+
+    <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+    <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Discover the latest privacy features in Firefox so you’re always up to date on how to stay protected.</string>
+
+    <!-- Notifications onboarding button. -->
+    <string name="nova_onboarding_notifications_button">Turn on notifications</string>
+
+    <!-- "Add search widget" onboarding title. -->
+    <string name="nova_onboarding_add_search_widget_title">Make every search more private</string>
+
+    <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+    <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Start every search from your phone’s home screen and know Firefox’s automatic protections have your back.</string>
+
+    <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
+    <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Add Firefox widget</string>
+
+    <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
     <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
     <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Pick a toolbar placement</string>
@@ -739,8 +845,6 @@
     <string name="preferences_gestures">Gestures</string>
     <!-- Preference for settings related to visual options -->
     <string name="preferences_customize">Customize</string>
-    <!-- Preference description for banner about signing in -->
-    <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Sign in to sync tabs, bookmarks, passwords, and more.</string>
     <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
     <string name="preferences_sign_in_description">Sync tabs, bookmarks, passwords, and more.</string>
     <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -807,6 +911,13 @@
     <string name="preferences_open_links_in_apps_ask">Ask before opening</string>
     <!-- Preference for open links in third party apps never open in apps option -->
     <string name="preferences_open_links_in_apps_never">Never</string>
+    <!-- Preference category for file storage. -->
+    <string name="preferences_category_file_storage">File storage</string>
+    <!-- Preference title for downloads default location. -->
+    <string name="preferences_downloads_default_location_title">Default download location</string>
+    <!-- Message shown as the summary of the download location preference when the
+           app has lost the permission to access a previously selected custom folder. -->
+    <string name="preference_downloads_folder_permission_lost">You don’t have permission to use this folder. Try choosing a different one.</string>
     <!-- Preference title for choosing an app to handle downloads -->
     <string name="preferences_choose_app_for_downloads">Manage downloads with another app</string>
     <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1108,8 +1219,6 @@
     <string name="preference_experiments_summary_2">Allows Mozilla to install and run studies</string>
 
     <!-- Turn On Sync Preferences -->
-    <!-- Header of the Sync and save your data preference view -->
-    <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sync and save your data</string>
     <!-- Header of the Sign in preference view -->
     <string name="preferences_sign_in">Sign in</string>
     <!-- Preference for reconnecting to FxA sync -->
@@ -1287,11 +1396,25 @@
     <!-- Title of the active section on the studies list -->
     <string name="studies_active">Active</string>
     <!-- Description for studies -->
-    <string name="studies_description_3">Try out features and ideas before they’re released to everyone.</string>
+    <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Try out features and ideas before they’re released to everyone.</string>
+    <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+    <string name="studies_description_4" tools:ignore="BrandUsage">Firefox randomly selects users to test features, which improves quality for everyone.</string>
     <!-- Title of the Studies data preference -->
-    <string name="studies_title">Install and run studies</string>
+    <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Install and run studies</string>
+    <!-- Title of the Studies data preference -->
+    <string name="studies_title_2">Allow feature studies</string>
     <!-- Learn more link for studies, links to an article for more information about studies. -->
     <string name="studies_learn_more">Learn more</string>
+
+    <!-- Remote Improvements (Rollouts) -->
+    <!-- Title of the Remote Improvements (rollouts) data preference -->
+    <string name="remote_improvements_title">Allow remote improvements</string>
+    <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+    <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox will improve features, performance, and stability between updates. Changes applied remotely.</string>
+    <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+    <string name="remote_improvements_learn_more">Learn more</string>
+    <!-- Title for remote improvements preference in Advanced settings -->
+    <string name="preferences_remote_improvements">Remote improvements</string>
 
     <!-- Sessions -->
     <!-- Title for the list of tabs in the current normal session used by a11y services
@@ -1323,6 +1446,8 @@
     <string name="tab_drawer_fab_content">Private</string>
     <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
     <string name="tab_drawer_fab_sync">Sync</string>
+    <!-- Text for the tab search bar placeholder -->
+    <string name="tab_manager_search_bar_placeholder">Search your tabs</string>
     <!-- Text shown in the menu for sharing all tabs -->
     <string name="tab_tray_menu_item_share">Share all tabs</string>
     <!-- Text shown in the menu to view recently closed tabs -->
@@ -1336,7 +1461,7 @@
     <!-- Text shown in the menu for closing all tabs -->
     <string name="tab_tray_menu_item_close">Close all tabs</string>
     <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
-    <string name="tab_manager_close_all_tabs_dialog_title">Close all tabs?</string>Í
+    <string name="tab_manager_close_all_tabs_dialog_title">Close all tabs?</string>
     <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
     <string name="tab_manager_close_all_tabs_dialog_body">This will close all open tabs.</string>
     <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
@@ -1361,18 +1486,22 @@
     <string name="tab_tray_multiselect_menu_content_description">Selected tabs menu</string>
     <!-- Title text displayed for a homepage tab in the tabs tray. -->
     <string name="tab_tray_homepage_tab">Homepage</string>
-    <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-    <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s homepage</string>
     <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
     <string name="remove_tab_from_collection">Remove tab from collection</string>
     <!-- Text for button to enter multiselect mode in tabs tray -->
     <string name="tabs_tray_select_tabs">Select tabs</string>
+    <!-- Text for tab manager search page when there are no results. -->
+    <string name="tab_manager_no_search_results">No matches found.</string>
+    <!-- Additional text for tab manager search page when there are no results. -->
+    <string name="tab_manager_no_search_results_additional_text">Try another search!</string>
     <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
     <string name="close_tab">Close tab</string>
     <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
     <string name="close_tab_title">Close tab %s</string>
     <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
     <string name="open_tabs_menu">Open tabs menu</string>
+    <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+    <string name="tab_manager_search_bar_back_content_description">Return to tab manager</string>
     <!-- Open tabs menu item to save tabs to collection -->
     <string name="tabs_menu_save_to_collection1">Save tabs to collection</string>
     <!-- Text for the menu button to delete a collection -->
@@ -1460,6 +1589,8 @@
     <string name="download_delete_item">Delete</string>
     <!-- Content description for the toolbar "Navigate back" button -->
     <string name="download_navigate_back_description">Navigate back</string>
+    <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+    <string name="download_navigate_settings_description">Navigate to Downloads Settings</string>
     <!-- Content description for the toolbar back button while searching the downloads -->
     <string name="download_close_search_description">Back and close search</string>
     <!-- Content description for the search bar clear text button on the downloads screen -->
@@ -1725,8 +1856,14 @@
     <string name="bookmark_delete_folder_content_description">Delete folder</string>
     <!-- Content description for bookmark search floating action button -->
     <string name="bookmark_search_button_content_description">Search bookmarks</string>
+    <!-- Content description for select folder screen search action button ("search" is a verb)  -->
+    <string name="select_bookmark_search_button_content_description">Search folders</string>
     <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
     <string name="bookmark_item_menu_button_content_description">Item Menu for %s</string>
+    <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+    <string name="bookmark_select_folder_expand_folder_content_description">Expand folder: %s</string>
+    <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+    <string name="bookmark_select_folder_close_folder_content_description">Close folder: %s</string>
     <!-- Content description for the "close" button in bookmarks screen. -->
     <string name="bookmark_close_button_content_description">Close bookmarks</string>
     <!-- Title for the bookmark list empty state-->
@@ -1743,6 +1880,8 @@
     <string name="bookmark_empty_list_folder_description">Add bookmarks as you browse so you can find your favorite sites later.</string>
     <!-- Description for the add new folder button when selecting a folder. -->
     <string name="bookmark_select_folder_new_folder_button_title">New folder</string>
+    <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
+    <string name="bookmark_moved_single_item">Moved %1$s to %2$s</string>
 
     <!-- Site Permissions -->
     <!-- Button label that take the user to the Android App setting -->
@@ -1913,8 +2052,6 @@
     <string name="toast_copy_link_to_clipboard">Copied to clipboard</string>
     <!-- An option from the share dialog to sign into sync -->
     <string name="sync_sign_in">Sign in to Sync</string>
-    <!-- An option from the three dot menu to sync and save data -->
-    <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sync and save data</string>
     <!-- An option from the three dot menu to sign in -->
     <string name="sync_menu_sign_in">Sign in</string>
     <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2021,7 +2158,7 @@
     <!-- Title for Accessibility Text Size Scaling Preference -->
     <string name="preference_accessibility_font_size_title">Font Size</string>
     <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-    <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+    <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
 
     <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
     <string name="preference_accessibility_auto_size_2">Automatic font sizing</string>
@@ -2475,7 +2612,10 @@
     <string name="edit_login_navigate_back_button_content_description">Navigate back</string>
     <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
     <string name="edit_login_button_content_description">Edit login</string>
-
+    <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
+    <string name="saved_logins_add_new_login_button_content_description">Add new login</string>
+    <!-- Content description, used by tools like screenreaders, to press on the clear search text button. -->
+    <string name="saved_logins_clear_search_text_button_content_description">Clear search text</string>
     <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
     <string name="saved_login_open_site">Open site in browser</string>
     <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -3555,6 +3695,8 @@
     <string name="settings_search_no_results_title">Nothing turned up</string>
     <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
     <string name="settings_search_no_results_message">Maybe try a different search?</string>
+    <!-- Content Description for the button to open Settings Search (to search through settings). -->
+    <string name="settings_search_button_content_description">Settings search button</string>
 
     <!-- ==== Terms of use pop up prompt ==== -->
 

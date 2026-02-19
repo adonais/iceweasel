@@ -11,6 +11,8 @@
 // for definition of MFBT_DATA
 #include "mozilla/Types.h"
 
+#include <cstdint>
+
 /**
  * The public interface of this header consists of a set of macros and
  * functions for Intel CPU features.

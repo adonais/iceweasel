@@ -29,7 +29,6 @@
 #include "nsITimer.h"
 #include "nsTHashMap.h"
 #include "nsThreadUtils.h"
-// #include "nscore.h"
 
 namespace details {
 static nsCString MakeTargetName(const char* name) {
@@ -113,7 +112,7 @@ class TestHandleWatcher : public testing::Test {
 /* static */
 bool TestHandleWatcher::sIsLive = false;
 /* static */
-MOZ_CONSTINIT RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool;
+constinit RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool;
 
 ///////////////////////////////////////////////////////////////////////
 // WindowsEventObject

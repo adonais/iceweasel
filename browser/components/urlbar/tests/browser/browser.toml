@@ -714,8 +714,10 @@ https_first_disabled = true
 
 ["browser_trust_panel.js"]
 https_first_disabled = true
+support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
 
 ["browser_trust_panel_pages.js"]
+https_first_disabled = true
 
 ["browser_trust_panel_security_view.js"]
 https_first_disabled = true
@@ -777,9 +779,6 @@ https_first_disabled = true
 tags = "search-telemetry"
 
 ["browser_urlbar_telemetry_remotetab.js"]
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_searchContainers.js"]
 tags = "search-telemetry"
 
 ["browser_urlbar_telemetry_searchmode.js"]

@@ -57,7 +57,7 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
 
 #ifdef MOZ_WIDGET_GTK
   // Check if libva and libva-drm are available and we can use HW decode.
-  bool IsVAAPIAvailable();
+  bool IsVAAPIAvailable() const;
 #endif
 
   // Helpers for libavcodec/util logging to integrate with MOZ_LOG.

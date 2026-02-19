@@ -67,7 +67,7 @@ const Localized = createFactory(
  * is written using vanilla JS and browser chrome elements in order to be more
  * performant.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class DevToolsPresetSelection extends PureComponent {
   /** @param {Props} props */

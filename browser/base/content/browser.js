@@ -606,13 +606,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "gTranslationsEnabled",
-  "browser.translations.enable",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "gUseFeltPrivacyUI",
   "browser.privatebrowsing.felt-privacy-v1",
   false
@@ -715,6 +708,7 @@ async function gLazyFindCommand(cmd, ...args) {
 var gPageIcons = {
   "about:home": "chrome://branding/content/icon32.png",
   "about:newtab": "chrome://branding/content/icon32.png",
+  "about:opentabs": "chrome://branding/content/icon32.png",
   "about:welcome": "chrome://branding/content/icon32.png",
   "about:privatebrowsing": "chrome://browser/skin/privatebrowsing/favicon.svg",
 };
@@ -724,6 +718,7 @@ var gInitialPages = [
   "about:home",
   "about:firefoxview",
   "about:newtab",
+  "about:opentabs",
   "about:privatebrowsing",
   "about:sessionrestore",
   "about:welcome",
@@ -1690,8 +1685,6 @@ function OpenBrowserWindow(options) {
   options ??= {};
   options.openerWindow ??= window;
 
-  AIWindow.handleAIWindowOptions(window, options);
-
   let win = BrowserWindowTracker.openWindow(options);
 
   win.addEventListener(
@@ -2215,16 +2208,19 @@ var XULBrowserWindow = {
       aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SESSION_STORE
     );
 
-    // We want to update the popup visibility if we received this notification
-    // via simulated locationchange events such as switching between tabs, however
-    // if this is a document navigation then PopupNotifications will be updated
-    // via TabsProgressListener.onLocationChange and we do not want it called twice
-    gURLBar.setURI({
-      uri: aLocationURI,
-      dueToTabSwitch: aIsSimulated,
-      dueToSessionRestore: isSessionRestore,
-      isSameDocument,
-    });
+    // Don't update URL for document PiP window as it shows its opener url
+    if (!window.browsingContext.isDocumentPiP) {
+      // We want to update the popup visibility if we received this notification
+      // via simulated locationchange events such as switching between tabs, however
+      // if this is a document navigation then PopupNotifications will be updated
+      // via TabsProgressListener.onLocationChange and we do not want it called twice
+      gURLBar.setURI({
+        uri: aLocationURI,
+        dueToTabSwitch: aIsSimulated,
+        dueToSessionRestore: isSessionRestore,
+        isSameDocument,
+      });
+    }
 
     BookmarkingUI.onLocationChange();
     // If we've actually changed document, update the toolbar visibility.
@@ -2374,12 +2370,11 @@ var XULBrowserWindow = {
     } else {
       this._menuItemForTranslations.removeAttribute("disabled");
     }
-    if (gTranslationsEnabled) {
-      if (TranslationsParent.getIsTranslationsEngineSupported()) {
-        this._menuItemForTranslations.removeAttribute("hidden");
-      } else {
-        this._menuItemForTranslations.setAttribute("hidden", "true");
-      }
+    if (
+      TranslationsParent.AIFeature.isEnabled &&
+      TranslationsParent.getIsTranslationsEngineSupported()
+    ) {
+      this._menuItemForTranslations.removeAttribute("hidden");
     } else {
       this._menuItemForTranslations.setAttribute("hidden", "true");
     }
@@ -2540,6 +2535,13 @@ var XULBrowserWindow = {
     if (uriOverride) {
       uri = uriOverride;
       aState |= Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
+    }
+
+    if (window.browsingContext.isDocumentPiP) {
+      gURLBar.setURI({
+        uri,
+        isSameDocument: true,
+      });
     }
 
     try {
@@ -3343,12 +3345,12 @@ const DynamicShortcutTooltip = {
 /**
  * Extracts linkNode and href for the current click target.
  *
+ * Note: linkNode will be null if the click wasn't on an anchor
+ * element (or XLink).
+ *
  * @param event
  *        The click event.
  * @return [href, linkNode].
- *
- * @note linkNode will be null if the click wasn't on an anchor
- *       element (or XLink).
  */
 function hrefAndLinkNodeForClickEvent(event) {
   function isHTMLLink(aNode) {
@@ -3398,11 +3400,12 @@ function hrefAndLinkNodeForClickEvent(event) {
 /**
  * Called whenever the user clicks in the content area.
  *
+ * Note: the default event is prevented if the click is handled.
+ *
  * @param event
  *        The click event.
  * @param isPanelClick
  *        Whether the event comes from an extension panel.
- * @note default event is prevented if the click is handled.
  */
 function contentAreaClick(event, isPanelClick) {
   if (!event.isTrusted || event.defaultPrevented || event.button != 0) {

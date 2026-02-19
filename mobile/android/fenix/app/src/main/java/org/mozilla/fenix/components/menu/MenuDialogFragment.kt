@@ -60,12 +60,11 @@ import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.util.dpToPx
+import mozilla.components.support.utils.ext.getWindowInsets
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.top
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
@@ -88,8 +87,8 @@ import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.getWindowInsets
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
+import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
@@ -914,10 +913,10 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         }
 
         url?.let {
-            (activity as HomeActivity).openToBrowserAndLoad(
+            findNavController().openToBrowser()
+            requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
                 searchTermOrURL = url,
                 newTab = true,
-                from = BrowserDirection.FromMenuDialogFragment,
             )
         }
     }

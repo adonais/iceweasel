@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.settings.trustpanel.TrustPanelFragmentDirections
@@ -33,7 +33,7 @@ class TrustPanelNavigationMiddleware(
 
     @Suppress("CyclomaticComplexMethod")
     override fun invoke(
-        context: MiddlewareContext<TrustPanelState, TrustPanelAction>,
+        store: Store<TrustPanelState, TrustPanelAction>,
         next: (TrustPanelAction) -> Unit,
         action: TrustPanelAction,
     ) {

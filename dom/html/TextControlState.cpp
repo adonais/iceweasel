@@ -991,28 +991,20 @@ TextInputListener::HandleEvent(Event* aEvent) {
 }
 
 nsresult TextInputListener::OnEditActionHandled(TextEditor& aTextEditor) {
-  if (mFrame) {
-    // XXX Do we still need this or can we just remove the mFrame and
-    // frame.IsAlive() conditions below?
-    AutoWeakFrame weakFrame = mFrame;
+  // Update the undo / redo menus
+  //
+  size_t numUndoItems = aTextEditor.NumberOfUndoItems();
+  size_t numRedoItems = aTextEditor.NumberOfRedoItems();
+  if ((numUndoItems && !mHadUndoItems) || (!numUndoItems && mHadUndoItems) ||
+      (numRedoItems && !mHadRedoItems) || (!numRedoItems && mHadRedoItems)) {
+    // Modify the menu if undo or redo items are different
+    UpdateTextInputCommands(u"undo"_ns);
 
-    // Update the undo / redo menus
-    //
-    size_t numUndoItems = aTextEditor.NumberOfUndoItems();
-    size_t numRedoItems = aTextEditor.NumberOfRedoItems();
-    if ((numUndoItems && !mHadUndoItems) || (!numUndoItems && mHadUndoItems) ||
-        (numRedoItems && !mHadRedoItems) || (!numRedoItems && mHadRedoItems)) {
-      // Modify the menu if undo or redo items are different
-      UpdateTextInputCommands(u"undo"_ns);
-
-      mHadUndoItems = numUndoItems != 0;
-      mHadRedoItems = numRedoItems != 0;
-    }
-
-    if (weakFrame.IsAlive()) {
-      HandleValueChanged(aTextEditor);
-    }
+    mHadUndoItems = numUndoItems != 0;
+    mHadRedoItems = numRedoItems != 0;
   }
+
+  HandleValueChanged(aTextEditor);
 
   return mTextControlState ? mTextControlState->OnEditActionHandled() : NS_OK;
 }
@@ -1038,11 +1030,7 @@ void TextInputListener::HandleValueChanged(TextEditor& aTextEditor) {
 
 nsresult TextInputListener::UpdateTextInputCommands(
     const nsAString& aCommandsToUpdate) {
-  nsIContent* content = mFrame->GetContent();
-  if (NS_WARN_IF(!content)) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<Document> doc = content->GetComposedDoc();
+  nsCOMPtr<Document> doc = mTxtCtrlElement->GetComposedDoc();
   if (NS_WARN_IF(!doc)) {
     return NS_ERROR_FAILURE;
   }

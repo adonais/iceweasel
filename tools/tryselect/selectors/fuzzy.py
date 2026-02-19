@@ -102,6 +102,7 @@ class FuzzyParser(BaseTryParser):
         "browsertime",
         "chemspill-prio",
         "disable-pgo",
+        "do-not-optimize",
         "env",
         "existing-tasks",
         "gecko-profile",

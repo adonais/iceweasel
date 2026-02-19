@@ -34,6 +34,7 @@ class WebTransportParent : public PWebTransportParent,
   NS_DECL_WEBTRANSPORTSESSIONEVENTLISTENER
 
   void Create(const nsAString& aURL, nsIPrincipal* aPrincipal,
+              const uint64_t& aBrowsingContextID,
               const mozilla::Maybe<IPCClientInfo>& aClientInfo,
               const bool& aDedicated, const bool& aRequireUnreliable,
               const uint32_t& aCongestionControl,
@@ -58,6 +59,9 @@ class WebTransportParent : public PWebTransportParent,
 
   ::mozilla::ipc::IPCResult RecvGetMaxDatagramSize(
       GetMaxDatagramSizeResolver&& aResolver);
+
+  ::mozilla::ipc::IPCResult RecvGetHttpChannelID(
+      GetHttpChannelIDResolver&& aResolver);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 

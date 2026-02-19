@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
@@ -37,6 +37,7 @@ import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 private const val DEFAULT_REGION = "XX"
 private const val MAX_REGION_LENGTH = 2
@@ -182,20 +183,12 @@ class RegionToolsViewModel : ViewModel() {
     var currentRegion by mutableStateOf("")
 }
 
-@Composable
-@PreviewLightDark
-private fun RegionScreenPreview() {
-    FirefoxTheme {
-        RegionTools(
-            browserStore = BrowserStore(),
-        )
-    }
-}
-
-@Composable
 @Preview
-private fun RegionScreenPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun RegionScreenPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         RegionTools(
             browserStore = BrowserStore(),
         )

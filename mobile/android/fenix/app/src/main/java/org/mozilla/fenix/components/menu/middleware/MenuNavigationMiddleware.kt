@@ -21,7 +21,7 @@ import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.service.fxa.manager.AccountState.Authenticated
 import mozilla.components.service.fxa.manager.AccountState.Authenticating
 import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
@@ -78,7 +78,7 @@ class MenuNavigationMiddleware(
 
     @Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")
     override fun invoke(
-        context: MiddlewareContext<MenuState, MenuAction>,
+        store: Store<MenuState, MenuAction>,
         next: (MenuAction) -> Unit,
         action: MenuAction,
     ) {
@@ -86,7 +86,7 @@ class MenuNavigationMiddleware(
         // This is to ensure that any navigation action will be using correct
         // state properties before they are modified due to other actions being
         // dispatched and processes.
-        val currentState = context.state
+        val currentState = store.state
 
         next(action)
 

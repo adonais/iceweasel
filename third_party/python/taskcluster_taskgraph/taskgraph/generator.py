@@ -100,9 +100,9 @@ class Kind:
                 attributes=task_dict["attributes"],
                 task=task_dict["task"],
                 optimization=task_dict.get("optimization"),
-                dependencies=task_dict.get("dependencies"),
-                soft_dependencies=task_dict.get("soft-dependencies"),
-                if_dependencies=task_dict.get("if-dependencies"),
+                dependencies=task_dict.get("dependencies", {}),
+                soft_dependencies=task_dict.get("soft-dependencies", []),
+                if_dependencies=task_dict.get("if-dependencies", []),
             )
             for task_dict in transforms(trans_config, inputs)
         ]

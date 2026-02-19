@@ -275,19 +275,16 @@ def setup(root, log, **lintargs) -> int:
             installed_version = get_audit_version()
 
         if not installed_version or installed_version != desired_version:
-
-            output = run_process(
-                [
-                    "cargo",
-                    "install",
-                    "--locked",
-                    "--version",
-                    desired_version,
-                    "--color",
-                    "never",
-                    "cargo-audit",
-                ]
-            )
+            output = run_process([
+                "cargo",
+                "install",
+                "--locked",
+                "--version",
+                desired_version,
+                "--color",
+                "never",
+                "cargo-audit",
+            ])
             if not which("cargo-audit") or get_audit_version() != desired_version:
                 log.error(f"Could not install cargo-audit:\n{output}")
                 return 1

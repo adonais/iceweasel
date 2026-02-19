@@ -170,38 +170,37 @@ function waitForSourceLoad(toolbox, url) {
  * There may be no benefit in doing this as an abstract type, but if nothing
  * else gives us a place to write documentation.
  */
-function DevToolPanel(iframeWindow, toolbox) {
-  EventEmitter.decorate(this);
+class DevToolPanel extends EventEmitter {
+  constructor(iframeWindow, toolbox) {
+    super();
 
-  this._toolbox = toolbox;
-  this._window = iframeWindow;
-}
-
-DevToolPanel.prototype = {
+    this._toolbox = toolbox;
+    this._window = iframeWindow;
+  }
   open() {
     return new Promise(resolve => {
       executeSoon(() => {
         resolve(this);
       });
     });
-  },
+  }
 
   get document() {
     return this._window.document;
-  },
+  }
 
   get target() {
     return this._toolbox.target;
-  },
+  }
 
   get toolbox() {
     return this._toolbox;
-  },
+  }
 
   destroy() {
     return Promise.resolve(null);
-  },
-};
+  }
+}
 
 /**
  * Create a simple devtools test panel that implements the minimum API needed to be

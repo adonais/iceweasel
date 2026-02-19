@@ -140,6 +140,8 @@ class CompileZone {
                                    gc::CatchAllAllocSite siteKind);
   gc::AllocSite* tenuringAllocSite();
 
+  void* jitZone();
+
   bool hasRealmWithAllocMetadataBuilder();
 };
 

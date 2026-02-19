@@ -98,20 +98,18 @@ def extract_flaky_tests(xml_files: list[Path]) -> list[dict[str, Any]]:
                         if cur_case.result:
                             result_info = []
                             for result in cur_case.result:
-                                result_info.append(
-                                    {
-                                        "type": (
-                                            result.type
-                                            if result.type
-                                            else "Failure Stack Trace"
-                                        ),
-                                        "message": (
-                                            result.message
-                                            if result.message
-                                            else result.text
-                                        ),
-                                    }
-                                )
+                                result_info.append({
+                                    "type": (
+                                        result.type
+                                        if result.type
+                                        else "Failure Stack Trace"
+                                    ),
+                                    "message": (
+                                        result.message
+                                        if result.message
+                                        else result.text
+                                    ),
+                                })
                             flaky_info["results"] = result_info
 
                         flaky_tests.append(flaky_info)
@@ -233,24 +231,24 @@ def generate_html_report(flaky_tests: list[dict[str, Any]], output_path: Path) -
     for test in flaky_tests:
         html_content += f"""
     <div class="test-case">
-        <div class="test-name">{test['name']}</div>
-        <div class="test-class">Class: {test['classname']}</div>
+        <div class="test-name">{test["name"]}</div>
+        <div class="test-class">Class: {test["classname"]}</div>
         <div class="test-meta">
-            Execution Time: {test.get('time', 'N/A')}s | Source: {test['file']}
+            Execution Time: {test.get("time", "N/A")}s | Source: {test["file"]}
         </div>
 """
 
         if "weblink" in test:
             html_content += f"""
-        <a href="{test['weblink']}" class="firebase-link" target="_blank">View in Firebase Test Lab</a>
+        <a href="{test["weblink"]}" class="firebase-link" target="_blank">View in Firebase Test Lab</a>
 """
 
         if "results" in test:
             for result in test["results"]:
                 html_content += f"""
         <div class="result-info">
-            <div class="result-type">{result.get('type', 'Unknown')}</div>
-            <div>{result.get('message', 'No message available')}</div>
+            <div class="result-type">{result.get("type", "Unknown")}</div>
+            <div>{result.get("message", "No message available")}</div>
         </div>
 """
 

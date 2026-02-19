@@ -33,9 +33,6 @@ class TMimeType final {
     ParameterValue() : mRequiresQuoting(false) {}
   };
 
-  static nsTArray<nsTDependentSubstring<char_type>> SplitMimetype(
-      const nsTSubstring<char_type>& aMimeType);
-
   bool mIsBase64{false};
   nsTString<char_type> mType;
   nsTString<char_type> mSubtype;
@@ -47,6 +44,9 @@ class TMimeType final {
   TMimeType(const nsTSubstring<char_type>& aType,
             const nsTSubstring<char_type>& aSubtype)
       : mType(aType), mSubtype(aSubtype) {}
+
+  static nsTArray<nsTDependentSubstring<char_type>> SplitMimetype(
+      const nsTSubstring<char_type>& aMimeType);
 
   static RefPtr<TMimeType<char_type>> Parse(
       const nsTSubstring<char_type>& aMimeType);

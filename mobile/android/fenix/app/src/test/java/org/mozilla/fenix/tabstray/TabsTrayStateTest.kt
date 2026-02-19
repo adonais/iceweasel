@@ -221,13 +221,28 @@ class TabsTrayStateTest {
 
     @Test
     fun `WHEN the user is on the normal tabs page THEN the search icon is visible`() {
-        val testState = TabsTrayState(selectedPage = Page.NormalTabs)
+        val testState = TabsTrayState(
+            selectedPage = Page.NormalTabs,
+            tabSearchEnabled = true,
+        )
         assertTrue(testState.searchIconVisible)
     }
 
     @Test
+    fun `GIVEN Tab Search is not enabled WHEN the user is on the normal tabs page THEN the search icon is not visible`() {
+        val testState = TabsTrayState(
+            selectedPage = Page.NormalTabs,
+            tabSearchEnabled = false,
+        )
+        assertFalse(testState.searchIconVisible)
+    }
+
+    @Test
     fun `WHEN the user is on the private tabs page THEN the search icon is visible`() {
-        val testState = TabsTrayState(selectedPage = Page.PrivateTabs)
+        val testState = TabsTrayState(
+            selectedPage = Page.PrivateTabs,
+            tabSearchEnabled = true,
+        )
         assertTrue(testState.searchIconVisible)
     }
 
@@ -255,6 +270,7 @@ class TabsTrayStateTest {
         val testState = TabsTrayState(
             selectedPage = Page.NormalTabs,
             normalTabs = listOf(createTab(url = "url")),
+            tabSearchEnabled = true,
         )
         assertTrue(testState.searchIconEnabled)
     }
@@ -273,6 +289,7 @@ class TabsTrayStateTest {
         val testState = TabsTrayState(
             selectedPage = Page.PrivateTabs,
             privateTabs = listOf(createTab(url = "url")),
+            tabSearchEnabled = true,
         )
         assertTrue(testState.searchIconEnabled)
     }

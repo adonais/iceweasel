@@ -7,12 +7,14 @@ mod profiler;
 mod shell;
 mod textures;
 mod composite_view;
+mod draw_calls;
+mod timeline;
 
 use eframe::egui;
-use webrender_api::DebugFlags;
+use webrender_api::{DebugFlags, RenderCommandInfo};
 use webrender_api::debugger::{DebuggerMessage, DebuggerTextureContent, ProfileCounterId, CompositorDebugInfo};
 use crate::{command, net};
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::fs;
 use std::io::Write;
 use std::sync::mpsc;
@@ -25,6 +27,43 @@ enum ApplicationEvent {
     NetworkEvent(net::NetworkEvent),
 }
 
+struct LoggedFrame {
+    pub render_commands: Option<Vec<RenderCommandInfo>>,
+}
+
+struct FrameLog {
+    pub frames: VecDeque<LoggedFrame>,
+    pub enabled: bool,
+    pub frames_end: usize,
+}
+
+impl FrameLog {
+    pub fn new() -> Self {
+        FrameLog {
+            frames: VecDeque::with_capacity(100),
+            enabled: false,
+            frames_end: 0,
+        }
+    }
+
+    pub fn first_frame_index(&self) -> usize {
+        self.frames_end - self.frames.len()
+    }
+
+    pub fn last_frame_index(&self) -> usize {
+        self.frames_end.max(1) - 1
+    }
+
+    pub fn frame(&self, idx: usize) -> Option<&LoggedFrame> {
+        let i = idx - self.first_frame_index();
+        if i < self.frames.len() {
+            return Some(&self.frames[i]);
+        }
+
+        None
+    }
+}
+
 struct DataModel {
     is_connected: bool,
     debug_flags: DebugFlags,
@@ -33,6 +72,8 @@ struct DataModel {
     documents: Vec<Document>,
     preview_doc_index: Option<usize>,
     profile_graphs: HashMap<ProfileCounterId, Graph>,
+    frame_log: FrameLog,
+    timeline: timeline::Timeline,
 }
 
 impl DataModel {
@@ -45,6 +86,8 @@ impl DataModel {
             documents: Vec::new(),
             preview_doc_index: None,
             profile_graphs: HashMap::new(),
+            frame_log: FrameLog::new(),
+            timeline: timeline::Timeline::new(),
         }
     }
 }
@@ -56,6 +99,8 @@ pub enum Tool {
     Shell,
     Documents,
     Preview,
+    DrawCalls,
+    Timeline,
 }
 
 impl egui_tiles::Behavior<Tool> for Gui {
@@ -66,6 +111,8 @@ impl egui_tiles::Behavior<Tool> for Gui {
             Tool::Shell => { "Shell" }
             Tool::Documents => { "Documents" }
             Tool::Preview => { "Preview" }
+            Tool::DrawCalls => { "Draw calls" }
+            Tool::Timeline => { "Timeline" }
         };
 
         title.into()
@@ -82,6 +129,8 @@ impl egui_tiles::Behavior<Tool> for Gui {
                 Tool::DebugFlags => { debug_flags::ui(self, ui); }
                 Tool::Profiler => { profiler::ui(self, ui); }
                 Tool::Shell => { shell::ui(self, ui); }
+                Tool::DrawCalls => { draw_calls::ui(self, ui); }
+                Tool::Timeline => { timeline::ui(self, ui); }
             }
         });
 
@@ -149,12 +198,19 @@ impl Gui {
                         e
                     })
                     .ok()
+            }).and_then(|save| {
+                if save.version == GuiSavedState::VERSION {
+                    Some(save)
+                } else {
+                    None
+                }
             }).unwrap_or_else(|| {
                 // Create default layout
                 let mut tiles = egui_tiles::Tiles::default();
                 let tabs = vec![
                     tiles.insert_pane(Tool::Profiler),
                     tiles.insert_pane(Tool::Preview),
+                    tiles.insert_pane(Tool::DrawCalls),
                 ];
                 let side = vec![
                     tiles.insert_pane(Tool::DebugFlags),
@@ -166,14 +222,19 @@ impl Gui {
                     side,
                     main_tile,
                 ];
-                let main_and_side = tiles.insert_horizontal_tile(main_and_side);
-                let v = vec![
-                    main_and_side,
+                let shell_and_timeline = vec![
                     tiles.insert_pane(Tool::Shell),
+                    tiles.insert_pane(Tool::Timeline),
                 ];
-                let root = tiles.insert_vertical_tile(v);
+                let shell_and_timeline = tiles.insert_tab_tile(shell_and_timeline);
+                let main_and_side = tiles.insert_horizontal_tile(main_and_side);
+                let root = tiles.insert_vertical_tile(vec![
+                    main_and_side,
+                    shell_and_timeline,
+                ]);
 
                 GuiSavedState {
+                    version: GuiSavedState::VERSION,
                     cmd_history: Vec::new(),
                     ui_tiles: egui_tiles::Tree::new("WR debugger", root, tiles),
                 }
@@ -390,13 +451,33 @@ impl Gui {
                             }
                         }
                     }
-                    DebuggerMessage::UpdateProfileCounters(info) => {
-                        for counter in &info.updates {
-                            if let Some(graph) = self.data_model
-                                .profile_graphs
-                                .get_mut(&counter.id) {
-                                graph.push(counter.value);
+                    DebuggerMessage::UpdateFrameLog(info) => {
+                        if let Some(updates) = info.profile_counters {
+                            for counter in &updates {
+                                if let Some(graph) = self.data_model
+                                    .profile_graphs
+                                    .get_mut(&counter.id) {
+                                    graph.push(counter.value);
+                                }
                             }
+                        }
+                        let frame_log = &mut self.data_model.frame_log;
+                        if frame_log.frames.len() == frame_log.frames.capacity() {
+                            frame_log.frames.pop_front();
+                        }
+                        frame_log.frames.push_back(LoggedFrame {
+                            render_commands: info.render_commands.clone(),
+                        });
+                        frame_log.frames_end += 1;
+                        let first = frame_log.first_frame_index();
+                        let last = frame_log.last_frame_index();
+
+                        if self.data_model.timeline.current_frame < first  {
+                            self.data_model.timeline.current_frame = first;
+                        }
+
+                        if self.data_model.timeline.current_frame >= last - 1  {
+                            self.data_model.timeline.current_frame = last;
                         }
                     }
                 }
@@ -417,6 +498,7 @@ impl Drop for Gui {
         };
 
         let save = GuiSavedState {
+            version: GuiSavedState::VERSION,
             ui_tiles: self.ui_tiles.take().unwrap(),
             cmd_history: self.cmd_history.drain(range).collect(),
         };
@@ -516,6 +598,13 @@ fn config_path() -> std::path::PathBuf {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct GuiSavedState {
+    version: u32,
     cmd_history: Vec<String>,
     ui_tiles: egui_tiles::Tree<Tool>,
+}
+
+impl GuiSavedState {
+    /// Update this number to reset the configuration. This ensures that new
+    /// panels are added.
+    const VERSION: u32 = 2;
 }

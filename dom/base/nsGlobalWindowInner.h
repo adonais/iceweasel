@@ -110,6 +110,7 @@ class Crypto;
 class CustomElementRegistry;
 class DataTransfer;
 class DocGroup;
+class DocumentPictureInPicture;
 class External;
 class FunctionOrTrustedScriptOrString;
 class Gamepad;
@@ -668,14 +669,19 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   already_AddRefed<mozilla::dom::CookieStore> CookieStore();
 
+  mozilla::dom::DocumentPictureInPicture* GetExtantDocumentPictureInPicture()
+      override {
+    return mDocumentPiP;
+  }
+
+  mozilla::dom::DocumentPictureInPicture* DocumentPictureInPicture();
+
   // https://w3c.github.io/webappsec-secure-contexts/#dom-window-issecurecontext
   bool IsSecureContext() const;
 
   mozilla::dom::External* External();
 
   mozilla::dom::Worklet* GetPaintWorklet(mozilla::ErrorResult& aRv);
-
-  void GetRegionalPrefsLocales(nsTArray<nsString>& aLocales);
 
   void GetWebExposedLocales(nsTArray<nsString>& aLocales);
 
@@ -1292,6 +1298,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void SetCurrentPasteDataTransfer(mozilla::dom::DataTransfer* aDataTransfer);
   mozilla::dom::DataTransfer* GetCurrentPasteDataTransfer() const;
 
+  mozilla::dom::ClientSource* GetClientSource() const {
+    return mClientSource.get();
+  }
+
  private:
   RefPtr<mozilla::dom::ContentMediaController> mContentMediaController;
 
@@ -1391,6 +1401,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   RefPtr<mozilla::dom::cache::CacheStorage> mCacheStorage;
   RefPtr<mozilla::dom::Console> mConsole;
   RefPtr<mozilla::dom::CookieStore> mCookieStore;
+  RefPtr<mozilla::dom::DocumentPictureInPicture> mDocumentPiP;
   RefPtr<mozilla::dom::Worklet> mPaintWorklet;
   RefPtr<mozilla::dom::External> mExternal;
 

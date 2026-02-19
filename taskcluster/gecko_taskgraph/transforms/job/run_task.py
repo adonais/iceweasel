@@ -19,46 +19,44 @@ from gecko_taskgraph.transforms.job import run_job_using
 from gecko_taskgraph.transforms.job.common import add_tooltool, support_vcs_checkout
 from gecko_taskgraph.transforms.task import taskref_or_string
 
-run_task_schema = Schema(
-    {
-        Required("using"): "run-task",
-        # Use the specified caches.
-        Optional("use-caches"): Any(bool, [str]),
-        # if true (the default), perform a checkout of gecko on the worker
-        Required("checkout"): bool,
-        Optional(
-            "cwd",
-            description="Path to run command in. If a checkout is present, the path "
-            "to the checkout will be interpolated with the key `checkout`",
-        ): str,
-        # The sparse checkout profile to use. Value is the filename relative to
-        # "sparse-profile-prefix" which defaults to "build/sparse-profiles/".
-        Required("sparse-profile"): Any(str, None),
-        # The relative path to the sparse profile.
-        Optional("sparse-profile-prefix"): str,
-        # Whether to use a shallow clone or not, default True (git only).
-        Optional("shallow-clone"): bool,
-        # if true, perform a checkout of a comm-central based branch inside the
-        # gecko checkout
-        Required("comm-checkout"): bool,
-        # The command arguments to pass to the `run-task` script, after the
-        # checkout arguments.  If a list, it will be passed directly; otherwise
-        # it will be included in a single argument to `bash -cx`.
-        Required("command"): Any([taskref_or_string], taskref_or_string),
-        # Base work directory used to set up the task.
-        Optional("workdir"): str,
-        # If not false, tooltool downloads will be enabled via relengAPIProxy
-        # for either just public files, or all files. Only supported on
-        # docker-worker.
-        Required("tooltool-downloads"): Any(
-            False,
-            "public",
-            "internal",
-        ),
-        # Whether to run as root. (defaults to False)
-        Optional("run-as-root"): bool,
-    }
-)
+run_task_schema = Schema({
+    Required("using"): "run-task",
+    # Use the specified caches.
+    Optional("use-caches"): Any(bool, [str]),
+    # if true (the default), perform a checkout of gecko on the worker
+    Required("checkout"): bool,
+    Optional(
+        "cwd",
+        description="Path to run command in. If a checkout is present, the path "
+        "to the checkout will be interpolated with the key `checkout`",
+    ): str,
+    # The sparse checkout profile to use. Value is the filename relative to
+    # "sparse-profile-prefix" which defaults to "build/sparse-profiles/".
+    Required("sparse-profile"): Any(str, None),
+    # The relative path to the sparse profile.
+    Optional("sparse-profile-prefix"): str,
+    # Whether to use a shallow clone or not, default True (git only).
+    Optional("shallow-clone"): bool,
+    # if true, perform a checkout of a comm-central based branch inside the
+    # gecko checkout
+    Required("comm-checkout"): bool,
+    # The command arguments to pass to the `run-task` script, after the
+    # checkout arguments.  If a list, it will be passed directly; otherwise
+    # it will be included in a single argument to `bash -cx`.
+    Required("command"): Any([taskref_or_string], taskref_or_string),
+    # Base work directory used to set up the task.
+    Optional("workdir"): str,
+    # If not false, tooltool downloads will be enabled via relengAPIProxy
+    # for either just public files, or all files. Only supported on
+    # docker-worker.
+    Required("tooltool-downloads"): Any(
+        False,
+        "public",
+        "internal",
+    ),
+    # Whether to run as root. (defaults to False)
+    Optional("run-as-root"): bool,
+})
 
 
 def common_setup(config, job, taskdesc, command):
@@ -184,37 +182,31 @@ def generic_worker_run_task(config, job, taskdesc):
     run_task_bin = (
         "run-task-git" if config.params["repository_type"] == "git" else "run-task-hg"
     )
-    worker["mounts"].append(
-        {
-            "content": {
-                "url": script_url(config, run_task_bin),
-            },
-            "file": "./run-task",
-        }
-    )
+    worker["mounts"].append({
+        "content": {
+            "url": script_url(config, run_task_bin),
+        },
+        "file": "./run-task",
+    })
 
     if (
         job.get("fetches")
         or job.get("use-uv")
         or job.get("use-python", "system") != "system"
     ):
-        worker["mounts"].append(
-            {
-                "content": {
-                    "url": script_url(config, "fetch-content"),
-                },
-                "file": "./fetch-content",
-            }
-        )
+        worker["mounts"].append({
+            "content": {
+                "url": script_url(config, "fetch-content"),
+            },
+            "file": "./fetch-content",
+        })
     if run.get("checkout"):
-        worker["mounts"].append(
-            {
-                "content": {
-                    "url": script_url(config, "robustcheckout.py"),
-                },
-                "file": "./robustcheckout.py",
-            }
-        )
+        worker["mounts"].append({
+            "content": {
+                "url": script_url(config, "robustcheckout.py"),
+            },
+            "file": "./robustcheckout.py",
+        })
 
     run_command = run["command"]
 

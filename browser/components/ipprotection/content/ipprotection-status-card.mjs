@@ -8,10 +8,6 @@ import {
   classMap,
   styleMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
-import {
-  connectionTimer,
-  defaultTimeValue,
-} from "chrome://browser/content/ipprotection/ipprotection-timer.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
@@ -28,6 +24,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
   static queries = {
     statusGroupEl: "#status-card",
     connectionToggleEl: "#connection-toggle",
+    connectionButtonEl: "#connection-toggle-button",
     locationEl: "#location-wrapper",
     siteSettingsEl: "ipprotection-site-settings-control",
   };
@@ -56,18 +53,39 @@ export default class IPProtectionStatusCard extends MozLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.dispatchEvent(new CustomEvent("IPProtection:Init", { bubbles: true }));
     this.addEventListener("keydown", this.keyListener, { capture: true });
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-
     this.removeEventListener("keydown", this.keyListener, { capture: true });
   }
 
   handleToggleConnect(event) {
     let isEnabled = event.target.pressed;
+
+    if (isEnabled) {
+      this.dispatchEvent(
+        new CustomEvent(this.TOGGLE_ON_EVENT, {
+          bubbles: true,
+          composed: true,
+        })
+      );
+    } else {
+      this.dispatchEvent(
+        new CustomEvent(this.TOGGLE_OFF_EVENT, {
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
+
+    this._toggleEnabled = isEnabled;
+  }
+
+  // TODO: Move button handling logic and button to new ipprotection-status-box component in Bug 2008854
+  handleOnOffButtonClick() {
+    let isEnabled = !this._toggleEnabled;
 
     if (isEnabled) {
       this.dispatchEvent(
@@ -139,6 +157,10 @@ export default class IPProtectionStatusCard extends MozLitElement {
     const toggleL10nId = this.protectionEnabled
       ? "ipprotection-toggle-active"
       : "ipprotection-toggle-inactive";
+    const toggleButtonType = this.protectionEnabled ? "secondary" : "primary";
+    const toggleButtonL10nId = this.protectionEnabled
+      ? "ipprotection-button-turn-vpn-off"
+      : "ipprotection-button-turn-vpn-on";
 
     const siteSettingsTemplate = this.protectionEnabled
       ? this.siteSettingsTemplate()
@@ -167,7 +189,15 @@ export default class IPProtectionStatusCard extends MozLitElement {
           ></moz-toggle>
         </moz-box-item>
         ${siteSettingsTemplate}
-      </moz-box-group>`;
+      </moz-box-group>
+      <moz-button
+        type=${toggleButtonType}
+        id="connection-toggle-button"
+        data-l10n-id=${toggleButtonL10nId}
+        @click=${this.handleOnOffButtonClick}
+        hidden
+      >
+      </moz-button>`;
   }
 
   siteSettingsTemplate() {
@@ -192,11 +222,6 @@ export default class IPProtectionStatusCard extends MozLitElement {
   }
 
   cardDescriptionTemplate() {
-    // The template consists of location name and connection time.
-    let time = this.canShowTime
-      ? connectionTimer(this.enabledSince)
-      : defaultTimeValue;
-
     // To work around mox-box-item description elements being hard to reach because of the shadowDOM,
     // let's use a lit stylemap to apply style changes directly.
     let labelStyles = styleMap({
@@ -219,11 +244,6 @@ export default class IPProtectionStatusCard extends MozLitElement {
                 style=${imgStyles}
               />
             </div>
-            <span
-              id="time"
-              data-l10n-id="ipprotection-connection-time"
-              data-l10n-args=${time}
-            ></span>
           </div>
         `
       : null;

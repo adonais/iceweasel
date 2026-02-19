@@ -13,7 +13,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/FirefoxBridgeExtensionUtils.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
-  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UsageReporting: "resource://gre/modules/UsageReporting.sys.mjs",
 });
 
@@ -316,11 +315,6 @@ export let ProfileDataUpgrader = {
         !oldPrefValue
       );
       Services.prefs.clearUserPref(oldPrefName);
-    }
-
-    // Initialize the new browser.urlbar.showSuggestionsBeforeGeneral pref.
-    if (existingDataVersion < 106) {
-      lazy.UrlbarPrefs.initializeShowSearchSuggestionsFirstPref();
     }
 
     if (existingDataVersion < 107) {

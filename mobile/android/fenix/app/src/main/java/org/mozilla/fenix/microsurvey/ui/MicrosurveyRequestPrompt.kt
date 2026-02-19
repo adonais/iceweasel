@@ -28,18 +28,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.support.utils.KeyboardState
+import mozilla.components.support.utils.keyboardAsState
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.utils.KeyboardState
-import org.mozilla.fenix.compose.utils.keyboardAsState
 import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 private const val TABLET_WIDTH_FRACTION = 0.5f
@@ -135,29 +136,12 @@ private fun Header(
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun MicrosurveyRequestPromptPreview() {
-    FirefoxTheme {
-        MicrosurveyRequestPrompt(
-            microsurvey = MicrosurveyUIData(
-                id = "",
-                promptTitle = "Help make printing in Firefox better. It only takes a sec.",
-                icon = iconsR.drawable.mozac_ic_lightbulb_24,
-                question = "",
-                answers = emptyList(),
-            ),
-            activity = HomeActivity(),
-            onStartSurveyClicked = {},
-            onCloseButtonClicked = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun MicrosurveyRequestPromptPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun MicrosurveyRequestPromptPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         MicrosurveyRequestPrompt(
             microsurvey = MicrosurveyUIData(
                 id = "",

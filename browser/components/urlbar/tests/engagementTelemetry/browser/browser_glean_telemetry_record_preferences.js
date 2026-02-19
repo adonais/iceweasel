@@ -91,7 +91,7 @@ add_task(async function boolNimbusVariable() {
     Assert.equal(
       Glean.urlbar[glean].testGetValue(),
       initialValue,
-      `Record ${glean} when UrlbarController is initialized`
+      "Metric value should be correct initially: " + glean
     );
 
     let nimbusCleanup = await UrlbarTestUtils.initNimbusFeature({
@@ -101,7 +101,28 @@ add_task(async function boolNimbusVariable() {
     Assert.equal(
       Glean.urlbar[glean].testGetValue(),
       !initialValue,
-      `Record ${glean} when the ${variable} variable is set`
+      "Metric value should be correct after installing experiment: " + glean
+    );
+
+    // Open a new window and make sure the metric is still correct. These pref
+    // metrics are currently recorded by `TelemetryEvent`, an instance of which
+    // is created per browser window.
+    let win = await BrowserTestUtils.openNewBrowserWindow();
+    await TestUtils.waitForTick();
+
+    Assert.equal(
+      Glean.urlbar[glean].testGetValue(),
+      !initialValue,
+      "Metric value should remain correct after opening new window: " + glean
+    );
+
+    await BrowserTestUtils.closeWindow(win);
+    await TestUtils.waitForTick();
+
+    Assert.equal(
+      Glean.urlbar[glean].testGetValue(),
+      !initialValue,
+      "Metric value should remain correct after closing new window: " + glean
     );
 
     await nimbusCleanup();
@@ -109,7 +130,7 @@ add_task(async function boolNimbusVariable() {
     Assert.equal(
       Glean.urlbar[glean].testGetValue(),
       initialValue,
-      `Record ${glean} when the ${variable} variable is unset`
+      "Metric value should be reset after uninstalling experiment: " + glean
     );
   }
 });

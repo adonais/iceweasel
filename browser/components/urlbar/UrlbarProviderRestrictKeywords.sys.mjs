@@ -73,15 +73,15 @@ export class UrlbarProviderRestrictKeywords extends UrlbarProvider {
         type: UrlbarUtils.RESULT_TYPE.RESTRICT,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         hideRowLabel: true,
-        ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+        payload: {
           icon,
           keyword: token,
-          l10nRestrictKeywords: [
-            l10nRestrictKeywords,
-            UrlbarUtils.HIGHLIGHT.TYPED,
-          ],
+          l10nRestrictKeywords,
           providesSearchMode: true,
-        }),
+        },
+        highlights: {
+          l10nRestrictKeywords: UrlbarUtils.HIGHLIGHT.TYPED,
+        },
       });
       addCallback(this, result);
     }

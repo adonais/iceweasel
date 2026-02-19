@@ -1279,18 +1279,18 @@ void RenderThread::InitDeviceTask() {
   // lazy initialization to happen now.
   SingletonGL();
 
-  if (mShaders) {
-    // Kick off shader warmup, outside the InitDeviceTask so that this thread
-    // becomes available to handle other messages from the Compositor.
-    PostResumeShaderWarmupRunnable();
-  }
-
   const auto maxDurationMs = 3 * 1000;
   const auto end = TimeStamp::Now();
   const auto durationMs = static_cast<uint32_t>((end - start).ToMilliseconds());
   if (durationMs > maxDurationMs) {
     gfxCriticalNoteOnce << "RenderThread::InitDeviceTask is slow: "
                         << durationMs;
+  }
+}
+
+void RenderThread::BeginShaderWarmupIfNeeded() {
+  if (mShaders && gfx::gfxVars::ShouldWarmUpWebRenderProgramBinaries()) {
+    PostResumeShaderWarmupRunnable();
   }
 }
 

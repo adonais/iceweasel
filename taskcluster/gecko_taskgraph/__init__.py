@@ -32,16 +32,14 @@ tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozill
 # Schemas for YAML files should use dashed identifiers by default. If there are
 # components of the schema for which there is a good reason to use another format,
 # exceptions can be added here.
-schema.EXCEPTED_SCHEMA_IDENTIFIERS.extend(
-    [
-        "test_name",
-        "json_location",
-        "video_location",
-        "profile_name",
-        "target_path",
-        "try_task_config",
-    ]
-)
+schema.EXCEPTED_SCHEMA_IDENTIFIERS.extend([
+    "test_name",
+    "json_location",
+    "video_location",
+    "profile_name",
+    "target_path",
+    "try_task_config",
+])
 
 # TODO: These are temporarily redefined in gecko_taskgraph. Remove them from
 # upstream until they can be consolidated.
@@ -56,8 +54,6 @@ def register(graph_config):
     Args:
         graph_config: The graph configuration object.
     """
-    from taskgraph.optimize.base import registry
-
     from gecko_taskgraph import (  # noqa
         filter_tasks,
         morph,
@@ -68,11 +64,6 @@ def register(graph_config):
         dependencies,  # noqa - trigger group_by registration
     )
     from gecko_taskgraph.util.verify import verifications
-
-    # TODO: Remove along with
-    # `gecko_taskgraph.optimize.strategies.SkipUnlessChanged`
-    # (see comment over there)
-    del registry["skip-unless-changed"]
 
     register_mozilla_taskgraph(graph_config)
     register_android_taskgraph(graph_config)

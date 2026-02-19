@@ -35,14 +35,12 @@ add_task(async function test() {
   SearchUIUtils.loadSearchFromContext({
     window,
     searchText: "mozilla",
-    usePrivate: false,
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     event: new PointerEvent("click"),
   });
   SearchUIUtils.loadSearchFromContext({
     window,
     searchText: "firefox",
-    usePrivate: false,
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     event: new PointerEvent("click"),
   });

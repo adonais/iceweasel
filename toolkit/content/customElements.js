@@ -834,8 +834,16 @@
         "chrome://global/content/elements/moz-input-color.mjs",
       ],
       [
+        "moz-input-email",
+        "chrome://global/content/elements/moz-input-email.mjs",
+      ],
+      [
         "moz-input-folder",
         "chrome://global/content/elements/moz-input-folder.mjs",
+      ],
+      [
+        "moz-input-number",
+        "chrome://global/content/elements/moz-input-number.mjs",
       ],
       [
         "moz-input-password",
@@ -845,7 +853,9 @@
         "moz-input-search",
         "chrome://global/content/elements/moz-input-search.mjs",
       ],
+      ["moz-input-tel", "chrome://global/content/elements/moz-input-tel.mjs"],
       ["moz-input-text", "chrome://global/content/elements/moz-input-text.mjs"],
+      ["moz-input-url", "chrome://global/content/elements/moz-input-url.mjs"],
       ["moz-label", "chrome://global/content/elements/moz-label.mjs"],
       [
         "moz-message-bar",

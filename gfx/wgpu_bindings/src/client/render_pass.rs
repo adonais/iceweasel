@@ -145,6 +145,7 @@ impl<V1, V2> MapClearValue<V1, V2> for wgc::command::LoadOp<V1> {
         match self {
             Self::Clear(value) => wgc::command::LoadOp::Clear(f(value)),
             Self::Load => wgc::command::LoadOp::Load,
+            Self::DontCare(token) => wgc::command::LoadOp::DontCare(token),
         }
     }
 }

@@ -15,24 +15,22 @@ from gecko_taskgraph.util.scriptworker import (
     get_beetmover_bucket_scope,
 )
 
-beetmover_push_to_release_description_schema = Schema(
-    {
-        Required("name"): str,
-        Required("product"): str,
-        Required("treeherder-platform"): str,
-        Optional("attributes"): {str: object},
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("run"): {str: object},
-        Optional("run-on-projects"): task_description_schema["run-on-projects"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-        Optional("dependencies"): {str: taskref_or_string},
-        Optional("index"): {str: str},
-        Optional("routes"): [str],
-        Required("shipping-phase"): task_description_schema["shipping-phase"],
-        Required("shipping-product"): task_description_schema["shipping-product"],
-        Optional("extra"): task_description_schema["extra"],
-    }
-)
+beetmover_push_to_release_description_schema = Schema({
+    Required("name"): str,
+    Required("product"): str,
+    Required("treeherder-platform"): str,
+    Optional("attributes"): {str: object},
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("run"): {str: object},
+    Optional("run-on-projects"): task_description_schema["run-on-projects"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+    Optional("dependencies"): {str: taskref_or_string},
+    Optional("index"): {str: str},
+    Optional("routes"): [str],
+    Required("shipping-phase"): task_description_schema["shipping-phase"],
+    Required("shipping-product"): task_description_schema["shipping-product"],
+    Optional("extra"): task_description_schema["extra"],
+})
 
 
 transforms = TransformSequence()

@@ -131,6 +131,10 @@ nsCString GetSubTypeStr(const GUID& aSubtype) {
   ENUM_TO_STR(MFVideoFormat_P016)
   ENUM_TO_STR(MFVideoFormat_ARGB32)
   ENUM_TO_STR(MFVideoFormat_RGB32)
+  ENUM_TO_STR(MFVideoFormat_A2R10G10B10)
+  ENUM_TO_STR(MFVideoFormat_A16B16G16R16F)
+  ENUM_TO_STR(MFVideoFormat_I420)
+  ENUM_TO_STR(MFVideoFormat_YUY2)
   // codec
   ENUM_TO_STR(MFAudioFormat_MP3)
   ENUM_TO_STR(MFAudioFormat_AAC)

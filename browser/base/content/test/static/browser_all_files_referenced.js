@@ -202,9 +202,6 @@ var allowlist = [
 
   { file: "resource://gre/greprefs.js" },
 
-  // layout/mathml/nsMathMLChar.cpp
-  { file: "resource://gre/res/fonts/mathfontUnicode.properties" },
-
   // toolkit/mozapps/extensions/AddonContentPolicy.cpp
   { file: "resource://gre/localization/en-US/toolkit/global/cspErrors.ftl" },
 
@@ -332,35 +329,30 @@ var allowlist = [
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
   },
 
-  // Bug 2000725 importer lands (backed out due to unused file)
-  {
-    file: "moz-src:///browser/components/aiwindow/models/InsightsHistorySource.sys.mjs",
-  },
-
   // Bug 2000945 - Move query intent detection to AI-window r?mardak (backed out due to unused file)
   {
     file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   },
-  // Bug 2002840 - add function to return real time info injection message & tests (backed out due to unused file)
+  // Bug 2005768 - Insights scheduler for generation from history
+  // Bug 2007939 - Rename "insights" to "memories"
   {
-    file: "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistoryScheduler.sys.mjs",
   },
-  // Bug 2003328 - Implement createOpenAIEngine and prompt rendering (backed out due to unused file)
-  // Bug 2003832 - Change .mjs files to .sys.mjs (backed out due to unused file)
+  // Bug 2006090 - Insight updation - Day 0 and incremental updates from Chat history
+  // Bug 2007939 - Rename "insights" to "memories"
   {
-    file: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesConversationScheduler.sys.mjs",
   },
-  // Bug 2002906 - Add insights storage
+  // Bug 2006433 - Implement conversation starter/followup inference
   {
-    file: "moz-src:///browser/components/aiwindow/services/InsightStore.sys.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   },
-  // Bug 2003623 - Add assistant system prompt
+  // Bug 1996315: QR code generation modules
   {
-    file: "moz-src:///browser/components/aiwindow/models/prompts/assistantPrompts.sys.mjs",
+    file: "moz-src:///browser/components/qrcode/QRCodeGenerator.sys.mjs",
   },
-  // Bug 2002638 - Move search browsing history to AI-window r?mardak (backed out due to unused file)
   {
-    file: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
+    file: "moz-src:///browser/components/qrcode/QRCodeWorker.sys.mjs",
   },
 ];
 

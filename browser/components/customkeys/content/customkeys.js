@@ -152,6 +152,11 @@ async function onKey({ data }) {
     input.select();
     return;
   }
+  if (!data.isValid) {
+    input.value = await document.l10n.formatValue("customkeys-key-invalid");
+    input.select();
+    return;
+  }
   if (await maybeHandleConflict(data)) {
     const newData = await RPMSendQuery("CustomKeys:ChangeKey", data);
     updateKey(row, newData);

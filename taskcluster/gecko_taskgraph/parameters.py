@@ -51,6 +51,21 @@ gecko_parameters_schema = {
         Optional("gecko-profile-features"): str,
         Optional("gecko-profile-threads"): str,
         Optional(
+            "github",
+            description="Github pull request triggering a code-review analysis",
+        ): {
+            Required("branch", description="Pull request branch name"): str,
+            Required(
+                "pull_head_sha", description="Pull request head commit identifier"
+            ): str,
+            Required(
+                "pull_number", description="Pull request public numerical ID"
+            ): int,
+            Required(
+                "repo_url", description="Targeted Mozilla repository on Github"
+            ): str,
+        },
+        Optional(
             "new-test-config",
             description="adjust parameters, chunks, etc. to speed up the process "
             "of greening up a new test config.",

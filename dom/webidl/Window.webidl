@@ -845,24 +845,6 @@ callback IdleRequestCallback = undefined (IdleDeadline deadline);
 
 partial interface Window {
   /**
-   * Returns a list of locales that the internationalization components
-   * should be localized to.
-   *
-   * The function name refers to Regional Preferences which can be either
-   * fetched from the internal internationalization database (CLDR), or
-   * from the host environment.
-   *
-   * The result is a sorted list of valid locale IDs and it should be
-   * used for all APIs that accept list of locales, like ECMA402 and L10n APIs.
-   *
-   * This API always returns at least one locale.
-   *
-   * Example: ["en-US", "de", "pl", "sr-Cyrl", "zh-Hans-HK"]
-   */
-  [Func="IsChromeOrUAWidget"]
-  sequence<DOMString> getRegionalPrefsLocales();
-
-  /**
    * Returns a list of locales that the web content would know from the user.
    *
    * One of the fingerprinting technique is to recognize users from their locales
@@ -914,4 +896,10 @@ partial interface Window {
 // https://html.spec.whatwg.org/multipage/browsers.html#origin-keyed-agent-clusters
 partial interface Window {
   [Pref="dom.origin_agent_cluster.enabled"] readonly attribute boolean originAgentCluster;
+};
+
+// https://wicg.github.io/document-picture-in-picture/#api
+partial interface Window {
+  [SameObject, SecureContext, Pref="dom.documentpip.enabled"]
+  readonly attribute DocumentPictureInPicture documentPictureInPicture;
 };

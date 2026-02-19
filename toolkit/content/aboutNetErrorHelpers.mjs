@@ -27,13 +27,14 @@ export const MDN_DOCS_HEADERS =
   "https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/";
 export const COOP_MDN_DOCS = MDN_DOCS_HEADERS + "Cross-Origin-Opener-Policy";
 export const COEP_MDN_DOCS = MDN_DOCS_HEADERS + "Cross-Origin-Embedder-Policy";
+export const HTTPS_UPGRADES_MDN_DOCS =
+  "https://support.mozilla.org/kb/https-upgrades";
 export let gErrorCode = searchParams.get("e");
 export let gIsCertError = gErrorCode == "nssBadCert";
 export let gHasSts = gIsCertError && getCSSClass() === "badStsCert";
 export let gNoConnectivity =
   gErrorCode == "dnsNotFound" && !RPMHasConnectivity();
 export let gOffline = gErrorCode === "netOffline" || gNoConnectivity;
-const HOST_NAME = getHostName();
 
 export function isCaptive() {
   return searchParams.get("captive") == "true";
@@ -122,9 +123,15 @@ export async function recordSecurityUITelemetry(category, name, errorInfo) {
   if (category == "securityUiCerterror" && name.startsWith("load")) {
     extraKeys.issued_by_cca = false;
     extraKeys.hyphen_compat = false;
+
+    // We can't use HOST_NAME as that is display-formatted and can
+    // include a port. We need the ascii host as that is what the cert's
+    // SAN value would also contain.
+    const asciiHostname = RPMGetInnermostAsciiHost();
+
     // This issue only applies to certificate domain name mismatch errors where
     // the first label in the domain name starts or ends with a hyphen.
-    let label = HOST_NAME.substring(0, HOST_NAME.indexOf("."));
+    let label = asciiHostname.substring(0, asciiHostname.indexOf("."));
     if (
       errorCode == "SSL_ERROR_BAD_CERT_DOMAIN" &&
       (label.startsWith("-") || label.endsWith("-"))
@@ -138,7 +145,7 @@ export async function recordSecurityUITelemetry(category, name, errorInfo) {
           // domain names when matching wildcard entries.
           if (
             subjectAltName.startsWith("*.") &&
-            subjectAltName.substring(1) == HOST_NAME.substring(label.length)
+            subjectAltName.substring(1) == asciiHostname.substring(label.length)
           ) {
             extraKeys.hyphen_compat = true;
             break;
@@ -191,4 +198,34 @@ export function errorHasNoUserFix(errorCodeString) {
     default:
       return false;
   }
+}
+
+export function handleNSSFailure(callback) {
+  const netErrorInfo = document.getNetErrorInfo();
+  void recordSecurityUITelemetry(
+    "securityUiTlserror",
+    "loadAbouttlserror",
+    netErrorInfo
+  );
+  const errorCode = netErrorInfo.errorCodeString;
+  const result = {};
+  switch (errorCode) {
+    case "SSL_ERROR_UNSUPPORTED_VERSION":
+    case "SSL_ERROR_PROTOCOL_VERSION_ALERT": {
+      result.versionError = true;
+    }
+    // fallthrough
+
+    case "SSL_ERROR_NO_CIPHERS_SUPPORTED":
+    case "SSL_ERROR_NO_CYPHER_OVERLAP":
+    case "SSL_ERROR_SSL_DISABLED":
+      RPMAddMessageListener("HasChangedCertPrefs", msg => {
+        if (msg.data.hasChangedCertPrefs) {
+          // Configuration overrides might have caused this; offer to reset.
+          callback?.();
+        }
+      });
+      RPMSendAsyncMessage("GetChangedCertPrefs");
+  }
+  return result;
 }

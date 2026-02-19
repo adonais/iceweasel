@@ -104,7 +104,11 @@ private fun StoriesScreenContent(
     interactor: PocketStoriesInteractor,
 ) {
     Column(
-        modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
+        modifier = Modifier.padding(
+            top = paddingValues.calculateTopPadding(),
+            start = FirefoxTheme.layout.space.dynamic200,
+            end = FirefoxTheme.layout.space.dynamic200,
+        ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Stories(

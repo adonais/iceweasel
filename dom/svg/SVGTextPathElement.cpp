@@ -83,7 +83,8 @@ void SVGTextPathElement::HrefAsString(nsAString& aHref) {
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGTextPathElement)
 
 already_AddRefed<DOMSVGAnimatedString> SVGTextPathElement::Href() {
-  return mStringAttributes[HREF].IsExplicitlySet()
+  return mStringAttributes[HREF].IsExplicitlySet() ||
+                 !mStringAttributes[XLINK_HREF].IsExplicitlySet()
              ? mStringAttributes[HREF].ToDOMAnimatedString(this)
              : mStringAttributes[XLINK_HREF].ToDOMAnimatedString(this);
 }

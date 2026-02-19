@@ -38,7 +38,14 @@ class EventDispatcher: NSObject, SwiftEventDispatcher {
     static var runtimeInstance = EventDispatcher()
     static var dispatchers: [String: EventDispatcher] = [:]
 
+    struct QueuedMessage {
+        let type: String
+        let message: [String: Any?]?
+        let callback: EventCallback?
+    }
+
     var gecko: GeckoEventDispatcher?
+    var queue: [QueuedMessage]? = []
     var listeners: [String: [EventListener]] = [:]
     var name: String?
 
@@ -68,6 +75,8 @@ class EventDispatcher: NSObject, SwiftEventDispatcher {
             for listener in eventListeners {
                 listener.handleMessage(type: type, message: message, callback: callback)
             }
+        } else if queue != nil {
+            queue!.append(QueuedMessage(type: type, message: message, callback: callback))
         } else {
             gecko?.dispatch(toGecko: type, message: message, callback: callback)
         }
@@ -107,6 +116,17 @@ class EventDispatcher: NSObject, SwiftEventDispatcher {
         if let eventListeners = listeners[type] {
             for listener in eventListeners {
                 listener.handleMessage(type: type, message: message, callback: callback)
+            }
+        }
+    }
+
+    func activate() {
+        // Drain the queue, then clear it out so future messages are dispatched
+        // directly.
+        if let queue = self.queue {
+            self.queue = nil
+            for event in queue {
+                gecko?.dispatch(toGecko: event.type, message: event.message, callback: event.callback)
             }
         }
     }

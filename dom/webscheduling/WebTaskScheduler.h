@@ -23,7 +23,7 @@ namespace mozilla::dom {
 
 // Keep tracks of the number of same-event-loop-high-priority-queues
 // (User_blocking or User_visible) that have at least one task scheduled.
-MOZ_CONSTINIT extern uint32_t
+constinit extern uint32_t
     gNumNormalOrHighPriorityQueuesHaveTaskScheduledMainThread;
 
 // https://wicg.github.io/scheduling-apis/#scheduling-state

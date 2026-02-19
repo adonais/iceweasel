@@ -16,13 +16,14 @@
 #include "api/video/i420_buffer.h"
 #include "device_info_android.h"
 #include "modules/video_capture/video_capture_impl.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace videocapturemodule {
 
 class VideoCaptureAndroid : public VideoCaptureImpl {
  public:
-  VideoCaptureAndroid();
+  VideoCaptureAndroid(Clock* clock);
   virtual int32_t Init(const char* deviceUniqueIdUTF8);
 
   virtual int32_t StartCapture(const VideoCaptureCapability& capability);

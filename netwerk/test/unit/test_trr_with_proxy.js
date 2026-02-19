@@ -24,20 +24,27 @@ let systemProxySettings;
 let trrProxy;
 const pps = Cc["@mozilla.org/network/protocol-proxy-service;1"].getService();
 
-function setup() {
-  h2Port = trr_test_setup();
+let trrServer;
+add_setup(async function setup() {
+  trr_test_setup();
   SetParentalControlEnabled(false);
-}
 
-setup();
-registerCleanupFunction(async () => {
-  trr_clear_prefs();
-  Services.prefs.clearUserPref("network.proxy.type");
-  Services.prefs.clearUserPref("network.proxy.autoconfig_url");
-  Services.prefs.clearUserPref("network.trr.async_connInfo");
-  if (trrProxy) {
-    await trrProxy.stop();
-  }
+  trrServer = new TRRServer();
+  await trrServer.start();
+  h2Port = trrServer.port();
+
+  registerCleanupFunction(async () => {
+    trr_clear_prefs();
+    Services.prefs.clearUserPref("network.proxy.type");
+    Services.prefs.clearUserPref("network.proxy.autoconfig_url");
+    Services.prefs.clearUserPref("network.trr.async_connInfo");
+    if (trrProxy) {
+      await trrProxy.stop();
+    }
+    if (trrServer) {
+      await trrServer.stop();
+    }
+  });
 });
 
 class ProxyFilter {

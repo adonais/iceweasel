@@ -412,9 +412,10 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
    */
   Maybe<uint64_t> mCallbackId;
 
-  void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
+  void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets,
+                            bool aCopyCoalescedEvents = true) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
-    AssignPointerHelperData(aEvent, /* aCopyCoalescedEvents */ true);
+    AssignPointerHelperData(aEvent, aCopyCoalescedEvents);
     AssignMouseEventDataOnly(aEvent);
   }
 
@@ -919,8 +920,9 @@ class WidgetPointerEvent : public WidgetMouseEvent {
 
   // XXX Not tested by test_assign_event_data.html
   void AssignPointerEventData(const WidgetPointerEvent& aEvent,
-                              bool aCopyTargets) {
-    AssignMouseEventData(aEvent, aCopyTargets);
+                              bool aCopyTargets,
+                              bool aCopyCoalescedEvents = true) {
+    AssignMouseEventData(aEvent, aCopyTargets, aCopyCoalescedEvents);
 
     mWidth = aEvent.mWidth;
     mHeight = aEvent.mHeight;

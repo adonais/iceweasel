@@ -487,6 +487,7 @@ export class FeatureModel {
     impressions,
     model_id = "unknown",
     condensePrivateValues = true,
+    timeZoneOffset,
   }) {
     let inferredInterests = divideDict(clicks, impressions);
 
@@ -501,7 +502,12 @@ export class FeatureModel {
       const coarseValues = this.applyPostProcessing({
         ...originalInterestValues,
       });
+      // Time zone offset special case only in coarse / private interests
+      if (timeZoneOffset && "timeZoneOffset" in this.interestVectorModel) {
+        coarseValues.timeZoneOffset = timeZoneOffset;
+      }
       this.applyThresholding(coarseValues, false);
+
       resultObject.coarseInferredInterests = { ...coarseValues, model_id };
     }
 
@@ -514,7 +520,14 @@ export class FeatureModel {
             this.privateFeatures.includes(key)
           )
         );
-        this.applyPostProcessing({ ...originalInterestValues });
+      }
+      coarsePrivateValues = this.applyPostProcessing(coarsePrivateValues);
+      if (
+        timeZoneOffset &&
+        (!this.privateFeatures ||
+          this.privateFeatures.includes("timeZoneOffset"))
+      ) {
+        coarsePrivateValues.timeZoneOffset = timeZoneOffset;
       }
       this.applyThresholding(coarsePrivateValues, true);
 

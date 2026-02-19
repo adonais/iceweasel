@@ -251,6 +251,8 @@ struct DocShellLoadStateInit
   bool IsMetaRefresh;
 
   bool IsCaptivePortalTab;
+
+  bool IsInitialAboutBlankHandlingProhibited;
 };
 
 struct TimedChannelInfo

@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <utility>
 
 #include "MediaMIMETypes.h"
 #include "mozilla/Assertions.h"

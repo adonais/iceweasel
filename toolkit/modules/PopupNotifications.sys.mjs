@@ -928,7 +928,8 @@ PopupNotifications.prototype = {
       this.panel.firstElementChild &&
       this.panel.firstElementChild.notification.browser;
     this.panel.hidePopup();
-    if (browser) {
+    // Focus the browser if it's still selected by the time we dismiss.
+    if (browser && this.tabbrowser.selectedBrowser === browser) {
       browser.focus();
     }
   },

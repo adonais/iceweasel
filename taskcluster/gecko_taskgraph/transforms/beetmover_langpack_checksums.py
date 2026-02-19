@@ -21,19 +21,17 @@ from gecko_taskgraph.util.scriptworker import (
     get_beetmover_bucket_scope,
 )
 
-beetmover_checksums_description_schema = Schema(
-    {
-        Required("attributes"): {str: object},
-        Optional("label"): str,
-        Optional("treeherder"): task_description_schema["treeherder"],
-        Optional("locale"): str,
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+beetmover_checksums_description_schema = Schema({
+    Required("attributes"): {str: object},
+    Optional("label"): str,
+    Optional("treeherder"): task_description_schema["treeherder"],
+    Optional("locale"): str,
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("shipping-product"): task_description_schema["shipping-product"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 transforms = TransformSequence()
 

@@ -319,22 +319,39 @@ export class PlacesFrecencyRecalculator {
     let affectedCount = 0;
     let db = await lazy.PlacesUtils.promiseUnsafeWritableDBConnection();
     await db.executeTransaction(async () => {
-      // NULL frecencies are normalized to 1.0 (to avoid confusion with pages
-      // 0 frecency special meaning), as the table doesn't support NULL values.
+      // Recalculate frecency for origins marked with recalc_frecency = 1.
+      //
+      // Origin frecency =
+      //  AVG(page frecency) * COUNT(distinct days with typed visits)
+      //
+      // The average is weighted by typed visits: pages with more typed visits
+      // within the window contribute proportionally more to the average.
+      // We only consider typed visits within the last
+      // `originsFrecencyCutOffDays` days. We use distinct days as the
+      // multiplier rather than the total typed visit count to avoid
+      // over-weighting origins visited repeatedly in a short period.
+      //
+      // Origins with no typed visits within the period get a frecency of 1.0,
+      // not NULL or 0, since 0 has a special meaning for pages and the table
+      // doesn't support NULL). Highest-frecency origins are processed first.
       let affected = await db.executeCached(
         `
         UPDATE moz_origins
         SET frecency = IFNULL((
-          SELECT SUM(f) FROM (
-            SELECT CAST(AVG(h.frecency) AS INTEGER) AS f
-            FROM moz_places h
-            WHERE origin_id = moz_origins.id
-            AND last_visit_date >
+          SELECT CAST(
+            AVG(h.frecency) * COUNT(
+              DISTINCT date(v.visit_date / 1000000, 'unixepoch')
+            ) AS INTEGER
+          )
+          FROM moz_places h
+          JOIN moz_historyvisits v ON v.place_id = h.id
+          WHERE h.origin_id = moz_origins.id
+            AND v.visit_type = ${lazy.PlacesUtils.history.TRANSITION_TYPED}
+            AND v.visit_date >
               strftime('%s','now','localtime','start of day',
                        '-${lazy.originsFrecencyCutOffDays} day','utc') * 1000000
-            GROUP BY date(last_visit_date / 1000000, 'unixepoch')
-          )
-        ), 1.0), recalc_frecency = 0
+        ), 1.0),
+        recalc_frecency = 0
         WHERE id IN (
           SELECT id FROM moz_origins
           WHERE recalc_frecency = 1

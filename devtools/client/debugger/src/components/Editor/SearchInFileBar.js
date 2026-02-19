@@ -342,7 +342,7 @@ class SearchInFileBar extends Component {
     }
 
     if (index == -1) {
-      const resultsSummaryString = L10N.getStr("sourceSearch.resultsSummary1");
+      const resultsSummaryString = L10N.getStr("sourceSearch.resultsSummary2");
       return PluralForm.get(count, resultsSummaryString).replace("#1", count);
     }
 

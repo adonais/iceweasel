@@ -785,7 +785,7 @@ void Assembler::LoadStorePairNonTemporal(const CPURegister& rt,
   VIXL_ASSERT(addr.IsImmediateOffset());
 
   unsigned size = CalcLSPairDataSize(
-    static_cast<LoadStorePairOp>(op & LoadStorePairMask));
+    static_cast<LoadStorePairOp>(static_cast<Instr>(op) & LoadStorePairMask));
   VIXL_ASSERT(IsImmLSPair(addr.offset(), size));
   int offset = static_cast<int>(addr.offset());
   Emit(op | Rt(rt) | Rt2(rt2) | RnSP(addr.base()) | ImmLSPair(offset, size));
@@ -4053,13 +4053,13 @@ void Assembler::AddSub(const Register& rd,
     if (rn.IsSP() || rd.IsSP()) {
       VIXL_ASSERT(!(rd.IsSP() && (S == SetFlags)));
       DataProcExtendedRegister(rd, rn, operand.ToExtendedRegister(), S,
-                               AddSubExtendedFixed | op);
+                               AddSubExtendedFixed | static_cast<Instr>(op));
     } else {
-      DataProcShiftedRegister(rd, rn, operand, S, AddSubShiftedFixed | op);
+      DataProcShiftedRegister(rd, rn, operand, S, AddSubShiftedFixed | static_cast<Instr>(op));
     }
   } else {
     VIXL_ASSERT(operand.IsExtendedRegister());
-    DataProcExtendedRegister(rd, rn, operand, S, AddSubExtendedFixed | op);
+    DataProcExtendedRegister(rd, rn, operand, S, AddSubExtendedFixed | static_cast<Instr>(op));
   }
 }
 
@@ -4102,11 +4102,11 @@ void Assembler::ConditionalCompare(const Register& rn,
   if (operand.IsImmediate()) {
     int64_t immediate = operand.immediate();
     VIXL_ASSERT(IsImmConditionalCompare(immediate));
-    ccmpop = ConditionalCompareImmediateFixed | op |
+    ccmpop = ConditionalCompareImmediateFixed | static_cast<Instr>(op) |
         ImmCondCmp(static_cast<unsigned>(immediate));
   } else {
     VIXL_ASSERT(operand.IsShiftedRegister() && (operand.shift_amount() == 0));
-    ccmpop = ConditionalCompareRegisterFixed | op | Rm(operand.reg());
+    ccmpop = ConditionalCompareRegisterFixed | static_cast<Instr>(op) | Rm(operand.reg());
   }
   Emit(SF(rn) | ccmpop | Cond(cond) | Rn(rn) | Nzcv(nzcv));
 }

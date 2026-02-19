@@ -737,9 +737,7 @@ def repackage_msix(
     if not makeappx:
         makeappx = find_sdk_tool("makeappx.exe", log=log)
     if not makeappx:
-        raise ValueError(
-            "makeappx is required; " "set MAKEAPPX or WINDOWSSDKDIR or PATH"
-        )
+        raise ValueError("makeappx is required; set MAKEAPPX or WINDOWSSDKDIR or PATH")
 
     # `makeappx.exe` supports both slash and hyphen style arguments; `makemsix`
     # supports only hyphen style.  `makeappx.exe` allows to overwrite and to
@@ -776,7 +774,7 @@ def repackage_msix(
 def _sign_msix_win(output, force, log, verbose):
     powershell_exe = find_sdk_tool("powershell.exe", log=log)
     if not powershell_exe:
-        raise ValueError("powershell is required; " "set POWERSHELL or PATH")
+        raise ValueError("powershell is required; set POWERSHELL or PATH")
 
     def powershell(argstring, check=True):
         "Invoke `powershell.exe`.  Arguments are given as a string to allow consumer to quote."
@@ -789,9 +787,7 @@ def _sign_msix_win(output, force, log, verbose):
 
     signtool = find_sdk_tool("signtool.exe", log=log)
     if not signtool:
-        raise ValueError(
-            "signtool is required; " "set SIGNTOOL or WINDOWSSDKDIR or PATH"
-        )
+        raise ValueError("signtool is required; set SIGNTOOL or WINDOWSSDKDIR or PATH")
 
     # Our first order of business is to find, or generate, a (self-signed)
     # certificate.
@@ -979,16 +975,16 @@ def _sign_msix_posix(output, force, log, verbose):
     makeappx = find_sdk_tool("makeappx", log=log)
 
     if not makeappx:
-        raise ValueError("makeappx is required; " "set MAKEAPPX or PATH")
+        raise ValueError("makeappx is required; set MAKEAPPX or PATH")
 
     openssl = find_sdk_tool("openssl", log=log)
 
     if not openssl:
-        raise ValueError("openssl is required; " "set OPENSSL or PATH")
+        raise ValueError("openssl is required; set OPENSSL or PATH")
 
-    if "sign" not in subprocess.run(makeappx, capture_output=True).stdout.decode(
-        "utf-8"
-    ):
+    if "sign" not in subprocess.run(
+        makeappx, check=False, capture_output=True
+    ).stdout.decode("utf-8"):
         raise ValueError(
             "makeappx must support 'sign' operation. ",
             "You probably need to build Mozilla's version of it: ",

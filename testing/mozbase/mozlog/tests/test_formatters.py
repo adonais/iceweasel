@@ -331,9 +331,7 @@ def test_fail(get_logger, name, opts, expected):
     stack = """
     SimpleTest.is@SimpleTest/SimpleTest.js:312:5
     @caps/tests/mochitest/test_bug246699.html:53:1
-""".strip(
-        "\n"
-    )
+""".strip("\n")
 
     logger = get_logger(name, **opts)
 

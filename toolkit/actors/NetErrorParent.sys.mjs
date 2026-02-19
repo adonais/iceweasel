@@ -257,11 +257,14 @@ export class NetErrorParent extends EscapablePageParent {
         }
         break;
       case "Browser:AddTRRExcludedDomain": {
-        let domain = message.data.hostname;
+        let uri = this.browsingContext.currentURI;
+        if (uri instanceof Ci.nsINestedURI) {
+          uri = uri.QueryInterface(Ci.nsINestedURI).innermostURI;
+        }
         let excludedDomains = Services.prefs.getStringPref(
           "network.trr.excluded-domains"
         );
-        excludedDomains += `, ${domain}`;
+        excludedDomains += `, ${uri.asciiHost}`;
         Services.prefs.setStringPref(
           "network.trr.excluded-domains",
           excludedDomains

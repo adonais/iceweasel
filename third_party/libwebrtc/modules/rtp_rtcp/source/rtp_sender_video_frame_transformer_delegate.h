@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "api/array_view.h"
@@ -67,7 +68,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
       RTPVideoFrameSenderInterface* sender,
       scoped_refptr<FrameTransformerInterface> frame_transformer,
       uint32_t ssrc,
-      const std::string& rid,
+      std::string rid,
       TaskQueueFactory* send_transport_queue);
 
   void Init();

@@ -9,10 +9,10 @@ Since then, things have changed in cargo, such that it is now possible to use
 a simpler approach that only relies on tweaking what is shipped in rust.
 
 diff --git a/src/bootstrap/src/core/build_steps/dist.rs b/src/bootstrap/src/core/build_steps/dist.rs
-index 4957de2e1b7..b903e1be4aa 100644
+index 5cfaa6a7c77..65c8abcb4f8 100644
 --- a/src/bootstrap/src/core/build_steps/dist.rs
 +++ b/src/bootstrap/src/core/build_steps/dist.rs
-@@ -941,6 +941,101 @@ fn run(self, builder: &Builder<'_>) -> GeneratedTarball {
+@@ -1016,6 +1016,97 @@ fn run(self, builder: &Builder<'_>) -> GeneratedTarball {
              &dst_src,
          );
  
@@ -36,11 +36,7 @@ index 4957de2e1b7..b903e1be4aa 100644
 +            cmd.env("RUSTC_BOOTSTRAP", "1");
 +            builder.info("Dist src");
 +            let _time = timeit(builder);
-+            builder.run(
-+                &mut cmd,
-+                crate::utils::exec::OutputMode::Print,
-+                crate::utils::exec::OutputMode::Print,
-+            );
++            cmd.run(builder);
 +
 +            // Ideally, we would add the .cargo/config.toml that `cargo vendor` outputs,
 +            // but cargo doesn't read it when building libstd. So instead, we add
@@ -113,4 +109,4 @@ index 4957de2e1b7..b903e1be4aa 100644
 +
          tarball.generate()
      }
- }
+ 

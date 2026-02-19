@@ -460,12 +460,27 @@ NS_IMETHODIMP TextEditor::InsertLineBreak() {
 }
 
 nsresult TextEditor::ComputeTextValue(nsAString& aString) const {
-  Element* anonymousDivElement = GetRoot();
-  if (NS_WARN_IF(!anonymousDivElement)) {
-    return NS_ERROR_NOT_INITIALIZED;
+  // This is a public method so that anytime this may be called, e.g., before
+  // initialized or after destroyed.  However, GetTextNode() is an internal API
+  // for friend classes and internal use.  Therefore, it asserts the conditions
+  // whether the anonymous subtree is available.  Therefore, this method needs
+  // to get the Text with the anonymous <div>.
+  const Element* const anonymousDivElement = GetRoot();
+  if (MOZ_UNLIKELY(!anonymousDivElement)) {
+    // If we're temporarily destroyed while we're handling something, we can get
+    // the value from the cached text node which was maybe modified by us.  This
+    // helps TextControlState and TextInputListener to notify the text control
+    // element of value changes, etc, at UnbindFromFrame().
+    const Text* const cachedTextNode = GetCachedTextNode();
+    if (NS_WARN_IF(!cachedTextNode)) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+    cachedTextNode->GetData(aString);
+    return NS_OK;
   }
 
-  auto* text = Text::FromNodeOrNull(anonymousDivElement->GetFirstChild());
+  const auto* const text =
+      Text::FromNodeOrNull(anonymousDivElement->GetFirstChild());
   if (MOZ_UNLIKELY(!text)) {
     MOZ_ASSERT_UNREACHABLE("how?");
     return NS_ERROR_UNEXPECTED;
@@ -583,33 +598,42 @@ already_AddRefed<Element> TextEditor::GetInputEventTargetElement() const {
 }
 
 bool TextEditor::IsEmpty() const {
-  // This is a public method.  Therefore, it might have not been initialized yet
-  // when this is called.  Let's return true in such case, but warn it because
-  // it may return different value than actual value which is stored by the
-  // text control element.
-  MOZ_ASSERT_IF(mInitSucceeded, GetRoot());
-  if (NS_WARN_IF(!GetRoot())) {
-    NS_ASSERTION(false,
-                 "Make the root caller stop doing that before initializing or "
-                 "after destroying the TextEditor");
-    return true;
+  // This is a public method so that anytime this may be called, e.g., before
+  // initialized or after destroyed.  However, GetTextNode() is an internal API
+  // for friend classes and internal use.  Therefore, it asserts the conditions
+  // whether the anonymous subtree is available.  Therefore, this method needs
+  // to get the Text with the anonymous <div>.
+  if (MOZ_UNLIKELY(!mInitSucceeded)) {
+    // If we're temporarily destroyed while we're handling something, we can get
+    // the value from the cached text node which was maybe modified by us.  This
+    // helps TextControlState and TextInputListener to notify the text control
+    // element of value changes, etc, at UnbindFromFrame().
+    const Text* const cachedTextNode = GetCachedTextNode();
+    return NS_WARN_IF(!cachedTextNode) || !cachedTextNode->TextDataLength();
   }
   const Text* const textNode = GetTextNode();
-  MOZ_DIAGNOSTIC_ASSERT_IF(textNode,
-                           !Text::FromNodeOrNull(textNode->GetNextSibling()));
   return !textNode || !textNode->TextDataLength();
 }
 
 NS_IMETHODIMP TextEditor::GetTextLength(uint32_t* aCount) {
   MOZ_ASSERT(aCount);
-
-  if (NS_WARN_IF(!GetRoot())) {
-    return NS_ERROR_FAILURE;
+  // This is a public method so that anytime this may be called, e.g., before
+  // initialized or after destroyed.  However, GetTextNode() is an internal API
+  // for friend classes and internal use.  Therefore, it asserts the conditions
+  // whether the anonymous subtree is available.  Therefore, this method needs
+  // to get the Text with the anonymous <div>.
+  if (MOZ_UNLIKELY(!mInitSucceeded)) {
+    // If we're temporarily destroyed while we're handling something, we can get
+    // the value from the cached text node which was maybe modified by us.
+    const Text* const textNode = GetCachedTextNode();
+    if (NS_WARN_IF(!textNode)) {
+      return NS_ERROR_FAILURE;
+    }
+    *aCount = textNode->TextDataLength();
+    return NS_OK;
   }
 
   const Text* const textNode = GetTextNode();
-  MOZ_DIAGNOSTIC_ASSERT_IF(textNode,
-                           !Text::FromNodeOrNull(textNode->GetNextSibling()));
   *aCount = textNode ? textNode->TextDataLength() : 0u;
   return NS_OK;
 }

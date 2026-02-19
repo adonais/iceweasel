@@ -8,9 +8,8 @@
 
 #include <algorithm>
 
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/IntegerRange.h"
-
-#include "BaseProfiler.h"
 
 namespace mozilla {
 namespace baseprofiler {

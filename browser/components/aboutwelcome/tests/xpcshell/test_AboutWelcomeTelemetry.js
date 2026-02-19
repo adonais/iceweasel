@@ -10,14 +10,18 @@ const { AboutWelcomeTelemetry } = ChromeUtils.importESModule(
 const { AttributionCode } = ChromeUtils.importESModule(
   "moz-src:///browser/components/attribution/AttributionCode.sys.mjs"
 );
+const { TelemetryController } = ChromeUtils.importESModule(
+  "resource://gre/modules/TelemetryController.sys.mjs"
+);
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const TELEMETRY_PREF = "browser.newtabpage.activity-stream.telemetry";
 
-add_setup(function setup() {
+add_setup(async () => {
   do_get_profile();
   Services.fog.initializeFOG();
+  await TelemetryController.testSetup();
 });
 
 add_task(function test_enabled() {
@@ -38,6 +42,7 @@ add_task(function test_enabled() {
 add_task(async function test_pingPayload() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(TELEMETRY_PREF);
+    sinon.restore();
   });
   Services.prefs.setBoolPref(TELEMETRY_PREF, true);
   const AWTelemetry = new AboutWelcomeTelemetry();
@@ -53,8 +58,14 @@ add_task(async function test_pingPayload() {
   ok(pingSubmitted, "Glean ping was submitted");
 });
 
-add_task(function test_mayAttachAttribution() {
+add_task(async function test_mayAttachAttribution() {
   const sandbox = sinon.createSandbox();
+  Services.prefs.setBoolPref(TELEMETRY_PREF, true);
+  registerCleanupFunction(() => {
+    sandbox.restore();
+    Services.prefs.clearUserPref(TELEMETRY_PREF);
+  });
+
   const AWTelemetry = new AboutWelcomeTelemetry();
 
   sandbox.stub(AttributionCode, "getCachedAttributionData").returns(null);
@@ -81,10 +92,38 @@ add_task(function test_mayAttachAttribution() {
     experiment: "(not set)",
     variation: "(not set)",
     ua: "chrome",
+    dltoken: "(not set)",
+    msstoresignedin: "false",
+    msclkid: "(not set)",
+    dlsource: "(not set)",
+
+    invalid: "unused",
   };
   sandbox.restore();
   sandbox.stub(AttributionCode, "getCachedAttributionData").returns(attr);
   ping = AWTelemetry._maybeAttachAttribution({});
 
   equal(ping.attribution, attr, "Should set attribution if it presents");
+
+  await GleanPings.messagingSystem.testSubmission(
+    () => {
+      const glAttr = Glean.messagingSystemAttribution;
+      Assert.equal(glAttr.source.testGetValue(), attr.source);
+      Assert.equal(glAttr.medium.testGetValue(), attr.medium);
+      Assert.equal(glAttr.campaign.testGetValue(), attr.campaign);
+      Assert.equal(glAttr.content.testGetValue(), attr.content);
+      Assert.equal(glAttr.experiment.testGetValue(), attr.experiment);
+      Assert.equal(glAttr.variation.testGetValue(), attr.variation);
+      Assert.equal(glAttr.ua.testGetValue(), attr.ua);
+      Assert.equal(glAttr.dltoken.testGetValue(), attr.dltoken);
+      Assert.equal(glAttr.msstoresignedin.testGetValue(), attr.msstoresignedin);
+      Assert.equal(glAttr.msclkid.testGetValue(), attr.msclkid);
+      Assert.equal(glAttr.dlsource.testGetValue(), attr.dlsource);
+
+      Assert.equal(glAttr.unknownKeys.invalid.testGetValue(), 1);
+    },
+    async () => {
+      await AWTelemetry.sendTelemetry({ event: "MOCHITEST" });
+    }
+  );
 });

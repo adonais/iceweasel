@@ -514,22 +514,22 @@ class SettingsSubMenuSearchRobot {
             return SettingsSubMenuSearchRobot.Transition()
         }
 
-        fun clickCustomSearchStringLearnMoreLink(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun clickCustomSearchStringLearnMoreLink(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "clickCustomSearchStringLearnMoreLink: Trying to click the \"Search string URL\" learn more link")
             onView(withId(R.id.custom_search_engines_learn_more)).click()
             Log.i(TAG, "clickCustomSearchStringLearnMoreLink: Clicked the \"Search string URL\" learn more link")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun clickCustomSearchSuggestionsLearnMoreLink(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun clickCustomSearchSuggestionsLearnMoreLink(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "clickCustomSearchSuggestionsLearnMoreLink: Trying to click the \"Search suggestions API\" learn more link")
             onView(withId(R.id.custom_search_suggestions_learn_more)).click()
             Log.i(TAG, "clickCustomSearchSuggestionsLearnMoreLink: Clicked the \"Search suggestions API\" learn more link")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
     }
 }

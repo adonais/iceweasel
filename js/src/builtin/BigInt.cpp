@@ -64,7 +64,7 @@ JSObject* BigIntObject::create(JSContext* cx, HandleBigInt bigInt) {
   if (!bn) {
     return nullptr;
   }
-  bn->setFixedSlot(PRIMITIVE_VALUE_SLOT, BigIntValue(bigInt));
+  bn->initFixedSlot(PRIMITIVE_VALUE_SLOT, BigIntValue(bigInt));
   return bn;
 }
 

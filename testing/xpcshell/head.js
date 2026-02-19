@@ -264,7 +264,7 @@ void Cc["@mozilla.org/widget/transferable;1"].createInstance();
  * This behaviour would cause random failures and slowdown tests execution,
  * for example by running database vacuum or cleanups for each test.
  *
- * @note Idle service is overridden by default.  If a test requires it, it will
+ * Note: Idle service is overridden by default.  If a test requires it, it will
  *       have to call do_get_idle() function at least once before use.
  */
 var _fakeIdleService = {

@@ -4,7 +4,19 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 147.0 (In Development)
+# 148.0 (In Development)
+* **support-utils**
+  * 🆕 New `keyboardAsState` available to use in Jetpack Compose code to know when the IME is shown or hidden. This works more reliably on older Android versions than the frameworks `isImeVisible` API. [Bug 1988730](https://bugzilla.mozilla.org/show_bug.cgi?id=1988730).
+* **browser-engine-gecko** and **concept-engine**
+  * Add optional link text support to HitResult.UNKNOWN to allow getting the text associated with a link in response to a long click
+* **feature-contextmenu**
+  * 🆕 New: "Copy link text" context menu candidate to allow for the ability to copy link text [Bug 1809303](https://bugzilla.mozilla.org/show_bug.cgi?id=1809303)
+* **lib-state**
+  * ⚠️ **Breaking change**: Removed `MiddlewareContext`. You can now pass in a `Store` directly when invoking a `Middleware`. [Bug 2005443](https://bugzilla.mozilla.org/show_bug.cgi?id=2005443).
+* **lib-crash**
+  * 🆕 New `CrashReporter.registerDeferredInitializer()` allows registering a lazy initializer for CrashReporter that is evaluated only when `requireInstance` is accessed, avoiding immediate initialization of dependencies [Bug 2005839](https://bugzilla.mozilla.org/show_bug.cgi?id=2005839)
+
+# 147.0
 * **browser-state**:
   * ⚠️ **Breaking change**: New `Unknown` third state for the `SecurityStatus` of the connection used in a tab. The `secure` property has been migrated to `isSecure`. [Bug 2000617](https://bugzilla.mozilla.org/show_bug.cgi?id=2000617).
 * **lib-state**

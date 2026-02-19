@@ -164,7 +164,7 @@ def fenix_format(_paths, config, fix=None, **lintargs):
         os.path.join("mobile", "android", "fenix"),
         lint_tasks=[
             "fenix:lint",
-            "fenix:lintFenixDebug",
+            "fenix:lintDebug",
         ],
         **lintargs,
     )
@@ -454,9 +454,7 @@ def read_lint_report(config, subdir, tasks=[], **lintargs):
                 open(
                     os.path.join(reports, "lint", file),
                 )
-            ).get(
-                "runs", [{}]
-            )[0]
+            ).get("runs", [{}])[0]
 
             issues = data.get("results", [])
             rules = data.get("tool", {}).get("driver", {}).get("rules", [])

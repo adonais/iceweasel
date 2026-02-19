@@ -282,7 +282,7 @@ class nsWindow final : public nsIWidget {
   void CreateLayerManager();
   void RedrawAll();
 
-  void OnSizeChanged(const mozilla::gfx::IntSize& aSize);
+  void OnSizeChanged(const mozilla::LayoutDeviceIntSize& aSize);
 
   mozilla::layers::LayersId GetRootLayerId() const;
   RefPtr<mozilla::layers::UiCompositorControllerChild>

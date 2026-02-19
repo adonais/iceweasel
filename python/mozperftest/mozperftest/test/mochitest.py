@@ -98,7 +98,7 @@ class Mochitest(Layer):
     }
 
     def __init__(self, env, mach_cmd):
-        super(Mochitest, self).__init__(env, mach_cmd)
+        super().__init__(env, mach_cmd)
         self.topsrcdir = mach_cmd.topsrcdir
         self._mach_context = mach_cmd._mach_context
         self.python_path = mach_cmd.virtualenv_manager.python_path
@@ -138,13 +138,11 @@ class Mochitest(Layer):
 
         if self.get_arg("gecko-profile"):
             gecko_profile_args.append("--profiler")
-            gecko_profile_args.extend(
-                [
-                    f"--setenv=MOZ_PROFILER_STARTUP_FEATURES={gecko_profile_features}",
-                    f"--setenv=MOZ_PROFILER_STARTUP_FILTERS={gecko_profile_threads}",
-                    f"--setenv=MOZ_PROFILER_STARTUP_ENTRIES={gecko_profile_entries}",
-                ]
-            )
+            gecko_profile_args.extend([
+                f"--setenv=MOZ_PROFILER_STARTUP_FEATURES={gecko_profile_features}",
+                f"--setenv=MOZ_PROFILER_STARTUP_FILTERS={gecko_profile_threads}",
+                f"--setenv=MOZ_PROFILER_STARTUP_ENTRIES={gecko_profile_entries}",
+            ])
             if gecko_profile_interval:
                 gecko_profile_args.append(
                     f"--setenv=MOZ_PROFILER_STARTUP_INTERVAL={gecko_profile_interval}"
@@ -192,23 +190,19 @@ class Mochitest(Layer):
 
         if not ON_TRY:
             os.environ["MOZ_HOST_BIN"] = self.mach_cmd.bindir
-            mochitest_android_args.extend(
-                [
-                    f"--setenv=MOZ_HOST_BIN={os.environ['MOZ_HOST_BIN']}",
-                ]
-            )
+            mochitest_android_args.extend([
+                f"--setenv=MOZ_HOST_BIN={os.environ['MOZ_HOST_BIN']}",
+            ])
         else:
             os.environ["MOZ_HOST_BIN"] = str(
                 Path(os.getenv("MOZ_FETCHES_DIR"), "hostutils")
             )
-            mochitest_android_args.extend(
-                [
-                    f"--setenv=MOZ_HOST_BIN={os.environ['MOZ_HOST_BIN']}",
-                    f"--remote-webserver={os.environ['HOST_IP']}",
-                    "--http-port=8854",
-                    "--ssl-port=4454",
-                ]
-            )
+            mochitest_android_args.extend([
+                f"--setenv=MOZ_HOST_BIN={os.environ['MOZ_HOST_BIN']}",
+                f"--remote-webserver={os.environ['HOST_IP']}",
+                "--http-port=8854",
+                "--ssl-port=4454",
+            ])
 
         return mochitest_android_args
 
@@ -240,8 +234,7 @@ class Mochitest(Layer):
             )
         if not manifest_flavor:
             raise MissingMochitestInformation(
-                "Mochitest flavor needs to be provided"
-                "(e.g. plain, browser-chrome, ...)"
+                "Mochitest flavor needs to be provided(e.g. plain, browser-chrome, ...)"
             )
 
         manifest_path = Path(test.parent, manifest_name)
@@ -307,7 +300,6 @@ class Mochitest(Layer):
         results = []
         cycles = self.get_arg("cycles", 1)
         for cycle in range(1, cycles + 1):
-
             metadata.run_hook(
                 "before_cycle", metadata, self.env, cycle, metadata.script
             )
@@ -358,13 +350,11 @@ class Mochitest(Layer):
         if len(results) == 0:
             raise NoPerfMetricsError("mochitest")
 
-        metadata.add_result(
-            {
-                "name": test_name,
-                "framework": {"name": "mozperftest"},
-                "transformer": "mozperftest.test.mochitest:MochitestData",
-                "results": results,
-            }
-        )
+        metadata.add_result({
+            "name": test_name,
+            "framework": {"name": "mozperftest"},
+            "transformer": "mozperftest.test.mochitest:MochitestData",
+            "results": results,
+        })
 
         return metadata

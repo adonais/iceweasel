@@ -368,6 +368,12 @@ struct ReflowInput : public SizeComputationInput {
   // unconstrained dimensions replaced by zero.
   nsSize ComputedSizeAsContainerIfConstrained() const;
 
+  // Return the physical content box relative to the frame itself.
+  nsRect ComputedPhysicalContentBoxRelativeToSelf() const {
+    auto bp = ComputedPhysicalBorderPadding();
+    return nsRect(nsPoint(bp.left, bp.top), ComputedPhysicalSize());
+  }
+
   // Get the writing mode of the containing block, to resolve float/clear
   // logical sides appropriately.
   WritingMode GetCBWritingMode() const;

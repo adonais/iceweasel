@@ -19,7 +19,6 @@
 
 #include "nsISupports.h"
 #include "nsIStreamListener.h"
-#include "nsIDTD.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsAtom.h"
@@ -175,6 +174,12 @@ class nsIParser : public nsParserBase {
    * True if this is a script-created HTML5 parser.
    */
   virtual bool IsScriptCreated() = 0;
+
+  /**
+   * True iff this is an about:blank-mode HTML5 parser
+   * (i.e. a parser for non-initial about:blank).
+   */
+  virtual bool IsAboutBlankMode() = 0;
 };
 
 #endif

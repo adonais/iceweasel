@@ -16,7 +16,8 @@ ChromeUtils.defineLazyGetter(this, "SearchTestUtils", () => {
 });
 
 ChromeUtils.defineESModuleGetters(this, {
-  IPProtection: "resource:///modules/ipprotection/IPProtection.sys.mjs",
+  IPProtection:
+    "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
 });
 
 const mockIdleService = {

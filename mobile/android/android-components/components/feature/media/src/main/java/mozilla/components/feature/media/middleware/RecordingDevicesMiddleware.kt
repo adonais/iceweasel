@@ -23,7 +23,7 @@ import mozilla.components.concept.engine.media.RecordingDevice
 import mozilla.components.feature.media.R
 import mozilla.components.feature.media.notification.MediaNotificationChannel
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.android.OnPermissionGranted
 import mozilla.components.support.base.ids.SharedIdsHelper
@@ -49,7 +49,7 @@ class RecordingDevicesMiddleware(
     private var isShowingNotification: Boolean = false
 
     override fun invoke(
-        context: MiddlewareContext<BrowserState, BrowserAction>,
+        store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
         action: BrowserAction,
     ) {
@@ -62,15 +62,15 @@ class RecordingDevicesMiddleware(
             action is TabListAction ||
             action is CustomTabListAction
         ) {
-            process(context, false)
+            process(store, false)
         }
     }
 
     private fun process(
-        middlewareContext: MiddlewareContext<BrowserState, BrowserAction>,
+        store: Store<BrowserState, BrowserAction>,
         isReminder: Boolean,
     ) {
-        val devices = middlewareContext.state.tabs
+        val devices = store.state.tabs
             .map { tab -> tab.content.recordingDevices }
             .flatten()
             .filter { device -> device.status == RecordingDevice.Status.RECORDING }
@@ -91,7 +91,7 @@ class RecordingDevicesMiddleware(
             isReminder,
             processRecordingState = {
                 isShowingNotification = false
-                process(middlewareContext, true)
+                process(store, true)
             },
         )
     }

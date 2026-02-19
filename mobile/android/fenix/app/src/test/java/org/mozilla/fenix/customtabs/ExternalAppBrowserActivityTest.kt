@@ -99,6 +99,8 @@ class ExternalAppBrowserActivityTest {
                     every { bundle.getString(any()) } returns ""
                     every { intent.extras } returns bundle
                     every { intent.getBooleanExtra(any(), any()) } returns false
+                    every { intent.dataString } returns null
+
                     return intent
                 }
             },
@@ -123,6 +125,8 @@ class ExternalAppBrowserActivityTest {
                     every { bundle.getString(any()) } returns ""
                     every { intent.getBooleanExtra(any(), any()) } returns true
                     every { intent.extras } returns bundle
+                    every { intent.dataString } returns null
+
                     return intent
                 }
             },
@@ -151,6 +155,8 @@ class ExternalAppBrowserActivityTest {
                     every { bundle.getString(any()) } returns ""
                     every { intent.getBooleanExtra(any(), any()) } returns false
                     every { intent.extras } returns bundle
+                    every { intent.dataString } returns null
+
                     return intent
                 }
             },

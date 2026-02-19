@@ -106,7 +106,7 @@ def arm32_soft_fp_args(func_type):
                 contents += f"MakeInt64(stack_pointer[{stackOffset}], stack_pointer[{stackOffset + 1}])"
                 stackOffset += 2
             else:
-                contents += f"MakeInt64(a{intRegIndex}, a{intRegIndex+1})"
+                contents += f"MakeInt64(a{intRegIndex}, a{intRegIndex + 1})"
                 intRegIndex += 2
         elif arg == "Float32":
             if intRegIndex == numIntArgRegs:
@@ -162,7 +162,7 @@ def arm32_hard_fp_args(func_type):
                 contents += f"MakeInt64(stack_pointer[{stackOffset}], stack_pointer[{stackOffset + 1}])"
                 stackOffset += 2
             else:
-                contents += f"MakeInt64(a{intRegIndex}, a{intRegIndex+1})"
+                contents += f"MakeInt64(a{intRegIndex}, a{intRegIndex + 1})"
                 intRegIndex += 2
         elif arg == "Float32":
             if floatRegIndex == numFloatArgRegs:

@@ -308,7 +308,6 @@ opaque-types = [
     "std::unique_ptr.*",
     "std::.*::unique_ptr.*",
     "mozilla::dom::FrameRequestManager",
-
     "mozilla::dom::Touch",
     "mozilla::dom::Sequence",
     "mozilla::SmallPointerArray",
@@ -434,7 +433,7 @@ cbindgen-types = [
     { gecko = "StyleViewTransitionClass", servo = "crate::values::computed::ViewTransitionClass" },
     { gecko = "StyleViewTransitionName", servo = "crate::values::computed::ViewTransitionName" },
     { gecko = "StyleResize", servo = "crate::values::computed::Resize" },
-    { gecko = "StyleOverflowClipBox", servo = "crate::values::computed::OverflowClipBox" },
+    { gecko = "StyleOverflowClipMargin", servo = "crate::values::computed::OverflowClipMargin" },
     { gecko = "StyleFloat", servo = "crate::values::computed::Float" },
     { gecko = "StyleClear", servo = "crate::values::computed::Clear" },
     { gecko = "StyleOverscrollBehavior", servo = "crate::values::computed::OverscrollBehavior" },

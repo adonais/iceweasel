@@ -584,7 +584,7 @@ newtab-new-user-custom-wallpaper-cta = Спробувати зараз
 
 ## Strings for download mobile highlight
 
-newtab-download-mobile-highlight-title = Завантажити { -brand-product-name } для мобільних пристроїв
+newtab-download-mobile-highlight-title = Завантажте { -brand-product-name } для мобільних пристроїв
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = Скануйте код, щоб безпечно переглядати вебсторінки в дорозі.
 newtab-download-mobile-highlight-body-variant-b = Продовжуйте з того місця, де зупинилися, синхронізуючи вкладки, паролі тощо.
@@ -669,6 +669,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Новий список
+newtab-widget-section-title = Віджети
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Приховати віджети
+    .aria-label = Приховати всі віджети
+newtab-widget-section-maximize =
+    .title = Розгорнути віджети
+    .aria-label = Розгорнути всі віджети до повного розміру
+newtab-widget-section-minimize =
+    .title = Згорнути віджети
+    .aria-label = Згорнути всі віджети до компактного розміру
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -691,8 +702,6 @@ newtab-widget-timer-menu-notifications = Вимкнути сповіщення
 newtab-widget-timer-menu-notifications-on = Увімкнути сповіщення
 newtab-widget-timer-menu-hide = Приховати таймер
 newtab-widget-timer-menu-learn-more = Докладніше
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Прокрутіть, щоб переглянути більше
 newtab-widget-message-title = Будьте зосередженими завдяки спискам і вбудованому таймеру
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Миттєві нагадування, щоденні справи, сеанси зосередження і перерви – контролюйте свої завдання і виконуйте їх вчасно.

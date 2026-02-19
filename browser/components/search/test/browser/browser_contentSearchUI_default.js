@@ -2,9 +2,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const TEST_ENGINE_NAME = "searchSuggestionEngine";
-const HANDOFF_PREF =
-  "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar";
-
 let extension;
 let defaultEngine;
 let addedEngine;
@@ -101,10 +98,16 @@ async function ensurePlaceholder(tab, expectedId, expectedEngine) {
       await ContentTaskUtils.waitForCondition(() => !content.document.hidden);
 
       await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector(".search-handoff-button"),
-        "l10n ID not set."
+        () => content.document.querySelector("content-search-handoff-ui"),
+        "content-search-handoff-ui not found."
       );
-      let buttonNode = content.document.querySelector(".search-handoff-button");
+      let handoffUI = content.document.querySelector(
+        "content-search-handoff-ui"
+      );
+      await handoffUI.updateComplete;
+      let buttonNode = handoffUI.shadowRoot.querySelector(
+        ".search-handoff-button"
+      );
       let expectedAttributes = { id, args: engine ? { engine } : null };
       Assert.deepEqual(
         content.document.l10n.getAttributes(buttonNode),
@@ -115,7 +118,7 @@ async function ensurePlaceholder(tab, expectedId, expectedEngine) {
   );
 }
 
-async function runNewTabTest(isHandoff) {
+async function runNewTabTest() {
   let tab = await BrowserTestUtils.openNewForegroundTab({
     url: "about:newtab",
     gBrowser,
@@ -125,13 +128,11 @@ async function runNewTabTest(isHandoff) {
   let engineIcon = await defaultEngine.getIconURL(16);
 
   await ensureIcon(tab, engineIcon);
-  if (isHandoff) {
-    await ensurePlaceholder(
-      tab,
-      "newtab-search-box-handoff-input",
-      Services.search.defaultEngine.name
-    );
-  }
+  await ensurePlaceholder(
+    tab,
+    "newtab-search-box-handoff-input",
+    Services.search.defaultEngine.name
+  );
 
   await Services.search.setDefault(
     addedEngine,
@@ -141,19 +142,15 @@ async function runNewTabTest(isHandoff) {
   // We only show the engine's own icon for config engines, otherwise show
   // a default. xref https://bugzilla.mozilla.org/show_bug.cgi?id=1449338#c19
   await ensureIcon(tab, "chrome://global/skin/icons/search-glass.svg");
-  if (isHandoff) {
-    await ensurePlaceholder(tab, "newtab-search-box-handoff-input-no-engine");
-  }
+  await ensurePlaceholder(tab, "newtab-search-box-handoff-input-no-engine");
 
   // Disable suggestions in the Urlbar. This should update the placeholder
   // string since handoff will now enter search mode.
-  if (isHandoff) {
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.urlbar.suggest.searches", false]],
-    });
-    await ensurePlaceholder(tab, "newtab-search-box-input");
-    await SpecialPowers.popPrefEnv();
-  }
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.searches", false]],
+  });
+  await ensurePlaceholder(tab, "newtab-search-box-input");
+  await SpecialPowers.popPrefEnv();
 
   await Services.search.setDefault(
     defaultEngine,
@@ -164,21 +161,7 @@ async function runNewTabTest(isHandoff) {
 }
 
 add_task(async function test_content_search_attributes() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[HANDOFF_PREF, true]],
-  });
-
-  await runNewTabTest(true);
-  await SpecialPowers.popPrefEnv();
-});
-
-add_task(async function test_content_search_attributes_no_handoff() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[HANDOFF_PREF, false]],
-  });
-
-  await runNewTabTest(false);
-  await SpecialPowers.popPrefEnv();
+  await runNewTabTest();
 });
 
 add_task(async function test_content_search_attributes_in_private_window() {
@@ -223,14 +206,11 @@ add_task(async function test_content_search_attributes_in_private_window() {
 
 add_task(async function test_content_search_permanent_private_browsing() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [HANDOFF_PREF, true],
-      ["browser.privatebrowsing.autostart", true],
-    ],
+    set: [["browser.privatebrowsing.autostart", true]],
   });
 
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  await runNewTabTest(true);
+  await runNewTabTest();
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
 });

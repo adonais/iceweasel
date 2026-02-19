@@ -68,8 +68,8 @@ add_task(async function TestPrintableKey() {
 add_task(async function TestNonPrintableKey() {
   let tests = [
     ["KEY_Backspace", false],
-    ["KEY_Control", false],
-    ["KEY_Shift", false],
+    ["KEY_Control", true],
+    ["KEY_Shift", true],
     ["KEY_Escape", false],
     // Treat as user input
     ["KEY_Tab", true],

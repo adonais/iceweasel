@@ -8,7 +8,6 @@ import mozilla.components.support.test.assertUnused
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
 import org.mozilla.fenix.components.AppStore
@@ -21,8 +20,8 @@ class ReviewPromptMiddlewareTest {
 
     private val eventStore = FakeNimbusEventStore()
 
-    private var isFeatureFlagEnabled = true
-    private var isTelemetryEnabled = true
+    private var shouldUseNewTriggerCriteria = true
+    private var shouldShowCustomPrompt = true
     private lateinit var mainCriteria: Sequence<Boolean>
     private lateinit var subCriteria: Sequence<Boolean>
     private lateinit var legacyCriteria: Sequence<Boolean>
@@ -30,8 +29,8 @@ class ReviewPromptMiddlewareTest {
     private val store = AppStore(
         middlewares = listOf(
             ReviewPromptMiddleware(
-                isReviewPromptFeatureEnabled = { isFeatureFlagEnabled },
-                isTelemetryEnabled = { isTelemetryEnabled },
+                shouldUseNewTriggerCriteria = { shouldUseNewTriggerCriteria },
+                shouldShowCustomPrompt = { shouldShowCustomPrompt },
                 createJexlHelper = {
                     object : NimbusMessagingHelperInterface {
                         override fun evalJexl(expression: String) = assertUnused()
@@ -48,8 +47,8 @@ class ReviewPromptMiddlewareTest {
     )
 
     @Test
-    fun `GIVEN feature flag is enabled WHEN check requested THEN main and sub-criteria are checked`() {
-        isFeatureFlagEnabled = true
+    fun `GIVEN new criteria are enabled WHEN check requested THEN main and sub-criteria are checked`() {
+        shouldUseNewTriggerCriteria = true
 
         var mainCriteriaChecked = false
         var subCriteriaChecked = false
@@ -75,8 +74,8 @@ class ReviewPromptMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN feature flag is disabled WHEN check requested THEN legacy criteria are checked`() {
-        isFeatureFlagEnabled = false
+    fun `GIVEN new criteria are disabled WHEN check requested THEN legacy criteria are checked`() {
+        shouldUseNewTriggerCriteria = false
 
         var mainCriteriaChecked = false
         var subCriteriaChecked = false
@@ -237,10 +236,9 @@ class ReviewPromptMiddlewareTest {
         assertNoOp(ReviewPromptAction.ShowPlayStorePrompt)
     }
 
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2001801")
     @Test
-    fun `GIVEN telemetry enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
-        isTelemetryEnabled = true
+    fun `GIVEN custom prompt enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
+        shouldShowCustomPrompt = true
         mainCriteria = sequenceOf(true)
         subCriteria = sequenceOf(true)
 
@@ -253,8 +251,8 @@ class ReviewPromptMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN telemetry disabled AND criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
-        isTelemetryEnabled = false
+    fun `GIVEN custom prompt disabled AND criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
+        shouldShowCustomPrompt = false
         mainCriteria = sequenceOf(true)
         subCriteria = sequenceOf(true)
 
@@ -266,11 +264,10 @@ class ReviewPromptMiddlewareTest {
         )
     }
 
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2001801")
     @Test
-    fun `GIVEN feature flag disabled AND telemetry enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
-        isFeatureFlagEnabled = false
-        isTelemetryEnabled = true
+    fun `GIVEN new criteria are disabled AND custom prompt enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
+        shouldUseNewTriggerCriteria = false
+        shouldShowCustomPrompt = true
         legacyCriteria = sequenceOf(true)
 
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
@@ -282,9 +279,9 @@ class ReviewPromptMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN feature flag disabled AND telemetry disabled AND criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
-        isFeatureFlagEnabled = false
-        isTelemetryEnabled = false
+    fun `GIVEN new criteria are disabled AND custom prompt disabled AND criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
+        shouldUseNewTriggerCriteria = false
+        shouldShowCustomPrompt = false
         legacyCriteria = sequenceOf(true)
 
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)

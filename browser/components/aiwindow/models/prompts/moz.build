@@ -6,5 +6,8 @@ with Files("**"):
     BUG_COMPONENT = ("Core", "Machine Learning: General")
 
 MOZ_SRC_FILES += [
-    "assistantPrompts.sys.mjs",
+    "AssistantPrompts.sys.mjs",
+    "ConversationSuggestionsPrompts.sys.mjs",
+    "MemoriesPrompts.sys.mjs",
+    "TitleGenerationPrompts.sys.mjs",
 ]

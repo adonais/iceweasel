@@ -47,9 +47,9 @@ class TestLint(unittest.TestCase):
         sandbox.run(mozpath.join(test_data_path, "moz.configure"))
 
     def moz_configure(self, source):
-        return MockedOpen(
-            {os.path.join(test_data_path, "moz.configure"): textwrap.dedent(source)}
-        )
+        return MockedOpen({
+            os.path.join(test_data_path, "moz.configure"): textwrap.dedent(source)
+        })
 
     def assertRaisesFromLine(self, exc_type, line):
         return AssertRaisesFromLine(
@@ -341,7 +341,7 @@ class TestLint(unittest.TestCase):
                 self.lint_test()
         self.assertEqual(
             str(e.exception),
-            "--disable-foo should be used instead of " "--enable-foo with default=True",
+            "--disable-foo should be used instead of --enable-foo with default=True",
         )
 
     def test_default_disable(self):
@@ -361,8 +361,7 @@ class TestLint(unittest.TestCase):
                 self.lint_test()
         self.assertEqual(
             str(e.exception),
-            "--enable-foo should be used instead of "
-            "--disable-foo with default=False",
+            "--enable-foo should be used instead of --disable-foo with default=False",
         )
 
     def test_default_with(self):
@@ -382,7 +381,7 @@ class TestLint(unittest.TestCase):
                 self.lint_test()
         self.assertEqual(
             str(e.exception),
-            "--without-foo should be used instead of " "--with-foo with default=True",
+            "--without-foo should be used instead of --with-foo with default=True",
         )
 
     def test_default_without(self):
@@ -402,7 +401,7 @@ class TestLint(unittest.TestCase):
                 self.lint_test()
         self.assertEqual(
             str(e.exception),
-            "--with-foo should be used instead of " "--without-foo with default=False",
+            "--with-foo should be used instead of --without-foo with default=False",
         )
 
     def test_default_func(self):
@@ -427,8 +426,7 @@ class TestLint(unittest.TestCase):
                 self.lint_test()
         self.assertEqual(
             str(e.exception),
-            '`help` should contain "{Enable|Disable}" because of '
-            "non-constant default",
+            '`help` should contain "{Enable|Disable}" because of non-constant default',
         )
 
     def test_dual_help(self):

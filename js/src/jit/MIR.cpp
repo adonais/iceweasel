@@ -570,6 +570,14 @@ const MDefinition* MDefinition::skipObjectGuards() const {
       result = result->toGuardMultipleShapes()->object();
       continue;
     }
+    if (result->isGuardShapeListToOffset()) {
+      result = result->toGuardShapeListToOffset()->object();
+      continue;
+    }
+    if (result->isGuardMultipleShapesToOffset()) {
+      result = result->toGuardMultipleShapesToOffset()->object();
+      continue;
+    }
     if (result->isGuardNullProto()) {
       result = result->toGuardNullProto()->object();
       continue;
@@ -608,6 +616,33 @@ bool MDefinition::congruentIfOperandsEqual(const MDefinition* ins) const {
     }
   }
 
+  return true;
+}
+
+bool MDefinition::dominates(const MDefinition* other) const {
+  if (block() != other->block()) {
+    return block()->dominates(other->block());
+  }
+
+  // Nothing in a block dominates a phi in that block.
+  if (other->isPhi()) {
+    return false;
+  }
+
+  // Phis dominate all instructions in the block.
+  if (isPhi()) {
+    return true;
+  }
+
+  // If both defs are instructions in the same block, check whether
+  // `this` precedes `other`.
+  MInstructionIterator opIter = block()->begin(toInstruction());
+  do {
+    ++opIter;
+    if (opIter == block()->end()) {
+      return false;
+    }
+  } while (*opIter != other);
   return true;
 }
 
@@ -7225,6 +7260,28 @@ AliasSet MGuardShapeList::getAliasSet() const {
   return AliasSet::Load(AliasSet::ObjectFields);
 }
 
+bool MGuardShapeListToOffset::congruentTo(const MDefinition* ins) const {
+  if (!congruentIfOperandsEqual(ins)) {
+    return false;
+  }
+
+  const auto& shapesA = this->shapeList()->shapes();
+  const auto& shapesB = ins->toGuardShapeListToOffset()->shapeList()->shapes();
+  if (!std::equal(shapesA.begin(), shapesA.end(), shapesB.begin(),
+                  shapesB.end()))
+    return false;
+
+  const auto& offsetsA = this->shapeList()->offsets();
+  const auto& offsetsB =
+      ins->toGuardShapeListToOffset()->shapeList()->offsets();
+  return std::equal(offsetsA.begin(), offsetsA.end(), offsetsB.begin(),
+                    offsetsB.end());
+}
+
+AliasSet MGuardShapeListToOffset::getAliasSet() const {
+  return AliasSet::Load(AliasSet::ObjectFields);
+}
+
 bool MHasShape::congruentTo(const MDefinition* ins) const {
   if (!ins->isHasShape()) {
     return false;
@@ -7305,6 +7362,19 @@ AliasSet MGuardMultipleShapes::getAliasSet() const {
   // store the list of shapes, but that object is internal and not exposed
   // to script, so it doesn't have to be in the alias set.
   return AliasSet::Load(AliasSet::ObjectFields);
+}
+
+AliasSet MGuardMultipleShapesToOffset::getAliasSet() const {
+  return AliasSet::Load(AliasSet::ObjectFields);
+}
+
+AliasSet MLoadFixedSlotFromOffset::getAliasSet() const {
+  return AliasSet::Load(AliasSet::FixedSlot);
+}
+
+AliasSet MLoadDynamicSlotFromOffset::getAliasSet() const {
+  MOZ_ASSERT(slots()->type() == MIRType::Slots);
+  return AliasSet::Load(AliasSet::DynamicSlot);
 }
 
 AliasSet MGuardGlobalGeneration::getAliasSet() const {

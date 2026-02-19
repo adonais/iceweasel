@@ -60,6 +60,15 @@ using WGPUTextureId = uint64_t;
 using WGPUTextureViewId = uint64_t;
 using WGPUExternalTextureId = uint64_t;
 using WGPUExternalTextureSourceId = uint64_t;
+
+// This is a zero-sized type in wgpu's API, but cbindgen generates C++
+// that leaves it as an incomplete type. Since WebGPU's GPULoadOp
+// doesn't even have this variant (and probably never will, as its
+// purpose is to allow behavior to vary freely per implementation), we
+// can just give it a dummy definition that at least compiles.
+struct WGPULoadOpDontCare {
+    char dummy;
+};
 """
 include_version = true
 braces = "SameLine"
@@ -72,6 +81,7 @@ style = "tag"
 prefix = "WGPU"
 renaming_overrides_prefixing = true
 exclude = [
+	"LoadOpDontCare",
 	"Option_AdapterId",
 	"Option_BufferId",
 	"Option_BindGroupId",

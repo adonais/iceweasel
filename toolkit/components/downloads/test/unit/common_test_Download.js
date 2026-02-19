@@ -29,10 +29,10 @@ ChromeUtils.defineESModuleGetters(this, {
  * Creates and starts a new download, using either DownloadCopySaver or
  * DownloadLegacySaver based on the current test run.
  *
- * @return {Promise}
- * @resolves The newly created Download object.  The download may be in progress
- *           or already finished.  The promiseDownloadStopped function can be
- *           used to wait for completion.
+ * @returns {Promise}
+ *   Resolves to the newly created Download object. The download may be in
+ *   progress or already finished. The promiseDownloadStopped function can be
+ *   used to wait for completion.
  * @rejects JavaScript exception.
  */
 function promiseStartDownload(aSourceUrl) {
@@ -55,8 +55,8 @@ function promiseStartDownload(aSourceUrl) {
  * @param expectedContents
  *        String containing the octets that are expected in the file.
  *
- * @return {Promise}
- * @resolves When the properties have been verified.
+ * @returns {Promise<void>}
+ *   Resolves when the properties have been verified.
  * @rejects JavaScript exception.
  */
 var promiseVerifyTarget = async function (downloadTarget, expectedContents) {

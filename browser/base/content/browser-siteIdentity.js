@@ -4,6 +4,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
+  QWACs: "resource://gre/modules/psm/QWACs.sys.mjs",
 });
 
 /**
@@ -49,6 +50,18 @@ var gIdentityHandler = {
    * time the identity UI was updated, or null if the connection is not secure.
    */
   _secInfo: null,
+
+  /**
+   * If the document is using a QWAC, this may eventually be an nsIX509Cert
+   * corresponding to it.
+   */
+  _qwac: null,
+
+  /**
+   * Promise that will resolve when determining if the document is using a QWAC
+   * has resolved.
+   */
+  _qwacStatusPromise: null,
 
   /**
    * Bitmask provided by nsIWebProgressListener.onSecurityChange.
@@ -629,12 +642,11 @@ var gIdentityHandler = {
   },
 
   /**
-   * Helper to parse out the important parts of _secInfo (of the SSL cert in
-   * particular) for use in constructing identity UI strings
+   * Helper to parse out the important parts of the given certificate for use
+   * in constructing identity UI strings.
    */
-  getIdentityData() {
+  getIdentityData(cert = this._secInfo.serverCert) {
     var result = {};
-    var cert = this._secInfo.serverCert;
 
     // Human readable name of Subject
     result.subjectOrg = cert.organization;
@@ -699,7 +711,7 @@ var gIdentityHandler = {
    *        processed by createExposableURI.
    */
   updateIdentity(state, uri) {
-    let shouldHidePopup = this._uri && this._uri.spec != uri.spec;
+    let locationChanged = this._uri && this._uri.spec != uri.spec;
     this._state = state;
 
     // Firstly, populate the state properties required to display the UI. See
@@ -707,12 +719,15 @@ var gIdentityHandler = {
     this.setURI(uri);
     this._secInfo = gBrowser.securityUI.secInfo;
     this._isSecureContext = this._getIsSecureContext();
-
+    if (locationChanged) {
+      this._qwac = null;
+      this._qwacStatusPromise = null;
+    }
     // Then, update the user interface with the available data.
     this.refreshIdentityBlock();
     // Handle a location change while the Control Center is focused
     // by closing the popup (bug 1207542)
-    if (shouldHidePopup) {
+    if (locationChanged) {
       this.hidePopup();
       gPermissionPanel.hidePopup();
     }
@@ -960,6 +975,43 @@ var gIdentityHandler = {
   },
 
   /**
+   * Determines the string used to describe the connection security
+   * information.
+   */
+  getConnectionSecurityInformation() {
+    if (this._isSecureInternalUI) {
+      return "chrome";
+    } else if (this._pageExtensionPolicy) {
+      return "extension";
+    } else if (this._isURILoadedFromFile) {
+      return "file";
+    } else if (this._qwac) {
+      return "secure-etsi";
+    } else if (this._isEV) {
+      return "secure-ev";
+    } else if (this._isCertUserOverridden) {
+      return "secure-cert-user-overridden";
+    } else if (this._isSecureConnection) {
+      return "secure";
+    } else if (this._isCertErrorPage) {
+      return "cert-error-page";
+    } else if (this._isAboutHttpsOnlyErrorPage) {
+      return "https-only-error-page";
+    } else if (this._isAboutBlockedPage) {
+      return "not-secure";
+    } else if (this._isSecurelyConnectedAboutNetErrorPage) {
+      return "secure";
+    } else if (this._isAboutNetErrorPage) {
+      return "net-error-page";
+    } else if (this._isAssociatedIdentity) {
+      return "associated";
+    } else if (this._isPotentiallyTrustworthy) {
+      return "file";
+    }
+    return "not-secure";
+  },
+
+  /**
    * Set up the title and content messages for the identity message popup,
    * based on the specified mode, and the details of the SSL cert, where
    * applicable
@@ -988,34 +1040,9 @@ var gIdentityHandler = {
     let customRoot = false;
 
     // Determine connection security information.
-    let connection = "not-secure";
-    if (this._isSecureInternalUI) {
-      connection = "chrome";
-    } else if (this._pageExtensionPolicy) {
-      connection = "extension";
-    } else if (this._isURILoadedFromFile) {
-      connection = "file";
-    } else if (this._isEV) {
-      connection = "secure-ev";
-    } else if (this._isCertUserOverridden) {
-      connection = "secure-cert-user-overridden";
-    } else if (this._isSecureConnection) {
-      connection = "secure";
+    let connection = this.getConnectionSecurityInformation();
+    if (this._isSecureConnection) {
       customRoot = this._hasCustomRoot();
-    } else if (this._isCertErrorPage) {
-      connection = "cert-error-page";
-    } else if (this._isAboutHttpsOnlyErrorPage) {
-      connection = "https-only-error-page";
-    } else if (this._isAboutBlockedPage) {
-      connection = "not-secure";
-    } else if (this._isSecurelyConnectedAboutNetErrorPage) {
-      connection = "secure";
-    } else if (this._isAboutNetErrorPage) {
-      connection = "net-error-page";
-    } else if (this._isAssociatedIdentity) {
-      connection = "associated";
-    } else if (this._isPotentiallyTrustworthy) {
-      connection = "file";
     }
 
     let securityButtonNode = document.getElementById(
@@ -1025,6 +1052,7 @@ var gIdentityHandler = {
     let disableSecurityButton = ![
       "not-secure",
       "secure",
+      "secure-etsi",
       "secure-ev",
       "secure-cert-user-overridden",
       "cert-error-page",
@@ -1137,9 +1165,10 @@ var gIdentityHandler = {
       verifier = this._identityIconLabel.tooltipText;
     }
 
-    // Fill in organization information if we have a valid EV certificate.
-    if (this._isEV) {
-      let iData = this.getIdentityData();
+    // Fill in organization information if we have a valid EV certificate or
+    // QWAC.
+    if (this._isEV || this._qwac) {
+      let iData = this.getIdentityData(this._qwac || this._secInfo.serverCert);
       owner = iData.subjectOrg;
       verifier = this._identityIconLabel.tooltipText;
 
@@ -1252,6 +1281,23 @@ var gIdentityHandler = {
   _openPopup(event) {
     // Make the popup available.
     this._initializePopup();
+
+    // Kick off background determination of QWAC status.
+    if (this._isSecureContext && !this._qwacStatusPromise) {
+      let qwacStatusPromise = QWACs.determineQWACStatus(
+        this._secInfo,
+        this._uri,
+        gBrowser.selectedBrowser.browsingContext
+      ).then(result => {
+        // Check that when this promise resolves, we're still on the same
+        // document as when it was created.
+        if (qwacStatusPromise == this._qwacStatusPromise && result) {
+          this._qwac = result;
+          this.refreshIdentityPopup();
+        }
+      });
+      this._qwacStatusPromise = qwacStatusPromise;
+    }
 
     // Update the popup strings
     this.refreshIdentityPopup();

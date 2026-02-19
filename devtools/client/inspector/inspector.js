@@ -222,9 +222,11 @@ class Inspector extends EventEmitter {
     this.#fluentL10n = new FluentL10n();
     await this.#fluentL10n.init(["devtools/client/compatibility.ftl"]);
 
-    // Display the main inspector panel with: search input, markup view and breadcrumbs.
-    this.panelDoc.getElementById("inspector-main-content").style.visibility =
-      "visible";
+    // Add the class that will display the main inspector panel with: search input,
+    // markup view and breadcrumbs.
+    this.panelDoc
+      .getElementById("inspector-main-content")
+      .classList.add("initialized");
 
     // Setup the splitter before watching targets & resources.
     // The markup view will be initialized after we get the first root-node

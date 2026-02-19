@@ -284,10 +284,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
       mozilla::dom::EventTarget* aChromeEventHandler) override;
 
   // Outer windows only.
-  virtual void SetInitialPrincipal(
-      nsIPrincipal* aNewWindowPrincipal, nsIPolicyContainer* aPolicyContainer,
-      const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCoep)
-      override;
+  virtual void SetInitialPrincipal(nsIPrincipal* aNewWindowPrincipal) override;
 
   virtual already_AddRefed<nsISupports> SaveWindowState() override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsresult RestoreWindowState(
@@ -784,7 +781,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   // Outer windows only.
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  bool CanMoveResizeWindows(mozilla::dom::CallerType aCallerType);
+  bool CanMoveResizeWindows(mozilla::dom::CallerType aCallerType, bool aIsMove,
+                            mozilla::ErrorResult& aError);
 
   // If aDoFlush is true, we'll flush our own layout; otherwise we'll try to
   // just flush our parent and only flush ourselves if we think we need to.

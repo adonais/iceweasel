@@ -159,7 +159,7 @@ const url = Services.io.newURI("https://www.test.com");
 const userContextId = 0;
 
 const registry = new TaskbarTabsRegistry();
-const taskbarTab = registry.findOrCreateTaskbarTab(url, userContextId);
+const taskbarTab = createTaskbarTab(registry, url, userContextId);
 
 const patchedSpy = sinon.stub();
 registry.on(TaskbarTabsRegistry.events.patched, patchedSpy);
@@ -261,7 +261,7 @@ add_task(async function test_pin_location() {
 
 add_task(async function test_pin_location_dos_name() {
   const parsedURI = Services.io.newURI("https://aux.test");
-  const invalidTaskbarTab = registry.findOrCreateTaskbarTab(parsedURI, 0);
+  const invalidTaskbarTab = createTaskbarTab(registry, parsedURI, 0);
   sinon.resetHistory();
 
   await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab, registry);
@@ -291,7 +291,7 @@ add_task(async function test_pin_location_dos_name() {
 
 add_task(async function test_pin_location_bad_characters() {
   const parsedURI = Services.io.newURI("https://another.test");
-  const invalidTaskbarTab = registry.findOrCreateTaskbarTab(parsedURI, 0, {
+  const invalidTaskbarTab = createTaskbarTab(registry, parsedURI, 0, {
     manifest: {
       name: "** :\t\r\n \\\\ >> Not a valid. filename??! << // |||: **.",
     },
@@ -316,7 +316,7 @@ add_task(async function test_pin_location_bad_characters() {
 
 add_task(async function test_pin_location_lnk_extension() {
   const parsedURI = Services.io.newURI("https://another.test");
-  const invalidTaskbarTab = registry.findOrCreateTaskbarTab(parsedURI, 0, {
+  const invalidTaskbarTab = createTaskbarTab(registry, parsedURI, 0, {
     manifest: {
       name: "coolstartup.lnk",
     },

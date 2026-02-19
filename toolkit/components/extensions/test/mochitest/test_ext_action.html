@@ -13,12 +13,6 @@
 <script type="text/javascript">
 "use strict";
 
-add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.manifestV3.enabled", true]],
-  });
-});
-
 add_task(async function test_action_onClicked() {
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {

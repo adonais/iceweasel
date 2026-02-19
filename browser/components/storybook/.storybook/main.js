@@ -5,7 +5,7 @@
 
 const path = require("path");
 const webpack = require("webpack");
-const rewriteChromeUri = require("./chrome-uri-utils.js");
+const { rewriteChromeUri, rewriteMozSrcUri } = require("./moz-uri-utils.js");
 const mdIndexer = require("./markdown-story-indexer.js");
 
 const projectRoot = path.resolve(__dirname, "../../../../");
@@ -31,12 +31,18 @@ module.exports = {
     `${projectRoot}/browser/components/backup/content/**/*.stories.mjs`,
     // Settings components stories
     `${projectRoot}/browser/components/preferences/widgets/**/*.stories.mjs`,
+    // Search components stories
+    `${projectRoot}/browser/components/search/**/*.stories.mjs`,
     // Reader View components stories
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
     // megalist components stories
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
     // WebRTC components stories
     `${projectRoot}/browser/components/webrtc/content/**/*.stories.mjs`,
+    // AI Window components stories
+    `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
+    // Multiline editor components stories
+    `${projectRoot}/browser/components/multilineeditor/**/*.stories.mjs`,
     // Everything else
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     // Design system files
@@ -86,6 +92,7 @@ module.exports = {
     // Make whatever fine-grained changes you need
     config.resolve.alias = {
       browser: `${projectRoot}/browser`,
+      third_party: `${projectRoot}/third_party`,
       toolkit: `${projectRoot}/toolkit`,
       "toolkit-widgets": `${projectRoot}/toolkit/content/widgets/`,
       "lit.all.mjs": `${projectRoot}/toolkit/content/widgets/vendor/lit.all.mjs`,
@@ -103,6 +110,13 @@ module.exports = {
       })
     );
 
+    config.plugins.push(
+      // Rewrite moz-src:/// URI imports to file system paths.
+      new webpack.NormalModuleReplacementPlugin(/^moz-src:\/\/\//, resource => {
+        resource.request = rewriteMozSrcUri(resource.request);
+      })
+    );
+
     config.module.rules.push({
       test: /\.ftl$/,
       type: "asset/source",
@@ -111,12 +125,12 @@ module.exports = {
     config.module.rules.push({
       test: /\.m?js$/,
       exclude: /\.storybook/,
-      use: [{ loader: path.resolve(__dirname, "./chrome-styles-loader.js") }],
+      use: [{ loader: path.resolve(__dirname, "./moz-styles-loader.js") }],
     });
 
     // Replace the default CSS rule with a rule to emit a separate CSS file and
     // export the URL. This allows us to rewrite the source to use CSS imports
-    // via the chrome-styles-loader.
+    // via the moz-styles-loader.
     let cssFileTest = /\.css$/.toString();
     let cssRuleIndex = config.module.rules.findIndex(
       rule => rule.test.toString() === cssFileTest

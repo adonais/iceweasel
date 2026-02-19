@@ -11,8 +11,8 @@
 }
 
 :host(:hover) {
-  background-color: var(--in-content-item-hover);
-  color: var(--in-content-item-hover-text);
+  background-color: var(--background-color-list-item-hover);
+  color: var(--text-color-list-item-hover);
   border-inline-color: var(--border-color);
   cursor: pointer;
 }

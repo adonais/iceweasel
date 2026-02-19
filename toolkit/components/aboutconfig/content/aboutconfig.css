@@ -115,8 +115,8 @@
 }
 
 #prefs > tr:hover {
-  background-color: var(--in-content-item-hover);
-  color: var(--in-content-item-hover-text);
+  background-color: var(--background-color-list-item-hover);
+  color: var(--text-color-list-item-hover);
 }
 
 #prefs > tr.has-user-value {

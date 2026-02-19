@@ -205,6 +205,8 @@ Within Firefox we allow the ability to enable/disable bits of code or entire fea
   especially useful when conducting experiments or a gradual rollout of high risk features
   to our Release population.
 
+  A Pref Rollout can also be used to mitigate an incident, see `Incident Response Pref Flips <https://experimenter.info/desktop-incident-response>`__ for details.
+
 Further Reading/Useful links:
 
 -  `Mozilla preferences documentation <https://firefox-source-docs.mozilla.org/modules/libpref/index.html>`__
@@ -261,6 +263,25 @@ Further Reading/Useful links:
 -  `Requesting a new Experiment <https://experimenter.services.mozilla.com/experiments/new/>`__
    (Follow the ‘help’ links to learn more)
 -  `Telemetry <https://wiki.mozilla.org/Telemetry>`__
+
+Train-Hop
+~~~~~~~~~~~
+
+Extensions in browser/extensions/ can run inside of Firefox as a “built-in addon”.
+Unlike traditional WebExtensions, these add-ons ship with Firefox and run with the same privilege level as the rest of the browser code.
+
+When a built-in add-on is packaged up as an XPI and deployed to Beta or Release clients, it is referred to as a “train-hop”.
+A train-hop supplements the default Firefox train release model by allowing teams to ship code changes without requiring a dot release.
+
+By default, the code for built-in add-ons rides the standard Firefox release train.
+A train-hop only occurs when the extension is intentionally packaged and shipped off-train.
+
+The extensions that currently support train-hops are New Tab and Web Compatibility.
+
+Further Reading/Useful links:
+
+- `Web Compatibility Release Process <https://wiki.mozilla.org/Compatibility/System_Addon/Release_Process#Shipping_interventions_with_an_out-of-band_System_Addon_Update>`__
+- `Train-hopping for New Tab <https://firefox-source-docs.mozilla.org/browser/extensions/newtab/docs/v2-system-addon/train_hopping.html>`__
 
 Definitions
 -----------

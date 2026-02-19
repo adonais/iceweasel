@@ -82,21 +82,21 @@ const TOOLTIP_VARIABLE_TYPE = "variable";
 
 /**
  * Manages all tooltips in the style-inspector.
- *
- * @param {CssRuleView|CssComputedView} view
- *        Either the rule-view or computed-view panel
  */
-function TooltipsOverlay(view) {
-  this.view = view;
-  this._instances = new Map();
+class TooltipsOverlay {
+  /**
+   * @param {CssRuleView|CssComputedView} view
+   *        Either the rule-view or computed-view panel
+   */
+  constructor(view) {
+    this.view = view;
+    this._instances = new Map();
 
-  this._onNewSelection = this._onNewSelection.bind(this);
-  this.view.inspector.selection.on("new-node-front", this._onNewSelection);
+    this._onNewSelection = this._onNewSelection.bind(this);
+    this.view.inspector.selection.on("new-node-front", this._onNewSelection);
 
-  this.addToView();
-}
-
-TooltipsOverlay.prototype = {
+    this.addToView();
+  }
   get isEditing() {
     for (const [, tooltip] of this._instances) {
       if (typeof tooltip.isEditing == "function" && tooltip.isEditing()) {
@@ -104,7 +104,7 @@ TooltipsOverlay.prototype = {
       }
     }
     return false;
-  },
+  }
 
   /**
    * Add the tooltips overlay to the view. This will start tracking mouse
@@ -141,7 +141,7 @@ TooltipsOverlay.prototype = {
         );
       }
     }
-  },
+  }
 
   /**
    * Lazily fetch and initialize the different tooltips that are used in the inspector.
@@ -207,7 +207,7 @@ TooltipsOverlay.prototype = {
     }
     this._instances.set(name, tooltip);
     return tooltip;
-  },
+  }
 
   /**
    * Remove the tooltips overlay from the view. This will stop tracking mouse
@@ -226,7 +226,7 @@ TooltipsOverlay.prototype = {
     this.compatibilityTooltipHelper.destroy();
 
     this._isStarted = false;
-  },
+  }
 
   /**
    * Given a hovered node info, find out which type of tooltip should be shown,
@@ -275,7 +275,7 @@ TooltipsOverlay.prototype = {
     }
 
     return tooltipType;
-  },
+  }
 
   _removePreviousInstances() {
     for (const tooltip of this._instances.values()) {
@@ -286,7 +286,7 @@ TooltipsOverlay.prototype = {
         tooltip.hide();
       }
     }
-  },
+  }
 
   /**
    * Executed by the tooltip when the pointer hovers over an element of the
@@ -373,7 +373,7 @@ TooltipsOverlay.prototype = {
     }
 
     return false;
-  },
+  }
 
   /**
    * Executed by the tooltip when the pointer hovers over an element of the
@@ -458,7 +458,7 @@ TooltipsOverlay.prototype = {
     }
 
     return false;
-  },
+  }
 
   /**
    * Send a telemetry Scalar showing that a tooltip of `type` has been opened.
@@ -468,7 +468,7 @@ TooltipsOverlay.prototype = {
    */
   sendOpenScalarToTelemetry(type) {
     Glean.devtoolsTooltip.shown[type].add(1);
-  },
+  }
 
   /**
    * Set the content of the preview tooltip to display an image preview. The image URL can
@@ -505,7 +505,7 @@ TooltipsOverlay.prototype = {
       naturalWidth,
       naturalHeight,
     });
-  },
+  }
 
   /**
    * Set the content of the preview tooltip to display a font family preview.
@@ -553,7 +553,7 @@ TooltipsOverlay.prototype = {
       naturalWidth,
       naturalHeight,
     });
-  },
+  }
 
   /**
    * Set the content of the preview tooltip to display a variable preview.
@@ -569,13 +569,13 @@ TooltipsOverlay.prototype = {
       doc,
       tooltipParams
     );
-  },
+  }
 
   _onNewSelection() {
     for (const [, tooltip] of this._instances) {
       tooltip.hide();
     }
-  },
+  }
 
   /**
    * Destroy this overlay instance, removing it from the view
@@ -587,7 +587,7 @@ TooltipsOverlay.prototype = {
     this.view = null;
 
     this._isDestroyed = true;
-  },
-};
+  }
+}
 
 module.exports = TooltipsOverlay;

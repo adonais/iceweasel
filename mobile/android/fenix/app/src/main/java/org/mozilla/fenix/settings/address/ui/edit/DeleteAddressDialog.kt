@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
@@ -24,6 +24,7 @@ import org.mozilla.fenix.settings.address.store.DialogState
 import org.mozilla.fenix.settings.address.store.ViewAppeared
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Dialog that is presented when deleting an address.
@@ -61,30 +62,17 @@ internal fun DeleteAddressDialog(store: AddressStore) {
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun DeleteAddressDialogPreview() {
-    val store = AddressStore(
-        AddressState.initial().copy(deleteDialog = DialogState.Presenting),
-        listOf(),
-    ).also { it.dispatch(ViewAppeared) }
-
-    FirefoxTheme {
-        Surface {
-            DeleteAddressDialog(store)
-        }
-    }
-}
-
 @Preview
 @Composable
-private fun DeleteAddressDialogPrivatePreview() {
+private fun DeleteAddressDialogPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val store = AddressStore(
         AddressState.initial().copy(deleteDialog = DialogState.Presenting),
         listOf(),
     ).also { it.dispatch(ViewAppeared) }
 
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         Surface {
             DeleteAddressDialog(store)
         }

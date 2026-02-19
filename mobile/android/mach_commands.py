@@ -14,7 +14,7 @@ import zipfile
 import mozpack.path as mozpath
 from mach.decorators import Command, CommandArgument, SubCommand
 from mozbuild.base import MachCommandConditions as conditions
-from mozbuild.shellutil import split as shell_split
+from mozshellutil import split as shell_split
 
 # Mach's conditions facility doesn't support subcommands.  Print a
 # deprecation message ourselves instead.
@@ -238,9 +238,7 @@ def install_app_bundle(command_context, bundle):
     bundletool = mozpath.join(command_context._mach_context.state_dir, "bundletool.jar")
     device = ADBDeviceFactory(verbose=True)
     bundle_path = mozpath.join(command_context.topobjdir, bundle)
-    java_home = java_home = os.path.dirname(
-        os.path.dirname(command_context.substs["JAVA"])
-    )
+    java_home = os.path.dirname(os.path.dirname(command_context.substs["JAVA"]))
     device.install_app_bundle(bundletool, bundle_path, java_home, timeout=120)
 
 
@@ -266,7 +264,40 @@ def android_install_geckoview_example(command_context, args):
 def android_install_fenix(command_context, args):
     gradle(
         command_context,
-        ["fenix:installFenixDebug"] + args,
+        ["fenix:installDebug"] + args,
+        verbose=True,
+    )
+    return 0
+
+
+@SubCommand("android", "install-fenix-nightly", """Install fenix Nightly""")
+@CommandArgument("args", nargs=argparse.REMAINDER)
+def android_install_fenix_nightly(command_context, args):
+    gradle(
+        command_context,
+        ["fenix:installNightly"] + args,
+        verbose=True,
+    )
+    return 0
+
+
+@SubCommand("android", "install-fenix-beta", """Install fenix Beta""")
+@CommandArgument("args", nargs=argparse.REMAINDER)
+def android_install_fenix_beta(command_context, args):
+    gradle(
+        command_context,
+        ["fenix:installBeta"] + args,
+        verbose=True,
+    )
+    return 0
+
+
+@SubCommand("android", "install-fenix-release", """Install fenix Release""")
+@CommandArgument("args", nargs=argparse.REMAINDER)
+def android_install_fenix_release(command_context, args):
+    gradle(
+        command_context,
+        ["fenix:installRelease"] + args,
         verbose=True,
     )
     return 0
@@ -292,17 +323,6 @@ def android_install_geckoview_test_runner(command_context, args):
         command_context,
         command_context.substs["GRADLE_ANDROID_INSTALL_GECKOVIEW_TEST_RUNNER_TASKS"]
         + args,
-        verbose=True,
-    )
-    return 0
-
-
-@SubCommand("android", "installFenixRelease", """Install fenix Release""")
-@CommandArgument("args", nargs=argparse.REMAINDER)
-def android_install_fenix_release(command_context, args):
-    gradle(
-        command_context,
-        ["-p", "mobile/android/fenix", "installFenixRelease"] + args,
         verbose=True,
     )
     return 0
@@ -549,15 +569,13 @@ def gradle(command_context, args, verbose=False, gradle_path=None, topsrcdir=Non
 
     env = os.environ.copy()
 
-    env.update(
-        {
-            "GRADLE_OPTS": "-Dfile.encoding=utf-8",
-            "JAVA_HOME": java_home,
-            "JAVA_TOOL_OPTIONS": "-Dfile.encoding=utf-8",
-            # Let Gradle get the right Python path on Windows
-            "GRADLE_MACH_PYTHON": sys.executable,
-        }
-    )
+    env.update({
+        "GRADLE_OPTS": "-Dfile.encoding=utf-8",
+        "JAVA_HOME": java_home,
+        "JAVA_TOOL_OPTIONS": "-Dfile.encoding=utf-8",
+        # Let Gradle get the right Python path on Windows
+        "GRADLE_MACH_PYTHON": sys.executable,
+    })
     # Set ANDROID_SDK_ROOT if --with-android-sdk was set.
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=1576471
     android_sdk_root = command_context.substs.get("ANDROID_SDK_ROOT", "")

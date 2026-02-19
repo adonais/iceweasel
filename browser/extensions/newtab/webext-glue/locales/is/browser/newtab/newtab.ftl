@@ -690,8 +690,6 @@ newtab-widget-timer-menu-notifications = Slökkva á tilkynningum
 newtab-widget-timer-menu-notifications-on = Kveikja á tilkynningum
 newtab-widget-timer-menu-hide = Fela tímamæli
 newtab-widget-timer-menu-learn-more = Fræðast meira
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Skrunaðu til að sjá meira
 newtab-widget-message-title = Vertu einbeittur með listum og innbyggðum tímamæli
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Frá fljótlegum áminningum til daglegra verkefna, einbeitingarlotum til teygingahléa - haltu þér við verkefnin og á réttum tíma.

@@ -312,48 +312,49 @@ ChromeUtils.defineLazyGetter(lazy, "ProfilerPopupBackground", function () {
   );
 });
 
-export function DevToolsStartup() {
-  this.onWindowReady = this.onWindowReady.bind(this);
-  this.addDevToolsItemsToSubview = this.addDevToolsItemsToSubview.bind(this);
-  this.onMoreToolsViewShowing = this.onMoreToolsViewShowing.bind(this);
-  this.toggleProfilerKeyShortcuts = this.toggleProfilerKeyShortcuts.bind(this);
-}
-
-DevToolsStartup.prototype = {
+// eslint-disable-next-line jsdoc/require-jsdoc
+export class DevToolsStartup {
+  constructor() {
+    this.onWindowReady = this.onWindowReady.bind(this);
+    this.addDevToolsItemsToSubview = this.addDevToolsItemsToSubview.bind(this);
+    this.onMoreToolsViewShowing = this.onMoreToolsViewShowing.bind(this);
+    this.toggleProfilerKeyShortcuts =
+      this.toggleProfilerKeyShortcuts.bind(this);
+  }
   /**
    * Boolean flag to check if DevTools have been already initialized or not.
    * By initialized, we mean that its main modules are loaded.
    */
-  initialized: false,
+  initialized = false;
 
   /**
    * Boolean flag to check if the devtools initialization was already sent to telemetry.
    * We only want to record one devtools entry point per Firefox run, but we are not
    * interested in all the entry points.
    */
-  recorded: false,
+  recorded = false;
 
   get telemetry() {
     if (!this._telemetry) {
       this._telemetry = new lazy.Telemetry();
     }
     return this._telemetry;
-  },
+  }
 
   /**
    * Flag that indicates if the developer toggle was already added to customizableUI.
    */
-  developerToggleCreated: false,
+  developerToggleCreated = false;
 
   /**
    * Flag that indicates if the profiler recording popup was already added to
    * customizableUI.
    */
-  profilerRecordingButtonCreated: false,
+  profilerRecordingButtonCreated = false;
 
   isDisabledByPolicy() {
     return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
-  },
+  }
 
   handle(cmdLine) {
     const flags = this.readCommandLineFlags(cmdLine);
@@ -418,7 +419,7 @@ DevToolsStartup.prototype = {
     if (!isInitialLaunch && this.initialized && cmdLine.length) {
       this.checkForDebuggerLink(cmdLine);
     }
-  },
+  }
 
   /**
    * Lookup in all arguments passed to firefox binary to find
@@ -513,7 +514,7 @@ DevToolsStartup.prototype = {
       null,
       "CommandLine"
     );
-  },
+  }
 
   readCommandLineFlags(cmdLine) {
     // All command line flags are disabled if DevTools are disabled by policy.
@@ -556,7 +557,7 @@ DevToolsStartup.prototype = {
       devtools,
       devToolsServer,
     };
-  },
+  }
 
   /**
    * Called when receiving the "browser-delayed-startup-finished" event for a new
@@ -582,7 +583,7 @@ DevToolsStartup.prototype = {
     }
 
     JsonView.initialize();
-  },
+  }
 
   /**
    * Called when receiving the "browser-delayed-startup-finished" event for a top-level
@@ -602,7 +603,7 @@ DevToolsStartup.prototype = {
       }
     }
     this.setSlowScriptDebugHandler();
-  },
+  }
 
   /**
    * Register listeners to all possible entry points for Developer Tools.
@@ -627,7 +628,7 @@ DevToolsStartup.prototype = {
     if (!this.initialized) {
       this.hookBrowserToolsMenu(window);
     }
-  },
+  }
 
   /**
    * Dynamically register a wrench icon in the customization menu.
@@ -686,7 +687,7 @@ DevToolsStartup.prototype = {
     lazy.CustomizableWidgets.push(item);
 
     this.developerToggleCreated = true;
-  },
+  }
 
   addDevToolsItemsToSubview(subview) {
     // Initialize DevTools to create all menuitems in the system menu before
@@ -702,11 +703,11 @@ DevToolsStartup.prototype = {
 
     lazy.CustomizableUI.clearSubview(subview);
     lazy.CustomizableUI.fillSubviewFromMenuItems(itemsToDisplay, subview);
-  },
+  }
 
   onMoreToolsViewShowing(moreToolsView) {
     this.addDevToolsItemsToSubview(moreToolsView);
-  },
+  }
 
   /**
    * Register the profiler recording button. This button will be available
@@ -746,7 +747,7 @@ DevToolsStartup.prototype = {
       // side-effects with existing tests.
       lazy.ProfilerMenuButton.ensureButtonInNavbar();
     }
-  },
+  }
 
   /**
    * Initialize the WebChannel for profiler.firefox.com. This function happens at
@@ -789,7 +790,7 @@ DevToolsStartup.prototype = {
         );
       });
     }
-  },
+  }
 
   /*
    * We listen to the "Browser Tools" system menu, which is under "Tools" main item.
@@ -803,7 +804,7 @@ DevToolsStartup.prototype = {
       this.initDevTools("SystemMenu");
     };
     menu.addEventListener("popupshowing", onPopupShowing);
-  },
+  }
 
   /**
    * Check if the user is a DevTools user by looking at our selfxss pref.
@@ -814,7 +815,7 @@ DevToolsStartup.prototype = {
   isDevToolsUser() {
     const selfXssCount = Services.prefs.getIntPref("devtools.selfxss.count", 0);
     return selfXssCount > 0;
-  },
+  }
 
   hookKeyShortcuts(window) {
     const doc = window.document;
@@ -835,7 +836,7 @@ DevToolsStartup.prototype = {
     // account (see bug 832984).
     const mainKeyset = doc.getElementById("mainKeyset");
     mainKeyset.parentNode.insertBefore(keyset, mainKeyset);
-  },
+  }
 
   /**
    * This method attaches on the key elements to the devtools keyset.
@@ -856,7 +857,7 @@ DevToolsStartup.prototype = {
       const xulKey = this.createKey(doc, key, () => this.onKey(window, key));
       keyset.appendChild(xulKey);
     }
-  },
+  }
 
   /**
    * This method removes keys from the devtools keyset.
@@ -871,7 +872,7 @@ DevToolsStartup.prototype = {
         keyElement.remove();
       }
     }
-  },
+  }
 
   /**
    * We only want to have the keyboard shortcuts active when the menu button is on.
@@ -907,7 +908,7 @@ DevToolsStartup.prototype = {
       // account (see bug 832984).
       mainKeyset.parentNode.insertBefore(devtoolsKeyset, mainKeyset);
     }
-  },
+  }
 
   async onKey(window, key) {
     try {
@@ -945,11 +946,11 @@ DevToolsStartup.prototype = {
     } catch (e) {
       console.error(`Exception while trigerring key ${key}: ${e}\n${e.stack}`);
     }
-  },
+  }
 
   getKeyElementId({ id, toolId }) {
     return "key_" + (id || toolId);
-  },
+  }
 
   // Create a <xul:key> DOM Element
   createKey(doc, key, oncommand) {
@@ -975,7 +976,7 @@ DevToolsStartup.prototype = {
     k.addEventListener("command", oncommand);
 
     return k;
-  },
+  }
 
   initDevTools(reason, key = "") {
     // In the case of the --jsconsole and --jsdebugger command line parameters
@@ -993,7 +994,7 @@ DevToolsStartup.prototype = {
     // eslint-disable-next-line import/no-unassigned-import
     require("devtools/client/framework/devtools-browser");
     return require;
-  },
+  }
 
   handleConsoleFlag(cmdLine) {
     const window = Services.wm.getMostRecentWindow("devtools:webconsole");
@@ -1011,14 +1012,14 @@ DevToolsStartup.prototype = {
     if (cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_AUTO) {
       cmdLine.preventDefault = true;
     }
-  },
+  }
 
   // Open the toolbox on the selected tab once the browser starts up.
   async handleDevToolsFlag(window) {
     const require = this.initDevTools("CommandLine");
     const { gDevTools } = require("devtools/client/framework/devtools");
     await gDevTools.showToolboxForTab(window.gBrowser.selectedTab);
-  },
+  }
 
   _isRemoteDebuggingEnabled() {
     let remoteDebuggingEnabled = false;
@@ -1041,7 +1042,7 @@ DevToolsStartup.prototype = {
       dump(errorMsg + "\n");
     }
     return remoteDebuggingEnabled;
-  },
+  }
 
   handleDebuggerFlag(cmdLine, binaryPath) {
     if (!this._isRemoteDebuggingEnabled()) {
@@ -1089,7 +1090,7 @@ DevToolsStartup.prototype = {
     if (cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_AUTO) {
       cmdLine.preventDefault = true;
     }
-  },
+  }
 
   /**
    * Handle the --start-debugger-server command line flag. The options are:
@@ -1190,7 +1191,7 @@ DevToolsStartup.prototype = {
     if (cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_AUTO) {
       cmdLine.preventDefault = true;
     }
-  },
+  }
 
   /**
    * Send entry point telemetry explaining how the devtools were launched. This
@@ -1255,7 +1256,7 @@ DevToolsStartup.prototype = {
       dump("DevTools telemetry entry point failed: " + e + "\n");
     }
     this.recorded = true;
-  },
+  }
 
   /**
    * Hook the debugger tool to the "Debug Script" button of the slow script dialog.
@@ -1301,7 +1302,7 @@ DevToolsStartup.prototype = {
       }
       callback.finishDebuggerStartup();
     };
-  },
+  }
 
   /**
    * Called by setSlowScriptDebugHandler, when a tab freeze because of a slow running script
@@ -1345,16 +1346,16 @@ DevToolsStartup.prototype = {
             threadFront.state
         );
     }
-  },
+  }
 
   // Used by tests and the toolbox to register the same key shortcuts in toolboxes loaded
   // in a window window.
   get KeyShortcuts() {
     return lazy.KeyShortcuts;
-  },
+  }
   get wrappedJSObject() {
     return this;
-  },
+  }
 
   get jsdebuggerHelpInfo() {
     return `  --jsdebugger [<path>] Open the Browser Toolbox. Defaults to the local build
@@ -1366,17 +1367,17 @@ DevToolsStartup.prototype = {
                      a TCP port or Unix domain socket path. Defaults to TCP port
                      6000. Use WebSocket protocol if ws: prefix is specified.
 `;
-  },
+  }
 
   get helpInfo() {
     return `  --jsconsole        Open the Browser Console.
   --devtools         Open DevTools on initial load.
 ${this.jsdebuggerHelpInfo}`;
-  },
+  }
 
-  classID: Components.ID("{9e9a9283-0ce9-4e4a-8f1c-ba129a032c32}"),
-  QueryInterface: ChromeUtils.generateQI(["nsICommandLineHandler"]),
-};
+  classID = Components.ID("{9e9a9283-0ce9-4e4a-8f1c-ba129a032c32}");
+  QueryInterface = ChromeUtils.generateQI(["nsICommandLineHandler"]);
+}
 
 /**
  * Singleton object that represents the JSON View in-content tool.

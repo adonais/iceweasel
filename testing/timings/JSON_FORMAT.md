@@ -101,18 +101,24 @@ String tables for efficient storage. All strings are deduplicated and stored onc
     "Testing :: XPCShell Harness",
     "Firefox :: General",
     ...
+  ],
+  "commitIds": [                     // Commit IDs from repository (extracted from profile.meta.sourceURL)
+    "f37a6863f87aeeb870b16223045ea7614b1ba0a7",
+    "abc123def456789012345678901234567890abcd",
+    ...
   ]
 }
 ```
 
 ### taskInfo
 
-Maps task IDs to their associated job names and repositories. These are parallel arrays indexed by `taskIdId`:
+Maps task IDs to their associated job names, repositories, and commit IDs. These are parallel arrays indexed by `taskIdId`:
 
 ```json
 {
   "repositoryIds": [0, 1, 0, 2, ...],  // Index into tables.repositories
-  "jobNameIds": [0, 0, 1, 1, ...]      // Index into tables.jobNames
+  "jobNameIds": [0, 0, 1, 1, ...],     // Index into tables.jobNames
+  "commitIds": [0, 1, 0, null, ...]    // Index into tables.commitIds (null if not available)
 }
 ```
 
@@ -122,6 +128,8 @@ const taskIdId = 5;
 const taskId = tables.taskIds[taskIdId];           // "YJJe4a0CRIqbAmcCo8n63w.0"
 const repository = tables.repositories[taskInfo.repositoryIds[taskIdId]];  // "mozilla-central"
 const jobName = tables.jobNames[taskInfo.jobNameIds[taskIdId]];           // "test-linux1804-64/opt-xpcshell"
+const commitIdIdx = taskInfo.commitIds[taskIdId];
+const commitId = commitIdIdx !== null ? tables.commitIds[commitIdIdx] : null;  // "f37a6863f87a..." or null
 ```
 
 ### testInfo
@@ -397,3 +405,238 @@ Dates are sorted in descending order (newest first).
 - **Component mapping:** Components are fetched from the TaskCluster index `gecko.v2.mozilla-central.latest.source.source-bugzilla-info` and mapped to test paths. The component ID in `testInfo.componentIds` may be `null` if the test path is not found in the mapping
 - Components are formatted as `"Product :: Component"` (e.g., `"Core :: Storage: IndexedDB"`)
 - The data structure is optimized for sequential access patterns used by the dashboards
+
+---
+
+## Aggregated Files Format
+
+When running with `--days N` where N > 1, two aggregated files are generated:
+
+1. **`xpcshell-issues-with-taskids.json`** (~30MB for 21 days): Includes task IDs for all non-passing runs, allowing drill-down to specific CI tasks. Passing runs and non-passing runs are both aggregated by hour.
+
+2. **`xpcshell-issues.json`** (~15MB for 21 days): No task IDs or minidumps - all runs are aggregated to counts only. Optimized for fast dashboard initial load.
+
+### Detailed File (xpcshell-issues-with-taskids.json)
+
+#### Differences from Daily Files
+
+#### 1. Metadata Changes
+
+```json
+{
+  "metadata": {
+    "startDate": "2025-11-12",           // First date in the range (earliest)
+    "endDate": "2025-12-02",             // Last date in the range (most recent)
+    "days": 21,                          // Number of days aggregated
+    "startTime": 1731456000,             // Unix timestamp for startDate at 00:00:00 UTC
+    "generatedAt": "...",
+    "totalTestCount": 4506,              // Total number of unique tests
+    "testsWithFailures": 3614,           // Number of tests that had at least one non-passing run
+    "aggregatedFrom": [...]              // Array of source filenames
+  }
+}
+```
+
+Additional fields:
+- `startDate`, `endDate`, `days` indicate the date range
+- `startTime` is the base timestamp for the entire aggregated period (00:00:00 UTC on `startDate`)
+- `testsWithFailures` counts tests with any non-passing status
+- `aggregatedFrom` lists all source files that were merged
+
+#### 2. Passing Test Runs Are Aggregated
+
+**Daily files** store individual runs for all statuses:
+```json
+{
+  "taskIdIds": [123, 456, 789],
+  "durations": [1500, 1600, 1550],
+  "timestamps": [3600, 3600, 7200]
+}
+```
+
+**Aggregated file** stores only counts per hour for passing statuses (status starts with "PASS"):
+```json
+{
+  "counts": [150, 200, 180, 145, ...],
+  "hours": [0, 5, 1, 2, 8, ...]
+}
+```
+
+Where:
+- `counts[i]` = total number of passing runs in that hour
+- `hours[i]` = differential compressed hour offset (hours since previous bucket)
+- No `taskIdIds` or `durations` arrays
+- Typically sparse - only hours with passing runs are included
+
+**Decompressing hours:**
+```javascript
+let currentHour = 0;
+const absoluteHours = [];
+for (const delta of hours) {
+  currentHour += delta;
+  absoluteHours.push(currentHour);
+}
+// absoluteHours[i] is now the hour number (0 = startTime, 1 = startTime + 1 hour, etc.)
+```
+
+**Example: Calculate pass rate for a test on day 5:**
+```javascript
+const testId = 0;
+const day = 5; // 5 days after startDate
+
+// Find pass status
+const passStatusId = data.tables.statuses.findIndex(s => s.startsWith("PASS"));
+const passGroup = data.testRuns[testId]?.[passStatusId];
+
+// Count passes in day 5 (hours 120-143)
+const dayStartHour = day * 24;
+const dayEndHour = (day + 1) * 24;
+let passCount = 0;
+let currentHour = 0;
+if (passGroup) {
+  for (let i = 0; i < passGroup.hours.length; i++) {
+    currentHour += passGroup.hours[i];
+    if (currentHour >= dayStartHour && currentHour < dayEndHour) {
+      passCount += passGroup.counts[i];
+    }
+  }
+}
+
+// For fail count, need to count timestamps in that day's range
+const dayStartSeconds = day * 86400;
+const dayEndSeconds = (day + 1) * 86400;
+```
+
+#### 3. All Test Runs Aggregated by Hour
+
+Both passing and non-passing test runs are aggregated by hour. The difference is in what data is preserved:
+
+**Passing tests** (status starts with "PASS"):
+```json
+{
+  "counts": [150, 200, 180],
+  "hours": [0, 5, 1]
+}
+```
+
+**Non-passing tests** (FAIL, CRASH, TIMEOUT, SKIP, etc.):
+```json
+{
+  "taskIdIds": [
+    [45, 67],      // Task IDs that failed in hour 0 with message 23
+    [89, 12, 56],  // Task IDs that failed in hour 5 with message 23
+    [34]           // Task IDs that failed in hour 6 with message 24
+  ],
+  "hours": [0, 5, 1],
+  "messageIds": [23, 23, 24],
+  "crashSignatureIds": [5, 5, 6],
+  "minidumps": [
+    ["abc123", "def456"],    // Minidumps for crashes in hour 0
+    ["ghi789", null, "jkl"],  // Minidumps for crashes in hour 5
+    [null]                    // Minidumps for crashes in hour 6
+  ]
+}
+```
+
+Key differences from daily files:
+- `taskIdIds` is an **array of arrays** - one array per (hour, message, crashSignature) bucket
+- `minidumps` is an **array of arrays** - parallel to `taskIdIds`, preserving minidump for each task
+- `hours` provides differentially compressed hour offsets
+- Durations are **removed**
+- Individual timestamps are **removed** - only the hour bucket is preserved
+- Failures with different messages or crash signatures are in separate buckets
+
+#### 4. String Tables Are Merged
+
+All string tables are merged and deduplicated across all input days. A string that appears in multiple daily files will only appear once in the aggregated file.
+
+#### 5. TaskInfo Only Contains Failed Tasks
+
+Since passing runs don't store `taskIdIds`, the `taskInfo` object only contains mappings for tasks that appear in non-passing test runs. This significantly reduces the size of these arrays.
+
+#### 6. Platform-Irrelevant Tests Are Filtered
+
+SKIP tests with messages starting with "run-if" are filtered out during aggregation. These represent tests that are not relevant on certain platforms (e.g., "run-if = os == 'win'") and are not actual issues. The dashboard would filter these out anyway, so excluding them reduces file size.
+
+### Use Cases
+
+**Show pass/fail trends over time:**
+- Passing runs: Use `counts` and `hours` arrays
+- Failing runs: Count taskIds in buckets within day ranges using `hours`
+
+**Investigate specific failures:**
+- Task IDs preserved for all non-passing runs
+- Can identify which tasks/jobs/repos had failures
+- Can see error messages, crash signatures, and minidumps
+
+**Calculate overall pass rate:**
+```javascript
+const testId = 0;
+const passStatusId = data.tables.statuses.findIndex(s => s.startsWith("PASS"));
+const failStatusId = data.tables.statuses.indexOf("FAIL");
+
+// Total passes
+const totalPasses = data.testRuns[testId]?.[passStatusId]?.counts.reduce((a, b) => a + b, 0) ?? 0;
+
+// Total fails - count all taskIds across all buckets
+const failGroup = data.testRuns[testId]?.[failStatusId];
+const totalFails = failGroup?.taskIdIds.reduce((sum, arr) => sum + arr.length, 0) ?? 0;
+
+const passRate = totalPasses / (totalPasses + totalFails);
+```
+
+---
+
+### Small File (xpcshell-issues.json)
+
+This file omits task IDs and minidumps to minimize file size for fast dashboard loading.
+
+#### Differences from xpcshell-issues-with-taskids.json
+
+#### 1. No taskInfo or taskIds
+
+The `taskInfo` object and `tables.taskIds` array are completely omitted since all runs are aggregated.
+
+#### 2. Reduced String Tables
+
+Only includes tables needed for aggregated data:
+```json
+{
+  "tables": {
+    "testPaths": [...],
+    "testNames": [...],
+    "statuses": [...],
+    "messages": [...],           // Kept for failure details
+    "crashSignatures": [...],    // Kept for crash details
+    "components": [...]
+    // No jobNames, repositories, or taskIds
+  }
+}
+```
+
+#### 3. No Task IDs - Only Counts
+
+All status groups use counts instead of task ID arrays:
+
+```json
+{
+  "counts": [5, 12, 8, 3],
+  "hours": [0, 5, 1, 2],
+  "messageIds": [23, 23, 24, 24],           // For failures with different messages
+  "crashSignatureIds": [5, 6, 5, 6]         // For crashes with different signatures
+  // Note: taskIdIds and minidumps are NOT included in this file
+}
+```
+
+Failures with different messages or crash signatures are bucketed separately, preserving distinct failure modes.
+
+Task IDs and minidumps are omitted to reduce size. They are available in the detailed file.
+
+**Example:** A test that fails 5 times in hour 10 with message A and 3 times with message B will have two entries:
+```json
+{
+  "counts": [5, 3],
+  "hours": [10, 0],  // Both in same hour, so second delta is 0
+  "messageIds": [23, 24]
+}
+```

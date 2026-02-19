@@ -44,7 +44,7 @@ OS_EXPORT OS_NOTHROW OS_NONNULL_ALL void os_unfair_lock_lock_with_options(
 // locks.
 //
 // A constexpr constructor is provided so that Mutex can be part of something
-// that is MOZ_CONSTINIT, but the mutex won't be initialised, you must still
+// that is constinit, but the mutex won't be initialised, you must still
 // call Init() before the mutex can be used.
 struct MOZ_CAPABILITY("mutex") Mutex {
 #if defined(XP_WIN)

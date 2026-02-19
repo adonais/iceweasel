@@ -3,12 +3,11 @@ add_task(async function test_openPreferences_spotlight() {
     ["privacy-reports", "panePrivacy", "#privacy", "reports"],
     ["privacy-address-autofill", "panePrivacy", "#privacy", "address-autofill"],
     [
-      "privacy-credit-card-autofill",
+      "privacy-payment-methods-autofill",
       "panePrivacy",
       "#privacy",
-      "credit-card-autofill",
+      "payment-methods-autofill",
     ],
-    ["privacy-form-autofill", "panePrivacy", "#privacy", "form-autofill"],
     ["privacy-logins", "panePrivacy", "#privacy", "logins"],
     [
       "privacy-trackingprotection",

@@ -979,7 +979,7 @@ let activeTracer = null;
  * Start tracing JavaScript.
  * i.e. log the name of any function being called in JS and its location in source code.
  *
- * @params {object} options (mandatory)
+ * @param {object} options (mandatory)
  *        See JavaScriptTracer.startTracing jsdoc.
  */
 function startTracing(options) {

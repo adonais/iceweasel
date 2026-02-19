@@ -689,7 +689,6 @@ dom/tests/mochitest/chrome/test_intlUtils_isAppLocaleRTL.html
 dom/tests/mochitest/chrome/test_nodesFromRect.html
 dom/tests/mochitest/chrome/test_queryCaretRect.html
 dom/tests/mochitest/chrome/test_selectAtPoint.html
-dom/tests/mochitest/chrome/test_window_getRegionalPrefsLocales.html
 dom/tests/mochitest/chrome/window_focus.xhtml
 dom/tests/mochitest/general/file_clonewrapper.html
 dom/tests/mochitest/general/file_focusrings.html

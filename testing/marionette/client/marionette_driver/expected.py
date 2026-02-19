@@ -66,10 +66,10 @@ class element_not_present(element_present):
     """
 
     def __init__(self, *args):
-        super(element_not_present, self).__init__(*args)
+        super().__init__(*args)
 
     def __call__(self, marionette):
-        return not super(element_not_present, self).__call__(marionette)
+        return not super().__call__(marionette)
 
 
 class element_stale:
@@ -156,10 +156,10 @@ class elements_not_present(elements_present):
     """
 
     def __init__(self, *args):
-        super(elements_not_present, self).__init__(*args)
+        super().__init__(*args)
 
     def __call__(self, marionette):
-        return not super(elements_not_present, self).__call__(marionette)
+        return not super().__call__(marionette)
 
 
 class element_displayed:
@@ -235,10 +235,10 @@ class element_not_displayed(element_displayed):
     """
 
     def __init__(self, *args):
-        super(element_not_displayed, self).__init__(*args)
+        super().__init__(*args)
 
     def __call__(self, marionette):
-        return not super(element_not_displayed, self).__call__(marionette)
+        return not super().__call__(marionette)
 
 
 class element_selected:
@@ -266,10 +266,10 @@ class element_not_selected(element_selected):
     """
 
     def __init__(self, element):
-        super(element_not_selected, self).__init__(element)
+        super().__init__(element)
 
     def __call__(self, marionette):
-        return not super(element_not_selected, self).__call__(marionette)
+        return not super().__call__(marionette)
 
 
 class element_enabled:
@@ -296,10 +296,10 @@ class element_not_enabled(element_enabled):
     """
 
     def __init__(self, element):
-        super(element_not_enabled, self).__init__(element)
+        super().__init__(element)
 
     def __call__(self, marionette):
-        return not super(element_not_enabled, self).__call__(marionette)
+        return not super().__call__(marionette)
 
 
 def _find(marionette, func):

@@ -102,8 +102,7 @@ def requests_content(chunks=None):
     def _content(*args, **kw):
         class Resp:
             def iter_content(self, **kw):
-                for chunk in chunks:
-                    yield chunk
+                yield from chunks
 
         return Resp()
 

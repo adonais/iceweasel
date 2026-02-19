@@ -344,9 +344,9 @@ export class AddonInternal {
    * SitePermission addons are a special case, where the triggering install site may be a subdomain
    * of a valid xpi origin.
    *
-   * @param {object}  origins             Object containing URIs related to install.
-   * @params {nsIURI} origins.installFrom The nsIURI of the website that has triggered the install flow.
-   * @params {nsIURI} origins.source      The nsIURI where the xpi is hosted.
+   * @param {object} origins             Object containing URIs related to install.
+   * @param {nsIURI} origins.installFrom The nsIURI of the website that has triggered the install flow.
+   * @param {nsIURI} origins.source      The nsIURI where the xpi is hosted.
    * @returns {boolean}
    */
   validInstallOrigins({ installFrom, source }) {

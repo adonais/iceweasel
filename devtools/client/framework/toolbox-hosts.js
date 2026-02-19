@@ -283,17 +283,18 @@ class RightHost extends SidebarHost {
 /**
  * Host object for the toolbox in a separate window
  */
-function WindowHost(hostTab, options) {
-  this._boundUnload = this._boundUnload.bind(this);
-  this.hostTab = hostTab;
-  this.options = options;
-  EventEmitter.decorate(this);
-}
+class WindowHost extends EventEmitter {
+  constructor(hostTab, options) {
+    super();
 
-WindowHost.prototype = {
-  type: "window",
+    this._boundUnload = this._boundUnload.bind(this);
+    this.hostTab = hostTab;
+    this.options = options;
+  }
 
-  WINDOW_URL: "chrome://devtools/content/framework/toolbox-window.xhtml",
+  type = "window";
+
+  WINDOW_URL = "chrome://devtools/content/framework/toolbox-window.xhtml";
 
   /**
    * Create a new xul window to contain the toolbox.
@@ -359,7 +360,7 @@ WindowHost.prototype = {
 
       this._window = win;
     });
-  },
+  }
 
   /**
    * Catch the user closing the window.
@@ -371,21 +372,21 @@ WindowHost.prototype = {
     this._window.removeEventListener("unload", this._boundUnload);
 
     this.emit("window-closed");
-  },
+  }
 
   /**
    * Raise the host.
    */
   raise() {
     this._window.focus();
-  },
+  }
 
   /**
    * Set the toolbox title.
    */
   setTitle(title) {
     this._window.document.title = title;
-  },
+  }
 
   /**
    * Destroy the window.
@@ -399,19 +400,20 @@ WindowHost.prototype = {
     }
 
     return Promise.resolve(null);
-  },
-};
+  }
+}
 
 /**
  * Host object for the Browser Toolbox
  */
-function BrowserToolboxHost(hostTab, options) {
-  this.doc = options.doc;
-  EventEmitter.decorate(this);
-}
+class BrowserToolboxHost extends EventEmitter {
+  constructor(hostTab, options) {
+    super();
 
-BrowserToolboxHost.prototype = {
-  type: "browsertoolbox",
+    this.doc = options.doc;
+  }
+
+  type = "browsertoolbox";
 
   async create() {
     this.frame = createDevToolsFrame(
@@ -423,27 +425,27 @@ BrowserToolboxHost.prototype = {
     this.frame.docShellIsActive = true;
 
     return this.frame;
-  },
+  }
 
   /**
    * Raise the host.
    */
   raise() {
     this.doc.defaultView.focus();
-  },
+  }
 
   /**
    * Set the toolbox title.
    */
   setTitle(title) {
     this.doc.title = title;
-  },
+  }
 
   // Do nothing. The BrowserToolbox is destroyed by quitting the application.
   destroy() {
     return Promise.resolve(null);
-  },
-};
+  }
+}
 
 /**
  * Host object for the toolbox as a page.
@@ -451,32 +453,32 @@ BrowserToolboxHost.prototype = {
  * via `about:devtools-toolbox` URLs.
  * The `iframe` ends up being the tab's browser element.
  */
-function PageHost(hostTab, options) {
-  this.frame = options.customIframe;
-}
+class PageHost {
+  constructor(hostTab, options) {
+    this.frame = options.customIframe;
+  }
 
-PageHost.prototype = {
-  type: "page",
+  type = "page";
 
   create() {
     return Promise.resolve(this.frame);
-  },
+  }
 
   // Focus the tab owning the browser element.
   raise() {
     // See @constructor, for the page host, the frame is also the browser
     // element.
     focusTab(this.frame.ownerGlobal.gBrowser.getTabForBrowser(this.frame));
-  },
+  }
 
   // Do nothing.
-  setTitle() {},
+  setTitle() {}
 
   // Do nothing.
   destroy() {
     return Promise.resolve(null);
-  },
-};
+  }
+}
 
 /**
  *  Switch to the given tab in a browser and focus the browser window

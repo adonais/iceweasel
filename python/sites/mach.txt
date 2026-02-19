@@ -41,6 +41,7 @@ pth:testing/mozbase/mozproxy
 pth:testing/mozbase/mozrunner
 pth:testing/mozbase/mozscreenshot
 pth:testing/mozbase/mozserve
+pth:testing/mozbase/mozshellutil
 pth:testing/mozbase/mozsystemmonitor
 pth:testing/mozbase/moztest
 pth:testing/mozbase/mozversion

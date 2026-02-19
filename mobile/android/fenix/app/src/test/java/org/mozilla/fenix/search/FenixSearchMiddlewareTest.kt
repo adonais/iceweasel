@@ -34,8 +34,6 @@ import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.feature.tabs.TabsUseCases
-import mozilla.components.lib.state.MiddlewareContext
-import mozilla.components.lib.state.Store
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainLooperTestRule
@@ -279,6 +277,32 @@ class FenixSearchMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN browsing mode is private and suggestions in private mode not allowed WHEN the query is empty THEN don't show the private suggestions banner`() {
+        val (_, store) = buildMiddlewareAndAddToSearchStore()
+        every { settings.showSearchSuggestionsInPrivateOnboardingFinished } returns false
+        every { settings.shouldShowSearchSuggestions } returns true
+        every { settings.shouldShowSearchSuggestionsInPrivate } returns false
+        every { browsingModeManager.mode } returns BrowsingMode.Private
+
+        store.dispatch(SearchFragmentAction.UpdateQuery(""))
+
+        assertFalse(store.state.showSearchSuggestionsHint)
+    }
+
+    @Test
+    fun `GIVEN browsing mode is private and suggestions in private mode not allowed WHEN the query is not empty THEN show the private suggestions banner`() {
+        val (_, store) = buildMiddlewareAndAddToSearchStore()
+        every { settings.showSearchSuggestionsInPrivateOnboardingFinished } returns false
+        every { settings.shouldShowSearchSuggestions } returns true
+        every { settings.shouldShowSearchSuggestionsInPrivate } returns false
+        every { browsingModeManager.mode } returns BrowsingMode.Private
+
+        store.dispatch(SearchFragmentAction.UpdateQuery("test"))
+
+        assertTrue(store.state.showSearchSuggestionsHint)
+    }
+
+    @Test
     fun `GIVEN browsing mode is private and user has allowed suggestions in private mode WHEN search query is different than the current URL and not empty THEN show search suggestions`() {
         val (_, store) = buildMiddlewareAndAddToSearchStore()
         every { settings.shouldShowSearchSuggestions } returns true
@@ -332,9 +356,8 @@ class FenixSearchMiddlewareTest {
         every { settings.enableHomepageAsNewTab } returns true
         val middleware = buildMiddleware(useCases = useCases)
         val store = buildStore(middleware)
-        val context = buildContext(store)
 
-        middleware.loadUrlUseCase(context).invoke(url, flags, null, null)
+        middleware.loadUrlUseCase(store).invoke(url, flags, null, null)
 
         verify { navController.navigate(R.id.browserFragment) }
         verify {
@@ -363,9 +386,8 @@ class FenixSearchMiddlewareTest {
         every { nimbusComponents.events } returns nimbusEventsStore
         val middleware = buildMiddleware()
         val store = buildStore(middleware)
-        val context = buildContext(store)
 
-        middleware.searchUseCase(context).invoke(searchTerm, null, null)
+        middleware.searchUseCase(store).invoke(searchTerm, null, null)
 
         verify { navController.navigate(R.id.browserFragment) }
         verify {
@@ -393,7 +415,6 @@ class FenixSearchMiddlewareTest {
         val tabsUseCases: TabsUseCases = mockk(relaxed = true)
         every { useCases.tabsUseCases } returns tabsUseCases
         val middleware = buildMiddleware(useCases = useCases)
-        val store = buildStore(middleware)
 
         middleware.selectTabUseCase().invoke(selectedTabId)
 
@@ -556,19 +577,6 @@ class FenixSearchMiddlewareTest {
         initialState = buildEmptySearchState(),
         middleware = listOf(middleware, searchActionsCaptor),
     )
-
-    private fun buildContext(
-        store: SearchFragmentStore,
-    ) = object : MiddlewareContext<SearchFragmentState, SearchFragmentAction> {
-        override val state: SearchFragmentState
-            get() = store.state
-
-        override fun dispatch(action: SearchFragmentAction) {
-            store.dispatch(action)
-        }
-
-        override val store: Store<SearchFragmentState, SearchFragmentAction> = store
-    }
 
     private fun buildEmptySearchState(
         searchEngineSource: SearchEngineSource = SearchEngineSource.Default(searchEngine = mockk()),

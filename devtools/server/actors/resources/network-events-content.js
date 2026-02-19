@@ -75,7 +75,18 @@ class NetworkEventContentWatcher {
     this.networkEvents.clear();
   }
 
-  httpFailedOpeningRequest = subject => {
+  httpFailedOpeningRequest = (subject, topic) => {
+    if (
+      topic != "http-on-failed-opening-request" ||
+      !(subject instanceof Ci.nsIHttpChannel)
+    ) {
+      const channel = subject.QueryInterface(Ci.nsIChannel);
+      console.warn(
+        `httpFailedOpeningRequest triggered on non-nsIHttpChannel for uri: ${channel.URI.spec}`
+      );
+      return;
+    }
+
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     // Ignore preload requests to avoid duplicity request entries in

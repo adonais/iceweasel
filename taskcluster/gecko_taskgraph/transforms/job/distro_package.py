@@ -5,7 +5,6 @@
 Support for running spidermonkey jobs via dedicated scripts
 """
 
-
 import os
 import re
 
@@ -26,48 +25,42 @@ source_definition = {
     Required("sha256"): str,
 }
 
-common_schema = Schema(
-    {
-        # URL/SHA256 of a source file to build, which can either be a source
-        # control (.dsc), or a tarball.
-        Required(Any("dsc", "tarball")): source_definition,
-        # Package name. Normally derived from the source control or tarball file
-        # name. Use in case the name doesn't match DSC_PACKAGE_RE or
-        # SOURCE_PACKAGE_RE.
-        Optional("name"): str,
-        # Patch to apply to the extracted source.
-        Optional("patch"): str,
-        # Command to run before dpkg-buildpackage.
-        Optional("pre-build-command"): str,
-        # Architecture to build the package for.
-        Optional("arch"): str,
-        # List of package tasks to get build dependencies from.
-        Optional("packages"): [str],
-        # What resolver to use to install build dependencies. The default
-        # (apt-get) is good in most cases, but in subtle cases involving
-        # a *-backports archive, its solver might not be able to find a
-        # solution that satisfies the build dependencies.
-        Optional("resolver"): Any("apt-get", "aptitude"),
-        # Base work directory used to set up the task.
-        Required("workdir"): str,
-    }
-)
+common_schema = Schema({
+    # URL/SHA256 of a source file to build, which can either be a source
+    # control (.dsc), or a tarball.
+    Required(Any("dsc", "tarball")): source_definition,
+    # Package name. Normally derived from the source control or tarball file
+    # name. Use in case the name doesn't match DSC_PACKAGE_RE or
+    # SOURCE_PACKAGE_RE.
+    Optional("name"): str,
+    # Patch to apply to the extracted source.
+    Optional("patch"): str,
+    # Command to run before dpkg-buildpackage.
+    Optional("pre-build-command"): str,
+    # Architecture to build the package for.
+    Optional("arch"): str,
+    # List of package tasks to get build dependencies from.
+    Optional("packages"): [str],
+    # What resolver to use to install build dependencies. The default
+    # (apt-get) is good in most cases, but in subtle cases involving
+    # a *-backports archive, its solver might not be able to find a
+    # solution that satisfies the build dependencies.
+    Optional("resolver"): Any("apt-get", "aptitude"),
+    # Base work directory used to set up the task.
+    Required("workdir"): str,
+})
 
-debian_schema = common_schema.extend(
-    {
-        Required("using"): "debian-package",
-        # Debian distribution
-        Required("dist"): str,
-    }
-)
+debian_schema = common_schema.extend({
+    Required("using"): "debian-package",
+    # Debian distribution
+    Required("dist"): str,
+})
 
-ubuntu_schema = common_schema.extend(
-    {
-        Required("using"): "ubuntu-package",
-        # Ubuntu distribution
-        Required("dist"): str,
-    }
-)
+ubuntu_schema = common_schema.extend({
+    Required("using"): "ubuntu-package",
+    # Ubuntu distribution
+    Required("dist"): str,
+})
 
 
 def common_package(config, job, taskdesc, distro, version):
@@ -99,8 +92,7 @@ def common_package(config, job, taskdesc, distro, version):
     elif "tarball" in run:
         src = run["tarball"]
         unpack = (
-            "mkdir {package} && "
-            "tar -C {package} -axf {src_file} --strip-components=1"
+            "mkdir {package} && tar -C {package} -axf {src_file} --strip-components=1"
         )
         package_re = SOURCE_PACKAGE_RE
     else:
@@ -158,7 +150,8 @@ def common_package(config, job, taskdesc, distro, version):
         "/usr/local/sbin/setup_packages.sh $TASKCLUSTER_ROOT_URL $PACKAGES && "
         "apt-get update && "
         # Upgrade packages that might have new versions in package tasks.
-        "apt-get dist-upgrade && " "cd /tmp && "
+        "apt-get dist-upgrade && "
+        "cd /tmp && "
         # Get, validate and extract the package source.
         "(dget -d -u {src_url} || exit 100) && "
         'echo "{src_sha256}  {src_file}" | sha256sum -c && '

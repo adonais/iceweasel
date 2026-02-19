@@ -488,12 +488,6 @@ this.DateTimeBoxWidget = class {
     }
   }
 
-  notifyPicker() {
-    if (this.mIsPickerOpen && this.isAnyFieldAvailable(true)) {
-      this.mInputElement.updateDateTimePicker(this.getCurrentValue());
-    }
-  }
-
   isDisabled() {
     return this.mInputElement.matches(":disabled");
   }
@@ -1034,8 +1028,6 @@ this.DateTimeBoxWidget = class {
         this.setFieldValue(this.mMillisecField, millisecond || 0);
       }
     }
-
-    this.notifyPicker();
   }
 
   setInputValueFromFields() {
@@ -1048,9 +1040,6 @@ this.DateTimeBoxWidget = class {
       } else {
         this.mInputElement.updateValidityState();
       }
-      // We still need to notify picker in case any of the field has
-      // changed.
-      this.notifyPicker();
       return;
     }
 
@@ -1111,7 +1100,6 @@ this.DateTimeBoxWidget = class {
       return;
     }
     this.log("setInputValueFromFields: " + value);
-    this.notifyPicker();
     this.mInputElement.setUserInput(value);
   }
 

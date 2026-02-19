@@ -34,10 +34,6 @@
 
 namespace mozilla {
 
-#undef LOG
-#undef LOGW
-#undef LOGE
-
 LazyLogModule gAudioStreamLog("AudioStream");
 // For simple logs
 #define LOG(x, ...)                                  \
@@ -767,5 +763,9 @@ void AudioClock::SetPreservesPitch(bool aPreservesPitch) {
 }
 
 bool AudioClock::GetPreservesPitch() const { return mPreservesPitch; }
+
+#undef LOG
+#undef LOGW
+#undef LOGE
 
 }  // namespace mozilla

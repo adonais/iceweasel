@@ -93,6 +93,77 @@ add_task(async function testMarkerOnPseudo() {
     "hidden",
     "Expander button is not visible for ul::after"
   );
+
+  await selectNode("dialog", inspector);
+
+  const dialogNodeFront = await getNodeFront("dialog", inspector);
+  const dialogContainer = await getContainerForNodeFront(
+    dialogNodeFront,
+    inspector
+  );
+  is(
+    ulContainer.expander.style.visibility,
+    "visible",
+    "Expander button is visible for <dialog>"
+  );
+
+  info("Click on the <dialog> parent expander and wait for children");
+  await toggleContainerByClick(inspector, dialogContainer);
+
+  let tree = `
+    html
+      head!ignore-children
+      body
+        article!ignore-children
+        ul!ignore-children
+        dialog
+          p
+      `.trim();
+  await assertMarkupViewAsTree(tree, "html", inspector);
+
+  info("Show the dialog modal and wait for mutation");
+  let onMarkupMutation = inspector.once("markupmutation");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.document.querySelector("dialog").showModal();
+  });
+  await onMarkupMutation;
+
+  info(
+    "Check that both the ::backdrop and ::before element are now displayed under <dialog>"
+  );
+  tree = `
+    html
+      head!ignore-children
+      body
+        article!ignore-children
+        ul!ignore-children
+        dialog
+          ::backdrop
+          ::before
+          p
+      `.trim();
+  await assertMarkupViewAsTree(tree, "html", inspector);
+
+  info("Hide the dialog modal and wait for mutation");
+  onMarkupMutation = inspector.once("markupmutation");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.document.querySelector("dialog").close();
+  });
+  await onMarkupMutation;
+
+  info(
+    "Check that both the <dialog> ::backdrop and ::before children gets removed"
+  );
+  tree = `
+    html
+      head!ignore-children
+      body
+        article!ignore-children
+        ul!ignore-children
+        dialog
+          p
+      `.trim();
+  await assertMarkupViewAsTree(tree, "html", inspector);
 });
 
 async function checkMarkupView(inspector) {

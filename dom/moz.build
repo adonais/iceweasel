@@ -41,6 +41,7 @@ DIRS += [
     "credentialmanagement",
     "crypto",
     "debugger",
+    "documentpip",
     "encoding",
     "events",
     "fetch",

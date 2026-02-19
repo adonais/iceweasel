@@ -182,7 +182,7 @@ add_task(async function test_null_title() {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: "https://example.com/",
-        fallbackTitle: "https://example.com/",
+        title: "https://example.com/",
         iconUri: "page-icon:https://example.com/",
         heuristic: true,
         providerName: "UrlbarProviderHeuristicFallback",
@@ -208,7 +208,7 @@ add_task(async function test_over_max_length_text() {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri,
-        fallbackTitle: uri,
+        title: uri,
         iconUri: "page-icon:https://example.com/",
         heuristic: true,
         providerName: "UrlbarProviderHeuristicFallback",
@@ -232,7 +232,7 @@ add_task(async function test_unsupported_protocol() {
       makeVisitResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         uri: "about:robots",
-        fallbackTitle: "about:robots",
+        title: "about:robots",
         heuristic: true,
         providerName: "UrlbarProviderHeuristicFallback",
       }),

@@ -1474,8 +1474,11 @@ var XPIStates = {
           // here. See bug 1830136.
           delete data.startupData.lwtData?.darkTheme?._processedColors;
           delete data.startupData.lwtData?.theme?._processedColors;
-          delete data.startupData.lwtDarkStyles?._processedColors;
-          delete data.startupData.lwtStyles?._processedColors;
+          // These properties are obsolete since bug 2004905, let's clean them up
+          // while at it.
+          delete data.startupData.lwtDarkStyles;
+          delete data.startupData.lwtStyles;
+          delete data.startupData.experiment;
         }
       }
     }

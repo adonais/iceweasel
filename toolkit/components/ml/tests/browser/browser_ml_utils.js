@@ -16,7 +16,21 @@ const {
   engineIdToAddonId,
   stringifyForLog,
   parseNpy,
+  MLUninstallService,
 } = ChromeUtils.importESModule("chrome://global/content/ml/Utils.sys.mjs");
+
+const { MLEngine: UtilsMLEngine } = ChromeUtils.importESModule(
+  "resource://gre/actors/MLEngineParent.sys.mjs"
+);
+
+const { OPFS: UtilsOPFS } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/OPFS.sys.mjs"
+);
+
+// Root URL of the fake hub, see the `data` dir in the tests.
+const FAKE_HUB =
+  "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data";
+const FAKE_URL_TEMPLATE = "{model}/resolve/{revision}";
 
 /**
  * Test that we can retrieve the correct content without a callback.
@@ -1389,4 +1403,219 @@ add_task(function test_npy_fixture() {
   SimpleTest.isDeeply(numbers, data, "Round tripping produces the same array");
   SimpleTest.isDeeply(shape, [vocabSize, dimensions], "The shape is preserved");
   is(dtype, "f2", "The datatype is correctly fp16");
+});
+
+/**
+ * Test that feature uninstall works as expected
+ */
+add_task(async function test_feature_uninstall() {
+  const cache = await initializeCache();
+
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+    allowDenyList: [],
+  });
+  hub.cache = cache;
+
+  const testData = createBlob();
+  const engineOne = crypto.randomUUID();
+  const engineTwo = crypto.randomUUID();
+  const model = "org/model";
+  const revision = "v1";
+
+  // a file is stored by engineOne
+  await cache.put({
+    engineId: engineOne,
+    taskName: crypto.randomUUID(),
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+    data: createBlob(),
+    headers: null,
+  });
+
+  // The file is read by engineTwo
+  let retrievedData = await cache.getFile({
+    engineId: engineTwo,
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+  });
+
+  Assert.deepEqual(
+    retrievedData[0],
+    testData,
+    "The retrieved data should match the stored data."
+  );
+
+  // We should have two engines associated with the model file
+  let retrievedFiles = await cache.listFiles({ model, revision });
+  Assert.equal(retrievedFiles.metadata.engineIds.length, 2);
+
+  // Create engine instance
+  new UtilsMLEngine({
+    mlEngineParent: {},
+    pipelineOptions: {
+      engineId: engineOne,
+      featureId: engineOne,
+      taskName: "test-task",
+    },
+    notificationsCallback: null,
+  });
+
+  // Create engine instance
+  new UtilsMLEngine({
+    mlEngineParent: {},
+    pipelineOptions: {
+      engineId: engineTwo,
+      featureId: engineTwo,
+      taskName: "test-task",
+    },
+    notificationsCallback: null,
+  });
+
+  Assert.notEqual(UtilsMLEngine.getInstance(engineOne), null);
+  Assert.notEqual(UtilsMLEngine.getInstance(engineTwo), null);
+
+  // if we delete the model by engineOne, it will still be around for engineTwo
+  await MLUninstallService.uninstall({ engineIds: [engineOne], hub });
+  Assert.equal(UtilsMLEngine.getInstance(engineOne), null);
+
+  retrievedData = await cache.getFile({
+    engineId: engineTwo,
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+  });
+  Assert.deepEqual(
+    retrievedData[0],
+    testData,
+    "The retrieved data should match the stored data."
+  );
+
+  // We should now have one engine associated with the model file
+  retrievedFiles = await cache.listFiles({ model, revision });
+  Assert.equal(retrievedFiles.metadata.engineIds.length, 1);
+  Assert.equal(retrievedFiles.metadata.engineIds[0], engineTwo);
+
+  // now deleting via engineTwo
+  await MLUninstallService.uninstall({ engineIds: [engineTwo], hub });
+  Assert.equal(UtilsMLEngine.getInstance(engineTwo), null);
+
+  // at this point we should not have anymore files
+  const dataAfterDelete = await cache.getFile({
+    engineId: engineOne,
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+  });
+  Assert.equal(
+    dataAfterDelete,
+    null,
+    "The data for the deleted model should not exist."
+  );
+
+  // Now we should have no more engine
+  Assert.equal(await cache._testGetData(cache.enginesStoreName), null);
+
+  await deleteCache(cache);
+  await MLEngine.removeInstance(engineOne, false, false);
+  await MLEngine.removeInstance(engineTwo, false, false);
+});
+
+/**
+ * Test that full ml uninstall works as expected
+ */
+add_task(async function test_full_ml_uninstall() {
+  const cache = await initializeCache();
+
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+    allowDenyList: [],
+  });
+  hub.cache = cache;
+
+  const testData = createBlob();
+  const engineOne = crypto.randomUUID();
+  const engineTwo = crypto.randomUUID();
+  const model = "org/model";
+  const revision = "v1";
+
+  // a file is stored by engineOne
+  await cache.put({
+    engineId: engineOne,
+    taskName: crypto.randomUUID(),
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+    data: createBlob(),
+    headers: null,
+  });
+
+  // The file is read by engineTwo
+  let retrievedData = await cache.getFile({
+    engineId: engineTwo,
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+  });
+
+  Assert.deepEqual(
+    retrievedData[0],
+    testData,
+    "The retrieved data should match the stored data."
+  );
+
+  // We should have two engines associated with the model file
+  let retrievedFiles = await cache.listFiles({ model, revision });
+  Assert.equal(retrievedFiles.metadata.engineIds.length, 2);
+
+  // Create engine instance
+  new UtilsMLEngine({
+    mlEngineParent: {},
+    pipelineOptions: {
+      engineId: engineOne,
+      featureId: engineOne,
+      taskName: "test-task",
+    },
+    notificationsCallback: null,
+  });
+
+  // Create engine instance
+  new UtilsMLEngine({
+    mlEngineParent: {},
+    pipelineOptions: {
+      engineId: engineTwo,
+      featureId: engineTwo,
+      taskName: "test-task",
+    },
+    notificationsCallback: null,
+  });
+
+  Assert.notEqual(UtilsMLEngine.getInstance(engineOne), null);
+  Assert.notEqual(UtilsMLEngine.getInstance(engineTwo), null);
+
+  await MLUninstallService.uninstallAll({ hub });
+
+  Assert.ok(!(await indexedDBExists(cache.dbName)));
+
+  let opfsExists = true;
+
+  try {
+    await UtilsOPFS.getDirectoryHandle(cache.dbName, { create: false });
+  } catch (e) {
+    if (e.name === "NotFoundError") {
+      opfsExists = false;
+    } else {
+      throw e;
+    }
+  }
+
+  Assert.ok(!opfsExists);
+
+  await deleteCache(cache);
+  await MLEngine.removeInstance(engineOne, false, false);
+  await MLEngine.removeInstance(engineTwo, false, false);
 });

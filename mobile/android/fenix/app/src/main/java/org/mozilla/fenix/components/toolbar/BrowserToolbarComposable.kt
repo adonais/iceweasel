@@ -143,6 +143,8 @@ class BrowserToolbarComposable(
                         BrowserToolbar(
                             store = toolbarStore,
                             cfr = toolbarCFR,
+                            useMinimalBottomToolbarWhenEnteringText =
+                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
                         )
                         if (customTabSession == null) {
                             searchSuggestionsContent(Modifier.weight(1f))
@@ -161,12 +163,16 @@ class BrowserToolbarComposable(
                             BrowserToolbar(
                                 store = toolbarStore,
                                 cfr = toolbarCFR,
+                                useMinimalBottomToolbarWhenEnteringText =
+                                    settings.shouldUseMinimalBottomToolbarWhenEnteringText,
                             )
                             navigationBarContent?.invoke()
                         } else {
                             BrowserToolbar(
                                 store = toolbarStore,
                                 cfr = toolbarCFR,
+                                useMinimalBottomToolbarWhenEnteringText =
+                                    settings.shouldUseMinimalBottomToolbarWhenEnteringText,
                             )
                             if (customTabSession == null) {
                                 searchSuggestionsContent(Modifier.weight(1f))

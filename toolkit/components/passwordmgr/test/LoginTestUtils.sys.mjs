@@ -79,7 +79,7 @@ export const LoginTestUtils = {
       "passwordmgr-storage-changed",
       (_, data) => data == "modifyLogin"
     );
-    Services.logins.modifyLogin(oldLogin, newLogin);
+    await Services.logins.modifyLoginAsync(oldLogin, newLogin);
     await storageChangedPromise;
   },
 

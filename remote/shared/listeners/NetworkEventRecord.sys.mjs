@@ -24,6 +24,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
  */
 export class NetworkEventRecord {
   #decodedBodySizeMap;
+  #devtoolsResponseContent;
   #devtoolsResponseSizes;
   #fromCache;
   #networkEventsMap;
@@ -67,6 +68,7 @@ export class NetworkEventRecord {
     });
     this.#response = null;
 
+    this.#devtoolsResponseContent = null;
     this.#devtoolsResponseSizes = {
       decodedBodySize: 0,
       encodedBodySize: 0,
@@ -225,11 +227,14 @@ export class NetworkEventRecord {
    *     An object which represents the response content.
    */
   addResponseContent(responseContent) {
-    if (this.#response) {
-      this.#response.setResponseContent(responseContent);
-    }
+    // Bug 1982252: at the moment we have no way to know which
+    // addResponseContent call corresponds to the last chunk, and therefore we
+    // hold on the responseContent and will forward it to the NetworkResponse
+    // class in addResponseContentComplete.
+    this.#devtoolsResponseContent = responseContent;
+
     // Bug 1979111: In Bug 1971778 the DevTools NetworkObserver is configured
-    // to no longer decode responsizes.
+    // to no longer decode response sizes.
     // Consequently `responseContent` no longer exposes the decodedBodySize.
     // Until we can monitor decoded body size in all processes, ServiceWorker
     // initiated requests will report the encodedBodySize here, which is at
@@ -256,6 +261,12 @@ export class NetworkEventRecord {
    *    An object with info for when response content is complete
    */
   addResponseContentComplete(responseInfo) {
+    // addResponseContentComplete is called when all chunks have been received,
+    // we can now set the final response content in the response object.
+    if (this.#response && this.#devtoolsResponseContent) {
+      this.#response.setResponseContent(this.#devtoolsResponseContent);
+    }
+
     if (
       // Ignore already completed requests.
       this.#request.alreadyCompleted ||
@@ -265,6 +276,7 @@ export class NetworkEventRecord {
     ) {
       return;
     }
+
     this.#handleRequestEnd(
       responseInfo.blockedReason,
       this.#devtoolsResponseSizes

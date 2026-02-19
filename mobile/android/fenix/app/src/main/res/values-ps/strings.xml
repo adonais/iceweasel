@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">د پلټلو اصطلاحات دننه کړئ</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">ستاسو پرانيستي ټبونه به دلته ښکاره شي.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ستاسو پرانيستي ټبونه به دلته ښکاره شي.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">ستاسو شخصي ټبونه به دلته ښکاره شي.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ستاسو شخصي ټبونه به دلته ښکاره شي.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">شخصي پلټنه کول</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">د څوګونې ټاکنې موډ څخه ووځئ</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">غوره شوي ټبونه په ټولګه کې خوندي کړئ</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">غوره شوي ټبونه په ټولګه کې خوندي کړئ</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">له هرې وسیلې څخه ټبونه واخلئ</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -149,9 +149,9 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">وروستاړي</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">مرسته</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">مرسته</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">څه نوي دي</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">څه نوي دي</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">امستنې</string>
   <!-- Browser menu button that opens a user's library -->
@@ -163,15 +163,13 @@
   <!-- Browser menu button that goes to the homepage screen -->
   <string name="browser_menu_homepage">کور پاڼه</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">زياتول</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">زياتول</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">سمول</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">سمول</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">پاسورډونه</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">مینو بندول</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">امستنې</string>
   <!-- Browser menu label for the print feature -->
   <string name="browser_menu_print_2">چاپ</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
@@ -189,9 +187,9 @@
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_sign_in_negative_button" tools:ignore="UnusedResources">اوس نه</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">د فایرفوکس د کارولو شرایط</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">د فایرفوکس د کارولو شرایط</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">تاییدول</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">تاییدول</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- ==== End of Project "Nova" onboarding strings ==== -->

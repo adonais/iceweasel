@@ -8,6 +8,7 @@
 //! [image]: https://drafts.csswg.org/css-images/#image-values
 
 use crate::color::mix::ColorInterpolationMethod;
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::stylesheets::CorsMode;
 use crate::values::generics::color::{ColorMixFlags, GenericLightDark};
@@ -26,7 +27,7 @@ use crate::values::specified::{
 };
 use crate::values::specified::{Number, NumberOrPercentage, Percentage};
 use crate::Atom;
-use cssparser::{Delimiter, Parser, Token};
+use cssparser::{match_ignore_ascii_case, Delimiter, Parser, Token};
 use selectors::parser::SelectorParseErrorKind;
 use std::cmp::Ordering;
 use std::fmt::{self, Write};

@@ -161,8 +161,8 @@ export var DownloadIntegration = {
    * @param list
    *        DownloadList object to be initialized.
    *
-   * @return {Promise}
-   * @resolves When the list has been initialized.
+   * @returns {Promise<void>}
+   *   Resolves when the list has been initialized.
    * @rejects JavaScript exception.
    */
   async initializePublicDownloadList(list) {
@@ -190,8 +190,8 @@ export var DownloadIntegration = {
    *        serialized from the previous session.  This list will be persisted
    *        to disk during the session lifetime.
    *
-   * @return {Promise}
-   * @resolves When the list has been populated.
+   * @returns {Promise<void>}
+   *   Resolves when the list has been populated.
    * @rejects JavaScript exception.
    */
   async loadPublicDownloadListFromStore(list) {
@@ -254,8 +254,8 @@ export var DownloadIntegration = {
   /**
    * Returns the system downloads directory asynchronously.
    *
-   * @return {Promise}
-   * @resolves The downloads directory string path.
+   * @returns {Promise<string>}
+   *   Resolves to the downloads directory path.
    */
   async getSystemDownloadsDirectory() {
     if (this._downloadsDirectory) {
@@ -292,8 +292,8 @@ export var DownloadIntegration = {
    * @param {string} pref
    *        The preference which contains the directory
    *
-   * @return {Promise}
-   * @resolves The directory string path.
+   * @returns {Promise<string>}
+   *   Resolves to the directory path.
    */
   async _getCustomDirectoryOrDownloads(pref) {
     let directoryPath = null;
@@ -318,8 +318,8 @@ export var DownloadIntegration = {
    * behavior should match that of the synchronous function of the same name
    * exposed by nsIExternalHelperAppService.
    *
-   * @return {Promise}
-   * @resolves The downloads directory string path.
+   * @returns {Promise<string>}
+   *   Resolves to the downloads directory path.
    */
   async getPreferredDownloadsDirectory() {
     let directoryPath = null;
@@ -346,8 +346,8 @@ export var DownloadIntegration = {
   /**
    * Returns the user screenshots directory asynchronously.
    *
-   * @return {Promise}
-   * @resolves The screenshots directory string path.
+   * @returns {Promise<string>}
+   *   Resolves to the screenshots directory path.
    */
   async getPreferredScreenshotsDirectory() {
     let directoryPath = null;
@@ -387,8 +387,8 @@ export var DownloadIntegration = {
   /**
    * Returns the temporary downloads directory asynchronously.
    *
-   * @return {Promise}
-   * @resolves The downloads directory string path.
+   * @returns {Promise<string>}
+   *   Resolves to the temporary downloads directory path.
    */
   async getTemporaryDownloadsDirectory() {
     let directoryPath = null;
@@ -408,8 +408,8 @@ export var DownloadIntegration = {
    * aParam aDownload
    *        The download object.
    *
-   * @return {Promise}
-   * @resolves The boolean indicates to block downloads or not.
+   * @returns {Promise<boolean>}
+   *   Resolves to a boolean which indicates to block downloads or not.
    */
   shouldBlockForParentalControls(aDownload) {
     let isEnabled =
@@ -438,14 +438,14 @@ export var DownloadIntegration = {
    * aParam aDownload
    *        The download object.
    *
-   * @return {Promise}
-   * @resolves Object with the following properties:
-   *           {
-   *             shouldBlock: Whether the download should be blocked.
-   *             verdict: Detailed reason for the block, according to the
-   *                      "Downloads.Error.BLOCK_VERDICT_" constants, or empty
-   *                      string if the reason is unknown.
-   *           }
+   * @returns {Promise}
+   *   Resolves to an object with the following properties:
+   *   {
+   *     shouldBlock: Whether the download should be blocked.
+   *     verdict: Detailed reason for the block, according to the
+   *              "Downloads.Error.BLOCK_VERDICT_" constants, or empty
+   *              string if the reason is unknown.
+   *   }
    */
   shouldBlockForReputationCheck(aDownload) {
     let hash;
@@ -726,8 +726,8 @@ export var DownloadIntegration = {
    * aParam aDownload
    *        The Download object.
    *
-   * @return {Promise}
-   * @resolves When all the operations completed successfully.
+   * @returns {Promise<void>}
+   *   Resolves when all the operations completed successfully.
    * @rejects JavaScript exception if any of the operations failed.
    */
   async downloadDone(aDownload) {
@@ -850,13 +850,12 @@ export var DownloadIntegration = {
    *                              Optional value indicating how to handle launching this download,
    *                              this time only. Will override the associated mimeInfo.preferredAction
    *
-   * @return {Promise}
-   * @resolves When the instruction to launch the file has been
-   *           successfully given to the operating system. Note that
-   *           the OS might still take a while until the file is actually
-   *           launched.
-   * @rejects  JavaScript exception if there was an error trying to launch
-   *           the file.
+   * @returns {Promise<void>}
+   *   Resolves when the instruction to launch the file has been successfully
+   *   given to the operating system. Note that the OS might still take a while
+   *   until the file is actually launched.
+   * @rejects JavaScript exception if there was an error trying to launch
+   *          the file.
    */
   async launchDownload(aDownload, { openWhere, useSystemDefault = null }) {
     let file = new lazy.FileUtils.File(aDownload.target.path);
@@ -1036,7 +1035,7 @@ export var DownloadIntegration = {
   /**
    * Launches the specified file, unless overridden by regression tests.
    *
-   * @note Always use launchDownload() from the outside of this module, it is
+   * Note: Always use launchDownload() from the outside of this module, it is
    *       both more powerful and safer.
    */
   launchFile(file, mimeInfo) {
@@ -1053,13 +1052,12 @@ export var DownloadIntegration = {
    * @param aFilePath
    *        The path to the file.
    *
-   * @return {Promise}
-   * @resolves When the instruction to open the containing folder has been
-   *           successfully given to the operating system. Note that
-   *           the OS might still take a while until the folder is actually
-   *           opened.
-   * @rejects  JavaScript exception if there was an error trying to open
-   *           the containing folder.
+   * @returns {Promise<void>}
+   *   Resolves when the instruction to open the containing folder has been
+   *   successfully given to the operating system. Note that the OS might
+   *   still take a while until the folder is actually opened.
+   * @rejects JavaScript exception if there was an error trying to open
+   *          the containing folder.
    */
   async showContainingDirectory(aFilePath) {
     let file = new lazy.FileUtils.File(aFilePath);
@@ -1097,8 +1095,8 @@ export var DownloadIntegration = {
    * Calls the directory service, create a downloads directory and returns an
    * nsIFile for the downloads directory.
    *
-   * @return {Promise}
-   * @resolves The directory string path.
+   * @returns {Promise<string>}
+   *   Resolves to the directory path.
    */
   _createDownloadsDirectory(aName) {
     // We read the name of the directory from the list of translated strings
@@ -1142,8 +1140,8 @@ export var DownloadIntegration = {
    * @param aIsPrivate
    *        True if the list is private, false otherwise.
    *
-   * @return {Promise}
-   * @resolves When the views and observers are added.
+   * @returns {Promise<void>}
+   *   Reolves when the views and observers are added.
    */
   addListObservers(aList, aIsPrivate) {
     DownloadObserver.registerView(aList, aIsPrivate);
@@ -1173,8 +1171,8 @@ export var DownloadIntegration = {
    * Force a save on _store if it exists. Used to ensure downloads do not
    * persist after being sanitized on Android.
    *
-   * @return {Promise}
-   * @resolves When _store.save() completes.
+   * @returns {Promise<void>}
+   *   Resolves when _store.save() completes.
    */
   forceSave() {
     if (this._store) {

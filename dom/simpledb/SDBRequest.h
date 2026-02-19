@@ -7,8 +7,6 @@
 #ifndef mozilla_dom_simpledb_SDBRequest_h
 #define mozilla_dom_simpledb_SDBRequest_h
 
-#include <cstdint>
-
 #include "ErrorList.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"

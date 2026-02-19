@@ -158,6 +158,42 @@ __declspec(dllexport) MOZ_NAKED void MovImm64() {
       "nop;nop;nop");
 }
 
+__declspec(dllexport) MOZ_NAKED void AndWithSib() {
+  asm volatile(
+      "andl $15, (%%rax,%%rax,1);"  // AND r/m32, imm32;
+      "nop;nop;nop;nop;nop;nop;nop;nop;nop;"
+      :
+      :
+      : "memory", "cc");
+}
+
+__declspec(dllexport) MOZ_NAKED void AndWithoutSib() {
+  asm volatile(
+      "andl $16, (%%rax);"  // AND r/m32, imm32;
+      "nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;"
+      :
+      :
+      : "memory", "cc");
+}
+
+__declspec(dllexport) MOZ_NAKED void RexAndWithSib() {
+  asm volatile(
+      "andq $17, (%%r10,%%rcx,1);"  // AND r/m64, imm8;
+      "nop;nop;nop;nop;nop;nop;nop;nop;"
+      :
+      :
+      : "memory", "cc");
+}
+
+__declspec(dllexport) MOZ_NAKED void RexAndWithoutSib() {
+  asm volatile(
+      "andq $18, (%%r10);"  // AND r/m64, imm8
+      "nop;nop;nop;nop;nop;nop;nop;nop;nop;"
+      :
+      :
+      : "memory", "cc");
+}
+
 static unsigned char __attribute__((used)) gGlobalValue = 0;
 
 __declspec(dllexport) MOZ_NAKED void RexCmpRipRelativeBytePtr() {

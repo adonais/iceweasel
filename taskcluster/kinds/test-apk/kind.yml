@@ -25,6 +25,8 @@ task-defaults:
     fetches:
         toolchain:
             - android-sdk-linux
+            - linux64-embedded-uniffi-bindgen
+            - linux64-nimbus-fml
             - android-gradle-dependencies
             - linux64-jdk
         build-fat-aar:
@@ -73,7 +75,7 @@ tasks:
             pre-gradlew:
                 - ["cd", "mobile/android/fenix"]
                 - ['java', '-version']
-            gradlew: ['clean', 'testFenixDebugUnitTest']
+            gradlew: ['clean', 'testDebugUnitTest']
         treeherder:
             platform: 'fenix-android-all/opt'
             symbol: fenix-debug(T)
@@ -81,7 +83,7 @@ tasks:
         worker:
             artifacts:
                 - name: public/reports/index.html
-                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/fenix/app/reports/tests/testFenixDebugUnitTest/index.html
+                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/fenix/app/reports/tests/testDebugUnitTest/index.html
                   type: file
                 - name: public/reports/test
                   path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/fenix/app/reports/tests

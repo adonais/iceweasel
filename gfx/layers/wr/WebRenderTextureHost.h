@@ -103,11 +103,7 @@ class WebRenderTextureHost final : public TextureHost {
 
   bool SupportsExternalCompositing(WebRenderBackend aBackend) override;
 
-  void SetAcquireFence(UniqueFileHandle&& aFenceFd) override;
-
-  void SetReleaseFence(UniqueFileHandle&& aFenceFd) override;
-
-  UniqueFileHandle GetAndResetReleaseFence() override;
+  void SetReadFence(Fence* aReadFence) override;
 
   AndroidHardwareBuffer* GetAndroidHardwareBuffer() const override;
 

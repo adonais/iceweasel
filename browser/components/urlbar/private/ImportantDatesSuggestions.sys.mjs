@@ -230,11 +230,8 @@ export class ImportantDatesSuggestions extends SuggestProvider {
         isManageable: true,
         isBlockable: true,
       },
-      payloadHighlights: {
-        title: [
-          // Make whole title bold.
-          [0, dateString.length],
-        ],
+      highlights: {
+        title: lazy.UrlbarUtils.HIGHLIGHT.ALL,
       },
     });
   }

@@ -11,7 +11,6 @@
  * Report messages to the Windows Event Log.
  */
 
-#include <stdio.h>
 #include <windows.h>
 
 #include "mozilla/Attributes.h"

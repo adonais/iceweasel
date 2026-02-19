@@ -139,8 +139,8 @@ class RangeUtils final {
   template <TreeKind aKind = TreeKind::ShadowIncludingDOM,
             typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
                                         aKind == TreeKind::Flat>>
-  static Maybe<bool> IsNodeContainedInRange(nsINode& aNode,
-                                            AbstractRange* aAbstractRange);
+  static Maybe<bool> IsNodeContainedInRange(
+      const nsINode& aNode, const AbstractRange* aAbstractRange);
 
   /**
    * Utility routine to detect if a content node starts before a range and/or
@@ -150,8 +150,8 @@ class RangeUtils final {
   template <TreeKind aKind = TreeKind::ShadowIncludingDOM,
             typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
                                         aKind == TreeKind::Flat>>
-  static nsresult CompareNodeToRange(nsINode* aNode,
-                                     AbstractRange* aAbstractRange,
+  static nsresult CompareNodeToRange(const nsINode* aNode,
+                                     const AbstractRange* aAbstractRange,
                                      bool* aNodeIsBeforeRange,
                                      bool* aNodeIsAfterRange);
 
@@ -160,7 +160,7 @@ class RangeUtils final {
             typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
                                         aKind == TreeKind::Flat>>
   static nsresult CompareNodeToRangeBoundaries(
-      nsINode* aNode, const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
+      const nsINode* aNode, const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       const RangeBoundaryBase<EPT, ERT>& aEndBoundary, bool* aNodeIsBeforeRange,
       bool* aNodeIsAfterRange);
 };

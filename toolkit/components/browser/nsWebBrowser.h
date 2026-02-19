@@ -33,6 +33,8 @@
 #include "nsTArray.h"
 #include "nsIWeakReferenceUtils.h"
 
+class nsIOpenWindowInfo;
+
 class nsWebBrowserInitInfo {
  public:
   // nsIBaseWindow Stuff
@@ -90,7 +92,8 @@ class nsWebBrowser final : public nsIWebBrowser,
   static already_AddRefed<nsWebBrowser> Create(
       nsIWebBrowserChrome* aContainerWindow, nsIWidget* aParentWidget,
       mozilla::dom::BrowsingContext* aBrowsingContext,
-      mozilla::dom::WindowGlobalChild* aInitialWindowChild);
+      mozilla::dom::WindowGlobalChild* aInitialWindowChild,
+      nsIOpenWindowInfo* aOpenWindowInfo);
 
  protected:
   virtual ~nsWebBrowser();

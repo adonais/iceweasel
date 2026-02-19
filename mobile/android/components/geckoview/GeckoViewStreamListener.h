@@ -30,8 +30,8 @@ class GeckoViewStreamListener : public nsIStreamListener,
 
   explicit GeckoViewStreamListener() {}
 
-  static std::tuple<jni::ByteArray::LocalRef, java::sdk::Boolean::LocalRef>
-  CertificateFromChannel(nsIChannel* aChannel);
+  static std::tuple<jni::ByteArray::LocalRef, bool> CertificateFromChannel(
+      nsIChannel* aChannel);
 
  protected:
   virtual ~GeckoViewStreamListener() {}

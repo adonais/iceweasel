@@ -441,6 +441,15 @@ nsresult HTMLEditor::ComputeTargetRanges(
         "There is no range which we can delete entire of or around the caret");
     return NS_ERROR_EDITOR_NO_EDITABLE_RANGE;
   }
+  // Delete each range if completely in a replaced element or a void element
+  // because collapsing the range outside may cause the surrounding content
+  // which is outside the selection range will be deleted.
+  if (aRangesToDelete.AdjustRangesNotInReplacedNorVoidElements(
+          AutoClonedRangeArray::RangeInReplacedOrVoidElement::Delete,
+          *editingHost) &&
+      !aRangesToDelete.Ranges().Length()) {
+    return NS_ERROR_EDITOR_NO_EDITABLE_RANGE;
+  }
   AutoDeleteRangesHandler deleteHandler;
   // Should we delete target ranges which cannot delete actually?
   nsresult rv = deleteHandler.ComputeRangesToDelete(
@@ -502,6 +511,39 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
         "There is no range which we can delete entire the ranges or around the "
         "caret");
     return Err(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);
+  }
+  // Delete each range if completely in a replaced element or a void element
+  // because collapsing the range outside may cause the surrounding content
+  // which is outside the selection range will be deleted.
+  if (rangesToDelete.AdjustRangesNotInReplacedNorVoidElements(
+          AutoClonedRangeArray::RangeInReplacedOrVoidElement::Delete,
+          *editingHost) &&
+      rangesToDelete.Ranges().IsEmpty()) {
+    // Collapse Selection to the first editable range to avoid the toplevel edit
+    // subaction handler to be confused at non-selection ranges.
+    if (GetTopLevelEditSubAction() != EditSubAction::eDeleteSelectedContent) {
+      AutoClonedSelectionRangeArray editableSelectionRanges(SelectionRef());
+      editableSelectionRanges.EnsureOnlyEditableRanges(*editingHost);
+      if (!editableSelectionRanges.GetAncestorLimiter()) {
+        editableSelectionRanges.SetAncestorLimiter(
+            FindSelectionRoot(*editingHost));
+      }
+      editableSelectionRanges.AdjustRangesNotInReplacedNorVoidElements(
+          AutoClonedRangeArray::RangeInReplacedOrVoidElement::Collapse,
+          *editingHost);
+      if (NS_WARN_IF(editableSelectionRanges.Ranges().IsEmpty())) {
+        return Err(NS_ERROR_FAILURE);
+      }
+      nsresult rv = editableSelectionRanges.Collapse(
+          editableSelectionRanges.GetFirstRangeStartPoint<EditorRawDOMPoint>());
+      if (NS_WARN_IF(Destroyed())) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_FAILED(rv)) {
+        return Err(rv);
+      }
+    }
+    return Err(NS_ERROR_EDITOR_NO_DELETABLE_RANGE);
   }
   AutoDeleteRangesHandler deleteHandler;
   Result<EditActionResult, nsresult> result = deleteHandler.Run(

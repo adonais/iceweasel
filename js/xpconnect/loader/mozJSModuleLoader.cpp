@@ -10,8 +10,6 @@
 #include "mozilla/RefPtr.h"  // RefPtr, mozilla::StaticRefPtr
 #include "mozilla/Utf8.h"    // mozilla::Utf8Unit
 
-#include <cstdarg>
-
 #include "mozilla/Logging.h"
 #include "mozilla/dom/RequestBinding.h"
 #ifdef ANDROID
@@ -65,6 +63,7 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ScriptPreloader.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/Try.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"

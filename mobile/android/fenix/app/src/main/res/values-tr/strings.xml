@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Aranacak terimleri yazın</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Açık sekmeleriniz burada gösterilecek.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Açık sekmeleriniz burada gösterilecek.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Gizli sekmeleriniz burada gösterilecek.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Gizli sekmeleriniz burada gösterilecek.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Gizli gezinti</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Çoklu seçim modundan çık</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Seçilen sekmeleri koleksiyona kaydet</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Seçilen sekmeleri koleksiyona kaydet</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Sekmelerinize tüm cihazlarınızdan ulaşın</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Uzantılar</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Yüklenmiş ama etkinleştirilmemiş uzantılarınız var</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Yüklenmiş ama etkinleştirilmemiş uzantılarınız var</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Uzantıları yönet</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Hesap bilgileri</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Yardım</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Yardım</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Yeni neler var?</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Yeni neler var?</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Ayarlar</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Masaüstü sitesi</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Normal sekmede aç</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Normal sekmede aç</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Ana ekrana ekle</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s SEKMESİ</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s SEKMESİ</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Uygulamada aç</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Okuyucuyu özelleştir</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Okuyucuyu özelleştir</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Okuyucu görünümünü özelleştir</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Ekle</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Ekle</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Düzenle</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Düzenle</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Giriş sayfasını özelleştir</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Giriş sayfasını özelleştir</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Giriş yap</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Menüyü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigasyon</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Yardım</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Ayarlar</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Uzantılar menüsünü kapat</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Uzantılar menüsünü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Kaydet menüsünü kapat</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Kaydet menüsünü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Araçlar menüsünü kapat</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Araçlar menüsünü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Özel sekme menüsünü kapat</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -327,8 +323,10 @@
   <string name="browser_menu_save_as_pdf_2">PDF olarak kaydet</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Sayfayı çevir</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Sayfayı özetle</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Bozuk siteyi rapor et…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Bozuk siteyi rapor et…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Bozuk siteyi rapor et</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -438,6 +436,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: arama motoru seçimi</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">%1$s geçmişten silindi</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Bu geçmiş kaydını sil</string>
   <!--
     Home onboarding
 
@@ -452,19 +454,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Firefox gizlilik bildirimi</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Sizi güvende tutmayı seviyoruz</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Milyonların Firefox’u neden sevdiğini öğrenin</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Daha fazla seçenekle güvenli gezinti</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Kâr amacı gütmeyen tarayıcımız, şirketlerin sizi web’de gizlice takip etmesini engelliyor.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">100 milyondan fazla insan, kâr amacı gütmeyen bir kuruluş tarafından desteklenen bu tarayıcıyla gizliliğini koruyor.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Takip kodları mı dediniz? Otomatik olarak engelliyoruz. Uzantı desteği mi? 700 uzantıyı deneyebilirsiniz. Ya PDF desteği? Yerleşik okuyucumuzla PDF’leri yönetmek çok daha kolay.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Varsayılan tarayıcı yap</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +545,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Yönet</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">En gelişmiş Android tarayıcısını başlatın</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">En gelişmiş Android tarayıcısını başlatın</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Işık hızında yüklenen siteler</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Işık hızında yüklenen siteler</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Otomatik izlenme koruması</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Otomatik izlenme koruması</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Binlerce özelleştirme</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Binlerce özelleştirme</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Devam ettiğinizde %1$s’nı kabul etmiş sayılırsınız.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Devam ettiğinizde %1$s’nı kabul etmiş sayılırsınız.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Firefox Kullanım Koşulları</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Firefox Kullanım Koşulları</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox gizliliğinize önem verir. Daha fazla bilgi için %1$s’ne bakabilirsiniz.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox gizliliğinize önem verir. Daha fazla bilgi için %1$s’ne bakabilirsiniz.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Gizlilik Bildirimi</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Gizlilik Bildirimi</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Firefox, tarayıcıyı geliştirmemize yardımcı olmak için Mozilla’ya tanı ve etkileşim verileri gönderir. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Firefox, tarayıcıyı geliştirmemize yardımcı olmak için Mozilla’ya tanı ve etkileşim verileri gönderir. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Ayarları yönet</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Ayarları yönet</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">İleri</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">İleri</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">Adres çubuğunuz nerede dursun?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Adres çubuğunuz nerede dursun?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">İleri</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">İleri</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Firefox’u büyütmemize yardım edin</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Firefox’u büyütmemize yardım edin</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Firefox’u nasıl keşfettiğinizi ve kullandığınızı Mozilla’nın pazarlama iş ortaklarıyla paylaşın. Bu verileri asla satmayız.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Firefox’u nasıl keşfettiğinizi ve kullandığınızı Mozilla’nın pazarlama iş ortaklarıyla paylaşın. Bu verileri asla satmayız.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Bu verileri nasıl kullanıyoruz?</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Bu verileri nasıl kullanıyoruz?</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Onayla</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Onayla</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Otomatik izlenme koruması her an yanınızda</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Otomatik izlenme koruması her an yanınızda</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Şirketlerin tıklamalarınızı gözetlemesini tek dokunuşla durdurabilirsiniz.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Şirketlerin tıklamalarınızı gözetlemesini tek dokunuşla durdurabilirsiniz.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Firefox’u kullandığınız her yerde eşitleyin</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Firefox’u kullandığınız her yerde eşitleyin</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Yer imlerinize, sekmelerinize ve parolalarınıza istediğiniz cihazdan ulaşın. Tüm bilgileriniz şifrelenerek korunur.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Yer imlerinize, sekmelerinize ve parolalarınıza istediğiniz cihazdan ulaşın. Tüm bilgileriniz şifrelenerek korunur.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Eşitlemeyi başlat</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Eşitlemeyi başlat</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Şimdi değil</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Şimdi değil</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Firefox’u büyütmemize yardım edin</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +618,48 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Devam et</string>
+  <string name="nova_onboarding_continue_button">Devam et</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Şimdi değil</string>
+  <string name="nova_onboarding_negative_button">Şimdi değil</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Özgürleşmeye hazır olun</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Hızlı, güvenli ve sizi satmayan tarayıcı.\nİnternette gezinmek artık daha keyifli.</string>
+  <string name="nova_onboarding_tou_subtitle">Hızlı, güvenli ve sizi satmayan tarayıcı.\nİnternette gezinmek artık daha keyifli.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Devam ettiğinizde %1$s’nı kabul etmiş sayılırsınız.</string>
+  <string name="nova_onboarding_tou_body_line_1">Devam ettiğinizde %1$s’nı kabul etmiş sayılırsınız.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Firefox Kullanım Koşulları</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Firefox Kullanım Koşulları</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox gizliliğinize önem verir. Daha fazla bilgi için %1$s’ne bakabilirsiniz.</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox gizliliğinize önem verir. Daha fazla bilgi için %1$s’ne bakabilirsiniz.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Gizlilik Bildirimi</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Gizlilik Bildirimi</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Firefox, tarayıcıyı geliştirmemize yardımcı olmak için Mozilla’ya tanı ve etkileşim verileri gönderir. %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Firefox, tarayıcıyı geliştirmemize yardımcı olmak için Mozilla’ya tanı ve etkileşim verileri gönderir. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Ayarları yönet</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Ayarları yönet</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Ürpertici takip kodlarına veda edin</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Bağlantılarınızı açarken gizliliğinizi koruyun</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Verilerinizi koruyoruz ve şirketlerin tıklamalarınızı izlemesini otomatik olarak engelliyoruz.</string>
+  <string name="nova_onboarding_set_to_default_subtitle">Verilerinizi koruyoruz ve şirketlerin tıklamalarınızı izlemesini otomatik olarak engelliyoruz.</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Varsayılan tarayıcı yap</string>
+  <string name="nova_onboarding_set_to_default_button">Varsayılan tarayıcı yap</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Adres çubuğunuzu seçin</string>
+  <string name="nova_onboarding_toolbar_selection_title">Adres çubuğunuzu seçin</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Üstte</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">Üstte</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Altta</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">Altta</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Temanızı seçin</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +669,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Koyu</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Kaldığınız yerden anında devam edin</string>
+  <string name="nova_onboarding_sync_title">Kaldığınız yerden anında devam edin</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">Yer imlerinizi, parolalarınızı ve daha fazlasını istediğiniz cihazdan hızlıca alın. Kişisel verileriniz şifrelemeyle güvende kalır.</string>
+  <string name="nova_onboarding_sync_subtitle">Yer imlerinizi, parolalarınızı ve daha fazlasını istediğiniz cihazdan hızlıca alın. Kişisel verileriniz şifrelemeyle güvende kalır.</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Eşitlemeyi başlat</string>
+  <string name="nova_onboarding_sync_button">Eşitlemeyi başlat</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Daha iyi bir internet inşa etmemize yardım edin</string>
+  <string name="nova_onboarding_marketing_title">Daha iyi bir internet inşa etmemize yardım edin</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Firefox’u nasıl keşfettiğinizi ve kullandığınızı Mozilla’nın pazarlama iş ortaklarıyla paylaşın. Bu verileri asla satmayız. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Firefox’u nasıl keşfettiğinizi ve kullandığınızı Mozilla’nın pazarlama iş ortaklarıyla paylaşın. Bu verileri asla satmayız. %1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Bu verileri nasıl kullanıyoruz?</string>
+  <string name="nova_onboarding_marketing_body_link_text">Bu verileri nasıl kullanıyoruz?</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Bildirimler Firefox ile daha güvende kalmanızı sağlar</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Firefox’taki en yeni gizlilik özelliklerini keşfedin, nasıl korunacağınızı daha iyi öğrenin.</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Bildirimleri aç</string>
+  <string name="nova_onboarding_notifications_button">Bildirimleri aç</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Arama yaparken gizlilikten vazgeçmeyin</string>
+  <string name="nova_onboarding_add_search_widget_title">Arama yaparken gizlilikten vazgeçmeyin</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">Aramaya telefonunuzun ana ekranından başladığınızda bile Firefox’un otomatik korumaları sizi korusun.</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Aramaya telefonunuzun ana ekranından başladığınızda bile Firefox’un otomatik korumaları sizi korusun.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Firefox widget’ını ekle</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Firefox widget’ını ekle</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -781,6 +774,8 @@
   <string name="preferences_search">Arama</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Arama motorları</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Ana ekran widget’ı</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Arama motorlarından öneriler</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -972,6 +967,15 @@
   <string name="preferences_open_links_in_apps_ask">Açmadan önce sor</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Asla</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Dosya depolama</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Varsayılan indirme konumu</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">Bu klasörü kullanma izniniz yok. Başka bir klasör seçmeyi deneyin.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">İndirmeleri başka bir uygulamadan yönet</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1137,8 +1141,6 @@
   <string name="alternative_app_icon_group_solid_colors">Düz renkler</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Renk geçişleri</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Diğer</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Öne çıkanlar</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1150,7 +1152,7 @@
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Simgeyi değiştir</string>
   <!-- Dialog button text for cancelling app icon change -->
-  <string name="restart_warning_dialog_button_negative">Vazgeç</string>
+  <string name="restart_warning_dialog_button_negative">İptal</string>
   <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
   <string name="shortcuts_update_error">Uygulama simgesi güncellenemedi. Mevcut kısayolları kaldırıp yeniden deneyin.</string>
   <!--
@@ -1505,11 +1507,27 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Etkin</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Yeni özellikleri ve fikirleri herkesin kullanımına açılmadan önce deneyin.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Yeni özellikleri ve fikirleri herkesin kullanımına açılmadan önce deneyin.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox rastgele bazı kullanıcıları seçerek yeni özellikleri test eder. Böylece herkes için kaliteyi artırabiliriz.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Araştırmaları yükle ve çalıştır</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Araştırmaları yükle ve çalıştır</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Özellik araştırmalarına izin ver</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Daha fazla bilgi al</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Uzaktan iyileştirmelere izin ver</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox her güncellemede özellikleri, performansı ve kararlılığı iyileştirecektir. Değişiklikler uzaktan uygulanır.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Daha fazla bilgi al</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Uzaktan geliştirmeler</string>
   <!--
     Sessions
 
@@ -1544,17 +1562,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Gizli sekme ekle</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">GİZLİ</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">GİZLİ</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">EŞİTLE</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">EŞİTLE</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Sekmelerimde ara</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Tüm sekmeleri paylaş</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Tüm sekmeleri paylaş</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Son kapatılan sekmeler</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Son kapatılanlar</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Son kapatılanlar</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Hesap ayarları</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1568,13 +1586,13 @@
   <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_confirm">Sekmeleri kapat</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
-  <string name="tab_manager_close_all_tabs_dialog_cancel">Vazgeç</string>
+  <string name="tab_manager_close_all_tabs_dialog_cancel">İptal</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Yer imlerine ekle</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Yer imlerine ekle</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Seçili sekmeleri yer imlerine ekle</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Kapat</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Kapat</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Seçili sekmeleri kapat</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1600,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Koleksiyona ekle</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Seçili sekmeleri paylaş</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Seçili sekmeleri paylaş</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Seçili sekmeler menüsü</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1721,8 @@
   <string name="download_delete_item">Sil</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Geri git</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">İndirme ayarlarına git</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Geri dön ve aramayı kapat</string>
   <!--
@@ -1720,12 +1740,25 @@
   <string name="download_share_url">Adresi paylaş</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Dosyayı paylaş</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Dosyayı yeniden adlandır</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Seçilen öğeleri silmek istediğinizden emin misiniz?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Sil</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">İptal</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Dosyayı yeniden adlandır</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Adı</string>
+  <string name="download_rename_dialog_confirm_button">Kaydet</string>
+  <string name="download_rename_dialog_cancel_button">İptal</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Dosya yeniden adlandırılamadı</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Sistem veya depolama kısıtlamaları nedeniyle bu dosyanın adı değiştirilemiyor.</string>
+  <string name="download_rename_error_dismiss_button">Tamam</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Devam ediyor</string>
   <!--
@@ -1918,6 +1951,8 @@
   <string name="bookmark_error_edit_bookmark">Yer imi düzenlenemiyor</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">DÜZENLE</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Seç</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Taşı</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1998,6 +2033,10 @@
   <string name="select_bookmark_search_button_content_description">Klasörlerde ara</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">%s öğe menüsü</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Klasörü genişlet: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Klasörü kapat: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Yer imlerini kapat</string>
   <!-- Title for the bookmark list empty state -->
@@ -2200,7 +2239,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Sync’e giriş yap</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Giriş yap</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Giriş yap</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Tüm cihazlara gönder</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2399,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Ana menüden \"Çık\"ı seçtiğinizde gezinti verilerini otomatik olarak siler</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Çık</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Çık</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Silinecek zaman aralığı</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2824,6 +2863,20 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Parolaları sırala menüsü</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">E-posta maskeleri</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">E-posta maskesi öner</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Gelen kutunuzu spam’den korumak için gerçek e-postanızı gizleyin. Bazı siteler e-posta maskelerini desteklemez.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Daha fazla bilgi al</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">E-posta maskelerini yönet</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3059,9 +3112,9 @@
   -->
   <string name="certificate_info_verified_by">Doğrulayan: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Sil</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Sil</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Düzenle</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Düzenle</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Bu parolayı silmek istediğinizden emin misiniz?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3122,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">İptal</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Parola seçenekleri</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Parola seçenekleri</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Web sitesi adresi için düzenlenebilir metin alanı.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Web sitesi adresi için düzenlenebilir metin alanı.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Kullanıcı adı için düzenlenebilir metin alanı.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Kullanıcı adı için düzenlenebilir metin alanı.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Parola için düzenlenebilir metin alanı.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Parola için düzenlenebilir metin alanı.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Değişiklikleri kaydet.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Değişiklikleri kaydet.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Parola düzenle</string>
   <!-- The page title for adding new password. -->
@@ -3530,7 +3583,7 @@
     Description text for the protection panel banner when tracking protection is disabled.
     %s is the name of the app (for example "Firefox").
   -->
-  <string name="protection_panel_banner_not_protected_description">%s kapalı. Korumaları yeniden açmanızı öneririz.</string>
+  <string name="protection_panel_banner_not_protected_description">%s korumaları kapalı. Korumaları yeniden açmanızı öneririz.</string>
   <!--
     Title text for the protection panel banner when tracking protection is enabled.
     %s is the name of the app (for example "Firefox").
@@ -4002,6 +4055,8 @@
   <string name="settings_search_no_results_title">Hiç sonuç bulunamadı</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Başka bir şey aramak ister misiniz?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Ayarlarda arama düğmesi</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

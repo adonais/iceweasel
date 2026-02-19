@@ -197,10 +197,10 @@ export var PageThumbUtils = {
    * It's actually better to the eye to have small blurry text than sharp
    * jagged pixels to represent text.
    *
-   * @params aBrowser - the browser to create a snapshot of.
-   * @params aDestCanvas destination canvas to draw the final
+   * @param aBrowser - the browser to create a snapshot of.
+   * @param aDestCanvas destination - canvas to draw the final
    *   snapshot to. Can be null.
-   * @param aArgs (optional) Additional named parameters:
+   * @param [aArgs] - Additional named parameters:
    *   fullScale - request that a non-downscaled image be returned.
    * @return Canvas with a scaled thumbnail of the window.
    */

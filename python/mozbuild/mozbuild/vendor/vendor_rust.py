@@ -163,20 +163,18 @@ class VendorRust(MozbuildObject):
         self._issues = []
 
     def serialize_issues_json(self):
-        return json.dumps(
-            {
-                "Cargo.lock": [
-                    {
-                        "path": "Cargo.lock",
-                        "column": None,
-                        "line": None,
-                        "level": "error" if level == logging.ERROR else "warning",
-                        "message": msg,
-                    }
-                    for (level, msg) in self._issues
-                ]
-            }
-        )
+        return json.dumps({
+            "Cargo.lock": [
+                {
+                    "path": "Cargo.lock",
+                    "column": None,
+                    "line": None,
+                    "level": "error" if level == logging.ERROR else "warning",
+                    "message": msg,
+                }
+                for (level, msg) in self._issues
+            ]
+        })
 
     def generate_diff_stream(self):
         return self.repository.diff_stream()
@@ -268,9 +266,7 @@ class VendorRust(MozbuildObject):
 {files}
 
 Please commit or stash these changes before vendoring, or re-run with `--ignore-modified`.
-""".format(
-                    files="\n".join(sorted(modified))
-                ),
+""".format(files="\n".join(sorted(modified))),
             )
         return modified
 
@@ -706,13 +702,11 @@ license file's hash.
 
             for name, packages in grouped.items():
                 # Allow to have crates of the same name when one depends on the other.
-                num = len(
-                    [
-                        p
-                        for p in packages
-                        if all(d.split()[0] != name for d in p.get("dependencies", []))
-                    ]
-                )
+                num = len([
+                    p
+                    for p in packages
+                    if all(d.split()[0] != name for d in p.get("dependencies", []))
+                ])
                 if num > 1:
                     self.log(
                         logging.ERROR,
@@ -728,12 +722,10 @@ license file's hash.
 
         # Only emit warnings for cargo-vet for now.
         env = os.environ.copy()
-        env["PATH"] = os.pathsep.join(
-            (
-                str(Path(cargo).parent),
-                os.environ["PATH"],
-            )
-        )
+        env["PATH"] = os.pathsep.join((
+            str(Path(cargo).parent),
+            os.environ["PATH"],
+        ))
         flags = ["--output-format=json"]
         if "MOZ_AUTOMATION" in os.environ:
             flags.append("--locked")

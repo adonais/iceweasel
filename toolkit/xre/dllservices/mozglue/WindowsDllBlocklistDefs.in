@@ -6,13 +6,13 @@
 
 # This file exposes these lists:
 # ALL_PROCESSES, BROWSER_PROCESS, CHILD_PROCESSES, GMPLUGIN_PROCESSES,
-# GPU_PROCESSES, UTILITY_PROCESSES, and SOCKET_PROCESSES
+# GPU_PROCESSES, UTILITY_PROCESSES, SOCKET_PROCESSES, and RDD_PROCESSES.
 #
 # In addition, each of those lists supports a special variant for test-only
 # entries:
 # ALL_PROCESSES_TESTS, BROWSER_PROCESS_TESTS, CHILD_PROCESSES_TESTS,
-# GMPLUGIN_PROCESSES_TESTS, GPU_PROCESSES_TESTS, UTILITY_PROCESSES_TESTS, and
-# SOCKET_PROCESSES_TESTS
+# GMPLUGIN_PROCESSES_TESTS, GPU_PROCESSES_TESTS, UTILITY_PROCESSES_TESTS,
+# SOCKET_PROCESSES_TESTS, and RDD_PROCESSES_TESTS.
 #
 # Choose the list that is applicable to the applicable process type(s) for your
 # DLL block.
@@ -429,6 +429,9 @@ SOCKET_PROCESSES += [
 
     # Causes crashes in the socket process, bug 1807038 and bug 1845111
     DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
+
+    # Bug 2007362
+    DllBlocklistEntry("windhawk.dll", (1, 6, 1, 0)),
 ]
 
 SOCKET_PROCESSES_TESTS += [
@@ -447,6 +450,9 @@ UTILITY_PROCESSES += [
 
     # Causes crashes in the LPAC utility process for PlayReady, bug 1895174
     DllBlocklistEntry("WRusr.dll", ALL_VERSIONS),
+
+    # Bug 2007362
+    DllBlocklistEntry("windhawk.dll", (1, 6, 1, 0)),
 ]
 
 UTILITY_PROCESSES_TESTS += [
@@ -479,6 +485,9 @@ RDD_PROCESSES += [
     DllBlocklistEntry("mfehcinj.dll", ALL_VERSIONS),
     DllBlocklistEntry("mfehcthe.dll", ALL_VERSIONS),
     DllBlocklistEntry("mvcairo_x64.dll", ALL_VERSIONS),
+
+    # Bug 2007362
+    DllBlocklistEntry("windhawk.dll", (1, 6, 1, 0)),
 ]
 
 RDD_PROCESSES_TESTS += [

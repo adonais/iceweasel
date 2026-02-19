@@ -6,8 +6,6 @@
 
 #include "mozilla/dom/GamepadManager.h"
 
-#include <cstddef>
-
 #include "VRManagerChild.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"

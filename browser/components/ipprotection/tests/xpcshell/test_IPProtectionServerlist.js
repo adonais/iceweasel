@@ -3,8 +3,13 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const { IPProtectionServerlist } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
+const {
+  IPProtectionServerlist,
+  PrefServerList,
+  RemoteSettingsServerlist,
+  IPProtectionServerlistFactory,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 const COLLECTION_NAME = "vpn-serverlist";
@@ -86,6 +91,7 @@ add_setup(async function () {
 
   await IPProtectionServerlist.maybeFetchList();
   await IPProtectionServerlist.initOnStartupCompleted();
+  Assert.ok(IPProtectionServerlist instanceof RemoteSettingsServerlist);
 });
 
 add_task(async function test_getDefaultLocation() {
@@ -176,4 +182,48 @@ add_task(async function test_syncRespected() {
   ({ country, city } = IPProtectionServerlist.getDefaultLocation());
   Assert.equal(country.code, "US", "The default country should be US");
   Assert.deepEqual(city, updated_city, "The updated city should be returned");
+});
+
+add_task(async function test_PrefServerList() {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(PrefServerList.PREF_NAME);
+  });
+  Services.prefs.setCharPref(
+    PrefServerList.PREF_NAME,
+    JSON.stringify(TEST_COUNTRIES)
+  );
+
+  Assert.equal(
+    PrefServerList.hasPrefValue,
+    true,
+    "PrefServerList should have a pref value set."
+  );
+  Assert.deepEqual(
+    PrefServerList.prefValue,
+    TEST_COUNTRIES,
+    "PrefServerList's pref value should match the set value."
+  );
+
+  const serverList = new PrefServerList();
+  await serverList.maybeFetchList();
+
+  const { country, city } = serverList.getDefaultLocation();
+  Assert.equal(country.code, "US", "The default country should be US");
+  Assert.deepEqual(city, TEST_US_CITY, "The default city should be returned.");
+});
+
+add_task(async function test_IPProtectionServerlistFactory() {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(PrefServerList.PREF_NAME);
+  });
+  // Without the pref set, it should return RemoteSettingsServerlist
+  Services.prefs.clearUserPref(PrefServerList.PREF_NAME);
+  let instance = IPProtectionServerlistFactory();
+  Assert.ok(instance instanceof RemoteSettingsServerlist);
+  Services.prefs.setCharPref(
+    PrefServerList.PREF_NAME,
+    JSON.stringify(TEST_COUNTRIES)
+  );
+  // With the pref set, it should return PrefServerList
+  Assert.ok(IPProtectionServerlistFactory() instanceof PrefServerList);
 });

@@ -2301,32 +2301,6 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
   mEventHandlingNeedsFlush = false;
   doc->FlushPendingNotifications(FlushType::EnsurePresShellInitAndFrames);
 
-  PresShell* presShell = doc->GetPresShell();
-  if (!presShell) {
-    return nullptr;
-  }
-
-  // If this is an iframe that doesn't have an in-process subdocument, it is
-  // either an OOP iframe or an in-process iframe without lazy about:blank
-  // creation having taken place. In the OOP case, iframe is always focusable.
-  // In the in-process case, create the initial about:blank for in-process
-  // BrowsingContexts in order to have the `GetSubDocumentFor` call after this
-  // block return something.
-  //
-  // TODO(emilio): This block can probably go after bug 543435 lands.
-  if (RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(aElement)) {
-    if (!aElement->IsXULElement()) {
-      // Only look at pre-existing browsing contexts. If this function is
-      // called during reflow, calling GetBrowsingContext() could cause frame
-      // loader initialization at a time when it isn't safe.
-      if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
-        // This call may create a documentViewer-created about:blank.
-        // That's intentional, so we can move focus there.
-        (void)bc->GetDocument();
-      }
-    }
-  }
-
   return GetTheFocusableArea(aElement, aFlags);
 }
 

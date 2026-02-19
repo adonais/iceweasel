@@ -392,6 +392,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 
   virtual bool HasPrimaryAction() const override;
 
+  virtual bool HasCustomActions() const override;
   virtual bool IsEditable() const override;
 
 #if !defined(XP_WIN)

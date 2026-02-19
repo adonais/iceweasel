@@ -9,6 +9,7 @@
 
 use crate::context::QuirksMode;
 use crate::data::ElementData;
+use crate::derives::*;
 use crate::dom::{TDocument, TElement, TNode};
 use crate::invalidation::element::element_wrapper::{ElementSnapshot, ElementWrapper};
 use crate::invalidation::element::restyle_hints::RestyleHint;

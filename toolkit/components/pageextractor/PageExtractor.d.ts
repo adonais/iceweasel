@@ -7,8 +7,6 @@ export type GetTextOptions = Partial<{
   // When set, extraction will stop when the text meets or exceeds this length.
   // When unset, the lenghth of the extracted text is unbounded.
   sufficientLength: number;
-  // Remove menus and other boilerplate.
-  removeBoilerplate: boolean;
   // Just include the viewport content.
   justViewport: boolean;
 }>;

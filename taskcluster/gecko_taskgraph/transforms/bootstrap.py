@@ -11,21 +11,19 @@ from gecko_taskgraph.transforms.task import task_description_schema
 
 transforms = TransformSequence()
 
-bootstrap_schema = Schema(
-    {
-        # Name of the bootstrap task.
-        Required("name"): str,
-        # Name of the docker image. Ideally, we'd also have tasks for mac and windows,
-        # but we unfortunately don't have workers barebones enough for such testing
-        # to be satisfactory.
-        Required("image"): Any(str, {"in-tree": str}),
-        # Initialization commands.
-        Required("pre-commands"): [str],
-        # relative path (from config.path) to the file task was defined in
-        Optional("task-from"): str,
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+bootstrap_schema = Schema({
+    # Name of the bootstrap task.
+    Required("name"): str,
+    # Name of the docker image. Ideally, we'd also have tasks for mac and windows,
+    # but we unfortunately don't have workers barebones enough for such testing
+    # to be satisfactory.
+    Required("image"): Any(str, {"in-tree": str}),
+    # Initialization commands.
+    Required("pre-commands"): [str],
+    # relative path (from config.path) to the file task was defined in
+    Optional("task-from"): str,
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 transforms.add_validate(bootstrap_schema)

@@ -6,6 +6,7 @@
 //!
 //! [font-palette-values]: https://drafts.csswg.org/css-fonts/#font-palette-values
 
+use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::{
@@ -23,8 +24,8 @@ use crate::values::specified::Color as SpecifiedColor;
 use crate::values::specified::NonNegativeInteger;
 use crate::values::DashedIdent;
 use cssparser::{
-    AtRuleParser, CowRcStr, DeclarationParser, Parser, ParserState, QualifiedRuleParser,
-    RuleBodyItemParser, RuleBodyParser, SourceLocation,
+    match_ignore_ascii_case, AtRuleParser, CowRcStr, DeclarationParser, Parser, ParserState,
+    QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
 };
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};

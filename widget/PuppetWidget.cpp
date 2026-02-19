@@ -172,10 +172,9 @@ void PuppetWidget::Resize(const DesktopSize& aSize, bool aRepaint) {
   if (!oldBounds.IsEqualEdges(mBounds) && mAttachedWidgetListener) {
     if (auto* paintListener = GetPaintListener();
         paintListener && paintListener != mAttachedWidgetListener) {
-      paintListener->WindowResized(this, mBounds.Width(), mBounds.Height());
+      paintListener->WindowResized(this, mBounds.Size());
     }
-    mAttachedWidgetListener->WindowResized(this, mBounds.Width(),
-                                           mBounds.Height());
+    mAttachedWidgetListener->WindowResized(this, mBounds.Size());
   }
 }
 

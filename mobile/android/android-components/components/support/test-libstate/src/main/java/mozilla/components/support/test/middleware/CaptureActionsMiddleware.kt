@@ -6,8 +6,8 @@ package mozilla.components.support.test.middleware
 
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.State
+import mozilla.components.lib.state.Store
 import kotlin.reflect.KClass
 
 /**
@@ -17,7 +17,7 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     private val capturedActions = mutableListOf<A>()
 
     @Synchronized
-    override fun invoke(context: MiddlewareContext<S, A>, next: (A) -> Unit, action: A) {
+    override fun invoke(store: Store<S, A>, next: (A) -> Unit, action: A) {
         capturedActions.add(action)
         next(action)
     }

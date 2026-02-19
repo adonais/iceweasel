@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{DebugCommand, RenderApi, ApiMsg};
-use crate::profiler::Profiler;
+use crate::profiler::{Profiler, RenderCommandLog};
 use crate::composite::CompositeState;
 use std::collections::HashMap;
 use std::convert::Infallible;
@@ -11,7 +11,7 @@ use api::crossbeam_channel;
 use api::channel::{Sender, unbounded_channel};
 use api::{DebugFlags, TextureCacheCategory};
 use api::debugger::{DebuggerMessage, SetDebugFlagsMessage, ProfileCounterDescriptor};
-use api::debugger::{UpdateProfileCountersMessage, InitProfileCountersMessage, ProfileCounterId};
+use api::debugger::{FrameLogMessage, InitProfileCountersMessage, ProfileCounterId};
 use api::debugger::{CompositorDebugInfo, CompositorDebugTile};
 use std::thread;
 use base64::prelude::*;
@@ -142,6 +142,7 @@ impl Debugger {
         &mut self,
         debug_flags: DebugFlags,
         profiler: &Profiler,
+        command_log: &Option<RenderCommandLog>,
     ) {
         let mut clients_to_keep = Vec::new();
 
@@ -149,15 +150,21 @@ impl Debugger {
             let msg = SetDebugFlagsMessage {
                 flags: debug_flags,
             };
-            if client.send_msg(DebuggerMessage::SetDebugFlags(msg)) {
-                let updates = profiler.collect_updates_for_debugger();
+            let profile_counters = if client.send_msg(DebuggerMessage::SetDebugFlags(msg)) {
+                Some(profiler.collect_updates_for_debugger())
+            } else {
+                None
+            };
 
-                let counters = UpdateProfileCountersMessage {
-                    updates,
-                };
-                if client.send_msg(DebuggerMessage::UpdateProfileCounters(counters)) {
-                    clients_to_keep.push(client);
-                }
+            let render_commands = command_log.as_ref().map(|dc| { dc.get().to_vec() });
+
+            let msg = FrameLogMessage {
+                profile_counters,
+                render_commands,
+            };
+
+            if client.send_msg(DebuggerMessage::UpdateFrameLog(msg)) {
+                clients_to_keep.push(client);
             }
         }
 
@@ -254,6 +261,21 @@ async fn handle_request(
                         DebugCommand::GenerateFrame
                     );
                     Ok(string_response(format!("flags = {:?}", flags)))
+                }
+                _ => {
+                    Ok(status_response(403))
+                }
+            }
+        }
+        "/render-cmd-log" => {
+            match request.method() {
+                &hyper::Method::POST => {
+                    let content = request_to_string(request).await.unwrap();
+                    let enabled = serde_json::from_str(&content).expect("bug");
+                    api.send_debug_cmd(
+                        DebugCommand::SetRenderCommandLog(enabled)
+                    );
+                    Ok(string_response(format!("{:?}", enabled)))
                 }
                 _ => {
                     Ok(status_response(403))

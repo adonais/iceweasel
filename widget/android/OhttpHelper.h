@@ -61,8 +61,8 @@ class OhttpHelper final {
   static inline uint8_t sInitializationBitset = 0;
 
   static inline StaticAutoPtr<nsTArray<uint8_t>> sConfigData;
-  MOZ_CONSTINIT static inline nsCString sConfigUrl;
-  MOZ_CONSTINIT static inline nsCString sRelayUrl;
+  constinit static inline nsCString sConfigUrl;
+  constinit static inline nsCString sRelayUrl;
 
   static inline StaticAutoPtr<nsTArray<RefPtr<OhttpRequest>>> sPendingRequests;
 };

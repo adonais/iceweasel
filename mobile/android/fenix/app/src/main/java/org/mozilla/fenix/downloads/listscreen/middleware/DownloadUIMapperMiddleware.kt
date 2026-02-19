@@ -15,7 +15,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DateTimeProvider
 import mozilla.components.feature.downloads.DefaultDateTimeProvider
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
@@ -42,7 +41,7 @@ class DownloadUIMapperMiddleware(
 ) : Middleware<DownloadUIState, DownloadUIAction> {
 
     override fun invoke(
-        context: MiddlewareContext<DownloadUIState, DownloadUIAction>,
+        store: Store<DownloadUIState, DownloadUIAction>,
         next: (DownloadUIAction) -> Unit,
         action: DownloadUIAction,
     ) {
@@ -50,7 +49,7 @@ class DownloadUIMapperMiddleware(
         when (action) {
             is DownloadUIAction.Init -> {
                 browserStore.dispatch(DownloadAction.RemoveDeletedDownloads)
-                update(context.store)
+                update(store)
             }
 
             else -> {

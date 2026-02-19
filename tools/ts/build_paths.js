@@ -20,7 +20,16 @@ const HEADER = `/**
  */
 `;
 
-const IGNORE = [/\.git/, /\.hg/, /node_modules/, /^obj.*/, /test262/];
+const IGNORE = [
+  /\.git/,
+  /\.hg/,
+  /node_modules/,
+  /^obj.*/,
+  /test262/,
+  // eslint-plugin-mozilla isn't part of Gecko/Firefox code, but runs tests
+  // simulating imports that we don't need to define in the paths.
+  /eslint-plugin-mozilla/,
+];
 const IMPORT =
   /(\bimport |import\(|require\(|\.(importESModule|defineESModuleGetters?|declareLazy|defineLazy)\()[^;]+/gm;
 const URI = /("|')((resource|chrome|moz-src):\/\/[\w\d\/_.-]+\.m?js)\1/gm;

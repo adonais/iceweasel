@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { ColorPickerCommon } = ChromeUtils.importESModule(
+  "chrome://global/content/bindings/colorpicker-common.mjs"
+);
+
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const {
   MultiLocalizationHelper,
@@ -23,21 +27,7 @@ const L10N = new MultiLocalizationHelper(
   "devtools/client/locales/accessibility.properties",
   "devtools/client/locales/inspector.properties"
 );
-const ARROW_KEYS = ["ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft"];
-const [ArrowUp, ArrowRight, ArrowDown, ArrowLeft] = ARROW_KEYS;
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
-const SLIDER = {
-  hue: {
-    MIN: "0",
-    MAX: "128",
-    STEP: "1",
-  },
-  alpha: {
-    MIN: "0",
-    MAX: "1",
-    STEP: "0.01",
-  },
-};
 
 /**
  * Spectrum creates a color picker widget in any container you give it.
@@ -62,22 +52,15 @@ const SLIDER = {
  * Fires the following events:
  * - changed : When the user changes the current color
  */
-class Spectrum {
+class Spectrum extends ColorPickerCommon {
   constructor(parentEl, rgb) {
-    EventEmitter.decorate(this);
-
-    this.document = parentEl.ownerDocument;
-    this.element = parentEl.ownerDocument.createElementNS(XHTML_NS, "div");
-    this.parentEl = parentEl;
-
-    this.element.className = "spectrum-container";
+    const element = parentEl.ownerDocument.createElement("div");
     // eslint-disable-next-line no-unsanitized/property
-    this.element.innerHTML = `
+    element.innerHTML = `
     <section class="spectrum-color-picker">
       <div class="spectrum-color spectrum-box"
            tabindex="0"
            role="slider"
-           title="${ColorPickerBundle.formatValueSync("colorpicker-tooltip-spectrum-dragger-title")}"
            aria-describedby="spectrum-dragger">
         <div class="spectrum-sat">
           <div class="spectrum-val">
@@ -111,20 +94,10 @@ class Spectrum {
       </div>
     </section>
   `;
+    super(element);
+    EventEmitter.decorate(this);
 
-    this.onElementClick = this.onElementClick.bind(this);
-    this.element.addEventListener("click", this.onElementClick);
-
-    this.parentEl.appendChild(this.element);
-
-    // Color spectrum dragger.
-    this.dragger = this.element.querySelector(".spectrum-color");
-    this.dragHelper = this.element.querySelector(".spectrum-dragger");
-    draggable(this.dragger, this.dragHelper, this.onDraggerMove.bind(this));
-
-    // Here we define the components for the "controls" section of the color picker.
-    this.controls = this.element.querySelector(".spectrum-controls");
-    this.colorPreview = this.element.querySelector(".spectrum-color-preview");
+    parentEl.appendChild(this.element);
 
     // Create the eyedropper.
     const eyedropper = this.document.createElementNS(XHTML_NS, "button");
@@ -136,14 +109,6 @@ class Spectrum {
       ColorPickerBundle.formatValueSync("colorpicker-tooltip-eyedropper-title")
     );
     this.controls.insertBefore(eyedropper, this.colorPreview);
-
-    // Hue slider and alpha slider
-    this.hueSlider = this.createSlider("hue", this.onHueSliderMove.bind(this));
-    this.hueSlider.setAttribute("aria-describedby", this.dragHelper.id);
-    this.alphaSlider = this.createSlider(
-      "alpha",
-      this.onAlphaSliderMove.bind(this)
-    );
 
     // Color contrast
     this.spectrumContrast = this.element.querySelector(
@@ -178,11 +143,6 @@ class Spectrum {
       : null;
   }
 
-  /** @param {[number, number, number, number]} color */
-  set rgb([r, g, b, a]) {
-    this.hsv = [...InspectorUtils.rgbToHsv(r / 255, g / 255, b / 255), a];
-  }
-
   set backgroundColorData(colorData) {
     this._backgroundColorData = colorData;
   }
@@ -195,114 +155,8 @@ class Spectrum {
     return this._textProps;
   }
 
-  #toRgbInt(rgbFloat) {
-    return rgbFloat.map(c => Math.round(c * 255));
-  }
-
-  get rgbFloat() {
-    const [h, s, v, a] = this.hsv;
-    return [...InspectorUtils.hsvToRgb(h, s, v), a];
-  }
-
-  get rgb() {
-    const [r, g, b, a] = this.rgbFloat;
-    return [...this.#toRgbInt([r, g, b]), a];
-  }
-
-  /**
-   * Map current rgb to the closest color available in the database by
-   * calculating the delta-E between each available color and the current rgb
-   *
-   * @return {string}
-   *         Color name or closest color name
-   */
-  get colorName() {
-    const [r, g, b] = this.rgbFloat;
-    const { exact, colorName } = InspectorUtils.rgbToNearestColorName(r, g, b);
-    return exact
-      ? colorName
-      : ColorPickerBundle.formatValueSync(
-          "colorpicker-tooltip-color-name-title",
-          { colorName }
-        );
-  }
-
-  get rgbNoSatVal() {
-    return [
-      ...this.#toRgbInt(InspectorUtils.hsvToRgb(this.hsv[0], 1, 1)),
-      this.hsv[3],
-    ];
-  }
-
-  get rgbCssString() {
-    const rgb = this.rgb;
-    return (
-      "rgba(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ", " + rgb[3] + ")"
-    );
-  }
-
-  show() {
-    this.dragWidth = this.dragger.offsetWidth;
-    this.dragHeight = this.dragger.offsetHeight;
-    this.dragHelperHeight = this.dragHelper.offsetHeight;
-
-    this.updateUI();
-  }
-
-  onElementClick(e) {
-    e.stopPropagation();
-  }
-
-  onHueSliderMove() {
-    this.hsv[0] = this.hueSlider.value / this.hueSlider.max;
-    this.updateUI();
-    this.onChange();
-  }
-
-  onDraggerMove(dragX, dragY) {
-    this.hsv[1] = dragX / this.dragWidth;
-    this.hsv[2] = (this.dragHeight - dragY) / this.dragHeight;
-    this.updateUI();
-    this.onChange();
-  }
-
-  onAlphaSliderMove() {
-    this.hsv[3] = this.alphaSlider.value / this.alphaSlider.max;
-    this.updateUI();
-    this.onChange();
-  }
-
   onChange() {
     this.emit("changed", this.rgb, this.rgbCssString);
-  }
-
-  /**
-   * Creates and initializes a slider element, attaches it to its parent container
-   * based on the slider type and returns it
-   *
-   * @param  {string} sliderType
-   *         The type of the slider (i.e. alpha or hue)
-   * @param  {Function} onSliderMove
-   *         The function to tie the slider to on input
-   * @return {DOMNode}
-   *         Newly created slider
-   */
-  createSlider(sliderType, onSliderMove) {
-    const container = this.element.querySelector(`.spectrum-${sliderType}`);
-
-    const slider = this.document.createElementNS(XHTML_NS, "input");
-    slider.className = `spectrum-${sliderType}-input`;
-    slider.type = "range";
-    slider.min = SLIDER[sliderType].MIN;
-    slider.max = SLIDER[sliderType].MAX;
-    slider.step = SLIDER[sliderType].STEP;
-    slider.title = ColorPickerBundle.formatValueSync(
-      `colorpicker-tooltip-${sliderType}-slider-title`
-    );
-    slider.addEventListener("input", onSliderMove);
-
-    container.appendChild(slider);
-    return slider;
   }
 
   /**
@@ -372,81 +226,6 @@ class Spectrum {
       "--accessibility-contrast-bg",
       `rgba(${backgroundColor})`
     );
-  }
-
-  updateAlphaSlider() {
-    // Set alpha slider background
-    const rgb = this.rgb;
-
-    const rgbNoAlpha = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
-    const rgbAlpha0 = "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ", 0)";
-    const alphaGradient =
-      "linear-gradient(to right, " + rgbAlpha0 + ", " + rgbNoAlpha + ")";
-    this.alphaSlider.style.background = alphaGradient;
-  }
-
-  updateColorPreview() {
-    // Overlay the rgba color over a checkered image background.
-    this.colorPreview.style.setProperty("--overlay-color", this.rgbCssString);
-
-    // We should be able to distinguish the color preview on high luminance rgba values.
-    // Give the color preview a light grey border if the luminance of the current rgba
-    // tuple is great.
-    const colorLuminance = InspectorUtils.relativeLuminance(...this.rgbFloat);
-    this.colorPreview.classList.toggle("high-luminance", colorLuminance > 0.85);
-
-    // Set title on color preview for better UX
-    this.colorPreview.title = this.colorName;
-  }
-
-  updateDragger() {
-    // Set dragger background color
-    const flatColor =
-      "rgb(" +
-      this.rgbNoSatVal[0] +
-      ", " +
-      this.rgbNoSatVal[1] +
-      ", " +
-      this.rgbNoSatVal[2] +
-      ")";
-    this.dragger.style.backgroundColor = flatColor;
-
-    // Set dragger aria attributes
-    this.dragger.setAttribute("aria-valuetext", this.rgbCssString);
-  }
-
-  updateHueSlider() {
-    // Set hue slider aria attributes
-    this.hueSlider.setAttribute("aria-valuetext", this.rgbCssString);
-  }
-
-  updateHelperLocations() {
-    const h = this.hsv[0];
-    const s = this.hsv[1];
-    const v = this.hsv[2];
-
-    // Placing the color dragger
-    let dragX = s * this.dragWidth;
-    let dragY = this.dragHeight - v * this.dragHeight;
-    const helperDim = this.dragHelperHeight / 2;
-
-    dragX = Math.max(
-      -helperDim,
-      Math.min(this.dragWidth - helperDim, dragX - helperDim)
-    );
-    dragY = Math.max(
-      -helperDim,
-      Math.min(this.dragHeight - helperDim, dragY - helperDim)
-    );
-
-    this.dragHelper.style.top = dragY + "px";
-    this.dragHelper.style.left = dragX + "px";
-
-    // Placing the hue slider
-    this.hueSlider.value = h * this.hueSlider.max;
-
-    // Placing the alpha slider
-    this.alphaSlider.value = this.hsv[3] * this.alphaSlider.max;
   }
 
   /* Calculates the contrast ratio for the currently selected
@@ -545,126 +324,16 @@ class Spectrum {
   }
 
   updateUI() {
-    this.updateHelperLocations();
-
-    this.updateColorPreview();
-    this.updateDragger();
-    this.updateHueSlider();
-    this.updateAlphaSlider();
+    super.updateUI();
     this.updateContrast();
   }
 
   destroy() {
-    this.element.removeEventListener("click", this.onElementClick);
-    this.hueSlider.removeEventListener("input", this.onHueSliderMove);
-    this.alphaSlider.removeEventListener("input", this.onAlphaSliderMove);
-
-    this.parentEl.removeChild(this.element);
-
-    this.dragger = this.dragHelper = null;
-    this.alphaSlider = null;
-    this.hueSlider = null;
-    this.colorPreview = null;
-    this.element = null;
-    this.parentEl = null;
+    super.destroy();
     this.spectrumContrast = null;
     this.contrastValue = this.contrastValueMin = this.contrastValueMax = null;
     this.contrastLabel = null;
   }
-}
-
-function draggable(element, dragHelper, onmove) {
-  onmove = onmove || function () {};
-
-  const doc = element.ownerDocument;
-  let dragging = false;
-  let offset = {};
-  let maxHeight = 0;
-  let maxWidth = 0;
-
-  function setDraggerDimensionsAndOffset() {
-    maxHeight = element.offsetHeight;
-    maxWidth = element.offsetWidth;
-    offset = element.getBoundingClientRect();
-  }
-
-  function prevent(e) {
-    e.stopPropagation();
-    e.preventDefault();
-  }
-
-  function move(e) {
-    if (dragging) {
-      if (e.buttons === 0) {
-        // The button is no longer pressed but we did not get a mouseup event.
-        stop();
-        return;
-      }
-      const pageX = e.pageX;
-      const pageY = e.pageY;
-
-      const dragX = Math.max(0, Math.min(pageX - offset.left, maxWidth));
-      const dragY = Math.max(0, Math.min(pageY - offset.top, maxHeight));
-
-      onmove.apply(element, [dragX, dragY]);
-    }
-  }
-
-  function start(e) {
-    const rightClick = e.which === 3;
-
-    if (!rightClick && !dragging) {
-      dragging = true;
-      setDraggerDimensionsAndOffset();
-
-      move(e);
-
-      doc.addEventListener("selectstart", prevent);
-      doc.addEventListener("dragstart", prevent);
-      doc.addEventListener("mousemove", move);
-      doc.addEventListener("mouseup", stop);
-
-      prevent(e);
-    }
-  }
-
-  function stop() {
-    if (dragging) {
-      doc.removeEventListener("selectstart", prevent);
-      doc.removeEventListener("dragstart", prevent);
-      doc.removeEventListener("mousemove", move);
-      doc.removeEventListener("mouseup", stop);
-    }
-    dragging = false;
-  }
-
-  function onKeydown(e) {
-    const { key } = e;
-
-    if (!ARROW_KEYS.includes(key)) {
-      return;
-    }
-
-    setDraggerDimensionsAndOffset();
-    const { offsetHeight, offsetTop, offsetLeft } = dragHelper;
-    let dragX = offsetLeft + offsetHeight / 2;
-    let dragY = offsetTop + offsetHeight / 2;
-
-    if (key === ArrowLeft && dragX > 0) {
-      dragX -= 1;
-    } else if (key === ArrowRight && dragX < maxWidth) {
-      dragX += 1;
-    } else if (key === ArrowUp && dragY > 0) {
-      dragY -= 1;
-    } else if (key === ArrowDown && dragY < maxHeight) {
-      dragY += 1;
-    }
-
-    onmove.apply(element, [dragX, dragY]);
-  }
-
-  element.addEventListener("mousedown", start);
-  element.addEventListener("keydown", onKeydown);
 }
 
 /**

@@ -57,7 +57,10 @@ add_task(async function test_reader_button() {
   await PlacesTestUtils.addFavicons(new Map([[url, favicon]]));
   info("Opening tab and waiting for reader mode button to show up");
 
-  await promiseTabLoadEvent(tab, url);
+  await BrowserTestUtils.loadURIString({
+    browser: tab.linkedBrowser,
+    uriString: url,
+  });
   await TestUtils.waitForCondition(() => !readerButton.hidden);
 
   is_element_visible(
@@ -66,7 +69,7 @@ add_task(async function test_reader_button() {
   );
 
   // Switch page into reader mode.
-  let promiseTabLoad = promiseTabLoadEvent(tab);
+  let promiseTabLoad = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   readerButton.click();
   await promiseTabLoad;
 
@@ -132,7 +135,10 @@ add_task(async function test_reader_button() {
 
   // Load a new tab that is NOT reader-able.
   let newTab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
-  await promiseTabLoadEvent(newTab, nonReadableUrl);
+  await BrowserTestUtils.loadURIString({
+    browser: newTab.linkedBrowser,
+    uriString: nonReadableUrl,
+  });
   await TestUtils.waitForCondition(() => readerButton.hidden);
   is_element_hidden(
     readerButton,
@@ -153,7 +159,10 @@ add_task(async function test_reader_button() {
     newTab.linkedBrowser,
     "AboutReaderContentError"
   );
-  await promiseTabLoadEvent(newTab, "about:reader?url=" + nonReadableUrl);
+  await BrowserTestUtils.loadURIString({
+    browser: newTab.linkedBrowser,
+    uriString: "about:reader?url=" + nonReadableUrl,
+  });
   await promiseAboutReaderError;
   await TestUtils.waitForCondition(() => !readerButton.hidden);
   is_element_visible(
@@ -383,11 +392,14 @@ add_task(async function test_reader_mode_lang() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url);
 
-  await promiseTabLoadEvent(tab, url);
+  await BrowserTestUtils.loadURIString({
+    browser: tab.linkedBrowser,
+    uriString: url,
+  });
   await TestUtils.waitForCondition(() => !readerButton.hidden);
 
   // Switch page into reader mode.
-  let promiseTabLoad = promiseTabLoadEvent(tab);
+  let promiseTabLoad = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   readerButton.click();
   await promiseTabLoad;
 

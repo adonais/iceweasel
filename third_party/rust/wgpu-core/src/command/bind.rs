@@ -2,14 +2,12 @@ use core::{iter::zip, ops::Range};
 
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 
-use arrayvec::ArrayVec;
 use thiserror::Error;
 
 use crate::{
     binding_model::{BindGroup, LateMinBufferBindingSizeMismatch, PipelineLayout},
-    device::SHADER_STAGE_COUNT,
     pipeline::LateSizedBufferGroup,
-    resource::{Labeled, ResourceErrorIdent},
+    resource::{Labeled, ParentDevice, ResourceErrorIdent},
 };
 
 mod compat {
@@ -291,6 +289,7 @@ pub enum BinderError {
 
 #[derive(Debug)]
 struct LateBufferBinding {
+    binding_index: u32,
     shader_expect_size: wgt::BufferAddress,
     bound_size: wgt::BufferAddress,
 }
@@ -337,18 +336,29 @@ impl Binder {
         }
     }
 
+    /// Returns `true` if the pipeline layout has been changed, i.e. if the
+    /// new PL was not the same as the old PL.
     pub(super) fn change_pipeline_layout<'a>(
         &'a mut self,
         new: &Arc<PipelineLayout>,
         late_sized_buffer_groups: &[LateSizedBufferGroup],
-    ) {
-        let old_id_opt = self.pipeline_layout.replace(new.clone());
+    ) -> bool {
+        if let Some(old) = self.pipeline_layout.as_ref() {
+            if old.is_equal(new) {
+                return false;
+            }
+        }
+
+        let old = self.pipeline_layout.replace(new.clone());
 
         self.manager.update_expectations(&new.bind_group_layouts);
 
         // Update the buffer binding sizes that are required by shaders.
+
         for (payload, late_group) in self.payloads.iter_mut().zip(late_sized_buffer_groups) {
             payload.late_bindings_effective_count = late_group.shader_sizes.len();
+            // Update entries that already exist as the bind group was bound before the pipeline
+            // was bound.
             for (late_binding, &shader_expect_size) in payload
                 .late_buffer_bindings
                 .iter_mut()
@@ -356,11 +366,13 @@ impl Binder {
             {
                 late_binding.shader_expect_size = shader_expect_size;
             }
+            // Add new entries for the bindings that were not known when the bind group was bound.
             if late_group.shader_sizes.len() > payload.late_buffer_bindings.len() {
                 for &shader_expect_size in
                     late_group.shader_sizes[payload.late_buffer_bindings.len()..].iter()
                 {
                     payload.late_buffer_bindings.push(LateBufferBinding {
+                        binding_index: 0,
                         shader_expect_size,
                         bound_size: 0,
                     });
@@ -368,12 +380,14 @@ impl Binder {
             }
         }
 
-        if let Some(old) = old_id_opt {
+        if let Some(old) = old {
             // root constants are the base compatibility property
-            if old.push_constant_ranges != new.push_constant_ranges {
+            if old.immediate_size != new.immediate_size {
                 self.manager.update_start_index(0);
             }
         }
+
+        true
     }
 
     pub(super) fn assign_group<'a>(
@@ -389,20 +403,27 @@ impl Binder {
 
         // Fill out the actual binding sizes for buffers,
         // whose layout doesn't specify `min_binding_size`.
-        for (late_binding, late_size) in payload
+
+        // Update entries that already exist as the pipeline was bound before the group
+        // was bound.
+        for (late_binding, late_info) in payload
             .late_buffer_bindings
             .iter_mut()
-            .zip(bind_group.late_buffer_binding_sizes.iter())
+            .zip(bind_group.late_buffer_binding_infos.iter())
         {
-            late_binding.bound_size = late_size.get();
+            late_binding.binding_index = late_info.binding_index;
+            late_binding.bound_size = late_info.size.get();
         }
-        if bind_group.late_buffer_binding_sizes.len() > payload.late_buffer_bindings.len() {
-            for late_size in
-                bind_group.late_buffer_binding_sizes[payload.late_buffer_bindings.len()..].iter()
+
+        // Add new entries for the bindings that were not known when the pipeline was bound.
+        if bind_group.late_buffer_binding_infos.len() > payload.late_buffer_bindings.len() {
+            for late_info in
+                bind_group.late_buffer_binding_infos[payload.late_buffer_bindings.len()..].iter()
             {
                 payload.late_buffer_bindings.push(LateBufferBinding {
+                    binding_index: late_info.binding_index,
                     shader_expect_size: 0,
-                    bound_size: late_size.get(),
+                    bound_size: late_info.size.get(),
                 });
             }
         }
@@ -469,15 +490,13 @@ impl Binder {
     ) -> Result<(), LateMinBufferBindingSizeMismatch> {
         for group_index in self.manager.list_active() {
             let payload = &self.payloads[group_index];
-            for (compact_index, late_binding) in payload.late_buffer_bindings
-                [..payload.late_bindings_effective_count]
-                .iter()
-                .enumerate()
+            for late_binding in
+                &payload.late_buffer_bindings[..payload.late_bindings_effective_count]
             {
                 if late_binding.bound_size < late_binding.shader_expect_size {
                     return Err(LateMinBufferBindingSizeMismatch {
                         group_index: group_index as u32,
-                        compact_index,
+                        binding_index: late_binding.binding_index,
                         shader_size: late_binding.shader_expect_size,
                         bound_size: late_binding.bound_size,
                     });
@@ -486,55 +505,4 @@ impl Binder {
         }
         Ok(())
     }
-}
-
-struct PushConstantChange {
-    stages: wgt::ShaderStages,
-    offset: u32,
-    enable: bool,
-}
-
-/// Break up possibly overlapping push constant ranges into a set of
-/// non-overlapping ranges which contain all the stage flags of the
-/// original ranges. This allows us to zero out (or write any value)
-/// to every possible value.
-pub fn compute_nonoverlapping_ranges(
-    ranges: &[wgt::PushConstantRange],
-) -> ArrayVec<wgt::PushConstantRange, { SHADER_STAGE_COUNT * 2 }> {
-    if ranges.is_empty() {
-        return ArrayVec::new();
-    }
-    debug_assert!(ranges.len() <= SHADER_STAGE_COUNT);
-
-    let mut breaks: ArrayVec<PushConstantChange, { SHADER_STAGE_COUNT * 2 }> = ArrayVec::new();
-    for range in ranges {
-        breaks.push(PushConstantChange {
-            stages: range.stages,
-            offset: range.range.start,
-            enable: true,
-        });
-        breaks.push(PushConstantChange {
-            stages: range.stages,
-            offset: range.range.end,
-            enable: false,
-        });
-    }
-    breaks.sort_unstable_by_key(|change| change.offset);
-
-    let mut output_ranges = ArrayVec::new();
-    let mut position = 0_u32;
-    let mut stages = wgt::ShaderStages::NONE;
-
-    for bk in breaks {
-        if bk.offset - position > 0 && !stages.is_empty() {
-            output_ranges.push(wgt::PushConstantRange {
-                stages,
-                range: position..bk.offset,
-            })
-        }
-        position = bk.offset;
-        stages.set(bk.stages, bk.enable);
-    }
-
-    output_ranges
 }

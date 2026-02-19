@@ -154,8 +154,7 @@ nsresult nsStyledElement::ReparseStyleAttribute(bool aForceInDataDoc) {
     // Don't bother going through SetInlineStyleDeclaration; we don't
     // want to fire off mutation events or document notifications anyway
     bool oldValueSet;
-    nsresult rv =
-        mAttrs.SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet);
+    nsresult rv = SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

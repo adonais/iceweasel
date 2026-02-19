@@ -116,7 +116,7 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
                         )
                         SupportUtils.launchSandboxCustomTab(
                             context,
-                            SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE),
+                            SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE),
                         )
                     },
                 )

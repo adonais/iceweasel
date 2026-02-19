@@ -1858,11 +1858,6 @@ int32_t RecordContentFrameTime(
           .AccumulateSingleSample(
               static_cast<unsigned long long>(fracLatencyNorm));
 
-      if (aStats) {
-        latencyMs -= (double(aStats->gpu_cache_upload_time) / 1000000.0);
-        latencyNorm = latencyMs / aVsyncRate.ToMilliseconds();
-        fracLatencyNorm = lround(latencyNorm * 100.0);
-      }
       mozilla::glean::gfx_content_frame_time::without_resource_upload
           .AccumulateSingleSample(
               static_cast<unsigned long long>(fracLatencyNorm));

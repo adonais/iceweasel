@@ -193,6 +193,7 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
   static const DOMTokenListSupportedToken sSupportedSandboxTokens[];
 
   void RefreshFeaturePolicy(bool aParseAllowAttribute);
+  void RefreshEmbedderReferrerPolicy(ReferrerPolicy aPolicy);
 
   // If this iframe has a 'srcdoc' attribute, the document's origin will be
   // returned. Otherwise, if this iframe has a 'src' attribute, the origin will

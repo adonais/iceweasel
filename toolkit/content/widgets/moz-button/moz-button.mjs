@@ -199,7 +199,7 @@ class MenuController {
  * @property {HTMLButtonElement} buttonEl - The internal button element in the shadow DOM.
  * @property {HTMLButtonElement} slotEl - The internal slot element in the shadow DOM.
  * @cssproperty [--button-outer-padding-inline] - Used to set the outer inline padding of toolbar style buttons
- * @csspropert [--button-outer-padding-block] - Used to set the outer block padding of toolbar style buttons.
+ * @cssproperty [--button-outer-padding-block] - Used to set the outer block padding of toolbar style buttons.
  * @cssproperty [--button-outer-padding-inline-start] - Used to set the outer inline-start padding of toolbar style buttons
  * @cssproperty [--button-outer-padding-inline-end] - Used to set the outer inline-end padding of toolbar style buttons
  * @cssproperty [--button-outer-padding-block-start] - Used to set the outer block-start padding of toolbar style buttons
@@ -307,7 +307,12 @@ export default class MozButton extends MozLitElement {
         @click=${e => e.stopPropagation()}
         @mousedown=${e => e.stopPropagation()}
       >
-        <span class="button-background" type=${this.type} size=${this.size}>
+        <span
+          class="button-background"
+          part="chevron-button"
+          type=${this.type}
+          size=${this.size}
+        >
           <img
             src="chrome://global/skin/icons/arrow-down.svg"
             role="presentation"

@@ -71,6 +71,10 @@
       this.pinnedTabsContainer = document.getElementById(
         "pinned-tabs-container"
       );
+      this.pinnedTabsContainer.setAttribute(
+        "orient",
+        this.getAttribute("orient")
+      );
 
       // Override arrowscrollbox.js method, since our scrollbox's children are
       // inherited from the scrollbox binding parent (this).
@@ -245,20 +249,13 @@
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-      if (name != "orient") {
-        return;
-      }
-
-      if (this.overflowing) {
-        // reset this value so we don't have incorrect styling for vertical tabs
+      if (name == "orient") {
+        // reset this attribute so we don't have incorrect styling for vertical tabs
         this.removeAttribute("overflow");
+        this.#updateTabMinWidth();
+        this.#updateTabMinHeight();
+        this.pinnedTabsContainer?.setAttribute("orient", newValue);
       }
-
-      this.#updateTabMinWidth();
-      this.#updateTabMinHeight();
-
-      this.pinnedTabsContainer.setAttribute("orient", newValue);
-
       super.attributeChangedCallback(name, oldValue, newValue);
     }
 
@@ -1003,14 +1000,13 @@
           child.labelElement.elementIndex = elementIndex++;
           dragAndDropElements.push(child.labelElement);
 
-          let visibleChildren = Array.from(child.children).filter(
-            ele => ele.visible || ele.tagName == "tab-split-view-wrapper"
+          let tabsAndSplitViews = child.tabsAndSplitViews.filter(
+            node => node.visible
           );
-
-          visibleChildren.forEach(tab => {
-            tab.elementIndex = elementIndex++;
+          tabsAndSplitViews.forEach(ele => {
+            ele.elementIndex = elementIndex++;
           });
-          dragAndDropElements.push(...visibleChildren);
+          dragAndDropElements.push(...tabsAndSplitViews);
         } else {
           child.elementIndex = elementIndex++;
           dragAndDropElements.push(child);
@@ -1065,6 +1061,15 @@
 
     #isMovingTab() {
       return this.hasAttribute("movingtab");
+    }
+
+    isContainerVerticalPinnedGrid(tab) {
+      return (
+        tab.pinned &&
+        this.verticalMode &&
+        this.hasAttribute("expanded") &&
+        !this.expandOnHover
+      );
     }
 
     /**

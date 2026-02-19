@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.findTab
@@ -43,6 +43,7 @@ import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.debugsettings.ui.DebugDrawer
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import java.util.UUID
 import mozilla.components.ui.icons.R as iconsR
 
@@ -185,27 +186,12 @@ internal class FakeLoginsStorage : LoginsStorage {
     )
 }
 
-@Composable
-@PreviewLightDark
-private fun LoginsScreenPreview() {
-    FirefoxTheme {
-        val selectedTab = createTab("https://example.com")
-        LoginsTools(
-            browserStore = BrowserStore(
-                BrowserState(
-                    selectedTabId = selectedTab.id,
-                    tabs = listOf(selectedTab),
-                ),
-            ),
-            loginsStorage = FakeLoginsStorage(),
-        )
-    }
-}
-
-@Composable
 @Preview
-private fun LoginsScreenPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun LoginsScreenPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         val selectedTab = createTab("https://example.com")
         LoginsTools(
             browserStore = BrowserStore(

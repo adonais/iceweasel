@@ -6,6 +6,13 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { CustomKeys } from "resource:///modules/CustomKeys.sys.mjs";
 import { ShortcutUtils } from "resource://gre/modules/ShortcutUtils.sys.mjs";
 
+const KEY_NAMES_TO_CODES = {
+  ArrowDown: "VK_DOWN",
+  ArrowLeft: "VK_LEFT",
+  ArrowRight: "VK_RIGHT",
+  ArrowUp: "VK_UP",
+};
+
 /**
  * Actor implementation for about:keyboard.
  */
@@ -182,10 +189,21 @@ export class CustomKeysParent extends JSWindowActorParent {
         this.sendAsyncMessage("CustomKeys:CapturedKey", data);
         return;
       }
+      data.isValid = true;
       if (event.key.length == 1) {
         data.key = event.key.toUpperCase();
+        if (!modifiers.length || (event.shiftKey && modifiers.length == 1)) {
+          // This is a printable character; e.g. a letter, number or punctuation
+          // mark. That's not a valid shortcut key.
+          data.isValid = false;
+        }
       } else {
-        data.keycode = ShortcutUtils.getKeycodeAttribute(event.key);
+        data.keycode =
+          KEY_NAMES_TO_CODES[event.key] ??
+          ShortcutUtils.getKeycodeAttribute(event.key);
+        if (event.key == "Backspace") {
+          data.isValid = false;
+        }
       }
       data.shortcut = this.prettifyShortcut(data);
       this.sendAsyncMessage("CustomKeys:CapturedKey", data);

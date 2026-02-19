@@ -109,6 +109,11 @@ add_task(async function test_profile_js_sources_with_tracing() {
     "The profiler is not currently active"
   );
 
+  // sync about:blank (bug 543435) somehow causes a
+  // CycleCollectedJSContext::EndExecutionTracingAsync runnable to leak. See bug 2000283
+  await TestUtils.waitForTick();
+  await TestUtils.waitForTick();
+
   const url = BASE_URL + "tracing.html";
   await BrowserTestUtils.withNewTab("about:blank", async contentBrowser => {
     // Start profiling with tracing to capture JS tracer frames

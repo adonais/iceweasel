@@ -7,8 +7,6 @@
 #ifndef mozilla_dom_quota_UsageRequest_h
 #define mozilla_dom_quota_UsageRequest_h
 
-#include <cstdint>
-
 #include "ErrorList.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

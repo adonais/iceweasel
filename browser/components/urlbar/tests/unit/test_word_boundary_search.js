@@ -206,7 +206,7 @@ add_task(async function test_escape() {
         })
       : makeVisitResult(context, {
           uri: "file:///",
-          fallbackTitle: "file:///",
+          title: "file:///",
           source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
           heuristic: true,
         });

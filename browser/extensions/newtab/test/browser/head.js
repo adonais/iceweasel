@@ -71,12 +71,11 @@ async function clearHistoryAndBookmarks() {
  * not necessarily have had all its javascript/render logic executed.
  */
 async function waitForPreloaded(browser) {
-  let readyState = await ContentTask.spawn(
-    browser,
-    null,
-    () => content.document.readyState
-  );
-  if (readyState !== "complete") {
+  let [readyState, location] = await ContentTask.spawn(browser, null, () => [
+    content.document.readyState,
+    content.document.location.href,
+  ]);
+  if (readyState !== "complete" || location === "about:blank") {
     await BrowserTestUtils.browserLoaded(browser);
   }
 }

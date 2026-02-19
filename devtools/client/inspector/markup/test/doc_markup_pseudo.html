@@ -19,6 +19,13 @@ ul::before::marker {
 ul::after {
   content: "-";
 }
+
+dialog::backdrop {
+  background-color: gold;
+}
+dialog::before {
+  content: "before dialog";
+}
 </style>
 
 <article>
@@ -28,3 +35,4 @@ ul::after {
   <li>Dogs</li>
   <li>Cats</li>
 </ul>
+<dialog><p>My Dialog</p></dialog>

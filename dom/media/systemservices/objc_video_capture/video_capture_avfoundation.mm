@@ -100,8 +100,9 @@ AVCaptureDeviceFormat* _Nullable FindFormat(
 
 namespace webrtc::videocapturemodule {
 VideoCaptureAvFoundation::VideoCaptureAvFoundation(
-    AVCaptureDevice* _Nonnull aDevice)
-    : mDevice(aDevice),
+    Clock* _Nonnull clock, AVCaptureDevice* _Nonnull aDevice)
+    : VideoCaptureImpl(clock),
+      mDevice(aDevice),
       mAdapter([[VideoCaptureAdapter alloc] init]),
       mCapturer([[RTC_OBJC_TYPE(RTCCameraVideoCapturer) alloc]
           initWithDelegate:mAdapter]),
@@ -121,7 +122,7 @@ VideoCaptureAvFoundation::~VideoCaptureAvFoundation() {
 
 /* static */
 webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureAvFoundation::Create(
-    const char* _Nullable aDeviceUniqueIdUTF8) {
+    Clock* _Nonnull clock, const char* _Nullable aDeviceUniqueIdUTF8) {
   std::string uniqueId(aDeviceUniqueIdUTF8);
 
   for (AVCaptureDevice* device in [RTCCameraVideoCapturer
@@ -129,7 +130,8 @@ webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureAvFoundation::Create(
                                              defaultCaptureDeviceTypes]]) {
     if ([NSString stdStringForString:device.uniqueID] == uniqueId) {
       webrtc::scoped_refptr<VideoCaptureModule> module(
-          new webrtc::RefCountedObject<VideoCaptureAvFoundation>(device));
+          new webrtc::RefCountedObject<VideoCaptureAvFoundation>(clock,
+                                                                 device));
       return module;
     }
   }

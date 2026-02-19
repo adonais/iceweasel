@@ -60,8 +60,10 @@ async protocol PRemoteEncoder
 {
   manager PRemoteMediaManager;
 parent:
+  // Construct must be the first message sent.
   async Construct() returns (MediaResult result);
 
+  // Init must only be called after Construct has returned successfully.
   async Init() returns (EncodeInitResultIPDL result);
 
   async Encode(EncodedInputIPDL data) returns (EncodeResultIPDL result);

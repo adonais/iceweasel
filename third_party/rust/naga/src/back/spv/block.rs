@@ -19,6 +19,7 @@ fn get_dimension(type_inner: &crate::TypeInner) -> Dimension {
         crate::TypeInner::Scalar(_) => Dimension::Scalar,
         crate::TypeInner::Vector { .. } => Dimension::Vector,
         crate::TypeInner::Matrix { .. } => Dimension::Matrix,
+        crate::TypeInner::CooperativeMatrix { .. } => Dimension::CooperativeMatrix,
         _ => unreachable!(),
     }
 }
@@ -203,7 +204,7 @@ impl Writer {
         ));
 
         let clamp_id = self.id_gen.next();
-        body.push(Instruction::ext_inst(
+        body.push(Instruction::ext_inst_gl_op(
             self.gl450_ext_inst_id,
             spirv::GLOp::FClamp,
             float_type_id,
@@ -221,8 +222,13 @@ impl Writer {
         ir_result: &crate::FunctionResult,
         result_members: &[ResultMember],
         body: &mut Vec<Instruction>,
-    ) -> Result<(), Error> {
+        task_payload: Option<Word>,
+    ) -> Result<Instruction, Error> {
         for (index, res_member) in result_members.iter().enumerate() {
+            // This isn't a real builtin, and is handled elsewhere
+            if res_member.built_in == Some(crate::BuiltIn::MeshTaskSize) {
+                continue;
+            }
             let member_value_id = match ir_result.binding {
                 Some(_) => value_id,
                 None => {
@@ -253,7 +259,13 @@ impl Writer {
                 _ => {}
             }
         }
-        Ok(())
+        self.try_write_entry_point_task_return(
+            value_id,
+            ir_result,
+            result_members,
+            body,
+            task_payload,
+        )
     }
 }
 
@@ -766,6 +778,7 @@ impl BlockContext<'_> {
                                 rows,
                                 scalar,
                             } => {
+                                //TODO: why not just rely on `Fadd` for matrices?
                                 self.write_matrix_matrix_column_op(
                                     block,
                                     id,
@@ -781,6 +794,7 @@ impl BlockContext<'_> {
                                 self.cached[expr_handle] = id;
                                 return Ok(());
                             }
+                            crate::TypeInner::CooperativeMatrix { .. } => spirv::Op::FAdd,
                             _ => unimplemented!(),
                         },
                         crate::BinaryOperator::Subtract => match *left_ty_inner {
@@ -809,6 +823,7 @@ impl BlockContext<'_> {
                                 self.cached[expr_handle] = id;
                                 return Ok(());
                             }
+                            crate::TypeInner::CooperativeMatrix { .. } => spirv::Op::FSub,
                             _ => unimplemented!(),
                         },
                         crate::BinaryOperator::Multiply => {
@@ -842,10 +857,12 @@ impl BlockContext<'_> {
                                 (Dimension::Vector, Dimension::Matrix) => {
                                     spirv::Op::VectorTimesMatrix
                                 }
-                                (Dimension::Matrix, Dimension::Scalar) => {
+                                (Dimension::Matrix, Dimension::Scalar)
+                                | (Dimension::CooperativeMatrix, Dimension::Scalar) => {
                                     spirv::Op::MatrixTimesScalar
                                 }
-                                (Dimension::Scalar, Dimension::Matrix) => {
+                                (Dimension::Scalar, Dimension::Matrix)
+                                | (Dimension::Scalar, Dimension::CooperativeMatrix) => {
                                     reverse_operands = true;
                                     spirv::Op::MatrixTimesScalar
                                 }
@@ -864,6 +881,12 @@ impl BlockContext<'_> {
                                 }
                                 (Dimension::Vector, Dimension::Vector)
                                 | (Dimension::Scalar, Dimension::Scalar) => spirv::Op::IMul,
+                                (Dimension::CooperativeMatrix, Dimension::CooperativeMatrix)
+                                //Note: technically can do `FMul` but IR doesn't have matrix per-component multiplication
+                                | (Dimension::CooperativeMatrix, _)
+                                | (_, Dimension::CooperativeMatrix) => {
+                                    unimplemented!()
+                                }
                             }
                         }
                         crate::BinaryOperator::Divide => match left_ty_inner.scalar_kind() {
@@ -1026,7 +1049,7 @@ impl BlockContext<'_> {
                             };
 
                             let max_id = self.gen_id();
-                            block.body.push(Instruction::ext_inst(
+                            block.body.push(Instruction::ext_inst_gl_op(
                                 self.writer.gl450_ext_inst_id,
                                 max_op,
                                 result_type_id,
@@ -1034,7 +1057,7 @@ impl BlockContext<'_> {
                                 &[arg0_id, arg1_id],
                             ));
 
-                            MathOp::Custom(Instruction::ext_inst(
+                            MathOp::Custom(Instruction::ext_inst_gl_op(
                                 self.writer.gl450_ext_inst_id,
                                 min_op,
                                 result_type_id,
@@ -1068,7 +1091,7 @@ impl BlockContext<'_> {
                             arg2_id = self.writer.get_constant_composite(ty, &self.temp_list);
                         }
 
-                        MathOp::Custom(Instruction::ext_inst(
+                        MathOp::Custom(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::FClamp,
                             result_type_id,
@@ -1282,7 +1305,7 @@ impl BlockContext<'_> {
                                     &self.temp_list,
                                 ));
 
-                                MathOp::Custom(Instruction::ext_inst(
+                                MathOp::Custom(Instruction::ext_inst_gl_op(
                                     self.writer.gl450_ext_inst_id,
                                     spirv::GLOp::FMix,
                                     result_type_id,
@@ -1339,7 +1362,7 @@ impl BlockContext<'_> {
                         };
 
                         let lsb_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::FindILsb,
                             result_type_id,
@@ -1347,7 +1370,7 @@ impl BlockContext<'_> {
                             &[arg0_id],
                         ));
 
-                        MathOp::Custom(Instruction::ext_inst(
+                        MathOp::Custom(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             result_type_id,
@@ -1388,7 +1411,7 @@ impl BlockContext<'_> {
                         };
 
                         let msb_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             if width != 4 {
                                 spirv::GLOp::FindILsb
@@ -1445,7 +1468,7 @@ impl BlockContext<'_> {
 
                         // o = min(offset, w)
                         let offset_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -1465,7 +1488,7 @@ impl BlockContext<'_> {
 
                         // c = min(count, tmp)
                         let count_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -1495,7 +1518,7 @@ impl BlockContext<'_> {
 
                         // o = min(offset, w)
                         let offset_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -1515,7 +1538,7 @@ impl BlockContext<'_> {
 
                         // c = min(count, tmp)
                         let count_id = self.gen_id();
-                        block.body.push(Instruction::ext_inst(
+                        block.body.push(Instruction::ext_inst_gl_op(
                             self.writer.gl450_ext_inst_id,
                             spirv::GLOp::UMin,
                             u32_type,
@@ -1610,7 +1633,7 @@ impl BlockContext<'_> {
                 };
 
                 block.body.push(match math_op {
-                    MathOp::Ext(op) => Instruction::ext_inst(
+                    MathOp::Ext(op) => Instruction::ext_inst_gl_op(
                         self.writer.gl450_ext_inst_id,
                         op,
                         result_type_id,
@@ -1621,7 +1644,27 @@ impl BlockContext<'_> {
                 });
                 id
             }
-            crate::Expression::LocalVariable(variable) => self.function.variables[&variable].id,
+            crate::Expression::LocalVariable(variable) => {
+                if let Some(rq_tracker) = self
+                    .function
+                    .ray_query_initialization_tracker_variables
+                    .get(&variable)
+                {
+                    self.ray_query_tracker_expr.insert(
+                        expr_handle,
+                        super::RayQueryTrackers {
+                            initialized_tracker: rq_tracker.id,
+                            t_max_tracker: self
+                                .function
+                                .ray_query_t_max_tracker_variables
+                                .get(&variable)
+                                .expect("Both trackers are set at the same time.")
+                                .id,
+                        },
+                    );
+                }
+                self.function.variables[&variable].id
+            }
             crate::Expression::Load { pointer } => {
                 self.write_checked_load(pointer, block, AccessTypeAdjustment::None, result_type_id)?
             }
@@ -1772,6 +1815,10 @@ impl BlockContext<'_> {
             crate::Expression::ArrayLength(expr) => self.write_runtime_array_length(expr, block)?,
             crate::Expression::RayQueryGetIntersection { query, committed } => {
                 let query_id = self.cached[query];
+                let init_tracker_id = *self
+                    .ray_query_tracker_expr
+                    .get(&query)
+                    .expect("not a cached ray query");
                 let func_id = self
                     .writer
                     .write_ray_query_get_intersection_function(committed, self.ir_module);
@@ -1782,7 +1829,7 @@ impl BlockContext<'_> {
                     intersection_type_id,
                     id,
                     func_id,
-                    &[query_id],
+                    &[query_id, init_tracker_id.initialized_tracker],
                 ));
                 id
             }
@@ -1792,6 +1839,69 @@ impl BlockContext<'_> {
                     &[spirv::Capability::RayQueryPositionFetchKHR],
                 )?;
                 self.write_ray_query_return_vertex_position(query, block, committed)
+            }
+            crate::Expression::CooperativeLoad { ref data, .. } => {
+                self.writer.require_any(
+                    "CooperativeMatrix",
+                    &[spirv::Capability::CooperativeMatrixKHR],
+                )?;
+                let layout = if data.row_major {
+                    spirv::CooperativeMatrixLayout::RowMajorKHR
+                } else {
+                    spirv::CooperativeMatrixLayout::ColumnMajorKHR
+                };
+                let layout_id = self.get_index_constant(layout as u32);
+                let stride_id = self.cached[data.stride];
+                match self.write_access_chain(data.pointer, block, AccessTypeAdjustment::None)? {
+                    ExpressionPointer::Ready { pointer_id } => {
+                        let id = self.gen_id();
+                        block.body.push(Instruction::coop_load(
+                            result_type_id,
+                            id,
+                            pointer_id,
+                            layout_id,
+                            stride_id,
+                        ));
+                        id
+                    }
+                    ExpressionPointer::Conditional { condition, access } => self
+                        .write_conditional_indexed_load(
+                            result_type_id,
+                            condition,
+                            block,
+                            |id_gen, block| {
+                                let pointer_id = access.result_id.unwrap();
+                                block.body.push(access);
+                                let id = id_gen.next();
+                                block.body.push(Instruction::coop_load(
+                                    result_type_id,
+                                    id,
+                                    pointer_id,
+                                    layout_id,
+                                    stride_id,
+                                ));
+                                id
+                            },
+                        ),
+                }
+            }
+            crate::Expression::CooperativeMultiplyAdd { a, b, c } => {
+                self.writer.require_any(
+                    "CooperativeMatrix",
+                    &[spirv::Capability::CooperativeMatrixKHR],
+                )?;
+                let a_id = self.cached[a];
+                let b_id = self.cached[b];
+                let c_id = self.cached[c];
+                let id = self.gen_id();
+                block.body.push(Instruction::coop_mul_add(
+                    result_type_id,
+                    id,
+                    a_id,
+                    b_id,
+                    c_id,
+                ));
+                id
             }
         };
 
@@ -2008,7 +2118,7 @@ impl BlockContext<'_> {
                 let max_const_id = maybe_splat_const(self.writer, max_const_id);
 
                 let clamp_id = self.gen_id();
-                block.body.push(Instruction::ext_inst(
+                block.body.push(Instruction::ext_inst_gl_op(
                     self.writer.gl450_ext_inst_id,
                     spirv::GLOp::FClamp,
                     expr_type_id,
@@ -2671,7 +2781,7 @@ impl BlockContext<'_> {
             });
 
             let clamp_id = self.gen_id();
-            block.body.push(Instruction::ext_inst(
+            block.body.push(Instruction::ext_inst_gl_op(
                 self.writer.gl450_ext_inst_id,
                 clamp_op,
                 wide_vector_type_id,
@@ -2765,7 +2875,7 @@ impl BlockContext<'_> {
                 let [min, max] = [min, max].map(|lit| self.writer.get_constant_scalar(lit));
 
                 let clamp_id = self.gen_id();
-                block.body.push(Instruction::ext_inst(
+                block.body.push(Instruction::ext_inst_gl_op(
                     self.writer.gl450_ext_inst_id,
                     clamp_op,
                     result_type_id,
@@ -3227,22 +3337,31 @@ impl BlockContext<'_> {
                     let instruction = match self.function.entry_point_context {
                         // If this is an entry point, and we need to return anything,
                         // let's instead store the output variables and return `void`.
-                        Some(ref context) => {
-                            self.writer.write_entry_point_return(
-                                value_id,
-                                self.ir_function.result.as_ref().unwrap(),
-                                &context.results,
-                                &mut block.body,
-                            )?;
-                            Instruction::return_void()
-                        }
+                        Some(ref context) => self.writer.write_entry_point_return(
+                            value_id,
+                            self.ir_function.result.as_ref().unwrap(),
+                            &context.results,
+                            &mut block.body,
+                            context.task_payload_variable_id,
+                        )?,
                         None => Instruction::return_value(value_id),
                     };
                     self.function.consume(block, instruction);
                     return Ok(BlockExitDisposition::Discarded);
                 }
                 Statement::Return { value: None } => {
-                    self.function.consume(block, Instruction::return_void());
+                    if let Some(super::EntryPointContext {
+                        mesh_state: Some(ref mesh_state),
+                        ..
+                    }) = self.function.entry_point_context
+                    {
+                        self.function.consume(
+                            block,
+                            Instruction::branch(mesh_state.entry_point_epilogue_id),
+                        );
+                    } else {
+                        self.function.consume(block, Instruction::return_void());
+                    }
                     return Ok(BlockExitDisposition::Discarded);
                 }
                 Statement::Kill => {
@@ -3250,7 +3369,7 @@ impl BlockContext<'_> {
                     return Ok(BlockExitDisposition::Discarded);
                 }
                 Statement::ControlBarrier(flags) => {
-                    self.writer.write_control_barrier(flags, &mut block);
+                    self.writer.write_control_barrier(flags, &mut block.body);
                 }
                 Statement::MemoryBarrier(flags) => {
                     self.writer.write_memory_barrier(flags, &mut block);
@@ -3589,7 +3708,7 @@ impl BlockContext<'_> {
                 }
                 Statement::WorkGroupUniformLoad { pointer, result } => {
                     self.writer
-                        .write_control_barrier(crate::Barrier::WORK_GROUP, &mut block);
+                        .write_control_barrier(crate::Barrier::WORK_GROUP, &mut block.body);
                     let result_type_id = self.get_expression_type_id(&self.fun_info[result].ty);
                     // Embed the body of
                     match self.write_access_chain(
@@ -3629,7 +3748,7 @@ impl BlockContext<'_> {
                         }
                     }
                     self.writer
-                        .write_control_barrier(crate::Barrier::WORK_GROUP, &mut block);
+                        .write_control_barrier(crate::Barrier::WORK_GROUP, &mut block.body);
                 }
                 Statement::RayQuery { query, ref fun } => {
                     self.write_ray_query_function(query, fun, &mut block);
@@ -3655,7 +3774,42 @@ impl BlockContext<'_> {
                 } => {
                     self.write_subgroup_gather(mode, argument, result, &mut block)?;
                 }
-                Statement::MeshFunction(_) => unreachable!(),
+                Statement::CooperativeStore { target, ref data } => {
+                    let target_id = self.cached[target];
+                    let layout = if data.row_major {
+                        spirv::CooperativeMatrixLayout::RowMajorKHR
+                    } else {
+                        spirv::CooperativeMatrixLayout::ColumnMajorKHR
+                    };
+                    let layout_id = self.get_index_constant(layout as u32);
+                    let stride_id = self.cached[data.stride];
+                    match self.write_access_chain(
+                        data.pointer,
+                        &mut block,
+                        AccessTypeAdjustment::None,
+                    )? {
+                        ExpressionPointer::Ready { pointer_id } => {
+                            block.body.push(Instruction::coop_store(
+                                target_id, pointer_id, layout_id, stride_id,
+                            ));
+                        }
+                        ExpressionPointer::Conditional { condition, access } => {
+                            let mut selection = Selection::start(&mut block, ());
+                            selection.if_true(self, condition, ());
+
+                            // The in-bounds path. Perform the access and the store.
+                            let pointer_id = access.result_id.unwrap();
+                            selection.block().body.push(access);
+                            selection.block().body.push(Instruction::coop_store(
+                                target_id, pointer_id, layout_id, stride_id,
+                            ));
+
+                            // Finish the in-bounds block and start the merge block. This
+                            // is the block we'll leave current on return.
+                            selection.finish(self, ());
+                        }
+                    };
+                }
             }
         }
 
@@ -3703,6 +3857,16 @@ impl BlockContext<'_> {
             LoopContext::default(),
             debug_info,
         )?;
+        if let Some(super::EntryPointContext {
+            mesh_state: Some(ref mesh_state),
+            ..
+        }) = self.function.entry_point_context
+        {
+            let mut block = Block::new(mesh_state.entry_point_epilogue_id);
+            self.writer
+                .write_mesh_shader_return(mesh_state, &mut block)?;
+            self.function.consume(block, Instruction::return_void());
+        }
 
         Ok(())
     }

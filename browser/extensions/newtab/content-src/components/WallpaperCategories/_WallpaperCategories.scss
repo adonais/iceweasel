@@ -39,6 +39,8 @@
   -moz-context-properties: fill;
   fill: currentColor;
   min-height: 1rem;
+  margin-inline-start: var(--space-xsmall);
+  margin-block-start: var(--space-xsmall);
 }
 
 .wallpaper-input {
@@ -202,6 +204,8 @@
   border: none;
 
   &.category {
+    --wallpaper-panel-width: 430px;
+
     background-color: var(--newtab-background-color-secondary);
     color: var(--newtab-text-primary-color);
     display: unset;
@@ -211,18 +215,13 @@
     height: 100%;
     // Can get rid of padding and replace height with
     // 'height: stretch' when bug 1789477 lands.
-    padding-block-end: var(--space-xxlarge);
-    inset-inline-start: var(--space-xlarge);
+    padding: var(--space-xlarge);
     position: absolute;
     inset-block-start: 0;
-    width: 380px;
+    inset-inline-start: 100%;
+    width: var(--wallpaper-panel-width);
     z-index: 2;
-    transform: translateX(100%);
     overflow-y: auto;
-
-    &:dir(rtl) {
-      transform: translateX(-100%);
-    }
 
     fieldset {
       border: none;
@@ -237,13 +236,13 @@
       &.wallpaper-list-exit,
       &.wallpaper-list-enter-done,
       &.wallpaper-list-exit-done {
-        transition: transform 300ms;
+        transition: inset-inline-start 300ms;
       }
     }
 
     &.wallpaper-list-enter-done,
     &.wallpaper-list-enter-active {
-      transform: translateX(0);
+      inset-inline-start: calc(100% - var(--wallpaper-panel-width));
     }
   }
 

@@ -100,6 +100,65 @@ testRule({
         "Using the small, large, and xlarge size tokens with the inset property is valid.",
     },
     {
+      code: ".a { inset-block: var(--size-item-small); }",
+      description: "Using size tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-block-start: var(--size-item-small); }",
+      description: "Using size tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-block-end: var(--size-item-medium); }",
+      description: "Using size tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-inline: var(--size-item-xsmall) var(--size-item-large); }",
+      description: "Using size tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-inline-start: var(--size-item-small); }",
+      description: "Using size tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-inline-end: var(--size-item-medium); }",
+      description: "Using size tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { top: var(--size-item-small); }",
+      description:
+        "Using size tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { right: var(--size-item-small); }",
+      description:
+        "Using size tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { bottom: var(--size-item-small); }",
+      description:
+        "Using size tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { left: var(--size-item-small); }",
+      description:
+        "Using size tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { background-position: bottom var(--size-item-small) right var(--size-item-medium); }",
+      description:
+        "Using size tokens with background-position properties is valid.",
+    },
+    {
+      code: ".a { background-position-x: var(--size-item-small); }",
+      description:
+        "Using size tokens with background-position properties is valid.",
+    },
+    {
+      code: ".a { background-position-y: var(--size-item-small); }",
+      description:
+        "Using size tokens with background-position properties is valid.",
+    },
+    {
       code: ".a { opacity: var(--button-opacity-disabled); }",
       description:
         "Using the disabled button opacity token with the opacity property is valid.",
@@ -108,6 +167,86 @@ testRule({
       code: ".a { padding: var(--space-small) 4px; }",
       description:
         "Using the small space token with the padding property is valid.",
+    },
+    {
+      code: ".a { grid-gap: var(--space-small); }",
+      description:
+        "Using the small space token with the grid-gap property is valid.",
+    },
+    {
+      code: ".a { grid-row-gap: var(--space-small); }",
+      description:
+        "Using the small space token with the grid-row-gap property is valid.",
+    },
+    {
+      code: ".a { grid-column-gap: var(--space-small); }",
+      description:
+        "Using the small space token with the grid-column-gap property is valid.",
+    },
+    {
+      code: ".a { inset-block: var(--space-small); }",
+      description:
+        "Using space tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-block-start: var(--space-small); }",
+      description:
+        "Using space tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-block-end: var(--space-medium); }",
+      description:
+        "Using space tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-inline: var(--space-xsmall) var(--space-large); }",
+      description:
+        "Using space tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-inline-start: var(--space-small); }",
+      description:
+        "Using space tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { inset-inline-end: var(--space-medium); }",
+      description:
+        "Using space tokens with inset longhand properties is valid.",
+    },
+    {
+      code: ".a { top: var(--space-small); }",
+      description:
+        "Using space tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { right: var(--space-small); }",
+      description:
+        "Using space tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { bottom: var(--space-small); }",
+      description:
+        "Using space tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { left: var(--space-small); }",
+      description:
+        "Using space tokens with top/right/bottom/left properties is valid.",
+    },
+    {
+      code: ".a { background-position: bottom var(--space-small) right var(--space-medium); }",
+      description:
+        "Using space tokens with background-position properties is valid.",
+    },
+    {
+      code: ".a { background-position-x: var(--space-small); }",
+      description:
+        "Using space tokens with background-position properties is valid.",
+    },
+    {
+      code: ".a { background-position-y: var(--space-small); }",
+      description:
+        "Using space tokens with background-position properties is valid.",
     },
     {
       code: ".a { color: var(--text-color); }",
@@ -140,6 +279,24 @@ testRule({
       description:
         "Using the canvas background color token with the background-color property, the text color token with the color property, and the border color token with the border shorthand property are valid.",
     },
+    {
+      code: ".a { outline-offset: var(--focus-outline-inset); }",
+      description:
+        "Using a focus outline token with the outline-offset property is valid.",
+    },
+    {
+      code: ".a { outline-offset: var(--link-focus-outline-offset); }",
+      description:
+        "Using a link focus outline token with the outline-offset property is valid.",
+    },
+    {
+      code: ".a { border: var(--focus-outline); }",
+      description: "Using outline tokens for border properties is valid.",
+    },
+    {
+      code: ".a { border-color: var(--focus-outline-color); }",
+      description: "Using outline tokens for border properties is valid.",
+    },
   ],
   reject: [
     {
@@ -162,9 +319,9 @@ testRule({
     },
     {
       code: `
-        :root { --local-background-color: var(--border-color); }
-        .a { background: var(--local-background-color); }
-      `,
+      :root { --local-background-color: var(--border-color); }
+      .a { background: var(--local-background-color); }
+    `,
       message: messages.rejected("var(--border-color)"),
       description:
         "Unexpected usage of `var(--border-color)`. Design tokens should only be used with properties matching their semantic meaning.",

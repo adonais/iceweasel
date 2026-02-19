@@ -7,7 +7,6 @@
 #ifndef mozilla_MruCache_h
 #define mozilla_MruCache_h
 
-#include <cstdint>
 #include <type_traits>
 #include <utility>
 

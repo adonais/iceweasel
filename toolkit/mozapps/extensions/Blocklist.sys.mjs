@@ -1450,7 +1450,7 @@ var gBlocklistLevel = DEFAULT_LEVEL;
  * extensions/plugins.
  */
 /**
- * @method prompt
+ * @function prompt
  *
  * Prompt the user about newly blocked addons. The prompt is then resposible
  * for soft-blocking any addons that need to be afterwards

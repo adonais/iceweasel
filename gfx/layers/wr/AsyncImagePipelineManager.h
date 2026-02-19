@@ -260,6 +260,7 @@ class AsyncImagePipelineManager final {
 #ifdef XP_WIN
   bool mUseWebRenderDCompVideoHwOverlayWin;
   bool mUseWebRenderDCompVideoSwOverlayWin;
+  bool mUseWebRenderDCompositionTextureOverlayWin;
 #endif
 
   // Render time for the current composition.
@@ -292,7 +293,7 @@ class AsyncImagePipelineManager final {
   std::vector<std::pair<wr::RenderedFrameId,
                         std::vector<UniquePtr<ForwardingTextureHost>>>>
       mTexturesInUseByGPU;
-  RefPtr<Fence> mReleaseFence;
+  RefPtr<Fence> mReadFence;
 };
 
 }  // namespace layers

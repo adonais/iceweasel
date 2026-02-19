@@ -80,7 +80,7 @@ const SUPPORTED_OPTIONS = {
  * (see _updateParentProcessConfiguration), and others will be set from the target actor,
  * in the content process.
  *
- * @constructor
+ * @class
  */
 class TargetConfigurationActor extends Actor {
   constructor(watcherActor) {

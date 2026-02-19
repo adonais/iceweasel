@@ -42,7 +42,7 @@ NS_INTERFACE_MAP_END
 //
 // NOTE: nsIURI doesn't have to be touched here because it cannot be a part
 //       of cycle.
-NS_IMPL_CYCLE_COLLECTION(LoadedScript, mFetchOptions, mCacheInfo)
+NS_IMPL_CYCLE_COLLECTION(LoadedScript, mFetchOptions, mCacheEntry)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(LoadedScript)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadedScript)
@@ -56,6 +56,7 @@ LoadedScript::LoadedScript(ScriptKind aKind,
       mSerializedStencilOffset(0),
       mCacheEntryId(InvalidCacheEntryId),
       mIsDirty(false),
+      mTookLongInPreviousRuns(false),
       mFetchOptions(aFetchOptions),
       mURI(aURI),
       mReceivedScriptTextLength(0) {
@@ -70,6 +71,7 @@ LoadedScript::LoadedScript(const LoadedScript& aOther)
       mSerializedStencilOffset(0),
       mCacheEntryId(aOther.mCacheEntryId),
       mIsDirty(aOther.mIsDirty),
+      mTookLongInPreviousRuns(aOther.mTookLongInPreviousRuns),
       mFetchOptions(aOther.mFetchOptions),
       mURI(aOther.mURI),
       mBaseURL(aOther.mBaseURL),

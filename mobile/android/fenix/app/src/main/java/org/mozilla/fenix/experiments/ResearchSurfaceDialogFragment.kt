@@ -19,7 +19,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * Dialog displaying the fullscreen research surface message.
  */
-
 class ResearchSurfaceDialogFragment : DialogFragment() {
     private val args by navArgs<ResearchSurfaceDialogFragmentArgs>()
     private lateinit var bundleArgs: Bundle

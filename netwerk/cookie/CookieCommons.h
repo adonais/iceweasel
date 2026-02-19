@@ -174,10 +174,14 @@ class CookieCommons final {
       mozilla::dom::Document* aDocument, nsIPrincipal** aCookiePrincipal,
       nsIPrincipal** aCookiePartitionedPrincipal);
 
-  // Return a reduced expiry attribute value if needed. Parameters are in
-  // milliseconds.
+  // Return a reduced expiry attribute value if needed.
   static int64_t MaybeCapExpiry(int64_t aCurrentTimeInMSec,
                                 int64_t aExpiryInMSec);
+
+  // Return a reduced expiry value starting from the max-age attribute and the
+  // current time.
+  static int64_t MaybeCapMaxAge(int64_t aCurrentTimeInMSec,
+                                int64_t aMaxAgeInSec);
 
   // returns true if 'a' is equal to or a subdomain of 'b',
   // assuming no leading dots are present.

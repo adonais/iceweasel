@@ -24,7 +24,7 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  ["getIndentationFromPrefs", "getIndentationFromString"],
+  "getIndentationFromPrefs",
   "resource://devtools/shared/indentation.js",
   true
 );
@@ -67,7 +67,7 @@ const BLANK_LINE_RX = /^[ \t]*(?:\r\n|\n|\r|\f|$)/;
  */
 class RuleRewriter {
   /**
-   * @constructor
+   * @class
    * @param {Window} win
    * @param {Function} isCssPropertyKnown
    *        A function to check if the CSS property is known. This is either an
@@ -513,19 +513,6 @@ class RuleRewriter {
     }
 
     const styleSheetResourceId = this.rule.parentStyleSheet.resourceId;
-
-    // @backward-compat { version 146 } getStyleSheetIndent was added in 146. The whole
-    // if block can be removed once 146 is in release.
-    const { hasGetStyleSheetIndentation } = await styleSheetsFront.getTraits();
-    if (!hasGetStyleSheetIndentation) {
-      const { str: source, initial } =
-        await styleSheetsFront.getText(styleSheetResourceId);
-      const { indentUnit, indentWithTabs } = getIndentationFromString(
-        source ?? initial ?? ""
-      );
-      return indentWithTabs ? "\t" : " ".repeat(indentUnit);
-    }
-
     return styleSheetsFront.getStyleSheetIndentation(styleSheetResourceId);
   }
 

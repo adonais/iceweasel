@@ -25,7 +25,7 @@ private val IMAGE_HEIGHT = 200.dp
 @Composable
 fun SetSearchWidgetMainImage() {
     Image(
-        painter = painterResource(R.drawable.ic_onboarding_search_widget),
+        painter = painterResource(R.drawable.nova_onboarding_widget),
         contentDescription = null, // Decorative only
         modifier = Modifier.height(IMAGE_HEIGHT),
     )

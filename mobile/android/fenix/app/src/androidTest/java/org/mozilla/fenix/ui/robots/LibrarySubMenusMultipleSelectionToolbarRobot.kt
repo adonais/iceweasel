@@ -149,17 +149,17 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
         Log.i(TAG, "clickMultiSelectThreeDotButton: Clicked the multi-selection three dot button")
     }
 
-    class Transition {
+    class Transition(private val composeTestRule: ComposeTestRule) {
         fun closeToolbarReturnToHistory(interact: HistoryRobot.() -> Unit): HistoryRobot.Transition {
             Log.i(TAG, "closeToolbarReturnToHistory: Trying to click the navigate up toolbar button")
             closeToolbarButton().click()
             Log.i(TAG, "closeToolbarReturnToHistory: Clicked the navigate up toolbar button")
 
             HistoryRobot().interact()
-            return HistoryRobot.Transition()
+            return HistoryRobot.Transition(composeTestRule)
         }
 
-        fun clickOpenNewTab(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+        fun clickOpenNewTab(interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
             Log.i(TAG, "clickOpenNewTab: Trying to click the multi-select \"Open in a new tab\" context menu button")
             openInNewTabButton().click()
             Log.i(TAG, "clickOpenNewTab: Clicked the multi-select \"Open in a new tab\" context menu button")
@@ -171,7 +171,7 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
             return TabDrawerRobot.Transition(composeTestRule)
         }
 
-        fun clickOpenInNewTabButton(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+        fun clickOpenInNewTabButton(interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
             Log.i(TAG, "clickOpenInNewTabButton: Trying to click the multi-select \"Open in a new tab\" context menu button")
             redesignedBookmarksOpenInNewTabButton(composeTestRule).performClick()
             Log.i(TAG, "clickOpenInNewTabButton: Clicked the multi-select \"Open in a new tab\" context menu button")
@@ -183,7 +183,7 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
             return TabDrawerRobot.Transition(composeTestRule)
         }
 
-        fun clickOpenPrivateTab(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+        fun clickOpenPrivateTab(interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
             Log.i(TAG, "clickOpenPrivateTab: Trying to click the multi-select \"Open in a private tab\" context menu button")
             openInPrivateTabButton().click()
             Log.i(TAG, "clickOpenPrivateTab: Clicked the multi-select \"Open in a private tab\" context menu button")
@@ -194,9 +194,9 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
     }
 }
 
-fun multipleSelectionToolbar(interact: LibrarySubMenusMultipleSelectionToolbarRobot.() -> Unit): LibrarySubMenusMultipleSelectionToolbarRobot.Transition {
+fun multipleSelectionToolbar(composeTestRule: ComposeTestRule, interact: LibrarySubMenusMultipleSelectionToolbarRobot.() -> Unit): LibrarySubMenusMultipleSelectionToolbarRobot.Transition {
     LibrarySubMenusMultipleSelectionToolbarRobot().interact()
-    return LibrarySubMenusMultipleSelectionToolbarRobot.Transition()
+    return LibrarySubMenusMultipleSelectionToolbarRobot.Transition(composeTestRule)
 }
 
 private fun closeToolbarButton() = onView(withContentDescription("Navigate up"))

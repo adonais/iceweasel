@@ -112,6 +112,30 @@ export default class SecurityPrivacyCard extends MozLitElement {
     };
   }
 
+  #openWarningCardAndScroll() {
+    let accordion = document.getElementById("warningCard");
+    if (!accordion) {
+      return;
+    }
+    accordion.expanded = true;
+    this.#scrollToTargetOnPanel("#privacy", "warningCard")();
+  }
+
+  getStatusImage() {
+    if (this.configIssueCount > 0) {
+      return html`<img
+        class="status-image"
+        src="chrome://global/skin/illustrations/kit-looking-left.svg"
+        data-l10n-id="security-privacy-image-warning"
+      />`;
+    }
+    return html`<img
+      class="status-image"
+      src="chrome://global/skin/illustrations/kit-looking-forward.svg"
+      data-l10n-id="security-privacy-image-ok"
+    />`;
+  }
+
   /**
    * Create the bullet point for the current count of "issues" in the user profile.
    * Really only depends on `this.configIssueCount`
@@ -120,38 +144,24 @@ export default class SecurityPrivacyCard extends MozLitElement {
    */
   buildIssuesElement() {
     if (this.configIssueCount == 0) {
-      return html`<div class="status-bullet">
-        <img
-          class="check-bullet"
-          src="chrome://global/skin/icons/check-filled.svg"
-          alt="status ok"
-        />
-        <div data-l10n-id=${L10N_IDS.okLabel}></div>
-      </div>`;
+      return html`<li class="status-ok">
+        <p data-l10n-id=${L10N_IDS.okLabel}></p>
+      </li>`;
     }
-    return html`<div class="status-bullet">
-      <img
-        class="alert-bullet"
-        src="chrome://global/skin/icons/warning.svg"
-        alt="status warning"
-      />
-
-      <div class="status-label-holder">
-        <div data-l10n-id=${L10N_IDS.problemLabel}></div>
-        <div>
+    return html`<li class="status-alert">
+      <div>
+        <p data-l10n-id=${L10N_IDS.problemLabel}></p>
+        <p>
           <small
             ><a
               href=""
-              @click=${this.#scrollToTargetOnPanel(
-                "#privacy",
-                "securityWarningsGroup"
-              )}
+              @click=${() => this.#openWarningCardAndScroll()}
               data-l10n-id=${L10N_IDS.problemHelperLabel}
             ></a
           ></small>
-        </div>
+        </p>
       </div>
-    </div>`;
+    </li>`;
   }
 
   /**
@@ -166,22 +176,17 @@ export default class SecurityPrivacyCard extends MozLitElement {
     };
     let trackerLabelElement =
       this.trackersBlocked != null
-        ? html`<div
+        ? html`<p
             data-l10n-id=${L10N_IDS.trackersLabel}
             data-l10n-args=${JSON.stringify(trackerData)}
-          ></div>`
-        : html`<div data-l10n-id=${L10N_IDS.trackersPendingLabel}></div>`;
+          ></p>`
+        : html`<p data-l10n-id=${L10N_IDS.trackersPendingLabel}></p>`;
 
     if (this.strictEnabled) {
-      return html`<div class="status-bullet">
-        <img
-          class="check-bullet"
-          src="chrome://global/skin/icons/check-filled.svg"
-          alt="status ok"
-        />
-        <div class="status-label-holder">
+      return html`<li class="status-ok">
+        <div>
           ${trackerLabelElement}
-          <div>
+          <p>
             <small
               data-l10n-id=${L10N_IDS.strictEnabledLabel}
               id="strictEnabled"
@@ -189,18 +194,11 @@ export default class SecurityPrivacyCard extends MozLitElement {
             >
               <a data-l10n-name="strict-tracking-protection" href=""></a
             ></small>
-          </div>
+          </p>
         </div>
-      </div>`;
+      </li>`;
     }
-    return html`<div class="status-bullet">
-      <img
-        class="check-bullet"
-        src="chrome://global/skin/icons/check-filled.svg"
-        alt="status ok"
-      />
-      ${trackerLabelElement}
-    </div>`;
+    return html`<li class="status-ok">${trackerLabelElement}</li>`;
   }
 
   /**
@@ -212,72 +210,52 @@ export default class SecurityPrivacyCard extends MozLitElement {
   buildUpdateElement() {
     switch (this.appUpdateStatus) {
       case lazy.AppUpdater.STATUS.NO_UPDATES_FOUND:
-        return html`<div class="status-bullet">
-          <img
-            class="check-bullet"
-            src="chrome://global/skin/icons/check-filled.svg"
-            alt="status ok"
-          />
-          <div data-l10n-id=${L10N_IDS.upToDateLabel}></div>
-        </div>`;
+        return html`<li class="status-ok">
+          <p data-l10n-id=${L10N_IDS.upToDateLabel}></p>
+        </li>`;
       case lazy.AppUpdater.STATUS.MANUAL_UPDATE:
       case lazy.AppUpdater.STATUS.DOWNLOADING:
       case lazy.AppUpdater.STATUS.DOWNLOAD_AND_INSTALL:
       case lazy.AppUpdater.STATUS.STAGING:
       case lazy.AppUpdater.STATUS.READY_FOR_RESTART:
-        return html`<div class="status-bullet">
-          <img
-            class="alert-bullet"
-            src="chrome://global/skin/icons/warning.svg"
-            alt="status warning"
-          />
-          <div class="status-label-holder">
-            <div data-l10n-id=${L10N_IDS.updateNeededLabel}></div>
-            <div>
+        return html`<li class="status-alert">
+          <div>
+            <p data-l10n-id=${L10N_IDS.updateNeededLabel}></p>
+            <p>
               <small
                 ><span data-l10n-id=${L10N_IDS.updateNeededDescription}></span
               ></small>
-            </div>
+            </p>
             <moz-box-link
               @click=${this.#scrollToTargetOnPanel("#general", "updateApp")}
               data-l10n-id=${L10N_IDS.updateButtonLabel}
             ></moz-box-link>
           </div>
-        </div>`;
+        </li>`;
       case lazy.AppUpdater.STATUS.NEVER_CHECKED:
       case lazy.AppUpdater.STATUS.UNSUPPORTED_SYSTEM:
       case lazy.AppUpdater.STATUS.DOWNLOAD_FAILED:
       case lazy.AppUpdater.STATUS.INTERNAL_ERROR:
       case lazy.AppUpdater.STATUS.CHECKING_FAILED:
-        return html`<div class="status-bullet">
-          <img
-            class="alert-bullet"
-            src="chrome://global/skin/icons/warning.svg"
-            alt="status warning"
-          />
-          <div class="status-label-holder">
-            <div data-l10n-id=${L10N_IDS.updateErrorLabel}></div>
-            <div>
+        return html`<li class="status-alert">
+          <div>
+            <p data-l10n-id=${L10N_IDS.updateErrorLabel}></p>
+            <p>
               <small
                 ><span data-l10n-id=${L10N_IDS.updateNeededDescription}></span
               ></small>
-            </div>
+            </p>
             <moz-box-link
               href="javascript:void(0)"
               @click=${this.#scrollToTargetOnPanel("#general", "updateApp")}
               data-l10n-id=${L10N_IDS.updateButtonLabel}
             ></moz-box-link>
           </div>
-        </div>`;
+        </li>`;
       case lazy.AppUpdater.STATUS.CHECKING:
-        return html`<div class="status-bullet">
-          <img
-            class="throbber-bullet"
-            src="chrome://global/skin/icons/loading.svg"
-            alt="status loading"
-          />
-          <div data-l10n-id=${L10N_IDS.updateCheckingLabel}></div>
-        </div>`;
+        return html`<li class="status-loading">
+          <p data-l10n-id=${L10N_IDS.updateCheckingLabel}></p>
+        </li>`;
       case lazy.AppUpdater.STATUS.NO_UPDATER:
       case lazy.AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY:
       case lazy.AppUpdater.STATUS.OTHER_INSTANCE_HANDLING_UPDATES:
@@ -312,16 +290,19 @@ export default class SecurityPrivacyCard extends MozLitElement {
         href="chrome://browser/content/preferences/widgets/security-privacy-card.css"
       />
       <moz-card aria-labelledby="heading">
-        <div class="status-container">
-          <div class="status-bullet-container">
-            <div
+        <div class="card-contents">
+          <div class="status-text-container">
+            <h3
               id="heading"
               data-l10n-id=${headerL10nId}
               data-l10n-args=${JSON.stringify(headerL10nData)}
-            ></div>
-            ${this.buildIssuesElement()} ${this.buildTrackersElement()}
-            ${this.buildUpdateElement()}
+            ></h3>
+            <ul>
+              ${this.buildIssuesElement()} ${this.buildTrackersElement()}
+              ${this.buildUpdateElement()}
+            </ul>
           </div>
+          ${this.getStatusImage()}
         </div>
       </moz-card>
     `;

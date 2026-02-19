@@ -271,5 +271,4 @@ LOCAL_INCLUDES += [
     "/layout/generic",
     "/layout/style",
     "/layout/svg",
-    "/layout/xul",
 ]

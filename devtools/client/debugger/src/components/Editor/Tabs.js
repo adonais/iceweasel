@@ -28,7 +28,7 @@ import actions from "../../actions/index";
 import Tab from "./Tab";
 import { PaneToggleButton } from "../shared/Button/index";
 import Dropdown from "../shared/Dropdown";
-import AccessibleImage from "../shared/AccessibleImage";
+import DebuggerImage from "../shared/DebuggerImage";
 import CommandBar from "../SecondaryPanes/CommandBar";
 
 const { debounce } = require("resource://devtools/shared/debounce.js");
@@ -141,8 +141,9 @@ class Tabs extends PureComponent {
         onClick,
         title: getFileURL(source, false),
       },
-      React.createElement(AccessibleImage, {
-        className: `dropdown-icon ${this.getIconClass(source)}`,
+      React.createElement(DebuggerImage, {
+        name: this.getIconClass(source),
+        className: "dropdown-icon",
       }),
       span(
         {
@@ -233,8 +234,8 @@ class Tabs extends PureComponent {
       return null;
     }
     const panel = ul(null, hiddenSources.map(this.renderDropdownSource));
-    const icon = React.createElement(AccessibleImage, {
-      className: "more-tabs",
+    const icon = React.createElement(DebuggerImage, {
+      name: "more-tabs",
     });
     return React.createElement(Dropdown, {
       panel,

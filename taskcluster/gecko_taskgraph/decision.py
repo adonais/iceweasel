@@ -26,6 +26,7 @@ from taskgraph.util.yaml import load_yaml
 
 from . import GECKO
 from .actions import render_actions_json
+from .files_changed import get_changed_files
 from .parameters import get_app_version, get_version
 from .util.backstop import ANDROID_PERFTEST_BACKSTOP_INDEX, BACKSTOP_INDEX, is_backstop
 from .util.bugbug import push_schedules
@@ -314,17 +315,9 @@ def get_decision_parameters(graph_config, options):
             GECKO, revision=parameters["head_rev"]
         )
 
-        changed_files_since_base = set(
-            repo.get_changed_files(
-                rev=parameters["head_rev"], base=parameters["base_rev"]
-            )
+        parameters["files_changed"] = sorted(
+            get_changed_files(parameters["head_repository"], parameters["head_rev"])
         )
-        if "try" in parameters["project"] and options["tasks_for"] == "hg-push":
-            parameters["files_changed"] = sorted(
-                set(repo.get_outgoing_files()) | changed_files_since_base
-            )
-        else:
-            parameters["files_changed"] = sorted(changed_files_since_base)
 
     elif parameters["repository_type"] == "git":
         parameters["hg_branch"] = None

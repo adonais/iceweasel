@@ -26,7 +26,7 @@ var {
  * @param [Front|null] parentFront
  *   The parent front. This is only available if the Front being initialized is a child
  *   of a parent front.
- * @constructor
+ * @class
  */
 class Front extends Pool {
   constructor(conn = null, targetFront = null, parentFront = null) {

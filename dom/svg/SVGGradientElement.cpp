@@ -78,7 +78,8 @@ already_AddRefed<DOMSVGAnimatedEnumeration> SVGGradientElement::SpreadMethod() {
 }
 
 already_AddRefed<DOMSVGAnimatedString> SVGGradientElement::Href() {
-  return mStringAttributes[HREF].IsExplicitlySet()
+  return mStringAttributes[HREF].IsExplicitlySet() ||
+                 !mStringAttributes[XLINK_HREF].IsExplicitlySet()
              ? mStringAttributes[HREF].ToDOMAnimatedString(this)
              : mStringAttributes[XLINK_HREF].ToDOMAnimatedString(this);
 }

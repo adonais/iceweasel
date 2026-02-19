@@ -42,7 +42,7 @@ class NoNetworkAccessStartupTests : TestSetup() {
 
         composeTestRule.activityRule.launchActivity(null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
             verifyHomeScreen()
         }
     }
@@ -56,13 +56,13 @@ class NoNetworkAccessStartupTests : TestSetup() {
 
         composeTestRule.activityRule.launchActivity(null)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(url.toUri()) {}
 
         setNetworkEnabled(false)
 
-        browserScreen {
-        }.goToHomescreen(composeTestRule) {
+        browserScreen(composeTestRule) {
+        }.goToHomescreen {
             verifyHomeScreen()
         }
     }
@@ -75,14 +75,14 @@ class NoNetworkAccessStartupTests : TestSetup() {
 
         composeTestRule.activityRule.launchActivity(null)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(url.toUri()) {}
 
         setNetworkEnabled(false)
 
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.refreshPage { }
+        }.clickRefreshButton { }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2240721
@@ -95,12 +95,12 @@ class NoNetworkAccessStartupTests : TestSetup() {
 
         composeTestRule.activityRule.launchActivity(null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openTurnOnSyncMenu {
             tapOnUseEmailToSignIn()
-            browserScreen {
+            browserScreen(composeTestRule) {
                 verifyUrl("firefox.com")
             }
         }

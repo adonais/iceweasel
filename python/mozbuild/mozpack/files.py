@@ -20,8 +20,8 @@ from tempfile import NamedTemporaryFile, mkstemp
 
 from jsmin import JavascriptMinify
 
-import mozbuild.makeutil as makeutil
 import mozpack.path as mozpath
+from mozbuild import makeutil
 from mozbuild.preprocessor import Preprocessor
 from mozbuild.util import FileAvoidWrite, ensure_unicode, memoize
 from mozpack.chrome.manifest import ManifestEntry, ManifestInterfaces
@@ -433,7 +433,7 @@ class HardlinkFile(File):
         assert isinstance(dest, str)
 
         if not hasattr(os, "link"):
-            return super(HardlinkFile, self).copy(dest, skip_if_older=skip_if_older)
+            return super().copy(dest, skip_if_older=skip_if_older)
 
         try:
             path_st = os.stat(self.path)
@@ -463,7 +463,7 @@ class HardlinkFile(File):
             os.link(self.path, dest)
         except OSError:
             # If we can't hard link, fall back to copying
-            return super(HardlinkFile, self).copy(dest, skip_if_older=skip_if_older)
+            return super().copy(dest, skip_if_older=skip_if_older)
         return True
 
 
@@ -939,7 +939,7 @@ class FileFinder(BaseFinder):
         ignore=(),
         ignore_broken_symlinks=False,
         find_dotfiles=False,
-        **kargs
+        **kargs,
     ):
         """
         Create a FileFinder for files under the given base directory.
@@ -998,8 +998,7 @@ class FileFinder(BaseFinder):
                     continue
                 if not self.find_dotfiles:
                     continue
-            for p_, f in self._find(mozpath.join(path, p)):
-                yield p_, f
+            yield from self._find(mozpath.join(path, p))
 
     def get(self, path):
         srcpath = os.path.join(self.base, path)
@@ -1166,7 +1165,7 @@ class MercurialRevisionFinder(BaseFinder):
         if not hglib:
             raise Exception("hglib package not found")
 
-        super(MercurialRevisionFinder, self).__init__(base=repo, **kwargs)
+        super().__init__(base=repo, **kwargs)
 
         self._root = mozpath.normpath(repo).rstrip("/")
         self._recognize_repo_paths = recognize_repo_paths
@@ -1184,13 +1183,11 @@ class MercurialRevisionFinder(BaseFinder):
 
         # Immediately populate the list of files in the repo since nearly every
         # operation requires this list.
-        out = self._client.rawcommand(
-            [
-                b"files",
-                b"--rev",
-                self._rev.encode(),
-            ]
-        )
+        out = self._client.rawcommand([
+            b"files",
+            b"--rev",
+            self._rev.encode(),
+        ])
         for relpath in out.splitlines():
             # Mercurial may use \ as path separator on Windows. So use
             # normpath().

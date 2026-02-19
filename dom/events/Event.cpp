@@ -332,6 +332,19 @@ EventTarget* Event::GetOriginalTarget() const {
   return mEvent->GetOriginalDOMEventTarget();
 }
 
+EventTarget* Event::GetOriginalTarget(CallerType aCallerType) const {
+  if (aCallerType == CallerType::System || nsContentUtils::IsCallerUAWidget()) {
+    return GetOriginalTarget();
+  }
+
+  EventTarget* et = mEvent->GetOriginalDOMEventTarget();
+  nsIContent* content = nsIContent::FromEventTargetOrNull(et);
+  if (!content) {
+    return et;
+  }
+  return content->FindFirstNonChromeOnlyAccessContent();
+}
+
 EventTarget* Event::GetComposedTarget() const {
   EventTarget* et = GetOriginalTarget();
   nsIContent* content = nsIContent::FromEventTargetOrNull(et);

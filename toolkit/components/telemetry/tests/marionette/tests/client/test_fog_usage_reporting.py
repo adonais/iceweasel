@@ -20,16 +20,16 @@ class TestUsageReporting(FOGTestCase):
 
     def disable_usage_reporting(self):
         """Disable usage reporting in the current browser."""
-        self.marionette.instance.profile.set_persistent_preferences(
-            {"datareporting.usage.uploadEnabled": False}
-        )
+        self.marionette.instance.profile.set_persistent_preferences({
+            "datareporting.usage.uploadEnabled": False
+        })
         self.marionette.set_pref("datareporting.usage.uploadEnabled", False)
 
     def enable_usage_reporting(self):
         """Enable usage reporting in the current browser."""
-        self.marionette.instance.profile.set_persistent_preferences(
-            {"datareporting.usage.uploadEnabled": True}
-        )
+        self.marionette.instance.profile.set_persistent_preferences({
+            "datareporting.usage.uploadEnabled": True
+        })
         self.marionette.set_pref("datareporting.usage.uploadEnabled", True)
 
     def test_usage_reporting_independent_from_telemetry(self):
@@ -273,17 +273,17 @@ class TestUsageReporting(FOGTestCase):
         last_pid = self.marionette.process_id
 
         # New profiles should not inherit the general preference.
-        self.marionette.enforce_gecko_prefs(
-            {"datareporting.healthreport.uploadEnabled": False}
-        )
+        self.marionette.enforce_gecko_prefs({
+            "datareporting.healthreport.uploadEnabled": False
+        })
         self.assertIs(healthreportEnabled(), False)
         self.assertIs(usageEnabled(), True)
         self.assertNotEqual(last_pid, self.marionette.process_id)
         last_pid = self.marionette.process_id
 
-        self.marionette.enforce_gecko_prefs(
-            {"datareporting.healthreport.uploadEnabled": True}
-        )
+        self.marionette.enforce_gecko_prefs({
+            "datareporting.healthreport.uploadEnabled": True
+        })
         self.assertIs(healthreportEnabled(), True)
         self.assertIs(usageEnabled(), True)
         self.assertNotEqual(last_pid, self.marionette.process_id)

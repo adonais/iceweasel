@@ -5,6 +5,8 @@
 package org.mozilla.fenix.home.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -15,11 +17,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.semantics
@@ -71,7 +75,8 @@ internal fun MiddleSearchHomepage(
                 }
                 .pointerInput(state.isSearchInProgress) {
                     if (state.isSearchInProgress) {
-                        awaitPointerEventScope {
+                        awaitEachGesture {
+                            awaitFirstDown(false, PointerEventPass.Initial)
                             interactor.onHomeContentFocusedWhileSearchIsActive()
                         }
                     }
@@ -148,7 +153,7 @@ internal fun MiddleSearchHomepage(
 private fun Scrim(onDismiss: () -> Unit) {
     Box(
         modifier = Modifier
-            .background(FirefoxTheme.colors.layerScrim.copy(alpha = 0.75f))
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.75f))
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { onDismiss() })
@@ -162,6 +167,7 @@ private fun MiddleSearchHomepagePreview() {
     FirefoxTheme {
         MiddleSearchHomepage(
             HomepageState.Normal(
+                shouldShowPrivacyNoticeBanner = false,
                 nimbusMessage = null,
                 topSites = FakeHomepagePreview.topSites(),
                 recentTabs = FakeHomepagePreview.recentTabs(),

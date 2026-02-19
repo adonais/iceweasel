@@ -2,15 +2,6 @@
 
 "use strict";
 
-/**
- * @backward-compat { version 146 }
- *
- * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
- * DAPSender does not exist.
- */
-const is146AndUp =
-  Services.vc.compare(AppConstants.MOZ_APP_VERSION, "146.0a1") >= 0;
-
 ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   NewTabActorRegistry: "resource://newtab/lib/NewTabActorRegistry.sys.mjs",
@@ -26,6 +17,10 @@ const { AttributionParent } = ChromeUtils.importESModule(
 
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
+);
+
+const { DAPSender } = ChromeUtils.importESModule(
+  "resource://gre/modules/DAPSender.sys.mjs"
 );
 
 let sandbox;
@@ -74,17 +69,6 @@ async function dispatchAttributionEvent(browser, detail) {
 }
 
 add_setup(async function () {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   // enable gating so registry will register the actor
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -102,16 +86,6 @@ add_setup(async function () {
   });
 
   sandbox = sinon.createSandbox();
-
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Move this back up to the list of imports once 146 hits
-   * release.
-   */
-  const { DAPSender } = ChromeUtils.importESModule(
-    "resource://gre/modules/DAPSender.sys.mjs"
-  );
 
   dapStub = sandbox.stub(DAPSender, "sendDAPMeasurement");
   conversionStub = sandbox.stub(
@@ -153,17 +127,6 @@ async function resetTestState() {
  * from an allowlisted origin.
  */
 add_task(async function test_parent_calls_onAttributionConversion() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
   dapStub.resetHistory();
 
@@ -210,17 +173,6 @@ add_task(async function test_parent_calls_onAttributionConversion() {
  * is not in allowlist.
  */
 add_task(async function test_parent_blocks_non_allowlisted_origin() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   const partnerId = "expedia";
@@ -242,17 +194,6 @@ add_task(async function test_parent_blocks_non_allowlisted_origin() {
  * conversion data (extra keys).
  */
 add_task(async function test_parent_blocks_invalid_conversion_extra_keys() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -276,17 +217,6 @@ add_task(async function test_parent_blocks_invalid_conversion_extra_keys() {
  * is not an object.
  */
 add_task(async function test_parent_blocks_non_object_conversion() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -311,17 +241,6 @@ add_task(async function test_parent_blocks_non_object_conversion() {
  * message.data.detail is missing.
  */
 add_task(async function test_parent_blocks_missing_detail() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -345,17 +264,6 @@ add_task(async function test_parent_blocks_missing_detail() {
  * Test that Remote Settings client uses get() and registers onSync handler.
  */
 add_task(async function test_remote_settings_sync_and_handler() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   const mockClient = {
@@ -390,17 +298,6 @@ add_task(async function test_remote_settings_sync_and_handler() {
  * Test that onSync updates the allowlist when Remote Settings syncs.
  */
 add_task(async function test_onSync_updates_allowlist() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -436,17 +333,6 @@ add_task(async function test_onSync_updates_allowlist() {
  * Test that didDestroy removes the onSync event listener.
  */
 add_task(async function test_didDestroy_removes_listener() {
-  /**
-   * @backward-compat { version 146 }
-   *
-   * Bug 2000073 - Fix perma mochitest-browser failure on release 145, where
-   * DAPSender does not exist.
-   */
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   const mockClient = {

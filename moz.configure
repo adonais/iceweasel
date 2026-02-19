@@ -131,8 +131,7 @@ set_define("FMT_USE_LOCALE", 0)
 option(
     "--enable-debug",
     nargs="?",
-    help="Enable building with developer debug info "
-    "(using the given compiler flags)",
+    help="Enable building with developer debug info (using the given compiler flags)",
 )
 
 
@@ -603,18 +602,6 @@ set_config("MOZ_UI_LOCALE", moz_ui_locale)
 include(
     "build/moz.configure/clang_plugin.configure", when="--enable-compile-environment"
 )
-
-
-# Awk detection
-# ==============================================================
-awk = check_prog("AWK", ("gawk", "mawk", "nawk", "awk"), paths=prefer_mozillabuild_path)
-
-# Until the AWK variable is not necessary in old-configure
-
-
-@depends(awk)
-def awk_for_old_configure(value):
-    return value
 
 
 # GNU make detection

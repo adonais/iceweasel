@@ -65,6 +65,11 @@ for (let [name, enabled, test] of releasedFeaturesMaybeDisabledAnyway) {
 
 let releasedFeatures = [
   ['threads', wasmThreadsEnabled(), `(module (memory 1 1 shared))`],
+  ['branch-hinting', wasmBranchHintingEnabled(),
+    `(func
+      i32.const 0
+      (@metadata.code.branch_hint "\\00") if
+    end)`],
 ];
 
 for (let [name, enabled, test, options] of releasedFeatures) {

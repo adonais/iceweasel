@@ -29,12 +29,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -237,7 +239,7 @@ private fun EditorContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD)
-                .semantics { contentType = ContentType.CreditCardNumber }
+                .semantics { contentDataType = ContentDataType.None }
                 .focusRequester(focusRequester),
             errorText = stringResource(R.string.credit_cards_number_validation_error_message_2),
             label = stringResource(R.string.credit_cards_card_number),
@@ -254,7 +256,7 @@ private fun EditorContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(CreditCardEditorTestTags.NAME_ON_CARD_FIELD)
-                .semantics { contentType = ContentType.PersonFullName },
+                .semantics { contentDataType = ContentDataType.None },
             errorText = stringResource(R.string.credit_cards_name_on_card_validation_error_message_2),
             label = stringResource(R.string.credit_cards_name_on_card),
             isError = state.showNameOnCardError,

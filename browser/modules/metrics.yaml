@@ -1338,6 +1338,21 @@ browser.ui.interaction:
     expires: never
     telemetry_mirror: BROWSER_UI_INTERACTION_PREFERENCES_PANECONTAINERS
 
+  preferences_pane_ai:
+    type: labeled_counter
+    description: >
+      Records the items interacted with in the AI Controls section
+      of preferences. See https://firefox-source-
+      docs.mozilla.org/browser/BrowserUsageTelemetry.html
+    bugs:
+      - https://bugzil.la/2012800
+    data_reviews:
+      - https://bugzil.la/2012800
+    notification_emails:
+      - mstriemer@mozilla.com
+      - sopsal@mozilla.com
+    expires: never
+
   preferences_pane_experimental:
     type: labeled_counter
     description: >

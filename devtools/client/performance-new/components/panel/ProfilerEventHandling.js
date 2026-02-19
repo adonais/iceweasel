@@ -56,7 +56,7 @@ const selectors = require("resource://devtools/client/performance-new/store/sele
  * suddenly becomes unavailable, it needs to react to those changes, and update the
  * recordingState in the store.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class ProfilerEventHandling extends PureComponent {
   componentDidMount() {

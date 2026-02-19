@@ -187,27 +187,25 @@ class ParseError(Exception):
 @functools.lru_cache(maxsize=None)  # noqa: UP033
 def scan(text):
     if not ExpressionParser.scanner:
-        ExpressionParser.scanner = re.Scanner(
-            [
-                # Note: keep these in sync with the class docstring above.
-                (r"true|false", bool_token),
-                (r"[a-zA-Z_]\w*", ident_token),
-                (r"[0-9]+", int_token),
-                (r'("[^"]*")|(\'[^\']*\')', string_token),
-                (r"==", eq_op_token()),
-                (r"!=", neq_op_token()),
-                (r"<=", le_op_token()),
-                (r">=", ge_op_token()),
-                (r"<", lt_op_token()),
-                (r">", gt_op_token()),
-                (r"\|\|", or_op_token()),
-                (r"!", not_op_token()),
-                (r"&&", and_op_token()),
-                (r"\(", lparen_token()),
-                (r"\)", rparen_token()),
-                (r"\s+", None),  # skip whitespace
-            ]
-        )
+        ExpressionParser.scanner = re.Scanner([
+            # Note: keep these in sync with the class docstring above.
+            (r"true|false", bool_token),
+            (r"[a-zA-Z_]\w*", ident_token),
+            (r"[0-9]+", int_token),
+            (r'("[^"]*")|(\'[^\']*\')', string_token),
+            (r"==", eq_op_token()),
+            (r"!=", neq_op_token()),
+            (r"<=", le_op_token()),
+            (r">=", ge_op_token()),
+            (r"<", lt_op_token()),
+            (r">", gt_op_token()),
+            (r"\|\|", or_op_token()),
+            (r"!", not_op_token()),
+            (r"&&", and_op_token()),
+            (r"\(", lparen_token()),
+            (r"\)", rparen_token()),
+            (r"\s+", None),  # skip whitespace
+        ])
     tokens, _ = ExpressionParser.scanner.scan(text)
     return tokens
 
@@ -261,8 +259,7 @@ class ExpressionParser:
         """
         Lex the input text into tokens and yield them in sequence.
         """
-        for t in scan(self.text):
-            yield t
+        yield from scan(self.text)
         yield end_token()
 
     def value(self, ident):

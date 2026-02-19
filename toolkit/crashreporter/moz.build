@@ -84,6 +84,7 @@ if CONFIG["MOZ_CRASHREPORTER"]:
         "crash_helper",
         "crash_helper_client",
         "crash_helper_server",
+        "crashping",
         "mozannotation_client",
     ]
 

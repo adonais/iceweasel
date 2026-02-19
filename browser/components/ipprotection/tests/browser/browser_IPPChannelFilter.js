@@ -4,7 +4,10 @@
 "use strict";
 
 const { IPPChannelFilter } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPChannelFilter.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs"
+);
+const { IPPExceptionsManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 
 add_task(async function test_createConnection_and_proxy() {
@@ -87,6 +90,43 @@ add_task(async function test_essential_exclusion() {
     );
     await BrowserTestUtils.removeTab(tab);
     filter.stop();
+  });
+});
+
+add_task(async function test_exclusion_manager() {
+  const server = new HttpServer();
+  server.registerPathHandler("/", (request, response) => {
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    response.setHeader("Content-Type", "text/plain");
+    response.write("Hello World");
+  });
+  server.start(-1);
+
+  await withProxyServer(async proxyInfo => {
+    // Create the IPP connection filter
+    const filter = IPPChannelFilter.create();
+    // Add a site exclusion using IPPExceptionsManager
+    let principal =
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        "http://localhost:" + server.identity.primaryPort
+      );
+    IPPExceptionsManager.addExclusion(principal);
+
+    filter.initialize("", proxyInfo.server);
+    proxyInfo.gotConnection.then(() => {
+      Assert.ok(false, "Proxy connection should not be made for excluded URL");
+    });
+    filter.start();
+
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      "http://localhost:" + server.identity.primaryPort
+    );
+    await BrowserTestUtils.removeTab(tab);
+    filter.stop();
+
+    IPPExceptionsManager.removeExclusion(principal);
   });
 });
 

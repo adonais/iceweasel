@@ -9,8 +9,6 @@
 #ifndef gc_Allocator_h
 #define gc_Allocator_h
 
-#include <stdint.h>
-
 #include "gc/AllocKind.h"
 #include "gc/GCEnum.h"
 #include "js/HeapAPI.h"

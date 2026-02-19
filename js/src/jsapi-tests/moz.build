@@ -108,6 +108,7 @@ UNIFIED_SOURCES += [
     "testParserAtom.cpp",
     "testPersistentRooted.cpp",
     "testPreserveJitCode.cpp",
+    "testPrinter.cpp",
     "testPrintf.cpp",
     "testPrivateGCThingValue.cpp",
     "testProfileStrings.cpp",

@@ -3,6 +3,8 @@ support-files = [
   "head.js"
 ]
 
+["browser_drag_splitview.js"]
+
 ["browser_drag_to_pin.js"]
 
 ["browser_move_unpinned_not_overflowing.js"]

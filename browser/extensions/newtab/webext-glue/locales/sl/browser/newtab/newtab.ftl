@@ -668,6 +668,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nov seznam
+newtab-widget-section-title = Pripomočki
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Skrij pripomočke
+    .aria-label = Skrij vse pripomočke
+newtab-widget-section-maximize =
+    .title = Razširi pripomočke
+    .aria-label = Povečaj vse pripomočke na polno velikost
+newtab-widget-section-minimize =
+    .title = Pomanjšaj pripomočke
+    .aria-label = Skrči vse pripomočke
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -690,8 +701,6 @@ newtab-widget-timer-menu-notifications = Izklopi obvestila
 newtab-widget-timer-menu-notifications-on = Vklopi obvestila
 newtab-widget-timer-menu-hide = Skrij odštevalnik
 newtab-widget-timer-menu-learn-more = Več o tem
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Podrsajte za več
 newtab-widget-message-title = Ostanite osredotočeni s seznami in vgrajenim časovnikom
 newtab-promo-card-title = Podprite { -brand-product-name(sklon: "tozilnik") }
 newtab-promo-card-body = Naši sponzorji podpirajo naše poslanstvo ustvarjanja boljšega spleta

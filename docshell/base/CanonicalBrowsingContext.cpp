@@ -67,6 +67,8 @@
 #include "nsIXPConnect.h"
 #include "nsImportModule.h"
 #include "UnitTransforms.h"
+#include "nsIOpenWindowInfo.h"
+#include "nsOpenWindowInfo.h"
 
 using namespace mozilla::ipc;
 
@@ -2368,6 +2370,8 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
 
   nsCOMPtr<nsIPrincipal> initialPrincipal =
       NullPrincipal::Create(target->OriginAttributesRef());
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  openWindowInfo->mPrincipalToInheritForAboutBlank = initialPrincipal;
   WindowGlobalInit windowInit =
       WindowGlobalActor::AboutBlankInitializer(target, initialPrincipal);
 
@@ -3748,6 +3752,100 @@ void CanonicalBrowsingContext::MaybeReconstructActiveEntryList() {
   }
 }
 
+// https://html.spec.whatwg.org/#concept-internal-location-ancestor-origin-objects-list
+// Creates the internal ancestor origins list (we store it on a canonical
+// browsing context). `aThisDocumentPrincipal` represents the origin for the
+// document who we are computing the list for, and
+// `aFrameReferrerPolicyAttribute` is the referrer policy attribute on the frame
+// that hosts the document.
+// For normal navigations `aFrameReferrerPolicyAttribute` will have been
+// snapshotted at a spec-appropriate time and passed in here, whereas
+// about:blank can read the attribute directly without the attribute having time
+// to change which makes the timing consistent with "normal" documents and for
+// about:blank this happens in `ContentParent::RecvUpdateAncestorOriginsList`.
+void CanonicalBrowsingContext::CreateRedactedAncestorOriginsList(
+    nsIPrincipal* aThisDocumentPrincipal,
+    ReferrerPolicy aFrameReferrerPolicyAttribute) {
+  MOZ_DIAGNOSTIC_ASSERT(aThisDocumentPrincipal);
+  nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
+  // 4. if parentDoc is null, then return output
+  CanonicalBrowsingContext* parent = GetParent();
+  if (!parent) {
+    mPossiblyRedactedAncestorOriginsList = std::move(ancestorPrincipals);
+    return;
+  }
+
+  // 7. Let ancestorOrigins be parentLocation's internal ancestor origin objects
+  // list.
+  const Span<const nsCOMPtr<nsIPrincipal>> parentAncestorOriginsList =
+      parent->GetPossiblyRedactedAncestorOriginsList();
+
+  // 8. Let container be innerDoc's node navigable's container.
+  WindowGlobalParent* ancestorWGP = GetParentWindowContext();
+
+  // 10. If container is an iframe element, then set referrerPolicy to
+  // container's referrerpolicy attribute's state's corresponding keyword.
+  // Note: becomes the empty string if there is none
+  auto referrerPolicy = aFrameReferrerPolicyAttribute;
+
+  // 11. Let masked be false.
+  bool masked = false;
+
+  if (referrerPolicy == ReferrerPolicy::No_referrer) {
+    // 12. If referrerPolicy is "no-referrer", then set masked to true.
+    masked = true;
+  } else if (referrerPolicy == ReferrerPolicy::Same_origin &&
+             !ancestorWGP->DocumentPrincipal()->Equals(
+                 aThisDocumentPrincipal)) {
+    // 13. Otherwise, if referrerPolicy is "same-origin" and parentDoc's
+    // origin is not same origin with innerDoc's origin, then set masked to
+    // true.
+    masked = true;
+  }
+
+  if (masked) {
+    // 14. If masked is true, then append a new opaque origin to output.
+    ancestorPrincipals.AppendElement(nullptr);
+  } else {
+    // 15. Otherwise, append parentDoc's origin to output.
+    auto* principal = ancestorWGP->DocumentPrincipal();
+    // when we serialize a "null principal", we leak information. Represent
+    // them as actual nullptr instead.
+    ancestorPrincipals.AppendElement(
+        principal->GetIsNullPrincipal() ? nullptr : principal);
+  }
+
+  // 16. For each ancestorOrigin of ancestorOrigins:
+  for (const auto& ancestorOrigin : parentAncestorOriginsList) {
+    // 16.1 if masked is true
+    if (masked && ancestorOrigin &&
+        ancestorOrigin->Equals(ancestorWGP->DocumentPrincipal())) {
+      //  16.1.1. If ancestorOrigin is same origin with parentDoc's origin, then
+      //  append a new opaque origin to output.
+      ancestorPrincipals.AppendElement(nullptr);
+    } else {
+      // 16.1.2. Otherwise, append ancestorOrigin to output and set masked to
+      // false. or 16.2. Otherwise, append ancestorOrigin to output.
+      ancestorPrincipals.AppendElement(ancestorOrigin);
+      masked = false;
+    }
+  }
+
+  // 17. Return output.
+  // Only we don't return it. We're in the parent process.
+  mPossiblyRedactedAncestorOriginsList = std::move(ancestorPrincipals);
+}
+
+Span<const nsCOMPtr<nsIPrincipal>>
+CanonicalBrowsingContext::GetPossiblyRedactedAncestorOriginsList() const {
+  return mPossiblyRedactedAncestorOriginsList;
+}
+
+void CanonicalBrowsingContext::SetPossiblyRedactedAncestorOriginsList(
+    nsTArray<nsCOMPtr<nsIPrincipal>> aAncestorOriginsList) {
+  mPossiblyRedactedAncestorOriginsList = std::move(aAncestorOriginsList);
+}
+
 EntryList* CanonicalBrowsingContext::GetActiveEntries() {
   if (!mActiveEntryList) {
     auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
@@ -3756,6 +3854,11 @@ EntryList* CanonicalBrowsingContext::GetActiveEntries() {
     }
   }
   return mActiveEntryList;
+}
+
+void CanonicalBrowsingContext::SetEmbedderFrameReferrerPolicy(
+    ReferrerPolicy aPolicy) {
+  mEmbedderFrameReferrerPolicy = aPolicy;
 }
 
 already_AddRefed<net::DocumentLoadListener>

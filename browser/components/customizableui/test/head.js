@@ -386,21 +386,6 @@ function waitFor(aTimeout = 100) {
 }
 
 /**
- * Starts a load in an existing tab and waits for it to finish (via some event).
- *
- * @param aTab       The tab to load into.
- * @param aUrl       The url to load.
- * @param aEventType The load event type to wait for.  Defaults to "load".
- * @return {Promise} resolved when the event is handled.
- */
-function promiseTabLoadEvent(aTab, aURL) {
-  let browser = aTab.linkedBrowser;
-
-  BrowserTestUtils.startLoadingURIString(browser, aURL);
-  return BrowserTestUtils.browserLoaded(browser);
-}
-
-/**
  * Wait for an attribute on a node to change
  *
  * @param aNode      Node on which the mutation is expected

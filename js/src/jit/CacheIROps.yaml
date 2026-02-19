@@ -248,6 +248,16 @@
     obj: ObjId
     shapes: ObjectField
 
+- name: GuardMultipleShapesToOffset
+  shared: true
+  transpile: true
+  cost_estimate: 2
+  custom_writer: true
+  args:
+    obj: ObjId
+    shapes: ObjectField
+    result: Int32Id
+
 - name: GuardProto
   shared: false
   transpile: true
@@ -796,6 +806,32 @@
     obj: ObjId
     offset: RawInt32Field
 
+- name: LoadFixedSlotFromOffsetResult
+  shared: true
+  transpile: true
+  cost_estimate: 2
+  args:
+    obj: ObjId
+    offset: Int32Id
+
+- name: StoreFixedSlotFromOffset
+  shared: true
+  transpile: true
+  cost_estimate: 6
+  args:
+    obj: ObjId
+    offset: Int32Id
+    rhs: ValId
+
+- name: StoreDynamicSlotFromOffset
+  shared: true
+  transpile: true
+  cost_estimate: 6
+  args:
+    obj: ObjId
+    offset: Int32Id
+    rhs: ValId
+
 - name: LoadDynamicSlot
   shared: true
   transpile: true
@@ -804,6 +840,14 @@
     result: ValId
     obj: ObjId
     slot: RawInt32Field
+
+- name: LoadDynamicSlotFromOffsetResult
+  shared: true
+  transpile: true
+  cost_estimate: 2
+  args:
+    obj: ObjId
+    offset: Int32Id
 
 - name: GuardNoAllocationMetadataBuilder
   shared: true
@@ -2020,7 +2064,7 @@
     receiver: ObjId
     callee: ObjId
     rhs: ValId
-    icScript: RawPointerField
+    icScript: ICScriptField
     sameRealm: BoolImm
     nargsAndFlags: RawInt32Field
 
@@ -2213,7 +2257,7 @@
   args:
     callee: ObjId
     argc: Int32Id
-    icScript: RawPointerField
+    icScript: ICScriptField
     flags: CallFlagsImm
     argcFixed: UInt32Imm
 
@@ -2656,7 +2700,7 @@
   args:
     receiver: ValId
     callee: ObjId
-    icScript: RawPointerField
+    icScript: ICScriptField
     sameRealm: BoolImm
     nargsAndFlags: RawInt32Field
 
@@ -3799,7 +3843,6 @@
   args:
     iter: ObjId
     callee: ObjId
-    kind: CompletionKindImm
     targetNargs: UInt32Imm
 
 - name: CallPrintString

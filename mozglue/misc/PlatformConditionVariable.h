@@ -7,8 +7,6 @@
 #ifndef mozilla_ConditionVariable_h
 #define mozilla_ConditionVariable_h
 
-#include <stdint.h>
-
 #include "mozilla/PlatformMutex.h"
 #include "mozilla/TimeStamp.h"
 #if !defined(XP_WIN) && !defined(__wasi__)

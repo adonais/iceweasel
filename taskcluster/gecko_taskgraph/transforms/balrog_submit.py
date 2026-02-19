@@ -14,27 +14,25 @@ from voluptuous import Optional, Required
 from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 
-balrog_description_schema = Schema(
-    {
-        # unique label to describe this balrog task, defaults to balrog-{dep.label}
-        Required("label"): str,
-        Optional(
-            "update-no-wnp",
-            description="Whether the parallel `-No-WNP` blob should be updated as well.",
-        ): optionally_keyed_by("release-type", bool),
-        # treeherder is allowed here to override any defaults we use for beetmover.  See
-        # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
-        # below transforms for defaults of various values.
-        Optional("treeherder"): task_description_schema["treeherder"],
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("task-from"): task_description_schema["task-from"],
-        # Shipping product / phase
-        Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+balrog_description_schema = Schema({
+    # unique label to describe this balrog task, defaults to balrog-{dep.label}
+    Required("label"): str,
+    Optional(
+        "update-no-wnp",
+        description="Whether the parallel `-No-WNP` blob should be updated as well.",
+    ): optionally_keyed_by("release-type", bool),
+    # treeherder is allowed here to override any defaults we use for beetmover.  See
+    # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
+    # below transforms for defaults of various values.
+    Optional("treeherder"): task_description_schema["treeherder"],
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("task-from"): task_description_schema["task-from"],
+    # Shipping product / phase
+    Optional("shipping-product"): task_description_schema["shipping-product"],
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 transforms = TransformSequence()

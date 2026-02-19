@@ -99,7 +99,7 @@ class ParentProcessDocumentEventWatcher {
       // Ignore if we are still on the initial document,
       // as that's the navigation from it (about:blank) to the actual first location.
       // The target isn't created yet.
-      if (browsingContext.currentWindowGlobal.isInitialDocument) {
+      if (browsingContext.currentWindowGlobal.isUncommittedInitialDocument) {
         return;
       }
 

@@ -46,9 +46,13 @@ def test_symbols_path_url(check_for_crashes, minidump_files):
         urlhandlers=[{"method": "GET", "path": "/symbols", "function": get_symbols}],
     )
     httpd.start()
-    symbol_url = urlunsplit(
-        ("http", "%s:%d" % httpd.httpd.server_address, "/symbols", "", "")
-    )
+    symbol_url = urlunsplit((
+        "http",
+        "%s:%d" % httpd.httpd.server_address,
+        "/symbols",
+        "",
+        "",
+    ))
 
     assert 1 == check_for_crashes(symbols_path=symbol_url)
     assert data["retrieved"]
@@ -83,9 +87,13 @@ def test_symbols_retry(check_for_crashes, minidump_files):
         urlhandlers=[{"method": "GET", "path": "/symbols", "function": get_symbols}],
     )
     httpd.start()
-    symbol_url = urlunsplit(
-        ("http", "%s:%d" % httpd.httpd.server_address, "/symbols", "", "")
-    )
+    symbol_url = urlunsplit((
+        "http",
+        "%s:%d" % httpd.httpd.server_address,
+        "/symbols",
+        "",
+        "",
+    ))
 
     assert 1 == check_for_crashes(symbols_path=symbol_url)
     assert data["retrieved"]

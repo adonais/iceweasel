@@ -66,7 +66,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   typedef mozilla::layers::KnowsCompositor KnowsCompositor;
 
  public:
-  FFmpegVideoDecoder(FFmpegLibWrapper* aLib, const VideoInfo& aConfig,
+  FFmpegVideoDecoder(const FFmpegLibWrapper* aLib, const VideoInfo& aConfig,
                      KnowsCompositor* aAllocator,
                      ImageContainer* aImageContainer, bool aLowLatency,
                      bool aDisableHardwareDecoding, bool a8BitOutput,
@@ -99,6 +99,11 @@ class FFmpegVideoDecoder<LIBAV_VER>
                                         : ConversionRequired::kNeedNone;
 #endif
   }
+
+#ifdef MOZ_WIDGET_ANDROID
+  Maybe<MediaDataDecoder::PropertyValue> GetDecodeProperty(
+      MediaDataDecoder::PropertyName aName) const override;
+#endif
 
   static AVCodecID GetCodecId(const nsACString& aMimeType);
 
@@ -157,11 +162,13 @@ class FFmpegVideoDecoder<LIBAV_VER>
 #endif
 
   RefPtr<KnowsCompositor> mImageAllocator;
+  RefPtr<ImageContainer> mImageContainer;
+  VideoInfo mInfo;
 
 #ifdef MOZ_USE_HWDECODE
  public:
   static AVCodec* FindVideoHardwareAVCodec(
-      FFmpegLibWrapper* aLib, AVCodecID aCodec,
+      const FFmpegLibWrapper* aLib, AVCodecID aCodec,
       AVHWDeviceType aDeviceType = AV_HWDEVICE_TYPE_NONE);
 
  private:
@@ -234,9 +241,6 @@ class FFmpegVideoDecoder<LIBAV_VER>
   UniquePtr<VideoFramePool<LIBAV_VER>> mVideoFramePool;
   static nsTArray<AVCodecID> mAcceleratedFormats;
 #endif
-
-  RefPtr<ImageContainer> mImageContainer;
-  VideoInfo mInfo;
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
   class DecodeStats {

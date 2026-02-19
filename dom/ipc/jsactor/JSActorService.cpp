@@ -338,4 +338,19 @@ JSActorService::GetJSWindowActorProtocol(const nsACString& aName) {
   return mWindowActorDescriptors.Get(aName);
 }
 
+bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
+  if (mRemoteTypes.IsEmpty()) {
+    return true;
+  }
+
+  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
+  for (auto& remoteType : mRemoteTypes) {
+    // TODO: Maybe this should use glob-style matching instead. See bug 2006165.
+    if (StringBeginsWith(remoteTypePrefix, remoteType)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace mozilla::dom

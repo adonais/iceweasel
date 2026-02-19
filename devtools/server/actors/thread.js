@@ -2366,16 +2366,16 @@ exports.ThreadActor = ThreadActor;
  *
  * PauseActors exist for the lifetime of a given debuggee pause.  Used to
  * scope pause-lifetime grips.
- *
- * @param {Pool} pool: The actor pool created for this pause.
  */
-function PauseActor(pool) {
-  this.pool = pool;
+class PauseActor {
+  /**
+   * @param {Pool} pool: The actor pool created for this pause.
+   */
+  constructor(pool) {
+    this.pool = pool;
+  }
+  typeName = "pause";
 }
-
-PauseActor.prototype = {
-  typeName: "pause",
-};
 
 // Utility functions.
 

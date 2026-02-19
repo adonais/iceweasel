@@ -18,8 +18,7 @@ const TEST_PAGE_URL =
  *   The keys are "enlarge", "reduce" and "reset" for readability,
  *   and internally this function maps those keys to the appropriate
  *   commands.
- * @returns Promise
- * @resolves undefined
+ * @returns {Promise<void>}
  */
 async function waitForCommandEnabledState(expectedState) {
   const COMMAND_MAP = {

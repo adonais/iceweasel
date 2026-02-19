@@ -185,8 +185,6 @@ class nsTableWrapperFrame : public nsContainerFrame {
   // having "physical" names.)
   MaybeCaptionSide GetCaptionSide() const;
 
-  mozilla::StyleVerticalAlignKeyword GetCaptionVerticalAlign() const;
-
   nscoord ComputeFinalBSize(const mozilla::LogicalSize& aInnerSize,
                             const mozilla::LogicalSize& aCaptionSize,
                             const mozilla::LogicalMargin& aCaptionMargin,

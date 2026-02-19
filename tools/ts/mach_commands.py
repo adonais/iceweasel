@@ -160,9 +160,11 @@ def subs(ctx):
 
 
 def tsc(ctx, *args):
-    return ctx._sub_mach(
-        ["node", os.path.join("node_modules", "typescript", "bin", "tsc"), *args]
-    )
+    return ctx._sub_mach([
+        "node",
+        os.path.join("node_modules", "typescript", "bin", "tsc"),
+        *args,
+    ])
 
 
 def node(ctx, script, *args):
@@ -174,8 +176,9 @@ def node(ctx, script, *args):
 def maybe_setup(ctx):
     sys.path.append(mozpath.join(ctx.topsrcdir, "tools", "lint", "eslint"))
     import setup_helper
+    from mozbuild.nodeutil import check_node_executables_valid
 
-    if not setup_helper.check_node_executables_valid():
+    if not check_node_executables_valid():
         return 1
 
     setup_helper.eslint_maybe_setup(package_name="TypeScript")

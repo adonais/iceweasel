@@ -80,7 +80,7 @@ class EnhancedTrackingProtectionSettingsTest : TestSetup() {
         val trackingPage = webServer.getEnhancedTrackingProtectionAsset("adsTrackers")
 
         searchScreen {
-        }.loadPage(genericPage.url.toString()) {
+        }.loadPage(genericPage.url) {
             // loading a generic page to allow GV to fully load on first run
             verifyPageContent(genericPage.content)
         }.openMainMenu {

@@ -12,8 +12,8 @@
 #pragma warning(pop)
 
 #include "Authenticode.h"
-#include "BaseProfiler.h"
 #include "nsWindowsDllInterceptor.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/StackWalk_windows.h"
 #include "mozilla/TimeStamp.h"

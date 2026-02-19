@@ -37,31 +37,6 @@ add_task(async function test_preferences_visibility() {
   });
 
   await SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.sanitizeOnShutdown", true]],
-  });
-
-  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let settings = browser.contentDocument.querySelector("backup-settings");
-
-    Assert.ok(
-      !settings.restoreSectionEl && !settings.archiveSectionEl,
-      "Backup section is not available when sanitizeOnShutdown is enabled"
-    );
-  });
-
-  await SpecialPowers.popPrefEnv();
-
-  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let settings = browser.contentDocument.querySelector("backup-settings");
-
-    Assert.ok(
-      BrowserTestUtils.isVisible(settings.restoreSectionEl) &&
-        BrowserTestUtils.isVisible(settings.archiveSectionEl),
-      "Backup section is visible now"
-    );
-  });
-
-  await SpecialPowers.pushPrefEnv({
     set: [[BACKUP_ARCHIVE_ENABLED_PREF, false]],
   });
 
@@ -71,7 +46,7 @@ add_task(async function test_preferences_visibility() {
     Assert.ok(
       BrowserTestUtils.isVisible(settings.restoreSectionEl) &&
         !settings.archiveSectionEl,
-      "Backup section is still visible since restore is enabled"
+      "Backup section is visible since restore is enabled"
     );
   });
 

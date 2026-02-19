@@ -1022,47 +1022,65 @@ set_define("ENABLE_WASM_MEMORY_CONTROL", wasm_memory_control)
 # ===========================
 
 
-@depends(milestone.is_nightly)
-def default_wasm_branch_hinting(is_nightly):
-    if is_nightly:
+option(
+    "--disable-wasm-branch-hinting",
+    default=True,
+    help="{Enable|Disable} WebAssembly branch hinting",
+)
+
+set_config(
+    "ENABLE_WASM_BRANCH_HINTING",
+    depends_if("--enable-wasm-branch-hinting")(lambda x: True),
+)
+set_define(
+    "ENABLE_WASM_BRANCH_HINTING",
+    depends_if("--enable-wasm-branch-hinting")(lambda x: True),
+)
+
+
+# Support for WebAssembly Custom Page Sizes
+# =====================================================
+
+
+@depends(milestone.is_nightly, "--enable-simulator", target)
+def default_wasm_custom_page_sizes(is_nightly, simulator, target):
+    if simulator and (simulator[0] != "arm64"):
+        return
+
+    if is_nightly and target.cpu in ("x86_64", "x86", "aarch64"):
         return True
 
 
 option(
-    "--enable-wasm-branch-hinting",
-    default=default_wasm_branch_hinting,
-    help="{Enable|Disable} WebAssembly Branch hints",
+    "--enable-wasm-custom-page-sizes",
+    default=default_wasm_custom_page_sizes,
+    help="{Enable|Disable} WebAssembly Custom Page Sizes",
 )
 
 
-@depends("--enable-wasm-branch-hinting", "--wasm-no-experimental")
-def wasm_branch_hinting(value, no_experimental):
+@depends(
+    "--enable-wasm-custom-page-sizes",
+    "--enable-simulator",
+    target,
+    "--wasm-no-experimental",
+)
+def wasm_custom_page_sizes(value, simulator, target, no_experimental):
     if no_experimental or not value:
         return
 
-    return True
+    if simulator and (simulator[0] != "arm64"):
+        return
+
+    if target.cpu in ("x86_64", "x86", "aarch64"):
+        return True
+
+    die(
+        "--enable-wasm-custom-page-sizes only possible when targeting the x86_64/x86/arm64 jits"
+    )
 
 
-set_config("ENABLE_WASM_BRANCH_HINTING", wasm_branch_hinting)
-set_define("ENABLE_WASM_BRANCH_HINTING", wasm_branch_hinting)
-
-
-# Enable static checking using sixgill
-# ====================================
-
-option("--with-sixgill", nargs=1, help="Enable static checking of code using sixgill")
-
-
-@depends_if("--with-sixgill")
-@imports("os")
-def sixgill(value):
-    for f in ("bin/xdbfind", "gcc/xgill.so", "scripts/wrap_gcc/g++"):
-        if not os.path.exists(os.path.join(value[0], f)):
-            die("The sixgill plugin and binaries are not at the specified path")
-    return value[0]
-
-
-set_config("SIXGILL_PATH", sixgill)
+set_config("ENABLE_WASM_CUSTOM_PAGE_SIZES", wasm_custom_page_sizes)
+set_define("ENABLE_WASM_CUSTOM_PAGE_SIZES", wasm_custom_page_sizes)
 
 
 # Support for readline
@@ -1313,7 +1331,7 @@ with only_when(compile_environment):
     configured_moz_optimize_flags,
     when="--enable-compile-environment",
 )
-@imports(_from="mozbuild.shellutil", _import="split")
+@imports(_from="mozshellutil", _import="split")
 def moz_js_optimize_flags(target, compiler, configured_moz_optimize_flags):
     if configured_moz_optimize_flags:
         return configured_moz_optimize_flags
@@ -1398,7 +1416,6 @@ with only_when(compile_environment & depends(target.os)(lambda os: os != "WINNT"
     set_define("HAVE_GETC_UNLOCKED", check_symbol("getc_unlocked"))
     set_define("HAVE_PTHREAD_GETNAME_NP", check_symbol("pthread_getname_np"))
     set_define("HAVE_PTHREAD_GET_NAME_NP", check_symbol("pthread_get_name_np"))
-    set_define("HAVE_STRERROR", check_symbol("strerror"))
 
     set_config(
         "HAVE_LANGINFO_CODESET",

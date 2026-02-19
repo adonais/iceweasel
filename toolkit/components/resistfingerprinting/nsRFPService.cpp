@@ -44,6 +44,8 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanvasRenderingContextHelper.h"
+#include "mozilla/dom/CanvasRenderingContext2D.h"
+#include "mozilla/dom/CanvasUtils.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -51,9 +53,9 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/MediaDeviceInfoBinding.h"
 #include "mozilla/dom/quota/QuotaManager.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/XorShift128PlusRNG.h"
-#include "mozilla/dom/CanvasUtils.h"
 
 #include "nsAboutProtocolUtils.h"
 #include "nsBaseHashtable.h"
@@ -144,7 +146,7 @@ static constexpr uint32_t kVideoDroppedRatio = 1;
 #  define DESKTOP_DEFAULT(name) RFPTarget::name,
 #endif
 
-MOZ_CONSTINIT const RFPTargetSet kDefaultFingerprintingProtectionsBase = {
+constinit const RFPTargetSet kDefaultFingerprintingProtectionsBase = {
 #include "RFPTargetsDefaultBaseline.inc"
 };
 
@@ -155,8 +157,6 @@ MOZ_RUNINIT const RFPTargetSet kDefaultFingerprintingProtections = {
 #undef ANDROID_DEFAULT
 #undef DESKTOP_DEFAULT
 // NOLINTEND(bugprone-macro-parentheses)
-
-static constexpr uint32_t kSuspiciousFingerprintingActivityThreshold = 1;
 
 // ============================================================================
 // ============================================================================
@@ -171,9 +171,9 @@ static inline StaticAutoPtr<nsTArray<nsCString>> sAllowedFonts;
 
 // Actually enabled fingerprinting protections.
 static StaticMutex sEnabledFingerprintingProtectionsMutex;
-MOZ_CONSTINIT static RFPTargetSet sEnabledFingerprintingProtectionsBase
+constinit static RFPTargetSet sEnabledFingerprintingProtectionsBase
     MOZ_GUARDED_BY(sEnabledFingerprintingProtectionsMutex);
-MOZ_CONSTINIT static RFPTargetSet sEnabledFingerprintingProtections
+constinit static RFPTargetSet sEnabledFingerprintingProtections
     MOZ_GUARDED_BY(sEnabledFingerprintingProtectionsMutex);
 
 /* static */
@@ -1731,16 +1731,66 @@ nsresult nsRFPService::GenerateCanvasKeyFromImageData(
 }
 
 // static
-nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
-                                       nsIPrincipal* aPrincipal, uint8_t* aData,
-                                       uint32_t aWidth, uint32_t aHeight,
-                                       uint32_t aSize,
-                                       gfx::SurfaceFormat aSurfaceFormat) {
-#ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-  if (false) {
+void nsRFPService::PotentiallyDumpImage(nsIPrincipal* aPrincipal,
+                                        gfx::DataSourceSurface* aSurface) {
+  // Only dump from the content process to avoid unintended file writes from
+  // privileged or background processes.
+  if (XRE_GetProcessType() != GeckoProcessType_Content) {
+    return;
+  }
+  if (MOZ_LOG_TEST(gFingerprinterDetection, LogLevel::Debug)) {
+    int32_t format = 0;
+    UniquePtr<uint8_t[]> imageBuffer =
+        gfxUtils::GetImageBuffer(aSurface, true, &format);
+    nsRFPService::PotentiallyDumpImage(
+        aPrincipal, imageBuffer.get(), aSurface->GetSize().width,
+        aSurface->GetSize().height,
+        aSurface->GetSize().width * aSurface->GetSize().height * 4);
+  }
+}
+
+void nsRFPService::PotentiallyDumpImage(nsIPrincipal* aPrincipal,
+                                        uint8_t* aData, uint32_t aWidth,
+                                        uint32_t aHeight, uint32_t aSize) {
+  // Only dump from the content process to avoid unintended file writes from
+  // privileged or background processes.
+  if (XRE_GetProcessType() != GeckoProcessType_Content) {
+    return;
+  }
+  nsAutoCString safeSite;
+
+  if (MOZ_LOG_TEST(gFingerprinterDetection, LogLevel::Debug)) {
+    nsAutoCString site;
+    if (aPrincipal) {
+      nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
+      if (uri) {
+        site.Assign(uri->GetSpecOrDefault());
+      }
+    }
+    if (site.IsEmpty()) {
+      site.AssignLiteral("unknown");
+    }
+
+    safeSite.SetCapacity(site.Length());
+    // Build a sanitized site string from the principal's URI for filename.
+    // Allow alnum, '.', '_', '-', replace others with '_'.
+    for (uint32_t i = 0; i < site.Length() && safeSite.Length() < 80; ++i) {
+      char c = site[i];
+      if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+          (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-') {
+        safeSite.Append(c);
+      } else {
+        safeSite.Append('_');
+      }
+    }
+
+    MOZ_LOG(gFingerprinterDetection, LogLevel::Debug,
+            ("Would dump a canvas image from %s width: %i height: %i bytes: %i",
+             site.get(), aWidth, aHeight, aSize));
+  }
+
+  if (MOZ_LOG_TEST(gFingerprinterDetection, LogLevel::Verbose)) {
+    // Requires sandbox level 0
     // For debugging purposes you can dump the image with this code
     // then convert it with the image-magick command
     // convert -size WxH -depth 8 rgba:$i $i.png
@@ -1748,17 +1798,47 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
     // up...
     static int calls = 0;
     char filename[256];
-    SprintfLiteral(filename, "rendered_image_%dx%d_%d_pre", aWidth, aHeight,
-                   calls);
-    FILE* outputFile = fopen(filename, "wb");  // "wb" for binary write mode
-    fwrite(aData, 1, aSize, outputFile);
-    fclose(outputFile);
-    calls++;
-  }
-#ifdef __clang__
-#  pragma clang diagnostic pop
-#endif
+    SprintfLiteral(filename, "rendered_image_%s__%dx%d_%d", safeSite.get(),
+                   aWidth, aHeight, calls);
 
+    const char* logEnv = PR_GetEnv("MOZ_LOG_FILE");
+#ifdef XP_WIN
+    const char sep = '\\';
+#else
+    const char sep = '/';
+#endif
+    const char* dirEnd = nullptr;
+    if (logEnv) {
+      for (const char* it = logEnv; *it; ++it) {
+        if (*it == sep) {
+          dirEnd = it;
+        }
+      }
+    }
+
+    char outPath[512];
+    if (dirEnd) {
+      int dirLen = int(dirEnd - logEnv + 1);
+      SprintfLiteral(outPath, "%.*s%s", dirLen, logEnv, filename);
+    } else {
+      SprintfLiteral(outPath, "%s", filename);
+    }
+
+    FILE* outputFile = fopen(outPath, "wb");
+    if (outputFile) {
+      fwrite(aData, 1, aSize, outputFile);
+      fclose(outputFile);
+      calls++;
+    }
+  }
+}
+
+// static
+nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
+                                       nsIPrincipal* aPrincipal, uint8_t* aData,
+                                       uint32_t aWidth, uint32_t aHeight,
+                                       uint32_t aSize,
+                                       gfx::SurfaceFormat aSurfaceFormat) {
   constexpr uint8_t bytesPerChannel = 1;
   constexpr uint8_t bytesPerPixel = 4 * bytesPerChannel;
 
@@ -1914,24 +1994,391 @@ nsresult nsRFPService::RandomizeElements(
 }
 
 static const char* CanvasFingerprinterToString(
-    ContentBlockingNotifier::CanvasFingerprinter aFingerprinter) {
+    CanvasFingerprinterAlias aFingerprinter) {
   switch (aFingerprinter) {
-    case ContentBlockingNotifier::CanvasFingerprinter::eFingerprintJS:
+    case CanvasFingerprinterAlias::eNoneIdentified:
+      return "(None Identified)";
+    case CanvasFingerprinterAlias::eFingerprintJS:
       return "FingerprintJS";
-    case ContentBlockingNotifier::CanvasFingerprinter::eAkamai:
+    case CanvasFingerprinterAlias::eAkamai:
       return "Akamai";
-    case ContentBlockingNotifier::CanvasFingerprinter::eVariant1:
+    case CanvasFingerprinterAlias::eOzoki:
+      return "Ozoki";
+    case CanvasFingerprinterAlias::ePerimeterX:
+      return "PerimeterX";
+    case CanvasFingerprinterAlias::eClientGear:
+      return "ClientGear";
+    case CanvasFingerprinterAlias::eSignifyd:
+      return "Signifyd";
+    case CanvasFingerprinterAlias::eClaydar:
+      return "Claydar";
+    case CanvasFingerprinterAlias::eImperva:
+      return "Imperva";
+    case CanvasFingerprinterAlias::eForter:
+      return "Forter";
+    case CanvasFingerprinterAlias::eVariant1:
       return "Variant1";
-    case ContentBlockingNotifier::CanvasFingerprinter::eVariant2:
+    case CanvasFingerprinterAlias::eVariant2:
       return "Variant2";
-    case ContentBlockingNotifier::CanvasFingerprinter::eVariant3:
+    case CanvasFingerprinterAlias::eVariant3:
       return "Variant3";
-    case ContentBlockingNotifier::CanvasFingerprinter::eVariant4:
+    case CanvasFingerprinterAlias::eVariant4:
       return "Variant4";
-    case ContentBlockingNotifier::CanvasFingerprinter::eMaybe:
-      return "Maybe";
+    case CanvasFingerprinterAlias::eVariant5:
+      return "Variant5";
+    case CanvasFingerprinterAlias::eVariant6:
+      return "Variant6";
+    case CanvasFingerprinterAlias::eVariant7:
+      return "Variant7";
+    case CanvasFingerprinterAlias::eVariant8:
+      return "Variant8";
   }
+  MOZ_ASSERT(false, "Unhandled CanvasFingerprinterAlias enum value");
   return "<error>";
+}
+
+namespace mozilla {
+nsCString CanvasUsageSourceToString(CanvasUsageSource aSource) {
+  if (aSource == CanvasUsageSource::Unknown) {
+    return "None"_ns;
+  }
+
+  nsCString accumulated;
+
+  auto append = [&](const char* name) {
+    if (!accumulated.IsEmpty()) {
+      accumulated.AppendLiteral(", ");
+    }
+    accumulated.Append(name);
+  };
+
+#define APPEND_IF_SET(flag, name)     \
+  if ((aSource & (flag)) == (flag)) { \
+    append(name);                     \
+  }
+
+  APPEND_IF_SET(Impossible, "Impossible");
+
+  APPEND_IF_SET(MainThread_Canvas_ImageBitmap_toDataURL,
+                "MainThread_Canvas_ImageBitmap_toDataURL");
+  APPEND_IF_SET(MainThread_Canvas_ImageBitmap_toBlob,
+                "MainThread_Canvas_ImageBitmap_toBlob");
+  APPEND_IF_SET(MainThread_Canvas_ImageBitmap_getImageData,
+                "MainThread_Canvas_ImageBitmap_getImageData");
+
+  APPEND_IF_SET(MainThread_Canvas_Canvas2D_toDataURL,
+                "MainThread_Canvas_Canvas2D_toDataURL");
+  APPEND_IF_SET(MainThread_Canvas_Canvas2D_toBlob,
+                "MainThread_Canvas_Canvas2D_toBlob");
+  APPEND_IF_SET(MainThread_Canvas_Canvas2D_getImageData,
+                "MainThread_Canvas_Canvas2D_getImageData");
+
+  APPEND_IF_SET(MainThread_Canvas_WebGL_toDataURL,
+                "MainThread_Canvas_WebGL_toDataURL");
+  APPEND_IF_SET(MainThread_Canvas_WebGL_toBlob,
+                "MainThread_Canvas_WebGL_toBlob");
+  APPEND_IF_SET(MainThread_Canvas_WebGL_getImageData,
+                "MainThread_Canvas_WebGL_getImageData");
+  APPEND_IF_SET(MainThread_Canvas_WebGL_readPixels,
+                "MainThread_Canvas_WebGL_readPixels");
+
+  APPEND_IF_SET(MainThread_Canvas_WebGPU_toDataURL,
+                "MainThread_Canvas_WebGPU_toDataURL");
+  APPEND_IF_SET(MainThread_Canvas_WebGPU_toBlob,
+                "MainThread_Canvas_WebGPU_toBlob");
+  APPEND_IF_SET(MainThread_Canvas_WebGPU_getImageData,
+                "MainThread_Canvas_WebGPU_getImageData");
+
+  APPEND_IF_SET(MainThread_OffscreenCanvas_ImageBitmap_toDataURL,
+                "MainThread_OffscreenCanvas_ImageBitmap_toDataURL");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_ImageBitmap_toBlob,
+                "MainThread_OffscreenCanvas_ImageBitmap_toBlob");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_ImageBitmap_getImageData,
+                "MainThread_OffscreenCanvas_ImageBitmap_getImageData");
+
+  APPEND_IF_SET(MainThread_OffscreenCanvas_Canvas2D_toDataURL,
+                "MainThread_OffscreenCanvas_Canvas2D_toDataURL");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_Canvas2D_toBlob,
+                "MainThread_OffscreenCanvas_Canvas2D_toBlob");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_Canvas2D_getImageData,
+                "MainThread_OffscreenCanvas_Canvas2D_getImageData");
+
+  APPEND_IF_SET(Worker_OffscreenCanvas_Canvas2D_toBlob,
+                "Worker_OffscreenCanvas_Canvas2D_toBlob");
+  APPEND_IF_SET(Worker_OffscreenCanvas_Canvas2D_getImageData,
+                "Worker_OffscreenCanvas_Canvas2D_getImageData");
+
+  APPEND_IF_SET(MainThread_OffscreenCanvas_WebGL_toDataURL,
+                "MainThread_OffscreenCanvas_WebGL_toDataURL");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_WebGL_toBlob,
+                "MainThread_OffscreenCanvas_WebGL_toBlob");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_WebGL_getImageData,
+                "MainThread_OffscreenCanvas_WebGL_getImageData");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_WebGL_readPixels,
+                "MainThread_OffscreenCanvas_WebGL_readPixels");
+
+  APPEND_IF_SET(Worker_OffscreenCanvas_ImageBitmap_toBlob,
+                "Worker_OffscreenCanvas_ImageBitmap_toBlob");
+  APPEND_IF_SET(Worker_OffscreenCanvas_ImageBitmap_getImageData,
+                "Worker_OffscreenCanvas_ImageBitmap_getImageData");
+
+  APPEND_IF_SET(Worker_OffscreenCanvas_WebGL_toBlob,
+                "Worker_OffscreenCanvas_WebGL_toBlob");
+  APPEND_IF_SET(Worker_OffscreenCanvas_WebGL_getImageData,
+                "Worker_OffscreenCanvas_WebGL_getImageData");
+  APPEND_IF_SET(Worker_OffscreenCanvas_WebGL_readPixels,
+                "Worker_OffscreenCanvas_WebGL_readPixels");
+
+  APPEND_IF_SET(MainThread_OffscreenCanvas_WebGPU_toDataURL,
+                "MainThread_OffscreenCanvas_WebGPU_toDataURL");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_WebGPU_toBlob,
+                "MainThread_OffscreenCanvas_WebGPU_toBlob");
+  APPEND_IF_SET(MainThread_OffscreenCanvas_WebGPU_getImageData,
+                "MainThread_OffscreenCanvas_WebGPU_getImageData");
+
+  APPEND_IF_SET(Worker_OffscreenCanvas_WebGPU_toBlob,
+                "Worker_OffscreenCanvas_WebGPU_toBlob");
+  APPEND_IF_SET(Worker_OffscreenCanvas_WebGPU_getImageData,
+                "Worker_OffscreenCanvas_WebGPU_getImageData");
+
+  APPEND_IF_SET(Worker_OffscreenCanvasCanvas2D_Canvas2D_getImageData,
+                "Worker_OffscreenCanvasCanvas2D_Canvas2D_getImageData");
+  APPEND_IF_SET(Worker_OffscreenCanvasCanvas2D_Canvas2D_toBlob,
+                "Worker_OffscreenCanvasCanvas2D_Canvas2D_toBlob");
+
+#undef APPEND_IF_SET
+
+  if (accumulated.IsEmpty()) {
+    accumulated.AssignLiteral("<error>");
+  }
+
+  return accumulated;
+}
+}  // namespace mozilla
+
+CanvasUsage CanvasUsage::CreateUsage(
+    bool aIsOffscreen, dom::CanvasContextType aContextType,
+    CanvasExtractionAPI aApi, CSSIntSize aSize,
+    const nsICanvasRenderingContextInternal* aContext) {
+  CanvasFeatureUsage featureUsage = CanvasFeatureUsage::None;
+
+  // Only 2D contexts currently expose feature usage metrics.
+  if (aContext && (aContextType == dom::CanvasContextType::Canvas2D ||
+                   aContextType == dom::CanvasContextType::OffscreenCanvas2D)) {
+    // Downcast is safe because 2D contexts derive from
+    // nsICanvasRenderingContextInternal and we gated on the supplied type. The
+    // header is included so the relationship is known to the compiler.
+    auto* ctx2D = static_cast<const dom::CanvasRenderingContext2D*>(aContext);
+    featureUsage = ctx2D->FeatureUsage();
+  }
+
+  CanvasUsageSource usageSource =
+      CanvasUsage::GetCanvasUsageSource(aIsOffscreen, aContextType, aApi);
+  return CanvasUsage(aSize, aContextType, usageSource, featureUsage);
+}
+CanvasUsageSource CanvasUsage::GetCanvasUsageSource(
+    bool isOffscreen, dom::CanvasContextType contextType,
+    CanvasExtractionAPI api) {
+  const bool isMainThread = NS_IsMainThread();
+
+  auto logImpossible = [&](const char* aComment = "") {
+    MOZ_LOG(gFingerprinterDetection, LogLevel::Error,
+            ("CanvasUsageSource impossible: comment=%s isOffscreen=%d "
+             "contextType=%d api=%d isMainThread=%d",
+             aComment, isOffscreen, static_cast<int>(contextType),
+             static_cast<int>(api), isMainThread));
+  };
+
+  // Non-offscreen (HTMLCanvasElement) path (always main thread).
+  if (!isOffscreen) {
+    if (!isMainThread) {
+      logImpossible("Non-offscreen canvas accessed off main thread");
+      return CanvasUsageSource::Impossible;
+    }
+    switch (contextType) {
+      case dom::CanvasContextType::Canvas2D:
+        switch (api) {
+          case CanvasExtractionAPI::ToDataURL:
+            return MainThread_Canvas_Canvas2D_toDataURL;
+          case CanvasExtractionAPI::ToBlob:
+            return MainThread_Canvas_Canvas2D_toBlob;
+          case CanvasExtractionAPI::GetImageData:
+            return MainThread_Canvas_Canvas2D_getImageData;
+          case CanvasExtractionAPI::ReadPixels:
+            logImpossible("ReadPixels invalid for Canvas2D");
+            return CanvasUsageSource::Impossible;
+          default:
+            logImpossible("Unknown API for Canvas2D");
+            return CanvasUsageSource::Impossible;
+        }
+      case dom::CanvasContextType::OffscreenCanvas2D:
+        // Very confused about how we get an OffscreenCanvas2D context without
+        // an OffscreenCanvas but it does happen in the wild...
+        switch (api) {
+          case CanvasExtractionAPI::GetImageData:
+            return CanvasUsageSource::
+                MainThread_Canvas_OffscreenCanvas2D_getImageData;
+          case CanvasExtractionAPI::ToBlob:
+            return CanvasUsageSource::
+                MainThread_Canvas_OffscreenCanvas2D_toBlob;
+          default:
+            logImpossible("Unsupported API for OffscreenCanvas2D");
+            return CanvasUsageSource::Impossible;
+        }
+      case dom::CanvasContextType::WebGL1:
+      case dom::CanvasContextType::WebGL2:
+        switch (api) {
+          case CanvasExtractionAPI::ToDataURL:
+            return MainThread_Canvas_WebGL_toDataURL;
+          case CanvasExtractionAPI::ToBlob:
+            return MainThread_Canvas_WebGL_toBlob;
+          case CanvasExtractionAPI::GetImageData:
+            return MainThread_Canvas_WebGL_getImageData;
+          case CanvasExtractionAPI::ReadPixels:
+            return MainThread_Canvas_WebGL_readPixels;
+          default:
+            logImpossible("Unknown API for WebGL");
+            return CanvasUsageSource::Impossible;
+        }
+      case dom::CanvasContextType::WebGPU:
+        switch (api) {
+          case CanvasExtractionAPI::ToDataURL:
+            return MainThread_Canvas_WebGPU_toDataURL;
+          case CanvasExtractionAPI::ToBlob:
+            return MainThread_Canvas_WebGPU_toBlob;
+          case CanvasExtractionAPI::GetImageData:
+            return MainThread_Canvas_WebGPU_getImageData;
+          case CanvasExtractionAPI::ReadPixels:
+            logImpossible("ReadPixels invalid for WebGPU");
+            return CanvasUsageSource::Impossible;
+          default:
+            logImpossible("Unknown API for WebGPU");
+            return CanvasUsageSource::Impossible;
+        }
+      case dom::CanvasContextType::ImageBitmap:
+        switch (api) {
+          case CanvasExtractionAPI::ToDataURL:
+            return MainThread_Canvas_ImageBitmap_toDataURL;
+          case CanvasExtractionAPI::ToBlob:
+            return MainThread_Canvas_ImageBitmap_toBlob;
+          case CanvasExtractionAPI::GetImageData:
+            return MainThread_Canvas_ImageBitmap_getImageData;
+          case CanvasExtractionAPI::ReadPixels:
+            logImpossible("ReadPixels invalid for ImageBitmap");
+            return CanvasUsageSource::Impossible;
+          default:
+            logImpossible("Unknown API for ImageBitmap");
+            return CanvasUsageSource::Impossible;
+        }
+      default:
+        logImpossible("Unknown context type (main thread, non-offscreen)");
+        return CanvasUsageSource::Impossible;
+    }
+  }
+
+  // OffscreenCanvas path.
+  switch (contextType) {
+    case dom::CanvasContextType::Canvas2D:
+      switch (api) {
+        case CanvasExtractionAPI::ToDataURL:
+          if (isMainThread) {
+            return MainThread_OffscreenCanvas_Canvas2D_toDataURL;
+          }
+          logImpossible("ToDataURL invalid for Offscreen Canvas2D on worker");
+          return CanvasUsageSource::Impossible;  // not supported
+        case CanvasExtractionAPI::ToBlob:
+          return isMainThread ? MainThread_OffscreenCanvas_Canvas2D_toBlob
+                              : Worker_OffscreenCanvas_Canvas2D_toBlob;
+        case CanvasExtractionAPI::GetImageData:
+          return isMainThread ? MainThread_OffscreenCanvas_Canvas2D_getImageData
+                              : Worker_OffscreenCanvas_Canvas2D_getImageData;
+        case CanvasExtractionAPI::ReadPixels:
+          logImpossible("ReadPixels invalid for Offscreen 2D");
+          return CanvasUsageSource::Impossible;
+        default:
+          logImpossible("Unknown API for Offscreen Canvas2D");
+          return CanvasUsageSource::Impossible;
+      }
+    case dom::CanvasContextType::OffscreenCanvas2D:
+      switch (api) {
+        case CanvasExtractionAPI::GetImageData:
+          return Worker_OffscreenCanvasCanvas2D_Canvas2D_getImageData;
+        case CanvasExtractionAPI::ToBlob:
+          return Worker_OffscreenCanvasCanvas2D_Canvas2D_toBlob;
+        default:
+          logImpossible("Unsupported API for OffscreenCanvas2D");
+          return CanvasUsageSource::Impossible;
+      }
+    case dom::CanvasContextType::WebGL1:
+    case dom::CanvasContextType::WebGL2:
+      switch (api) {
+        case CanvasExtractionAPI::ToDataURL:
+          if (!isMainThread) {
+            logImpossible("ToDataURL invalid for Offscreen WebGL on worker");
+            return CanvasUsageSource::Impossible;  // not supported
+          }
+          return MainThread_OffscreenCanvas_WebGL_toDataURL;
+        case CanvasExtractionAPI::ToBlob:
+          return isMainThread ? MainThread_OffscreenCanvas_WebGL_toBlob
+                              : Worker_OffscreenCanvas_WebGL_toBlob;
+        case CanvasExtractionAPI::GetImageData:
+          return isMainThread ? MainThread_OffscreenCanvas_WebGL_getImageData
+                              : Worker_OffscreenCanvas_WebGL_getImageData;
+        case CanvasExtractionAPI::ReadPixels:
+          return isMainThread ? MainThread_OffscreenCanvas_WebGL_readPixels
+                              : Worker_OffscreenCanvas_WebGL_readPixels;
+        default:
+          logImpossible("Unknown API for Offscreen WebGL");
+          return CanvasUsageSource::Impossible;
+      }
+    case dom::CanvasContextType::WebGPU:
+      switch (api) {
+        case CanvasExtractionAPI::ToDataURL:
+          if (!isMainThread) {
+            logImpossible("ToDataURL invalid for Offscreen WebGPU on worker");
+            return CanvasUsageSource::Impossible;  // not supported
+          }
+          return MainThread_OffscreenCanvas_WebGPU_toDataURL;
+        case CanvasExtractionAPI::ToBlob:
+          return isMainThread ? MainThread_OffscreenCanvas_WebGPU_toBlob
+                              : Worker_OffscreenCanvas_WebGPU_toBlob;
+        case CanvasExtractionAPI::GetImageData:
+          return isMainThread ? MainThread_OffscreenCanvas_WebGPU_getImageData
+                              : Worker_OffscreenCanvas_WebGPU_getImageData;
+        case CanvasExtractionAPI::ReadPixels:
+          logImpossible("ReadPixels invalid for Offscreen WebGPU");
+          return CanvasUsageSource::Impossible;
+        default:
+          logImpossible("Unknown API for Offscreen WebGPU");
+          return CanvasUsageSource::Impossible;
+      }
+    case dom::CanvasContextType::ImageBitmap:
+      switch (api) {
+        case CanvasExtractionAPI::ToDataURL:
+          if (!isMainThread) {
+            logImpossible(
+                "ToDataURL invalid for Offscreen ImageBitmap on worker");
+            return CanvasUsageSource::Impossible;  // not supported worker
+          }
+          return MainThread_OffscreenCanvas_ImageBitmap_toDataURL;
+        case CanvasExtractionAPI::ToBlob:
+          return isMainThread ? MainThread_OffscreenCanvas_ImageBitmap_toBlob
+                              : Worker_OffscreenCanvas_ImageBitmap_toBlob;
+        case CanvasExtractionAPI::GetImageData:
+          return isMainThread
+                     ? MainThread_OffscreenCanvas_ImageBitmap_getImageData
+                     : Worker_OffscreenCanvas_ImageBitmap_getImageData;
+        case CanvasExtractionAPI::ReadPixels:
+          logImpossible("ReadPixels invalid for Offscreen ImageBitmap");
+          return CanvasUsageSource::Impossible;
+        default:
+          logImpossible("Unknown API for Offscreen ImageBitmap");
+          return CanvasUsageSource::Impossible;
+      }
+    default:
+      logImpossible("Unknown context type (offscreen)");
+      return CanvasUsageSource::Impossible;
+  }
 }
 
 static void MaybeCurrentCaller(nsACString& aFilename, uint32_t& aLineNum,
@@ -1954,122 +2401,175 @@ static void MaybeCurrentCaller(nsACString& aFilename, uint32_t& aLineNum,
 }
 
 /* static */ void nsRFPService::MaybeReportCanvasFingerprinter(
-    nsTArray<CanvasUsage>& aUses, nsIChannel* aChannel,
-    nsACString& aOriginNoSuffix) {
+    nsTArray<CanvasUsage>& aUses, nsIChannel* aChannel, nsIURI* aURI,
+    const nsACString& aOriginNoSuffix) {
   if (!aChannel) {
     return;
   }
 
-  uint32_t extractedWebGL = 0;
+  nsAutoCString scheme;
+  (void)aURI->GetScheme(scheme);
+  // We exclude reporting for chrome and resource URIs.
+  if (scheme.EqualsLiteral("chrome") || scheme.EqualsLiteral("resource")) {
+    return;
+  }
+
+  bool extractedWebGL = false;
   bool seenExtractedWebGL_300x150 = false;
+  bool seenExtractedWebGL_2000x200 = false;
 
   uint32_t extracted2D = 0;
-  bool seenExtracted2D_16x16 = false;
   bool seenExtracted2D_122x110 = false;
+  bool seenExtracted2D_220x30 = false;
   bool seenExtracted2D_240x60 = false;
-  bool seenExtracted2D_280x60 = false;
+  bool seenExtracted2D_250x80 = false;
+  bool seenExtracted2D_300x100 = false;
+  bool seenExtracted2D_650x12 = false;
   bool seenExtracted2D_860x6 = false;
-  CanvasFeatureUsage featureUsage = CanvasFeatureUsage::None;
 
-  uint32_t extractedOther = 0;
+  CanvasFeatureUsage accumulatedFeatureUsage = CanvasFeatureUsage::None;
+  CanvasUsageSource accumulatedUsageSource = CanvasUsageSource::Unknown;
+
+  MOZ_LOG(
+      gFingerprinterDetection, LogLevel::Debug,
+      ("MaybeReportCanvasFingerprinter: examining %zu uses", aUses.Length()));
 
   for (const auto& usage : aUses) {
     int32_t width = usage.mSize.width;
     int32_t height = usage.mSize.height;
 
-    if (width > 2000 || height > 1000) {
+    if (width > 2500 || height > 1000) {
       // Canvases used for fingerprinting are usually relatively small.
       continue;
     }
 
-    if (usage.mType == dom::CanvasContextType::Canvas2D) {
-      featureUsage |= usage.mFeatureUsage;
+    accumulatedFeatureUsage |= usage.mFeatureUsage;
+    accumulatedUsageSource |= usage.mUsageSource;
+
+    if (usage.mType == dom::CanvasContextType::Canvas2D ||
+        usage.mType == dom::CanvasContextType::OffscreenCanvas2D) {
+      accumulatedFeatureUsage |= usage.mFeatureUsage;
       extracted2D++;
-      if (width == 16 && height == 16) {
-        seenExtracted2D_16x16 = true;
+      if (width == 122 && height == 110) {
+        seenExtracted2D_122x110 = true;
+      } else if (width == 220 && height == 30) {
+        seenExtracted2D_220x30 = true;
       } else if (width == 240 && height == 60) {
         seenExtracted2D_240x60 = true;
-      } else if (width == 122 && height == 110) {
-        seenExtracted2D_122x110 = true;
-      } else if (width == 280 && height == 60) {
-        seenExtracted2D_280x60 = true;
+      } else if (width == 250 && height == 80) {
+        seenExtracted2D_250x80 = true;
+      } else if (width == 300 && height == 100) {
+        seenExtracted2D_300x100 = true;
+      } else if (width == 650 && height == 12) {
+        seenExtracted2D_650x12 = true;
       } else if (width == 860 && height == 6) {
         seenExtracted2D_860x6 = true;
       }
     } else if (usage.mType == dom::CanvasContextType::WebGL1) {
-      extractedWebGL++;
+      extractedWebGL = true;
       if (width == 300 && height == 150) {
         seenExtractedWebGL_300x150 = true;
+      } else if (width == 2000 && height == 200) {
+        seenExtractedWebGL_2000x200 = true;
       }
-    } else {
-      extractedOther++;
     }
   }
 
-  Maybe<ContentBlockingNotifier::CanvasFingerprinter> fingerprinter;
+  CanvasFingerprinterAlias fingerprinter = eNoneIdentified;
+  uint32_t knownTextBitmask = static_cast<uint32_t>(
+      static_cast<uint64_t>(accumulatedFeatureUsage) & 0xFFFFFFFFu);
+
   if (seenExtractedWebGL_300x150 && seenExtracted2D_240x60 &&
       seenExtracted2D_122x110) {
-    fingerprinter =
-        Some(ContentBlockingNotifier::CanvasFingerprinter::eFingerprintJS);
-  } else if (seenExtractedWebGL_300x150 && seenExtracted2D_280x60 &&
-             seenExtracted2D_16x16) {
-    fingerprinter = Some(ContentBlockingNotifier::CanvasFingerprinter::eAkamai);
+    fingerprinter = CanvasFingerprinterAlias::eFingerprintJS;
+  } else if (seenExtractedWebGL_300x150 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_12 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_13) {
+    fingerprinter = CanvasFingerprinterAlias::eAkamai;
+  } else if (accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_9 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_10 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_11) {
+    fingerprinter = CanvasFingerprinterAlias::eOzoki;
+  } else if (seenExtractedWebGL_2000x200 && knownTextBitmask == 0) {
+    fingerprinter = CanvasFingerprinterAlias::ePerimeterX;
+  } else if (seenExtracted2D_220x30 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_7) {
+    fingerprinter = CanvasFingerprinterAlias::eSignifyd;
+  } else if (seenExtracted2D_300x100 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_8) {
+    fingerprinter = CanvasFingerprinterAlias::eSignifyd;
+  } else if (seenExtracted2D_240x60 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_4) {
+    fingerprinter = CanvasFingerprinterAlias::eClaydar;
+  } else if (accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_23) {
+    fingerprinter = CanvasFingerprinterAlias::eForter;
+  } else if (accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_2) {
+    fingerprinter = CanvasFingerprinterAlias::eImperva;
+  } else if (accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_26) {
+    fingerprinter = CanvasFingerprinterAlias::eClientGear;
+  } else if (seenExtracted2D_250x80 &&
+             accumulatedFeatureUsage & CanvasFeatureUsage::KnownText_6) {
+    fingerprinter = CanvasFingerprinterAlias::eVariant5;
+  } else if (seenExtracted2D_650x12) {
+    fingerprinter = CanvasFingerprinterAlias::eVariant6;
+  } else if (seenExtracted2D_860x6) {
+    fingerprinter = CanvasFingerprinterAlias::eVariant7;
   } else if (seenExtractedWebGL_300x150 && extracted2D > 0 &&
-             (featureUsage & CanvasFeatureUsage::SetFont)) {
-    fingerprinter =
-        Some(ContentBlockingNotifier::CanvasFingerprinter::eVariant1);
+             (accumulatedFeatureUsage & CanvasFeatureUsage::SetFont)) {
+    fingerprinter = CanvasFingerprinterAlias::eVariant1;
   } else if (extractedWebGL > 0 && extracted2D > 1 && seenExtracted2D_860x6) {
-    fingerprinter =
-        Some(ContentBlockingNotifier::CanvasFingerprinter::eVariant2);
-  } else if (extractedOther > 0 && (extractedWebGL > 0 || extracted2D > 0)) {
-    fingerprinter =
-        Some(ContentBlockingNotifier::CanvasFingerprinter::eVariant3);
-  } else if (extracted2D > 0 && (featureUsage & CanvasFeatureUsage::SetFont) &&
-             (featureUsage &
-              (CanvasFeatureUsage::FillRect | CanvasFeatureUsage::LineTo |
-               CanvasFeatureUsage::Stroke))) {
-    fingerprinter =
-        Some(ContentBlockingNotifier::CanvasFingerprinter::eVariant4);
-  } else if (extractedOther + extractedWebGL + extracted2D > 1) {
-    // This I added primarily to not miss anything, but it can cause false
-    // positives.
-    fingerprinter = Some(ContentBlockingNotifier::CanvasFingerprinter::eMaybe);
+    fingerprinter = CanvasFingerprinterAlias::eVariant2;
   }
 
-  bool knownFingerprintText =
-      bool(featureUsage & CanvasFeatureUsage::KnownFingerprintText);
-  if (!knownFingerprintText && fingerprinter.isNothing()) {
-    return;
-  }
-
+  nsAutoCString uri;
+  (void)aURI->GetSpec(uri);
+  nsAutoCString origin(aOriginNoSuffix);
+  nsAutoCString filename;
   if (MOZ_LOG_TEST(gFingerprinterDetection, LogLevel::Info)) {
-    nsAutoCString filename;
     uint32_t lineNum = 0;
     uint32_t columnNum = 0;
     MaybeCurrentCaller(filename, lineNum, columnNum);
-
-    nsAutoCString origin(aOriginNoSuffix);
-    MOZ_LOG(
-        gFingerprinterDetection, LogLevel::Info,
-        ("Detected a potential canvas fingerprinter on %s in script %s:%d:%d "
-         "(KnownFingerprintText: %s, CanvasFingerprinter: %s)",
-         origin.get(), filename.get(), lineNum, columnNum,
-         knownFingerprintText ? "true" : "false",
-         fingerprinter.isSome()
-             ? CanvasFingerprinterToString(fingerprinter.value())
-             : "<none>"));
   }
 
-  ContentBlockingNotifier::OnEvent(
-      aChannel, false,
-      nsIWebProgressListener::STATE_ALLOWED_CANVAS_FINGERPRINTING,
-      aOriginNoSuffix, Nothing(), fingerprinter,
-      Some(featureUsage & CanvasFeatureUsage::KnownFingerprintText));
+  if (knownTextBitmask == 0 && fingerprinter == eNoneIdentified) {
+    MOZ_LOG(gFingerprinterDetection, LogLevel::Debug,
+            ("Found no potential canvas fingerprinter on %s on %s in script %s",
+             origin.get(), uri.get(), filename.get()));
+    return;
+  }
+
+  auto event = CanvasFingerprintingEvent(fingerprinter, knownTextBitmask,
+                                         accumulatedUsageSource);
+
+  MOZ_LOG(gFingerprinterDetection, LogLevel::Info,
+          ("Detected a potential canvas fingerprinter on %s on %s in script %s "
+           "(KnownFingerprintTextBitmask: %u, CanvasFingerprinterAlias: %s, "
+           "AccumulatedCanvasUsageSource: %s)",
+           origin.get(), uri.get(), filename.get(), knownTextBitmask,
+           CanvasFingerprinterToString(fingerprinter),
+           CanvasUsageSourceToString(accumulatedUsageSource).get()));
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "nsRFPService::MaybeReportCanvasFingerprinter::NotifyEvent",
+      [channel = nsCOMPtr{aChannel}, origin = nsCString(aOriginNoSuffix),
+       event = event]() {
+        ContentBlockingNotifier::OnEvent(
+            channel, false,
+            nsIWebProgressListener::STATE_ALLOWED_CANVAS_FINGERPRINTING, origin,
+            Nothing(), Some(event));
+      }));
 }
 
 /* static */ void nsRFPService::MaybeReportFontFingerprinter(
-    nsIChannel* aChannel, const nsACString& aOriginNoSuffix) {
+    nsIChannel* aChannel, nsIURI* aURI, const nsACString& aOriginNoSuffix) {
   if (!aChannel) {
+    return;
+  }
+
+  nsAutoCString scheme;
+  (void)aURI->GetScheme(scheme);
+  // We exclude reporting for chrome and resource URIs.
+  if (scheme.EqualsLiteral("chrome") || scheme.EqualsLiteral("resource")) {
     return;
   }
 
@@ -2080,12 +2580,17 @@ static void MaybeCurrentCaller(nsACString& aFilename, uint32_t& aLineNum,
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "nsRFPService::MaybeReportFontFingerprinter",
         [channel = nsCOMPtr{aChannel},
-         originNoSuffix = nsCString(aOriginNoSuffix)]() {
-          nsRFPService::MaybeReportFontFingerprinter(channel, originNoSuffix);
+         originNoSuffix = nsCString(aOriginNoSuffix), uri = nsCOMPtr{aURI}]() {
+          nsRFPService::MaybeReportFontFingerprinter(channel, uri,
+                                                     originNoSuffix);
         }));
 
     return;
   }
+
+  nsAutoCString uri;
+  (void)aURI->GetSpec(uri);
+  nsAutoCString origin(aOriginNoSuffix);
 
   if (MOZ_LOG_TEST(gFingerprinterDetection, LogLevel::Info)) {
     nsAutoCString filename;
@@ -2093,58 +2598,15 @@ static void MaybeCurrentCaller(nsACString& aFilename, uint32_t& aLineNum,
     uint32_t columnNum = 0;
     MaybeCurrentCaller(filename, lineNum, columnNum);
 
-    nsAutoCString origin(aOriginNoSuffix);
     MOZ_LOG(gFingerprinterDetection, LogLevel::Info,
-            ("Detected a potential font fingerprinter on %s in script %s:%d:%d",
-             origin.get(), filename.get(), lineNum, columnNum));
+            ("Detected a potential font fingerprinter on %s on %s in script "
+             "%s:%d:%d",
+             origin.get(), uri.get(), filename.get(), lineNum, columnNum));
   }
 
   ContentBlockingNotifier::OnEvent(
       aChannel, false,
-      nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING,
-      aOriginNoSuffix);
-}
-
-/* static */
-bool nsRFPService::CheckSuspiciousFingerprintingActivity(
-    nsTArray<ContentBlockingLog::LogEntry>& aLogs) {
-  if (aLogs.Length() == 0) {
-    return false;
-  }
-
-  uint32_t cnt = 0;
-  // We use these two booleans to prevent counting duplicated fingerprinting
-  // events.
-  bool foundCanvas = false;
-  bool foundFont = false;
-
-  // Iterate through the logs to see if there are suspicious fingerprinting
-  // activities.
-  for (auto& log : aLogs) {
-    // If it's a known canvas fingerprinter, we can directly return true from
-    // here.
-    if (log.mCanvasFingerprinter &&
-        (log.mCanvasFingerprinter.ref() ==
-             ContentBlockingNotifier::CanvasFingerprinter::eFingerprintJS ||
-         log.mCanvasFingerprinter.ref() ==
-             ContentBlockingNotifier::CanvasFingerprinter::eAkamai)) {
-      return true;
-    } else if (!foundCanvas && log.mType ==
-                                   nsIWebProgressListener::
-                                       STATE_ALLOWED_CANVAS_FINGERPRINTING) {
-      cnt++;
-      foundCanvas = true;
-    } else if (!foundFont &&
-               log.mType ==
-                   nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING) {
-      cnt++;
-      foundFont = true;
-    }
-  }
-
-  // If the number of suspicious fingerprinting activity exceeds the threshold,
-  // we return true to indicates there is a suspicious fingerprinting activity.
-  return cnt > kSuspiciousFingerprintingActivityThreshold;
+      nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING, origin);
 }
 
 /* static */

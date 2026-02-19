@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Zadajte hľadaný výraz</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Vaše otvorené karty budú zobrazené tu.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Vaše otvorené karty budú zobrazené tu.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Vaše súkromné karty budú zobrazené tu.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Vaše súkromné karty budú zobrazené tu.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Súkromné prehliadanie</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Ukončenie režimu viacnásobného výberu</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Uložiť vybrané karty do kolekcie</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Uložiť vybrané karty do kolekcie</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Získajte karty z akéhokoľvek zariadenia</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Rozšírenia</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Máte nainštalované rozšírenia, ale nie sú povolené</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Máte nainštalované rozšírenia, ale nie sú povolené</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Spravovať rozšírenia</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Informácie o účte</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Pomocník</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Pomocník</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Čo je nové</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Čo je nové</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Nastavenia</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Verzia pre počítače</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Otvoriť na bežnej karte</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Otvoriť na bežnej karte</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Pridať na úvodnú obrazovku</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">POHÁŇANÉ APLIKÁCIOU %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">POHÁŇANÉ APLIKÁCIOU %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Otvoriť v aplikácii</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Prispôsobiť zobrazenie čítačky</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Prispôsobiť zobrazenie čítačky</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Prispôsobiť zobrazenie čítačky</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Pridať</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Pridať</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Upraviť</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Upraviť</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Upraviť domovskú stránku</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Upraviť domovskú stránku</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Prihlásiť sa</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Zavrieť ponuku</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigácia</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Pomocník</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Nastavenia</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Zavrieť zoznam s ponukou rozšírení</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Zavrieť zoznam s ponukou rozšírení</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Zavrieť zoznam s ponukou uloženia</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Zavrieť zoznam s ponukou uloženia</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Zavrieť zoznam s ponukou nástrojov</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Zavrieť zoznam s ponukou nástrojov</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Zavrieť zoznam s ponukou pre vlastnú kartu</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -327,8 +323,10 @@
   <string name="browser_menu_save_as_pdf_2">Uložiť ako PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Preložiť stránku</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Vytvor súhrn stránky</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Nahlásiť nefunkčnú stránku…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Nahlásiť nefunkčnú stránku…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Nahlásiť nefunkčnú stránku</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -438,6 +436,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: výber vyhľadávacieho nástroja</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">Záznam %1$s bol odstránený z histórie</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Odstrániť tento záznam z histórie</string>
   <!--
     Home onboarding
 
@@ -452,19 +454,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Vyhlásenie o ochrane osobných údajov Firefoxu</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Radi vás držíme v bezpečí</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Zistite, prečo milióny ľudí milujú Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Bezpečné prehliadanie s viacerými možnosťami</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Náš neziskový prehliadač pomáha zabrániť spoločnostiam, aby vás tajne sledovali na webe.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Viac ako 100 miliónov ľudí chráni svoje súkromie výberom prehliadača, ktorého tvorcom je nezisková organizácia.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Známi sledovacie prvky? Automaticky blokované. Rozšírenia? Vyskúšajte všetkých 700. Súbory PDF? Naša vstavaná čítačka uľahčuje prácu s nimi.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Nastaviť ako predvolený prehliadač</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +545,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Spravovať</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Spustite dokonalý prehliadač pre Android</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Spustite dokonalý prehliadač pre Android</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Bleskovo rýchle načítanie stránok</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Bleskovo rýchle načítanie stránok</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Automatická ochrana pred sledovaním</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Automatická ochrana pred sledovaním</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Tisíce prispôsobení</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Tisíce prispôsobení</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Pokračovaním vyjadrujete súhlas s dokumentom %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Pokračovaním vyjadrujete súhlas s dokumentom %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Podmienky používania Firefoxu</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Podmienky používania Firefoxu</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox sa stará o vaše súkromie. Podrobnosti nájdete v dokumente %1$s.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox sa stará o vaše súkromie. Podrobnosti nájdete v dokumente %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Vyhlásenie o ochrane osobných údajov</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Vyhlásenie o ochrane osobných údajov</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Aby bolo možné prehliadač vylepšovať, Firefox odosiela diagnostické údaje a údaje o interakciách do Mozilly. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Aby bolo možné prehliadač vylepšovať, Firefox odosiela diagnostické údaje a údaje o interakciách do Mozilly. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Spravovať nastavenia</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Spravovať nastavenia</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Pokračovať</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Pokračovať</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">Kam chcete umiestniť panel s adresou?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Kam chcete umiestniť panel s adresou?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Pokračovať</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Pokračovať</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Pomôžte nám rozšíriť Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Pomôžte nám rozšíriť Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Podeľte sa o to, ako ste objavili Firefox a že ho používate, s marketingovými partnermi Mozilly. Tieto údaje sa nikdy nepredávajú.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Podeľte sa o to, ako ste objavili Firefox a že ho používate, s marketingovými partnermi Mozilly. Tieto údaje sa nikdy nepredávajú.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Ako používame údaje</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Ako používame údaje</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Potvrdiť</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Potvrdiť</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Získajte automatickú ochranu pred sledovaním ako predvolené nastavenie</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Získajte automatickú ochranu pred sledovaním ako predvolené nastavenie</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Jedno ťuknutie pomôže zabrániť spoločnostiam špehovať vaše kliknutia.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Jedno ťuknutie pomôže zabrániť spoločnostiam špehovať vaše kliknutia.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Synchronizujte všade, kde používate Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Synchronizujte všade, kde používate Firefox</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Získajte záložky, karty a heslá na akomkoľvek zariadení. Všetko chránené šifrovaním.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Získajte záložky, karty a heslá na akomkoľvek zariadení. Všetko chránené šifrovaním.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Spustiť synchronizáciu</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Spustiť synchronizáciu</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Teraz nie</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Teraz nie</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Pomôžte nám rozšíriť Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +618,48 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Pokračovať</string>
+  <string name="nova_onboarding_continue_button">Pokračovať</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Teraz nie</string>
+  <string name="nova_onboarding_negative_button">Teraz nie</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Pripravte sa na voľnosť</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Rýchly, bezpečný a nikdy vás neprezradí.\nPrehliadanie sa práve stalo lepším.</string>
+  <string name="nova_onboarding_tou_subtitle">Rýchly, bezpečný a nikdy vás neprezradí.\nPrehliadanie sa práve stalo lepším.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Pokračovaním vyjadrujete súhlas s dokumentom %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_1">Pokračovaním vyjadrujete súhlas s dokumentom %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Podmienky používania Firefoxu</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Podmienky používania Firefoxu</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox sa stará o vaše súkromie. Podrobnosti nájdete v dokumente %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox sa stará o vaše súkromie. Podrobnosti nájdete v dokumente %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Vyhlásenie o ochrane osobných údajov</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Vyhlásenie o ochrane osobných údajov</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Aby bolo možné prehliadač vylepšovať, Firefox odosiela diagnostické údaje a údaje o interakciách do Mozilly. %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Aby bolo možné prehliadač vylepšovať, Firefox odosiela diagnostické údaje a údaje o interakciách do Mozilly. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Spravovať nastavenia</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Spravovať nastavenia</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Rozlúčte sa so strašidelnými sledovačmi</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Otvárajte všetky svoje odkazy so zabudovaným súkromím</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Chránime vaše údaje a automaticky blokujeme spoločnosti, aby nešpehovali vaše kliknutia.</string>
+  <string name="nova_onboarding_set_to_default_subtitle">Chránime vaše údaje a automaticky blokujeme spoločnosti, aby nešpehovali vaše kliknutia.</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Nastaviť ako predvolený prehliadač</string>
+  <string name="nova_onboarding_set_to_default_button">Nastaviť ako predvolený prehliadač</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Vyberte si panel s adresou</string>
+  <string name="nova_onboarding_toolbar_selection_title">Vyberte si panel s adresou</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Hore</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">Hore</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Dole</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">Dole</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Vyberte si tému</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +669,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Tmavá</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Okamžite pokračujte tam, kde ste prestali</string>
+  <string name="nova_onboarding_sync_title">Okamžite pokračujte tam, kde ste prestali</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">Získajte záložky, heslá a ďalšie informácie na akomkoľvek zariadení raz-dva. Vaše osobné údaje zostanú v bezpečí vďaka šifrovaniu.</string>
+  <string name="nova_onboarding_sync_subtitle">Získajte záložky, heslá a ďalšie informácie na akomkoľvek zariadení raz-dva. Vaše osobné údaje zostanú v bezpečí vďaka šifrovaniu.</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Spustiť synchronizáciu</string>
+  <string name="nova_onboarding_sync_button">Spustiť synchronizáciu</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Pomôžte nám vybudovať lepší internet</string>
+  <string name="nova_onboarding_marketing_title">Pomôžte nám vybudovať lepší internet</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Podeľte sa o to, ako ste objavili Firefox a že ho používate, s marketingovými partnermi Mozilly. Tieto údaje sa nikdy nepredávajú. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Podeľte sa o to, ako ste objavili Firefox a že ho používate, s marketingovými partnermi Mozilly. Tieto údaje sa nikdy nepredávajú. %1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Ako používame údaje</string>
+  <string name="nova_onboarding_marketing_body_link_text">Ako používame údaje</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Upozornenia vám pomôžu zostať s Firefoxom v bezpečí</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Objavte najnovšie funkcie ochrany súkromia vo Firefoxe, aby ste boli vždy informovaní o tom, ako zostať chránení.</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Zapnúť upozornenia</string>
+  <string name="nova_onboarding_notifications_button">Zapnúť upozornenia</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Zvýšte súkromie každého vyhľadávania</string>
+  <string name="nova_onboarding_add_search_widget_title">Zvýšte súkromie každého vyhľadávania</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">Začnite každé vyhľadávanie z domovskej obrazovky telefónu a vedzte, že automatická ochrana Firefoxu vás kryje.</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Začnite každé vyhľadávanie z domovskej obrazovky telefónu a vedzte, že automatická ochrana Firefoxu vás kryje.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Pridať miniaplikáciu Firefox</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Pridať miniaplikáciu Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -781,6 +774,8 @@
   <string name="preferences_search">Vyhľadávanie</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Vyhľadávacie moduly</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Miniaplikácia na domovskú obrazovku</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Návrhy z vyhľadávačov</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -972,6 +967,15 @@
   <string name="preferences_open_links_in_apps_ask">Pred otvorením sa opýtať</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Nikdy</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Úložisko súborov</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Predvolené umiestnenie pre sťahovanie</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">Nemáte povolenie na používanie tohto priečinka. Skúste vybrať iný.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Spravovať sťahovania pomocou inej aplikácie</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1137,8 +1141,6 @@
   <string name="alternative_app_icon_group_solid_colors">Plné farby</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Prechody farieb</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Iné</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Odporúčané</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1505,11 +1507,27 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Aktívna</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Vyskúšajte funkcie a nápady skôr, ako budú zverejnené pre všetkých.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Vyskúšajte funkcie a nápady skôr, ako budú zverejnené pre všetkých.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox náhodne vyberá používateľov na testovanie funkcií, čo zlepšuje kvalitu pre všetkých.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Inštalovať a spúšťať štúdie</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Inštalovať a spúšťať štúdie</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Povoliť štúdie funkcií</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Ďalšie informácie</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Povoliť vzdialené vylepšenia</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox vylepší funkcie, výkon a stabilitu medzi aktualizáciami. Zmeny sa aplikujú na diaľku.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Ďalšie informácie</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Vylepšenia na diaľku</string>
   <!--
     Sessions
 
@@ -1544,17 +1562,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Pridať súkromnú kartu</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Súkromná</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Súkromná</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Synchronizovať</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Synchronizovať</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Vyhľadávanie v kartách</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Zobraziť všetky karty</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Zobraziť všetky karty</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Nedávno zatvorené karty</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Nedávno zatvorené</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Nedávno zatvorené</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Nastavenia účtu</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1570,11 +1588,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Zrušiť</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Pridať medzi záložky</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Pridať medzi záložky</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Pridať označené karty medzi záložky</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Zavrieť</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Zavrieť</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Zavrieť označené karty</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1600,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Pridať do kolekcie</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Zdieľať vybrané karty</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Zdieľať vybrané karty</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Ponuka vybratých kariet</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1721,8 @@
   <string name="download_delete_item">Odstrániť</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Prejsť dozadu</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Prejsť do nastavení sťahovania</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Späť a zatvoriť vyhľadávanie</string>
   <!--
@@ -1720,12 +1740,25 @@
   <string name="download_share_url">Zdieľať URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Zdieľať súbor</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Premenovať súbor</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Naozaj chcete odstrániť označené položky?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Odstrániť</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Zrušiť</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Premenovanie súboru</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Názov</string>
+  <string name="download_rename_dialog_confirm_button">Uložiť</string>
+  <string name="download_rename_dialog_cancel_button">Zrušiť</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Súbor sa nedá premenovať</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Tento súbor nie je možné premenovať z dôvodu systémových obmedzení alebo obmedzení úložiska.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Prebieha</string>
   <!--
@@ -1918,6 +1951,8 @@
   <string name="bookmark_error_edit_bookmark">Záložku sa nepodarilo upraviť</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">UPRAVIŤ</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Vybrať</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Presunúť</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1998,6 +2033,10 @@
   <string name="select_bookmark_search_button_content_description">Hľadať v priečinkoch</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Ponuka položiek pre %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Rozbaliť priečinok: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Zavrieť priečinok: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Zavrieť záložky</string>
   <!-- Title for the bookmark list empty state -->
@@ -2200,7 +2239,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Prihlásiť sa k službe Sync</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Prihlásiť sa</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Prihlásiť sa</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Odoslať do všetkých zariadení</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2399,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Automaticky odstráni údaje o prehliadaní po stlačení tlačidla „Ukončiť“ v hlavnej ponuke</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Ukončiť</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Ukončiť</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Obdobie, za ktoré vymazať údaje</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2824,6 +2863,20 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Ponuka pre zoradenie hesiel</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">E‑mailové masky</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Navrhovať e‑mailové masky</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Skryte svoj skutočný e-mail, aby ste ochránili svoju schránku pred nevyžiadanou poštou. Niektoré stránky nepodporujú e‑mailové masky.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Ďalšie informácie</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Spravovať e‑mailové masky</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3059,9 +3112,9 @@
   -->
   <string name="certificate_info_verified_by">Overil ju: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Odstrániť</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Odstrániť</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Upraviť</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Upraviť</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Naozaj chcete odstrániť toto heslo?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3122,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Zrušiť</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Možnosti hesiel</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Možnosti hesiel</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Upraviteľné textové pole pre webovú adresu.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Upraviteľné textové pole pre webovú adresu.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Upraviteľné textové pole pre používateľské meno.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Upraviteľné textové pole pre používateľské meno.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Upraviteľné textové pole pre heslo.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Upraviteľné textové pole pre heslo.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Uložiť zmeny</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Uložiť zmeny</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Upraviť heslo</string>
   <!-- The page title for adding new password. -->
@@ -4002,6 +4055,8 @@
   <string name="settings_search_no_results_title">Žiadne výsledky</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Možno skúste iné vyhľadávanie?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Tlačidlo vyhľadávania v nastaveniach</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

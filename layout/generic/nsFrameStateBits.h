@@ -174,15 +174,14 @@ FRAME_STATE_BIT(Generic, 19, NS_FRAME_REFLOW_ROOT)
 // NOTE: Bits 20-31 and 60-63 of the frame state are reserved for specific
 // frame classes.
 
-// This bit is set on floats whose parent does not contain their
-// placeholder.  This can happen for two reasons:  (1) the float was
-// split, and this piece is the continuation, or (2) the entire float
-// didn't fit on the page.
-// Note that this bit is also shared by text frames for
-// TEXT_IS_IN_TOKEN_MATHML.  That's OK because we only check the
-// NS_FRAME_IS_PUSHED_FLOAT bit on frames which we already know are
-// out-of-flow.
-FRAME_STATE_BIT(Generic, 32, NS_FRAME_IS_PUSHED_FLOAT)
+// This bit is set on out-of-flow frames (e.g. floats or absolutely positioned
+// elements) whose parent does not contain their placeholder. This can happen
+// for two reasons: (1) the frame was split, and this piece is the continuation,
+// or (2) the entire frame didn't fit on the fragmentainer (e.g. page/column).
+// Note that this bit is also shared by text frames for TEXT_IS_IN_TOKEN_MATHML.
+// That's OK because we only check the NS_FRAME_IS_PUSHED_OUT_OF_FLOW bit on
+// frames which we already know are out-of-flow.
+FRAME_STATE_BIT(Generic, 32, NS_FRAME_IS_PUSHED_OUT_OF_FLOW)
 
 // This bit acts as a loop flag for recursive paint server drawing.
 FRAME_STATE_BIT(Generic, 33, NS_FRAME_DRAWING_AS_PAINTSERVER)
@@ -493,7 +492,7 @@ FRAME_STATE_BIT(Text, 31, TEXT_HAS_NONCOLLAPSED_CHARACTERS)
 
 // This state bit is set on children of token MathML elements.
 // NOTE: TEXT_IS_IN_TOKEN_MATHML has a global state bit value that is shared
-//       with NS_FRAME_IS_PUSHED_FLOAT.
+//       with NS_FRAME_IS_PUSHED_OUT_OF_FLOW.
 FRAME_STATE_BIT(Text, 32, TEXT_IS_IN_TOKEN_MATHML)
 
 // Set when this text frame is mentioned in the userdata for the

@@ -141,9 +141,9 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
         const result = new lazy.UrlbarResult({
           type: UrlbarUtils.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-          ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-            title: [res.title, UrlbarUtils.HIGHLIGHT.NONE],
-            url: [res.url, UrlbarUtils.HIGHLIGHT.NONE],
+          payload: {
+            title: res.title,
+            url: res.url,
             icon: UrlbarUtils.getIconForUrl(res.url),
             isBlockable: true,
             blockL10n: { id: "urlbar-result-menu-remove-from-history" },
@@ -151,7 +151,7 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
               Services.urlFormatter.formatURLPref("app.support.baseURL") +
               "awesome-bar-result-menu",
             frecency: res.frecency,
-          }),
+          },
         });
         addCallback(this, result);
       }
@@ -200,24 +200,20 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
       ) {
         continue;
       }
-      let { payload, payloadHighlights } =
-        lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-          url: [res.url, UrlbarUtils.HIGHLIGHT.NONE],
-          title: [res.title, UrlbarUtils.HIGHLIGHT.NONE],
+      let result = new lazy.UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+        source: UrlbarUtils.RESULT_SOURCE.TABS,
+        payload: {
+          url: res.url,
+          title: res.title,
           icon: UrlbarUtils.getIconForUrl(res.url),
           userContextId: tabUserContextId,
           tabGroup: tabGroupId,
           lastVisit: res.lastVisit,
-        });
-      if (lazy.UrlbarPrefs.get("secondaryActions.switchToTab")) {
-        payload.action =
-          UrlbarUtils.createTabSwitchSecondaryAction(tabUserContextId);
-      }
-      let result = new lazy.UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-        source: UrlbarUtils.RESULT_SOURCE.TABS,
-        payload,
-        payloadHighlights,
+          action: lazy.UrlbarPrefs.get("secondaryActions.switchToTab")
+            ? UrlbarUtils.createTabSwitchSecondaryAction(tabUserContextId)
+            : undefined,
+        },
       });
       addCallback(this, result);
       added = true;

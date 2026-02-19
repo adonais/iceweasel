@@ -158,7 +158,7 @@ class Selection extends EventEmitter {
    * Called when a target front is destroyed.
    *
    * @param {TargetFront} front
-   * @emits detached-front
+   * @fires detached-front
    */
   onTargetDestroyed(targetFront) {
     // if the current walker belongs to the target that is destroyed, emit a `detached-front`

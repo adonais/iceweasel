@@ -29,41 +29,41 @@ const PREFIX = "Services.prefs:";
  * nsIPrefBranch and nsIPrefService, though it only implements the
  * subset needed by devtools.  A preference branch can hold child
  * preferences while also holding a preference value itself.
- *
- * @param {PrefBranch} parent the parent branch, or null for the root
- *        branch.
- * @param {string} name the base name of this branch
- * @param {string} fullName the fully-qualified name of this branch
  */
-function PrefBranch(parent, name, fullName) {
-  this._parent = parent;
-  this._name = name;
-  this._fullName = fullName;
-  this._observers = {};
-  this._children = {};
+class PrefBranch {
+  /**
+   * @param {PrefBranch} parent the parent branch, or null for the root
+   *        branch.
+   * @param {string} name the base name of this branch
+   * @param {string} fullName the fully-qualified name of this branch
+   */
+  constructor(parent, name, fullName) {
+    this._parent = parent;
+    this._name = name;
+    this._fullName = fullName;
+    this._observers = {};
+    this._children = {};
 
-  // Properties used when this branch has a value as well.
-  this._defaultValue = null;
-  this._hasUserValue = false;
-  this._userValue = null;
-  this._type = PREF_INVALID;
-}
-
-PrefBranch.prototype = {
-  PREF_INVALID,
-  PREF_STRING,
-  PREF_INT,
-  PREF_BOOL,
+    // Properties used when this branch has a value as well.
+    this._defaultValue = null;
+    this._hasUserValue = false;
+    this._userValue = null;
+    this._type = PREF_INVALID;
+  }
+  PREF_INVALID = PREF_INVALID;
+  PREF_STRING = PREF_STRING;
+  PREF_INT = PREF_INT;
+  PREF_BOOL = PREF_BOOL;
 
   /** @see nsIPrefBranch.root.  */
   get root() {
     return this._fullName;
-  },
+  }
 
   /** @see nsIPrefBranch.getPrefType.  */
   getPrefType(prefName) {
     return this._findPref(prefName)._type;
-  },
+  }
 
   /** @see nsIPrefBranch.getBoolPref.  */
   getBoolPref(prefName, defaultValue) {
@@ -79,7 +79,7 @@ PrefBranch.prototype = {
       }
       throw e;
     }
-  },
+  }
 
   /** @see nsIPrefBranch.setBoolPref.  */
   setBoolPref(prefName, value) {
@@ -91,7 +91,7 @@ PrefBranch.prototype = {
       throw new Error(`${prefName} does not have bool type`);
     }
     thePref._set(value);
-  },
+  }
 
   /** @see nsIPrefBranch.getCharPref.  */
   getCharPref(prefName, defaultValue) {
@@ -107,12 +107,12 @@ PrefBranch.prototype = {
       }
       throw e;
     }
-  },
+  }
 
   /** @see nsIPrefBranch.getStringPref.  */
   getStringPref() {
     return this.getCharPref.apply(this, arguments);
-  },
+  }
 
   /** @see nsIPrefBranch.setCharPref.  */
   setCharPref(prefName, value) {
@@ -124,12 +124,12 @@ PrefBranch.prototype = {
       throw new Error(`${prefName} does not have string type`);
     }
     thePref._set(value);
-  },
+  }
 
   /** @see nsIPrefBranch.setStringPref.  */
   setStringPref() {
     return this.setCharPref.apply(this, arguments);
-  },
+  }
 
   /** @see nsIPrefBranch.getIntPref.  */
   getIntPref(prefName, defaultValue) {
@@ -145,7 +145,7 @@ PrefBranch.prototype = {
       }
       throw e;
     }
-  },
+  }
 
   /** @see nsIPrefBranch.setIntPref.  */
   setIntPref(prefName, value) {
@@ -157,19 +157,19 @@ PrefBranch.prototype = {
       throw new Error(`${prefName} does not have int type`);
     }
     thePref._set(value);
-  },
+  }
 
   /** @see nsIPrefBranch.clearUserPref */
   clearUserPref(prefName) {
     const thePref = this._findPref(prefName);
     thePref._clearUserValue();
-  },
+  }
 
   /** @see nsIPrefBranch.prefHasUserValue */
   prefHasUserValue(prefName) {
     const thePref = this._findPref(prefName);
     return thePref._hasUserValue;
-  },
+  }
 
   /** @see nsIPrefBranch.addObserver */
   addObserver(domain, observer, holdWeak) {
@@ -181,7 +181,7 @@ PrefBranch.prototype = {
       this._observers[domain] = [];
     }
     this._observers[domain].push(observer);
-  },
+  }
 
   /** @see nsIPrefBranch.removeObserver */
   removeObserver(domain, observer) {
@@ -192,7 +192,7 @@ PrefBranch.prototype = {
     if (index >= 0) {
       this._observers[domain].splice(index, 1);
     }
-  },
+  }
 
   /** @see nsIPrefService.savePrefFile */
   savePrefFile(file) {
@@ -200,7 +200,7 @@ PrefBranch.prototype = {
       throw new Error("shim prefs only supports null file in savePrefFile");
     }
     // Nothing to do - this implementation always writes back.
-  },
+  }
 
   /** @see nsIPrefService.getBranch */
   getBranch(prefRoot) {
@@ -213,7 +213,7 @@ PrefBranch.prototype = {
     // This is a bit weird since it could erroneously return a pref,
     // not a pref branch.
     return this._findPref(prefRoot);
-  },
+  }
 
   /**
    * Return this preference's current value.
@@ -227,7 +227,7 @@ PrefBranch.prototype = {
       return this._userValue;
     }
     return this._defaultValue;
-  },
+  }
 
   /**
    * Set the preference's value.  The new value is assumed to be a
@@ -242,7 +242,7 @@ PrefBranch.prototype = {
       this._hasUserValue = true;
       this._saveAndNotify();
     }
-  },
+  }
 
   /**
    * Set the default value for this preference, and emit a
@@ -257,7 +257,7 @@ PrefBranch.prototype = {
         this._saveAndNotify();
       }
     }
-  },
+  }
 
   /**
    * If this preference has a user value, clear it.  If a change was
@@ -269,7 +269,7 @@ PrefBranch.prototype = {
       this._hasUserValue = false;
       this._saveAndNotify();
     }
-  },
+  }
 
   /**
    * Helper function to write the preference's value to local storage
@@ -285,7 +285,7 @@ PrefBranch.prototype = {
 
     localStorage.setItem(PREFIX + this._fullName, JSON.stringify(store));
     this._parent._notify(this._name);
-  },
+  }
 
   /**
    * Change this preference's value without writing it back to local
@@ -313,7 +313,7 @@ PrefBranch.prototype = {
     // There's no need to write this back to local storage, since it
     // came from there; and this avoids infinite event loops.
     this._parent._notify(this._name);
-  },
+  }
 
   /**
    * Helper function to find either a Preference or PrefBranch object
@@ -335,7 +335,7 @@ PrefBranch.prototype = {
     }
 
     return branch;
-  },
+  }
 
   /**
    * Helper function to notify any observers when a preference has
@@ -377,7 +377,7 @@ PrefBranch.prototype = {
     if (this._parent) {
       this._parent._notify(`${this._name}.${relativeName}`);
     }
-  },
+  }
 
   /**
    * Helper function to create a branch given an array of branch names
@@ -398,7 +398,7 @@ PrefBranch.prototype = {
       parent = parent._children[branch];
     }
     return parent;
-  },
+  }
 
   /**
    * Create a new preference.  The new preference is assumed to be in
@@ -449,7 +449,7 @@ PrefBranch.prototype = {
     }
 
     return branch;
-  },
+  }
 
   getKeyName(keyName) {
     if (keyName.startsWith(PREFIX)) {
@@ -457,7 +457,7 @@ PrefBranch.prototype = {
     }
 
     return keyName;
-  },
+  }
 
   /**
    * Helper function that is called when local storage changes.  This
@@ -487,7 +487,7 @@ PrefBranch.prototype = {
       const thePref = this._findPref(key);
       thePref._storageUpdated(type, userValue, hasUserValue, defaultValue);
     }
-  },
+  }
 
   /**
    * Helper function to initialize the root PrefBranch.
@@ -522,8 +522,8 @@ PrefBranch.prototype = {
 
     this._onStorageChange = this._onStorageChange.bind(this);
     window.addEventListener("storage", this._onStorageChange);
-  },
-};
+  }
+}
 
 const Services = {
   _prefs: null,

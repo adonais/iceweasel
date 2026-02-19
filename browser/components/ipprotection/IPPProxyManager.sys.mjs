@@ -6,19 +6,35 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IPPEnrollAndEntitleManager:
-    "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
-  IPPChannelFilter: "resource:///modules/ipprotection/IPPChannelFilter.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
+  IPPChannelFilter:
+    "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs",
   IPProtectionUsage:
-    "resource:///modules/ipprotection/IPProtectionUsage.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionUsage.sys.mjs",
   IPPNetworkErrorObserver:
-    "resource:///modules/ipprotection/IPPNetworkErrorObserver.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPPNetworkErrorObserver.sys.mjs",
   IPProtectionServerlist:
-    "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs",
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
+
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "setTimeout",
+  () =>
+    ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs")
+      .setTimeout
+);
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "clearTimeout",
+  () =>
+    ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs")
+      .clearTimeout
+);
 
 import { ERRORS } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 
@@ -71,6 +87,8 @@ class IPPProxyManagerSingleton extends EventTarget {
   // If this is set, we're awaiting a proxy pass rotation
   #rotateProxyPassPromise = null;
   #activatedAt = false;
+
+  #rotationTimer = 0;
 
   errors = [];
 
@@ -193,6 +211,7 @@ class IPPProxyManagerSingleton extends EventTarget {
         started = await this.#startInternal();
       } catch (error) {
         this.#setErrorState(ERRORS.GENERIC, error);
+        this.cancelChannelFilter();
         return;
       }
 
@@ -251,9 +270,10 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     // If the current proxy pass is valid, no need to re-authenticate.
     // Throws an error if the proxy pass is not available.
-    if (!this.#pass?.isValid()) {
+    if (this.#pass == null || this.#pass.shouldRotate()) {
       this.#pass = await this.#getProxyPass();
     }
+    this.#schedulePassRotation(this.#pass);
 
     const location = lazy.IPProtectionServerlist.getDefaultLocation();
     const server = lazy.IPProtectionServerlist.selectServer(location?.city);
@@ -303,6 +323,9 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
 
     this.cancelChannelFilter();
+
+    lazy.clearTimeout(this.#rotationTimer);
+    this.#rotationTimer = 0;
 
     this.networkErrorObserver.stop();
 
@@ -373,6 +396,37 @@ class IPPProxyManagerSingleton extends EventTarget {
   }
 
   /**
+   * Given a ProxyPass, sets a timer and triggers a rotation when it's about to expire.
+   *
+   * @param {*} pass
+   */
+  #schedulePassRotation(pass) {
+    if (this.#rotationTimer) {
+      lazy.clearTimeout(this.#rotationTimer);
+      this.#rotationTimer = 0;
+    }
+
+    const now = Temporal.Now.instant();
+    const rotationTimePoint = pass.rotationTimePoint;
+    let msUntilRotation = now.until(rotationTimePoint).total("milliseconds");
+    if (msUntilRotation <= 0) {
+      msUntilRotation = 0;
+    }
+
+    lazy.logConsole.debug(
+      `ProxyPass will rotate in ${now.until(rotationTimePoint).total("minutes")} minutes`
+    );
+    this.#rotationTimer = lazy.setTimeout(async () => {
+      this.#rotationTimer = 0;
+      if (!this.#connection?.active) {
+        return;
+      }
+      lazy.logConsole.debug(`Statrting scheduled ProxyPass rotation`);
+      await this.#rotateProxyPass();
+    }, msUntilRotation);
+  }
+
+  /**
    * Starts a flow to get a new ProxyPass and replace the current one.
    *
    * @returns {Promise<void>} - Returns a promise that resolves when the rotation is complete or failed.
@@ -396,6 +450,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
     lazy.logConsole.debug("Successfully rotated token!");
     this.#pass = pass;
+    this.#schedulePassRotation(pass);
     return null;
   }
 

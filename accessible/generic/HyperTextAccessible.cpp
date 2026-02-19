@@ -309,7 +309,7 @@ void HyperTextAccessible::SetMathMLXMLRoles(AccAttributes* aAttributes) {
           if (mathMLFrame) {
             nsEmbellishData embellishData;
             mathMLFrame->GetEmbellishData(embellishData);
-            if (NS_MATHML_EMBELLISH_IS_FENCE(embellishData.flags)) {
+            if (embellishData.flags.contains(MathMLEmbellishFlag::Fence)) {
               if (!LocalPrevSibling()) {
                 aAttributes->SetAttribute(nsGkAtoms::xmlroles,
                                           nsGkAtoms::open_fence);
@@ -318,7 +318,7 @@ void HyperTextAccessible::SetMathMLXMLRoles(AccAttributes* aAttributes) {
                                           nsGkAtoms::close_fence);
               }
             }
-            if (NS_MATHML_EMBELLISH_IS_SEPARATOR(embellishData.flags)) {
+            if (embellishData.flags.contains(MathMLEmbellishFlag::Separator)) {
               aAttributes->SetAttribute(nsGkAtoms::xmlroles,
                                         nsGkAtoms::separator);
             }

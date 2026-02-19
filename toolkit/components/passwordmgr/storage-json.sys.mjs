@@ -447,6 +447,12 @@ export class LoginManagerStorage_json {
     ]);
   }
 
+  async modifyLoginAsync(oldLogin, newLoginData, fromSync) {
+    let result = this.modifyLogin(oldLogin, newLoginData, fromSync);
+    // Emulate being async:
+    return Promise.resolve(result);
+  }
+
   // Replace the login with a tombstone. It has a guid and sync-related properties,
   // but does not contain the login or password information.
   #replaceLoginWithTombstone(login) {
@@ -500,7 +506,7 @@ export class LoginManagerStorage_json {
    * fails due to a corrupt entry, the login is not included in
    * the resulting array.
    *
-   * @resolve {nsILoginInfo[]}
+   * @returns {Promise<nsILoginInfo[]>}
    */
   async getAllLogins(includeDeleted) {
     this._store.ensureDataReady();

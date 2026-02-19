@@ -569,7 +569,7 @@ bool TexUnpackBytes::TexOrSubImage(bool isSubImage, bool needsRespec,
     const auto& unpacking = unpackingRes.inspect();
     const auto stride = unpacking.metrics.bytesPerRowStride;
     // clang-format off
-    if (!ConvertIfNeeded(webgl, unpacking.state.rowLength,
+    if (!ConvertIfNeeded(webgl, unpacking.metrics.usedPixelsPerRow,
                          unpacking.metrics.totalRows,
                          format, uploadPtr, AutoAssertCast(stride),
                          format, AutoAssertCast(stride), &uploadPtr, &tempBuffer)) {
@@ -1172,6 +1172,12 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
 
   ////
 
+  const auto surfSize = surf->GetSize();
+  if (uint32_t(surfSize.width) < size.x || uint32_t(surfSize.height) < size.y) {
+    gfxCriticalError() << "Source surface size too small for upload.";
+    return false;
+  }
+
   WebGLTexelFormat srcFormat;
   uint8_t srcBPP;
   if (!GetFormatForSurf(surf, &srcFormat, &srcBPP)) {
@@ -1196,7 +1202,7 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
 
   const auto dstFormat = FormatForPackingInfo(dstPI);
   const size_t dstBpp = BytesPerPixel(dstPI);
-  const size_t dstUsedBytesPerRow = dstBpp * surf->GetSize().width;
+  const size_t dstUsedBytesPerRow = dstBpp * surfSize.width;
   size_t dstStride = dstFormat == srcFormat ? srcStride  // Try To match
                                             : dstUsedBytesPerRow;
 
@@ -1227,7 +1233,7 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
   const uint8_t* dstBegin = srcBegin;
   UniqueBuffer tempBuffer;
   // clang-format off
-  if (!ConvertIfNeeded(webgl, surf->GetSize().width, surf->GetSize().height,
+  if (!ConvertIfNeeded(webgl, surfSize.width, surfSize.height,
                        srcFormat, srcBegin, AutoAssertCast(srcStride),
                        dstFormat, AutoAssertCast(dstUnpacking.metrics.bytesPerRowStride), &dstBegin,
                        &tempBuffer)) {

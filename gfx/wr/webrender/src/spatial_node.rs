@@ -301,6 +301,10 @@ pub struct SpatialNode {
     /// This is calculated in update(). This will be used to decide whether
     /// to override corresponding picture's raster space as an optimisation.
     pub is_ancestor_or_self_zooming: bool,
+
+    /// An internal unique identifier for use during frame building (as opposed
+    /// to SpatialNodeUid which is used before interning).
+    pub uid: u64,
 }
 
 /// Snap an offset to be incorporated into a transform, where the local space
@@ -1051,4 +1055,3 @@ fn test_cst_perspective_relative_scroll() {
     let ref_transform = transform.then_translate(LayoutVector3D::new(0.0, -50.0, 0.0));
     assert!(world_transform.approx_eq(&ref_transform));
 }
-

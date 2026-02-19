@@ -68,7 +68,12 @@ add_task(async function test_openPasswordManagementNew() {
       "Save Password CheckBox should be unchecked by default"
     );
 
-    let showPasswordsButton = doc.getElementById("manageSavedPasswords");
+    let showPasswordsButton = doc
+      .getElementById("manageSavedPasswords")
+      /**
+       * Must test clicking on shadowRoot anchor or a11y checks will fail.
+       */
+      .shadowRoot.querySelector("a");
     showPasswordsButton.click();
   });
 

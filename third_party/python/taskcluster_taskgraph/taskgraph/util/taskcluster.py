@@ -231,7 +231,7 @@ def find_task_id_batched(index_paths):
 def get_artifact_from_index(index_path, artifact_path):
     index = get_taskcluster_client("index")
     response = index.findArtifactFromTask(index_path, artifact_path)
-    return _handle_artifact(index_path, response)
+    return _handle_artifact(artifact_path, response)
 
 
 def list_tasks(index_path):

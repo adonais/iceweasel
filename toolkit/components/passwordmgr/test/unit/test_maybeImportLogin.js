@@ -64,7 +64,9 @@ add_task(async function test_new_logins() {
     },
   ]);
   Assert.ok(importedLogin, "Return value should indicate imported login.");
-  let matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  let matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -84,14 +86,18 @@ add_task(async function test_new_logins() {
     importedLogin,
     "Return value should indicate another imported login."
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
     `There should still be 1 login for ${HOST1}`
   );
 
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST2 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST2,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -115,7 +121,9 @@ add_task(async function test_duplicate_logins() {
     },
   ]);
   Assert.ok(importedLogin, "Return value should indicate imported login.");
-  let matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  let matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -134,7 +142,9 @@ add_task(async function test_duplicate_logins() {
     !importedLogin,
     "Return value should indicate no new login was imported."
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -154,7 +164,9 @@ add_task(async function test_different_passwords() {
     },
   ]);
   Assert.ok(importedLogin, "Return value should indicate imported login.");
-  let matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  let matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -175,7 +187,9 @@ add_task(async function test_different_passwords() {
     !importedLogin,
     "Return value should not indicate imported login (as we updated an existing one)."
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -201,7 +215,9 @@ add_task(async function test_different_passwords() {
     !importedLogin,
     "Return value should not indicate imported login (as we didn't update anything)."
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -226,7 +242,9 @@ add_task(async function test_different_usernames_without_guid() {
     },
   ]);
   Assert.ok(importedLogin, "Return value should indicate imported login.");
-  let matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  let matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -245,7 +263,9 @@ add_task(async function test_different_usernames_without_guid() {
     importedLogin,
     "Return value should indicate another imported login."
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     2,
@@ -265,7 +285,9 @@ add_task(async function test_different_usernames_with_guid() {
     },
   ]);
   Assert.ok(importedLogin, "Return value should indicate imported login.");
-  let matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  let matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -287,7 +309,9 @@ add_task(async function test_different_usernames_with_guid() {
     "modified",
     "Return value should indicate an update"
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST2 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST2,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -311,7 +335,9 @@ add_task(async function test_different_targets() {
     },
   ]);
   Assert.ok(importedLogin, "Return value should indicate imported login.");
-  let matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  let matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -332,7 +358,9 @@ add_task(async function test_different_targets() {
     "Return value should NOT indicate imported login " +
       "(because a missing formActionOrigin and httpRealm should be duped to the existing login)."
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     1,
@@ -357,7 +385,9 @@ add_task(async function test_different_targets() {
     "Return value should indicate another imported login " +
       "as an httpRealm login shouldn't be duped."
   );
-  matchingLogins = LoginHelper.searchLoginsWithObject({ origin: HOST1 });
+  matchingLogins = await Services.logins.searchLoginsAsync({
+    origin: HOST1,
+  });
   Assert.equal(
     matchingLogins.length,
     2,

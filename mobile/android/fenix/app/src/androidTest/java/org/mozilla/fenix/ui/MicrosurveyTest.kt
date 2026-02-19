@@ -4,6 +4,7 @@
 package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
@@ -36,15 +37,15 @@ class MicrosurveyTest : TestSetup() {
     fun activationOfThePrintMicrosurveyTest() {
         val testPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage.url) {
         }.openThreeDotMenu {
         }.clickShareButton {
-        }.clickPrintButton {
+        }.clickPrintButton(composeTestRule) {
             mDevice.waitForIdle()
             mDevice.pressBack()
         }
-        surveyScreen {
+        surveyScreen(composeTestRule) {
             verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = true)
         }
     }
@@ -56,43 +57,45 @@ class MicrosurveyTest : TestSetup() {
         val testPage1 = mockWebServer.getGenericAsset(1)
         val testPage2 = mockWebServer.getGenericAsset(2)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage1.url) {
         }.openThreeDotMenu {
         }.clickShareButton {
-        }.clickPrintButton {
+        }.clickPrintButton(composeTestRule) {
             mDevice.waitForIdle()
             mDevice.pressBack()
         }
-        surveyScreen {
+        surveyScreen(composeTestRule) {
             clickContinueSurveyButton(composeTestRule)
             verifyPleaseCompleteTheSurveyHeader(composeTestRule)
             selectAnswer("Very satisfied", composeTestRule)
         }.collapseSurveyByTappingBackButton {
-        }.openNavigationToolbar {
+        }
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage2.url) {
             mDevice.waitForIdle()
-            surveyScreen {
+            surveyScreen(composeTestRule) {
                 verifyTheSurveyTitle(getStringResource(R.string.microsurvey_prompt_printing_title), composeTestRule, true)
             }
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2809361
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @SmokeTest
     @Test
     fun verifyTheSurveyConfirmationSheetTest() {
         val testPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage.url) {
         }.openThreeDotMenu {
         }.clickShareButton {
-        }.clickPrintButton {
+        }.clickPrintButton(composeTestRule) {
             mDevice.waitForIdle()
             mDevice.pressBack()
         }
-        surveyScreen {
+        surveyScreen(composeTestRule) {
             clickContinueSurveyButton(composeTestRule)
             expandSurveySheet(composeTestRule)
             selectAnswer("Very satisfied", composeTestRule)
@@ -102,25 +105,26 @@ class MicrosurveyTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2809344
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun dismissTheSurveyPromptTest() {
         val testPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage.url) {
         }.openThreeDotMenu {
         }.clickShareButton {
-        }.clickPrintButton {
+        }.clickPrintButton(composeTestRule) {
             mDevice.waitForIdle()
             mDevice.pressBack()
         }
-        surveyScreen {
+        surveyScreen(composeTestRule) {
             verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = true)
             clickOutsideTheSurveyPrompt()
             verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = true)
         }.clickHomeScreenSurveyCloseButton {
         }
-        surveyScreen {
+        surveyScreen(composeTestRule) {
             verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = false)
         }
     }

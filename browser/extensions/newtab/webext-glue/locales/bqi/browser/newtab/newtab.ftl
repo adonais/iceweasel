@@ -13,6 +13,10 @@ newtab-settings-dialog-label =
 
 newtab-topsites-edit-shortcut-header = آلشت ر نهنگ
 
+## Top Sites - General form dialog buttons. These are verbs/actions.
+
+newtab-topsites-cancel-button = لقو
+
 ## Top Sites - Delete history confirmation dialog.
 
 # "This action" refers to deleting a page from history.
@@ -28,11 +32,18 @@ newtab-menu-topsites-placeholder-tooltip =
 ## Context Menu: These strings are displayed in a context menu and are meant as a call to action for a given page.
 
 newtab-menu-edit-topsites = آلشت
+newtab-menu-open-new-window = گۊشیڌن من ی نیمدری نۊ
+newtab-menu-open-new-private-window = گۊشیڌن من ی نیمدری سیخومی نۊ
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
 newtab-privacy-modal-button-done = ٱنجوم وابی
 newtab-privacy-modal-button-manage = دؽوۉداری سامووا موئتوا هؽزگر
+
+##
+
+# Bookmark is a verb here.
+newtab-menu-bookmark = نشووک
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -50,6 +61,16 @@ newtab-custom-settings = دؽوۉداری سامووا قلوه
 ## New Tab Weather
 
 newtab-weather-menu-learn-more = قلوه دووسته بۊین
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = شئر نیویورک
+
+## Topic Selection Modal
+
+newtab-topic-selection-cancel-button = لقو
+
+## Strings for reporting ads and content
+
+newtab-report-cancel = لقو
 
 ## Strings for trending searches
 
@@ -62,9 +83,16 @@ newtab-widget-lists-label-new =
     .label = نۊ
 newtab-widget-task-list-menu-copy = لف گیری
 newtab-widget-lists-menu-edit = آلشت نومگه نوم
+newtab-widget-lists-menu-create = وورکل ی نومگه نۊ
 newtab-widget-lists-menu-copy = لف گیری نومگه من کلیپ بورد
 newtab-widget-lists-menu-learn-more = قلوه دووسته بۊین
 newtab-widget-lists-input-menu-edit = آلشت
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + وورکل ی نومگه نۊ
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = نومگه نۊ
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

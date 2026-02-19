@@ -157,7 +157,7 @@ def midl(out, input, *flags):
         command.append("-Oicf")
         command.append(relativize(input, base))
         print("Executing:", " ".join(command))
-        result = subprocess.run(command, cwd=base)
+        result = subprocess.run(command, check=False, cwd=base)
         return result.returncode
     finally:
         if tmpdir:

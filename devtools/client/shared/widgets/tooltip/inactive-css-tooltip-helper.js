@@ -10,6 +10,9 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/link.js",
   true
 );
+const { getMdnLinkParams } = ChromeUtils.importESModule(
+  "resource://devtools/shared/mdn.mjs"
+);
 
 class InactiveCssTooltipHelper {
   constructor() {
@@ -61,13 +64,12 @@ class InactiveCssTooltipHelper {
     const { doc } = tooltip;
 
     const documentUrl = new URL(
-      learnMoreURL ||
-        `https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/${property}`
+      (learnMoreURL ||
+        `https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/${property}`) +
+        "?" +
+        getMdnLinkParams("inspector-inactive-css")
     );
     this._currentTooltip = tooltip;
-    const { searchParams } = documentUrl;
-    searchParams.append("utm_source", "devtools");
-    searchParams.append("utm_medium", "inspector-inactive-css");
     this._currentUrl = documentUrl.toString();
 
     const templateNode = doc.createElementNS(XHTML_NS, "template");

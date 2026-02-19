@@ -95,7 +95,7 @@
 /** Compile-time conversion of float constant to log gain value */
 #define GCONST2(x,bits) ((celt_glog)(.5+(x)*(((celt_glog)1)<<(bits))))
 
-/** Compile-time conversion of float constant to DB_SHFIT log gain value */
+/** Compile-time conversion of float constant to DB_SHIFT log gain value */
 #define GCONST(x) GCONST2((x),DB_SHIFT)
 
 /** Negate a 16-bit value */
@@ -200,7 +200,7 @@
 /** Divide a 32-bit value by a 32-bit value. Result fits in 32 bits */
 #define DIV32(a,b) (((opus_val32)(a))/((opus_val32)(b)))
 
-#if defined(__mips_dsp) && __mips == 32
+#if defined(__mips)
 #include "mips/fixed_generic_mipsr1.h"
 #endif
 

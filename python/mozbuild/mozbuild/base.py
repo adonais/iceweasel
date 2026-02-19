@@ -301,9 +301,7 @@ class MozbuildObject(ProcessExecutionMixin):
                     )
                     for a in args
                 )
-                return super(ReducedConfigureSandbox, self).depends_impl(
-                    *args, **kwargs
-                )
+                return super().depends_impl(*args, **kwargs)
 
         # This may be called recursively from configure itself for $reasons,
         # so avoid logging to the same logger (configure uses "moz.configure")
@@ -958,119 +956,133 @@ class MachCommandConditions:
     """
 
     @staticmethod
-    def is_firefox(cls):
+    def is_firefox(build_obj):
         """Must have a Firefox build."""
-        if hasattr(cls, "substs"):
-            return cls.substs.get("MOZ_BUILD_APP") == "browser"
+        if hasattr(build_obj, "substs"):
+            return build_obj.substs.get("MOZ_BUILD_APP") == "browser"
         return False
 
     @staticmethod
-    def is_jsshell(cls):
+    def is_jsshell(build_obj):
         """Must have a jsshell build."""
-        if hasattr(cls, "substs"):
-            return cls.substs.get("MOZ_BUILD_APP") == "js"
+        if hasattr(build_obj, "substs"):
+            return build_obj.substs.get("MOZ_BUILD_APP") == "js"
         return False
 
     @staticmethod
-    def is_thunderbird(cls):
+    def is_thunderbird(build_obj):
         """Must have a Thunderbird build."""
-        if hasattr(cls, "substs"):
-            return cls.substs.get("MOZ_BUILD_APP") == "comm/mail"
+        if hasattr(build_obj, "substs"):
+            return build_obj.substs.get("MOZ_BUILD_APP") == "comm/mail"
         return False
 
     @staticmethod
-    def is_firefox_or_thunderbird(cls):
+    def is_firefox_or_thunderbird(build_obj):
         """Must have a Firefox or Thunderbird build."""
         return MachCommandConditions.is_firefox(
-            cls
-        ) or MachCommandConditions.is_thunderbird(cls)
+            build_obj
+        ) or MachCommandConditions.is_thunderbird(build_obj)
 
     @staticmethod
-    def is_android(cls):
+    def is_android(build_obj):
         """Must have an Android build."""
-        if hasattr(cls, "substs"):
-            return cls.substs.get("MOZ_WIDGET_TOOLKIT") == "android"
+        if hasattr(build_obj, "substs"):
+            return build_obj.substs.get("MOZ_WIDGET_TOOLKIT") == "android"
         return False
 
     @staticmethod
-    def is_not_android(cls):
+    def is_not_android(build_obj):
         """Must not have an Android build."""
-        if hasattr(cls, "substs"):
-            return cls.substs.get("MOZ_WIDGET_TOOLKIT") != "android"
+        if hasattr(build_obj, "substs"):
+            return build_obj.substs.get("MOZ_WIDGET_TOOLKIT") != "android"
         return False
 
     @staticmethod
-    def is_android_cpu(cls):
+    def is_ios(build_obj):
+        """Must have an iOS build."""
+        if hasattr(build_obj, "substs"):
+            return build_obj.substs.get("TARGET_OS") == "iOS"
+        return False
+
+    @staticmethod
+    def is_ios_simulator(build_obj):
+        """Must have an iOS simulator build."""
+        if hasattr(build_obj, "substs"):
+            return build_obj.substs.get("IPHONEOS_IS_SIMULATOR", False)
+        return False
+
+    @staticmethod
+    def is_android_cpu(build_obj):
         """Targeting Android CPU."""
-        if hasattr(cls, "substs"):
-            return "ANDROID_CPU_ARCH" in cls.substs
+        if hasattr(build_obj, "substs"):
+            return "ANDROID_CPU_ARCH" in build_obj.substs
         return False
 
     @staticmethod
-    def is_firefox_or_android(cls):
+    def is_firefox_or_android(build_obj):
         """Must have a Firefox or Android build."""
         return MachCommandConditions.is_firefox(
-            cls
-        ) or MachCommandConditions.is_android(cls)
+            build_obj
+        ) or MachCommandConditions.is_android(build_obj)
 
     @staticmethod
-    def has_build(cls):
+    def has_build(build_obj):
         """Must have a build."""
         return MachCommandConditions.is_firefox_or_android(
-            cls
-        ) or MachCommandConditions.is_thunderbird(cls)
+            build_obj
+        ) or MachCommandConditions.is_thunderbird(build_obj)
 
     @staticmethod
-    def has_build_or_shell(cls):
+    def has_build_or_shell(build_obj):
         """Must have a build or a shell build."""
-        return MachCommandConditions.has_build(cls) or MachCommandConditions.is_jsshell(
-            cls
-        )
+        return MachCommandConditions.has_build(
+            build_obj
+        ) or MachCommandConditions.is_jsshell(build_obj)
 
     @staticmethod
-    def is_hg(cls):
+    def is_hg(build_obj):
         """Must have a mercurial source checkout."""
         try:
-            return isinstance(cls.repository, HgRepository)
+            return isinstance(build_obj.repository, HgRepository)
         except InvalidRepoPath:
             return False
 
     @staticmethod
-    def is_git(cls):
+    def is_git(build_obj):
         """Must have a git source checkout."""
         try:
-            return isinstance(cls.repository, GitRepository)
+            return isinstance(build_obj.repository, GitRepository)
         except InvalidRepoPath:
             return False
 
     @staticmethod
-    def is_jj(cls):
+    def is_jj(build_obj):
         """Must have a jj source checkout."""
         try:
-            return isinstance(cls.repository, JujutsuRepository)
+            return isinstance(build_obj.repository, JujutsuRepository)
         except InvalidRepoPath:
             return False
 
     @staticmethod
-    def is_artifact_build(cls):
+    def is_artifact_build(build_obj):
         """Must be an artifact build."""
-        if hasattr(cls, "substs"):
-            return getattr(cls, "substs", {}).get("MOZ_ARTIFACT_BUILDS")
+        if hasattr(build_obj, "substs"):
+            return getattr(build_obj, "substs", {}).get("MOZ_ARTIFACT_BUILDS")
         return False
 
     @staticmethod
-    def is_non_artifact_build(cls):
+    def is_non_artifact_build(build_obj):
         """Must not be an artifact build."""
-        if hasattr(cls, "substs"):
-            return not MachCommandConditions.is_artifact_build(cls)
+        if hasattr(build_obj, "substs"):
+            return not MachCommandConditions.is_artifact_build(build_obj)
         return False
 
     @staticmethod
-    def is_buildapp_in(cls, apps):
+    def is_buildapp_in(build_obj, apps):
         """Must have a build for one of the given app"""
         for app in apps:
             attr = getattr(MachCommandConditions, f"is_{app}", None)
-            if attr and attr(cls):
+            if attr and attr(build_obj):
                 return True
         return False
 

@@ -29,12 +29,18 @@ async function setupSplitView() {
   info("Add tabs into an active split view.");
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   const splitView = gBrowser.addTabSplitView(tabs);
+  const tabpanels = document.getElementById("tabbrowser-tabpanels");
+  await BrowserTestUtils.waitForMutationCondition(
+    tabpanels,
+    { attributes: true },
+    () => tabpanels.hasAttribute("splitview")
+  );
   for (const tab of tabs) {
     const tabPanel = document.getElementById(tab.linkedPanel);
     await BrowserTestUtils.waitForMutationCondition(
       tabPanel,
       { attributes: true },
-      () => tabPanel.classList.contains("split-view-panel")
+      () => tabPanel.classList.contains("split-view-panel-active")
     );
   }
 

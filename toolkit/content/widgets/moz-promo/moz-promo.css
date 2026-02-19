@@ -105,7 +105,11 @@
 /* MozPromo slot styles */
 
 .actions-and-support-link-wrapper {
-  display: flex;
+  display: none;
   gap: var(--space-small);
   align-items: baseline;
+}
+
+.actions-and-support-link-wrapper.active {
+  display: flex;
 }

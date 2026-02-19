@@ -52,8 +52,8 @@ export let DownloadHistory = {
    *        Optional number that limits the amount of results the history query
    *        may return.
    *
-   * @return {Promise}
-   * @resolves The requested DownloadHistoryList object.
+   * @returns {Promise<DownloadHistoryList>}
+   *   Resolves to the requested DownloadHistoryList object.
    * @rejects JavaScript exception.
    */
   async getList({ type = lazy.Downloads.PUBLIC, maxHistoryResults } = {}) {

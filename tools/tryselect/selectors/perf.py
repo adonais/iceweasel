@@ -102,6 +102,7 @@ class PerfParser(CompareParser):
     task_configs = [
         "artifact",
         "browsertime",
+        "build-car",
         "disable-pgo",
         "env",
         "gecko-profile",
@@ -563,9 +564,9 @@ class PerfParser(CompareParser):
 
                 # Disable the variant combination if none of them
                 # are found in the suite
-                disable_variant = not any(
-                    [variant.value in suite_variants for variant in variant_combination]
-                )
+                disable_variant = not any([
+                    variant.value in suite_variants for variant in variant_combination
+                ])
 
                 for platform in Platforms:
                     if disable_variant:
@@ -628,20 +629,18 @@ class PerfParser(CompareParser):
                 if BASE_CATEGORY_NAME not in variant_combination:
                     # Make sure that all portions of the variant combination
                     # target at least one of the suites in the category
-                    tmp_variant_combination = set(
-                        [v.value for v in variant_combination]
-                    )
+                    tmp_variant_combination = set([
+                        v.value for v in variant_combination
+                    ])
                     for suite in Suites:
                         if suite.value not in category_info["suites"]:
                             continue
-                        tmp_variant_combination = tmp_variant_combination - set(
-                            [
-                                variant.value
-                                for variant in variant_combination
-                                if variant.value
-                                in PerfParser.suites[suite.value]["variants"]
-                            ]
-                        )
+                        tmp_variant_combination = tmp_variant_combination - set([
+                            variant.value
+                            for variant in variant_combination
+                            if variant.value
+                            in PerfParser.suites[suite.value]["variants"]
+                        ])
                     if tmp_variant_combination:
                         # If it's not empty, then some variants
                         # are non-existent
@@ -1032,8 +1031,7 @@ class PerfParser(CompareParser):
 
         if len(mwu_task) > 1 or len(mwu_task) == 0:
             raise InvalidRegressionDetectorQuery(
-                f"Expected 1 task from change detector "
-                f"query, but found {len(mwu_task)}"
+                f"Expected 1 task from change detector query, but found {len(mwu_task)}"
             )
 
         selected_tasks |= set(mwu_task)

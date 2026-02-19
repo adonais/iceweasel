@@ -7,6 +7,7 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.clearText
 import androidx.test.espresso.action.ViewActions.typeText
@@ -73,18 +74,18 @@ class FindInPageRobot {
     fun verifyFindInPageResult(ratioCounter: String) = assertUIObjectExists(itemContainingText(ratioCounter))
 
     class Transition {
-        fun closeFindInPageWithCloseButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun closeFindInPageWithCloseButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "closeFindInPageWithCloseButton: Waiting for device to be idle")
             mDevice.waitForIdle()
             Log.i(TAG, "closeFindInPageWithCloseButton: Device was idle")
             Log.i(TAG, "closeFindInPageWithCloseButton: Trying to close find in page button")
             findInPageCloseButton().click()
             Log.i(TAG, "closeFindInPageWithCloseButton: Clicked close find in page button")
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun closeFindInPageWithBackButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun closeFindInPageWithBackButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "closeFindInPageWithBackButton: Waiting for device to be idle")
             mDevice.waitForIdle()
             Log.i(TAG, "closeFindInPageWithBackButton: Device was idle")
@@ -97,8 +98,8 @@ class FindInPageRobot {
             mDevice.pressBack()
             Log.i(TAG, "closeFindInPageWithBackButton: Pressed 2x the device back button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
     }
 }

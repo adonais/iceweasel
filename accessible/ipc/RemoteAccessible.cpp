@@ -1952,9 +1952,8 @@ already_AddRefed<AccAttributes> RemoteAccessible::Attributes() {
       attributes->SetAttribute(nsGkAtoms::ispopup, std::move(popupType));
     }
 
-    if (auto hasActions =
-            mCachedFields->GetAttribute<bool>(CacheKey::HasActions)) {
-      attributes->SetAttribute(nsGkAtoms::hasActions, *hasActions);
+    if (HasCustomActions()) {
+      attributes->SetAttribute(nsGkAtoms::hasActions, true);
     }
 
     nsString detailsFrom;
@@ -2666,6 +2665,14 @@ void RemoteAccessible::DeleteText(int32_t aStartPos, int32_t aEndPos) {
 
 void RemoteAccessible::PasteText(int32_t aPosition) {
   (void)mDoc->SendPasteText(mID, aPosition);
+}
+
+bool RemoteAccessible::HasCustomActions() const {
+  if (RequestDomainsIfInactive(CacheDomain::ARIA) || !mCachedFields) {
+    return false;
+  }
+  auto hasActions = mCachedFields->GetAttribute<bool>(CacheKey::HasActions);
+  return hasActions && *hasActions;
 }
 
 size_t RemoteAccessible::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {

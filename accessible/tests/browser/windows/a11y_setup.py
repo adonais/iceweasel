@@ -2,8 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Python environment for Windows a11y browser tests.
-"""
+"""Python environment for Windows a11y browser tests."""
 
 import ctypes
 import os
@@ -15,7 +14,7 @@ from dataclasses import dataclass
 import comtypes.automation
 import comtypes.client
 import psutil
-from comtypes import COMError, IServiceProvider
+from comtypes import GUID, COMError, IServiceProvider
 
 CHILDID_SELF = 0
 COWAIT_DEFAULT = 0
@@ -99,6 +98,24 @@ uiaClient = comtypes.CoCreateInstance(
     interface=uiaMod.IUIAutomation,
     clsctx=comtypes.CLSCTX_INPROC_SERVER,
 )
+
+# Register UIA custom properties.
+# IUIAutomationRegistrar is in a different type library.
+uiaCoreMod = comtypes.client.GetModule(("{930299ce-9965-4dec-b0f4-a54848d4b667}",))
+uiaReg = comtypes.CoCreateInstance(
+    uiaCoreMod.CUIAutomationRegistrar._reg_clsid_,
+    interface=uiaCoreMod.IUIAutomationRegistrar,
+)
+uiaAccessibleActionsPropertyId = uiaReg.RegisterProperty(
+    byref(
+        uiaCoreMod.UIAutomationPropertyInfo(
+            GUID("{8C787AC3-0405-4C94-AC09-7A56A173F7EF}"),
+            "AccessibleActions",
+            uiaCoreMod.UIAutomationType_ElementArray,
+        )
+    )
+)
+del uiaReg, uiaCoreMod
 
 _threadLocal = threading.local()
 

@@ -639,8 +639,6 @@ newtab-widget-timer-label-pause =
 newtab-widget-timer-menu-notifications-on = Activar as notificacións
 newtab-widget-timer-menu-hide = Ocultar o temporizador
 newtab-widget-timer-menu-learn-more = Máis información
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Desprázate para ver máis
 newtab-widget-message-title = Mantente concentrado con listas e un temporizador incorporado
 newtab-promo-card-title = Apoiar a { -brand-product-name }
 newtab-promo-card-body = Os nosos patrocinadores apoian a nosa misión de construír unha web mellor

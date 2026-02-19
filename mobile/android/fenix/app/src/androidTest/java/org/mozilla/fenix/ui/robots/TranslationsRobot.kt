@@ -49,13 +49,13 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
                         throw e
                     } else {
                         if (isRedesignedToolbarEnabled) {
-                            browserScreen {
+                            browserScreen(composeTestRule) {
                                 refreshPageFromRedesignedToolbar()
                             }
                         } else {
-                            navigationToolbar {
+                            browserScreen(composeTestRule) {
                             }.openThreeDotMenu {
-                            }.refreshPage {
+                            }.clickRefreshButton {
                             }
                         }
                     }
@@ -303,8 +303,8 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
                 }
             }
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun clickShowOriginalButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -312,8 +312,8 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
             composeTestRule.onNodeWithText("Show original").performClick()
             Log.i(TAG, "clickShowOriginalButton: Clicked on the Show Original button.")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun clickNotNowButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -321,8 +321,8 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
             composeTestRule.onNodeWithText(getStringResource(R.string.translations_bottom_sheet_negative_button)).performClick()
             Log.i(TAG, "clickShowOriginalButton: Clicked on the \"Not now\" button.")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun swipeCloseTranslationsSheet(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -344,8 +344,8 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
                 }
             }
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
 
         fun clickTranslationSettingsButton(interact: SettingsTranslationsRobot.() -> Unit): SettingsTranslationsRobot.Transition {

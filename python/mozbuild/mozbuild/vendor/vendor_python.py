@@ -146,23 +146,21 @@ class VendorPython(MozbuildObject):
         with TemporaryDirectory() as tmp:
             # use requirements.txt to download archived source distributions of all
             # packages
-            subprocess.check_call(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "download",
-                    "-r",
-                    str(requirements_path),
-                    "--no-deps",
-                    "--dest",
-                    tmp,
-                    "--abi",
-                    "none",
-                    "--platform",
-                    "any",
-                ]
-            )
+            subprocess.check_call([
+                sys.executable,
+                "-m",
+                "pip",
+                "download",
+                "-r",
+                str(requirements_path),
+                "--no-deps",
+                "--dest",
+                tmp,
+                "--abi",
+                "none",
+                "--platform",
+                "any",
+            ])
             _purge_vendor_dir(vendor_dir)
             self._extract(tmp, vendor_dir, keep_extra_files)
 

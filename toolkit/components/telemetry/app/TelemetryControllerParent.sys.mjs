@@ -38,6 +38,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   CoveragePing: "resource://gre/modules/CoveragePing.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   TelemetryArchive: "resource://gre/modules/TelemetryArchive.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TelemetryEventPing: "resource://gre/modules/EventPing.sys.mjs",
@@ -527,6 +528,27 @@ var Impl = {
         ", aOptions: " +
         JSON.stringify(aOptions)
     );
+
+    const disabledPings =
+      lazy.NimbusFeatures.legacyTelemetry.getVariable("disabledPings") ?? [];
+    const UNCONTROLLABLE_PINGS = [
+      "main",
+      "first-shutdown",
+      "new-profile",
+      "deletion-request",
+    ];
+    if (disabledPings.includes(aType)) {
+      if (UNCONTROLLABLE_PINGS.includes(aType)) {
+        this._log.warn(
+          `submitExternalPing - type: ${aType} not controllable, but is in the list of disabledPings ${JSON.stringify(disabledPings)}. Ping will submit as normal. Please remove ping type "${aType}" from the Nimbus config.`
+        );
+      } else {
+        this._log.trace(
+          `submitExternalPing - type ${aType} disabled by Nimbus.`
+        );
+        return Promise.reject(new Error("Ping disabled."));
+      }
+    }
 
     // Reject pings sent after shutdown.
     if (this._shutDown) {

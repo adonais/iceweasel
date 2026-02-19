@@ -238,62 +238,6 @@ perf:
     send_in_pings:
       - pageload-base-domain
 
-  js_exec_asm_js:
-    type: timing_distribution
-    description: >
-      Time in milliseconds spent executing Javascript for top level
-      documents that contain the asm.js use counter.  Measures 5min
-      of activity after the use counter is set then records
-      the value in this histogram.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1980396
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D259436
-    notification_emails:
-      - perf-telemetry-alerts@mozilla.com
-    expires: never
-
-  http3_page_load_time:
-    type: labeled_timing_distribution
-    description: >
-      Time in milliseconds from navigationStart to loadEventStart for the
-      foreground http or https root content document. This is collected only on
-      page load where the main document uses or suppports HTTP3
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HTTP3_PERF_PAGE_LOAD_TIME_MS.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675503
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675503
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HTTP3_PERF_PAGE_LOAD_TIME_MS
-
-  http3_first_contentful_paint:
-    type: labeled_timing_distribution
-    description: >
-      The time between navigationStart and the first contentful paint of a
-      foreground http or https root content document, in milliseconds. The
-      contentful paint timestamp is taken during display list building and does
-      not include rasterization or compositing of that paint. This is collected
-      only on page load where the main document uses or suppports HTTP3
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HTTP3_PERF_FIRST_CONTENTFUL_PAINT_MS.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675503
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675503
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HTTP3_PERF_FIRST_CONTENTFUL_PAINT_MS
-
   h3p_page_load_time:
     type: labeled_timing_distribution
     description: >
@@ -339,28 +283,6 @@ perf:
       - necko@mozilla.com
     expires: never
     telemetry_mirror: H3P_PERF_FIRST_CONTENTFUL_PAINT_MS
-
-  dns_first_contentful_paint:
-    type: labeled_timing_distribution
-    description: >
-      The time between navigationStart and the first contentful paint of a
-      foreground http or https root content document, in milliseconds. The
-      contentful paint timestamp is taken during display list building and does
-      not include rasterization or compositing of that paint. Keyed by TRR
-      domain for DoH or 'Native' otherwise
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram DNS_PERF_FIRST_CONTENTFUL_PAINT_MS.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1796639
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1796639
-    notification_emails:
-      - necko@mozilla.com
-      - acreskey@mozilla.com
-    expires: never
-    telemetry_mirror: DNS_PERF_FIRST_CONTENTFUL_PAINT_MS
 
   dns_first_byte:
     type: labeled_timing_distribution

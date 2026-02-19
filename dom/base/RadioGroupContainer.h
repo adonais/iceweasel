@@ -55,7 +55,7 @@ class RadioGroupContainer final {
   nsRadioGroupStruct* GetOrCreateRadioGroup(const nsAString& aName);
 
  private:
-  const nsTArray<RefPtr<HTMLInputElement>>& GetButtonsInGroup(
+  Span<const RefPtr<HTMLInputElement>> GetButtonsInGroup(
       nsRadioGroupStruct* aGroup) const;
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;

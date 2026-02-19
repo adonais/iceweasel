@@ -128,6 +128,8 @@ pub struct EntryPoint<'a> {
     pub stage: crate::ShaderStage,
     pub early_depth_test: Option<crate::EarlyDepthTest>,
     pub workgroup_size: Option<[Option<Handle<Expression<'a>>>; 3]>,
+    pub mesh_output_variable: Option<(&'a str, Span)>,
+    pub task_payload: Option<(&'a str, Span)>,
 }
 
 #[cfg(doc)]
@@ -152,6 +154,7 @@ pub enum Binding<'a> {
         interpolation: Option<crate::Interpolation>,
         sampling: Option<crate::Sampling>,
         blend_src: Option<Handle<Expression<'a>>>,
+        per_primitive: bool,
     },
 }
 
@@ -234,6 +237,13 @@ pub enum Type<'a> {
         rows: crate::VectorSize,
         ty: Handle<Type<'a>>,
         ty_span: Span,
+    },
+    CooperativeMatrix {
+        columns: crate::CooperativeSize,
+        rows: crate::CooperativeSize,
+        ty: Handle<Type<'a>>,
+        ty_span: Span,
+        role: crate::CooperativeRole,
     },
     Atomic(Scalar),
     Pointer {
@@ -385,6 +395,21 @@ pub enum ConstructorType<'a> {
         ty_span: Span,
     },
 
+    /// A cooperative matrix construction base `coop_mat8x8(...)`.
+    PartialCooperativeMatrix {
+        columns: crate::CooperativeSize,
+        rows: crate::CooperativeSize,
+    },
+
+    /// A full cooperative matrix construction `coop_mat8x8<f32,A>(...)`.
+    CooperativeMatrix {
+        columns: crate::CooperativeSize,
+        rows: crate::CooperativeSize,
+        ty: Handle<Type<'a>>,
+        ty_span: Span,
+        role: crate::CooperativeRole,
+    },
+
     /// An array whose component type and size are inferred from the arguments:
     /// `array(3,4,5)`.
     PartialArray,
@@ -465,6 +490,7 @@ pub enum Expression<'a> {
     Call {
         function: Ident<'a>,
         arguments: Vec<Handle<Expression<'a>>>,
+        result_ty: Option<(Handle<Type<'a>>, Span)>,
     },
     Index {
         base: Handle<Expression<'a>>,

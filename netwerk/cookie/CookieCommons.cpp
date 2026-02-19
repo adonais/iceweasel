@@ -1000,7 +1000,7 @@ void CookieCommons::GetServerDateHeader(nsIChannel* aChannel,
 // static
 int64_t CookieCommons::MaybeCapExpiry(int64_t aCurrentTimeInMSec,
                                       int64_t aExpiryInMSec) {
-  int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
+  const int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
 
   if (maxageCap) {
     aExpiryInMSec =
@@ -1008,6 +1008,16 @@ int64_t CookieCommons::MaybeCapExpiry(int64_t aCurrentTimeInMSec,
   }
 
   return aExpiryInMSec;
+}
+
+int64_t CookieCommons::MaybeCapMaxAge(int64_t aCurrentTimeInMSec,
+                                      int64_t aMaxAgeInSec) {
+  const int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
+  CheckedInt<int64_t> value(aCurrentTimeInMSec);
+
+  value +=
+      (maxageCap ? std::min(aMaxAgeInSec, maxageCap) : aMaxAgeInSec) * 1000;
+  return value.isValid() ? value.value() : INT64_MAX;
 }
 
 // static

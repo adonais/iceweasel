@@ -47,7 +47,7 @@ DocumentTimeline::DocumentTimeline(Document* aDocument,
       mDocument(aDocument),
       mOriginTime(aOriginTime) {
   if (mDocument) {
-    mDocument->Timelines().insertBack(this);
+    mDocument->TimelinesController().AddDocumentTimeline(*this);
   }
   // Ensure mLastRefreshDriverTime is valid.
   UpdateLastRefreshDriverTime();

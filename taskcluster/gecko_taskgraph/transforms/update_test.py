@@ -174,9 +174,9 @@ def parametrize_by_locale(config, tasks):
                 f"{this_task['description']}, locale coverage: {locale}"
             )
             this_task["name"] = this_task["name"].replace("locale", locale)
-            this_task["index"][
-                "job-name"
-            ] = f"{this_task['index']['job-name']}-{locale}"
+            this_task["index"]["job-name"] = (
+                f"{this_task['index']['job-name']}-{locale}"
+            )
             this_task["treeherder"]["symbol"] = infix_treeherder_symbol(
                 this_task["treeherder"]["symbol"], locale.replace("-", "")
             )

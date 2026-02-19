@@ -5,7 +5,7 @@
 package org.mozilla.fenix.tabstray
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.GleanMetrics.Metrics
@@ -25,7 +25,7 @@ class TabsTrayTelemetryMiddleware(
     private var shouldReportInactiveTabMetrics: Boolean = true
 
     override fun invoke(
-        context: MiddlewareContext<TabsTrayState, TabsTrayAction>,
+        store: Store<TabsTrayState, TabsTrayAction>,
         next: (TabsTrayAction) -> Unit,
         action: TabsTrayAction,
     ) {

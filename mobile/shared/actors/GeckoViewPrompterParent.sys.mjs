@@ -122,6 +122,24 @@ export class GeckoViewPrompterParent extends GeckoViewActorParent {
         this.rootActor.notifyPromptShow(data.id);
         break;
       }
+      case "GeckoView:Prompt:Dismiss": {
+        return this.eventDispatcher.sendRequest({
+          ...data,
+          type: "GeckoView:Prompt:Dismiss",
+        });
+      }
+      case "GeckoView:Prompt:Update": {
+        return this.eventDispatcher.sendRequest({
+          ...data,
+          type: "GeckoView:Prompt:Update",
+        });
+      }
+      case "GeckoView:Prompt": {
+        return this.eventDispatcher.sendRequestForResult({
+          ...data,
+          type: "GeckoView:Prompt",
+        });
+      }
       default: {
         return super.receiveMessage({ name, data });
       }

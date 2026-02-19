@@ -49,7 +49,7 @@ class JujutsuRepository(Repository):
     HEAD_REVSET = 'coalesce(@ ~ (empty() & description(exact:"")) ~ bookmarks(), @-)'
 
     def __init__(self, path: Path, jj="jj", git="git"):
-        super(JujutsuRepository, self).__init__(path, tool=jj)
+        super().__init__(path, tool=jj)
         self._git = GitRepository(path, git=git)
 
         # Find git root. Newer jj has `jj git root`, but this should support
@@ -460,12 +460,12 @@ class JujutsuRepository(Repository):
 
     def config_key_list_value_missing(self, key: str):
         output = self._run_read_only(
-            "config", "list", key, stderr=subprocess.DEVNULL
+            "config", "list", "--repo", key, stderr=subprocess.DEVNULL
         ).strip()
 
-        # Empty output means the key is missing. We can't rely on warnings because
-        # there could be one or more other warnings (eg: deprecated config flags)
-        # and parsing that would be messy.
+        # Empty output means the key is missing from repo config. We can't rely on
+        # warnings because there could be one or more other warnings (eg: deprecated
+        # config flags) and parsing that would be messy.
         if not output:
             return True
 
@@ -487,6 +487,24 @@ class JujutsuRepository(Repository):
             self.set_config_key_value(config_key, default_value)
         else:
             print(f'jj config: "{config_key}" already set; skipping')
+
+    def _get_config_value(self, key: str) -> Optional[str]:
+        """Get a config value, returning None if not set."""
+        value = self._run_read_only(
+            "config", "get", key, return_codes=[0, 1], stderr=subprocess.DEVNULL
+        )
+        return value.strip() if value else None
+
+    def _migrate_config_value(
+        self, key: str, deprecated_value: str, default_value: str
+    ):
+        """
+        Migrate a config key from a deprecated value to a new valid default value.
+        Only updates if the current value matches deprecated_value.
+        """
+        if self._get_config_value(key) == deprecated_value:
+            print(f'Migrating jj config: "{key}"')
+            self.set_config_key_value(key, default_value)
 
     def _copy_from_git_if_missing(self, config_key: str) -> bool:
         """
@@ -540,9 +558,18 @@ class JujutsuRepository(Repository):
             if updated_author:
                 self._run("describe", "--reset-author", "--no-edit")
 
+            immutable_heads_key = 'revset-aliases."immutable_heads()"'
+            immutable_heads_default_value = "builtin_immutable_heads() | remote_bookmarks(glob:'*', remote=exact:'origin')"
+            immutable_heads_deprecated_value = (
+                "builtin_immutable_heads() | remote_bookmarks(glob:'*', 'origin')"
+            )
+            self._migrate_config_value(
+                immutable_heads_key,
+                immutable_heads_deprecated_value,
+                immutable_heads_default_value,
+            )
             self._set_default_if_missing(
-                'revset-aliases."immutable_heads()"',
-                "builtin_immutable_heads() | remote_bookmarks(glob:'*', 'origin')",
+                immutable_heads_key, immutable_heads_default_value
             )
 
             # This enables `jj fix` which does `./mach lint --fix` on every commit in parallel

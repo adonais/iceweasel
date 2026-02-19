@@ -15,10 +15,8 @@
 #include "mozilla/Encoding.h"
 #include "nsCOMPtr.h"
 #include "nsURLHelper.h"
-#include "nsISizeOf.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/MemoryReporting.h"
 #include "nsISensitiveInfoHiddenURI.h"
 #include "nsIURIMutator.h"
 
@@ -112,7 +110,6 @@ class URLSegmentNumber {
 class nsStandardURL : public nsIFileURL,
                       public nsIStandardURL,
                       public nsISerializable,
-                      public nsISizeOf,
                       public nsISensitiveInfoHiddenURI
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
     ,
@@ -131,9 +128,6 @@ class nsStandardURL : public nsIFileURL,
   NS_DECL_NSISTANDARDURL
   NS_DECL_NSISERIALIZABLE
   NS_DECL_NSISENSITIVEINFOHIDDENURI
-
-  // nsISizeOf
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   static void InitGlobalObjects();
   static void ShutdownGlobalObjects();

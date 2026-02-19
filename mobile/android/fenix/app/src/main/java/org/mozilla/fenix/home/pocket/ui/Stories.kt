@@ -57,8 +57,7 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_STORY
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.roundToInt
 
-private const val DEFAULT_MAX_LINES = 3
-private const val SPONSORED_MAX_LINES = 2
+private const val DEFAULT_MAX_LINES = 2
 private const val ACCESSIBILITY_MAX_LINES_SCALE_FACTOR = 1.2f
 
 /**
@@ -90,7 +89,7 @@ fun SponsoredContentStory(
                     testTag = "pocket.sponsoredContent.title"
                 },
                 overflow = TextOverflow.Ellipsis,
-                maxLines = maxSponsoredLines(),
+                maxLines = maxLines(),
                 style = FirefoxTheme.typography.body2,
             )
 
@@ -100,7 +99,6 @@ fun SponsoredContentStory(
                     testTagsAsResourceId = true
                     testTag = "pocket.sponsoredContent.identifier"
                 },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
                 style = FirefoxTheme.typography.caption,
@@ -145,6 +143,13 @@ fun ContentRecommendationStory(
             overflow = TextOverflow.Ellipsis,
             maxLines = maxLines(),
             style = FirefoxTheme.typography.body2,
+        )
+
+        Text(
+            text = recommendation.publisher,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            style = FirefoxTheme.typography.caption,
         )
     }
 }
@@ -322,10 +327,6 @@ private fun StoriesPreview() {
 @Composable
 @ReadOnlyComposable
 private fun maxLines() = if (limitMaxLines()) DEFAULT_MAX_LINES else Int.MAX_VALUE
-
-@Composable
-@ReadOnlyComposable
-private fun maxSponsoredLines() = if (limitMaxLines()) SPONSORED_MAX_LINES else Int.MAX_VALUE
 
 @Composable
 @ReadOnlyComposable

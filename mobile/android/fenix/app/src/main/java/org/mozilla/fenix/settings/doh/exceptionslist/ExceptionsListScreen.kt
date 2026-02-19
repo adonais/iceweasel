@@ -19,9 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.DestructiveButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.FaviconListItem
@@ -30,6 +30,7 @@ import org.mozilla.fenix.settings.doh.DohSettingsState
 import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -115,20 +116,12 @@ private fun createState() = DohSettingsState(
     isUserExceptionValid = true,
 )
 
+@FlexibleWindowPreview
 @Composable
-@FlexibleWindowLightDarkPreview
-private fun ExceptionsListScreenPreview() {
-    FirefoxTheme {
-        ExceptionsListScreen(
-            state = createState(),
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun ExceptionsListScreenPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun ExceptionsListScreenPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         ExceptionsListScreen(
             state = createState(),
         )

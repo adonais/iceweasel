@@ -583,7 +583,7 @@ class ADBHost(ADBCommand):
                         )
                     except ValueError:
                         self._logger.warning(
-                            "devices: Unable to parse " "remainder for device %s" % line
+                            "devices: Unable to parse remainder for device %s" % line
                         )
                 devices.append(device)
         for device in devices:
@@ -639,9 +639,9 @@ def ADBDeviceFactory(
         # already created an ADBDevice which means we must only have
         # one device connected and we can re-use the existing ADBDevice.
         devices = list(ADBDEVICES.keys())
-        assert (
-            len(devices) == 1
-        ), "Only one device may be connected if the device serial number is not specified."
+        assert len(devices) == 1, (
+            "Only one device may be connected if the device serial number is not specified."
+        )
         adbdevice = ADBDEVICES[devices[0]]
     elif (
         device is not None
@@ -750,67 +750,65 @@ class ADBDevice(ADBCommand):
     # BUILTINS is used to determine which commands can not be executed
     # via su or run-as. This set of possible builtin commands was
     # obtained from `man builtin` on Linux.
-    BUILTINS = set(
-        [
-            "alias",
-            "bg",
-            "bind",
-            "break",
-            "builtin",
-            "caller",
-            "cd",
-            "command",
-            "compgen",
-            "complete",
-            "compopt",
-            "continue",
-            "declare",
-            "dirs",
-            "disown",
-            "echo",
-            "enable",
-            "eval",
-            "exec",
-            "exit",
-            "export",
-            "false",
-            "fc",
-            "fg",
-            "getopts",
-            "hash",
-            "help",
-            "history",
-            "jobs",
-            "kill",
-            "let",
-            "local",
-            "logout",
-            "mapfile",
-            "popd",
-            "printf",
-            "pushd",
-            "pwd",
-            "read",
-            "readonly",
-            "return",
-            "set",
-            "shift",
-            "shopt",
-            "source",
-            "suspend",
-            "test",
-            "times",
-            "trap",
-            "true",
-            "type",
-            "typeset",
-            "ulimit",
-            "umask",
-            "unalias",
-            "unset",
-            "wait",
-        ]
-    )
+    BUILTINS = set([
+        "alias",
+        "bg",
+        "bind",
+        "break",
+        "builtin",
+        "caller",
+        "cd",
+        "command",
+        "compgen",
+        "complete",
+        "compopt",
+        "continue",
+        "declare",
+        "dirs",
+        "disown",
+        "echo",
+        "enable",
+        "eval",
+        "exec",
+        "exit",
+        "export",
+        "false",
+        "fc",
+        "fg",
+        "getopts",
+        "hash",
+        "help",
+        "history",
+        "jobs",
+        "kill",
+        "let",
+        "local",
+        "logout",
+        "mapfile",
+        "popd",
+        "printf",
+        "pushd",
+        "pwd",
+        "read",
+        "readonly",
+        "return",
+        "set",
+        "shift",
+        "shopt",
+        "source",
+        "suspend",
+        "test",
+        "times",
+        "trap",
+        "true",
+        "type",
+        "typeset",
+        "ulimit",
+        "umask",
+        "unalias",
+        "unset",
+        "wait",
+    ])
 
     def __init__(
         self,
@@ -1125,6 +1123,8 @@ class ADBDevice(ADBCommand):
         self.run_as_package = run_as_package
 
         self._logger.debug("ADBDevice: %s" % self.__dict__)
+        self.shell("settings put system accelerometer_rotation 0")
+        self.shell("settings put system user_rotation 0")
 
     @property
     def is_rooted(self):
@@ -1329,7 +1329,7 @@ class ADBDevice(ADBCommand):
             char = file_obj.read(1).decode()
             if not char:
                 break
-            if char != "\r" and char != "\n":
+            if char not in {"\r", "\n"}:
                 line = char + line
             elif line:
                 # we have collected everything up to the beginning of the line
@@ -1598,13 +1598,11 @@ class ADBDevice(ADBCommand):
             if not self.is_rooted:
                 # Note that /sdcard may be accessible while
                 # /mnt/sdcard is not.
-                paths.extend(
-                    [
-                        "/sdcard/test_root",
-                        "/storage/sdcard/test_root",
-                        "/mnt/sdcard/test_root",
-                    ]
-                )
+                paths.extend([
+                    "/sdcard/test_root",
+                    "/storage/sdcard/test_root",
+                    "/mnt/sdcard/test_root",
+                ])
 
         return self._try_test_root_candidates(paths)
 
@@ -3383,9 +3381,9 @@ class ADBDevice(ADBCommand):
                 if "No such process" not in str(e):
                     raise
             pid_set = set(pid_list)
-            current_pid_set = set(
-                [str(proc[0]) for proc in self.get_process_list(timeout=timeout)]
-            )
+            current_pid_set = set([
+                str(proc[0]) for proc in self.get_process_list(timeout=timeout)
+            ])
             pid_list = list(pid_set.intersection(current_pid_set))
             if not pid_list:
                 break
@@ -3681,9 +3679,9 @@ class ADBDevice(ADBCommand):
             if uptime:
                 m = re.match(r"up time: ((\d+) days, )*(\d{2}):(\d{2}):(\d{2})", uptime)
                 if m:
-                    uptime = "%d days %d hours %d minutes %d seconds" % tuple(
-                        [int(g or 0) for g in m.groups()[1:]]
-                    )
+                    uptime = "%d days %d hours %d minutes %d seconds" % tuple([
+                        int(g or 0) for g in m.groups()[1:]
+                    ])
                 info["uptime"] = uptime
         return info
 
@@ -4217,9 +4215,7 @@ class ADBDevice(ADBCommand):
         # starting a new instance may not be what we want depending on what
         # we want to do
         if fail_if_running and self.process_exist(app_name, timeout=timeout):
-            raise ADBError(
-                "Only one instance of an application may be running " "at once"
-            )
+            raise ADBError("Only one instance of an application may be running at once")
 
         if grant_runtime_permissions:
             self.grant_runtime_permissions(app_name)
@@ -4227,12 +4223,10 @@ class ADBDevice(ADBCommand):
         acmd = ["am"] + ["startservice" if is_service else "start"]
         if wait:
             acmd.extend(["-W"])
-        acmd.extend(
-            [
-                "-n",
-                f"{app_name}/{activity_name}",
-            ]
-        )
+        acmd.extend([
+            "-n",
+            f"{app_name}/{activity_name}",
+        ])
         if intent:
             acmd.extend(["-a", intent])
 

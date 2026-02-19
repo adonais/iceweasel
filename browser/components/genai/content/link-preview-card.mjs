@@ -182,7 +182,7 @@ class LinkPreviewCard extends MozLitElement {
    */
   get errorMessageL10nId() {
     if (this.isMissingDataErrorState) {
-      return "link-preview-generation-error-missing-data";
+      return "link-preview-generation-error-missing-data-v2";
     } else if (this.generationError) {
       return "link-preview-generation-error-unexpected";
     }
@@ -497,7 +497,7 @@ class LinkPreviewCard extends MozLitElement {
           <div class="og-error-content">
             <p
               class="og-error-message"
-              data-l10n-id="link-preview-error-message"
+              data-l10n-id="link-preview-error-message-v2"
             ></p>
             <a
               class="og-card-title"

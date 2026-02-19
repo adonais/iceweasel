@@ -61,7 +61,10 @@ var tests = [
       this.notification = showNotification(this.notifyObj);
     },
     async onShown(popup) {
-      await promiseTabLoadEvent(gBrowser.selectedTab, "about:blank");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        uriString: "about:blank",
+      });
 
       checkPopup(popup, this.notifyObj);
       is(
@@ -103,7 +106,11 @@ var tests = [
       );
 
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        uriString: "http://example.com/",
+      });
 
       isnot(
         document.getElementById("geo-notification-icon").getBoundingClientRect()

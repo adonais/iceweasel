@@ -269,7 +269,6 @@ fun TabsTray(
                     .padding(paddingValues)
                     .fillMaxSize(),
                 state = pagerState,
-                beyondViewportPageCount = 2,
                 userScrollEnabled = false,
             ) { position ->
                 when (Page.positionToPage(position)) {
@@ -325,6 +324,10 @@ fun TabsTray(
                             onTabClick = onSyncedTabClick,
                             onTabClose = onSyncedTabClose,
                             onSignInClick = onSignInClick,
+                            expandedState = tabsTrayState.expandedSyncedTabs,
+                            onSectionExpansionToggled = { i ->
+                                tabsTrayStore.dispatch(TabsTrayAction.SyncedTabsHeaderToggled(i))
+                            },
                         )
                     }
                 }
@@ -368,6 +371,7 @@ private fun TabsTrayPreview(
                 privateTabs = tabTrayState.privateTabs,
                 syncedTabs = tabTrayState.syncedTabs,
                 selectedTabId = tabTrayState.selectedTabId,
+                expandedSyncedTabs = tabTrayState.expandedSyncedTabs,
             ),
         )
     }
@@ -581,6 +585,7 @@ private data class TabsTrayPreviewModel(
     val showTabAutoCloseBanner: Boolean = false,
     val isPbmLocked: Boolean = false,
     val isSignedIn: Boolean = true,
+    val expandedSyncedTabs: List<Boolean> = emptyList(),
 )
 
 private fun generateFakeTabsList(

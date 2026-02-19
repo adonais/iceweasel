@@ -7,16 +7,12 @@
 
 // We use importESModule here instead of static import so that the Karma test
 // environment won't choke on these module. This is because the Karma test
-// environment already stubs out XPCOMUtils, AppConstants and RemoteSettings,
-// and overrides importESModule to be a no-op (which can't be done for a static
-// import statement).
+// environment already stubs out XPCOMUtils and RemoteSettings, and overrides
+// importESModule to be a no-op (which can't be done for a static import
+// statement).
 // eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-// eslint-disable-next-line mozilla/use-static-import
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
 );
 
 import {
@@ -43,19 +39,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   UTEventReporting: "resource://newtab/lib/UTEventReporting.sys.mjs",
   NewTabContentPing: "resource://newtab/lib/NewTabContentPing.sys.mjs",
-  NewTabGleanUtils: "resource://newtab/lib/NewTabGleanUtils.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "handoffToAwesomebarPrefValue",
-  "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar",
-  false,
-  (preference, previousValue, new_value) =>
-    Glean.newtabHandoffPreference.enabled.set(new_value)
-);
 
 export const PREF_IMPRESSION_ID = "impressionId";
 export const TELEMETRY_PREF = "telemetry";
@@ -275,9 +261,6 @@ export class TelemetryFeed {
       );
     }
     Glean.newtab.locale.set(Services.locale.appLocaleAsBCP47);
-    Glean.newtabHandoffPreference.enabled.set(
-      lazy.handoffToAwesomebarPrefValue
-    );
   }
 
   getOrCreateImpressionId() {
@@ -739,13 +722,8 @@ export class TelemetryFeed {
           position: action.data.position,
           is_pinned: !!action.data.isPinned,
           visible_topsites,
-          // @backward-compat { version 146 } This newtab train-hop compatibility
-          // shim can be removed once Firefox 146 makes it to the release channel.
-          ...(Services.vc.compare(AppConstants.MOZ_APP_VERSION, "146.0a1") >=
-            0 && {
-            smart_scores: JSON.stringify(action.data.smartScores),
-            smart_weights: JSON.stringify(action.data.smartWeights),
-          }),
+          smart_scores: JSON.stringify(action.data.smartScores),
+          smart_weights: JSON.stringify(action.data.smartWeights),
         });
         break;
 
@@ -756,18 +734,27 @@ export class TelemetryFeed {
           position: action.data.position,
           is_pinned: !!action.data.isPinned,
           visible_topsites,
-          // @backward-compat { version 146 } This newtab train-hop compatibility
-          // shim can be removed once Firefox 146 makes it to the release channel.
-          ...(Services.vc.compare(AppConstants.MOZ_APP_VERSION, "146.0a1") >=
-            0 && {
-            smart_scores: JSON.stringify(action.data.smartScores),
-            smart_weights: JSON.stringify(action.data.smartWeights),
-          }),
+          smart_scores: JSON.stringify(action.data.smartScores),
+          smart_weights: JSON.stringify(action.data.smartWeights),
         });
         break;
 
       default:
         break;
+    }
+  }
+
+  /**
+   * Records the duration that spoc (ads) placeholders were visible to the user.
+   * This tracks how long placeholder content is shown before being replaced
+   * with actual sponsored content when using onDemand mode.
+   *
+   * @param {number} action.data.duration - Duration in milliseconds
+   */
+  handleSpocPlaceholderDuration(action) {
+    const { duration } = action.data;
+    if (duration !== undefined && duration >= 0) {
+      Glean.pocket.spocPlaceholderDuration.accumulateSingleSample(duration);
     }
   }
 
@@ -1035,66 +1022,6 @@ export class TelemetryFeed {
           }
         }
 
-        break;
-      }
-      case "POCKET_THUMBS_DOWN":
-      case "POCKET_THUMBS_UP": {
-        const {
-          corpus_item_id,
-          format,
-          is_section_followed,
-          action_position,
-          received_rank,
-          recommendation_id,
-          recommended_at,
-          scheduled_corpus_item_id,
-          section_position,
-          section,
-          thumbs_down,
-          thumbs_up,
-          tile_id,
-          topic,
-        } = action.data.value ?? {};
-
-        const gleanData = {
-          tile_id,
-          position: action_position,
-          // We conditionally add in a few props.
-          ...(corpus_item_id ? { corpus_item_id } : {}),
-          ...(scheduled_corpus_item_id ? { scheduled_corpus_item_id } : {}),
-          ...(corpus_item_id || scheduled_corpus_item_id
-            ? {
-                received_rank,
-                recommended_at,
-              }
-            : {
-                recommendation_id,
-              }),
-          thumbs_up,
-          thumbs_down,
-          topic,
-          ...(format ? { format } : {}),
-          ...(section
-            ? {
-                section,
-                section_position,
-                ...(this.sectionsPersonalizationEnabled
-                  ? { is_section_followed: !!is_section_followed }
-                  : {}),
-              }
-            : {}),
-        };
-        Glean.pocket.thumbVotingInteraction.record({
-          ...this.redactNewTabPing(gleanData),
-          newtab_visit_id: session.session_id,
-        });
-        if (this.privatePingEnabled) {
-          // eslint-disable-next-line no-unused-vars
-          this.newtabContentPing.recordEvent(
-            "thumbVotingInteraction",
-            gleanData
-          );
-        }
         break;
       }
       // Bug 1969452 - Feature Highlight Telemetry Events
@@ -1387,6 +1314,9 @@ export class TelemetryFeed {
           au.getPortIdOfSender(action),
           action.data
         );
+        break;
+      case at.DISCOVERY_STREAM_SPOC_PLACEHOLDER_DURATION:
+        this.handleSpocPlaceholderDuration(action);
         break;
       case at.DISCOVERY_STREAM_USER_EVENT:
         this.handleDiscoveryStreamUserEvent(action);
@@ -2058,7 +1988,7 @@ export class TelemetryFeed {
    * be valid values of the perf object, as defined in pings.js and the
    * data*.md documentation.
    *
-   * @note Any existing keys with the same names already in the
+   * Note: Any existing keys with the same names already in the
    * session perf object will be overwritten by values passed in here.
    *
    * @param {string} port  The session with which this is associated
@@ -2143,16 +2073,6 @@ export class TelemetryFeed {
   }
 
   async _setNewtabPrefMetrics(fullPrefName, isChanged) {
-    // @backward-compat { version 146 } This newtab train-hop compatibility
-    // shim can be removed once Firefox 146 makes it to the release channel.
-    const is146AndUp =
-      Services.vc.compare(AppConstants.MOZ_APP_VERSION, "146.0a1") >= 0;
-    if (!is146AndUp) {
-      await lazy.NewTabGleanUtils.registrationDone;
-      NEWTAB_PING_PREFS["feeds.section.highlights"] =
-        Glean.newtab.highlightsEnabled;
-    }
-
     const pref = fullPrefName.slice(ACTIVITY_STREAM_PREF_BRANCH.length);
     if (!Object.hasOwn(NEWTAB_PING_PREFS, pref)) {
       return;

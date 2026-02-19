@@ -75,9 +75,9 @@ class Task:
             attributes=task_dict["attributes"],
             task=task_dict["task"],
             optimization=task_dict["optimization"],
-            dependencies=task_dict.get("dependencies"),
-            soft_dependencies=task_dict.get("soft_dependencies"),
-            if_dependencies=task_dict.get("if_dependencies"),
+            dependencies=task_dict.get("dependencies", {}),
+            soft_dependencies=task_dict.get("soft_dependencies", []),
+            if_dependencies=task_dict.get("if_dependencies", []),
         )
         if "task_id" in task_dict:
             rv.task_id = task_dict["task_id"]

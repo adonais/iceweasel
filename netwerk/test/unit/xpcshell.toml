@@ -372,6 +372,8 @@ skip-if = [
 
 ["test_cache-entry-id.js"]
 
+["test_cache-entry-write-handle.js"]
+
 ["test_cache2-00-service-get.js"]
 
 ["test_cache2-01-basic.js"]
@@ -653,7 +655,6 @@ head = "head_channels.js head_cache.js head_cookies.js head_trr.js head_http3.js
 run-if = [
   "!socketprocess_networking",
 ]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_doomentry.js"]
 
@@ -1061,22 +1062,19 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 ["test_httpssvc_https_upgrade.js"]
 
 ["test_httpssvc_iphint.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_httpssvc_priority.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_httpssvc_retry_with_ech.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'", # Bug 1622901
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1808048
   "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1808048
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1808048
 ]
+run-sequentially = ["true"] # uses common port for ECH server
 
 ["test_httpssvc_retry_without_ech.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 1808048
 ]
@@ -1219,8 +1217,6 @@ skip-if = [
 ]
 
 ["test_post.js"]
-
-["test_predictor.js"]
 
 ["test_prio_header_override_forbid.js"]
 
@@ -1477,24 +1473,18 @@ requesttimeoutfactor = 2  # Slow on Linux and Windows
 head = "head_channels.js head_cache.js head_cookies.js head_trr.js head_http3.js trr_common.js"
 
 ["test_trr_additional_section.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_af_fallback.js"]
 
 ["test_trr_blocklist.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_cancel.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_case_sensitivity.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_cname_chain.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_confirmation.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 run-if = [
   "!socketprocess_networking", # confirmation state isn't passed cross-process
 ]
@@ -1503,7 +1493,6 @@ skip-if = [
 ]
 
 ["test_trr_connection_cycle.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 run-if = ["!socketprocess_networking"] # confirmation state isn't passed cross-process
 
 ["test_trr_decoding.js"]
@@ -1520,13 +1509,11 @@ skip-if = [
 ]
 
 ["test_trr_extended_error.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_flags.js"]
 
 ["test_trr_https_fallback.js"]
 requesttimeoutfactor = 4  # Slow on Linux
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'",
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'",
@@ -1535,7 +1522,6 @@ skip-if = [
 ]
 
 ["test_trr_https_rr_with_cname.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'",
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1808049
@@ -1544,7 +1530,6 @@ skip-if = [
 ]
 
 ["test_trr_httpssvc.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_idle_time.js"]
 run-if = [
@@ -1555,7 +1540,6 @@ skip-if = [
 ]
 
 ["test_trr_nat64.js"]
-run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_trr_noPrefetch.js"]
 
@@ -1578,7 +1562,6 @@ run-if = [
 
 ["test_trr_with_proxy.js"]
 head = "head_channels.js head_cache.js head_cookies.js head_trr.js trr_common.js"
-run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !fission && socketprocess_networking", # Bug 1808233
 ]
@@ -1602,6 +1585,8 @@ skip-if = [
 run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_verify_traffic.js"]
+
+["test_wallpaper_protocol.js"]
 
 ["test_websocket_500k.js"]
 skip-if = [

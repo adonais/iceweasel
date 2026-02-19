@@ -15,7 +15,7 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
 
 class HTTPSFirstModeTest : TestSetup() {
     @get:Rule
-    val activityTestRule =
+    val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
@@ -25,29 +25,30 @@ class HTTPSFirstModeTest : TestSetup() {
 
     @Test
     fun httpsFirstModeImplicitSchemeTest() {
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser("permission.site".toUri()) {
             verifyPageContent("permission.site")
-        }.openNavigationToolbar {
-            verifyUrl("https://permission.site/")
+        }.openSearch {
+            verifyTypedToolbarText("https://permission.site/", exists = true)
         }
     }
 
     @Test
     fun httpsFirstModeExplicitSchemeTest() {
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser("http://permission.site".toUri()) {
             verifyPageContent("permission.site")
-        }.openNavigationToolbar {
-            verifyUrl("http://permission.site/")
+        }.openSearch {
+            verifyTypedToolbarText("http://permission.site/", exists = true)
+        }.dismissSearchBar {
         }
 
         // Exception should persist
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser("permission.site".toUri()) {
             verifyPageContent("permission.site")
-        }.openNavigationToolbar {
-            verifyUrl("http://permission.site/")
+        }.openSearch {
+            verifyTypedToolbarText("http://permission.site/", exists = true)
         }
     }
 }

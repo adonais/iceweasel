@@ -12,6 +12,11 @@ const SELECTOR_WARNINGS = {
     // There could be a specific section on the MDN :has page for this: https://github.com/mdn/mdn/issues/469
     learnMoreUrl: null,
   },
+  SiblingCombinatorAfterScope: {
+    l10nId: "css-selector-warning-sibling-combinator-after-scope",
+    // Add the link to MDN when https://github.com/mdn/content/issues/42364 is addressed
+    learnMoreUrl: null,
+  },
 };
 
 class CssSelectorWarningsTooltipHelper {

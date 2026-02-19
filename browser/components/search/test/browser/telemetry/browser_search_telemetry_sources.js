@@ -61,10 +61,6 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.suggest.searches", true],
-      [
-        "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar",
-        true,
-      ],
       // Ensure to add search suggestion telemetry as search_suggestion not search_formhistory.
       ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
     ],
@@ -287,11 +283,14 @@ add_task(async function test_source_urlbar_handoff() {
       await BrowserTestUtils.browserStopped(tab.linkedBrowser, "about:newtab");
 
       info("Focus on search input in newtab content");
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        ".fake-editable",
-        {},
-        tab.linkedBrowser
-      );
+      await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+        let handoffUI = content.document.querySelector(
+          "content-search-handoff-ui"
+        );
+        await handoffUI.updateComplete;
+        let fakeEditable = handoffUI.shadowRoot.querySelector(".fake-editable");
+        fakeEditable.click();
+      });
 
       info("Get suggestions");
       for (const c of "searchSuggestion".split("")) {
@@ -440,13 +439,14 @@ add_task(async function test_source_system() {
 
       // This is not quite the same as calling from the commandline, but close
       // enough for this test.
-      SearchUIUtils.loadSearchFromCommandLine(
+      SearchUIUtils.loadSearch({
         window,
-        "searchSuggestion",
-        false,
-        Services.scriptSecurityManager.getSystemPrincipal(),
-        gBrowser.selectedBrowser.policyContainer
-      );
+        searchText: "searchSuggestion",
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+        policyContainer: gBrowser.selectedBrowser.policyContainer,
+        sapSource: "system",
+      });
 
       await loadPromise;
       return tab;

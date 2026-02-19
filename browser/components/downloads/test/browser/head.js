@@ -439,9 +439,8 @@ function openLibrary(aLeftPaneRoot) {
  * @param aDownload
  *        The Download object to wait upon.
  *
- * @return {Promise}
- * @resolves When the download has reached its progress.
- * @rejects Never.
+ * @returns {Promise<void>}
+ *   Resolves when the download has reached its progress.
  */
 function promiseDownloadHasProgress(aDownload, progress) {
   return new Promise(resolve => {

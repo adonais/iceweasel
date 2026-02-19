@@ -178,6 +178,8 @@ void* CompileZone::addressOfNurseryAllocatedSites() {
   return rt->gc.addressOfNurseryAllocatedSites();
 }
 
+void* CompileZone::jitZone() { return zone()->jitZone(); }
+
 bool CompileZone::canNurseryAllocateStrings() {
   return zone()->allocNurseryStrings();
 }

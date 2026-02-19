@@ -21,19 +21,17 @@ class BackupTest(MarionetteTestCase):
         # We need to force the service to be enabled because it's disabled
         # by default for Marionette. Also "browser.backup.log" has to be set
         # to true before Firefox starts in order for it to be displayed.
-        self.marionette.enforce_gecko_prefs(
-            {
-                "browser.backup.enabled": True,
-                "browser.backup.log": True,
-                "browser.backup.archive.enabled": True,
-                "browser.backup.restore.enabled": True,
-                "browser.backup.archive.overridePlatformCheck": True,
-                "browser.backup.restore.overridePlatformCheck": True,
-                # Necessary to test Session Restore from backup, which relies on
-                # the crash restore mechanism.
-                "browser.sessionstore.resume_from_crash": True,
-            }
-        )
+        self.marionette.enforce_gecko_prefs({
+            "browser.backup.enabled": True,
+            "browser.backup.log": True,
+            "browser.backup.archive.enabled": True,
+            "browser.backup.restore.enabled": True,
+            "browser.backup.archive.overridePlatformCheck": True,
+            "browser.backup.restore.overridePlatformCheck": True,
+            # Necessary to test Session Restore from backup, which relies on
+            # the crash restore mechanism.
+            "browser.sessionstore.resume_from_crash": True,
+        })
 
         self.marionette.set_context("chrome")
 
@@ -317,10 +315,80 @@ class BackupTest(MarionetteTestCase):
         mozfile.remove(archivePath)
         mozfile.remove(recoveryPath)
 
+    def test_backup_disablement_in_new_session(self):
+        archiveDestPath = os.path.join(
+            tempfile.gettempdir(), "backup-dest-disable-test"
+        )
+
+        [archivePath, lastBackupFileName] = self.marionette.execute_async_script(
+            """
+          const { BackupService } = ChromeUtils.importESModule("resource:///modules/backup/BackupService.sys.mjs");
+          let bs = BackupService.init();
+          if (!bs) {
+            throw new Error("Could not get initialized BackupService.");
+          }
+
+          let [archiveDestPath, outerResolve] = arguments;
+          bs.setParentDirPath(archiveDestPath);
+
+          (async () => {
+            bs.setScheduledBackups(true);
+            let { archivePath } = await bs.createBackup();
+            if (!archivePath) {
+              throw new Error("Could not create backup.");
+            }
+
+            let lastBackupFileName = Services.prefs.getStringPref("browser.backup.scheduled.last-backup-file", "");
+            return [archivePath, lastBackupFileName];
+          })().then(outerResolve);
+        """,
+            script_args=[archiveDestPath],
+        )
+
+        print(f"Created backup at: {archivePath}")
+        print(f"Last backup filename: {lastBackupFileName}")
+
+        self.marionette.quit()
+        self.marionette.start_session()
+        self.marionette.set_context("chrome")
+
+        if os.path.exists(archivePath):
+            print(f"File size: {os.path.getsize(archivePath)} bytes")
+
+        self.marionette.execute_async_script(
+            """
+
+          ChromeUtils.defineESModuleGetters(this, {
+            BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+            ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
+          });
+
+          let bs = BackupService.init();
+          if (!bs) {
+            throw new Error("Could not get initialized BackupService.");
+          }
+
+          let [outerResolve] = arguments;
+          (async () => {
+            await ASRouterTargeting.Environment.backupsInfo;
+            await bs.cleanupBackupFiles();
+            bs.setScheduledBackups(false);
+          })().then(outerResolve);
+        """,
+            script_args=[],
+        )
+
+        archiveDeletedAfterDisable = not os.path.exists(archivePath)
+        self.assertTrue(
+            archiveDeletedAfterDisable,
+            f"Backup file should be deleted after disabling backups. Path: {archivePath}, exists: {os.path.exists(archivePath)}",
+        )
+
     def add_test_cookie(self):
         self.marionette.execute_async_script(
             """
           let [outerResolve] = arguments;
+
           (async () => {
             // We'll just add a single cookie, and then make sure that it shows
             // up on the other side.

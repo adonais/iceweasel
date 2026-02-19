@@ -375,6 +375,11 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
     if (result.isDead()) {
       auto* registry = result.initialTarget();
       registry->queue()->setHasRegistry(false);
+
+      // Remove any queued records. These might be dead since the registry was
+      // not marked.
+      registry->queue()->clear();
+
       e.removeFront();
     } else {
       FinalizationRegistryObject* registry = result.finalTarget();
@@ -414,8 +419,16 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
         auto* record = &iter->as<FinalizationRecordObject>();
         record->setInRecordMap(false);
         record->unlink();
+
+        // Move the record to the queue object. In theory this requires a read
+        // barrier since the record pointer is weak. However we have may have
+        // finished marking the record's zone at this point so this is not
+        // possible. Instead note that the record will be marked if the registry
+        // is alive. If not then we clear any queued records when we discover
+        // the the registry is dead above.
         FinalizationQueueObject* queue = record->queue();
         queue->queueRecordToBeCleanedUp(record);
+
         if (shouldQueueFinalizationRegistryForCleanup(queue)) {
           gc->queueFinalizationRegistryForCleanup(queue);
         }
@@ -435,6 +448,7 @@ bool FinalizationObservers::shouldQueueFinalizationRegistryForCleanup(
   //
   // In this case we defer queuing the registry and this happens when the
   // registry is swept.
+  MOZ_ASSERT(queue->hasRegistry());
   Zone* zone = queue->zone();
   return !zone->wasGCStarted() || zone->gcState() >= Zone::Sweep;
 }

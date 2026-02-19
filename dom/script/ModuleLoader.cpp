@@ -220,8 +220,8 @@ nsresult ModuleLoader::CompileFetchedModule(
   switch (aRequest->mModuleType) {
     case JS::ModuleType::Unknown:
       MOZ_CRASH("Unexpected module type");
-    case JS::ModuleType::JavaScript:
-      return CompileJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
+    case JS::ModuleType::JavaScriptOrWasm:
+      return CompileJavaScriptOrWasmModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::CSS:
@@ -233,10 +233,33 @@ nsresult ModuleLoader::CompileFetchedModule(
   MOZ_CRASH("Unhandled module type");
 }
 
-nsresult ModuleLoader::CompileJavaScriptModule(
+nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     JS::MutableHandle<JSObject*> aModuleOut) {
   GetScriptLoader()->CalculateCacheFlag(aRequest);
+
+#ifdef NIGHTLY_BUILD
+  if (aRequest->HasWasmMimeTypeEssence()) {
+    MOZ_ASSERT(aRequest->IsTextSource());
+
+    ModuleLoader::MaybeSourceText maybeSource;
+    nsresult rv = aRequest->GetScriptSource(aCx, &maybeSource,
+                                            aRequest->mLoadContext.get());
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    auto compile = [&](auto& source) {
+      return JS::CompileWasmModule(aCx, aOptions, source);
+    };
+
+    auto* wasmModule = maybeSource.mapNonEmpty(compile);
+    if (!wasmModule) {
+      return NS_ERROR_FAILURE;
+    }
+
+    aModuleOut.set(wasmModule);
+    return NS_OK;
+  }
+#endif
 
   if (aRequest->IsCachedStencil()) {
     JS::InstantiateOptions instantiateOptions(aOptions);

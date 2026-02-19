@@ -7,9 +7,9 @@
 #ifndef ProfileBufferEntry_h
 #define ProfileBufferEntry_h
 
-#include "BaseProfilingCategory.h"
 #include "gtest/MozGtestFriend.h"
 #include "mozilla/BaseProfileJSONWriter.h"
+#include "mozilla/BaseProfilingCategory.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"

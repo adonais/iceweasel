@@ -12,7 +12,7 @@ const TEST_URI = `
   }
 
   .has-issue {
-    scrollbar-color: auto;
+    user-select: auto;
     user-modify: read-only;
   }
 
@@ -31,8 +31,8 @@ const TEST_DATA_SELECTED = [
     selector: ".has-issue",
     expectedIssues: [
       {
-        property: "scrollbar-color",
-        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
+        property: "user-select",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select",
       },
       {
         property: "user-modify",
@@ -61,8 +61,8 @@ const TEST_DATA_ALL = [
     url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
   },
   {
-    property: "scrollbar-color",
-    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
+    property: "user-select",
+    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select",
   },
   {
     property: "user-modify",

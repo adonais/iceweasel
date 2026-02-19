@@ -579,11 +579,11 @@ export var DownloadsCommon = {
    * @param options.useSystemDefault
    *        Optional value indicating how to handle launching this download,
    *        this call only. Will override the associated mimeInfo.preferredAction
-   * @return {Promise}
-   * @resolves When the instruction to launch the file has been
-   *           successfully given to the operating system or handled internally
-   * @rejects  JavaScript exception if there was an error trying to launch
-   *           the file.
+   * @returns {Promise<void>}
+   *   Resolves when the instruction to launch the file has been successfully
+   *   given to the operating system or handled internally.
+   * @rejects
+   *   With a JavaScript exception if there was an error trying to launch the file.
    */
   async openDownload(download, options) {
     // some download objects got serialized and need reconstituting
@@ -663,12 +663,12 @@ export var DownloadsCommon = {
    *             - "chooseOpen" to offer "open" and "confirmBlock".
    *        }
    *
-   * @return {Promise}
-   * @resolves String representing the action that should be executed:
-   *            - "open" to allow the download and open the file.
-   *            - "unblock" to allow the download without opening the file.
-   *            - "confirmBlock" to delete the blocked data permanently.
-   *            - "cancel" to do nothing and cancel the operation.
+   * @returns {Promise<string>}
+   *   Resolves to a string representing the action that should be executed:
+   *   - "open" to allow the download and open the file.
+   *   - "unblock" to allow the download without opening the file.
+   *   - "confirmBlock" to delete the blocked data permanently.
+   *   - "cancel" to do nothing and cancel the operation.
    */
   async confirmUnblockDownload({
     verdict,
@@ -1186,7 +1186,7 @@ const DownloadsViewPrototype = {
    * @param download
    *        Download object that was just added.
    *
-   * @note Subclasses should override this and still call the base method.
+   * Note: Subclasses should override this and still call the base method.
    */
   onDownloadAdded(download) {
     this._oldDownloadStates.set(
@@ -1202,7 +1202,7 @@ const DownloadsViewPrototype = {
    *
    * The onDownloadChanged notification will always be sent afterwards.
    *
-   * @note Subclasses should override this.
+   * Note: Subclasses should override this.
    */
   onDownloadStateChanged() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
@@ -1215,7 +1215,7 @@ const DownloadsViewPrototype = {
    * Note that progress notification changes are throttled at the Downloads.sys.mjs
    * API level, and there is no throttling mechanism in the front-end.
    *
-   * @note Subclasses should override this and still call the base method.
+   * Note: Subclasses should override this and still call the base method.
    */
   onDownloadChanged(download) {
     let oldState = this._oldDownloadStates.get(download);
@@ -1234,7 +1234,7 @@ const DownloadsViewPrototype = {
    * @param download
    *        Download object that is being removed.
    *
-   * @note Subclasses should override this.
+   * Note: Subclasses should override this.
    */
   onDownloadRemoved(download) {
     this._oldDownloadStates.delete(download);
@@ -1244,7 +1244,7 @@ const DownloadsViewPrototype = {
    * Private function used to refresh the internal properties being sent to
    * each registered view.
    *
-   * @note Subclasses should override this.
+   * Note: Subclasses should override this.
    */
   _refreshProperties() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
@@ -1253,7 +1253,7 @@ const DownloadsViewPrototype = {
   /**
    * Private function used to refresh an individual view.
    *
-   * @note Subclasses should override this.
+   * Note: Subclasses should override this.
    */
   _updateView() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);

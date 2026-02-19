@@ -6,7 +6,6 @@ package org.mozilla.fenix.onboarding.redesign.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -68,7 +67,7 @@ fun MarketingDataOnboardingPageRedesign(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(if (state.shouldShowElevation) 6.dp else 0.dp),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
@@ -160,18 +159,8 @@ private fun MarketingDataView(
                 },
             )
 
-            Text(
-                text = marketingData.bodyTwoText,
-                style = FirefoxTheme.typography.body2,
-                textAlign = TextAlign.Start,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Box(modifier = Modifier.padding(start = 48.dp)) {
             LinkText(
-                text = marketingData.bodyOneText,
+                text = marketingData.bodyOneText.updateFirstPlaceholder(marketingData.bodyOneLinkText),
                 linkTextStates = listOf(
                     LinkTextState(
                         text = marketingData.bodyOneLinkText,
@@ -180,6 +169,8 @@ private fun MarketingDataView(
                     ),
                 ),
                 linkTextDecoration = TextDecoration.Underline,
+                style = FirefoxTheme.typography.body2,
+                textAlign = TextAlign.Start,
             )
         }
     }
@@ -191,17 +182,17 @@ private fun MarketingDataOnboardingPagePreview() {
     FirefoxTheme {
         MarketingDataOnboardingPageRedesign(
             state = OnboardingPageState(
-                imageRes = R.drawable.ic_onboarding_marketing_redesign,
-                title = stringResource(id = R.string.onboarding_marketing_redesign_title),
+                imageRes = R.drawable.nova_onboarding_marketing,
+                title = stringResource(id = R.string.nova_onboarding_marketing_title),
                 description = "", // NB: not used in the redesign
                 primaryButton = Action(
-                    text = stringResource(id = R.string.onboarding_marketing_redesign_positive_button),
+                    text = stringResource(id = R.string.nova_onboarding_continue_button),
                     onClick = {},
                 ),
                 marketingData = OnboardingMarketingData(
-                    bodyOneText = stringResource(id = R.string.onboarding_marketing_redesign_learn_more),
-                    bodyOneLinkText = stringResource(id = R.string.onboarding_marketing_redesign_learn_more),
-                    bodyTwoText = stringResource(id = R.string.onboarding_marketing_redesign_opt_out_checkbox),
+                    bodyOneText = stringResource(id = R.string.nova_onboarding_marketing_body),
+                    bodyOneLinkText = stringResource(id = R.string.nova_onboarding_marketing_body_link_text),
+                    bodyTwoText = "", // NB: not used in the redesign
                 ),
             ),
             onMarketingDataLearnMoreClick = {},
@@ -210,3 +201,5 @@ private fun MarketingDataOnboardingPagePreview() {
         )
     }
 }
+
+private fun String.updateFirstPlaceholder(text: String) = replace($$"%1$s", text)

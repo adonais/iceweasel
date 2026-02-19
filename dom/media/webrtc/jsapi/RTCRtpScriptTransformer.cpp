@@ -311,9 +311,11 @@ void RTCRtpScriptTransformer::TransformFrame(
       auto* videoFrame =
           static_cast<webrtc::TransformableVideoFrameInterface*>(aFrame.get());
       if (videoFrame->IsKeyFrame()) {
-        ResolveGenerateKeyFramePromises(videoFrame->GetRid(),
-                                        videoFrame->GetTimestamp());
-        if (!videoFrame->GetRid().empty() &&
+        MOZ_ASSERT(videoFrame->Rid().has_value());
+        ResolveGenerateKeyFramePromises(
+            videoFrame->Rid().value_or(std::string()),
+            videoFrame->GetTimestamp());
+        if (videoFrame->Rid().has_value() && !videoFrame->Rid()->empty() &&
             videoFrame->Metadata().GetSimulcastIdx() == 0) {
           ResolveGenerateKeyFramePromises("", videoFrame->GetTimestamp());
         }

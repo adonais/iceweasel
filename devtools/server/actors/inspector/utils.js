@@ -140,17 +140,17 @@ function isInXULDocument(el) {
 }
 
 /**
- * This DeepTreeWalker filter skips whitespace text nodes and anonymous
- * content with the exception of ::marker, ::before, and ::after, plus anonymous
- * content in XUL document (needed to show all elements in the browser toolbox).
+ * This DeepTreeWalker filter skips whitespace text nodes and anonymous content (unless
+ * we want them visible in the markup view, e.g. ::before, ::after, ::marker, …),
+ * plus anonymous content in XUL document (needed to show all elements in the browser toolbox).
  */
 function standardTreeWalkerFilter(node) {
-  // ::marker, ::before, and ::after are native anonymous content, but we always
-  // want to show them
+  // There are a few native anonymous content that we want to show in markup
   if (
     node.nodeName === "_moz_generated_content_marker" ||
     node.nodeName === "_moz_generated_content_before" ||
-    node.nodeName === "_moz_generated_content_after"
+    node.nodeName === "_moz_generated_content_after" ||
+    node.nodeName === "_moz_generated_content_backdrop"
   ) {
     return nodeFilterConstants.FILTER_ACCEPT;
   }

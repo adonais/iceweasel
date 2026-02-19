@@ -5,7 +5,6 @@
 Add from parameters.yml into bouncer submission tasks.
 """
 
-
 import copy
 import logging
 
@@ -30,8 +29,10 @@ FTP_PLATFORMS_PER_BOUNCER_PLATFORM = {
 }
 
 # :lang is interpolated by bouncer at runtime
-CANDIDATES_PATH_TEMPLATE = "/{ftp_product}/candidates/{version}-candidates/build{build_number}/\
+CANDIDATES_PATH_TEMPLATE = (
+    "/{ftp_product}/candidates/{version}-candidates/build{build_number}/\
 {update_folder}{ftp_platform}/:lang/{file}"
+)
 RELEASES_PATH_TEMPLATE = "/{ftp_product}/releases/{version}/\
 {update_folder}{ftp_platform}/:lang/{file}"
 
@@ -132,13 +133,13 @@ def make_task_worker(config, jobs):
             job,
             "worker-type",
             item_name=job["name"],
-            **{"release-level": release_level(config.params["project"])},
+            **{"release-level": release_level(config.params)},
         )
         resolve_keyed_by(
             job,
             "scopes",
             item_name=job["name"],
-            **{"release-level": release_level(config.params["project"])},
+            **{"release-level": release_level(config.params)},
         )
         resolve_keyed_by(
             job,
@@ -167,9 +168,7 @@ def make_task_worker(config, jobs):
         else:
             logger.warning(
                 'No bouncer entries defined in bouncer submission task for "{}". \
-Job deleted.'.format(
-                    job["name"]
-                )
+Job deleted.'.format(job["name"])
             )
 
 
@@ -189,9 +188,7 @@ def craft_bouncer_entries(config, job):
     else:
         logger.warning(
             'No partials defined! Bouncer submission task won\'t send any \
-partial-related entry for "{}"'.format(
-                job["name"]
-            )
+partial-related entry for "{}"'.format(job["name"])
         )
         bouncer_products = [
             bouncer_product

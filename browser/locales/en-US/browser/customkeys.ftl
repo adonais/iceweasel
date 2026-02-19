@@ -40,3 +40,6 @@ customkeys-nav-reload-skip-cache = Reload (Override Cache)
 customkeys-nav-stop = Stop
 
 customkeys-caution-message = This feature is experimental and may not work as expected.
+
+# Displayed in the new key field when the key that was pressed isn't valid.
+customkeys-key-invalid = Invalid

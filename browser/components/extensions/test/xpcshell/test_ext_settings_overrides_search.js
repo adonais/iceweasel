@@ -562,7 +562,6 @@ add_task(async function test_extension_allow_http_for_localhost() {
 });
 
 add_task(async function test_search_favicon_mv3() {
-  Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
   let normalized = await ExtensionTestUtils.normalizeManifest({
     manifest_version: 3,
     chrome_settings_overrides: {

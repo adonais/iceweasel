@@ -1568,7 +1568,6 @@ void WebGPUParent::ActorDestroy(ActorDestroyReason aWhy) {
     mRemoteTextureOwner = nullptr;
   }
   mActiveDeviceIds.Clear();
-  ffi::wgpu_server_poll_all_devices(mContext.get(), true);
   mContext = nullptr;
 }
 

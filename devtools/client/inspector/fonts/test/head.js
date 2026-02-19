@@ -226,7 +226,7 @@ function getFamilyName(fontEl) {
  * @return {object}
  *         Object with the value and unit of the given font property or axis tag
  *         from the corresponding input fron the font editor.
- *         @Example:
+ *         @example
  *         {
  *          value: {String|null}
  *          unit: {String|null}

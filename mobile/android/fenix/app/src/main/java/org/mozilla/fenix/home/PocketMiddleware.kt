@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import mozilla.components.service.pocket.PocketStoriesService
 import mozilla.components.service.pocket.PocketStory
@@ -73,7 +72,7 @@ class PocketMiddleware(
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) : Middleware<AppState, AppAction> {
     override fun invoke(
-        context: MiddlewareContext<AppState, AppAction>,
+        store: Store<AppState, AppAction>,
         next: (AppAction) -> Unit,
         action: AppAction,
     ) {
@@ -103,7 +102,7 @@ class PocketMiddleware(
                 restoreSelectedCategories(
                     coroutineScope = coroutineScope,
                     currentCategories = action.storiesCategories,
-                    store = context.store,
+                    store = store,
                     selectedPocketCategoriesDataStore = selectedPocketCategoriesDataStore,
                 )
             }
@@ -128,7 +127,10 @@ class PocketMiddleware(
             -> {
                 persistSelectedCategories(
                     coroutineScope = coroutineScope,
-                    currentCategoriesSelections = context.state.recommendationState.pocketStoriesCategoriesSelections,
+                    currentCategoriesSelections = store
+                        .state
+                        .recommendationState
+                        .pocketStoriesCategoriesSelections,
                     selectedPocketCategoriesDataStore = selectedPocketCategoriesDataStore,
                 )
             }

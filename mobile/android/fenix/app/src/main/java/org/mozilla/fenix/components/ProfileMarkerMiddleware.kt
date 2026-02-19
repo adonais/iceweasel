@@ -10,8 +10,8 @@ import kotlinx.coroutines.launch
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.State
+import mozilla.components.lib.state.Store
 
 /**
  * A generic middleware that can be attached to a Store to log every action that is processed by that
@@ -24,7 +24,7 @@ class ProfileMarkerMiddleware<S : State, A : Action>(
     val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
 ) : Middleware<S, A> {
     override fun invoke(
-        context: MiddlewareContext<S, A>,
+        store: Store<S, A>,
         next: (A) -> Unit,
         action: A,
     ) {

@@ -8,7 +8,6 @@
 #define MOZILLA_GFX_ITERABLEARENA_H_
 
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 #include <utility>

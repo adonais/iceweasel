@@ -88,7 +88,9 @@ async function heuristicIsNotRestyled(expectedType, resultDetails) {
   ) {
     Assert.equal(
       resultDetails.displayed.url,
-      resultDetails.result.payload.displayUrl
+      resultDetails.result.getDisplayableValueAndHighlights("url", {
+        isURL: true,
+      }).value
     );
   } else {
     Assert.equal(

@@ -12,7 +12,6 @@
 
 #include <stdint.h>
 
-#include <cstddef>
 #include <set>
 #include <string>
 #include <vector>

@@ -12,7 +12,6 @@
 #include "nsStringIterator.h"
 
 #include <string.h>
-#include <stdarg.h>
 
 #include "nsStringFlags.h"
 #include "nsTStringRepr.h"

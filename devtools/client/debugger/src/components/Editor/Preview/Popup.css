@@ -211,7 +211,7 @@
   align-items: center;
 }
 
-.exception-message .arrow {
+.exception-message .dbg-img-arrow {
   margin-inline-end: 4px;
 }
 

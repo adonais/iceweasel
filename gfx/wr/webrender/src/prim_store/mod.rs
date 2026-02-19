@@ -4,7 +4,7 @@
 
 use api::{BorderRadius, ClipMode, ColorF, ColorU, RasterSpace};
 use api::{ImageRendering, RepeatMode, PrimitiveFlags};
-use api::{PremultipliedColorF, PropertyBinding, Shadow};
+use api::{PropertyBinding, Shadow};
 use api::{PrimitiveKeyKind, FillRule, POLYGON_CLIP_VERTEX_MAX};
 use api::units::*;
 use euclid::{SideOffsets2D, Size2D};
@@ -13,6 +13,7 @@ use crate::composite::CompositorSurfaceKind;
 use crate::clip::ClipLeafId;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
 use crate::quad::QuadTileClassifier;
+use crate::renderer::{GpuBufferAddress, GpuBufferHandle, GpuBufferWriterF};
 use crate::segment::EdgeAaSegmentMask;
 use crate::border::BorderSegmentCacheKey;
 use crate::debug_item::{DebugItem, DebugMessage};
@@ -20,8 +21,7 @@ use crate::debug_colors;
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
 use glyph_rasterizer::GlyphKey;
-use crate::gpu_cache::{GpuCacheAddress, GpuCacheHandle, GpuDataRequest};
-use crate::gpu_types::{BrushFlags, QuadSegment};
+use crate::gpu_types::{BrushFlags, BrushSegmentGpuData, QuadSegment};
 use crate::intern;
 use crate::picture::PicturePrimitive;
 use crate::render_task_graph::RenderTaskId;
@@ -90,7 +90,7 @@ impl PrimitiveOpacity {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DeferredResolve {
-    pub address: GpuCacheAddress,
+    pub handle: GpuBufferHandle,
     pub image_properties: ImageProperties,
     pub rendering: ImageRendering,
     pub is_composited: bool,
@@ -481,23 +481,18 @@ pub enum PrimitiveTemplateKind {
     Rectangle {
         color: PropertyBinding<ColorF>,
     },
-    Clear,
 }
 
 impl PrimitiveTemplateKind {
     /// Write any GPU blocks for the primitive template to the given request object.
     pub fn write_prim_gpu_blocks(
         &self,
-        request: &mut GpuDataRequest,
+        writer: &mut GpuBufferWriterF,
         scene_properties: &SceneProperties,
     ) {
         match *self {
-            PrimitiveTemplateKind::Clear => {
-                // Opaque black with operator dest out
-                request.push(PremultipliedColorF::BLACK);
-            }
             PrimitiveTemplateKind::Rectangle { ref color, .. } => {
-                request.push(scene_properties.resolve_color(color).premultiplied())
+                writer.push_one(scene_properties.resolve_color(color).premultiplied())
             }
         }
     }
@@ -509,9 +504,6 @@ impl PrimitiveTemplateKind {
 impl From<PrimitiveKeyKind> for PrimitiveTemplateKind {
     fn from(kind: PrimitiveKeyKind) -> Self {
         match kind {
-            PrimitiveKeyKind::Clear => {
-                PrimitiveTemplateKind::Clear
-            }
             PrimitiveKeyKind::Rectangle { color, .. } => {
                 PrimitiveTemplateKind::Rectangle {
                     color: color.into(),
@@ -530,11 +522,12 @@ pub struct PrimTemplateCommonData {
     pub may_need_repetition: bool,
     pub prim_rect: LayoutRect,
     pub opacity: PrimitiveOpacity,
-    /// The GPU cache handle for a primitive template. Since this structure
-    /// is retained across display lists by interning, this GPU cache handle
-    /// also remains valid, which reduces the number of updates to the GPU
-    /// cache when a new display list is processed.
-    pub gpu_cache_handle: GpuCacheHandle,
+    /// Address of the per-primitive data in the GPU cache.
+    ///
+    /// TODO: This is only valid during the current frame and must
+    /// be overwritten each frame. We should move this out of the
+    /// common data to avoid accidental reuse.
+    pub gpu_buffer_address: GpuBufferAddress,
     /// Specifies the edges that are *allowed* to have anti-aliasing.
     /// In other words EdgeAaSegmentFlags::all() does not necessarily mean all edges will
     /// be anti-aliased, only that they could be.
@@ -549,7 +542,7 @@ impl PrimTemplateCommonData {
             flags: common.flags,
             may_need_repetition: true,
             prim_rect: common.prim_rect.into(),
-            gpu_cache_handle: GpuCacheHandle::new(),
+            gpu_buffer_address: GpuBufferAddress::INVALID,
             opacity: PrimitiveOpacity::translucent(),
             edge_aa_mask: EdgeAaSegmentMask::all(),
         }
@@ -580,7 +573,6 @@ impl PatternBuilder for PrimitiveTemplate {
         _state: &mut PatternBuilderState,
     ) -> crate::pattern::Pattern {
         match self.kind {
-            PrimitiveTemplateKind::Clear => Pattern::clear(),
             PrimitiveTemplateKind::Rectangle { ref color, .. } => {
                 let color = ctx.scene_properties.resolve_color(color);
                 Pattern::color(color)
@@ -593,7 +585,6 @@ impl PatternBuilder for PrimitiveTemplate {
         ctx: &PatternBuilderContext,
     ) -> ColorF {
         match self.kind {
-            PrimitiveTemplateKind::Clear => ColorF::BLACK,
             PrimitiveTemplateKind::Rectangle { ref color, .. } => {
                 ctx.scene_properties.resolve_color(color)
             }
@@ -639,14 +630,11 @@ impl PrimitiveTemplate {
         frame_state: &mut FrameBuildingState,
         scene_properties: &SceneProperties,
     ) {
-        if let Some(mut request) = frame_state.gpu_cache.request(&mut self.common.gpu_cache_handle) {
-            self.kind.write_prim_gpu_blocks(&mut request, scene_properties);
-        }
+        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(1);
+        self.kind.write_prim_gpu_blocks(&mut writer, scene_properties);
+        self.common.gpu_buffer_address = writer.finish();
 
         self.opacity = match self.kind {
-            PrimitiveTemplateKind::Clear => {
-                PrimitiveOpacity::translucent()
-            }
             PrimitiveTemplateKind::Rectangle { ref color, .. } => {
                 PrimitiveOpacity::from_alpha(scene_properties.resolve_color(color).a)
             }
@@ -677,11 +665,6 @@ impl InternablePrimitive for PrimitiveKeyKind {
         prim_store: &mut PrimitiveStore,
     ) -> PrimitiveInstanceKind {
         match key.kind {
-            PrimitiveKeyKind::Clear => {
-                PrimitiveInstanceKind::Clear {
-                    data_handle
-                }
-            }
             PrimitiveKeyKind::Rectangle { color, .. } => {
                 let color_binding_index = match color {
                     PropertyBinding::Binding(..) => {
@@ -712,7 +695,7 @@ pub struct VisibleMaskImageTile {
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct VisibleGradientTile {
-    pub handle: GpuCacheHandle,
+    pub address: GpuBufferAddress,
     pub local_rect: LayoutRect,
     pub local_clip_rect: LayoutRect,
 }
@@ -765,6 +748,17 @@ impl BrushSegment {
             extra_data,
             brush_flags,
         }
+    }
+
+    pub fn gpu_data(&self) -> BrushSegmentGpuData {
+        BrushSegmentGpuData {
+            local_rect: self.local_rect,
+            extra_data: self.extra_data,
+        }
+    }
+
+    pub fn write_gpu_blocks(&self, writer: &mut GpuBufferWriterF) {
+        writer.push(&self.gpu_data());
     }
 }
 
@@ -954,9 +948,6 @@ impl IsVisible for PrimitiveKeyKind {
     //           primitive types to use this.
     fn is_visible(&self) -> bool {
         match *self {
-            PrimitiveKeyKind::Clear => {
-                true
-            }
             PrimitiveKeyKind::Rectangle { ref color, .. } => {
                 match *color {
                     PropertyBinding::Value(value) => value.a > 0,
@@ -982,9 +973,6 @@ impl CreateShadow for PrimitiveKeyKind {
                 PrimitiveKeyKind::Rectangle {
                     color: PropertyBinding::Value(shadow.color.into()),
                 }
-            }
-            PrimitiveKeyKind::Clear => {
-                panic!("bug: this prim is not supported in shadow contexts");
             }
         }
     }
@@ -1076,11 +1064,6 @@ pub enum PrimitiveInstanceKind {
         visible_tiles_range: GradientTileRange,
         use_legacy_path: bool,
     },
-    /// Clear out a rect, used for special effects.
-    Clear {
-        /// Handle to the common interned data for this primitive.
-        data_handle: PrimitiveDataHandle,
-    },
     /// Render a portion of a specified backdrop.
     BackdropCapture {
         data_handle: BackdropCaptureDataHandle,
@@ -1149,7 +1132,6 @@ impl PrimitiveInstance {
 
     pub fn uid(&self) -> intern::ItemUid {
         match &self.kind {
-            PrimitiveInstanceKind::Clear { data_handle, .. } |
             PrimitiveInstanceKind::Rectangle { data_handle, .. } => {
                 data_handle.uid()
             }
@@ -1202,7 +1184,7 @@ impl PrimitiveInstance {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[derive(Debug)]
 pub struct SegmentedInstance {
-    pub gpu_cache_handle: GpuCacheHandle,
+    pub gpu_data: GpuBufferAddress,
     pub segments_range: SegmentsRange,
 }
 
@@ -1555,7 +1537,7 @@ fn test_struct_sizes() {
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<PrimitiveInstance>(), 88, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 24, "PrimitiveInstanceKind size changed");
-    assert_eq!(mem::size_of::<PrimitiveTemplate>(), 56, "PrimitiveTemplate size changed");
+    assert_eq!(mem::size_of::<PrimitiveTemplate>(), 52, "PrimitiveTemplate size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 28, "PrimitiveTemplateKind size changed");
     assert_eq!(mem::size_of::<PrimitiveKey>(), 36, "PrimitiveKey size changed");
     assert_eq!(mem::size_of::<PrimitiveKeyKind>(), 16, "PrimitiveKeyKind size changed");

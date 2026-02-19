@@ -131,9 +131,15 @@ impl IPCConnector {
     where
         T: Message,
     {
+        let expected_payload_len = message.payload_size();
+        let expected_ancillary_data = message.has_ancillary_data();
         self.send(&message.header(), None)
             .map_err(IPCError::TransmissionFailure)?;
         let (payload, ancillary_data) = message.into_payload();
+        assert!(
+            payload.len() == expected_payload_len
+        );
+        assert!(ancillary_data.is_some() == expected_ancillary_data);
         self.send(&payload, ancillary_data)
             .map_err(IPCError::TransmissionFailure)
     }

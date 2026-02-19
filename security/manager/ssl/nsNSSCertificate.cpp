@@ -485,6 +485,27 @@ nsNSSCertificate::GetTokenName(nsAString& aTokenName) {
 }
 
 NS_IMETHODIMP
+nsNSSCertificate::GetSubjectPublicKeyInfo(nsTArray<uint8_t>& aSPKI) {
+  aSPKI.Clear();
+
+  pkix::Input certInput;
+  pkix::Result result = certInput.Init(mDER.Elements(), mDER.Length());
+  if (result != pkix::Result::Success) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  // NB: since we're not building a trust path, the endEntityOrCA parameter is
+  // irrelevant.
+  pkix::BackCert cert(certInput, pkix::EndEntityOrCA::MustBeEndEntity, nullptr);
+  result = cert.Init();
+  if (result != pkix::Result::Success) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  pkix::Input spki = cert.GetSubjectPublicKeyInfo();
+  aSPKI.AppendElements(spki.UnsafeGetData(), spki.GetLength());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsNSSCertificate::GetSha256SubjectPublicKeyInfoDigest(
     nsACString& aSha256SPKIDigest) {
   aSha256SPKIDigest.Truncate();

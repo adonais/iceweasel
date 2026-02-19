@@ -6,6 +6,7 @@ support-files = [
 prefs = [
   "browser.sessionstore.closedTabsFromAllWindows=true",
   "browser.sessionstore.closedTabsFromClosedWindows=true",
+  "browser.urlbar.trustPanel.featureGate=false",
   "sidebar.revamp=false",
 ]
 

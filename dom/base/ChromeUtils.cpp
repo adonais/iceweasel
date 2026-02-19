@@ -58,6 +58,7 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/quota/QuotaManager.h"
+#include "mozilla/image/FetchDecodedImage.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/UtilityProcessHost.h"
 #include "mozilla/ipc/UtilityProcessManager.h"
@@ -1860,10 +1861,10 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                                                          // DOM windows.
             /* aUtilityInfo = */ std::move(utilityActors),
             /* aChild = */ 0  // Without a ContentProcess, no ChildId.
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
             ,
             /* aChildTask = */ aGeckoProcess->GetChildTask()
-#endif  // XP_DARWIN
+#endif  // XP_MACOSX
         );
       });
 
@@ -1964,10 +1965,10 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
         /* aWindowInfo = */ std::move(windows),
         /* aUtilityInfo = */ nsTArray<UtilityInfo>(),
         /* aChild = */ contentParent->ChildID()
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
             ,
         /* aChildTask = */ contentParent->Process()->GetChildTask()
-#endif  // XP_DARWIN
+#endif  // XP_MACOSX
     );
   }
 
@@ -2743,6 +2744,43 @@ Nullable<bool> ChromeUtils::GetGlobalWindowCommandEnabled(
   return handler->IsCommandEnabled(aName, nullptr);
 }
 
+already_AddRefed<Promise> ChromeUtils::FetchDecodedImage(GlobalObject& aGlobal,
+                                                         nsIURI* aURI,
+                                                         nsIChannel* aChannel,
+                                                         ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  MOZ_ASSERT(global);
+  RefPtr<Promise> domPromise = Promise::Create(global, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
+  image::FetchDecodedImage(aURI, aChannel, gfx::IntSize{})
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [global, domPromise](already_AddRefed<imgIContainer> aImage) {
+            nsCOMPtr<imgIContainer> image(std::move(aImage));
+
+            AutoJSAPI jsapi;
+            if (!jsapi.Init(global)) {
+              domPromise->MaybeRejectWithUndefined();
+              return;
+            }
+
+            JS::Rooted<JS::Value> value(jsapi.cx());
+            if (!WrapObject(jsapi.cx(), image, &NS_GET_IID(imgIContainer),
+                            &value)) {
+              domPromise->MaybeRejectWithUndefined();
+              return;
+            }
+
+            domPromise->MaybeResolve(value);
+          },
+          [domPromise](nsresult aStatus) { domPromise->MaybeReject(aStatus); });
+
+  return domPromise.forget();
+}
+
 void ChromeUtils::EncodeURIForSrcset(GlobalObject&, const nsACString& aIn,
                                      nsACString& aOut) {
   const auto inputLen = aIn.Length();
@@ -2767,6 +2805,12 @@ void ChromeUtils::EncodeURIForSrcset(GlobalObject&, const nsACString& aIn,
   } else {
     aOut.Append(Substring(aIn, start));
   }
+}
+
+void ChromeUtils::GetLastOOMStackTrace(GlobalObject& aGlobal,
+                                       nsAString& aRetval) {
+  JSContext* cx = aGlobal.Context();
+  aRetval = NS_ConvertUTF8toUTF16(JS_GetLastOOMStackTrace(cx));
 }
 
 }  // namespace mozilla::dom

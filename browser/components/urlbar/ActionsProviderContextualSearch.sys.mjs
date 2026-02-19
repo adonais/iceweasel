@@ -123,6 +123,11 @@ class ProviderContextualSearch extends ActionsProvider {
       return engine;
     }
 
+    // Don't match the default engine for non-query-matches.
+    let defaultEngine = queryContext.isPrivate
+      ? Services.search.defaultPrivateEngine
+      : Services.search.defaultEngine;
+
     let browser =
       lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser;
     if (!browser) {
@@ -160,12 +165,12 @@ class ProviderContextualSearch extends ActionsProvider {
       // Cache the result against this host so we do not need to rerun
       // the same query every keystroke.
       this.#hostEngines.set(host, hostEngine);
-      if (hostEngine) {
+      if (hostEngine && hostEngine.engine.name != defaultEngine.name) {
         return hostEngine;
       }
     } else if (host) {
       let cachedEngine = this.#hostEngines.get(host);
-      if (cachedEngine) {
+      if (cachedEngine && cachedEngine.engine.name != defaultEngine.name) {
         return cachedEngine;
       }
     }
@@ -173,6 +178,8 @@ class ProviderContextualSearch extends ActionsProvider {
     // Lastly match any openSearch
     if (browser) {
       let openSearchEngines = lazy.OpenSearchManager.getEngines(browser);
+      // We don't need to check if the engine has the same name as the
+      // default engine because OpenSearchManager already handles that.
       if (openSearchEngines.length) {
         return { type: OPEN_SEARCH_ENGINE, engine: openSearchEngines[0] };
       }

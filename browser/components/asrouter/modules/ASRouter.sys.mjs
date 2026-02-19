@@ -60,6 +60,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   ToastNotification: "resource:///modules/asrouter/ToastNotification.sys.mjs",
   ToolbarBadgeHub: "resource:///modules/asrouter/ToolbarBadgeHub.sys.mjs",
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -2325,7 +2327,7 @@ export class _ASRouter {
    *   recursion. we call this from loadMessagesFromAllProviders in order to
    *   fire the messagesLoaded trigger.
    * @returns {Promise<object>}
-   * @resolves {message} an object with the routed message
+   *   Resolves to an object with the routed message.
    */
   async sendTriggerMessage(
     { browser, ...trigger },
@@ -2342,6 +2344,9 @@ export class _ASRouter {
         trigger.context = {};
       }
       if (typeof trigger.context === "object") {
+        trigger.context.isAIWindow = !!lazy.AIWindow?.isAIWindowActive?.(
+          browser.ownerGlobal
+        );
         trigger.context.browserIsSelected =
           trigger.context.browserIsSelected ||
           browser === browser.ownerGlobal.gBrowser?.selectedBrowser;

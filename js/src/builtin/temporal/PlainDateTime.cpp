@@ -130,15 +130,15 @@ static PlainDateTimeObject* CreateTemporalDateTime(
   // Step 4.
   auto packedDate = PackedDate::pack(isoDateTime.date);
   auto packedTime = PackedTime::pack(isoDateTime.time);
-  object->setFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
-  object->setFixedSlot(
+  object->initFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(
       PlainDateTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
   // Step 5.
-  object->setFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   // Step 6.
   return object;
@@ -168,15 +168,15 @@ PlainDateTimeObject* js::temporal::CreateTemporalDateTime(
   // Step 4.
   auto packedDate = PackedDate::pack(isoDateTime.date);
   auto packedTime = PackedTime::pack(isoDateTime.time);
-  object->setFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
-  object->setFixedSlot(
+  object->initFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(
       PlainDateTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
   // Step 5.
-  object->setFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   // Step 6.
   return object;
@@ -574,9 +574,6 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
     JSContext* cx, const ISODateTime& isoDateTime1,
     const ISODateTime& isoDateTime2, Handle<CalendarValue> calendar,
     const DifferenceSettings& settings, InternalDuration* result) {
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime1));
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime2));
-
   // Step 1.
   if (isoDateTime1 == isoDateTime2) {
     // Step 1.a.
@@ -584,7 +581,13 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
     return true;
   }
 
-  // Step 2. (Not applicable in our implementation.)
+  // Step 2.
+  if (!ISODateTimeWithinLimits(isoDateTime1) ||
+      !ISODateTimeWithinLimits(isoDateTime2)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_TIME_INVALID);
+    return false;
+  }
 
   // Step 3.
   InternalDuration diff;
@@ -622,9 +625,6 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
     JSContext* cx, const ISODateTime& isoDateTime1,
     const ISODateTime& isoDateTime2, Handle<CalendarValue> calendar,
     TemporalUnit unit, double* result) {
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime1));
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime2));
-
   // Step 1.
   if (isoDateTime1 == isoDateTime2) {
     // Step 1.a.
@@ -632,7 +632,13 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
     return true;
   }
 
-  // Step 2. (Not applicable in our implementation.)
+  // Step 2.
+  if (!ISODateTimeWithinLimits(isoDateTime1) ||
+      !ISODateTimeWithinLimits(isoDateTime2)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_TIME_INVALID);
+    return false;
+  }
 
   // Step 3.
   InternalDuration diff;

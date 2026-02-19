@@ -72,6 +72,13 @@
 #  include "mozilla/widget/GSettings.h"
 #endif
 
+// For FPU control state detection
+#include <cfenv>
+#if defined(_MSC_VER)
+#  include <float.h>
+#  include <intrin.h>
+#endif
+
 using namespace mozilla;
 
 static LazyLogModule gUserCharacteristicsLog("UserCharacteristics");
@@ -701,8 +708,126 @@ void PopulateProcessorCount() {
   glean::characteristics::processor_count.Set(processorCount);
 }
 
+/**
+ * Gets the complete FPU state including rounding mode and precision.
+ * Returns a string formatted as:
+ * - x86/x86-64: "std:X;x87:Y;sse:Z;prec:P"
+ * - ARM: "std:X;arm:Y"
+ * Where X,Y,Z are rounding mode values (0-3) and P is precision.
+ */
+static nsCString GetFPUControlState() {
+  nsCString result;
+
+  // Get standard C rounding mode (portable)
+  int std_mode = std::fegetround();
+  const char* mode_str = "unknown";
+  switch (std_mode) {
+    case FE_TONEAREST:
+      mode_str = "0";
+      break;
+    case FE_DOWNWARD:
+      mode_str = "1";
+      break;
+    case FE_UPWARD:
+      mode_str = "2";
+      break;
+    case FE_TOWARDZERO:
+      mode_str = "3";
+      break;
+  }
+  result.AppendLiteral("std:");
+  result.Append(mode_str);
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+    defined(_M_IX86)
+  // x86/x86-64: Read both x87 and SSE control registers
+
+  // Read x87 control word
+  uint16_t x87_cw = 0;
+#  ifdef _MSC_VER
+  x87_cw = static_cast<uint16_t>(_control87(0, 0));
+#  else
+  __asm__ __volatile__("fstcw %0" : "=m"(x87_cw));
+#  endif
+
+  // Extract rounding mode (bits 10-11)
+  int x87_round = (x87_cw >> 10) & 0x3;
+  result.AppendLiteral(";x87:");
+  result.AppendInt(x87_round);
+
+  // Extract precision control (bits 8-9)
+  int precision = (x87_cw >> 8) & 0x3;
+  const char* prec_str = "unknown";
+  switch (precision) {
+    case 0:
+      prec_str = "single";
+      break;
+    case 1:
+      prec_str = "reserved";
+      break;
+    case 2:
+      prec_str = "double";
+      break;
+    case 3:
+      prec_str = "extended";
+      break;
+  }
+
+    // Read SSE MXCSR register (64-bit only, or 32-bit with SSE support)
+#  if defined(__x86_64__) || defined(_M_X64) || defined(__SSE__)
+  uint32_t mxcsr = 0;
+#    ifdef _MSC_VER
+  mxcsr = _mm_getcsr();
+#    else
+  __asm__ __volatile__("stmxcsr %0" : "=m"(mxcsr));
+#    endif
+
+  // Extract rounding mode (bits 13-14)
+  int sse_round = (mxcsr >> 13) & 0x3;
+  result.AppendLiteral(";sse:");
+  result.AppendInt(sse_round);
+#  else
+  // 32-bit without SSE
+  result.AppendLiteral(";sse:na");
+#  endif
+
+  result.AppendLiteral(";prec:");
+  result.Append(prec_str);
+
+#elif defined(__aarch64__)
+  // ARM64: Read FPCR register
+  uint64_t fpcr = 0;
+  __asm__ __volatile__("mrs %0, fpcr" : "=r"(fpcr));
+
+  // Extract rounding mode (bits 22-23)
+  int arm_round = (fpcr >> 22) & 0x3;
+  result.AppendLiteral(";arm:");
+  result.AppendInt(arm_round);
+
+#elif defined(__arm__)
+  // ARM32: Read FPSCR register
+  uint32_t fpscr = 0;
+  __asm__ __volatile__("vmrs %0, fpscr" : "=r"(fpscr));
+
+  // Extract rounding mode (bits 22-23)
+  int arm_round = (fpscr >> 22) & 0x3;
+  result.AppendLiteral(";arm:");
+  result.AppendInt(arm_round);
+
+#else
+  // Other architectures: only report standard mode
+  result.AppendLiteral(";arch:other");
+#endif
+
+  return result;
+}
+
 void PopulateMisc(bool worksInGtest) {
   if (worksInGtest) {
+    // Collect FPU control state
+    nsCString fpuState = GetFPUControlState();
+    glean::characteristics::fpu_control_state.Set(fpuState);
+
     glean::characteristics::max_touch_points.Set(testing::MaxTouchPoints());
     nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
     if (gfxInfo) {
@@ -801,7 +926,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 // metric is set, this variable should be incremented. It'll be a lot. It's
 // okay. We're going to need it to know (including during development) what is
 // the source of the data we are looking at.
-const int kSubmissionSchema = 27;
+const int kSubmissionSchema = 30;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";

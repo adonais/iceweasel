@@ -73,7 +73,7 @@
   <!-- Description for the "history" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_history_description">دسرسی و ویرگار گشتنا</string>
   <!-- Description for the "management" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_management_description">کیل کردن و کار گرؽڌن وردنی یل وو دؽوۉداری تما</string>
+  <string name="mozac_feature_addons_permissions_management_description">نزارت ری و کار گرؽڌن وردنی یل وو دؽوۉداری زمینه یل</string>
   <!-- Description for the "nativeMessaging" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_native_messaging_description">جا گورویی پیوم وا برنومه یلی غیرزا ای برنومه</string>
   <!-- Description for the "notifications" WebExtensions API permission. -->
@@ -89,7 +89,7 @@
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">دسرسی و ویرگار گشتنا</string>
   <!-- Description for the "trialML" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description">دانلود وو ر وندن مودلا هۊش مسنۊعی و ری دسگا ایسا</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description">دانلود وو ره وندن مودلا هۊش مسنۊعی و ری دسگا ایسا</string>
   <!-- Description for the "userScripts" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description">هشتن اسکریپتا شسخ سالس تاییڌ نوابیڌه سی دسرسی و داده یل ایسا</string>
   <!-- Description for the "devtools" WebExtensions API permission. -->
@@ -127,7 +127,7 @@
   <!-- Description for the "history" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_history_description_for_update">دسرسی و ویرگار گشتنا.</string>
   <!-- Description for the "management" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_management_description_for_update">کیل کردن و کار گرؽڌن وردنی یل وو دؽوۉداری تما.</string>
+  <string name="mozac_feature_addons_permissions_management_description_for_update">نزارت ری و کار گرؽڌن وردنی یل وو دؽوۉداری زمینه یل.</string>
   <!-- Description for the "nativeMessaging" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_native_messaging_description_for_update">جا گورویی پیوم وا برنومه یلی غیرزا ای برنومه.</string>
   <!-- Description for the "notifications" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -143,7 +143,7 @@
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_top_sites_description_for_update">دسرسی و ویرگار گشتنا.</string>
   <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">دانلود وو ر وندن مودلا هۊش مسنۊعی و ری دسگا ایسا.</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">دانلود وو ره وندن مودلا هۊش مسنۊعی و ری دسگا ایسا.</string>
   <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">هشتن اسکریپتا شسخ سالس تاییڌ نوابیڌه سی دسرسی و داده یل ایسا.</string>
   <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -173,7 +173,7 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_sites_description_for_update">دسرسی و دووسمندیا ایسا من وبگه یل دیر.</string>
   <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
-  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">اسکریپتا تاییڌ نوابیڌه ترن خترات ٱمنیتی وو زفت کردن هریم سیخومی وورکل کونن. تینا اسکریپتایی ن ز وردنی یل وو بونچکایی ک وسووݩ ائتماڌ دارین، ر بونین.</string>
+  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">اسکریپتا تاییڌ نوابیڌه ترن خترات ٱمنیتی وو زفت کردن هریم سیخومی وورکل کونن. تینا اسکریپتایی ز وردنی یل وو بونچکایی ک وسووݩ ائتماڌ دارین ن، ره بونین.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
   <string name="mozac_feature_addons_permissions_required_data_collection_description_2">برنومه نویس اگو ای وردنی مووردا لمی ن جم اکونه: %1$s</string>
   <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
@@ -253,7 +253,7 @@
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">بهلین وردنی من هالت سیخومی ر بوۊفته</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_run_in_private_browsing">ر وندن من هالت گشتن سیخومی</string>
+  <string name="mozac_feature_addons_settings_run_in_private_browsing">ره وندن من هالت گشتن سیخومی</string>
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
   <string name="mozac_feature_addons_not_allowed_in_private_browsing">من نیمدری یل سیخومی موجاز نؽ</string>
   <!-- Indicates the add-on is enabled. -->
@@ -321,7 +321,7 @@
   <!-- The content of the "crash" notification in the extensions manager -->
   <string name="mozac_feature_extensions_manager_notification_content_text">یک یا چن وردنی ز کار وستنه وو سیستوم ایسا ن نا پایدار کردنه.</string>
   <!-- Button to re-enable the extensions in the "crash" notification -->
-  <string name="mozac_feature_extensions_manager_notification_restart_button">وردنی یل ن ز نۊ ر بونین</string>
+  <string name="mozac_feature_extensions_manager_notification_restart_button">وردنی یل ن ز نۊ ره بونین</string>
   <!-- Button in the extensions manager that opens AMO in a tab -->
   <string name="mozac_feature_addons_find_more_extensions_button_text">وردنی یل قلوه ای ن بجۊرین</string>
   <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->

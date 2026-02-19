@@ -570,22 +570,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     /**
-     * Sets whether or not local network access (LNA) blocking is enabled
-     *
-     * @deprecated This API is deprecated and may not work as expected. Please use {@link
-     *     #setLnaEnabled(Boolean)}, {@link #setLnaBlocking(Boolean)} and {@link
-     *     #setLnaBlockTrackers(Boolean)}} for more fine-grained control.
-     * @param enabled flag indicating whether or not local network access (LNA) blocking is enabled
-     * @return The builder instance
-     */
-    @Deprecated
-    @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
-    public @NonNull Builder setLnaBlockingEnabled(@NonNull final Boolean enabled) {
-      getSettings().setLnaBlockingEnabled(enabled);
-      return this;
-    }
-
-    /**
      * Sets whether or not the request blocking feature for Local Network / Device Access blocking
      * is enabled
      *
@@ -2139,36 +2123,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       return HTTPS_ONLY_PRIVATE;
     }
     return ALLOW_ALL;
-  }
-
-  /**
-   * Sets whether or not local network access (LNA) blocking is enabled
-   *
-   * @param enabled flag indicating whether or not local network access blocking is enabled
-   * @return The updated instance of {@link GeckoRuntimeSettings}
-   * @deprecated This API is deprecated and does not work as expected. Please use {@link
-   *     #setLnaEnabled(boolean)}, {@link #setLnaBlocking(boolean)} and {@link
-   *     #setLnaBlockTrackers(boolean)}} for more fine-grained control.
-   */
-  @Deprecated
-  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
-  public @NonNull GeckoRuntimeSettings setLnaBlockingEnabled(final boolean enabled) {
-    mLnaBlocking.commit(enabled);
-    return this;
-  }
-
-  /**
-   * Gets whether or not local network access (LNA) blocking is enabled
-   *
-   * @return Boolean indicating whether LNA blocking is enabled or not.
-   * @deprecated This API is deprecated and does not work as expected. Use {@link #getLnaEnabled()},
-   *     {@link #getLnaBlocking()} and {@link #getLnaBlockTrackers()} for more fine-grained control.
-   */
-  @Deprecated
-  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
-  public boolean getLnaBlockingEnabled() {
-    final Boolean lnaBlocking = mLnaBlocking.get();
-    return lnaBlocking != null ? lnaBlocking : false;
   }
 
   /**

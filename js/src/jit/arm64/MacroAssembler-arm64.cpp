@@ -1861,11 +1861,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   assertStackAlignment(ABIStackAlignment);
 }
 
-void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
-                                     bool callFromWasm) {
-  // wasm operates without the need for dynamic alignment of SP.
-  MOZ_ASSERT(!(dynamicAlignment_ && callFromWasm));
-
+void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
   // Call boundaries communicate stack via SP, so we must resync PSP now.
   initPseudoStackPtr();
 

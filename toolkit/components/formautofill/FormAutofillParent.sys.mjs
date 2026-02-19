@@ -35,8 +35,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AddressComponent: "resource://gre/modules/shared/AddressComponent.sys.mjs",
-  // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   FormAutofillAddressSection:
     "resource://gre/modules/shared/FormAutofillSection.sys.mjs",
   FormAutofillCreditCardSection:
@@ -1029,11 +1027,13 @@ export class FormAutofillParent extends JSWindowActorParent {
    */
   async onAutoCompleteEntrySelected(message, data) {
     switch (message) {
-      case "FormAutofill:OpenPreferences": {
-        const win = lazy.BrowserWindowTracker.getTopWindow({
-          allowFromInactiveWorkspace: true,
-        });
-        win.openPreferences("privacy-form-autofill");
+      case "FormAutofill:OpenPaymentPreferences": {
+        lazy.FormAutofillPreferences.openPaymentPreference();
+        break;
+      }
+
+      case "FormAutofill:OpenAddressPreferences": {
+        lazy.FormAutofillPreferences.openAddressPreference();
         break;
       }
 

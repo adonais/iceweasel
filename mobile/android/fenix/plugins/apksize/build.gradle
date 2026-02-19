@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.dsl)
 }
 
-buildDir = "${gradle.mozconfig.topobjdir}/gradle/build/mobile/android/fenix/plugins/apksize"
+layout.buildDirectory.set(file("${gradle.mozconfig.topobjdir}/gradle/build/mobile/android/fenix/plugins/apksize"))
 
 repositories {
         gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->

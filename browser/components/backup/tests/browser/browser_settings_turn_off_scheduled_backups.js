@@ -121,7 +121,7 @@ add_task(async function test_turn_off_scheduled_backups_disables_encryption() {
      * out the actual BackupService state, instead of the state passed to backup-settings
      * since we're not testing UI here. */
     const testDefaultName = "test-default-path";
-    sandbox.stub(BackupService.prototype, "state").get(() => {
+    sandbox.stub(BackupService.get(), "state").get(() => {
       return {
         encryptionEnabled: true,
         defaultParent: {

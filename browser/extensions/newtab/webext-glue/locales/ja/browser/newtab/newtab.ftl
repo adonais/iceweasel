@@ -662,6 +662,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = 新しいリスト
+newtab-widget-section-title = ウィジェット
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = ウィジェットを隠します
+    .aria-label = すべてのウィジェットを隠します
+newtab-widget-section-maximize =
+    .title = ウィジェットを展開します
+    .aria-label = すべてのウィジェットを最大サイズに展開します
+newtab-widget-section-minimize =
+    .title = ウィジェットを最小化します
+    .aria-label = すべてのウィジェットをコンパクトサイズに折りたたみます
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

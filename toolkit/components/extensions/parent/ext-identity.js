@@ -109,7 +109,7 @@ const openOAuthWindow = (details, redirectURI) => {
 
     // If the user just closes the window we need to reject
     unloadListener = () => {
-      if (window.document.isInitialDocument) {
+      if (window.document.isUncommittedInitialDocument) {
         // The "unload" event also fires when the initial "about:blank"
         // document transitions to the browser document, ignore it.
         return;

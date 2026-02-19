@@ -118,17 +118,14 @@ export class UrlbarProviderClipboard extends UrlbarProvider {
     let result = new lazy.UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        fallbackTitle: [
-          UrlbarUtils.prepareUrlForDisplay(this.#previousClipboard.value, {
-            trimURL: false,
-          }),
-          UrlbarUtils.HIGHLIGHT.NONE,
-        ],
-        url: [this.#previousClipboard.value, UrlbarUtils.HIGHLIGHT.NONE],
+      payload: {
+        title: UrlbarUtils.prepareUrlForDisplay(this.#previousClipboard.value, {
+          trimURL: false,
+        }),
+        url: this.#previousClipboard.value,
         icon: "chrome://global/skin/icons/clipboard.svg",
         isBlockable: true,
-      }),
+      },
     });
 
     addCallback(this, result);

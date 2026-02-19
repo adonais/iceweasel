@@ -35,7 +35,7 @@ struct HandlerStats {
   nsCString lastValue2;
 };
 
-MOZ_CONSTINIT mozilla::UniquePtr<HandlerStats> gHandlerStats;
+constinit mozilla::UniquePtr<HandlerStats> gHandlerStats;
 
 void MaybeCreateHandlerStats() {
   if (!gHandlerStats) {

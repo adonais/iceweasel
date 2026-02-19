@@ -14,17 +14,15 @@ from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 
-repackage_signing_description_schema = Schema(
-    {
-        Optional("label"): str,
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("treeherder"): task_description_schema["treeherder"],
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+repackage_signing_description_schema = Schema({
+    Optional("label"): str,
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("treeherder"): task_description_schema["treeherder"],
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 transforms = TransformSequence()
 
@@ -62,9 +60,9 @@ def make_signing_description(config, jobs):
 
         dependencies = {dep_job.kind: dep_job.label}
         signing_dependencies = dep_job.dependencies
-        dependencies.update(
-            {k: v for k, v in signing_dependencies.items() if k != "docker-image"}
-        )
+        dependencies.update({
+            k: v for k, v in signing_dependencies.items() if k != "docker-image"
+        })
 
         description = "Signing Geckodriver for build '{}'".format(
             attributes.get("build_platform"),

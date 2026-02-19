@@ -50,9 +50,35 @@ async def test_change_detector_basic(kwargs=None, return_value=({}, {})):
 
 @pytest.mark.asyncio
 async def test_change_detector_with_task_name():
-    await test_change_detector_basic(
-        {
-            "task_names": ["test-platform/opt-browsertime-test"],
+    await test_change_detector_basic({
+        "task_names": ["test-platform/opt-browsertime-test"],
+        "new_test_name": None,
+        "platform": None,
+        "new_platform": None,
+        "base_branch": "try",
+        "new_branch": "try",
+        "base_revision": "99",
+        "new_revision": "99",
+    })
+
+
+@pytest.mark.asyncio
+async def test_change_detector_option_failure():
+    with pytest.raises(Exception):
+        await test_change_detector_basic({
+            "test_name": None,
+            "new_test_name": None,
+            "platform": "test-platform/opt",
+            "new_platform": None,
+            "base_branch": "try",
+            "new_branch": "try",
+            "base_revision": "99",
+            "new_revision": "99",
+        })
+
+    with pytest.raises(Exception):
+        await test_change_detector_basic({
+            "test_name": "browsertime-test",
             "new_test_name": None,
             "platform": None,
             "new_platform": None,
@@ -60,39 +86,7 @@ async def test_change_detector_with_task_name():
             "new_branch": "try",
             "base_revision": "99",
             "new_revision": "99",
-        }
-    )
-
-
-@pytest.mark.asyncio
-async def test_change_detector_option_failure():
-    with pytest.raises(Exception):
-        await test_change_detector_basic(
-            {
-                "test_name": None,
-                "new_test_name": None,
-                "platform": "test-platform/opt",
-                "new_platform": None,
-                "base_branch": "try",
-                "new_branch": "try",
-                "base_revision": "99",
-                "new_revision": "99",
-            }
-        )
-
-    with pytest.raises(Exception):
-        await test_change_detector_basic(
-            {
-                "test_name": "browsertime-test",
-                "new_test_name": None,
-                "platform": None,
-                "new_platform": None,
-                "base_branch": "try",
-                "new_branch": "try",
-                "base_revision": "99",
-                "new_revision": "99",
-            }
-        )
+        })
 
 
 @pytest.mark.asyncio

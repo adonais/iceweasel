@@ -48,8 +48,6 @@ FINAL_TARGET_FILES.actors += [
     "ContentMetaParent.sys.mjs",
     "ControllersChild.sys.mjs",
     "ControllersParent.sys.mjs",
-    "DateTimePickerChild.sys.mjs",
-    "DateTimePickerParent.sys.mjs",
     "ExtFindChild.sys.mjs",
     "FindBarChild.sys.mjs",
     "FindBarParent.sys.mjs",
@@ -82,4 +80,13 @@ FINAL_TARGET_FILES.actors += [
     "ViewSourcePageParent.sys.mjs",
     "WebChannelChild.sys.mjs",
     "WebChannelParent.sys.mjs",
+]
+
+MOZ_SRC_FILES += [
+    "ColorPickerChild.sys.mjs",
+    "ColorPickerParent.sys.mjs",
+    "DateTimePickerChild.sys.mjs",
+    "DateTimePickerParent.sys.mjs",
+    "InputPickerChildCommon.sys.mjs",
+    "InputPickerParentCommon.sys.mjs",
 ]

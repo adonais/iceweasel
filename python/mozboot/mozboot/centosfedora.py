@@ -42,6 +42,7 @@ class CentOSFedoraBootstrapper(LinuxBootstrapper, BaseBootstrapper):
                 # https://bugzilla.redhat.com/show_bug.cgi?id=2030255
                 is_installed = subprocess.run(
                     ["dnf", "list", "--installed", package],
+                    check=False,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                 )

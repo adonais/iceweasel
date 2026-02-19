@@ -12,13 +12,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPProtectionPanel:
-    "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
-  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
-  IPPProxyStates: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+  IPPProxyManager:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyStates:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   requestIdleCallback: "resource://gre/modules/Timer.sys.mjs",
   cancelIdleCallback: "resource://gre/modules/Timer.sys.mjs",
 });

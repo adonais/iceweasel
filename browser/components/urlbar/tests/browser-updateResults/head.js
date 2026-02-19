@@ -86,7 +86,6 @@ function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
     resultSpan,
     payload: {
       url: "http://example.com/si",
-      displayUrl: "http://example.com/si",
       title: "suggested index",
       helpUrl: "http://example.com/",
       isBlockable: true,
@@ -161,7 +160,6 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
               source: UrlbarUtils.RESULT_SOURCE.HISTORY,
               payload: {
                 url: "http://example.com/" + i,
-                displayUrl: "http://example.com/" + i,
                 title: str,
                 helpUrl: "http://example.com/",
                 isBlockable: true,

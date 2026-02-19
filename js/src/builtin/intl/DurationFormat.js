@@ -520,24 +520,6 @@ function GetDurationUnitOptions(
 }
 
 /**
- * Returns the subset of the given locale list for which this locale list has a
- * matching (possibly fallback) locale. Locales appear in the same order in the
- * returned list as in the input list.
- */
-function Intl_DurationFormat_supportedLocalesOf(locales /*, options*/) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  // Step 1.
-  var availableLocales = "DurationFormat";
-
-  // Step 2.
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  // Step 3.
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-/**
  * Returns the resolved options for a DurationFormat object.
  */
 function Intl_DurationFormat_resolvedOptions() {

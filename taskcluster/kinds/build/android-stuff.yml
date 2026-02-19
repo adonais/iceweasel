@@ -45,6 +45,8 @@ android-geckoview-docs/opt:
         toolchain:
             - android-gradle-dependencies
             - android-sdk-linux
+            - linux64-embedded-uniffi-bindgen
+            - linux64-nimbus-fml
             - linux64-jdk
             - linux64-node
     optimization:

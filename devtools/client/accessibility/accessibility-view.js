@@ -50,12 +50,15 @@ const {
  * for rendering the content. It renders the top level ReactJS
  * component: the MainFrame.
  */
-function AccessibilityView(localStore) {
-  addEventListener("devtools/chrome/message", this.onMessage.bind(this), true);
-  this.store = localStore;
-}
-
-AccessibilityView.prototype = {
+class AccessibilityView {
+  constructor(localStore) {
+    addEventListener(
+      "devtools/chrome/message",
+      this.onMessage.bind(this),
+      true
+    );
+    this.store = localStore;
+  }
   /**
    * Initialize accessibility view, create its top level component and set the
    * data store.
@@ -171,22 +174,22 @@ AccessibilityView.prototype = {
       });
     }
     this.mainFrame = ReactDOM.render(provider, container);
-  },
+  }
 
   destroy() {
     const container = document.getElementById("content");
     ReactDOM.unmountComponentAtNode(container);
-  },
+  }
 
   async selectAccessible(accessible) {
     await this.store.dispatch(select(accessible));
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_INSPECTED);
-  },
+  }
 
   async highlightAccessible(accessible) {
     await this.store.dispatch(highlight(accessible));
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_HIGHLIGHTED);
-  },
+  }
 
   async selectNodeAccessible(node) {
     if (!node) {
@@ -247,7 +250,7 @@ AccessibilityView.prototype = {
 
     await this.store.dispatch(select(accessible));
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_INSPECTED);
-  },
+  }
 
   /**
    * Process message from accessibility panel.
@@ -261,7 +264,7 @@ AccessibilityView.prototype = {
     if (typeof this[method] === "function") {
       this[method](...data.args);
     }
-  },
-};
+  }
+}
 
 window.view = new AccessibilityView(store);

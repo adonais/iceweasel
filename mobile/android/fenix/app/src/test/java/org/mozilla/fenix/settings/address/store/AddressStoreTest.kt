@@ -2,24 +2,23 @@ package org.mozilla.fenix.settings.address.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.UpdatableAddressFields
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AddressStoreTest {
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
+
+    private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `GIVEN a store WHEN a user edits an address THEN the address structure is loaded`() = runTestOnMain {
+    fun `GIVEN a store WHEN a user edits an address THEN the address structure is loaded`() = runTest(testDispatcher) {
         val expectedAddressStructure = AddressStructure(
             listOf(
                 AddressStructure.Field.TextField(AddressStructure.Field.ID.Name, AddressStructure.Field.LocalizationKey.Name),
@@ -35,6 +34,7 @@ class AddressStoreTest {
         }
 
         store.dispatch(ViewAppeared)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(
             AddressStructureState.Loaded(expectedAddressStructure),
@@ -43,7 +43,7 @@ class AddressStoreTest {
     }
 
     @Test
-    fun `GIVEN a store WHEN a user edits an address and changes the country THEN the address structure is loaded`() = runTestOnMain {
+    fun `GIVEN a store WHEN a user edits an address and changes the country THEN the address structure is loaded`() = runTest(testDispatcher) {
         val expectedAddressStructure = AddressStructure(
             listOf(
                 AddressStructure.Field.TextField(AddressStructure.Field.ID.Name, AddressStructure.Field.LocalizationKey.Name),
@@ -82,7 +82,10 @@ class AddressStoreTest {
         assertEquals("WA", store.state.address.addressLevel1)
 
         store.dispatch(ViewAppeared)
+        testDispatcher.scheduler.advanceUntilIdle()
+
         store.dispatch(FormChange.Country("CA"))
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("CA", store.state.address.country)
         assertEquals("AL", store.state.address.addressLevel1)
@@ -94,7 +97,7 @@ class AddressStoreTest {
     }
 
     @Test
-    fun `GIVEN a store WHEN an address structure is loaded with an Unknown LocalizationKey THEN submit an exception`() = runTestOnMain {
+    fun `GIVEN a store WHEN an address structure is loaded with an Unknown LocalizationKey THEN submit an exception`() = runTest(testDispatcher) {
         val expectedAddressStructure = AddressStructure(
             listOf(
                 AddressStructure.Field.TextField(AddressStructure.Field.ID.Name, AddressStructure.Field.LocalizationKey.Name),
@@ -112,6 +115,7 @@ class AddressStoreTest {
         }
 
         store.dispatch(ViewAppeared)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(
             UnknownLocalizationKey("US", "unknown-key"),
@@ -120,7 +124,7 @@ class AddressStoreTest {
     }
 
     @Test
-    fun `GIVEN a store WHEN a user updates the address THEN the address is updated`() = runTestOnMain {
+    fun `GIVEN a store WHEN a user updates the address THEN the address is updated`() = runTest(testDispatcher) {
         val store = makeStore(this) {
             copy(
                 getAddressStructure = { _ ->
@@ -155,6 +159,7 @@ class AddressStoreTest {
             FormChange.Tel("555-555-5555"),
             FormChange.Email("mo@zilla.com"),
         ).forEach(store::dispatch)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val expected = UpdatableAddressFields(
             name = "Work",
@@ -172,7 +177,7 @@ class AddressStoreTest {
     }
 
     @Test
-    fun `GIVEN a state with no guid WHEN a user taps save THEN create and navigateBack is called on the environment`() = runTestOnMain {
+    fun `GIVEN a state with no guid WHEN a user taps save THEN create and navigateBack is called on the environment`() = runTest(testDispatcher) {
         var navigateBackCalled = false
         var createdAddress: UpdatableAddressFields? = null
 
@@ -188,6 +193,7 @@ class AddressStoreTest {
 
         store.dispatch(FormChange.Name("Work"))
         store.dispatch(SaveTapped)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val expected = emptyUpdatableAddress.copy(name = "Work")
 
@@ -196,7 +202,7 @@ class AddressStoreTest {
     }
 
     @Test
-    fun `GIVEN a state with an existing address WHEN a user taps save THEN update and navigateBack is called on the environment`() = runTestOnMain {
+    fun `GIVEN a state with an existing address WHEN a user taps save THEN update and navigateBack is called on the environment`() = runTest(testDispatcher) {
         var navigateBackCalled = false
         var updatedAddress: Pair<String, UpdatableAddressFields>? = null
 
@@ -211,6 +217,7 @@ class AddressStoreTest {
 
         store.dispatch(FormChange.Name("Home"))
         store.dispatch(SaveTapped)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val expected = Pair("BEEF", emptyUpdatableAddress.copy(name = "Home", organization = "Mozilla"))
 
@@ -219,7 +226,7 @@ class AddressStoreTest {
     }
 
     @Test
-    fun `GIVEN a state with an existing address WHEN a user taps save THEN delete and navigateBack is called on the environment`() = runTestOnMain {
+    fun `GIVEN a state with an existing address WHEN a user taps save THEN delete and navigateBack is called on the environment`() = runTest(testDispatcher) {
         var navigateBackCalled = false
         var deletedGuid: String? = null
 
@@ -233,10 +240,14 @@ class AddressStoreTest {
         }
 
         assertEquals(DialogState.Inert, store.state.deleteDialog)
+
         store.dispatch(DeleteTapped)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(DialogState.Presenting, store.state.deleteDialog)
+
         store.dispatch(DeleteDialogAction.DeleteTapped)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val expected = "BEEF"
 
@@ -254,8 +265,8 @@ class AddressStoreTest {
         return AddressStore(
             state,
             listOf(
-                AddressMiddleware(environment, scope, coroutinesTestRule.testDispatcher),
-                AddressStructureMiddleware(environment, scope, coroutinesTestRule.testDispatcher),
+                AddressMiddleware(environment, scope, testDispatcher, testDispatcher),
+                AddressStructureMiddleware(environment, scope, testDispatcher),
             ),
         )
     }

@@ -92,6 +92,7 @@ const UnenrollReason = Object.freeze({
   PREF_VARIABLE_MISSING: "pref-variable-missing",
   PREF_VARIABLE_NO_LONGER: "pref-variable-no-longer",
   RECIPE_NOT_SEEN: "recipe-not-seen",
+  ROLLOUTS_OPT_OUT: "rollouts-opt-out",
   STUDIES_OPT_OUT: "studies-opt-out",
   TARGETING_MISMATCH: "targeting-mismatch",
   UNENROLLED_IN_ANOTHER_PROFILE: "unenrolled-in-another-profile",

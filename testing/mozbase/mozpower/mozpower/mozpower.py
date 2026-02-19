@@ -77,7 +77,7 @@ class MozPower:
         android=False,
         logger_name="mozpower",
         output_file_path="power-testing",
-        **kwargs
+        **kwargs,
     ):
         """Initializes the MozPower object, detects OS and CPU (if not android),
         and instatiates the appropriate combo-dependent class for measurements.

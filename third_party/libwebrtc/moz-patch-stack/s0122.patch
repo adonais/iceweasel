@@ -1,42 +1,44 @@
-From: Michael Froman <mjfroman@mac.com>
-Date: Tue, 16 Sep 2025 09:26:22 -0500
-Subject: Bug 1985396 - Cherry-pick upstream libwebrtc commit 73898ac18b
+From: Michael Froman <mfroman@mozilla.com>
+Date: Wed, 17 Sep 2025 15:41:00 +0000
+Subject: Bug 1988042 - android build fix in
+ third_party/libwebrtc/rtc_base/cpu_info.cc r?ng!
 
-Upstream commit: https://webrtc.googlesource.com/src/+/73898ac18b498c3322f71b9543a2b77f465a47af
-       APM data dumpers: add missing include
+Supports(...) is really used in unittests and outside of unittests
+it is only used when WEBRTC_ARCH_X86_FAMILY is defined.  For now,
+we'll return false when checking for arm/neon suport.
 
-       Currently, audioproc_f fails to build with apm_debug_dump enabled.
-
-       Bug: webrtc:442745059
-       Change-Id: I349468891d798341abdaea32042cbe23c4722f75
-       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/407641
-       Commit-Queue: Sam Zackrisson <saza@webrtc.org>
-       Commit-Queue: Lionel Koenig <lionelk@webrtc.org>
-       Reviewed-by: Lionel Koenig <lionelk@webrtc.org>
-       Cr-Commit-Position: refs/heads/main@{#45547}
+Differential Revision: https://phabricator.services.mozilla.com/D265018
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/eae7b6ec4f7ca191e8eaa8e36787142528f2c132
 ---
- modules/audio_processing/logging/apm_data_dumper.cc | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ rtc_base/cpu_info.cc | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/modules/audio_processing/logging/apm_data_dumper.cc b/modules/audio_processing/logging/apm_data_dumper.cc
-index b26d90fbc8..d86d8d8d3b 100644
---- a/modules/audio_processing/logging/apm_data_dumper.cc
-+++ b/modules/audio_processing/logging/apm_data_dumper.cc
-@@ -10,13 +10,16 @@
- 
- #include "modules/audio_processing/logging/apm_data_dumper.h"
- 
--
- // Check to verify that the define is properly set.
- #if !defined(WEBRTC_APM_DEBUG_DUMP) || \
-     (WEBRTC_APM_DEBUG_DUMP != 0 && WEBRTC_APM_DEBUG_DUMP != 1)
- #error "Set WEBRTC_APM_DEBUG_DUMP to either 0 or 1"
- #endif
- 
-+#if WEBRTC_APM_DEBUG_DUMP == 1
-+#include "rtc_base/strings/string_builder.h"
+diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
+index f0bff56911..b51c9e950e 100644
+--- a/rtc_base/cpu_info.cc
++++ b/rtc_base/cpu_info.cc
+@@ -25,7 +25,9 @@
+ #elif defined(WEBRTC_MAC)
+ #include <sys/sysctl.h>
+ #elif defined(WEBRTC_ANDROID)
++#if !defined(WEBRTC_MOZILLA_BUILD)
+ #include <cpu-features.h>
 +#endif
-+
- namespace webrtc {
- namespace {
- 
+ #include <unistd.h>
+ #elif defined(WEBRTC_FUCHSIA)
+ #include <zircon/syscalls.h>
+@@ -175,7 +177,14 @@ bool Supports(ISA instruction_set_architecture) {
+ #elif defined(WEBRTC_ARCH_ARM_FAMILY)
+   if (instruction_set_architecture == ISA::kNeon) {
+ #if defined(WEBRTC_ANDROID)
++#if defined(WEBRTC_MOZILLA_BUILD)
++    // We should revisit this if Supports(...) is ever more widely used.
++    // Currently, it is used in unittests and when WEBRTC_ARCH_X86_FAMILY
++    // is defined in non-unittest code.
++    return false;
++#else
+     return 0 != (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
++#endif
+ #elif defined(WEBRTC_BSD)
+     // OpenBSD does not have getauxval() and does not have /proc reading
+     return false;

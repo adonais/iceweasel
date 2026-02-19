@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!--
     Home Fragment
 
@@ -16,7 +16,7 @@
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Ünvanı daxil et və ya axtar</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Açıq vərəqləriniz burada göstəriləcək.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Açıq vərəqləriniz burada göstəriləcək.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Məxfi səyahət haqqında olan əfsanələr</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
@@ -42,9 +42,9 @@
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
   <string name="browser_menu_stop">Dayandır</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Kömək</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Kömək</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Yeniliklər</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Yeniliklər</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Tənzimləmələr</string>
   <!-- Browser menu button that opens a user's library -->
@@ -68,7 +68,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s TƏRƏFİNDƏN</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s TƏRƏFİNDƏN</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -497,7 +497,7 @@
   <!-- Title for the site permissions item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_site_permissions">Sayt icazələri</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Çıx</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Çıx</string>
   <!-- Text for the cancel button for the data deletion dialog -->
   <string name="delete_browsing_data_prompt_cancel">Ləğv et</string>
   <!-- Text for the allow button for the data deletion dialog -->
@@ -662,7 +662,7 @@
   -->
   <string name="certificate_info_verified_by">Təsdiqləyən: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Sil</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Sil</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Sil</string>
   <!-- Translations feature -->

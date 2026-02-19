@@ -8,7 +8,6 @@ var { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
 
-let h2Port;
 let h3Port;
 
 const certOverrideService = Cc[
@@ -16,10 +15,6 @@ const certOverrideService = Cc[
 ].getService(Ci.nsICertOverrideService);
 
 function setup() {
-  h2Port = Services.env.get("MOZHTTP2_PORT");
-  Assert.notEqual(h2Port, null);
-  Assert.notEqual(h2Port, "");
-
   h3Port = Services.env.get("MOZHTTP3_PORT");
   Assert.notEqual(h3Port, null);
   Assert.notEqual(h3Port, "");
@@ -73,14 +68,6 @@ function channelOpenPromise(chan, flags) {
 }
 
 async function H3CoalescingTest(host1, host2) {
-  // Disable PMTUD (Path MTU Discovery) to avoid race condition between DNS
-  // resolution (to validate whether we can coalesce) and new connection
-  // attempt. Long term one might not want to start the new connection attempt
-  // in the first place.
-  //
-  // See Bug 1909910 for more details.
-  Services.prefs.setBoolPref("network.http.http3.pmtud", false);
-
   Services.prefs.setCharPref(
     "network.http.http3.alt-svc-mapping-for-testing",
     `${host1};h3=:${h3Port}`

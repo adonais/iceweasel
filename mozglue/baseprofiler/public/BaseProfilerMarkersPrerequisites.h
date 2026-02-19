@@ -24,8 +24,8 @@ enum class StackCaptureOptions {
 
 }
 
-#include "BaseProfileJSONWriter.h"
-#include "BaseProfilingCategory.h"
+#include "mozilla/BaseProfileJSONWriter.h"
+#include "mozilla/BaseProfilingCategory.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/BaseProfilerState.h"
@@ -650,12 +650,12 @@ class MarkerOptions {
   // Options can be read by their name (without "Marker"), e.g.: `o.ThreadId()`.
   // Add "Ref" for a non-const reference, e.g.: `o.ThreadIdRef() = ...;`
 #define FUNCTIONS_ON_MEMBER(NAME)                      \
-  MarkerOptions& Set(Marker##NAME&& a##NAME)& {        \
+  MarkerOptions& Set(Marker##NAME&& a##NAME) & {       \
     m##NAME = std::move(a##NAME);                      \
     return *this;                                      \
   }                                                    \
                                                        \
-  MarkerOptions&& Set(Marker##NAME&& a##NAME)&& {      \
+  MarkerOptions&& Set(Marker##NAME&& a##NAME) && {     \
     m##NAME = std::move(a##NAME);                      \
     return std::move(*this);                           \
   }                                                    \

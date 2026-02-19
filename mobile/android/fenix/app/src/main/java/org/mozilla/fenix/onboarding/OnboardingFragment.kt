@@ -518,7 +518,7 @@ class OnboardingFragment : Fragment() {
             text = getString(R.string.juno_onboarding_privacy_notice_text),
             linkTextState = LinkTextState(
                 text = getString(R.string.juno_onboarding_privacy_notice_text),
-                url = SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE),
+                url = SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE),
                 onClick = {
                     SupportUtils.launchSandboxCustomTab(
                         context = requireContext(),

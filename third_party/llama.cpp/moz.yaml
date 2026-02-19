@@ -84,3 +84,4 @@ vendoring:
      - load-from-buffer-or-fd.patch # add an API to load a model from a buffer or a fd
      - static-ctors.patch # remove some static ctors
      - fix-RLIMIT_MEMLOCK-solaris.patch # fix the build on solaris
+     - missing-include.patch # backported from https://github.com/ggml-org/llama.cpp/commit/2aa45ef9e31069ea0a7d0fef7ce858facdf25218

@@ -68,7 +68,7 @@ class SupportUtilsTest {
         )
         assertEquals(
             "https://www.mozilla.org/zh/privacy/firefox/",
-            SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE, Locale.forLanguageTag("zh")),
+            SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE, Locale.forLanguageTag("zh")),
         )
     }
 

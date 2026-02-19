@@ -677,6 +677,7 @@ const PREF_URLBAR_DEFAULTS_MAP = new Map(PREF_URLBAR_DEFAULTS);
 const PREF_OTHER_DEFAULTS = new Map([
   ["browser.fixup.dns_first_for_single_words", false],
   ["browser.ml.enable", false],
+  ["browser.search.openintab", false],
   ["browser.search.suggest.enabled", true],
   ["browser.search.suggest.enabled.private", false],
   ["browser.search.widget.new", false],
@@ -716,7 +717,7 @@ const PREF_TYPES = new Map([
 ]);
 
 /**
- * Builds the standard result groups and returns the root group.  Result
+ * Builds the default result groups and returns the root group.  Result
  * groups determine the composition of results in the muxer, i.e., how they're
  * grouped and sorted.  Each group is an object that looks like this:
  *
@@ -753,7 +754,7 @@ const PREF_TYPES = new Map([
  * @param {boolean} options.showSearchSuggestionsFirst
  *   If true, the suggestions group will come before the general group.
  */
-function makeResultGroups({ showSearchSuggestionsFirst }) {
+function makeDefaultResultGroups({ showSearchSuggestionsFirst }) {
   /**
    * @type {ResultGroup}
    */
@@ -982,16 +983,6 @@ class Preferences {
   }
 
   /**
-   * Builds the standard result groups.  See makeResultGroups.
-   *
-   * @param {object} options
-   *   See makeResultGroups.
-   */
-  makeResultGroups(options) {
-    return makeResultGroups(options);
-  }
-
-  /**
    * Gets a pref but allows the `scotchBonnet.enableOverride` pref to
    * short circuit them so one pref can be used to enable multiple
    * features.
@@ -1004,13 +995,47 @@ class Preferences {
     return this.get("scotchBonnet.enableOverride") || this.get(pref);
   }
 
-  get resultGroups() {
-    if (!this.#resultGroups) {
-      this.#resultGroups = makeResultGroups({
-        showSearchSuggestionsFirst: this.get("showSearchSuggestionsFirst"),
-      });
+  getResultGroups({ context }) {
+    // We try to cache result groups so we don't have to rebuild them each time.
+    // This key may be modified per each SAP, and will track the cached groups,
+    // any additionally used condition must be added to the key.
+    let key = context.sapName;
+    switch (context.sapName) {
+      case "urlbar": {
+        let showSearchSuggestionsFirst =
+          context.searchString ||
+          (!this.get("suggest.trending") &&
+            !this.get("suggest.recentsearches"));
+
+        let inSearchEngineMode = !!context.searchMode?.engineName;
+
+        // If we're in a case were search suggestions would be shown first, but not
+        // in search engine mode, then just use the user preference.
+        if (!inSearchEngineMode && showSearchSuggestionsFirst) {
+          showSearchSuggestionsFirst = this.get("showSearchSuggestionsFirst");
+        }
+
+        key += showSearchSuggestionsFirst;
+        return this.#getOrCacheResultGroups(key, () =>
+          makeDefaultResultGroups({ showSearchSuggestionsFirst })
+        );
+      }
+      case "searchbar": {
+        // This is a temporary placeholder until searchbar gets its own config.
+        return this.#getOrCacheResultGroups(key, () =>
+          makeDefaultResultGroups({ showSearchSuggestionsFirst: true })
+        );
+      }
+      case "smartbar": {
+        // This is a temporary placeholder until smartbar gets its own config.
+        return this.#getOrCacheResultGroups(key, () =>
+          makeDefaultResultGroups({ showSearchSuggestionsFirst: false })
+        );
+      }
+      default: {
+        throw new Error(`Unknown SAP name: ${context.sapName}`);
+      }
     }
-    return this.#resultGroups;
   }
 
   /**
@@ -1079,7 +1104,7 @@ class Preferences {
         this._map.delete("autoFillAdaptiveHistoryUseCountThreshold");
         return;
       case "showSearchSuggestionsFirst":
-        this.#resultGroups = null;
+        this.#cachedResultGroups.clear();
         return;
     }
 
@@ -1288,44 +1313,6 @@ class Preferences {
   }
 
   /**
-   * Initializes the showSearchSuggestionsFirst pref based on the matchGroups
-   * pref.  This function can be removed when the corresponding UI migration in
-   * BrowserGlue.sys.mjs is no longer needed.
-   */
-  initializeShowSearchSuggestionsFirstPref() {
-    let matchGroups = [];
-    let pref = Services.prefs.getCharPref("browser.urlbar.matchGroups", "");
-    try {
-      matchGroups = pref.split(",").map(v => {
-        let group = v.split(":");
-        return [group[0].trim().toLowerCase(), Number(group[1])];
-      });
-    } catch (ex) {}
-    let groupNames = matchGroups.map(group => group[0]);
-    let suggestionIndex = groupNames.indexOf("suggestion");
-    let generalIndex = groupNames.indexOf("general");
-    let showSearchSuggestionsFirst =
-      generalIndex < 0 ||
-      (suggestionIndex >= 0 && suggestionIndex < generalIndex);
-    let oldValue = Services.prefs.getBoolPref(
-      "browser.urlbar.showSearchSuggestionsFirst"
-    );
-    Services.prefs.setBoolPref(
-      "browser.urlbar.showSearchSuggestionsFirst",
-      showSearchSuggestionsFirst
-    );
-
-    // Pref observers aren't called when a pref is set to its current value, but
-    // we always want to set matchGroups to the appropriate default value via
-    // onPrefChanged, so call it now if necessary.  This is really only
-    // necessary for tests since the only time this function is called outside
-    // of tests is by a UI migration in BrowserGlue.
-    if (oldValue == showSearchSuggestionsFirst) {
-      this.onPrefChanged("showSearchSuggestionsFirst");
-    }
-  }
-
-  /**
    * Return whether or not persisted search terms is enabled.
    *
    * @returns {boolean} true: if enabled.
@@ -1336,6 +1323,20 @@ class Preferences {
       this.get("showSearchTerms.enabled") &&
       !lazy.CustomizableUI.getPlacementOfWidget("search-container")
     );
+  }
+
+  /**
+   * @type {Map<string, ResultGroup>}
+   * Result groups cached by search access point and params used to build them.
+   */
+  #cachedResultGroups = new Map();
+  #getOrCacheResultGroups(key, builder) {
+    let groups = this.#cachedResultGroups.get(key);
+    if (!groups) {
+      groups = builder();
+      this.#cachedResultGroups.set(key, groups);
+    }
+    return groups;
   }
 
   #notifyObservers(method, changed, ...rest) {
@@ -1356,8 +1357,6 @@ class Preferences {
       ++i;
     }
   }
-
-  #resultGroups = null;
 }
 
 export var UrlbarPrefs = new Preferences();

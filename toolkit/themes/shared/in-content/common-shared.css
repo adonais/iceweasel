@@ -17,9 +17,6 @@
    *    browser.display.background_color.dark
    */
 
-  --in-content-item-hover: color-mix(in srgb, var(--button-background-color-primary) 20%, transparent);
-  --in-content-item-hover-text: var(--text-color);
-
   --in-content-border-invalid: light-dark(var(--red-50), rgb(255, 132, 139));
 
   --in-content-table-background: light-dark(#f8f8fa, rgb(35, 34, 43));
@@ -34,11 +31,9 @@
   --blue-50: #0a84ff;
   --blue-60: #0060df;
   --grey-30: #d7d7db;
-  --grey-60: #4a4a4f;
   --grey-90-a10: rgba(12, 12, 13, 0.1);
   --grey-90-a20: rgba(12, 12, 13, 0.2);
   --grey-90-a30: rgba(12, 12, 13, 0.3);
-  --grey-90-a60: rgba(12, 12, 13, 0.6);
   --green-70: #058b00;
   --orange-50: #ff9400;
   --red-40: #ff4f5e;
@@ -70,9 +65,6 @@
 @media (forced-colors) {
   :host(.anonymous-content-host),
   :root {
-    --in-content-item-hover: SelectedItem;
-    --in-content-item-hover-text: SelectedItemText;
-
     /* This is not great, but there is no suitable keyword for this.
      * In theory, we shouldn't be conveying invalid state just with a colour
      * change... */
@@ -398,8 +390,8 @@ xul|menulist > xul|menupopup xul|menuitem {
 
 xul|menulist > xul|menupopup > xul|menu:not([disabled="true"])[_moz-menuactive="true"],
 xul|menulist > xul|menupopup > xul|menuitem:not([disabled="true"])[_moz-menuactive="true"] {
-  color: var(--in-content-item-hover-text);
-  background-color: var(--in-content-item-hover);
+  color: var(--text-color-list-item-hover);
+  background-color: var(--background-color-list-item-hover);
 }
 
 xul|menulist > xul|menupopup > xul|menu:not([disabled="true"])[selected="true"],
@@ -786,8 +778,8 @@ xul|treechildren::-moz-tree-row(multicol, odd) {
 
 html|select[size][multiple] > html|option:hover,
 xul|treechildren::-moz-tree-row(hover) {
-  background-color: var(--in-content-item-hover);
-  color: var(--in-content-item-hover-text);
+  background-color: var(--background-color-list-item-hover);
+  color: var(--text-color-list-item-hover);
 }
 
 xul|richlistbox > xul|richlistitem[selected],
@@ -906,7 +898,7 @@ xul|treechildren::-moz-tree-row {
 xul|treechildren::-moz-tree-cell-text(hover),
 xul|treechildren::-moz-tree-twisty(hover),
 xul|treechildren::-moz-tree-image(hover) {
-  color: var(--in-content-item-hover-text);
+  color: var(--text-color-list-item-hover);
 }
 
 xul|treechildren::-moz-tree-cell-text(selected),

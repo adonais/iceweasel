@@ -596,6 +596,12 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
           ariaProperties.AppendLiteral("atomic=false");
         }
       }
+      if (acc->HasCustomActions()) {
+        if (!ariaProperties.IsEmpty()) {
+          ariaProperties += ';';
+        }
+        ariaProperties.AppendLiteral("hasactions=true");
+      }
       if (!ariaProperties.IsEmpty()) {
         aPropertyValue->vt = VT_BSTR;
         aPropertyValue->bstrVal = ::SysAllocString(ariaProperties.get());
@@ -775,6 +781,17 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
       aPropertyValue->vt = VT_I4;
       aPropertyValue->lVal = acc->GroupPosition().setSize;
       return S_OK;
+
+    default: {
+      // These can't be included as case statements because they are not
+      // constant expressions.
+      const UiaRegistrations& registrations = GetUiaRegistrations();
+      if (aPropertyId == registrations.mAccessibleActions) {
+        aPropertyValue->vt = VT_UNKNOWN | VT_ARRAY;
+        aPropertyValue->parray = AccRelationsToUiaArray({RelationType::ACTION});
+        return S_OK;
+      }
+    }
   }
 
   return S_OK;
@@ -1569,4 +1586,30 @@ SAFEARRAY* a11y::AccessibleArrayToUiaArray(const nsTArray<Accessible*>& aAccs) {
     ++indices[0];
   }
   return uias;
+}
+
+const UiaRegistrations& a11y::GetUiaRegistrations() {
+  static UiaRegistrations sRegistrations = {};
+  static bool sRegistered = false;
+  if (sRegistered) {
+    return sRegistrations;
+  }
+  RefPtr<IUIAutomationRegistrar> registrar;
+  if (FAILED(CoCreateInstance(CLSID_CUIAutomationRegistrar, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_IUIAutomationRegistrar,
+                              getter_AddRefs(registrar)))) {
+    return sRegistrations;
+  }
+  UIAutomationPropertyInfo actionsInfo = {
+      // https://w3c.github.io/core-aam/#ariaActions
+      // {8C787AC3-0405-4C94-AC09-7A56A173F7EF}
+      {0x8C787AC3,
+       0x0405,
+       0x4C94,
+       {0xAC, 0x09, 0x7A, 0x56, 0xA1, 0x73, 0xF7, 0xEF}},
+      L"AccessibleActions",
+      UIAutomationType_ElementArray};
+  registrar->RegisterProperty(&actionsInfo, &sRegistrations.mAccessibleActions);
+  sRegistered = true;
+  return sRegistrations;
 }

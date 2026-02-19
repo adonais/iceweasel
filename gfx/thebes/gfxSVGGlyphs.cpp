@@ -281,8 +281,7 @@ gfxSVGGlyphsDocument::gfxSVGGlyphsDocument(const uint8_t* aBuffer,
       if (Z_OK == inflateInit2(&s, 16 + MAX_WBITS)) {
         int result = inflate(&s, Z_FINISH);
         if (Z_STREAM_END == result) {
-          MOZ_ASSERT(size_t(s.next_out - outBuf.Elements()) == origLen);
-          ParseDocument(outBuf.Elements(), outBuf.Length());
+          ParseDocument(outBuf.Elements(), s.total_out);
         } else {
           NS_WARNING("Failed to decompress SVG glyphs document");
         }

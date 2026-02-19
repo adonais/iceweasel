@@ -68,6 +68,7 @@
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/PointerEventHandler.h"
+#include "mozilla/dom/PopoverData.h"
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/UIEvent.h"
@@ -152,7 +153,7 @@ static nsITimer* gUserInteractionTimer = nullptr;
 static nsITimerCallback* gUserInteractionTimerCallback = nullptr;
 
 static const double kCursorLoadingTimeout = 1000;  // ms
-MOZ_CONSTINIT static AutoWeakFrame gLastCursorSourceFrame;
+constinit static AutoWeakFrame gLastCursorSourceFrame;
 static TimeStamp gLastCursorUpdateTime;
 static TimeStamp gTypingStartTime;
 static TimeStamp gTypingEndTime;
@@ -616,10 +617,12 @@ bool EventStateManager::sNormalLMouseEventInProcess = false;
 int16_t EventStateManager::sCurrentMouseBtn = MouseButton::eNotPressed;
 EventStateManager* EventStateManager::sActiveESM = nullptr;
 EventStateManager* EventStateManager::sCursorSettingManager = nullptr;
-MOZ_CONSTINIT AutoWeakFrame EventStateManager::sLastDragOverFrame{};
+constinit AutoWeakFrame EventStateManager::sLastDragOverFrame{};
 LayoutDeviceIntPoint EventStateManager::sPreLockScreenPoint =
     LayoutDeviceIntPoint(0, 0);
 LayoutDeviceIntPoint EventStateManager::sLastRefPoint = kInvalidRefPoint;
+LayoutDeviceIntPoint EventStateManager::sLastRefPointOfRawUpdate =
+    kInvalidRefPoint;
 CSSIntPoint EventStateManager::sLastScreenPoint = CSSIntPoint(0, 0);
 LayoutDeviceIntPoint EventStateManager::sSynthCenteringPoint = kInvalidRefPoint;
 CSSIntPoint EventStateManager::sLastClientPoint = CSSIntPoint(0, 0);
@@ -1522,7 +1525,8 @@ void EventStateManager::LightDismissOpenPopovers(WidgetEvent* aEvent,
     return;
   }
 
-  Element* topmostPopover = aTargetContent->OwnerDoc()->GetTopmostAutoPopover();
+  Element* topmostPopover = aTargetContent->OwnerDoc()->GetTopmostPopoverOf(
+      PopoverAttributeState::Auto);
   if (!topmostPopover) {
     return;
   }
@@ -5633,6 +5637,10 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
     return;
   }
 
+  const LayoutDeviceIntPoint& lastRefPoint =
+      aMouseEvent->mMessage == ePointerRawUpdate ? sLastRefPointOfRawUpdate
+                                                 : sLastRefPoint;
+
   // Mouse movement is reported on the MouseEvent.movement{X,Y} fields.
   // Movement is calculated in UIEvent::GetMovementPoint() as:
   //   previous_mousemove_mRefPoint - current_mousemove_mRefPoint.
@@ -5646,14 +5654,14 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
     aMouseEvent->mLastRefPoint =
         GetWindowClientRectCenter(aMouseEvent->mWidget);
 
-  } else if (sLastRefPoint == kInvalidRefPoint) {
+  } else if (lastRefPoint == kInvalidRefPoint) {
     // We don't have a valid previous mousemove mRefPoint. This is either
     // the first move we've encountered, or the mouse has just re-entered
     // the application window. We should report (0,0) movement for this
     // case, so make the current and previous mRefPoints the same.
     aMouseEvent->mLastRefPoint = aMouseEvent->mRefPoint;
   } else {
-    aMouseEvent->mLastRefPoint = sLastRefPoint;
+    aMouseEvent->mLastRefPoint = lastRefPoint;
   }
 }
 
@@ -5707,10 +5715,21 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
 /* static */
 void EventStateManager::UpdateLastPointerPosition(
     WidgetMouseEvent* aMouseEvent) {
-  if (aMouseEvent->mMessage != eMouseMove) {
+  if (aMouseEvent->IsSynthesized()) {
     return;
   }
-  sLastRefPoint = aMouseEvent->mRefPoint;
+  if (aMouseEvent->mMessage == eMouseMove) {
+    sLastRefPoint = aMouseEvent->mRefPoint;
+  } else if (aMouseEvent->mMessage == ePointerRawUpdate ||
+             // FYI: ePointerRawUpdate is handled only when there are some
+             // `pointerrawupdate` event listeners.  Therefore, we need to
+             // update the last ref point for ePointerRawUpdate when we dispatch
+             // ePointerMove too since the first `pointerrawupdate` event
+             // listener may be added after the ePointerMove.
+             aMouseEvent->mMessage == ePointerMove) {
+    // XXX Shouldn't we store last refpoint of PointerEvent per pointerId?
+    sLastRefPointOfRawUpdate = aMouseEvent->mRefPoint;
+  }
 }
 
 void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
@@ -5792,9 +5811,9 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
         }
       }
 
-      // Reset sLastRefPoint, so that we'll know not to report any
-      // movement the next time we re-enter the window.
-      sLastRefPoint = kInvalidRefPoint;
+      // Reset sLastRefPoint and sLastRefPointOfRawUpdate, so that we'll know
+      // not to report any movement the next time we re-enter the window.
+      sLastRefPoint = sLastRefPointOfRawUpdate = kInvalidRefPoint;
 
       NotifyMouseOut(aMouseEvent, nullptr);
       break;
@@ -5851,7 +5870,8 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     // XXX Cannot we do synthesize the native mousemove in the parent process
     //     with calling LockNativePointer below?  Then, we could make this API
     //     work only in the automation mode.
-    sLastRefPoint = GetWindowClientRectCenter(aWidget);
+    sLastRefPoint = sLastRefPointOfRawUpdate =
+        GetWindowClientRectCenter(aWidget);
     aWidget->SynthesizeNativeMouseMove(
         sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
 
@@ -5873,10 +5893,11 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     sSynthCenteringPoint = kInvalidRefPoint;
     if (aWidget) {
       // Unlocking, so return pointer to the original position by firing a
-      // synthetic mouse event. We first reset sLastRefPoint to its
-      // pre-pointerlock position, so that the synthetic mouse event reports
-      // no movement.
-      sLastRefPoint = sPreLockScreenPoint - aWidget->WidgetToScreenOffset();
+      // synthetic mouse event. We first reset sLastRefPoint and
+      // sLastRefPointOfRawUpdate to its pre-pointerlock position, so that the
+      // synthetic mouse event reports no movement.
+      sLastRefPoint = sLastRefPointOfRawUpdate =
+          sPreLockScreenPoint - aWidget->WidgetToScreenOffset();
       // XXX Cannot we do synthesize the native mousemove in the parent process
       //     with calling `UnlockNativePointer` above?  Then, we could make this
       //     API work only in the automation mode.

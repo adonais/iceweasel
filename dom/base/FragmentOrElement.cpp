@@ -148,8 +148,9 @@ nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   return nullptr;
 }
 
-void nsIContent::UnbindFromTree(nsINode* aNewParent) {
-  UnbindContext context(*this);
+void nsIContent::UnbindFromTree(nsINode* aNewParent,
+                                const BatchRemovalState* aBatchState) {
+  UnbindContext context(*this, aBatchState);
   context.SetIsMove(aNewParent != nullptr);
   UnbindFromTree(context);
 }
@@ -1231,28 +1232,28 @@ class ContentUnbinder : public Runnable {
   ~ContentUnbinder() { Run(); }
 
   void UnbindSubtree(nsIContent* aNode) {
+    if (!aNode->HasChildren()) {
+      return;
+    }
     if (aNode->NodeType() != nsINode::ELEMENT_NODE &&
         aNode->NodeType() != nsINode::DOCUMENT_FRAGMENT_NODE) {
       return;
     }
-    FragmentOrElement* container = static_cast<FragmentOrElement*>(aNode);
-    if (container->HasChildren()) {
-      // Invalidate cached array of child nodes
-      container->InvalidateChildNodes();
-
-      while (container->HasChildren()) {
-        // Hold a strong ref to the node when we remove it, because we may be
-        // the last reference to it.  We need to call DisconnectChild()
-        // before calling UnbindFromTree, since this last can notify various
-        // observers and they should really see consistent
-        // tree state.
-        // If this code changes, change the corresponding code in
-        // FragmentOrElement's and Document's unlink impls.
-        nsCOMPtr<nsIContent> child = container->GetLastChild();
-        container->DisconnectChild(child);
-        UnbindSubtree(child);
-        child->UnbindFromTree();
-      }
+    auto* container = static_cast<FragmentOrElement*>(aNode);
+    // Invalidate cached array of child nodes
+    container->InvalidateChildNodes();
+    BatchRemovalState state{};
+    while (nsCOMPtr<nsIContent> child = container->GetLastChild()) {
+      // Hold a strong ref to the node when we remove it, because we may be
+      // the last reference to it.  We need to call DisconnectChild()
+      // before calling UnbindFromTree, since this last can notify various
+      // observers and they should really see consistent tree state.
+      // If this code changes, change the corresponding code in
+      // FragmentOrElement's and Document's unlink impls.
+      container->DisconnectChild(child);
+      UnbindSubtree(child);
+      child->UnbindFromTree(/* aNewParent = */ nullptr, &state);
+      state.mIsFirst = false;
     }
   }
 
@@ -1329,14 +1330,15 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   if (tmp->UnoptimizableCCNode() || !nsCCUncollectableMarker::sGeneration) {
     // Don't allow script to run while we're unbinding everything.
     nsAutoScriptBlocker scriptBlocker;
-    while (tmp->HasChildren()) {
+    BatchRemovalState state{};
+    while (nsCOMPtr<nsIContent> child = tmp->GetLastChild()) {
       // Hold a strong ref to the node when we remove it, because we may be
       // the last reference to it.
       // If this code changes, change the corresponding code in Document's
       // unlink impl and ContentUnbinder::UnbindSubtree.
-      nsCOMPtr<nsIContent> child = tmp->GetLastChild();
       tmp->DisconnectChild(child);
-      child->UnbindFromTree();
+      child->UnbindFromTree(/* aNewParent = */ nullptr, &state);
+      state.mIsFirst = false;
     }
   } else if (!tmp->GetParent() && tmp->HasChildren()) {
     ContentUnbinder::Append(tmp);

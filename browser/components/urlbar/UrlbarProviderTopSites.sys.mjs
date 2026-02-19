@@ -248,10 +248,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
                 let result = new lazy.UrlbarResult({
                   type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
                   source: UrlbarUtils.RESULT_SOURCE.TABS,
-                  ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-                    queryContext.tokens,
-                    payload
-                  ),
+                  payload,
                 });
                 addCallback(this, result);
                 switchToTabResultAdded = true;
@@ -287,10 +284,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
           let result = new lazy.UrlbarResult({
             type: UrlbarUtils.RESULT_TYPE.URL,
             source: resultSource,
-            ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-              queryContext.tokens,
-              payload
-            ),
+            payload,
           });
           addCallback(this, result);
           break;
@@ -320,17 +314,14 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
           let result = new lazy.UrlbarResult({
             type: UrlbarUtils.RESULT_TYPE.SEARCH,
             source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-            ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-              queryContext.tokens,
-              {
-                keyword: site.title,
-                providesSearchMode: true,
-                engine: engine.name,
-                query: "",
-                icon: site.favicon,
-                isPinned: site.isPinned,
-              }
-            ),
+            payload: {
+              keyword: site.title,
+              providesSearchMode: true,
+              engine: engine.name,
+              query: "",
+              icon: site.favicon,
+              isPinned: site.isPinned,
+            },
           });
           addCallback(this, result);
           break;

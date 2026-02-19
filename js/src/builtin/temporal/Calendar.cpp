@@ -1338,10 +1338,25 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
 
       MOZ_ASSERT(1 <= month && month <= 13);
 
+      // Constrain |day| when overflow is "reject" to avoid rejecting too large
+      // day values in CreateDateFromCodes.
+      //
+      // For example when month = 10 and day = 30 and the input year is a leap
+      // year. We first try month code "M10", but since "M10" can have at most
+      // 29 days, we need to constrain the days value before calling
+      // CreateDateFromCodes.
+      int32_t constrainedDay = day;
+      if (overflow == TemporalOverflow::Reject) {
+        constexpr auto daysInMonth = CalendarDaysInMonth(CalendarId::Hebrew);
+        if (day > daysInMonth.first && day <= daysInMonth.second) {
+          constrainedDay = daysInMonth.first;
+        }
+      }
+
       // Create date with month number replaced by month-code.
       auto monthCode = MonthCode{std::min(month, 12)};
       auto date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
-                                      monthCode, day, overflow);
+                                      monthCode, constrainedDay, overflow);
       if (!date) {
         return nullptr;
       }
@@ -1350,6 +1365,18 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       // changes are necessary and we can directly return |date|.
       int32_t ordinal = OrdinalMonth(date.get());
       if (ordinal == month) {
+        // If |day| was constrained, check if the actual input days value
+        // exceeds the number of days in the resolved month.
+        if (constrainedDay < day) {
+          MOZ_ASSERT(overflow == TemporalOverflow::Reject);
+
+          if (day > CalendarDaysInMonth(calendarId, monthCode).second) {
+            ReportCalendarFieldOverflow(cx, "day", day);
+            return nullptr;
+          }
+          return CreateDateFromCodes(cx, calendarId, calendar, eraYear,
+                                     monthCode, day, overflow);
+        }
         return date;
       }
 

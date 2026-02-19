@@ -459,7 +459,8 @@ class _UrlbarSearchTermsPersistence {
     if (!searchParams.size) {
       return false;
     }
-    if (provider.includeParams) {
+
+    if (provider.includeParams?.length) {
       let foundMatch = false;
       for (let param of provider.includeParams) {
         // The param might not be present on page load.

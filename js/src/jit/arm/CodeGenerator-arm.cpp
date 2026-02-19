@@ -83,7 +83,7 @@ void CodeGeneratorARM::bailoutIf(Assembler::Condition condition,
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
 
   // All bailout code is associated with the bytecodeSite of the block we are
   // bailing out from.
@@ -101,7 +101,7 @@ void CodeGeneratorARM::bailoutFrom(Label* label, LSnapshot* snapshot) {
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
 
   // All bailout code is associated with the bytecodeSite of the block we are
   // bailing out from.
@@ -568,7 +568,7 @@ void CodeGenerator::visitSoftDivI(LSoftDivI* ins) {
   if (gen->compilingWasm()) {
     masm.Push(InstanceReg);
     int32_t framePushedAfterInstance = masm.framePushed();
-    masm.setupWasmABICall();
+    masm.setupWasmABICall(wasm::SymbolicAddress::aeabi_idivmod);
     masm.passABIArg(lhs);
     masm.passABIArg(rhs);
     int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
@@ -758,7 +758,7 @@ void CodeGenerator::visitSoftModI(LSoftModI* ins) {
   if (gen->compilingWasm()) {
     masm.Push(InstanceReg);
     int32_t framePushedAfterInstance = masm.framePushed();
-    masm.setupWasmABICall();
+    masm.setupWasmABICall(wasm::SymbolicAddress::aeabi_idivmod);
     masm.passABIArg(lhs);
     masm.passABIArg(rhs);
     int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
@@ -1826,7 +1826,7 @@ void CodeGenerator::visitWasmAddOffset(LWasmAddOffset* lir) {
 
   ScratchRegisterScope scratch(masm);
   masm.ma_add(base, Imm32(mir->offset()), out, scratch, SetCC);
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
   });
   addOutOfLineCode(ool, mir);
@@ -1842,7 +1842,7 @@ void CodeGenerator::visitWasmAddOffset64(LWasmAddOffset64* lir) {
   ScratchRegisterScope scratch(masm);
   masm.ma_add(base.low, Imm32(mir->offset()), out.low, scratch, SetCC);
   masm.ma_adc(base.high, Imm32(mir->offset() >> 32), out.high, scratch, SetCC);
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
   });
   addOutOfLineCode(ool, mir);
@@ -2121,7 +2121,7 @@ void CodeGenerator::visitSoftUDivOrMod(LSoftUDivOrMod* ins) {
   if (gen->compilingWasm()) {
     masm.Push(InstanceReg);
     int32_t framePushedAfterInstance = masm.framePushed();
-    masm.setupWasmABICall();
+    masm.setupWasmABICall(wasm::SymbolicAddress::aeabi_uidivmod);
     masm.passABIArg(lhs);
     masm.passABIArg(rhs);
     wasm::BytecodeOffset bytecodeOffset =
@@ -2260,31 +2260,27 @@ void CodeGenerator::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir) {
 
   masm.Push(input);
 
-  masm.setupWasmABICall();
-  masm.passABIArg(inputDouble, ABIType::Float64);
-
-  int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
+  wasm::SymbolicAddress callee;
   if (lir->mir()->isSaturating()) {
     if (lir->mir()->isUnsigned()) {
-      masm.callWithABI(mir->trapSiteDesc().bytecodeOffset,
-                       wasm::SymbolicAddress::SaturatingTruncateDoubleToUint64,
-                       mozilla::Some(instanceOffset));
+      callee = wasm::SymbolicAddress::SaturatingTruncateDoubleToUint64;
     } else {
-      masm.callWithABI(mir->trapSiteDesc().bytecodeOffset,
-                       wasm::SymbolicAddress::SaturatingTruncateDoubleToInt64,
-                       mozilla::Some(instanceOffset));
+      callee = wasm::SymbolicAddress::SaturatingTruncateDoubleToInt64;
     }
   } else {
     if (lir->mir()->isUnsigned()) {
-      masm.callWithABI(mir->trapSiteDesc().bytecodeOffset,
-                       wasm::SymbolicAddress::TruncateDoubleToUint64,
-                       mozilla::Some(instanceOffset));
+      callee = wasm::SymbolicAddress::TruncateDoubleToUint64;
     } else {
-      masm.callWithABI(mir->trapSiteDesc().bytecodeOffset,
-                       wasm::SymbolicAddress::TruncateDoubleToInt64,
-                       mozilla::Some(instanceOffset));
+      callee = wasm::SymbolicAddress::TruncateDoubleToInt64;
     }
   }
+
+  masm.setupWasmABICall(callee);
+  masm.passABIArg(inputDouble, ABIType::Float64);
+
+  int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
+  masm.callWithABI(mir->trapSiteDesc().bytecodeOffset, callee,
+                   mozilla::Some(instanceOffset));
 
   masm.Pop(input);
   masm.Pop(InstanceReg);
@@ -2330,10 +2326,6 @@ void CodeGenerator::visitInt64ToFloatingPointCall(
   MBuiltinInt64ToFloatingPoint* mir = lir->mir();
   MIRType toType = mir->type();
 
-  masm.setupWasmABICall();
-  masm.passABIArg(input.high);
-  masm.passABIArg(input.low);
-
   bool isUnsigned = mir->isUnsigned();
   wasm::SymbolicAddress callee =
       toType == MIRType::Float32
@@ -2341,6 +2333,9 @@ void CodeGenerator::visitInt64ToFloatingPointCall(
                         : wasm::SymbolicAddress::Int64ToFloat32)
           : (isUnsigned ? wasm::SymbolicAddress::Uint64ToDouble
                         : wasm::SymbolicAddress::Int64ToDouble);
+  masm.setupWasmABICall(callee);
+  masm.passABIArg(input.high);
+  masm.passABIArg(input.low);
 
   int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
   ABIType result =
@@ -2444,22 +2439,18 @@ void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
     masm.bind(&notmin);
   }
 
-  masm.setupWasmABICall();
+  wasm::SymbolicAddress callee = mir->isWasmBuiltinModI64()
+                                     ? wasm::SymbolicAddress::ModI64
+                                     : wasm::SymbolicAddress::DivI64;
+  masm.setupWasmABICall(callee);
   masm.passABIArg(lhs.high);
   masm.passABIArg(lhs.low);
   masm.passABIArg(rhs.high);
   masm.passABIArg(rhs.low);
 
   int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
-  if (mir->isWasmBuiltinModI64()) {
-    masm.callWithABI(lir->trapSiteDesc().bytecodeOffset,
-                     wasm::SymbolicAddress::ModI64,
-                     mozilla::Some(instanceOffset));
-  } else {
-    masm.callWithABI(lir->trapSiteDesc().bytecodeOffset,
-                     wasm::SymbolicAddress::DivI64,
-                     mozilla::Some(instanceOffset));
-  }
+  masm.callWithABI(lir->trapSiteDesc().bytecodeOffset, callee,
+                   mozilla::Some(instanceOffset));
 
   MOZ_ASSERT(ReturnReg64 == output);
 
@@ -2488,23 +2479,19 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
     masm.bind(&nonZero);
   }
 
-  masm.setupWasmABICall();
+  MDefinition* mir = lir->mir();
+  wasm::SymbolicAddress callee = mir->isWasmBuiltinModI64()
+                                     ? wasm::SymbolicAddress::UModI64
+                                     : wasm::SymbolicAddress::UDivI64;
+  masm.setupWasmABICall(callee);
   masm.passABIArg(lhs.high);
   masm.passABIArg(lhs.low);
   masm.passABIArg(rhs.high);
   masm.passABIArg(rhs.low);
 
-  MDefinition* mir = lir->mir();
   int32_t instanceOffset = masm.framePushed() - framePushedAfterInstance;
-  if (mir->isWasmBuiltinModI64()) {
-    masm.callWithABI(lir->trapSiteDesc().bytecodeOffset,
-                     wasm::SymbolicAddress::UModI64,
-                     mozilla::Some(instanceOffset));
-  } else {
-    masm.callWithABI(lir->trapSiteDesc().bytecodeOffset,
-                     wasm::SymbolicAddress::UDivI64,
-                     mozilla::Some(instanceOffset));
-  }
+  masm.callWithABI(lir->trapSiteDesc().bytecodeOffset, callee,
+                   mozilla::Some(instanceOffset));
   masm.Pop(InstanceReg);
 }
 

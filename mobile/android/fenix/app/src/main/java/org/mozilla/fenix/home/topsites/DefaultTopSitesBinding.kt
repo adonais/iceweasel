@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.topsites
 
 import android.content.res.Resources
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -36,6 +37,9 @@ import org.mozilla.fenix.utils.Settings
  * @param resources [Resources] used for accessing application resources.
  * @param crashReporter [CrashReporter] used for recording caught exceptions.
  * @param isReleased Whether or not the build is in a release channel.
+ * @param mainDispatcher The dispatcher on which to observe state changes.
+ * @param ioDispatcher The dispatcher used for I/O operations,
+ *                     specifically reading and parsing the initial shortcuts JSON.
  */
 class DefaultTopSitesBinding(
     browserStore: BrowserStore,
@@ -44,7 +48,9 @@ class DefaultTopSitesBinding(
     private val resources: Resources,
     private val crashReporter: CrashReporter,
     private val isReleased: Boolean = Config.channel.isReleased,
-) : AbstractBinding<BrowserState>(browserStore) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : AbstractBinding<BrowserState>(browserStore, mainDispatcher = mainDispatcher) {
 
     override suspend fun onState(flow: Flow<BrowserState>) {
         if (settings.defaultTopSitesAdded) return
@@ -66,7 +72,7 @@ class DefaultTopSitesBinding(
             }
     }
 
-    internal suspend fun getTopSites(region: String): List<Pair<String, String>> = withContext(Dispatchers.IO) {
+    internal suspend fun getTopSites(region: String): List<Pair<String, String>> = withContext(ioDispatcher) {
         try {
             val json = Json { ignoreUnknownKeys = true }
             val jsonString = resources.openRawResource(R.raw.initial_shortcuts).bufferedReader()

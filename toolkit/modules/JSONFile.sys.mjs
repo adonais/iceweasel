@@ -200,8 +200,8 @@ JSONFile.prototype = {
   /**
    * Loads persistent data from the file to memory.
    *
-   * @return {Promise}
-   * @resolves When the operation finished successfully.
+   * @returns {Promise<void>}
+   *   Resolves when the operation finished successfully.
    * @rejects JavaScript exception when dataPostProcessor fails. It never fails
    *          if there is no dataPostProcessor.
    */
@@ -412,8 +412,8 @@ JSONFile.prototype = {
    *
    * If an error occurs, the previous file is not deleted.
    *
-   * @return {Promise}
-   * @resolves When the operation finished successfully.
+   * @returns {Promise<void>}
+   *   Resolves when the operation finished successfully.
    * @rejects JavaScript exception.
    */
   async _save() {
@@ -483,8 +483,8 @@ JSONFile.prototype = {
   /**
    * Finishes persisting data to disk and resets all state for this file.
    *
-   * @return {Promise}
-   * @resolves When the object is finalized.
+   * @returns {Promise<void>}
+   *   Resolves when the object is finalized.
    */
   _finalizeInternal() {
     if (this._finalizePromise) {

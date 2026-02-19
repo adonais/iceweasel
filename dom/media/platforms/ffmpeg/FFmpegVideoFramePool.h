@@ -102,7 +102,7 @@ class VideoFrameSurface<LIBAV_VER> {
  protected:
   // Lock VAAPI related data
   void LockVAAPIData(AVCodecContext* aAVCodecContext, AVFrame* aAVFrame,
-                     FFmpegLibWrapper* aLib);
+                     const FFmpegLibWrapper* aLib);
   // Release VAAPI related data, DMABufSurface can be reused
   // for another frame.
   void ReleaseVAAPIData(bool aForFrameRecycle = true);
@@ -135,11 +135,11 @@ class VideoFramePool<LIBAV_VER> {
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetVideoFrameSurface(
       VADRMPRIMESurfaceDescriptor& aVaDesc, int aWidth, int aHeight,
       AVCodecContext* aAVCodecContext, AVFrame* aAVFrame,
-      FFmpegLibWrapper* aLib);
+      const FFmpegLibWrapper* aLib);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetVideoFrameSurface(
       AVDRMFrameDescriptor& aDesc, int aWidth, int aHeight,
       AVCodecContext* aAVCodecContext, AVFrame* aAVFrame,
-      FFmpegLibWrapper* aLib);
+      const FFmpegLibWrapper* aLib);
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetVideoFrameSurface(
       const layers::PlanarYCbCrData& aData, AVCodecContext* aAVCodecContext);
 

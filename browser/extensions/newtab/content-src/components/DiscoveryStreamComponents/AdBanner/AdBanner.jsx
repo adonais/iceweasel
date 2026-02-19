@@ -25,7 +25,7 @@ const PREF_PROMOCARD_VISIBLE = "discoverystream.promoCard.visible";
  * @param type
  * @param prefs
  * @returns {Element}
- * @constructor
+ * @class
  */
 export const AdBanner = ({
   spoc,

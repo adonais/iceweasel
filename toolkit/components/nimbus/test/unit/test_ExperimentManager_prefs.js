@@ -1869,7 +1869,9 @@ add_task(async function test_prefChange() {
     }
 
     const enrollmentStatusEvents = (
-      Glean.nimbusEvents.enrollmentStatus.testGetValue("events") ?? []
+      Glean.nimbusEvents.enrollmentStatus.testGetValue(
+        "nimbus-targeting-context"
+      ) ?? []
     ).map(ev => ev.extra);
 
     for (const expectedEvent of expectedEnrollmentStatusEvents) {

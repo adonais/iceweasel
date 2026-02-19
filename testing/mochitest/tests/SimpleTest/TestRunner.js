@@ -752,8 +752,9 @@ TestRunner.testFinished = function (tests) {
         result = "ERROR";
       }
 
-      var unexpectedCrashDumpFiles =
-        await SpecialPowers.findUnexpectedCrashDumpFiles();
+      var unexpectedCrashDumpFiles = SpecialPowers.unwrap(
+        await SpecialPowers.findUnexpectedCrashDumpFiles()
+      );
       TestRunner._expectingProcessCrash = false;
       if (unexpectedCrashDumpFiles.length) {
         let subtest = "unexpected-crash-dump-found";

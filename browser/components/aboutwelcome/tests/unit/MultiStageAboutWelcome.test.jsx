@@ -169,6 +169,51 @@ describe("MultiStageAboutWelcome module", () => {
       telemetryStub.restore();
     });
 
+    it("should autoAdvance with configurable time and send appropriate telemetry", () => {
+      let clock = sinon.useFakeTimers();
+      const screens = [
+        {
+          auto_advance: {
+            actionEl: "primary_button",
+            actionTimeMS: 5000,
+          },
+          content: {
+            title: "test title",
+            subtitle: "test subtitle",
+            primary_button: {
+              label: "Test Button",
+              action: {
+                navigate: true,
+              },
+            },
+          },
+        },
+      ];
+      const AUTO_ADVANCE_PROPS = {
+        defaultScreens: screens,
+        metricsFlowUri: "http://localhost/",
+        message_id: "DEFAULT_ABOUTWELCOME",
+        utm_term: "default",
+        startScreen: 0,
+      };
+      const wrapper = mount(<MultiStageAboutWelcome {...AUTO_ADVANCE_PROPS} />);
+      wrapper.update();
+      const finishStub = sandbox.stub(global, "AWFinish");
+      const telemetryStub = sinon.stub(
+        AboutWelcomeUtils,
+        "sendActionTelemetry"
+      );
+
+      assert.notCalled(finishStub);
+      clock.tick(5001);
+      assert.calledOnce(finishStub);
+      assert.calledOnce(telemetryStub);
+      assert.equal(telemetryStub.lastCall.args[2], "AUTO_ADVANCE");
+      clock.restore();
+      finishStub.restore();
+      telemetryStub.restore();
+    });
+
     it("should send telemetry ping on collectSelect", () => {
       const screens = [
         {

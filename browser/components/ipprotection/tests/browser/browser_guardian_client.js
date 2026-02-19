@@ -5,7 +5,7 @@
 "use strict";
 
 const { GuardianClient } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
 );
 
 function makeGuardianServer(

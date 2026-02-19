@@ -7,7 +7,6 @@ with either `platform` or a list of `platforms`, and set the appropriate
 treeherder configuration and attributes for that platform.
 """
 
-
 import copy
 import os
 
@@ -19,40 +18,36 @@ from voluptuous import Any, Extra, Optional, Required
 
 from gecko_taskgraph.transforms.job import job_description_schema
 
-source_test_description_schema = Schema(
-    {
-        # most fields are passed directly through as job fields, and are not
-        # repeated here
-        Extra: object,
-        # The platform on which this task runs.  This will be used to set up attributes
-        # (for try selection) and treeherder metadata (for display).  If given as a list,
-        # the job will be "split" into multiple tasks, one with each platform.
-        Required("platform"): Any(str, [str]),
-        # Build labels required for the task. If this key is provided it must
-        # contain a build label for the task platform.
-        # The task will then depend on a build task, and the installer url will be
-        # saved to the GECKO_INSTALLER_URL environment variable.
-        Optional("require-build"): optionally_keyed_by("project", {str: str}),
-        # These fields can be keyed by "platform", and are otherwise identical to
-        # job descriptions.
-        Required("worker-type"): optionally_keyed_by(
-            "platform", job_description_schema["worker-type"]
-        ),
-        Required("worker"): optionally_keyed_by(
-            "platform", job_description_schema["worker"]
-        ),
-        Optional("dependencies"): {
-            k: optionally_keyed_by("platform", v)
-            for k, v in job_description_schema["dependencies"].items()
-        },
-        # A list of artifacts to install from 'fetch' tasks.
-        Optional("fetches"): {
-            str: optionally_keyed_by(
-                "platform", job_description_schema["fetches"][str]
-            ),
-        },
-    }
-)
+source_test_description_schema = Schema({
+    # most fields are passed directly through as job fields, and are not
+    # repeated here
+    Extra: object,
+    # The platform on which this task runs.  This will be used to set up attributes
+    # (for try selection) and treeherder metadata (for display).  If given as a list,
+    # the job will be "split" into multiple tasks, one with each platform.
+    Required("platform"): Any(str, [str]),
+    # Build labels required for the task. If this key is provided it must
+    # contain a build label for the task platform.
+    # The task will then depend on a build task, and the installer url will be
+    # saved to the GECKO_INSTALLER_URL environment variable.
+    Optional("require-build"): optionally_keyed_by("project", {str: str}),
+    # These fields can be keyed by "platform", and are otherwise identical to
+    # job descriptions.
+    Required("worker-type"): optionally_keyed_by(
+        "platform", job_description_schema["worker-type"]
+    ),
+    Required("worker"): optionally_keyed_by(
+        "platform", job_description_schema["worker"]
+    ),
+    Optional("dependencies"): {
+        k: optionally_keyed_by("platform", v)
+        for k, v in job_description_schema["dependencies"].items()
+    },
+    # A list of artifacts to install from 'fetch' tasks.
+    Optional("fetches"): {
+        str: optionally_keyed_by("platform", job_description_schema["fetches"][str]),
+    },
+})
 
 transforms = TransformSequence()
 

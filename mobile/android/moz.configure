@@ -186,3 +186,46 @@ set_config(
     "MOZ_ANDROID_FAT_AAR_ARCHITECTURES",
     depends("MOZ_ANDROID_FAT_AAR_ARCHITECTURES")(lambda x: x),
 )
+
+
+# Template to check for a build-time host/bin program that is either produced as
+# part of the build or is fetched from a toolchain artifact.  Also allows
+# `--without-{prog}` to disable checking.
+#
+# Such compiled programs are "part of the build" but need special accommodations
+# to distribute to artifact builds: they are distributed as toolchain builds
+# rather than extracted from a package or a test package.  In addition, these
+# compiled programs may not be needed for very unusual jobs, in particular
+# `android-gradle-dependencies` jobs, so they can be disabled entirely.
+#
+# - `var` is the name of the variable that will be set with `set_config` when
+#   the program is found, like "A_PROG".
+# - `prog` is the name of the program, like "a-prog".
+# - `toolchain` is the name of the toolchain (defaults to `prog`).
+@template
+def check_host_bin_prog(var, prog, toolchain=None):
+    option(f"--without-{prog}", help="Disable building with {prog}")
+
+    with only_when(f"--with-{prog}"):
+        with only_when(compile_environment):
+            # Produced at build-time.  Look in `$DIST/host/bin`.
+            set_config(
+                var,
+                depends(build_environment.dist, bin_suffix(host))(
+                    lambda dist, bin_suffix: f"{dist}/host/bin/{prog}{bin_suffix}"
+                ),
+            )
+
+        with only_when(~compile_environment):
+            # Fetched at configure-time.  Look in `~/.mozbuild` locally or
+            # `$MOZ_FETCH_DIR` in automation.
+            check_prog(
+                var,
+                [prog],
+                what=prog,
+                bootstrap=toolchain or prog,
+            )
+
+
+check_host_bin_prog("EMBEDDED_UNIFFI_BINDGEN", "embedded-uniffi-bindgen")
+check_host_bin_prog("NIMBUS_FML", "nimbus-fml")

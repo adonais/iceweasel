@@ -7,7 +7,6 @@ from xdg_config_home_test_case import XdgConfigHomeTestCase
 
 
 class TestXdgConfigHomeNewEnv(XdgConfigHomeTestCase):
-
     def setUp(self):
         assert "XDG_CONFIG_HOME" not in self._env.keys()
         self._env.update({"XDG_CONFIG_HOME": f"{self.homedir}/mozXDG-config-dir"})

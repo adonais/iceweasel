@@ -165,8 +165,8 @@ function arrayToString(a) {
 // PEM to the format that nsIX509CertDB requires.
 function pemToBase64(pem) {
   return pem
-    .replace(/-----BEGIN CERTIFICATE-----/, "")
-    .replace(/-----END CERTIFICATE-----/, "")
+    .replace(/-----BEGIN (CERTIFICATE|(EC )?PRIVATE KEY)-----/, "")
+    .replace(/-----END (CERTIFICATE|(EC )?PRIVATE KEY)-----/, "")
     .replace(/[\r\n]/g, "");
 }
 

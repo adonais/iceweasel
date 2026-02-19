@@ -18,7 +18,6 @@
 #include <utility>
 
 #include "api/environment/environment.h"
-#include "api/make_ref_counted.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_type.h"
@@ -44,19 +43,6 @@ namespace webrtc {
 namespace {
 const int kMessagesThrottlingThreshold = 2;
 const int kThrottleRatio = 100000;
-
-class EncodedImageBufferWrapper : public EncodedImageBufferInterface {
- public:
-  explicit EncodedImageBufferWrapper(Buffer&& buffer)
-      : buffer_(std::move(buffer)) {}
-
-  const uint8_t* data() const override { return buffer_.data(); }
-  size_t size() const override { return buffer_.size(); }
-
- private:
-  Buffer buffer_;
-};
-
 }  // namespace
 
 FrameEncodeMetadataWriter::TimingFramesLayerInfo::TimingFramesLayerInfo() =
@@ -91,7 +77,9 @@ void FrameEncodeMetadataWriter::OnEncoderInit(const VideoCodec& codec) {
     std::unique_ptr<ScalableVideoController> structure =
         CreateScalabilityStructure(*codec_settings_.GetScalabilityMode());
     if (structure) {
-      num_spatial_layers = structure->StreamConfig().num_spatial_layers;
+      // Take maximum of simulcast streams and SVC layers
+      size_t svc_spatial_layers = structure->StreamConfig().num_spatial_layers;
+      num_spatial_layers = std::max(num_spatial_layers, svc_spatial_layers);
     } else {
       // |structure| maybe nullptr if the scalability mode is invalid.
       RTC_LOG(LS_WARNING) << "Cannot create ScalabilityStructure, since the "
@@ -230,7 +218,7 @@ void FrameEncodeMetadataWriter::UpdateBitstream(
       buffer, encoded_image->ColorSpace());
 
   encoded_image->SetEncodedData(
-      make_ref_counted<EncodedImageBufferWrapper>(std::move(modified_buffer)));
+      EncodedImageBuffer::Create(std::move(modified_buffer)));
 }
 
 void FrameEncodeMetadataWriter::Reset() {
@@ -276,8 +264,10 @@ FrameEncodeMetadataWriter::ExtractEncodeStartTimeAndFillMetadata(
       encoded_image->ntp_time_ms_ = metadata_list->front().ntp_time_ms;
       encoded_image->rotation_ = metadata_list->front().rotation;
       encoded_image->SetColorSpace(metadata_list->front().color_space);
+      // Key frames should never be considered as steady state refresh frames.
       encoded_image->SetIsSteadyStateRefreshFrame(
-          metadata_list->front().is_steady_state_refresh_frame);
+          metadata_list->front().is_steady_state_refresh_frame &&
+          encoded_image->FrameType() != VideoFrameType::kVideoFrameKey);
       encoded_image->SetPacketInfos(metadata_list->front().packet_infos);
       metadata_list->pop_front();
     } else {

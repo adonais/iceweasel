@@ -49,6 +49,7 @@ XPCOM_MANIFESTS += [
 EXTRA_JS_MODULES.psm += [
     "ClientAuthDialogService.sys.mjs",
     "DER.sys.mjs",
+    "QWACs.sys.mjs",
     "RemoteSecuritySettings.sys.mjs",
     "X509.sys.mjs",
 ]

@@ -25,7 +25,7 @@ import {
  *
  * @param [options]
  *        Object, custom options that used for testing
- * @constructor
+ * @class
  */
 export function FxAccountsPushService(options = {}) {
   this.log = log;

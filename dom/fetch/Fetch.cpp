@@ -27,6 +27,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/Headers.h"
+#include "mozilla/dom/MimeType.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseWorkerProxy.h"
 #include "mozilla/dom/ReadableStreamDefaultReader.h"
@@ -1514,20 +1515,63 @@ template already_AddRefed<Promise> FetchBody<EmptyBody>::ConsumeBody(
 template <class Derived>
 void FetchBody<Derived>::GetMimeType(nsACString& aMimeType,
                                      nsACString& aMixedCaseMimeType) {
-  // Extract mime type.
-  ErrorResult result;
-  nsCString contentTypeValues;
+  // Implements "extract a MIME type" from
+  // https://fetch.spec.whatwg.org/#concept-header-extract-mime-type
   MOZ_ASSERT(DerivedClass()->GetInternalHeaders());
-  DerivedClass()->GetInternalHeaders()->Get("Content-Type"_ns,
-                                            contentTypeValues, result);
+
+  ErrorResult result;
+  nsAutoCString contentTypeValue;
+  DerivedClass()->GetInternalHeaders()->Get("Content-Type"_ns, contentTypeValue,
+                                            result);
   MOZ_ALWAYS_TRUE(!result.Failed());
 
-  // HTTP ABNF states Content-Type may have only one value.
-  // This is from the "parse a header value" of the fetch spec.
-  if (!contentTypeValues.IsVoid() && contentTypeValues.Find(",") == -1) {
-    // Convert from a bytestring to a UTF8 CString.
-    CopyLatin1toUTF8(contentTypeValues, aMimeType);
-    aMixedCaseMimeType = aMimeType;
+  if (contentTypeValue.IsVoid()) {
+    return;
+  }
+
+  nsTArray<nsTDependentSubstring<char>> values =
+      CMimeType::SplitMimetype(contentTypeValue);
+
+  nsAutoCString charset;
+  nsAutoCString essence;
+  RefPtr<CMimeType> mimeType;
+
+  for (const auto& value : values) {
+    RefPtr<CMimeType> temporaryMimeType = CMimeType::Parse(value);
+
+    if (!temporaryMimeType) {
+      continue;
+    }
+
+    nsAutoCString temporaryEssence;
+    temporaryMimeType->GetEssence(temporaryEssence);
+
+    if (temporaryEssence.EqualsLiteral("*/*")) {
+      continue;
+    }
+
+    mimeType = temporaryMimeType;
+
+    if (!temporaryEssence.Equals(essence)) {
+      charset.Truncate();
+      mimeType->GetParameterValue("charset"_ns, charset, false, false);
+
+      essence = temporaryEssence;
+    } else {
+      nsAutoCString newCharset;
+      if (!mimeType->GetParameterValue("charset"_ns, newCharset, false,
+                                       false) &&
+          !charset.IsEmpty()) {
+        mimeType->SetParameterValue("charset"_ns, charset);
+      } else if (!newCharset.IsEmpty()) {
+        charset = newCharset;
+      }
+    }
+  }
+
+  if (mimeType) {
+    mimeType->Serialize(aMixedCaseMimeType);
+    aMimeType = aMixedCaseMimeType;
     ToLowerCase(aMimeType);
   }
 }

@@ -31,7 +31,7 @@
 #  include <unistd.h>
 #endif
 
-#ifdef XP_UNIX
+#if defined(XP_UNIX) && !defined(XP_IOS)
 #  define MOZ_SUPPORTS_FIFO 1
 #endif
 

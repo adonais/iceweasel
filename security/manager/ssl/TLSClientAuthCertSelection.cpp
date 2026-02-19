@@ -912,7 +912,7 @@ void DoSelectClientAuthCertificate(NSSSocketControl* info,
                              rememberedCertBytes, rememberedCertChainBytes)) {
     continuation->SetSelectedClientAuthData(
         std::move(rememberedCertBytes), std::move(rememberedCertChainBytes));
-    (void)NS_DispatchToCurrentThread(continuation);
+    (void)continuation->Run();
     return;
   }
 
@@ -944,7 +944,7 @@ void DoSelectClientAuthCertificate(NSSSocketControl* info,
         ("[%p] no client certificates available after filtering by CA", &info));
     // By default, the continuation will continue the connection with no client
     // auth certificate.
-    (void)NS_DispatchToCurrentThread(continuation);
+    (void)continuation->Run();
     return;
   }
 #endif  // MOZ_WIDGET_ANDROID

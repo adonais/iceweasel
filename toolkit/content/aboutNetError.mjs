@@ -18,9 +18,11 @@ import {
   getCSSClass,
   gNoConnectivity,
   retryThis,
+  handleNSSFailure,
   errorHasNoUserFix,
   COOP_MDN_DOCS,
   COEP_MDN_DOCS,
+  HTTPS_UPGRADES_MDN_DOCS,
 } from "chrome://global/content/aboutNetErrorHelpers.mjs";
 
 const formatter = new Intl.DateTimeFormat();
@@ -74,7 +76,6 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
  * aboutNetErrorCodes.js which is loaded before we are: */
 /* global KNOWN_ERROR_MESSAGE_IDS */
 const ERROR_MESSAGES_FTL = "toolkit/neterror/nsserrors.ftl";
-const HTTPS_UPGRADES_MDN_DOCS = "https://support.mozilla.org/kb/https-upgrades";
 
 // If the location of the favicon changes, FAVICON_CERTERRORPAGE_URL and/or
 // FAVICON_ERRORPAGE_URL in toolkit/components/places/nsFaviconService.idl
@@ -373,35 +374,12 @@ function initTitleAndBodyIds(baseURL, isTRROnlyFailure) {
     // failures) are of type nssFailure2.
     case "nssFailure2": {
       learnMore.hidden = false;
-
-      const netErrorInfo = document.getNetErrorInfo();
-      void recordSecurityUITelemetry(
-        "securityUiTlserror",
-        "loadAbouttlserror",
-        netErrorInfo
-      );
-      const errorCode = netErrorInfo.errorCodeString;
-      switch (errorCode) {
-        case "SSL_ERROR_UNSUPPORTED_VERSION":
-        case "SSL_ERROR_PROTOCOL_VERSION_ALERT": {
-          const tlsNotice = document.getElementById("tlsVersionNotice");
-          tlsNotice.hidden = false;
-          document.l10n.setAttributes(tlsNotice, "cert-error-old-tls-version");
-        }
-        // fallthrough
-
-        case "SSL_ERROR_NO_CIPHERS_SUPPORTED":
-        case "SSL_ERROR_NO_CYPHER_OVERLAP":
-        case "SSL_ERROR_SSL_DISABLED":
-          RPMAddMessageListener("HasChangedCertPrefs", msg => {
-            if (msg.data.hasChangedCertPrefs) {
-              // Configuration overrides might have caused this; offer to reset.
-              showPrefChangeContainer();
-            }
-          });
-          RPMSendAsyncMessage("GetChangedCertPrefs");
+      const result = handleNSSFailure(showPrefChangeContainer);
+      if (result.versionError) {
+        const tlsNotice = document.getElementById("tlsVersionNotice");
+        tlsNotice.hidden = false;
+        document.l10n.setAttributes(tlsNotice, "cert-error-old-tls-version");
       }
-
       break;
     }
 
@@ -514,9 +492,7 @@ function initPage() {
       // enable buttons
       let trrExceptionButton = document.getElementById("trrExceptionButton");
       trrExceptionButton.addEventListener("click", () => {
-        RPMSendQuery("Browser:AddTRRExcludedDomain", {
-          hostname: HOST_NAME,
-        }).then(() => {
+        RPMSendQuery("Browser:AddTRRExcludedDomain").then(() => {
           retryThis(trrExceptionButton);
         });
       });
@@ -1300,6 +1276,11 @@ function setTechnicalDetailsOnCertError(
           // get anyone anywhere useful. bug 432491
           const okHost = altName.replace(/^\*\./, "www.");
 
+          // We can't use HOST_NAME for the comparison, as that is
+          // display-formatted and can include a port. We need the ascii host as
+          // that is what the cert's SAN value would also contain.
+          const asciiHostname = RPMGetInnermostAsciiHost();
+
           // Let's check if we want to make this a link.
           const showLink =
             /* case #1:
@@ -1315,13 +1296,13 @@ function setTechnicalDetailsOnCertError(
              * domain names are famous for having '.' characters in them,
              * which would allow spurious and possibly hostile matches.
              */
-            okHost.endsWith("." + HOST_NAME) ||
+            okHost.endsWith("." + asciiHostname) ||
             /* case #2:
              * browser.garage.maemo.org uses an invalid security certificate.
              *
              * The certificate is only valid for garage.maemo.org
              */
-            HOST_NAME.endsWith("." + okHost);
+            asciiHostname.endsWith("." + okHost);
 
           const l10nArgs = { hostname: HOST_NAME, "alt-name": altName };
           if (showLink) {
@@ -1410,21 +1391,54 @@ function setFocus(selector, position = "afterbegin") {
   }
 }
 
-if (!NetErrorCard.isSupported()) {
-  for (let button of document.querySelectorAll(".try-again")) {
-    button.addEventListener("click", function () {
-      retryThis(this);
-    });
+async function getErrorCode() {
+  try {
+    const errorInfo = gIsCertError
+      ? document.getFailedCertSecurityInfo()
+      : document.getNetErrorInfo();
+    return errorInfo.errorCodeString;
+  } catch (e) {
+    return undefined;
   }
-
-  initPage();
-
-  // Dispatch this event so tests can detect that we finished loading the error page.
-  document.dispatchEvent(
-    new CustomEvent("AboutNetErrorLoad", { bubbles: true })
-  );
-} else {
-  customElements.define("net-error-card", NetErrorCard);
-  document.body.classList.add("felt-privacy-body");
-  document.body.replaceChildren(document.createElement("net-error-card"));
 }
+
+async function retryErrorCode() {
+  return new Promise(res => {
+    setTimeout(() => {
+      res(getErrorCode());
+    }, 100);
+  });
+}
+
+async function init() {
+  let errorCode = await getErrorCode();
+  let i = 0;
+  while (!errorCode && i < 3) {
+    i++;
+    errorCode = await retryErrorCode();
+  }
+}
+
+async function main() {
+  await init();
+  if (!NetErrorCard.isSupported()) {
+    for (let button of document.querySelectorAll(".try-again")) {
+      button.addEventListener("click", function () {
+        retryThis(this);
+      });
+    }
+
+    initPage();
+
+    // Dispatch this event so tests can detect that we finished loading the error page.
+    document.dispatchEvent(
+      new CustomEvent("AboutNetErrorLoad", { bubbles: true })
+    );
+  } else {
+    customElements.define("net-error-card", NetErrorCard);
+    document.body.classList.add("felt-privacy-body");
+    document.body.replaceChildren(document.createElement("net-error-card"));
+  }
+}
+
+main();

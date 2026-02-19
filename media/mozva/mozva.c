@@ -11,7 +11,6 @@
 
 #include <dlfcn.h>
 #include <pthread.h>
-#include <stdlib.h>
 
 #define GET_FUNC(func, lib) (func##Fn = dlsym(lib, #func))
 

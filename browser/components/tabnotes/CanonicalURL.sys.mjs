@@ -67,7 +67,7 @@ function getOpenGraphUrl(document) {
  * @returns {string|null}
  */
 function getJSONLDUrl(document) {
-  return Array.from(
+  const firstMatch = Array.from(
     document.querySelectorAll('script[type="application/ld+json"]')
   )
     .map(script => {
@@ -77,7 +77,8 @@ function getJSONLDUrl(document) {
         return null;
       }
     })
-    .find(obj => obj?.url)?.url;
+    .find(obj => obj && obj.url && typeof obj.url === "string");
+  return firstMatch?.url;
 }
 
 /**

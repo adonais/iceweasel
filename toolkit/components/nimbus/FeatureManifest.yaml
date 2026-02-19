@@ -1310,14 +1310,6 @@ newTabSectionsExperiment:
         pref:  browser.newtabpage.activity-stream.discoverystream.sections.enabled
       description: >-
         Enable the Section UI for recommended stories on newtab
-    cardRefreshThumbsUpDownEnabled:
-      type: boolean
-      setPref:
-        branch: user
-        pref:  browser.newtabpage.activity-stream.discoverystream.sections.cards.thumbsUpDown.enabled
-      description: >-
-        Enable the thumbs up/down buttons in the revised pocket story
-        card UI in recommended stories on newtab
     cardRefreshEnabled:
       type: boolean
       setPref:
@@ -2001,31 +1993,6 @@ pocketNewtab:
         pref: browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment
       description: >-
         Should we pass the experiment branch and slug to the Merino feed request.
-    thumbsUpDown:
-      type: boolean
-      setPref:
-        branch: user
-        pref: browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.enabled
-      description: Display thumbs up and down buttons on recommended stories
-    regionThumbsUpDownConfig:
-      description: A comma-separated list of regions that get thumbs up and down buttons by default.
-      type: string
-      setPref:
-        branch: user
-        pref: browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.region-thumbs-config
-    localeThumbsUpDownConfig:
-      description: A comma-separated list of locales that get thumbs up and down buttons by default.
-      type: string
-      setPref:
-        branch: user
-        pref: browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thumbs-config
-    thumbsUpDownCompactLayout:
-      type: boolean
-      setPref:
-        branch: user
-        pref: browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact
-      description: >-
-        Change the layout of the sections to be more compact to account for the added card height with the thumbs up/down enabled.
 
 sessionRestore:
   description: Session restore feature
@@ -2752,6 +2719,38 @@ gleanInternalSdk:
         branch: user
         pref: telemetry.glean.internal.maxPingsPerMinute
 
+legacyTelemetry:
+  description: "Controls for the Legacy Telemetry data collection system"
+  owner: chutten@mozilla.com
+  applications:
+    - firefox-desktop
+  hasExposure: false
+  variables:
+    disabledPings:
+      type: json
+      description: |
+        A list of Legacy Telemetry pings to disable.
+        Pings on this list will not be archived or uploaded.
+        On submit their payloads will be dropped.
+        Code that collects to and submits the ping will still operate as normal.
+        Cannot be used to disable the "main", "first-shutdown", "new-profile",
+        or "deletion-request" pings.
+    disableMainPingScalars:
+      type: boolean
+      description: |
+        If true, scalars will not be included in "main" pings.
+        Exceptions are made for two important engagement measures:
+        `browser.engagement.total_uri_count_normal_and_private_mode` and
+        `browser.engagement.active_ticks`.
+        These scalars will continue to be reported as normal, even if all
+        others are disabled by this variable.
+    disableMainPingHgrams:
+      type: boolean
+      description: |
+        If true, histograms will not be included in "main" pings.
+        Data will still be recorded locally,
+        it will merely not be included in "main" pings when they are submitted.
+
 browserLowMemoryPrefs:
   description: Prefs which control the browser's behaviour under low memory.
   owner: haftandilian@mozilla.com
@@ -2919,12 +2918,6 @@ networking:
       setPref:
         branch: default
         pref: "network.preconnect"
-    networkPredictor:
-      description: Whether the Necko predictor is enabled
-      type: boolean
-      setPref:
-        branch: default
-        pref: "network.predictor.enabled"
     http3CCalgorithm:
       description: The congestion control algorithm with which to configure neqo. 0 for NewReno, 1 for Cubic
       type: int
@@ -3485,25 +3478,6 @@ compressionDictionaries:
       setPref:
        branch: default
        pref: network.http.dictionaries.enable
-
-cookieStore:
-  description: Enablement of cookieStore API
-  owner: edgul@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      type: boolean
-      setPref:
-        branch: default
-        pref: dom.cookieStore.enabled
-      description: >-
-        Enablement of the cookie store API to CRUD and monitor cookies from window JS.
-    managerEnabled:
-      description: Enablement of ServiceWorker access to cookie-change events.
-      type: boolean
-      setPref:
-        branch: default
-        pref: dom.cookieStore.manager.enabled
 
 pingsender:
   description: "In-product usage of the pingsender telemetry reporter."
@@ -4237,18 +4211,6 @@ jitHintsCache:
       setPref:
         branch: user
         pref: "javascript.options.jithints"
-
-asmjs:
-  description: Pref to toggle support for asm.js.
-  owner: dpalmeiro@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      description: True to enable the asm.js feature.
-      type: boolean
-      setPref:
-        branch: user
-        pref: "javascript.options.asmjs"
 
 scriptloader:
   description: Prefs that control scriptloader heuristics.

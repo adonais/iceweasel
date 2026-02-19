@@ -8,13 +8,15 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionServerlist:
-    "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs",
-  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
-  IPPProxyStates: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs",
+  IPPProxyManager:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyStates:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 const AUTOSTART_FEATURE_ENABLE_PREF = "browser.ipProtection.features.autoStart";

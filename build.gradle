@@ -459,6 +459,7 @@ subprojects { project ->
         apply plugin: "com.diffplug.spotless"
 
         spotless {
+            lineEndings = com.diffplug.spotless.LineEnding.UNIX
             java {
                 target project.fileTree(project.projectDir) {
                     include '**/*.java'

@@ -357,13 +357,15 @@ class D3D11DXVA2Manager : public DXVA2Manager {
   HRESULT ConfigureForSize(IMFMediaType* aInputType,
                            gfx::YUVColorSpace aColorSpace,
                            gfx::ColorRange aColorRange,
-                           gfx::ColorDepth aColorDepth, uint32_t aWidth,
-                           uint32_t aHeight) override;
+                           gfx::ColorDepth aColorDepth,
+                           gfx::TransferFunction aTransferFunction,
+                           uint32_t aWidth, uint32_t aHeight) override;
   HRESULT ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
                            gfx::YUVColorSpace aColorSpace,
                            gfx::ColorRange aColorRange,
-                           gfx::ColorDepth aColorDepth, uint32_t aWidth,
-                           uint32_t aHeight) override;
+                           gfx::ColorDepth aColorDepth,
+                           gfx::TransferFunction aTransferFunction,
+                           uint32_t aWidth, uint32_t aHeight) override;
 
   bool IsD3D11() override { return true; }
 
@@ -423,6 +425,7 @@ class D3D11DXVA2Manager : public DXVA2Manager {
   gfx::YUVColorSpace mYUVColorSpace;
   gfx::ColorRange mColorRange = gfx::ColorRange::LIMITED;
   gfx::ColorDepth mColorDepth = gfx::ColorDepth::COLOR_8;
+  gfx::TransferFunction mTransferFunction = gfx::TransferFunction::BT709;
   gfx::SurfaceFormat mSurfaceFormat;
   std::list<ThreadSafeWeakPtr<layers::IMFSampleWrapper>> mIMFSampleWrappers;
   RefPtr<layers::ZeroCopyUsageInfo> mZeroCopyUsageInfo;
@@ -575,6 +578,10 @@ bool D3D11DXVA2Manager::SupportsConfig(const VideoInfo& aInfo,
       desc.OutputFormat = DXGI_FORMAT_P010;
     } else if (subtype == MFVideoFormat_P016) {
       desc.OutputFormat = DXGI_FORMAT_P016;
+    } else if (subtype == MFVideoFormat_A2R10G10B10) {
+      desc.OutputFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
+    } else if (subtype == MFVideoFormat_A16B16G16R16F) {
+      desc.OutputFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
     }
   }
 
@@ -699,6 +706,7 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
     return hr;
   }
 
+  // TODO(https://bugzilla.mozilla.org/show_bug.cgi?id=2008874)
   // The IMFTransform interface used by MFTDecoder is documented to require to
   // run on an MTA thread.
   // https://msdn.microsoft.com/en-us/library/windows/desktop/ee892371(v=vs.85).aspx#components
@@ -924,19 +932,89 @@ void D3D11DXVA2Manager::BeforeShutdownVideoMFTDecoder() {
   ReleaseAllIMFSamples();
 }
 
+// Glossary of RGB formats for display:
+// DXGI_FORMAT_B8G8R8A8_UNORM     <-> MFVideoFormat_ARGB32
+// DXGI_FORMAT_R16G16B16A16_FLOAT <-> MFVideoFormat_A16B16G16R16F
+// DXGI_FORMAT_R10G10B10A2_UNORM  <-> MFVideoFormat_A2R10G10B10
+// (Yes MFVideoFormat_A2R10G10B10 is actually R10G10B10A2)
+//
+// YUV formats for decoder output:
+// DXGI_FORMAT_NV12               <-> MFVideoFormat_NV12
+// DXGI_FORMAT_YV12               <-> MFVideoFormat_YV12
+// DXGI_FORMAT_P010               <-> MFVideoFormat_P010
+// DXGI_FORMAT_P016               <-> MFVideoFormat_P016
+//
+// Format pairings for SDR colorspaces:
+// {DXGI_FORMAT_NV12, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709}
+// {DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P709}
+//
+// Format pairings for HDR colorspaces:
+// {DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020}
+// {DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709}
+//
+// A few notes:
+// * NV12 can be directly displayed as an overlay, whereas all other
+//   formats need to be converted to RGB for display.
+// * YV12 is only used for SW decode (and we have no SurfaceFormat to represent
+//   it, gfx::SurfaceFormat::YUV420 has a different plane order).
+// * P010 and P016 are for HDR video, testing these as an overlay showed that
+//   they do not seem to honor the HDR G2084 transfer function so we can
+//   consider them simply not displayable.
+// * If a video has alpha channel the decoder would have to output RGBA because
+//   Windows has no enums for YUV with alpha, we don't currently support RGBA
+//   output from decoders so alpha is not currently relevant.
+// * Windows seems to do some magic HDR tonemapping on SDR displays without even
+//   telling it to do anything, it's not clear what we can rely on about this,
+//   but testing in the wild is probably the best answer for now.
+
+// Convert a Media Foundation subtype GUID to a gfx::SurfaceFormat.
+static gfx::SurfaceFormat SurfaceFormatFromSubType(const GUID& aSubType) {
+  // We can't use a switch on subType because GUID is a struct.
+  if (aSubType == MFVideoFormat_ARGB32) {
+    return gfx::SurfaceFormat::B8G8R8A8;
+  }
+  if (aSubType == MFVideoFormat_A16B16G16R16F) {
+    return gfx::SurfaceFormat::R16G16B16A16F;
+  }
+  if (aSubType == MFVideoFormat_A2R10G10B10) {
+    return gfx::SurfaceFormat::R10G10B10X2_UINT32;
+  }
+  if (aSubType == MFVideoFormat_NV12) {
+    return gfx::SurfaceFormat::NV12;
+  }
+  if (aSubType == MFVideoFormat_YUY2) {
+    return gfx::SurfaceFormat::YUY2;
+  }
+  if (aSubType == MFVideoFormat_P010) {
+    return gfx::SurfaceFormat::P010;
+  }
+  if (aSubType == MFVideoFormat_P016) {
+    return gfx::SurfaceFormat::P016;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown subtype");
+  return gfx::SurfaceFormat::UNKNOWN;
+}
+
 HRESULT
 D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
                                     gfx::YUVColorSpace aColorSpace,
                                     gfx::ColorRange aColorRange,
                                     gfx::ColorDepth aColorDepth,
+                                    gfx::TransferFunction aTransferFunction,
                                     uint32_t aWidth, uint32_t aHeight) {
   GUID subType = {0};
   HRESULT hr = aInputType->GetGUID(MF_MT_SUBTYPE, &subType);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
+  // The aInputType subType here is one of the following:
+  // * MFVideoFormat_NV12
+  // * MFVideoFormat_YV12
+  // * MFVideoFormat_P010
+  // * MFVideoFormat_P016
+
   if (subType == mInputSubType && aWidth == mWidth && aHeight == mHeight &&
       mYUVColorSpace == aColorSpace && mColorRange == aColorRange &&
-      mColorDepth == aColorDepth) {
+      mColorDepth == aColorDepth && mTransferFunction == aTransferFunction) {
     // If the media type hasn't changed, don't reconfigure.
     return S_OK;
   }
@@ -969,13 +1047,24 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
   hr = outputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_ARGB32);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  // Pick an RGB format based on the required color depth.
+  if (aColorDepth > gfx::ColorDepth::COLOR_10) {
+    hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A16B16G16R16F);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  } else if (aColorDepth > gfx::ColorDepth::COLOR_8) {
+    hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A2R10G10B10);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  } else {
+    hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_ARGB32);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  }
 
+  // TODO(https://bugzilla.mozilla.org/show_bug.cgi?id=2008874)
   hr = E_FAIL;
   mozilla::mscom::EnsureMTA([&]() -> void {
     hr = mTransform->SetMediaTypes(
-        inputType, outputType, [aWidth, aHeight](IMFMediaType* aOutput) {
+        inputType, outputType, MFVideoFormat_ARGB32,
+        [aWidth, aHeight](IMFMediaType* aOutput) {
           HRESULT hr = aOutput->SetUINT32(MF_MT_INTERLACE_MODE,
                                           MFVideoInterlace_Progressive);
           NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
@@ -997,19 +1086,9 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
   mYUVColorSpace = aColorSpace;
   mColorRange = aColorRange;
   mColorDepth = aColorDepth;
+  mTransferFunction = aTransferFunction;
   if (mTextureClientAllocator) {
-    mSurfaceFormat = [&]() {
-      if (subType == MFVideoFormat_NV12) {
-        return gfx::SurfaceFormat::NV12;
-      } else if (subType == MFVideoFormat_P010) {
-        return gfx::SurfaceFormat::P010;
-      } else if (subType == MFVideoFormat_P016) {
-        return gfx::SurfaceFormat::P016;
-      } else {
-        MOZ_ASSERT_UNREACHABLE("Unexpected texture type");
-        return gfx::SurfaceFormat::NV12;
-      }
-    }();
+    mSurfaceFormat = SurfaceFormatFromSubType(subType);
     mTextureClientAllocator->SetPreferredSurfaceFormat(mSurfaceFormat);
   }
   // Reconfig video processor as well
@@ -1018,9 +1097,10 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
   }
   LOG("Configured D3D11DXVA2Manager, size=[%u,%u], colorSpace=%hhu, "
-      "colorRange=%hhu, colorDepth=%hhu",
+      "colorRange=%hhu, colorDepth=%hhu, transferFunction=%hhu",
       mWidth, mHeight, static_cast<uint8_t>(mYUVColorSpace),
-      static_cast<uint8_t>(mColorRange), static_cast<uint8_t>(mColorDepth));
+      static_cast<uint8_t>(mColorRange), static_cast<uint8_t>(mColorDepth),
+      static_cast<uint8_t>(mTransferFunction));
   return S_OK;
 }
 
@@ -1029,10 +1109,11 @@ D3D11DXVA2Manager::ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
                                     gfx::YUVColorSpace aColorSpace,
                                     gfx::ColorRange aColorRange,
                                     gfx::ColorDepth aColorDepth,
+                                    gfx::TransferFunction aTransferFunction,
                                     uint32_t aWidth, uint32_t aHeight) {
   if (aWidth == mWidth && aHeight == mHeight && mYUVColorSpace == aColorSpace &&
       mColorRange == aColorRange && aSurfaceFormat == mSurfaceFormat &&
-      mColorDepth == aColorDepth) {
+      mColorDepth == aColorDepth && mTransferFunction == aTransferFunction) {
     // No need to reconfigure if nothing changes.
     return S_OK;
   }
@@ -1044,7 +1125,13 @@ D3D11DXVA2Manager::ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
   mColorRange = aColorRange;
   mColorDepth = aColorDepth;
   mSurfaceFormat = aSurfaceFormat;
+  mTransferFunction = aTransferFunction;
   if (mTextureClientAllocator) {
+    // mSurfaceFormat here is one of the following:
+    // * SurfaceFormat::NV12
+    // * SurfaceFormat::YV12
+    // * SurfaceFormat::P010
+    // * SurfaceFormat::P016
     mTextureClientAllocator->SetPreferredSurfaceFormat(mSurfaceFormat);
   }
   // Reconfig video processor as well
@@ -1052,9 +1139,11 @@ D3D11DXVA2Manager::ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
     mProcessor->Init(gfx::IntSize(mWidth, mHeight));
   }
   LOG("Configured D3D11DXVA2Manager, size=[%u,%u], colorSpace=%hhu, "
-      "colorRange=%hhu, colorDepth=%hhu, surfaceFormat=%hhd",
+      "colorRange=%hhu, colorDepth=%hhu, transferFunction=%hhu, "
+      "surfaceFormat=%hhd",
       mWidth, mHeight, static_cast<uint8_t>(mYUVColorSpace),
       static_cast<uint8_t>(mColorRange), static_cast<uint8_t>(mColorDepth),
+      static_cast<uint8_t>(mTransferFunction),
       static_cast<uint8_t>(mSurfaceFormat));
   return S_OK;
 }
@@ -1158,6 +1247,11 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
 
   D3D11_TEXTURE2D_DESC inDesc;
   aInTexture.mTexture->GetDesc(&inDesc);
+
+  LOG("CopyTextureToImage, inDesc.Format=%d, mYUVColorSpace=%d, "
+      "mColorRange=%d, mColorDepth=%d",
+      inDesc.Format, static_cast<int>(mYUVColorSpace),
+      static_cast<int>(mColorRange), static_cast<int>(mColorDepth));
 
   RefPtr<D3D11ShareHandleImage> image = new D3D11ShareHandleImage(
       gfx::IntSize(mWidth, mHeight), aInTexture.mRegion,

@@ -67,7 +67,26 @@ class ContextMenuCandidateTest {
         val candidates = ContextMenuCandidate.defaultCandidates(testContext, mock(), mock(), mock())
         // Just a sanity check: When changing the list of default candidates be aware that this will affect all
         // consumers of this component using the default list.
-        assertEquals(14, candidates.size)
+        assertEquals(
+            listOf(
+                "mozac.feature.contextmenu.open_in_new_tab",
+                "mozac.feature.contextmenu.open_in_private_tab",
+                "mozac.feature.contextmenu.copy_link",
+                "mozac.feature.contextmenu.copy_link_text",
+                "mozac.feature.contextmenu.download_link",
+                "mozac.feature.contextmenu.share_link",
+                "mozac.feature.contextmenu.share_image",
+                "mozac.feature.contextmenu.open_image_in_new_tab",
+                "mozac.feature.contextmenu.copy_image",
+                "mozac.feature.contextmenu.save_image",
+                "mozac.feature.contextmenu.save_video",
+                "mozac.feature.contextmenu.copy_image_location",
+                "mozac.feature.contextmenu.add_to_contact",
+                "mozac.feature.contextmenu.share_email",
+                "mozac.feature.contextmenu.copy_email_address",
+            ),
+            candidates.map { it.id },
+        )
     }
 
     @Test
@@ -1509,6 +1528,51 @@ class ContextMenuCandidateTest {
         assertEquals(
             "https://getpocket.com",
             clipboardManager.primaryClip!!.getItemAt(0).text,
+        )
+    }
+
+    @Test
+    fun `Candidate 'Copy link text' is shown for UNKNOWN HitResult with link text`() {
+        val parentView = CoordinatorLayout(testContext)
+
+        val copyLinkText = ContextMenuCandidate.createCopyLinkTextCandidate(
+            testContext,
+            parentView,
+            snackbarDelegate,
+        )
+
+        assertTrue(
+            "Copy link text is shown for HitResult.UNKNOWN with link text",
+            copyLinkText.showFor(
+                createTab("https://www.mozilla.org"),
+                HitResult.UNKNOWN(src = "https://www.mozilla.org", linkText = "Mozilla"),
+            ),
+        )
+    }
+
+    @Test
+    fun `Candidate 'Copy link text' not shown for UNKNOWN HitResult without link text`() {
+        val parentView = CoordinatorLayout(testContext)
+
+        val copyLinkText = ContextMenuCandidate.createCopyLinkTextCandidate(
+            testContext,
+            parentView,
+            snackbarDelegate,
+        )
+
+        assertFalse(
+            "Copy link text is not shown for HitResult.UNKNOWN with empty link text",
+            copyLinkText.showFor(
+                createTab("https://www.mozilla.org"),
+                HitResult.UNKNOWN(src = "https://www.mozilla.org", linkText = ""),
+            ),
+        )
+        assertFalse(
+            "Copy link text is not shown for HitResult.UNKNOWN with null link text",
+            copyLinkText.showFor(
+                createTab("https://www.mozilla.org"),
+                HitResult.UNKNOWN(src = "https://www.mozilla.org", linkText = null),
+            ),
         )
     }
 

@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.recover.RecoverableTab
+import mozilla.components.compose.base.BannerColors
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.feature.tab.collections.Tab
@@ -27,7 +28,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
-import org.mozilla.fenix.compose.MessageCardColors
 import org.mozilla.fenix.compose.MessageCardState
 import org.mozilla.fenix.ext.TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT
 import org.mozilla.fenix.home.bookmarks.Bookmark
@@ -50,6 +50,8 @@ import org.mozilla.fenix.home.recentvisits.interactor.RecentVisitsInteractor
 import org.mozilla.fenix.home.search.HomeSearchInteractor
 import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.home.store.NimbusMessageState
+import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractor
+import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractorNoOp
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 import org.mozilla.fenix.wallpapers.WallpaperState
@@ -74,7 +76,8 @@ internal object FakeHomepagePreview {
             RecentVisitsInteractor by recentVisitsInteractor,
             HomeSearchInteractor by homeSearchInteractor,
             CollectionInteractor by collectionInteractor,
-            PocketStoriesInteractor by storiesInteractor {
+            PocketStoriesInteractor by storiesInteractor,
+            PrivacyNoticeBannerInteractor by PrivacyNoticeBannerInteractorNoOp {
             override fun reportSessionMetrics(state: AppState) { /* no op */ }
 
             override fun onPasteAndGo(clipboardText: String) { /* no op */ }
@@ -232,7 +235,7 @@ internal object FakeHomepagePreview {
         messageText = stringResource(id = R.string.default_browser_experiment_card_text),
         titleText = stringResource(id = R.string.default_browser_experiment_card_title),
         buttonText = "",
-        messageColors = MessageCardColors.buildMessageCardColors(),
+        bannerColors = BannerColors.bannerColors(),
     )
 
     internal fun message() = Message(

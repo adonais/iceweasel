@@ -475,15 +475,6 @@ parsererror|sourcetext {
   direction: ltr;
 }
 
-/* contenteditable support */
-
-:read-write:focus,
-:root:read-write {
-  /* Scroll-anchoring shouldn't work in any editable and scrollable elements
-   * when user inserts something. */
-  overflow-anchor: none;
-}
-
 /* https://drafts.csswg.org/css-view-transitions-1/#ua-styles */
 
 /* :root section moved to the other root selectors for performance */

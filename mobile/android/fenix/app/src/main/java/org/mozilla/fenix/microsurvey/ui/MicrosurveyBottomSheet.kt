@@ -29,12 +29,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
@@ -127,36 +129,16 @@ fun MicrosurveyBottomSheet(
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Preview(
     name = "Large Font",
     fontScale = 2.0f,
 )
 @Composable
-private fun MicrosurveyBottomSheetPreview() {
-    FirefoxTheme {
-        MicrosurveyBottomSheet(
-            question = "How satisfied are you with printing in Firefox?",
-            icon = iconsR.drawable.mozac_ic_print_24,
-            onPrivacyPolicyLinkClick = {},
-            onCloseButtonClicked = {},
-            onSubmitButtonClicked = {},
-            answers = listOf(
-                stringResource(id = R.string.likert_scale_option_1),
-                stringResource(id = R.string.likert_scale_option_2),
-                stringResource(id = R.string.likert_scale_option_3),
-                stringResource(id = R.string.likert_scale_option_4),
-                stringResource(id = R.string.likert_scale_option_5),
-                stringResource(id = R.string.likert_scale_option_6),
-            ),
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun MicrosurveyBottomSheetPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun MicrosurveyBottomSheetPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         MicrosurveyBottomSheet(
             question = "How satisfied are you with printing in Firefox?",
             icon = iconsR.drawable.mozac_ic_print_24,

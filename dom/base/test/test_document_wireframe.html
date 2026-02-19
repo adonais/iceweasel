@@ -270,9 +270,8 @@
      *   The iframe to load the page in.
      * @param {string} page
      *   The URL of the page to load in the frame.
-     * @returns Promise
-     * @resolves undefined
-     *   Once the load event has fired for the frame.
+     * @returns {Promise<Event>}
+     *   Resolves once the load event has fired for the frame.
      */
     function loadInIframe(frame, page) {
       return new Promise(resolve => {

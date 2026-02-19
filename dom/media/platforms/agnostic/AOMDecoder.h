@@ -39,6 +39,9 @@ class AOMDecoder final : public MediaDataDecoder,
   // by our demuxers to identify AV1 streams.
   static bool IsAV1(const nsACString& aMimeType);
 
+  // Return true if uses AV1 main profile.
+  static bool IsMainProfile(const MediaByteBuffer* aBox);
+
   // Return true if a sample is a keyframe.
   static bool IsKeyframe(Span<const uint8_t> aBuffer);
 

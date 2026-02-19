@@ -17,7 +17,6 @@ ERROR = "error"
 
 
 class CleanSkipfails:
-
     def __init__(
         self,
         command_context=None,
@@ -108,10 +107,8 @@ class CleanSkipfails:
             manifest_paths = set(t["manifest"] for t in tests)
         else:
             myPath = Path(".").parent
-            manifest_paths = set(
-                [
-                    str(x).replace("\\", "/")
-                    for x in myPath.glob(self.manifest_search_path)
-                ]
-            )
+            manifest_paths = set([
+                str(x).replace("\\", "/")
+                for x in myPath.glob(self.manifest_search_path)
+            ])
         return manifest_paths

@@ -141,3 +141,25 @@ function waitForTabMove(tab) {
     "Tab did not change position after a drop"
   );
 }
+
+/**
+ * @param {boolean} Optional
+ * Whether to apply to vertical or horizontal tabs
+ * @returns {object}
+ *   Returns properties used to emulate a drag event.
+ */
+function getDragEvent(isVertical = false) {
+  let tabContainerRect = window.windowUtils.getBoundsWithoutFlushing(
+    gBrowser.tabContainer
+  );
+  // Drag to the starting edge of the tab container
+  return {
+    clientX: isVertical
+      ? tabContainerRect.x + tabContainerRect.width / 2
+      : tabContainerRect.x + 1,
+    clientY: isVertical
+      ? tabContainerRect.y + 1
+      : tabContainerRect.y + tabContainerRect.height / 2,
+    dropEffect: "move",
+  };
+}

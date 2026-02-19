@@ -17,7 +17,6 @@ add_setup(async function () {
           url: "https://mozilla.com/",
           tags: [],
           title: "mozilla.com",
-          displayUrl: "mozilla.com",
         },
       }),
     ],
@@ -39,7 +38,6 @@ add_setup(async function () {
           url: "https://example.com/",
           tags: [],
           title: "example.com",
-          displayUrl: "example.com",
         },
       }),
     ],
@@ -67,6 +65,7 @@ add_task(async function testOnEngagementNotification() {
 
   const engagedResult = makeVisitResult(context, {
     uri: "https://mozilla.com/",
+    title: "mozilla.com",
     providerName: "firstProvider",
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
   });
@@ -77,6 +76,7 @@ add_task(async function testOnEngagementNotification() {
       engagedResult,
       makeVisitResult(context, {
         uri: "https://example.com/",
+        title: "example.com",
         providerName: "secondProvider",
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       }),
@@ -114,11 +114,13 @@ add_task(async function testOnAbandonmentNotification() {
     matches: [
       makeVisitResult(context, {
         uri: "https://mozilla.com/",
+        title: "mozilla.com",
         providerName: "firstProvider",
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       }),
       makeVisitResult(context, {
         uri: "https://example.com/",
+        title: "example.com",
         providerName: "secondProvider",
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       }),
@@ -151,6 +153,7 @@ add_task(async function testOnImpressionNotification() {
 
   const engagedResult = makeVisitResult(context, {
     uri: "https://mozilla.com/",
+    title: "mozilla.com",
     providerName: "firstProvider",
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
   });
@@ -161,6 +164,7 @@ add_task(async function testOnImpressionNotification() {
       engagedResult,
       makeVisitResult(context, {
         uri: "https://example.com/",
+        title: "example.com",
         providerName: "secondProvider",
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       }),
@@ -215,6 +219,7 @@ add_task(async function testOnSearchSessionEndNotification() {
 
   const engagedResult = makeVisitResult(context, {
     uri: "https://mozilla.com/",
+    title: "mozilla.com",
     providerName: "firstProvider",
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
   });
@@ -225,6 +230,7 @@ add_task(async function testOnSearchSessionEndNotification() {
       engagedResult,
       makeVisitResult(context, {
         uri: "https://example.com/",
+        title: "example.com",
         providerName: "secondProvider",
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       }),

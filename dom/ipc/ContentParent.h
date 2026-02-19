@@ -1404,6 +1404,13 @@ class ContentParent final : public PContentParent,
       const MaybeDiscardedBrowsingContext& aContainerContext,
       MaybeFeaturePolicyInfo&& aContainerFeaturePolicyInfo);
 
+  mozilla::ipc::IPCResult RecvUpdateAncestorOriginsList(
+      const MaybeDiscardedBrowsingContext& aContext);
+
+  mozilla::ipc::IPCResult RecvSetReferrerPolicyForEmbedderFrame(
+      const MaybeDiscardedBrowsingContext& aContext,
+      const ReferrerPolicy& aPolicy);
+
   mozilla::ipc::IPCResult RecvGetSystemIcon(nsIURI* aURI,
                                             GetSystemIconResolver&& aResolver);
 

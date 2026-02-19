@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -132,13 +133,13 @@ class SettingsSubMenuPrivateBrowsingRobot {
             return SettingsRobot.Transition()
         }
 
-        fun openPrivateBrowsingShortcut(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+        fun openPrivateBrowsingShortcut(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
             Log.i(TAG, "openPrivateBrowsingShortcut: Trying to click the \"Private $appName\" shortcut icon")
             privateBrowsingShortcutIcon().click()
             Log.i(TAG, "openPrivateBrowsingShortcut: Clicked the \"Private $appName\" shortcut icon")
 
-            SearchRobot().interact()
-            return SearchRobot.Transition()
+            SearchRobot(composeTestRule).interact()
+            return SearchRobot.Transition(composeTestRule)
         }
     }
 }

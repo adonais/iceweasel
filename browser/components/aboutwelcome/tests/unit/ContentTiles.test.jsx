@@ -4,6 +4,7 @@ import { ContentTiles } from "content-src/components/ContentTiles";
 import { ActionChecklist } from "content-src/components/ActionChecklist";
 import { MobileDownloads } from "content-src/components/MobileDownloads";
 import { EmbeddedBackupRestore } from "content-src/components/EmbeddedBackupRestore";
+import { EmbeddedMigrationWizard } from "content-src/components/EmbeddedMigrationWizard";
 import { AboutWelcomeUtils } from "content-src/lib/aboutwelcome-utils.mjs";
 import { GlobalOverrider } from "asrouter/tests/unit/utils";
 
@@ -1061,5 +1062,64 @@ describe("ContentTiles component", () => {
     assert.equal(mounted.find(".content-tile").length, 1);
 
     mounted.unmount();
+  });
+
+  it("passes migration_wizard_options properties to migration-wizard element", () => {
+    const MIGRATION_WIZARD_TILE = {
+      type: "migration-wizard",
+      migration_wizard_options: {
+        force_show_import_all: true,
+        option_expander_title_string: "Custom title",
+        hide_option_expander_subtitle: true,
+        hide_select_all: true,
+      },
+    };
+
+    const content = {
+      tiles: [MIGRATION_WIZARD_TILE],
+    };
+
+    const mountedWrapper = mount(
+      <ContentTiles
+        content={content}
+        handleAction={handleAction}
+        activeMultiSelect={null}
+        setActiveMultiSelect={setActiveMultiSelect}
+      />
+    );
+
+    const embeddedMigrationWizard = mountedWrapper.find(
+      EmbeddedMigrationWizard
+    );
+    assert.ok(
+      embeddedMigrationWizard.exists(),
+      "EmbeddedMigrationWizard rendered"
+    );
+
+    const migrationWizardEl = mountedWrapper.find("migration-wizard");
+    assert.ok(migrationWizardEl.exists(), "migration-wizard element rendered");
+
+    assert.equal(
+      migrationWizardEl.prop("force-show-import-all"),
+      true,
+      "force-show-import-all is set"
+    );
+    assert.equal(
+      migrationWizardEl.prop("option-expander-title-string"),
+      "Custom title",
+      "option-expander-title-string is set"
+    );
+    assert.equal(
+      migrationWizardEl.prop("hide-option-expander-subtitle"),
+      true,
+      "hide-option-expander-subtitle is set"
+    );
+    assert.equal(
+      migrationWizardEl.prop("hide-select-all"),
+      true,
+      "hide-select-all is set"
+    );
+
+    mountedWrapper.unmount();
   });
 });

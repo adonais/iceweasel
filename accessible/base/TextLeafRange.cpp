@@ -661,6 +661,18 @@ static bool IsCaretValid(TextLeafPoint aPoint) {
   return focus->State() & states::EDITABLE;
 }
 
+static bool IsStartOfFocusedEditor(TextLeafPoint& aPoint) {
+  if (aPoint.mOffset != 0) {
+    return false;
+  }
+  Accessible* focus = FocusMgr() ? FocusMgr()->FocusedAccessible() : nullptr;
+  if (!focus || !(focus->State() & states::EDITABLE)) {
+    // There isn't a focused editor.
+    return false;
+  }
+  return aPoint == TextLeafPoint(focus, 0);
+}
+
 /*** TextLeafPoint ***/
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
@@ -1084,18 +1096,49 @@ TextLeafPoint TextLeafPoint::FindNextWordStartSameAcc(
 /* static */
 TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
   if (LocalAccessible* localAcc = aAcc->AsLocal()) {
-    // Use HyperTextAccessible::CaretOffset. Eventually, we'll want to move
-    // that code into TextLeafPoint, but existing code depends on it living in
-    // HyperTextAccessible (including caret events).
-    HyperTextAccessible* ht = HyperTextFor(localAcc);
-    if (!ht) {
-      return TextLeafPoint();
+    // Use the HyperTextAccessible caret offset. Eventually, we'll want to move
+    // that code into TextLeafPoint, but existing code depends on it being based
+    // on HyperTextAccessible (including caret events).
+    int32_t htOffset = -1;
+    // Try the cached caret.
+    HyperTextAccessible* ht = SelectionMgr()->AccessibleWithCaret(&htOffset);
+    if (ht) {
+      MOZ_ASSERT(htOffset != -1);
+    } else {
+      // There is no cached caret, but there might still be a caret; see bug
+      // 1425112.
+      ht = HyperTextFor(localAcc);
+      if (!ht) {
+        return TextLeafPoint();
+      }
+      // An offset can only refer to a child, but the caret might be in a deeper
+      // descendant. Walk to the deepest HyperTextAccessible using CaretOffset.
+      bool gotCaret = false;
+      for (;;) {
+        htOffset = ht->CaretOffset();
+        if (htOffset == -1) {
+          break;
+        }
+        // A descendant might return -1 in some cases, but it's okay as long as
+        // the call on the outermost HyperTextAccessible succeeds.
+        gotCaret = true;
+        LocalAccessible* child = ht->GetChildAtOffset(htOffset);
+        if (!child) {
+          break;
+        }
+        if (HyperTextAccessible* childHt = child->AsHyperText()) {
+          ht = childHt;
+        } else {
+          break;
+        }
+      }
+      if (!gotCaret) {
+        return TextLeafPoint();
+      }
     }
-    int32_t htOffset = ht->CaretOffset();
-    if (htOffset == -1) {
-      return TextLeafPoint();
-    }
-    TextLeafPoint point = ht->ToTextLeafPoint(htOffset);
+    // As noted above, CaretOffset on a descendant might return -1. Use 0 in
+    // that case.
+    TextLeafPoint point = ht->ToTextLeafPoint(htOffset == -1 ? 0 : htOffset);
     if (!point) {
       // Bug 1905021: This happens in the wild, but we don't understand why.
       // ToTextLeafPoint should only fail if the HyperText offset is invalid,
@@ -1118,17 +1161,19 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
       // node.
       // 3. The caret is somewhere other than the start of a line and the user
       // presses down or up arrow to move by line.
+      // 4. The user focuses a contentEditable and the caret is positioned on
+      // the first character.
       if (point.mOffset <
           static_cast<int32_t>(nsAccUtils::TextLength(point.mAcc))) {
         // The caret is at the end of a line if the point is at the start of a
-        // line but not at the start of a paragraph.
+        // line but not the start of a focused editor.
         point.mIsEndOfLineInsertionPoint =
             point.FindPrevLineStartSameLocalAcc(/* aIncludeOrigin */ true) ==
                 point &&
-            !point.IsParagraphStart();
+            !IsStartOfFocusedEditor(point);
       } else {
-        // This is the end of a node. CaretAssociationHint::Before is only used
-        // at the end of a node if the caret is at the end of a line.
+        // CaretAssociationHint::Before is only used at the end of a node if the
+        // caret is both at the end of a node and at the end of a line.
         point.mIsEndOfLineInsertionPoint = true;
       }
     }

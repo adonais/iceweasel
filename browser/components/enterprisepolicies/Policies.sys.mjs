@@ -1059,6 +1059,14 @@ export var Policies = {
     },
   },
 
+  DisableRemoteImprovements: {
+    onBeforeAddons(manager, param) {
+      if (param) {
+        manager.disallowFeature("NimbusRollouts");
+      }
+    },
+  },
+
   DisableSafeMode: {
     onBeforeUIStartup(manager, param) {
       if (param) {
@@ -1665,17 +1673,34 @@ export var Policies = {
       const defaultValue = "Enabled" in param ? param.Enabled : undefined;
 
       const features = [
-        ["Chatbot", ["browser.ml.chat.enabled", "browser.ml.chat.page"]],
-        ["LinkPreviews", ["browser.ml.linkPreview.optin"]],
-        ["TabGroups", ["browser.tabs.groups.smart.userEnabled"]],
+        [
+          "Chatbot",
+          ["browser.ml.chat.enabled", "browser.ml.chat.page"],
+          "browser.ai.control.sidebarChatbot",
+        ],
+        [
+          "LinkPreviews",
+          ["browser.ml.linkPreview.optin"],
+          "browser.ai.control.linkPreviewKeyPoints",
+        ],
+        [
+          "TabGroups",
+          ["browser.tabs.groups.smart.userEnabled"],
+          "browser.ai.control.smartTabGroups",
+        ],
       ];
 
-      for (const [key, prefs] of features) {
+      for (const [key, prefs, aiControlPref] of features) {
         const value = key in param ? param[key] : defaultValue;
         if (value !== undefined) {
           for (const pref of prefs) {
             PoliciesUtils.setDefaultPref(pref, value, param.Locked);
           }
+          PoliciesUtils.setDefaultPref(
+            aiControlPref,
+            value ? "enabled" : "blocked",
+            param.Locked
+          );
         }
       }
     },
@@ -2876,6 +2901,10 @@ export var Policies = {
   TranslateEnabled: {
     onBeforeAddons(manager, param) {
       setAndLockPref("browser.translations.enable", param);
+      setAndLockPref(
+        "browser.ai.control.translations",
+        param ? "enabled" : "blocked"
+      );
     },
   },
 

@@ -778,11 +778,10 @@ class HTMLInputElement final : public TextControlElement,
   Element* GetDateTimeBoxElement();
 
   /*
-   * The following functions are called from datetime input box XBL to control
+   * The following functions are called from the datetimebox element to control
    * and update the picker.
    */
   void OpenDateTimePicker(const DateTimeValue& aInitialValue);
-  void UpdateDateTimePicker(const DateTimeValue& aValue);
   void CloseDateTimePicker();
 
   /**
@@ -790,6 +789,8 @@ class HTMLInputElement final : public TextControlElement,
    * open or closed.
    */
   void SetOpenState(bool aIsOpen);
+
+  void OpenColorPicker();
 
   /*
    * Called from datetime input box binding when inner text fields are focused
@@ -811,6 +812,16 @@ class HTMLInputElement final : public TextControlElement,
   double GetStepBaseAsDouble() { return GetStepBase().toDouble(); }
   double GetMinimumAsDouble() { return GetMinimum().toDouble(); }
   double GetMaximumAsDouble() { return GetMaximum().toDouble(); }
+
+  /**
+   * Return the current value as InputPickerColor.
+   */
+  void GetColor(InputPickerColor& aValue);
+
+  /**
+   * Converts the InputPickerColor into a string and set it as user input.
+   */
+  void SetUserInputColor(const InputPickerColor& aValue);
 
   void StartNumberControlSpinnerSpin();
   enum SpinnerStopState { eAllowDispatchingEvents, eDisallowDispatchingEvents };
@@ -1333,11 +1344,6 @@ class HTMLInputElement final : public TextControlElement,
    * @param aStep The value used to be multiplied against the step value.
    */
   void ApplyStep(int32_t aStep, ErrorResult&);
-
-  /**
-   * Returns if the current type is an experimental mobile type.
-   */
-  static bool IsExperimentalMobileType(FormControlType);
 
   /*
    * Returns if the current type is one of the date/time input types: date,

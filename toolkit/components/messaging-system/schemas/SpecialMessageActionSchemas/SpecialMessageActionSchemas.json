@@ -799,6 +799,18 @@
           "properties": {
             "type": {
               "type": "string",
+              "enum": ["FXA_AIWINDOW_SIGNIN_FLOW"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Opens AI Window after successful authentication with Accounts sign-in flow"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
               "enum": ["CREATE_TASKBAR_TAB"]
             }
           },

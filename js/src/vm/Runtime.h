@@ -585,6 +585,21 @@ struct JSRuntime {
   js::MainThreadData<JS::CTypesActivityCallback> ctypesActivityCallback;
 
  private:
+  // Script sources to compress off-thread. Only accessed by the main thread or
+  // off-thread GC sweeping (GCRuntime::sweepCompressionTasks).
+  using PendingCompressions =
+      js::Vector<js::PendingSourceCompressionEntry, 4, js::SystemAllocPolicy>;
+  js::MainThreadOrGCTaskData<PendingCompressions> pendingCompressions_;
+
+ public:
+  [[nodiscard]] bool addPendingCompressionEntry(js::ScriptSource* source) {
+    return pendingCompressions().emplaceBack(this, source);
+  }
+  PendingCompressions& pendingCompressions() {
+    return pendingCompressions_.ref();
+  }
+
+ private:
   js::WriteOnceData<const JSClass*> windowProxyClass_;
 
  public:
@@ -607,6 +622,9 @@ struct JSRuntime {
 
   template <typename T>
   struct GlobalObjectWatchersLinkAccess {
+    static const mozilla::DoublyLinkedListElement<T>& Get(const T* aThis) {
+      return aThis->onNewGlobalObjectWatchersLink;
+    }
     static mozilla::DoublyLinkedListElement<T>& Get(T* aThis) {
       return aThis->onNewGlobalObjectWatchersLink;
     }
@@ -614,6 +632,9 @@ struct JSRuntime {
 
   template <typename T>
   struct GarbageCollectionWatchersLinkAccess {
+    static const mozilla::DoublyLinkedListElement<T>& Get(const T* aThis) {
+      return aThis->onGarbageCollectionWatchersLink;
+    }
     static mozilla::DoublyLinkedListElement<T>& Get(T* aThis) {
       return aThis->onGarbageCollectionWatchersLink;
     }
@@ -736,6 +757,10 @@ struct JSRuntime {
   [[nodiscard]] bool createJitRuntime(JSContext* cx);
   js::jit::JitRuntime* jitRuntime() const { return jitRuntime_.ref(); }
   bool hasJitRuntime() const { return !!jitRuntime_; }
+  static constexpr size_t offsetOfJitRuntime() {
+    return offsetof(JSRuntime, jitRuntime_) +
+           js::UnprotectedData<js::jit::JitRuntime*>::offsetOfValue();
+  }
 
  private:
   // Used to generate random keys for hash tables.

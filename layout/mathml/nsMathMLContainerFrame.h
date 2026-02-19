@@ -51,9 +51,10 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
           ReflowOutput& aDesiredStretchSize) override;
 
   NS_IMETHOD
-  UpdatePresentationDataFromChildAt(int32_t aFirstIndex, int32_t aLastIndex,
-                                    uint32_t aFlagsValues,
-                                    uint32_t aFlagsToUpdate) override {
+  UpdatePresentationDataFromChildAt(
+      int32_t aFirstIndex, int32_t aLastIndex,
+      MathMLPresentationFlags aFlagsValues,
+      MathMLPresentationFlags aFlagsToUpdate) override {
     PropagatePresentationDataFromChildAt(this, aFirstIndex, aLastIndex,
                                          aFlagsValues, aFlagsToUpdate);
     return NS_OK;
@@ -285,7 +286,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   static void GetReflowAndBoundingMetricsFor(
       nsIFrame* aFrame, ReflowOutput& aReflowOutput,
       nsBoundingMetrics& aBoundingMetrics,
-      eMathMLFrameType* aMathMLFrameType = nullptr);
+      MathMLFrameType* aMathMLFrameType = nullptr);
 
   // helper method to clear metrics saved with
   // SaveReflowAndBoundingMetricsFor() from all child frames.
@@ -299,16 +300,15 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
   // helper to let the update of presentation data pass through
   // a subtree that may contain non-MathML container frames
-  static void PropagatePresentationDataFor(nsIFrame* aFrame,
-                                           uint32_t aFlagsValues,
-                                           uint32_t aFlagsToUpdate);
+  static void PropagatePresentationDataFor(
+      nsIFrame* aFrame, MathMLPresentationFlags aFlagsValues,
+      MathMLPresentationFlags aFlagsToUpdate);
 
  public:
-  static void PropagatePresentationDataFromChildAt(nsIFrame* aParentFrame,
-                                                   int32_t aFirstChildIndex,
-                                                   int32_t aLastChildIndex,
-                                                   uint32_t aFlagsValues,
-                                                   uint32_t aFlagsToUpdate);
+  static void PropagatePresentationDataFromChildAt(
+      nsIFrame* aParentFrame, int32_t aFirstChildIndex, int32_t aLastChildIndex,
+      MathMLPresentationFlags aFlagsValues,
+      MathMLPresentationFlags aFlagsToUpdate);
 
   // Sets flags on aFrame and all descendant frames
   static void PropagateFrameFlagFor(nsIFrame* aFrame, nsFrameState aFlags);

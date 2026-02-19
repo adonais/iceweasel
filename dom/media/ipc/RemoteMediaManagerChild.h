@@ -85,7 +85,7 @@ class RemoteMediaManagerChild final
       const EncoderConfig& aConfig);
 
   // Can be called from any thread.
-  static nsISerialEventTarget* GetManagerThread();
+  static nsCOMPtr<nsISerialEventTarget> GetManagerThread();
 
   // Return the track support information based on the location of the remote
   // process. Thread-safe.

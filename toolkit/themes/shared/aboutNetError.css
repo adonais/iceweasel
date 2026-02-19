@@ -104,6 +104,19 @@ button:disabled {
   max-width: var(--in-content-container-max-width);
 }
 
+.custom-net-error-card h3,
+.advanced-container h3 {
+  margin-block-end: var(--space-small);
+
+  & + p {
+    margin-block-start: var(--space-small);
+  }
+}
+
+.custom-net-error-card h1 + p:last-of-type {
+  margin-block-end: var(--space-xxlarge);
+}
+
 #errorCode {
   white-space: nowrap;
 }
@@ -122,14 +135,14 @@ button:disabled {
   background-color: var(--background-color-box-info) !important;
   border-top: 1px solid var(--border-color);
   width: 100%;
-  padding: 1em 3%;
+  padding: var(--space-large);
   box-sizing: border-box;
 }
 
 #certificateErrorText {
   font-family: monospace;
   white-space: pre-wrap;
-  padding: 1em 0;
+  padding: var(--space-small) 0;
   display: flex;
   flex-wrap: wrap;
 }
@@ -154,6 +167,10 @@ button:disabled {
   margin-top: 10px;
 }
 
+#prefChangeContainer {
+  margin-block-end: var(--space-large);
+}
+
 /* Felt Privacy v1 LARGER SCREEN! */
 /* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("security.certerrors.felt-privacy-v1") {
@@ -165,6 +182,7 @@ button:disabled {
     width: min(100%, 720px);
     min-width: min-content;
     margin-top: 150px;
+    padding-block-end: var(--space-xxlarge);
   }
 
   .felt-privacy-container {

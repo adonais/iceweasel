@@ -98,8 +98,11 @@ class InstalledAddonDetailsFragment : Fragment() {
     internal fun provideAddonManager() = requireContext().components.addonManager
 
     @VisibleForTesting
-    internal fun bindAddon(dispatchers: CoroutineDispatcher = Dispatchers.IO) {
-        lifecycleScope.launch(dispatchers) {
+    internal fun bindAddon(
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+        mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    ) {
+        lifecycleScope.launch(ioDispatcher) {
             // Only needed in case we are not able to find the add-on.
             var breadcrumb: Breadcrumb? = null
             try {
@@ -111,12 +114,12 @@ class InstalledAddonDetailsFragment : Fragment() {
                         )
                         throw AddonManagerException(Exception("Addon ${addon.id} not found"))
                     } else {
-                        withContext(Dispatchers.Main) {
+                        withContext(mainDispatcher) {
                             addon = latestAddon
                             bindUI()
                         }
                     }
-                    withContext(Dispatchers.Main) {
+                    withContext(mainDispatcher) {
                         binding.addOnProgressBar.isVisible = false
                         binding.addonContainer.isVisible = true
                     }
@@ -127,7 +130,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                     crashReporter?.recordCrashBreadcrumb(it)
                 }
                 crashReporter?.submitCaughtException(e)
-                lifecycleScope.launch(Dispatchers.Main) {
+                lifecycleScope.launch(mainDispatcher) {
                     logger.error("Unable to bind addon", e)
                     showUnableToQueryAddonsMessage()
                 }

@@ -504,6 +504,9 @@ NS_EVENT_MESSAGE(eWaitingForKey)
 
 NS_EVENT_MESSAGE(eScrollend)
 
+// Legacy orientatipon events.
+NS_EVENT_MESSAGE(eMozOrientationChange)
+
 #ifdef UNDEF_NS_EVENT_MESSAGE_FIRST_LAST
 #  undef UNDEF_NS_EVENT_MESSAGE_FIRST_LAST
 #  undef NS_EVENT_MESSAGE_FIRST_LAST

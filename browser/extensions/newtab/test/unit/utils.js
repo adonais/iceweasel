@@ -321,7 +321,7 @@ FakePerformance.prototype = {
   callsToMark: 0,
 
   /**
-   * @note The "startTime" for each mark is simply the number of times mark
+   * Note: The "startTime" for each mark is simply the number of times mark
    * has been called in this object.
    */
   mark(name) {

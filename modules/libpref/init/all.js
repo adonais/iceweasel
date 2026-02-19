@@ -146,6 +146,22 @@ pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode.addl", "")
 // enabled here, the feature may not be visible in all browsers.
 pref("dom.text-recognition.enabled", true);
 
+// Blocklist of domains of web apps which we should not dispatch `input` event
+// immediately before `compositionend`.
+pref("editor.texteditor.inputevent.hack.no_dispatch_before_compositionend", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_before_compositionend", "");
+// Pref for end-users and policy to add additional values.
+pref("editor.texteditor.inputevent.hack.no_dispatch_before_compositionend.addl", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_before_compositionend.addl", "");
+
+// Blocklist of domains of web apps which we should not dispatch `input` event
+// immediately after `compositionend`.
+pref("editor.texteditor.inputevent.hack.no_dispatch_after_compositionend", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_after_compositionend", "");
+// Pref for end-users and policy to add additional values.
+pref("editor.texteditor.inputevent.hack.no_dispatch_after_compositionend.addl", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_after_compositionend.addl", "");
+
 // Fastback caching - if this pref is negative, then we calculate the number
 // of content viewers to cache based on the amount of available memory.
 pref("browser.sessionhistory.max_total_viewers", -1);
@@ -385,7 +401,9 @@ pref("gfx.downloadable_fonts.fallback_delay", 3000);
 pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
 #ifdef XP_WIN
-  pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
+  // Bug 2011408 will remove this pref and the code that uses it completely if
+  // we don't see any performance issues.
+  pref("gfx.font_rendering.directwrite.use_gdi_table_loading", false);
 #endif
 
 // comma separated list of backends to use in order of preference
@@ -1775,8 +1793,6 @@ pref("extensions.eventPages.enabled", true);
 // Whether MV3 restrictions for actions popup urls should be extended to MV2 extensions
 // (only allowing same extension urls to be used as action popup urls).
 pref("extensions.manifestV2.actionsPopupURLRestricted", false);
-// Whether "manifest_version: 3" extensions should be allowed to install successfully.
-pref("extensions.manifestV3.enabled", true);
 #ifndef MOZ_WEBEXT_WEBIDL_ENABLED
   // Defined in StaticPrefList.yaml but overridden here to lock it.
   pref("extensions.backgroundServiceWorker.enabled", false, locked);
@@ -3083,7 +3099,7 @@ pref("network.tcp.keepalive.idle_time", 600); // seconds; 10 mins
 
 // All the Geolocation preferences are here.
 //
-pref("geo.provider.network.url", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%");
+pref("geo.provider.network.url", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%&solution_channel=%OS%");
 
 // Timeout to wait before sending the location request.
 pref("geo.provider.network.timeToWaitBeforeSending", 5000);
@@ -3679,6 +3695,14 @@ pref("browser.translations.simulateUnsupportedEngine", false);
 // between 0ms and the timeoutMS provided.
 pref("browser.translations.chaos.errors", false);
 pref("browser.translations.chaos.timeoutMS", 0);
+
+// AI controls
+pref("browser.ai.control.default", "available");
+pref("browser.ai.control.translations", "default");
+pref("browser.ai.control.pdfjsAltText", "default");
+pref("browser.ai.control.smartTabGroups", "default");
+pref("browser.ai.control.linkPreviewKeyPoints", "default");
+pref("browser.ai.control.sidebarChatbot", "default");
 
 // Enable the experimental machine learning inference engine.
 pref("browser.ml.enable", true);

@@ -5,7 +5,6 @@
 #ifndef TestCommon_h__
 #define TestCommon_h__
 
-#include <stdlib.h>
 #include "nsThreadUtils.h"
 #include "mozilla/SpinEventLoopUntil.h"
 

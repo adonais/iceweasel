@@ -2,19 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{AlphaType, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
+use api::{AlphaType, ExtendMode, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
+use euclid::HomogeneousVector;
 use crate::composite::{CompositeFeatures, CompositorClip};
+use crate::pattern::PatternShaderInput;
+use crate::quad::LayoutOrDeviceRect;
 use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use crate::internal_types::{FastHashMap, FrameVec, FrameMemory};
-use crate::prim_store::ClipData;
+use crate::prim_store::{ClipData, VECS_PER_SEGMENT};
 use crate::render_task::RenderTaskAddress;
 use crate::render_task_graph::RenderTaskId;
-use crate::renderer::{ShaderColorMode, GpuBufferAddress};
+use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferHandle, GpuBufferWriterF, GpuBufferDataF, GpuBufferDataI, GpuBufferWriterI, ShaderColorMode};
 use std::i32;
-use crate::util::{MatrixHelpers, TransformedRectKind};
+use crate::util::{MatrixHelpers, ScaleOffset, TransformedRectKind};
 use glyph_rasterizer::SubpixelDirection;
 use crate::util::pack_as_float;
 
@@ -22,6 +24,7 @@ use crate::util::pack_as_float;
 // Contains type that must exactly match the same structures declared in GLSL.
 
 pub const VECS_PER_TRANSFORM: usize = 8;
+pub const VECS_PER_SPECIFIC_BRUSH: usize = 3;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(C)]
@@ -164,21 +167,6 @@ impl ScalingInstance {
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct SvgFilterInstance {
-    pub task_address: RenderTaskAddress,
-    pub input_1_task_address: RenderTaskAddress,
-    pub input_2_task_address: RenderTaskAddress,
-    pub kind: u16,
-    pub input_count: u16,
-    pub generic_int: u16,
-    pub padding: u16,
-    pub extra_data_address: GpuCacheAddress,
-}
-
-#[derive(Clone, Debug)]
-#[repr(C)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SVGFEFilterInstance {
     pub target_rect: DeviceRect,
     pub input_1_content_scale_and_offset: [f32; 4],
@@ -187,7 +175,7 @@ pub struct SVGFEFilterInstance {
     pub input_2_task_address: RenderTaskAddress,
     pub kind: u16,
     pub input_count: u16,
-    pub extra_data_address: GpuCacheAddress,
+    pub extra_data_address: i32,
 }
 
 #[derive(Copy, Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
@@ -261,7 +249,7 @@ pub struct BoxShadowData {
 #[repr(C)]
 pub struct ClipMaskInstanceBoxShadow {
     pub common: ClipMaskInstanceCommon,
-    pub resource_address: GpuCacheAddress,
+    pub resource_address: i32,
     pub shadow_data: BoxShadowData,
 }
 
@@ -505,7 +493,7 @@ impl PrimitiveHeaders {
         self.headers_int.push(PrimitiveHeaderI {
             z: prim_header.z,
             render_task_address: prim_header.render_task_address,
-            specific_prim_address: prim_header.specific_prim_address.as_int(),
+            specific_prim_address: prim_header.specific_prim_address,
             transform_id: prim_header.transform_id,
             user_data: prim_header.user_data,
         });
@@ -520,7 +508,7 @@ impl PrimitiveHeaders {
 pub struct PrimitiveHeader {
     pub local_rect: LayoutRect,
     pub local_clip_rect: LayoutRect,
-    pub specific_prim_address: GpuCacheAddress,
+    pub specific_prim_address: i32,
     pub transform_id: TransformPaletteId,
     pub z: ZBufferId,
     pub render_task_address: RenderTaskAddress,
@@ -571,16 +559,27 @@ impl GlyphInstance {
         clip_task: RenderTaskAddress,
         subpx_dir: SubpixelDirection,
         glyph_index_in_text_run: i32,
-        glyph_uv_rect: GpuCacheAddress,
+        glyph_uv_rect: GpuBufferAddress,
         color_mode: ShaderColorMode,
+        subpx_offset_x: u8,
+        subpx_offset_y: u8,
+        is_packed_glyph: bool,
     ) -> PrimitiveInstanceData {
+        // Pack subpixel offsets and multi-variant flag into upper 16 bits of data[2]
+        // After instance.flags extraction (>> 16), shader sees:
+        // bits 0-3: color_mode, bits 4-5: subpx_offset_x, bits 6-7: subpx_offset_y,
+        // bits 8-9: subpx_dir, bit 10: is_packed_glyph
+        let packed_flags = (((is_packed_glyph as u32) & 0x1) << 26)
+            | (((subpx_dir as u32) & 0x3) << 24)
+            | (((subpx_offset_y as u32) & 0x3) << 22)
+            | (((subpx_offset_x as u32) & 0x3) << 20)
+            | (((color_mode as u32) & 0xF) << 16);
+
         PrimitiveInstanceData {
             data: [
                 self.prim_header_index.0 as i32,
                 clip_task.0 as i32,
-                (subpx_dir as u32 as i32) << 24
-                | (color_mode as u32 as i32) << 16
-                | glyph_index_in_text_run,
+                packed_flags as i32 | glyph_index_in_text_run,
                 glyph_uv_rect.as_int(),
             ],
         }
@@ -612,8 +611,8 @@ impl From<SplitCompositeInstance> for PrimitiveInstanceData {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct QuadInstance {
     pub dst_task_address: RenderTaskAddress,
-    pub prim_address_i: GpuBufferAddress,
-    pub prim_address_f: GpuBufferAddress,
+    pub prim_address_i: i32,
+    pub prim_address_f: i32,
     pub quad_flags: u8,
     pub edge_flags: u8,
     pub part_index: u8,
@@ -631,8 +630,8 @@ impl From<QuadInstance> for PrimitiveInstanceData {
 
         PrimitiveInstanceData {
             data: [
-                instance.prim_address_i.as_int(),
-                instance.prim_address_f.as_int(),
+                instance.prim_address_i,
+                instance.prim_address_f,
 
                 ((instance.quad_flags as i32)    << 24) |
                 ((instance.edge_flags as i32)    << 16) |
@@ -645,11 +644,92 @@ impl From<QuadInstance> for PrimitiveInstanceData {
     }
 }
 
+/// Matches QuadHeader in ps_quad.glsl
+pub struct QuadHeader {
+    pub transform_id: TransformPaletteId,
+    pub z_id: ZBufferId,
+    pub pattern_input: PatternShaderInput,
+}
+
+impl GpuBufferDataI for QuadHeader {
+    const NUM_BLOCKS: usize = 1;
+    fn write(&self, writer: &mut GpuBufferWriterI) {
+        writer.push_one([
+            self.transform_id.0 as i32,
+            self.z_id.0,
+            self.pattern_input.0,
+            self.pattern_input.1,
+        ]);
+    }
+}
+
+/// Matches QuadPrimitive in ps_quad.glsl
+pub struct QuadPrimitive {
+    pub bounds: LayoutOrDeviceRect,
+    pub clip: LayoutOrDeviceRect,
+    // TODO: This gets translated into a Rect just before upload.
+    // It would be better to send the gpu buffer address to the shader.
+    pub input_task: RenderTaskId,
+    pub pattern_scale_offset: ScaleOffset,
+    /// Base color of the pattern.
+    pub color: PremultipliedColorF,
+}
+
+impl GpuBufferDataF for QuadPrimitive {
+    const NUM_BLOCKS: usize = 5;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one(self.bounds);
+        writer.push_one(self.clip);
+        writer.push_render_task(self.input_task);
+        writer.push_one(self.pattern_scale_offset);
+        writer.push_one(self.color);
+    }
+}
+
+pub const VECS_PER_QUAD_SEGMENT: usize = 2;
+
+/// Matches QuadSegment in ps_quad.glsl
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct QuadSegment {
-    pub rect: LayoutRect,
+    pub rect: LayoutOrDeviceRect,
+    // TODO: This gets translated into a Rect just before upload.
+    // It would be better to send the gpu buffer address to the shader.
     pub task_id: RenderTaskId,
+}
+
+impl GpuBufferDataF for QuadSegment {
+    const NUM_BLOCKS: usize = VECS_PER_QUAD_SEGMENT;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one(self.rect);
+        writer.push_render_task(self.task_id)
+    }
+}
+
+/// Matches LinearGradientBrushData in brush_linear_gradient.glsl
+pub struct LinearGradientBrushData {
+    pub start: LayoutPoint,
+    pub end: LayoutPoint,
+    pub extend_mode: ExtendMode,
+    pub stretch_size: LayoutSize,
+}
+
+impl GpuBufferDataF for LinearGradientBrushData {
+    const NUM_BLOCKS: usize = 2;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one([
+            self.start.x,
+            self.start.y,
+            self.end.x,
+            self.end.y,
+        ]);
+        writer.push_one([
+            pack_as_float(self.extend_mode as u32),
+            self.stretch_size.width,
+            self.stretch_size.height,
+            0.0,
+        ]);
+    }
 }
 
 #[derive(Copy, Debug, Clone, PartialEq)]
@@ -763,14 +843,14 @@ impl From<BrushInstance> for PrimitiveInstanceData {
 
 /// Convenience structure to encode into the image brush's user data.
 #[derive(Copy, Clone, Debug)]
-pub struct ImageBrushData {
+pub struct ImageBrushUserData {
     pub color_mode: ShaderColorMode,
     pub alpha_type: AlphaType,
     pub raster_space: RasterizationSpace,
     pub opacity: f32,
 }
 
-impl ImageBrushData {
+impl ImageBrushUserData {
     #[inline]
     pub fn encode(&self) -> [i32; 4] {
         [
@@ -1006,26 +1086,90 @@ pub struct ImageSource {
 }
 
 impl ImageSource {
-    pub fn write_gpu_blocks(&self, request: &mut GpuDataRequest) {
+    pub fn write_gpu_blocks(&self, gpu_buffer: &mut GpuBufferBuilderF) -> GpuBufferHandle {
+        let mut writer = gpu_buffer.write_blocks(6);
+        self.push_gpu_blocks(&mut writer);
+        writer.finish_with_handle()
+    }
+
+    pub fn push_gpu_blocks(&self, writer: &mut GpuBufferWriterF) {
         // see fetch_image_resource in GLSL
         // has to be VECS_PER_IMAGE_RESOURCE vectors
-        request.push([
+        writer.push_one([
             self.p0.x,
             self.p0.y,
             self.p1.x,
             self.p1.y,
         ]);
-        request.push(self.user_data);
+        writer.push_one(self.user_data);
 
         // If this is a polygon uv kind, then upload the four vertices.
         if let UvRectKind::Quad { top_left, top_right, bottom_left, bottom_right } = self.uv_rect_kind {
             // see fetch_image_resource_extra in GLSL
             //Note: we really need only 3 components per point here: X, Y, and W
-            request.push(top_left);
-            request.push(top_right);
-            request.push(bottom_left);
-            request.push(bottom_right);
+            fn to_array(v: HomogeneousVector<f32, DevicePixel>) -> [f32; 4] {
+                [v.x, v.y, v.z, v.w]
+            }
+            writer.push_one(to_array(top_left));
+            writer.push_one(to_array(top_right));
+            writer.push_one(to_array(bottom_left));
+            writer.push_one(to_array(bottom_right));
         }
+    }
+}
+
+// Must correspond to ImageBrushPrimitiveData in brush_image.glsl
+// Images are drawn as a white color, modulated by the total
+// opacity coming from any collapsed property bindings.
+#[derive(Copy, Clone, Debug)]
+pub struct ImageBrushPrimitiveData {
+    pub color: PremultipliedColorF,
+    pub background_color: PremultipliedColorF,
+    pub stretch_size: LayoutSize,
+}
+
+impl GpuBufferDataF for ImageBrushPrimitiveData {
+    const NUM_BLOCKS: usize = VECS_PER_SPECIFIC_BRUSH;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one(self.color);
+        writer.push_one(self.background_color);
+        writer.push_one([self.stretch_size.width, self.stretch_size.height, 0.0, 0.0]);
+    }
+}
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Clone, MallocSizeOf)]
+pub struct BrushSegmentGpuData {
+    pub local_rect: LayoutRect,
+    /// Each brush shader has its own interpretation of this field.
+    pub extra_data: [f32; 4],
+}
+
+impl GpuBufferDataF for BrushSegmentGpuData {
+    const NUM_BLOCKS: usize = VECS_PER_SEGMENT;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one(self.local_rect);
+        writer.push_one(self.extra_data);
+    }
+}
+
+/// Matches YuvPrimitive in yuv.glsl
+pub struct YuvPrimitive {
+    pub channel_bit_depth: u32,
+    pub color_space: YuvRangedColorSpace,
+    pub yuv_format: YuvFormat,
+}
+
+impl GpuBufferDataF for YuvPrimitive {
+    const NUM_BLOCKS: usize = 1;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one([
+            pack_as_float(self.channel_bit_depth),
+            pack_as_float(self.color_space as u32),
+            pack_as_float(self.yuv_format as u32),
+            0.0
+        ]);
     }
 }
 

@@ -115,8 +115,9 @@ impl CrashHelperClient {
         Ok(unsafe { OwnedHandle::from_raw_handle(pi.hProcess as RawHandle) })
     }
 
-    pub(crate) fn prepare_for_minidump(_crash_helper_pid: Pid) {
+    pub(crate) fn prepare_for_minidump(_crash_helper_pid: Pid) -> bool {
         // On Windows this is currently a no-op
+        true
     }
 }
 

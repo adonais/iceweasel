@@ -156,6 +156,11 @@ nsTArray<RefPtr<nsRange>> FragmentDirective::FindTextFragmentsInDocument() {
                       uri);
     return {};
   }
+  RefPtr doc = mDocument;
+  doc->FlushPendingNotifications(FlushType::Layout);
+  if (!mFinder) {
+    return {};
+  }
   auto textDirectives = mFinder->FindTextDirectivesInDocument();
   if (!mFinder->HasUninvokedDirectives()) {
     mFinder = nullptr;

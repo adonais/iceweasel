@@ -16,6 +16,7 @@
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/intl/WordBreaker.h"
@@ -473,10 +474,35 @@ nsresult nsClipboardCommand::DoCommand(const nsACString& aCommandName,
     return eCopy;
   }();
 
+  RefPtr<dom::DataTransfer> dataTransfer;
+  if (ePaste == eventMessage) {
+    nsCOMPtr<nsIPrincipal> subjectPrincipal =
+        nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
+    MOZ_ASSERT(subjectPrincipal);
+
+    // If we don't need to get user confirmation for clipboard access, we could
+    // just let nsCopySupport::FireClipboardEvent() to create DataTransfer
+    // instance synchronously for paste event. Otherwise, we need to spin the
+    // event loop to wait for the clipboard paste contextmenu to be shown and
+    // get user confirmation which are all handled in parent process before
+    // sending the paste event.
+    if (!nsContentUtils::PrincipalHasPermission(*subjectPrincipal,
+                                                nsGkAtoms::clipboardRead)) {
+      MOZ_DIAGNOSTIC_ASSERT(StaticPrefs::dom_execCommand_paste_enabled(),
+                            "How did we get here?");
+      // This will spin the event loop.
+      dataTransfer = dom::DataTransfer::WaitForClipboardDataSnapshotAndCreate(
+          window, subjectPrincipal);
+      if (!dataTransfer) {
+        return NS_SUCCESS_DOM_NO_OPERATION;
+      }
+    }
+  }
+
   bool actionTaken = false;
-  nsCopySupport::FireClipboardEvent(eventMessage,
-                                    Some(nsIClipboard::kGlobalClipboard),
-                                    presShell, nullptr, nullptr, &actionTaken);
+  nsCopySupport::FireClipboardEvent(
+      eventMessage, Some(nsIClipboard::kGlobalClipboard), presShell, nullptr,
+      dataTransfer, &actionTaken);
 
   return actionTaken ? NS_OK : NS_SUCCESS_DOM_NO_OPERATION;
 }

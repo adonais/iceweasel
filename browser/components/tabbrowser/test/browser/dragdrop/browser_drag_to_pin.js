@@ -25,21 +25,6 @@ registerCleanupFunction(() => {
   CustomizableUI.reset();
 });
 
-function getDragEvent(win, isVertical = false) {
-  let tabContainer = win.document.getElementById("tabbrowser-tabs");
-  let tabContainerRect = win.windowUtils.getBoundsWithoutFlushing(tabContainer);
-  // Drag to the starting edge of the tab container
-  return {
-    clientX: isVertical
-      ? tabContainerRect.x + tabContainerRect.width / 2
-      : tabContainerRect.x + 1,
-    clientY: isVertical
-      ? tabContainerRect.y + 1
-      : tabContainerRect.y + tabContainerRect.height / 2,
-    dropEffect: "move",
-  };
-}
-
 async function pinIndicatorDragCond(pinnedDropIndicator) {
   info("Wait for interaction cue");
   await BrowserTestUtils.waitForMutationCondition(
@@ -61,7 +46,7 @@ add_task(async function test_pin_to_pinned_drop_indicator_horizontal() {
   let unpinnedTabsContainer = document.getElementById(
     "tabbrowser-arrowscrollbox"
   );
-  let dragEvent = getDragEvent(window);
+  let dragEvent = getDragEvent();
 
   info("Drag to pin to the interaction cue");
   await customDragAndDrop(
@@ -144,6 +129,10 @@ add_task(async function test_resize_container_on_unpin_horizontal() {
 });
 
 add_task(async function test_pin_to_promo_card_vertical() {
+  // Ensure the mouse is not hovering over the tab strip.
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
+    type: "mouseover",
+  });
   await SpecialPowers.pushPrefEnv({
     set: [
       ["sidebar.verticalTabs", true],
@@ -155,7 +144,7 @@ add_task(async function test_pin_to_promo_card_vertical() {
   let initialTab = gBrowser.tabs[0];
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let promoCard = document.getElementById("drag-to-pin-promo-card");
-  let dragEvent = getDragEvent(window, true);
+  let dragEvent = getDragEvent(true);
 
   async function promoPinDragCond() {
     info("Wait for promo card");

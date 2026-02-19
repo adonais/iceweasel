@@ -10,9 +10,6 @@
 #include "jsapi/PeerConnectionCtx.h"
 #include "libwebrtcglue/WebrtcEnvironmentWrapper.h"
 
-// libwebrtc includes
-#include "call/rtp_transport_controller_send_factory.h"
-
 namespace mozilla {
 
 /* static */ RefPtr<WebrtcCallWrapper> WebrtcCallWrapper::Create(

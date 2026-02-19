@@ -4,6 +4,7 @@
 
 package org.mozilla.tooling.nimbus
 
+import groovy.transform.Immutable
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -18,15 +19,11 @@ import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.LocalState
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 import javax.inject.Inject
-
-import groovy.transform.Immutable
-
 import java.security.MessageDigest
 
 /**
@@ -230,7 +227,7 @@ abstract class NimbusAssembleToolsTask extends DefaultTask {
         extractBinary(archiveFileObj)
     }
 
-    private void extractBinary(File archiveFileObj) {
+    protected void extractBinary(File archiveFileObj) {
         def binaryFile = fmlBinary.get().asFile
         def zipTree = archiveOperations.zipTree(archiveFileObj)
         def visitedFilePaths = []

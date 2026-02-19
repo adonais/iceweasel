@@ -34,7 +34,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Dropdown
@@ -51,6 +51,7 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import java.util.Locale
 import mozilla.components.ui.icons.R as iconsR
 
@@ -731,35 +732,12 @@ internal fun getTranslateToLanguageList(): List<Language> {
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun TranslationsDialogBottomSheetPreview() {
-    FirefoxTheme {
-        Surface {
-        TranslationsDialogBottomSheet(
-                translationsDialogState = TranslationsDialogState(
-                    positiveButtonType = PositiveButtonType.Enabled,
-                    toLanguages = getTranslateToLanguageList(),
-                    fromLanguages = getTranslateFromLanguageList(),
-                ),
-                learnMoreUrl = "",
-                showPageSettings = true,
-                showFirstTimeFlow = true,
-                onSettingClicked = {},
-                onLearnMoreClicked = {},
-                onPositiveButtonClicked = {},
-                onNegativeButtonClicked = {},
-                onFromDropdownSelected = {},
-                onToDropdownSelected = {},
-            )
-        }
-    }
-}
-
-@Composable
 @Preview
-private fun TranslationsDialogBottomSheetPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun TranslationsDialogBottomSheetPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             TranslationsDialogBottomSheet(
                 translationsDialogState = TranslationsDialogState(

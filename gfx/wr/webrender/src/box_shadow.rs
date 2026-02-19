@@ -101,8 +101,8 @@ impl PatternBuilder for BoxShadowTemplate {
 
         let pattern_prim_address_f = quad::write_prim_blocks(
             &mut state.frame_gpu_data.f32,
-            pattern_rect,
-            pattern_rect,
+            pattern_rect.to_untyped(),
+            pattern_rect.to_untyped(),
             color_pattern.base_color,
             color_pattern.texture_input.task_id,
             &[],

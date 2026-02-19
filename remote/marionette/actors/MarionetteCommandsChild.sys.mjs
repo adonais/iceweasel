@@ -220,6 +220,9 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
         case "MarionetteCommandsParent:findElements":
           result = await this.findElements(data);
           break;
+        case "MarionetteCommandsParent:generateTestReport":
+          result = await this.generateTestReport(data);
+          break;
         case "MarionetteCommandsParent:getActiveElement":
           result = await this.getActiveElement();
           break;
@@ -384,6 +387,17 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
 
     const container = { frame: this.document.defaultView };
     return lazy.dom.find(container, strategy, selector, opts);
+  }
+
+  /**
+   * Generates and sends a test report to be observed by any registered reporting observers
+   */
+  async generateTestReport(options = {}) {
+    const { message, group } = options;
+    return this.browsingContext.window.TestReportGenerator.generateReport({
+      message,
+      group,
+    });
   }
 
   /**

@@ -4,6 +4,7 @@
 
 # For the vendored lib, see https://bugzilla.mozilla.org/show_bug.cgi?id=1890946
 toolkit.jar:
+    content/global/ml/AIFeature.sys.mjs                   (AIFeature.sys.mjs)
     content/global/ml/ClusterAlgos.sys.mjs                (content/ClusterAlgos.sys.mjs)
     content/global/ml/EngineProcess.sys.mjs     	        (content/EngineProcess.sys.mjs)
     content/global/ml/MLEngine.worker.mjs       	        (content/MLEngine.worker.mjs)
@@ -28,6 +29,13 @@ toolkit.jar:
     content/global/ml/backends/StaticEmbeddingsPipeline.mjs (content/backends/StaticEmbeddingsPipeline.mjs)
     content/global/ml/openai.mjs                          (vendor/openai/dist/openai.mjs)
     content/global/ml/MLTelemetry.sys.mjs                 (MLTelemetry.sys.mjs)
+    content/global/ml/security/ConditionEvaluator.sys.mjs            (security/ConditionEvaluator.sys.mjs)
+    content/global/ml/security/DecisionTypes.sys.mjs                 (security/DecisionTypes.sys.mjs)
+    content/global/ml/security/PolicyEvaluator.sys.mjs               (security/PolicyEvaluator.sys.mjs)
+    content/global/ml/security/SecurityLogger.sys.mjs                (security/SecurityLogger.sys.mjs)
+    content/global/ml/security/SecurityOrchestrator.sys.mjs          (security/SecurityOrchestrator.sys.mjs)
+    content/global/ml/security/SecurityUtils.sys.mjs                 (security/SecurityUtils.sys.mjs)
+    content/global/ml/security/policies/tool-execution-policies.json (security/policies/tool-execution-policies.json)
 #ifdef NIGHTLY_BUILD
     content/global/ml/ort.webgpu-dev.mjs        	        (vendor/ort.webgpu-dev.mjs)
     content/global/ml/transformers-dev.js       	        (vendor/transformers-dev.js)

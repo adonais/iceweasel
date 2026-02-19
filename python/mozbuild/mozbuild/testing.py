@@ -152,9 +152,10 @@ class SupportFilesConverter:
                     full = mozpath.normpath(
                         mozpath.join(manifest_dir, mozpath.basename(pattern))
                     )
-                    info.installs.append(
-                        (full, mozpath.join(install_root, pattern[1:]))
-                    )
+                    info.installs.append((
+                        full,
+                        mozpath.join(install_root, pattern[1:]),
+                    ))
                 else:
                     full = mozpath.normpath(mozpath.join(manifest_dir, pattern))
                     dest_path = mozpath.join(out_dir, pattern)

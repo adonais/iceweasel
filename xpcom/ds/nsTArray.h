@@ -76,7 +76,6 @@ namespace mozilla::dom {
 class ClonedMessageData;
 class MessageData;
 class MessagePortIdentifier;
-struct MozPluginParameter;
 template <typename T>
 struct Nullable;
 class OwningFileOrDirectory;

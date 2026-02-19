@@ -59,36 +59,10 @@
       height: 32px;
       width: 32px;
     }
-
-    .card-stp-thumbs-buttons-wrapper {
-      .card-stp-thumbs-buttons {
-        gap: var(--space-small);
-      }
-    }
-
-
-    &:hover,
-    &:active,
-    &:focus-within,
-    &.active {
-      .card-stp-thumbs-buttons-wrapper {
-        visibility: visible;
-      }
-
-      .meta {
-        .source-wrapper .source {
-          display: none;
-        }
-      }
-    }
   }
 
   &.ds-card.sections-card-ui {
     padding: unset;
-  }
-
-  .card-stp-thumbs-buttons-wrapper {
-    visibility: hidden;
   }
 
   .ds-card-link {
@@ -109,7 +83,7 @@
     .ds-image.img {
       width: 100%;
       height: 100%;
-      padding-top: 0;
+      padding-block-start: 0;
       min-width: 100%;
     }
 
@@ -168,10 +142,6 @@
     &:hover {
       box-shadow: var(--box-shadow-card-hover);
     }
-  }
-
-  .card-stp-thumbs-buttons-wrapper {
-    visibility: visible;
   }
 
   &.refined-cards {
@@ -241,18 +211,10 @@
       background: transparent;
     }
 
-    .card-stp-thumbs-buttons-wrapper {
-      visibility: hidden;
-    }
-
     &:hover,
     &:active,
     &:focus-within,
     &.active {
-      .card-stp-thumbs-buttons-wrapper {
-        visibility: visible;
-      }
-
       .meta {
         .source-wrapper {
           max-width: 175px;
@@ -273,10 +235,6 @@
 
   .card-stp-button-hover-background {
     background: transparent;
-  }
-
-  .card-stp-thumbs-buttons-wrapper {
-    display: block;
   }
 
   .ds-card-link {
@@ -321,7 +279,7 @@
     }
 
     .sections-card-footer {
-      margin-top: auto;
+      margin-block-start: auto;
     }
   }
 }
@@ -422,7 +380,7 @@
         }
 
         .sections-card-footer {
-          margin-top: auto;
+          margin-block-start: auto;
         }
       }
 

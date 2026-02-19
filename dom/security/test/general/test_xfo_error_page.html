@@ -12,12 +12,19 @@
 
 SimpleTest.waitForExplicitFinish();
 
+const { ContentTaskUtils } = SpecialPowers.ChromeUtils.importESModule(
+  "resource://testing-common/ContentTaskUtils.sys.mjs"
+);
+
 const XFO_ERROR_PAGE_MSG = "This page has an X-Frame-Options policy that prevents it from being loaded in this context";
 
 let xfo_testframe = document.getElementById("xfo_testframe");
 
-xfo_testframe.onload = function() {
+xfo_testframe.onload = async function() {
   let wrappedXFOFrame = SpecialPowers.wrap(xfo_testframe.contentWindow);
+  await ContentTaskUtils.waitForCondition(
+    () => wrappedXFOFrame.document.body.innerHTML.includes(XFO_ERROR_PAGE_MSG)
+  );
   let frameContentXFO = wrappedXFOFrame.document.body.innerHTML;
   ok(frameContentXFO.includes(XFO_ERROR_PAGE_MSG), "xfo error page correct");
   SimpleTest.finish();

@@ -39,6 +39,11 @@
     "dark": "{Colors$color/yellow/90}",
     "forcedColors": "{Theme$background/color/canvas}"
   },
+  "background/color/list/item/hover": {
+    "light": "color-mix(in srgb, var(--color-accent-primary) 20%, transparent)",
+    "dark": "color-mix(in srgb, var(--color-accent-primary) 20%, transparent)",
+    "forcedColors": "{HCM Theme$SelectedItem}"
+  },
   "border/color": {
     "light": "{Colors$color/gray/50}",
     "dark": "{Colors$color/gray/70}",
@@ -542,6 +547,11 @@
   "text/color/accent/primary/selected": {
     "light": "{Colors$color/white}",
     "dark": "{Colors$color/gray/100}",
+    "forcedColors": "{HCM Theme$SelectedItemText}"
+  },
+  "text/color/list/item/hover": {
+    "light": "{Theme$text/color}",
+    "dark": "{Theme$text/color}",
     "forcedColors": "{HCM Theme$SelectedItemText}"
   }
 }

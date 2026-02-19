@@ -26,7 +26,7 @@ const Localized = createFactory(
  * This component provides a helpful description for what is going on in the component
  * and provides some external links.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class Description extends PureComponent {
   /**

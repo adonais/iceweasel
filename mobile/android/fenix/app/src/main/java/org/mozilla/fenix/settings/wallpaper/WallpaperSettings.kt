@@ -45,13 +45,15 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.core.graphics.createBitmap
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.modifier.debouncedClickable
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ClickableSubstringLink
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.wallpapers.Wallpaper
 
 /**
@@ -311,10 +313,12 @@ private fun WallpaperThumbnailItem(
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
 @Suppress("MagicNumber")
-private fun WallpaperThumbnailsPreview() {
+private fun WallpaperThumbnailsPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val downloadedCollection: List<Wallpaper> = List(size = 5) { index ->
         Wallpaper(
             name = "downloaded wallpaper $index",
@@ -339,58 +343,7 @@ private fun WallpaperThumbnailsPreview() {
     }
     var selectedWallpaper by remember { mutableStateOf(downloadedCollection[0]) }
 
-    FirefoxTheme {
-        WallpaperSettings(
-            defaultWallpaper = Wallpaper.Default,
-            loadWallpaperResource = { wallpaper ->
-                if (wallpaper == Wallpaper.Default) {
-                    null
-                } else {
-                    createBitmap(100, 100, Bitmap.Config.ARGB_8888)
-                }
-            },
-            wallpaperGroups = mapOf(
-                Wallpaper.DefaultCollection to downloadedCollection,
-                Wallpaper.ClassicFirefoxCollection to downloadingCollection,
-            ),
-            selectedWallpaper = selectedWallpaper,
-            onSelectWallpaper = { wallpaper ->
-                selectedWallpaper = wallpaper
-            },
-            onLearnMoreClick = { _, _ -> },
-        )
-    }
-}
-
-@FlexibleWindowLightDarkPreview
-@Composable
-@Suppress("MagicNumber")
-private fun WallpaperThumbnailsPrivatePreview() {
-    val downloadedCollection: List<Wallpaper> = List(size = 5) { index ->
-        Wallpaper(
-            name = "downloaded wallpaper $index",
-            textColor = 0L,
-            cardColorLight = 0L,
-            cardColorDark = 0L,
-            thumbnailFileState = Wallpaper.ImageFileState.Downloaded,
-            assetsFileState = Wallpaper.ImageFileState.Downloaded,
-            collection = Wallpaper.ClassicFirefoxCollection,
-        )
-    } + Wallpaper.Default
-    val downloadingCollection: List<Wallpaper> = List(size = 5) { index ->
-        Wallpaper(
-            name = "downloading wallpaper $index",
-            textColor = 0L,
-            cardColorLight = 0L,
-            cardColorDark = 0L,
-            thumbnailFileState = Wallpaper.ImageFileState.Downloading,
-            assetsFileState = Wallpaper.ImageFileState.Downloading,
-            collection = Wallpaper.ClassicFirefoxCollection,
-        )
-    }
-    var selectedWallpaper by remember { mutableStateOf(downloadedCollection[0]) }
-
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         WallpaperSettings(
             defaultWallpaper = Wallpaper.Default,
             loadWallpaperResource = { wallpaper ->

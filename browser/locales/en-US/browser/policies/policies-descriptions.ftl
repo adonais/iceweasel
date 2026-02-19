@@ -94,6 +94,8 @@ policy-DisableProfileImport = Disable the menu command to Import data from anoth
 
 policy-DisableProfileRefresh = Disable the Refresh { -brand-short-name } button in the about:support page.
 
+policy-DisableRemoteImprovements = Prevent { -brand-short-name } from applying performance, stability, and feature changes between updates.
+
 policy-DisableSafeMode = Disable the feature to restart in Safe Mode. Note: the Shift key to enter Safe Mode can only be disabled on Windows using Group Policy.
 
 policy-DisableSecurityBypass = Prevent the user from bypassing certain security warnings.

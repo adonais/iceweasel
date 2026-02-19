@@ -2188,6 +2188,13 @@ export class FfiConverterSequenceString extends FfiConverterArrayBuffer {
  */
 export class RemoteSettingsServiceInterface {
     /**
+     * clientUrl
+     * @returns {string}
+     */
+    clientUrl() {
+      throw Error("clientUrl not implemented");
+    }
+    /**
      * Create a new Remote Settings client
      * 
      * This method performs no IO or network requests and is safe to run in a main thread that can't be blocked.
@@ -2215,7 +2222,7 @@ export class RemoteSettingsServiceInterface {
      * execution can cause weird effects.
      * @param {RemoteSettingsConfig2} config
      */
-    updateConfig(
+    async updateConfig(
         config) {
       throw Error("updateConfig not implemented");
     }
@@ -2276,6 +2283,23 @@ export class RemoteSettingsService extends RemoteSettingsServiceInterface {
     }
 
     /**
+     * clientUrl
+     * @returns {string}
+     */
+    clientUrl() {
+       
+        const result = UniFFIScaffolding.callSync(
+            74, // uniffi_remote_settings_fn_method_remotesettingsservice_client_url
+            FfiConverterTypeRemoteSettingsService.lowerReceiver(this),
+        )
+        return handleRustResult(
+            result,
+            FfiConverterString.lift.bind(FfiConverterString),
+            null,
+        )
+    }
+
+    /**
      * Create a new Remote Settings client
      * 
      * This method performs no IO or network requests and is safe to run in a main thread that can't be blocked.
@@ -2287,7 +2311,7 @@ export class RemoteSettingsService extends RemoteSettingsServiceInterface {
        
         FfiConverterString.checkType(collectionName);
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            74, // uniffi_remote_settings_fn_method_remotesettingsservice_make_client
+            75, // uniffi_remote_settings_fn_method_remotesettingsservice_make_client
             FfiConverterTypeRemoteSettingsService.lowerReceiver(this),
             FfiConverterString.lower(collectionName),
         )
@@ -2305,7 +2329,7 @@ export class RemoteSettingsService extends RemoteSettingsServiceInterface {
     async sync() {
        
         const result = await UniFFIScaffolding.callAsyncWrapper(
-            75, // uniffi_remote_settings_fn_method_remotesettingsservice_sync
+            76, // uniffi_remote_settings_fn_method_remotesettingsservice_sync
             FfiConverterTypeRemoteSettingsService.lowerReceiver(this),
         )
         return handleRustResult(
@@ -2325,12 +2349,12 @@ export class RemoteSettingsService extends RemoteSettingsServiceInterface {
      * execution can cause weird effects.
      * @param {RemoteSettingsConfig2} config
      */
-    updateConfig(
+    async updateConfig(
         config) {
        
         FfiConverterTypeRemoteSettingsConfig2.checkType(config);
-        const result = UniFFIScaffolding.callSync(
-            76, // uniffi_remote_settings_fn_method_remotesettingsservice_update_config
+        const result = await UniFFIScaffolding.callAsyncWrapper(
+            77, // uniffi_remote_settings_fn_method_remotesettingsservice_update_config
             FfiConverterTypeRemoteSettingsService.lowerReceiver(this),
             FfiConverterTypeRemoteSettingsConfig2.lower(config),
         )

@@ -17,7 +17,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsIContentSink.h"
-#include "nsIDTD.h"
 #include "nsIScriptContext.h"
 #include "nsIStreamLoader.h"
 #include "nsTArray.h"

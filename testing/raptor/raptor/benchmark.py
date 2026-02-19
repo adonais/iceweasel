@@ -81,7 +81,7 @@ class Benchmark:
 
             def log_message(self, *args):
                 if CustomHandler.verbose:
-                    super(CustomHandler, self).log_message(*args)
+                    super().log_message(*args)
 
             def end_headers(self):
                 self.send_header("Access-Control-Allow-Origin", "*")
@@ -104,18 +104,16 @@ class Benchmark:
             LOG.warning(f"Failed to stop benchmark server: {traceback.format_exc()}")
 
     def _full_clone(self, benchmark_repository, dest):
-        subprocess.check_call(
-            [
-                "git",
-                "clone",
-                "-c",
-                "http.postBuffer=2147483648",
-                "-c",
-                "core.autocrlf=false",
-                benchmark_repository,
-                str(dest.resolve()),
-            ]
-        )
+        subprocess.check_call([
+            "git",
+            "clone",
+            "-c",
+            "http.postBuffer=2147483648",
+            "-c",
+            "core.autocrlf=false",
+            benchmark_repository,
+            str(dest.resolve()),
+        ])
 
     def _get_benchmark_folder(self, benchmark_dest, run_local):
         if not run_local:
@@ -131,19 +129,17 @@ class Benchmark:
         See bug 1804694. This method should only be used in CI, locally we
         can simply pull the whole repo.
         """
-        subprocess.check_call(
-            [
-                "git",
-                "clone",
-                "--depth",
-                "1",
-                "--filter",
-                "blob:none",
-                "--sparse",
-                benchmark_repository,
-                str(dest.resolve()),
-            ]
-        )
+        subprocess.check_call([
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--filter",
+            "blob:none",
+            "--sparse",
+            benchmark_repository,
+            str(dest.resolve()),
+        ])
         subprocess.check_call(
             [
                 "git",

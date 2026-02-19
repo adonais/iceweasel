@@ -6,6 +6,7 @@
 //!
 //! https://drafts.csswg.org/css-align/
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -385,20 +386,20 @@ impl SelfAlignment {
             AlignFlags::SELF_START => AlignFlags::SELF_END,
             AlignFlags::SELF_END => AlignFlags::SELF_START,
 
-            AlignFlags::AUTO |
-            AlignFlags::NORMAL |
-            AlignFlags::BASELINE |
-            AlignFlags::LAST_BASELINE |
-            AlignFlags::STRETCH |
-            AlignFlags::CENTER |
-            AlignFlags::SPACE_BETWEEN |
-            AlignFlags::SPACE_AROUND |
-            AlignFlags::SPACE_EVENLY |
-            AlignFlags::ANCHOR_CENTER => return self,
+            AlignFlags::AUTO
+            | AlignFlags::NORMAL
+            | AlignFlags::BASELINE
+            | AlignFlags::LAST_BASELINE
+            | AlignFlags::STRETCH
+            | AlignFlags::CENTER
+            | AlignFlags::SPACE_BETWEEN
+            | AlignFlags::SPACE_AROUND
+            | AlignFlags::SPACE_EVENLY
+            | AlignFlags::ANCHOR_CENTER => return self,
             _ => {
                 debug_assert!(false, "Unexpected alignment enumeration value");
                 return self;
-            }
+            },
         };
         self.with_value(flipped_value)
     }

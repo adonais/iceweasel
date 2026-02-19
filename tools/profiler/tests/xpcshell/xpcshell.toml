@@ -111,6 +111,11 @@ skip-if = [
 
 ["test_get_features.js"]
 
+["test_get_profile.js"]
+skip-if = [
+  "tsan", # Times out on TSan, bug 1612707
+]
+
 ["test_marker_jit_sourceindex.js"]
 
 ["test_merged_stacks.js"]
@@ -135,14 +140,4 @@ skip-if = [
   "tsan", # Times out on TSan, bug 1612707
 ]
 
-["test_run.js"]
-run-if = [
-  "false",
-]
-
 ["test_shared_library.js"]
-
-["test_start.js"]
-run-if = [
-  "false",
-]

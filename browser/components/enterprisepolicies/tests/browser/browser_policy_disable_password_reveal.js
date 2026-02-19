@@ -25,7 +25,12 @@ add_task(async function test_hidden_reveal_password() {
 
   let browser = gBrowser.selectedBrowser;
 
-  await SpecialPowers.spawn(browser, [], () => {
+  await SpecialPowers.spawn(browser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.documentElement.classList.contains("initialized"),
+      "Waiting for about:logins to be initialized"
+    );
+
     let loginItem = Cu.waiveXrays(content.document.querySelector("login-item"));
 
     let passwordReveal = loginItem.shadowRoot.querySelector(
@@ -52,7 +57,12 @@ add_task(async function test_bug_1696948() {
 
   let browser = gBrowser.selectedBrowser;
 
-  await SpecialPowers.spawn(browser, [], () => {
+  await SpecialPowers.spawn(browser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.documentElement.classList.contains("initialized"),
+      "Waiting for about:logins to be initialized"
+    );
+
     let loginList = Cu.waiveXrays(content.document.querySelector("login-list"));
     let createButton = loginList._createLoginButton;
     ok(

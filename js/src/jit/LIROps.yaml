@@ -267,28 +267,6 @@
   num_temps: 1
   mir_op: true
 
-- name: InitElemGetterSetter
-  operands:
-    object: WordSized
-    id: BoxedValue
-    value: WordSized
-  call_instruction: true
-  mir_op: true
-
-# Takes in an Object and a Value.
-- name: MutateProto
-  operands:
-    object: WordSized
-    value: BoxedValue
-  call_instruction: true
-
-- name: InitPropGetterSetter
-  operands:
-    object: WordSized
-    value: WordSized
-  call_instruction: true
-  mir_op: true
-
 - name: WasmRefAsNonNull
   operands:
     ref: WordSized
@@ -396,27 +374,6 @@
   mir_op: Rotate
   defer_init: true
 
-- name: WasmStackSwitchToMain
-  result_type: WordSized
-  operands:
-    suspender: WordSized
-    fn: WordSized
-    data: WordSized
-  call_instruction: true
-
-- name: WasmStackSwitchToSuspendable
-  operands:
-    suspender: WordSized
-    fn: WordSized
-    data: WordSized
-  call_instruction: true
-
-- name: WasmStackContinueOnSuspendable
-  operands:
-    suspender: WordSized
-    result: WordSized
-  call_instruction: true
-
 - name: WasmInterruptCheck
   operands:
     instance: WordSized
@@ -454,13 +411,6 @@
     input: BoxedValue
   mir_op: TypeOfIs
 
-- name: ToAsyncIter
-  result_type: WordSized
-  operands:
-    iterator: WordSized
-    nextMethod: BoxedValue
-  call_instruction: true
-
 # Allocate a new arguments object for the frame.
 - name: CreateArgumentsObject
   result_type: WordSized
@@ -478,23 +428,6 @@
 
 - name: GetInlinedArgumentHole
   gen_boilerplate: false
-
-# Guard that the given flags are not set on the arguments object.
-- name: GuardArgumentsObjectFlags
-  operands:
-    argsObject: WordSized
-  num_temps: 1
-  mir_op: true
-
-- name: GuardObjectHasSameRealm
-  operands:
-    object: WordSized
-  num_temps: 1
-  mir_op: true
-
-- name: GuardBoundFunctionIsConstructor
-  operands:
-    object: WordSized
 
 - name: BoxNonStrictThis
   result_type: WordSized
@@ -575,12 +508,6 @@
   result_type: BoxedValue
   operands:
     proxy: WordSized
-  mir_op: true
-
-- name: GuardDOMExpandoMissingOrGuardShape
-  operands:
-    input: BoxedValue
-  num_temps: 1
   mir_op: true
 
 - name: ApplyArgsGeneric
@@ -1999,19 +1926,6 @@
   num_temps: 2
   mir_op: BinaryCache
 
-- name: ModuleMetadata
-  result_type: WordSized
-  call_instruction: true
-  mir_op: true
-
-- name: DynamicImport
-  result_type: WordSized
-  operands:
-    specifier: BoxedValue
-    options: BoxedValue
-  call_instruction: true
-  mir_op: true
-
 - name: Lambda
   result_type: WordSized
   operands:
@@ -2027,16 +1941,6 @@
   call_instruction: true
   mir_op: true
 
-- name: KeepAliveObject
-  operands:
-    object: WordSized
-
-- name: DebugEnterGCUnsafeRegion
-  num_temps: 1
-
-- name: DebugLeaveGCUnsafeRegion
-  num_temps: 1
-
 - name: GetNextEntryForIterator
   result_type: WordSized
   operands:
@@ -2044,41 +1948,6 @@
     result: WordSized
   num_temps: 3
   mir_op: true
-
-# Read the length of a resizable typed array.
-- name: ResizableTypedArrayLength
-  result_type: WordSized
-  operands:
-    object: WordSized
-  arguments:
-    synchronization: js::jit::Synchronization
-  num_temps: 1
-
-# Read the byte length of a resizable data view.
-- name: ResizableDataViewByteLength
-  result_type: WordSized
-  operands:
-    object: WordSized
-  arguments:
-    synchronization: js::jit::Synchronization
-  num_temps: 1
-
-# Guard a resizable array buffer view is in-bounds.
-- name: GuardResizableArrayBufferViewInBounds
-  operands:
-    object: WordSized
-  num_temps: 1
-
-# Guard a resizable array buffer view is in-bounds.
-- name: GuardResizableArrayBufferViewInBoundsOrDetached
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardHasAttachedArrayBuffer
-  operands:
-    object: WordSized
-  num_temps: 1
 
 # Double to IntPtr, eligible for accessing into a TypedArray or DataView. If
 # the index isn't exactly representable as an IntPtr, depending on the
@@ -2214,20 +2083,6 @@
 
 - name: InlineArgumentsSlice
   gen_boilerplate: false
-
-- name: ObjectKeys
-  result_type: WordSized
-  operands:
-    object: WordSized
-  num_temps: 0
-  call_instruction: true
-
-- name: ObjectKeysLength
-  result_type: WordSized
-  operands:
-    object: WordSized
-  num_temps: 0
-  call_instruction: true
 
 - name: LoadUnboxedScalar
   result_type: WordSized
@@ -2598,6 +2453,22 @@
     value: WordSized
   mir_op: StoreFixedSlot
 
+- name: StoreFixedSlotFromOffsetV
+  operands:
+    object: WordSized
+    offset: WordSized
+    value: BoxedValue
+  num_temps: 1
+  mir_op: StoreFixedSlotFromOffset
+
+- name: StoreFixedSlotFromOffsetT
+  operands:
+    object: WordSized
+    offset: WordSized
+    value: WordSized
+  num_temps: 1
+  mir_op: StoreFixedSlotFromOffset
+
 - name: GetPropSuperCache
   result_type: BoxedValue
   operands:
@@ -2649,6 +2520,22 @@
     slots: WordSized
     value: WordSized
   mir_op: StoreDynamicSlot
+
+- name: StoreDynamicSlotFromOffsetV
+  operands:
+    slots: WordSized
+    offset: WordSized
+    value: BoxedValue
+  num_temps: 1
+  mir_op: StoreDynamicSlotFromOffset
+
+- name: StoreDynamicSlotFromOffsetT
+  operands:
+    slots: WordSized
+    offset: WordSized
+    value: WordSized
+  num_temps: 1
+  mir_op: StoreDynamicSlotFromOffset
 
 # Take the floor of a double precision number and converts it to an int32.
 # Implements Math.floor().
@@ -2774,34 +2661,12 @@
   call_instruction: true
   mir_op: true
 
-- name: CallDeleteProperty
-  result_type: WordSized
-  operands:
-    value: BoxedValue
-  call_instruction: true
-  mir_op: DeleteProperty
-
-- name: CallDeleteElement
-  result_type: WordSized
-  operands:
-    value: BoxedValue
-    index: BoxedValue
-  call_instruction: true
-  mir_op: DeleteElement
-
 - name: ObjectToIterator
   result_type: WordSized
   operands:
     object: WordSized
   num_temps: 3
   mir_op: true
-
-- name: ValueToIterator
-  result_type: WordSized
-  operands:
-    value: BoxedValue
-  call_instruction: true
-  mir_op: ValueToIterator
 
 - name: IteratorHasIndicesAndBranch
   successors: [ifTrue, ifFalse]
@@ -2998,13 +2863,6 @@
   num_temps: 1
   mir_op: PostWriteElementBarrier
 
-# Assert in debug mode that a post write barrier can be elided.
-- name: AssertCanElidePostWriteBarrier
-  operands:
-    object: WordSized
-    value: BoxedValue
-  num_temps: 1
-
 # Guard against an object's identity.
 - name: GuardObjectIdentity
   operands:
@@ -3018,20 +2876,17 @@
     input: WordSized
     expected: WordSized
 
-- name: GuardSpecificAtom
-  operands:
-    str: WordSized
-  num_temps: 1
-  mir_op: true
-
 - name: GuardSpecificSymbol
   operands:
     symbol: WordSized
   mir_op: true
 
-- name: GuardSpecificInt32
+- name: GuardMultipleShapesToOffset
+  result_type: WordSized
   operands:
-    num: WordSized
+    object: WordSized
+    shapeList: WordSized
+  num_temps: 3
   mir_op: true
 
 - name: GuardProto
@@ -3045,30 +2900,6 @@
     object: WordSized
   num_temps: 1
 
-- name: GuardIsNativeObject
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardGlobalGeneration
-  mir_op: true
-  num_temps: 1
-
-- name: GuardIsProxy
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardIsNotProxy
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardIsNotDOMProxy
-  operands:
-    proxy: WordSized
-  num_temps: 1
-
 - name: ProxyHasProp
   result_type: BoxedValue
   operands:
@@ -3076,36 +2907,6 @@
     id: BoxedValue
   call_instruction: true
   mir_op: true
-
-- name: GuardIsNotArrayBufferMaybeShared
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardIsTypedArray
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardIsNonResizableTypedArray
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardIsResizableTypedArray
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardHasProxyHandler
-  operands:
-    object: WordSized
-  mir_op: true
-
-- name: GuardNoDenseElements
-  operands:
-    input: WordSized
-  num_temps: 1
 
 - name: InCache
   result_type: WordSized
@@ -3366,7 +3167,6 @@
   mir_op: true
 
 - name: AsmJSStoreHeap
-  result_type: WordSized
   operands:
     ptr: WordSized
     value: WordSized
@@ -3634,7 +3434,7 @@
 - name: WasmRegisterPairResult
   gen_boilerplate: false
 
-- name: WasmBuiltinFloatRegisterResult
+- name: WasmSystemFloatRegisterResult
   gen_boilerplate: false
 
 - name: WasmStackResultArea
@@ -3688,33 +3488,7 @@
   num_temps: 1
   mir_op: true
 
-- name: GuardNullOrUndefined
-  operands:
-    input: BoxedValue
-  mir_op: true
-
-- name: GuardIsNotObject
-  operands:
-    input: BoxedValue
-  mir_op: true
-
 - name: GuardFunctionFlags
-  operands:
-    function: WordSized
-  mir_op: true
-
-- name: GuardFunctionIsNonBuiltinCtor
-  operands:
-    function: WordSized
-  num_temps: 1
-
-- name: GuardFunctionKind
-  operands:
-    function: WordSized
-  num_temps: 1
-  mir_op: true
-
-- name: GuardFunctionScript
   operands:
     function: WordSized
   mir_op: true
@@ -3722,10 +3496,6 @@
 - name: LexicalCheck
   operands:
     input: BoxedValue
-  mir_op: true
-
-- name: ThrowRuntimeLexicalError
-  call_instruction: true
   mir_op: true
 
 - name: ThrowMsg
@@ -3740,68 +3510,12 @@
   num_temps: 1
   call_instruction: true
 
-# Math.random()
-- name: Random
-  result_type: WordSized
-  num_temps: 1
-  num_temps64: 2
-  mir_op: true
-
-- name: CheckObjCoercible
-  operands:
-    value: BoxedValue
-
-- name: CheckClassHeritage
-  operands:
-    heritage: BoxedValue
-  num_temps: 2
-
-- name: CheckThis
-  operands:
-    value: BoxedValue
-
-- name: CheckThisReinit
-  operands:
-    thisValue: BoxedValue
-
 - name: Generator
   result_type: WordSized
   operands:
     callee: WordSized
     environmentChain: WordSized
     argsObject: WordSized
-  call_instruction: true
-  mir_op: true
-
-- name: AsyncResolve
-  result_type: WordSized
-  operands:
-    generator: WordSized
-    value: BoxedValue
-  call_instruction: true
-  mir_op: true
-
-- name: AsyncReject
-  result_type: WordSized
-  operands:
-    generator: WordSized
-    reason: BoxedValue
-    stack: BoxedValue
-  call_instruction: true
-  mir_op: true
-
-- name: AsyncAwait
-  result_type: WordSized
-  operands:
-    value: BoxedValue
-    generator: WordSized
-  call_instruction: true
-  mir_op: true
-
-- name: CanSkipAwait
-  result_type: WordSized
-  operands:
-    value: BoxedValue
   call_instruction: true
   mir_op: true
 
@@ -3813,17 +3527,6 @@
   call_instruction: true
   mir_op: true
 
-- name: DebugCheckSelfHosted
-  operands:
-    value: BoxedValue
-  call_instruction: true
-
-- name: GuardArrayIsPacked
-  operands:
-    array: WordSized
-  num_temps: 2
-  mir_op: true
-
 - name: ObjectStaticProto
   result_type: WordSized
   operands:
@@ -3833,43 +3536,6 @@
   operands:
     lhs: WordSized
     rhs: WordSized
-
-- name: GuardHasGetterSetter
-  operands:
-    object: WordSized
-  num_temps: 3
-  call_instruction: true
-  mir_op: true
-
-- name: GuardIsExtensible
-  operands:
-    object: WordSized
-  num_temps: 1
-
-- name: GuardInt32IsNonNegative
-  operands:
-    index: WordSized
-
-- name: GuardInt32Range
-  operands:
-    input: WordSized
-  mir_op: true
-
-- name: GuardIndexIsNotDenseElement
-  operands:
-    object: WordSized
-    index: WordSized
-  num_temps: 2
-
-- name: GuardIndexIsValidUpdateOrAdd
-  operands:
-    object: WordSized
-    index: WordSized
-  num_temps: 2
-
-- name: GuardNonGCThing
-  operands:
-    input: BoxedValue
 
 # Canonicalize a double value.
 - name: CanonicalizeNaND
@@ -4056,7 +3722,6 @@
   mir_op: true
 
 - name: WasmStoreLaneSimd128
-  result_type: WordSized
   operands:
     ptr: WordSized
     src: WordSized
@@ -4922,23 +4587,4 @@
     value: WordSized
   num_temps: 2
   mir_op: FuzzilliHashStore
-#endif
-
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-- name: AddDisposableResource
-  operands:
-    environment: WordSized
-    resource: BoxedValue
-    method: BoxedValue
-    needsClosure: WordSized
-  arguments:
-    hint: uint8_t
-  call_instruction: true
-
-- name: CreateSuppressedError
-  operands:
-    error: BoxedValue
-    suppressed: BoxedValue
-  result_type: WordSized
-  call_instruction: true
 #endif

@@ -60,6 +60,10 @@ pane-sync-title3 = Sync
 category-sync3 =
     .tooltiptext = { pane-sync-title3 }
 
+pane-ai-controls-title = AI Controls
+category-ai-controls =
+    .tooltiptext = { pane-ai-controls-title }
+
 settings-pane-labs-title = { -firefoxlabs-brand-name }
 settings-category-labs =
     .tooltiptext = { -firefoxlabs-brand-name }
@@ -347,9 +351,11 @@ preferences-web-appearance-override-warning3 =
 preferences-web-appearance-link =
     .label = Manage { -brand-short-name } themes in Extensions & Themes
 
-preferences-contrast-control-header = Contrast Control
-
-preferences-contrast-control-description = Websites have a variety of foreground and background colors. Configure { -brand-short-name } to use the same colors across websites for improved readability.
+preferences-contrast-control-group =
+    .label = Website contrast
+    .description = Websites use a variety of foreground and background colors. For consistent contrast, you can use the same colors across websites.
+preferences-contrast-control-radio-group =
+    .label = Override colors
 
 preferences-contrast-control-use-platform-settings =
     .label = Automatic (use system settings)
@@ -379,9 +385,11 @@ advanced-fonts =
     .accesskey = A
 
 # Zoom is a noun, and the message is used as header for a group of options
-preferences-zoom-header = Zoom
+preferences-zoom-header2 =
+  .label = Zoom
 
-preferences-default-zoom = Default zoom
+preferences-default-zoom-label =
+    .label = Default zoom
     .accesskey = z
 
 # Variables:
@@ -416,6 +424,94 @@ fx-translate-web-pages = { -translations-brand-name }
 translate-exceptions =
     .label = Exceptions…
     .accesskey = x
+
+settings-translations-header =
+    .label = Translations
+    .aria-label = Translations
+    .description = Translate pages or selected text. To protect your privacy, translations stay on your device.
+
+settings-translations-offer-to-translate-label =
+    .label = Offer full page translation
+
+settings-translations-more-settings-button =
+    .label = More translation settings
+    .description = Set preferences for languages, websites, and offline translation.
+
+settings-translations-subpage-header =
+    .heading = More translation settings
+
+settings-translations-subpage-speed-up-translation-header =
+    .label = Speed up translation
+    .description = Download complete languages for faster translations and to translate offline.
+
+settings-translations-subpage-automatic-translation-header =
+    .label = Automatic translation
+
+settings-translations-subpage-always-translate-header =
+    .label = Always translate these languages
+
+settings-translations-subpage-never-translate-header =
+    .label = Never translate these languages
+
+settings-translations-subpage-never-translate-sites-header =
+    .label = Never translate these sites
+
+# The icon placeholders show the translations button and the settings gear in the urlbar panel.
+settings-translations-subpage-never-translate-sites-description =
+    To add a site, open the <img data-l10n-name="translations-icon"/> translation panel, select <img data-l10n-name="settings-icon"/> translation settings, then choose “Never translate this site”
+
+settings-translations-subpage-language-select-option =
+    .label = Add language
+
+settings-translations-subpage-language-add-button =
+    .aria-label = Add language
+    .title = Add language
+
+settings-translations-subpage-download-languages-header =
+    .label = Download languages
+
+settings-translations-subpage-download-languages-select-option =
+    .label = Select language
+
+settings-translations-subpage-download-languages-button =
+    .aria-label = Download language
+    .title = Download language
+
+# Variables:
+#   $language (string) - Localized name of the language to download.
+#   $size (string) - Download size in megabytes, formatted for the locale.
+settings-translations-subpage-download-language-option = { $language } ({ $size }MB)
+    .label = { $language } ({ $size }MB)
+
+settings-translations-subpage-no-languages-downloaded =
+    .label = No languages downloaded
+
+settings-translations-subpage-no-languages-added =
+    .label = No languages added
+
+settings-translations-subpage-download-progress = Download in progress…
+
+# Variables:
+#   $language (string) - The localized display name of the language.
+#   $size (string) - The download size of the language in megabytes.
+settings-translations-subpage-download-error = Couldn’t download { $language } ({ $size }MB)
+
+settings-translations-subpage-download-retry-button =
+    .label = Try again
+
+# Variables:
+#   $language (string) - The localized display name of the language.
+#   $size (string) - The download size of the language in megabytes.
+settings-translations-subpage-download-delete-confirm = Delete { $language } ({ $size }MB)?
+
+settings-translations-subpage-download-delete-button =
+    .label = Delete
+
+settings-translations-subpage-download-cancel-button =
+    .label = Cancel
+
+settings-translations-subpage-no-sites-added =
+    .label = No sites added
 
 # Variables:
 #    $localeName (string) - Localized name of the locale to be used.
@@ -602,6 +698,18 @@ update-in-progress-ok-button = &Discard
 # method of closing the UI will not discard the update.
 update-in-progress-cancel-button = &Continue
 
+## Firefox support
+
+support-application-heading =
+    .label = { -brand-short-name } support
+    .description = Troubleshoot issues or share ideas with the community.
+
+support-get-help =
+    .label = Get help
+
+support-share-ideas =
+    .label = Share ideas and feedback
+
 ## General Section - Performance
 
 performance-title = Performance
@@ -706,13 +814,18 @@ home-new-windows-tabs-description2 = Choose what you see when you open your home
 
 ## Home Section - Home Page Customization
 
-home-homepage-header = Homepage
+home-homepage-title =
+    .label = Homepage
 
 home-homepage-mode-label = Homepage and new windows
 
-home-homepage-mode-label2 = New windows
+home-homepage-new-windows =
+    .label = New windows
 
 home-newtabs-mode-label = New tabs
+
+home-homepage-new-tabs =
+    .label = New tabs
 
 home-restore-defaults =
     .label = Restore Defaults
@@ -735,7 +848,8 @@ home-homepage-manage-extension-button =
     .label = Manage extension
 
 # This option leads to the "Custom Homepage" subpage
-home-homepage-custom-homepage-url = Choose a specific site
+home-homepage-custom-homepage-button =
+    .label = Choose a specific site
 
 ## Custom Homepage subpage
 
@@ -852,7 +966,14 @@ home-prefs-mission-message2 =
     .message = Our sponsors support our mission to build a better web.
 
 home-prefs-manage-topics-link = Manage topics
+
+home-prefs-manage-topics-link2 =
+    .label = Manage topics
+
 home-prefs-choose-wallpaper-link = Choose a wallpaper
+
+home-prefs-choose-wallpaper-link2 =
+    .label = Choose a wallpaper
 
 # Variables:
 #   $num (number) - Number of rows displayed
@@ -882,8 +1003,8 @@ search-separate-default-engine-2 =
 search-separate-default-engine-dropdown =
     .aria-label = Default search engine in private windows
 
-search-suggestions-header = Search Suggestions
-search-suggestions-desc = Choose how suggestions from search engines appear.
+search-suggestions-header-2 =
+    .label = Search engine suggestions
 
 search-show-suggestions-option =
     .label = Show search suggestions
@@ -896,15 +1017,82 @@ search-show-suggestions-url-bar-option =
 # This string describes what the user will observe when the system
 # prioritizes search suggestions over browsing history in the results
 # that extend down from the address bar. In the original English string,
-# "ahead" refers to location (appearing most proximate to), not time
+# "before" refers to location (appearing most proximate to), not time
 # (appearing before).
-search-show-suggestions-above-history-option =
-    .label = Show search suggestions ahead of browsing history in address bar results
+search-show-suggestions-above-history-option-2 =
+    .label = Show search suggestions before browsing history in address bar results
 
-search-show-suggestions-private-windows =
-    .label = Show search suggestions in Private Windows
+search-show-suggestions-private-windows-2 =
+    .label = Search suggestions in private windows
 
-search-suggestions-cant-show = Search suggestions will not be shown in location bar results because you have configured { -brand-short-name } to never remember history.
+search-suggestions-cant-show-2 =
+    .message = Search suggestions will not be shown in location bar results because you have configured { -brand-short-name } to never remember history.
+
+
+addressbar-header-1 =
+    .label = Address Bar
+    .description = Choose which suggestions display in your address bar
+
+# When Firefox Suggest is enabled, this replaces `addressbar-header-1`.
+addressbar-header-firefox-suggest-2 =
+    .label = { -firefox-suggest-brand-name }
+    .description = Suggestions from { -brand-short-name } and our partners in your address bar.
+
+addressbar-locbar-history-option =
+    .label = Browsing history
+    .accesskey = h
+addressbar-locbar-bookmarks-option =
+    .label = Bookmarks
+    .accesskey = k
+addressbar-locbar-clipboard-option =
+    .label = Clipboard
+    .accesskey = C
+addressbar-locbar-openpage-option =
+    .label = Open tabs
+    .accesskey = O
+# Shortcuts refers to the shortcut tiles on the new tab page, previously known as top sites. Translation should be consistent.
+addressbar-locbar-shortcuts-option =
+    .label = Shortcuts
+    .accesskey = S
+addressbar-locbar-topsites-option =
+    .label = Top sites
+    .accesskey = T
+addressbar-locbar-showrecentsearches-option-2 =
+    .label = Recent searches
+    .accesskey = r
+addressbar-locbar-engines-option-1 =
+    .label = Suggest search engines to use
+    .accesskey = a
+addressbar-locbar-quickactions-option =
+    .label = Quick actions
+    .accesskey = Q
+addressbar-locbar-showtrendingsuggestions-option-2 =
+    .label = Trending search suggestions
+    .accesskey = t
+
+# Toggles whether suggestions are obtained from Firefox Suggest or not (local or online).
+addressbar-locbar-suggest-all-option-2 =
+    .label = Suggestions from { -brand-short-name }
+    .description = Get suggestions from the web related to your search.
+
+addressbar-locbar-suggest-sponsored-option-2 =
+    .label = Suggestions from sponsors
+    .description = Support { -brand-short-name } with occasional sponsored suggestions.
+
+# This string is used for a checkbox in the settings UI that opts the
+# user into "online" Firefox Suggest, allowing them to receive suggestions from
+# Mozilla's Merino server.
+# "Mozilla" is intentionally hardcoded to prevent forks from replacing it
+# with their own vendor name, since the online suggest is created and maintained
+# by Mozilla.
+addressbar-firefox-suggest-online =
+    .label = Retrieve suggestions from Mozilla as you type
+
+addressbar-dismissed-suggestions-label-2 =
+    .label = Dismissed suggestions
+    .description = Restore dismissed suggestions from sponsors and { -brand-short-name }.
+addressbar-restore-dismissed-suggestions-button-2 =
+    .label = Restore suggestions
 
 search-one-click-header2 = Search Shortcuts
 
@@ -968,6 +1156,18 @@ containers-settings-button =
 containers-remove-button =
     .label = Remove
 
+## Account and sync
+
+sync-group-label =
+    .label = Sync
+
+account-group-label =
+    .label = { -vendor-short-name } account
+
+account-placeholder =
+    .label = You’re not signed in
+    .description = Sign in to keep your data private, encrypted, and synced across devices.
+
 ## Firefox account - Signed out. Note that "Sync" and "Firefox account" are now
 ## more discrete ("signed in" no longer means "and sync is connected").
 
@@ -976,6 +1176,14 @@ sync-signedout-description2 = Synchronize your bookmarks, history, tabs, passwor
 
 sync-signedout-account-signin3 =
     .label = Sign in to sync…
+    .accesskey = i
+
+sync-signedout-account-signin-4 =
+    .label = Sign in to your account to start syncing
+    .accesskey = i
+
+sync-signedout-account-short =
+    .label = Sign in
     .accesskey = i
 
 # This message contains two links and two icon images.
@@ -1004,14 +1212,39 @@ sync-sign-out =
     .label = Sign Out…
     .accesskey = g
 
+sync-sign-out2 =
+    .label = Sign out
+    .accesskey = g
+
 sync-manage-account = Manage account
+    .accesskey = o
+
+sync-manage-account2 =
+    .label = Manage account
     .accesskey = o
 
 ## Variables
 ## $email (string) - Email used for Firefox account
+## $name (string) - Name used for Firefox account
+
+sync-account-signed-in =
+    .label = { $email }
+
+sync-account-signed-in-display-name =
+    .label = { $name }
+    .description = { $email }
 
 sync-signedin-unverified = { $email } is not verified.
+
+sync-signedin-unverified2 =
+    .label = { $email } isn’t confirmed yet
+    .description = Check your inbox to confirm your account and make it official.
+
 sync-signedin-login-failure = Please sign in to reconnect { $email }
+
+sync-signedin-login-failure2 =
+    .label = You’re signed out of { $email }
+    .description = Sign back in to reconnect and start syncing your data.
 
 ##
 
@@ -1031,10 +1264,21 @@ sync-sign-in =
 
 prefs-syncing-on = Syncing: ON
 
+prefs-syncing-on-2 =
+    .label = Syncing is ON
+
 prefs-syncing-off = Syncing: OFF
+
+prefs-syncing-off-2 =
+    .label = Syncing is OFF
+    .description = Turn on sync to get your bookmarks, passwords, history, and more on any device.
 
 prefs-sync-turn-on-syncing =
     .label = Turn on syncing…
+    .accesskey = s
+
+prefs-sync-turn-on-syncing-2 =
+    .label = Turn on syncing
     .accesskey = s
 
 prefs-sync-offer-setup-label2 = Synchronize your bookmarks, history, tabs, passwords, add-ons, and settings across all your devices.
@@ -1043,8 +1287,16 @@ prefs-sync-now-button =
     .label = Sync Now
     .accesskey = N
 
+prefs-sync-now-button-2 =
+    .label = Sync now
+    .accesskey = N
+
 prefs-syncing-button =
     .label = Syncing…
+
+prefs-syncing-button-2 =
+    .label = Syncing…
+    .title = Sync now
 
 ## The list of things currently syncing.
 
@@ -1067,6 +1319,10 @@ sync-currently-syncing-settings = Settings
 
 sync-manage-options =
     .label = Manage sync…
+    .accesskey = M
+
+sync-manage-options-2 =
+    .label = Manage synced data
     .accesskey = M
 
 ## The "Choose what to sync" dialog.
@@ -1121,6 +1377,9 @@ sync-engine-settings =
 
 sync-device-name-header = Device Name
 
+sync-device-name-header-2 =
+    .label = Device Name
+
 # Variables:
 #   $placeholder (string) - The placeholder text of the input
 sync-device-name-input =
@@ -1144,6 +1403,9 @@ sync-device-name-save =
     .accesskey = v
 
 sync-connect-another-device = Connect another device
+
+sync-connect-another-device-2 =
+    .label = Connect another device
 
 ## Privacy Section
 
@@ -1203,6 +1465,10 @@ forms-additional-protections-header =
 forms-primary-pw-use =
     .label = Use a primary password
     .accesskey = U
+forms-primary-pw-use-2 =
+    .label = Use a primary password
+    .description = Adds an extra layer of security to protect your saved passwords.
+    .accesskey = U
 forms-primary-pw-set =
     .label = Set primary password
 forms-primary-pw-on =
@@ -1215,6 +1481,8 @@ forms-primary-pw-turn-off =
 # This operation requires the user to authenticate with the operating system (device sign-in)
 forms-os-reauth =
     .label = Require device sign in to fill and manage passwords
+forms-os-reauth-2 =
+    .label = Require device sign in to manage passwords
 forms-primary-pw-learn-more-link = Learn more
 # This string uses the former name of the Primary Password feature
 # ("Master Password" in English) so that the preferences can be found
@@ -1279,10 +1547,27 @@ autofill-reauth-payment-methods-checkbox-2 =
 autofill-payment-methods-add-button = Add new payment method
 payments-list-header =
   .label = Payment methods
-payments-list-item-label = <strong>Payment methods</strong>
-payments-remove-payment-prompt-title = Remove this payment method?
-payments-remove-payment-prompt-confirm-button = Remove
-payments-remove-payment-prompt-cancel-button = Cancel
+payments-delete-payment-prompt-title = Delete this payment method?
+payments-delete-payment-prompt-confirm-button = Delete
+payments-delete-payment-prompt-cancel-button = Cancel
+payments-delete-payment-button-label =
+    .aria-label = Delete
+payments-edit-payment-button-label =
+    .aria-label = Edit
+
+# This message is displayed when no payment methods such as credit card are stored in Firefox
+payments-no-payments-stored-message =
+    .label = No payment methods added
+
+# These values are displayed for each credit card record listed on the Manage Payment methods
+# settings page.
+# Variables:
+#   $cardNumber (string) - The obscured credit card number (for example: ********* 2423)
+#   $expDate (string) - The obscured expiry date of the credit card (for example: XX/2027)
+payment-moz-box-item =
+  .label = { $cardNumber }
+  .description = { $expDate }
+
 autofill-addresses-title = Addresses and more
 autofill-addresses-header =
     .aria-label = Addresses and more
@@ -1292,15 +1577,30 @@ autofill-addresses-checkbox-message =
 autofill-addresses-manage-addresses-button =
     .label = Manage addresses and more
     .accesskey = M
+addresses-list-header =
+    .label = Addresses
+addreses-delete-address-button-label =
+    .aria-label = Delete
+addreses-edit-address-button-label =
+    .aria-label = Edit
+addresses-delete-address-prompt-title = Delete this address?
+addresses-delete-address-prompt-confirm-button = Delete
+addresses-delete-address-prompt-cancel-button = Cancel
+autofill-addresses-add-button = Add new address
+autofill-addresses-manage-addresses-title =
+    .heading = Manage addresses and more
 
-# These values are displayed for each credit card record listed on the Manage Payment methods
-# settings page.
+# This message is displayed when no addresses are stored in Firefox
+addresses-no-addresses-stored-message =
+    .label = No addresses added
+
+# These values are displayed for each address record listed on the "Manage addresses and more" subpage.
 # Variables:
-#   $cardNumber (string) - The obscured credit card number (for example: 2423 *********)
-#   $expDate (string) - The obscured expiry date of the credit card (for example: XX/2027)
-payment-moz-box-item =
-  .label = { $cardNumber }
-  .description = { $expDate }
+#   $name (string) - The name associated with the address
+#   $address (string) - The address
+address-moz-box-item =
+  .label = { $name }
+  .description = { $address }
 
 ## Privacy Section - History
 
@@ -1420,79 +1720,6 @@ cookie-banner-blocker-description = When a site asks if they can use cookies in 
 cookie-banner-learn-more = Learn more
 cookie-banner-blocker-checkbox-label =
     .label = Automatically refuse cookie banners
-
-## Privacy Section - Address Bar
-
-addressbar-header = Address Bar
-
-addressbar-suggest-1 = Choose which suggestions display in your address bar
-
-# When Firefox Suggest is enabled, this replaces `addressbar-header`.
-addressbar-header-firefox-suggest-1 = { -firefox-suggest-brand-name }
-
-# When Firefox Suggest is enabled, this replaces `addressbar-suggest`.
-addressbar-suggest-firefox-suggest-1 = Suggestions from { -brand-short-name } and our partners in your address bar.
-
-# When Firefox Suggest is enabled, a "Learn more" link appears at the end of
-# `addressbar-suggest-firefox-suggest`.
-addressbar-locbar-firefox-suggest-learn-more = Learn more
-
-addressbar-locbar-history-option =
-    .label = Browsing history
-    .accesskey = h
-addressbar-locbar-bookmarks-option =
-    .label = Bookmarks
-    .accesskey = k
-addressbar-locbar-clipboard-option =
-    .label = Clipboard
-    .accesskey = C
-addressbar-locbar-openpage-option =
-    .label = Open tabs
-    .accesskey = O
-# Shortcuts refers to the shortcut tiles on the new tab page, previously known as top sites. Translation should be consistent.
-addressbar-locbar-shortcuts-option =
-    .label = Shortcuts
-    .accesskey = S
-addressbar-locbar-topsites-option =
-    .label = Top sites
-    .accesskey = T
-addressbar-locbar-engines-option-1 =
-    .label = Suggest search engines to use
-    .accesskey = a
-addressbar-locbar-quickactions-option =
-    .label = Quick actions
-    .accesskey = Q
-addressbar-locbar-showrecentsearches-option =
-    .label = Show recent searches
-    .accesskey = r
-addressbar-locbar-showtrendingsuggestions-option =
-    .label = Show trending search suggestions
-    .accesskey = t
-
-# Toggles whether suggestions are obtained from Firefox Suggest or not (local or online).
-addressbar-locbar-suggest-all-option =
-  .label = Suggestions from { -brand-short-name }
-addressbar-locbar-suggest-all-option-desc = Get suggestions from the web related to your search.
-
-addressbar-locbar-suggest-sponsored-option =
-  .label = Suggestions from sponsors
-addressbar-locbar-suggest-sponsored-desc = Support { -brand-short-name } with occasional sponsored suggestions.
-
-# This string is used for a checkbox in the settings UI that opts the
-# user into "online" Firefox Suggest, allowing them to receive suggestions from
-# Mozilla's Merino server.
-# "Mozilla" is intentionally hardcoded to prevent forks from replacing it
-# with their own vendor name, since the online suggest is created and maintained
-# by Mozilla.
-addressbar-firefox-suggest-online =
-  .label = Retrieve suggestions from Mozilla as you type
-
-addressbar-quickactions-learn-more = Learn more
-
-addressbar-dismissed-suggestions-label = Dismissed suggestions
-addressbar-restore-dismissed-suggestions-description = Restore dismissed suggestions from sponsors and { -brand-short-name }.
-addressbar-restore-dismissed-suggestions-button =
-  .label = Restore
 
 ## Privacy Section - Content Blocking
 
@@ -1708,6 +1935,10 @@ collection-studies2 =
 collection-studies-description = Try out features and ideas before they’re released to everyone.
 collection-studies-link = View { -brand-short-name } studies
 
+nimbus-rollouts-enabled =
+    .label = Allow { -brand-short-name } to improve features, performance, and stability between updates
+nimbus-rollouts-enabled-description = Changes will be applied remotely.
+
 addon-recommendations2 =
     .label = Allow personalized extension recommendations
 addon-recommendations-description = Get extension recommendations to improve your browsing experience.
@@ -1869,6 +2100,80 @@ preferences-doh-manage-exceptions =
 
 desktop-folder-name = Desktop
 downloads-folder-name = Downloads
+
+## AI controls page
+
+preferences-ai-controls-header =
+    .heading = { pane-ai-controls-title }
+
+preferences-ai-controls-description = You always have a choice in { -brand-short-name }, including whether to use features enhanced with AI. More controls coming soon.
+
+preferences-ai-controls-block-ai-label = Block AI enhancements
+preferences-ai-controls-block-ai =
+    .label = { preferences-ai-controls-block-ai-label }
+preferences-ai-controls-block-ai-description = Blocking means you won’t see new or current AI enhancements in { -brand-short-name }, or pop-ups about them. <a data-l10n-name="link">Get more details</a> about what’s included and how to control traditional machine learning features, like search suggestions and recommendations.
+
+preferences-ai-controls-blocked-message =
+    .message = New and current AI enhancements are blocked by default. To unblock a specific feature, use the controls below.
+
+preferences-ai-controls-on-device-group =
+    .label = On-device AI
+    .description = These use small AI models that download to your device if you use the feature. This approach helps protect your privacy.
+
+preferences-ai-controls-translations-control =
+    .label = Translations
+    .description = Seamlessly browse the web in your preferred language.
+preferences-ai-controls-translations-more-link = More translations settings
+
+preferences-ai-controls-pdfjs-control =
+    .label = Image alt text in { -brand-short-name } PDF viewer
+    .description = When you add images to PDFs, this adds descriptions to make them accessible.
+
+preferences-ai-controls-tab-group-suggestions-control =
+    .label = Tab group suggestions
+    .description = Get suggestions to name and organize your tabs.
+
+preferences-ai-controls-key-points-control =
+    .label = Key points in link previews
+    .description = See a quick summary before opening a link.
+
+preferences-ai-controls-sidebar-chatbot-group =
+    .label = AI chatbot providers in sidebar
+    .description = Keep a chatbot in view as you browse. Choose from Anthropic Claude, ChatGPT, Copilot, Google Gemini, and Le Chat Mistral.
+
+preferences-ai-controls-sidebar-chatbot-control =
+    .label = Chatbot in sidebar
+
+# This option means that a user will see the feature and can use it.
+preferences-ai-controls-state-available =
+    .label = Available
+# This option means a user has opted in to use the feature.
+preferences-ai-controls-state-enabled =
+    .label = Enabled
+# This option means the user won't see and can't use the feature. For on-device AI, any models already downloaded are removed.
+preferences-ai-controls-state-blocked =
+    .label = Blocked
+
+preferences-ai-controls-state-description-before = What the options mean:
+preferences-ai-controls-state-description-available = <strong>Available:</strong> You’ll see the feature and can use it.
+preferences-ai-controls-state-description-enabled = <strong>Enabled:</strong> You’ve opted in to use the feature.
+preferences-ai-controls-state-description-blocked = <strong>Blocked:</strong> You won’t see and can’t use the feature. For on-device AI, any models already downloaded are removed.
+
+preferences-ai-controls-block-confirmation-heading = Block AI enhancements?
+preferences-ai-controls-block-confirmation-description = You won’t see new or current AI enhancements in { -brand-short-name }, or pop-ups about them. Afterwards, you can unblock anything you want to keep using.
+
+preferences-ai-controls-block-confirmation-features-start = What will be blocked:
+preferences-ai-controls-block-confirmation-translations = Translations
+preferences-ai-controls-block-confirmation-pdfjs = Image alt text in { -brand-short-name } PDF viewer
+preferences-ai-controls-block-confirmation-tab-group-suggestions = Tab group suggestions
+preferences-ai-controls-block-confirmation-key-points = Key points in link previews
+preferences-ai-controls-block-confirmation-sidebar-chatbot = Chatbot providers in sidebar
+preferences-ai-controls-block-confirmation-features-after = Blocking also affects extensions that use AI provided by { -brand-short-name }.
+
+preferences-ai-controls-block-confirmation-cancel =
+    .label = Cancel
+preferences-ai-controls-block-confirmation-confirm =
+    .label = Block
 
 pane-iceweasel-title = Iceweasel
 category-iceweasel =

@@ -18,20 +18,18 @@ transforms = TransformSequence()
 """List of available test variants defined."""
 
 
-variant_description_schema = Schema(
-    {
-        str: {
-            Required("description"): str,
-            Required("suffix"): str,
-            Optional("mozinfo"): str,
-            Required("component"): str,
-            Required("expiration"): str,
-            Optional("when"): {Any("$eval", "$if"): str},
-            Optional("replace"): {str: object},
-            Optional("merge"): {str: object},
-        }
+variant_description_schema = Schema({
+    str: {
+        Required("description"): str,
+        Required("suffix"): str,
+        Optional("mozinfo"): str,
+        Required("component"): str,
+        Required("expiration"): str,
+        Optional("when"): {Any("$eval", "$if"): str},
+        Optional("replace"): {str: object},
+        Optional("merge"): {str: object},
     }
-)
+})
 """variant description schema"""
 
 
@@ -124,7 +122,7 @@ def split_variants(config, tasks):
         variants = remove_expired(variants, expired_variants)
 
         if task.pop("run-without-variant"):
-            taskv = deepcopy(task)
+            taskv = deepcopy(task) if variants else task
             taskv["attributes"]["unittest_variant"] = None
             yield taskv
 

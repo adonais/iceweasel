@@ -455,8 +455,7 @@ void PrototypeDocumentContentSink::CloseElement(Element* aElement,
       {
         nsAutoMicroTask mt;
       }
-      DebugOnly<bool> block = sele->AttemptToExecute();
-      MOZ_ASSERT(!block, "<script type=module> shouldn't block the parser");
+      sele->AttemptToExecute(nullptr /* aParser */);
     }
   }
 }

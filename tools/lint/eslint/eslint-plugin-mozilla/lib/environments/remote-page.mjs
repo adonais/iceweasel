@@ -13,6 +13,7 @@ export default {
     RPMAddTRRExcludedDomain: "readonly",
     RPMGetAppBuildID: "readonly",
     RPMGetHostForDisplay: "readonly",
+    RPMGetInnermostAsciiHost: "readonly",
     RPMGetIntPref: "readonly",
     RPMGetStringPref: "readonly",
     RPMGetBoolPref: "readonly",

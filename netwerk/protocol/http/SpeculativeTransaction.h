@@ -34,16 +34,12 @@ class SpeculativeTransaction : public NullHttpTransaction {
     mParallelSpeculativeConnectLimit.emplace(aLimit);
   }
   void SetIgnoreIdle(bool aIgnoreIdle) { mIgnoreIdle.emplace(aIgnoreIdle); }
-  void SetIsFromPredictor(bool aIsFromPredictor) {
-    mIsFromPredictor.emplace(aIsFromPredictor);
-  }
   void SetAllow1918(bool aAllow1918) { mAllow1918.emplace(aAllow1918); }
 
   const Maybe<uint32_t>& ParallelSpeculativeConnectLimit() {
     return mParallelSpeculativeConnectLimit;
   }
   const Maybe<bool>& IgnoreIdle() { return mIgnoreIdle; }
-  const Maybe<bool>& IsFromPredictor() { return mIsFromPredictor; }
   const Maybe<bool>& Allow1918() { return mAllow1918; }
 
   void Close(nsresult aReason) override;
@@ -56,7 +52,6 @@ class SpeculativeTransaction : public NullHttpTransaction {
 
   Maybe<uint32_t> mParallelSpeculativeConnectLimit;
   Maybe<bool> mIgnoreIdle;
-  Maybe<bool> mIsFromPredictor;
   Maybe<bool> mAllow1918;
 
   bool mTriedToWrite = false;

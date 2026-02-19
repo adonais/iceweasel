@@ -12,7 +12,6 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/ThreadLocal.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <netinet/in.h>

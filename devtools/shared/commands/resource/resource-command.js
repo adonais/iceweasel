@@ -1287,6 +1287,7 @@ ResourceCommand.TYPES = ResourceCommand.prototype.TYPES = {
   STYLESHEET: "stylesheet",
   NETWORK_EVENT: "network-event",
   WEBSOCKET: "websocket",
+  WEBTRANSPORT: "webtransport",
   COOKIE: "cookies",
   LOCAL_STORAGE: "local-storage",
   SESSION_STORAGE: "session-storage",

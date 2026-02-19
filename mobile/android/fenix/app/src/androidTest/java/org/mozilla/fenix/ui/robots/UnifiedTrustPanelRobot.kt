@@ -1,9 +1,12 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.core.text.HtmlCompat
@@ -18,6 +21,7 @@ class UnifiedTrustPanelRobot {
     fun verifyUnifiedTrustPanelItems(
         composeTestRule: ComposeTestRule,
         webSite: String,
+        shouldWebSiteURLBeDisplayed: Boolean = true,
         webSiteURL: String,
         isTheWebSiteSecure: Boolean,
         isEnhancedTrackingProtectionEnabled: Boolean,
@@ -26,11 +30,13 @@ class UnifiedTrustPanelRobot {
         ) {
         waitForAppWindowToBeUpdated()
         Log.i(TAG, "verifyUnifiedTrustPanelItems: Trying to verify that the web site title: $webSite is displayed")
-        composeTestRule.onNodeWithText(webSite, useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("unified.trust.panel.website").assert(hasText(webSite))
         Log.i(TAG, "verifyUnifiedTrustPanelItems: Verified that the web site title: $webSite is displayed")
-        Log.i(TAG, "verifyUnifiedTrustPanelItems: Trying to verify that the web site url: $webSiteURL is displayed")
-        composeTestRule.onNodeWithText(webSiteURL, useUnmergedTree = true, substring = true).assertIsDisplayed()
-        Log.i(TAG, "verifyUnifiedTrustPanelItems: Verified that the web site url: $webSiteURL is displayed")
+        if (shouldWebSiteURLBeDisplayed) {
+            Log.i(TAG, "verifyUnifiedTrustPanelItems: Trying to verify that the web site url: $webSiteURL is displayed")
+            composeTestRule.onNodeWithTag("unified.trust.panel.website.url").assert(hasText(webSiteURL))
+            Log.i(TAG, "verifyUnifiedTrustPanelItems: Verified that the web site url: $webSiteURL is displayed")
+        }
         verifyTheEnhancedTrackingProtectionState(composeTestRule, isEnhancedTrackingProtectionEnabled, isTheWebSiteSecure)
         verifyTheTrackersBlockedOptionState(composeTestRule, isTrackerBlockingEnabled, areTrackersBlocked)
         verifyTheSiteSecurityOption(composeTestRule, isTheWebSiteSecure)

@@ -407,29 +407,23 @@ static inline const nsAString* GetContent(
   return IsString(aInput) ? GetAsString(aInput) : GetAsTrustedType(aInput);
 }
 
-template <typename ExpectedType, typename TrustedTypeOrString,
-          typename NodeOrGlobalObject>
-MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
-    const TrustedTypeOrString& aInput, const nsAString& aSink,
-    const nsAString& aSinkGroup, NodeOrGlobalObject& aNodeOrGlobalObject,
-    nsIPrincipal* aPrincipalOrNull, Maybe<nsAutoString>& aResultHolder,
+template <typename NodeOrGlobalObject>
+inline bool PrepareExecutionOfTrustedTypesDefaultPolicy(
+    NodeOrGlobalObject& aNodeOrGlobalObject, nsIPrincipal* aPrincipalOrNull,
+    nsIGlobalObject*& aGlobalObject, nsPIDOMWindowInner*& aPIDOMWindowInner,
+    RequireTrustedTypesForDirectiveState* aRequireTrustedTypesForDirectiveState,
     ErrorResult& aError) {
-  MOZ_ASSERT(aSinkGroup == kTrustedTypesOnlySinkGroup);
   if (!StaticPrefs::dom_security_trusted_types_enabled()) {
     // A trusted type might've been created before the pref was set to `false`,
     // so we cannot assume aInput.IsString().
-    return GetContent(aInput);
-  }
-
-  if (IsTrustedType(aInput)) {
-    return GetAsTrustedType(aInput);
+    return false;
   }
 
   // Exempt web extension content scripts from trusted types policies defined by
   // the page in which they are running.
   if (auto* principal = BasePrincipal::Cast(aPrincipalOrNull)) {
     if (principal->ContentScriptAddonPolicyCore()) {
-      return GetAsString(aInput);
+      return false;
     }
   }
 
@@ -444,30 +438,30 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
   nsPIDOMWindowInner* piDOMWindowInner = nullptr;
   if constexpr (std::is_same_v<NodeOrGlobalObjectArg, nsINode>) {
     if (aNodeOrGlobalObject.HasBeenInUAWidget()) {
-      return GetAsString(aInput);
+      return false;
     }
     Document* ownerDoc = aNodeOrGlobalObject.OwnerDoc();
     const bool ownerDocLoadedAsData = ownerDoc->IsLoadedAsData();
     if (!ownerDoc->HasPolicyWithRequireTrustedTypesForDirective() &&
         !ownerDocLoadedAsData) {
-      return GetAsString(aInput);
+      return false;
     }
     globalObject = ownerDoc->GetScopeObject();
     if (!globalObject) {
       aError.ThrowTypeError("No global object");
-      return nullptr;
+      return false;
     }
     piDOMWindowInner = globalObject->GetAsInnerWindow();
     if (!piDOMWindowInner) {
       // Global object is not a Window. This can happen when DOM APIs are used
       // in some contexts where Trusted Types don't apply (e.g. bug 1942517),
       // so just return the input string.
-      return GetAsString(aInput);
+      return false;
     }
     if (ownerDocLoadedAsData && piDOMWindowInner->GetExtantDoc() &&
         !piDOMWindowInner->GetExtantDoc()
              ->HasPolicyWithRequireTrustedTypesForDirective()) {
-      return GetAsString(aInput);
+      return false;
     }
   } else if constexpr (std::is_same_v<NodeOrGlobalObjectArg, nsIGlobalObject>) {
     piDOMWindowInner = aNodeOrGlobalObject.GetAsInnerWindow();
@@ -475,7 +469,7 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
       const Document* extantDoc = piDOMWindowInner->GetExtantDoc();
       if (extantDoc &&
           !extantDoc->HasPolicyWithRequireTrustedTypesForDirective()) {
-        return GetAsString(aInput);
+        return false;
       }
     }
     globalObject = &aNodeOrGlobalObject;
@@ -489,13 +483,13 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
   // (https://w3c.github.io/trusted-types/dist/spec/#abstract-opdef-does-sink-type-require-trusted-types)
   // and "Should sink type mismatch violation be blocked by CSP?"
   // (https://w3c.github.io/trusted-types/dist/spec/#should-block-sink-type-mismatch).
-  RefPtr<nsIContentSecurityPolicy> csp;
   RequireTrustedTypesForDirectiveState requireTrustedTypesForDirectiveState =
       RequireTrustedTypesForDirectiveState::NONE;
   if (piDOMWindowInner) {
-    csp = PolicyContainer::GetCSP(piDOMWindowInner->GetPolicyContainer());
+    RefPtr<nsIContentSecurityPolicy> csp =
+        PolicyContainer::GetCSP(piDOMWindowInner->GetPolicyContainer());
     if (!csp) {
-      return GetAsString(aInput);
+      return false;
     }
     requireTrustedTypesForDirectiveState =
         csp->GetRequireTrustedTypesForDirectiveState();
@@ -511,13 +505,53 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
         cspInfo.requireTrustedTypesForDirectiveState();
     if (requireTrustedTypesForDirectiveState ==
         RequireTrustedTypesForDirectiveState::NONE) {
-      return GetAsString(aInput);
+      return false;
     }
   } else {
     // Global object is neither Window nor WorkerGlobalScope. This can happen
     // when DOM APIs are used in some contexts where Trusted Types don't apply
     // (e.g. bugs 1942517 and 1936219), so just return the input string.
-    return GetAsString(aInput);
+    return false;
+  }
+
+  aGlobalObject = globalObject;
+  aPIDOMWindowInner = piDOMWindowInner;
+  *aRequireTrustedTypesForDirectiveState = requireTrustedTypesForDirectiveState;
+  return true;
+}
+
+bool CanSkipTrustedTypesEnforcement(const nsINode& aNode) {
+  nsIGlobalObject* dummyGlobal = nullptr;
+  nsPIDOMWindowInner* dummyWindow = nullptr;
+  RequireTrustedTypesForDirectiveState dummyState;
+  // Specify a null principal, as ScriptElement::UpdateTrustWorthiness() has
+  // already checked whether this is running in an isolated web extension
+  // context.
+  return !PrepareExecutionOfTrustedTypesDefaultPolicy(
+      aNode, nullptr /* aPrincipalOrNull */, dummyGlobal, dummyWindow,
+      &dummyState, IgnoreErrors());
+}
+
+template <typename ExpectedType, typename TrustedTypeOrString,
+          typename NodeOrGlobalObject>
+MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
+    const TrustedTypeOrString& aInput, const nsAString& aSink,
+    const nsAString& aSinkGroup, NodeOrGlobalObject& aNodeOrGlobalObject,
+    nsIPrincipal* aPrincipalOrNull, Maybe<nsAutoString>& aResultHolder,
+    ErrorResult& aError) {
+  MOZ_ASSERT(aSinkGroup == kTrustedTypesOnlySinkGroup);
+
+  if (IsTrustedType(aInput)) {
+    return GetAsTrustedType(aInput);
+  }
+
+  nsIGlobalObject* globalObject = nullptr;
+  nsPIDOMWindowInner* piDOMWindowInner = nullptr;
+  RequireTrustedTypesForDirectiveState requireTrustedTypesForDirectiveState;
+  if (!PrepareExecutionOfTrustedTypesDefaultPolicy(
+          aNodeOrGlobalObject, aPrincipalOrNull, globalObject, piDOMWindowInner,
+          &requireTrustedTypesForDirectiveState, aError)) {
+    return aError.Failed() ? nullptr : GetAsString(aInput);
   }
 
   RefPtr<ExpectedType> convertedInput;
@@ -533,6 +567,8 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
   if (!convertedInput) {
     auto location = JSCallingLocation::Get();
     if (piDOMWindowInner) {
+      RefPtr<nsIContentSecurityPolicy> csp =
+          PolicyContainer::GetCSP(piDOMWindowInner->GetPolicyContainer());
       ReportSinkTypeMismatchViolations(csp, nullptr /* aCSPEventListener */,
                                        location.FileName(), location.mLine,
                                        location.mColumn, aSink, aSinkGroup,
@@ -625,11 +661,13 @@ MOZ_CAN_RUN_SCRIPT const nsAString*
 GetTrustedTypesCompliantStringForTrustedScript(
     const nsAString& aInput, const nsAString& aSink,
     const nsAString& aSinkGroup, const nsINode& aNode,
-    nsIPrincipal* aPrincipalOrNull, Maybe<nsAutoString>& aResultHolder,
-    ErrorResult& aError) {
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError) {
+  // Specify a null principal, as ScriptElement::UpdateTrustWorthiness() has
+  // already checked whether this is running in an isolated web extension
+  // context.
   return GetTrustedTypesCompliantString<TrustedScript>(
-      &aInput, aSink, aSinkGroup, aNode, aPrincipalOrNull, aResultHolder,
-      aError);
+      &aInput, aSink, aSinkGroup, aNode, nullptr /* aPrincipalOrNull */,
+      aResultHolder, aError);
 }
 
 bool GetTrustedTypeDataForAttribute(const nsAtom* aElementName,

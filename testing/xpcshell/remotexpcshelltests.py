@@ -512,15 +512,13 @@ class XPCShellRemote(xpcshell.XPCShellTests):
             f.write("#!/system/bin/sh\n")
             for envkey, envval in self.env.items():
                 f.write("export %s=%s\n" % (envkey, envval))
-            f.writelines(
-                [
-                    "cd $1\n",
-                    "echo xpcw: cd $1\n",
-                    "shift\n",
-                    'echo xpcw: xpcshell "$@"\n',
-                    '%s/xpcshell "$@"\n' % self.remoteBinDir,
-                ]
-            )
+            f.writelines([
+                "cd $1\n",
+                "echo xpcw: cd $1\n",
+                "shift\n",
+                'echo xpcw: xpcshell "$@"\n',
+                '%s/xpcshell "$@"\n' % self.remoteBinDir,
+            ])
         remoteWrapper = posixpath.join(self.remoteBinDir, "xpcw")
         self.device.push(localWrapper, remoteWrapper)
         self.device.chmod(remoteWrapper)
@@ -530,8 +528,7 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         test.selectedProcess = RemoteProcessMonitor.pickUnusedProcess()
         if test.selectedProcess == -1:
             self.log.error(
-                "TEST-UNEXPECTED-FAIL | remotexpcshelltests.py | "
-                "no more free processes"
+                "TEST-UNEXPECTED-FAIL | remotexpcshelltests.py | no more free processes"
             )
         test.start()
 
@@ -539,7 +536,7 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         RemoteProcessMonitor.freeProcess(test.selectedProcess)
 
     def buildPrefsFile(self, extraPrefs):
-        prefs = super(XPCShellRemote, self).buildPrefsFile(extraPrefs)
+        prefs = super().buildPrefsFile(extraPrefs)
         remotePrefsFile = posixpath.join(self.remoteTestRoot, "user.js")
         self.device.push(self.prefsFile, remotePrefsFile)
         self.device.chmod(remotePrefsFile)
@@ -692,7 +689,7 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         self.device.chmod(self.remoteScriptsDir, recursive=True)
 
     def trySetupNode(self):
-        super(XPCShellRemote, self).trySetupNode()
+        super().trySetupNode()
         # make node host ports visible to device
         if "MOZHTTP2_PORT" in self.env:
             port = "tcp:{}".format(self.env["MOZHTTP2_PORT"])
@@ -708,7 +705,7 @@ class XPCShellRemote(xpcshell.XPCShellTests):
             self.log.info("reversed MOZNODE_EXEC_PORT connection for port " + port)
 
     def shutdownNode(self):
-        super(XPCShellRemote, self).shutdownNode()
+        super().shutdownNode()
 
         if "MOZHTTP2_PORT" in self.env:
             port = "tcp:{}".format(self.env["MOZHTTP2_PORT"])

@@ -20,7 +20,6 @@
 #include "nsDOMNavigationTiming.h"
 #include "nsFontFaceLoader.h"
 #include "nsIDocShell.h"
-#include "nsINetworkPredictor.h"
 #include "nsISupportsPriority.h"
 #include "nsIWebNavigation.h"
 #include "nsPresContext.h"
@@ -318,9 +317,6 @@ nsresult FontFaceSetDocumentImpl::StartLoad(gfxUserFontEntry* aUserFontEntry,
     RecursiveMutexAutoLock lock(mMutex);
     mLoaders.PutEntry(fontLoader);
   }
-
-  net::PredictorLearn(src.mURI->get(), mDocument->GetDocumentURI(),
-                      nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE, loadGroup);
 
   if (NS_SUCCEEDED(rv)) {
     fontLoader->StartedLoading(streamLoader);

@@ -6,8 +6,6 @@
 
 #include "RuntimeExceptionModule.h"
 
-#include <cstdint>
-
 #include "mozilla/ProcessType.h"
 
 #if defined(XP_WIN)

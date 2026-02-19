@@ -36,14 +36,19 @@ add_task(async function testHostnameDisplayedCorrectly() {
     async browser => {
       await BrowserTestUtils.waitForErrorPage(browser);
       await SpecialPowers.spawn(browser, [port], async p => {
-        const data = await ContentTaskUtils.waitForCondition(() =>
-          content.document
-            .querySelector('[data-l10n-id="neterror-basic-http-auth"]')
-            ?.getAttribute("data-l10n-args")
+        const netErrorCard = await ContentTaskUtils.waitForCondition(
+          () =>
+            content.document.querySelector("net-error-card")?.wrappedJSObject
         );
-        const { hostname } = JSON.parse(data);
+        await netErrorCard.getUpdateComplete();
+
         Assert.equal(
-          hostname,
+          netErrorCard.errorInfo.errorCodeString,
+          "NS_ERROR_BASIC_HTTP_AUTH_DISABLED",
+          "Shows HTTP auth disabled error"
+        );
+        Assert.equal(
+          netErrorCard.hostname,
           `localhost:${p}`,
           "Hostname includes the port once"
         );

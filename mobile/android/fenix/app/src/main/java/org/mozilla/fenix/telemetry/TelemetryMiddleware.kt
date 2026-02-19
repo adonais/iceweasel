@@ -22,7 +22,7 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.translate.TranslationOperation
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
@@ -56,7 +56,7 @@ class TelemetryMiddleware(
 
     @Suppress("TooGenericExceptionCaught", "CognitiveComplexMethod", "NestedBlockDepth", "LongMethod", "CyclomaticComplexMethod")
     override fun invoke(
-        context: MiddlewareContext<BrowserState, BrowserAction>,
+        store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
         action: BrowserAction,
     ) {
@@ -64,7 +64,7 @@ class TelemetryMiddleware(
 
         when (action) {
             is ContentAction.UpdateLoadingStateAction -> {
-                context.state.findTab(action.sessionId)?.let { tab ->
+                store.state.findTab(action.sessionId)?.let { tab ->
                     val hasFinishedLoading = tab.content.loading && !action.loading
 
                     // Record UriOpened event when a non-private page finishes loading
@@ -75,12 +75,12 @@ class TelemetryMiddleware(
             }
             is DownloadAction.AddDownloadAction -> { /* NOOP */ }
             is EngineAction.KillEngineSessionAction -> {
-                val tab = context.state.findTabOrCustomTab(action.tabId)
-                onEngineSessionKilled(context.state, tab)
+                val tab = store.state.findTabOrCustomTab(action.tabId)
+                onEngineSessionKilled(store.state, tab)
             }
             is EngineAction.CreateEngineSessionAction -> {
-                val tab = context.state.findTabOrCustomTab(action.tabId)
-                onEngineSessionCreated(context.state, tab)
+                val tab = store.state.findTabOrCustomTab(action.tabId)
+                onEngineSessionCreated(store.state, tab)
             }
             is ContentAction.CheckForFormDataExceptionAction -> {
                 Events.formDataFailure.record(NoExtras())
@@ -109,9 +109,9 @@ class TelemetryMiddleware(
             is TabListAction.RestoreAction,
             -> {
                 // Update/Persist tabs count whenever it changes
-                settings.openTabsCount = context.state.normalTabs.count()
-                settings.openPrivateTabsCount = context.state.privateTabs.count()
-                if (context.state.normalTabs.isNotEmpty()) {
+                settings.openTabsCount = store.state.normalTabs.count()
+                settings.openPrivateTabsCount = store.state.privateTabs.count()
+                if (store.state.normalTabs.isNotEmpty()) {
                     Metrics.hasOpenTabs.set(true)
                 } else {
                     Metrics.hasOpenTabs.set(false)

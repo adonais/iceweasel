@@ -6,7 +6,6 @@
 #ifndef toolkit_breakpad_linux_utils_h__
 #define toolkit_breakpad_linux_utils_h__
 
-#include <stdio.h>
 #include <stdint.h>
 
 bool ElfFileSoVersion(const char* mapping_name, uint32_t* version);

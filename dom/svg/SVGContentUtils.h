@@ -11,6 +11,7 @@
 #include <math.h>
 
 #include "gfx2DGlue.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/gfx/2D.h"  // for StrokeOptions
 #include "mozilla/gfx/Matrix.h"
 #include "nsDependentSubstring.h"
@@ -102,7 +103,9 @@ class SVGContentUtils {
     Float mSmallArray[16];
   };
 
-  enum StrokeOptionFlags { eAllStrokeOptions, eIgnoreStrokeDashing };
+  enum class StrokeOptionFlag { IgnoreStrokeDashing };
+  using StrokeOptionFlags = EnumSet<StrokeOptionFlag>;
+
   /**
    * Note: the linecap style returned in aStrokeOptions is not valid when
    * ShapeTypeHasNoCorners(aElement) == true && aFlags == eIgnoreStrokeDashing,
@@ -113,7 +116,7 @@ class SVGContentUtils {
                                dom::SVGElement* aElement,
                                const ComputedStyle* aComputedStyle,
                                const SVGContextPaint* aContextPaint,
-                               StrokeOptionFlags aFlags = eAllStrokeOptions);
+                               StrokeOptionFlags aFlags = {});
 
   /**
    * Returns the current computed value of the CSS property 'stroke-width' for

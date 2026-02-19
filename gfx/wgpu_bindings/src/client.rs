@@ -218,7 +218,14 @@ pub struct BindGroupEntry {
     binding: u32,
     buffer: Option<id::BufferId>,
     offset: wgt::BufferAddress,
-    size: Option<wgt::BufferSize>,
+
+    // In `wgpu_core::binding_model::BufferBinding`, these are an
+    // `Option<BufferAddress>`. But since `BufferAddress` can be zero, that is
+    // not a type that cbindgen can express in C++, so we use this pair of
+    // values instead.
+    size_passed: bool,
+    size: wgt::BufferAddress,
+
     sampler: Option<id::SamplerId>,
     texture_view: Option<id::TextureViewId>,
     external_texture: Option<id::ExternalTextureId>,
@@ -645,6 +652,8 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                 vendor,
                 support_use_shared_texture_in_swap_chain,
                 transient_saves_memory,
+                subgroup_min_size,
+                subgroup_max_size,
             }) = adapter_information
             {
                 let nss = |s: &str| {
@@ -665,6 +674,8 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                     vendor,
                     support_use_shared_texture_in_swap_chain,
                     transient_saves_memory,
+                    subgroup_min_size,
+                    subgroup_max_size,
                 };
                 unsafe {
                     wgpu_child_resolve_request_adapter_promise(
@@ -1401,7 +1412,7 @@ pub unsafe extern "C" fn wgpu_command_encoder_begin_render_pass(
     let color_attachments: Vec<_> = color_attachments
         .as_slice()
         .iter()
-        .map(|format| Some(format.clone().to_wgpu()))
+        .map(|color_attachment| Some(color_attachment.clone().to_wgpu()))
         .collect();
     let depth_stencil_attachment = depth_stencil_attachment.cloned().map(|dsa| dsa.to_wgpu());
     let pass = crate::command::RecordedRenderPass::new(
@@ -1569,7 +1580,7 @@ pub unsafe extern "C" fn wgpu_client_create_pipeline_layout(
     let wgpu_desc = wgc::binding_model::PipelineLayoutDescriptor {
         label,
         bind_group_layouts: Cow::Borrowed(desc.bind_group_layouts.as_slice()),
-        push_constant_ranges: Cow::Borrowed(&[]),
+        immediate_size: 0,
     };
 
     let action = DeviceAction::CreatePipelineLayout(id, wgpu_desc);
@@ -1598,7 +1609,7 @@ pub unsafe extern "C" fn wgpu_client_create_bind_group(
                 wgc::binding_model::BindingResource::Buffer(wgc::binding_model::BufferBinding {
                     buffer: id,
                     offset: entry.offset,
-                    size: entry.size,
+                    size: entry.size_passed.then_some(entry.size),
                 })
             } else if let Some(id) = entry.sampler {
                 wgc::binding_model::BindingResource::Sampler(id)
@@ -2057,19 +2068,6 @@ pub extern "C" fn wgpu_render_bundle_set_index_buffer(
         index_format,
         offset,
         size.copied(),
-    )
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_render_bundle_set_push_constants(
-    pass: &mut RenderBundleEncoder,
-    stages: wgt::ShaderStages,
-    offset: u32,
-    size_bytes: u32,
-    data: *const u8,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_set_push_constants(
-        pass, stages, offset, size_bytes, data,
     )
 }
 

@@ -43,6 +43,7 @@ def spawn_child_and_exit(is_breakaway_job):
     # mistakenly detect an exited child process for the parent process).
     subprocess.run(
         [sys.executable, "-c", "print('2. first_child_start_and_exit')"],
+        check=False,
         stdout=sys.stdout,
         stderr=sys.stderr,
     )

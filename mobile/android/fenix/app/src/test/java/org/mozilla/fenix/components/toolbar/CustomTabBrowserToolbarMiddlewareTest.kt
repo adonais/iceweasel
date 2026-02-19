@@ -652,13 +652,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN the custom tab is configured to show a share button WHEN initializing the toolbar THEN show both a share and a menu buttons`() {
+    fun `GIVEN the custom tab is configured to show a share button WHEN initializing the toolbar THEN show just a menu button`() {
         every { customTab.config.showShareMenuItem } returns true
-        val expectedShareButton = ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_share_android_24,
-            contentDescription = customtabsR.string.mozac_feature_customtabs_share_link,
-            onClick = ShareClicked,
-        )
         val expectedMenuButton = ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = R.string.content_description_menu,
@@ -668,10 +663,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
         val toolbarStore = buildStore()
 
         val toolbarBrowserActions = toolbarStore.state.displayState.browserActionsEnd
-        assertEquals(2, toolbarBrowserActions.size)
-        val shareButton = toolbarBrowserActions[0]
-        val menuButton = toolbarBrowserActions[1]
-        assertEquals(expectedShareButton, shareButton)
+        assertEquals(1, toolbarBrowserActions.size)
+        val menuButton = toolbarBrowserActions[0]
         assertEquals(expectedMenuButton, menuButton)
     }
 

@@ -20,8 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
@@ -29,6 +29,7 @@ import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * CFR Tools UI that allows for the CFR states to be reset.
@@ -219,19 +220,11 @@ private fun CfrSectionTitle(
 }
 
 @Composable
-@FlexibleWindowLightDarkPreview
-private fun CfrToolsPreview() {
-    FirefoxTheme {
-        CfrTools(
-            cfrToolsStore = CfrToolsStore(),
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun CfrToolsPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@FlexibleWindowPreview
+private fun CfrToolsPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         CfrTools(
             cfrToolsStore = CfrToolsStore(),
         )

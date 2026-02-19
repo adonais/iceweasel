@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">የፍለጋ ቃላትን አስገባ</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">የእርስዎ ክፍት ትሮች እዚህ ይታያሉ።</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">የእርስዎ ክፍት ትሮች እዚህ ይታያሉ።</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">የእርስዎ የግል ትሮች እዚህ ይታያሉ።</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">የእርስዎ የግል ትሮች እዚህ ይታያሉ።</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d ተመርጧል</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -46,7 +46,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">ከብዙ ምርጫ ሁነታ ውጣ</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">የተመረጡ ትሮችን ወደ ስብስብ ያስቀምጡ</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">የተመረጡ ትሮችን ወደ ስብስብ ያስቀምጡ</string>
   <!--
     Home - Bookmarks
 
@@ -187,7 +187,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">ቅጥያዎች</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">የተጫኑ ቅጥያዎች አሉዎት፣ ግን አልነቁም</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">የተጫኑ ቅጥያዎች አሉዎት፣ ግን አልነቁም</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">ቅጥያዎችን ያስተዳድሩ</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -208,9 +208,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">የመለያ መረጃ</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">እገዛ</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">እገዛ</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">ምን አዲስ ነገር አለ</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">ምን አዲስ ነገር አለ</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">ቅንብሮች</string>
   <!-- Browser menu button that opens a user's library -->
@@ -218,7 +218,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">የዴስክቶፕ ድረ-ገፅ</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">በመደበኛ ትር ውስጥ ይክፈቱ</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">በመደበኛ ትር ውስጥ ይክፈቱ</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">ወደ መነሻ ማያ ገጽ ጨምር</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -244,7 +244,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">በ%1$s የተጎላበተ</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">በ%1$s የተጎላበተ</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -257,15 +257,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">በመተግበሪያ ውስጥ ክፈት</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">የአንባቢ እይታን አብጅ</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">የአንባቢ እይታን አብጅ</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">የአንባቢ እይታን አብጅ</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">ጨምር</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">ጨምር</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">አርትዕ</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">አርትዕ</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">መነሻ ገጽ አብጅ</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">መነሻ ገጽ አብጅ</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">ይግቡ</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -278,16 +278,12 @@
   <string name="browser_menu_new_private_tab">አዲስ የግል ትር</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">የይለፍ ቃሎች</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">እገዛ</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">ቅንብሮች</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">የቅጥያዎች ምናሌ ገፅን ዝጋ</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">የቅጥያዎች ምናሌ ገፅን ዝጋ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">የማስቀመጥ ምናሌ ገፅን ዝጋ</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">የማስቀመጥ ምናሌ ገፅን ዝጋ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">የመሳሪያዎች ምናሌ ገፅን ዝጋ</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">የመሳሪያዎች ምናሌ ገፅን ዝጋ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">ብጁ የትር ምናሌ ገፅን ዝጋ</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -299,7 +295,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ገጽ ተርጉም</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">የተበላሽ ጣቢያ አሳውቅ…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">የተበላሽ ጣቢያ አሳውቅ…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">የተበላሽ ጣቢያ አሳውቅ</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -405,19 +401,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">የFirefox ግላዊነት ማስታወቂያ</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">ደህንነትዎን መጠበቅ እንወዳለን</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">ሚሊዮኖች ለምን Firefoxን እንደሚወዱ ይወቁ</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">ከተጨማሪ ምርጫዎች ጋር ደህንነቱ የተጠበቀ አሰሳ</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">የእኛ ለትርፍ-ባልተቋቋመ የሚደገፈው አሳሽ ኩባንያዎች በድር ላይ እርስዎን በድብቅ እንዳይከተሉዎት ያግዛል።</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">ከ100 ሚሊዮን በላይ ሰዎች በትርፍ ያልተቋቋመ አሳሽ በመምረጥ ግላዊነትን ይጠብቃሉ።</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">የታወቁ መከታተያዎች? በራስ ሰር ታግደዋል። ቅጥያዎች? ሁሉንም ይሞክሩ 700. ፒዲኤፍ? የእኛ አብሮ-የተገነባ አንባቢ ለማስተዳደር ቀላል ያደርጋቸዋል።</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">ነባሪ አሳሽ አድርገህ አስቀምጥ</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -929,8 +914,6 @@
   <string name="alternative_app_icon_group_solid_colors">ድፍን ቀለሞች</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">ቅልቅል ቀለሞች</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">ሌላ</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1247,9 +1230,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">ንቁ</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">ለሁሉም ሰው ከመለቀቃቸው በፊት ባህሪያትን እና ሀሳቦችን ይሞክሩ።</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">ለሁሉም ሰው ከመለቀቃቸው በፊት ባህሪያትን እና ሀሳቦችን ይሞክሩ።</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">ጥናቶችን ይጫኑ እና ያሂዱ</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">ጥናቶችን ይጫኑ እና ያሂዱ</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">ተጨማሪ ይወቁ</string>
   <!--
@@ -1267,15 +1250,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">የግል ትርን ያክሉ</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">የግል</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">የግል</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">አመሳስል</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">አመሳስል</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">ሁሉንም ትሮች ያጋሩ</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">ሁሉንም ትሮች ያጋሩ</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">በቅርብ ጊዜ የተዘጉ ትሮች</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">በቅርብ ጊዜ የተዘጉ</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">በቅርብ ጊዜ የተዘጉ</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">የመለያ ቅንብሮች</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1283,11 +1266,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ሁሉንም ትሮች ዝጋ</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">እልባት</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">እልባት</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">ዝጋ</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">ዝጋ</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">የተመረጡ ትሮችን ያጋሩ</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">የተመረጡ ትሮችን ያጋሩ</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">የተመረጡ የትሮች ምናሌ</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1994,7 +1977,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">ከዋናው ምናሌ ውስጥ \"አቋርጥ\"ን ስትመርጡ የአሰሳ ውሂብን በራስ ሰር ይሰርዛል</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">አቁም</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">አቁም</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">የሚሰረዝበት ጊዜ</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2593,9 +2576,9 @@
   -->
   <string name="certificate_info_verified_by">አረጋጋጭ:- %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">ሰርዝ</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">ሰርዝ</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">አርትዕ</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">አርትዕ</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">እርግጠኛ ነዎት ይህን የይለፍ ቃል መሰረዝ ይፈልጋሉ?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -2603,15 +2586,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">ተወው</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">የይለፍ ቃል አማራጮች</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">የይለፍ ቃል አማራጮች</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">ለድር ጣቢያው አድራሻ ሊስተካከል የሚችል የጽሑፍ መስክ።</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">ለድር ጣቢያው አድራሻ ሊስተካከል የሚችል የጽሑፍ መስክ።</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">ለተጠቃሚ ስም ሊስተካከል የሚችል የጽሑፍ መስክ።</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">ለተጠቃሚ ስም ሊስተካከል የሚችል የጽሑፍ መስክ።</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">ለይለፍ ቃል ሊስተካከል የሚችል የጽሑፍ መስክ።</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">ለይለፍ ቃል ሊስተካከል የሚችል የጽሑፍ መስክ።</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">ለውጦችን አስቀምጥ።</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">ለውጦችን አስቀምጥ።</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">የይለፍ ቃል አርትዕ</string>
   <!-- The page title for adding new password. -->

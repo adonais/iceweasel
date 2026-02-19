@@ -90,7 +90,7 @@
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">Să acceseze istoricul de navigare</string>
   <!-- Description for the "trialML" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description">Să descarce și să ruleze modele IA pe dispozitivul tău</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description">Să descarce și să ruleze modele AI pe dispozitivul tău</string>
   <!-- Description for the "userScripts" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description">Să acorde acces la datele tale unor scripturi neverificate de la terți</string>
   <!-- Description for the "devtools" WebExtensions API permission. -->

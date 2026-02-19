@@ -11,14 +11,14 @@
 
 namespace mozilla {
 
-Sinf::Sinf(Box& aBox) : mDefaultIVSize(0) {
+Sinf::Sinf(const Box& aBox) : mDefaultIVSize(0) {
   SinfParser parser(aBox);
   if (parser.GetSinf().IsValid()) {
     *this = parser.GetSinf();
   }
 }
 
-SinfParser::SinfParser(Box& aBox) {
+SinfParser::SinfParser(const Box& aBox) {
   for (Box box = aBox.FirstChild(); box.IsAvailable(); box = box.Next()) {
     if (box.IsType("schm")) {
       (void)ParseSchm(box);
@@ -28,7 +28,7 @@ SinfParser::SinfParser(Box& aBox) {
   }
 }
 
-Result<Ok, nsresult> SinfParser::ParseSchm(Box& aBox) {
+Result<Ok, nsresult> SinfParser::ParseSchm(const Box& aBox) {
   BoxReader reader(aBox);
 
   if (reader->Remaining() < 8) {
@@ -40,7 +40,7 @@ Result<Ok, nsresult> SinfParser::ParseSchm(Box& aBox) {
   return Ok();
 }
 
-Result<Ok, nsresult> SinfParser::ParseSchi(Box& aBox) {
+Result<Ok, nsresult> SinfParser::ParseSchi(const Box& aBox) {
   for (Box box = aBox.FirstChild(); box.IsAvailable(); box = box.Next()) {
     if (box.IsType("tenc") && ParseTenc(box).isErr()) {
       return Err(NS_ERROR_FAILURE);
@@ -49,7 +49,7 @@ Result<Ok, nsresult> SinfParser::ParseSchi(Box& aBox) {
   return Ok();
 }
 
-Result<Ok, nsresult> SinfParser::ParseTenc(Box& aBox) {
+Result<Ok, nsresult> SinfParser::ParseTenc(const Box& aBox) {
   BoxReader reader(aBox);
 
   if (reader->Remaining() < 24) {

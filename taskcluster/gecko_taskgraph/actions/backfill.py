@@ -278,7 +278,7 @@ def new_label(label, tasks):
                 "maximum": 10,
                 "title": "Times",
                 "description": (
-                    "The number of times to execute each job " "you are backfilling."
+                    "The number of times to execute each job you are backfilling."
                 ),
             },
             "retrigger": {
@@ -398,7 +398,7 @@ def filter_raptor_jobs(full_task_graph, label_to_taskid, project):
         if entry.task.get("extra", {}).get("suite", "") != "raptor":
             continue
         if not match_run_on_projects(
-            project, entry.attributes.get("run_on_projects", [])
+            {"project": project}, entry.attributes.get("run_on_projects", [])
         ):
             continue
         if "macosx1500" in entry.attributes.get("test_platform", ""):

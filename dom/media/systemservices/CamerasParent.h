@@ -73,7 +73,7 @@ class AggregateCapturer final
                            const NormalizedConstraints& aConstraints,
                            const dom::VideoResizeModeEnum& aResizeMode,
                            bool aStarted);
-  webrtc::VideoCaptureCapability CombinedCapability();
+  Maybe<webrtc::VideoCaptureCapability> CombinedCapability();
 
   void OnCaptureEnded();
   void OnFrame(const webrtc::VideoFrame& aVideoFrame) override;

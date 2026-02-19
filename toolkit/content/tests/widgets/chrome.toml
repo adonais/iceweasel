@@ -54,13 +54,21 @@ skip-if = [
 
 ["test_moz_input_elems_in_form.html"]
 
+["test_moz_input_email.html"]
+
 ["test_moz_input_folder.html"]
+
+["test_moz_input_number.html"]
 
 ["test_moz_input_password.html"]
 
 ["test_moz_input_search.html"]
 
+["test_moz_input_tel.html"]
+
 ["test_moz_input_text.html"]
+
+["test_moz_input_url.html"]
 
 ["test_moz_label.html"]
 
@@ -85,6 +93,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1997197
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1997197
   "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug", # Bug 1997197
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1997197
 ]
 
 ["test_moz_support_link.html"]

@@ -7,8 +7,6 @@
 #ifndef shell_jsoptparse_h
 #define shell_jsoptparse_h
 
-#include <stdio.h>
-
 #include "js/AllocPolicy.h"
 #include "js/Utility.h"
 #include "js/Vector.h"

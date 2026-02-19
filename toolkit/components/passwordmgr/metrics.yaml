@@ -1171,11 +1171,13 @@ pwmgr:
       signon.reencryptionNeeded pref.
     bugs:
       - https://bugzilla.mozilla.org/1977171
+      - https://bugzilla.mozilla.org/2005389
     data_reviews:
       - https://bugzilla.mozilla.org/1977171
+      - https://bugzilla.mozilla.org/2005389
     notification_emails:
       - seceng-telemetry@mozilla.com
-    expires: 149
+    expires: 155
     extra_keys:
       value:
         description: >

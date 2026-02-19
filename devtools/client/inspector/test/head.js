@@ -1184,7 +1184,7 @@ async function getDisplayedNodeTextContent(selector, inspector) {
   await waitForMultipleChildrenUpdates(inspector);
   if (container) {
     const textContainer = container.elt.querySelector("pre");
-    return textContainer.textContent;
+    return textContainer?.textContent;
   }
   return null;
 }

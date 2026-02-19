@@ -199,6 +199,7 @@ pub(crate) enum Error<'a> {
     InvalidIdentifierUnderscore(Span),
     ReservedIdentifierPrefix(Span),
     UnknownAddressSpace(Span),
+    InvalidLocalVariableAddressSpace(Span),
     RepeatedAttribute(Span),
     UnknownAttribute(Span),
     UnknownBuiltin(Span),
@@ -406,12 +407,18 @@ pub(crate) enum Error<'a> {
         accept_span: Span,
         accept_type: String,
     },
+    ExpectedGlobalVariable {
+        name_span: Span,
+    },
     StructMemberTooLarge {
         member_name_span: Span,
     },
     TypeTooLarge {
         span: Span,
     },
+    UnderspecifiedCooperativeMatrix,
+    InvalidCooperativeLoadType(Span),
+    UnsupportedCooperativeScalar(Span),
 }
 
 impl From<ConflictingDiagnosticRuleError> for Error<'_> {
@@ -655,6 +662,11 @@ impl<'a> Error<'a> {
             Error::UnknownAddressSpace(bad_span) => ParseError {
                 message: format!("unknown address space: `{}`", &source[bad_span]),
                 labels: vec![(bad_span, "unknown address space".into())],
+                notes: vec![],
+            },
+            Error::InvalidLocalVariableAddressSpace(bad_span) => ParseError {
+                message: format!("invalid address space for local variable: `{}`", &source[bad_span]),
+                labels: vec![(bad_span, "local variables can only use 'function' address space".into())],
                 notes: vec![],
             },
             Error::RepeatedAttribute(bad_span) => ParseError {
@@ -1370,6 +1382,11 @@ impl<'a> Error<'a> {
                 ],
                 notes: vec![],
             },
+            Error::ExpectedGlobalVariable { name_span } => ParseError {
+                message: "expected global variable".to_string(),
+                labels: vec![(name_span, "variable used here".into())],
+                notes: vec![],
+            },
             Error::StructMemberTooLarge { member_name_span } => ParseError {
                 message: "struct member is too large".into(),
                 labels: vec![(member_name_span, "this member exceeds the maximum size".into())],
@@ -1385,6 +1402,21 @@ impl<'a> Error<'a> {
                     "the maximum size is {} bytes",
                     crate::valid::MAX_TYPE_SIZE
                 )],
+            },
+            Error::UnderspecifiedCooperativeMatrix => ParseError {
+                message: "cooperative matrix constructor is underspecified".into(),
+                labels: vec![],
+                notes: vec![format!("must be F32")],
+            },
+            Error::InvalidCooperativeLoadType(span) => ParseError {
+                message: "cooperative load should have a generic type for coop_mat".into(),
+                labels: vec![(span, "type needs the coop_mat<...>".into())],
+                notes: vec![format!("must be a valid cooperative type")],
+            },
+            Error::UnsupportedCooperativeScalar(span) => ParseError {
+                message: "cooperative scalar type is not supported".into(),
+                labels: vec![(span, "type needs the scalar type specified".into())],
+                notes: vec![format!("must be F32")],
             },
         }
     }

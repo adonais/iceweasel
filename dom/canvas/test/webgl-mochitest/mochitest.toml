@@ -265,9 +265,21 @@ skip-if = [
 # 2020-01-07 00:00:11.839 F/MOZ_Assert( 6742): Assertion failure: [GFX1]: void mozilla::gl::GLContext::raw_fClear(GLbitfield): Generated unexpected GL_OUT_OF_MEMORY error, at /builds/worker/workspace/build/src/gfx/2d/Logging.h:746
 # 2020-01-07 00:01:28.281 F/MOZ_Assert( 8333): Assertion failure: [GFX1]: Unexpected error from driver: DoCompressedTexSubImage(0x0de1, 0, 0,4,0, 4,4,1, 0x9270, 8) -> 0x0501, at /builds/worker/workspace/build/src/gfx/2d/Logging.h:746
 
+["test_webgl_constant_vendor_fpp.html"]
+
+["test_webgl_constant_vendor_fpp_explicit.html"]
+
+["test_webgl_constant_vendor_rfp.html"]
+
 ["test_webgl_fingerprinting_resistance.html"]
 
 ["test_webgl_force_enable.html"]
+
+["test_webgl_renderer_constant_fpp.html"]
+
+["test_webgl_renderer_constant_fpp_explicit.html"]
+
+["test_webgl_renderer_constant_rfp.html"]
 
 ["test_webgl_request_context.html"]
 skip-if = [
@@ -278,6 +290,18 @@ skip-if = [
 skip-if = [
   "os == 'android'", # bug 865443- seperate suite - the non_conf* tests pass except for one on armv6 tests
 ]
+
+["test_webgl_vendor_randomize_fpp.html"]
+
+["test_webgl_vendor_randomize_fpp_explicit.html"]
+
+["test_webgl_vendor_randomize_rfp.html"]
+
+["test_webgl_vendor_sanitize_fpp.html"]
+
+["test_webgl_vendor_sanitize_fpp_explicit.html"]
+
+["test_webgl_vendor_sanitize_rfp.html"]
 
 ["test_webglcontextcreationerror.html"]
 

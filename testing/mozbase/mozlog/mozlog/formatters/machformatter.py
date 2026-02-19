@@ -77,7 +77,7 @@ class MachFormatter(base.BaseFormatter):
         enable_screenshot=False,
         **kwargs,
     ):
-        super(MachFormatter, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if start_time is None:
             start_time = time.time()
@@ -115,7 +115,7 @@ class MachFormatter(base.BaseFormatter):
     def __call__(self, data):
         self.summary(data)
 
-        s = super(MachFormatter, self).__call__(data)
+        s = super().__call__(data)
         if s is None:
             return
 
@@ -174,18 +174,18 @@ class MachFormatter(base.BaseFormatter):
             if expected not in ("PASS", "OK"):
                 color = self.color_formatter.log_test_status_fail
                 status = "EXPECTED-%s" % status
+        elif status in known_intermittent:
+            color = self.color_formatter.log_test_status_known_intermittent
+            status = "KNOWN-INTERMITTENT-%s" % status
         else:
-            if status in known_intermittent:
-                color = self.color_formatter.log_test_status_known_intermittent
-                status = "KNOWN-INTERMITTENT-%s" % status
-            else:
-                color = self.color_formatter.log_test_status_fail
-                if status in ("PASS", "OK"):
-                    status = "UNEXPECTED-%s" % status
+            color = self.color_formatter.log_test_status_fail
+            if status in ("PASS", "OK"):
+                status = "UNEXPECTED-%s" % status
         return color(status)
 
     def _format_status(self, test, data):
-        name = data.get("subtest", test)
+        subtest = data.get("subtest")
+        name = subtest if subtest is not None else test
         rv = "%s %s" % (
             self._format_expected(
                 data["status"],
@@ -250,9 +250,9 @@ class MachFormatter(base.BaseFormatter):
             for key in ("test", "subtest", "assert"):
                 if not count[key]["unexpected"]:
                     continue
-                status_str = ", ".join(
-                    [f"{n} {s}" for s, n in sorted(count[key]["unexpected"].items())]
-                )
+                status_str = ", ".join([
+                    f"{n} {s}" for s, n in sorted(count[key]["unexpected"].items())
+                ])
                 rv.append(
                     "  {}: {} ({})".format(
                         key, sum(count[key]["unexpected"].values()), status_str
@@ -262,13 +262,11 @@ class MachFormatter(base.BaseFormatter):
         # Format intermittents
         if intermittents > 0:
             heading = "Known Intermittent Results"
-            rv.extend(
-                [
-                    "",
-                    self.color_formatter.heading(heading),
-                    self.color_formatter.heading("-" * len(heading)),
-                ]
-            )
+            rv.extend([
+                "",
+                self.color_formatter.heading(heading),
+                self.color_formatter.heading("-" * len(heading)),
+            ])
             if count["subtest"]["count"]:
                 for test_id, results in intermittent_logs.items():
                     test = self._get_file_name(test_id)
@@ -291,13 +289,11 @@ class MachFormatter(base.BaseFormatter):
         else:
             # Format test failures
             heading = "Error Summary"
-            rv.extend(
-                [
-                    "",
-                    self.color_formatter.heading(heading),
-                    self.color_formatter.heading("-" * len(heading)),
-                ]
-            )
+            rv.extend([
+                "",
+                self.color_formatter.heading(heading),
+                self.color_formatter.heading("-" * len(heading)),
+            ])
             if count["subtest"]["count"]:
                 for test_id, results in logs.items():
                     test = self._get_file_name(test_id)
@@ -448,7 +444,7 @@ class MachFormatter(base.BaseFormatter):
                 )
 
             status = self.color_formatter.log_test_status_pass("FAIL")
-            return "%s leakcheck: " "%s missing output line for total leaks!\n" % (
+            return "%s leakcheck: %s missing output line for total leaks!\n" % (
                 status,
                 data["process"],
             )

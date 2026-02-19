@@ -6,8 +6,6 @@
 #ifndef WidevineFileIO_h_
 #define WidevineFileIO_h_
 
-#include <stddef.h>
-
 #include <string>
 
 #include "content_decryption_module.h"

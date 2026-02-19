@@ -55,8 +55,6 @@ class Ref {
   friend class Ref;
 
   using Self = Ref<Cls, Type>;
-  using bool_type = void (Self::*)() const;
-  void non_null_reference() const {}
 
   // A Cls-derivative that allows copying
   // (e.g. when acting as a return value).
@@ -169,10 +167,8 @@ class Ref {
     return Ref<Object, jobject>(mInstance);
   }
 
-  // Null checking (e.g. !!ref) using the safe-bool idiom.
-  operator bool_type() const {
-    return mInstance ? &Self::non_null_reference : nullptr;
-  }
+  // Null checking (e.g. !!ref)
+  explicit operator bool() const { return !!mInstance; }
 
   // We don't allow implicit conversion to jobject because that can lead
   // to easy mistakes such as assigning a temporary LocalRef to a jobject,

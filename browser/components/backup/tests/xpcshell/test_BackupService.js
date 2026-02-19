@@ -114,7 +114,7 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     .stub(FakeBackupResource3.prototype, "recover")
     .resolves(fake3PostRecoveryEntry);
 
-  let bs = new BackupService({
+  let bs = BackupService.init({
     FakeBackupResource1,
     FakeBackupResource2,
     FakeBackupResource3,
@@ -392,6 +392,10 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   await maybeRemovePath(fakeProfilePath);
   await maybeRemovePath(recoveredProfilePath);
   await maybeRemovePath(EXPECTED_ARCHIVE_PATH);
+
+  Services.prefs.clearUserPref(LAST_BACKUP_FILE_NAME_PREF_NAME);
+
+  BackupService.uninit();
 }
 
 /**

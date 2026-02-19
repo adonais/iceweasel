@@ -219,7 +219,6 @@ EXPORTS.mozilla.layers += [
     "TextureWrapperImage.h",
     "TransactionIdAllocator.h",
     "TreeTraversal.h",
-    "UpdateImageHelper.h",
     "wr/AsyncImagePipelineManager.h",
     "wr/AsyncImagePipelineOp.h",
     "wr/ClipManager.h",

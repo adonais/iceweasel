@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Idatzi bilaketa-terminoak</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Irekitako fitxak hemen erakutsiko dira.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Irekitako fitxak hemen erakutsiko dira.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Zure fitxa pribatuak hemen erakutsiko dira.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Zure fitxa pribatuak hemen erakutsiko dira.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Nabigatze pribatua</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Irten hautapen anitzeko modutik</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Gorde hautatutako fitxak bilduman</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Gorde hautatutako fitxak bilduman</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Hartu fitxak edozein gailutatik</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Hedapenak</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Hedapenak instalatuta dituzu baina ez daude gaituta</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Hedapenak instalatuta dituzu baina ez daude gaituta</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Kudeatu hedapenak</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Kontuaren informazioa</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Laguntza</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Laguntza</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Nobedadeak</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Nobedadeak</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Ezarpenak</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Mahaigainerako gunea</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Ireki fitxa arruntean</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Ireki fitxa arruntean</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Gehitu hasierako pantailan</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s TEKNOLOGIAREKIN</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s TEKNOLOGIAREKIN</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Ireki aplikazioan</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Pertsonalizatu irakurtzeko ikuspegia</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Pertsonalizatu irakurtzeko ikuspegia</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Pertsonalizatu irakurtzeko ikuspegia</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Gehitu</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Gehitu</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Editatu</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Editatu</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Pertsonalizatu hasiera-orria</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Pertsonalizatu hasiera-orria</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Hasi saioa</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Itxi menua</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Nabigazioa</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Laguntza</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Ezarpenak</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Itxi hedapenen menuaren orria</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Itxi hedapenen menuaren orria</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Itxi gordetzeko menuaren orria</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Itxi gordetzeko menuaren orria</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Itxi tresnen menuaren orria</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Itxi tresnen menuaren orria</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Itxi fitxa pertsonalizatuaren menuaren orria</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -328,7 +324,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Itzuli orria</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Eman hondatutako gunearen berri…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Eman hondatutako gunearen berri…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Eman hondatutako gunearen berri</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -438,6 +434,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: bilaketa-motorraren hautapena</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">%1$s historiatik kenduta</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Ezabatu historiako sarrera hau</string>
   <!--
     Home onboarding
 
@@ -452,19 +452,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Firefoxen pribatutasun-oharra</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Zu seguru mantentzea dugu xede</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Ezagutu zergatik milioika pertsonek atsegin duten Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Nabigatze segurua aukera gehiagorekin</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Irabazi asmorik gabeko erakundeak babestutako gure nabigatzaileak laguntzen du eragozten enpresek zure webeko jarraipena sekretupean egin dezaten.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">100 milioi pertsona baino gehiagok beraien pribatutasuna babesten duten irabazi-asmorik gabeko batek sostengatutako nabigatzailea aukeratuz.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Jarraipen-elementu ezagunak? Automatikoki blokeatzen dira. Hedapenak? Probatu denak, 700 guztira. PDFak? Integratutako gure irakurgailuarekin erraz kudea daitezke.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Ezarri nabigatzaile lehenetsi gisa</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +543,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Kudeatu</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Abiarazi Androideko benetako nabigatzailea</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Abiarazi Androideko benetako nabigatzailea</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Kargatu guneak di-da</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Kargatu guneak di-da</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Jarraipenaren babes automatikoa</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Jarraipenaren babes automatikoa</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Pertsonalizatzeko milaka aukera</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Pertsonalizatzeko milaka aukera</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Jarraitzearekin bat, %1$s onartzen dituzu.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Jarraitzearekin bat, %1$s onartzen dituzu.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Firefoxen erabilera-baldintzak</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Firefoxen erabilera-baldintzak</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefoxi zure pribatutasunak axola dio. Irakurri gehiago gure %1$s.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefoxi zure pribatutasunak axola dio. Irakurri gehiago gure %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Pribatutasun-oharrean</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Pribatutasun-oharrean</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Nabigatzailea hobetzen laguntzeko, Firefoxek diagnostiko- eta interakzio-datuak bidaltzen ditu Mozillara. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Nabigatzailea hobetzen laguntzeko, Firefoxek diagnostiko- eta interakzio-datuak bidaltzen ditu Mozillara. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Kudeatu ezarpenak</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Kudeatu ezarpenak</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Jarraitu</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Jarraitu</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">Non nahi duzu helbide-barra egotea?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Non nahi duzu helbide-barra egotea?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Jarraitu</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Jarraitu</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Lagun iezaguzu Firefox hazten</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Lagun iezaguzu Firefox hazten</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Partekatu Mozillaren marketin-bazkideekin nola aurkitu duzun Firefox eta erabili egiten duzula. Datu hauek inoiz ez dira saltzen.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Partekatu Mozillaren marketin-bazkideekin nola aurkitu duzun Firefox eta erabili egiten duzula. Datu hauek inoiz ez dira saltzen.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Nola erabiltzen ditugun datuak</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Nola erabiltzen ditugun datuak</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Berretsi</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Berretsi</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Eskuratu jarraipenaren babes automatikoa lehenespenez</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Eskuratu jarraipenaren babes automatikoa lehenespenez</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Behin sakatzeak laguntzen du enpresek zure klikak espiatzea gelditzen.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Behin sakatzeak laguntzen du enpresek zure klikak espiatzea gelditzen.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Sinkronizatu Firefox darabilzun edozein lekutan</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Sinkronizatu Firefox darabilzun edozein lekutan</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Eskuratu laster-markak, fitxak eta pasahitzak edozein gailutan. Denak zifratzearekin babestuta.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Eskuratu laster-markak, fitxak eta pasahitzak edozein gailutan. Denak zifratzearekin babestuta.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Hasi sinkronizatzen</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Hasi sinkronizatzen</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Une honetan ez</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Une honetan ez</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Lagun iezaguzu Firefox hazten</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +616,48 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Jarraitu</string>
+  <string name="nova_onboarding_continue_button">Jarraitu</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Une honetan ez</string>
+  <string name="nova_onboarding_negative_button">Une honetan ez</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Presta zaitez libre ibiltzeko</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Bizkorra, segurua eta ez zaitu salduko.\nNabigatzea hobeagoa da orain.</string>
+  <string name="nova_onboarding_tou_subtitle">Bizkorra, segurua eta ez zaitu salduko.\nNabigatzea hobeagoa da orain.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Jarraitzearekin bat, %1$s onartzen dituzu.</string>
+  <string name="nova_onboarding_tou_body_line_1">Jarraitzearekin bat, %1$s onartzen dituzu.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Firefoxen erabilera-baldintzak</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Firefoxen erabilera-baldintzak</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefoxi zure pribatutasunak axola dio. Irakurri gehiago gure %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefoxi zure pribatutasunak axola dio. Irakurri gehiago gure %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Pribatutasun-oharrean</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Pribatutasun-oharrean</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Nabigatzailea hobetzen laguntzeko, Firefoxek diagnostiko- eta interakzio-datuak bidaltzen ditu Mozillara. %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Nabigatzailea hobetzen laguntzeko, Firefoxek diagnostiko- eta interakzio-datuak bidaltzen ditu Mozillara. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Kudeatu ezarpenak</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Kudeatu ezarpenak</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Esan agur jarraipen-elementu beldurgarriei</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Ireki zure lotura guztiak integratutako pribatutasunarekin</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Zure datuak babestu eta enpresek zure klikak espiatzetik automatikoki blokeatzen ditugu.</string>
+  <string name="nova_onboarding_set_to_default_subtitle">Zure datuak babestu eta enpresek zure klikak espiatzetik automatikoki blokeatzen ditugu.</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Ezarri nabigatzaile lehenetsi gisa</string>
+  <string name="nova_onboarding_set_to_default_button">Ezarri nabigatzaile lehenetsi gisa</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Aukeratu zure helbide-barra</string>
+  <string name="nova_onboarding_toolbar_selection_title">Aukeratu zure helbide-barra</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Goian</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">Goian</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Behean</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">Behean</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Aukeratu zure itxura</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +667,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Iluna</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Jarraitu utzi zenuen tokitik</string>
+  <string name="nova_onboarding_sync_title">Jarraitu utzi zenuen tokitik</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">Hartu laster-markak, pasahitzak eta gehiago edozein gailutatik ziztu-bizian. Zure datu pertsonalak zifratze bidez seguru mantentzen dira.</string>
+  <string name="nova_onboarding_sync_subtitle">Hartu laster-markak, pasahitzak eta gehiago edozein gailutatik ziztu-bizian. Zure datu pertsonalak zifratze bidez seguru mantentzen dira.</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Hasi sinkronizatzen</string>
+  <string name="nova_onboarding_sync_button">Hasi sinkronizatzen</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Lagun gaitzazu Internet hobeago bat eraikitzen</string>
+  <string name="nova_onboarding_marketing_title">Lagun gaitzazu Internet hobeago bat eraikitzen</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Partekatu Mozillaren marketin-bazkideekin nola aurkitu duzun Firefox eta erabili egiten duzula. Datu hauek inoiz ez dira saltzen. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Partekatu Mozillaren marketin-bazkideekin nola aurkitu duzun Firefox eta erabili egiten duzula. Datu hauek inoiz ez dira saltzen. %1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Nola erabiltzen ditugun datuak</string>
+  <string name="nova_onboarding_marketing_body_link_text">Nola erabiltzen ditugun datuak</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Jakinarazpenek Firefoxekin seguruago egoten laguntzen dizute</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Ezagutu Firefoxen azken pribatutasun-eginbideak eta mantendu egunean jakiteko nola egon babestuta.</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Aktibatu jakinarazpenak</string>
+  <string name="nova_onboarding_notifications_button">Aktibatu jakinarazpenak</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Egin bilaketa bakoitza are pribatuagoa</string>
+  <string name="nova_onboarding_add_search_widget_title">Egin bilaketa bakoitza are pribatuagoa</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">Hasi bilaketa bakoitza zure telefonoaren hasierako pantailatik eta jakin seguru zaudela Firefoxen babes automatikoekin.</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Hasi bilaketa bakoitza zure telefonoaren hasierako pantailatik eta jakin seguru zaudela Firefoxen babes automatikoekin.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Gehitu Firefox widget-a</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Gehitu Firefox widget-a</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -781,6 +772,8 @@
   <string name="preferences_search">Bilaketa</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Bilaketa-motorrak</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Hasierako pantailako widgeta</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Bilaketa-motorretako gomendioak</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -972,6 +965,15 @@
   <string name="preferences_open_links_in_apps_ask">Galdetu ireki aurretik</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Inoiz ez</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Fitxategien biltegiratzea</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Deskargen kokapen lehenetsia</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">Ez daukazu karpeta hau erabiltzeko baimenik. Probatu beste bat aukeratzen.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Kudeatu deskargak beste aplikazio batekin</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1137,8 +1139,6 @@
   <string name="alternative_app_icon_group_solid_colors">Kolore solidoak</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Gradienteak</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Bestelakoak</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Nabarmenduak</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1505,11 +1505,27 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Aktibo</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Probatu eginbide eta ideiak mundu guztiarentzat argitaratu diren aurretik.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Probatu eginbide eta ideiak mundu guztiarentzat argitaratu diren aurretik.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefoxek ausaz aukeratzen ditu erabiltzaileak eginbideak proba ditzaten, horrela mundu guztiarentzat kalitatea hobetzeko.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Instalatu eta exekutatu esperimentuak</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Instalatu eta exekutatu esperimentuak</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Baimendu eginbideen esperimentuak</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Argibide gehiago</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Baimendu urruneko hobekuntzak</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Eguneraketen artean eginbideak, errendimendua eta egonkortasuna hobetuko ditu Firefoxek. Aldaketak urrunetik aplikatzen dira.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Argibide gehiago</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Urruneko hobekuntzak</string>
   <!--
     Sessions
 
@@ -1544,17 +1560,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Gehitu fitxa pribatua</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Pribatua</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Pribatua</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sinkronizatu</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sinkronizatu</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Bilatu zure fitxak</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Partekatu fitxa guztiak</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Partekatu fitxa guztiak</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Itxitako azken fitxak</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Itxitako azkenak</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Itxitako azkenak</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Kontu-ezarpenak</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1570,11 +1586,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Utzi</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Egin laster-marka</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Egin laster-marka</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Egin hautatutako fitxen laster-markak</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Itxi</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Itxi</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Itxi hautatutako fitxak</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1598,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Gehitu bildumara</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Partekatu hautatutako fitxak</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Partekatu hautatutako fitxak</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Hautatutako fitxen menua</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1719,8 @@
   <string name="download_delete_item">Ezabatu</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Nabigatu atzera</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Nabigatu deskargen ezarpenetara</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Atzera eta itxi bilaketa</string>
   <!--
@@ -1726,6 +1744,12 @@
   <string name="download_delete_multi_select_dialog_confirm">Ezabatu</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Utzi</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Berrizendatu fitxategia</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Izena</string>
+  <string name="download_rename_dialog_confirm_button">Gorde</string>
+  <string name="download_rename_dialog_cancel_button">Utzi</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Lanean</string>
   <!--
@@ -1918,6 +1942,8 @@
   <string name="bookmark_error_edit_bookmark">Ezin da laster-marka editatu</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">EDITATU</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Hautatu</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Aldatu lekuz</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1998,6 +2024,10 @@
   <string name="select_bookmark_search_button_content_description">Bilatu karpetak</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">%s laster-markarako menu-elementua</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Zabaldu karpeta: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Itxi karpeta: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Itxi laster-markak</string>
   <!-- Title for the bookmark list empty state -->
@@ -2200,7 +2230,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Hasi saioa Sync-en</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Hasi saioa</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Hasi saioa</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Bidali gailu guztietara</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2390,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Nabigatze-datuak automatikoki ezabatzen ditu menu nagusian \"Irten\" hautatzerakoan</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Irten</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Irten</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Ezabatu beharreko denbora-tartea</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2824,6 +2854,20 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Ordenatu pasahitzen menua</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Posta-maskarak</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Gomendatu posta-maskarak</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Ezkutatu zure benetako helbide elektronikoa sarrera-ontzia spametik babesteko. Zenbait gunek ez dituzte posta-maskarak onartzen.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Argibide gehiago</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Kudeatu posta-maskarak</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3059,9 +3103,9 @@
   -->
   <string name="certificate_info_verified_by">Egiaztatzailea: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Ezabatu</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Ezabatu</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Editatu</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Editatu</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Ziur zaude pasahitz hau ezabatu nahi duzula?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3113,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Utzi</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Pasahitzaren aukerak</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Pasahitzaren aukerak</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Webgunearen helbidearen testu-eremu editagarria.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Webgunearen helbidearen testu-eremu editagarria.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Erabiltzaile-izenaren testu-eremu editagarria.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Erabiltzaile-izenaren testu-eremu editagarria.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Pasahitzaren testu-eremu editagarria.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Pasahitzaren testu-eremu editagarria.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Gorde aldaketak.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Gorde aldaketak.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Editatu pasahitza</string>
   <!-- The page title for adding new password. -->
@@ -4002,6 +4046,8 @@
   <string name="settings_search_no_results_title">Ez da ezer aurkitu</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Agian saiatu beste bilaketa batekin?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Ezarpenen bilaketa-botoia</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

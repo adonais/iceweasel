@@ -6,7 +6,6 @@ Apply some defaults and minor modifications to the jobs defined in the test
 kinds.
 """
 
-
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
 
@@ -30,6 +29,6 @@ def resolve_keys(config, tasks):
                     "shipping-product": task.get("attributes", {}).get(
                         "shipping-product"
                     ),
-                }
+                },
             )
         yield task

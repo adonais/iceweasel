@@ -10,6 +10,8 @@
 #include "nsIChannelEventSink.h"
 #include "mozilla/Perfetto.h"
 #include "mozilla/ErrorNames.h"
+#include "nsHttpHandler.h"
+#include "nsIClassOfService.h"
 
 namespace mozilla::net {
 struct NetworkMarker {
@@ -25,8 +27,8 @@ struct NetworkMarker {
       bool aIsPrivateBrowsing, const net::TimingStruct& aTimings,
       const ProfilerString8View& aRedirectURI,
       const ProfilerString8View& aContentType, uint32_t aRedirectFlags,
-      int64_t aRedirectChannelId, unsigned long aClassOfServiceFlag,
-      nsresult aRequestStatus,
+      int64_t aRedirectChannelId, uint32_t aClassOfServiceFlags,
+      bool aClassOfServiceIncremental, nsresult aRequestStatus,
       const mozilla::Maybe<mozilla::net::HttpVersion> aHttpVersion,
       mozilla::Maybe<uint32_t> aResponseStatus) {
     // This payload still streams a startTime and endTime property because it
@@ -40,11 +42,21 @@ struct NetworkMarker {
     // Bug 1919148 - Moved aClassOfServiceStr here to ensure that we call
     // aWriter.StringProperty before the lifetime of nsAutoCString ends
     nsAutoCString aClassOfServiceStr;
-    GetClassOfService(aClassOfServiceStr, aClassOfServiceFlag);
+    GetClassOfService(aClassOfServiceStr, aClassOfServiceFlags);
     MOZ_ASSERT(aClassOfServiceStr.Length() > 0,
                "aClassOfServiceStr should be set after GetClassOfService");
     aWriter.StringProperty("classOfService",
                            MakeStringSpan(aClassOfServiceStr.get()));
+
+    uint8_t urgency =
+        nsHttpHandler::UrgencyFromCoSFlags(aClassOfServiceFlags, aPri);
+    nsAutoCString priorityHeader;
+    priorityHeader.AppendPrintf("u=%d", urgency);
+    if (aClassOfServiceIncremental) {
+      priorityHeader.Append(", i");
+    }
+    aWriter.StringProperty("priorityHeader",
+                           MakeStringSpan(priorityHeader.get()));
 
     nsAutoCString aRequestStatusStr;
     GetErrorName(aRequestStatus, aRequestStatusStr);
@@ -165,7 +177,7 @@ struct NetworkMarker {
 
   // Update an empty string aClassOfServiceStr based on aClassOfServiceFlag
   static void GetClassOfService(nsAutoCString& aClassOfServiceStr,
-                                unsigned long aClassOfServiceFlag) {
+                                uint32_t aClassOfServiceFlag) {
     MOZ_ASSERT(aClassOfServiceStr.IsEmpty(),
                "Flags should not be appended to aClassOfServiceStr before "
                "calling GetClassOfService");
@@ -389,7 +401,7 @@ void profiler_add_network_marker(
     mozilla::TimeStamp aEnd, int64_t aCount,
     nsICacheInfoChannel::CacheDisposition aCacheDisposition,
     uint64_t aInnerWindowID, bool aIsPrivateBrowsing,
-    unsigned long aClassOfServiceFlag, nsresult aRequestStatus,
+    nsIClassOfService* aClassOfService, nsresult aRequestStatus,
     const mozilla::net::TimingStruct* aTimings,
     UniquePtr<ProfileChunkedBuffer> aSource,
     const Maybe<mozilla::net::HttpVersion> aHttpVersion,
@@ -418,6 +430,13 @@ void profiler_add_network_marker(
     aRedirectURI->GetAsciiSpec(redirect_spec);
   }
 
+  uint32_t classOfServiceFlags = 0;
+  bool classOfServiceIncremental = false;
+  if (aClassOfService) {
+    aClassOfService->GetClassFlags(&classOfServiceFlags);
+    aClassOfService->GetIncremental(&classOfServiceIncremental);
+  }
+
   profiler_add_marker(
       name, geckoprofiler::category::NETWORK,
       {MarkerTiming::Interval(aStart, aEnd),
@@ -428,7 +447,7 @@ void profiler_add_network_marker(
       aIsPrivateBrowsing, aTimings ? *aTimings : scEmptyNetTimingStruct,
       redirect_spec,
       aContentType ? ProfilerString8View(*aContentType) : ProfilerString8View(),
-      aRedirectFlags, aRedirectChannelId, aClassOfServiceFlag, aRequestStatus,
-      aHttpVersion, aResponseStatus);
+      aRedirectFlags, aRedirectChannelId, classOfServiceFlags,
+      classOfServiceIncremental, aRequestStatus, aHttpVersion, aResponseStatus);
 }
 }  // namespace mozilla::net

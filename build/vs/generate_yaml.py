@@ -6,7 +6,7 @@
 import sys
 
 import yaml
-from mozbuild.shellutil import quote as shellquote
+from mozshellutil import quote as shellquote
 from vsdownload import (
     getArgsParser,
     getManifest,

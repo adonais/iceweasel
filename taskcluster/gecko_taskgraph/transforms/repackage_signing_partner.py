@@ -18,19 +18,17 @@ from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 
 transforms = TransformSequence()
 
-repackage_signing_description_schema = Schema(
-    {
-        Optional("label"): str,
-        Optional("extra"): object,
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("priority"): task_description_schema["priority"],
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+repackage_signing_description_schema = Schema({
+    Optional("label"): str,
+    Optional("extra"): object,
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("shipping-product"): task_description_schema["shipping-product"],
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("priority"): task_description_schema["priority"],
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 @transforms.add
@@ -106,22 +104,20 @@ def make_repackage_signing_description(config, jobs):
                 "repack_stub_installer"
             )
             if build_platform.startswith("win32") and repack_stub_installer:
-                upstream_artifacts.append(
-                    {
-                        "taskId": {"task-reference": "<repackage>"},
-                        "taskType": "repackage",
-                        "paths": [
-                            get_artifact_path(
-                                dep_job,
-                                f"{repack_id}/target.stub-installer.exe",
-                            ),
-                        ],
-                        "formats": [
-                            "gcp_prod_autograph_authenticode_202412",
-                            "gcp_prod_autograph_gpg",
-                        ],
-                    }
-                )
+                upstream_artifacts.append({
+                    "taskId": {"task-reference": "<repackage>"},
+                    "taskType": "repackage",
+                    "paths": [
+                        get_artifact_path(
+                            dep_job,
+                            f"{repack_id}/target.stub-installer.exe",
+                        ),
+                    ],
+                    "formats": [
+                        "gcp_prod_autograph_authenticode_202412",
+                        "gcp_prod_autograph_gpg",
+                    ],
+                })
         elif "mac" in build_platform:
             upstream_artifacts = [
                 {

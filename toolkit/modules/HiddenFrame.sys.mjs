@@ -127,9 +127,7 @@ export class HiddenFrame {
       this.#listener,
       Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
     );
-    let docShell = this.#browser.docShell;
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    docShell.createAboutBlankDocumentViewer(systemPrincipal, systemPrincipal);
     let browsingContext = this.#browser.browsingContext;
     browsingContext.useGlobalHistory = false;
     let loadURIOptions = {

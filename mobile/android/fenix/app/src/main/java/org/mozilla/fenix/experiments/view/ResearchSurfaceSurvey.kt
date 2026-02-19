@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -101,55 +102,62 @@ fun ResearchSurfaceSurvey(
     onAccept: () -> Unit,
 ) {
     SlideInFromBottomAnimation {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding(),
-        ) {
-            Column(
+        Surface {
+            Box(
                 modifier = Modifier
-                    .fillMaxHeight(FULLSCREEN_HEIGHT)
-                    .align(Alignment.Center)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween,
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
             ) {
-                Spacer(Modifier)
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier
+                        .fillMaxHeight(FULLSCREEN_HEIGHT)
+                        .align(Alignment.Center)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_firefox),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .height(112.dp)
-                            .width(108.dp),
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = messageText,
-                        color = FirefoxTheme.colors.textPrimary,
-                        textAlign = TextAlign.Center,
-                        style = FirefoxTheme.typography.headline6,
-                    )
-                }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth(BUTTON_WIDTH),
-                ) {
-                    FilledButton(
-                        text = onAcceptButtonText,
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onAccept,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        text = onDismissButtonText,
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onDismiss,
-                    )
+                    Spacer(Modifier)
+
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_firefox),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .height(112.dp)
+                                .width(108.dp),
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = messageText,
+                            textAlign = TextAlign.Center,
+                            style = FirefoxTheme.typography.headline6,
+                        )
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth(BUTTON_WIDTH),
+                    ) {
+                        FilledButton(
+                            text = onAcceptButtonText,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onAccept,
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            text = onDismissButtonText,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onDismiss,
+                        )
+                    }
                 }
             }
         }

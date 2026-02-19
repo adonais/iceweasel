@@ -5,6 +5,7 @@
 """
 Runs the reftest test harness.
 """
+
 import json
 import os
 import platform
@@ -763,12 +764,10 @@ class RefTest:
 
         print("REFTEST INFO | Result summary:")
         for summaryObj, (text, categories) in zip(summaryObjects, summaryLines):
-            details = ", ".join(
-                [
-                    "%d %s" % (summaryObj[attribute], description)
-                    for (attribute, description) in categories
-                ]
-            )
+            details = ", ".join([
+                "%d %s" % (summaryObj[attribute], description)
+                for (attribute, description) in categories
+            ])
             print(
                 "REFTEST INFO | "
                 + text

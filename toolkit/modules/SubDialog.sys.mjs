@@ -861,7 +861,9 @@ SubDialog.prototype = {
     if (includeLoad) {
       this._window.removeEventListener("DOMFrameContentLoaded", this, true);
       this._frame.removeEventListener("load", this, true);
-      this._frame.contentWindow.removeEventListener("dialogclosing", this);
+      if (this._frame.contentWindow) {
+        this._frame.contentWindow.removeEventListener("dialogclosing", this);
+      }
     }
 
     this._window.removeEventListener("keydown", this, true);

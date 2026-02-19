@@ -31,13 +31,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(28.dp)
@@ -127,24 +128,12 @@ fun MenuBanner(
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun MenuBannerPreview() {
-    FirefoxTheme {
-        MenuBanner(
-            onDismiss = {},
-            onClick = {},
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
-                .padding(all = FirefoxTheme.layout.space.static200),
-        )
-    }
-}
-
 @Preview
 @Composable
-private fun MenuBannerPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun MenuBannerPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         MenuBanner(
             onDismiss = {},
             onClick = {},

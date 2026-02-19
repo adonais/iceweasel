@@ -10,6 +10,7 @@
 #include "gfxUserFontSet.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
+#include "MediaCodecsSupport.h"
 
 class gfxAndroidPlatform final : public gfxPlatform {
  public:
@@ -49,6 +50,9 @@ class gfxAndroidPlatform final : public gfxPlatform {
   static void WaitForInitializeFontAPI();
 
   static bool IsFontAPIDisabled(bool aDontCheckPref = false);
+
+  static bool IsHwCodecSupported(mozilla::media::MediaCodec aCodec,
+                                 bool aEncoder);
 
  protected:
   void InitAcceleration() override;

@@ -609,13 +609,11 @@ def write_mozbuild(topsrcdir, write_mozbuild_variables, relsrcdir, configs):
                 conditions.add(cond)
 
             for cond in sorted(conditions):
-                common_attrs = find_common_attrs(
-                    [
-                        attrs
-                        for args, attrs in configs
-                        if all((args.get(k) or "") == v for k, v in cond)
-                    ]
-                )
+                common_attrs = find_common_attrs([
+                    attrs
+                    for args, attrs in configs
+                    if all((args.get(k) or "") == v for k, v in cond)
+                ])
                 if any(common_attrs.values()):
                     if cond:
                         mb.write_condition(dict(cond))
@@ -726,31 +724,25 @@ def generate_gn_config(
     srcdir = build_root_dir / target_dir
 
     input_variables = input_variables.copy()
-    input_variables.update(
-        {
-            f"{moz_build_flag}": True,
-            "concurrent_links": 1,
-            "action_pool_depth": 1,
-        }
-    )
+    input_variables.update({
+        f"{moz_build_flag}": True,
+        "concurrent_links": 1,
+        "action_pool_depth": 1,
+    })
 
     if input_variables["target_os"] == "win":
-        input_variables.update(
-            {
-                "visual_studio_path": "/",
-                "visual_studio_version": 2015,
-                "wdk_path": "/",
-                "windows_sdk_version": "n/a",
-            }
-        )
+        input_variables.update({
+            "visual_studio_path": "/",
+            "visual_studio_version": 2015,
+            "wdk_path": "/",
+            "windows_sdk_version": "n/a",
+        })
     if input_variables["target_os"] == "mac":
-        input_variables.update(
-            {
-                "mac_sdk_path": "/",
-            }
-        )
+        input_variables.update({
+            "mac_sdk_path": "/",
+        })
 
-    gn_args = f'--args={" ".join([f"{k}={str_for_arg(v)}" for k, v in input_variables.items()])}'
+    gn_args = f"--args={' '.join([f'{k}={str_for_arg(v)}' for k, v in input_variables.items()])}"
     with tempfile.TemporaryDirectory() as tempdir:
         # On Mac, `tempdir` starts with /var which is a symlink to /private/var.
         # We resolve the symlinks in `tempdir` here so later usage with

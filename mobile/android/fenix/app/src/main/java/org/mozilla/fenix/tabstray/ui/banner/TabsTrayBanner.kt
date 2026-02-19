@@ -259,6 +259,10 @@ private fun TabPageBanner(
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
     val selectedTabIndex = Page.pageToPosition(selectedPage)
 
+    // We wrap the TabRow in a TopAppBar to reuse Material3's built-in scroll behavior.
+    // CenterAlignedTopAppBar provides the scroll-to-collapse behavior via `scrollBehavior`,
+    // which TabRow/PrimaryTabRow does not support on its own. Without this wrapper, we'd have
+    // to duplicate the app bar scroll behavior implementation here.
     CenterAlignedTopAppBar(
         title = {
             Column(

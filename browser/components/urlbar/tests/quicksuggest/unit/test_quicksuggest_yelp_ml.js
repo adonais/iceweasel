@@ -559,7 +559,6 @@ function makeExpectedResult({
   source = "ml",
   provider = "yelp_intent",
   originalUrl = undefined,
-  displayUrl = undefined,
   // Expect index -1 for amp results because we test
   // without the search suggestions provider.
   suggestedIndex = -1,
@@ -570,7 +569,6 @@ function makeExpectedResult({
     source,
     provider,
     originalUrl,
-    displayUrl,
     suggestedIndex,
   });
 }

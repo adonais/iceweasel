@@ -1404,11 +1404,17 @@ nsresult nsObjectLoadingContent::CloseChannel() {
 
 bool nsObjectLoadingContent::IsAboutBlankLoadOntoInitialAboutBlank(
     nsIURI* aURI, bool aInheritPrincipal, nsIPrincipal* aPrincipalToInherit) {
-  return NS_IsAboutBlank(aURI) && aInheritPrincipal &&
-         (!mFrameLoader || !mFrameLoader->GetExistingDocShell() ||
-          mFrameLoader->GetExistingDocShell()
-              ->IsAboutBlankLoadOntoInitialAboutBlank(aURI, aInheritPrincipal,
-                                                      aPrincipalToInherit));
+  if (!NS_IsAboutBlankAllowQueryAndFragment(aURI) || !aInheritPrincipal) {
+    return false;
+  }
+
+  if (!mFrameLoader || !mFrameLoader->GetExistingDocShell()) {
+    return false;
+  }
+
+  RefPtr<nsDocShellLoadState> dummyLoadState = new nsDocShellLoadState(mURI);
+  return mFrameLoader->GetExistingDocShell()->ShouldDoInitialAboutBlankSyncLoad(
+      aURI, dummyLoadState, aPrincipalToInherit);
 }
 
 nsresult nsObjectLoadingContent::OpenChannel() {

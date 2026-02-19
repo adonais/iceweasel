@@ -79,7 +79,6 @@ struct ParamTraits<mozilla::ScrollAxis> {
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParam(aWriter, aParam.mWhereToScroll);
     WriteParam(aWriter, aParam.mWhenToScroll);
-    WriteParam(aWriter, aParam.mOnlyIfPerceivedScrollableDirection);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -89,15 +88,6 @@ struct ParamTraits<mozilla::ScrollAxis> {
     if (!ReadParam(aReader, &aResult->mWhenToScroll)) {
       return false;
     }
-
-    // We can't set mOnlyIfPerceivedScrollableDirection directly since it's
-    // a bitfield.
-    bool value;
-    if (!ReadParam(aReader, &value)) {
-      return false;
-    }
-    aResult->mOnlyIfPerceivedScrollableDirection = value;
-
     return true;
   }
 };

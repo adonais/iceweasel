@@ -74,7 +74,7 @@ class PageStyleActor extends Actor {
    * @param inspector
    *    The InspectorActor that owns this PageStyleActor.
    *
-   * @constructor
+   * @class
    */
   constructor(inspector) {
     super(inspector.conn, pageStyleSpec);

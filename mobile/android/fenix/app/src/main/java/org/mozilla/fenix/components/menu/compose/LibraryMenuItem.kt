@@ -19,9 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +40,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.badge.BADGE_SIZE_SMALL
+import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.theme.information
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
@@ -98,19 +97,14 @@ fun LibraryMenuItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
         ) {
-            BadgedBox(
-                badge = {
-                    if (isHighlighted) {
-                        Badge(containerColor = MaterialTheme.colorScheme.information)
-                    }
-                },
-            ) {
-                Icon(
-                    painter = painterResource(iconRes),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
+            BadgedIcon(
+                painter = painterResource(iconRes),
+                isHighlighted = isHighlighted,
+                size = BADGE_SIZE_SMALL,
+                contentDescription = null,
+                containerColor = MaterialTheme.colorScheme.information,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
 
             Spacer(Modifier.height(4.dp))
 

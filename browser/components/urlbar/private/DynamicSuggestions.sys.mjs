@@ -103,17 +103,24 @@ export class DynamicSuggestions extends SuggestProvider {
       return null;
     }
 
+    payload.isManageable = true;
+    payload.helpUrl = lazy.QuickSuggest.HELP_URL;
+
+    if (!payload.title && payload.url) {
+      try {
+        // If there's no title, show the domain as the title. Not all valid URLs
+        // have a domain.
+        payload.title = new URL(payload.url).URI.displayHostPort;
+      } catch (e) {}
+    }
+
     let resultProperties = { ...result };
     delete resultProperties.payload;
     return new lazy.UrlbarResult({
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       ...resultProperties,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-        ...payload,
-        isManageable: true,
-        helpUrl: lazy.QuickSuggest.HELP_URL,
-      }),
+      payload,
     });
   }
 

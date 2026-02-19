@@ -32,6 +32,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/webdriver-bidi/WebDriverBiDiConnection.sys.mjs",
   WebSocketHandshake:
     "chrome://remote/content/server/WebSocketHandshake.sys.mjs",
+  windowManager: "chrome://remote/content/shared/WindowManager.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
@@ -295,6 +296,7 @@ export class WebDriverSession {
 
     // Start the tracking of browsing contexts to create Navigable ids.
     lazy.NavigableManager.startTracking();
+    lazy.windowManager.startTracking();
 
     webDriverSessions.set(this.#id, this);
   }
@@ -305,6 +307,7 @@ export class WebDriverSession {
     // Stop the tracking of browsing contexts when no WebDriver
     // session exists anymore.
     lazy.NavigableManager.stopTracking();
+    lazy.windowManager.stopTracking();
 
     lazy.unregisterProcessDataActor();
 

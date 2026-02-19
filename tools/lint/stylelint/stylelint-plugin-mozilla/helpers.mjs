@@ -360,9 +360,15 @@ export const isValidFallback = (value, tokenCSS) => {
  * @param {string} value some CSS declaration to match
  * @param {object} cssCustomProperties
  * @param {string[]} tokenCSS
+ * @param {string[]} allowList
  * @returns {boolean}
  */
-export const isValidLocalProperty = (value, cssCustomProperties, tokenCSS) => {
+export const isValidLocalProperty = (
+  value,
+  cssCustomProperties,
+  tokenCSS,
+  allowList = ALLOW_LIST
+) => {
   const parsed = valueParser(String(value));
   let customProperty = null;
 
@@ -380,7 +386,7 @@ export const isValidLocalProperty = (value, cssCustomProperties, tokenCSS) => {
       cssCustomProperties[customProperty],
       tokenCSS,
       cssCustomProperties,
-      ALLOW_LIST
+      allowList
     );
   }
   return false;
@@ -421,7 +427,7 @@ export const isValidValue = (
 /**
  * Checks if CSS value uses tokens correctly (as a group).
  *
- * @param {string} value some CSS declaration to match
+ * @param {string | import('postcss').Node} value some CSS declaration to match
  * @param {string[]} tokenCSS
  * @param {object} cssCustomProperties
  * @param {string[]} allowList defaults to the base list in this file
@@ -433,7 +439,9 @@ export const isValidTokenUsage = (
   cssCustomProperties,
   allowList = ALLOW_LIST
 ) => {
-  const parsed = valueParser(value);
+  // TODO: this handles both string and postcss node values to support the old rule implementation
+  // once all design token rules are consolidated, we can remove this and use only postcss nodes
+  const parsed = typeof value === "string" ? valueParser(value) : value;
   let isValid = false;
 
   parsed.walk(node => {
@@ -449,7 +457,12 @@ export const isValidTokenUsage = (
           let variableNode = `var(${node.nodes[0].value})`;
           isValid =
             isToken(variableNode, tokenCSS) ||
-            isValidLocalProperty(variableNode, cssCustomProperties, tokenCSS);
+            isValidLocalProperty(
+              variableNode,
+              cssCustomProperties,
+              tokenCSS,
+              allowList
+            );
         }
         break;
       }

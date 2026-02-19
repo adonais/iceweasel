@@ -984,8 +984,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   assertStackAlignment(ABIStackAlignment);
 }
 
-void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
-                                     bool callFromWasm) {
+void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
   freeStack(stackAdjust);
   if (dynamicAlignment_) {
     pop(rsp);

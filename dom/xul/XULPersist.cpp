@@ -171,13 +171,13 @@ nsresult XULPersist::ApplyPersistentAttributes() {
 
     // We want to hold strong refs to the elements while applying
     // persistent attributes, just in case.
-    const nsTArray<Element*>* allElements = mDocument->GetAllElementsForId(id);
-    if (!allElements) {
+    const Span allElements = mDocument->GetAllElementsForId(id);
+    if (allElements.IsEmpty()) {
       continue;
     }
     elements.Clear();
-    elements.SetCapacity(allElements->Length());
-    for (Element* element : *allElements) {
+    elements.SetCapacity(allElements.Length());
+    for (Element* element : allElements) {
       elements.AppendObject(element);
     }
 

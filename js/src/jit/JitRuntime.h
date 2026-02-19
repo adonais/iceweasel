@@ -340,6 +340,9 @@ class JitRuntime {
   const void* addressOfDisallowArbitraryCode() const {
     return &disallowArbitraryCode_.refNoCheck();
   }
+  static size_t offsetOfDisallowArbitraryCode() {
+    return offsetof(JitRuntime, disallowArbitraryCode_);
+  }
 #endif
 
   uint8_t* allocateIonOsrTempData(size_t size);

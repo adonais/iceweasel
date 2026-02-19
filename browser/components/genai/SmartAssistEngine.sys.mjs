@@ -129,7 +129,11 @@ export const SmartAssistEngine = {
     const fxAccountToken = await this._getFxAccountToken();
 
     // We'll mutate a local copy of the thread as we loop
-    let convo = Array.isArray(messages) ? [...messages] : [];
+    // We also filter out empty assistant messages because
+    //  these kinds of messages can produce unexpected model responses
+    let convo = Array.isArray(messages)
+      ? messages.filter(msg => !(msg.role == "assistant" && !msg.content))
+      : [];
 
     // Helper to run the model once (streaming) on current convo
     const streamModelResponse = () =>

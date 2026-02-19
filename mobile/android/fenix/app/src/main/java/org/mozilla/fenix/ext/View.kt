@@ -12,10 +12,7 @@ import androidx.annotation.DimenRes
 import androidx.annotation.Dimension
 import androidx.annotation.Dimension.Companion.DP
 import androidx.annotation.VisibleForTesting
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import mozilla.components.support.ktx.android.util.dpToPx
-import mozilla.components.support.utils.ext.bottom
 import org.mozilla.fenix.components.Components
 
 /**
@@ -82,61 +79,6 @@ fun View.getRectWithScreenLocation(): Rect {
         locationOnScreen[0] + width,
         locationOnScreen[1] + height,
     )
-}
-
-/**
- * A safer version of [ViewCompat.getRootWindowInsets] that does not throw a NullPointerException
- * if the view is not attached.
- */
-fun View.getWindowInsets(): WindowInsetsCompat? {
-    return rootWindowInsets?.let {
-        WindowInsetsCompat.toWindowInsetsCompat(it)
-    }
-}
-
-/**
- * Checks if the keyboard is visible
- *
- * Inspired by https://stackoverflow.com/questions/2150078/how-to-check-visibility-of-software-keyboard-in-android
- * API 30 adds a native method for this. We should use it (and a compat method if one
- * is added) when it becomes available
- */
-fun View.isKeyboardVisible(): Boolean {
-    // Since we have insets, we don't need to guess what the keyboard height is.
-    return isKeyboardVisible(getKeyboardHeight())
-}
-
-@VisibleForTesting
-internal fun isKeyboardVisible(keyboardHeight: Int): Boolean {
-    val minimumKeyboardHeight = 0
-    return keyboardHeight > minimumKeyboardHeight
-}
-
-@VisibleForTesting
-internal fun View.getWindowVisibleDisplayFrame(): Rect = with(Rect()) {
-    getWindowVisibleDisplayFrame(this)
-    this
-}
-
-/**
- * Calculates the height of the onscreen keyboard.
- */
-fun View.getKeyboardHeight(): Int {
-    return getKeyboardHeight(
-        rootViewHeight = rootView.height,
-        windowVisibleDisplayFrame = getWindowVisibleDisplayFrame(),
-        bottomInset = getWindowInsets()?.bottom() ?: 0,
-    )
-}
-
-@VisibleForTesting
-internal fun getKeyboardHeight(
-    rootViewHeight: Int,
-    windowVisibleDisplayFrame: Rect,
-    bottomInset: Int,
-): Int {
-    val statusBarHeight = windowVisibleDisplayFrame.top
-    return rootViewHeight - (windowVisibleDisplayFrame.height() + statusBarHeight) - bottomInset
 }
 
 /**

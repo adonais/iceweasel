@@ -7,7 +7,6 @@
 #include "SpeechDispatcherService.h"
 
 #include <math.h>
-#include <stdlib.h>
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"

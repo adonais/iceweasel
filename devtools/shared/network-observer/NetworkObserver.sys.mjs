@@ -98,7 +98,7 @@ const HTTP_DOWNLOAD_ACTIVITIES = [
  * http-on-examine-response notifications. All network request information is
  * routed to the remote Web Console.
  *
- * @constructor
+ * @class
  * @param {object} options
  * @param {Function(nsIChannel): boolean} options.ignoreChannelFunction
  *        This function will be called for every detected channel to decide if it
@@ -314,9 +314,21 @@ export class NetworkObserver {
     return this.#throttleData;
   }
 
+  /**
+   * Update the network throttling configuration.
+   *
+   * @param {object|null} value
+   *        The network throttling configuration object, or null if throttling
+   *        should be disabled.
+   */
   setThrottleData(value) {
     this.#throttleData = value;
-    // Clear out any existing throttlers
+
+    // If value is null, the user is disabling throttling, destroy the previous
+    // throttler.
+    if (this.#throttler && value === null) {
+      this.#throttler.destroy();
+    }
     this.#throttler = null;
   }
 

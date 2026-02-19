@@ -448,14 +448,13 @@
     > .urlbarView-row:not(:hover, [selected], [descendant-selected])
     > .urlbarView-row-buttons
     > &:not([open]):first-child:empty {
-    display: none;
-
     /* The realtime suggestions' style will be broken if the width will be
        changed by hover. Thus we use the visibility instead of display to keep
        the element size */
-    .urlbarView-row[dynamicType^="realtime-"] > .urlbarView-row-buttons > & {
-      display: unset;
-      visibility: hidden;
+    visibility: hidden;
+
+    .urlbarView-row:not([dynamicType^="realtime-"]) > .urlbarView-row-buttons > & {
+      display: none;
     }
   }
 

@@ -358,8 +358,8 @@ export class AdsFeed {
         context_id: await lazy.ContextId.request(),
         placements,
         blocks: blockedSponsors.split(","),
-        credentials: "omit",
       }),
+      credentials: "omit",
       signal,
     };
 

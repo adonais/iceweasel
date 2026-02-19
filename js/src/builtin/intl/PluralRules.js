@@ -230,28 +230,6 @@ function InitializePluralRules(pluralRules, locales, options) {
 }
 
 /**
- * 16.2.2 Intl.PluralRules.supportedLocalesOf ( locales [ , options ] )
- *
- * Returns the subset of the given locale list for which this locale list has a
- * matching (possibly fallback) locale. Locales appear in the same order in the
- * returned list as in the input list.
- *
- * ES2024 Intl draft rev 74ca7099f103d143431b2ea422ae640c6f43e3e6
- */
-function Intl_PluralRules_supportedLocalesOf(locales /*, options*/) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  // Step 1.
-  var availableLocales = "PluralRules";
-
-  // Step 2.
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  // Step 3.
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-/**
  * 16.3.3 Intl.PluralRules.prototype.select ( value )
  *
  * Returns a String value representing the plural category matching

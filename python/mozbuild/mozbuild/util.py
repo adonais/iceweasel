@@ -83,7 +83,7 @@ class EmptyValue(str):
     """
 
     def __init__(self):
-        super(EmptyValue, self).__init__()
+        super().__init__()
 
 
 class ReadOnlyNamespace:
@@ -91,7 +91,7 @@ class ReadOnlyNamespace:
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
-            super(ReadOnlyNamespace, self).__setattr__(k, v)
+            super().__setattr__(k, v)
 
     def __delattr__(self, key):
         raise Exception("Object does not support deletion.")
@@ -400,24 +400,22 @@ class List(list):
             raise ValueError("List can only be created from other list instances.")
 
         self._kwargs = kwargs
-        super(List, self).__init__(iterable)
+        super().__init__(iterable)
 
     def extend(self, l):
         if not isinstance(l, list):
             raise ValueError("List can only be extended with other list instances.")
 
-        return super(List, self).extend(l)
+        return super().extend(l)
 
     def __setitem__(self, key, val):
         if isinstance(key, slice):
             if not isinstance(val, list):
-                raise ValueError(
-                    "List can only be sliced with other list " "instances."
-                )
+                raise ValueError("List can only be sliced with other list instances.")
             if key.step:
-                raise ValueError("List cannot be sliced with a nonzero step " "value")
-            return super(List, self).__setitem__(key, val)
-        return super(List, self).__setitem__(key, val)
+                raise ValueError("List cannot be sliced with a nonzero step value")
+            return super().__setitem__(key, val)
+        return super().__setitem__(key, val)
 
     def __setslice__(self, i, j, sequence):
         return self.__setitem__(slice(i, j), sequence)
@@ -438,7 +436,7 @@ class List(list):
         if not isinstance(other, list):
             raise ValueError("Only lists can be appended to lists.")
 
-        return super(List, self).__iadd__(other)
+        return super().__iadd__(other)
 
 
 class UnsortedError(Exception):
@@ -496,27 +494,27 @@ class StrictOrderingOnAppendList(List):
 
         StrictOrderingOnAppendList.ensure_sorted(iterable)
 
-        super(StrictOrderingOnAppendList, self).__init__(iterable, **kwargs)
+        super().__init__(iterable, **kwargs)
 
     def extend(self, l):
         StrictOrderingOnAppendList.ensure_sorted(l)
 
-        return super(StrictOrderingOnAppendList, self).extend(l)
+        return super().extend(l)
 
     def __setitem__(self, key, val):
         if isinstance(key, slice):
             StrictOrderingOnAppendList.ensure_sorted(val)
-        return super(StrictOrderingOnAppendList, self).__setitem__(key, val)
+        return super().__setitem__(key, val)
 
     def __add__(self, other):
         StrictOrderingOnAppendList.ensure_sorted(other)
 
-        return super(StrictOrderingOnAppendList, self).__add__(other)
+        return super().__add__(other)
 
     def __iadd__(self, other):
         StrictOrderingOnAppendList.ensure_sorted(other)
 
-        return super(StrictOrderingOnAppendList, self).__iadd__(other)
+        return super().__iadd__(other)
 
 
 class ImmutableStrictOrderingOnAppendList(StrictOrderingOnAppendList):
@@ -560,9 +558,7 @@ class StrictOrderingOnAppendListWithAction(StrictOrderingOnAppendList):
                 "with another list"
             )
         iterable = [self._action(i) for i in iterable]
-        super(StrictOrderingOnAppendListWithAction, self).__init__(
-            iterable, action=action
-        )
+        super().__init__(iterable, action=action)
 
     def extend(self, l):
         if not isinstance(l, list):
@@ -571,7 +567,7 @@ class StrictOrderingOnAppendListWithAction(StrictOrderingOnAppendList):
                 "with another list"
             )
         l = [self._action(i) for i in l]
-        return super(StrictOrderingOnAppendListWithAction, self).extend(l)
+        return super().extend(l)
 
     def __setitem__(self, key, val):
         if isinstance(key, slice):
@@ -581,7 +577,7 @@ class StrictOrderingOnAppendListWithAction(StrictOrderingOnAppendList):
                     "with another list"
                 )
             val = [self._action(item) for item in val]
-        return super(StrictOrderingOnAppendListWithAction, self).__setitem__(key, val)
+        return super().__setitem__(key, val)
 
     def __add__(self, other):
         if not isinstance(other, list):
@@ -589,7 +585,7 @@ class StrictOrderingOnAppendListWithAction(StrictOrderingOnAppendList):
                 "StrictOrderingOnAppendListWithAction can only be added with "
                 "another list"
             )
-        return super(StrictOrderingOnAppendListWithAction, self).__add__(other)
+        return super().__add__(other)
 
     def __iadd__(self, other):
         if not isinstance(other, list):
@@ -598,7 +594,7 @@ class StrictOrderingOnAppendListWithAction(StrictOrderingOnAppendList):
                 "another list"
             )
         other = [self._action(i) for i in other]
-        return super(StrictOrderingOnAppendListWithAction, self).__iadd__(other)
+        return super().__iadd__(other)
 
 
 class MozbuildDeletionError(Exception):
@@ -707,9 +703,7 @@ def StrictOrderingOnAppendListWithFlagsFactory(flags):
                     "'%s' object does not support item assignment"
                     % self.__class__.__name__
                 )
-            result = super(
-                StrictOrderingOnAppendListWithFlagsSpecialization, self
-            ).__setitem__(name, value)
+            result = super().__setitem__(name, value)
             # We may have removed items.
             for k in set(self._flags.keys()) - set(self):
                 del self._flags[k]
@@ -732,17 +726,13 @@ def StrictOrderingOnAppendListWithFlagsFactory(flags):
             self._flags.update(other._flags)
 
         def extend(self, l):
-            result = super(
-                StrictOrderingOnAppendListWithFlagsSpecialization, self
-            ).extend(l)
+            result = super().extend(l)
             if isinstance(l, StrictOrderingOnAppendListWithFlags):
                 self._update_flags(l)
             return result
 
         def __add__(self, other):
-            result = super(
-                StrictOrderingOnAppendListWithFlagsSpecialization, self
-            ).__add__(other)
+            result = super().__add__(other)
             if isinstance(other, StrictOrderingOnAppendListWithFlags):
                 # Result has flags from other but not from self, since
                 # internally we duplicate self and then extend with other, and
@@ -754,9 +744,7 @@ def StrictOrderingOnAppendListWithFlagsFactory(flags):
             return result
 
         def __iadd__(self, other):
-            result = super(
-                StrictOrderingOnAppendListWithFlagsSpecialization, self
-            ).__iadd__(other)
+            result = super().__iadd__(other)
             if isinstance(other, StrictOrderingOnAppendListWithFlags):
                 self._update_flags(other)
             return result
@@ -984,7 +972,7 @@ def TypedNamedTuple(name, fields):
             if len(args) == 1 and not kwargs and isinstance(args[0], tuple):
                 args = args[0]
 
-            return super(TypedTuple, klass).__new__(klass, *args, **kwargs)
+            return super().__new__(klass, *args, **kwargs)
 
         def __init__(self, *args, **kwargs):
             for i, (fname, ftype) in enumerate(self._fields):
@@ -1032,27 +1020,27 @@ def TypedList(type, base_class=List):
                 iterable = []
             iterable = self._ensure_type(iterable)
 
-            super(_TypedList, self).__init__(iterable, **kwargs)
+            super().__init__(iterable, **kwargs)
 
         def extend(self, l):
             l = self._ensure_type(l)
 
-            return super(_TypedList, self).extend(l)
+            return super().extend(l)
 
         def __setitem__(self, key, val):
             val = self._ensure_type(val)
 
-            return super(_TypedList, self).__setitem__(key, val)
+            return super().__setitem__(key, val)
 
         def __add__(self, other):
             other = self._ensure_type(other)
 
-            return super(_TypedList, self).__add__(other)
+            return super().__add__(other)
 
         def __iadd__(self, other):
             other = self._ensure_type(other)
 
-            return super(_TypedList, self).__iadd__(other)
+            return super().__iadd__(other)
 
         def append(self, other):
             self += [other]
@@ -1130,8 +1118,8 @@ def expand_variables(s, variables):
     If a variable value is not a string, it is iterated and its items are
     joined with a whitespace."""
     result = ""
-    for s, name in pair(VARIABLES_RE.split(s)):
-        result += s
+    for text_part, name in pair(VARIABLES_RE.split(s)):
+        result += text_part
         value = variables.get(name)
         if not value:
             continue
@@ -1213,13 +1201,13 @@ class EnumString(str):
                 "Can only compare with %s"
                 % ", ".join("'%s'" % v for v in self.POSSIBLE_VALUES)
             )
-        return super(EnumString, self).__eq__(other)
+        return super().__eq__(other)
 
     def __ne__(self, other):
         return not (self == other)
 
     def __hash__(self):
-        return super(EnumString, self).__hash__()
+        return super().__hash__()
 
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self)!r})"

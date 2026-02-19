@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-12-04T14:55:53.808070+00:00'
+updated_at: '2026-01-06T20:18:20.713926+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -861,6 +861,10 @@ people:
     bmo_id: 690738
     name: Niklas Baumgardner
     nick: niklas
+  - &ninapy
+    bmo_id: 731746
+    name: Nina Pypchenko
+    nick: nina-py
   - &nlapre
     bmo_id: 711793
     name: Nathan LaPré
@@ -873,10 +877,6 @@ people:
     bmo_id: 651777
     name: Erik Nordin
     nick: nordzilla
-  - &npypchenko
-    bmo_id: 731746
-    name: Nina Pypchenko
-    nick: npypchenko
   - &nrishel
     bmo_id: 697005
     name: Nick Rishel
@@ -1171,7 +1171,7 @@ modules:
     description: The top level directory for the Firefox/Gecko tree. Owned by the
       TLMC
     includes:
-      - README.txt
+      - README.md
     meta:
       owners_emeritus:
         - Ben Bangert
@@ -3759,7 +3759,7 @@ modules:
           - *maxx
           - *mconley
           - *nbarrett
-          - *npypchenko
+          - *ninapy
           - *rhamoui
         machine_name: new_tab_page
 
@@ -3949,12 +3949,12 @@ modules:
           peers_emeritus:
             - Jared Wein
             - Matthew N
+            - *mak
             - *mconley
         owners:
           - *dao
           - *sthompson
         peers:
-          - *mak
           - *dwalker
           - *nikkis
           - *niklas
@@ -4607,9 +4607,9 @@ modules:
       - browser/components/translations/**/*
     excludes: []
     owners:
-      - *gregtatum
-    peers:
       - *nordzilla
+    peers:
+      - *gregtatum
       - *epavlov
       - *marco
     meta:
@@ -4668,5 +4668,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 74d3e43232fd8791824228b47bf9d0de2e3e0ccc
-  export: 65ac11e9d29fb19a38fa449a050a80c42498370f
+  config: 3cf0f5ab20db1a5c5120fe66954f6c6e1f4a3018
+  export: 81a7a835536803c8ec5b654be6f52cb73746d7e0

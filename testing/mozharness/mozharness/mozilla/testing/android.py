@@ -51,7 +51,7 @@ class AndroidMixin:
         self.use_gles3 = False
         self.use_root = True
         self.xre_path = None
-        super(AndroidMixin, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @property
     def adb_path(self):

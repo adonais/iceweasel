@@ -74,7 +74,8 @@ nsMathMLmrootFrame::InheritAutomaticData(nsIFrame* aParent) {
 
   bool isRootWithIndex = GetContent()->IsMathMLElement(nsGkAtoms::mroot);
   if (!isRootWithIndex) {
-    mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
+    mPresentationData.flags +=
+        MathMLPresentationFlag::StretchAllChildrenVertically;
   }
 
   return NS_OK;
@@ -90,10 +91,12 @@ nsMathMLmrootFrame::TransmitAutomaticData() {
     //    base.
     // 2. The TeXbook (Ch 17. p.141) says \sqrt is compressed
     if (!StaticPrefs::mathml_math_shift_enabled()) {
-      UpdatePresentationDataFromChildAt(1, 1, NS_MATHML_COMPRESSED,
-                                        NS_MATHML_COMPRESSED);
-      UpdatePresentationDataFromChildAt(0, 0, NS_MATHML_COMPRESSED,
-                                        NS_MATHML_COMPRESSED);
+      UpdatePresentationDataFromChildAt(1, 1,
+                                        MathMLPresentationFlag::Compressed,
+                                        MathMLPresentationFlag::Compressed);
+      UpdatePresentationDataFromChildAt(0, 0,
+                                        MathMLPresentationFlag::Compressed,
+                                        MathMLPresentationFlag::Compressed);
     }
 
     PropagateFrameFlagFor(mFrames.LastChild(),
@@ -101,8 +104,9 @@ nsMathMLmrootFrame::TransmitAutomaticData() {
   } else {
     // The TeXBook (Ch 17. p.141) says that \sqrt is cramped
     if (!StaticPrefs::mathml_math_shift_enabled()) {
-      UpdatePresentationDataFromChildAt(0, -1, NS_MATHML_COMPRESSED,
-                                        NS_MATHML_COMPRESSED);
+      UpdatePresentationDataFromChildAt(0, -1,
+                                        MathMLPresentationFlag::Compressed,
+                                        MathMLPresentationFlag::Compressed);
     }
   }
 

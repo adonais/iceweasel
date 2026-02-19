@@ -29,7 +29,7 @@ namespace mozilla {
 using TimeUnit = media::TimeUnit;
 
 FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(
-    FFmpegLibWrapper* aLib, const CreateDecoderParams& aDecoderParams)
+    const FFmpegLibWrapper* aLib, const CreateDecoderParams& aDecoderParams)
     : FFmpegDataDecoder(aLib,
                         GetCodecId(aDecoderParams.AudioConfig().mMimeType,
                                    aDecoderParams.AudioConfig()),
@@ -451,6 +451,7 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
 
   packet->data = const_cast<uint8_t*>(aData);
   packet->size = aSize;
+  packet->pts = aSample->mTime.ToMicroseconds();
 
   if (aGotFrame) {
     *aGotFrame = false;

@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.concept.engine.Engine
 import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.service.nimbus.NimbusApi
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.metrics.MetricController
@@ -33,7 +33,7 @@ internal class DataChoicesMiddleware(
 ) : Middleware<DataChoicesState, DataChoicesAction> {
 
     override fun invoke(
-        context: MiddlewareContext<DataChoicesState, DataChoicesAction>,
+        store: Store<DataChoicesState, DataChoicesAction>,
         next: (DataChoicesAction) -> Unit,
         action: DataChoicesAction,
     ) {
@@ -41,7 +41,7 @@ internal class DataChoicesMiddleware(
 
         when (action) {
             is ViewCreated -> scope.launch {
-                context.store.dispatch(
+                store.dispatch(
                     SettingsLoaded(
                         telemetryEnabled = settings.isTelemetryEnabled,
                         usagePingEnabled = settings.isDailyUsagePingEnabled,
@@ -54,7 +54,7 @@ internal class DataChoicesMiddleware(
             }
             is ChoiceAction.TelemetryClicked -> {
                 updateTelemetryChoice()
-                context.store.dispatch(StudiesLoaded(settings.isExperimentationEnabled))
+                store.dispatch(StudiesLoaded(settings.isExperimentationEnabled))
             }
             is ChoiceAction.MeasurementDataClicked -> {
                 updateMarketingDataChoice()
@@ -104,17 +104,13 @@ internal class DataChoicesMiddleware(
             metrics.start(MetricServiceType.Data)
             if (!settings.hasUserDisabledExperimentation) {
                 settings.isExperimentationEnabled = true
+                nimbusSdk.experimentParticipation = true
             }
-            // Use separate participation flags for experiments and rollouts
-            nimbusSdk.experimentParticipation = true
-            nimbusSdk.rolloutParticipation = true
             engine.notifyTelemetryPrefChanged(true)
         } else {
             metrics.stop(MetricServiceType.Data)
             settings.isExperimentationEnabled = false
-            // Use separate participation flags for experiments and rollouts
             nimbusSdk.experimentParticipation = false
-            nimbusSdk.rolloutParticipation = false
             engine.notifyTelemetryPrefChanged(false)
         }
         // Reset experiment identifiers on both opt-in and opt-out; it's likely

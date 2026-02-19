@@ -3,6 +3,7 @@ support-files = [
   "Bug422543Child.sys.mjs",
   "dummy_page.html",
   "favicon_bug655270.ico",
+  "file_2007897.html",
   "file_bug234628-1-child.html",
   "file_bug234628-1.html",
   "file_bug234628-10-child.xhtml",
@@ -274,6 +275,18 @@ skip-if = [
 
 ["browser_bug1798780.js"]
 
+["browser_bug2002654.js"]
+
+["browser_bug2004165.js"]
+skip-if = [
+  "debug", # bug 2005202
+]
+
+["browser_bug2007897.js"]
+skip-if = [
+  "debug", # bug 2005202
+]
+
 ["browser_click_link_within_view_source.js"]
 
 ["browser_closewatcher_integration.js"]
@@ -315,6 +328,8 @@ skip-if = [
 
 ["browser_history_triggeringprincipal_viewsource.js"]
 https_first_disabled = true
+
+["browser_initialDocument_noLoadBlocking.js"]
 
 ["browser_initial_entry_without_interaction.js"]
 
@@ -361,6 +376,8 @@ support-files = ["file_replace_state_during_navigation.html"]
 support-files = ["file_replace_state_during_navigation.html"]
 
 ["browser_search_notification.js"]
+
+["browser_system_principal_initial_document.js"]
 
 ["browser_tab_replace_while_loading.js"]
 skip-if = [

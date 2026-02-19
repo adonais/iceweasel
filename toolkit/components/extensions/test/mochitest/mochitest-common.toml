@@ -215,6 +215,9 @@ skip-if = [
 ]
 
 ["test_ext_contentscript_data_url.html"]
+skip-if = [
+  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1897040
+]
 
 ["test_ext_contentscript_devtools_metadata.html"]
 skip-if = [
@@ -622,6 +625,8 @@ skip-if = [
   "http2",
   "http3",
 ]
+
+["test_ext_windowtracker_initialization.html"]
 
 ["test_startup_canary.html"]
 # test_startup_canary.html is at the bottom to minimize the time spent waiting in the test.

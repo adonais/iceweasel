@@ -1300,7 +1300,9 @@ class nsIWidget : public nsSupportsWeakReference {
   void NotifyWindowDestroyed();
   void NotifySizeMoveDone();
   using ByMoveToRect = nsIWidgetListener::ByMoveToRect;
-  void NotifyWindowMoved(int32_t aX, int32_t aY,
+  void NotifyWindowMoved(const LayoutDeviceIntPoint&,
+                         ByMoveToRect = ByMoveToRect::No);
+  void NotifyWindowMoved(const DesktopIntPoint&,
                          ByMoveToRect = ByMoveToRect::No);
   // Should be called by derived implementations to notify on system color and
   // theme changes. (Only one invocation per change is needed, not one
@@ -1414,8 +1416,6 @@ class nsIWidget : public nsSupportsWeakReference {
 
   void FreeShutdownObserver();
   void FreeLocalesChangedObserver();
-
-  bool IsPIPWindow() const { return mIsPIPWindow; };
 
  public:
   /**
@@ -2441,8 +2441,7 @@ class nsIWidget : public nsSupportsWeakReference {
   // a PANGESTURE_(MAY)START event).
   bool mCurrentPanGestureBelongsToSwipe;
 
-  // It's PictureInPicture window.
-  bool mIsPIPWindow : 1;
+  mozilla::widget::PiPType mPiPType;
 
   struct InitialZoomConstraints {
     InitialZoomConstraints(const uint32_t& aPresShellID,

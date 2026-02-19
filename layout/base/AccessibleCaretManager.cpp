@@ -310,18 +310,22 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
   // MockAccessibleCaretManager() to make it always return true.  Therefore,
   // we cannot return earlier when mPresShell is nullptr or the result of
   // GetFrameForRangeStart() is nullptr.
-  int32_t startOffset = 0;
-  nsIFrame* startFrame =
-      mPresShell ? GetFrameForRangeStart(*GetSelection()->GetFirstRange(),
-                                         &startOffset)
-                 : nullptr;
-  int32_t endOffset = 0;
-  nsIFrame* endFrame =
+  const FrameAndOffset startFrameAndOffset =
+      mPresShell ? GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+                       *GetSelection()->GetFirstRange())
+                 : FrameAndOffset{};
+  nsCOMPtr<nsIContent> endContent;
+  const FrameAndOffset endFrameAndOffset =
       mPresShell
-          ? GetFrameForRangeEnd(*GetSelection()->GetLastRange(), &endOffset)
-          : nullptr;
+          ? GetLastVisibleLeafFrameOrUnselectableChildFrame(
+                *GetSelection()->GetLastRange(), getter_AddRefs(endContent))
+          : FrameAndOffset{};
 
-  if (!CompareTreePosition(startFrame, startOffset, endFrame, endOffset)) {
+  if (!CompareTreePosition(
+          startFrameAndOffset.mFrame,
+          static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent),
+          endFrameAndOffset.mFrame,
+          static_cast<int32_t>(endFrameAndOffset.mOffsetInFrameContent))) {
     // XXX: Do we really have to hide carets if this condition isn't satisfied?
     HideCaretsAndDispatchCaretStateChangedEvent();
     return;
@@ -347,10 +351,22 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     return result;
   };
 
-  PositionChangedResult firstCaretResult =
-      updateSingleCaret(mCarets.GetFirst(), startFrame, startOffset);
+  PositionChangedResult firstCaretResult = updateSingleCaret(
+      mCarets.GetFirst(), startFrameAndOffset.mFrame,
+      static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent));
+  // If we get a frame for a child node for the end boundary, e.g., when the
+  // last visible content is <img> or something or unselectable container,
+  // we want to put the second caret to next to its end edge.  Then, we use
+  // the specific behavior of nsIFrame::GetPointFromOffset() (called by
+  // nsCaret::GetGeometryForFrame() in AccessibleCaret::SetPosition()) which
+  // returns the end edge if we set the length of frame content + 1.
+  const uint32_t offsetInEndFrameContent =
+      endFrameAndOffset.GetFrameContent() == endContent
+          ? endFrameAndOffset.mOffsetInFrameContent
+          : endFrameAndOffset.GetFrameContent()->Length() + 1;
   PositionChangedResult secondCaretResult =
-      updateSingleCaret(mCarets.GetSecond(), endFrame, endOffset);
+      updateSingleCaret(mCarets.GetSecond(), endFrameAndOffset.mFrame,
+                        static_cast<int32_t>(offsetInEndFrameContent));
 
   mIsCaretPositionChanged =
       firstCaretResult == PositionChangedResult::Position ||
@@ -368,7 +384,8 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     // old appearance. Otherwise we might override the appearance set by the
     // caller.
     if (StaticPrefs::layout_accessiblecaret_always_tilt()) {
-      UpdateCaretsForAlwaysTilt(startFrame, endFrame);
+      UpdateCaretsForAlwaysTilt(startFrameAndOffset.mFrame,
+                                endFrameAndOffset.mFrame);
     } else {
       UpdateCaretsForOverlappingTilt();
     }
@@ -658,9 +675,11 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
   if (offsets.content) {
     RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
     if (frameSelection) {
-      nsIFrame* theFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-          offsets.content, offsets.offset, offsets.associate);
-      if (theFrame && theFrame != ptFrame) {
+      const FrameAndOffset textFrameAndOffsetContainingWordBoundary =
+          SelectionMovementUtils::GetFrameForNodeOffset(
+              offsets.content, offsets.offset, offsets.associate);
+      if (textFrameAndOffsetContainingWordBoundary &&
+          textFrameAndOffsetContainingWordBoundary != ptFrame) {
         SetSelectionDragState(true);
         frameSelection->HandleClick(
             MOZ_KnownLive(offsets.content) /* bug 1636889 */,
@@ -1042,133 +1061,147 @@ void AccessibleCaretManager::LayoutFlusher::MaybeFlush(
   }
 }
 
-nsIFrame* AccessibleCaretManager::GetFrameForRangeStart(
-    nsRange& aRange, int32_t* aOutOffsetInFrameContent,
-    nsIContent** aOutContent /* = nullptr */,
-    int32_t* aOutOffsetInContent /* = nullptr */) const {
-  if (!mPresShell) {
-    return nullptr;
+static nsIFrame* GetChildFrameContainingOffset(
+    nsIFrame* aChildFrame, uint32_t aOffsetInChildFrameContent,
+    CaretAssociationHint aHint) {
+  nsIFrame* frameAtOffset = nullptr;
+  int32_t unused = 0;
+  if (NS_WARN_IF(NS_FAILED(aChildFrame->GetChildFrameContainingOffset(
+          static_cast<int32_t>(aOffsetInChildFrameContent),
+          aHint == CaretAssociationHint::After, &unused, &frameAtOffset)))) {
+    frameAtOffset = aChildFrame;
   }
-
-  MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
-  MOZ_ASSERT(aOutOffsetInFrameContent,
-             "aOutOffsetInFrameContent shouldn't be nullptr!");
-
-  nsIContent* const startContent =
-      nsIContent::FromNodeOrNull(aRange.GetStartContainer());
-  if (startContent && startContent->IsSelectable()) {
-    // FIXME: GetFrameForNodeOffset() may return unselectable frame. It should
-    // have an option to stop digging it if it reaches unselectable child.
-    uint32_t outOffset = 0;
-    nsIFrame* const startFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        startContent, aRange.StartOffset(), CaretAssociationHint::After,
-        &outOffset);
-    if (startFrame) {
-      MOZ_DIAGNOSTIC_ASSERT(startFrame->GetContent());
-      *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-      if (aOutContent) {
-        *aOutContent = do_AddRef(startContent).take();
-      }
-      if (aOutOffsetInContent) {
-        *aOutOffsetInContent = static_cast<int32_t>(aRange.StartOffset());
-      }
-      return startFrame;
-    }
-  }
-
-  UnsafePreContentIterator iter;
-  if (NS_WARN_IF(NS_FAILED(iter.Init(&aRange)))) {
-    return nullptr;
-  }
-  for (; !iter.IsDone(); iter.Next()) {
-    nsIContent* const content = nsIContent::FromNode(iter.GetCurrentNode());
-    if (!content || !content->IsSelectable()) {
-      continue;
-    }
-    // FIXME: GetFrameForNodeOffset() may return unselectable frame. It should
-    // have an option to stop digging it if it reaches unselectable child.
-    uint32_t outOffset = 0;
-    nsIFrame* const firstFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        content, 0, CaretAssociationHint::After, &outOffset);
-    if (NS_WARN_IF(!firstFrame)) {
-      continue;
-    }
-    MOZ_DIAGNOSTIC_ASSERT(firstFrame->GetContent());
-    *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-    if (aOutContent) {
-      *aOutContent = do_AddRef(content).take();
-    }
-    if (aOutOffsetInContent) {
-      *aOutOffsetInContent = 0;
-    }
-    return firstFrame;
-  }
-  return nullptr;
+  return frameAtOffset;
 }
 
-nsIFrame* AccessibleCaretManager::GetFrameForRangeEnd(
-    nsRange& aRange, int32_t* aOutOffsetInFrameContent,
-    nsIContent** aOutContent /* = nullptr */,
+FrameAndOffset
+AccessibleCaretManager::GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+    nsRange& aRange, nsIContent** aOutContent /* = nullptr */,
     int32_t* aOutOffsetInContent /* = nullptr */) const {
   if (!mPresShell) {
-    return nullptr;
+    return {};
   }
 
   MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
-  MOZ_ASSERT(aOutOffsetInFrameContent,
-             "aOutOffsetInFrameContent shouldn't be nullptr!");
 
-  nsIContent* const endContent =
-      nsIContent::FromNodeOrNull(aRange.GetEndContainer());
-  if (endContent && endContent->IsSelectable()) {
-    // FIXME: GetFrameForNodeOffset() may return unselectable frame. It should
-    // have an option to stop digging it if it reaches unselectable child.
-    uint32_t outOffset = 0;
-    nsIFrame* const endFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        endContent, aRange.EndOffset(), CaretAssociationHint::Before,
-        &outOffset);
-    if (endFrame) {
-      MOZ_DIAGNOSTIC_ASSERT(endFrame->GetContent());
-      *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-      if (aOutContent) {
-        *aOutContent = do_AddRef(endContent).take();
-      }
-      if (aOutOffsetInContent) {
-        *aOutOffsetInContent = static_cast<int32_t>(aRange.EndOffset());
-      }
-      return endFrame;
-    }
+  // FYI: aRange may be collapsed if `Selection` has multiple ranges.
+  if (MOZ_UNLIKELY(aRange.Collapsed())) {
+    return {};
   }
 
-  UnsafePostContentIterator iter;
-  if (NS_WARN_IF(NS_FAILED(iter.Init(&aRange)))) {
-    return nullptr;
+  const RawRangeBoundary& shrunkenStart =
+      SelectionMovementUtils::GetFirstVisiblePointAtLeaf(aRange);
+  if (MOZ_UNLIKELY(!shrunkenStart.IsSet())) {
+    return {};
   }
-  iter.Last();
-  for (; !iter.IsDone(); iter.Prev()) {
-    nsIContent* const content = nsIContent::FromNode(iter.GetCurrentNode());
-    if (!content || !content->IsSelectable()) {
-      continue;
+  if (aOutContent) {
+    if (nsIContent* const outContent =
+            nsIContent::FromNode(shrunkenStart.GetContainer())) {
+      *aOutContent = do_AddRef(outContent).take();
     }
-    // FIXME: GetFrameForNodeOffset() may return unselectable frame. It should
-    // have an option to stop digging it if it reaches unselectable child.
-    uint32_t outOffset = 0;
-    nsIFrame* const lastFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        content, content->Length(), CaretAssociationHint::Before, &outOffset);
-    if (NS_WARN_IF(!lastFrame)) {
-      continue;
-    }
-    MOZ_DIAGNOSTIC_ASSERT(lastFrame->GetContent());
-    *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-    if (aOutContent) {
-      *aOutContent = do_AddRef(content).take();
-    }
-    if (aOutOffsetInContent) {
-      *aOutOffsetInContent = static_cast<int32_t>(content->Length());
-    }
-    return lastFrame;
   }
-  return nullptr;
+  if (aOutOffsetInContent) {
+    *aOutOffsetInContent = static_cast<int32_t>(
+        *shrunkenStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets));
+  }
+  if (nsIContent* const child = shrunkenStart.GetChildAtOffset()) {
+    if (nsIFrame* const childFrame = child->GetPrimaryFrame()) {
+      const uint32_t offsetInFrameContent = 0u;
+      nsIFrame* const childFrameAtOffset = GetChildFrameContainingOffset(
+          childFrame, offsetInFrameContent, CaretAssociationHint::After);
+      MOZ_ASSERT(childFrameAtOffset);
+      // If the child is a non-selectable container which has padding or border,
+      // we want to put the caret before the start edge, but returning the frame
+      // makes the caller will get rect in its content.  Therefore, do not
+      // return the position in the unselectable container frame.
+      if (!childFrameAtOffset->IsInlineFrame() ||
+          childFrameAtOffset->IsSelfEmpty()) {
+        return {childFrameAtOffset, offsetInFrameContent};
+      }
+    }
+  }
+  nsIContent* const container =
+      nsIContent::FromNode(shrunkenStart.GetContainer());
+  if (MOZ_UNLIKELY(!container)) {
+    return {};
+  }
+  nsIFrame* const frame = container->GetPrimaryFrame();
+  if (MOZ_UNLIKELY(!frame)) {
+    return {};
+  }
+  MOZ_ASSERT(frame->IsSelectable());
+  const uint32_t offsetInFrameContent =
+      *shrunkenStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+  nsIFrame* const frameAtOffset = GetChildFrameContainingOffset(
+      frame, offsetInFrameContent, CaretAssociationHint::After);
+  MOZ_ASSERT(frameAtOffset);
+  return {frameAtOffset, offsetInFrameContent};
+}
+
+FrameAndOffset
+AccessibleCaretManager::GetLastVisibleLeafFrameOrUnselectableChildFrame(
+    nsRange& aRange, nsIContent** aOutContent /* = nullptr */,
+    int32_t* aOutOffsetInContent /* = nullptr */) const {
+  if (!mPresShell) {
+    return {};
+  }
+
+  MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
+
+  // FYI: aRange may be collapsed if `Selection` has multiple ranges.
+  if (MOZ_UNLIKELY(aRange.Collapsed())) {
+    return {};
+  }
+
+  const RawRangeBoundary& shrunkenEnd =
+      SelectionMovementUtils::GetLastVisiblePointAtLeaf(aRange);
+  if (MOZ_UNLIKELY(!shrunkenEnd.IsSet())) {
+    return {};
+  }
+  if (aOutContent) {
+    if (nsIContent* const outContent =
+            nsIContent::FromNode(shrunkenEnd.GetContainer())) {
+      *aOutContent = do_AddRef(outContent).take();
+    }
+  }
+  if (aOutOffsetInContent) {
+    *aOutOffsetInContent = static_cast<int32_t>(
+        *shrunkenEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets));
+  }
+  if (nsIContent* const previousSiblingOfChildAtOffset = shrunkenEnd.Ref()) {
+    if (nsIFrame* const childFrame =
+            previousSiblingOfChildAtOffset->GetPrimaryFrame()) {
+      const uint32_t offsetInChildFrameContent =
+          previousSiblingOfChildAtOffset->Length();
+      nsIFrame* const childFrameAtOffset = GetChildFrameContainingOffset(
+          childFrame, offsetInChildFrameContent, CaretAssociationHint::Before);
+      MOZ_ASSERT(childFrameAtOffset);
+      // If the child is a non-selectable inline container which has padding or
+      // border, we want to put the caret after the end edge, but returning the
+      // frame makes the caller will get rect in its content.  Therefore, do not
+      // return the position in the unselectable container frame.
+      if (!childFrameAtOffset->IsInlineFrame() ||
+          childFrameAtOffset->IsSelfEmpty()) {
+        return {childFrameAtOffset, offsetInChildFrameContent};
+      }
+    }
+  }
+  nsIContent* const container =
+      nsIContent::FromNode(shrunkenEnd.GetContainer());
+  if (MOZ_UNLIKELY(!container)) {
+    return {};
+  }
+  nsIFrame* const frame = container->GetPrimaryFrame();
+  if (MOZ_UNLIKELY(!frame)) {
+    return {};
+  }
+  MOZ_ASSERT(frame->IsSelectable());
+  const uint32_t offsetInFrameContent =
+      *shrunkenEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+  nsIFrame* const frameAtOffset = GetChildFrameContainingOffset(
+      frame, offsetInFrameContent, CaretAssociationHint::Before);
+  MOZ_ASSERT(frameAtOffset);
+  return {frameAtOffset, offsetInFrameContent};
 }
 
 bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
@@ -1181,29 +1214,29 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   nsDirection dir =
       mActiveCaret == mCarets.GetFirst() ? eDirPrevious : eDirNext;
-  int32_t offsetInFrameContent = 0;
   nsCOMPtr<nsIContent> content;
   int32_t offsetInContent = 0;
-  nsIFrame* frame =
-      dir == eDirNext
-          ? GetFrameForRangeStart(*GetSelection()->GetFirstRange(),
-                                  &offsetInFrameContent,
-                                  getter_AddRefs(content), &offsetInContent)
-          : GetFrameForRangeEnd(*GetSelection()->GetLastRange(),
-                                &offsetInFrameContent, getter_AddRefs(content),
-                                &offsetInContent);
-  if (!frame) {
+  const FrameAndOffset frameAndOffset =
+      dir == eDirNext ? GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+                            *GetSelection()->GetFirstRange(),
+                            getter_AddRefs(content), &offsetInContent)
+                      : GetLastVisibleLeafFrameOrUnselectableChildFrame(
+                            *GetSelection()->GetLastRange(),
+                            getter_AddRefs(content), &offsetInContent);
+  if (!frameAndOffset) {
     return false;
   }
 
   // Compare the active caret's new position (aOffsets) to the inactive caret's
   // position.
-  NS_ASSERTION(offsetInFrameContent >= 0,
-               "offsetInFrameContent should not be negative");
+  NS_ASSERTION(static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent) >= 0,
+               "mOffsetInFrameContent should not be negative when casting to "
+               "signed integer");
   const Maybe<int32_t> cmpToInactiveCaretPos =
       nsContentUtils::ComparePoints_AllowNegativeOffsets(
-          aOffsets.content, aOffsets.StartOffset(), frame->GetContent(),
-          offsetInFrameContent);
+          aOffsets.content, aOffsets.StartOffset(),
+          frameAndOffset.GetFrameContent(),
+          static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent));
   if (NS_WARN_IF(!cmpToInactiveCaretPos)) {
     // Potentially handle this properly when Selection across Shadow DOM
     // boundary is implemented
@@ -1214,9 +1247,10 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
   // Move one character (in the direction of dir) from the inactive caret's
   // position. This is the limit for the active caret's new position.
   PeekOffsetStruct limit(
-      eSelectCluster, dir, offsetInFrameContent, nsPoint(0, 0),
+      eSelectCluster, dir,
+      static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent), nsPoint(0, 0),
       {PeekOffsetOption::JumpLines, PeekOffsetOption::StopAtScroller});
-  nsresult rv = frame->PeekOffset(&limit);
+  nsresult rv = frameAndOffset->PeekOffset(&limit);
   if (NS_FAILED(rv)) {
     limit.mResultContent = content;
     limit.mContentOffset = offsetInContent;

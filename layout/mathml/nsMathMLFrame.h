@@ -28,7 +28,7 @@ class nsMathMLFrame : public nsIMathMLFrame {
   // nsIMathMLFrame ---
 
   bool IsSpaceLike() override {
-    return NS_MATHML_IS_SPACE_LIKE(mPresentationData.flags);
+    return mPresentationData.flags.contains(MathMLPresentationFlag::SpaceLike);
   }
 
   NS_IMETHOD
@@ -49,7 +49,7 @@ class nsMathMLFrame : public nsIMathMLFrame {
     return NS_OK;
   }
 
-  eMathMLFrameType GetMathMLFrameType() override;
+  MathMLFrameType GetMathMLFrameType() override;
 
   NS_IMETHOD
   Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
@@ -78,13 +78,14 @@ class nsMathMLFrame : public nsIMathMLFrame {
   TransmitAutomaticData() override { return NS_OK; }
 
   NS_IMETHOD
-  UpdatePresentationData(uint32_t aFlagsValues,
-                         uint32_t aFlagsToUpdate) override;
+  UpdatePresentationData(MathMLPresentationFlags aFlagsValues,
+                         MathMLPresentationFlags aFlagsToUpdate) override;
 
   NS_IMETHOD
-  UpdatePresentationDataFromChildAt(int32_t aFirstIndex, int32_t aLastIndex,
-                                    uint32_t aFlagsValues,
-                                    uint32_t aFlagsToUpdate) override {
+  UpdatePresentationDataFromChildAt(
+      int32_t aFirstIndex, int32_t aLastIndex,
+      MathMLPresentationFlags aFlagsValues,
+      MathMLPresentationFlags aFlagsToUpdate) override {
     return NS_OK;
   }
 
@@ -128,13 +129,13 @@ class nsMathMLFrame : public nsIMathMLFrame {
   static nscoord CalcLength(const nsCSSValue& aCSSValue,
                             float aFontSizeInflation, nsIFrame* aFrame);
 
-  static eMathMLFrameType GetMathMLFrameTypeFor(nsIFrame* aFrame) {
+  static MathMLFrameType GetMathMLFrameTypeFor(nsIFrame* aFrame) {
     if (aFrame->IsMathMLFrame()) {
       if (nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame)) {
         return mathMLFrame->GetMathMLFrameType();
       }
     }
-    return eMathMLFrameType_UNKNOWN;
+    return MathMLFrameType::Unknown;
   }
 
   // estimate of the italic correction

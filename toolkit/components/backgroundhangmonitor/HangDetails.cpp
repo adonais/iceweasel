@@ -18,8 +18,8 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/GfxMessageUtils.h"  // For ParamTraits<GeckoProcessType>
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/SharedLibraries.h"
 #include "mozilla/Try.h"
-#include "SharedLibraries.h"
 
 static const char MAGIC[] = "permahangsavev1";
 

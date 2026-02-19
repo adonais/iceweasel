@@ -11,7 +11,6 @@
 #include <cstring>
 #include <iterator>
 #include <string>
-#include <type_traits>
 
 #include "mozilla/intl/Locale.h"
 

@@ -3,15 +3,12 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <resources xmlns:tools="http://schemas.android.com/tools">
-
-    <style name="SplashScreen" parent="SplashScreenThemeBase">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/animated_splash_screen</item>
-    </style>
-
     <style name="SplashScreenThemeBase" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
-        <item name="windowSplashScreenBackground">@color/fx_mobile_surface</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenBackground">@color/fx_mobile_splashscreen_background</item>
         <item name="postSplashScreenTheme">@style/NormalTheme</item>
+        <item name="windowSplashScreenAnimationDuration">12000</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">default</item>
     </style>
 
     <style name="NormalThemeBase" parent="Theme.Material3.DayNight.NoActionBar">
@@ -101,9 +98,6 @@
         <item name="layer2">@color/fx_mobile_layer_color_2</item>
         <!-- Search -->
         <item name="layer3">@color/fx_mobile_layer_color_3</item>
-        <item name="layerSearch">@color/fx_mobile_layer_color_search</item>
-        <!-- Selected tab -->
-        <item name="layerNonOpaque">@color/fx_mobile_layer_color_accent_nonopaque</item>
         <item name="scrim">@color/fx_mobile_layer_color_scrim</item>
 
         <!-- Action -->
@@ -111,8 +105,6 @@
         <item name="actionPrimary">@color/fx_mobile_action_color_primary</item>
         <!-- Primary button in a disabled state -->
         <item name="actionPrimaryDisabled">@color/fx_mobile_action_color_primary_disabled</item>
-        <!-- Selected chip -->
-        <item name="actionChipSelected">@color/fx_mobile_action_color_chip_selected</item>
 
         <!-- Text -->
         <!-- Primary text -->
@@ -133,19 +125,9 @@
         <item name="textActionPrimaryDisabled">@color/fx_mobile_text_color_action_primary_disabled</item>
 
         <!-- Icon -->
-        <!-- Secondary icon -->
-        <item name="iconSecondary">@color/fx_mobile_icon_color_secondary</item>
-        <!-- Active tab -->
-        <item name="iconActive">@color/fx_mobile_icon_color_active</item>
         <!-- Icon inverted (on color) -->
         <item name="iconOnColor">@color/fx_mobile_icon_color_oncolor</item>
 
-        <!-- Border -->
-        <!-- Default, Divider, Dotted -->
-        <item name="borderPrimary">@color/fx_mobile_border_color_primary</item>
-        <item name="borderSecondary">@color/fx_mobile_border_color_secondary</item>
-        <!-- Toolbar divider -->
-        <item name="borderToolbarDivider">@color/fx_mobile_border_color_toolbar_divider</item>
         <!-- Active thumb color & Active track color (30% transparency) -->
         <item name="colorControlActivated">@color/accent_high_contrast_normal_theme</item>
         <!-- Inactive thumb color -->
@@ -179,7 +161,7 @@
         <item name="mozac_primary_text_color">@color/fx_mobile_text_color_primary</item>
         <item name="mozac_caption_text_color">@color/fx_mobile_text_color_secondary</item>
         <item name="mozac_widget_favicon_background_color">@color/fx_mobile_layer_color_2</item>
-        <item name="mozac_widget_favicon_border_color">@color/fx_mobile_border_color_primary</item>
+        <item name="mozac_widget_favicon_border_color">@color/fx_mobile_outline_variant</item>
 
         <!-- Drawables -->
         <item name="fenixLogo">@drawable/ic_logo_wordmark_normal</item>
@@ -398,9 +380,6 @@
         <item name="layer2">@color/fx_mobile_private_layer_color_2</item>
         <!-- Search -->
         <item name="layer3">@color/fx_mobile_private_layer_color_3</item>
-        <item name="layerSearch">@color/fx_mobile_private_layer_color_search</item>
-        <!-- Selected tab -->
-        <item name="layerNonOpaque">@color/fx_mobile_private_layer_color_accent_nonopaque</item>
         <item name="scrim">@color/fx_mobile_private_layer_color_scrim</item>
 
         <!-- Action -->
@@ -408,8 +387,7 @@
         <item name="actionPrimary">@color/fx_mobile_private_action_color_primary</item>
         <!-- Primary button in a disabled state -->
         <item name="actionPrimaryDisabled">@color/fx_mobile_private_action_color_primary_disabled</item>
-        <!-- Selected chip -->
-        <item name="actionChipSelected">@color/fx_mobile_private_action_color_chip_selected</item>
+
         <!-- Text -->
         <!-- Primary text -->
         <item name="textPrimary">@color/fx_mobile_private_text_color_primary</item>
@@ -429,19 +407,8 @@
         <item name="textActionPrimaryDisabled">@color/fx_mobile_private_text_color_action_primary_disabled</item>
 
         <!-- Icon -->
-        <!-- Secondary icon -->
-        <item name="iconSecondary">@color/fx_mobile_private_icon_color_secondary</item>
-        <!-- Active tab -->
-        <item name="iconActive">@color/fx_mobile_private_icon_color_active</item>
         <!-- Icon inverted (on color) -->
         <item name="iconOnColor">@color/fx_mobile_private_icon_color_oncolor</item>
-
-        <!-- Border -->
-        <!-- Default, Divider, Dotted -->
-        <item name="borderPrimary">@color/fx_mobile_private_border_color_primary</item>
-        <item name="borderSecondary">@color/fx_mobile_private_border_color_secondary</item>
-        <!-- Toolbar divider -->
-        <item name="borderToolbarDivider">@color/fx_mobile_private_border_color_toolbar_divider</item>
 
         <!-- Inactive thumb color -->
         <item name="colorSwitchThumbNormal">@color/toggle_off_knob_dark_theme</item>

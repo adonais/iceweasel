@@ -1,33 +1,18 @@
 "use strict";
 
 test_newtab({
-  async before({ pushPrefs }) {
-    await pushPrefs([
-      "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar",
-      false,
-    ]);
-  },
-  test: function test_render_search() {
-    let search = content.document.getElementById("newtab-search-text");
-    ok(search, "Got the search box");
-    isnot(
-      search.placeholder,
-      "search_web_placeholder",
-      "Search box is localized"
-    );
-  },
-});
-
-test_newtab({
-  async before({ pushPrefs }) {
-    await pushPrefs([
-      "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar",
-      true,
-    ]);
-  },
   test: function test_render_search_handoff() {
-    let search = content.document.querySelector(".search-handoff-button");
-    ok(search, "Got the search handoff button");
+    const usingHandoffComponent = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.search.useHandoffComponent",
+      false
+    );
+
+    const selector = usingHandoffComponent
+      ? "content-search-handoff-ui"
+      : ".search-handoff-button";
+
+    let search = content.document.querySelector(selector);
+    ok(search, "Got the content search handoff UI");
   },
 });
 

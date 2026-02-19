@@ -36,36 +36,34 @@ IMAGE_BUILDER_IMAGE = (
 
 transforms = TransformSequence()
 
-docker_image_schema = Schema(
-    {
-        # Name of the docker image.
-        Required("name"): str,
-        # Name of the parent docker image.
-        Optional("parent"): str,
-        # Treeherder symbol.
-        Required("symbol"): str,
-        # relative path (from config.path) to the file the docker image was defined
-        # in.
-        Optional("task-from"): str,
-        # Arguments to use for the Dockerfile.
-        Optional("args"): {str: str},
-        # Name of the docker image definition under taskcluster/docker, when
-        # different from the docker image name.
-        Optional("definition"): str,
-        # List of package tasks this docker image depends on.
-        Optional("packages"): [str],
-        Optional("arch"): str,
-        Optional(
-            "index",
-            description="information for indexing this build so its artifacts can be discovered",
-        ): task_description_schema["index"],
-        Optional(
-            "cache",
-            description="Whether this image should be cached based on inputs.",
-        ): bool,
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+docker_image_schema = Schema({
+    # Name of the docker image.
+    Required("name"): str,
+    # Name of the parent docker image.
+    Optional("parent"): str,
+    # Treeherder symbol.
+    Required("symbol"): str,
+    # relative path (from config.path) to the file the docker image was defined
+    # in.
+    Optional("task-from"): str,
+    # Arguments to use for the Dockerfile.
+    Optional("args"): {str: str},
+    # Name of the docker image definition under taskcluster/docker, when
+    # different from the docker image name.
+    Optional("definition"): str,
+    # List of package tasks this docker image depends on.
+    Optional("packages"): [str],
+    Optional("arch"): str,
+    Optional(
+        "index",
+        description="information for indexing this build so its artifacts can be discovered",
+    ): task_description_schema["index"],
+    Optional(
+        "cache",
+        description="Whether this image should be cached based on inputs.",
+    ): bool,
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 transforms.add_validate(docker_image_schema)

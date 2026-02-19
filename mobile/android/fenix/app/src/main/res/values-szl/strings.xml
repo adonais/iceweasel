@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Prywatny %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -30,9 +30,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Wkludź szukane słowa</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Sam sie pokożōm twoje ôtwarte karty.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Sam sie pokożōm twoje ôtwarte karty.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Sam sie pokożōm twoje prywatne karty.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Sam sie pokożōm twoje prywatne karty.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">Ôbrane karty: %1$d</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -44,7 +44,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Wylyź ze trybu multiwyboru</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Spamiyntej ôbrane karty we kolekcyji</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Spamiyntej ôbrane karty we kolekcyji</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s produkuje Mozilla.</string>
   <!-- Private Browsing -->
@@ -150,9 +150,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Infōrmacyje ô kōncie</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Pōmoc</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Pōmoc</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Co je nowego</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Co je nowego</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Sztalōnki</string>
   <!-- Browser menu button that opens a user's library -->
@@ -178,7 +178,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">Funguje skuli %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">Funguje skuli %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -191,13 +191,13 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Ôdewrzij w aplikacyji</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Poukłodej se wyglōnd do czytanio</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Poukłodej se wyglōnd do czytanio</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Przidej</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Przidej</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Edytuj</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Edytuj</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Przipasuj dōmowo strōna</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Przipasuj dōmowo strōna</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Hasła</string>
   <!--
@@ -709,15 +709,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Przidej prywatno karta</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Prywatno</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Prywatno</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Synchrōnizacyjo</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Synchrōnizacyjo</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Udostympnij wszyske karty</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Udostympnij wszyske karty</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Niydowno zawarte karty</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Niydowno zawarte</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Niydowno zawarte</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Sztalōnki kōnta</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -725,11 +725,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Zawrzij wszyske karty</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Przidej do zokłodek</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Przidej do zokłodek</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Zawrzij</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Zawrzij</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Udostympnij ôbrane karty</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Udostympnij ôbrane karty</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Myni ôbranych kart</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -1124,7 +1124,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Autōmatycznie kasuje dane przeglōndanio, jak we głōwnym myni ôbieresz \"Skōńcz\"</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Skōńcz</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Skōńcz</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Czas do skasowanio</string>
   <!-- Body text of a delete browsing data dialog. -->

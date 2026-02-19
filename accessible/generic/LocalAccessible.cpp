@@ -1121,7 +1121,7 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
     attribIter.ExposeAttr(attributes);
   }
 
-  if (nsAccUtils::HasARIAAttr(Elm(), nsGkAtoms::aria_actions)) {
+  if (HasCustomActions()) {
     attributes->SetAttribute(nsGkAtoms::hasActions, true);
   }
 
@@ -4091,7 +4091,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(CacheKey::ARIAAttributes, DeleteEntry());
     }
 
-    if (nsAccUtils::HasARIAAttr(Elm(), nsGkAtoms::aria_actions)) {
+    if (HasCustomActions()) {
       fields->SetAttribute(CacheKey::HasActions, true);
     } else if (IsUpdatePush(CacheDomain::ARIA)) {
       fields->SetAttribute(CacheKey::HasActions, DeleteEntry());
@@ -4565,4 +4565,9 @@ bool LocalAccessible::ARIAAttrValueIs(nsAtom* aAttrName,
 bool LocalAccessible::HasARIAAttr(nsAtom* aAttrName) const {
   return mContent ? nsAccUtils::HasDefinedARIAToken(mContent, aAttrName)
                   : false;
+}
+
+bool LocalAccessible::HasCustomActions() const {
+  dom::Element* el = Elm();
+  return el && nsAccUtils::HasARIAAttr(el, nsGkAtoms::aria_actions);
 }

@@ -4,7 +4,7 @@
 
 use api::units::PictureRect;
 use crate::pattern::{PatternKind, PatternShaderInput};
-use crate::{spatial_tree::SpatialNodeIndex, render_task_graph::RenderTaskId, surface::SurfaceTileDescriptor, picture::TileKey, renderer::GpuBufferAddress, FastHashMap, prim_store::PrimitiveInstanceIndex, gpu_cache::GpuCacheAddress};
+use crate::{spatial_tree::SpatialNodeIndex, render_task_graph::RenderTaskId, surface::SurfaceTileDescriptor, tile_cache::TileKey, renderer::GpuBufferAddress, FastHashMap, prim_store::PrimitiveInstanceIndex};
 use crate::gpu_types::{QuadSegment, TransformPaletteId};
 use crate::segment::EdgeAaSegmentMask;
 
@@ -112,7 +112,7 @@ pub enum PrimitiveCommand {
     },
     Complex {
         prim_instance_index: PrimitiveInstanceIndex,
-        gpu_address: GpuCacheAddress,
+        gpu_address: GpuBufferAddress,
     },
     Instance {
         prim_instance_index: PrimitiveInstanceIndex,
@@ -142,7 +142,7 @@ impl PrimitiveCommand {
 
     pub fn complex(
         prim_instance_index: PrimitiveInstanceIndex,
-        gpu_address: GpuCacheAddress,
+        gpu_address: GpuBufferAddress,
     ) -> Self {
         PrimitiveCommand::Complex {
             prim_instance_index,
@@ -239,11 +239,11 @@ impl CommandBuffer {
             }
             PrimitiveCommand::Complex { prim_instance_index, gpu_address } => {
                 self.commands.push(Command::draw_complex_prim(prim_instance_index));
-                self.commands.push(Command::data((gpu_address.u as u32) << 16 | gpu_address.v as u32));
+                self.commands.push(Command::data(gpu_address.as_u32()));
             }
             PrimitiveCommand::Instance { prim_instance_index, gpu_buffer_address } => {
                 self.commands.push(Command::draw_instance(prim_instance_index));
-                self.commands.push(Command::data((gpu_buffer_address.u as u32) << 16 | gpu_buffer_address.v as u32));
+                self.commands.push(Command::data(gpu_buffer_address.as_u32()));
             }
             PrimitiveCommand::Quad { pattern, pattern_input, prim_instance_index, gpu_buffer_address, transform_id, quad_flags, edge_flags, src_color_task_id } => {
                 self.commands.push(Command::draw_quad(prim_instance_index));
@@ -251,7 +251,7 @@ impl CommandBuffer {
                 self.commands.push(Command::data(pattern_input.0 as u32));
                 self.commands.push(Command::data(pattern_input.1 as u32));
                 self.commands.push(Command::data(src_color_task_id.index));
-                self.commands.push(Command::data((gpu_buffer_address.u as u32) << 16 | gpu_buffer_address.v as u32));
+                self.commands.push(Command::data(gpu_buffer_address.as_u32()));
                 self.commands.push(Command::data(transform_id.0));
                 self.commands.push(Command::data((quad_flags.bits() as u32) << 16 | edge_flags.bits() as u32));
             }
@@ -284,10 +284,7 @@ impl CommandBuffer {
                 Command::CMD_DRAW_COMPLEX_PRIM => {
                     let prim_instance_index = PrimitiveInstanceIndex(param);
                     let data = cmd_iter.next().unwrap();
-                    let gpu_address = GpuCacheAddress {
-                        u: (data.0 >> 16) as u16,
-                        v: (data.0 & 0xffff) as u16,
-                    };
+                    let gpu_address = GpuBufferAddress::from_u32(data.0);
                     let cmd = PrimitiveCommand::complex(
                         prim_instance_index,
                         gpu_address,
@@ -307,10 +304,7 @@ impl CommandBuffer {
                     let bits = cmd_iter.next().unwrap().0;
                     let quad_flags = QuadFlags::from_bits((bits >> 16) as u8).unwrap();
                     let edge_flags = EdgeAaSegmentMask::from_bits((bits & 0xff) as u8).unwrap();
-                    let gpu_buffer_address = GpuBufferAddress {
-                        u: (data.0 >> 16) as u16,
-                        v: (data.0 & 0xffff) as u16,
-                    };
+                    let gpu_buffer_address = GpuBufferAddress::from_u32(data.0);
                     let cmd = PrimitiveCommand::quad(
                         pattern,
                         pattern_input,
@@ -327,10 +321,7 @@ impl CommandBuffer {
                 Command::CMD_DRAW_INSTANCE => {
                     let prim_instance_index = PrimitiveInstanceIndex(param);
                     let data = cmd_iter.next().unwrap();
-                    let gpu_buffer_address = GpuBufferAddress {
-                        u: (data.0 >> 16) as u16,
-                        v: (data.0 & 0xffff) as u16,
-                    };
+                    let gpu_buffer_address = GpuBufferAddress::from_u32(data.0);
                     let cmd = PrimitiveCommand::instance(
                         prim_instance_index,
                         gpu_buffer_address,

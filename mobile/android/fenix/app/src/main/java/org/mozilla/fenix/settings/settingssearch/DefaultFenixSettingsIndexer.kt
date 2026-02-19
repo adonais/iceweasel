@@ -91,7 +91,6 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
                             PREFERENCE_TAG,
                             SWITCH_PREFERENCE_TAG,
                             SWITCH_PREFERENCE_PLAIN_TAG,
-                            TEXT_PERCENTAGE_SEEK_BAR_PREFERENCE_TAG,
                             TOGGLE_RADIO_BUTTON_PREFERENCE_TAG,
                                 -> {
                                 val item = createSettingsSearchItemFromAttributes(
@@ -290,8 +289,6 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
         private const val CUSTOM_CBH_SWITCH_PREFERENCE_TAG =
             "org.mozilla.fenix.settings.cookiebannerhandling.CustomCBHSwitchPreference"
         private const val DEFAULT_BROWSER_PREFERENCE_TAG = "org.mozilla.fenix.settings.DefaultBrowserPreference"
-        private const val TEXT_PERCENTAGE_SEEK_BAR_PREFERENCE_TAG =
-            "org.mozilla.fenix.settings.TextPercentageSeekBarPreference"
         private const val RADIO_BUTTON_PREFERENCE_TAG = "org.mozilla.fenix.settings.RadioButtonPreference"
         private const val TOGGLE_RADIO_BUTTON_PREFERENCE_TAG = "org.mozilla.fenix.settings.ToggleRadioButtonPreference"
         private const val KEY_ATTRIBUTE_NAME = "key"

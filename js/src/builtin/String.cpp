@@ -34,7 +34,7 @@
 #  include "builtin/intl/CommonFunctions.h"
 #  include "builtin/intl/FormatBuffer.h"
 #  include "builtin/intl/GlobalIntlData.h"
-#  include "builtin/intl/Locale.h"
+#  include "builtin/intl/LocaleNegotiation.h"
 #endif
 #include "builtin/RegExp.h"
 #include "gc/GC.h"

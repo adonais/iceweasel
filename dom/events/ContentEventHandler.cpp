@@ -1129,18 +1129,18 @@ nsresult ContentEventHandler::ExpandToClusterBoundary(
   MOZ_DIAGNOSTIC_ASSERT(mDocument->GetPresShell());
   CaretAssociationHint hint =
       aForward ? CaretAssociationHint::Before : CaretAssociationHint::After;
-  nsIFrame* frame = SelectionMovementUtils::GetFrameForNodeOffset(
+  FrameAndOffset frameAndOffset = SelectionMovementUtils::GetFrameForNodeOffset(
       &aTextNode, int32_t(*aXPOffset), hint);
-  if (frame) {
-    auto [startOffset, endOffset] = frame->GetOffsets();
+  if (frameAndOffset) {
+    auto [startOffset, endOffset] = frameAndOffset->GetOffsets();
     if (*aXPOffset == static_cast<uint32_t>(startOffset) ||
         *aXPOffset == static_cast<uint32_t>(endOffset)) {
       return NS_OK;
     }
-    if (!frame->IsTextFrame()) {
+    if (!frameAndOffset->IsTextFrame()) {
       return NS_ERROR_FAILURE;
     }
-    nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
+    nsTextFrame* textFrame = static_cast<nsTextFrame*>(frameAndOffset.mFrame);
     int32_t newOffsetInFrame = *aXPOffset - startOffset;
     newOffsetInFrame += aForward ? -1 : 1;
     // PeekOffsetCharacter() should respect cluster but ignore user-select

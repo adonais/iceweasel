@@ -909,14 +909,14 @@ class LWasmRegisterPairResult : public LInstructionHelper<2, 0, 0> {
   MDefinition* mir() const { return mirRaw(); }
 };
 
-class LWasmBuiltinFloatRegisterResult : public LInstructionHelper<1, 0, 0> {
+class LWasmSystemFloatRegisterResult : public LInstructionHelper<1, 0, 0> {
  public:
-  LIR_HEADER(WasmBuiltinFloatRegisterResult);
+  LIR_HEADER(WasmSystemFloatRegisterResult);
 
-  LWasmBuiltinFloatRegisterResult() : LInstructionHelper(classOpcode) {}
+  LWasmSystemFloatRegisterResult() : LInstructionHelper(classOpcode) {}
 
-  MWasmBuiltinFloatRegisterResult* mir() const {
-    return mir_->toWasmBuiltinFloatRegisterResult();
+  MWasmSystemFloatRegisterResult* mir() const {
+    return mir_->toWasmSystemFloatRegisterResult();
   }
 };
 

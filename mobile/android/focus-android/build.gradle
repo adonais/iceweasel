@@ -21,7 +21,6 @@ buildscript {
         classpath libs.android.gradle.plugin
         classpath libs.mozilla.glean.gradle.plugin
         classpath libs.osslicenses.plugin
-        classpath "${ApplicationServicesConfig.groupId}:tooling-nimbus-gradle:${ApplicationServicesConfig.version}"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

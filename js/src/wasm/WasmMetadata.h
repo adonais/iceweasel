@@ -180,7 +180,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 
   bool hugeMemoryEnabled(uint32_t memoryIndex) const {
     return !isAsmJS() && memoryIndex < memories.length() &&
-           IsHugeMemoryEnabled(memories[memoryIndex].addressType());
+           IsHugeMemoryEnabled(memories[memoryIndex].addressType(),
+                               memories[memoryIndex].pageSize());
   }
   bool usesSharedMemory(uint32_t memoryIndex) const {
     return memoryIndex < memories.length() && memories[memoryIndex].isShared();

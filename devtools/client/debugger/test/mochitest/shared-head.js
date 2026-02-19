@@ -1356,7 +1356,7 @@ function assertSourceIcon(dbg, sourceName, icon) {
   ok(sourceItem, `Found the source item for ${sourceName}`);
   is(
     sourceItem.querySelector(".source-icon").className,
-    `img source-icon ${icon}`,
+    `dbg-img dbg-img-${icon} source-icon`,
     `The icon for ${sourceName} is correct`
   );
 }
@@ -1946,7 +1946,7 @@ const selectors = {
   searchField: ".search-field",
   blackbox: ".action.black-box",
   projectSearchSearchInput: ".project-text-search .search-field input",
-  projectSearchCollapsed: ".project-text-search .arrow:not(.expanded)",
+  projectSearchCollapsed: ".project-text-search .dbg-img-arrow:not(.expanded)",
   projectSearchExpandedResults: ".project-text-search .result",
   projectSearchFileResults: ".project-text-search .file-result",
   projectSearchModifiersCaseSensitive:
@@ -1974,8 +1974,8 @@ const selectors = {
   previewPopupObjectFunction: ".preview-popup .objectBox-function",
   previewPopupObjectFunctionJumpToDefinition:
     ".preview-popup .objectBox-function .jump-definition",
-  sourceTreeRootNode: ".sources-panel .node .window",
-  sourceTreeFolderNode: ".sources-panel .node .folder",
+  sourceTreeRootNode: ".sources-panel .node .dbg-img-window",
+  sourceTreeFolderNode: ".sources-panel .node .dbg-img-folder",
   excludePatternsInput: ".project-text-search .exclude-patterns-field input",
   fileSearchInput: ".search-bar input",
   fileSearchSummary: ".search-bar .search-field-summary",
@@ -2855,7 +2855,7 @@ async function assertInlineExceptionPreview(
   info("Wait for top level node to expand and child nodes to load");
   await waitForElementWithSelector(
     dbg,
-    ".exception-popup .exception-message .arrow.expanded"
+    ".exception-popup .exception-message .dbg-img-arrow.expanded"
   );
 
   is(

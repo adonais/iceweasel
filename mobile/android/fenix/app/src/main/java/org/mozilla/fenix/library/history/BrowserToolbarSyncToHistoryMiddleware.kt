@@ -9,7 +9,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Exi
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.library.history.HistoryFragmentAction.SearchDismissed
 
 /**
@@ -20,7 +20,7 @@ class BrowserToolbarSyncToHistoryMiddleware(
     private val historyStore: HistoryFragmentStore,
 ) : Middleware<BrowserToolbarState, BrowserToolbarAction> {
     override fun invoke(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
         action: BrowserToolbarAction,
     ) {

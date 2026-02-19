@@ -21,7 +21,7 @@
   // known transparency issue with color-mix syntax when a wallpaper is set
   .lightWallpaper &,
   .darkWallpaper & {
-    background-color: var(--newtab-weather-background-color); // stylelint-disable-line stylelint-plugin-mozilla/use-background-color-tokens
+    background-color: var(--newtab-weather-background-color); // stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens
 
     @media (prefers-contrast) {
       background-color: var(--background-color-box);

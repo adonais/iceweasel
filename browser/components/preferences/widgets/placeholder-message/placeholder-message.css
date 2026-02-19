@@ -3,27 +3,28 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 moz-box-item {
-  --box-padding: var(--space-xxlarge);
-}
-
-.placeholder-container {
-  gap: var(--space-large);
+  --box-padding: var(--space-large);
 }
 
 .placeholder-container,
 .text-container {
   display: flex;
-  flex-direction: column;
+}
+
+.placeholder-container {
+  gap: var(--space-large);
   align-items: center;
 }
 
 .text-container {
   gap: var(--space-xsmall);
-  text-align: center;
+  text-align: start;
+  flex-direction: column;
+  justify-content: center;
 }
 
 img {
-  max-width: 160px;
+  max-width: 100px;
 }
 
 .label:has(+ .support-link),

@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Унеси појмове претраге</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Ваши отворени језичци биће приказани овде.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ваши отворени језичци биће приказани овде.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Ваши приватни језичци биће приказани овде.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ваши приватни језичци биће приказани овде.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d изабран</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -46,7 +46,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Изађите из режима вишеструког избора</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Сачувајте одабране језичке у збирку</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Сачувајте одабране језичке у збирку</string>
   <!--
     Home - Bookmarks
 
@@ -179,7 +179,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Проширења</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Имате инсталиране додатке који нису омогућени</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Имате инсталиране додатке који нису омогућени</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Управљај проширењима</string>
   <!--
@@ -196,9 +196,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Информације о налогу</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Помоћ</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Помоћ</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Шта је ново</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Шта је ново</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Подешавања</string>
   <!-- Browser menu button that opens a user's library -->
@@ -206,7 +206,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">За рачунаре</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Отвори у обичном језичку</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Отвори у обичном језичку</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Додај на почетни екран</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -232,7 +232,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">ПОКРЕЋЕ %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ПОКРЕЋЕ %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -245,15 +245,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Отвори у апликацији</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Прилагоди приказ за читање</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Прилагоди приказ за читање</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Прилагоди приказ читача</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Додај</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Додај</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Уреди</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Уреди</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Прилагоди почетну страну</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Прилагоди почетну страну</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Пријави се</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
@@ -264,10 +264,6 @@
   <string name="browser_menu_new_private_tab">Нова приватна картица</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Лозинке</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Помоћ</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Подешавања</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">Уреди обележивач</string>
   <!--
@@ -358,19 +354,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Firefox политика приватности</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Бринемо о вашој безбедности</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Сазнајте зашто милионе воле Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Безбедно прегледање са више избора</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Наш непрофитни прегледач помаже у спречавању компанија да вас тајно прате на мрежи.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Више од 100 милиона људи штити своју приватност бирањем прегледача којег подржава непрофитна организација.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Познати елементи за праћење? Аутоматски блокирани. Додаци? Пробајте свих 700. PDF-ови? Наш уграђени читач олакшава њихово управљање.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Постави као подразумевани прегледач</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -992,15 +977,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Додај приватни језичак</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Приватно</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Приватно</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Синхронизација</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Синхронизација</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Подели све језичке</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Подели све језичке</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Недавно затворени језичци</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Недавно затворено</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Недавно затворено</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Подешавања налога</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1008,11 +993,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Затвори све језичке</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Обележи</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Обележи</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Затвори</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Затвори</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Подели одабране језичке</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Подели одабране језичке</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Мени одабраних језичака</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -1525,7 +1510,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Самостално брише податке прегледања када изаберете \"Изађи\" у главном менију</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Изађи</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Изађи</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Временски распон за брисање</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2026,9 +2011,9 @@
   -->
   <string name="certificate_info_verified_by">Потврђено од: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Обриши</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Обриши</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Уређивање</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Уређивање</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Јесте ли сигурни да желите да обришете ову лозинку?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -2036,15 +2021,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Откажи</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Опције лозинке</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Опције лозинке</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Текстуално поље за адресу сајта.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Текстуално поље за адресу сајта.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Текстуално поље за корисничко име.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Текстуално поље за корисничко име.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Текстуално поље за лозинку.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Текстуално поље за лозинку.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Сачувај измене.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Сачувај измене.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Уреди лозинку</string>
   <!-- The page title for adding new password. -->

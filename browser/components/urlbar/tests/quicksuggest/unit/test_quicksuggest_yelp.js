@@ -109,6 +109,7 @@ add_task(async function basic() {
             ],
           },
         },
+        title: "best a service delivery in Tokyo, Tokyo-to",
       },
     },
     {
@@ -1121,6 +1122,7 @@ add_task(async function yelpServiceResultDistinction() {
             ],
           },
         },
+        title: "a service in Yokohama, Kanagawa",
       }),
     ],
   });

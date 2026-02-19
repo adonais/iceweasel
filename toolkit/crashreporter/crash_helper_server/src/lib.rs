@@ -11,11 +11,9 @@ mod ipc_server;
 mod logging;
 mod phc;
 
-#[cfg(not(target_os = "android"))]
-use crash_helper_common::Pid;
 #[cfg(target_os = "android")]
 use crash_helper_common::RawAncillaryData;
-use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener};
+use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
 use std::{
     ffi::{c_char, CStr, OsString},
     fmt::Display,
@@ -71,7 +69,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     );
 
     let ipc_server = unwrap_with_message(
-        IPCServer::new(listener, connector),
+        IPCServer::new(client_pid, listener, connector),
         "Could not create the IPC server",
     );
 
@@ -92,6 +90,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub unsafe extern "C" fn crash_generator_logic_android(
+    pid: Pid,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
     pipe: RawAncillaryData,
@@ -121,7 +120,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
             "Could not use the pipe",
         );
         let ipc_server = unwrap_with_message(
-            IPCServer::new(listener, connector),
+            IPCServer::new(pid, listener, connector),
             "Could not create the IPC server",
         );
         main_loop(ipc_server, crash_generator)

@@ -46,8 +46,10 @@ include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
+    "/toolkit/xre",
     "/widget",
     "/widget/headless",
+    "/xpcom/components",
 ]
 
 XPCOM_MANIFESTS += [

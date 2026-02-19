@@ -173,8 +173,7 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   // For some reason, the DNSQuery_A API doesn't work on Windows 10.
   // It returns a success code, but no records. We only allow
   // native HTTPS records on Win 11 for now.
-  sNativeHTTPSSupported = StaticPrefs::network_dns_native_https_query_win10() ||
-                          mozilla::IsWin11OrLater();
+  sNativeHTTPSSupported = mozilla::IsWin11OrLater();
 #elif defined(MOZ_WIDGET_ANDROID)
   // android_res_nquery only got added in API level 29
   sNativeHTTPSSupported = jni::GetAPIVersion() >= 29;
@@ -430,6 +429,13 @@ bool nsHostResolver::IsNativeHTTPSEnabled() {
   if (!StaticPrefs::network_dns_native_https_query()) {
     return false;
   }
+#ifdef XP_WIN
+  if (StaticPrefs::network_dns_native_https_query_win10()) {
+    // If this pref is true, we allow resolving HTTPS records.
+    // It might not work, or we might use the HTTPS override records.
+    return true;
+  }
+#endif
   return sNativeHTTPSSupported;
 }
 
@@ -591,7 +597,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
     } else if (!rec->mResolving) {
       result =
           FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags, af,
-                          aOriginAttributes.IsPrivateBrowsing(), status);
+                          aOriginAttributes.IsPrivateBrowsing(), status, lock);
       // If this is a by-type request or if no valid record was found
       // in the cache or this is an AF_UNSPEC request, then start a
       // new lookup.
@@ -681,6 +687,8 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
     LOG(("  Negative cache entry for host [%s].\n",
          nsPromiseFlatCString(aHost).get()));
     aStatus = NS_ERROR_UNKNOWN_HOST;
+  } else if (StaticPrefs::network_dns_mru_to_tail()) {
+    mQueue.MoveToEvictionQueueTail(aRec, aLock);
   }
 
   return result.forget();
@@ -707,7 +715,8 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromIPLiteral(
 already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
     nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
     const nsACString& aOriginSuffix, uint16_t aType,
-    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus) {
+    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus,
+    const MutexAutoLock& aLock) {
   RefPtr<nsHostRecord> result = nullptr;
   // If this is an IPV4 or IPV6 specific request, check if there is
   // an AF_UNSPEC entry we can use. Otherwise, hit the resolver...

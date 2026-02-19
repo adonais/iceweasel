@@ -35,7 +35,7 @@ import {
 import { shouldBlackbox } from "../../utils/source";
 
 import { PaneToggleButton } from "../shared/Button/index";
-import AccessibleImage from "../shared/AccessibleImage";
+import DebuggerImage from "../shared/DebuggerImage";
 
 const classnames = require("resource://devtools/client/shared/classnames.js");
 const MenuButton = require("resource://devtools/client/shared/components/menu/MenuButton.js");
@@ -82,8 +82,9 @@ class SourceFooter extends PureComponent {
           className: "action",
           key: "pretty-loader",
         },
-        React.createElement(AccessibleImage, {
-          className: "loader spin",
+        React.createElement(DebuggerImage, {
+          name: "loader",
+          className: "spin",
         })
       );
     }
@@ -109,8 +110,8 @@ class SourceFooter extends PureComponent {
         "aria-label": prettyPrintMessage,
         disabled: !canPrettyPrint && !selectedSource.isPrettyPrinted,
       },
-      React.createElement(AccessibleImage, {
-        className: type,
+      React.createElement(DebuggerImage, {
+        name: type,
       })
     );
   }
@@ -149,8 +150,8 @@ class SourceFooter extends PureComponent {
         "aria-label": tooltip,
         disabled: isSourceOnIgnoreList,
       },
-      React.createElement(AccessibleImage, {
-        className: "blackBox",
+      React.createElement(DebuggerImage, {
+        name: "blackBox",
       })
     );
   }

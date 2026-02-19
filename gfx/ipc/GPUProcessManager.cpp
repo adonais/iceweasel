@@ -796,10 +796,15 @@ void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
     gfxVars::SetUseWebRenderDCompVideoSwOverlayWin(false);
     return;
   }
+  if (aError == wr::WebRenderError::DCOMP_TEXTURE_OVERLAY) {
+    gfxVars::SetUseWebRenderDCompositionTextureOverlayWin(false);
+    return;
+  }
 #else
   if (aError == wr::WebRenderError::VIDEO_OVERLAY ||
       aError == wr::WebRenderError::VIDEO_HW_OVERLAY ||
-      aError == wr::WebRenderError::VIDEO_SW_OVERLAY) {
+      aError == wr::WebRenderError::VIDEO_SW_OVERLAY ||
+      aError == wr::WebRenderError::DCOMP_TEXTURE_OVERLAY) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return;
   }
@@ -1327,7 +1332,7 @@ RefPtr<CompositorSession> GPUProcessManager::CreateRemoteSession(
   if (!child->SendPCompositorWidgetConstructor(widget, std::move(initData))) {
     return nullptr;
   }
-  if (!widget->Initialize()) {
+  if (!widget->Initialize(aOptions)) {
     return nullptr;
   }
   if (!child->SendInitialize(aRootLayerTreeId)) {

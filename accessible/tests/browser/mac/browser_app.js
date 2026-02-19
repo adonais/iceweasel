@@ -28,6 +28,12 @@ function getMacAccessible(accOrElmOrID) {
   });
 }
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.trustPanel.featureGate", false]],
+  });
+});
+
 /**
  * Test a11yUtils announcements are exposed to VO
  */

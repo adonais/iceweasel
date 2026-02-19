@@ -326,10 +326,10 @@ function testEscapeStringWin() {
     "Percent signs should be escaped."
   );
 
-  const backslashes = "\\A simple string\\";
+  const backslashes = " - \\A simple string\\ - ";
   is(
     CurlUtils.escapeStringWin(backslashes),
-    '^\"^\\A simple string^\\^\"',
+    '^\" - ^\\^\\A simple string^\\^\\ - ^\"',
     "Backslashes should be escaped."
   );
 

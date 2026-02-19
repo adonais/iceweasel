@@ -1,5 +1,4 @@
 [DEFAULT]
-prefs = ["privacy.resistFingerprinting.testing.setTZtoUTC=false"]
 tags = "resistfingerprinting"
 support-files = [
   "coop_header.sjs",

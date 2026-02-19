@@ -42,7 +42,7 @@ const Localized = createFactory(
  * Switch between various profiler presets, which will override the individualized
  * settings for the profiler.
  *
- * @extends {React.PureComponent<PresetProps>}
+ * @augments {React.PureComponent<PresetProps>}
  */
 class Preset extends PureComponent {
   /**
@@ -110,7 +110,7 @@ class Preset extends PureComponent {
  * Switch between various profiler presets, which will override the individualized
  * settings for the profiler.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class Presets extends PureComponent {
   /**

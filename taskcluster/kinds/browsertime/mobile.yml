@@ -417,11 +417,6 @@ browsertime-benchmark-speedometer-mobile:
                     android-hw-a55.*shippable.*: [trunk]
                     default: []
             geckoview: []
-            cstm-car-m:
-                by-test-platform:
-                    android-hw-p6.*shippable.*: []
-                    android-hw-s24.*shippable.*: []
-                    default: [mozilla-central]
             default: []
     treeherder-symbol: Btime(sp)
     mozharness:
@@ -448,7 +443,6 @@ browsertime-benchmark-speedometer3-mobile:
                     android-hw-s24.*shippable.*: [mozilla-central]
                     default: []
             geckoview: []
-            cstm-car-m: [mozilla-central]
             chrome-m:
                 by-test-platform:
                     android-hw-p6.*shippable.*: [mozilla-central]

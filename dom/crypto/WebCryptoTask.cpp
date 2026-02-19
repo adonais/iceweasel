@@ -2499,7 +2499,17 @@ class DeriveX25519BitsTask : public ReturnArrayBufferViewTask {
   DeriveX25519BitsTask(JSContext* aCx, const ObjectOrString& aAlgorithm,
                        CryptoKey& aKey, const ObjectOrString& aTargetAlgorithm)
       : mPrivKey(aKey.GetPrivateKey()) {
-    Init(aCx, aAlgorithm, aKey);
+    Maybe<size_t> lengthInBits;
+    mEarlyRv = GetKeyLengthForAlgorithmIfSpecified(aCx, aTargetAlgorithm,
+                                                   lengthInBits);
+    if (lengthInBits.isNothing()) {
+      mLength.SetNull();
+    } else {
+      mLength.SetValue(*lengthInBits);
+    }
+    if (NS_SUCCEEDED(mEarlyRv)) {
+      Init(aCx, aAlgorithm, aKey);
+    }
   }
 
   void Init(JSContext* aCx, const ObjectOrString& aAlgorithm, CryptoKey& aKey) {

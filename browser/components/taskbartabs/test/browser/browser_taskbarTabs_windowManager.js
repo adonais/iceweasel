@@ -17,12 +17,12 @@ const registry = new TaskbarTabsRegistry();
 
 const url1 = Services.io.newURI("https://example.com");
 const userContextId1 = 0;
-const taskbarTab1 = registry.findOrCreateTaskbarTab(url1, userContextId1);
+const taskbarTab1 = createTaskbarTab(registry, url1, userContextId1);
 const id1 = taskbarTab1.id;
 
 const url2 = Services.io.newURI("https://subdomain.example.com");
 const userContextId2 = 1;
-const taskbarTab2 = registry.findOrCreateTaskbarTab(url2, userContextId2);
+const taskbarTab2 = createTaskbarTab(registry, url2, userContextId2);
 const id2 = taskbarTab2.id;
 
 add_task(async function test_count_for_id() {

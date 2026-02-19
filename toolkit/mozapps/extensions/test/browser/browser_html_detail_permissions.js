@@ -523,15 +523,7 @@ async function runTest(options) {
   }
 }
 
-async function testPermissionsView({
-  manifestV3enabled,
-  manifest_version,
-  expectGranted,
-}) {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.manifestV3.enabled", manifestV3enabled]],
-  });
-
+async function testPermissionsView({ manifest_version, expectGranted }) {
   // pre-set a permission prior to starting extensions.
   await ExtensionPermissions.add("addon4@mochi.test", {
     permissions: ["tabs"],
@@ -569,7 +561,7 @@ async function testPermissionsView({
   info("Check add-on with only one optional origin.");
   await runTest({
     extension: extensions["addon2@mochi.test"],
-    optional_permissions: manifestV3enabled ? ["http://mochi.test/*"] : [],
+    optional_permissions: ["http://mochi.test/*"],
     optional_strings: {
       "http://mochi.test/*": "Access your data for http://mochi.test",
     },
@@ -596,7 +588,7 @@ async function testPermissionsView({
     optional_permissions: [
       "webNavigation",
       "<all_urls>",
-      ...(manifestV3enabled ? ["https://example.com/*"] : []),
+      "https://example.com/*",
     ],
     optional_enabled: ["https://example.com/*"],
     optional_strings: {
@@ -620,10 +612,7 @@ async function testPermissionsView({
   info("Check privileged add-on with non-web origin permissions");
   await runTest({
     extension: extensions["priv6@mochi.test"],
-    optional_permissions: [
-      "<all_urls>",
-      ...(manifestV3enabled ? ["*://*.mozilla.com/*"] : []),
-    ],
+    optional_permissions: ["<all_urls>", "*://*.mozilla.com/*"],
     optional_overlapping: ["<all_urls>", "*://*/*"],
     optional_strings: {
       "*://*.mozilla.com/*":
@@ -653,12 +642,8 @@ async function testPermissionsView({
   await SpecialPowers.popPrefEnv();
 }
 
-add_task(async function testPermissionsView_MV2_manifestV3disabled() {
-  await testPermissionsView({ manifestV3enabled: false, manifest_version: 2 });
-});
-
-add_task(async function testPermissionsView_MV2_manifestV3enabled() {
-  await testPermissionsView({ manifestV3enabled: true, manifest_version: 2 });
+add_task(async function testPermissionsView_MV2() {
+  await testPermissionsView({ manifest_version: 2 });
 });
 
 add_task(async function testPermissionsView_MV3_noInstallPrompt() {
@@ -666,7 +651,6 @@ add_task(async function testPermissionsView_MV3_noInstallPrompt() {
     set: [["extensions.originControls.grantByDefault", false]],
   });
   await testPermissionsView({
-    manifestV3enabled: true,
     manifest_version: 3,
     expectGranted: false,
   });
@@ -678,7 +662,6 @@ add_task(async function testPermissionsView_MV3() {
     set: [["extensions.originControls.grantByDefault", true]],
   });
   await testPermissionsView({
-    manifestV3enabled: true,
     manifest_version: 3,
     expectGranted: true,
   });

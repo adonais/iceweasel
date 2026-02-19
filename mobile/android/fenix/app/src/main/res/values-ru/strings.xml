@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Введите поисковые запросы</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Открытые вами вкладки будут показаны здесь.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Открытые вами вкладки будут показаны здесь.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Ваши приватные вкладки будут показаны здесь.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ваши приватные вкладки будут показаны здесь.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Приватный просмотр</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Выйти из режима множественного выбора</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Сохранить выбранные вкладки в сборник</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Сохранить выбранные вкладки в сборник</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Захватывайте вкладки с любого устройства</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Расширения</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">У вас есть установленные, но не включенные расширения</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">У вас есть установленные, но не включенные расширения</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Управление расширениями</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Ваш аккаунт</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Справка</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Справка</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Что нового</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Что нового</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Настройки</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Вид для ПК</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Открыть в обычной вкладке</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Открыть в обычной вкладке</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">На домашний экран</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">На движке %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">На движке %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Открыть в приложении</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Настроить вид для чтения</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Настроить вид для чтения</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Настроить Вид для чтения</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Добавить</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Добавить</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Изменить</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Изменить</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Изменить вид</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Изменить вид</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Войти</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Закрыть меню</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Навигация</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Справка</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Настройки</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Закрыть страницу меню расширений</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Закрыть страницу меню расширений</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Закрыть страницу меню сохранения</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Закрыть страницу меню сохранения</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Закрыть страницу меню инструментов</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Закрыть страницу меню инструментов</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Закрыть страницу меню пользовательских вкладок</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -327,8 +323,10 @@
   <string name="browser_menu_save_as_pdf_2">Сохранить как PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Перевести страницу</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Резюме по странице</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Сломанный сайт?…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Сломанный сайт?…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Сообщить о сломанном сайте</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -438,6 +436,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: выбор поисковой системы</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">%1$s удалено из истории</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Удалить эту запись из истории</string>
   <!--
     Home onboarding
 
@@ -452,19 +454,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Уведомление о конфиденциальности Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Нам нравится обеспечивать вашу безопасность</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Узнайте, почему миллионы людей любят Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Безопасный веб-сёрфинг с большим выбором</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Наш браузер, поддерживаемый некоммерческой организацией, помогает не давать компаниям следить за вами в Интернете.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Более 100 миллионов человек защищают свою приватность, выбирая браузер, поддерживаемый некоммерческой организацией.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Известные трекеры? Блокируются автоматически. Расширения? Попробовать все 700. PDF-файлы? Наша встроенная программа чтения позволяет легко ими управлять.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Установить браузером по умолчанию</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +545,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Управление</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Запустите лучший браузер для Android</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Запустите лучший браузер для Android</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">Молниеносная загрузка сайтов</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Молниеносная загрузка сайтов</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">Автоматическая защита от отслеживания</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Автоматическая защита от отслеживания</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">Тысячи настроек</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Тысячи настроек</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">Продолжая, вы соглашаетесь с %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Продолжая, вы соглашаетесь с %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Условия использования Firefox</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Условия использования Firefox</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox заботится о вашей конфиденциальности. Узнайте больше в нашем %1$s.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox заботится о вашей конфиденциальности. Узнайте больше в нашем %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">Уведомление о конфиденциальности</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Уведомление о конфиденциальности</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Чтобы помочь улучшить браузер, Firefox отправляет диагностику и данные взаимодействия в Mozilla. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Чтобы помочь улучшить браузер, Firefox отправляет диагностику и данные взаимодействия в Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">Управление настройками</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Управление настройками</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Продолжить</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Продолжить</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">Где вы хотите разместить адресную строку?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Где вы хотите разместить адресную строку?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">Продолжить</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Продолжить</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Помогите нам в развитии Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Помогите нам в развитии Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Расскажите маркетинговым партнёрам Mozilla о том, как вы открыли для себя Firefox и о том, что вы его используете. Эти данные никогда не продаются.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Расскажите маркетинговым партнёрам Mozilla о том, как вы открыли для себя Firefox и о том, что вы его используете. Эти данные никогда не продаются.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">Как мы используем данные</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Как мы используем данные</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">Подтвердить</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Подтвердить</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">Получите автоматическую защиту от отслеживания по умолчанию</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Получите автоматическую защиту от отслеживания по умолчанию</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">Одно касание — запрещает компаниям шпионить за вашими кликами.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Одно касание — запрещает компаниям шпионить за вашими кликами.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Синхронизируйте везде, где используете Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Синхронизируйте везде, где используете Firefox</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">Получите доступ к закладкам, вкладкам и паролям на любом устройстве. Всё защищено шифрованием.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Получите доступ к закладкам, вкладкам и паролям на любом устройстве. Всё защищено шифрованием.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">Начать синхронизацию</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Начать синхронизацию</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">Не сейчас</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Не сейчас</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Помогите нам в развитии Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +618,48 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Продолжить</string>
+  <string name="nova_onboarding_continue_button">Продолжить</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Не сейчас</string>
+  <string name="nova_onboarding_negative_button">Не сейчас</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Приготовьтесь к свободному бегу</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Быстрый, безопасный и не предаст вас.\nВеб-сёрфинг стал ещё лучше.</string>
+  <string name="nova_onboarding_tou_subtitle">Быстрый, безопасный и не предаст вас.\nВеб-сёрфинг стал ещё лучше.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Продолжая, вы соглашаетесь с %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_1">Продолжая, вы соглашаетесь с %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Условиями использования Firefox</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Условиями использования Firefox</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox заботится о вашей конфиденциальности. Узнайте больше в нашем %1$s.</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox заботится о вашей конфиденциальности. Узнайте больше в нашем %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Уведомлении о конфиденциальности</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Уведомлении о конфиденциальности</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Чтобы помочь улучшить браузер, Firefox отправляет диагностику и данные взаимодействия в Mozilla. %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Чтобы помочь улучшить браузер, Firefox отправляет диагностику и данные взаимодействия в Mozilla. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Управление настройками</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Управление настройками</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Попрощайтесь с жуткими трекерами</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Открывайте все ссылки со встроенной приватностью</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Мы защищаем ваши данные и автоматически блокируем компании от отслеживания ваших кликов.</string>
+  <string name="nova_onboarding_set_to_default_subtitle">Мы защищаем ваши данные и автоматически блокируем компании от отслеживания ваших кликов.</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Установить браузером по умолчанию</string>
+  <string name="nova_onboarding_set_to_default_button">Установить браузером по умолчанию</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Выберите адресную строку</string>
+  <string name="nova_onboarding_toolbar_selection_title">Выберите адресную строку</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Сверху</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">Сверху</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Снизу</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">Снизу</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Выберите вашу тему</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +669,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Тёмная</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Мгновенно вернитесь к месту, где остановились</string>
+  <string name="nova_onboarding_sync_title">Мгновенно вернитесь к месту, где остановились</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">Моментально просматривайте закладки, пароли и многое другое на любом устройстве. Ваши личные данные остаются в безопасности и под защитой с шифрованием.</string>
+  <string name="nova_onboarding_sync_subtitle">Моментально просматривайте закладки, пароли и многое другое на любом устройстве. Ваши личные данные остаются в безопасности и под защитой с шифрованием.</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Начать синхронизацию</string>
+  <string name="nova_onboarding_sync_button">Начать синхронизацию</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Помогите нам в создании лучшего Интернета</string>
+  <string name="nova_onboarding_marketing_title">Помогите нам в создании лучшего Интернета</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Расскажите маркетинговым партнерам Mozilla о том, как вы открыли для себя Firefox и о том, что вы его используете. Эти данные никогда не продаются. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Расскажите маркетинговым партнерам Mozilla о том, как вы открыли для себя Firefox и о том, что вы его используете. Эти данные никогда не продаются. %1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Как мы используем данные</string>
+  <string name="nova_onboarding_marketing_body_link_text">Как мы используем данные</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Уведомления помогают вам оставаться в безопасности с Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Откройте для себя новейшие функции приватности в Firefox, чтобы вы всегда были в курсе того, как оставаться под защитой.</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Включить уведомления</string>
+  <string name="nova_onboarding_notifications_button">Включить уведомления</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Сделайте каждый поиск более приватным</string>
+  <string name="nova_onboarding_add_search_widget_title">Сделайте каждый поиск более приватным</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">Начинайте каждый поиск с домашнего экрана телефона и знайте, что автоматическая защита Firefox прикрывает вашу спину.</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Начинайте каждый поиск с домашнего экрана телефона и знайте, что автоматическая защита Firefox прикрывает вашу спину.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Добавить виджет Firefox</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Добавить виджет Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -781,6 +774,8 @@
   <string name="preferences_search">Поиск</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Поисковые системы</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Виджет домашнего экрана</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Предложения от поисковых систем</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -972,6 +967,15 @@
   <string name="preferences_open_links_in_apps_ask">Спрашивать перед открытием</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Никогда</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Хранилище файлов</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Адрес для загрузок по умолчанию</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">У вас нет прав на использование этой папки. Попробуйте выбрать другую.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Управление скачиванием с помощью другого приложения</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1021,7 +1025,7 @@
 
     Preference to customize the configured AMO (addons.mozilla.org) collection
   -->
-  <string name="preferences_customize_extension_collection">Коллекция пользовательских расширений</string>
+  <string name="preferences_customize_extension_collection">Подборка пользовательских расширений</string>
   <!-- Button caption to confirm the add-on collection configuration -->
   <string name="customize_addon_collection_ok">OK</string>
   <!-- Button caption to abort the add-on collection configuration -->
@@ -1031,7 +1035,7 @@
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Владелец сборника (идентификатор пользователя)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
-  <string name="toast_customize_extension_collection_done">Коллекция расширений изменёна. Выход из приложения для применения изменений…</string>
+  <string name="toast_customize_extension_collection_done">Подборка расширений изменена. Выход из приложения для применения изменений…</string>
   <!--
     Customize Home
 
@@ -1137,8 +1141,6 @@
   <string name="alternative_app_icon_group_solid_colors">Сплошные цвета</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Градиенты</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Другое</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Рекомендуемые</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1505,11 +1507,27 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Активно</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Опробуйте функции и идеи перед тем, как они станут доступны для всех и каждого.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Опробуйте функции и идеи перед тем, как они станут доступны для всех и каждого.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox случайным образом выбирает пользователей для тестирования функций, что повышает качество для всех и каждого.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Устанавливать и запускать исследования</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Устанавливать и запускать исследования</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Разрешить исследование функций</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Узнать больше</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Разрешить удалённые улучшения</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox будет улучшать возможности, производительность и стабильность между обновлениями. Изменения применяются удалённо.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Подробнее</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Удалённые улучшения</string>
   <!--
     Sessions
 
@@ -1544,17 +1562,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Добавить приватную вкладку</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Приватно</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Приватно</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Синхронизация</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Синхронизация</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Поиск во вкладках</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Поделиться всеми вкладками</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Поделиться всеми вкладками</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Недавно закрытые вкладки</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Недавно закрытые</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Недавно закрытые</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Настройки аккаунта</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1570,11 +1588,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Отмена</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Добавить в закладки</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Добавить в закладки</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Добавить выбранные вкладки в закладки</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Закрыть</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Закрыть</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Закрыть выбранные вкладки</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1600,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Добавить в подборку</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Поделиться выбранными вкладками</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Поделиться выбранными вкладками</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Меню выбранных вкладок</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1721,8 @@
   <string name="download_delete_item">Удалить</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Перейти назад</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Перейти в настройки загрузок</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Вернуться и закрыть поиск</string>
   <!--
@@ -1720,12 +1740,25 @@
   <string name="download_share_url">Поделиться URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Поделиться файлом</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Переименовать файл</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Вы уверены, что хотите удалить выбранные элементы?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Удалить</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Отмена</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Переименовать файл</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Имя</string>
+  <string name="download_rename_dialog_confirm_button">Сохранить</string>
+  <string name="download_rename_dialog_cancel_button">Отменить</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Не могу переименовать файл</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Этот файл не может быть переименован из-за ограничений системы или хранилища.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">В процессе</string>
   <!--
@@ -1918,6 +1951,8 @@
   <string name="bookmark_error_edit_bookmark">Не удалось изменить закладку</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">ИЗМЕНИТЬ</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Выбрать</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Переместить</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1998,6 +2033,10 @@
   <string name="select_bookmark_search_button_content_description">Поиск в папках</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Элемент меню для %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Развернуть папку: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Закрыть папку: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Закрыть закладки</string>
   <!-- Title for the bookmark list empty state -->
@@ -2200,7 +2239,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Войти в синхронизацию</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">Войти</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Войти</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Отправить на все устройства</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2399,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Автоматически удаляет данные просмотра сети, когда вы выбираете \"Выйти\" в главном меню</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Выйти</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Выйти</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Промежуток времени для удаления</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2824,6 +2863,20 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Меню сортировки паролей</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Псевдонимы эл. почты</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Предлагать псевдонимы эл. почты</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Скройте свой настоящий адрес электронной почты, чтобы защитить свой почтовый ящик от спама. Некоторые сайты не поддерживают псевдонимы электронной почты.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Подробнее</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Управление псевдонимами эл. почты</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3059,9 +3112,9 @@
   -->
   <string name="certificate_info_verified_by">Подтверждено: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Удалить</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Удалить</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Править</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Править</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Вы уверены, что хотите удалить этот пароль?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3122,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Отмена</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Настройки пароля</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Настройки пароля</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Редактируемое текстовое поле для адреса веб-сайта.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Редактируемое текстовое поле для адреса веб-сайта.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Редактируемое текстовое поле для имени пользователя.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Редактируемое текстовое поле для имени пользователя.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Редактируемое текстовое поле для пароля.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Редактируемое текстовое поле для пароля.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Сохранить изменения.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Сохранить изменения.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Изменить пароль</string>
   <!-- The page title for adding new password. -->
@@ -4002,6 +4055,8 @@
   <string name="settings_search_no_results_title">Ничего не найдено</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Возможно, попробовать другой поиск?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Кнопка поиска настроек</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

@@ -668,6 +668,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Νέα λίστα
+newtab-widget-section-title = Γραφικά στοιχεία
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Απόκρυψη widgets
+    .aria-label = Απόκρυψη όλων των widgets
+newtab-widget-section-maximize =
+    .title = Ανάπτυξη λίστας widgets
+    .aria-label = Ανάπτυξη όλων των widgets σε πλήρη μέγεθος
+newtab-widget-section-minimize =
+    .title = Ελαχιστοποίηση γραφικών στοιχείων
+    .aria-label = Σύμπτυξη όλων των γραφικών στοιχείων σε μικρό μέγεθος
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -690,8 +701,6 @@ newtab-widget-timer-menu-notifications = Απενεργοποίηση ειδοπ
 newtab-widget-timer-menu-notifications-on = Ενεργοποίηση ειδοποιήσεων
 newtab-widget-timer-menu-hide = Απόκρυψη αντίστροφης μέτρησης
 newtab-widget-timer-menu-learn-more = Μάθετε περισσότερα
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Κάντε κύλιση για περισσότερα
 newtab-widget-message-title = Παραμείνετε συγκεντρωμένοι με τις λίστες και την ενσωματωμένη αντίστροφη μέτρηση
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Από γρήγορες υπενθυμίσεις έως καθημερινές υποχρεώσεις, συνεδρίες συγκέντρωσης έως διαλείμματα: επικεντρωθείτε και ολοκληρώστε τις εργασίες σας εγκαίρως.

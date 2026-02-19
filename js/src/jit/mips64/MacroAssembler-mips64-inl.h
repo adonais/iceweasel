@@ -241,6 +241,14 @@ void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
 #endif
 }
 
+void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
+  UseScratchRegisterScope temps(*this);
+  Register scratch = temps.Acquire();
+  MOZ_ASSERT(srcDest != scratch);
+  mov(rhs, scratch);
+  mulPtr(scratch, srcDest);
+}
+
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest) {
   UseScratchRegisterScope temps(*this);
   Register scratch = temps.Acquire();

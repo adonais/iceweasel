@@ -100,6 +100,15 @@ function migrateMultiphase() {
   }
 }
 
+/**
+ * Disable rollouts if the user has previously opted out of studies.
+ */
+function migrateSeparateRolloutOptOut() {
+  if (!Services.prefs.getBoolPref("app.shield.optoutstudies.enabled")) {
+    Services.prefs.setBoolPref("nimbus.rollouts.enabled", false);
+  }
+}
+
 function migrateNoop() {
   // This migration intentionally left blank.
   //
@@ -477,6 +486,7 @@ export const NimbusMigrations = {
   MIGRATIONS: {
     [Phase.INIT_STARTED]: [
       migration("multi-phase-migrations", migrateMultiphase),
+      migration("separate-rollout-opt-out", migrateSeparateRolloutOptOut),
     ],
 
     [Phase.AFTER_STORE_INITIALIZED]: [

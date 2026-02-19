@@ -26,6 +26,10 @@ namespace a11y {
 class Accessible;
 enum class RelationType;
 
+struct UiaRegistrations {
+  PROPERTYID mAccessibleActions = 0;
+};
+
 /**
  * IRawElementProviderSimple implementation (maintains IAccessibleEx approach).
  */
@@ -209,6 +213,15 @@ class uiaRawElmProvider : public IAccessibleEx,
 };
 
 SAFEARRAY* AccessibleArrayToUiaArray(const nsTArray<Accessible*>& aAccs);
+
+/**
+ * Get ids for custom UI Automation properties and events which are not defined
+ * by Windows and therefore need to be registered at runtime. This function will
+ * register the properties and events the first time it is called. Thereafter,
+ * cached ids will be returned, since they are valid for the lifetime of the
+ * process.
+ */
+const UiaRegistrations& GetUiaRegistrations();
 
 }  // namespace a11y
 }  // namespace mozilla

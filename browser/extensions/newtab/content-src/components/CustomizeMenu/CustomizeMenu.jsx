@@ -112,6 +112,8 @@ export class _CustomizeMenu extends React.PureComponent {
                 dispatch={this.props.dispatch}
                 exitEventFired={this.state.exitEventFired}
                 onSubpanelToggle={this.onSubpanelToggle}
+                toggleSectionsMgmtPanel={this.props.toggleSectionsMgmtPanel}
+                showSectionsMgmtPanel={this.props.showSectionsMgmtPanel}
               />
             </div>
           </div>

@@ -18,6 +18,7 @@ class nsINode;
 class nsPIDOMWindowInner;
 class nsPIDOMWindowOuter;
 class nsPIWindowRoot;
+class nsScreen;
 
 namespace mozilla {
 
@@ -143,6 +144,12 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   inline const Navigation* GetAsNavigation() const;
   inline Navigation* AsNavigation();
   inline const Navigation* AsNavigation() const;
+
+  virtual bool IsScreen() const { return false; }
+  inline nsScreen* GetAsScreen();
+  inline const nsScreen* GetAsScreen() const;
+  inline nsScreen* AsScreen();
+  inline const nsScreen* AsScreen() const;
 
   virtual bool IsInnerWindow() const { return false; }
   virtual bool IsOuterWindow() const { return false; }

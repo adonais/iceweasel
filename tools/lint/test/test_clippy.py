@@ -89,7 +89,6 @@ def test_fix_non_gkrust(lint, paths, create_temp_file):
     path = create_temp_file(contents, "non_gkrust_fixable.rs")
 
     # Reset the fixed counter
-    global fixed
     fixed_before = fixed
 
     # Run clippy with fix=True

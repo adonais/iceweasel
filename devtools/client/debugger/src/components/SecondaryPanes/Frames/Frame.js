@@ -5,7 +5,7 @@
 import React, { Component, memo } from "devtools/client/shared/vendor/react";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
-import AccessibleImage from "../../shared/AccessibleImage";
+import DebuggerImage from "../../shared/DebuggerImage";
 import { formatDisplayName } from "../../../utils/pause/frames/index";
 import { getFileURL } from "../../../utils/source";
 import FrameIndent from "./FrameIndent";
@@ -43,8 +43,9 @@ const FrameLocation = memo(
           className: "location",
         },
         frame.library,
-        React.createElement(AccessibleImage, {
-          className: `annotation-logo ${frame.library.toLowerCase()}`,
+        React.createElement(DebuggerImage, {
+          name: frame.library.toLowerCase(),
+          className: "annotation-logo",
         })
       );
     }

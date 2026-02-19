@@ -88,7 +88,7 @@ exports.analyzeInputString = function (str, timeout = 2500) {
       };
     }
 
-    currentIndex += 1;
+    currentIndex += c.length;
     let resetLastStatement = false;
     const isWhitespaceChar = c.trim() === "";
     switch (state) {

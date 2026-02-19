@@ -83,7 +83,7 @@ add_task(async function test_launch_login_item() {
     "passwordmgr-storage-changed",
     (_, data) => data == "modifyLogin"
   );
-  Services.logins.modifyLogin(TEST_LOGIN1, modifiedLogin);
+  await Services.logins.modifyLoginAsync(TEST_LOGIN1, modifiedLogin);
   await storageChangedPromised;
 
   BrowserTestUtils.removeTab(newTab);

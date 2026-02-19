@@ -4,7 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNativeDragSource.h"
-#include <stdio.h>
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "nsToolkit.h"

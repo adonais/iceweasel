@@ -399,12 +399,9 @@ class LintRoller:
 
         # Make sure all paths are absolute. Join `paths` to cwd and `vcs_paths` to root.
         paths = set(map(os.path.abspath, paths))
-        vcs_paths = set(
-            [
-                os.path.join(self.root, p) if not os.path.isabs(p) else p
-                for p in vcs_paths
-            ]
-        )
+        vcs_paths = set([
+            os.path.join(self.root, p) if not os.path.isabs(p) else p for p in vcs_paths
+        ])
 
         num_procs = num_procs or cpu_count()
         jobs = list(self._generate_jobs(paths, vcs_paths, num_procs))

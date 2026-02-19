@@ -45,8 +45,6 @@ xpcshell:
     treeherder-symbol: X(X)
     variants:
         - conditioned_profile
-        - socketprocess_networking+no-fission
-        - socketprocess_networking
         - no-fission
         - msix
         - geckoview-no-fission-no-ship
@@ -67,18 +65,6 @@ xpcshell:
                     linux1804-64.*/opt: ['trunk']
                     linux2404-64.*/opt: ['trunk']
                     windows11-64.*/opt: ['trunk']
-                    default: []
-            socketprocess_networking+no-fission:
-                by-test-platform:
-                    linux1804-64.*: ['mozilla-central']
-                    linux2404-64.*: ['mozilla-central']
-                    default: []
-            socketprocess_networking:
-                by-test-platform:
-                    macosx1015.*: ['trunk']  # All Mac variants
-                    macosx1470.*: ['trunk']  # All Mac variants
-                    windows.*-asan.*: []
-                    windows11.*: ['trunk']   # All Windows11 except ASAN
                     default: []
             no-fission:
                 by-test-platform:
@@ -148,10 +134,6 @@ xpcshell:
     tier:
         by-variant:
             no-fission:
-                by-test-platform:
-                    linux.*: 2
-                    default: default
-            socketprocess_networking+no-fission:
                 by-test-platform:
                     linux.*: 2
                     default: default

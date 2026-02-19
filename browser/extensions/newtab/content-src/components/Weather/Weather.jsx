@@ -285,6 +285,14 @@ export class _Weather extends React.PureComponent {
     const weatherOptIn = Prefs.values["system.showWeatherOptIn"];
     const nimbusWeatherOptInEnabled =
       Prefs.values.trainhopConfig?.weather?.weatherOptInEnabled;
+    // Bug 2009484: Controls button order in opt-in dialog for A/B testing.
+    // When true, "Not now" gets slot="primary";
+    // when false/undefined, "Yes" gets slot="primary".
+    // Also note the primary button's position varies by platform:
+    // on Windows, it appears on the left,
+    // while on Linux and macOS, it appears on the right.
+    const reverseOptInButtons =
+      Prefs.values.trainhopConfig?.weather?.reverseOptInButtons;
 
     const optInDisplayed = Prefs.values["weather.optInDisplayed"];
     const optInUserChoice = Prefs.values["weather.optInAccepted"];
@@ -470,16 +478,18 @@ export class _Weather extends React.PureComponent {
                     <moz-button
                       size="small"
                       type="default"
-                      data-l10n-id="newtab-weather-opt-in-not-now"
-                      onClick={this.handleRejectOptIn}
-                      id="reject-opt-in"
+                      data-l10n-id="newtab-weather-opt-in-yes"
+                      onClick={this.handleAcceptOptIn}
+                      id="accept-opt-in"
+                      slot={reverseOptInButtons ? "" : "primary"}
                     />
                     <moz-button
                       size="small"
                       type="default"
-                      data-l10n-id="newtab-weather-opt-in-yes"
-                      onClick={this.handleAcceptOptIn}
-                      id="accept-opt-in"
+                      data-l10n-id="newtab-weather-opt-in-not-now"
+                      onClick={this.handleRejectOptIn}
+                      id="reject-opt-in"
+                      slot={reverseOptInButtons ? "primary" : ""}
                     />
                   </moz-button-group>
                 </div>

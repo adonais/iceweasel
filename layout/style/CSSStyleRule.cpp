@@ -203,6 +203,10 @@ const StyleLockedDeclarationBlock* CSSStyleRule::RawStyle() const {
   return mDecls.mDecls->Raw();
 }
 
+DeclarationBlock& CSSStyleRule::GetDeclarationBlock() const {
+  return *mDecls.mDecls;
+}
+
 void CSSStyleRule::GetSelectorText(nsACString& aSelectorText) {
   Servo_StyleRule_GetSelectorText(mRawRule, &aSelectorText);
 }
@@ -358,6 +362,9 @@ Element* CSSStyleRule::GetScopeRootFor(uint32_t aSelectorIndex,
 
 SelectorWarningKind ToWebIDLSelectorWarningKind(
     StyleSelectorWarningKind aKind) {
+  // Whenever an entry is modified here, file a DevTools follow-up bug to make
+  // use of the warning, e.g. Like it is done in
+  // `css-selector-warnings-tooltip-helper.js`.
   switch (aKind) {
     case StyleSelectorWarningKind::UnconstraintedRelativeSelector:
       return SelectorWarningKind::UnconstrainedHas;
@@ -402,7 +409,7 @@ already_AddRefed<nsINodeList> CSSStyleRule::QuerySelectorAll(nsINode& aRoot) {
 
 StylePropertyMap* CSSStyleRule::StyleMap() {
   if (!mStyleMap) {
-    mStyleMap = MakeRefPtr<StylePropertyMap>(this, /* aComputed */ false);
+    mStyleMap = MakeRefPtr<StylePropertyMap>(this);
   }
 
   return mStyleMap;

@@ -180,7 +180,7 @@ include = [
   "TransitionBehavior",
   "ViewTimelineInset",
   "OverflowAnchor",
-  "OverflowClipBox",
+  "OverflowClipMargin",
   "Resize",
   "Overflow",
   "LengthPercentage",

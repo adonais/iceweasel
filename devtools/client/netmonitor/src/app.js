@@ -44,14 +44,15 @@ const SearchDispatcher = require("resource://devtools/client/netmonitor/src/work
  *
  * This object can be consumed by other panels (e.g. Console
  * is using inspectRequest), by the Launchpad (bootstrap), etc.
- *
- * @param {object} api An existing API object to be reused.
  */
-function NetMonitorApp(api) {
-  this.api = api;
-}
+class NetMonitorApp {
+  /**
+   * @param {object} api An existing API object to be reused.
+   */
+  constructor(api) {
+    this.api = api;
+  }
 
-NetMonitorApp.prototype = {
   async bootstrap({ toolbox, document }) {
     // Get the root element for mounting.
     this.mount = document.querySelector("#mount");
@@ -104,7 +105,7 @@ NetMonitorApp.prototype = {
       ),
       this.mount
     );
-  },
+  }
 
   /**
    * Clean up (unmount from DOM, remove listeners, disconnect).
@@ -122,7 +123,7 @@ NetMonitorApp.prototype = {
 
     // Prevents any further action from being dispatched
     this.api.store.dispatch(START_IGNORE_ACTION);
-  },
+  }
 
   /**
    * Selects the specified request in the waterfall and opens the details view.
@@ -162,7 +163,7 @@ NetMonitorApp.prototype = {
         this.api.on(EVENTS.REQUEST_ADDED, inspector);
       }
     });
-  },
-};
+  }
+}
 
 exports.NetMonitorApp = NetMonitorApp;

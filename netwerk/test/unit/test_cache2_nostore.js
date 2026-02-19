@@ -2,7 +2,7 @@
 /* vim: set ts=2 sw=2 sts=2 et: */
 
 /**
- * @fileoverview
+ * @file
  *   Unit test to verify that resources with Cache-Control: no-store, no-cache
  *   and Cache-Control: no-cache, no-store headers are not saved in the cache.
  */

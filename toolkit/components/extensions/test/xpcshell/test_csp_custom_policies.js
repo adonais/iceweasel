@@ -166,8 +166,6 @@ add_task(async function test_policy_csp() {
 });
 
 add_task(async function test_extension_csp() {
-  Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
-
   ExtensionTestUtils.failOnSchemaWarnings(false);
 
   let extension_pages = "script-src 'self'; img-src 'none'";
@@ -366,6 +364,4 @@ add_task(async function test_extension_csp() {
   }
 
   ExtensionTestUtils.failOnSchemaWarnings(true);
-
-  Services.prefs.clearUserPref("extensions.manifestV3.enabled");
 });

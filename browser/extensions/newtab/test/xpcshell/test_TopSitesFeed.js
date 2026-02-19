@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
   FilterAdult: "resource:///modules/FilterAdult.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -2791,6 +2792,14 @@ add_task(async function test_ContileIntegration() {
 
     Assert.ok(fetched);
     Assert.equal(feed._contile.sites.length, 2);
+
+    info("TopSitesFeed._fetchSites should not send cookies");
+    Assert.ok(fetchStub.calledOnce, "fetch should be called once");
+    Assert.equal(
+      fetchStub.firstCall.args[1].credentials,
+      "omit",
+      "should not send cookies"
+    );
     sandbox.restore();
   }
 
@@ -3392,6 +3401,138 @@ add_task(async function test_ContileIntegration() {
     Assert.equal(feed._contile.sites[0].url, "https://www.test.com");
     Assert.equal(feed._contile.sites[1].url, "https://test1.com");
     Assert.equal(feed._contile.sites[2].url, "https://test2.com");
+    sandbox.restore();
+  }
+
+  {
+    info(
+      "TopSitesFeed._fetchSites should cast headers from a Headers object to JS object when using OHTTP"
+    );
+    let { feed, fetchStub } = prepFeed(getTopSitesFeedForTest(sandbox));
+
+    Services.prefs.setStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL",
+      "https://relay.url"
+    );
+    Services.prefs.setStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL",
+      "https://config.url"
+    );
+    Services.prefs.setBoolPref(
+      "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled",
+      true
+    );
+    feed.store.state.Prefs.values["unifiedAds.tiles.enabled"] = true;
+    feed.store.state.Prefs.values["unifiedAds.adsFeed.enabled"] = false;
+    feed.store.state.Prefs.values["unifiedAds.endpoint"] =
+      "https://test.endpoint/";
+    feed.store.state.Prefs.values["discoverystream.placements.tiles"] = "1";
+    feed.store.state.Prefs.values["discoverystream.placements.tiles.counts"] =
+      "1";
+    feed.store.state.Prefs.values["unifiedAds.blockedAds"] = "";
+
+    const TEST_PREFLIGHT_UA_STRING = "Some test UA";
+    const TEST_PREFLIGHT_GEONAME_ID = "Some geo name";
+    const TEST_PREFLIGHT_GEO_LOCATION = "Some geo location";
+
+    fetchStub.resolves({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          normalized_ua: TEST_PREFLIGHT_UA_STRING,
+          geoname_id: TEST_PREFLIGHT_GEONAME_ID,
+          geo_location: TEST_PREFLIGHT_GEO_LOCATION,
+        }),
+    });
+
+    const fakeOhttpConfig = { config: "config" };
+    sandbox.stub(ObliviousHTTP, "getOHTTPConfig").resolves(fakeOhttpConfig);
+
+    const ohttpRequestStub = sandbox
+      .stub(ObliviousHTTP, "ohttpRequest")
+      .resolves({
+        ok: true,
+        status: 200,
+        headers: new Map([
+          ["cache-control", "private, max-age=859, stale-if-error=10463"],
+        ]),
+        json: () =>
+          Promise.resolve({
+            1: [
+              {
+                block_key: 12345,
+                name: "test",
+                url: "https://www.test.com",
+                image_url: "images/test-com.png",
+                callbacks: {
+                  click: "https://www.test-click.com",
+                  impression: "https://www.test-impression.com",
+                },
+              },
+            ],
+          }),
+      });
+
+    let fetched = await feed._contile._fetchSites();
+
+    Assert.ok(fetchStub.calledOnce, "The preflight request was made.");
+
+    Assert.ok(fetched);
+    Assert.ok(
+      ohttpRequestStub.calledOnce,
+      "ohttpRequest should be called once"
+    );
+    const callArgs = ohttpRequestStub.getCall(0).args;
+    Assert.equal(callArgs[0], "https://relay.url", "relay URL should match");
+    Assert.deepEqual(
+      callArgs[1],
+      fakeOhttpConfig,
+      "config should be passed through"
+    );
+
+    const sentHeaders = callArgs[3].headers;
+    Assert.equal(
+      typeof sentHeaders,
+      "object",
+      "headers should be a plain object"
+    );
+    Assert.ok(
+      // We use instanceof here since isInstance isn't available for
+      // Headers, it seems.
+      // eslint-disable-next-line mozilla/use-isInstance
+      !(sentHeaders instanceof Headers),
+      "headers should not be a Headers instance"
+    );
+
+    Assert.equal(
+      sentHeaders["x-user-agent"],
+      TEST_PREFLIGHT_UA_STRING,
+      "Sent the x-user-agent header from preflight"
+    );
+    Assert.equal(
+      sentHeaders["x-geoname-id"],
+      TEST_PREFLIGHT_GEONAME_ID,
+      "Sent the x-geoname-id header from preflight"
+    );
+    Assert.equal(
+      sentHeaders["x-geo-location"],
+      TEST_PREFLIGHT_GEO_LOCATION,
+      "Sent the x-geo-location header from preflight"
+    );
+
+    info("TopSitesFeed._fetchSites should not send cookies via OHTTP");
+    Assert.equal(callArgs[3].credentials, "omit", "should not send cookies");
+
+    Services.prefs.clearUserPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL"
+    );
+    Services.prefs.clearUserPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL"
+    );
+    Services.prefs.clearUserPref(
+      "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled"
+    );
     sandbox.restore();
   }
 

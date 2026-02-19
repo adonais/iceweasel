@@ -3222,7 +3222,7 @@ bool ParseMediaDescription(
 
 }  // namespace
 
-std::string SdpSerialize(const JsepSessionDescription& jdesc) {
+std::string SdpSerialize(const SessionDescriptionInterface& jdesc) {
   const SessionDescription* desc = jdesc.description();
   if (!desc) {
     return "";
@@ -3342,9 +3342,10 @@ std::string SdpSerializeCandidate(const Candidate& candidate) {
   return message;
 }
 
-bool SdpDeserialize(absl::string_view message,
-                    JsepSessionDescription* jdesc,
-                    SdpParseError* error) {
+std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
+    SdpType sdp_type,
+    absl::string_view message,
+    SdpParseError* absl_nullable error) {
   std::string session_id;
   std::string session_version;
   TransportDescription session_td("", "");
@@ -3357,7 +3358,7 @@ bool SdpDeserialize(absl::string_view message,
   if (!ParseSessionDescription(message, &current_pos, &session_id,
                                &session_version, &session_td, &session_extmaps,
                                &session_connection_addr, desc.get(), error)) {
-    return false;
+    return nullptr;
   }
 
   // Media Description
@@ -3365,30 +3366,20 @@ bool SdpDeserialize(absl::string_view message,
   if (!ParseMediaDescription(message, session_td, session_extmaps, &current_pos,
                              session_connection_addr, desc.get(), &candidates,
                              error)) {
-    return false;
+    return nullptr;
   }
 
-  jdesc->Initialize(std::move(desc), session_id, session_version);
-
+  std::unique_ptr<SessionDescriptionInterface> description =
+      CreateSessionDescription(sdp_type, session_id, session_version,
+                               std::move(desc));
+  if (!description) {
+    return nullptr;
+  }
   for (const auto& candidate : candidates) {
-    jdesc->AddCandidate(candidate.get());
+    description->AddCandidate(candidate.get());
   }
-  return true;
-}
 
-bool SdpDeserializeCandidate(absl::string_view transport_name,
-                             absl::string_view message,
-                             Candidate* candidate,
-                             SdpParseError* error) {
-  RTC_DCHECK(candidate != nullptr);
-  if (!ParseCandidate(message, candidate, error, true)) {
-    return false;
-  }
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  candidate->set_transport_name(transport_name);
-#pragma clang diagnostic pop
-  return true;
+  return description;
 }
 
 bool ParseCandidate(absl::string_view message,

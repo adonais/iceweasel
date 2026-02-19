@@ -130,7 +130,7 @@ bool WMFAudioMFTManager::Init() {
   hr = outputType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 32);
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-  hr = decoder->SetMediaTypes(inputType, outputType);
+  hr = decoder->SetMediaTypes(inputType, outputType, MFAudioFormat_Float);
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
   mDecoder = decoder;
@@ -195,7 +195,7 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutput) {
       return hr;
     }
     if (hr == MF_E_TRANSFORM_STREAM_CHANGE) {
-      hr = mDecoder->FindDecoderOutputType();
+      hr = mDecoder->FindDecoderOutputType(MFAudioFormat_Float);
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
       hr = UpdateOutputType();
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);

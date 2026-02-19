@@ -563,13 +563,23 @@ export const NimbusTestUtils = {
       });
     },
 
+    get SEPARATE_ROLLOUT_OPT_OUT() {
+      const { Phase } = lazy.NimbusMigrations;
+
+      return NimbusTestUtils.makeMigrationState({
+        [Phase.INIT_STARTED]: "separate-rollout-opt-out",
+        [Phase.AFTER_STORE_INITIALIZED]: "graduate-firefox-labs-auto-pip",
+        [Phase.AFTER_REMOTE_SETTINGS_UPDATE]: "firefox-labs-enrollments",
+      });
+    },
+
     /**
      * A migration state that represents all migrations applied.
      *
      * @type {Record<Phase, number>}
      */
     get LATEST() {
-      return NimbusTestUtils.migrationState.GRADUATED_FIREFOX_LABS_AUTO_PIP;
+      return NimbusTestUtils.migrationState.SEPARATE_ROLLOUT_OPT_OUT;
     },
   },
 
@@ -660,7 +670,7 @@ export const NimbusTestUtils = {
    * NB: These features will only be visible to the JS Nimbus client. The native
    * Nimbus client will have no access.
    *
-   * @params {...object} features
+   * @param {...object} features
    *         A list of `_NimbusFeature`s.
    *
    * @returns {function(): void}
@@ -710,12 +720,12 @@ export const NimbusTestUtils = {
   /**
    * Unenroll from all the given slugs and assert that the store is now empty.
    *
-   * @params {string[]} slugs
+   * @param {string[]} slugs
    *         The slugs to unenroll from.
    *
-   * @params {object?} options
+   * @param {object?} options
    *
-   * @params {object?} options.manager
+   * @param {object?} options.manager
    *         The ExperimentManager to clean up. Defaults to the global
    *         ExperimentManager.
    *
@@ -1132,7 +1142,7 @@ export const NimbusTestUtils = {
    * If the store contains active enrollments this function will cause the test
    * to fail.
    *
-   * @params {ExperimentStore} store
+   * @param {ExperimentStore} store
    *         The store to delete.
    */
   async removeStore(store) {
@@ -1341,7 +1351,7 @@ export const NimbusTestUtils = {
   /**
    * Validate an enrollment matches the Nimbus enrollment schema.
    *
-   * @params {object} enrollment
+   * @param {object} enrollment
    *         The enrollment to validate.
    *
    * @throws If the enrollment does not validate or its feature configurations

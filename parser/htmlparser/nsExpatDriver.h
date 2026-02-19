@@ -10,7 +10,6 @@
 #include "moz_expat.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
-#include "nsIDTD.h"
 #include "nsIInputStream.h"
 #include "nsIParser.h"
 #include "nsCycleCollectionParticipant.h"
@@ -28,17 +27,20 @@ template <typename, size_t>
 class Array;
 }
 
-class nsExpatDriver : public nsIDTD {
+class nsExpatDriver : public nsISupports {
   virtual ~nsExpatDriver();
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
-  NS_DECL_NSIDTD
   NS_DECL_CYCLE_COLLECTION_CLASS(nsExpatDriver)
 
   nsExpatDriver();
 
   nsresult Initialize(nsIURI* aURI, nsIContentSink* aSink);
+
+  void DidBuildModel();
+  nsresult BuildModel();
+  void Terminate();
 
   nsresult ResumeParse(nsScanner& aScanner, bool aIsFinalChunk);
 

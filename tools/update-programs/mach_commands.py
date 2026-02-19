@@ -15,7 +15,6 @@ $ ./mach update serve -v https://archive.mozilla.org/pub/firefox/candidates/135.
 ```
 """
 
-
 import json
 import logging
 import os

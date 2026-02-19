@@ -4,6 +4,7 @@
 
 //! A centralized set of stylesheets for a document.
 
+use crate::derives::*;
 use crate::invalidation::stylesheets::{RuleChangeKind, StylesheetInvalidationSet};
 use crate::media_queries::Device;
 use crate::shared_lock::SharedRwLockReadGuard;

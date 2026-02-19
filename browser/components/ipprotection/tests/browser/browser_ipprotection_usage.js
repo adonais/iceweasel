@@ -5,10 +5,10 @@
 "use strict";
 
 const { IPPChannelFilter } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPChannelFilter.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs"
 );
 const { IPProtectionUsage } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionUsage.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtectionUsage.sys.mjs"
 );
 
 add_task(async function test_createConnection_and_proxy() {

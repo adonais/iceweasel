@@ -26,10 +26,6 @@
   />
   <link
     rel="stylesheet"
-    href="chrome://browser/skin/preferences/translations.css"
-  />
-  <link
-    rel="stylesheet"
     href="chrome://browser/content/preferences/dialogs/handlers.css"
   />
   <link
@@ -60,6 +56,7 @@
   <link rel="localization" href="preview/smartTabGroups.ftl"/>
   <link rel="localization" href="preview/privacyPreferences.ftl"/>
   <link rel="localization" href="preview/ipProtection.ftl"/>
+  <link rel="localization" href="preview/aiFeatures.ftl"/>
 
   <!-- Links below are only used for search-l10n-ids into subdialogs -->
   <link rel="localization" href="browser/aboutDialog.ftl"/>
@@ -76,7 +73,6 @@
   <link rel="localization" href="browser/preferences/siteDataSettings.ftl"/>
   <link rel="localization" href="browser/sanitize.ftl"/>
   <link rel="localization" href="browser/translations.ftl"/>
-  <link rel="localization" href="preview/translations.ftl"/>
   <link rel="localization" href="preview/enUS-searchFeatures.ftl"/>
   <link rel="localization" href="security/certificates/certManager.ftl"/>
   <link rel="localization" href="security/certificates/deviceManager.ftl"/>
@@ -167,6 +163,16 @@
                       align="center">
           <image class="category-icon"/>
           <label class="category-name" flex="1" data-l10n-id="pane-sync-title3"></label>
+        </richlistitem>
+
+        <richlistitem id="category-ai-features"
+                      class="category"
+                      value="paneAi"
+                      data-l10n-id="category-ai-controls"
+                      data-l10n-attrs="tooltiptext"
+                      align="center">
+          <image class="category-icon"/>
+          <label class="category-name" flex="1" data-l10n-id="pane-ai-controls-title"></label>
         </richlistitem>
 
         <richlistitem id="category-experimental"
@@ -266,7 +272,6 @@
 #include search.inc.xhtml
 #include privacy.inc.xhtml
 #include containers.inc.xhtml
-#include translations.inc.xhtml
 #include sync.inc.xhtml
 #include experimental.inc.xhtml
 #include iceweasel.inc.xhtml

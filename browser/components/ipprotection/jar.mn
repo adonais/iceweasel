@@ -14,4 +14,3 @@ browser.jar:
     content/browser/ipprotection/ipprotection-site-settings-control.mjs (content/ipprotection-site-settings-control.mjs)
     content/browser/ipprotection/ipprotection-status-card.css (content/ipprotection-status-card.css)
     content/browser/ipprotection/ipprotection-status-card.mjs (content/ipprotection-status-card.mjs)
-    content/browser/ipprotection/ipprotection-timer.mjs (content/ipprotection-timer.mjs)

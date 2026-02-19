@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { openAIEngine, renderPrompt } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-);
+const { MODEL_FEATURES, openAIEngine, renderPrompt } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -16,10 +17,12 @@ const { sinon } = ChromeUtils.importESModule(
 const PREF_API_KEY = "browser.aiwindow.apiKey";
 const PREF_ENDPOINT = "browser.aiwindow.endpoint";
 const PREF_MODEL = "browser.aiwindow.model";
+const PREF_EXTRA_HEADERS = "browser.aiwindow.extraHeaders";
 
 const API_KEY = "fake-key";
 const ENDPOINT = "https://api.fake-endpoint.com/v1";
 const MODEL = "fake-model";
+const EXTRA_HEADERS = '{"x-fastly-request": "fake-key"}';
 
 /**
  * Cleans up preferences after testing
@@ -35,10 +38,11 @@ registerCleanupFunction(() => {
 /**
  * Tests the creation of an OpenAI engine instance
  */
-add_task(async function test_createOpenAIEngine() {
+add_task(async function test_createOpenAIEngine_with_chat_feature() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
   Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
   Services.prefs.setStringPref(PREF_MODEL, MODEL);
+  Services.prefs.setStringPref(PREF_EXTRA_HEADERS, EXTRA_HEADERS);
 
   const sb = sinon.createSandbox();
   try {
@@ -50,7 +54,7 @@ add_task(async function test_createOpenAIEngine() {
     };
 
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build();
+    const engine = await openAIEngine.build(MODEL_FEATURES.CHAT);
     Assert.strictEqual(
       engine.engineInstance,
       fakeEngine,
@@ -68,12 +72,18 @@ add_task(async function test_createOpenAIEngine() {
       "smart-openai",
       "engineId should be smart-openai"
     );
-    Assert.equal(opts.modelId, MODEL, "modelId should come from pref");
+    Assert.ok(opts.modelId, "modelId should be set");
     Assert.equal(opts.modelRevision, "main", "modelRevision should be main");
     Assert.equal(
       opts.taskName,
       "text-generation",
       "taskName should be text-generation"
+    );
+    Assert.equal(opts.serviceType, "ai", "serviceType should be ai");
+    Assert.deepEqual(
+      opts.extraHeaders,
+      JSON.parse(EXTRA_HEADERS),
+      "extraHeaders should come from pref"
     );
   } finally {
     sb.restore();

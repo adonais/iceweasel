@@ -1,0 +1,25 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.smartbar {
+  --smartbar-min-height: var(--urlbar-min-height);
+  bottom: 0;
+  display: block;
+  height: auto;
+  min-height: var(--smartbar-min-height);
+  position: absolute;
+  width: 100%;
+}
+
+.smartbar .urlbar-input-box {
+  align-items: stretch;
+}
+
+.smartbar .urlbar-input {
+  box-sizing: border-box;
+  height: auto;
+  min-height: var(--smartbar-min-height);
+  white-space: pre-wrap;
+  width: 100%;
+}

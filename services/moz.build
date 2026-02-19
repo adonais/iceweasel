@@ -7,6 +7,9 @@
 with Files("moz.build"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
+with Files("app-services-tools/**"):
+    BUG_COMPONENT = ("Application Services", "General")
+
 DIRS += [
     "common",
     "crypto",
@@ -19,10 +22,8 @@ DIRS += [
 # actually adds them, after which it is possible to enable the flag.
 if CONFIG["MOZ_APPSERVICES_IN_TREE"]:
     DIRS += [
-        "app-services/components/support/nimbus-fml",
         "app-services/megazords/full",
         "app-services/megazords/fenix-dylib",
-        "app-services/tools/embedded-uniffi-bindgen",
     ]
 
 # The automation dir is only included in nightlies and debug
@@ -33,6 +34,12 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
     DIRS += [
         "fxaccounts",
         "application-services/components/viaduct-necko",
+    ]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    DIRS += [
+        "app-services-tools/embedded-uniffi-bindgen",
+        "app-services-tools/nimbus-fml",
     ]
 
 if CONFIG["MOZ_SERVICES_SYNC"]:

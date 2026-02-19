@@ -74,5 +74,3 @@ tags = "os_integration"
 ["browser_fxa_config.js"]
 
 ["browser_openPreferences.js"]
-
-["browser_openSearchPanel.js"]

@@ -83,18 +83,19 @@ static nsresult AppendImagePromise(nsITransferable* aTransferable,
                                    nsINode* aImageNode);
 #endif
 
-static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
-                                     Document& aDocument, Selection* aSelection,
-                                     uint32_t aAdditionalEncoderFlags,
-                                     bool& aEncodedAsTextHTMLResult,
-                                     nsAutoString& aSerializationResult) {
-  // note that we assign text/unicode as mime type, but in fact
-  // nsHTMLCopyEncoder ignore it and use text/html or text/plain depending where
-  // the selection is. if it is a selection into input/textarea element or in a
-  // html content with pre-wrap style : text/plain. Otherwise text/html. see
-  // nsHTMLCopyEncoder::SetSelection
+static nsresult EncodeForTextPlain(nsIDocumentEncoder& aEncoder,
+                                   Document& aDocument, Selection* aSelection,
+                                   uint32_t aAdditionalEncoderFlags,
+                                   bool& aCanBeEncodedAsTextHTML,
+                                   nsAString& aSerializationResult) {
+  // We assign text/html as the MIME type first, but in fact nsHTMLCopyEncoder
+  // force the use of text/plain depending where the selection is (e.g., a
+  // selection inside an <input> or <textarea> element). See
+  // nsHTMLCopyEncoder::SetSelection. We can then use this behavior to detect
+  // whether the selection can be encoded as text/html by checking the MIME type
+  // after nsHTMLCopyEncoder::SetSelection.
   nsAutoString mimeType;
-  mimeType.AssignLiteral("text/unicode");
+  mimeType.AssignLiteral(kHTMLMime);
 
   // Do the first and potentially trial encoding as preformatted and raw.
   uint32_t flags = aAdditionalEncoderFlags |
@@ -113,45 +114,51 @@ static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
   // text widget.
   rv = aEncoder.GetMimeType(mimeType);
   NS_ENSURE_SUCCESS(rv, rv);
-  bool selForcedTextPlain = mimeType.EqualsLiteral(kTextMime);
 
-  nsAutoString buf;
-  rv = aEncoder.EncodeToString(buf);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = aEncoder.GetMimeType(mimeType);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  // The mime type is ultimately text/html if the encoder successfully encoded
-  // the selection as text/html.
-  aEncodedAsTextHTMLResult = mimeType.EqualsLiteral(kHTMLMime);
-
-  if (selForcedTextPlain) {
-    // Nothing to do.  buf contains the final, preformatted, raw text/plain.
-    aSerializationResult.Assign(buf);
-  } else {
-    // Redo the encoding, but this time use pretty printing.
-    flags = nsIDocumentEncoder::OutputSelectionOnly |
-            nsIDocumentEncoder::OutputForPlainTextClipboardCopy |
-            nsIDocumentEncoder::OutputAbsoluteLinks |
-            nsIDocumentEncoder::SkipInvisibleContent |
-            nsIDocumentEncoder::OutputDropInvisibleBreak |
-            (aAdditionalEncoderFlags &
-             (nsIDocumentEncoder::OutputNoScriptContent |
-              nsIDocumentEncoder::OutputRubyAnnotation |
-              nsIDocumentEncoder::AllowCrossShadowBoundary));
-
-    mimeType.AssignLiteral(kTextMime);
-    rv = aEncoder.Init(&aDocument, mimeType, flags);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = aEncoder.SetSelection(aSelection);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = aEncoder.EncodeToString(aSerializationResult);
-    NS_ENSURE_SUCCESS(rv, rv);
+  // XXX: For XHTML documents, we would like to use pretty-printing encoding for
+  // text/plain, just as we do for HTML documents. This is achieved by
+  // relying on the current nsHTMLCopyEncoder design, where the MIME
+  // type is not updated to text/plain immediately in
+  // nsHTMLCopyEncoder::SetSelection(), but only latter when
+  // nsHTMLCopyEncoder::EncodeToString() is called. As a result, we still see a
+  // text/html MIME type here for XHTML documents.
+  if (mimeType.EqualsLiteral(kTextMime)) {
+    // nsHTMLCopyEncoder force to use text/plain.
+    nsAutoString buf;
+    rv = aEncoder.EncodeToString(buf);
+    if (NS_SUCCEEDED(rv)) {
+      // Nothing to do. buf contains the final, preformatted, raw text/plain.
+      aSerializationResult.Assign(buf);
+    }
+    return rv;
   }
 
+  MOZ_ASSERT(mimeType.EqualsLiteral(kHTMLMime));
+  // XXX: We currently only try to encode as text/html for HTML documents.
+  // See bug 857915.
+  if (aDocument.IsHTMLDocument()) {
+    aCanBeEncodedAsTextHTML = true;
+  }
+
+  // Do the text/plain encoding, but this time use pretty printing.
+  flags = nsIDocumentEncoder::OutputSelectionOnly |
+          nsIDocumentEncoder::OutputForPlainTextClipboardCopy |
+          nsIDocumentEncoder::OutputAbsoluteLinks |
+          nsIDocumentEncoder::SkipInvisibleContent |
+          nsIDocumentEncoder::OutputDropInvisibleBreak |
+          (aAdditionalEncoderFlags &
+           (nsIDocumentEncoder::OutputNoScriptContent |
+            nsIDocumentEncoder::OutputRubyAnnotation |
+            nsIDocumentEncoder::AllowCrossShadowBoundary));
+
+  mimeType.AssignLiteral(kTextMime);
+  rv = aEncoder.Init(&aDocument, mimeType, flags);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aEncoder.SetSelection(aSelection);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aEncoder.EncodeToString(aSerializationResult);
   return rv;
 }
 
@@ -174,26 +181,21 @@ static nsresult EncodeAsTextHTMLWithContext(
 }
 
 struct EncodedDocumentWithContext {
-  // When determining `mSerializationForTextUnicode`, `text/unicode` is passed
-  // as mime type to the encoder. It uses this as a switch to decide whether to
-  // encode the document as `text/html` or `text/plain`. It  is `true` iff
-  // `text/html` was used.
-  bool mUnicodeEncodingIsTextHTML = false;
+  // Whether the document can be encoded as text/html.
+  bool mCanBeEncodedAsTextHTML = false;
 
-  // The serialized document when encoding the document with `text/unicode`. See
-  // comment of `mUnicodeEncodingIsTextHTML`.
-  nsAutoString mSerializationForTextUnicode;
+  // The serialized document when encoding the document with `text/plain`.
+  nsAutoString mSerializationForTextPlain;
 
-  // When `mUnicodeEncodingIsTextHTML` is true, this is the serialized document
-  // using `text/html`. Its value may differ from `mSerializationForTextHTML`,
-  // because different flags were passed to the encoder.
+  // When `mCanBeEncodedAsTextHTML` is true, this is the serialized document
+  // using `text/html`.
   nsAutoString mSerializationForTextHTML;
 
-  // When `mUnicodeEncodingIsTextHTML` is true, this contains the serialized
+  // When `mCanBeEncodedAsTextHTML` is true, this contains the serialized
   // ancestor elements.
   nsAutoString mHTMLContextBuffer;
 
-  // When `mUnicodeEncodingIsTextHTML` is true, this contains numbers
+  // When `mCanBeEncodedAsTextHTML` is true, this contains numbers
   // identifying where in the context the serialization came from.
   nsAutoString mHTMLInfoBuffer;
 };
@@ -208,17 +210,17 @@ static nsresult EncodeDocumentWithContext(
     EncodedDocumentWithContext& aEncodedDocumentWithContext) {
   nsCOMPtr<nsIDocumentEncoder> docEncoder = do_createHTMLCopyEncoder();
 
-  bool unicodeEncodingIsTextHTML{false};
-  nsAutoString serializationForTextUnicode;
-  nsresult rv = EncodeForTextUnicode(
+  bool canBeEncodedAsTextHTML{false};
+  nsAutoString serializationForTextPlain;
+  nsresult rv = EncodeForTextPlain(
       *docEncoder, aDocument, aSelection, aAdditionalEncoderFlags,
-      unicodeEncodingIsTextHTML, serializationForTextUnicode);
+      canBeEncodedAsTextHTML, serializationForTextPlain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoString serializationForTextHTML;
   nsAutoString htmlContextBuffer;
   nsAutoString htmlInfoBuffer;
-  if (unicodeEncodingIsTextHTML) {
+  if (canBeEncodedAsTextHTML) {
     // Redo the encoding, but this time use the passed-in flags.
     // Don't allow wrapping of CJK strings.
     rv = EncodeAsTextHTMLWithContext(
@@ -230,7 +232,7 @@ static nsresult EncodeDocumentWithContext(
   }
 
   aEncodedDocumentWithContext = {
-      unicodeEncodingIsTextHTML, std::move(serializationForTextUnicode),
+      canBeEncodedAsTextHTML, std::move(serializationForTextPlain),
       std::move(serializationForTextHTML), std::move(htmlContextBuffer),
       std::move(htmlInfoBuffer)};
 
@@ -247,7 +249,10 @@ static nsresult CreateTransferable(
 
   aTransferable->Init(aDocument.GetLoadContext());
   aTransferable->SetDataPrincipal(aDocument.NodePrincipal());
-  if (aEncodedDocumentWithContext.mUnicodeEncodingIsTextHTML) {
+  if (aEncodedDocumentWithContext.mCanBeEncodedAsTextHTML) {
+    // XXX: Now we provide the text/plain directly, do we still need to always
+    // set a HTML converter? Or perhaps we could set the converter only when the
+    // text/plain is not available.
     // Set up a format converter so that clipboard flavor queries work.
     // This converter isn't really used for conversions.
     nsCOMPtr<nsIFormatConverter> htmlConverter =
@@ -276,15 +281,14 @@ static nsresult CreateTransferable(
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    if (!aEncodedDocumentWithContext.mSerializationForTextUnicode.IsEmpty()) {
-      // unicode text
+    if (!aEncodedDocumentWithContext.mSerializationForTextPlain.IsEmpty()) {
       // Add the plain text DataFlavor to the transferable
       // If we didn't have this, then nsDataObj::GetData matches
       // text/plain against the kURLMime flavour which is not desirable
       // (eg. when pasting into Notepad)
-      rv = AppendString(
-          aTransferable,
-          aEncodedDocumentWithContext.mSerializationForTextUnicode, kTextMime);
+      rv = AppendString(aTransferable,
+                        aEncodedDocumentWithContext.mSerializationForTextPlain,
+                        kTextMime);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -309,11 +313,11 @@ static nsresult CreateTransferable(
       }
     }
   } else {
-    if (!aEncodedDocumentWithContext.mSerializationForTextUnicode.IsEmpty()) {
+    if (!aEncodedDocumentWithContext.mSerializationForTextPlain.IsEmpty()) {
       // Add the unicode DataFlavor to the transferable
-      rv = AppendString(
-          aTransferable,
-          aEncodedDocumentWithContext.mSerializationForTextUnicode, kTextMime);
+      rv = AppendString(aTransferable,
+                        aEncodedDocumentWithContext.mSerializationForTextPlain,
+                        kTextMime);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }

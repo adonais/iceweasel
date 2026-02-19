@@ -129,7 +129,7 @@ this.AccessibilityUtils = (function () {
 
   /**
    * Get role attribute for an accessible object if specified for its
-   * corresponding {@code DOMNode}.
+   * corresponding ``DOMNode``.
    *
    * @param   {nsIAccessible} accessible
    *          Accessible for which to determine its role attribute value.
@@ -166,13 +166,13 @@ this.AccessibilityUtils = (function () {
   }
 
   /**
-   * Test if an accessible has a {@code hidden} attribute.
+   * Test if an accessible has a ``hidden`` attribute.
    *
    * @param  {nsIAccessible} accessible
    *         Accessible object.
    *
    * @return {boolean}
-   *         True if the accessible object has a {@code hidden} attribute, false
+   *         True if the accessible object has a ``hidden`` attribute, false
    *         otherwise.
    */
   function hasHiddenAttribute(accessible) {

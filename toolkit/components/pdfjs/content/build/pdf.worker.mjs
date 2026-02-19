@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.445
- * pdfjsBuild = ec5330f78
+ * pdfjsVersion = 5.4.551
+ * pdfjsBuild = 29413be02
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -3824,6 +3824,455 @@ class ImageResizer {
     i += colorTable.length;
     bmpData.set(data, i);
     return bmpData;
+  }
+}
+
+;// ./external/jbig2/jbig2.js
+async function JBig2(moduleArg = {}) {
+  var moduleRtn;
+  var Module = moduleArg;
+  var ENVIRONMENT_IS_WEB = true;
+  var ENVIRONMENT_IS_WORKER = false;
+  var arguments_ = [];
+  var thisProgram = "./this.program";
+  var quit_ = (status, toThrow) => {
+    throw toThrow;
+  };
+  var _scriptName = import.meta.url;
+  var scriptDirectory = "";
+  var readAsync, readBinary;
+  if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
+    try {
+      scriptDirectory = new URL(".", _scriptName).href;
+    } catch {}
+    readAsync = async url => {
+      var response = await fetch(url, {
+        credentials: "same-origin"
+      });
+      if (response.ok) {
+        return response.arrayBuffer();
+      }
+      throw new Error(response.status + " : " + response.url);
+    };
+  } else {}
+  var out = console.log.bind(console);
+  var err = console.error.bind(console);
+  var wasmBinary;
+  var ABORT = false;
+  var EXITSTATUS;
+  var readyPromiseResolve, readyPromiseReject;
+  var HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
+  var HEAP64, HEAPU64;
+  var runtimeInitialized = false;
+  function updateMemoryViews() {
+    var b = wasmMemory.buffer;
+    HEAP8 = new Int8Array(b);
+    HEAP16 = new Int16Array(b);
+    HEAPU8 = new Uint8Array(b);
+    HEAPU16 = new Uint16Array(b);
+    HEAP32 = new Int32Array(b);
+    HEAPU32 = new Uint32Array(b);
+    HEAPF32 = new Float32Array(b);
+    HEAPF64 = new Float64Array(b);
+    HEAP64 = new BigInt64Array(b);
+    HEAPU64 = new BigUint64Array(b);
+  }
+  function preRun() {
+    if (Module["preRun"]) {
+      if (typeof Module["preRun"] == "function") Module["preRun"] = [Module["preRun"]];
+      while (Module["preRun"].length) {
+        addOnPreRun(Module["preRun"].shift());
+      }
+    }
+    callRuntimeCallbacks(onPreRuns);
+  }
+  function initRuntime() {
+    runtimeInitialized = true;
+    wasmExports["i"]();
+  }
+  function postRun() {
+    if (Module["postRun"]) {
+      if (typeof Module["postRun"] == "function") Module["postRun"] = [Module["postRun"]];
+      while (Module["postRun"].length) {
+        addOnPostRun(Module["postRun"].shift());
+      }
+    }
+    callRuntimeCallbacks(onPostRuns);
+  }
+  function abort(what) {
+    Module["onAbort"]?.(what);
+    what = "Aborted(" + what + ")";
+    err(what);
+    ABORT = true;
+    what += ". Build with -sASSERTIONS for more info.";
+    var e = new WebAssembly.RuntimeError(what);
+    readyPromiseReject?.(e);
+    throw e;
+  }
+  var wasmBinaryFile;
+  function getWasmImports() {
+    var imports = {
+      a: wasmImports
+    };
+    return imports;
+  }
+  async function createWasm() {
+    function receiveInstance(instance, module) {
+      wasmExports = instance.exports;
+      assignWasmExports(wasmExports);
+      updateMemoryViews();
+      return wasmExports;
+    }
+    var info = getWasmImports();
+    return new Promise((resolve, reject) => {
+      Module["instantiateWasm"](info, (inst, mod) => {
+        resolve(receiveInstance(inst, mod));
+      });
+    });
+  }
+  class ExitStatus {
+    name = "ExitStatus";
+    constructor(status) {
+      this.message = `Program terminated with exit(${status})`;
+      this.status = status;
+    }
+  }
+  var callRuntimeCallbacks = callbacks => {
+    while (callbacks.length > 0) {
+      callbacks.shift()(Module);
+    }
+  };
+  var onPostRuns = [];
+  var addOnPostRun = cb => onPostRuns.push(cb);
+  var onPreRuns = [];
+  var addOnPreRun = cb => onPreRuns.push(cb);
+  var noExitRuntime = true;
+  class ExceptionInfo {
+    constructor(excPtr) {
+      this.excPtr = excPtr;
+      this.ptr = excPtr - 24;
+    }
+    set_type(type) {
+      HEAPU32[this.ptr + 4 >> 2] = type;
+    }
+    get_type() {
+      return HEAPU32[this.ptr + 4 >> 2];
+    }
+    set_destructor(destructor) {
+      HEAPU32[this.ptr + 8 >> 2] = destructor;
+    }
+    get_destructor() {
+      return HEAPU32[this.ptr + 8 >> 2];
+    }
+    set_caught(caught) {
+      caught = caught ? 1 : 0;
+      HEAP8[this.ptr + 12] = caught;
+    }
+    get_caught() {
+      return HEAP8[this.ptr + 12] != 0;
+    }
+    set_rethrown(rethrown) {
+      rethrown = rethrown ? 1 : 0;
+      HEAP8[this.ptr + 13] = rethrown;
+    }
+    get_rethrown() {
+      return HEAP8[this.ptr + 13] != 0;
+    }
+    init(type, destructor) {
+      this.set_adjusted_ptr(0);
+      this.set_type(type);
+      this.set_destructor(destructor);
+    }
+    set_adjusted_ptr(adjustedPtr) {
+      HEAPU32[this.ptr + 16 >> 2] = adjustedPtr;
+    }
+    get_adjusted_ptr() {
+      return HEAPU32[this.ptr + 16 >> 2];
+    }
+  }
+  var exceptionLast = 0;
+  var uncaughtExceptionCount = 0;
+  var ___cxa_throw = (ptr, type, destructor) => {
+    var info = new ExceptionInfo(ptr);
+    info.init(type, destructor);
+    exceptionLast = ptr;
+    uncaughtExceptionCount++;
+    throw exceptionLast;
+  };
+  var __abort_js = () => abort("");
+  var runtimeKeepaliveCounter = 0;
+  var __emscripten_runtime_keepalive_clear = () => {
+    noExitRuntime = false;
+    runtimeKeepaliveCounter = 0;
+  };
+  var timers = {};
+  var handleException = e => {
+    if (e instanceof ExitStatus || e == "unwind") {
+      return EXITSTATUS;
+    }
+    quit_(1, e);
+  };
+  var keepRuntimeAlive = () => noExitRuntime || runtimeKeepaliveCounter > 0;
+  var _proc_exit = code => {
+    EXITSTATUS = code;
+    if (!keepRuntimeAlive()) {
+      Module["onExit"]?.(code);
+      ABORT = true;
+    }
+    quit_(code, new ExitStatus(code));
+  };
+  var exitJS = (status, implicit) => {
+    EXITSTATUS = status;
+    _proc_exit(status);
+  };
+  var _exit = exitJS;
+  var maybeExit = () => {
+    if (!keepRuntimeAlive()) {
+      try {
+        _exit(EXITSTATUS);
+      } catch (e) {
+        handleException(e);
+      }
+    }
+  };
+  var callUserCallback = func => {
+    if (ABORT) {
+      return;
+    }
+    try {
+      func();
+      maybeExit();
+    } catch (e) {
+      handleException(e);
+    }
+  };
+  var _emscripten_get_now = () => performance.now();
+  var __setitimer_js = (which, timeout_ms) => {
+    if (timers[which]) {
+      clearTimeout(timers[which].id);
+      delete timers[which];
+    }
+    if (!timeout_ms) return 0;
+    var id = setTimeout(() => {
+      delete timers[which];
+      callUserCallback(() => __emscripten_timeout(which, _emscripten_get_now()));
+    }, timeout_ms);
+    timers[which] = {
+      id,
+      timeout_ms
+    };
+    return 0;
+  };
+  var getHeapMax = () => 2147483648;
+  var alignMemory = (size, alignment) => Math.ceil(size / alignment) * alignment;
+  var growMemory = size => {
+    var oldHeapSize = wasmMemory.buffer.byteLength;
+    var pages = (size - oldHeapSize + 65535) / 65536 | 0;
+    try {
+      wasmMemory.grow(pages);
+      updateMemoryViews();
+      return 1;
+    } catch (e) {}
+  };
+  var _emscripten_resize_heap = requestedSize => {
+    var oldSize = HEAPU8.length;
+    requestedSize >>>= 0;
+    var maxHeapSize = getHeapMax();
+    if (requestedSize > maxHeapSize) {
+      return false;
+    }
+    for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
+      var overGrownHeapSize = oldSize * (1 + .2 / cutDown);
+      overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296);
+      var newSize = Math.min(maxHeapSize, alignMemory(Math.max(requestedSize, overGrownHeapSize), 65536));
+      var replacement = growMemory(newSize);
+      if (replacement) {
+        return true;
+      }
+    }
+    return false;
+  };
+  function _setImageData(array_ptr, pitch8, pitch32, height) {
+    if (pitch32 === pitch8) {
+      Module.imageData = new Uint8ClampedArray(HEAPU8.subarray(array_ptr, array_ptr + pitch32 * height));
+      return;
+    }
+    const destSize = pitch8 * height;
+    const imageData = Module.imageData = new Uint8ClampedArray(destSize);
+    for (let srcStart = array_ptr, destStart = 0; destStart < destSize; srcStart += pitch32, destStart += pitch8) {
+      imageData.set(HEAPU8.subarray(srcStart, srcStart + pitch8), destStart);
+    }
+  }
+  var writeArrayToMemory = (array, buffer) => {
+    HEAP8.set(array, buffer);
+  };
+  if (Module["noExitRuntime"]) noExitRuntime = Module["noExitRuntime"];
+  if (Module["print"]) out = Module["print"];
+  if (Module["printErr"]) err = Module["printErr"];
+  if (Module["wasmBinary"]) wasmBinary = Module["wasmBinary"];
+  if (Module["arguments"]) arguments_ = Module["arguments"];
+  if (Module["thisProgram"]) thisProgram = Module["thisProgram"];
+  if (Module["preInit"]) {
+    if (typeof Module["preInit"] == "function") Module["preInit"] = [Module["preInit"]];
+    while (Module["preInit"].length > 0) {
+      Module["preInit"].shift()();
+    }
+  }
+  Module["writeArrayToMemory"] = writeArrayToMemory;
+  var _malloc, _free, _jbig2_decode, __emscripten_timeout, memory, __indirect_function_table, wasmMemory;
+  function assignWasmExports(wasmExports) {
+    _malloc = Module["_malloc"] = wasmExports["j"];
+    _free = Module["_free"] = wasmExports["k"];
+    _jbig2_decode = Module["_jbig2_decode"] = wasmExports["l"];
+    __emscripten_timeout = wasmExports["m"];
+    memory = wasmMemory = wasmExports["h"];
+    __indirect_function_table = wasmExports["__indirect_function_table"];
+  }
+  var wasmImports = {
+    a: ___cxa_throw,
+    f: __abort_js,
+    c: __emscripten_runtime_keepalive_clear,
+    d: __setitimer_js,
+    e: _emscripten_resize_heap,
+    b: _proc_exit,
+    g: _setImageData
+  };
+  function run() {
+    preRun();
+    function doRun() {
+      Module["calledRun"] = true;
+      if (ABORT) return;
+      initRuntime();
+      readyPromiseResolve?.(Module);
+      Module["onRuntimeInitialized"]?.();
+      postRun();
+    }
+    if (Module["setStatus"]) {
+      Module["setStatus"]("Running...");
+      setTimeout(() => {
+        setTimeout(() => Module["setStatus"](""), 1);
+        doRun();
+      }, 1);
+    } else {
+      doRun();
+    }
+  }
+  var wasmExports;
+  wasmExports = await createWasm();
+  run();
+  if (runtimeInitialized) {
+    moduleRtn = Module;
+  } else {
+    moduleRtn = new Promise((resolve, reject) => {
+      readyPromiseResolve = resolve;
+      readyPromiseReject = reject;
+    });
+  }
+  return moduleRtn;
+}
+/* harmony default export */ const jbig2 = (JBig2);
+;// ./src/core/jbig2_wasm.js
+
+
+
+class JBig2Error extends BaseException {
+  constructor(msg) {
+    super(msg, "Jbig2Error");
+  }
+}
+class JBig2WasmImage {
+  static #buffer = null;
+  static #handler = null;
+  static #modulePromise = null;
+  static #useWasm = true;
+  static #useWorkerFetch = true;
+  static #wasmUrl = null;
+  static setOptions({
+    handler,
+    useWasm,
+    useWorkerFetch,
+    wasmUrl
+  }) {
+    this.#useWasm = useWasm;
+    this.#useWorkerFetch = useWorkerFetch;
+    this.#wasmUrl = wasmUrl;
+    if (!useWorkerFetch) {
+      this.#handler = handler;
+    }
+  }
+  static async #instantiateWasm(fallbackCallback, imports, successCallback) {
+    const filename = "jbig2.wasm";
+    try {
+      if (!this.#buffer) {
+        if (this.#useWorkerFetch) {
+          this.#buffer = await fetchBinaryData(`${this.#wasmUrl}${filename}`);
+        } else {
+          this.#buffer = await this.#handler.sendWithPromise("FetchBinaryData", {
+            type: "wasmFactory",
+            filename
+          });
+        }
+      }
+      const results = await WebAssembly.instantiate(this.#buffer, imports);
+      return successCallback(results.instance);
+    } catch (reason) {
+      warn(`JBig2Image#instantiateWasm: ${reason}`);
+      return fallbackCallback(null);
+    } finally {
+      this.#handler = null;
+    }
+  }
+  static async decode(bytes, width, height, globals) {
+    if (!this.#modulePromise) {
+      const {
+        promise,
+        resolve
+      } = Promise.withResolvers();
+      const promises = [promise];
+      if (this.#useWasm) {
+        promises.push(jbig2({
+          warn: warn,
+          instantiateWasm: this.#instantiateWasm.bind(this, resolve)
+        }));
+      } else {
+        resolve(null);
+      }
+      this.#modulePromise = Promise.race(promises);
+    }
+    const module = await this.#modulePromise;
+    if (!module) {
+      throw new JBig2Error("JBig2 failed to initialize");
+    }
+    let ptr, globalsPtr;
+    try {
+      const size = bytes.length;
+      ptr = module._malloc(size);
+      module.writeArrayToMemory(bytes, ptr);
+      const globalsSize = globals ? globals.length : 0;
+      if (globalsSize > 0) {
+        globalsPtr = module._malloc(globalsSize);
+        module.writeArrayToMemory(globals, globalsPtr);
+      }
+      module._jbig2_decode(ptr, size, width, height, globalsPtr, globalsSize);
+      if (!module.imageData) {
+        throw new JBig2Error("Unknown error");
+      }
+      const {
+        imageData
+      } = module;
+      module.imageData = null;
+      return imageData;
+    } finally {
+      if (ptr) {
+        module._free(ptr);
+      }
+      if (globalsPtr) {
+        module._free(globalsPtr);
+      }
+    }
+  }
+  static cleanup() {
+    this.#modulePromise = null;
   }
 }
 
@@ -9126,15 +9575,15 @@ function readSegmentHeader(data, start) {
   let referredToCount = referredFlags >> 5 & 7;
   const retainBits = [referredFlags & 31];
   let position = start + 6;
-  if (referredFlags === 7) {
+  if (referredToCount === 7) {
     referredToCount = readUint32(data, position - 1) & 0x1fffffff;
     position += 3;
-    let bytes = referredToCount + 7 >> 3;
+    let bytes = referredToCount + 8 >> 3;
     retainBits[0] = data[position++];
     while (--bytes > 0) {
       retainBits.push(data[position++]);
     }
-  } else if (referredFlags === 5 || referredFlags === 6) {
+  } else if (referredToCount === 5 || referredToCount === 6) {
     throw new Jbig2Error("invalid referred-to flags");
   }
   segmentHeader.retainBits = retainBits;
@@ -10040,6 +10489,7 @@ class Jbig2Image {
 
 
 
+
 class Jbig2Stream extends DecodeStream {
   constructor(stream, maybeLength, params) {
     super(maybeLength);
@@ -10055,7 +10505,32 @@ class Jbig2Stream extends DecodeStream {
   readBlock() {
     this.decodeImage();
   }
-  decodeImage(bytes) {
+  get isAsyncDecoder() {
+    return true;
+  }
+  async decodeImage(bytes, _decoderOptions) {
+    if (this.eof) {
+      return this.buffer;
+    }
+    bytes ||= this.bytes;
+    try {
+      let globals = null;
+      if (this.params instanceof Dict) {
+        const globalsStream = this.params.get("JBIG2Globals");
+        if (globalsStream instanceof BaseStream) {
+          globals = globalsStream.getBytes();
+        }
+      }
+      this.buffer = await JBig2WasmImage.decode(bytes, this.dict.get("Width"), this.dict.get("Height"), globals);
+    } catch {
+      warn("Jbig2Stream: Falling back to JS JBIG2 decoder.");
+      return this.decodeImageFallback(bytes);
+    }
+    this.bufferLength = this.buffer.length;
+    this.eof = true;
+    return this.buffer;
+  }
+  async decodeImageFallback(bytes) {
     if (this.eof) {
       return this.buffer;
     }
@@ -16952,12 +17427,10 @@ const CharstringValidationData = [null, {
   resetStack: true
 }, null, {
   id: "callsubr",
-  min: 1,
-  undefStack: true
+  min: 1
 }, {
   id: "return",
-  min: 0,
-  undefStack: true
+  min: 0
 }, null, null, {
   id: "endchar",
   min: 0,
@@ -17006,8 +17479,7 @@ const CharstringValidationData = [null, {
   resetStack: true
 }, null, {
   id: "callgsubr",
-  min: 1,
-  undefStack: true
+  min: 1
 }, {
   id: "vhcurveto",
   min: 4,
@@ -17155,6 +17627,7 @@ class CFFParser {
     cff.isCIDFont = topDict.hasName("ROS");
     const charStringOffset = topDict.getByName("CharStrings");
     const charStringIndex = this.parseIndex(charStringOffset).obj;
+    cff.charStringCount = charStringIndex.count;
     const fontMatrix = topDict.getByName("FontMatrix");
     if (fontMatrix) {
       properties.fontMatrix = fontMatrix;
@@ -17445,15 +17918,13 @@ class CFFParser {
             data[j - 1] = value === 1 ? 3 : 23;
           }
         }
-        if ("min" in validationCommand) {
-          if (!state.undefStack && stackSize < validationCommand.min) {
-            warn("Not enough parameters for " + validationCommand.id + "; actual: " + stackSize + ", expected: " + validationCommand.min);
-            if (stackSize === 0) {
-              data[j - 1] = 14;
-              return true;
-            }
-            return false;
+        if (stackSize < validationCommand.min) {
+          warn("Not enough parameters for " + validationCommand.id + "; actual: " + stackSize + ", expected: " + validationCommand.min);
+          if (stackSize === 0) {
+            data[j - 1] = 14;
+            return true;
           }
+          return false;
         }
         if (state.firstStackClearing && validationCommand.stackClearing) {
           state.firstStackClearing = false;
@@ -17472,15 +17943,8 @@ class CFFParser {
             validationCommand.stackFn(stack, stackSize);
           }
           stackSize += validationCommand.stackDelta;
-        } else if (validationCommand.stackClearing) {
+        } else if (validationCommand.stackClearing || validationCommand.resetStack) {
           stackSize = 0;
-        } else if (validationCommand.resetStack) {
-          stackSize = 0;
-          state.undefStack = false;
-        } else if (validationCommand.undefStack) {
-          stackSize = 0;
-          state.undefStack = true;
-          state.firstStackClearing = false;
         }
       }
     }
@@ -17507,7 +17971,6 @@ class CFFParser {
         callDepth: 0,
         stackSize: 0,
         stack: [],
-        undefStack: true,
         hints: 0,
         firstStackClearing: true,
         seac: null,
@@ -17752,6 +18215,7 @@ class CFF {
     this.fdArray = [];
     this.fdSelect = null;
     this.isCIDFont = false;
+    this.charStringCount = 0;
   }
   duplicateFirstGlyph() {
     if (this.charStrings.count >= 65535) {
@@ -18924,6 +19388,39 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[598] = 1068;
   t[599] = 1069;
   t[600] = 1070;
+  t[601] = 1071;
+  t[602] = 1072;
+  t[603] = 1073;
+  t[604] = 1074;
+  t[605] = 1075;
+  t[606] = 1076;
+  t[607] = 1077;
+  t[608] = 1078;
+  t[609] = 1079;
+  t[610] = 1080;
+  t[611] = 1081;
+  t[612] = 1082;
+  t[613] = 1083;
+  t[614] = 1084;
+  t[615] = 1085;
+  t[616] = 1086;
+  t[617] = 1087;
+  t[618] = 1088;
+  t[619] = 1089;
+  t[620] = 1090;
+  t[621] = 1091;
+  t[622] = 1092;
+  t[623] = 1093;
+  t[624] = 1094;
+  t[625] = 1095;
+  t[626] = 1096;
+  t[627] = 1097;
+  t[628] = 1098;
+  t[629] = 1099;
+  t[630] = 1100;
+  t[631] = 1101;
+  t[632] = 1102;
+  t[633] = 1103;
   t[672] = 1488;
   t[673] = 1489;
   t[674] = 1490;
@@ -24755,7 +25252,6 @@ class Type1Font {
 
 
 
-
 const PRIVATE_USE_AREAS = [[0xe000, 0xf8ff], [0x100000, 0x10fffd]];
 const PDF_GLYPH_SPACE_UNITS = 1000;
 const EXPORT_DATA_PROPERTIES = ["ascent", "bbox", "black", "bold", "charProcOperatorList", "cssFontInfo", "data", "defaultVMetrics", "defaultWidth", "descent", "disableFontFace", "fallbackName", "fontExtraProperties", "fontMatrix", "isInvalidPDFjsFont", "isType3Font", "italic", "loadedName", "mimetype", "missingFile", "name", "remeasure", "systemFontInfo", "vertical"];
@@ -26603,14 +27099,10 @@ class Font {
       header = readOpenTypeHeader(font);
       tables = readTables(font, header.numTables);
     }
-    let cff, cffFile;
     const isTrueType = !tables["CFF "];
     if (!isTrueType) {
-      const isComposite = properties.composite && (properties.cidToGidMap?.length > 0 || !(properties.cMap instanceof IdentityCMap));
-      if (header.version === "OTTO" && !isComposite || !tables.head || !tables.hhea || !tables.maxp || !tables.post) {
-        cffFile = new Stream(tables["CFF "].data);
-        cff = new CFFFont(cffFile, properties);
-        return this.convert(name, cff, properties);
+      if (header.version === "OTTO" && !properties.composite || !tables.head || !tables.hhea || !tables.maxp || !tables.post) {
+        return this.convert(name, new CFFFont(new Stream(tables["CFF "].data), properties), properties);
       }
       delete tables.glyf;
       delete tables.loca;
@@ -26634,9 +27126,26 @@ class Font {
     if (!tables.maxp) {
       throw new FormatError('Required "maxp" table is not found');
     }
+    let numGlyphsFromCFF;
+    if (!isTrueType) {
+      try {
+        const parser = new CFFParser(new Stream(tables["CFF "].data), properties, SEAC_ANALYSIS_ENABLED);
+        const cff = parser.parse();
+        cff.duplicateFirstGlyph();
+        const compiler = new CFFCompiler(cff);
+        tables["CFF "].data = compiler.compile();
+        numGlyphsFromCFF = cff.charStringCount;
+      } catch {
+        warn("Failed to compile font " + properties.loadedName);
+      }
+    }
     font.pos = (font.start || 0) + tables.maxp.offset;
     let version = font.getInt32();
-    const numGlyphs = font.getUint16();
+    const numGlyphs = numGlyphsFromCFF ?? font.getUint16();
+    if (version === 0x00005000 && tables.maxp.length !== 6) {
+      tables.maxp.data = tables.maxp.data.subarray(0, 6);
+      tables.maxp.length = 6;
+    }
     if (version !== 0x00010000 && version !== 0x00005000) {
       if (tables.maxp.length === 6) {
         version = 0x0005000;
@@ -26647,11 +27156,28 @@ class Font {
       }
       writeUint32(tables.maxp.data, 0, version);
     }
+    let isGlyphLocationsLong = int16(tables.head.data[50], tables.head.data[51]);
+    if (tables.loca) {
+      const locaLength = isGlyphLocationsLong ? (numGlyphs + 1) * 4 : (numGlyphs + 1) * 2;
+      if (tables.loca.length !== locaLength) {
+        warn("Incorrect 'loca' table length -- attempting to fix it.");
+        const sortedTables = Object.values(tables).filter(Boolean).sort((a, b) => a.offset - b.offset);
+        const locaIndex = sortedTables.indexOf(tables.loca);
+        const nextTable = sortedTables[locaIndex + 1] || null;
+        if (nextTable && tables.loca.offset + locaLength < nextTable.offset) {
+          const previousPos = font.pos;
+          font.pos = font.start || 0;
+          font.skip(tables.loca.offset);
+          tables.loca.data = font.getBytes(locaLength);
+          tables.loca.length = locaLength;
+          font.pos = previousPos;
+        }
+      }
+    }
     if (properties.scaleFactors?.length === numGlyphs && isTrueType) {
       const {
         scaleFactors
       } = properties;
-      const isGlyphLocationsLong = int16(tables.head.data[50], tables.head.data[51]);
       const glyphs = new GlyfTable({
         glyfTable: tables.glyf.data,
         isGlyphLocationsLong,
@@ -26668,7 +27194,7 @@ class Font {
       tables.loca.data = loca;
       if (isLocationLong !== !!isGlyphLocationsLong) {
         tables.head.data[50] = 0;
-        tables.head.data[51] = isLocationLong ? 1 : 0;
+        isGlyphLocationsLong = tables.head.data[51] = isLocationLong ? 1 : 0;
       }
       const metrics = tables.hmtx.data;
       for (let i = 0; i < numGlyphs; i++) {
@@ -26716,7 +27242,6 @@ class Font {
     sanitizeHead(tables.head, numGlyphs, isTrueType ? tables.loca.length : 0);
     let missingGlyphs = Object.create(null);
     if (isTrueType) {
-      const isGlyphLocationsLong = int16(tables.head.data[50], tables.head.data[51]);
       const glyphsInfo = sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs, isGlyphLocationsLong, hintsValid, dupFirstEntry, maxSizeOfInstructions);
       missingGlyphs = glyphsInfo.missingGlyphs;
       if (version >= 0x00010000 && tables.maxp.length >= 32) {
@@ -26882,18 +27407,6 @@ class Font {
           tag: "OS/2",
           data: createOS2Table(properties, newMapping.charCodeToGlyphId, metricsOverride)
         };
-      }
-    }
-    if (!isTrueType) {
-      try {
-        cffFile = new Stream(tables["CFF "].data);
-        const parser = new CFFParser(cffFile, properties, SEAC_ANALYSIS_ENABLED);
-        cff = parser.parse();
-        cff.duplicateFirstGlyph();
-        const compiler = new CFFCompiler(cff);
-        tables["CFF "].data = compiler.compile();
-      } catch {
-        warn("Failed to compile font " + properties.loadedName);
       }
     }
     if (!tables.name) {
@@ -27866,6 +28379,23 @@ class PatternInfo {
       return ["Mesh", shadingType, coords, colors, figures, bounds, bbox, background];
     }
     throw new Error(`Unsupported pattern kind: ${kind}`);
+  }
+}
+class FontPathInfo {
+  static write(path) {
+    let data;
+    let buffer;
+    buffer = new ArrayBuffer(path.length * 2);
+    data = new Float16Array(buffer);
+    data.set(path);
+    return buffer;
+  }
+  #buffer;
+  constructor(buffer) {
+    this.#buffer = buffer;
+  }
+  get path() {
+    return new Float16Array(this.#buffer);
   }
 }
 
@@ -30726,6 +31256,32 @@ const substitutionMap = new Map([["Times-Roman", {
   alias: "Wingdings"
 }], ["Wingdings-Bold", {
   alias: "Wingdings"
+}], ["\xCB\xCE\xCC\xE5", {
+  local: ["SimSun", "SimSun Regular", "NSimSun"],
+  style: NORMAL,
+  ultimate: "serif"
+}], ["\xBA\xDA\xCC\xE5", {
+  local: ["SimHei", "SimHei Regular"],
+  style: NORMAL,
+  ultimate: "sans-serif"
+}], ["\xBF\xAC\xCC\xE5", {
+  local: ["KaiTi", "SimKai", "SimKai Regular"],
+  style: NORMAL,
+  ultimate: "sans-serif"
+}], ["\xB7\xC2\xCB\xCE", {
+  local: ["FangSong", "SimFang", "SimFang Regular"],
+  style: NORMAL,
+  ultimate: "serif"
+}], ["\xBF\xAC\xCC\xE5_GB2312", {
+  alias: "\xBF\xAC\xCC\xE5"
+}], ["\xB7\xC2\xCB\xCE_GB2312", {
+  alias: "\xB7\xC2\xCB\xCE"
+}], ["\xC1\xA5\xCA\xE9", {
+  local: ["SimLi", "SimLi Regular"],
+  style: NORMAL,
+  ultimate: "serif"
+}], ["\xD0\xC2\xCB\xCE", {
+  alias: "\xCB\xCE\xCC\xE5"
 }]]);
 const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
 function getStyleToAppend(style) {
@@ -31234,7 +31790,7 @@ class PDFImage {
     const decode = dict.getArray("D", "Decode");
     const inverseDecode = decode?.[0] > 0;
     const computedLength = (width + 7 >> 3) * height;
-    const imgArray = image.getBytes(computedLength);
+    const imgArray = await image.getImageData(computedLength);
     const isSingleOpaquePixel = width === 1 && height === 1 && inverseDecode === (imgArray.length === 0 || !!(imgArray[0] & 128));
     if (isSingleOpaquePixel) {
       return {
@@ -32457,7 +33013,7 @@ class PartialEvaluator {
     const glyphs = font.charsToGlyphs(chars);
     if (font.data) {
       const isAddToPathSet = !!(state.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG);
-      if (isAddToPathSet || state.fillColorSpace.name === "Pattern" || font.disableFontFace) {
+      if (isAddToPathSet || state.fillColorSpace.name === "Pattern" || state.strokeColorSpace.name === "Pattern" || font.disableFontFace) {
         PartialEvaluator.buildFontPaths(font, glyphs, this.handler, this.options);
       }
     }
@@ -34301,7 +34857,7 @@ class PartialEvaluator {
     const toUnicodePromise = this.readToUnicode(properties.toUnicode);
     if (properties.composite) {
       const cidSystemInfo = dict.get("CIDSystemInfo");
-      if (cidSystemInfo instanceof Dict) {
+      if (cidSystemInfo instanceof Dict && !properties.cidSystemInfo) {
         properties.cidSystemInfo = {
           registry: stringToPDFString(cidSystemInfo.get("Registry")),
           ordering: stringToPDFString(cidSystemInfo.get("Ordering")),
@@ -34359,6 +34915,28 @@ class PartialEvaluator {
       isSymbolsFontName = getSymbolsFonts()[properties.name];
     if (baseEncodingName && nonEmbeddedFont && isSymbolsFontName) {
       baseEncodingName = null;
+    }
+    if (baseEncodingName === "WinAnsiEncoding" && nonEmbeddedFont && properties.name?.charCodeAt(0) >= 0xb7) {
+      const fontName = properties.name;
+      const chineseFontNames = ["\xCB\xCE\xCC\xE5", "\xBA\xDA\xCC\xE5", "\xBF\xAC\xCC\xE5", "\xB7\xC2\xCB\xCE", "\xBF\xAC\xCC\xE5_GB2312", "\xB7\xC2\xCB\xCE_GB2312", "\xC1\xA5\xCA\xE9", "\xD0\xC2\xCB\xCE"];
+      if (chineseFontNames.includes(fontName)) {
+        baseEncodingName = null;
+        properties.defaultEncoding = "Adobe-GB1-UCS2";
+        properties.composite = true;
+        properties.cidEncoding = Name.get("GBK-EUC-H");
+        const cMap = await CMapFactory.create({
+          encoding: properties.cidEncoding,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
+          useCMap: null
+        });
+        properties.cMap = cMap;
+        properties.vertical = properties.cMap.vertical;
+        properties.cidSystemInfo = {
+          registry: "Adobe",
+          ordering: "GB1",
+          supplement: 0
+        };
+      }
     }
     if (baseEncodingName) {
       properties.defaultEncoding = getEncoding(baseEncodingName);
@@ -35098,7 +35676,8 @@ class PartialEvaluator {
         if (font.renderer.hasBuiltPath(fontChar)) {
           return;
         }
-        handler.send("commonobj", [glyphName, "FontPath", font.renderer.getPathJs(fontChar)]);
+        const buffer = FontPathInfo.write(font.renderer.getPathJs(fontChar));
+        handler.send("commonobj", [glyphName, "FontPath", buffer], [buffer]);
       } catch (reason) {
         if (evaluatorOptions.ignoreErrors) {
           warn(`buildFontPaths - ignoring ${glyphName} glyph: "${reason}".`);
@@ -57322,6 +57901,7 @@ class PDFDocument {
 
 
 
+
 function parseDocBaseUrl(url) {
   if (url) {
     const absoluteUrl = createValidAbsoluteUrl(url);
@@ -57358,6 +57938,7 @@ class BasePdfManager {
     JpxImage.setOptions(options);
     IccColorSpace.setOptions(options);
     CmykICCBasedCS.setOptions(options);
+    JBig2WasmImage.setOptions(options);
   }
   get docId() {
     return this._docId;
@@ -59757,7 +60338,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.4.445";
+    const workerVersion = "5.4.551";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

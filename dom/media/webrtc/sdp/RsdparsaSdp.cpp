@@ -6,8 +6,6 @@
 
 #include "sdp/RsdparsaSdp.h"
 
-#include <cstdlib>
-
 #include "mozilla/Assertions.h"
 #include "nsError.h"
 #include "sdp/RsdparsaSdpInc.h"

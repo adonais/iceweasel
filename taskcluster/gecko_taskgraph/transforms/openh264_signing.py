@@ -17,18 +17,16 @@ from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 
 transforms = TransformSequence()
 
-signing_description_schema = Schema(
-    {
-        Optional("label"): str,
-        Optional("extra"): object,
-        Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+signing_description_schema = Schema({
+    Optional("label"): str,
+    Optional("extra"): object,
+    Optional("shipping-product"): task_description_schema["shipping-product"],
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 @transforms.add
@@ -53,8 +51,7 @@ def make_signing_description(config, jobs):
         is_nightly = True  # cert_scope_per_platform uses this to choose the right cert
 
         description = (
-            "Signing of OpenH264 Binaries for '"
-            "{build_platform}/{build_type}'".format(
+            "Signing of OpenH264 Binaries for '{build_platform}/{build_type}'".format(
                 build_platform=attributes.get("build_platform"),
                 build_type=attributes.get("build_type"),
             )

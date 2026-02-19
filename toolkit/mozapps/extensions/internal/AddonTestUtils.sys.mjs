@@ -1168,7 +1168,7 @@ export var AddonTestUtils = {
    * Creates an XPI with the given files and installs it.
    *
    * @param {object} files
-   *        A files object as would be passed to {@see #createTempXPI}.
+   *        A files object as would be passed to {@link createTempXPIFile()}.
    * @returns {Promise}
    *        A promise which resolves when the add-on is installed.
    */
@@ -1546,8 +1546,8 @@ export var AddonTestUtils = {
 
   /**
    * @property {number} updateReason
-   *        The default update reason for {@see promiseFindAddonUpdates}
-   *        calls. May be overwritten by tests which primarily check for
+   *        The default update reason for {@link promiseFindAddonUpdates()} calls.
+   *        May be overwritten by tests which primarily check for
    *        updates with a particular reason.
    */
   updateReason: AddonManager.UPDATE_WHEN_PERIODIC_UPDATE,

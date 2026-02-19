@@ -18,8 +18,7 @@ export class ScrollDelegateChild extends GeckoViewActorChild {
         const x = {};
         const y = {};
         this.contentWindow.windowUtils.getVisualViewportOffset(x, y);
-        this.eventDispatcher.sendRequest({
-          type: "GeckoView:ScrollChanged",
+        this.sendAsyncMessage("GeckoView:ScrollChanged", {
           scrollX: x.value,
           scrollY: y.value,
         });

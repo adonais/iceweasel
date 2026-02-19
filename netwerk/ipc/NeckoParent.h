@@ -8,8 +8,8 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/net/PNeckoParent.h"
 #include "mozilla/net/NeckoCommon.h"
+#include "mozilla/MozPromise.h"
 #include "nsIAuthPrompt2.h"
-#include "nsINetworkPredictor.h"
 #include "nsNetUtil.h"
 
 #ifndef mozilla_net_NeckoParent_h
@@ -17,6 +17,10 @@
 
 namespace mozilla {
 namespace net {
+
+class RemoteStreamInfo;
+using RemoteStreamPromise =
+    mozilla::MozPromise<RemoteStreamInfo, nsresult, false>;
 
 // Used to override channel Private Browsing status if needed.
 enum PBOverrideStatus {
@@ -56,6 +60,14 @@ class NeckoParent : public PNeckoParent {
     return PNeckoParent::RecvPCookieServiceConstructor(aActor);
   }
 
+  /*
+   * Helper method to create a remote stream from a resolved file URI.
+   * Shared by PageThumbProtocolHandler and MozNewTabWallpaperProtocolHandler.
+   */
+  static RefPtr<RemoteStreamPromise> CreateRemoteStreamForResolvedURI(
+      nsIURI* aChildURI, const nsACString& aResolvedSpec,
+      const nsACString& aDefaultMimeType);
+
  protected:
   virtual ~NeckoParent() = default;
 
@@ -76,9 +88,16 @@ class NeckoParent : public PNeckoParent {
       const Maybe<TabId>& aTabId);
   bool DeallocPWebrtcTCPSocketParent(PWebrtcTCPSocketParent* aActor);
 
+  PCacheEntryWriteHandleParent* AllocPCacheEntryWriteHandleParent(
+      PHttpChannelParent* channel);
+  bool DeallocPCacheEntryWriteHandleParent(
+      PCacheEntryWriteHandleParent* aActor);
+
   PAltDataOutputStreamParent* AllocPAltDataOutputStreamParent(
       const nsACString& type, const int64_t& predictedSize,
-      PHttpChannelParent* channel);
+      mozilla::Maybe<mozilla::NotNull<mozilla::net::PHttpChannelParent*>>&
+          channel,
+      mozilla::Maybe<mozilla::NotNull<PCacheEntryWriteHandleParent*>>& handle);
   bool DeallocPAltDataOutputStreamParent(PAltDataOutputStreamParent* aActor);
 
   bool DeallocPCookieServiceParent(PCookieServiceParent*);
@@ -168,18 +187,6 @@ class NeckoParent : public PNeckoParent {
   PTransportProviderParent* AllocPTransportProviderParent();
   bool DeallocPTransportProviderParent(PTransportProviderParent* aActor);
 
-  /* Predictor Messages */
-  mozilla::ipc::IPCResult RecvPredPredict(
-      nsIURI* aTargetURI, nsIURI* aSourceURI,
-      const PredictorPredictReason& aReason,
-      const OriginAttributes& aOriginAttributes, const bool& hasVerifier);
-
-  mozilla::ipc::IPCResult RecvPredLearn(
-      nsIURI* aTargetURI, nsIURI* aSourceURI,
-      const PredictorPredictReason& aReason,
-      const OriginAttributes& aOriginAttributes);
-  mozilla::ipc::IPCResult RecvPredReset();
-
   mozilla::ipc::IPCResult RecvRequestContextLoadBegin(const uint64_t& rcid);
   mozilla::ipc::IPCResult RecvRequestContextAfterDOMContentLoaded(
       const uint64_t& rcid);
@@ -201,6 +208,11 @@ class NeckoParent : public PNeckoParent {
   mozilla::ipc::IPCResult RecvGetPageIconStream(
       nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
       GetPageIconStreamResolver&& aResolve);
+
+  /* New Tab wallpaper remote resource loading */
+  mozilla::ipc::IPCResult RecvGetMozNewTabWallpaperStream(
+      nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
+      GetMozNewTabWallpaperStreamResolver&& aResolve);
 
   mozilla::ipc::IPCResult RecvInitSocketProcessBridge(
       InitSocketProcessBridgeResolver&& aResolver);

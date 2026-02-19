@@ -35,9 +35,14 @@ git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/wgpu?rev=d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"]
+[source."git+https://github.com/gfx-rs/rspirv?rev=89ce4d0e64c91b0635f617409dc57cb031749a39"]
+git = "https://github.com/gfx-rs/rspirv"
+rev = "89ce4d0e64c91b0635f617409dc57cb031749a39"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/gfx-rs/wgpu?rev=0a4a0a70cd11482ac685c5b0745dedebaa284d57"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"
+rev = "0a4a0a70cd11482ac685c5b0745dedebaa284d57"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/allocator-api2?rev=ad5f3d56a5a4519eff52af4ff85293431466ef5c"]
@@ -70,14 +75,9 @@ git = "https://github.com/jfkthame/mapped_hyph.git"
 rev = "eff105f6ad7ec9b79816cfc1985a28e5340ad14b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/martinthomson/ohttp.git?rev=bf6a983845cc0b540effb3a615e92d914dfcfd0b"]
-git = "https://github.com/martinthomson/ohttp.git"
-rev = "bf6a983845cc0b540effb3a615e92d914dfcfd0b"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70"]
+[source."git+https://github.com/mozilla/application-services?rev=0376c542e4a31cde8d33dd0e8da17dcfbc6c58b2"]
 git = "https://github.com/mozilla/application-services"
-rev = "799ae231ba91f5b6634672a2737cc9efdf997b70"
+rev = "0376c542e4a31cde8d33dd0e8da17dcfbc6c58b2"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/audioipc?rev=82fe7fa7e3aaa35468137239a0e4c2f867457214"]
@@ -105,14 +105,14 @@ git = "https://github.com/mozilla/midir.git"
 rev = "54759f681f3b523e120d047adec2bb1a97152017"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/mp4parse-rust?rev=f955be5d2a04a631c0f1777d6f35370ea1a99e2d"]
+[source."git+https://github.com/mozilla/mp4parse-rust?rev=26788821a443614d88470fe71f51f66720696096"]
 git = "https://github.com/mozilla/mp4parse-rust"
-rev = "f955be5d2a04a631c0f1777d6f35370ea1a99e2d"
+rev = "26788821a443614d88470fe71f51f66720696096"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.20.0"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.21.0"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.20.0"
+tag = "v0.21.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/rust-lang/rust-bindgen?rev=9366e0af8da529c958b4cd4fcbe492d951c86f5c"]

@@ -812,6 +812,11 @@ with modules["EDITOR"]:
     # non-collapsed range crosses editing host boundaries.
     errors["NS_ERROR_EDITOR_NO_EDITABLE_RANGE"] = FAILURE(4)
 
+    # An error code that indicates that there is no deletable selection ranges
+    # even though there are some editable ranges.  E.g., if each editable range
+    # is in a replaced element or a void element.
+    errors["NS_ERROR_EDITOR_NO_DELETABLE_RANGE"] = FAILURE(5)
+
     errors["NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND"] = SUCCESS(1)
     errors["NS_SUCCESS_EDITOR_FOUND_TARGET"] = SUCCESS(2)
 
@@ -1376,9 +1381,7 @@ enum class nsresult : uint32_t
 {}
 }};
 
-""".format(
-            ",\n".join(items)
-        )
+""".format(",\n".join(items))
     )
 
     items = []
@@ -1392,9 +1395,7 @@ const nsresult
 ;
 
 #endif // ErrorList_h__
-""".format(
-            ",\n".join(items)
-        )
+""".format(",\n".join(items))
     )
 
 

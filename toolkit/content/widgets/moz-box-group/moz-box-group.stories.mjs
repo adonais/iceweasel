@@ -26,7 +26,7 @@ moz-box-item =
 moz-box-button-1 =
   .label = I'm a box button in a group
 moz-box-button-2 =
-  .label = I'm another box button in a group
+  .label = Delete this box button from a group
 moz-box-link =
   .label = I'm a box link in a group
 moz-box-delete-action =
@@ -139,8 +139,16 @@ function basicElements() {
         slot="actions-start"
       ></moz-button>
     </moz-box-item>
-    <moz-box-button data-l10n-id="moz-box-button-2"></moz-box-button>`;
+    <moz-box-button
+      iconsrc="chrome://global/skin/icons/delete.svg"
+      @click=${deleteItem}
+      data-l10n-id="moz-box-button-2"
+    ></moz-box-button> `;
 }
+
+const deleteItem = event => {
+  event.target.remove();
+};
 
 const appendItem = event => {
   let group = event.target.getRootNode().querySelector("moz-box-group");

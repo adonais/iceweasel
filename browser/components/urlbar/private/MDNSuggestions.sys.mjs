@@ -55,27 +55,25 @@ export class MDNSuggestions extends SuggestProvider {
     );
     url.searchParams.set("utm_content", "treatment");
 
-    const payload = {
-      icon: "chrome://global/skin/icons/mdn.svg",
-      url: url.href,
-      originalUrl: suggestion.url,
-      title: [suggestion.title, lazy.UrlbarUtils.HIGHLIGHT.TYPED],
-      description: suggestion.description,
-      shouldShowUrl: true,
-      bottomTextL10n: {
-        id: "firefox-suggest-mdn-bottom-text",
-      },
-    };
-
     return new lazy.UrlbarResult({
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
       isBestMatch: true,
       showFeedbackMenu: true,
-      ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-        queryContext.tokens,
-        payload
-      ),
+      payload: {
+        icon: "chrome://global/skin/icons/mdn.svg",
+        url: url.href,
+        originalUrl: suggestion.url,
+        title: suggestion.title,
+        description: suggestion.description,
+        shouldShowUrl: true,
+        bottomTextL10n: {
+          id: "firefox-suggest-mdn-bottom-text",
+        },
+      },
+      highlights: {
+        title: lazy.UrlbarUtils.HIGHLIGHT.TYPED,
+      },
     });
   }
 

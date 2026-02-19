@@ -3,11 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-import concurrent.futures as futures
 import copy
 import logging
 import os
 import re
+from concurrent import futures
 from functools import reduce
 
 import jsone
@@ -177,8 +177,8 @@ def fetch_graph_and_labels(parameters, graph_config):
             try:
                 run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
                 label_to_taskid.update(run_label_to_id)
-                for label, task_id in run_label_to_id.items():
-                    label_to_taskids.setdefault(label, []).append(task_id)
+                for label, existing_task_id in run_label_to_id.items():
+                    label_to_taskids.setdefault(label, []).append(existing_task_id)
             except TaskclusterRestFailure as e:
                 if e.status_code != 404:
                     raise
@@ -200,8 +200,8 @@ def fetch_graph_and_labels(parameters, graph_config):
             try:
                 run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
                 label_to_taskid.update(run_label_to_id)
-                for label, task_id in run_label_to_id.items():
-                    label_to_taskids.setdefault(label, []).append(task_id)
+                for label, existing_task_id in run_label_to_id.items():
+                    label_to_taskids.setdefault(label, []).append(existing_task_id)
             except TaskclusterRestFailure as e:
                 if e.status_code != 404:
                     raise

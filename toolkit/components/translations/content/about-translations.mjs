@@ -8,7 +8,8 @@
 
 /* global AT_getAppLocale, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
    AT_getDisplayName, AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
-   AT_isTranslationEngineSupported, AT_identifyLanguage, AT_openSupportPage, AT_telemetry */
+   AT_isTranslationEngineSupported, AT_isInAutomation, AT_identifyLanguage,
+   AT_openSupportPage, AT_telemetry */
 
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
 
@@ -16,6 +17,22 @@ import { Translator } from "chrome://global/content/translations/Translator.mjs"
  * Allows tests to override the delay milliseconds so that they can run faster.
  */
 window.DEBOUNCE_DELAY = 200;
+
+/**
+ * The default duration, in milliseconds, that the copy button remains in the "copied" state
+ * before reverting back to its default state.
+ */
+window.COPY_BUTTON_RESET_DELAY = 1500;
+
+/**
+ * Tests can set this to true to manually trigger copy button resets.
+ *
+ * When enabled, the copy button will remain in its copied state until tests
+ * call {@link AboutTranslations.testResetCopyButton}.
+ *
+ * @type {boolean}
+ */
+window.testManualCopyButtonReset = false;
 
 /**
  * Limits how long the "text" parameter can be in the URL.
@@ -42,6 +59,20 @@ class AboutTranslations {
    * @type {number}
    */
   #translationId = 0;
+
+  /**
+   * Whether the Translations feature is enabled for this page.
+   *
+   * @type {boolean}
+   */
+  #isFeatureEnabled = true;
+
+  /**
+   * Whether the current system supports the translations engine.
+   *
+   * @type {boolean}
+   */
+  #isTranslationsEngineSupported;
 
   /**
    * The previous source text that was translated.
@@ -95,19 +126,26 @@ class AboutTranslations {
   #readyPromiseWithResolvers = Promise.withResolvers();
 
   /**
+   * A timeout id for resetting the copy button's "copied" state.
+   *
+   * @type {number | null}
+   */
+  #copyButtonResetTimeoutId = null;
+
+  /**
    * The orientation of the page's content.
    *
-   * When the page orientation is horizontal the source and target text areas
-   * are displayed side by side with the source text area at the inline start
-   * and the target text area at the inline end.
+   * When the page orientation is horizontal the source and target sections
+   * are displayed side by side with the source section at the inline start
+   * and the target section at the inline end.
    *
-   * When the page orientation is vertical the source text area is displayed
-   * above the target text area, independent of locale bidirectionality.
+   * When the page orientation is vertical the source section is displayed
+   * above the target section, independent of locale bidirectionality.
    *
-   * When the page orientation is vertical, each text area spans the full width
+   * When the page orientation is vertical, each section spans the full width
    * of the content, and resizing the window width or changing the zoom level
-   * must trigger text-area resizing, where as resizing the text areas is not
-   * necessary for these scenarios when the page orientation is horizontal.
+   * must trigger section resizing, whereas those updates are not necessary
+   * when the page orientation is horizontal.
    *
    * @type {("vertical"|"horizontal")}
    */
@@ -115,14 +153,25 @@ class AboutTranslations {
 
   /**
    * A timeout id that gets set when a pending callback is scheduled
-   * to synchronize the heights of the source and target text areas.
+   * to update the section heights.
    *
    * This helps ensure that we do not make repeated calls to this function
    * that would cause unnecessary and excessive reflow.
    *
    * @type {number | null}
    */
-  #synchronizeTextAreaHeightsTimeoutId = null;
+  #updateSectionHeightsTimeoutId = null;
+
+  /**
+   * Returns the maximum of the given numbers, rounded up.
+   *
+   * @param  {...number} numbers
+   *
+   * @returns {number}
+   */
+  static #maxInteger(...numbers) {
+    return Math.ceil(Math.max(...numbers));
+  }
 
   /**
    * Constructs a new {@link AboutTranslations} instance.
@@ -131,6 +180,8 @@ class AboutTranslations {
    *        Whether the translations engine is supported by the current system.
    */
   constructor(isTranslationsEngineSupported) {
+    this.#isTranslationsEngineSupported = isTranslationsEngineSupported;
+
     AT_telemetry("onOpen", {
       maintainFlow: false,
     });
@@ -162,19 +213,66 @@ class AboutTranslations {
   }
 
   /**
+   * Enables the feature and updates the UI to match the enabled state.
+   *
+   * @returns {Promise<void>}
+   */
+  async onFeatureEnabled() {
+    this.#isFeatureEnabled = true;
+
+    if (!this.#isTranslationsEngineSupported) {
+      this.#showUnsupportedInfoMessage();
+      document.body.style.visibility = "visible";
+      return;
+    }
+
+    if (!this.#supportedLanguages) {
+      this.#showLanguageLoadErrorMessage();
+      document.body.style.visibility = "visible";
+      return;
+    }
+
+    this.#updateSourceScriptDirection();
+    this.#updateTargetScriptDirection();
+    this.#updateSourceSectionClearButtonVisibility();
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+    this.#maybeRequestTranslation();
+
+    document.body.style.visibility = "visible";
+  }
+
+  /**
+   * Disables the feature and clears any active translations.
+   */
+  onFeatureDisabled() {
+    // Ensure any active translation request becomes stale.
+    this.#translationId += 1;
+    this.#isFeatureEnabled = false;
+    this.#destroyTranslator();
+
+    document.body.style.visibility = "hidden";
+  }
+
+  /**
    * Instantiates and returns the elements that comprise the UI.
    *
    * @returns {{
-   *   mainUserInterface: HTMLElement,
-   *   unsupportedInfoMessage: HTMLElement,
+   *   copyButton: HTMLElement,
+   *   detectLanguageOption: HTMLElement,
    *   languageLoadErrorMessage: HTMLElement,
    *   learnMoreLink: HTMLAnchorElement,
-   *   detectLanguageOption: HTMLOptionElement,
-   *   sourceLanguageSelector: HTMLSelectElement,
-   *   targetLanguageSelector: HTMLSelectElement,
+   *   mainUserInterface: HTMLElement,
+   *   sourceLanguageSelector: HTMLElement,
+   *   sourceSection: HTMLElement,
+   *   sourceSectionActionsColumn: HTMLElement,
+   *   sourceSectionClearButton: HTMLElement,
+   *   sourceSectionTextArea: HTMLTextAreaElement,
    *   swapLanguagesButton: HTMLElement,
-   *   sourceTextArea: HTMLTextAreaElement,
-   *   targetTextArea: HTMLTextAreaElement,
+   *   targetLanguageSelector: HTMLElement,
+   *   targetSection: HTMLElement,
+   *   targetSectionActionsRow: HTMLElement,
+   *   targetSectionTextArea: HTMLTextAreaElement,
+   *   unsupportedInfoMessage: HTMLElement,
    * }}
    */
   get elements() {
@@ -183,11 +281,13 @@ class AboutTranslations {
     }
 
     this.#lazyElements = {
-      mainUserInterface: /** @type {HTMLElement} */ (
-        document.getElementById("about-translations-main-user-interface")
+      copyButton: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-copy-button")
       ),
-      unsupportedInfoMessage: /** @type {HTMLElement} */ (
-        document.getElementById("about-translations-unsupported-info-message")
+      detectLanguageOption: /** @type {HTMLElement} */ (
+        document.getElementById(
+          "about-translations-detect-language-label-option"
+        )
       ),
       languageLoadErrorMessage: /** @type {HTMLElement} */ (
         document.getElementById(
@@ -197,23 +297,41 @@ class AboutTranslations {
       learnMoreLink: /** @type {HTMLAnchorElement} */ (
         document.getElementById("about-translations-learn-more-link")
       ),
-      detectLanguageOption: /** @type {HTMLOptionElement} */ (
-        document.getElementById("about-translations-detect-language-option")
+      mainUserInterface: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-main-user-interface")
       ),
-      sourceLanguageSelector: /** @type {HTMLSelectElement} */ (
+      sourceLanguageSelector: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-source-select")
       ),
-      targetLanguageSelector: /** @type {HTMLSelectElement} */ (
-        document.getElementById("about-translations-target-select")
+      sourceSection: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-source-section")
+      ),
+      sourceSectionActionsColumn: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-source-actions")
+      ),
+      sourceSectionClearButton: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-clear-button")
+      ),
+      sourceSectionTextArea: /** @type {HTMLTextAreaElement} */ (
+        document.getElementById("about-translations-source-textarea")
       ),
       swapLanguagesButton: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-swap-languages-button")
       ),
-      sourceTextArea: /** @type {HTMLTextAreaElement} */ (
-        document.getElementById("about-translations-source-textarea")
+      targetLanguageSelector: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-target-select")
       ),
-      targetTextArea: /** @type {HTMLTextAreaElement} */ (
+      targetSection: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-target-section")
+      ),
+      targetSectionActionsRow: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-target-actions")
+      ),
+      targetSectionTextArea: /** @type {HTMLTextAreaElement} */ (
         document.getElementById("about-translations-target-textarea")
+      ),
+      unsupportedInfoMessage: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-unsupported-info-message")
       ),
     };
 
@@ -272,6 +390,8 @@ class AboutTranslations {
     this.#updateTargetScriptDirection();
 
     this.#showMainUserInterface();
+    this.#updateSourceSectionClearButtonVisibility();
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
     this.#setInitialFocus();
   }
 
@@ -287,18 +407,18 @@ class AboutTranslations {
 
     for (const { langTagKey, displayName } of this.#supportedLanguages
       .sourceLanguages) {
-      const option = document.createElement("option");
+      const option = document.createElement("moz-option");
       option.value = langTagKey;
-      option.text = displayName;
-      sourceLanguageSelector.add(option);
+      option.setAttribute("label", displayName);
+      sourceLanguageSelector.append(option);
     }
 
     for (const { langTagKey, displayName } of this.#supportedLanguages
       .targetLanguages) {
-      const option = document.createElement("option");
+      const option = document.createElement("moz-option");
       option.value = langTagKey;
-      option.text = displayName;
-      targetLanguageSelector.add(option);
+      option.setAttribute("label", displayName);
+      targetLanguageSelector.append(option);
     }
   }
 
@@ -309,6 +429,9 @@ class AboutTranslations {
     await this.#populateLanguageSelectors();
 
     const { sourceLanguageSelector, targetLanguageSelector } = this.elements;
+    this.#resetDetectLanguageOptionText();
+    sourceLanguageSelector.value = "detect";
+    targetLanguageSelector.value = "";
     sourceLanguageSelector.disabled = false;
     targetLanguageSelector.disabled = false;
   }
@@ -318,93 +441,235 @@ class AboutTranslations {
    */
   #initializeEventListeners() {
     const {
+      copyButton,
       learnMoreLink,
-      swapLanguagesButton,
       sourceLanguageSelector,
+      sourceSectionActionsColumn,
+      sourceSectionClearButton,
+      sourceSectionTextArea,
+      swapLanguagesButton,
       targetLanguageSelector,
-      sourceTextArea,
+      targetSectionActionsRow,
+      targetSectionTextArea,
     } = this.elements;
 
-    learnMoreLink.addEventListener("click", this);
-    swapLanguagesButton.addEventListener("click", this);
-    sourceLanguageSelector.addEventListener("input", this);
-    targetLanguageSelector.addEventListener("input", this);
-    sourceTextArea.addEventListener("input", this);
-    window.addEventListener("resize", this);
-    window.visualViewport.addEventListener("resize", this);
+    copyButton.addEventListener("click", this.#onCopyButton);
+    learnMoreLink.addEventListener("click", this.#onLearnMoreLink);
+    sourceLanguageSelector.addEventListener(
+      "change",
+      this.#onSourceLanguageInput
+    );
+    sourceSectionActionsColumn.addEventListener(
+      "pointerdown",
+      this.#onSourceSectionActionsPointerDown
+    );
+    sourceSectionClearButton.addEventListener(
+      "click",
+      this.#onSourceSectionClearButton
+    );
+    sourceSectionClearButton.addEventListener(
+      "mousedown",
+      this.#onSourceSectionClearButtonMouseDown
+    );
+    sourceSectionTextArea.addEventListener("input", this.#onSourceTextInput);
+    sourceSectionTextArea.addEventListener(
+      "focus",
+      this.#onSourceTextAreaFocus
+    );
+    sourceSectionTextArea.addEventListener("blur", this.#onSourceTextAreaBlur);
+    swapLanguagesButton.addEventListener("click", this.#onSwapLanguagesButton);
+    targetLanguageSelector.addEventListener(
+      "change",
+      this.#onTargetLanguageInput
+    );
+    targetSectionTextArea.addEventListener(
+      "focus",
+      this.#onTargetTextAreaFocus
+    );
+    targetSectionTextArea.addEventListener("blur", this.#onTargetTextAreaBlur);
+    targetSectionActionsRow.addEventListener(
+      "pointerdown",
+      this.#onTargetSectionActionsPointerDown
+    );
+    window.addEventListener("resize", this.#onResize);
+    window.visualViewport.addEventListener("resize", this.#onResize);
   }
 
   /**
-   * The event handler for all UI interactions.
-   *
-   * @param {Event} event
+   * Handles clicks on the learn-more link.
    */
-  handleEvent = ({ type, target }) => {
-    const {
-      learnMoreLink,
-      swapLanguagesButton,
-      sourceLanguageSelector,
-      targetLanguageSelector,
-      sourceTextArea,
-    } = this.elements;
+  #onLearnMoreLink = () => {
+    AT_openSupportPage();
+  };
 
-    switch (type) {
-      case "click": {
-        if (target.id === swapLanguagesButton.id) {
-          this.#disableSwapLanguagesButton();
+  /**
+   * Handles mousedown on the source section clear button.
+   */
+  #onSourceSectionClearButtonMouseDown = event => {
+    if (this.elements.sourceSection.classList.contains("focus-section")) {
+      // When the source section has a focus outline, clicking the clear button will cause the outline
+      // to disappear and then reappear since clicking the clear button re-focuses the source section.
+      // We should just avoid the outline flash all together when the source section is focused.
+      event.preventDefault();
+    }
+  };
 
-          this.#maybeSwapLanguages();
-          this.#maybeRequestTranslation();
-        } else if (target.id === learnMoreLink.id) {
-          AT_openSupportPage();
-        }
+  /**
+   * Handles clicks on the source section clear button.
+   */
+  #onSourceSectionClearButton = event => {
+    if (!this.#sourceTextAreaHasValue()) {
+      return;
+    }
 
-        break;
+    event.preventDefault();
+    this.#setSourceText("");
+    this.#maybeUpdateDetectedSourceLanguage();
+    this.elements.sourceSectionTextArea.focus();
+  };
+
+  /**
+   * Handles clicks on the swap-languages button.
+   */
+  #onSwapLanguagesButton = () => {
+    this.#disableSwapLanguagesButton();
+    this.#maybeSwapLanguages();
+    this.#maybeRequestTranslation();
+  };
+
+  /**
+   * Handles change events on the source-language selector.
+   */
+  #onSourceLanguageInput = () => {
+    const { sourceLanguageSelector } = this.elements;
+
+    if (sourceLanguageSelector.value !== this.#detectedLanguage) {
+      this.#resetDetectLanguageOptionText();
+      this.#disableSwapLanguagesButton();
+    } else {
+      this.#resetDetectLanguageOptionText();
+      return;
+    }
+
+    this.#maybeRequestTranslation();
+  };
+
+  /**
+   * Handles change events on the target-language selector.
+   */
+  #onTargetLanguageInput = () => {
+    this.#disableSwapLanguagesButton();
+    this.#maybeRequestTranslation();
+  };
+
+  /**
+   * Handles input events on the source textarea.
+   */
+  #onSourceTextInput = () => {
+    this.#updateSourceSectionClearButtonVisibility();
+    this.#maybeRequestTranslation();
+  };
+
+  /**
+   * Handles pointerdown events within the source section's actions column.
+   *
+   * Clicking empty space within the column should behave as though the
+   * textarea was clicked, but clicking the clear button should preserve
+   * the default behavior.
+   */
+  #onSourceSectionActionsPointerDown = event => {
+    if (event.target?.closest?.("#about-translations-clear-button")) {
+      return;
+    }
+
+    event.preventDefault();
+    this.elements.sourceSectionTextArea.focus();
+  };
+
+  /**
+   * Handles focusing the source section by outlining the entire section.
+   */
+  #onSourceTextAreaFocus = () => {
+    this.elements.sourceSection.classList.add("focus-section");
+  };
+
+  /**
+   * Handles blur events on the source section's text area.
+   */
+  #onSourceTextAreaBlur = () => {
+    this.elements.sourceSection.classList.remove("focus-section");
+  };
+
+  /**
+   * Handles pointerdown events within the target section's actions row.
+   *
+   * Clicking empty space within the actions row should behave as though
+   * the textarea was clicked, but clicking a specific action, such as the
+   * copy button, should have the default behavior for that element.
+   */
+  #onTargetSectionActionsPointerDown = event => {
+    if (event.target?.closest?.("#about-translations-copy-button")) {
+      // The copy button was clicked: preserve the default behavior.
+      return;
+    }
+
+    // Empty space within the actions row was clicked: focus the text area.
+    event.preventDefault();
+    this.elements.targetSectionTextArea.focus();
+  };
+
+  /**
+   * Handles the custom effects for focusing the target section's text area,
+   * which should outline the entire section, instead of only the text area.
+   */
+  #onTargetTextAreaFocus = () => {
+    this.elements.targetSection.classList.add("focus-section");
+  };
+
+  /**
+   * Handles the custom effects for blur events on the target section's text area.
+   */
+  #onTargetTextAreaBlur = () => {
+    this.elements.targetSection.classList.remove("focus-section");
+  };
+
+  /**
+   * Handles copying the translated text to the clipboard when the copy button is invoked.
+   */
+  #onCopyButton = async () => {
+    const { copyButton, targetSectionTextArea } = this.elements;
+    if (copyButton.disabled) {
+      return;
+    }
+
+    const targetText = targetSectionTextArea.value;
+    if (!targetText) {
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API is unavailable.");
       }
-      case "input": {
-        const { id } = target;
+      await navigator.clipboard.writeText(targetText);
+    } catch (error) {
+      AT_logError(error);
+      return;
+    }
 
-        if (id === sourceLanguageSelector.id) {
-          if (sourceLanguageSelector.value !== this.#detectedLanguage) {
-            this.#resetDetectLanguageOptionText();
-            this.#disableSwapLanguagesButton();
-          } else {
-            // The source-language selector was previously set to "detect", but was
-            // explicitly changed to the detected language, so there is no action to take.
-            this.#resetDetectLanguageOptionText();
-            return;
-          }
-        }
+    this.#showCopyButtonCopiedState();
+  };
 
-        if (id === targetLanguageSelector.id) {
-          this.#disableSwapLanguagesButton();
-        }
+  /**
+   * Handles resize events, including resizing the window and zooming.
+   */
+  #onResize = () => {
+    const orientationChanged = this.#updatePageOrientation();
 
-        if (
-          id === sourceLanguageSelector.id ||
-          id === targetLanguageSelector.id ||
-          id === sourceTextArea.id
-        ) {
-          this.#maybeRequestTranslation();
-        }
-
-        break;
-      }
-      case "resize": {
-        if (target === window || target === window.visualViewport) {
-          const orientationChanged = this.#updatePageOrientation();
-
-          if (orientationChanged) {
-            // The page orientation changed, so we need to update the text-area heights immediately.
-            this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
-          } else if (this.#pageOrientation === "vertical") {
-            // Otherwise we only need to eventually update the text-area heights in vertical orientation.
-            this.#ensureTextAreaHeightsMatch({ scheduleCallback: true });
-          }
-        }
-
-        break;
-      }
+    if (orientationChanged) {
+      this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+    } else if (this.#pageOrientation === "vertical") {
+      this.#requestSectionHeightsUpdate({ scheduleCallback: true });
     }
   };
 
@@ -536,18 +801,18 @@ class AboutTranslations {
     const previousDetectedLanguage = this.#detectedLanguage;
     this.#detectedLanguage = detectedLanguage;
 
-    const { sourceTextArea } = this.elements;
+    const { sourceSectionTextArea } = this.elements;
 
     if (detectedLanguage) {
       const displayName = await AT_getDisplayName(detectedLanguage);
       this.#populateDetectLanguageOption({ detectedLanguage, displayName });
-      sourceTextArea.setAttribute(
+      sourceSectionTextArea.setAttribute(
         "dir",
         AT_getScriptDirection(detectedLanguage)
       );
     } else {
       this.#resetDetectLanguageOptionText();
-      sourceTextArea.setAttribute(
+      sourceSectionTextArea.setAttribute(
         "dir",
         AT_getScriptDirection(AT_getAppLocale())
       );
@@ -563,7 +828,7 @@ class AboutTranslations {
   }
 
   /**
-   * Sets the textContent of the about-translations-detect option in the
+   * Sets the label of the about-translations-detect option in the
    * about-translations-source-select dropdown.
    *
    * Passing an empty display name will reset to the default string.
@@ -578,7 +843,7 @@ class AboutTranslations {
     detectLanguageOption.setAttribute("language", detectedLanguage);
     document.l10n.setAttributes(
       detectLanguageOption,
-      "about-translations-detect-language",
+      "about-translations-detect-language-label",
       { language: displayName }
     );
   }
@@ -592,7 +857,7 @@ class AboutTranslations {
     detectLanguageOption.removeAttribute("language");
     document.l10n.setAttributes(
       detectLanguageOption,
-      "about-translations-detect-default"
+      "about-translations-detect-default-label"
     );
   }
 
@@ -685,6 +950,109 @@ class AboutTranslations {
   }
 
   /**
+   * Updates the enabled state of the copy button.
+   *
+   * @param {boolean} shouldEnable
+   */
+  #setCopyButtonEnabled(shouldEnable) {
+    const { copyButton } = this.elements;
+
+    if (copyButton.disabled !== shouldEnable) {
+      // The state isn't going to change: nothing to do.
+      return;
+    }
+
+    if (
+      this.#copyButtonResetTimeoutId !== null ||
+      copyButton.classList.contains("copied")
+    ) {
+      // When the copy button's enabled state changes while it is in the "copied" state,
+      // then we want to reset it immediately, instead of waiting for the timeout.
+      this.#resetCopyButton();
+    }
+
+    copyButton.disabled = !shouldEnable;
+
+    const eventName = shouldEnable
+      ? "AboutTranslationsTest:CopyButtonEnabled"
+      : "AboutTranslationsTest:CopyButtonDisabled";
+    document.dispatchEvent(new CustomEvent(eventName));
+  }
+
+  /**
+   * Applies the "copied" state visuals to the copy button.
+   */
+  #showCopyButtonCopiedState() {
+    const { copyButton } = this.elements;
+
+    if (this.#copyButtonResetTimeoutId !== null) {
+      // If there was a previously set timeout id, then we need to clear it to restart the timer.
+      // This occurs when the button is clicked a subsequent time when it is already in the "copied" state.
+      window.clearTimeout(this.#copyButtonResetTimeoutId);
+      this.#copyButtonResetTimeoutId = null;
+    }
+
+    copyButton.classList.add("copied");
+    copyButton.iconSrc = "chrome://global/skin/icons/check.svg";
+
+    document.l10n.setAttributes(
+      copyButton,
+      "about-translations-copy-button-copied"
+    );
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:CopyButtonShowCopied")
+    );
+
+    if (!window.testManualCopyButtonReset) {
+      this.#copyButtonResetTimeoutId = window.setTimeout(() => {
+        this.#resetCopyButton();
+      }, window.COPY_BUTTON_RESET_DELAY);
+    }
+  }
+
+  /**
+   * Restores the copy button to its default visual state.
+   */
+  #resetCopyButton() {
+    if (this.#copyButtonResetTimeoutId !== null) {
+      window.clearTimeout(this.#copyButtonResetTimeoutId);
+      this.#copyButtonResetTimeoutId = null;
+    }
+
+    const { copyButton } = this.elements;
+    if (!copyButton.classList.contains("copied")) {
+      return;
+    }
+
+    copyButton.classList.remove("copied");
+    copyButton.iconSrc = "chrome://global/skin/icons/edit-copy.svg";
+
+    document.l10n.setAttributes(
+      copyButton,
+      "about-translations-copy-button-default"
+    );
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:CopyButtonReset")
+    );
+  }
+
+  /**
+   * Manually resets the state of the copy button.
+   * This function is only expected to be called by automated tests.
+   */
+  testResetCopyButton() {
+    if (!AT_isInAutomation()) {
+      throw new Error("Test-only function called outside of automation.");
+    }
+
+    if (!window.testManualCopyButtonReset) {
+      throw new Error("Unexpected call to testResetCopyButton.");
+    }
+
+    this.#resetCopyButton();
+  }
+
+  /**
    * If the currently selected language pair is determined to be swappable,
    * swaps the active source language with the active target language,
    * and moves the translated output to be the new source text.
@@ -697,21 +1065,22 @@ class AboutTranslations {
     const {
       sourceLanguageSelector,
       targetLanguageSelector,
-      sourceTextArea,
-      targetTextArea,
+      sourceSectionTextArea,
+      targetSectionTextArea,
     } = this.elements;
 
     const selectedLanguagePair = this.#getSelectedLanguagePair();
 
     sourceLanguageSelector.value = selectedLanguagePair.targetLanguage;
     targetLanguageSelector.value = selectedLanguagePair.sourceLanguage;
-    sourceTextArea.value = targetTextArea.value;
+    sourceSectionTextArea.value = targetSectionTextArea.value;
 
     this.#updateSourceScriptDirection();
     this.#updateTargetScriptDirection();
-    this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+    this.#updateSourceSectionClearButtonVisibility();
 
-    if (sourceTextArea.value) {
+    if (sourceSectionTextArea.value) {
       this.#displayTranslatingPlaceholder();
     }
 
@@ -754,7 +1123,41 @@ class AboutTranslations {
    * @returns {string}
    */
   #getSourceText() {
-    return this.elements.sourceTextArea.value.trim();
+    return this.elements.sourceSectionTextArea.value.trim();
+  }
+
+  /**
+   * Returns true if the source textarea contains any text, otherwise false.
+   *
+   * @returns {boolean}
+   */
+  #sourceTextAreaHasValue() {
+    return Boolean(this.elements.sourceSectionTextArea.value);
+  }
+
+  /**
+   * Shows or hides the source clear button based on whether the textarea has text.
+   */
+  #updateSourceSectionClearButtonVisibility() {
+    const { sourceSectionClearButton } = this.elements;
+
+    const shouldShow = this.#sourceTextAreaHasValue();
+    const isHidden = sourceSectionClearButton.hidden;
+
+    const shouldHide = !shouldShow;
+    const isShown = !isHidden;
+
+    if (shouldShow && isHidden) {
+      sourceSectionClearButton.hidden = false;
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:SourceTextClearButtonShown")
+      );
+    } else if (shouldHide && isShown) {
+      sourceSectionClearButton.hidden = true;
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:SourceTextClearButtonHidden")
+      );
+    }
   }
 
   /**
@@ -763,22 +1166,33 @@ class AboutTranslations {
    * @param {string} value
    */
   #setSourceText(value) {
-    const { sourceTextArea } = this.elements;
+    const { sourceSectionTextArea } = this.elements;
+    const hadValueBefore = Boolean(sourceSectionTextArea.value);
 
-    sourceTextArea.value = value;
-    sourceTextArea.dispatchEvent(new Event("input"));
+    sourceSectionTextArea.value = value;
+    sourceSectionTextArea.dispatchEvent(new Event("input"));
 
+    this.#maybeUpdateDetectedSourceLanguage();
     this.#updateSourceScriptDirection();
-    this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+
+    if (!value && hadValueBefore) {
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:ClearSourceText")
+      );
+    }
   }
 
   /**
    * Sets the value of the target <textarea>.
    *
    * @param {string} value
+   * @param {object} [options]
+   * @param {boolean} [options.isTranslationResult=false]
+   * True if the value is the result of a translation request, otherwise false.
    */
-  #setTargetText(value) {
-    this.elements.targetTextArea.value = value;
+  #setTargetText(value, { isTranslationResult = false } = {}) {
+    this.elements.targetSectionTextArea.value = value;
 
     if (!value) {
       document.dispatchEvent(
@@ -787,7 +1201,8 @@ class AboutTranslations {
     }
 
     this.#updateTargetScriptDirection();
-    this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+    this.#setCopyButtonEnabled(Boolean(value) && isTranslationResult);
   }
 
   /**
@@ -819,12 +1234,12 @@ class AboutTranslations {
    * the swap-languages button while translation is in progress.
    */
   #displayTranslatingPlaceholder() {
-    const { targetTextArea } = this.elements;
+    const { targetSectionTextArea } = this.elements;
 
     this.#setTargetText(this.#translatingPlaceholderText);
     this.#disableSwapLanguagesButton();
 
-    targetTextArea.setAttribute(
+    targetSectionTextArea.setAttribute(
       "dir",
       AT_getScriptDirection(AT_getAppLocale())
     );
@@ -859,12 +1274,12 @@ class AboutTranslations {
    * Sets the initial focus on the most appropriate UI element based on the context.
    */
   #setInitialFocus() {
-    const { targetLanguageSelector, sourceTextArea } = this.elements;
+    const { targetLanguageSelector, sourceSectionTextArea } = this.elements;
 
     if (targetLanguageSelector.value === "") {
       targetLanguageSelector.focus();
     } else {
-      sourceTextArea.focus();
+      sourceSectionTextArea.focus();
     }
   }
 
@@ -941,15 +1356,18 @@ class AboutTranslations {
     const appLocale = AT_getAppLocale();
     const selectedLanguagePair = this.#getSelectedLanguagePair();
     const selectedSourceLanguage = selectedLanguagePair?.sourceLanguage;
-    const { sourceTextArea } = this.elements;
+    const { sourceSectionTextArea } = this.elements;
 
-    if (selectedSourceLanguage && sourceTextArea.value) {
-      sourceTextArea.setAttribute(
+    if (selectedSourceLanguage && sourceSectionTextArea.value) {
+      sourceSectionTextArea.setAttribute(
         "dir",
         AT_getScriptDirection(selectedSourceLanguage)
       );
     } else {
-      sourceTextArea.setAttribute("dir", AT_getScriptDirection(appLocale));
+      sourceSectionTextArea.setAttribute(
+        "dir",
+        AT_getScriptDirection(appLocale)
+      );
     }
   }
 
@@ -961,15 +1379,18 @@ class AboutTranslations {
     const appLocale = AT_getAppLocale();
     const selectedLanguagePair = this.#getSelectedLanguagePair();
     const selectedTargetLanguage = selectedLanguagePair?.targetLanguage;
-    const { targetTextArea } = this.elements;
+    const { targetSectionTextArea } = this.elements;
 
-    if (selectedTargetLanguage && targetTextArea.value) {
-      targetTextArea.setAttribute(
+    if (selectedTargetLanguage && targetSectionTextArea.value) {
+      targetSectionTextArea.setAttribute(
         "dir",
         AT_getScriptDirection(selectedTargetLanguage)
       );
     } else {
-      targetTextArea.setAttribute("dir", AT_getScriptDirection(appLocale));
+      targetSectionTextArea.setAttribute(
+        "dir",
+        AT_getScriptDirection(appLocale)
+      );
     }
   }
 
@@ -1029,9 +1450,14 @@ class AboutTranslations {
      * in a new translation request.
      */
     onDebounce: async () => {
+      if (!this.#isFeatureEnabled) {
+        return;
+      }
+
       try {
         this.#updateURLFromUI();
-        this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+
+        this.#requestSectionHeightsUpdate({ scheduleCallback: false });
 
         await this.#maybeUpdateDetectedSourceLanguage();
 
@@ -1043,7 +1469,7 @@ class AboutTranslations {
           this.#setTargetText("");
           this.#destroyTranslator();
           this.#updateSwapLanguagesButtonEnabledState();
-          this.elements.targetTextArea.setAttribute(
+          this.elements.targetSectionTextArea.setAttribute(
             "dir",
             AT_getScriptDirection(AT_getAppLocale())
           );
@@ -1091,7 +1517,7 @@ class AboutTranslations {
           }
         );
 
-        this.#setTargetText(translatedText);
+        this.#setTargetText(translatedText, { isTranslationResult: true });
         this.#updateSwapLanguagesButtonEnabledState();
         document.dispatchEvent(
           new CustomEvent("AboutTranslationsTest:TranslationComplete", {
@@ -1109,6 +1535,10 @@ class AboutTranslations {
     // Mark the events so that they show up in the Firefox Profiler. This makes it handy
     // to visualize the debouncing behavior.
     doEveryTime: () => {
+      if (!this.#isFeatureEnabled) {
+        return;
+      }
+
       const sourceText = this.#getSourceText();
       performance.mark(
         `Translations: input changed to ${sourceText.length} code units.`
@@ -1123,8 +1553,11 @@ class AboutTranslations {
   });
 
   /**
-   * Ensures that the heights of the source and target text areas match by syncing
-   * them to the maximum height of either of their content.
+   * Requests that the heights of each section is updated to at least match its content.
+   *
+   * In horizontal orientation the source and target sections are synchronized to
+   * the maximum content height between the two. In vertical orientation, each section
+   * is sized to its own content height.
    *
    * There are many situations in which this function needs to be called:
    *   - Every time the source text is updated
@@ -1134,85 +1567,369 @@ class AboutTranslations {
    *   - Etc.
    *
    * Some of these events happen infrequently, or are already debounced, such as
-   * each time a translation occurs. In these situations it is okay to synchronize
-   * the text-area heights immediately.
+   * each time a translation occurs. In these situations it is okay to update
+   * the section heights immediately.
    *
    * Some of these events can trigger quite rapidly, such as resizing the window
    * via click-and-drag semantics. In this case, a single callback should be scheduled
-   * to synchronize the text-area heights to prevent unnecessary and excessive reflow.
+   * to update the section heights to prevent unnecessary and excessive reflow.
    *
    * @param {object} params
    * @param {boolean} params.scheduleCallback
    */
-  #ensureTextAreaHeightsMatch({ scheduleCallback }) {
+  #requestSectionHeightsUpdate({ scheduleCallback }) {
     if (scheduleCallback) {
-      if (this.#synchronizeTextAreaHeightsTimeoutId) {
+      if (this.#updateSectionHeightsTimeoutId) {
         // There is already a pending callback: no need to schedule another.
         return;
       }
 
-      this.#synchronizeTextAreaHeightsTimeoutId = setTimeout(
-        this.#synchronizeTextAreasToMaxContentHeight,
+      this.#updateSectionHeightsTimeoutId = setTimeout(
+        this.#updateSectionHeights,
         100
       );
 
       return;
     }
 
-    this.#synchronizeTextAreasToMaxContentHeight();
+    this.#updateSectionHeights();
   }
 
   /**
-   * Calculates the heights of the content in both the source and target text areas,
-   * then syncs them both to the maximum calculated content height among the two.
+   * Updates the section heights based on the current page orientation.
    *
    * This function is intentionally written as a lambda so that it can be passed
    * as a callback without the need to explicitly bind `this` to the function object.
-   *
-   * Prefer calling #ensureTextAreaHeightsMatch to make it clear whether this function
-   * needs to run immediately, or is okay to be scheduled as a callback.
-   *
-   * @see {AboutTranslations#ensureTextAreaHeightsMatch}
    */
-  #synchronizeTextAreasToMaxContentHeight = () => {
-    const { sourceTextArea, targetTextArea } = this.elements;
-
-    // This will be the same for both the source and target text areas.
-    const textAreaRatioBefore =
-      parseFloat(sourceTextArea.style.height) / sourceTextArea.scrollWidth;
-
-    sourceTextArea.style.height = "auto";
-    targetTextArea.style.height = "auto";
-
-    const maxContentHeight = Math.ceil(
-      Math.max(sourceTextArea.scrollHeight, targetTextArea.scrollHeight)
-    );
-    const maxContentHeightPixels = `${maxContentHeight}px`;
-
-    sourceTextArea.style.height = maxContentHeightPixels;
-    targetTextArea.style.height = maxContentHeightPixels;
-
-    const textAreaRatioAfter = maxContentHeight / sourceTextArea.scrollWidth;
-    const ratioDelta = textAreaRatioAfter - textAreaRatioBefore;
-    const changeThreshold = 0.001;
-
-    if (
-      // The text-area heights were not 0px prior to growing.
-      textAreaRatioBefore > changeThreshold &&
-      // The text-area aspect ratio changed beyond typical floating-point error.
-      Math.abs(ratioDelta) > changeThreshold
-    ) {
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:TextAreaHeightsChanged", {
-          detail: {
-            textAreaHeights: ratioDelta < 0 ? "decreased" : "increased",
-          },
-        })
-      );
+  #updateSectionHeights = () => {
+    if (this.#updateSectionHeightsTimeoutId) {
+      clearTimeout(this.#updateSectionHeightsTimeoutId);
+      this.#updateSectionHeightsTimeoutId = null;
     }
 
-    this.#synchronizeTextAreaHeightsTimeoutId = null;
+    if (this.#pageOrientation === "horizontal") {
+      this.#synchronizeSectionsToMaxContentHeight();
+    } else {
+      this.#resizeSectionsToIndividualContentHeights();
+    }
   };
+
+  /**
+   * Retrieves the combined border and padding height of an element.
+   *
+   * Returns 0 when the element is missing or does not use border-box sizing.
+   *
+   * @param {HTMLElement | undefined} element
+   *
+   * @returns {number}
+   */
+  #getBorderAndPaddingHeight(element) {
+    if (!element) {
+      return 0;
+    }
+
+    const style = window.getComputedStyle(element);
+    if (style.boxSizing !== "border-box") {
+      return 0;
+    }
+
+    const borderTop = Number.parseFloat(style.borderTopWidth) || 0;
+    const borderBottom = Number.parseFloat(style.borderBottomWidth) || 0;
+    const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+    const paddingBottom = Number.parseFloat(style.paddingBottom) || 0;
+
+    return Math.ceil(borderTop + borderBottom + paddingTop + paddingBottom);
+  }
+
+  /**
+   * Retrieves the minimum height of an element.
+   *
+   * @param {HTMLElement | undefined} element
+   *
+   * @returns {number}
+   */
+  #getMinHeight(element) {
+    if (!element) {
+      return 0;
+    }
+
+    const style = window.getComputedStyle(element);
+    const minHeight = Number.parseFloat(style.minHeight);
+
+    if (Number.isNaN(minHeight)) {
+      return 0;
+    }
+
+    return Math.max(minHeight - this.#getBorderAndPaddingHeight(element), 0);
+  }
+
+  /**
+   * Returns whether a section height increased or decreased.
+   *
+   * @param {number} beforeHeight
+   * @param {number} afterHeight
+   * @returns {null | "decreased" | "increased"}
+   */
+  #getSectionHeightChange(beforeHeight, afterHeight) {
+    const changeThreshold = 1;
+    if (!Number.isFinite(beforeHeight) || beforeHeight <= changeThreshold) {
+      return null;
+    }
+
+    const delta = afterHeight - beforeHeight;
+    if (Math.abs(delta) <= changeThreshold) {
+      return null;
+    }
+
+    return delta < 0 ? "decreased" : "increased";
+  }
+
+  /**
+   * Dispatches a test event when section height changes are detected.
+   *
+   * @param {object} params
+   * @param {null | "decreased" | "increased"} params.sourceSectionHeightChange
+   * @param {null | "decreased" | "increased"} params.targetSectionHeightChange
+   */
+  #dispatchSectionHeightsChangedEvent({
+    sourceSectionHeightChange,
+    targetSectionHeightChange,
+  }) {
+    if (!sourceSectionHeightChange && !targetSectionHeightChange) {
+      return;
+    }
+
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:SectionHeightsChanged", {
+        detail: {
+          sourceSectionHeightChange: sourceSectionHeightChange ?? "unchanged",
+          targetSectionHeightChange: targetSectionHeightChange ?? "unchanged",
+        },
+      })
+    );
+  }
+
+  /**
+   * Calculates the content heights in both the source and target sections,
+   * then syncs them to the maximum calculated content height among the two.
+   *
+   * Prefer calling #requestSectionHeightsUpdate to make it clear whether this function
+   * needs to run immediately, or is okay to be scheduled as a callback.
+   *
+   * @see {AboutTranslations#requestSectionHeightsUpdate}
+   */
+  #synchronizeSectionsToMaxContentHeight() {
+    const {
+      sourceSection,
+      sourceSectionTextArea,
+      targetSection,
+      targetSectionActionsRow,
+      targetSectionTextArea,
+    } = this.elements;
+
+    const sourceSectionHeightBefore = Number.parseFloat(
+      sourceSection?.style.height
+    );
+    const targetSectionHeightBefore = Number.parseFloat(
+      targetSection?.style.height
+    );
+
+    sourceSection.style.height = "auto";
+    targetSection.style.height = "auto";
+    sourceSectionTextArea.style.height = "auto";
+    targetSectionTextArea.style.height = "auto";
+
+    const targetActionsHeight =
+      targetSectionActionsRow.getBoundingClientRect().height;
+    const minSectionHeight = AboutTranslations.#maxInteger(
+      this.#getMinHeight(sourceSection),
+      this.#getMinHeight(targetSection)
+    );
+    const targetSectionContentHeight =
+      targetSectionTextArea.scrollHeight + targetActionsHeight;
+    const maxContentHeight = AboutTranslations.#maxInteger(
+      sourceSectionTextArea.scrollHeight,
+      targetSectionContentHeight,
+      minSectionHeight
+    );
+    const sectionBorderHeight = AboutTranslations.#maxInteger(
+      this.#getBorderAndPaddingHeight(sourceSection),
+      this.#getBorderAndPaddingHeight(targetSection)
+    );
+    const maxSectionHeight = maxContentHeight + sectionBorderHeight;
+    const maxSectionHeightPixels = `${maxSectionHeight}px`;
+    const targetSectionTextAreaHeightPixels = `${Math.max(
+      maxContentHeight - targetActionsHeight,
+      0
+    )}px`;
+    const sourceSectionHeightChange = this.#getSectionHeightChange(
+      sourceSectionHeightBefore,
+      maxSectionHeight
+    );
+    const targetSectionHeightChange = this.#getSectionHeightChange(
+      targetSectionHeightBefore,
+      maxSectionHeight
+    );
+
+    sourceSection.style.height = maxSectionHeightPixels;
+    targetSection.style.height = maxSectionHeightPixels;
+
+    sourceSectionTextArea.style.height = "100%";
+    targetSectionTextArea.style.height = targetSectionTextAreaHeightPixels;
+
+    this.#dispatchSectionHeightsChangedEvent({
+      sourceSectionHeightChange,
+      targetSectionHeightChange,
+    });
+  }
+
+  /**
+   * Calculates the content heights in both the source and target sections,
+   * then sizes each section to its own calculated content height.
+   *
+   * Prefer calling #requestSectionHeightsUpdate to make it clear whether this function
+   * needs to run immediately, or is okay to be scheduled as a callback.
+   *
+   * @see {AboutTranslations#requestSectionHeightsUpdate}
+   */
+  #resizeSectionsToIndividualContentHeights() {
+    const {
+      sourceSection,
+      sourceSectionTextArea,
+      targetSection,
+      targetSectionActionsRow,
+      targetSectionTextArea,
+    } = this.elements;
+
+    const sourceSectionHeightBefore = Number.parseFloat(
+      sourceSection?.style.height
+    );
+    const targetSectionHeightBefore = Number.parseFloat(
+      targetSection?.style.height
+    );
+
+    sourceSection.style.height = "auto";
+    targetSection.style.height = "auto";
+    sourceSectionTextArea.style.height = "auto";
+    targetSectionTextArea.style.height = "auto";
+
+    const targetActionsHeight =
+      targetSectionActionsRow.getBoundingClientRect().height;
+    const sourceMinHeight = this.#getMinHeight(sourceSection);
+    const targetMinHeight = this.#getMinHeight(targetSection);
+    const sourceContentHeight = AboutTranslations.#maxInteger(
+      sourceSectionTextArea.scrollHeight,
+      sourceMinHeight
+    );
+    const targetContentHeight = AboutTranslations.#maxInteger(
+      targetSectionTextArea.scrollHeight + targetActionsHeight,
+      targetMinHeight
+    );
+    const sourceSectionHeight =
+      sourceContentHeight + this.#getBorderAndPaddingHeight(sourceSection);
+    const targetSectionHeight =
+      targetContentHeight + this.#getBorderAndPaddingHeight(targetSection);
+    const targetSectionTextAreaHeightPixels = `${Math.max(
+      targetContentHeight - targetActionsHeight,
+      0
+    )}px`;
+    const sourceSectionHeightChange = this.#getSectionHeightChange(
+      sourceSectionHeightBefore,
+      sourceSectionHeight
+    );
+    const targetSectionHeightChange = this.#getSectionHeightChange(
+      targetSectionHeightBefore,
+      targetSectionHeight
+    );
+
+    sourceSection.style.height = `${sourceSectionHeight}px`;
+    targetSection.style.height = `${targetSectionHeight}px`;
+    sourceSectionTextArea.style.height = "100%";
+    targetSectionTextArea.style.height = targetSectionTextAreaHeightPixels;
+
+    this.#dispatchSectionHeightsChangedEvent({
+      sourceSectionHeightChange,
+      targetSectionHeightChange,
+    });
+  }
+}
+
+/**
+ * A promise used to ensure the about:translations page initializes once.
+ *
+ * @type {Promise<void> | null}
+ */
+let aboutTranslationsInitPromise = null;
+
+/**
+ * Initializes the about:translations page if it has not been initialized yet.
+ *
+ * @returns {Promise<void>}
+ */
+async function ensureAboutTranslationsInitialized() {
+  if (aboutTranslationsInitPromise) {
+    return aboutTranslationsInitPromise;
+  }
+
+  aboutTranslationsInitPromise = AT_isTranslationEngineSupported()
+    .then(async isTranslationsEngineSupported => {
+      window.aboutTranslations = new AboutTranslations(
+        isTranslationsEngineSupported
+      );
+      await window.aboutTranslations.ready();
+    })
+    .catch(error => {
+      AT_logError(error);
+    });
+
+  return aboutTranslationsInitPromise;
+}
+
+/**
+ * Marks that the document is ready for automated testing to being making assertions.
+ *
+ * @returns {void}
+ */
+function markReadyForTesting() {
+  document.body.setAttribute("ready-for-testing", "");
+}
+
+/**
+ * Whether the initial enabled state has been applied.
+ *
+ * @type {boolean}
+ */
+let initialEnabledStateApplied = false;
+
+/**
+ * Applies the enabled state to the about:translations UI.
+ *
+ * @param {boolean} enabled
+ * @returns {Promise<void>}
+ */
+async function setFeatureEnabledState(enabled) {
+  await ensureAboutTranslationsInitialized();
+
+  if (!window.aboutTranslations) {
+    return;
+  }
+
+  if (enabled) {
+    await window.aboutTranslations.onFeatureEnabled();
+  } else {
+    window.aboutTranslations.onFeatureDisabled();
+  }
+
+  if (initialEnabledStateApplied) {
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:EnabledStateChanged", {
+        detail: { enabled },
+      })
+    );
+  }
+
+  initialEnabledStateApplied = true;
+  markReadyForTesting();
 }
 
 /**
@@ -1220,33 +1937,12 @@ class AboutTranslations {
  */
 window.addEventListener("AboutTranslationsChromeToContent", ({ detail }) => {
   switch (detail.type) {
-    case "enable": {
-      if (window.aboutTranslations) {
-        throw new Error(
-          "Attempt to initialize about:translations page more than once."
-        );
-      }
-
-      AT_isTranslationEngineSupported()
-        .then(async isTranslationsEngineSupported => {
-          window.aboutTranslations = new AboutTranslations(
-            isTranslationsEngineSupported
-          );
-          await window.aboutTranslations.ready();
-        })
-        .catch(error => {
-          AT_logError(error);
-        })
-        .finally(() => {
-          // This lets test cases know that they can start making assertions.
-          document.body.setAttribute("ready-for-testing", "");
-          document.body.style.visibility = "visible";
-        });
-
+    case "enabled-state-changed": {
+      void setFeatureEnabledState(detail.enabled);
       break;
     }
     case "rebuild-translator": {
-      window.aboutTranslations.rebuildTranslator();
+      window.aboutTranslations?.rebuildTranslator();
       break;
     }
     default: {

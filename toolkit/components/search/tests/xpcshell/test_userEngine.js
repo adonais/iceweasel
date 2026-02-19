@@ -240,3 +240,19 @@ add_task(async function test_changeIcon() {
     "The icon was re-scaled."
   );
 });
+
+add_task(async function test_duplicate_engine_error() {
+  let engineData = {
+    name: "Engine Name",
+    url: "https://example.com/search?q={searchTerms}",
+  };
+  let engine = await Services.search.addUserEngine(engineData);
+  Assert.ok(engine, "User engine should be added successfully.");
+  await Assert.rejects(
+    Services.search.addUserEngine(engineData),
+    ex => ex.result == Ci.nsISearchService.ERROR_DUPLICATE_ENGINE,
+    "Adding a user engine with a duplicate name should throw ERROR_DUPLICATE_ENGINE."
+  );
+
+  await Services.search.removeEngine(engine);
+});

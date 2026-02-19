@@ -139,7 +139,7 @@ class ProcessCrashMonitor final {
 };
 
 StaticMutex ProcessCrashMonitor::sMutex;
-MOZ_CONSTINIT UniquePtr<ProcessCrashMonitor> ProcessCrashMonitor::sCrashMonitor;
+constinit UniquePtr<ProcessCrashMonitor> ProcessCrashMonitor::sCrashMonitor;
 Atomic<bool> ProcessCrashMonitor::sIsShutdown{false};
 
 /* static */

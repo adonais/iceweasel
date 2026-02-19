@@ -8,14 +8,12 @@ import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
+import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.GlobalDependencyProvider
 import mozilla.components.service.pocket.mars.SponsoredContentsUseCases
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
@@ -23,11 +21,8 @@ import org.mockito.Mockito.doReturn
 @RunWith(AndroidJUnit4::class)
 class DeleteUserWorkerTest {
 
-    @get:Rule
-    val mainCoroutineRule = MainCoroutineRule()
-
     @Test
-    fun `WHEN user profile deletion is successful THEN return success`() = runTestOnMain {
+    fun `WHEN user profile deletion is successful THEN return success`() = runTest {
         val useCases: SponsoredContentsUseCases = mock()
         val deleteUser: SponsoredContentsUseCases.DeleteUser = mock()
 
@@ -43,7 +38,7 @@ class DeleteUserWorkerTest {
     }
 
     @Test
-    fun `WHEN user profile deletion fails THEN worker should retry`() = runTestOnMain {
+    fun `WHEN user profile deletion fails THEN worker should retry`() = runTest {
         val useCases: SponsoredContentsUseCases = mock()
         val deleteUser: SponsoredContentsUseCases.DeleteUser = mock()
 

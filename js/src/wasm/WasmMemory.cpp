@@ -291,18 +291,24 @@ static_assert(HugeOffsetGuardLimit < UINT32_MAX,
 //    where `offset < OffsetGuardLimit` as well as the overflow from unaligned
 //    accesses, as described above for MaxMemoryAccessSize.
 
-static const size_t OffsetGuardLimit = PageSize - MaxMemoryAccessSize;
+static const size_t OffsetGuardLimit =
+    StandardPageSizeBytes - MaxMemoryAccessSize;
 
 static_assert(MaxMemoryAccessSize < GuardSize,
               "Guard page handles partial out-of-bounds");
 static_assert(OffsetGuardLimit < UINT32_MAX,
               "checking for overflow against OffsetGuardLimit is enough.");
 
-uint64_t wasm::GetMaxOffsetGuardLimit(bool hugeMemory) {
+uint64_t wasm::GetMaxOffsetGuardLimit(bool hugeMemory, PageSize sz) {
+#ifndef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  MOZ_ASSERT(sz == PageSize::Standard);
+#endif
+
+  uint64_t guardLimit = sz == PageSize::Standard ? OffsetGuardLimit : 0;
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
-  return hugeMemory ? HugeOffsetGuardLimit : OffsetGuardLimit;
+  return hugeMemory ? HugeOffsetGuardLimit : guardLimit;
 #else
-  return OffsetGuardLimit;
+  return guardLimit;
 #endif
 }
 
@@ -312,34 +318,39 @@ static const size_t MinOffsetGuardLimit = OffsetGuardLimit;
 static_assert(MaxInlineMemoryCopyLength < MinOffsetGuardLimit, "precondition");
 static_assert(MaxInlineMemoryFillLength < MinOffsetGuardLimit, "precondition");
 
-wasm::Pages wasm::MaxMemoryPages(AddressType t) {
+wasm::Pages wasm::MaxMemoryPages(AddressType t, PageSize pageSize) {
 #ifdef JS_64BIT
-  MOZ_ASSERT_IF(t == AddressType::I64, !IsHugeMemoryEnabled(t));
-  size_t desired = MaxMemoryPagesValidation(t);
-  constexpr size_t actual = ArrayBufferObject::ByteLengthLimit / PageSize;
-  return wasm::Pages(std::min(desired, actual));
+  MOZ_ASSERT_IF(t == AddressType::I64, !IsHugeMemoryEnabled(t, pageSize));
+  size_t desired = MaxMemoryPagesValidation(t, pageSize);
+  size_t actual =
+      ArrayBufferObject::ByteLengthLimit / PageSizeInBytes(pageSize);
+  return wasm::Pages::fromPageCount(std::min(desired, actual), pageSize);
 #else
   // On 32-bit systems, the heap limit must be representable in the nonnegative
   // range of an int32_t, which means the maximum heap size as observed by wasm
   // code is one wasm page less than 2GB.
-  static_assert(ArrayBufferObject::ByteLengthLimit >= INT32_MAX / PageSize);
-  return wasm::Pages(INT32_MAX / PageSize);
+  MOZ_ASSERT(ArrayBufferObject::ByteLengthLimit >=
+             INT32_MAX / PageSizeInBytes(pageSize));
+  return wasm::Pages::fromPageCount(INT32_MAX / PageSizeInBytes(pageSize),
+                                    pageSize);
 #endif
 }
 
-size_t wasm::MaxMemoryBoundsCheckLimit(AddressType t) {
-  return MaxMemoryBytes(t);
+size_t wasm::MaxMemoryBoundsCheckLimit(AddressType t, PageSize pageSize) {
+  return MaxMemoryBytes(t, pageSize);
 }
 
 Pages wasm::ClampedMaxPages(AddressType t, Pages initialPages,
                             const mozilla::Maybe<Pages>& sourceMaxPages,
                             bool useHugeMemory) {
-  Pages clampedMaxPages;
+  PageSize pageSize = initialPages.pageSize();
+  Pages clampedMaxPages = Pages::forPageSize(pageSize);
 
   if (sourceMaxPages.isSome()) {
     // There is a specified maximum, clamp it to the implementation limit of
     // maximum pages
-    clampedMaxPages = std::min(*sourceMaxPages, wasm::MaxMemoryPages(t));
+    clampedMaxPages =
+        std::min(*sourceMaxPages, wasm::MaxMemoryPages(t, pageSize));
 
 #ifndef JS_64BIT
     static_assert(sizeof(uintptr_t) == 4, "assuming not 64 bit implies 32 bit");
@@ -349,7 +360,7 @@ Pages wasm::ClampedMaxPages(AddressType t, Pages initialPages,
     // "a lot of memory". Maintain the invariant that initialPages <=
     // clampedMaxPages.
     static const uint64_t OneGib = 1 << 30;
-    static const Pages OneGibPages = Pages(OneGib >> wasm::PageBits);
+    const Pages OneGibPages = Pages::fromByteLengthExact(OneGib, pageSize);
 
     Pages clampedPages = std::max(OneGibPages, initialPages);
     clampedMaxPages = std::min(clampedPages, clampedMaxPages);
@@ -357,13 +368,13 @@ Pages wasm::ClampedMaxPages(AddressType t, Pages initialPages,
   } else {
     // There is not a specified maximum, fill it in with the implementation
     // limit of maximum pages
-    clampedMaxPages = wasm::MaxMemoryPages(t);
+    clampedMaxPages = wasm::MaxMemoryPages(t, pageSize);
   }
 
   // Double-check our invariants
   MOZ_RELEASE_ASSERT(sourceMaxPages.isNothing() ||
                      clampedMaxPages <= *sourceMaxPages);
-  MOZ_RELEASE_ASSERT(clampedMaxPages <= wasm::MaxMemoryPages(t));
+  MOZ_RELEASE_ASSERT(clampedMaxPages <= wasm::MaxMemoryPages(t, pageSize));
   MOZ_RELEASE_ASSERT(initialPages <= clampedMaxPages);
 
   return clampedMaxPages;
@@ -374,9 +385,37 @@ size_t wasm::ComputeMappedSize(wasm::Pages clampedMaxPages) {
   // implementation limits.
   size_t maxSize = clampedMaxPages.byteLength();
 
+  // For tiny page sizes, round up the mapped size to a multiple of the
+  // system page size after clamping.
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  if (clampedMaxPages.pageSize() == wasm::PageSize::Tiny) {
+    mozilla::CheckedInt<size_t> length(maxSize);
+
+    if (length.value() % gc::SystemPageSize() != 0) {
+      length += ComputeByteAlignment(length.value(), gc::SystemPageSize());
+      // This should be valid because of previous clamping.
+      MOZ_RELEASE_ASSERT(length.isValid());
+      MOZ_ASSERT(length.value() % gc::SystemPageSize() == 0);
+      maxSize = length.value();
+    }
+
+    MOZ_ASSERT(maxSize <= clampedMaxPages.byteLength() + GuardSize);
+  }
+#endif
+
   MOZ_ASSERT(maxSize % gc::SystemPageSize() == 0);
   MOZ_ASSERT(GuardSize % gc::SystemPageSize() == 0);
-  maxSize += GuardSize;
+  if (clampedMaxPages.pageSize() == PageSize::Standard) {
+    maxSize += GuardSize;
+  } else {
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+    // In the case of a tiny page, we omit the guard page size
+    // because we can't use guard pages for tiny page bounds checks.
+    MOZ_ASSERT(clampedMaxPages.pageSize() == PageSize::Tiny);
+#else
+    MOZ_CRASH();
+#endif
+  }
 
   return maxSize;
 }

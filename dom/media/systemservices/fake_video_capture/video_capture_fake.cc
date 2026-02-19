@@ -20,11 +20,14 @@ using mozilla::layers::Image;
 namespace webrtc::videocapturemodule {
 webrtc::scoped_refptr<webrtc::VideoCaptureModule> VideoCaptureFake::Create(
     nsISerialEventTarget* aTarget) {
-  return webrtc::make_ref_counted<VideoCaptureFake>(aTarget);
+  return webrtc::make_ref_counted<VideoCaptureFake>(
+      Clock::GetRealTimeClockRaw(), aTarget);
 }
 
-VideoCaptureFake::VideoCaptureFake(nsISerialEventTarget* aTarget)
-    : mTarget(aTarget), mSource(MakeRefPtr<FakeVideoSource>(aTarget)) {
+VideoCaptureFake::VideoCaptureFake(Clock* clock, nsISerialEventTarget* aTarget)
+    : VideoCaptureImpl(clock),
+      mTarget(aTarget),
+      mSource(MakeRefPtr<FakeVideoSource>(aTarget)) {
   size_t len = strlen(DeviceInfoFake::kId);
   _deviceUniqueId = new (std::nothrow) char[len + 1];
   if (_deviceUniqueId) {

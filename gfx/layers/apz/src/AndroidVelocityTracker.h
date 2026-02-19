@@ -8,7 +8,6 @@
 #define mozilla_layers_AndroidVelocityTracker_h
 
 #include <utility>
-#include <cstdint>
 
 #include "Axis.h"
 #include "mozilla/Maybe.h"

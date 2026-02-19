@@ -8,13 +8,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPPEnrollAndEntitleManager:
-    "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
-  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
-  IPPProxyStates: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
+  IPPProxyManager:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyStates:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
-  IPProtection: "resource:///modules/ipprotection/IPProtection.sys.mjs",
-  IPPSignInWatcher: "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+  IPProtection:
+    "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
+  IPPSignInWatcher:
+    "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
 });
 
 import {
@@ -64,8 +68,6 @@ export class IPProtectionPanel {
   /**
    * @typedef {object} State
    * @property {boolean} isProtectionEnabled
-   *  True if IP Protection via the proxy is enabled
-   * @property {Date} protectionEnabledSince
    *  The timestamp in milliseconds since IP Protection was enabled
    * @property {boolean} isSignedOut
    *  True if not signed in to account
@@ -83,6 +85,8 @@ export class IPProtectionPanel {
    *  True if a Mozilla VPN subscription is linked to the user's Mozilla account.
    * @property {string} onboardingMessage
    * Continuous onboarding message to display in-panel, empty string if none applicable
+   * @property {boolean} paused
+   * True if the VPN service has been paused due to bandwidth limits
    */
 
   /**
@@ -115,12 +119,10 @@ export class IPProtectionPanel {
   constructor(window) {
     this.handleEvent = this.#handleEvent.bind(this);
 
-    let { activatedAt: protectionEnabledSince } = lazy.IPPProxyManager;
-
     this.state = {
       isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,
-      isProtectionEnabled: !!protectionEnabledSince,
-      protectionEnabledSince,
+      isProtectionEnabled:
+        lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
       location: {
         name: "United States",
         code: "us",
@@ -129,6 +131,8 @@ export class IPProtectionPanel {
       isAlpha: lazy.IPPEnrollAndEntitleManager.isAlpha,
       hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
       onboardingMessage: "",
+      bandwidthWarning: "",
+      paused: false,
     };
 
     if (window) {
@@ -433,15 +437,14 @@ export class IPProtectionPanel {
       event.type == "IPProtectionService:StateChanged" ||
       event.type === "IPPEnrollAndEntitleManager:StateChanged"
     ) {
-      let { activatedAt: protectionEnabledSince } = lazy.IPPProxyManager;
       let hasError =
         lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR &&
         lazy.IPPProxyManager.errors.includes(ERRORS.GENERIC);
 
       this.setState({
         isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,
-        isProtectionEnabled: !!protectionEnabledSince,
-        protectionEnabledSince,
+        isProtectionEnabled:
+          lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
         hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
         error: hasError ? ERRORS.GENERIC : "",
       });

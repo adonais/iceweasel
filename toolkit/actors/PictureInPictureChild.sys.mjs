@@ -174,9 +174,8 @@ export class PictureInPictureLauncherChild extends JSWindowActorChild {
    * @param {object} pipObject.eventExtraKeys Extra telemetry keys to record
    * @param {boolean} autoFocus Autofocus the PiP window (default: true)
    *
-   * @return {Promise}
-   * @resolves {undefined} Once the new Picture-in-Picture window
-   * has been requested.
+   * @returns {Promise<void>}
+   *   Resolved once the new Picture-in-Picture window has been requested.
    */
   async togglePictureInPicture(pipObject, autoFocus = true) {
     let { video, reason, eventExtraKeys = {} } = pipObject;
@@ -2084,10 +2083,8 @@ export class PictureInPictureChild extends JSWindowActorChild {
    * Tells the parent to close a pre-existing Picture-in-Picture
    * window.
    *
-   * @return {Promise}
-   *
-   * @resolves {undefined} Once the pre-existing Picture-in-Picture
-   * window has unloaded.
+   * @returns {Promise<void>}
+   *   Resolves once the pre-existing Picture-in-Picture window has unloaded.
    */
   async closePictureInPicture({ reason }) {
     let video = this.getWeakVideo();
@@ -2386,10 +2383,9 @@ export class PictureInPictureChild extends JSWindowActorChild {
    * @param videoRef {ContentDOMReference}
    *    A reference to the video element that a Picture-in-Picture window
    *    is being created for
-   * @return {Promise}
-   * @resolves {undefined} Once the player window has been set up
-   * properly, or a pre-existing Picture-in-Picture window has gone
-   * away due to an unexpected error.
+   * @returns {Promise<void>}
+   *   Resolves once the player window has been set up properly, or a pre-existing
+   *   Picture-in-Picture window has gone away due to an unexpected error.
    */
   async setupPlayer(videoRef) {
     const video = await lazy.ContentDOMReference.resolve(videoRef);
@@ -3201,7 +3197,7 @@ class PictureInPictureChildVideoWrapper {
    * OVERRIDABLE - calls the setCaptionContainerObserver() method defined in the site wrapper script. Runs a fallback implementation
    * if the method does not exist or if an error is thrown while calling it. This method is meant to listen for any cue changes in a
    * video's caption container and execute a callback function responsible for updating the pip window's text tracks container whenever
-   * a cue change is triggered {@see updatePiPTextTracks()}.
+   * a cue change is triggered {@link updatePiPTextTracks()}.
    *
    * @param {HTMLVideoElement} video
    *  The originating video source element

@@ -87,7 +87,8 @@ interface ShareController {
  * @param navController [NavController] used for navigation.
  * @param recentAppsStorage Instance of [RecentAppsStorage] for storing and retrieving the most recent apps.
  * @param viewLifecycleScope [CoroutineScope] used for retrieving the most recent apps in the background.
- * @param dispatcher Dispatcher used to execute suspending functions.
+ * @param mainDispatcher Dispatcher for executing tasks on the Main thread.
+ * @param ioDispatcher Dispatcher for executing I/O-bound tasks, like updating local storage.
  * @param fxaEntrypoint The entrypoint if we need to authenticate, it will be reported in telemetry.
  * @param dismiss Callback signalling sharing can be closed.
  */
@@ -104,7 +105,8 @@ class DefaultShareController(
     private val navController: NavController,
     private val recentAppsStorage: RecentAppsStorage,
     private val viewLifecycleScope: CoroutineScope,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val fxaEntrypoint: FxAEntryPoint = FenixFxAEntryPoint.ShareMenu,
     private val dismiss: (ShareController.Result) -> Unit,
 ) : ShareController {
@@ -135,7 +137,7 @@ class DefaultShareController(
             return
         }
 
-        viewLifecycleScope.launch(dispatcher) {
+        viewLifecycleScope.launch(ioDispatcher) {
             recentAppsStorage.updateRecentApp(app.activityName)
         }
 
@@ -218,7 +220,7 @@ class DefaultShareController(
         shareOperation: () -> Deferred<Boolean>,
     ) {
         // Use GlobalScope to allow the continuation of this method even if the share fragment is closed.
-        GlobalScope.launch(Dispatchers.Main) {
+        GlobalScope.launch(mainDispatcher) {
             val result = if (shareOperation.invoke().await()) {
                 showSuccess(destination)
                 ShareController.Result.SUCCESS

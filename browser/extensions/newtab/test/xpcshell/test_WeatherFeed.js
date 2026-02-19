@@ -333,41 +333,63 @@ add_task(async function test_fetch_weather_with_geolocation() {
       },
     },
     {
+      // Test city-state fallback: Singapore (no region field)
+      geolocation: {
+        country_code: "SG",
+        region_code: null,
+        region: null,
+        city: "Singapore",
+      },
+      expected: {
+        country: "SG",
+        region: "Singapore", // City used as fallback for region
+        city: "Singapore",
+      },
+    },
+    {
+      // Test city-state fallback: Monaco (no region field)
+      geolocation: {
+        country_code: "MC",
+        city: "Monaco",
+      },
+      expected: {
+        country: "MC",
+        region: "Monaco", // City used as fallback for region
+        city: "Monaco",
+      },
+    },
+    {
       geolocation: {
         country_code: "TestCountry",
       },
-      expected: {
-        country: "TestCountry",
-      },
+      // Missing region and city - request should be blocked
+      expected: false,
     },
     {
       geolocation: {
         region_code: "TestRegionCode",
       },
-      expected: {
-        region: "TestRegionCode",
-      },
+      // Missing country and city - request should be blocked
+      expected: false,
     },
     {
       geolocation: {
         region: "TestRegion",
       },
-      expected: {
-        region: "TestRegion",
-        city: "TestRegion",
-      },
+      // Missing country - request should be blocked
+      expected: false,
     },
     {
       geolocation: {
         city: "TestCity",
       },
-      expected: {
-        city: "TestCity",
-      },
+      // Missing country and region - request should be blocked
+      expected: false,
     },
     {
       geolocation: {},
-      expected: {},
+      // Empty geolocation - request should be blocked
+      expected: false,
     },
     {
       geolocation: null,

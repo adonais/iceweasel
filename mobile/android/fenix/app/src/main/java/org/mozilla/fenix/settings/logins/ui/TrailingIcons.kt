@@ -18,7 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.text.Text
@@ -26,6 +26,7 @@ import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.textfield.TextField
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -55,45 +56,14 @@ fun EyePasswordIconButton(
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun EyePasswordIconButtonPreview() {
-    var isPasswordVisible by remember { mutableStateOf(false) }
-
-    FirefoxTheme {
-        Surface {
-            TextField(
-                value = "password",
-                onValueChange = {},
-                isEnabled = true,
-                placeholder = "",
-                errorText = "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                label = "",
-                trailingIcon = {
-                    EyePasswordIconButton(
-                        isPasswordVisible = isPasswordVisible,
-                        onTrailingIconClick = { isPasswordVisible = !isPasswordVisible },
-                    )
-                },
-                visualTransformation = if (isPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-            )
-        }
-    }
-}
-
 @Preview
 @Composable
-private fun EyePasswordIconButtonPrivatePreview() {
+private fun EyePasswordIconButtonPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         Surface {
             TextField(
                 value = "password",

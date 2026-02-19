@@ -33,6 +33,7 @@ import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.ToolbarPopupWindow
 import org.mozilla.fenix.utils.getAppNightMode
 import java.lang.ref.WeakReference
+import com.google.android.material.R as materialR
 
 /**
  * A wrapper over [BrowserToolbar] to allow extra customisation and behavior.
@@ -235,7 +236,7 @@ class BrowserToolbarView(
         )
         val separatorColor = ContextCompat.getColor(
             context,
-            ThemeManager.resolveAttribute(R.attr.borderPrimary, context),
+            ThemeManager.resolveAttribute(materialR.attr.colorOutlineVariant, context),
         )
 
         toolbar.display.colors = toolbar.display.colors.copy(

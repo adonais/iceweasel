@@ -333,7 +333,7 @@ nsHTTPCompressConv::OnStopRequest(nsIRequest* request, nsresult aStatus) {
   // Bug 1886237 : TRRServiceChannel calls OnStopRequest OMT
   // MOZ_ASSERT(NS_IsMainThread());
   LOG(("nsHttpCompresssConv %p onstop %" PRIx32 " mDispatchToMainThread %d\n",
-       this, static_cast<uint32_t>(aStatus), mDispatchToMainThread));
+       this, static_cast<uint32_t>(aStatus), bool(mDispatchToMainThread)));
 
   // Framing integrity is enforced for content-encoding: gzip, but not for
   // content-encoding: deflate. Note that gzip vs deflate is NOT determined
@@ -894,7 +894,7 @@ nsresult nsHTTPCompressConv::do_OnDataAvailable(nsIRequest* request,
   LOG(
       ("nsHttpCompressConv %p do_OnDataAvailable mDispatchToMainThread %d "
        "count %u",
-       this, mDispatchToMainThread, count));
+       this, bool(mDispatchToMainThread), count));
   if (count == 0) {
     // Never send 0-byte OnDataAvailables; imglib at least barfs on them and
     // they're not useful
@@ -1099,43 +1099,49 @@ uint32_t nsHTTPCompressConv::check_header(nsIInputStream* iStr,
 
 NS_IMETHODIMP
 nsHTTPCompressConv::CheckListenerChain() {
-  if (XRE_IsContentProcess() &&
-      StaticPrefs::network_decompression_off_mainthread2()) {
-    // handle decompression OMT always.  If the chain needs to be MT,
-    // we'll determine that in OnStartRequest and dispatch to MT
-    return NS_OK;
-  }
+  MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIThreadRetargetableStreamListener> listener;
   {
     MutexAutoLock lock(mMutex);
     listener = do_QueryInterface(mListener);
   }
-  if (!listener) {
-    return NS_ERROR_NO_INTERFACE;
+
+  nsresult rv = NS_ERROR_NO_INTERFACE;
+  if (listener) {
+    rv = listener->CheckListenerChain();
   }
 
-  return listener->CheckListenerChain();
+  // handle decompression OMT always.  If the chain needs to be MT,
+  // we'll determine that in OnStartRequest and dispatch to MT
+  bool alwaysOMT = XRE_IsContentProcess() &&
+                   StaticPrefs::network_decompression_off_mainthread2();
+
+  if (NS_FAILED(rv) && alwaysOMT) {
+    mDispatchToMainThread = true;
+    return NS_OK;
+  }
+
+  return rv;
 }
 
 NS_IMETHODIMP
 nsHTTPCompressConv::OnDataFinished(nsresult aStatus) {
-  nsCOMPtr<nsIThreadRetargetableStreamListener> listener;
+  if (mDispatchToMainThread && !NS_IsMainThread()) {
+    // If this is called off main thread, but the listener can only
+    // handle calls on the main thread, then just return.
+    // Also important - never QI the listener off main thread
+    // if mDispatchToMainThread is true, because the listener
+    // might be JS implemented and won't support that.
+    return NS_OK;
+  }
 
+  nsCOMPtr<nsIThreadRetargetableStreamListener> listener;
   {
     MutexAutoLock lock(mMutex);
     listener = do_QueryInterface(mListener);
   }
 
   if (listener) {
-    if (mDispatchToMainThread && !NS_IsMainThread()) {
-      nsCOMPtr<nsIRunnable> handler = NS_NewRunnableFunction(
-          "dispatch", [listener{std::move(listener)}, aStatus]() {
-            (void)listener->OnDataFinished(aStatus);
-          });
-
-      return NS_DispatchToMainThread(handler);
-    }
-
     return listener->OnDataFinished(aStatus);
   }
 

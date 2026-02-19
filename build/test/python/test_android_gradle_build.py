@@ -167,6 +167,12 @@ def assert_all_task_statuses(objdir, acceptable_statuses, always_executed_tasks=
             # which get timestamps updated by the mach tasks above. Takes 0.000 seconds so not
             # a performance issue, but will be resolved when mach tasks get proper Gradle dependencies.
             ":geckoview:generateDebugAssets",
+            # Always executes because suppressUselessCastInSafeArgs sets `outputs.upToDateWhen { false }`.
+            # We could try using a marker file otherwise, but the task runtime is negligible and the added
+            # complexity doesn't seem worth it for what should only be a short-term workaround until Google
+            # fixes the upstream Navigation bug that led to it being added in the first place.
+            ":fenix:generateSafeArgsDebug",
+            ":fenix:suppressUselessCastInSafeArgs",
         ]
 
     build_metrics = get_test_run_build_metrics(objdir)
@@ -180,13 +186,13 @@ def assert_all_task_statuses(objdir, acceptable_statuses, always_executed_tasks=
         actual_status = task.get("status")
 
         if task_name in always_executed_tasks:
-            assert (
-                actual_status == "EXECUTED"
-            ), f"Task {task_name} should always execute, got '{actual_status}'"
+            assert actual_status == "EXECUTED", (
+                f"Task {task_name} should always execute, got '{actual_status}'"
+            )
         else:
-            assert (
-                actual_status in acceptable_statuses
-            ), f"Task {task_name} had status '{actual_status}', expected one of {acceptable_statuses}"
+            assert actual_status in acceptable_statuses, (
+                f"Task {task_name} had status '{actual_status}', expected one of {acceptable_statuses}"
+            )
 
 
 def assert_ordered_task_outcomes(objdir, ordered_expected_task_statuses):
@@ -213,18 +219,18 @@ def assert_ordered_task_outcomes(objdir, ordered_expected_task_statuses):
     assert not missing_tasks, f"Tasks not found in build metrics: {missing_tasks}"
 
     # Check order matches expectation
-    assert (
-        task_order == expected_order
-    ), f"Task execution order mismatch. Expected: {expected_order}, Got: {task_order}"
+    assert task_order == expected_order, (
+        f"Task execution order mismatch. Expected: {expected_order}, Got: {task_order}"
+    )
 
     # Check statuses for each task
     task_lookup = {task.get("path"): task for task in metrics_tasks}
     for task_name, expected_status in ordered_expected_task_statuses:
         task_info = task_lookup[task_name]
         actual_status = task_info.get("status")
-        assert (
-            actual_status == expected_status
-        ), f"Task {task_name} had status '{actual_status}', expected '{expected_status}'"
+        assert actual_status == expected_status, (
+            f"Task {task_name} had status '{actual_status}', expected '{expected_status}'"
+        )
 
 
 def test_artifact_build(objdir, mozconfig, run_mach):
@@ -254,21 +260,17 @@ def test_artifact_build(objdir, mozconfig, run_mach):
 
 
 def test_minify_fenix_incremental_build(objdir, mozconfig, run_mach):
-    """Verify that minifyFenixReleaseWithR8 is UP-TO-DATE on a subsequent
+    """Verify that minifyReleaseWithR8 is UP-TO-DATE on a subsequent
     run when there are no code changes.
     """
 
     # Ensure a clean state
-    assert_success(*run_mach(["gradle", ":fenix:cleanMinifyFenixReleaseWithR8"]))
-    assert_success(*run_mach(["gradle", ":fenix:minifyFenixReleaseWithR8"]))
-    assert_ordered_task_outcomes(
-        objdir, [(":fenix:minifyFenixReleaseWithR8", "EXECUTED")]
-    )
+    assert_success(*run_mach(["gradle", ":fenix:cleanMinifyReleaseWithR8"]))
+    assert_success(*run_mach(["gradle", ":fenix:minifyReleaseWithR8"]))
+    assert_ordered_task_outcomes(objdir, [(":fenix:minifyReleaseWithR8", "EXECUTED")])
 
-    assert_success(*run_mach(["gradle", ":fenix:minifyFenixReleaseWithR8"]))
-    assert_ordered_task_outcomes(
-        objdir, [(":fenix:minifyFenixReleaseWithR8", "UP-TO-DATE")]
-    )
+    assert_success(*run_mach(["gradle", ":fenix:minifyReleaseWithR8"]))
+    assert_ordered_task_outcomes(objdir, [(":fenix:minifyReleaseWithR8", "UP-TO-DATE")])
 
 
 def test_geckoview_build(objdir, mozconfig, run_mach):

@@ -2,8 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-export const TYPE_ICO = "image/x-icon";
-export const TYPE_SVG = "image/svg+xml";
+const TYPE_ICO = "image/x-icon";
+const TYPE_SVG = "image/svg+xml";
+
+export { TYPE_ICO, TYPE_SVG };
+
+// SVG images are send as raw data URLs from the content process to the parent.
+// The raw data: URL should NOT be used directly when displaying, but instead wrapped with a moz-remote-image: for safe re-encoding!
+export const SVG_DATA_URI_PREFIX = `data:${TYPE_SVG};base64,`;
 
 // URL schemes that we don't want to load and convert to data URLs.
 export const TRUSTED_FAVICON_SCHEMES = Object.freeze([
@@ -11,6 +17,18 @@ export const TRUSTED_FAVICON_SCHEMES = Object.freeze([
   "about",
   "resource",
 ]);
+
+// Creates a moz-remote-image: URL wrapping the specified URL.
+function getMozRemoteImageURL(imageUrl, size) {
+  let params = new URLSearchParams({
+    url: imageUrl,
+    width: size,
+    height: size,
+  });
+  return "moz-remote-image://?" + params;
+}
+
+export { getMozRemoteImageURL };
 
 /**
  * Converts a Blob into a data: URL.
@@ -27,3 +45,9 @@ export function blobAsDataURL(blob) {
     reader.readAsDataURL(blob);
   });
 }
+
+// Shim for tabbrowser.js that uses `defineESModuleGetters`.
+export let FaviconUtils = {
+  SVG_DATA_URI_PREFIX,
+  getMozRemoteImageURL,
+};

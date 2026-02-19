@@ -7,7 +7,6 @@ from xdg_config_home_test_case import XdgConfigHomeTestCase
 
 
 class TestXdgConfigHomeNew(XdgConfigHomeTestCase):
-
     def test_profile_dir(self):
         self.client.navigate(self.about_support)
 

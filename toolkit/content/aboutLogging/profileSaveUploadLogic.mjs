@@ -30,7 +30,7 @@ function uploadProfileUrl() {
  * YYYYMMDDHHMMSS, that can be used in a file name.
  *
  * @param {Date} date
- * @reurns {string}
+ * @returns {string}
  */
 function getStringifiedDateAndTime(date) {
   const pad = val => String(val).padStart(2, "0");

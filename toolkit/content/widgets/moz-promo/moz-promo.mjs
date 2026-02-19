@@ -21,6 +21,7 @@ export default class MozPromo extends MozLitElement {
   static queries = {
     actionsSlot: "slot[name=actions]",
     supportLinkSlot: "slot[name=support-link]",
+    actionsSupportWrapper: ".actions-and-support-link-wrapper",
   };
 
   static properties = {
@@ -41,6 +42,15 @@ export default class MozPromo extends MozLitElement {
     if (changedProperties.has("imageSrc") && this.imageSrc) {
       this.style.setProperty("--promo-image-url", `url("${this.imageSrc}")`);
     }
+  }
+
+  handleSlotChange() {
+    let hasActions = this.actionsSlot.assignedNodes().length;
+    let hasSupport = this.supportLinkSlot.assignedNodes().length;
+    this.actionsSupportWrapper.classList.toggle(
+      "active",
+      hasActions || hasSupport
+    );
   }
 
   headingTemplate() {
@@ -67,8 +77,11 @@ export default class MozPromo extends MozLitElement {
           ${this.headingTemplate()}
           <p class="message">
             ${this.message}<span class="actions-and-support-link-wrapper">
-              <slot name="actions"></slot>
-              <slot name="support-link"></slot>
+              <slot name="actions" @slotchange=${this.handleSlotChange}></slot>
+              <slot
+                name="support-link"
+                @slotchange=${this.handleSlotChange}
+              ></slot>
             </span>
           </p>
         </div>

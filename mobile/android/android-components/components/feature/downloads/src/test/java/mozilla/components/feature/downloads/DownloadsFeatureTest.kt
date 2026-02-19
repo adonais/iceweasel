@@ -1449,7 +1449,6 @@ class DownloadsFeatureTest {
         )
 
         doReturn(arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE)).`when`(downloadManager).permissions
-        doReturn(testContext.packageName).`when`(spy(ourApp)).packageName
         doReturn(dialog).`when`(fragmentManager).findFragmentByTag(DownloadAppChooserDialog.FRAGMENT_TAG)
         doReturn(consumeDownloadUseCase).`when`(downloadsUseCases).consumeDownload
 

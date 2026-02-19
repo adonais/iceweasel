@@ -84,7 +84,9 @@ class RootViewController: UIViewController {
 
         geckoview.session = session
 
-        if !homepage.isEmpty {
+        if let testUrl = ProcessInfo.processInfo.environment["MOZ_TEST_URL"] {
+            browse(to: testUrl)
+        } else if !homepage.isEmpty {
             browse(to: homepage)
         }
     }
@@ -197,7 +199,10 @@ extension RootViewController: ContentDelegate {
 
     func onFocusRequest(session: GeckoSession) {}
 
-    func onCloseRequest(session: GeckoSession) {}
+    func onCloseRequest(session: GeckoSession) {
+        session.close()
+        geckoview.session = nil
+    }
 
     func onFullScreen(session: GeckoSession, fullScreen: Bool) {}
 

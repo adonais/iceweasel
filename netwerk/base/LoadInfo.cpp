@@ -1769,6 +1769,14 @@ void LoadInfo::SetIsFromProcessingFrameAttributes() {
   mIsFromProcessingFrameAttributes = true;
 }
 
+dom::ReferrerPolicy LoadInfo::GetFrameReferrerPolicySnapshot() const {
+  return mFrameReferrerPolicySnapshot;
+}
+
+void LoadInfo::SetFrameReferrerPolicySnapshot(dom::ReferrerPolicy aPolicy) {
+  mFrameReferrerPolicySnapshot = aPolicy;
+}
+
 NS_IMETHODIMP
 LoadInfo::GetResultPrincipalURI(nsIURI** aURI) {
   *aURI = do_AddRef(mResultPrincipalURI).take();

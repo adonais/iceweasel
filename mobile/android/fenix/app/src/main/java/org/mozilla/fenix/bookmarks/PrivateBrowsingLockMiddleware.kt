@@ -6,7 +6,7 @@ package org.mozilla.fenix.bookmarks
 
 import androidx.annotation.VisibleForTesting
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.components.AppStore
 
 /**
@@ -27,7 +27,7 @@ internal class PrivateBrowsingLockMiddleware(
     internal var pendingAction: BookmarksAction? = null
 
     override fun invoke(
-        context: MiddlewareContext<BookmarksState, BookmarksAction>,
+        store: Store<BookmarksState, BookmarksAction>,
         next: (BookmarksAction) -> Unit,
         action: BookmarksAction,
     ) {

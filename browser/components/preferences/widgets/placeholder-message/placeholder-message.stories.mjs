@@ -21,10 +21,10 @@ export default {
     status: "in-development",
     fluent: `
 placeholder-message-label =
-  .label = You are not signed in
+  .label = You’re not signed in
 placeholder-message-label-description =
-  .label = You are not signed in
-  .description = With a Mozilla account, you can sync your bookmarks, history, tabs, passwords, add-ons, and settings across all your devices.
+  .label = You’re not signed in
+  .description = Sign in to keep your data private, encrypted, and instantly accessible everywhere you use Firefox.
     `,
   },
 };

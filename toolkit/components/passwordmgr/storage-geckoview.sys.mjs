@@ -61,6 +61,10 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
+  async modifyLoginAsync(_oldLogin, _newLoginData) {
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
+
   recordPasswordUse(login) {
     lazy.GeckoViewAutocomplete.onLoginPasswordUsed(
       lazy.LoginEntry.fromLoginInfo(login)
@@ -70,7 +74,7 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
   /**
    * Returns a promise resolving to an array of all saved logins that can be decrypted.
    *
-   * @resolve {nsILoginInfo[]}
+   * @returns {Promise<nsILoginInfo[]>}
    */
   getAllLogins(includeDeleted) {
     return this._getLoginsAsync({}, includeDeleted);

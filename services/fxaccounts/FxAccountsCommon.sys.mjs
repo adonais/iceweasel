@@ -151,7 +151,13 @@ export let COMMAND_FIREFOX_VIEW = "fxaccounts:firefox_view";
 // be stored. This branch will be reset on account signout and signin.
 export let PREF_ACCOUNT_ROOT = "identity.fxaccounts.account.";
 
-export let PREF_LAST_FXA_USER = "identity.fxaccounts.lastSignedInUserHash";
+// Where we store the hashed uid of the previous user.
+export let PREF_LAST_FXA_USER_UID =
+  "identity.fxaccounts.lastSignedInUserIdHash";
+// Where we used to store the hashed email of the previous user. We now store the
+// uid, but need to migrate from this.
+export let PREF_LAST_FXA_USER_EMAIL =
+  "identity.fxaccounts.lastSignedInUserHash";
 export let PREF_REMOTE_PAIRING_URI = "identity.fxaccounts.remote.pairing.uri";
 
 // Server errno.

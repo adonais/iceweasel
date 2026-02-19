@@ -33,7 +33,7 @@ RadioGroupContainer::RadioGroupContainer() = default;
 
 RadioGroupContainer::~RadioGroupContainer() {
   for (const auto& group : mRadioGroups) {
-    for (const auto& button : group.GetData()->mRadioButtons.AsList()) {
+    for (const auto& button : group.GetData()->mRadioButtons.AsSpan()) {
       // When the radio group container is being cycle-collected, any remaining
       // connected buttons will also be in the process of being cycle-collected.
       // Here, we unset the button's reference to the container so that when it
@@ -53,11 +53,10 @@ void RadioGroupContainer::Traverse(RadioGroupContainer* tmp,
         cb, "mRadioGroups entry->mSelectedRadioButton");
     cb.NoteXPCOMChild(ToSupports(radioGroup->mSelectedRadioButton));
 
-    uint32_t i, count = radioGroup->mRadioButtons->Length();
-    for (i = 0; i < count; ++i) {
+    for (auto& button : radioGroup->mRadioButtons.AsSpan()) {
       NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(
           cb, "mRadioGroups entry->mRadioButtons[i]");
-      cb.NoteXPCOMChild(ToSupports(radioGroup->mRadioButtons->ElementAt(i)));
+      cb.NoteXPCOMChild(ToSupports(button));
     }
   }
 }
@@ -96,12 +95,12 @@ nsresult RadioGroupContainer::GetNextRadioButton(
       return NS_ERROR_FAILURE;
     }
   }
-  int32_t index = radioGroup->mRadioButtons->IndexOf(currentRadio);
+  int32_t index = radioGroup->mRadioButtons.IndexOf(currentRadio);
   if (index < 0) {
     return NS_ERROR_FAILURE;
   }
 
-  int32_t numRadios = static_cast<int32_t>(radioGroup->mRadioButtons->Length());
+  int32_t numRadios = static_cast<int32_t>(radioGroup->mRadioButtons.Length());
   RefPtr<HTMLInputElement> radio;
   do {
     if (aPrevious) {
@@ -111,7 +110,7 @@ nsresult RadioGroupContainer::GetNextRadioButton(
     } else if (++index >= numRadios) {
       index = 0;
     }
-    radio = radioGroup->mRadioButtons->ElementAt(index);
+    radio = radioGroup->mRadioButtons.ElementAt(index);
   } while ((radio->Disabled() || !radio->GetPrimaryFrame() ||
             !radio->GetPrimaryFrame()->IsVisibleConsideringAncestors()) &&
            radio != currentRadio);
@@ -123,7 +122,7 @@ nsresult RadioGroupContainer::GetNextRadioButton(
 HTMLInputElement* RadioGroupContainer::GetFirstRadioButton(
     const nsAString& aName) {
   nsRadioGroupStruct* radioGroup = GetOrCreateRadioGroup(aName);
-  for (HTMLInputElement* radio : radioGroup->mRadioButtons.AsList()) {
+  for (HTMLInputElement* radio : radioGroup->mRadioButtons.AsSpan()) {
     if (!radio->Disabled() && radio->GetPrimaryFrame() &&
         radio->GetPrimaryFrame()->IsVisibleConsideringAncestors()) {
       return radio;
@@ -146,7 +145,7 @@ void RadioGroupContainer::RemoveFromRadioGroup(const nsAString& aName,
                                                HTMLInputElement* aRadio) {
   nsRadioGroupStruct* radioGroup = GetOrCreateRadioGroup(aName);
   MOZ_ASSERT(
-      radioGroup->mRadioButtons->Contains(aRadio),
+      radioGroup->mRadioButtons.Contains(aRadio),
       "Attempting to remove radio button from group it is not a part of!");
 
   radioGroup->mRadioButtons.RemoveElement(*aRadio);
@@ -200,9 +199,9 @@ nsRadioGroupStruct* RadioGroupContainer::GetOrCreateRadioGroup(
   return mRadioGroups.GetOrInsertNew(aName);
 }
 
-const nsTArray<RefPtr<HTMLInputElement>>&
-RadioGroupContainer::GetButtonsInGroup(nsRadioGroupStruct* aGroup) const {
-  return aGroup->mRadioButtons.AsList();
+Span<const RefPtr<HTMLInputElement>> RadioGroupContainer::GetButtonsInGroup(
+    nsRadioGroupStruct* aGroup) const {
+  return aGroup->mRadioButtons.AsSpan();
 }
 
 }  // namespace mozilla::dom

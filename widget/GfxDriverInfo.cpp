@@ -11,7 +11,7 @@
 
 using namespace mozilla::widget;
 
-MOZ_CONSTINIT RefPtr<GfxDeviceFamily>
+constinit RefPtr<GfxDeviceFamily>
     GfxDriverInfo::sDeviceFamilies[static_cast<size_t>(DeviceFamily::Max)];
 nsString*
     GfxDriverInfo::sWindowProtocol[static_cast<size_t>(WindowProtocol::Max)];

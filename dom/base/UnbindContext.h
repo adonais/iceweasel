@@ -22,16 +22,21 @@ struct MOZ_STACK_CLASS UnbindContext final {
   // The parent node of the subtree we're unbinding from.
   nsINode* GetOriginalSubtreeParent() const { return mOriginalParent; }
 
-  explicit UnbindContext(nsINode& aRoot)
-      : mRoot(aRoot), mOriginalParent(aRoot.GetParentNode()) {}
+  explicit UnbindContext(nsINode& aRoot, const BatchRemovalState* aBatchState)
+      : mRoot(aRoot),
+        mOriginalParent(aRoot.GetParentNode()),
+        mBatchState(aBatchState) {}
 
   void SetIsMove(bool aIsMove) { mIsMove = aIsMove; }
 
   bool IsMove() const { return mIsMove; }
 
+  const BatchRemovalState* GetBatchRemovalState() const { return mBatchState; }
+
  private:
   nsINode& mRoot;
   nsINode* const mOriginalParent;
+  const BatchRemovalState* const mBatchState = nullptr;
 
   // If set, we're moving the shadow-including inclusive ancestor.
   bool mIsMove = false;

@@ -104,6 +104,8 @@ skip-if = [
 
 ["test_geckoinstance.py"]
 
+["test_generate_test_report.py"]
+
 ["test_get_computed_label.py"]
 
 ["test_get_computed_role.py"]

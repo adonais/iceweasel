@@ -88,6 +88,7 @@
 #include "nsRange.h"
 #include "nsString.h"
 #include "nsStyleUtil.h"
+#include "nsTableCellFrame.h"
 #include "nsTextNode.h"
 #include "nsThreadUtils.h"
 #include "nscore.h"
@@ -1102,13 +1103,33 @@ nsMapRuleToAttributesFunc nsGenericHTMLElement::GetAttributeMappingFunction()
   return &MapCommonAttributesInto;
 }
 
-static constexpr nsAttrValue::EnumTableEntry kDivAlignTable[] = {
-    {"left", StyleTextAlign::MozLeft},
-    {"right", StyleTextAlign::MozRight},
-    {"center", StyleTextAlign::MozCenter},
-    {"middle", StyleTextAlign::MozCenter},
-    {"justify", StyleTextAlign::Justify},
+// Represents a possible value for the "align" attribute. Different
+// elements may support different subsets of these values and map
+// them into different CSS properties.
+enum class HTMLAlignValue : uint8_t {
+  Left,
+  Right,
+  Top,
+  Middle,
+  Bottom,
+  Center,
+  Baseline,
+  TextTop,
+  AbsMiddle,
+  AbsCenter,
+  AbsBottom,
+  Justify,
 };
+
+// clang-format off
+static constexpr nsAttrValue::EnumTableEntry kDivAlignTable[] = {
+    {"left", HTMLAlignValue::Left},
+    {"right", HTMLAlignValue::Right},
+    {"center", HTMLAlignValue::Center},
+    {"middle", HTMLAlignValue::Middle},
+    {"justify", HTMLAlignValue::Justify},
+};
+// clang-format on
 
 static constexpr nsAttrValue::EnumTableEntry kFrameborderTable[] = {
     {"yes", FrameBorderProperty::Yes},
@@ -1129,69 +1150,37 @@ static constexpr nsAttrValue::EnumTableEntry kScrollingTable[] = {
 };
 
 static constexpr nsAttrValue::EnumTableEntry kTableVAlignTable[] = {
-    {"top", StyleVerticalAlignKeyword::Top},
-    {"middle", StyleVerticalAlignKeyword::Middle},
-    {"bottom", StyleVerticalAlignKeyword::Bottom},
-    {"baseline", StyleVerticalAlignKeyword::Baseline},
+    {"top", TableCellAlignment::Top},
+    {"middle", TableCellAlignment::Middle},
+    {"bottom", TableCellAlignment::Bottom},
+    {"baseline", TableCellAlignment::Baseline},
 };
 
 static constexpr nsAttrValue::EnumTableEntry kAlignTable[] = {
-    {"left", StyleTextAlign::Left},
-    {"right", StyleTextAlign::Right},
-
-    {"top", StyleVerticalAlignKeyword::Top},
-    {"middle", StyleVerticalAlignKeyword::MozMiddleWithBaseline},
-
-    // Intentionally not bottom.
-    {"bottom", StyleVerticalAlignKeyword::Baseline},
-
-    {"center", StyleVerticalAlignKeyword::MozMiddleWithBaseline},
-    {"baseline", StyleVerticalAlignKeyword::Baseline},
-
-    {"texttop", StyleVerticalAlignKeyword::TextTop},
-    {"absmiddle", StyleVerticalAlignKeyword::Middle},
-    {"abscenter", StyleVerticalAlignKeyword::Middle},
-    {"absbottom", StyleVerticalAlignKeyword::Bottom},
+    {"left", HTMLAlignValue::Left},
+    {"right", HTMLAlignValue::Right},
+    {"top", HTMLAlignValue::Top},
+    {"middle", HTMLAlignValue::Middle},
+    {"bottom", HTMLAlignValue::Bottom},
+    {"center", HTMLAlignValue::Center},
+    {"baseline", HTMLAlignValue::Baseline},
+    {"texttop", HTMLAlignValue::TextTop},
+    {"absmiddle", HTMLAlignValue::AbsMiddle},
+    {"abscenter", HTMLAlignValue::AbsCenter},
+    {"absbottom", HTMLAlignValue::AbsBottom},
 };
 
 bool nsGenericHTMLElement::ParseAlignValue(const nsAString& aString,
                                            nsAttrValue& aResult) {
-  static_assert(uint8_t(StyleTextAlign::Left) !=
-                    uint8_t(StyleVerticalAlignKeyword::Top) &&
-                uint8_t(StyleTextAlign::Left) !=
-                    uint8_t(StyleVerticalAlignKeyword::MozMiddleWithBaseline) &&
-                uint8_t(StyleTextAlign::Left) !=
-                    uint8_t(StyleVerticalAlignKeyword::Baseline) &&
-                uint8_t(StyleTextAlign::Left) !=
-                    uint8_t(StyleVerticalAlignKeyword::TextTop) &&
-                uint8_t(StyleTextAlign::Left) !=
-                    uint8_t(StyleVerticalAlignKeyword::Middle) &&
-                uint8_t(StyleTextAlign::Left) !=
-                    uint8_t(StyleVerticalAlignKeyword::Bottom));
-
-  static_assert(uint8_t(StyleTextAlign::Right) !=
-                    uint8_t(StyleVerticalAlignKeyword::Top) &&
-                uint8_t(StyleTextAlign::Right) !=
-                    uint8_t(StyleVerticalAlignKeyword::MozMiddleWithBaseline) &&
-                uint8_t(StyleTextAlign::Right) !=
-                    uint8_t(StyleVerticalAlignKeyword::Baseline) &&
-                uint8_t(StyleTextAlign::Right) !=
-                    uint8_t(StyleVerticalAlignKeyword::TextTop) &&
-                uint8_t(StyleTextAlign::Right) !=
-                    uint8_t(StyleVerticalAlignKeyword::Middle) &&
-                uint8_t(StyleTextAlign::Right) !=
-                    uint8_t(StyleVerticalAlignKeyword::Bottom));
-
   return aResult.ParseEnumValue(aString, kAlignTable, false);
 }
 
 //----------------------------------------
 
 static constexpr nsAttrValue::EnumTableEntry kTableHAlignTable[] = {
-    {"left", StyleTextAlign::Left},
-    {"right", StyleTextAlign::Right},
-    {"center", StyleTextAlign::Center},
-    {"justify", StyleTextAlign::Justify},
+    {"left", HTMLAlignValue::Left},
+    {"right", HTMLAlignValue::Right},
+    {"center", HTMLAlignValue::Center},
 };
 
 bool nsGenericHTMLElement::ParseTableHAlignValue(const nsAString& aString,
@@ -1203,12 +1192,12 @@ bool nsGenericHTMLElement::ParseTableHAlignValue(const nsAString& aString,
 
 // This table is used for td, th, tr, col, thead, tbody and tfoot.
 static constexpr nsAttrValue::EnumTableEntry kTableCellHAlignTable[] = {
-    {"left", StyleTextAlign::MozLeft},
-    {"right", StyleTextAlign::MozRight},
-    {"center", StyleTextAlign::MozCenter},
-    {"justify", StyleTextAlign::Justify},
-    {"middle", StyleTextAlign::MozCenter},
-    {"absmiddle", StyleTextAlign::Center},
+    {"left", HTMLAlignValue::Left},
+    {"right", HTMLAlignValue::Right},
+    {"center", HTMLAlignValue::Center},
+    {"justify", HTMLAlignValue::Justify},
+    {"middle", HTMLAlignValue::Middle},
+    {"absmiddle", HTMLAlignValue::AbsMiddle},
 };
 
 bool nsGenericHTMLElement::ParseTableCellHAlignValue(const nsAString& aString,
@@ -1399,45 +1388,154 @@ void nsGenericHTMLElement::MapImageAlignAttributeInto(
     MappedDeclarationsBuilder& aBuilder) {
   const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::align);
   if (value && value->Type() == nsAttrValue::eEnum) {
-    int32_t align = value->GetEnumValue();
-    if (!aBuilder.PropertyIsSet(eCSSProperty_float)) {
-      if (align == uint8_t(StyleTextAlign::Left)) {
+    switch (HTMLAlignValue(value->GetEnumValue())) {
+      case HTMLAlignValue::Left:
         aBuilder.SetKeywordValue(eCSSProperty_float, StyleFloat::Left);
-      } else if (align == uint8_t(StyleTextAlign::Right)) {
+        break;
+      case HTMLAlignValue::Right:
         aBuilder.SetKeywordValue(eCSSProperty_float, StyleFloat::Right);
-      }
-    }
-    if (!aBuilder.PropertyIsSet(eCSSProperty_vertical_align)) {
-      switch (align) {
-        case uint8_t(StyleTextAlign::Left):
-        case uint8_t(StyleTextAlign::Right):
-          break;
-        default:
-          aBuilder.SetKeywordValue(eCSSProperty_vertical_align, align);
-          break;
-      }
+        break;
+      case HTMLAlignValue::TextTop:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::TextTop);
+        break;
+      case HTMLAlignValue::Top:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Top);
+        break;
+      case HTMLAlignValue::Middle:
+      case HTMLAlignValue::Center:
+        aBuilder.SetKeywordValue(
+            eCSSProperty_vertical_align,
+            StyleVerticalAlignKeyword::MozMiddleWithBaseline);
+        break;
+      case HTMLAlignValue::AbsMiddle:
+      case HTMLAlignValue::AbsCenter:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Middle);
+        break;
+      case HTMLAlignValue::AbsBottom:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Bottom);
+        break;
+      case HTMLAlignValue::Bottom:  // Intentionally mapped to `baseline`
+      case HTMLAlignValue::Baseline:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Baseline);
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unexpected align value");
+        break;
     }
   }
 }
 
 void nsGenericHTMLElement::MapDivAlignAttributeInto(
     MappedDeclarationsBuilder& aBuilder) {
-  if (!aBuilder.PropertyIsSet(eCSSProperty_text_align)) {
-    // align: enum
-    const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::align);
-    if (value && value->Type() == nsAttrValue::eEnum)
-      aBuilder.SetKeywordValue(eCSSProperty_text_align, value->GetEnumValue());
+  const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::align);
+  if (value && value->Type() == nsAttrValue::eEnum) {
+    switch (HTMLAlignValue(value->GetEnumValue())) {
+      case HTMLAlignValue::Left:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::MozLeft);
+        break;
+      case HTMLAlignValue::Right:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::MozRight);
+        break;
+      case HTMLAlignValue::Center:
+      case HTMLAlignValue::Middle:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::MozCenter);
+        break;
+      case HTMLAlignValue::Justify:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::Justify);
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unexpected align value");
+        break;
+    }
   }
 }
 
-void nsGenericHTMLElement::MapVAlignAttributeInto(
+void nsGenericHTMLElement::MapTableVAlignAttributeInto(
     MappedDeclarationsBuilder& aBuilder) {
-  if (!aBuilder.PropertyIsSet(eCSSProperty_vertical_align)) {
-    // align: enum
-    const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::valign);
-    if (value && value->Type() == nsAttrValue::eEnum)
-      aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
-                               value->GetEnumValue());
+  const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::valign);
+  if (value && value->Type() == nsAttrValue::eEnum) {
+    switch (TableCellAlignment(value->GetEnumValue())) {
+      case TableCellAlignment::Top:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Top);
+        break;
+      case TableCellAlignment::Middle:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Middle);
+        break;
+      case TableCellAlignment::Bottom:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Bottom);
+        break;
+      case TableCellAlignment::Baseline:
+        aBuilder.SetKeywordValue(eCSSProperty_vertical_align,
+                                 StyleVerticalAlignKeyword::Baseline);
+        break;
+    }
+  }
+}
+
+void nsGenericHTMLElement::MapTableHAlignAttributeInto(
+    MappedDeclarationsBuilder& aBuilder) {
+  const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::align);
+  if (value && value->Type() == nsAttrValue::eEnum) {
+    switch (HTMLAlignValue(value->GetEnumValue())) {
+      case HTMLAlignValue::Center:
+        aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_left);
+        aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_right);
+        break;
+      case HTMLAlignValue::Left:
+        aBuilder.SetKeywordValue(eCSSProperty_float, StyleFloat::Left);
+        break;
+      case HTMLAlignValue::Right:
+        aBuilder.SetKeywordValue(eCSSProperty_float, StyleFloat::Right);
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unexpected align value");
+        break;
+    }
+  }
+}
+
+void nsGenericHTMLElement::MapTableCellHAlignAttributeInto(
+    MappedDeclarationsBuilder& aBuilder) {
+  const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::align);
+  if (value && value->Type() == nsAttrValue::eEnum) {
+    switch (HTMLAlignValue(value->GetEnumValue())) {
+      case HTMLAlignValue::Left:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::MozLeft);
+        break;
+      case HTMLAlignValue::Right:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::MozRight);
+        break;
+      case HTMLAlignValue::Center:
+      case HTMLAlignValue::Middle:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::MozCenter);
+        break;
+      case HTMLAlignValue::AbsMiddle:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::Center);
+        break;
+      case HTMLAlignValue::Justify:
+        aBuilder.SetKeywordValue(eCSSProperty_text_align,
+                                 StyleTextAlign::Justify);
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unexpected align value");
+        break;
+    }
   }
 }
 
@@ -3404,92 +3502,223 @@ void nsGenericHTMLElement::ShowPopover(const ShowPopoverOptions& aOptions,
   return ShowPopoverInternal(MOZ_KnownLive(source), aRv);
 }
 
+// https://html.spec.whatwg.org/#show-popover
 void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
                                                ErrorResult& aRv) {
+  // 1. If the result of running check popover validity given element, false,
+  // throwExceptions, and null is false, then return.
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, nullptr, aRv)) {
     return;
   }
+
+  // 2. Let document be element's node document.
   RefPtr<Document> document = OwnerDoc();
 
+  // 3. Assert: element's popover trigger is null.
   MOZ_ASSERT(!GetPopoverData() || !GetPopoverData()->GetInvoker());
+
+  // 4. Assert: element is not in document's top layer.
   MOZ_ASSERT(!OwnerDoc()->TopLayerContains(*this));
 
-  bool wasShowingOrHiding = GetPopoverData()->IsShowingOrHiding();
+  // 5. Let nestedShow be element's popover showing or hiding.
+  bool nestedShow = GetPopoverData()->IsShowingOrHiding();
+
+  // 6. Let fireEvents be the boolean negation of nestedShow.
+  bool fireEvents = !nestedShow;
+
+  // 7. Set element's popover showing or hiding to true.
   GetPopoverData()->SetIsShowingOrHiding(true);
+
+  // 8. Let cleanupShowingFlag be the following steps:
   auto cleanupShowingFlag = MakeScopeExit([&]() {
+    // 8.1. If nestedShow is false, then set element's popover showing or hiding
+    // to false.
     if (auto* popoverData = GetPopoverData()) {
-      popoverData->SetIsShowingOrHiding(wasShowingOrHiding);
+      popoverData->SetIsShowingOrHiding(nestedShow);
     }
   });
 
-  // Fire beforetoggle event and re-check popover validity.
+  // 9. If the result of firing an event named beforetoggle, using ToggleEvent,
+  // with the cancelable attribute initialized to true, the oldState attribute
+  // initialized to "closed", the newState attribute initialized to "open", and
+  // the source attribute initialized to source at element is false, then run
+  // cleanupShowingFlag and return.
   if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns, aSource)) {
     return;
   }
+
+  // 10. If the result of running check popover validity given element, false,
+  // throwExceptions, and document is false, then run cleanupShowingFlag and
+  // return.
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
     return;
   }
 
+  // 11. Let shouldRestoreFocus be false.
   bool shouldRestoreFocus = false;
+
+  // 12. Let originalType be the current state of element's popover attribute.
+  auto originalType = GetPopoverAttributeState();
+
+  // 13. Let stackToAppendTo be null.
+  PopoverAttributeState stackToAppendTo = PopoverAttributeState::None;
+
+  // 14. Let autoAncestor be the result of running the topmost popover ancestor
+  // algorithm given element, document's showing auto popover list, source, and
+  // true.
+  // todo(keithamus) ^ popover hint
+
+  // 15. Let hintAncestor be the result of running the topmost popover ancestor
+  // algorithm given element, document's showing hint popover list, source, and
+  // true.
+  // todo(keithamus): ^ popover hint
+
   nsWeakPtr originallyFocusedElement;
-  if (IsAutoPopover()) {
-    auto originalState = GetPopoverAttributeState();
-    RefPtr<nsINode> ancestor = GetTopmostPopoverAncestor(aSource, true);
+
+  // 16. If originalType is the Auto state, then:
+  if (originalType == PopoverAttributeState::Auto) {
+    // 16.1. Run close entire popover list given document's showing hint popover
+    // list, shouldRestoreFocus, and fireEvents.
+    // todo(keithamus): ^ popover hint
+
+    // 16.2. Let ancestor be the result of running the topmost popover ancestor
+    // algorithm given element, document's showing auto popover list, source,
+    // and true.
+    RefPtr<nsINode> ancestor =
+        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, aSource, true);
+
+    // 16.3. If ancestor is null, then set ancestor to document.
     if (!ancestor) {
       ancestor = document;
     }
-    document->HideAllPopoversUntil(*ancestor, false,
-                                   /* aFireEvents = */ !wasShowingOrHiding);
-    if (GetPopoverAttributeState() != originalState) {
+
+    // 16.4. Run hide all popovers until given ancestor, shouldRestoreFocus, and
+    // fireEvents.
+    document->HideAllPopoversUntil(*ancestor, false, fireEvents);
+
+    // 16.5. Set stackToAppendTo to "auto".
+    stackToAppendTo = PopoverAttributeState::Auto;
+  }
+
+  // 17. If originalType is the Hint state, then:
+  // 17.1. If hintAncestor is not null, then:
+  // 17.1.1. Run hide all popovers until given hintAncestor, shouldRestoreFocus,
+  // and fireEvents.
+  // 17.1.2. Set stackToAppendTo to "hint".
+  // 17.2. Otherwise:
+  // 17.2.1. Run close entire popover list given document's showing hint popover
+  // list, shouldRestoreFocus, and fireEvents.
+  // 17.2.2. If autoAncestor is not
+  // null, then:
+  // 17.2.2.1 Run hide all popovers until given autoAncestor,
+  // shouldRestoreFocus, and fireEvents.
+  // 17.2.2.2 Set stackToAppendTo to "auto".
+  // 17.2.3. Otherwise, set stackToAppendTo to "hint".
+  // todo(keithamus): ^ popover hint
+
+  // 18. If originalType is Auto or Hint, then:
+  // todo(keithamus): ^ popover hint
+  if (originalType == PopoverAttributeState::Auto) {
+    // 18.1. Assert: stackToAppendTo is not null.
+    MOZ_ASSERT(stackToAppendTo != PopoverAttributeState::None);
+
+    // 18.2. If originalType is not equal to the value of element's popover
+    // attribute, then:
+    if (originalType != GetPopoverAttributeState()) {
+      // 18.2.1. If throwExceptions is true, then throw an
+      // "InvalidStateError" DOMException.
       aRv.ThrowInvalidStateError(
           "The value of the popover attribute was changed while hiding the "
           "popover.");
+      // 18.2.2. Return.
       return;
     }
 
-    // TODO: Handle if document changes, see
-    // https://github.com/whatwg/html/issues/9177
-    if (!IsAutoPopover() ||
-        !CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
+    // 18.3. If the result of running check popover validity given element,
+    // false, throwExceptions, and document is false, then run
+    // cleanupShowingFlag and return.
+    if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
       return;
     }
 
-    shouldRestoreFocus = !document->GetTopmostAutoPopover();
-    // Let originallyFocusedElement be document's focused area of the document's
-    // DOM anchor.
-    if (nsIContent* unretargetedFocus =
-            document->GetUnretargetedFocusedContent()) {
-      originallyFocusedElement =
-          do_GetWeakReference(unretargetedFocus->AsElement());
-    }
+    // 18.4. If the result of running topmost
+    // auto or hint popover on document is null, then set shouldRestoreFocus to
+    // true.
+    shouldRestoreFocus =
+        !document->GetTopmostPopoverOf(PopoverAttributeState::Auto);
 
+    // 18.5. If stackToAppendTo is "auto":
+    if (stackToAppendTo == PopoverAttributeState::Auto) {
+      // 18.5.1. Assert: document's showing auto popover list does not contain
+      // element.
+      MOZ_ASSERT(
+          !document->PopoverListOf(PopoverAttributeState::Auto).Contains(this));
+
+      // 18.5.2. Set element's opened in popover mode to "auto".
+      GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Auto);
+    } else {
+      // 18.5.- Otherwise:
+      // 18.5.-.1. Assert: stackToAppendTo is "hint".
+      // 18.5.-.2. Assert: document's showing hint popover list does not contain
+      // element.
+      // 18.5.-.3. Set element's opened in popover mode to "hint".
+      // todo(keithamus): ^ popover hint
+      MOZ_ASSERT_UNREACHABLE("stackToAppendTo was not Auto!");
+    }
+    // 18.6. Set element's popover close watcher to the result of establishing a
+    // close watcher given element's relevant global object, with:
+    //       - cancelAction being to return true.
+    //       - closeAction being to hide a popover given element, true, true,
+    //       false, and null.
+    //       - getEnabledState being to return true.
     if (StaticPrefs::dom_closewatcher_enabled()) {
       GetPopoverData()->EnsureCloseWatcher(this);
     }
   }
 
+  // 20. Let originallyFocusedElement be document's focused area of the
+  // document's DOM anchor.
+  if (nsIContent* unretargetedFocus =
+          document->GetUnretargetedFocusedContent()) {
+    originallyFocusedElement =
+        do_GetWeakReference(unretargetedFocus->AsElement());
+  }
+
+  // 21. Add an element to the top layer given element.
   document->AddPopoverToTopLayer(*this);
 
   PopoverPseudoStateUpdate(true, true);
 
   {
     auto* popoverData = GetPopoverData();
+    // 18.5.2. Set element's opened in popover mode to "auto".
+    popoverData->SetOpenedInMode(GetPopoverAttributeState());
+    // 22. Set element's popover visibility state to showing.
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Showing);
+    // 23. Set element's popover trigger to source.
     popoverData->SetInvoker(aSource);
     if (aSource && aSource->IsHTMLElement()) {
       aSource->SetAssociatedPopover(*this);
     }
   }
 
-  // Run the popover focusing steps given element.
+  // 25. Run the popover focusing steps given element.
   FocusPopover();
+
+  // 26. If shouldRestoreFocus is true and element's popover attribute is not
+  // in the No Popover state, then set element's previously focused element to
+  // originallyFocusedElement.
   if (shouldRestoreFocus &&
       GetPopoverAttributeState() != PopoverAttributeState::None) {
     GetPopoverData()->SetPreviouslyFocusedElement(originallyFocusedElement);
   }
 
-  // Queue popover toggle event task.
+  // 27. Queue a popover toggle event task given element, "closed", "open",
+  // and source.
   QueuePopoverEventTask(PopoverVisibilityState::Hidden, aSource);
+
+  // 28. Run cleanupShowingFlag.
+  // XXX (see MakeScopeExit above).
 }
 
 void nsGenericHTMLElement::HidePopoverWithoutRunningScript() {
@@ -3634,10 +3863,10 @@ void nsGenericHTMLElement::FocusCandidate(Element* aControl,
 
 already_AddRefed<ElementInternals> nsGenericHTMLElement::AttachInternals(
     ErrorResult& aRv) {
-  // ElementInternals is only available on autonomous custom element, so throws
-  // an error by default. The spec steps are implemented in HTMLElement because
-  // ElementInternals needs to hold a pointer to HTMLElement in order to forward
-  // form operation to it.
+  // ElementInternals is only available on autonomous custom element, so
+  // throws an error by default. The spec steps are implemented in HTMLElement
+  // because ElementInternals needs to hold a pointer to HTMLElement in order
+  // to forward form operation to it.
   aRv.ThrowNotSupportedError(nsPrintfCString(
       "Cannot attach ElementInternals to a customized built-in or non-custom "
       "element "

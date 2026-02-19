@@ -17,13 +17,6 @@ if ("@mozilla.org/xre/app-info;1" in Cc) {
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-const MOZ_COMPATIBILITY_NIGHTLY = ![
-  "aurora",
-  "beta",
-  "release",
-  "esr",
-].includes(AppConstants.MOZ_UPDATE_CHANNEL);
-
 const INTL_LOCALES_CHANGED = "intl:app-locales-changed";
 const XPIPROVIDER_BLOCKLIST_ATTENTION_UPDATED =
   "xpi-provider:blocklist-attention-updated";
@@ -57,7 +50,7 @@ const UPDATE_REQUEST_VERSION = 2;
 
 const BRANCH_REGEXP = /^([^\.]+\.[0-9]+[a-z]*).*/gi;
 const PREF_EM_CHECK_COMPATIBILITY_BASE = "extensions.checkCompatibility";
-var PREF_EM_CHECK_COMPATIBILITY = MOZ_COMPATIBILITY_NIGHTLY
+var PREF_EM_CHECK_COMPATIBILITY = AppConstants.NIGHTLY_BUILD
   ? PREF_EM_CHECK_COMPATIBILITY_BASE + ".nightly"
   : undefined;
 
@@ -689,7 +682,7 @@ var AddonManagerInternal = {
         );
       }
 
-      if (!MOZ_COMPATIBILITY_NIGHTLY) {
+      if (!AppConstants.NIGHTLY_BUILD) {
         PREF_EM_CHECK_COMPATIBILITY =
           PREF_EM_CHECK_COMPATIBILITY_BASE +
           "." +
@@ -3014,9 +3007,9 @@ var AddonManagerInternal = {
    *
    * @param  aIDs
    *         The array of IDs to retrieve
-   * @return {Promise}
-   * @resolves The array of found add-ons.
-   * @rejects  Never
+   * @returns {Promise}
+   *   Resolves to the array of found add-ons.
+   * @rejects Never
    * @throws if the aIDs argument is not specified
    */
   getAddonsByIDs(aIDs) {
@@ -3089,9 +3082,9 @@ var AddonManagerInternal = {
    * @param  aTypes
    *         An optional array of types to retrieve. Each type is a string name
    *
-   * @resolve {addons: Array, fullData: bool}
-   *          fullData is true if addons contains all the data we have on those
-   *          addons. It is false if addons only contains partial data.
+   * @returns {Promise<{addons: Array, fullData: boolean}>}
+   *   fullData is true if addons contains all the data we have on those addons.
+   *   It is false if addons only contains partial data.
    */
   async getActiveAddons(aTypes) {
     if (!gStarted) {
@@ -4334,7 +4327,7 @@ export var AddonManager = {
     return gStartedPromise.promise;
   },
 
-  /** @constructor */
+  /** @class */
   init() {
     this._stateToString = new Map();
     for (let [name, value] of this._states) {
@@ -5974,8 +5967,8 @@ AMTelemetry = {
   },
 
   /**
-   * @params {object} opts
-   * @params {nsIURI} opts.displayURI
+   * @param {object} opts
+   * @param {nsIURI} opts.displayURI
    */
   recordSuspiciousSiteEvent({ displayURI }) {
     let site = displayURI?.displayHost ?? "(unknown)";

@@ -62,6 +62,11 @@ main {
   }
 }
 
+// Edge case for if search is turned off (compact layout)
+.no-search main {
+  margin-block-start: var(--space-xxlarge);
+}
+
 .ds-outer-wrapper-search-alignment {
   main {
     // This override is to ensure while Discovery Stream loads,

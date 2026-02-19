@@ -1258,9 +1258,6 @@ static PRFileDesc* nsSSLIOLayerImportFD(PRFileDesc* fd,
   if (!sslSock) {
     return nullptr;
   }
-  if (SSL_SetPKCS11PinArg(sslSock, infoObject) != SECSuccess) {
-    return nullptr;
-  }
   if (SSL_HandshakeCallback(sslSock, HandshakeCallback, infoObject) !=
       SECSuccess) {
     return nullptr;

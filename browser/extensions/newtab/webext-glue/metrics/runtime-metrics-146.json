@@ -1,0 +1,68 @@
+{
+  "metrics": {
+    "newtab_content": {
+      "top_sites_click": {
+        "description": "Recorded when a top sites tile is clicked.\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": [
+            "advertiser_name",
+            "frecency_boosted",
+            "frecency_boosted_has_exposure",
+            "is_sponsored",
+            "position",
+            "tile_id",
+            "visible_topsites"
+          ]
+        },
+        "lifetime": "ping",
+        "pings": ["newtab-content"],
+        "type": "event"
+      },
+      "top_sites_dismiss": {
+        "description": "Recorded when the \"Dismiss\" menu item in the three-dots menu of a topsite is clicked.\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": [
+            "advertiser_name",
+            "is_sponsored",
+            "position",
+            "tile_id"
+          ]
+        },
+        "lifetime": "ping",
+        "pings": ["newtab-content"],
+        "type": "event"
+      },
+      "top_sites_impression": {
+        "description": "Recorded when a top sites tile is visible to the user.\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": [
+            "advertiser_name",
+            "frecency_boosted",
+            "frecency_boosted_has_exposure",
+            "is_sponsored",
+            "position",
+            "tile_id",
+            "visible_topsites"
+          ]
+        },
+        "lifetime": "ping",
+        "pings": ["newtab-content"],
+        "type": "event"
+      },
+      "top_sites_show_privacy_click": {
+        "description": "Recorded when the \"Our sponsors & your privacy\" menu item in the three-dots menu of a topsite is clicked.\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": ["advertiser_name", "position", "tile_id"]
+        },
+        "lifetime": "ping",
+        "pings": ["newtab-content"],
+        "type": "event"
+      }
+    }
+  },
+  "pings": {}
+}

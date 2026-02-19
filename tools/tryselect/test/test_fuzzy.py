@@ -71,7 +71,7 @@ def test_query_paths_no_chunks(run_mach, capfd, show_chunk_numbers):
 
 
 @pytest.mark.skipif(os.name == "nt", reason="fzf not installed on host")
-@pytest.mark.parametrize("variant", ["", "spi-nw"])
+@pytest.mark.parametrize("variant", [""])
 def test_query_paths_variants(monkeypatch, run_mach, capfd, variant):
     # Freeze time to avoid test failures due to an expired variant
     datetime_mock = MagicMock(wraps=datetime.datetime)
@@ -79,6 +79,11 @@ def test_query_paths_variants(monkeypatch, run_mach, capfd, variant):
         "2025-08-01", "%Y-%m-%d"
     )
     monkeypatch.setattr(datetime, "datetime", datetime_mock)
+    # also patch the cache key since faking the date means we don't want to reuse another graph
+    monkeypatch.setattr(
+        "tryselect.tasks.cache_key",
+        lambda attr, *args: f"{attr}-test_query_paths_variants",
+    )
 
     if variant:
         variant = "-%s" % variant
@@ -99,7 +104,6 @@ def test_query_paths_variants(monkeypatch, run_mach, capfd, variant):
         expected = ["test-linux2404-64/debug-mochitest-browser-chrome%s-*" % variant]
     else:
         expected = [
-            "test-linux2404-64/debug-mochitest-browser-chrome-spi-nw-*",
             "test-linux2404-64/debug-mochitest-browser-chrome-swr-*",
         ]
 

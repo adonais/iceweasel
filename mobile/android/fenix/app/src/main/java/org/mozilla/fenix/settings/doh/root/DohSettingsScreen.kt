@@ -35,10 +35,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Dropdown
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.MenuItem
@@ -56,6 +56,7 @@ import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.settings.doh.Provider
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -529,10 +530,12 @@ private fun ExceptionsRow(onExceptionsClicked: () -> Unit) {
     )
 }
 
+@FlexibleWindowPreview
 @Composable
-@FlexibleWindowLightDarkPreview
-private fun DohScreenDefaultProviderPreview() {
-    FirefoxTheme {
+private fun DohScreenDefaultProviderPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         val provider = Provider.BuiltIn(
             url = "https://mozilla.cloudflare-dns.com/dns-query",
             name = "Cloudflare",
@@ -558,10 +561,12 @@ private fun DohScreenDefaultProviderPreview() {
     }
 }
 
+@FlexibleWindowPreview
 @Composable
-@FlexibleWindowLightDarkPreview
-private fun DohScreenCustomProviderPreview() {
-    FirefoxTheme {
+private fun DohScreenCustomProviderPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         val provider = Provider.Custom(url = "")
         DohSettingsScreen(
             state = DohSettingsState(
@@ -583,64 +588,12 @@ private fun DohScreenCustomProviderPreview() {
     }
 }
 
-@Composable
 @Preview
-private fun DohScreenDefaultProviderPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
-        val provider = Provider.BuiltIn(
-            url = "https://mozilla.cloudflare-dns.com/dns-query",
-            name = "Cloudflare",
-            default = true,
-        )
-        DohSettingsScreen(
-            state = DohSettingsState(
-                allProtectionLevels = listOf(
-                    ProtectionLevel.Default,
-                    ProtectionLevel.Increased,
-                    ProtectionLevel.Max,
-                    ProtectionLevel.Off,
-                ),
-                selectedProtectionLevel = ProtectionLevel.Increased,
-                providers = listOf(
-                    provider,
-                ),
-                selectedProvider = provider,
-                exceptionsList = emptyList(),
-                isUserExceptionValid = true,
-            ),
-        )
-    }
-}
-
 @Composable
-@Preview
-private fun DohScreenCustomProviderPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
-        val provider = Provider.Custom(url = "")
-        DohSettingsScreen(
-            state = DohSettingsState(
-                allProtectionLevels = listOf(
-                    ProtectionLevel.Default,
-                    ProtectionLevel.Increased,
-                    ProtectionLevel.Max,
-                    ProtectionLevel.Off,
-                ),
-                selectedProtectionLevel = ProtectionLevel.Increased,
-                providers = listOf(
-                    provider,
-                ),
-                selectedProvider = provider,
-                exceptionsList = emptyList(),
-                isUserExceptionValid = true,
-            ),
-        )
-    }
-}
-
-@Composable
-@PreviewLightDark
-private fun AlertDialogAddCustomProviderPreview() {
-    FirefoxTheme {
+private fun AlertDialogAddCustomProviderPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         AlertDialogAddCustomProvider(
             customProviderUrl = "https://mozilla.cloudflare-dns.com/dns-query",
             customProviderErrorState = CustomProviderErrorState.Valid,
@@ -650,10 +603,12 @@ private fun AlertDialogAddCustomProviderPreview() {
     }
 }
 
-@Composable
 @Preview
-private fun AlertDialogAddCustomProviderPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@Composable
+private fun AlertDialogAddCustomProviderErrorPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         AlertDialogAddCustomProvider(
             customProviderUrl = "https://mozilla.cloudflare-dns.com/dns-query",
             customProviderErrorState = CustomProviderErrorState.Invalid,

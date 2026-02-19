@@ -279,20 +279,7 @@ static RefPtr<MediaByteBuffer> ExtractCodecConfig(
   if (!aAsAVCC) {
     return config;
   }
-  // Convert to avcC.
-  nsTArray<AnnexB::NALEntry> paramSets;
-  AnnexB::ParseNALEntries(
-      Span<const uint8_t>(config->Elements(), config->Length()), paramSets);
-
-  auto avcc = MakeRefPtr<MediaByteBuffer>();
-  AnnexB::NALEntry& sps = paramSets.ElementAt(0);
-  AnnexB::NALEntry& pps = paramSets.ElementAt(1);
-  const uint8_t* spsPtr = config->Elements() + sps.mOffset;
-  H264::WriteExtraData(
-      avcc, spsPtr[1], spsPtr[2], spsPtr[3],
-      Span<const uint8_t>(spsPtr, sps.mSize),
-      Span<const uint8_t>(config->Elements() + pps.mOffset, pps.mSize));
-  return avcc;
+  return AnnexB::ExtractExtraDataForAVCC(*config);
 }
 
 void AndroidDataEncoder::ProcessOutput(
@@ -339,8 +326,15 @@ void AndroidDataEncoder::ProcessOutput(
 
   if (size > 0) {
     if ((flags & java::sdk::MediaCodec::BUFFER_FLAG_CODEC_CONFIG) != 0) {
-      mConfigData = ExtractCodecConfig(aBuffer, offset, size,
-                                       IsAVCC(mConfig.mCodecSpecific));
+      auto configData = ExtractCodecConfig(aBuffer, offset, size,
+                                           IsAVCC(mConfig.mCodecSpecific));
+      if (configData) {
+        mConfigData = std::move(configData);
+      } else {
+        MOZ_ASSERT_UNREACHABLE("Bad config data!");
+        Error(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                          "fail to extract codec config"_ns));
+      }
       return;
     }
     RefPtr<MediaRawData> output;

@@ -7,7 +7,6 @@
 
 #include <assert.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <cstddef>
 #include <cstring>
 

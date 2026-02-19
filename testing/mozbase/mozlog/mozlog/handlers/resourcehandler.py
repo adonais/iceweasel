@@ -11,7 +11,7 @@ class ResourceHandler(LogHandler):
     """Handler class for recording a resource usage profile."""
 
     def __init__(self, command_context, **kwargs):
-        super(ResourceHandler, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 

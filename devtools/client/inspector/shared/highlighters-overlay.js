@@ -848,7 +848,7 @@ class HighlightersOverlay {
    *
    * @param  {NodeFront} node
    *         The NodeFront of the flexbox container element to highlight.
-   * @param. {string} trigger
+   * @param {string} trigger
    *         String name matching "layout", "markup" or "rule" to indicate where the
    *         flexbox highlighter was toggled on from. "layout" represents the layout view.
    *         "markup" represents the markup view. "rule" represents the rule view.
@@ -870,7 +870,7 @@ class HighlightersOverlay {
    *         The NodeFront of the flexbox container element to highlight.
    * @param  {object} options
    *         Object used for passing options to the flexbox highlighter.
-   * @param. {string} trigger
+   * @param {string} trigger
    *         String name matching "layout", "markup" or "rule" to indicate where the
    *         flexbox highlighter was toggled on from. "layout" represents the layout view.
    *         "markup" represents the markup view. "rule" represents the rule view.
@@ -936,7 +936,7 @@ class HighlightersOverlay {
    *
    * @param  {NodeFront} node
    *         The NodeFront of the grid container element to highlight.
-   * @param. {string} trigger
+   * @param {string} trigger
    *         String name matching "grid", "markup" or "rule" to indicate where the
    *         grid highlighter was toggled on from. "grid" represents the grid view.
    *         "markup" represents the markup view. "rule" represents the rule view.

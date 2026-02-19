@@ -8,6 +8,7 @@
 const FEATURE_PREF = "privacy.globalprivacycontrol.functionality.enabled";
 const MODE_PREF = "privacy.globalprivacycontrol.enabled";
 const DNT_PREF = "privacy.donottrackheader.enabled";
+const RELAY_PREF = "signon.firefoxRelay.feature";
 
 const SECTION_ID = "nonTechnicalPrivacyGroup";
 const GPC_CHECKBOX_ID = "gpcEnabled";
@@ -28,6 +29,7 @@ add_task(async function test_section_hidden_when_feature_flag_disabled() {
     set: [
       [FEATURE_PREF, false],
       [MODE_PREF, false],
+      [RELAY_PREF, undefined],
     ],
   });
 

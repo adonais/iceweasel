@@ -6,8 +6,6 @@
 
 #include "PoisonIOInterposer.h"
 
-#include <stdio.h>
-
 #include <io.h>
 #include <windows.h>
 #include <winternl.h>

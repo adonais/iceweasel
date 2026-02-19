@@ -100,31 +100,27 @@ class ABIArgGenerator : public ABIArgGeneratorShared {
   ABIArg& current() { return current_; }
 };
 
-// These registers may be volatile or nonvolatile.
+// See "ABI special registers" in Assembler-shared.h for more information.
 static constexpr Register ABINonArgReg0 = eax;
 static constexpr Register ABINonArgReg1 = ebx;
 static constexpr Register ABINonArgReg2 = ecx;
 static constexpr Register ABINonArgReg3 = edx;
 
-// This register may be volatile or nonvolatile. Avoid xmm7 which is the
-// ScratchDoubleReg_.
+// See "ABI special registers" in Assembler-shared.h for more information.
+// Avoid xmm7 which is the ScratchDoubleReg_.
 static constexpr FloatRegister ABINonArgDoubleReg =
     FloatRegister(X86Encoding::xmm0, FloatRegisters::Double);
 
-// These registers may be volatile or nonvolatile.
-// Note: these three registers are all guaranteed to be different
+// See "ABI special registers" in Assembler-shared.h for more information.
 static constexpr Register ABINonArgReturnReg0 = ecx;
 static constexpr Register ABINonArgReturnReg1 = edi;
 static constexpr Register ABINonVolatileReg = ebx;
 
-// This register is guaranteed to be clobberable during the prologue and
-// epilogue of an ABI call which must preserve both ABI argument, return
-// and non-volatile registers.
+// See "ABI special registers" in Assembler-shared.h for more information.
 static constexpr Register ABINonArgReturnVolatileReg = ecx;
 
-// Instance pointer argument register for WebAssembly functions. This must not
-// alias any other register used for passing function arguments or return
-// values. Preserved by WebAssembly functions.
+// See "ABI special registers" in Assembler-shared.h, and "The WASM ABIs" in
+// WasmFrame.h for more information.
 static constexpr Register InstanceReg = esi;
 
 // Registers used for asm.js/wasm table calls. These registers must be disjoint

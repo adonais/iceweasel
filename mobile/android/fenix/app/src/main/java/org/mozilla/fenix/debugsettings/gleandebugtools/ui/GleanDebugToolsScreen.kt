@@ -23,9 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.Dropdown
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
@@ -39,6 +39,7 @@ import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsState
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Glean Debug Tools UI that allows for glean test pings to be sent.
@@ -274,30 +275,11 @@ private fun getPingDropdownMenu(
 }
 
 @Composable
-@FlexibleWindowLightDarkPreview
-private fun GleanDebugToolsPreview() {
-    FirefoxTheme {
-        GleanDebugToolsScreen(
-            gleanDebugToolsStore = GleanDebugToolsStore(
-                initialState = GleanDebugToolsState(
-                    logPingsToConsoleEnabled = false,
-                    debugViewTag = "",
-                    pingTypes = listOf(
-                        "metrics",
-                        "baseline",
-                        "ping type 3",
-                        "ping type 4",
-                    ),
-                ),
-            ),
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun GleanDebugToolsPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+@FlexibleWindowPreview
+private fun GleanDebugToolsPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         GleanDebugToolsScreen(
             gleanDebugToolsStore = GleanDebugToolsStore(
                 initialState = GleanDebugToolsState(

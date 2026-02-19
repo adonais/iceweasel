@@ -11,12 +11,14 @@ mod image;
 mod index;
 mod instructions;
 mod layout;
+mod mesh_shader;
 mod ray;
 mod recyclable;
 mod selection;
 mod subgroup;
 mod writer;
 
+pub use mesh_shader::{MeshReturnInfo, MeshReturnMember};
 pub use spirv::{Capability, SourceLanguage};
 
 use alloc::{string::String, vec::Vec};
@@ -52,6 +54,7 @@ struct LogicalLayout {
     function_definitions: Vec<Word>,
 }
 
+#[derive(Clone)]
 struct Instruction {
     op: spirv::Op,
     wc: u32,
@@ -78,6 +81,8 @@ pub enum Error {
     Override,
     #[error(transparent)]
     ResolveArraySizeError(#[from] crate::proc::ResolveArraySizeError),
+    #[error("module requires SPIRV-{0}.{1}, which isn't supported")]
+    SpirvVersionTooLow(u8, u8),
     #[error("mapping of {0:?} is missing")]
     MissingBinding(crate::ResourceBinding),
 }
@@ -144,6 +149,8 @@ struct ResultMember {
 struct EntryPointContext {
     argument_ids: Vec<Word>,
     results: Vec<ResultMember>,
+    task_payload_variable_id: Option<Word>,
+    mesh_state: Option<MeshReturnInfo>,
 }
 
 #[derive(Default)]
@@ -151,6 +158,12 @@ struct Function {
     signature: Option<Instruction>,
     parameters: Vec<FunctionArgument>,
     variables: crate::FastHashMap<Handle<crate::LocalVariable>, LocalVariable>,
+    /// Map from a local variable that is a ray query to its u32 tracker.
+    ray_query_initialization_tracker_variables:
+        crate::FastHashMap<Handle<crate::LocalVariable>, LocalVariable>,
+    /// Map from a local variable that is a ray query to its tracker for the t max.
+    ray_query_t_max_tracker_variables:
+        crate::FastHashMap<Handle<crate::LocalVariable>, LocalVariable>,
     /// List of local variables used as a counters to ensure that all loops are bounded.
     force_loop_bounding_vars: Vec<LocalVariable>,
 
@@ -339,6 +352,36 @@ impl NumericType {
     }
 }
 
+/// A cooperative type, for use in [`LocalType`].
+#[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
+enum CooperativeType {
+    Matrix {
+        columns: crate::CooperativeSize,
+        rows: crate::CooperativeSize,
+        scalar: crate::Scalar,
+        role: crate::CooperativeRole,
+    },
+}
+
+impl CooperativeType {
+    const fn from_inner(inner: &crate::TypeInner) -> Option<Self> {
+        match *inner {
+            crate::TypeInner::CooperativeMatrix {
+                columns,
+                rows,
+                scalar,
+                role,
+            } => Some(Self::Matrix {
+                columns,
+                rows,
+                scalar,
+                role,
+            }),
+            _ => None,
+        }
+    }
+}
+
 /// A SPIR-V type constructed during code generation.
 ///
 /// This is the variant of [`LookupType`] used to represent types that might not
@@ -388,6 +431,7 @@ impl NumericType {
 enum LocalType {
     /// A numeric type.
     Numeric(NumericType),
+    Cooperative(CooperativeType),
     Pointer {
         base: Word,
         class: spirv::StorageClass,
@@ -445,11 +489,23 @@ struct LookupFunctionType {
     return_type_id: Word,
 }
 
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+enum LookupRayQueryFunction {
+    Initialize,
+    Proceed,
+    GenerateIntersection,
+    ConfirmIntersection,
+    GetVertexPositions { committed: bool },
+    GetIntersection { committed: bool },
+    Terminate,
+}
+
 #[derive(Debug)]
 enum Dimension {
     Scalar,
     Vector,
     Matrix,
+    CooperativeMatrix,
 }
 
 /// Key used to look up an operation which we have wrapped in a helper
@@ -685,6 +741,21 @@ struct BlockContext<'w> {
     expression_constness: ExpressionConstnessTracker,
 
     force_loop_bounding: bool,
+
+    /// Hash from an expression whose type is a ray query / pointer to a ray query to its tracker.
+    /// Note: this is sparse, so can't be a handle vec
+    ray_query_tracker_expr: crate::FastHashMap<Handle<crate::Expression>, RayQueryTrackers>,
+}
+
+#[derive(Clone, Copy)]
+struct RayQueryTrackers {
+    // Initialization tracker
+    initialized_tracker: Word,
+    // Tracks the t max from ray query initialize.
+    // Unlike HLSL, spir-v's equivalent getter for the current committed t has UB (instead of just
+    // returning t_max) if there was no previous hit (though in some places it treats the behaviour as
+    // defined), therefore we must track the tmax inputted into ray query initialize.
+    t_max_tracker: Word,
 }
 
 impl BlockContext<'_> {
@@ -741,6 +812,7 @@ pub struct Writer {
     /// The set of spirv extensions used.
     extensions_used: crate::FastIndexSet<&'static str>,
 
+    debug_strings: Vec<Instruction>,
     debugs: Vec<Instruction>,
     annotations: Vec<Instruction>,
     flags: WriterFlags,
@@ -773,12 +845,15 @@ pub struct Writer {
     // Just a temporary list of SPIR-V ids
     temp_list: Vec<Word>,
 
-    ray_get_committed_intersection_function: Option<Word>,
-    ray_get_candidate_intersection_function: Option<Word>,
+    ray_query_functions: crate::FastHashMap<LookupRayQueryFunction, Word>,
 
     /// F16 I/O polyfill manager for handling `f16` input/output variables
     /// when `StorageInputOutput16` capability is not available.
     io_f16_polyfills: f16_polyfill::F16IoPolyfill,
+
+    /// Non semantic debug printf extension `OpExtInstImport`
+    debug_printf: Option<Word>,
+    pub(crate) ray_query_initialization_tracking: bool,
 }
 
 bitflags::bitflags! {
@@ -810,6 +885,26 @@ bitflags::bitflags! {
         ///
         /// [`BuiltIn::FragDepth`]: crate::BuiltIn::FragDepth
         const CLAMP_FRAG_DEPTH = 0x10;
+
+        /// Instead of silently failing if the arguments to generate a ray query are
+        /// invalid, uses debug printf extension to print to the command line
+        ///
+        /// Note: VK_KHR_shader_non_semantic_info must be enabled. This will have no
+        /// effect if `options.ray_query_initialization_tracking` is set to false.
+        const PRINT_ON_RAY_QUERY_INITIALIZATION_FAIL = 0x20;
+    }
+}
+
+bitflags::bitflags! {
+    /// How far through a ray query are we
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub(super) struct RayQueryPoint: u32 {
+        /// Ray query has been successfully initialized.
+        const INITIALIZED = 1 << 0;
+        /// Proceed has been called on ray query.
+        const PROCEED = 1 << 1;
+        /// Proceed has returned false (have finished traversal).
+        const FINISHED_TRAVERSAL = 1 << 2;
     }
 }
 
@@ -867,6 +962,10 @@ pub struct Options<'a> {
     /// to think the number of iterations is bounded.
     pub force_loop_bounding: bool,
 
+    /// if set, ray queries will get a variable to track their state to prevent
+    /// misuse.
+    pub ray_query_initialization_tracking: bool,
+
     /// Whether to use the `StorageInputOutput16` capability for `f16` shader I/O.
     /// When false, `f16` I/O is polyfilled using `f32` types with conversions.
     pub use_storage_input_output_16: bool,
@@ -891,6 +990,7 @@ impl Default for Options<'_> {
             bounds_check_policies: BoundsCheckPolicies::default(),
             zero_initialize_workgroup_memory: ZeroInitializeWorkgroupMemoryMode::Polyfill,
             force_loop_bounding: true,
+            ray_query_initialization_tracking: true,
             use_storage_input_output_16: true,
             debug_info: None,
         }

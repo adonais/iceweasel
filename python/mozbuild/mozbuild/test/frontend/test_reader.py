@@ -289,9 +289,9 @@ class TestBuildReader(unittest.TestCase):
         )
 
         # Missing moz.build from missing intermediate directory.
-        paths = reader._find_relevant_mozbuilds(
-            ["d1/no-intermediate-moz-build/child/file"]
-        )
+        paths = reader._find_relevant_mozbuilds([
+            "d1/no-intermediate-moz-build/child/file"
+        ])
         self.assertEqual(
             paths,
             {
@@ -304,9 +304,9 @@ class TestBuildReader(unittest.TestCase):
         )
 
         # Lots of empty directories.
-        paths = reader._find_relevant_mozbuilds(
-            ["d1/parent-is-far/dir1/dir2/dir3/file"]
-        )
+        paths = reader._find_relevant_mozbuilds([
+            "d1/parent-is-far/dir1/dir2/dir3/file"
+        ])
         self.assertEqual(
             paths,
             {
@@ -319,9 +319,10 @@ class TestBuildReader(unittest.TestCase):
         )
 
         # Lots of levels.
-        paths = reader._find_relevant_mozbuilds(
-            ["d1/every-level/a/file", "d1/every-level/b/file"]
-        )
+        paths = reader._find_relevant_mozbuilds([
+            "d1/every-level/a/file",
+            "d1/every-level/b/file",
+        ])
         self.assertEqual(
             paths,
             {
@@ -354,9 +355,11 @@ class TestBuildReader(unittest.TestCase):
     def test_read_relevant_mozbuilds(self):
         reader = self.reader("reader-relevant-mozbuild")
 
-        paths, contexts = reader.read_relevant_mozbuilds(
-            ["d1/every-level/a/file", "d1/every-level/b/file", "d2/file"]
-        )
+        paths, contexts = reader.read_relevant_mozbuilds([
+            "d1/every-level/a/file",
+            "d1/every-level/b/file",
+            "d2/file",
+        ])
         self.assertEqual(len(paths), 3)
         self.assertEqual(len(contexts), 6)
 
@@ -387,13 +390,11 @@ class TestBuildReader(unittest.TestCase):
     def test_files_bug_component_static(self):
         reader = self.reader("files-info")
 
-        v = reader.files_info(
-            [
-                "bug_component/static/foo",
-                "bug_component/static/bar",
-                "bug_component/static/foo/baz",
-            ]
-        )
+        v = reader.files_info([
+            "bug_component/static/foo",
+            "bug_component/static/bar",
+            "bug_component/static/foo/baz",
+        ])
         self.assertEqual(len(v), 3)
         self.assertEqual(
             v["bug_component/static/foo"]["BUG_COMPONENT"],
@@ -420,13 +421,11 @@ class TestBuildReader(unittest.TestCase):
     def test_files_bug_component_different_matchers(self):
         reader = self.reader("files-info")
 
-        v = reader.files_info(
-            [
-                "bug_component/different-matchers/foo.jsm",
-                "bug_component/different-matchers/bar.cpp",
-                "bug_component/different-matchers/baz.misc",
-            ]
-        )
+        v = reader.files_info([
+            "bug_component/different-matchers/foo.jsm",
+            "bug_component/different-matchers/bar.cpp",
+            "bug_component/different-matchers/baz.misc",
+        ])
         self.assertEqual(len(v), 3)
 
         js_flags = v["bug_component/different-matchers/foo.jsm"]
@@ -445,14 +444,12 @@ class TestBuildReader(unittest.TestCase):
     def test_files_bug_component_final(self):
         reader = self.reader("files-info")
 
-        v = reader.files_info(
-            [
-                "bug_component/final/foo",
-                "bug_component/final/Makefile.in",
-                "bug_component/final/subcomponent/Makefile.in",
-                "bug_component/final/subcomponent/bar",
-            ]
-        )
+        v = reader.files_info([
+            "bug_component/final/foo",
+            "bug_component/final/Makefile.in",
+            "bug_component/final/subcomponent/Makefile.in",
+            "bug_component/final/subcomponent/bar",
+        ])
 
         self.assertEqual(
             v["bug_component/final/foo"]["BUG_COMPONENT"],
@@ -479,17 +476,15 @@ class TestBuildReader(unittest.TestCase):
 
     def test_schedules(self):
         reader = self.reader("schedules")
-        info = reader.files_info(
-            [
-                "win.and.osx",
-                "somefile",
-                "foo.win",
-                "foo.osx",
-                "subd/aa.py",
-                "subd/yaml.py",
-                "subd/win.js",
-            ]
-        )
+        info = reader.files_info([
+            "win.and.osx",
+            "somefile",
+            "foo.win",
+            "foo.osx",
+            "subd/aa.py",
+            "subd/yaml.py",
+            "subd/win.js",
+        ])
         # default: all exclusive, no inclusive
         self.assertEqual(info["somefile"]["SCHEDULES"].inclusive, [])
         self.assertEqual(

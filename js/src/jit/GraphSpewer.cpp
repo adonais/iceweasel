@@ -184,6 +184,9 @@ void GraphSpewer::spewMIR(MIRGraph* mir) {
       if (block->isSplitEdge()) {
         value("splitedge");
       }
+      if (*block == mir->osrBlock()) {
+        value("osr");
+      }
     }
     endList();
 

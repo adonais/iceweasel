@@ -11,6 +11,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   getPlacesSemanticHistoryManager:
     "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
+  // Domain fallback / workaround for general-category queries (games, movies, etc.)
+  SearchBrowsingHistoryDomainBoost:
+    "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistoryDomainBoost.sys.mjs",
 });
 
 /**
@@ -281,6 +284,31 @@ async function searchBrowsingHistorySemantic({
   for (let row of results) {
     rows.push(await buildHistoryRow(row));
   }
+
+  // Domain fallback for general-category queries (games, movies, news, etc.)
+  // Keep semantic ranking primary, only top-up if we have room.
+  if (rows.length < historyLimit) {
+    const domains =
+      lazy.SearchBrowsingHistoryDomainBoost.matchDomains(searchTerm);
+    if (domains?.length) {
+      const domainRows =
+        await lazy.SearchBrowsingHistoryDomainBoost.searchByDomains({
+          conn,
+          domains,
+          startTs,
+          endTs,
+          historyLimit: Math.max(historyLimit * 2, 200), // extra for dedupe
+          buildHistoryRow,
+        });
+
+      return lazy.SearchBrowsingHistoryDomainBoost.mergeDedupe(
+        rows,
+        domainRows,
+        historyLimit
+      );
+    }
+  }
+
   return rows;
 }
 
@@ -350,9 +378,9 @@ async function searchBrowsingHistoryBasic({ searchTerm, historyLimit }) {
  *  The search string. If null or empty, semantic search is skipped and
  *  results are filtered by time range and sorted by last_visit_date and frecency.
  * @param {string|null} params.startTs
- *  Optional ISO-8601 start timestamp (e.g. "2025-11-07T09:00:00-05:00").
+ *  Optional local ISO-8601 start timestamp (e.g. "2025-11-07T09:00:00").
  * @param {string|null} params.endTs
- *  Optional ISO-8601 end timestamp (e.g. "2025-11-07T09:00:00-05:00").
+ *  Optional local ISO-8601 end timestamp (e.g. "2025-11-07T09:00:00").
  * @param {number} params.historyLimit
  *  Maximum number of history results to return.
  * @returns {Promise<object>}

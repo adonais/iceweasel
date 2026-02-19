@@ -31,7 +31,6 @@ environment.  ``mach artifact`` ensures these modules are available, but other
 consumers will need to arrange this themselves.
 """
 
-
 import collections
 import functools
 import glob
@@ -277,8 +276,7 @@ class ArtifactJob:
                 )
         if self._tests_re and not tests_artifact:
             raise ValueError(
-                f'Expected tests archive matching "{self._tests_re}", but '
-                "found none!"
+                f'Expected tests archive matching "{self._tests_re}", but found none!'
             )
         if self._maven_zip_re and not maven_zip_artifact:
             raise ValueError(
@@ -330,11 +328,11 @@ class ArtifactJob:
 
         with self.get_writer(file=processed_filename, compress_level=5) as writer:
             reader = JarReader(filename)
-            for filename, entry in reader.entries.items():
+            for entry_filename, entry in reader.entries.items():
                 for pattern, (src_prefix, dest_prefix) in self.test_artifact_patterns:
-                    if not mozpath.match(filename, pattern):
+                    if not mozpath.match(entry_filename, pattern):
                         continue
-                    destpath = mozpath.relpath(filename, src_prefix)
+                    destpath = mozpath.relpath(entry_filename, src_prefix)
                     destpath = mozpath.join(dest_prefix, destpath)
                     self.log(
                         logging.DEBUG,
@@ -343,35 +341,37 @@ class ArtifactJob:
                         "Adding {destpath} to processed archive",
                     )
                     mode = entry["external_attr"] >> 16
-                    writer.add(destpath.encode("utf-8"), reader[filename], mode=mode)
+                    writer.add(
+                        destpath.encode("utf-8"), reader[entry_filename], mode=mode
+                    )
                     added_entry = True
                     break
 
-                if filename.endswith(".toml"):
+                if entry_filename.endswith(".toml"):
                     # The artifact build writes test .toml files into the object
                     # directory; they don't come from the upstream test archive.
                     self.log(
                         logging.DEBUG,
                         "artifact",
-                        {"filename": filename},
+                        {"filename": entry_filename},
                         "Skipping test INI file {filename}",
                     )
                     continue
 
                 for files_entry in OBJDIR_TEST_FILES.values():
                     origin_pattern = files_entry["pattern"]
-                    leaf_filename = filename
+                    leaf_filename = entry_filename
                     if "dest" in files_entry:
                         dest = files_entry["dest"]
                         origin_pattern = mozpath.join(dest, origin_pattern)
-                        leaf_filename = filename[len(dest) + 1 :]
-                    if mozpath.match(filename, origin_pattern):
+                        leaf_filename = entry_filename[len(dest) + 1 :]
+                    if mozpath.match(entry_filename, origin_pattern):
                         destpath = mozpath.join(
                             "..", files_entry["base"], leaf_filename
                         )
                         mode = entry["external_attr"] >> 16
                         writer.add(
-                            destpath.encode("utf-8"), reader[filename], mode=mode
+                            destpath.encode("utf-8"), reader[entry_filename], mode=mode
                         )
 
         if not added_entry:
@@ -384,15 +384,15 @@ class ArtifactJob:
         from mozbuild.action.test_archive import OBJDIR_TEST_FILES
 
         added_entry = False
-        for filename, entry in TarFinder(filename, stream):
+        for tar_entry_filename, entry in TarFinder(filename, stream):
             for (
                 pattern,
                 (src_prefix, dest_prefix),
             ) in self.test_artifact_patterns:
-                if not mozpath.match(filename, pattern):
+                if not mozpath.match(tar_entry_filename, pattern):
                     continue
 
-                destpath = mozpath.relpath(filename, src_prefix)
+                destpath = mozpath.relpath(tar_entry_filename, src_prefix)
                 destpath = mozpath.join(dest_prefix, destpath)
                 self.log(
                     logging.DEBUG,
@@ -405,25 +405,25 @@ class ArtifactJob:
                 added_entry = True
                 break
 
-            if filename.endswith(".toml"):
+            if tar_entry_filename.endswith(".toml"):
                 # The artifact build writes test .toml files into the object
                 # directory; they don't come from the upstream test archive.
                 self.log(
                     logging.DEBUG,
                     "artifact",
-                    {"filename": filename},
+                    {"filename": tar_entry_filename},
                     "Skipping test INI file {filename}",
                 )
                 continue
 
             for files_entry in OBJDIR_TEST_FILES.values():
                 origin_pattern = files_entry["pattern"]
-                leaf_filename = filename
+                leaf_filename = tar_entry_filename
                 if "dest" in files_entry:
                     dest = files_entry["dest"]
                     origin_pattern = mozpath.join(dest, origin_pattern)
-                    leaf_filename = filename[len(dest) + 1 :]
-                if mozpath.match(filename, origin_pattern):
+                    leaf_filename = tar_entry_filename[len(dest) + 1 :]
+                if mozpath.match(tar_entry_filename, origin_pattern):
                     destpath = mozpath.join("..", files_entry["base"], leaf_filename)
                     mode = entry.mode
                     writer.add(destpath.encode("utf-8"), entry.open(), mode=mode)
@@ -454,16 +454,16 @@ class ArtifactJob:
         self, filename, processed_filename, skip_compressed=False
     ):
         with self.get_writer(file=processed_filename, compress_level=5) as writer:
-            for filename, entry in self.iter_artifact_archive(filename):
-                if skip_compressed and filename.endswith(".gz"):
+            for archive_filename, entry in self.iter_artifact_archive(filename):
+                if skip_compressed and archive_filename.endswith(".gz"):
                     self.log(
                         logging.DEBUG,
                         "artifact",
-                        {"filename": filename},
+                        {"filename": archive_filename},
                         "Skipping compressed ELF debug symbol file {filename}",
                     )
                     continue
-                destpath = mozpath.join("crashreporter-symbols", filename)
+                destpath = mozpath.join("crashreporter-symbols", archive_filename)
                 self.log(
                     logging.INFO,
                     "artifact",
@@ -489,17 +489,17 @@ class ArtifactJob:
         dest_prefix = extra_archive["dest_prefix"]
 
         with self.get_writer(file=processed_filename, compress_level=5) as writer:
-            for filename, entry in self.iter_artifact_archive(filename):
-                if not filename.startswith(src_prefix):
+            for extra_filename, entry in self.iter_artifact_archive(filename):
+                if not extra_filename.startswith(src_prefix):
                     self.log(
                         logging.DEBUG,
                         "artifact",
-                        {"filename": filename, "src_prefix": src_prefix},
+                        {"filename": extra_filename, "src_prefix": src_prefix},
                         "Skipping extra archive item {filename} "
                         "that does not start with {src_prefix}",
                     )
                     continue
-                destpath = mozpath.relpath(filename, src_prefix)
+                destpath = mozpath.relpath(extra_filename, src_prefix)
                 destpath = mozpath.join(dest_prefix, destpath)
                 self.log(
                     logging.INFO,
@@ -512,8 +512,8 @@ class ArtifactJob:
     def iter_artifact_archive(self, filename):
         if filename.endswith(".zip"):
             reader = JarReader(filename)
-            for filename in reader.entries:
-                yield filename, reader[filename]
+            for entry_name in reader.entries:
+                yield entry_name, reader[entry_name]
         elif filename.endswith(".tar.zst") and self._mozbuild is not None:
             self._mozbuild._ensure_zstd()
             import zstandard
@@ -599,8 +599,8 @@ class AndroidArtifactJob(ArtifactJob):
         import gzip
 
         with self.get_writer(file=processed_filename, compress_level=5) as writer:
-            for filename, entry in self.iter_artifact_archive(filename):
-                if not filename.endswith(".gz"):
+            for symbols_filename, entry in self.iter_artifact_archive(filename):
+                if not symbols_filename.endswith(".gz"):
                     continue
 
                 # Uncompress "libxul.so/D3271457813E976AE7BF5DAFBABABBFD0/libxul.so.dbg.gz"
@@ -612,7 +612,7 @@ class AndroidArtifactJob(ArtifactJob):
                 #
                 # There are other paths that will work but none seem more desireable.  See
                 # https://github.com/llvm-mirror/lldb/blob/882670690ca69d9dd96b7236c620987b11894af9/source/Host/common/Symbols.cpp#L324.
-                basename = os.path.basename(filename).replace(".gz", "")
+                basename = os.path.basename(symbols_filename).replace(".gz", "")
                 destpath = mozpath.join("crashreporter-symbols", basename)
                 self.log(
                     logging.DEBUG,
@@ -744,15 +744,13 @@ class MacArtifactJob(ArtifactJob):
     @property
     def _extra_archives(self):
         extra_archives = super()._extra_archives
-        extra_archives.update(
-            {
-                ".update_framework_artifacts.zip": {
-                    "description": "Update-related macOS Framework Artifacts",
-                    "src_prefix": "",
-                    "dest_prefix": "update_framework_artifacts",
-                },
-            }
-        )
+        extra_archives.update({
+            ".update_framework_artifacts.zip": {
+                "description": "Update-related macOS Framework Artifacts",
+                "src_prefix": "",
+                "dest_prefix": "update_framework_artifacts",
+            },
+        })
         return extra_archives
 
     @property
@@ -917,12 +915,10 @@ class UnfilteredProjectPackageArtifactJob(ArtifactJob):
     """
 
     # Can't yet handle `AndroidArtifactJob` uniformly, since the `product` is "mobile".
-    package_re = "|".join(
-        [
-            f"({cls.package_re})"
-            for cls in (LinuxArtifactJob, MacArtifactJob, WinArtifactJob)
-        ]
-    )
+    package_re = "|".join([
+        f"({cls.package_re})"
+        for cls in (LinuxArtifactJob, MacArtifactJob, WinArtifactJob)
+    ])
     job_configuration = GeckoJobConfiguration
 
     @property

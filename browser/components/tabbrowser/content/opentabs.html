@@ -11,14 +11,36 @@
       content="default-src resource: chrome:; object-src 'none'; img-src data: chrome:;"
     />
     <meta name="color-scheme" content="light dark" />
-    <title>Open Tabs</title>
+    <link
+      rel="icon"
+      type="image/png"
+      id="favicon"
+      href="chrome://branding/content/icon32.png"
+    />
+    <link rel="localization" href="browser/firefoxView.ftl" />
+    <link rel="localization" href="browser/openTabs.ftl" />
+    <title data-l10n-id="opentabs-page-title"></title>
+    <link
+      rel="stylesheet"
+      href="chrome://browser/content/sidebar/sidebar.css"
+    />
     <link
       rel="stylesheet"
       href="chrome://browser/content/tabbrowser/opentabs.css"
     />
+    <script
+      type="module"
+      src="chrome://browser/content/tabbrowser/opentabs-splitview.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://browser/content/sidebar/sidebar-tab-list.mjs"
+    ></script>
   </head>
   <body>
-    <h3>Choose a tab to add to split view</h3>
-    <!-- TODO: Bug 2000938 - Add oepn tabs list -->
+    <div class="sticky-header">
+      <h3 data-l10n-id="opentabs-page-title"></h3>
+    </div>
+    <splitview-opentabs></splitview-opentabs>
   </body>
 </html>

@@ -168,7 +168,7 @@ bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
             dom::InternalRequest::MapContentPolicyTypeToRequestDestination(
                 aType)) != mMatchDest.NoIndex) {
       UrlpPattern pattern;
-      UrlpOptions options;
+      UrlpOptions options{};
       const nsCString base(mURI);
       if (!urlp_parse_pattern_from_string(&mPattern, &base, options,
                                           &pattern)) {

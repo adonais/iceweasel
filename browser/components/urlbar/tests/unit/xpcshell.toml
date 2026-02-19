@@ -24,6 +24,8 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarQueryContext_restrictSource.js"]
 
+["test_UrlbarResult_getDisplayableValueAndHighlights.js"]
+
 ["test_UrlbarSearchUtils.js"]
 
 ["test_UrlbarUtils_addToUrlbarHistory.js"]
@@ -60,6 +62,8 @@ prefs = [
   "places.frecency.origins.alternative.featureGate=true",
   "browser.urlbar.suggest.quickactions=false",
 ]
+
+["test_autofill_origins_typed_frecency.js"]
 
 ["test_autofill_prefix_fallback.js"]
 
@@ -178,6 +182,8 @@ skip-if = [
 ]
 
 ["test_resultGroups.js"]
+
+["test_result_highlights.js"]
 
 ["test_richsuggestions.js"]
 

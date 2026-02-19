@@ -12,7 +12,6 @@
 #include "mozilla/Maybe.h"
 
 #include <cmath>
-#include <stddef.h>
 #include <stdint.h>
 
 #include "jsnum.h"

@@ -104,7 +104,7 @@ def check_moz_app_vendor(moz_app_vendor, build_project):
 # Set the MOZ_CONFIGURE_OPTIONS variable with all the options that
 # were passed somehow (environment, command line, mozconfig)
 @dependable
-@imports(_from="mozbuild.shellutil", _import="quote")
+@imports(_from="mozshellutil", _import="quote")
 @imports(_from="mozbuild.util", _import="ensure_unicode")
 @imports(_from="mozbuild.util", _import="system_encoding")
 @imports("__sandbox__")
@@ -746,27 +746,7 @@ def gl_provider_define(provider):
 
 
 set_define("MOZ_GL_PROVIDER", gl_provider_define)
-
-
-@depends(gl_provider, toolkit_gtk)
-def gl_default_provider(value, toolkit_gtk):
-    if value:
-        return value
-    elif toolkit_gtk:
-        return "EGL"
-
-
 set_config("MOZ_GL_PROVIDER", gl_provider)
-set_config("MOZ_GL_DEFAULT_PROVIDER", gl_default_provider)
-
-
-@depends(gl_default_provider)
-def gl_provider_define(provider):
-    if provider:
-        return "GL_PROVIDER_%s" % provider
-
-
-set_define(gl_provider_define, True)
 
 
 # PDF printing

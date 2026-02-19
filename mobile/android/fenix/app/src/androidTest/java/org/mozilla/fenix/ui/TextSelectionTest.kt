@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -30,7 +31,7 @@ import org.mozilla.fenix.ui.robots.shareOverlay
 
 class TextSelectionTest : TestSetup() {
     @get:Rule(order = 0)
-    val activityIntentTestRule =
+    val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityTestRule(
                 isLocationPermissionEnabled = SitePermissionsRules.Action.BLOCKED,
@@ -49,21 +50,22 @@ class TextSelectionTest : TestSetup() {
     val retryTestRule = RetryTestRule(3)
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326832
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @SmokeTest
     @Test
     fun verifySelectAllTextOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            longClickPageObject(itemContainingText("content"))
+            longClickPageObject(composeTestRule, itemContainingText("content"))
             clickContextMenuItem("Select all")
             clickContextMenuItem("Copy")
         }.openNavigationToolbar {
             openEditURLView()
         }
 
-        searchScreen {
+        searchScreen(composeTestRule) {
             clickClearButton()
             longClickToolbar()
             clickPasteText()
@@ -78,14 +80,14 @@ class TextSelectionTest : TestSetup() {
     fun verifyCopyTextOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            longClickPageObject(itemContainingText("content"))
+            longClickPageObject(composeTestRule, itemContainingText("content"))
             clickContextMenuItem("Copy")
         }.openNavigationToolbar {
         }
 
-        searchScreen {
+        searchScreen(composeTestRule) {
             clickClearButton()
             longClickToolbar()
             clickPasteText()
@@ -98,9 +100,9 @@ class TextSelectionTest : TestSetup() {
     fun verifyShareSelectedTextOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            longClickPageObject(itemWithText(genericURL.content))
+            longClickPageObject(composeTestRule, itemWithText(genericURL.content))
         }.clickShareSelectedText {
             verifyAndroidShareLayout()
         }
@@ -111,9 +113,9 @@ class TextSelectionTest : TestSetup() {
     fun verifySearchTextOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            longClickPageObject(itemContainingText("content"))
+            longClickPageObject(composeTestRule, itemContainingText("content"))
             clickContextMenuItem("Search")
             mDevice.waitForIdle()
             verifyUrl("content")
@@ -122,18 +124,19 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326831
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @SmokeTest
     @Test
     fun verifyPrivateSearchTextTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.togglePrivateBrowsingMode()
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             verifyPageContent(genericURL.content)
-            longClickPageObject(itemContainingText("content"))
+            longClickPageObject(composeTestRule, itemContainingText("content"))
             clickContextMenuItem("Private Search")
             mDevice.waitForIdle()
             verifyTabCounter("2")
@@ -142,24 +145,25 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326834
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifySelectAllPDFTextOptionTest() {
         val genericURL =
             mockWebServer.getGenericAsset(3)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            clickPageObject(itemWithText("PDF form file"))
-            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
+            clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
             waitForPageToLoad()
-            longClickPageObject(itemContainingText("Crossing"))
+            longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Select all")
             clickContextMenuItem("Copy")
         }.openNavigationToolbar {
             openEditURLView()
         }
 
-        searchScreen {
+        searchScreen(composeTestRule) {
             clickClearButton()
             longClickToolbar()
             clickPasteText()
@@ -177,16 +181,16 @@ class TextSelectionTest : TestSetup() {
         val genericURL =
             mockWebServer.getGenericAsset(3)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            clickPageObject(itemWithText("PDF form file"))
-            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
-            longClickPageObject(itemContainingText("Crossing"))
+            clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
+            longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Copy")
         }.openNavigationToolbar {
         }
 
-        searchScreen {
+        searchScreen(composeTestRule) {
             clickClearButton()
             longClickToolbar()
             clickPasteText()
@@ -200,11 +204,11 @@ class TextSelectionTest : TestSetup() {
         val genericURL =
             mockWebServer.getGenericAsset(3)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            clickPageObject(itemWithText("PDF form file"))
-            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
-            longClickPageObject(itemContainingText("Crossing"))
+            clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
+            longClickPageObject(composeTestRule, itemContainingText("Crossing"))
         }.clickShareSelectedText {
             verifyAndroidShareLayout()
         }
@@ -217,11 +221,11 @@ class TextSelectionTest : TestSetup() {
         val genericURL =
             mockWebServer.getGenericAsset(3)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            clickPageObject(itemWithText("PDF form file"))
-            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
-            longClickPageObject(itemContainingText("Crossing"))
+            clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
+            longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Search")
             verifyUrl("Crossing")
             verifyTabCounter("2")
@@ -229,19 +233,20 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326837
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifyPrivateSearchPDFTextOptionTest() {
         val genericURL =
             mockWebServer.getGenericAsset(3)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.togglePrivateBrowsingMode()
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            clickPageObject(itemWithText("PDF form file"))
-            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
-            longClickPageObject(itemContainingText("Crossing"))
+            clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
+            longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Private Search")
             verifyUrl("Crossing")
             verifyTabCounter("2")
@@ -249,11 +254,12 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326813
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifyUrlBarTextSelectionOptionsTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openNavigationToolbar {
             longClickEditModeToolbar()
@@ -262,11 +268,12 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326814
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifyCopyUrlBarTextSelectionOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openNavigationToolbar {
             longClickEditModeToolbar()
@@ -280,11 +287,12 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326815
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifyCutUrlBarTextSelectionOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openNavigationToolbar {
             longClickEditModeToolbar()
@@ -297,12 +305,13 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243845
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @SmokeTest
     @Test
     fun verifyShareUrlBarTextSelectionOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openNavigationToolbar {
             longClickEditModeToolbar()
@@ -314,26 +323,27 @@ class TextSelectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/414316
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun urlBarQuickActionsTest() {
         val firstWebsite = mockWebServer.getGenericAsset(1)
         val secondWebsite = mockWebServer.getGenericAsset(2)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstWebsite.url) {
             longClickToolbar()
             clickContextMenuItem("Copy")
         }
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(secondWebsite.url) {
             longClickToolbar()
             clickContextMenuItem("Paste")
         }
-        searchScreen {
+        searchScreen(composeTestRule) {
             verifyTypedToolbarText(firstWebsite.url.toString(), exists = true)
         }.dismissSearchBar {
         }
-        browserScreen {
+        browserScreen(composeTestRule) {
             verifyUrl(secondWebsite.url.toString())
             longClickToolbar()
             clickContextMenuItem("Paste & Go")

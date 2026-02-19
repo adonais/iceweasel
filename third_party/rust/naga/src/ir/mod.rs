@@ -356,21 +356,21 @@ pub enum AddressSpace {
     /// Opaque handles, such as samplers and images.
     Handle,
 
-    /// Push constants.
+    /// Immediate data.
     ///
     /// A [`Module`] may contain at most one [`GlobalVariable`] in
     /// this address space. Its contents are provided not by a buffer
-    /// but by `SetPushConstant` pass commands, allowing the CPU to
+    /// but by `SetImmediates` pass commands, allowing the CPU to
     /// establish different values for each draw/dispatch.
     ///
-    /// `PushConstant` variables may not contain `f16` values, even if
+    /// `Immediate` variables may not contain `f16` values, even if
     /// the [`SHADER_FLOAT16`] capability is enabled.
     ///
     /// Backends generally place tight limits on the size of
-    /// `PushConstant` variables.
+    /// `Immediate` variables.
     ///
     /// [`SHADER_FLOAT16`]: crate::valid::Capabilities::SHADER_FLOAT16
-    PushConstant,
+    Immediate,
     /// Task shader to mesh shader payload
     TaskPayload,
 }
@@ -409,7 +409,7 @@ pub enum BuiltIn {
     PointCoord,
     /// Read in fragment shaders
     FrontFacing,
-    /// Read in fragment shaders, in the future may written in mesh shaders
+    /// Read in fragment shaders, written in mesh shaders
     PrimitiveIndex,
     /// Read in fragment shaders
     Barycentric,
@@ -450,6 +450,15 @@ pub enum BuiltIn {
     LineIndices,
     /// Written in mesh shaders
     TriangleIndices,
+
+    /// Written to a workgroup variable in mesh shaders
+    VertexCount,
+    /// Written to a workgroup variable in mesh shaders
+    Vertices,
+    /// Written to a workgroup variable in mesh shaders
+    PrimitiveCount,
+    /// Written to a workgroup variable in mesh shaders
+    Primitives,
 }
 
 /// Number of bytes per scalar.
@@ -486,6 +495,17 @@ impl From<VectorSize> for u32 {
     }
 }
 
+/// Number of components in a cooperative vector.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum CooperativeSize {
+    Eight = 8,
+    Sixteen = 16,
+}
+
 /// Primitive type for a scalar.
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
@@ -511,6 +531,18 @@ pub enum ScalarKind {
     ///
     /// These are forbidden by validation, and should never reach backends.
     AbstractFloat,
+}
+
+/// Role of a cooperative variable in the equation "A * B + C"
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum CooperativeRole {
+    A,
+    B,
+    C,
 }
 
 /// Characteristics of a scalar type.
@@ -760,6 +792,14 @@ pub enum TypeInner {
         columns: VectorSize,
         rows: VectorSize,
         scalar: Scalar,
+    },
+    /// Matrix that is cooperatively processed by all the threads
+    /// in an opaque mapping.
+    CooperativeMatrix {
+        columns: CooperativeSize,
+        rows: CooperativeSize,
+        scalar: Scalar,
+        role: CooperativeRole,
     },
     /// Atomic scalar.
     Atomic(Scalar),
@@ -1459,6 +1499,16 @@ bitflags::bitflags! {
     }
 }
 
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct CooperativeData {
+    pub pointer: Handle<Expression>,
+    pub stride: Handle<Expression>,
+    pub row_major: bool,
+}
+
 /// An expression that can be evaluated to obtain a value.
 ///
 /// This is a Single Static Assignment (SSA) scheme similar to SPIR-V.
@@ -1803,6 +1853,20 @@ pub enum Expression {
     /// [`SubgroupCollectiveOperation`]: Statement::SubgroupCollectiveOperation
     /// [`SubgroupGather`]: Statement::SubgroupGather
     SubgroupOperationResult { ty: Handle<Type> },
+
+    /// Load a cooperative primitive from memory.
+    CooperativeLoad {
+        columns: CooperativeSize,
+        rows: CooperativeSize,
+        role: CooperativeRole,
+        data: CooperativeData,
+    },
+    /// Compute `a * b + c`
+    CooperativeMultiplyAdd {
+        a: Handle<Expression>,
+        b: Handle<Expression>,
+        c: Handle<Expression>,
+    },
 }
 
 /// The value of the switch case.
@@ -2211,8 +2275,6 @@ pub enum Statement {
         /// The specific operation we're performing on `query`.
         fun: RayQueryFunction,
     },
-    /// A mesh shader intrinsic.
-    MeshFunction(MeshFunction),
     /// Calculate a bitmask using a boolean from each active thread in the subgroup
     SubgroupBallot {
         /// The [`SubgroupBallotResult`] expression representing this load's result.
@@ -2245,6 +2307,11 @@ pub enum Statement {
         ///
         /// [`SubgroupOperationResult`]: Expression::SubgroupOperationResult
         result: Handle<Expression>,
+    },
+    /// Store a cooperative primitive into memory.
+    CooperativeStore {
+        target: Handle<Expression>,
+        data: CooperativeData,
     },
 }
 
@@ -2569,7 +2636,7 @@ pub struct DocComments {
 }
 
 /// The output topology for a mesh shader. Note that mesh shaders don't allow things like triangle-strips.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2583,7 +2650,7 @@ pub enum MeshOutputTopology {
 }
 
 /// Information specific to mesh shader entry points.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2603,29 +2670,8 @@ pub struct MeshStageInfo {
     pub vertex_output_type: Handle<Type>,
     /// The type used by primitive outputs, i.e. what is passed to `setPrimitive`.
     pub primitive_output_type: Handle<Type>,
-}
-
-/// Mesh shader intrinsics
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub enum MeshFunction {
-    /// Sets the number of vertices and primitives that will be outputted.
-    SetMeshOutputs {
-        vertex_count: Handle<Expression>,
-        primitive_count: Handle<Expression>,
-    },
-    /// Sets the output vertex at a given index.
-    SetVertex {
-        index: Handle<Expression>,
-        value: Handle<Expression>,
-    },
-    /// Sets the output primitive at a given index.
-    SetPrimitive {
-        index: Handle<Expression>,
-        value: Handle<Expression>,
-    },
+    /// The global variable holding the outputted vertices, primitives, and counts
+    pub output_variable: Handle<GlobalVariable>,
 }
 
 /// Shader module.

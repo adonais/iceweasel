@@ -7,8 +7,6 @@
 #ifndef ThirdPartyUtil_h__
 #define ThirdPartyUtil_h__
 
-#include <cstdint>
-
 #include "ErrorList.h"
 #include "mozIThirdPartyUtil.h"
 #include "mozilla/RefPtr.h"

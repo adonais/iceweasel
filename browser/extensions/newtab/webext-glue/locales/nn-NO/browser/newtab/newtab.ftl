@@ -667,6 +667,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Ny liste
+newtab-widget-section-title = Widgetar
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Skjul widgetar
+    .aria-label = Skjul alle widgetar
+newtab-widget-section-maximize =
+    .title = Utvid widgetar
+    .aria-label = Utvid alle widgetar til full størrelse
+newtab-widget-section-minimize =
+    .title = Minimer widgetar
+    .aria-label = Slå saman alle widgetar til kompakt størrelse
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -689,8 +700,6 @@ newtab-widget-timer-menu-notifications = Slå av varsel
 newtab-widget-timer-menu-notifications-on = Slå på varsel
 newtab-widget-timer-menu-hide = Skjul nedteljar
 newtab-widget-timer-menu-learn-more = Les meir
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Rull for meir
 newtab-widget-message-title = Hald fokus med lister og ein innebygd nedteljar
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Frå kjappe påminningar til daglege gjeremål, fokuserte arbeidsøkter til strekkpausar — hald deg til oppgåva og tidsplanen.

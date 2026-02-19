@@ -19,7 +19,6 @@
 #include "nsIObserverService.h"
 #include "nsIFile.h"
 #include "nsIURI.h"
-#include "nsINetworkPredictor.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsNetCID.h"
@@ -1170,11 +1169,6 @@ bool CacheStorageService::IsForcedValidEntry(
   // Entry timeout has been reached
   mForcedValidEntries.Remove(aContextEntryKey);
 
-  if (!data.viewed) {
-    glean::predictor::prefetch_use_status
-        .EnumGet(glean::predictor::PrefetchUseStatusLabel::eWaitedtoolong)
-        .Add();
-  }
   return false;
 }
 
@@ -1215,13 +1209,6 @@ void CacheStorageService::RemoveEntryForceValid(nsACString const& aContextKey,
 
   LOG(("CacheStorageService::RemoveEntryForceValid context='%s' entryKey=%s",
        aContextKey.BeginReading(), aEntryKey.BeginReading()));
-  ForcedValidData data;
-  bool ok = mForcedValidEntries.Get(aContextKey + aEntryKey, &data);
-  if (ok && !data.viewed) {
-    glean::predictor::prefetch_use_status
-        .EnumGet(glean::predictor::PrefetchUseStatusLabel::eWaitedtoolong)
-        .Add();
-  }
   mForcedValidEntries.Remove(aContextKey + aEntryKey);
 }
 
@@ -1233,11 +1220,6 @@ void CacheStorageService::ForcedValidEntriesPrune(TimeStamp& now) {
 
   for (auto iter = mForcedValidEntries.Iter(); !iter.Done(); iter.Next()) {
     if (iter.Data().validUntil < now) {
-      if (!iter.Data().viewed) {
-        glean::predictor::prefetch_use_status
-            .EnumGet(glean::predictor::PrefetchUseStatusLabel::eWaitedtoolong)
-            .Add();
-      }
       iter.Remove();
     }
   }
@@ -2295,8 +2277,10 @@ void CacheStorageService::TelemetryRecordEntryRemoval(CacheEntry* entry) {
 
   glean::network::http_cache_entry_reuse_count.AccumulateSingleSample(
       entry->UseCount());
-  glean::network::http_cache_entry_alive_time.AccumulateRawDuration(
-      TimeStamp::NowLoRes() - entry->LoadStart());
+  if (Telemetry::CanRecordPrereleaseData()) {
+    glean::network::http_cache_entry_alive_time.AccumulateRawDuration(
+        TimeStamp::NowLoRes() - entry->LoadStart());
+  }
 }
 
 // nsIMemoryReporter

@@ -237,7 +237,7 @@
   <!-- Label for the button to quick add the current URL to the custom autocomplete list -->
   <string name="add_custom_autocomplete_label">Dodaj poveznicu u automatsko ispunjavanje</string>
   <!-- Preference category for settings about cookies and site data -->
-  <string name="preference_category_cookies">Kolačići i podatci stranica</string>
+  <string name="preference_category_cookies">Kolačići i podaci stranica</string>
   <!-- Preference category for settings about data choices -->
   <string name="preference_category_data_choices">Izbori podataka</string>
   <!-- Title of the screen for removing custom autocomplete URLs. -->

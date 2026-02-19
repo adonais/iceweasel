@@ -196,9 +196,14 @@ export class SelectControlBaseElement extends MozLitElement {
     this.focusedIndex = undefined;
   }
 
-  // NB: We may need to revise this to avoid bugs when we add more focusable
-  // elements to select control base/items.
+  /**
+   * @param {KeyboardEvent & { target: HTMLElement }} event
+   */
   handleKeydown(event) {
+    if (event.target.parentElement != this) {
+      // Ignore events from nested controls.
+      return;
+    }
     let directions = this.getNavigationDirections();
     switch (event.key) {
       case "Down":
@@ -300,7 +305,7 @@ export class SelectControlBaseElement extends MozLitElement {
         support-page=${ifDefined(this.supportPage)}
         role=${this.type == "radio" ? "radiogroup" : "listbox"}
         ?disabled=${this.disabled}
-        label=${this.label}
+        label=${ifDefined(this.label)}
         headinglevel=${this.headingLevel}
         exportparts="inputs, support-link"
         aria-orientation=${ifDefined(this.constructor.orientation)}

@@ -24,6 +24,7 @@
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
+#include "mozilla/SharedLibraries.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/Preferences.h"
@@ -37,7 +38,6 @@
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "platform.h"
-#include "SharedLibraries.h"
 #include "zlib.h"
 
 #ifndef ANDROID

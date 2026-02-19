@@ -434,23 +434,21 @@ def mozbuild_file_to_source_assignments(normalized_mozbuild_filename, assignment
                 )
             )
         ]
-        source_assignment_nodes.extend(
-            [
-                node
-                for node in ast.walk(root)
-                if isinstance(node, ast.Assign)
-                and (
-                    (
-                        isinstance(node.targets[0], ast.Name)
-                        and node.targets[0].id == "EXPORTS"
-                    )
-                    or (
-                        isinstance(node.targets[0], ast.Attribute)
-                        and get_attribute_label(node.targets[0]).startswith("EXPORTS")
-                    )
+        source_assignment_nodes.extend([
+            node
+            for node in ast.walk(root)
+            if isinstance(node, ast.Assign)
+            and (
+                (
+                    isinstance(node.targets[0], ast.Name)
+                    and node.targets[0].id == "EXPORTS"
                 )
-            ]
-        )
+                or (
+                    isinstance(node.targets[0], ast.Attribute)
+                    and get_attribute_label(node.targets[0]).startswith("EXPORTS")
+                )
+            )
+        ])
 
     # Get the source-assignment-location for the node:
     assignment_index = 1
@@ -473,11 +471,12 @@ def mozbuild_file_to_source_assignments(normalized_mozbuild_filename, assignment
         if source_assignment_location in source_assignments:
             source_assignment_location = node_to_readable_file_location(code, a)
 
-        assert (
-            source_assignment_location not in source_assignments
-        ), "In %s, two assignments have the same key ('%s')" % (
-            normalized_mozbuild_filename,
-            source_assignment_location,
+        assert source_assignment_location not in source_assignments, (
+            "In %s, two assignments have the same key ('%s')"
+            % (
+                normalized_mozbuild_filename,
+                source_assignment_location,
+            )
         )
         source_assignments[source_assignment_location] = normalized_source_filename_list
         assignment_index += 1
@@ -562,9 +561,9 @@ def get_mozbuild_file_search_order(
     ordered_list = []
 
     if all_mozbuild_filenames_normalized is None:
-        assert os.path.isfile(
-            ".arcconfig"
-        ), "We do not seem to be running from the gecko root"
+        assert os.path.isfile(".arcconfig"), (
+            "We do not seem to be running from the gecko root"
+        )
 
     # The first time around, this variable name is incorrect.
     #    It's actually the full path+filename, not a directory.
@@ -642,12 +641,10 @@ def filenames_directory_is_in_filename_list(
         f("foo/bar/a.c", ["foo/b.c", "foo/bar/c.c"]) -> true
         f("foo/bar/a.c", ["foo/b.c", "foo/bar/baz/d.c"]) -> false
     """
-    path_list = set(
-        [
-            os.path.dirname(f).replace(os.path.sep, "/")
-            for f in list_of_normalized_filenames
-        ]
-    )
+    path_list = set([
+        os.path.dirname(f).replace(os.path.sep, "/")
+        for f in list_of_normalized_filenames
+    ])
     return os.path.dirname(filename_normalized).replace(os.path.sep, "/") in path_list
 
 
@@ -695,7 +692,7 @@ def guess_best_assignment(source_assignments, filename_normalized):
                 length_of_longest_match = len(prefix)
                 source_assignment_location_of_longest_match = key
             elif len(prefix) == length_of_longest_match and len(
-                source_assignments[key]
+                list_of_normalized_filenames
             ) > len(source_assignments[source_assignment_location_of_longest_match]):
                 statistic_number_refinements += 1
                 statistic_length_logic += 1
@@ -1050,9 +1047,9 @@ def add_file_to_moz_build_file(
                 normalized_filename_to_add = original_normalized_filename_to_add
                 continue
 
-            assert (
-                len(possible_assignments) > 0
-            ), "Could not find a single possible source assignment"
+            assert len(possible_assignments) > 0, (
+                "Could not find a single possible source assignment"
+            )
             if len(possible_assignments) > 1:
                 best_guess, _ = guess_best_assignment(
                     possible_assignments, normalized_filename_to_add

@@ -92,6 +92,11 @@
   -->
   <string name="share_dialog_title">Tikomonïx b\'ey</string>
   <string name="notification_erase_title_android_14">La niyuj runatab\'al okem pa k\'amaya\'l?</string>
+  <!--
+    Text shown in the notification description that pops up to remind the user that a browsing session is active
+    for Android 14+.
+  -->
+  <string name="notification_erase_text_android_14_1">Tachapa\' o taqirirej re rutzijol re\' richin jikïl nayüj ri runatanab\'al awokem.</string>
   <string name="notification_erase_text">Tiyuj runatab\'al okem pa k\'amaya\'l</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">Tijaq</string>
@@ -656,6 +661,12 @@
   <string name="cookie_banner_report_a_site_snackbar_label">Xtaq ri ruk\'utuj tob\'äl.</string>
   <!-- Label for cookie banner item from tracking protection, after the user reports with success a website where cookie banner reducer did not work -->
   <string name="cookie_banner_the_site_was_reported">Xtaq ri ruk\'utuj tob\'äl.</string>
+  <!--
+    Contextual Feature Recommendation Popups
+
+    CFR for Cookie Banner (Banner Info Message). %1$s will be replaced by the app name, %2$s will be an active link using the string cfr_cookie_banner_link as text.
+  -->
+  <string name="cfr_cookie_banner">%1$s Tatojtob\'ej ye\'axutuj ri kik\'utuxik taq kuki richin ye\'ajech\'ej ri itzel taq kitzijol kuki.\n\nKenuk\'samajïx ri kajowaxik kitzijol taq kuki pa %2$s.</string>
   <!-- CFR for Cookie Banner (Banner Info Message). This string is used as text for a link in cfr_cookie_banner and takes the user to the app settings. -->
   <string name="cfr_cookie_banner_link">taq nuk\'ulem</string>
   <!-- Preference for autoplay -->
@@ -778,6 +789,8 @@
   <string name="preference_safe_browsing_summary">Keq\'at taq ruxaq etaman chi yeq\'eleb\'en chuqa\' yeq\'olon, tz\'ilanel ruxaq taq chokoy chuqa\' itzel ruxaq taq solkema\'.</string>
   <!-- Title of the preference to enable "HTTPS-Only" mode -->
   <string name="preference_https_only_title">HTTPS-Only B\'anikil</string>
+  <!-- Description of the preference to enable "HTTPS-Only" mode. -->
+  <string name="preference_https_only_summary3">Tatojtob\'ej yatok pa yonil chupam ri ruxaq akuchi\' nawokisaj ri rub\'eyal ewan rusik\'ixik HTTPS richin jun ütz jikib\'anem</string>
   <!-- Preference for exceptions tracking protection -->
   <string name="preference_exceptions">Taq man relik ta</string>
   <!-- Description for the exceptions preference screen -->
@@ -859,14 +872,29 @@
   <string name="preference_follow_device_theme">Tojqäx ri ruwachinel oyonib\'äl</string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="errorpage_httpsonly_title2">Man nuköch ta ri HTTPS re ruxaq k\'amaya\'l re\'</string>
+  <!--
+    The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"),
+    %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
+  -->
+  <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s Tatojtob\'ej nawokisaj jun HTTPS okem toq k\'atzinel richin jun nïm jikib\'anem. <a href=\"%2$s\">Tetamäx ch\'aqa\' chik</a> <br/><br/> Ütz nijal pa Runuk\'ulem > Ichinanem chuqa\' jikib\'anem > Jikib\'anem.]]></string>
   <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">Man ütz ta okem</string>
+  <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
+  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Rik\'in jub\'a\' jun ruk\'ayewal ri runuk\'ulem ruk\'u\'x samaj, o chuqa\' k\'o ri tajin nik\'exo ri ruk\'u\'x samaj. <br/><br/> We at jikïl chi atokinäq chik ütz pa re ruk\'u\'x samaj re\', to ri sachoj xa xe jun ti mej xtub\'än.]]></string>
+  <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Rik\'in jub\'a\' k\'o noxk\'ob\'en ri ruxaq ruma ri\' yak\'oje\' pa k\'ayewal pe k\'a nasamajij el.</label> <br><br>\n<label>%1$s man nukuqub\'a\' ta ruk\'u\'x chi rij <b>%2$s</b> ruma man etaman ta ruwäch ri xya\'o ri iqitzijob\'al, ri iqitzijob\'al ruyon juch\'un o ri ruk\'u\'x samaj man yerutäq ta ri nik\'aj ütz taq iqitizjob\'al.</label>]]></string>
   <!--
     Sessions List
 
     Content description (not visible, for screen readers etc.): Button that closes a tab n the sessions list
   -->
   <string name="close_tab">Titz\'apïx ruwi\'</string>
+  <!--
+    Contextual Feature Recommendation Popups
+
+    CFR for Toolbar Shield Icon (Banner Info Message)
+  -->
+  <string name="cfr_for_toolbar_shield_icon2">¡Yalan ütz! Xqab\'än chi man yatrunachaj ta ri ruxaq ajk\'amaya\'l. Tapitz\'a\' ri ti b\'oko\' richin natz\'ët ri tajin niqaq\'ät.</string>
   <!-- Content description (not visible, for screen readers etc.): Button that closes the CFR popup -->
   <string name="cfr_close_button_description">Titz\'apïx elenel tzuwäch</string>
   <!--
@@ -875,8 +903,12 @@
     Tool Tip Title
   -->
   <string name="tool_tip_title">¡Atchajin!</string>
+  <!-- Tool Tip Message -->
+  <string name="tool_tip_message">Re k\'o wi chi runuk\'ulem re\' nusüj jun nïm ruchajixik. Xa xe chi man k\'ayew ta richin nijal ri runuk\'ulem richin nab\'än ri nik\'atzin chawe.</string>
   <!-- Tool Tip "X" button Content description (not visible, for screen readers etc.) :Button that closes the tool tip -->
   <string name="tool_tip_dismiss_button_content_description">Tewäx</string>
+  <!-- CFR for Toolbar Delete Icon (Banner Info Message) -->
+  <string name="cfr_for_toolbar_delete_icon2">Tachapa\' wawe\' richin nayüj ronojel — natab\'äl, taq kuki, kan ronojel — chuqa\' tamaja\' chik el pa jun k\'ak\'a\' ruwi\'.</string>
   <!-- Promote SearchWidget Dialog -->
 
   <!--
@@ -894,6 +926,11 @@
   <!-- Banner Info Message than will appear when user first enters in the app. The location is at the toolbar. -->
   <string name="cfr_for_start_browsing">Tatikirisaj molojri\'ïl pa ichinan okem k\'a ri xkeqaq\'ät taq ojqanela\' chuqa\' juley chik taq k\'ayewal toq tajin yatok pa k\'amaya\'l.</string>
   <!--
+    This is the subtitle of promote search widget dialog. %1$s will get replaced with the name
+    of the app (e.g. "Focus")
+  -->
+  <string name="promote_search_widget_dialog_subtitle">Xatqaya\' kan rik\'in ri ichinan awokem, po yatikïr nawïl jun aninäq tikitib\'äl jun chik b\'ey rik\'in ri ruwidget %1$s pa ruwäch tikirib\'äl.</string>
+  <!--
     This is te text from add search widget to home screen button .The button is located on
     promote search widget dialog.
   -->
@@ -903,4 +940,18 @@
     to the home screen.
   -->
   <string name="promote_search_widget_snackbar_message">Xtz\'aqatisäx widget pa ri rutikirib\'al ruwa</string>
+  <!--
+    Messages explaining how to exit fullscreen mode
+
+    Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
+
+    This text should be as short as possible, max 68 chars
+  -->
+  <string name="exit_fullscreen_with_gesture_short">Taqirirej q\'anij chuqa\' tawokisaj ri silon paläj pa chi rij richin yatel</string>
+  <!--
+    Message shown to explain how to exit fullscreen mode when using back button navigation.
+
+    This text should be as short as possible, max 68 chars
+  -->
+  <string name="exit_fullscreen_with_back_button_short">Taqirirej q\'anij chuqa\' tapitz\'a\' ri chi rij richin yatel</string>
 </resources>

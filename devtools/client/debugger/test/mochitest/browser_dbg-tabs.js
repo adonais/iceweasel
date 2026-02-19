@@ -145,7 +145,7 @@ add_task(async function testOpeningAndClosingTabs() {
     await selectSource(dbg, source);
   }
   ok(
-    findElementWithSelector(dbg, ".more-tabs"),
+    findElementWithSelector(dbg, ".dbg-img-more-tabs"),
     "There is some hidden tabs displayed via a dropdown"
   );
 
@@ -164,7 +164,7 @@ add_task(async function testOpeningAndClosingTabs() {
   await onCloseTabsAction;
   is(countTabs(dbg), 0);
   ok(
-    !findElementWithSelector(dbg, ".more-tabs"),
+    !findElementWithSelector(dbg, ".dbg-img-more-tabs"),
     "After closing all tabs, hidden tabs dropdown is hidden"
   );
 });

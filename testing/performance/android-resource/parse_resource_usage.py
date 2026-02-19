@@ -15,60 +15,48 @@ def make_differential_metrics(
     metrics = []
 
     # Setup memory differentials
-    metrics.extend(
-        [
-            {
-                "name": f"{mem_type}-{category}-{differential_name}",
-                "unit": "Kb",
-                "values": [
-                    round(mem_usage - base_measures["mem"][mem_type][category], 2)
-                ],
-            }
-            for mem_type, mem_info in mem_measures.items()
-            for category, mem_usage in mem_info.items()
-            if category in base_measures["mem"].get(mem_type, {})
-        ]
-    )
-    metrics.extend(
-        [
-            {
-                "name": f"{mem_type}-total-{differential_name}",
-                "unit": "Kb",
-                "values": [
-                    round(
-                        sum(mem_info.values())
-                        - sum(base_measures["mem"][mem_type].values()),
-                        2,
-                    )
-                ],
-            }
-            for mem_type, mem_info in mem_measures.items()
-        ]
-    )
-
-    # Setup cpuTime differentials
-    metrics.extend(
-        [
-            {
-                "name": f"cpuTime-{category}-{differential_name}",
-                "unit": "ms",
-                "values": [cpu_time - base_measures["cpu"][category]],
-            }
-            for category, cpu_time in cpu_measures.items()
-            if category in base_measures.get("cpu", {})
-        ]
-    )
-    metrics.append(
+    metrics.extend([
         {
-            "name": f"cpuTime-total-{differential_name}",
-            "unit": "ms",
+            "name": f"{mem_type}-{category}-{differential_name}",
+            "unit": "Kb",
+            "values": [round(mem_usage - base_measures["mem"][mem_type][category], 2)],
+        }
+        for mem_type, mem_info in mem_measures.items()
+        for category, mem_usage in mem_info.items()
+        if category in base_measures["mem"].get(mem_type, {})
+    ])
+    metrics.extend([
+        {
+            "name": f"{mem_type}-total-{differential_name}",
+            "unit": "Kb",
             "values": [
                 round(
-                    sum(cpu_measures.values()) - sum(base_measures["cpu"].values()), 2
+                    sum(mem_info.values())
+                    - sum(base_measures["mem"][mem_type].values()),
+                    2,
                 )
             ],
         }
-    )
+        for mem_type, mem_info in mem_measures.items()
+    ])
+
+    # Setup cpuTime differentials
+    metrics.extend([
+        {
+            "name": f"cpuTime-{category}-{differential_name}",
+            "unit": "ms",
+            "values": [cpu_time - base_measures["cpu"][category]],
+        }
+        for category, cpu_time in cpu_measures.items()
+        if category in base_measures.get("cpu", {})
+    ])
+    metrics.append({
+        "name": f"cpuTime-total-{differential_name}",
+        "unit": "ms",
+        "values": [
+            round(sum(cpu_measures.values()) - sum(base_measures["cpu"].values()), 2)
+        ],
+    })
 
     return metrics
 
@@ -222,45 +210,37 @@ def main():
             base_measures["cpu"] = cpu_measures
             base_measures["mem"] = mem_measures
 
-        perf_metrics.extend(
-            [
-                {
-                    "name": f"cpuTime-{category}-{measurement_time}",
-                    "unit": "ms",
-                    "values": [cpu_time],
-                }
-                for category, cpu_time in cpu_measures.items()
-            ]
-        )
-        perf_metrics.append(
+        perf_metrics.extend([
             {
-                "name": f"cpuTime-total-{measurement_time}",
+                "name": f"cpuTime-{category}-{measurement_time}",
                 "unit": "ms",
-                "values": [round(sum(cpu_measures.values()), 2)],
+                "values": [cpu_time],
             }
-        )
+            for category, cpu_time in cpu_measures.items()
+        ])
+        perf_metrics.append({
+            "name": f"cpuTime-total-{measurement_time}",
+            "unit": "ms",
+            "values": [round(sum(cpu_measures.values()), 2)],
+        })
 
-        perf_metrics.extend(
-            [
-                {
-                    "name": f"{mem_type}-{category}-{measurement_time}",
-                    "unit": "Kb",
-                    "values": [round(mem_usage, 2)],
-                }
-                for mem_type, mem_info in mem_measures.items()
-                for category, mem_usage in mem_info.items()
-            ]
-        )
-        perf_metrics.extend(
-            [
-                {
-                    "name": f"{mem_type}-total-{measurement_time}",
-                    "unit": "Kb",
-                    "values": [round(sum(mem_info.values()), 2)],
-                }
-                for mem_type, mem_info in mem_measures.items()
-            ]
-        )
+        perf_metrics.extend([
+            {
+                "name": f"{mem_type}-{category}-{measurement_time}",
+                "unit": "Kb",
+                "values": [round(mem_usage, 2)],
+            }
+            for mem_type, mem_info in mem_measures.items()
+            for category, mem_usage in mem_info.items()
+        ])
+        perf_metrics.extend([
+            {
+                "name": f"{mem_type}-total-{measurement_time}",
+                "unit": "Kb",
+                "values": [round(sum(mem_info.values()), 2)],
+            }
+            for mem_type, mem_info in mem_measures.items()
+        ])
 
         if base_measures and run_background:
             if measurement_time == "10%":

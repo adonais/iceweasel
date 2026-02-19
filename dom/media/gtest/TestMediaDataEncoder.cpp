@@ -426,7 +426,7 @@ static void H264EncodesTest(Usage aUsage,
         GET_OR_RETURN_ON_ERROR(Encode(e, 1UL, aFrameSource));
     EXPECT_EQ(output.Length(), 1UL);
     EXPECT_TRUE(isAVCC ? AnnexB::IsAVCC(output[0])
-                       : AnnexB::IsAnnexB(output[0]));
+                       : AnnexB::IsAnnexB(*output[0]));
     WaitForShutdown(e);
     output.Clear();
 
@@ -461,7 +461,7 @@ static void H264EncodesTest(Usage aUsage,
       }
     } else {
       for (auto frame : output) {
-        EXPECT_TRUE(AnnexB::IsAnnexB(frame));
+        EXPECT_TRUE(AnnexB::IsAnnexB(*frame));
       }
     }
 
@@ -549,7 +549,7 @@ static void H264EncodeBatchTest(
       }
     } else {
       for (auto frame : output) {
-        EXPECT_TRUE(AnnexB::IsAnnexB(frame));
+        EXPECT_TRUE(AnnexB::IsAnnexB(*frame));
       }
     }
 
@@ -740,7 +740,7 @@ TEST_F(MediaDataEncoderTest, H264AVCC) {
         GET_OR_RETURN_ON_ERROR(Encode(e, NUM_FRAMES, mData));
     EXPECT_EQ(output.Length(), NUM_FRAMES);
     for (auto frame : output) {
-      EXPECT_FALSE(AnnexB::IsAnnexB(frame));
+      EXPECT_FALSE(AnnexB::IsAnnexB(*frame));
       if (frame->mKeyframe) {
         // The extradata may be included at the beginning, whenever it changes,
         // or with every keyframe to support robust seeking or decoder resets.

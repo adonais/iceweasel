@@ -742,7 +742,7 @@ export class LoginDataSource extends DataSourceBase {
     }
 
     try {
-      Services.logins.modifyLogin(logins[0], modifiedLogin);
+      await Services.logins.modifyLoginAsync(logins[0], modifiedLogin);
       this.setNotification({
         id: notificationId,
         viewMode: VIEW_MODES.LIST,

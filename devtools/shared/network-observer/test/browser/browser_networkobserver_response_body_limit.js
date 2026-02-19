@@ -51,6 +51,7 @@ const BYTES_1000 = 1000;
 const smallSize = BYTES_1000 / 2;
 const bigSize = BYTES_1000 * 2;
 const hugeSize = BYTES_1000 * 20;
+const tooManyArgumentsSize = BYTES_1000 * 1000;
 
 add_task(async function testNetworkObserverWithResponseBodyLimit1000() {
   info("Test a network observer with specific response body limit (1000)");
@@ -126,23 +127,40 @@ add_task(async function testNetworkObserverWithResponseBodyLimitZero() {
   info("Test a network observer with a response body limit = zero (unlimited)");
   const tab = await addTab(TEST_URL);
 
-  const events = [];
-  const noLimitNetworkObserver = createNetworkObserver({
-    events,
-    responseBodyLimit: 0,
-    decodeResponseBodies: true,
-  });
+  for (const useGzip of [true, false]) {
+    for (const decodeResponseBodies of [true, false]) {
+      info("Test with decodeResponseBodies=" + decodeResponseBodies);
+      const events = [];
+      const noLimitNetworkObserver = createNetworkObserver({
+        events,
+        responseBodyLimit: 0,
+        decodeResponseBodies,
+      });
 
-  await performGetDataRequest(gBrowser, events, smallSize);
-  await assertNetworkEventContent(events.at(-1), smallSize, false);
+      await performGetDataRequest(gBrowser, events, smallSize, useGzip);
+      await assertNetworkEventContent(events.at(-1), smallSize, false);
 
-  await performGetDataRequest(gBrowser, events, bigSize);
-  await assertNetworkEventContent(events.at(-1), bigSize, false);
+      await performGetDataRequest(gBrowser, events, bigSize, useGzip);
+      await assertNetworkEventContent(events.at(-1), bigSize, false);
 
-  await performGetDataRequest(gBrowser, events, hugeSize);
-  await assertNetworkEventContent(events.at(-1), hugeSize, false);
+      await performGetDataRequest(gBrowser, events, hugeSize, useGzip);
+      await assertNetworkEventContent(events.at(-1), hugeSize, false);
 
-  noLimitNetworkObserver.destroy();
+      await performGetDataRequest(
+        gBrowser,
+        events,
+        tooManyArgumentsSize,
+        useGzip
+      );
+      await assertNetworkEventContent(
+        events.at(-1),
+        tooManyArgumentsSize,
+        false
+      );
+
+      noLimitNetworkObserver.destroy();
+    }
+  }
 
   gBrowser.removeTab(tab);
 });

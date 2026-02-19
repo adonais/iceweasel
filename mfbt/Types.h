@@ -16,7 +16,6 @@
 
 /* Expose all <stdint.h> types and size_t. */
 #include <stddef.h>
-#include <stdint.h>
 
 /* Implement compiler and linker macros needed for APIs. */
 

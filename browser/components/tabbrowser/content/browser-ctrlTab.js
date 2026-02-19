@@ -54,17 +54,17 @@ var tabPreviews = {
    * previous call, the thumbnail will be regenerated.
    *
    * @param {MozTabbrowserTab} aTab The tab to get a preview for.
-   * @returns {Promise<HTMLCanvasElement|Image|null>} Resolves to...
-   * @resolves {HTMLCanvasElement} If a thumbnail can NOT be captured and stored
-   *   for the tab, or if the tab is still loading, a snapshot is taken and
-   *   returned as a canvas. It may be cached as a canvas (separately from
+   * @returns {Promise<HTMLCanvasElement|Image|null>}
+   *   Resolves to an HTMLCanvasElement if a thumbnail can NOT be captured and
+   *   stored for the tab, or if the tab is still loading (a snapshot is taken
+   *   and returned as a canvas). It may be cached as a canvas (separately from
    *   thumbnail storage) in aTab.__thumbnail if the tab is finished loading. If
    *   the snapshot CAN be stored as a thumbnail, the snapshot is converted to a
    *   blob image and drawn in the returned canvas, but the image is added to
    *   thumbnail storage and cached in aTab.__thumbnail.
-   * @resolves {Image} A cached blob image from a previous thumbnail capture.
-   *   e.g. <img src="moz-page-thumb://thumbnails/?url=foo.com&revision=bar">
-   * @resolves {null} If a thumbnail cannot be captured for any reason (e.g.
+   *   Resolves to an Image if a cached blob image from a previous thumbnail
+   *   capture exists (e.g. <img src="moz-page-thumb://thumbnails/?url=foo.com&revision=bar">).
+   *   Resolves to null if a thumbnail cannot be captured for any reason (e.g.
    *   because the tab is discarded) and there is no cached/stored thumbnail.
    */
   get: async function tabPreviews_get(aTab) {
@@ -98,13 +98,13 @@ var tabPreviews = {
    *
    * @param {MozTabbrowserTab} aTab The tab to capture a preview for.
    * @param {boolean} aShouldCache Cache/store the captured thumbnail?
-   * @returns {Promise<HTMLCanvasElement|null>} Resolves to...
-   * @resolves {HTMLCanvasElement} A snapshot of the tab's content. If the
+   * @returns {Promise<HTMLCanvasElement|null>}
+   *   Resolves to an HTMLCanvasElement snapshot of the tab's content. If the
    *   snapshot is safe for storage and aShouldCache is true, the snapshot is
    *   converted to a blob image, stored and cached, and drawn in the returned
    *   canvas. The thumbnail can then be recovered even if the browser is
    *   discarded. Otherwise, the canvas itself is cached in aTab.__thumbnail.
-   * @resolves {null} If a fatal exception occurred during thumbnail capture.
+   *   Resolves to null if a fatal exception occurred during thumbnail capture.
    */
   capture: async function tabPreviews_capture(aTab, aShouldCache) {
     let browser = aTab.linkedBrowser;

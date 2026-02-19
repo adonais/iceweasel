@@ -33,6 +33,10 @@
       content: "div-marker";
     }
 
+    dialog::backdrop {
+      animation: dialog-backdrop 8.5s infinite;
+    }
+
     ::view-transition-group(*),
     ::view-transition-old(*),
     ::view-transition-new(*) {
@@ -86,6 +90,15 @@
         opacity: 0deg;
       }
     }
+
+    @keyframes dialog-backdrop {
+      from {
+        background-color: hotpink;
+      }
+      to {
+        background-color: gold;
+      }
+    }
     </style>
   </head>
   <body>
@@ -93,6 +106,7 @@
     <div class="div-after"></div>
     <div class="div-marker"></div>
     <div class="div-view-transition">Hello</div>
+    <dialog>My Modal</dialog>
 
     <script>
     "use strict";
@@ -111,6 +125,9 @@
         pseudoElement: "::marker",
       }
     );
+
+    // show the dialog modal so the backdrop pseudo element node gets displayed
+    document.querySelector("dialog").showModal();
     </script>
   </body>
 </html>

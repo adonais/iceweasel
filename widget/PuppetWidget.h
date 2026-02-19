@@ -90,7 +90,7 @@ class PuppetWidget final : public nsIWidget,
   void Resize(const DesktopRect& aRect, bool aRepaint) override {
     auto targetRect = gfx::RoundedToInt(aRect * GetDesktopToDeviceScale());
     if (mBounds.TopLeft() != targetRect.TopLeft()) {
-      NotifyWindowMoved(targetRect.X(), targetRect.Y());
+      NotifyWindowMoved(targetRect.TopLeft());
     }
     mBounds.MoveTo(targetRect.TopLeft());
     return Resize(aRect.Size(), aRepaint);

@@ -413,7 +413,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
     def __init__(self, require_config_file=True):
         # abs_dirs defined already in BaseScript but is here to make pylint happy
         self.abs_dirs = None
-        super(DesktopUnittest, self).__init__(
+        super().__init__(
             config_options=self.config_options,
             all_actions=[
                 "clobber",
@@ -475,7 +475,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
 
     # helper methods {{{2
     def _pre_config_lock(self, rw_config):
-        super(DesktopUnittest, self)._pre_config_lock(rw_config)
+        super()._pre_config_lock(rw_config)
         c = self.config
         if not c.get("run_all_suites"):
             return  # configs are valid
@@ -493,7 +493,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
     def query_abs_dirs(self):
         if self.abs_dirs:
             return self.abs_dirs
-        abs_dirs = super(DesktopUnittest, self).query_abs_dirs()
+        abs_dirs = super().query_abs_dirs()
 
         c = self.config
         dirs = {}
@@ -726,12 +726,10 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 c.get("install_extension", [])
             ):
                 fetches_dir = os.environ.get("MOZ_FETCHES_DIR", '""')
-                base_cmd.extend(
-                    [
-                        f"--install-extension={os.path.join(fetches_dir, e)}"
-                        for e in c["install_extension"]
-                    ]
-                )
+                base_cmd.extend([
+                    f"--install-extension={os.path.join(fetches_dir, e)}"
+                    for e in c["install_extension"]
+                ])
 
             # do not add --disable fission if we don't have --disable-e10s
             if c["disable_fission"] and suite_category not in [
@@ -778,14 +776,12 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                                 "'{suite_category}' suite."
                             )
                 elif c.get("total_chunks") and c.get("this_chunk"):
-                    base_cmd.extend(
-                        [
-                            "--total-chunks",
-                            c["total_chunks"],
-                            "--this-chunk",
-                            c["this_chunk"],
-                        ]
-                    )
+                    base_cmd.extend([
+                        "--total-chunks",
+                        c["total_chunks"],
+                        "--this-chunk",
+                        c["this_chunk"],
+                    ])
 
                 if c.get("timeout_factor"):
                     base_cmd.extend(["--timeout-factor", c["timeout_factor"]])
@@ -1036,7 +1032,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 for cat in SUITE_CATEGORIES
                 if self._query_specified_suites(cat) is not None
             ]
-        super(DesktopUnittest, self).download_and_extract(
+        super().download_and_extract(
             extract_dirs=extract_dirs, suite_categories=target_categories
         )
 
@@ -1061,16 +1057,14 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
         command = []
         # Implies that underlying system is Linux.
         if os.environ.get("NEED_PULSEAUDIO") == "true":
-            command.extend(
-                [
-                    "pulseaudio",
-                    "--daemonize",
-                    "--log-level=4",
-                    "--log-time=1",
-                    "-vvvvv",
-                    "--exit-idle-time=-1",
-                ]
-            )
+            command.extend([
+                "pulseaudio",
+                "--daemonize",
+                "--log-level=4",
+                "--log-time=1",
+                "-vvvvv",
+                "--exit-idle-time=-1",
+            ])
 
             # Only run the initialization for Debian.
             # Ubuntu appears to have an alternate method of starting pulseaudio.

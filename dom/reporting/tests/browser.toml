@@ -5,3 +5,5 @@ support-files = [
 ]
 
 ["browser_cleanup.js"]
+
+["browser_reportGeneration.js"]

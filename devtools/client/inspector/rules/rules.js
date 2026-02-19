@@ -134,168 +134,173 @@ const POSITION_TRY_CONTAINER_ID = "position-try-container";
  * CssRuleView is a view of the style rules and declarations that
  * apply to a given element.  After construction, the 'element'
  * property will be available with the user interface.
- *
- * @param {Inspector} inspector
- *        Inspector toolbox panel
- * @param {Document} document
- *        The document that will contain the rule view.
- * @param {object} store
- *        The CSS rule view can use this object to store metadata
- *        that might outlast the rule view, particularly the current
- *        set of disabled properties.
  */
-function CssRuleView(inspector, document, store) {
-  EventEmitter.decorate(this);
+class CssRuleView extends EventEmitter {
+  /**
+   * @param {Inspector} inspector
+   *        Inspector toolbox panel
+   * @param {Document} document
+   *        The document that will contain the rule view.
+   * @param {object} store
+   *        The CSS rule view can use this object to store metadata
+   *        that might outlast the rule view, particularly the current
+   *        set of disabled properties.
+   */
+  constructor(inspector, document, store) {
+    super();
 
-  this.inspector = inspector;
-  this.cssProperties = inspector.cssProperties;
-  this.styleDocument = document;
-  this.styleWindow = this.styleDocument.defaultView;
-  this.store = store || {
-    expandedUnusedCustomCssPropertiesRuleActorIds: new Set(),
-  };
+    this.inspector = inspector;
+    this.cssProperties = inspector.cssProperties;
+    this.styleDocument = document;
+    this.styleWindow = this.styleDocument.defaultView;
+    this.store = store || {
+      expandedUnusedCustomCssPropertiesRuleActorIds: new Set(),
+    };
 
-  // Allow tests to override debouncing behavior, as this can cause intermittents.
-  this.debounce = debounce;
+    // Allow tests to override debouncing behavior, as this can cause intermittents.
+    this.debounce = debounce;
 
-  // Variable used to stop the propagation of mouse events to children
-  // when we are updating a value by dragging the mouse and we then release it
-  this.childHasDragged = false;
+    // Variable used to stop the propagation of mouse events to children
+    // when we are updating a value by dragging the mouse and we then release it
+    this.childHasDragged = false;
 
-  this._outputParser = new OutputParser(document, this.cssProperties);
-  this._abortController = new this.styleWindow.AbortController();
+    this._outputParser = new OutputParser(document, this.cssProperties);
+    this._abortController = new this.styleWindow.AbortController();
 
-  this.addNewRule = this.addNewRule.bind(this);
-  this._onContextMenu = this._onContextMenu.bind(this);
-  this._onCopy = this._onCopy.bind(this);
-  this._onFilterStyles = this._onFilterStyles.bind(this);
-  this._onClearSearch = this._onClearSearch.bind(this);
-  this._onTogglePseudoClassPanel = this._onTogglePseudoClassPanel.bind(this);
-  this._onTogglePseudoClass = this._onTogglePseudoClass.bind(this);
-  this._onToggleClassPanel = this._onToggleClassPanel.bind(this);
-  this._onToggleLightColorSchemeSimulation =
-    this._onToggleLightColorSchemeSimulation.bind(this);
-  this._onToggleDarkColorSchemeSimulation =
-    this._onToggleDarkColorSchemeSimulation.bind(this);
-  this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
-  this.highlightProperty = this.highlightProperty.bind(this);
-  this.refreshPanel = this.refreshPanel.bind(this);
+    this.addNewRule = this.addNewRule.bind(this);
+    this._onContextMenu = this._onContextMenu.bind(this);
+    this._onCopy = this._onCopy.bind(this);
+    this._onFilterStyles = this._onFilterStyles.bind(this);
+    this._onClearSearch = this._onClearSearch.bind(this);
+    this._onTogglePseudoClassPanel = this._onTogglePseudoClassPanel.bind(this);
+    this._onTogglePseudoClass = this._onTogglePseudoClass.bind(this);
+    this._onToggleClassPanel = this._onToggleClassPanel.bind(this);
+    this._onToggleLightColorSchemeSimulation =
+      this._onToggleLightColorSchemeSimulation.bind(this);
+    this._onToggleDarkColorSchemeSimulation =
+      this._onToggleDarkColorSchemeSimulation.bind(this);
+    this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
+    this.highlightProperty = this.highlightProperty.bind(this);
+    this.refreshPanel = this.refreshPanel.bind(this);
 
-  const doc = this.styleDocument;
-  // Delegate bulk handling of events happening within the DOM tree of the Rules view
-  // to this.handleEvent(). Listening on the capture phase of the event bubbling to be
-  // able to stop event propagation on a case-by-case basis and prevent event target
-  // ancestor nodes from handling them.
-  this.styleDocument.addEventListener("click", this, { capture: true });
-  this.element = doc.getElementById("ruleview-container-focusable");
-  this.addRuleButton = doc.getElementById("ruleview-add-rule-button");
-  this.searchField = doc.getElementById("ruleview-searchbox");
-  this.searchClearButton = doc.getElementById("ruleview-searchinput-clear");
-  this.pseudoClassPanel = doc.getElementById("pseudo-class-panel");
-  this.pseudoClassToggle = doc.getElementById("pseudo-class-panel-toggle");
-  this.classPanel = doc.getElementById("ruleview-class-panel");
-  this.classToggle = doc.getElementById("class-panel-toggle");
-  this.colorSchemeLightSimulationButton = doc.getElementById(
-    "color-scheme-simulation-light-toggle"
-  );
-  this.colorSchemeDarkSimulationButton = doc.getElementById(
-    "color-scheme-simulation-dark-toggle"
-  );
-  this.printSimulationButton = doc.getElementById("print-simulation-toggle");
-
-  this._initSimulationFeatures();
-
-  this.searchClearButton.hidden = true;
-
-  this.onHighlighterShown = data =>
-    this.handleHighlighterEvent("highlighter-shown", data);
-  this.onHighlighterHidden = data =>
-    this.handleHighlighterEvent("highlighter-hidden", data);
-  this.inspector.highlighters.on("highlighter-shown", this.onHighlighterShown);
-  this.inspector.highlighters.on(
-    "highlighter-hidden",
-    this.onHighlighterHidden
-  );
-
-  this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
-  this._onShortcut = this._onShortcut.bind(this);
-  this.shortcuts.on("Escape", event => this._onShortcut("Escape", event));
-  this.shortcuts.on("Return", event => this._onShortcut("Return", event));
-  this.shortcuts.on("Space", event => this._onShortcut("Space", event));
-  this.shortcuts.on("CmdOrCtrl+F", event =>
-    this._onShortcut("CmdOrCtrl+F", event)
-  );
-  this.element.addEventListener("copy", this._onCopy);
-  this.element.addEventListener("contextmenu", this._onContextMenu);
-  this.addRuleButton.addEventListener("click", this.addNewRule);
-  this.searchField.addEventListener("input", this._onFilterStyles);
-  this.searchClearButton.addEventListener("click", this._onClearSearch);
-  this.pseudoClassToggle.addEventListener(
-    "click",
-    this._onTogglePseudoClassPanel
-  );
-  this.classToggle.addEventListener("click", this._onToggleClassPanel);
-  // The "change" event bubbles up from checkbox inputs nested within the panel container.
-  this.pseudoClassPanel.addEventListener("change", this._onTogglePseudoClass);
-
-  if (flags.testing) {
-    // In tests, we start listening immediately to avoid having to simulate a mousemove.
-    this.highlighters.addToView(this);
-  } else {
-    this.element.addEventListener(
-      "mousemove",
-      () => {
-        this.highlighters.addToView(this);
-      },
-      { once: true }
+    const doc = this.styleDocument;
+    // Delegate bulk handling of events happening within the DOM tree of the Rules view
+    // to this.handleEvent(). Listening on the capture phase of the event bubbling to be
+    // able to stop event propagation on a case-by-case basis and prevent event target
+    // ancestor nodes from handling them.
+    this.styleDocument.addEventListener("click", this, { capture: true });
+    this.element = doc.getElementById("ruleview-container-focusable");
+    this.addRuleButton = doc.getElementById("ruleview-add-rule-button");
+    this.searchField = doc.getElementById("ruleview-searchbox");
+    this.searchClearButton = doc.getElementById("ruleview-searchinput-clear");
+    this.pseudoClassPanel = doc.getElementById("pseudo-class-panel");
+    this.pseudoClassToggle = doc.getElementById("pseudo-class-panel-toggle");
+    this.classPanel = doc.getElementById("ruleview-class-panel");
+    this.classToggle = doc.getElementById("class-panel-toggle");
+    this.colorSchemeLightSimulationButton = doc.getElementById(
+      "color-scheme-simulation-light-toggle"
     );
+    this.colorSchemeDarkSimulationButton = doc.getElementById(
+      "color-scheme-simulation-dark-toggle"
+    );
+    this.printSimulationButton = doc.getElementById("print-simulation-toggle");
+
+    this._initSimulationFeatures();
+
+    this.searchClearButton.hidden = true;
+
+    this.onHighlighterShown = data =>
+      this.handleHighlighterEvent("highlighter-shown", data);
+    this.onHighlighterHidden = data =>
+      this.handleHighlighterEvent("highlighter-hidden", data);
+    this.inspector.highlighters.on(
+      "highlighter-shown",
+      this.onHighlighterShown
+    );
+    this.inspector.highlighters.on(
+      "highlighter-hidden",
+      this.onHighlighterHidden
+    );
+
+    this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
+    this._onShortcut = this._onShortcut.bind(this);
+    this.shortcuts.on("Escape", event => this._onShortcut("Escape", event));
+    this.shortcuts.on("Return", event => this._onShortcut("Return", event));
+    this.shortcuts.on("Space", event => this._onShortcut("Space", event));
+    this.shortcuts.on("CmdOrCtrl+F", event =>
+      this._onShortcut("CmdOrCtrl+F", event)
+    );
+    this.element.addEventListener("copy", this._onCopy);
+    this.element.addEventListener("contextmenu", this._onContextMenu);
+    this.addRuleButton.addEventListener("click", this.addNewRule);
+    this.searchField.addEventListener("input", this._onFilterStyles);
+    this.searchClearButton.addEventListener("click", this._onClearSearch);
+    this.pseudoClassToggle.addEventListener(
+      "click",
+      this._onTogglePseudoClassPanel
+    );
+    this.classToggle.addEventListener("click", this._onToggleClassPanel);
+    // The "change" event bubbles up from checkbox inputs nested within the panel container.
+    this.pseudoClassPanel.addEventListener("change", this._onTogglePseudoClass);
+
+    if (flags.testing) {
+      // In tests, we start listening immediately to avoid having to simulate a mousemove.
+      this.highlighters.addToView(this);
+    } else {
+      this.element.addEventListener(
+        "mousemove",
+        () => {
+          this.highlighters.addToView(this);
+        },
+        { once: true }
+      );
+    }
+
+    this._handlePrefChange = this._handlePrefChange.bind(this);
+    this._handleUAStylePrefChange = this._handleUAStylePrefChange.bind(this);
+    this._handleDefaultColorUnitPrefChange =
+      this._handleDefaultColorUnitPrefChange.bind(this);
+    this._handleDraggablePrefChange =
+      this._handleDraggablePrefChange.bind(this);
+    this._handleInplaceEditorFocusNextOnEnterPrefChange =
+      this._handleInplaceEditorFocusNextOnEnterPrefChange.bind(this);
+
+    this._prefObserver = new PrefObserver("devtools.");
+    this._prefObserver.on(PREF_UA_STYLES, this._handleUAStylePrefChange);
+    this._prefObserver.on(
+      PREF_DEFAULT_COLOR_UNIT,
+      this._handleDefaultColorUnitPrefChange
+    );
+    this._prefObserver.on(PREF_DRAGGABLE, this._handleDraggablePrefChange);
+    // Initialize value of this.draggablePropertiesEnabled
+    this._handleDraggablePrefChange();
+
+    this._prefObserver.on(
+      PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER,
+      this._handleInplaceEditorFocusNextOnEnterPrefChange
+    );
+    // Initialize value of this.inplaceEditorFocusNextOnEnter
+    this._handleInplaceEditorFocusNextOnEnterPrefChange();
+
+    this.pseudoClassCheckboxes = this._createPseudoClassCheckboxes();
+    this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
+
+    // Add the tooltips and highlighters to the view
+    this.tooltips = new TooltipsOverlay(this);
+
+    this.cssRegisteredPropertiesByTarget = new Map();
+    this._elementsWithPendingClicks = new this.styleWindow.WeakSet();
   }
 
-  this._handlePrefChange = this._handlePrefChange.bind(this);
-  this._handleUAStylePrefChange = this._handleUAStylePrefChange.bind(this);
-  this._handleDefaultColorUnitPrefChange =
-    this._handleDefaultColorUnitPrefChange.bind(this);
-  this._handleDraggablePrefChange = this._handleDraggablePrefChange.bind(this);
-  this._handleInplaceEditorFocusNextOnEnterPrefChange =
-    this._handleInplaceEditorFocusNextOnEnterPrefChange.bind(this);
-
-  this._prefObserver = new PrefObserver("devtools.");
-  this._prefObserver.on(PREF_UA_STYLES, this._handleUAStylePrefChange);
-  this._prefObserver.on(
-    PREF_DEFAULT_COLOR_UNIT,
-    this._handleDefaultColorUnitPrefChange
-  );
-  this._prefObserver.on(PREF_DRAGGABLE, this._handleDraggablePrefChange);
-  // Initialize value of this.draggablePropertiesEnabled
-  this._handleDraggablePrefChange();
-
-  this._prefObserver.on(
-    PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER,
-    this._handleInplaceEditorFocusNextOnEnterPrefChange
-  );
-  // Initialize value of this.inplaceEditorFocusNextOnEnter
-  this._handleInplaceEditorFocusNextOnEnterPrefChange();
-
-  this.pseudoClassCheckboxes = this._createPseudoClassCheckboxes();
-  this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
-
-  // Add the tooltips and highlighters to the view
-  this.tooltips = new TooltipsOverlay(this);
-
-  this.cssRegisteredPropertiesByTarget = new Map();
-  this._elementsWithPendingClicks = new this.styleWindow.WeakSet();
-}
-
-CssRuleView.prototype = {
   // The element that we're inspecting.
-  _viewedElement: null,
+  _viewedElement = null;
 
   // Used for cancelling timeouts in the style filter.
-  _filterChangedTimeout: null,
+  _filterChangedTimeout = null;
 
   // Empty, unconnected element of the same type as this node, used
   // to figure out how shorthand properties will be parsed.
-  _dummyElement: null,
+  _dummyElement = null;
 
   get popup() {
     if (!this._popup) {
@@ -306,7 +311,7 @@ CssRuleView.prototype = {
     }
 
     return this._popup;
-  },
+  }
 
   get classListPreviewer() {
     if (!this._classListPreviewer) {
@@ -317,7 +322,7 @@ CssRuleView.prototype = {
     }
 
     return this._classListPreviewer;
-  },
+  }
 
   get contextMenu() {
     if (!this._contextMenu) {
@@ -325,12 +330,12 @@ CssRuleView.prototype = {
     }
 
     return this._contextMenu;
-  },
+  }
 
   // Get the dummy elemenet.
   get dummyElement() {
     return this._dummyElement;
-  },
+  }
 
   // Get the highlighters overlay from the Inspector.
   get highlighters() {
@@ -340,20 +345,20 @@ CssRuleView.prototype = {
     }
 
     return this._highlighters;
-  },
+  }
 
   // Get the filter search value.
   get searchValue() {
     return this.searchField.value.toLowerCase();
-  },
+  }
 
   get rules() {
     return this._elementStyle ? this._elementStyle.rules : [];
-  },
+  }
 
   get currentTarget() {
     return this.inspector.toolbox.target;
-  },
+  }
 
   /**
    * Highlight/unhighlight all the nodes that match a given rule's selector
@@ -396,7 +401,7 @@ CssRuleView.prototype = {
         options
       );
     }
-  },
+  }
 
   isPanelVisible() {
     return (
@@ -406,7 +411,7 @@ CssRuleView.prototype = {
       (this.inspector.sidebar.getCurrentTabID() == "ruleview" ||
         this.inspector.isThreePaneModeEnabled)
     );
-  },
+  }
 
   /**
    * Check whether a SelectorHighlighter is active for the given selector text.
@@ -420,7 +425,7 @@ CssRuleView.prototype = {
     );
 
     return options?.selector === selector;
-  },
+  }
 
   /**
    * Delegate handler for events happening within the DOM tree of the Rules view.
@@ -445,7 +450,7 @@ CssRuleView.prototype = {
         break;
       default:
     }
-  },
+  }
 
   /**
    * Delegate handler for click events happening within the DOM tree of the Rules view.
@@ -538,7 +543,7 @@ CssRuleView.prototype = {
         });
       }
     }
-  },
+  }
 
   /**
    * Delegate handler for highlighter events.
@@ -610,7 +615,7 @@ CssRuleView.prototype = {
         }
         break;
     }
-  },
+  }
 
   /**
    * Enables the print and color scheme simulation only for local and remote tab debugging.
@@ -640,7 +645,7 @@ CssRuleView.prototype = {
       this.colorSchemeDarkSimulationButton.setAttribute("disabled", true);
       console.warn("Color scheme simulation is disabled in RFP mode.");
     }
-  },
+  }
 
   /**
    * Get the type of a given node in the rule-view
@@ -656,7 +661,7 @@ CssRuleView.prototype = {
    */
   getNodeInfo(node) {
     return getNodeInfo(node, this._elementStyle);
-  },
+  }
 
   /**
    * Get the node's compatibility issues
@@ -680,7 +685,7 @@ CssRuleView.prototype = {
     );
 
     return compatibilityInfo;
-  },
+  }
 
   /**
    * Context menu handler.
@@ -698,7 +703,7 @@ CssRuleView.prototype = {
     event.preventDefault();
 
     this.contextMenu.show(event);
-  },
+  }
 
   /**
    * Callback for copy event. Copy the selected text.
@@ -712,7 +717,7 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
-  },
+  }
 
   /**
    * Copy the current selection. The current target is necessary
@@ -748,7 +753,7 @@ CssRuleView.prototype = {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
   /**
    * Add a new rule to the current element.
@@ -763,7 +768,7 @@ CssRuleView.prototype = {
 
     this._focusNextUserAddedRule = true;
     this.pageStyle.addNewRule(element, pseudoClasses);
-  },
+  }
 
   /**
    * Returns true if the "Add Rule" action (either via the addRuleButton or the context
@@ -773,14 +778,14 @@ CssRuleView.prototype = {
    */
   canAddNewRuleForSelectedNode() {
     return this._viewedElement && this.inspector.selection.isElementNode();
-  },
+  }
 
   /**
    * Disables add rule button when needed
    */
   refreshAddRuleButtonState() {
     this.addRuleButton.disabled = !this.canAddNewRuleForSelectedNode();
-  },
+  }
 
   /**
    * Return {Boolean} true if the rule view currently has an input
@@ -791,16 +796,16 @@ CssRuleView.prototype = {
       this.tooltips.isEditing ||
       !!this.element.querySelectorAll(".styleinspector-propertyeditor").length
     );
-  },
+  }
 
   _handleUAStylePrefChange() {
     this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
     this._handlePrefChange(PREF_UA_STYLES);
-  },
+  }
 
   _handleDefaultColorUnitPrefChange() {
     this._handlePrefChange(PREF_DEFAULT_COLOR_UNIT);
-  },
+  }
 
   _handleDraggablePrefChange() {
     this.draggablePropertiesEnabled = Services.prefs.getBoolPref(
@@ -811,7 +816,7 @@ CssRuleView.prototype = {
     // update their draggable behavior. Preferences observer are costly, so
     // we are forwarding the preference update via the EventEmitter.
     this.emit("draggable-preference-updated");
-  },
+  }
 
   _handleInplaceEditorFocusNextOnEnterPrefChange() {
     this.inplaceEditorFocusNextOnEnter = Services.prefs.getBoolPref(
@@ -819,7 +824,7 @@ CssRuleView.prototype = {
       false
     );
     this._handlePrefChange(PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER);
-  },
+  }
 
   _handlePrefChange(pref) {
     // Reselect the currently selected element
@@ -831,7 +836,7 @@ CssRuleView.prototype = {
     if (this._viewedElement && refreshOnPrefs.includes(pref)) {
       this.selectElement(this._viewedElement, true);
     }
-  },
+  }
 
   /**
    * Set the filter style search value.
@@ -843,7 +848,7 @@ CssRuleView.prototype = {
     this.searchField.value = value;
     this.searchField.focus();
     this._onFilterStyles();
-  },
+  }
 
   /**
    * Called when the user enters a search term in the filter style search box.
@@ -868,12 +873,12 @@ CssRuleView.prototype = {
         FILTER_CHANGED_TIMEOUT
       );
     }
-  },
+  }
 
   /**
    * Actually update search data and update the UI to reflect the current search.
    *
-   * @emits ruleview-filtered
+   * @fires ruleview-filtered
    */
   _doFilterStyles() {
     this.searchData = {
@@ -938,7 +943,7 @@ CssRuleView.prototype = {
     this.inspector.emit("ruleview-filtered");
 
     this._filterChangeTimeout = null;
-  },
+  }
 
   /**
    * Called when the user clicks on the clear button in the filter style search
@@ -951,7 +956,7 @@ CssRuleView.prototype = {
     }
 
     return false;
-  },
+  }
 
   destroy() {
     this.isDestroyed = true;
@@ -1060,7 +1065,7 @@ CssRuleView.prototype = {
       this._popup.destroy();
       this._popup = null;
     }
-  },
+  }
 
   /**
    * Mark the view as selecting an element, disabling all interaction, and
@@ -1069,14 +1074,14 @@ CssRuleView.prototype = {
    */
   _startSelectingElement() {
     this.element.classList.add("non-interactive");
-  },
+  }
 
   /**
    * Mark the view as no longer selecting an element, re-enabling interaction.
    */
   _stopSelectingElement() {
     this.element.classList.remove("non-interactive");
-  },
+  }
 
   /**
    * Update the view with a new selected element.
@@ -1182,7 +1187,7 @@ CssRuleView.prototype = {
         }
         console.error(e);
       });
-  },
+  }
 
   /**
    * Update the rules for the currently highlighted element.
@@ -1204,7 +1209,7 @@ CssRuleView.prototype = {
     return Promise.all(promises).then(() => {
       return this._populate();
     });
-  },
+  }
 
   /**
    * Clear the pseudo class options panel by removing the checked and disabled
@@ -1215,7 +1220,7 @@ CssRuleView.prototype = {
       checkbox.checked = false;
       checkbox.disabled = false;
     });
-  },
+  }
 
   /**
    * For each item in PSEUDO_CLASSES, create a checkbox input element for toggling a
@@ -1244,7 +1249,7 @@ CssRuleView.prototype = {
     return Array.from(
       this.pseudoClassPanel.querySelectorAll("input[type=checkbox]")
     );
-  },
+  }
 
   /**
    * Update the pseudo class options for the currently highlighted element.
@@ -1265,7 +1270,7 @@ CssRuleView.prototype = {
       checkbox.disabled = false;
       checkbox.checked = pseudoClassLocks.includes(checkbox.value);
     });
-  },
+  }
 
   _populate() {
     const elementStyle = this._elementStyle;
@@ -1286,7 +1291,7 @@ CssRuleView.prototype = {
         }, console.error);
       })
       .catch(promiseWarn);
-  },
+  }
 
   /**
    * Show the user that the rule view has no node selected.
@@ -1301,14 +1306,14 @@ CssRuleView.prototype = {
       class: "devtools-sidepanel-no-result",
       textContent: l10n("rule.empty"),
     });
-  },
+  }
 
   /**
    * Clear the rules.
    */
   _clearRules() {
     this.element.innerHTML = "";
-  },
+  }
 
   /**
    * Clear the rule view.
@@ -1328,7 +1333,7 @@ CssRuleView.prototype = {
       this.pageStyle.off("stylesheet-updated", this.refreshPanel);
       this.pageStyle = null;
     }
-  },
+  }
 
   /**
    * Called when the user has made changes to the ElementStyle.
@@ -1336,7 +1341,7 @@ CssRuleView.prototype = {
    */
   _changed() {
     this.emit("ruleview-changed");
-  },
+  }
 
   /**
    * Text for header that shows above rules for this element
@@ -1347,7 +1352,7 @@ CssRuleView.prototype = {
     }
     this._selectedElementLabel = l10n("rule.selectedElement");
     return this._selectedElementLabel;
-  },
+  }
 
   /**
    * Text for header that shows above rules for pseudo elements
@@ -1358,7 +1363,7 @@ CssRuleView.prototype = {
     }
     this._pseudoElementLabel = l10n("rule.pseudoElement");
     return this._pseudoElementLabel;
-  },
+  }
 
   get showPseudoElements() {
     if (this._showPseudoElements === undefined) {
@@ -1367,7 +1372,7 @@ CssRuleView.prototype = {
       );
     }
     return this._showPseudoElements;
-  },
+  }
 
   /**
    * Creates an expandable container in the rule view
@@ -1428,7 +1433,7 @@ CssRuleView.prototype = {
     }
 
     return container;
-  },
+  }
 
   /**
    * Create the `@property` expandable container
@@ -1442,7 +1447,7 @@ CssRuleView.prototype = {
     );
     el.classList.add("registered-properties");
     return el;
-  },
+  }
 
   /**
    * Return the RegisteredPropertyEditor element for a given property name
@@ -1454,7 +1459,7 @@ CssRuleView.prototype = {
     return this.styleDocument.querySelector(
       `#${REGISTERED_PROPERTIES_CONTAINER_ID} [data-name="${registeredPropertyName}"]`
     );
-  },
+  }
 
   /**
    * Toggle the visibility of an expandable container
@@ -1486,7 +1491,7 @@ CssRuleView.prototype = {
     }
 
     toggleButton.setAttribute("aria-expanded", !isOpen);
-  },
+  }
 
   /**
    * Creates editor UI for each of the rules in _elementStyle.
@@ -1665,7 +1670,7 @@ CssRuleView.prototype = {
     );
 
     return Promise.all(editorReadyPromises);
-  },
+  }
 
   /**
    * Highlight rules that matches the filter search value and returns a
@@ -1693,7 +1698,7 @@ CssRuleView.prototype = {
     }
 
     return isHighlighted;
-  },
+  }
 
   /**
    * Highlights the rule selector that matches the filter search value and
@@ -1732,7 +1737,7 @@ CssRuleView.prototype = {
     }
 
     return isSelectorHighlighted;
-  },
+  }
 
   /**
    * Highlights the ancestor rules data (@media / @layer) that matches the filter search
@@ -1763,7 +1768,7 @@ CssRuleView.prototype = {
     }
 
     return isHighlighted;
-  },
+  }
 
   /**
    * Highlights the stylesheet source that matches the filter search value and
@@ -1784,7 +1789,7 @@ CssRuleView.prototype = {
     }
 
     return isStyleSheetHighlighted;
-  },
+  }
 
   /**
    * Highlights the rule properties and computed properties that match the
@@ -1811,7 +1816,7 @@ CssRuleView.prototype = {
     }
 
     return isPropertyHighlighted || isComputedHighlighted;
-  },
+  }
 
   /**
    * Called when TextPropertyEditor is updated and updates the rule property
@@ -1830,7 +1835,7 @@ CssRuleView.prototype = {
     if (this._highlightProperty(editor.prop)) {
       this.searchField.classList.remove("devtools-style-searchbox-no-match");
     }
-  },
+  }
 
   /**
    * Highlights the rule property that matches the filter search value
@@ -1856,7 +1861,7 @@ CssRuleView.prototype = {
       propertyValue,
       textProperty,
     });
-  },
+  }
 
   /**
    * Highlights the computed property that matches the filter search value and
@@ -1895,7 +1900,7 @@ CssRuleView.prototype = {
     }
 
     return isComputedHighlighted;
-  },
+  }
 
   /**
    * Helper function for highlightRules that carries out highlighting the given
@@ -1974,7 +1979,7 @@ CssRuleView.prototype = {
     element.classList.add("ruleview-highlight");
 
     return true;
-  },
+  }
 
   /**
    * Clear all search filter highlights in the panel, and close the computed
@@ -1990,7 +1995,7 @@ CssRuleView.prototype = {
     )) {
       computed.parentNode._textPropertyEditor.collapseForFilter();
     }
-  },
+  }
 
   /**
    * Called when the pseudo class panel button is clicked and toggles
@@ -2002,7 +2007,7 @@ CssRuleView.prototype = {
     } else {
       this.hidePseudoClassPanel();
     }
-  },
+  }
 
   showPseudoClassPanel() {
     this.hideClassPanel();
@@ -2012,7 +2017,7 @@ CssRuleView.prototype = {
       checkbox.setAttribute("tabindex", "0");
     });
     this.pseudoClassPanel.hidden = false;
-  },
+  }
 
   hidePseudoClassPanel() {
     this.pseudoClassToggle.setAttribute("aria-pressed", "false");
@@ -2020,7 +2025,7 @@ CssRuleView.prototype = {
       checkbox.setAttribute("tabindex", "-1");
     });
     this.pseudoClassPanel.hidden = true;
-  },
+  }
 
   /**
    * Called when a pseudo class checkbox is clicked and toggles
@@ -2029,7 +2034,7 @@ CssRuleView.prototype = {
   _onTogglePseudoClass(event) {
     const target = event.target;
     this.inspector.togglePseudoClass(target.value);
-  },
+  }
 
   /**
    * Called when the class panel button is clicked and toggles the display of the class
@@ -2041,7 +2046,7 @@ CssRuleView.prototype = {
     } else {
       this.hideClassPanel();
     }
-  },
+  }
 
   showClassPanel() {
     this.hidePseudoClassPanel();
@@ -2050,12 +2055,12 @@ CssRuleView.prototype = {
     this.classPanel.hidden = false;
 
     this.classListPreviewer.focusAddClassField();
-  },
+  }
 
   hideClassPanel() {
     this.classToggle.setAttribute("aria-pressed", "false");
     this.classPanel.hidden = true;
-  },
+  }
 
   /**
    * Handle the keypress event in the rule view.
@@ -2083,7 +2088,7 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
-  },
+  }
 
   async _onToggleLightColorSchemeSimulation() {
     const shouldSimulateLightScheme =
@@ -2104,7 +2109,7 @@ CssRuleView.prototype = {
     );
     // Refresh the current element's rules in the panel.
     this.refreshPanel();
-  },
+  }
 
   async _onToggleDarkColorSchemeSimulation() {
     const shouldSimulateDarkScheme =
@@ -2125,7 +2130,7 @@ CssRuleView.prototype = {
     );
     // Refresh the current element's rules in the panel.
     this.refreshPanel();
-  },
+  }
 
   async _onTogglePrintSimulation() {
     const enabled =
@@ -2138,7 +2143,7 @@ CssRuleView.prototype = {
     );
     // Refresh the current element's rules in the panel.
     this.refreshPanel();
-  },
+  }
 
   /**
    * Temporarily flash the given element.
@@ -2167,7 +2172,7 @@ CssRuleView.prototype = {
 
       setTimeout(this._flashMutationCallback, PROPERTY_FLASHING_DURATION);
     });
-  },
+  }
 
   /**
    * Scrolls to the top of either the rule or declaration. The view will try to scroll to
@@ -2201,7 +2206,7 @@ CssRuleView.prototype = {
     scrollBehavior = reducedMotion ? "auto" : scrollBehavior;
 
     elementToScrollTo.scrollIntoView({ behavior: scrollBehavior });
-  },
+  }
 
   /**
    * Toggles the visibility of the pseudo element rule's container.
@@ -2214,7 +2219,7 @@ CssRuleView.prototype = {
       `[aria-controls="${PSEUDO_ELEMENTS_CONTAINER_ID}"]`
     );
     this._toggleContainerVisibility(toggle, container, true, true);
-  },
+  }
 
   /**
    * Finds the specified TextProperty name in the rule view. If found, scroll to and
@@ -2314,7 +2319,7 @@ CssRuleView.prototype = {
     }
 
     return false;
-  },
+  }
 
   /**
    * If the passed name matches a registered CSS property highlight it
@@ -2350,7 +2355,7 @@ CssRuleView.prototype = {
 
     this._highlightElementInRule(null, propertyEl, scrollBehavior);
     return true;
-  },
+  }
 
   /**
    * Highlight a given element in a rule editor
@@ -2368,7 +2373,7 @@ CssRuleView.prototype = {
     this._flashElement(element).then(() =>
       this.emitForTests("element-highlighted", element)
     );
-  },
+  }
 
   /**
    * Returns a Map (keyed by name) of the registered
@@ -2380,8 +2385,8 @@ CssRuleView.prototype = {
     return this.cssRegisteredPropertiesByTarget.get(
       this.inspector.selection.nodeFront.targetFront
     );
-  },
-};
+  }
+}
 
 class RuleViewTool {
   constructor(inspector, window) {

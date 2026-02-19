@@ -7,6 +7,7 @@ package org.mozilla.fenix.ext
 import android.view.View
 import io.mockk.every
 import io.mockk.mockk
+import mozilla.components.support.utils.ext.getKeyboardHeight
 import org.junit.Assert.assertEquals
 import org.junit.Ignore
 import org.junit.Test

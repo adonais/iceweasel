@@ -11,7 +11,6 @@
 #include "p2p/base/connection.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -30,6 +29,7 @@
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/stun.h"
+#include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
@@ -49,11 +49,12 @@
 #include "rtc_base/crypto_random.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/net_helper.h"
+#include "rtc_base/net_helpers.h"
 #include "rtc_base/network.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_constants.h"
-#include "rtc_base/platform_thread_types.h"
+#include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
@@ -225,7 +226,7 @@ void Connection::ConnectionRequest::OnSent() {
 }
 
 int Connection::ConnectionRequest::resend_delay() {
-  return CONNECTION_RESPONSE_TIMEOUT;
+  return kConnectionResponseTimeout.ms();
 }
 
 Connection::Connection(const Environment& env,
@@ -238,8 +239,8 @@ Connection::Connection(const Environment& env,
       port_(std::move(port)),
       local_candidate_(port_->Candidates()[index]),
       remote_candidate_(remote_candidate),
-      recv_rate_tracker_(100, 10u),
-      send_rate_tracker_(100, 10u),
+      recv_rate_tracker_(/*max_window_size=*/TimeDelta::Seconds(1)),
+      send_rate_tracker_(/*max_window_size=*/TimeDelta::Seconds(1)),
       last_send_data_(Timestamp::Zero()),
       write_state_(STATE_WRITE_INIT),
       receiving_(false),
@@ -257,7 +258,7 @@ Connection::Connection(const Environment& env,
       last_ping_response_received_(Timestamp::Zero()),
       receiving_unchanged_since_(Timestamp::Zero()),
       state_(IceCandidatePairState::WAITING),
-      time_created_(AlignTime(env_.clock().CurrentTime())),
+      time_created_(env_.clock().CurrentTime()),
       delta_internal_unix_epoch_(Timestamp::Millis(TimeUTCMillis()) -
                                  time_created_),
       field_trials_(&kDefaultFieldTrials),
@@ -287,16 +288,19 @@ const Candidate& Connection::remote_candidate() const {
 }
 
 const Network* Connection::network() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in network()";
   return port()->Network();
 }
 
 int Connection::generation() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in generation()";
   return port()->generation();
 }
 
 uint64_t Connection::priority() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in priority()";
   if (!port_)
     return 0;
@@ -332,12 +336,11 @@ void Connection::set_write_state(WriteState value) {
   if (value != old_value) {
     RTC_LOG(LS_VERBOSE) << ToString() << ": set_write_state from: " << old_value
                         << " to " << value;
-    SignalStateChange(this);
+    NotifyStateChange(this);
   }
 }
 
 void Connection::UpdateReceiving(Timestamp now) {
-  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
   bool receiving;
   if (LastPingSent() < LastPingResponseReceived()) {
@@ -360,7 +363,7 @@ void Connection::UpdateReceiving(Timestamp now) {
   RTC_LOG(LS_VERBOSE) << ToString() << ": set_receiving to " << receiving;
   receiving_ = receiving;
   receiving_unchanged_since_ = now;
-  SignalStateChange(this);
+  NotifyStateChange(this);
 }
 
 void Connection::set_state(IceCandidatePairState state) {
@@ -378,7 +381,7 @@ void Connection::set_connected(bool value) {
   connected_ = value;
   if (value != old_value) {
     RTC_LOG(LS_VERBOSE) << ToString() << ": Change connected_ to " << value;
-    SignalStateChange(this);
+    NotifyStateChange(this);
   }
 }
 
@@ -419,7 +422,7 @@ void Connection::SetUnwritableTimeout(std::optional<TimeDelta> value) {
 
 int Connection::unwritable_min_checks() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  return unwritable_min_checks_.value_or(CONNECTION_WRITE_CONNECT_FAILURES);
+  return unwritable_min_checks_.value_or(kConnectionWriteConnectFailures);
 }
 
 void Connection::set_unwritable_min_checks(const std::optional<int>& value) {
@@ -499,9 +502,10 @@ void Connection::OnReadPacket(const ReceivedIpPacket& packet) {
           packet.payload().size(), addr, &msg, &remote_ufrag)) {
     // The packet did not parse as a valid STUN message
     // This is a data packet, pass it along.
-    last_data_received_ = AlignTime(env_.clock().CurrentTime());
+    last_data_received_ = env_.clock().CurrentTime();
     UpdateReceiving(last_data_received_);
-    recv_rate_tracker_.AddSamples(packet.payload().size());
+    recv_rate_tracker_.Update(packet.payload().size(), last_data_received_);
+    stats_.recv_total_bytes += packet.payload().size();
     stats_.packets_received++;
     if (received_packet_callback_) {
       received_packet_callback_(this, packet);
@@ -682,7 +686,7 @@ void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {
       last_ping_response_received_ <= Timestamp::Zero()) {
     if (local_candidate().is_relay() || local_candidate().is_prflx() ||
         remote_candidate().is_relay() || remote_candidate().is_prflx()) {
-      const Timestamp now = AlignTime(env_.clock().CurrentTime());
+      const Timestamp now = env_.clock().CurrentTime();
       if (last_ping_sent_ + kMinExtraPingDelay <= now) {
         RTC_LOG(LS_INFO) << ToString()
                          << "WebRTC-ExtraICEPing/Sending extra ping"
@@ -748,7 +752,7 @@ void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {
     // We don't un-nominate a connection, so we only keep a larger nomination.
     if (nomination > remote_nomination_) {
       set_remote_nomination(nomination);
-      SignalNominated(this);
+      NotifyNominated(this);
     }
   }
   // Set the remote cost if the network_info attribute is available.
@@ -763,7 +767,7 @@ void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {
       remote_candidate_.set_network_cost(network_cost);
       // Network cost change will affect the connection ranking, so signal
       // state change to force a re-sort in P2PTransportChannel.
-      SignalStateChange(this);
+      NotifyStateChange(this);
     }
   }
 
@@ -795,7 +799,7 @@ void Connection::SendStunBindingResponse(const StunMessage* message) {
     response.AddAttribute(std::make_unique<StunUInt32Attribute>(
         STUN_ATTR_RETRANSMIT_COUNT, retransmit_attr->value()));
 
-    if (retransmit_attr->value() > CONNECTION_WRITE_CONNECT_FAILURES) {
+    if (retransmit_attr->value() > kConnectionWriteConnectFailures) {
       RTC_LOG(LS_INFO)
           << ToString()
           << ": Received a remote ping with high retransmit count: "
@@ -904,7 +908,7 @@ void Connection::set_remote_nomination(uint32_t remote_nomination) {
 
 void Connection::OnReadyToSend() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  SignalReadyToSend(this);
+  NotifyReadyToSend(this);
 }
 
 bool Connection::pruned() const {
@@ -941,9 +945,11 @@ bool Connection::Shutdown() {
   // intentionally to avoid a situation whereby the signal might have dangling
   // pointers to objects that have been deleted by the time the async task
   // that deletes the connection object runs.
-  auto destroyed_signals = SignalDestroyed;
-  SignalDestroyed.disconnect_all();
-  destroyed_signals(this);
+  // Note: With CallbackList, there's no way of clearing all callbacks.
+  // It would be cleaner if all callbacks used a safety flag on objects
+  // whose existence they care about.
+  // TODO: issues.webrtc.org/42222066 - figure out if this matters.
+  NotifyDestroyed(this);
 
   LogCandidatePairConfig(IceCandidatePairConfigType::kDestroyed);
 
@@ -1004,7 +1010,6 @@ void Connection::set_selected(bool selected) {
 }
 
 void Connection::UpdateState(Timestamp now) {
-  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in UpdateState()";
   if (!port_)
@@ -1087,7 +1092,6 @@ void Connection::Ping() {
 
 void Connection::Ping(Timestamp now,
                       std::unique_ptr<StunByteStringAttribute> delta) {
-  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in Ping()";
   if (!port_)
@@ -1220,7 +1224,7 @@ Timestamp Connection::LastPingReceived() const {
 
 void Connection::ReceivedPing(const std::optional<std::string>& request_id) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  last_ping_received_ = AlignTime(env_.clock().CurrentTime());
+  last_ping_received_ = env_.clock().CurrentTime();
   last_ping_id_received_ = request_id;
   UpdateReceiving(last_ping_received_);
 }
@@ -1242,8 +1246,7 @@ void Connection::HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg) {
       RTC_LOG_V(sev) << ToString()
                      << ": Received piggyback STUN ping response, id="
                      << hex_encode(request_id);
-      const TimeDelta rtt =
-          AlignTime(env_.clock().CurrentTime()) - iter->sent_time;
+      const TimeDelta rtt = env_.clock().CurrentTime() - iter->sent_time;
       ReceivedPingResponse(rtt, request_id, iter->nomination);
     }
   }
@@ -1274,7 +1277,7 @@ void Connection::ReceivedPingResponse(
     acked_nomination_ = nomination.value();
   }
 
-  Timestamp now = AlignTime(env_.clock().CurrentTime());
+  Timestamp now = env_.clock().CurrentTime();
   total_round_trip_time_ += rtt;
   current_round_trip_time_ = rtt;
   rtt_estimate_.AddSample(now.ms(), rtt.ms());
@@ -1326,7 +1329,6 @@ bool Connection::active() const {
 }
 
 bool Connection::dead(Timestamp now) const {
-  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
   if (LastReceived() > Timestamp::Zero()) {
     // If it has ever received anything, we keep it alive
@@ -1391,6 +1393,7 @@ std::string Connection::ToDebugId() const {
 }
 
 uint32_t Connection::ComputeNetworkCost() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
   // TODO(honghaiz): Will add rtt as part of the network cost.
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in ComputeNetworkCost()";
   return port()->network_cost() + remote_candidate_.network_cost();
@@ -1725,10 +1728,11 @@ uint32_t Connection::prflx_priority() const {
 
 ConnectionInfo Connection::stats() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  stats_.recv_bytes_second = round(recv_rate_tracker_.ComputeRate());
-  stats_.recv_total_bytes = recv_rate_tracker_.TotalSampleCount();
-  stats_.sent_bytes_second = round(send_rate_tracker_.ComputeRate());
-  stats_.sent_total_bytes = send_rate_tracker_.TotalSampleCount();
+  Timestamp now = env_.clock().CurrentTime();
+  stats_.recv_bytes_second =
+      recv_rate_tracker_.Rate(now).value_or(DataRate::Zero()).bps<size_t>();
+  stats_.sent_bytes_second =
+      send_rate_tracker_.Rate(now).value_or(DataRate::Zero()).bps<size_t>();
   stats_.receiving = receiving_;
   stats_.writable = write_state_ == STATE_WRITABLE;
   stats_.timeout = write_state_ == STATE_WRITE_TIMEOUT;
@@ -1784,9 +1788,9 @@ void Connection::MaybeUpdateLocalCandidate(StunRequest* request,
         RTC_LOG(LS_INFO) << ToString()
                          << ": Updating local candidate type to srflx.";
         local_candidate_ = candidate;
-        // SignalStateChange to force a re-sort in P2PTransportChannel as this
+        // NotifyStateChange to force a re-sort in P2PTransportChannel as this
         // Connection's local candidate has changed.
-        SignalStateChange(this);
+        NotifyStateChange(this);
       }
       return;
     }
@@ -1820,9 +1824,9 @@ void Connection::MaybeUpdateLocalCandidate(StunRequest* request,
   RTC_LOG(LS_INFO) << ToString() << ": Updating local candidate type to prflx.";
   port_->AddPrflxCandidate(local_candidate_);
 
-  // SignalStateChange to force a re-sort in P2PTransportChannel as this
+  // NotifyStateChange to force a re-sort in P2PTransportChannel as this
   // Connection's local candidate has changed.
-  SignalStateChange(this);
+  NotifyStateChange(this);
 }
 
 bool Connection::rtt_converged() const {
@@ -1832,7 +1836,6 @@ bool Connection::rtt_converged() const {
 
 bool Connection::missing_responses(Timestamp now) const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  now = AlignTime(now);
   if (pings_since_last_response_.empty()) {
     return false;
   }
@@ -1865,7 +1868,7 @@ void Connection::SetLocalCandidateNetworkCost(uint16_t cost) {
   // Network cost change will affect the connection selection criteria.
   // Signal the connection state change to force a re-sort in
   // P2PTransportChannel.
-  SignalStateChange(this);
+  NotifyStateChange(this);
 }
 
 bool Connection::ShouldSendGoogPing(const StunMessage* message) {
@@ -1918,7 +1921,7 @@ int ProxyConnection::Send(const void* data,
     mutable_stats().sent_discarded_packets++;
     mutable_stats().sent_discarded_bytes += size;
   } else {
-    send_rate_tracker().AddSamplesAtTime(now.ms(), sent);
+    AddSentBytesToStats(sent, now);
   }
   set_last_send_data(now);
   return sent;

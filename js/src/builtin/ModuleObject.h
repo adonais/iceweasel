@@ -66,12 +66,15 @@ class ImportAttribute {
 
 using ImportAttributeVector = GCVector<ImportAttribute, 0, SystemAllocPolicy>;
 
+enum class ImportPhase : uint8_t { Evaluation, Limit };
+
 class ModuleRequestObject : public NativeObject {
  public:
   enum {
     SpecifierSlot = 0,
     FirstUnsupportedAttributeKeySlot,
     ModuleTypeSlot,
+    PhaseSlot,
     SlotCount
   };
 
@@ -79,13 +82,15 @@ class ModuleRequestObject : public NativeObject {
   static bool isInstance(HandleValue value);
   [[nodiscard]] static ModuleRequestObject* create(
       JSContext* cx, Handle<JSAtom*> specifier,
-      Handle<ImportAttributeVector> maybeAttributes);
-  [[nodiscard]] static ModuleRequestObject* create(JSContext* cx,
-                                                   Handle<JSAtom*> specifier,
-                                                   JS::ModuleType moduleType);
+      Handle<ImportAttributeVector> maybeAttributes,
+      ImportPhase phase = ImportPhase::Evaluation);
+  [[nodiscard]] static ModuleRequestObject* create(
+      JSContext* cx, Handle<JSAtom*> specifier, JS::ModuleType moduleType,
+      ImportPhase phase = ImportPhase::Evaluation);
 
   JSAtom* specifier() const;
   JS::ModuleType moduleType() const;
+  ImportPhase phase() const;
 
   // We process import attributes earlier in the process, but according to the
   // spec, we should error during module evaluation if we encounter an

@@ -1110,7 +1110,7 @@ linux64-fuzzing-ccov/opt:
             - linux64-cbindgen
             - linux64-dump_syms
             - linux64-llvm-symbolizer
-            - linux64-rust-1.83
+            - linux64-rust-dev
             - linux64-rust-size
             - linux64-sccache
             - linux64-nasm
@@ -1477,7 +1477,7 @@ linux64-ccov/opt:
     fetches:
         toolchain:
             - linux64-clang
-            - linux64-rust-1.83
+            - linux64-rust-dev
             - linux64-cbindgen
             - linux64-dump_syms
             - linux64-sccache
@@ -1518,7 +1518,7 @@ linux64-ccov/debug:
     fetches:
         toolchain:
             - linux64-clang
-            - linux64-rust-1.83
+            - linux64-rust-dev
             - linux64-cbindgen
             - linux64-dump_syms
             - linux64-sccache

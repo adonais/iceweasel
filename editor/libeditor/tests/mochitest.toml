@@ -81,8 +81,6 @@ skip-if = [
 
 ["test_bug426246.html"]
 
-["test_bug430392.html"]
-
 ["test_bug439808.html"]
 
 ["test_bug442186.html"]
@@ -666,6 +664,8 @@ support-files = ["file_sanitizer_on_paste.sjs"]
 
 ["test_select_all_without_body.html"]
 support-files = ["file_select_all_without_body.html"]
+
+["test_selectable_input_event_dispatching_for_compositionend.html"]
 
 ["test_selection_at_beforeinput_insertReplacementText.html"]
 skip-if = [

@@ -556,6 +556,15 @@ add_task(async function test_default_location_selected() {
   await SpecialPowers.popPrefEnv();
 });
 
+async function waitInitialRequestStateSettled() {
+  // restore-from-backup.mjs is rendered quite late during the load.
+  // Bug 543435 caused a timing change such that withNewTab resolves right after
+  // that component dispatches BackupUI:InitWidget. So BackupUIParent hasn't yet
+  // received RequestState. If the RequestState / StateUpdate happens during the test
+  // that can mess things up, so wait a tick. See bug 2001583
+  await new Promise(res => setTimeout(res));
+}
+
 /**
  * Tests that the persistent data for embedded components is set when a user picks a file
  * and is flushed once backup is enabled.
@@ -566,6 +575,7 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    await waitInitialRequestStateSettled();
     const mockCustomParentDir = await IOUtils.createUniqueDirectory(
       PathUtils.tempDir,
       "our-dummy-folder"
@@ -651,6 +661,7 @@ add_task(
     await BrowserTestUtils.withNewTab(
       "about:preferences#sync",
       async browser => {
+        await waitInitialRequestStateSettled();
         const mockCustomParentDir = await IOUtils.createUniqueDirectory(
           PathUtils.tempDir,
           "our-dummy-folder"

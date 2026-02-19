@@ -27,7 +27,7 @@
 
   The first argument to HTML_TAG is the tag name. The second argument is the
   "creator" method of the form NS_New$TAGNAMEElement, that will be used by
-  nsHTMLContentSink.cpp to create a content object for a tag of that
+  HTMLElementFactory.cpp to create a content object for a tag of that
   type. Use NOTUSED, if the particular tag has a non-standard creator.
   The third argument is the interface name specified for this element
   in the HTML specification. It can be empty if the relevant interface name
@@ -188,7 +188,7 @@ HTML_HTMLELEMENT_TAG(wbr)
 HTML_TAG(xmp, Pre, Pre)
 
 /* These are not for tags. But they will be included in the nsHTMLTag
-   enum anyway */
+   enum anyway, because they are used by HTMLEditUtils. */
 
 HTML_OTHER(text)
 HTML_OTHER(whitespace)

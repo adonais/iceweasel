@@ -85,3 +85,14 @@ def fixture_add_browser_capabilities(configuration):
         return result
 
     return add_browser_capabilities
+
+
+@pytest_asyncio.fixture
+async def chrome_context(bidi_session):
+    parent_contexts = await bidi_session.browsing_context.get_tree(
+        max_depth=0, _extension_params={"moz:scope": "chrome"}
+    )
+
+    assert len(parent_contexts) > 0
+
+    return parent_contexts[0]

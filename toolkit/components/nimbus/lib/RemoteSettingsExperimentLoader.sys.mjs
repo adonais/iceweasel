@@ -119,6 +119,27 @@ export const MatchStatus = Object.freeze({
   DISABLED: "DISABLED",
 });
 
+const DeliveryKind = Object.freeze({
+  FIREFOX_LABS_OPT_IN: "firefox-labs-opt-in",
+  ROLLOUT: "rollout",
+  STUDY: "study",
+});
+
+/**
+ * @returns {DeliveryKind}
+ */
+function getDeliveryKind(recipe) {
+  if (recipe.isFirefoxLabsOptIn) {
+    return DeliveryKind.FIREFOX_LABS_OPT_IN;
+  }
+
+  if (recipe.isRollout) {
+    return DeliveryKind.ROLLOUT;
+  }
+
+  return DeliveryKind.STUDY;
+}
+
 export const CheckRecipeResult = {
   Ok(status) {
     return {
@@ -396,82 +417,88 @@ export class RemoteSettingsExperimentLoader {
     // See-also: https://bugzilla.mozilla.org/show_bug.cgi?id=1936317
     // See-also: https://bugzilla.mozilla.org/show_bug.cgi?id=1936319
     if (lazy.TARGETING_CONTEXT_TELEMETRY_ENABLED) {
-      lazy.recordTargetingContext();
+      await lazy.recordTargetingContext();
     }
 
-    // Since this method is async, the enabled pref could change between await
-    // points. We don't want to half validate experiments, so we cache this to
-    // keep it consistent throughout updating.
-    const validationEnabled = this.validationEnabled;
-
-    let recipeValidator;
-
-    if (validationEnabled) {
-      recipeValidator = new lazy.JsonSchema.Validator(
-        await SCHEMAS.NimbusExperiment
-      );
-    }
-
-    let allRecipes = null;
     try {
-      allRecipes = await this.getRecipesFromAllCollections({
-        forceSync,
-        trigger,
-      });
-    } catch (e) {
-      lazy.log.debug("Failed to update", e);
-    }
+      // Since this method is async, the enabled pref could change between await
+      // points. We don't want to half validate experiments, so we cache this to
+      // keep it consistent throughout updating.
+      const validationEnabled = this.validationEnabled;
 
-    if (allRecipes !== null) {
-      const unenrolledExperimentSlugs = lazy.NimbusEnrollments
-        .syncEnrollmentsEnabled
-        ? await lazy.NimbusEnrollments.loadUnenrolledExperimentSlugsFromOtherProfiles()
-        : undefined;
+      let recipeValidator;
 
-      const enrollmentsCtx = new EnrollmentsContext(
-        this.manager,
-        recipeValidator,
-        {
-          validationEnabled,
-          labsEnabled: lazy.ExperimentAPI.labsEnabled,
-          studiesEnabled: lazy.ExperimentAPI.studiesEnabled,
-          shouldCheckTargeting: true,
-          unenrolledExperimentSlugs,
-        }
-      );
-
-      const { existingEnrollments, recipes } =
-        this._partitionRecipes(allRecipes);
-
-      for (const { enrollment, recipe } of existingEnrollments) {
-        const result = recipe
-          ? await enrollmentsCtx.checkRecipe(recipe)
-          : CheckRecipeResult.Ok(MatchStatus.NOT_SEEN);
-
-        await this.manager.updateEnrollment(
-          enrollment,
-          recipe,
-          this.SOURCE,
-          result
+      if (validationEnabled) {
+        recipeValidator = new lazy.JsonSchema.Validator(
+          await SCHEMAS.NimbusExperiment
         );
       }
 
-      for (const recipe of recipes) {
-        const result = await enrollmentsCtx.checkRecipe(recipe);
-        await this.manager.onRecipe(recipe, this.SOURCE, result);
+      let allRecipes = null;
+      try {
+        allRecipes = await this.getRecipesFromAllCollections({
+          forceSync,
+          trigger,
+        });
+      } catch (e) {
+        lazy.log.debug("Failed to update", e);
       }
 
-      lazy.log.debug(`${enrollmentsCtx.matches} recipes matched.`);
-    }
+      if (allRecipes !== null) {
+        const unenrolledExperimentSlugs = lazy.NimbusEnrollments
+          .syncEnrollmentsEnabled
+          ? await lazy.NimbusEnrollments.loadUnenrolledExperimentSlugsFromOtherProfiles()
+          : undefined;
 
-    if (trigger !== "timer") {
-      const lastUpdateTime = Math.round(Date.now() / 1000);
-      Services.prefs.setIntPref(TIMER_LAST_UPDATE_PREF, lastUpdateTime);
-    }
+        const enrollmentsCtx = new EnrollmentsContext(
+          this.manager,
+          recipeValidator,
+          {
+            validationEnabled,
+            labsEnabled: lazy.ExperimentAPI.labsEnabled,
+            rolloutsEnabled: lazy.ExperimentAPI.rolloutsEnabled,
+            studiesEnabled: lazy.ExperimentAPI.studiesEnabled,
+            shouldCheckTargeting: true,
+            unenrolledExperimentSlugs,
+          }
+        );
 
-    if (allRecipes !== null) {
-      // Enrollments have not changed, so we don't need to notify.
-      Services.obs.notifyObservers(null, "nimbus:enrollments-updated");
+        const { existingEnrollments, recipes } =
+          this._partitionRecipes(allRecipes);
+
+        for (const { enrollment, recipe } of existingEnrollments) {
+          const result = recipe
+            ? await enrollmentsCtx.checkRecipe(recipe)
+            : CheckRecipeResult.Ok(MatchStatus.NOT_SEEN);
+
+          await this.manager.updateEnrollment(
+            enrollment,
+            recipe,
+            this.SOURCE,
+            result
+          );
+        }
+
+        for (const recipe of recipes) {
+          const result = await enrollmentsCtx.checkRecipe(recipe);
+          await this.manager.onRecipe(recipe, this.SOURCE, result);
+        }
+
+        lazy.log.debug(`${enrollmentsCtx.matches} recipes matched.`);
+      }
+
+      if (trigger !== "timer") {
+        const lastUpdateTime = Math.round(Date.now() / 1000);
+        Services.prefs.setIntPref(TIMER_LAST_UPDATE_PREF, lastUpdateTime);
+      }
+
+      if (allRecipes !== null) {
+        // Enrollments have not changed, so we don't need to notify.
+        Services.obs.notifyObservers(null, "nimbus:enrollments-updated");
+      }
+    } finally {
+      // Submit targeting context ping after all enrollment status events should be generated
+      GleanPings.nimbusTargetingContext.submit();
     }
   }
 
@@ -926,16 +953,18 @@ export class EnrollmentsContext {
       validationEnabled = true,
       shouldCheckTargeting = true,
       unenrolledExperimentSlugs,
-      studiesEnabled = true,
       labsEnabled = true,
+      rolloutsEnabled = true,
+      studiesEnabled = true,
     } = {}
   ) {
     this.manager = manager;
     this.recipeValidator = recipeValidator;
 
     this.validationEnabled = validationEnabled;
-    this.studiesEnabled = studiesEnabled;
     this.labsEnabled = labsEnabled;
+    this.rolloutsEnabled = rolloutsEnabled;
+    this.studiesEnabled = studiesEnabled;
 
     this.validatorCache = {};
     this.shouldCheckTargeting = shouldCheckTargeting;
@@ -970,9 +999,12 @@ export class EnrollmentsContext {
       }
     }
 
+    const deliveryKind = getDeliveryKind(recipe);
     if (
-      (recipe.isFirefoxLabsOptIn && !this.labsEnabled) ||
-      (!recipe.isFirefoxLabsOptIn && !this.studiesEnabled)
+      (deliveryKind === DeliveryKind.FIREFOX_LABS_OPT_IN &&
+        !this.labsEnabled) ||
+      (deliveryKind === DeliveryKind.ROLLOUT && !this.rolloutsEnabled) ||
+      (deliveryKind === DeliveryKind.STUDY && !this.studiesEnabled)
     ) {
       return CheckRecipeResult.Ok(MatchStatus.DISABLED);
     }

@@ -14,8 +14,9 @@ export var Async = {
    * must take a callback function as their last argument.  The 'this' object
    * will be whatever chain()'s is.
    *
-   * @usage this._chain = Async.chain;
-   *        this._chain(this.foo, this.bar, this.baz)(args, for, foo)
+   * @example
+   * this._chain = Async.chain;
+   * this._chain(this.foo, this.bar, this.baz)(args, for, foo)
    *
    * This is equivalent to:
    *

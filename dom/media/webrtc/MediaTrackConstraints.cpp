@@ -601,3 +601,5 @@ Maybe<VideoResizeModeEnum> MediaConstraintsHelper::GetResizeMode(
 }
 
 }  // namespace mozilla
+
+#undef LOG

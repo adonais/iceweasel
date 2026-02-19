@@ -9,8 +9,6 @@
 
 #ifdef JS_JITSPEW
 
-#  include <stdio.h>
-
 #  include "js/TypeDecls.h"
 #  include "vm/JSONPrinter.h"
 #  include "wasm/WasmTypeDef.h"

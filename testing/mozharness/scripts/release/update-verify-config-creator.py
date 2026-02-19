@@ -339,7 +339,7 @@ class UpdateVerifyConfigCreator(BaseScript):
             self.log("Closed HG client.")
 
     def _pre_config_lock(self, rw_config):
-        super(UpdateVerifyConfigCreator, self)._pre_config_lock(rw_config)
+        super()._pre_config_lock(rw_config)
 
         if "updater_platform" not in self.config:
             self.config["updater_platform"] = self.config["platform"]

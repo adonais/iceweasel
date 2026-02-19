@@ -392,6 +392,8 @@ class {class_name} : public {parent_class}<{num_defs}, {num_operands}, {num_temp
 
 
 def mir_type_to_lir_type(mir_type):
+    assert mir_type and mir_type != "None"
+
     if mir_type == "Value":
         return "BoxedValue"
 
@@ -478,12 +480,22 @@ def generate_lir_header(c_out, yaml_path, mir_yaml_path):
         assert isinstance(generate_lir, bool)
 
         if generate_lir:
+            # If the instruction has a `lir_result_type`, use it. If not, derive
+            # the LIR result type from the MIR `result_type`.
+            lir_result_type = op.get("lir_result_type", None)
+            assert isinstance(lir_result_type, (type(None), str))
+
             result_type = op.get("result_type", None)
             assert isinstance(result_type, (type(None), str))
 
-            if result_type:
-                result_type = mir_type_to_lir_type(result_type)
-                assert result_type in result_types
+            if lir_result_type is not None:
+                if lir_result_type == "none":
+                    lir_result_type = None
+                else:
+                    assert lir_result_type in result_types
+            elif result_type and result_type != "None":
+                lir_result_type = mir_type_to_lir_type(result_type)
+                assert lir_result_type in result_types
 
             successors = None
 
@@ -512,7 +524,7 @@ def generate_lir_header(c_out, yaml_path, mir_yaml_path):
             lir_op_classes.append(
                 gen_lir_class(
                     name,
-                    result_type,
+                    lir_result_type,
                     successors,
                     operands,
                     arguments,

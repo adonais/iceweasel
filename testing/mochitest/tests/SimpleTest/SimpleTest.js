@@ -2162,11 +2162,15 @@ var add_task = (function () {
         // These checks ensure that we are in an HTML document without
         // throwing TypeError; also I am told that readyState in XUL documents
         // are totally bogus so we don't try to do this there.
+        // The readyState of the initial about:blank is stuck at "complete",
+        // so check for "about:blank" separately.
         if (
-          typeof window !== "undefined" &&
-          typeof HTMLDocument !== "undefined" &&
-          window.document instanceof HTMLDocument &&
-          window.document.readyState !== "complete"
+          (typeof window !== "undefined" &&
+            typeof HTMLDocument !== "undefined" &&
+            window.document instanceof HTMLDocument &&
+            window.document.readyState !== "complete") ||
+          (typeof window !== "undefined" &&
+            window.document.location.href === "about:blank")
         ) {
           setTimeout(nextTick);
           return;

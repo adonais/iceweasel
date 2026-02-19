@@ -116,7 +116,6 @@
       <li><a href="about:license#libyuv">libyuv License</a></li>
       <li><a href="about:license#hunspell-lt">Lithuanian Spellchecking Dictionary License</a></li>
       <li><a href="about:license#lodash">lodash License</a></li>
-      <li><a href="about:license#matches">matches License</a></li>
       <li><a href="about:license#mit">MIT License</a></li>
       <li><a href="about:license#myspell">MySpell License</a></li>
       <li><a href="about:license#nicer">nICEr License</a></li>
@@ -129,6 +128,7 @@
 #endif
       <li><a href="about:license#praton">praton License</a></li>
       <li><a href="about:license#praton1">praton and inet_ntop License</a></li>
+      <li><a href="about:license#prosemirror">ProseMirror License</a></li>
       <li><a href="about:license#qcms">qcms License</a></li>
       <li><a href="about:license#qrcode-generator">QR Code Generator License</a></li>
       <li><a href="about:license#react">React License</a></li>
@@ -4080,44 +4080,6 @@ product.
 
         <tr>
           <td>
-            <h1><a id="matches"></a>matches License</h1>
-          </td>
-          <td>
-            <p>This license applies to files in the directory <code>third_party/rust/matches</code>.</p>
-          </td>
-          <td>
-            <pre>
-            Copyright (c) 2014-2016 Simon Sapin
-
-            Permission is hereby granted, free of charge, to any
-            person obtaining a copy of this software and associated
-            documentation files (the "Software"), to deal in the
-            Software without restriction, including without
-            limitation the rights to use, copy, modify, merge,
-            publish, distribute, sublicense, and/or sell copies of
-            the Software, and to permit persons to whom the Software
-            is furnished to do so, subject to the following
-            conditions:
-
-            The above copyright notice and this permission notice
-            shall be included in all copies or substantial portions
-            of the Software.
-
-            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-            ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-            TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-            PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-            SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-            CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-            OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-            IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-            DEALINGS IN THE SOFTWARE.
-            </pre>
-          </td>
-        </tr>
-
-        <tr>
-          <td>
             <h1><a id="mit"></a>MIT License</h1>
           </td>
           <td>
@@ -4738,14 +4700,37 @@ product.
 
         <tr>
           <td>
-            <h1><a id="qrcode-generator"></a>QR Code Generator License</h1>
+            <h1><a id="prosemirror"></a>ProseMirror Licenses</h1>
           </td>
           <td>
-            <p>This license applies to certain files in the directory <code>devtools/shared/qrcode/encoder/</code>.</p>
+            <p>This entry applies to all files in <code>third_party/js/prosemirror/</code> and its subdirectories. Most ProseMirror packages are licensed under the MIT license, except where noted below.</p>
+            <ul>
+              <li>
+                MIT License:
+                <ul>
+                  <li><code>third_party/js/prosemirror/prosemirror-commands</code></li>
+                  <li><code>third_party/js/prosemirror/prosemirror-history</code></li>
+                  <li><code>third_party/js/prosemirror/prosemirror-keymap</code></li>
+                  <li><code>third_party/js/prosemirror/prosemirror-model</code></li>
+                  <li><code>third_party/js/prosemirror/prosemirror-schema-basic</code></li>
+                  <li><code>third_party/js/prosemirror/prosemirror-state</code></li>
+                  <li><code>third_party/js/prosemirror/prosemirror-transform</code></li>
+                  <li><code>third_party/js/prosemirror/prosemirror-view</code></li>
+                </ul>
+              </li>
+              <li>
+                Apache License 2.0:
+                <ul>
+                  <li><code>third_party/js/prosemirror/prosemirror-suggestions</code></li>
+                </ul>
+              </li>
+            </ul>
           </td>
           <td>
             <pre>
-            Copyright (c) 2009 Kazuhiko Arase
+            MIT License (applies to core and non-core ProseMirror packages)
+
+            Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
             Permission is hereby granted, free of charge, to any person obtaining a copy
             of this software and associated documentation files (the "Software"), to deal
@@ -4764,6 +4749,58 @@ product.
             LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
             OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
             THE SOFTWARE.
+
+            ---
+
+            Apache License 2.0 (applies to third-party package <code>third_party/js/prosemirror/prosemirror-suggestions</code>):
+
+            Copyright 2017 Quartzy, Inc.
+
+            Licensed under the Apache License, Version 2.0 (the "License");
+            you may not use this file except in compliance with the License.
+            You may obtain a copy of the License at
+
+              http://www.apache.org/licenses/LICENSE-2.0
+
+            Unless required by applicable law or agreed to in writing, software
+            distributed under the License is distributed on an "AS IS" BASIS,
+            WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            See the License for the specific language governing permissions and
+            limitations under the License.
+            </pre>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <h1><a id="qrcode-generator"></a>QR Code Generator License</h1>
+          </td>
+          <td>
+            <p>This license applies to certain files in the directory <code>third_party/js/qrcode/</code>.</p>
+          </td>
+          <td>
+            <pre>
+            MIT License
+
+            Copyright (c) 2009 Kazuhiko Arase
+
+            Permission is hereby granted, free of charge, to any person obtaining a copy
+            of this software and associated documentation files (the "Software"), to deal
+            in the Software without restriction, including without limitation the rights
+            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+            copies of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+
+            The above copyright notice and this permission notice shall be included in all
+            copies or substantial portions of the Software.
+
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+            SOFTWARE.
             </pre>
           </td>
         </tr>

@@ -7,9 +7,6 @@
 
 #include "ppc.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #if defined(XP_LINUX)
 // Use the getauxval() function if available.
 // ARCH_3_00 wasn't defined until glibc 2.23, so include just in case.

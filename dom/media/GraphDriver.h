@@ -631,11 +631,13 @@ class AudioCallbackDriver final : public GraphDriver,
     return this;
   }
 
-  uint32_t OutputChannelCount() { return mOutputChannelCount; }
+  uint32_t OutputChannelCount() const { return mOutputChannelCount; }
 
-  uint32_t InputChannelCount() { return mInputChannelCount; }
+  uint32_t InputChannelCount() const { return mInputChannelCount; }
 
-  AudioInputType InputDevicePreference() {
+  CubebUtils::AudioDeviceID InputDeviceID() const { return mInputDeviceID; }
+
+  AudioInputType InputDevicePreference() const {
     if (mInputDevicePreference == CUBEB_DEVICE_PREF_VOICE) {
       return AudioInputType::Voice;
     }

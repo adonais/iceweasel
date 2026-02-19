@@ -74,17 +74,10 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
    */
   async startQuery(queryContext, addCallback) {
     let actionsResults = [];
-    let searchModeEngine = "";
 
     for (let provider of globalActionsProviders) {
       if (provider.isActive(queryContext)) {
         for (let action of (await provider.queryActions(queryContext)) || []) {
-          if (action.engine && !searchModeEngine) {
-            searchModeEngine = action.engine;
-          } else if (action.engine) {
-            // We only allow one action that provides an engine search mode.
-            continue;
-          }
           action.providerName = provider.name;
           actionsResults.push(action);
         }
@@ -115,11 +108,6 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
       showOnboardingLabel,
       query,
     };
-
-    if (searchModeEngine) {
-      payload.providesSearchMode = true;
-      payload.engine = searchModeEngine;
-    }
 
     let result = new lazy.UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
@@ -200,6 +188,7 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
 
       if (action.dataset?.providesSearchMode) {
         btn.attributes["data-provides-searchmode"] = "true";
+        btn.attributes["data-engine"] = action.engine;
       }
 
       return btn;

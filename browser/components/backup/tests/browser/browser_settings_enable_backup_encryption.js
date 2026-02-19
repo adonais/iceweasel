@@ -155,9 +155,6 @@ add_task(
         let enableEncryptionStub = sandbox
           .stub(BackupService.prototype, "enableEncryption")
           .resolves(true);
-        let disableEncryptionStub = sandbox
-          .stub(BackupService.prototype, "disableEncryption")
-          .resolves(true);
         let createBackupStub = sandbox
           .stub(BackupService.prototype, "createBackup")
           .resolves(true);
@@ -228,17 +225,19 @@ add_task(
         await settings.updateComplete;
         confirmButton = settings.enableBackupEncryptionEl.confirmButtonEl;
 
+        let initialState = BackupService.get().state;
+        sandbox.stub(BackupService.get(), "state").get(() => ({
+          ...initialState,
+          encryptionEnabled: true,
+        }));
+
         let promise = BrowserTestUtils.waitForEvent(
           window,
-          "BackupUI:RerunEncryption"
+          "BackupUI:EnableEncryption"
         );
         confirmButton.click();
         await promise;
 
-        Assert.ok(
-          disableEncryptionStub.calledOnce,
-          "BackupService was called to disable encryption first before registering the changed password"
-        );
         Assert.ok(
           enableEncryptionStub.calledOnceWith(MOCK_PASSWORD),
           "BackupService was called to re-run encryption with changed password"

@@ -532,7 +532,8 @@ void DocAccessible::Init() {
   // this failed. The DocAccessible was subsequently created due to a layout
   // notification.
   if (mDocumentNode->GetReadyStateEnum() ==
-      dom::Document::READYSTATE_COMPLETE) {
+          dom::Document::READYSTATE_COMPLETE &&
+      !mDocumentNode->IsUncommittedInitialDocument()) {
     mLoadState |= eDOMLoaded;
     // If this happened due to reasons 1 or 2, it isn't *necessary* to fire a
     // doc load complete event. If it happened due to reason 3, we need to fire
@@ -542,9 +543,10 @@ void DocAccessible::Init() {
     // harm even if it isn't necessary. We set mLoadEventType here and it will
     // be fired in ProcessLoad as usual.
     mLoadEventType = nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE;
-  } else if (mDocumentNode->IsInitialDocument()) {
-    // The initial about:blank document will never finish loading, so we can
-    // immediately mark it loaded to avoid waiting for its load.
+  } else if (mDocumentNode->IsUncommittedInitialDocument()) {
+    // The initial about:blank always has its readyState as "complete"
+    // even if it didn't fire a load event yet. We cannot know whether
+    // it will load, so mark it loaded to avoid waiting for it.
     mLoadState |= eDOMLoaded;
   }
 

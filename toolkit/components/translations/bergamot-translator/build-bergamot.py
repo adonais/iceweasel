@@ -123,9 +123,9 @@ def fetch_bergamot_source(translations_repo: Path | None):
     maybe_remove_repo_path()
 
     if translations_repo:
-        assert (
-            translations_repo.is_dir()
-        ), f"The translations repo must be a directory: {translations_repo}"
+        assert translations_repo.is_dir(), (
+            f"The translations repo must be a directory: {translations_repo}"
+        )
 
         logger.info(f"Using local mozilla/translations repo: {translations_repo}")
 

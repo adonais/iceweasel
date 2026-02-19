@@ -7,8 +7,6 @@
 #ifndef __IPC_GLUE_SERIALIZEDSTRUCTUREDCLONEBUFFER_H__
 #define __IPC_GLUE_SERIALIZEDSTRUCTUREDCLONEBUFFER_H__
 
-#include <cstdint>
-#include <cstdlib>
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "js/AllocPolicy.h"

@@ -18,7 +18,7 @@
     <ID>ForbiddenSuppress:AppLinksInterceptor.kt$AppLinksInterceptor$@Suppress("CognitiveComplexMethod", "ReturnCount", "CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:AppLinksUseCases.kt$AppLinksUseCases.GetAppLinkRedirect$@Suppress("CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:BaseBrowserFragment.kt$BaseBrowserFragment$@Suppress("LongMethod")</ID>
-    <ID>ForbiddenSuppress:BrowserDisplayToolbar.kt$@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserDisplayToolbar.kt$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:BrowserFragment.kt$BrowserFragment$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:BrowserMenuPositioning.kt$@Suppress("CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:BrowserScreen.kt$@Suppress("LongMethod")</ID>
@@ -48,6 +48,7 @@
     <ID>ForbiddenSuppress:EngineStateReducer.kt$EngineStateReducer$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:EngineVersion.kt$EngineVersion.Companion$@Suppress("MagicNumber", "ReturnCount")</ID>
     <ID>ForbiddenSuppress:ExpandableLayout.kt$ExpandableLayout$@Suppress("ReturnCount", "CognitiveComplexMethod")</ID>
+    <ID>ForbiddenSuppress:FullDisplayToolbar.kt$@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:FxaDeviceConstellation.kt$FxaDeviceConstellation$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:GeckoEngineSession.kt$GeckoEngineSession$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:GeckoEngineSession.kt$GeckoEngineSession$@Suppress("NestedBlockDepth", "CognitiveComplexMethod")</ID>
@@ -314,7 +315,6 @@
     <ID>UndocumentedPublicFunction:FindInPageView.kt$FindInPageView.Listener$fun onFindAll(query: String)</ID>
     <ID>UndocumentedPublicFunction:FindInPageView.kt$FindInPageView.Listener$fun onNextResult()</ID>
     <ID>UndocumentedPublicFunction:FindInPageView.kt$FindInPageView.Listener$fun onPreviousResult()</ID>
-    <ID>UndocumentedPublicFunction:GeckoEngineSession.kt$GeckoEngineSession$fun handleLongClick(elementSrc: String?, elementType: Int, uri: String? = null, title: String? = null): HitResult?</ID>
     <ID>UndocumentedPublicFunction:GeckoEngineSessionState.kt$GeckoEngineSessionState.Companion$fun fromJSON(json: JSONObject): GeckoEngineSessionState</ID>
     <ID>UndocumentedPublicFunction:GeckoPermissionRequest.kt$GeckoPermissionRequest.Media.Companion$fun mapPermission(mediaSource: MediaSource): Permission</ID>
     <ID>UndocumentedPublicFunction:Headers.kt$fun List&lt;Header&gt;.toMutableHeaders()</ID>

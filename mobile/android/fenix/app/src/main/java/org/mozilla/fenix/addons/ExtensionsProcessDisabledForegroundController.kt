@@ -11,6 +11,8 @@ import android.widget.TextView
 import androidx.annotation.UiContext
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import mozilla.components.browser.state.action.ExtensionsProcessAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.ktx.android.content.appName
@@ -29,6 +31,7 @@ import org.mozilla.fenix.ext.components
  * @param appStore The [AppStore] containing the application state
  * @param builder to use for creating the dialog which can be styled as needed
  * @param appName to be added to the message. Optional and mainly relevant for testing
+ * @param dispatcher The [CoroutineDispatcher] to use for the observer logic.
  */
 class ExtensionsProcessDisabledForegroundController(
     @UiContext context: Context,
@@ -36,9 +39,11 @@ class ExtensionsProcessDisabledForegroundController(
     appStore: AppStore = context.components.appStore,
     builder: MaterialAlertDialogBuilder = MaterialAlertDialogBuilder(context),
     appName: String = context.appName,
+    dispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : ExtensionsProcessDisabledPromptObserver(
     store = browserStore,
     shouldCancelOnStop = true,
+    dispatcher = dispatcher,
     {
         if (appStore.state.isForeground) {
             presentDialog(context, browserStore, builder, appName)

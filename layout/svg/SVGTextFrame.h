@@ -226,7 +226,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
       const nsPoint& aPoint, FrameWithDistance* aCurrentBestFrame) override;
 
   // ISVGDisplayableFrame interface:
-  void NotifySVGChanged(uint32_t aFlags) override;
+  void NotifySVGChanged(ChangeFlags aFlags) override;
   void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                 imgDrawingParams& aImgParams) override;
   nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;

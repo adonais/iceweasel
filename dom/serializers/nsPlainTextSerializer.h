@@ -317,7 +317,8 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   static void PerformWrapAndOutputCompleteLines(
       const Settings& aSettings, CurrentLine& aLine, OutputManager& aOutput,
-      bool aUseLineBreaker, nsPlainTextSerializer* aSerializer);
+      bool aUseLineBreaker, bool aAllowBonusWidth,
+      nsPlainTextSerializer* aSerializer);
   static void AppendLineToOutput(const Settings& aSettings, CurrentLine& aLine,
                                  OutputManager& aOutput);
 

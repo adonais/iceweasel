@@ -8,13 +8,12 @@ use api::units::*;
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
 use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, FONT_SIZE_LIMIT};
-use crate::gpu_cache::GpuCache;
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::picture::SurfaceInfo;
 use crate::prim_store::{PrimitiveOpacity,  PrimitiveScratchBuffer};
 use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplateCommonData};
-use crate::renderer::MAX_VERTEX_TEXTURE_WIDTH;
+use crate::renderer::{GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
 use crate::resource_cache::ResourceCache;
 use crate::util::MatrixHelpers;
 use crate::prim_store::{InternablePrimitive, PrimitiveInstanceKind, LayoutPointAu};
@@ -136,32 +135,32 @@ impl TextRunTemplate {
         &mut self,
         frame_state: &mut FrameBuildingState,
     ) {
-        // corresponds to `fetch_glyph` in the shaders
-        if let Some(mut request) = frame_state.gpu_cache.request(&mut self.common.gpu_cache_handle) {
-            request.push(ColorF::from(self.font.color).premultiplied());
+        // Corresponds to `fetch_glyph` in the shaders.
+        let num_blocks = (self.glyphs.len() + 1) / 2 + 1;
+        assert!(num_blocks <= MAX_VERTEX_TEXTURE_WIDTH);
+        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(num_blocks);
+        writer.push_one(ColorF::from(self.font.color).premultiplied());
 
-            let mut gpu_block = [0.0; 4];
-            for (i, src) in self.glyphs.iter().enumerate() {
-                // Two glyphs are packed per GPU block.
-
-                if (i & 1) == 0 {
-                    gpu_block[0] = src.point.x;
-                    gpu_block[1] = src.point.y;
-                } else {
-                    gpu_block[2] = src.point.x;
-                    gpu_block[3] = src.point.y;
-                    request.push(gpu_block);
-                }
+        let mut gpu_block = [0.0; 4];
+        for (i, src) in self.glyphs.iter().enumerate() {
+            // Two glyphs are packed per GPU block.
+            if (i & 1) == 0 {
+                gpu_block[0] = src.point.x;
+                gpu_block[1] = src.point.y;
+            } else {
+                gpu_block[2] = src.point.x;
+                gpu_block[3] = src.point.y;
+                writer.push_one(gpu_block);
             }
-
-            // Ensure the last block is added in the case
-            // of an odd number of glyphs.
-            if (self.glyphs.len() & 1) != 0 {
-                request.push(gpu_block);
-            }
-
-            assert!(request.current_used_block_num() <= MAX_VERTEX_TEXTURE_WIDTH);
         }
+
+        // Ensure the last block is added in the case
+        // of an odd number of glyphs.
+        if (self.glyphs.len() & 1) != 0 {
+            writer.push_one(gpu_block);
+        }
+
+        self.common.gpu_buffer_address = writer.finish();
     }
 }
 
@@ -466,7 +465,7 @@ impl TextRunPrimitive {
         allow_subpixel: bool,
         low_quality_pinch_zoom: bool,
         resource_cache: &mut ResourceCache,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
         spatial_tree: &SpatialTree,
         scratch: &mut PrimitiveScratchBuffer,
     ) {
@@ -507,7 +506,7 @@ impl TextRunPrimitive {
         resource_cache.request_glyphs(
             self.used_font.clone(),
             &scratch.glyph_keys[self.glyph_keys_range],
-            gpu_cache,
+            gpu_buffer,
         );
     }
 }
@@ -524,7 +523,7 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<TextRun>(), 88, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 96, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 88, "TextRunTemplate size changed");
     assert_eq!(mem::size_of::<TextRunKey>(), 104, "TextRunKey size changed");
     assert_eq!(mem::size_of::<TextRunPrimitive>(), 80, "TextRunPrimitive size changed");
 }

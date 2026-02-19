@@ -135,7 +135,7 @@ import org.mozilla.gecko.util.WebAuthnUtils;
     }
     final AuthenticationExtensions ext = extBuilder.build();
 
-    // requireUserVerification are not yet consumed by Android's API
+    // userVerification are not yet consumed by Android's FIDO API
 
     final List<PublicKeyCredentialDescriptor> excludedList =
         new ArrayList<PublicKeyCredentialDescriptor>();

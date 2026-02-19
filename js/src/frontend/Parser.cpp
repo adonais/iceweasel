@@ -49,8 +49,9 @@
 #include "js/ErrorReport.h"           // JSErrorBase
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/HashTable.h"
-#include "js/RegExpFlags.h"      // JS::RegExpFlags
-#include "js/Stack.h"            // JS::NativeStackLimit
+#include "js/RegExpFlags.h"  // JS::RegExpFlags
+#include "js/Stack.h"        // JS::NativeStackLimit
+#include "util/DifferentialTesting.h"
 #include "util/StringBuilder.h"  // StringBuilder
 #include "vm/BytecodeUtil.h"
 #include "vm/FunctionFlags.h"          // js::FunctionFlags
@@ -3834,7 +3835,8 @@ static inline bool IsUseAsmDirective(const TokenPos& pos,
 }
 
 template <typename Unit>
-bool Parser<SyntaxParseHandler, Unit>::asmJS(ListNodeType list) {
+bool Parser<SyntaxParseHandler, Unit>::asmJS(TokenPos directivePos,
+                                             ListNodeType list) {
   // While asm.js could technically be validated and compiled during syntax
   // parsing, we have no guarantee that some later JS wouldn't abort the
   // syntax parse and cause us to re-parse (and re-compile) the asm.js module.
@@ -3846,7 +3848,8 @@ bool Parser<SyntaxParseHandler, Unit>::asmJS(ListNodeType list) {
 }
 
 template <typename Unit>
-bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
+bool Parser<FullParseHandler, Unit>::asmJS(TokenPos directivePos,
+                                           ListNodeType list) {
   // Disable syntax parsing in anything nested inside the asm.js module.
   disableSyntaxParser();
 
@@ -3878,6 +3881,18 @@ bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
   if (!CompileAsmJS(this->fc_, this->parserAtoms(), *this, list, &validated)) {
     return false;
   }
+
+  // Warn about asm.js deprecation even if we failed validation. Do this after
+  // compilation so that this warning is the last one we emit. This makes
+  // testing in asm.js/disabled-warning.js easier.
+  if (!js::SupportDifferentialTesting() &&
+      JS::Prefs::warn_asmjs_deprecation()) {
+    if (!warningAt(directivePos.begin, JSMSG_USE_ASM_DEPRECATED)) {
+      return false;
+    }
+  }
+
+  // If we failed validation, trigger a reparse. See above.
   if (!validated) {
     pc_->newDirectives->setAsmJS();
     return false;
@@ -3887,8 +3902,9 @@ bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
 }
 
 template <class ParseHandler, typename Unit>
-inline bool GeneralParser<ParseHandler, Unit>::asmJS(ListNodeType list) {
-  return asFinalParser()->asmJS(list);
+inline bool GeneralParser<ParseHandler, Unit>::asmJS(TokenPos directivePos,
+                                                     ListNodeType list) {
+  return asFinalParser()->asmJS(directivePos, list);
 }
 
 /*
@@ -4003,7 +4019,7 @@ bool GeneralParser<ParseHandler, Unit>::maybeParseDirective(
     }
   } else if (IsUseAsmDirective(directivePos, directive)) {
     if (pc_->isFunctionBox()) {
-      return asmJS(list);
+      return asmJS(directivePos, list);
     }
     return warningAt(directivePos.begin, JSMSG_USE_ASM_DIRECTIVE_FAIL);
   }

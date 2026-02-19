@@ -107,11 +107,10 @@ import mozilla.components.feature.prompts.identitycredential.DialogColors
 import mozilla.components.feature.prompts.identitycredential.DialogColorsProvider
 import mozilla.components.feature.prompts.login.LoginDelegate
 import mozilla.components.feature.prompts.login.LoginSelectBar
-import mozilla.components.feature.prompts.login.PasswordGeneratorDialogColors
-import mozilla.components.feature.prompts.login.PasswordGeneratorDialogColorsProvider
 import mozilla.components.feature.prompts.login.SuggestStrongPasswordBar
 import mozilla.components.feature.prompts.login.SuggestStrongPasswordDelegate
 import mozilla.components.feature.prompts.share.ShareDelegate
+import mozilla.components.feature.pwa.feature.WebAppHideToolbarFeature
 import mozilla.components.feature.readerview.ReaderViewFeature
 import mozilla.components.feature.search.SearchFeature
 import mozilla.components.feature.session.FullScreenFeature
@@ -191,6 +190,7 @@ import org.mozilla.fenix.components.toolbar.FenixBrowserToolbarView
 import org.mozilla.fenix.components.toolbar.ToolbarContainerView
 import org.mozilla.fenix.components.toolbar.ToolbarIntegration
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
+import org.mozilla.fenix.components.toolbar.ToolbarsIntegration
 import org.mozilla.fenix.components.toolbar.interactor.BrowserToolbarInteractor
 import org.mozilla.fenix.components.toolbar.interactor.DefaultBrowserToolbarInteractor
 import org.mozilla.fenix.compose.core.Action
@@ -328,9 +328,12 @@ abstract class BaseBrowserFragment :
     @VisibleForTesting
     internal val findInPageIntegration = ViewBoundFeatureWrapper<FindInPageIntegration>()
     private val toolbarIntegration = ViewBoundFeatureWrapper<ToolbarIntegration>()
+    private val toolbarsIntegration = ViewBoundFeatureWrapper<ToolbarsIntegration>()
     private val bottomToolbarContainerIntegration = ViewBoundFeatureWrapper<BottomToolbarContainerIntegration>()
     private val sitePermissionsFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
     private val fullScreenFeature = ViewBoundFeatureWrapper<FullScreenFeature>()
+    protected val hideToolbarFeature = ViewBoundFeatureWrapper<WebAppHideToolbarFeature>()
+
     private val swipeRefreshFeature = ViewBoundFeatureWrapper<SwipeRefreshFeature>()
     private val webchannelIntegration = ViewBoundFeatureWrapper<FxaWebChannelIntegration>()
     private val sitePermissionWifiIntegration =
@@ -649,6 +652,28 @@ abstract class BaseBrowserFragment :
             )
         }
 
+        if (context.settings().shouldUseComposableToolbar) {
+            toolbarsIntegration.set(
+                feature = ToolbarsIntegration(
+                    fullScreenFeature = { fullScreenFeature.get() },
+                    webAppHideToolbarFeature = { hideToolbarFeature.get() },
+                    settings = context.settings(),
+                    browserLayout = getSwipeRefreshLayout(),
+                    engineView = getEngineView(),
+                    toolbar = browserToolbarView,
+                    navbar = browserNavigationBar,
+                    topToolbarHeight = {
+                        getTopToolbarHeight(
+                            includeTabStripIfAvailable = customTabSessionId == null,
+                        )
+                    },
+                    onToolbarsReset = ::collapseBrowserView,
+                ),
+                owner = this,
+                view = view,
+            )
+        }
+
         findInPageBinding.set(
             feature = FindInPageBinding(
                 appStore = context.components.appStore,
@@ -955,18 +980,6 @@ abstract class BaseBrowserFragment :
             },
         )
 
-        val passwordGeneratorColorsProvider = PasswordGeneratorDialogColorsProvider {
-            PasswordGeneratorDialogColors(
-                title = ThemeManager.resolveAttributeColor(attribute = R.attr.textPrimary),
-                description = ThemeManager.resolveAttributeColor(attribute = R.attr.textSecondary),
-                background = ThemeManager.resolveAttributeColor(attribute = materialR.attr.colorSurface),
-                cancelText = ThemeManager.resolveAttributeColor(attribute = R.attr.textAccent),
-                confirmButton = ThemeManager.resolveAttributeColor(attribute = R.attr.actionPrimary),
-                passwordBox = ThemeManager.resolveAttributeColor(attribute = R.attr.layer2),
-                boxBorder = ThemeManager.resolveAttributeColor(attribute = R.attr.textDisabled),
-            )
-        }
-
         val bottomToolbarHeight = getBottomToolbarHeight(
             includeNavBarIfEnabled = customTabSessionId == null,
         )
@@ -1149,7 +1162,6 @@ abstract class BaseBrowserFragment :
                         password = password,
                     )
                 },
-                passwordGeneratorColorsProvider = passwordGeneratorColorsProvider,
                 hideUpdateFragmentAfterSavingGeneratedPassword = { username, password ->
                     hideUpdateFragmentAfterSavingGeneratedPassword(
                         username,
@@ -1361,8 +1373,10 @@ abstract class BaseBrowserFragment :
         binding.swipeRefresh.isEnabled = shouldPullToRefreshBeEnabled(false)
 
         if (binding.swipeRefresh.isEnabled) {
-            val primaryTextColor = ThemeManager.resolveAttribute(R.attr.textPrimary, context)
-            val primaryBackgroundColor = ThemeManager.resolveAttribute(R.attr.layer2, context)
+            val primaryTextColor =
+                ThemeManager.resolveAttribute(materialR.attr.colorOnSurface, context)
+            val primaryBackgroundColor =
+                ThemeManager.resolveAttribute(materialR.attr.colorSurfaceContainerLowest, context)
             binding.swipeRefresh.apply {
                 setColorSchemeResources(primaryTextColor)
                 setProgressBackgroundColorSchemeResource(primaryBackgroundColor)
@@ -2510,7 +2524,7 @@ abstract class BaseBrowserFragment :
         private const val LAST_SAVED_GENERATED_PASSWORD = "last_saved_generated_password"
 
         val onboardingLinksList: List<String> = listOf(
-            SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE),
+            SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE),
             SupportUtils.FXACCOUNT_SUMO_URL,
         )
     }

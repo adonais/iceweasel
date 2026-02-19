@@ -1067,14 +1067,14 @@ bool ConnectionEntry::MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
 
 nsresult ConnectionEntry::CreateDnsAndConnectSocket(
     nsAHttpTransaction* trans, uint32_t caps, bool speculative,
-    bool isFromPredictor, bool urgentStart, bool allow1918,
+    bool urgentStart, bool allow1918,
     PendingTransactionInfo* pendingTransInfo) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT((speculative && !pendingTransInfo) ||
              (!speculative && pendingTransInfo));
 
-  RefPtr<DnsAndConnectSocket> sock = new DnsAndConnectSocket(
-      mConnInfo, trans, caps, speculative, isFromPredictor, urgentStart);
+  RefPtr<DnsAndConnectSocket> sock =
+      new DnsAndConnectSocket(mConnInfo, trans, caps, speculative, urgentStart);
 
   if (speculative) {
     sock->SetAllow1918(allow1918);

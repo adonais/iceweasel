@@ -49,10 +49,9 @@
   // Simple implementation of |require|
   let require = (function () {
     /**
-     * Mapping from module URI to module exports.
+     * Mapping from the absolute module URI to the exports object for that module.
      *
-     * @keys {string} The absolute URI to a module.
-     * @values {object} The |exports| objects for that module.
+     * @type {Map<string, object>}
      */
     let modules = new Map();
 

@@ -399,17 +399,13 @@ class TestInfoReport(TestInfo):
     def get_testinfoall_index_url(self):
         import taskcluster
 
-        index = taskcluster.Index(
-            {
-                "rootUrl": "https://firefox-ci-tc.services.mozilla.com",
-            }
-        )
+        index = taskcluster.Index({
+            "rootUrl": "https://firefox-ci-tc.services.mozilla.com",
+        })
         route = "gecko.v2.mozilla-central.latest.source.test-info-all"
-        queue = taskcluster.Queue(
-            {
-                "rootUrl": "https://firefox-ci-tc.services.mozilla.com",
-            }
-        )
+        queue = taskcluster.Queue({
+            "rootUrl": "https://firefox-ci-tc.services.mozilla.com",
+        })
 
         task_id = index.findTask(route)["taskId"]
         artifacts = queue.listLatestArtifacts(task_id)["artifacts"]

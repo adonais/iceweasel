@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.compose.base.snackbar.SnackbarTimeout
 import mozilla.components.feature.downloads.DownloadsUseCases
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 
@@ -41,14 +41,14 @@ class DownloadDeleteMiddleware(
     private val coroutineScope = CoroutineScope(dispatcher)
 
     override fun invoke(
-        context: MiddlewareContext<DownloadUIState, DownloadUIAction>,
+        store: Store<DownloadUIState, DownloadUIAction>,
         next: (DownloadUIAction) -> Unit,
         action: DownloadUIAction,
     ) {
         next(action)
         when (action) {
             is DownloadUIAction.AddPendingDeletionSet ->
-                startDelayedRemoval(context, action.itemIds, undoDelay)
+                startDelayedRemoval(store, action.itemIds, undoDelay)
 
             is DownloadUIAction.UndoPendingDeletion -> lastDeleteOperation?.cancel()
             else -> {
@@ -58,7 +58,7 @@ class DownloadDeleteMiddleware(
     }
 
     private fun startDelayedRemoval(
-        context: MiddlewareContext<DownloadUIState, DownloadUIAction>,
+        store: Store<DownloadUIState, DownloadUIAction>,
         items: Set<String>,
         delay: Long,
     ) {
@@ -66,9 +66,9 @@ class DownloadDeleteMiddleware(
             try {
                 delay(delay)
                 items.forEach { removeDownloadUseCase(it) }
-                context.dispatch(DownloadUIAction.FileItemDeletedSuccessfully)
+                store.dispatch(DownloadUIAction.FileItemDeletedSuccessfully)
             } catch (e: CancellationException) {
-                context.store.dispatch(DownloadUIAction.UndoPendingDeletionSet(items))
+                store.dispatch(DownloadUIAction.UndoPendingDeletionSet(items))
             } finally {
                 // This avoids mistakenly clearing lastDeleteOperation if another job was started before
                 // this one finished.

@@ -101,13 +101,13 @@ export class PrefsFeed {
   }
 
   /**
-   * Handler for when experiment data updates.
+   * Computes the trainhop config by processing all enrollments.
    * Supports two formats:
    * - Single payload: { type: "feature", payload: { "enabled": true, ... }}
    * - Multi-payload: { type: "multi-payload", payload: [{ type: "feature", payload: { "enabled": true, ... }}] }
    * Both formats output the same structure: { "feature": { "enabled": true, ... }}
    */
-  onTrainhopExperimentUpdated() {
+  _getTrainhopConfig() {
     const allEnrollments =
       lazy.NimbusFeatures.newtabTrainhop.getAllEnrollments() || [];
 
@@ -134,12 +134,6 @@ export class PrefsFeed {
       }
     });
 
-    // Combine all trainhop experiments keyed by type.
-    // Rules for duplicates:
-    // - Experiments take precedence over rollouts (this is expected).
-    // - If multiple experiments or multiple rollouts exist for the same type,
-    //   only the first is kept. This is nondeterministic and considered an error;
-    //   those experiments/rollouts should be relaunched.
     const valueObj = {};
     enrollmentsToProcess.reduce((accumulator, currentValue) => {
       if (currentValue?.value?.type) {
@@ -154,6 +148,15 @@ export class PrefsFeed {
       }
       return accumulator;
     }, {});
+
+    return valueObj;
+  }
+
+  /**
+   * Handler for when experiment data updates.
+   */
+  onTrainhopExperimentUpdated() {
+    const valueObj = this._getTrainhopConfig();
 
     this.store.dispatch(
       ac.BroadcastToContent({
@@ -318,16 +321,6 @@ export class PrefsFeed {
       "browser.topsites.useRemoteSetting"
     );
 
-    // Read the pref for search hand-off from firefox.js and store it
-    // in our internal list of prefs to watch
-    let handoffToAwesomebarPrefValue = Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"
-    );
-    values["improvesearch.handoffToAwesomebar"] = handoffToAwesomebarPrefValue;
-    this._prefMap.set("improvesearch.handoffToAwesomebar", {
-      value: handoffToAwesomebarPrefValue,
-    });
-
     // Add experiment values and default values
     values.featureConfig = lazy.NimbusFeatures.newtab.getAllVariables() || {};
     values.pocketConfig =
@@ -336,6 +329,7 @@ export class PrefsFeed {
       lazy.NimbusFeatures.newtabSmartShortcuts.getAllVariables() || {};
     values.widgetsConfig =
       lazy.NimbusFeatures.newtabWidgets.getAllVariables() || {};
+    values.trainhopConfig = this._getTrainhopConfig();
     this._setBoolPref(values, "logowordmark.alwaysVisible", false);
     this._setBoolPref(values, "feeds.section.topstories", false);
     this._setBoolPref(values, "discoverystream.enabled", false);
@@ -354,6 +348,8 @@ export class PrefsFeed {
     this._setStringPref(values, "discoverystream.spocs-endpoint", "");
     this._setStringPref(values, "discoverystream.spocs-endpoint-query", "");
     this._setStringPref(values, "newNewtabExperience.colors", "");
+    this._setBoolPref(values, "search.useHandoffComponent", false);
+    this._setBoolPref(values, "externalComponents.enabled", false);
 
     // Set the initial state of all prefs in redux
     this.store.dispatch(

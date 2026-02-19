@@ -63,7 +63,7 @@ def run_prettier(cmd_args, config, fix):
                         "rule": "prettier",
                         "lineno": 0,
                         "column": 0,
-                    }
+                    },
                 )
             )
 
@@ -103,7 +103,7 @@ def run_prettier(cmd_args, config, fix):
                         "rule": "prettier",
                         "lineno": 0,
                         "column": 0,
-                    }
+                    },
                 )
             )
 

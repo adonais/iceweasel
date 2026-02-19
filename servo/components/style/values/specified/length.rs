@@ -8,6 +8,7 @@
 
 use super::{AllowQuirks, Number, Percentage, ToComputedValue};
 use crate::computed_value_flags::ComputedValueFlags;
+use crate::derives::*;
 use crate::font_metrics::{FontMetrics, FontMetricsOrientation};
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::GeckoFontMetrics;
@@ -25,7 +26,8 @@ use crate::values::specified::NonNegativeNumber;
 use crate::values::CSSFloat;
 use crate::{Zero, ZeroNoPercent};
 use app_units::AU_PER_PX;
-use cssparser::{Parser, Token};
+use cssparser::{match_ignore_ascii_case, Parser, Token};
+use debug_unreachable::debug_unreachable;
 use std::cmp;
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;

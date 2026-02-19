@@ -50,7 +50,7 @@ const isMacOS = Services.appinfo.OS === "Darwin";
  */
 class WebConsole {
   /**
-   * @constructor
+   * @class
    * @param object toolbox
    *        The toolbox where the web console is displayed.
    * @param object commands

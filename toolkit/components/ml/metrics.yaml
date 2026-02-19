@@ -181,6 +181,9 @@ firefox.ai.runtime:
       engineId:
         description: Engine id
         type: string
+      error:
+        description: error class or message
+        type: string
 
   run_inference_success_flow:
     type: event
@@ -200,11 +203,35 @@ firefox.ai.runtime:
       tokenizing_time:
         type: quantity
         description: >
-          Time taken for tokenization in milliseconds
+          Time taken for tokenization (preprocessing) in milliseconds
       inference_time:
         type: quantity
         description: >
           Time taken for inference in milliseconds
+      decoding_time:
+        type: quantity
+        description: >
+          Time taken for decoding in milliseconds
+      input_tokens:
+        type: quantity
+        description: >
+          Number of tokens in the input prompt
+      output_tokens:
+        type: quantity
+        description: >
+          Number of tokens generated
+      time_to_first_token:
+        type: quantity
+        description: >
+          Time to first token in milliseconds (null if not applicable)
+      tokens_per_second:
+        type: quantity
+        description: >
+          Inference throughput in tokens per second (rounded integer)
+      time_per_output_token:
+        type: quantity
+        description: >
+          Average latency per output token in milliseconds (rounded integer)
 
   run_inference_success:
     type: labeled_timing_distribution

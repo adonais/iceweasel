@@ -67,18 +67,14 @@ TEST-UNEXPECTED-WARNING | /fake/root/d/e/f.txt:4:2 | oh no bar (bar-not-allowed)
 {abc}:4:10: baz error: oh no baz
 {abc}:5: foo-diff error: oh no foo-diff
 {def}:4:2: bar-not-allowed warning: oh no bar
-""".format(
-            **NORMALISED_PATHS
-        ).strip(),
+""".format(**NORMALISED_PATHS).strip(),
     },
     "summary": {
         "kwargs": {},
         "format": """
 {root}/a: 3 errors
 {root}/d: 0 errors, 1 warning
-""".format(
-            **NORMALISED_PATHS
-        ).strip(),
+""".format(**NORMALISED_PATHS).strip(),
     },
 }
 

@@ -38,6 +38,7 @@ Created on Apr 11, 2012
 
 @author: mrmiller
 """
+
 import argparse
 import concurrent.futures
 import errno
@@ -133,8 +134,7 @@ def find_all_packages(paths):
     """
     for path in paths:
         logging.info(f"find_all_packages: {path}")
-        for pkg in find_packages(path):
-            yield pkg
+        yield from find_packages(path)
 
 
 def find_payloads(path):

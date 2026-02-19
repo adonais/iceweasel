@@ -509,10 +509,11 @@ function internalPersist(persistArgs) {
       filesFolder = persistArgs.targetFile.clone();
 
       var nameWithoutExtension = getFileBaseName(filesFolder.leafName);
-      var filesFolderLeafName =
-        ContentAreaUtils.stringBundle.formatStringFromName("filesFolder", [
-          nameWithoutExtension,
-        ]);
+      // Given the minimal benefits, the "_files" suffix is intentionally not
+      // localized. Localizing it introduces complexity in handling OS filename
+      // length limits (e.g. bug 1959738) and risks breaking the folder-linking
+      // feature if an unsupported suffix is used.
+      var filesFolderLeafName = nameWithoutExtension + "_files";
 
       filesFolder.leafName = filesFolderLeafName;
     }
@@ -676,9 +677,9 @@ function initFileInfo(
  *        An nsIURI associated with the download. The last used
  *        directory of the picker is retrieved from/stored in the
  *        Content Pref Service using this URI.
- * @return Promise
- * @resolve a boolean. When true, it indicates that the file picker dialog
- *          is accepted.
+ * @returns {Promise<boolean>}
+ *   Resolves to a boolean. When true, it indicates that the file picker dialog is
+ *   accepted.
  */
 function promiseTargetFile(
   aFpP,

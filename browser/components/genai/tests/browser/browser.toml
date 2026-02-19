@@ -25,6 +25,8 @@ skip-if = [
   "verify-standalone",
 ]
 
+["browser_chat_prompt.js"]
+
 ["browser_chat_request.js"]
 support-files = [
   "file_chat-autosubmit.html",
@@ -62,6 +64,8 @@ support-files = [
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1996489
 ]
+
+["browser_link_preview_aifeature_lifecycle.js"]
 
 ["browser_link_preview_nimbus.js"]
 

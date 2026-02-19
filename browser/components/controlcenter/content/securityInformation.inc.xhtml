@@ -8,7 +8,7 @@
           <description class="identity-popup-connection-not-secure security-view"
                        when-connection="not-secure secure-cert-user-overridden cert-error-page net-error-page https-only-error-page" data-l10n-id="identity-connection-not-secure-security-view"></description>
           <description class="identity-popup-connection-secure security-view"
-                       when-connection="secure secure-ev" data-l10n-id="identity-connection-verified"></description>
+                       when-connection="secure secure-ev secure-etsi" data-l10n-id="identity-connection-verified"></description>
           <!-- These descriptions are shown on a seperate subview when trustpanel is disabled and
                are only visible here under the trustpanel -->
           <box class="only-trustpanel">
@@ -25,14 +25,17 @@
         <vbox id="identity-popup-securityView-extended-info" class="identity-popup-section">
           <!-- (EV) Certificate Information -->
           <description id="identity-popup-content-owner-label"
-                       when-connection="secure-ev" data-l10n-id="identity-ev-owner-label"></description>
+                       when-connection="secure-ev secure-etsi" data-l10n-id="identity-ev-owner-label"></description>
           <description id="identity-popup-content-owner"
-                       when-connection="secure-ev"
+                       when-connection="secure-ev secure-etsi"
                        class="header"/>
           <description id="identity-popup-content-supplemental"
-                       when-connection="secure-ev"/>
+                       when-connection="secure-ev secure-etsi"/>
           <description id="identity-popup-content-verifier"
-                       when-connection="secure secure-ev secure-cert-user-overridden"/>
+                       when-connection="secure secure-ev secure-etsi secure-cert-user-overridden"/>
+          <description id="identity-popup-content-etsi"
+                       when-connection="secure-etsi"
+                       data-l10n-id="identity-etsi"/>
           <description id="identity-popup-content-verifier-unknown"
                        class="identity-popup-warning-box identity-popup-warning-gray"
                        when-customroot="true">

@@ -16,6 +16,7 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/AnimationPlaybackEvent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsPresContext.h"

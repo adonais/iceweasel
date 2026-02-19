@@ -461,7 +461,7 @@ deck > *|*:not(:-moz-native-anonymous) {
 }
 
 tabpanels > .deck-selected,
-tabpanels > .split-view-panel,
+tabpanels > .split-view-panel-active,
 tabpanels > .split-view-splitter,
 deck > .deck-selected {
   -moz-subtree-hidden-only-visually: 0;
@@ -636,6 +636,12 @@ richlistitem {
 findbar {
   overflow-x: hidden;
   contain: inline-size;
+}
+
+/* Matches legacy behavior and <html:img> */
+image {
+  overflow-clip-margin: content-box;
+  overflow: clip;
 }
 
 /* Some elements that in HTML blocks should be inline-level by default */

@@ -385,7 +385,7 @@ class TemporaryDirectory:
 
 class PuppeteerRunner(MozbuildObject):
     def __init__(self, *args, **kwargs):
-        super(PuppeteerRunner, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.remotedir = os.path.join(self.topsrcdir, "remote")
         self.puppeteer_dir = os.path.join(self.remotedir, "test", "puppeteer")

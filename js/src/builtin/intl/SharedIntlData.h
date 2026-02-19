@@ -31,6 +31,18 @@ class ArrayObject;
 
 namespace intl {
 
+enum class AvailableLocaleKind {
+  Collator,
+  DateTimeFormat,
+  DisplayNames,
+  DurationFormat,
+  ListFormat,
+  NumberFormat,
+  PluralRules,
+  RelativeTimeFormat,
+  Segmenter,
+};
+
 /**
  * This deleter class exists so that mozilla::intl::DateTimePatternGenerator
  * can be a forward declaration, but still be used inside of a UniquePtr.
@@ -259,7 +271,7 @@ class SharedIntlData {
 
   using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
 
-  // Set of supported locales for all Intl service constructors except Collator,
+  // Set of available locales for all Intl service constructors except Collator,
   // which uses its own set.
   //
   // UDateFormat:
@@ -273,13 +285,13 @@ class SharedIntlData {
   // UListFormatter, UPluralRules, and URelativeDateTimeFormatter:
   // We're going to use ULocale availableLocales as per ICU recommendation:
   // https://unicode-org.atlassian.net/browse/ICU-12756
-  LocaleSet supportedLocales;
+  LocaleSet availableLocales;
 
   // ucol_[count,get]Available() return different results compared to
-  // uloc_[count,get]Available(), we can't use |supportedLocales| here.
-  LocaleSet collatorSupportedLocales;
+  // uloc_[count,get]Available(), we can't use |availableLocales| here.
+  LocaleSet collatorAvailableLocales;
 
-  bool supportedLocalesInitialized = false;
+  bool availableLocalesInitialized = false;
 
   // CountAvailable and GetAvailable describe the signatures used for ICU API
   // to determine available locales for various functionality.
@@ -293,33 +305,21 @@ class SharedIntlData {
   /**
    * Precomputes the available locales sets.
    */
-  bool ensureSupportedLocales(JSContext* cx);
+  bool ensureAvailableLocales(JSContext* cx);
 
  public:
-  enum class SupportedLocaleKind {
-    Collator,
-    DateTimeFormat,
-    DisplayNames,
-    DurationFormat,
-    ListFormat,
-    NumberFormat,
-    PluralRules,
-    RelativeTimeFormat,
-    Segmenter,
-  };
-
   /**
-   * Sets |supported| to true if |locale| is supported by the requested Intl
-   * service constructor. Otherwise sets |supported| to false.
+   * Sets |available| to true if |locale| is supported by the requested Intl
+   * service constructor. Otherwise sets |available| to false.
    */
-  [[nodiscard]] bool isSupportedLocale(JSContext* cx, SupportedLocaleKind kind,
-                                       JS::Handle<JSString*> locale,
-                                       bool* supported);
+  [[nodiscard]] bool isAvailableLocale(JSContext* cx, AvailableLocaleKind kind,
+                                       JS::Handle<JSLinearString*> locale,
+                                       bool* available);
 
   /**
    * Returns all available locales for |kind|.
    */
-  ArrayObject* availableLocalesOf(JSContext* cx, SupportedLocaleKind kind);
+  ArrayObject* availableLocalesOf(JSContext* cx, AvailableLocaleKind kind);
 
  private:
   /**
@@ -361,7 +361,7 @@ class SharedIntlData {
    * Sets |isUpperFirst| to true if |locale| sorts upper-case characters
    * before lower-case characters.
    */
-  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSString*> locale,
+  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSLinearString*> locale,
                         bool* isUpperFirst);
 
  private:
@@ -380,7 +380,7 @@ class SharedIntlData {
   /**
    * Sets |ignorePunctuation| to true if |locale| ignores punctuation.
    */
-  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSString*> locale,
+  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSLinearString*> locale,
                            bool* ignorePunctuation);
 
  private:

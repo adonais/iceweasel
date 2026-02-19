@@ -22,7 +22,6 @@ import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.compose.browser.toolbar.store.EditState
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import org.mozilla.samples.compose.browser.BrowserComposeActivity.Companion.ROUTE_SETTINGS
 import org.mozilla.samples.compose.browser.R
@@ -58,7 +57,7 @@ internal class BrowserToolbarMiddleware(
     var dependencies = initialDependencies
 
     override fun invoke(
-        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
         action: BrowserToolbarAction,
     ) {

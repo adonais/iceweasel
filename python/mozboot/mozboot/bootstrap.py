@@ -58,15 +58,13 @@ Please choose the version of Firefox you want to build (see note above):
 %s
 Your choice: """
 
-APPLICATIONS = OrderedDict(
-    [
-        ("Firefox for Desktop Artifact Mode", "browser_artifact_mode"),
-        ("Firefox for Desktop", "browser"),
-        ("GeckoView/Firefox for Android Artifact Mode", "mobile_android_artifact_mode"),
-        ("GeckoView/Firefox for Android", "mobile_android"),
-        ("SpiderMonkey JavaScript engine", "js"),
-    ]
-)
+APPLICATIONS = OrderedDict([
+    ("Firefox for Desktop Artifact Mode", "browser_artifact_mode"),
+    ("Firefox for Desktop", "browser"),
+    ("GeckoView/Firefox for Android Artifact Mode", "mobile_android_artifact_mode"),
+    ("GeckoView/Firefox for Android", "mobile_android"),
+    ("SpiderMonkey JavaScript engine", "js"),
+])
 
 FINISHED = """
 Your system should be ready to build %s!
@@ -172,7 +170,10 @@ def check_for_hgrc_state_dir_mismatch(state_dir):
     import subprocess
 
     result = subprocess.run(
-        ["hg", "config", "--source", "-T", "json"], capture_output=True, text=True
+        ["hg", "config", "--source", "-T", "json"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
 
     if result.returncode:
@@ -317,7 +318,7 @@ class Bootstrapper:
                 cls = WindowsBootstrapper
         if cls is None:
             raise NotImplementedError(
-                "Bootstrap support is not yet available " "for your OS."
+                "Bootstrap support is not yet available for your OS."
             )
 
         self.instance = cls(**args)
@@ -715,12 +716,10 @@ def current_firefox_checkout(env, hg: Optional[Path] = None):
 
     Returns one of None, ``git``, or ``hg``.
     """
-    HG_ROOT_REVISIONS = set(
-        [
-            # From mozilla-unified.
-            "8ba995b74e18334ab3707f27e9eb8f4e37ba3d29"
-        ]
-    )
+    HG_ROOT_REVISIONS = set([
+        # From mozilla-unified.
+        "8ba995b74e18334ab3707f27e9eb8f4e37ba3d29"
+    ])
 
     path = Path.cwd()
     while path:
@@ -779,6 +778,7 @@ def _warn_if_risky_revision(path: Path):
 def _macos_is_running_under_rosetta():
     proc = subprocess.run(
         ["sysctl", "-n", "sysctl.proc_translated"],
+        check=False,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
     )

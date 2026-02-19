@@ -626,7 +626,6 @@ function makeExpectedResult({
       isSponsored,
       telemetryType,
       suggestionType,
-      displayUrl: url.replace(/^https:\/\//, ""),
       source: "rust",
       provider: "Dynamic",
       isManageable: true,

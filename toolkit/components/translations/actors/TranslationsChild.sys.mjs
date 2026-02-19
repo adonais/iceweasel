@@ -140,6 +140,10 @@ export class TranslationsChild extends JSWindowActorChild {
       case "Translations:GetDocumentElementLang": {
         return this.document.documentElement.lang;
       }
+      case "Translations:IsDocumentReady": {
+        const state = this.document.readyState;
+        return state === "interactive" || state === "complete";
+      }
       case "Translations:AcquirePort": {
         this.addProfilerMarker("Acquired a port, resuming translations");
         this.#translatedDoc.acquirePort(data.port);

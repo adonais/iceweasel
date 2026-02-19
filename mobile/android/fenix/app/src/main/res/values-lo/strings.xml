@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">ປ້ອນຄຳທີ່ຕ້ອງການຄົ້ນຫາ</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">ແທັບທີ່ເປີດຂອງທ່ານຈະຖືກສະແດງຢູ່ບ່ອນນີ້.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ແທັບທີ່ເປີດຂອງທ່ານຈະຖືກສະແດງຢູ່ບ່ອນນີ້.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">ແທັບສ່ວນຕົວຂອງທ່ານຈະຖືກສະແດງຢູ່ບ່ອນນີ້.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ແທັບສ່ວນຕົວຂອງທ່ານຈະຖືກສະແດງຢູ່ບ່ອນນີ້.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">ການທ່ອງເວັບແບບສ່ວນຕົວ</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">ອອກຈາກໂຫມດ multiselect</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">ບັນທຶກແທັບທີ່ເລືອກແລ້ວໄປໄວ້ທີ່ການເກັບສະສົມ</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ບັນທຶກແທັບທີ່ເລືອກແລ້ວໄປໄວ້ທີ່ການເກັບສະສົມ</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">ຈັບແຖບຈາກອຸປະກອນໃດກໍໄດ້</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -206,7 +206,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">ສ່ວນຂະຫຍາຍ</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">ທ່ານໄດ້ຕິດຕັ້ງສ່ວນຂະຫຍາຍ, ແຕ່ບໍ່ໄດ້ເປີດໃຊ້ງານ</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">ທ່ານໄດ້ຕິດຕັ້ງສ່ວນຂະຫຍາຍ, ແຕ່ບໍ່ໄດ້ເປີດໃຊ້ງານ</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">ຈັດການສ່ວນເສີມ</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -227,9 +227,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">ຂໍ້ມູນບັນຊີ</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">ວິທີໃຊ້</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">ວິທີໃຊ້</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">ສິ່ງໃຫມ່ໆ</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">ສິ່ງໃຫມ່ໆ</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">ການຕັ້ງຄ່າ</string>
   <!-- Browser menu button that opens a user's library -->
@@ -237,7 +237,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">ໂຫມດເດັກສທັອບ</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">ເປີດໃນແທັບປົກກະຕິ</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">ເປີດໃນແທັບປົກກະຕິ</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">ເພີ່ມເຂົ້າໄປຫນ້າທຳອິດ</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -263,7 +263,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">ຂັບເຄື່ອນໂດຍ %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ຂັບເຄື່ອນໂດຍ %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -276,15 +276,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">ເປີດໃນ App</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">ແກ້ໄຂມຸມມອງຜູ້ອ່ານ</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">ແກ້ໄຂມຸມມອງຜູ້ອ່ານ</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">ປັບແຕ່ງມຸມມອງຜູ້ອ່ານ</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">ເພີ່ມ</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">ເພີ່ມ</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">ແກ້ໄຂ</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">ແກ້ໄຂ</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">ປັບແຕ່ງຫນ້າທຳອິດ</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">ປັບແຕ່ງຫນ້າທຳອິດ</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">ເຂົ້າສູ່ລະບົບ</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -303,16 +303,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">ປິດເມນູ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">ການນໍາທາງ</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">ຊ່ວຍເຫລືອ</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">ການຕັ້ງຄ່າ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">ປິດຊີດເມນູສ່ວນຂະຫຍາຍ</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ປິດຊີດເມນູສ່ວນຂະຫຍາຍ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">ປິດບັນທຶກເມນູ</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ປິດບັນທຶກເມນູ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">ປິດແຜ່ນເມນູເຄື່ອງມື</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ປິດແຜ່ນເມນູເຄື່ອງມື</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">ປິດຊີດເມນູແຖບແບບກຳນົດເອງ</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -324,7 +320,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ແປໜ້ານີ້</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">ລາຍງານເວັບໄຊທີ່ມີບັນຫາ…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">ລາຍງານເວັບໄຊທີ່ມີບັນຫາ…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">ລາຍງານເວັບໄຊທີ່ມີບັນຫາ</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -448,19 +444,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">ແຈ້ງການຄວາມເປັນສ່ວນຕົວຂອງ Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">ພວກເຮົາຮັກຮັກສາຄວາມປອດໄພໃຫ້ທ່ານ</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">ຄົ້ນຫາວ່າເປັນຫຍັງຈຶ່ງມີຫຼາຍລ້ານຄົນຮັກ Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">ການທ່ອງເວັບທີ່ປອດໄພມີທາງເລືອກຫຼາຍ</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">ບຣາວເຊີທີ່ບໍ່ຫວັງຜົນກຳໄລຂອງພວກເຮົາຊ່ວຍຢຸດບໍລິສັດບໍ່ໃຫ້ຕິດຕາມທ່ານໄປທົ່ວເວັບ.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">ຫຼາຍກວ່າ 100 ລ້ານຄົນປົກປ້ອງຄວາມເປັນສ່ວນຕົວຂອງເຂົາເຈົ້າໂດຍການເລືອກຕົວທ່ອງເວັບທີ່ສະຫນັບສະຫນູນໂດຍອົງການບໍ່ຫວັງຜົນກໍາໄລ.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">ຮູ້ຈັກຜູ້ທີ່ຕິດຕາມບໍ່? ບລັອກອັດຕະໂນມັດ. ສ່ວນຂະຫຍາຍ? ພະຍາຍາມທັງຫມົດ 700. PDFs? ຜູ້ອ່ານທີ່ສ້າງຂຶ້ນຂອງພວກເຮົາເຮັດໃຫ້ພວກເຂົາຈັດການໄດ້ງ່າຍ.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">ຕັ້ງໃຫ້ເປັນບຣາວເຊີຫລັກ</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -550,60 +535,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">ຈັດການ</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">ເປີດຕົວຕົວທ່ອງເວັບ Android ສຸດທ້າຍ</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">ເປີດຕົວຕົວທ່ອງເວັບ Android ສຸດທ້າຍ</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">ໂຫຼດເວັບໄຊໄວ</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">ໂຫຼດເວັບໄຊໄວ</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">ການປ້ອງກັນການຕິດຕາມອັດຕະໂນມັດ</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">ການປ້ອງກັນການຕິດຕາມອັດຕະໂນມັດ</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">ຫລາຍພັນການປັບແຕ່ງ</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">ຫລາຍພັນການປັບແຕ່ງ</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">ໂດຍການດຳເນີນການຕໍ່, ທ່ານເຫັນດີນຳ %1$s.</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">ໂດຍການດຳເນີນການຕໍ່, ທ່ານເຫັນດີນຳ %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">ເງື່ອນໄຂການນໍາໃຊ້ Firefox</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">ເງື່ອນໄຂການນໍາໃຊ້ Firefox</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox ເປັນຫ່ວງກ່ຽວກັບຄວາມເປັນສ່ວນຕົວຂອງທ່ານ. ສຶກສາເພີ່ມເຕີມໃນ %1$s ຂອງພວກເຮົາ.</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox ເປັນຫ່ວງກ່ຽວກັບຄວາມເປັນສ່ວນຕົວຂອງທ່ານ. ສຶກສາເພີ່ມເຕີມໃນ %1$s ຂອງພວກເຮົາ.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">ປະກາດຄວາມເປັນສ່ວນຕົວ</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">ປະກາດຄວາມເປັນສ່ວນຕົວ</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">ເພື່ອຊ່ວຍປັບປຸງຕົວທ່ອງເວັບ, Firefox ສົ່ງຂໍ້ມູນການວິເຄາະ ແລະ ການໂຕ້ຕອບກັບ Mozilla. %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">ເພື່ອຊ່ວຍປັບປຸງຕົວທ່ອງເວັບ, Firefox ສົ່ງຂໍ້ມູນການວິເຄາະ ແລະ ການໂຕ້ຕອບກັບ Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">ຈັດການການຕັ້ງຄ່າ</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">ຈັດການການຕັ້ງຄ່າ</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">ສືບຕໍ່</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">ສືບຕໍ່</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">ທ່ານຕ້ອງການແຖບທີ່ຢູ່ຂອງທ່ານຢູ່ໃສ?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">ທ່ານຕ້ອງການແຖບທີ່ຢູ່ຂອງທ່ານຢູ່ໃສ?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">ສືບຕໍ່</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">ສືບຕໍ່</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">ຊ່ວຍພວກເຮົາພັດທະນາ Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">ຊ່ວຍພວກເຮົາພັດທະນາ Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">ແບ່ງປັນວິທີທີ່ທ່ານຄົ້ນພົບ Firefox, ແລະ ທີ່ທ່ານໃຊ້ມັນ, ກັບຄູ່ຮ່ວມການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ.</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">ແບ່ງປັນວິທີທີ່ທ່ານຄົ້ນພົບ Firefox, ແລະ ທີ່ທ່ານໃຊ້ມັນ, ກັບຄູ່ຮ່ວມການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">ພວກເຮົາໃຊ້ຂໍ້ມູນແນວໃດ</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">ພວກເຮົາໃຊ້ຂໍ້ມູນແນວໃດ</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">ຢືນຢັນ​</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">ຢືນຢັນ​</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">ໄດ້ຮັບການປົກປ້ອງການຕິດຕາມອັດຕະໂນມັດໂດຍຄ່າເລີ່ມຕົ້ນ</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">ໄດ້ຮັບການປົກປ້ອງການຕິດຕາມອັດຕະໂນມັດໂດຍຄ່າເລີ່ມຕົ້ນ</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">ທໍ່ດຽວຊ່ວຍຢຸດບໍລິສັດທີ່ສອດແນມກ່ຽວກັບການຄລິກຂອງທ່ານ.</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">ທໍ່ດຽວຊ່ວຍຢຸດບໍລິສັດທີ່ສອດແນມກ່ຽວກັບການຄລິກຂອງທ່ານ.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">ຊິ້ງຢູ່ທຸກບ່ອນທີ່ທ່ານໃຊ້ Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">ຊິ້ງຢູ່ທຸກບ່ອນທີ່ທ່ານໃຊ້ Firefox</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">ເອົາບຸກມາກ, ແຖບ ແລະ ລະຫັດຜ່ານຢູ່ໃນອຸປະກອນໃດກໍໄດ້. ທັງໝົດຖືກປ້ອງກັນດ້ວຍການເຂົ້າລະຫັດ.</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">ເອົາບຸກມາກ, ແຖບ ແລະ ລະຫັດຜ່ານຢູ່ໃນອຸປະກອນໃດກໍໄດ້. ທັງໝົດຖືກປ້ອງກັນດ້ວຍການເຂົ້າລະຫັດ.</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">ເລີ່ມການຊິງຄ໌</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">ເລີ່ມການຊິງຄ໌</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">ບໍ່ແມ່ນດຽວນີ້</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">ບໍ່ແມ່ນດຽວນີ້</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">ຊ່ວຍພວກເຮົາພັດທະນາ Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -1057,8 +1042,6 @@
   <string name="alternative_app_icon_group_solid_colors">ສີແຂງ</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">ຊັ້ນສີ</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">ອື່ນໆ</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">ປ່ຽນໄອຄອນແອັບບໍ?</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1407,9 +1390,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">​ເປີດໃຊ້ງານ</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">ລອງໃຊ້ຄຸນສົມບັດ ແລະ ແນວຄວາມຄິດກ່ອນທີ່ພວກມັນຈະຖືກເປີດເຜີຍໃຫ້ທຸກຄົນຮູ້.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">ລອງໃຊ້ຄຸນສົມບັດ ແລະ ແນວຄວາມຄິດກ່ອນທີ່ພວກມັນຈະຖືກເປີດເຜີຍໃຫ້ທຸກຄົນຮູ້.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">ຕິດຕັ້ງ ແລະ ດໍາເນີນການສຶກສາ</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">ຕິດຕັ້ງ ແລະ ດໍາເນີນການສຶກສາ</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">ຮຽນຮູ້ເພີ່ມເຕີມ</string>
   <!--
@@ -1446,15 +1429,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">ເພີ່ມແທັບສ່ວນຕົວ</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">ສ່ວນຕົວ</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">ສ່ວນຕົວ</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sync</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sync</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">ແບ່ງປັນແທັບທັງໝົດ</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">ແບ່ງປັນແທັບທັງໝົດ</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">ແທັບທີ່ຫາກໍ່ປິດໄປມື້ກີ້ນີ້</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">ຫາກໍ່ປິດໄປມື້ກີ້ນີ້</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">ຫາກໍ່ປິດໄປມື້ກີ້ນີ້</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">ການຕັ້ງ​ຄ່າ​ບັນ​ຊີ</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1462,11 +1445,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ປິດແທັບທັງຫມົດ</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">ບຸກມາກ</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">ບຸກມາກ</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">ບຸກມາກແຖບທີ່ເລືອກ</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">ປິດ</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">ປິດ</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">ປິດແຖບທີ່ເລືອກ</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1474,7 +1457,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">ເພີ່ມໃສ່ຄໍເລັກຊັນ</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">ແບ່ງປັນແທັບທີ່ເລືອກໄວ້</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ແບ່ງປັນແທັບທີ່ເລືອກໄວ້</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">ເລືອກເມນູແທັບແລ້ວ</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -2072,7 +2055,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">ລົງຊື່ເຂົ້າໃຊ້ເພື່ອ Sync</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">ເຂົ້າສູ່ລະບົບ</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">ເຂົ້າສູ່ລະບົບ</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ສົ່ງໄປຫາທຸກອຸປະກອນ</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2232,7 +2215,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">ລຶບຂໍ້ມູນການທ່ອງເວັບໂດຍອັດຕະໂນມັດເມື່ອທ່ານເລືອກ \"ອອກ\" ຈາກເມນູຫລັກ</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">ອອກ</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">ອອກ</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">ຊ່ວງເວລາທີ່ຈະລຶບ</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2785,9 +2768,9 @@
   -->
   <string name="certificate_info_verified_by">ໄດ້ຮັບການຢັ້ງຢືນໂດຍ: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">ລຶບ</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">ລຶບ</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">ແກ້ໄຂ</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">ແກ້ໄຂ</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">ລຶບ</string>
   <!-- Negative action of a dialog asking to delete login -->

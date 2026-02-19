@@ -47,6 +47,9 @@ std::ostream& operator<<(std::ostream& aOut, const SurfaceFormat& aFormat) {
     Emit(SurfaceFormat::R8G8B8);
     Emit(SurfaceFormat::B8G8R8);
     Emit(SurfaceFormat::R5G6B5_UINT16);
+    Emit(SurfaceFormat::R10G10B10A2_UINT32);
+    Emit(SurfaceFormat::R10G10B10X2_UINT32);
+    Emit(SurfaceFormat::R16G16B16A16F);
     Emit(SurfaceFormat::A8);
     Emit(SurfaceFormat::A16);
     Emit(SurfaceFormat::R8G8);

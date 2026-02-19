@@ -53,6 +53,7 @@ const PanelUI = {
     this.menuButton.addEventListener("mousedown", this);
     this.menuButton.addEventListener("keypress", this);
 
+    Services.obs.addObserver(this, "ai-window-state-changed");
     Services.obs.addObserver(this, "fullscreen-nav-toolbox");
     Services.obs.addObserver(this, "appMenu-notifications");
     Services.obs.addObserver(this, "show-update-progress");
@@ -189,6 +190,7 @@ const PanelUI = {
       }
     }
 
+    Services.obs.removeObserver(this, "ai-window-state-changed");
     Services.obs.removeObserver(this, "fullscreen-nav-toolbox");
     Services.obs.removeObserver(this, "appMenu-notifications");
     Services.obs.removeObserver(this, "show-update-progress");
@@ -274,6 +276,12 @@ const PanelUI = {
 
   observe(subject, topic, status) {
     switch (topic) {
+      case "ai-window-state-changed":
+        if (subject == window) {
+          this._showAIMenuItem();
+        }
+        break;
+
       case "fullscreen-nav-toolbox":
         if (this._notifications) {
           this.updateNotifications(false);
@@ -1073,9 +1081,15 @@ const PanelUI = {
       document,
       "appMenu-new-classic-window-button"
     );
+    const chatHistoryMenuItem = PanelMultiView.getViewNode(
+      document,
+      "appMenu-chats-history-button"
+    );
 
     aiMenuItem.hidden = !this.isAIWindowEnabled || isAIWindowActive;
     classicWindowMenuItem.hidden = !this.isAIWindowEnabled || !isAIWindowActive;
+
+    chatHistoryMenuItem.hidden = !this.isAIWindowEnabled || !isAIWindowActive;
   },
 
   _showBadge(notification) {

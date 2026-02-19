@@ -169,6 +169,11 @@ void SubstitutingJARURI::Serialize(mozilla::ipc::URIParams& aParams) {
   aParams = params;
 }
 
+size_t SubstitutingJARURI::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
+  // We don't need to calcaulte this unless it shows up in DMD.
+  return 0;
+};
+
 // SubstitutingJARURI::nsISerializable
 
 NS_IMETHODIMP

@@ -455,6 +455,25 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   // Get the load listener for the current load in this browsing context.
   already_AddRefed<net::DocumentLoadListener> GetCurrentLoad();
 
+  // https://html.spec.whatwg.org/#concept-internal-location-ancestor-origin-objects-list
+  void CreateRedactedAncestorOriginsList(
+      nsIPrincipal* aThisDocumentPrincipal,
+      ReferrerPolicy aFrameReferrerPolicyAttribute);
+
+  Span<const nsCOMPtr<nsIPrincipal>> GetPossiblyRedactedAncestorOriginsList()
+      const;
+  void SetPossiblyRedactedAncestorOriginsList(
+      nsTArray<nsCOMPtr<nsIPrincipal>> aAncestorOriginsList);
+
+  void SetEmbedderFrameReferrerPolicy(ReferrerPolicy aPolicy);
+
+  // Called when we need to snap shot referrer policy for ancestorOrigins
+  // and also when building the internal ancestor origins list for about:blank
+  // because it needs special handling.
+  ReferrerPolicy GetEmbedderFrameReferrerPolicy() const {
+    return mEmbedderFrameReferrerPolicy;
+  }
+
  protected:
   // Called when the browsing context is being discarded.
   void CanonicalDiscard();
@@ -674,8 +693,14 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   uint32_t mPendingDiscards = 0;
 
   bool mFullyDiscarded = false;
+  // the referrerPolicy attribute of the iframe hosting this browsing context
+  // defaults to the empty string
+  ReferrerPolicy mEmbedderFrameReferrerPolicy = ReferrerPolicy::_empty;
 
   nsTArray<std::function<void(uint64_t)>> mFullyDiscardedListeners;
+
+  // https://html.spec.whatwg.org/#concept-internal-location-ancestor-origin-objects-list
+  nsTArray<nsCOMPtr<nsIPrincipal>> mPossiblyRedactedAncestorOriginsList;
 };
 
 }  // namespace dom

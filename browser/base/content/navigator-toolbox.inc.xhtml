@@ -104,6 +104,14 @@
     <hbox class="titlebar-spacer" type="post-tabs"/>
 
 #include private-browsing-indicator.inc.xhtml
+
+    <toolbarbutton id="ai-window-toggle"
+                    class="toolbarbutton-1 chromeclass-toolbar-additional"
+                    data-l10n-id="toolbar-button-ai-window-toggle"
+                    cui-areatype="toolbar"
+                    removable="false"
+                    hidden="true"/>
+
     <toolbarbutton class="content-analysis-indicator toolbarbutton-1 content-analysis-indicator-icon"/>
 
 #include titlebar-items.inc.xhtml
@@ -331,11 +339,12 @@
                       data-l10n-id="urlbar-search-mode-indicator-close"/>
           </html:div>
 
-          <hbox class="urlbar-revert-button-container" urlbar-slot="revert-button">
+          <hbox id="urlbar-revert-button-container" urlbar-slot="revert-button">
             <toolbartabstop/>
-            <image class="urlbar-icon urlbar-revert-button"
-                    role="button"
-                    data-l10n-id="urlbar-revert-button"/>
+            <image id="urlbar-revert-button"
+                   class="urlbar-icon urlbar-revert-button"
+                   role="button"
+                   data-l10n-id="urlbar-revert-button"/>
           </hbox>
 
           <hbox id="page-action-buttons" context="pageActionContextMenu" align="center" urlbar-slot="page-actions">

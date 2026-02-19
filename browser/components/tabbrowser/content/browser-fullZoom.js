@@ -329,8 +329,7 @@ var FullZoom = {
    *   whether or not the ZoomManager.zoom level is at 1.0. This is specifically
    *   for when using scaling zoom via the pinch gesture which doesn't cause
    *   the ZoomManager.zoom level to change.
-   * @returns Promise
-   * @resolves undefined
+   * @returns {Promise<void>}
    */
   updateCommands: async function FullZoom_updateCommands(
     forceResetEnabled = false

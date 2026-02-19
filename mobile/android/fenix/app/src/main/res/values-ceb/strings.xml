@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Pribado %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -20,9 +20,9 @@
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Pangitaa o ibutang ang address</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Ang imong abri nga tabs makita dinhi.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ang imong abri nga tabs makita dinhi.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Ang imong mga private tab makita dinhi.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ang imong mga private tab makita dinhi.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d napili</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -34,7 +34,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Gawas sa multiselect mode</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">i-Save ang napiling tabs padulong sa collection</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">i-Save ang napiling tabs padulong sa collection</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s hinimo sa Mozilla.</string>
   <!-- Private Browsing -->
@@ -102,9 +102,9 @@
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
   <string name="browser_menu_stop">Hunong</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Tabang</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Tabang</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Unsay Bag-o</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Unsay Bag-o</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Mga Setting</string>
   <!-- Browser menu button that opens a user's library -->
@@ -130,7 +130,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">POWERED BY %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">POWERED BY %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -143,13 +143,13 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">i-Open sa app</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">i-Customize ang reader view</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">i-Customize ang reader view</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">i-Add</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">i-Add</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">i-Edit</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">i-Edit</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">i-Customize ang homepage</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">i-Customize ang homepage</string>
   <!--
     Browser Toolbar
 

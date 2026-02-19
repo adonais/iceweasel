@@ -225,12 +225,21 @@ enum class LimitsFlags {
   HasMaximum = 0x1,
   IsShared = 0x2,
   IsI64 = 0x4,
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  HasCustomPageSize = 0x8,
+#endif
 };
 
 enum class LimitsMask {
   Table = uint8_t(LimitsFlags::HasMaximum) | uint8_t(LimitsFlags::IsI64),
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  Memory = uint8_t(LimitsFlags::HasMaximum) | uint8_t(LimitsFlags::IsShared) |
+           uint8_t(LimitsFlags::IsI64) |
+           uint8_t(LimitsFlags::HasCustomPageSize),
+#else
   Memory = uint8_t(LimitsFlags::HasMaximum) | uint8_t(LimitsFlags::IsShared) |
            uint8_t(LimitsFlags::IsI64),
+#endif
 };
 
 enum class DataSegmentKind {
@@ -1130,14 +1139,14 @@ enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 
 enum class FieldWideningOp { None, Signed, Unsigned };
 
-// The WebAssembly spec hard-codes the virtual page size to be 64KiB and
-// requires the size of linear memory to always be a multiple of 64KiB.
-
-static const unsigned PageSize = 64 * 1024;
-static const unsigned PageBits = 16;
-static_assert(PageSize == (1u << PageBits));
-
-static const unsigned PageMask = ((1u << PageBits) - 1);
+// The WebAssembly custom page sizes proposal allows for a virtual page size of
+// either 64KiB, or 1 byte.  We call these Standard and Tiny, respectively.
+enum class PageSize {
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  Tiny = 0,
+#endif
+  Standard = 16
+};
 
 // These limits are agreed upon with other engines for consistency.
 
@@ -1162,16 +1171,16 @@ static const unsigned MaxLocals = 50000;
 static const unsigned MaxParams = 1000;
 static const unsigned MaxResults = 1000;
 static const unsigned MaxStructFields = 10000;
-static const uint64_t MaxMemory32PagesValidation = uint64_t(1) << 16;
-static const uint64_t MaxMemory64PagesValidation = (uint64_t(1) << 37) - 1;
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+static const uint64_t MaxMemory32TinyPagesValidation = UINT32_MAX;
+static const uint64_t MaxMemory64TinyPagesValidation = (uint64_t(1) << 53) - 1;
+#endif
+static const uint64_t MaxMemory32StandardPagesValidation = uint64_t(1) << 16;
+static const uint64_t MaxMemory64StandardPagesValidation =
+    (uint64_t(1) << 37) - 1;
 static const unsigned MaxModuleBytes = 1024 * 1024 * 1024;
 static const unsigned MaxFunctionBytes = 7654321;
 static const unsigned MaxArrayNewFixedElements = 10000;
-
-// By spec, see
-// https://github.com/WebAssembly/spec/issues/1895#issuecomment-2895078022
-static_assert((PageSize * MaxMemory64PagesValidation) <=
-              (uint64_t(1) << 53) - 1);
 
 // Maximum payload size, in bytes, of a gc-proposal Array.  Puts it fairly
 // close to 2^31 without exposing us to potential danger at the signed-i32

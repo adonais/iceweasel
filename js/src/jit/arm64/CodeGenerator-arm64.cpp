@@ -84,7 +84,7 @@ void CodeGeneratorARM64::bailoutIf(Assembler::Condition condition,
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
   addOutOfLineCode(ool,
                    new (alloc()) BytecodeSite(tree, tree->script()->code()));
 
@@ -99,7 +99,7 @@ void CodeGeneratorARM64::bailoutIfZero(Assembler::Condition condition,
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
   addOutOfLineCode(ool,
                    new (alloc()) BytecodeSite(tree, tree->script()->code()));
 
@@ -118,7 +118,7 @@ void CodeGeneratorARM64::bailoutFrom(Label* label, LSnapshot* snapshot) {
 
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   auto* ool = new (alloc()) LambdaOutOfLineCode(
-      [=](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
+      [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
   addOutOfLineCode(ool,
                    new (alloc()) BytecodeSite(tree, tree->script()->code()));
 
@@ -2650,7 +2650,7 @@ void CodeGenerator::visitWasmAddOffset(LWasmAddOffset* lir) {
 
   masm.Adds(ARMRegister(out, 32), ARMRegister(base, 32),
             Operand(mir->offset()));
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
   });
   addOutOfLineCode(ool, mir);
@@ -2664,7 +2664,7 @@ void CodeGenerator::visitWasmAddOffset64(LWasmAddOffset64* lir) {
 
   masm.Adds(ARMRegister(out.reg, 64), ARMRegister(base.reg, 64),
             Operand(mir->offset()));
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
   });
   addOutOfLineCode(ool, mir);

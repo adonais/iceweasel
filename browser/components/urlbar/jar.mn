@@ -3,4 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 browser.jar:
-        content/browser/urlbar/UrlbarInput.mjs     (content/UrlbarInput.mjs)
+        content/browser/urlbar/SmartbarInput.mjs           (content/SmartbarInput.mjs)
+        content/browser/urlbar/SmartbarInputController.mjs (content/SmartbarInputController.mjs)
+        content/browser/urlbar/SmartbarInputUtils.mjs      (content/SmartbarInputUtils.mjs)
+        content/browser/urlbar/UrlbarInput.mjs             (content/UrlbarInput.mjs)

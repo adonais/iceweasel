@@ -298,7 +298,7 @@ add_task(async function test_httpsUpgradeCaptureFields_captureMatchingHTTP() {
   logins = await Services.logins.getAllLogins();
   Assert.equal(logins.length, 2, "Should have both HTTP and HTTPS still");
 
-  let httpsLogins = LoginHelper.searchLoginsWithObject({
+  let httpsLogins = await Services.logins.searchLoginsAsync({
     origin: "https://example.com",
   });
   Assert.equal(httpsLogins.length, 1, "Check https logins count");
@@ -306,7 +306,7 @@ add_task(async function test_httpsUpgradeCaptureFields_captureMatchingHTTP() {
   Assert.ok(httpsLogin.equals(login1HTTPS), "Check HTTPS login didn't change");
   Assert.equal(httpsLogin.timesUsed, 1, "Check times used");
 
-  let httpLogins = LoginHelper.searchLoginsWithObject({
+  let httpLogins = await Services.logins.searchLoginsAsync({
     origin: "http://example.com",
   });
   Assert.equal(httpLogins.length, 1, "Check http logins count");

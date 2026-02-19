@@ -14,8 +14,6 @@ prefs = [
 
 ["browser_IPProtectionService.js"]
 
-["browser_exceptions_dialog.js"]
-
 ["browser_guardian_client.js"]
 
 ["browser_ipprotection_content.js"]
@@ -44,7 +42,5 @@ prefs = [
 skip-if = [
   "devedition",
 ]
-
-["browser_ipprotection_upgrade.js"]
 
 ["browser_ipprotection_usage.js"]

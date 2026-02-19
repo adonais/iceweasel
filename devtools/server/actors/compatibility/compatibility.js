@@ -30,7 +30,7 @@ class CompatibilityActor extends Actor {
    * @param inspector
    *    The InspectorActor that owns this CompatibilityActor.
    *
-   * @constructor
+   * @class
    */
   constructor(inspector) {
     super(inspector.conn, compatibilitySpec);

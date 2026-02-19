@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -78,17 +80,11 @@ fun InfoCard(
                     InfoCardIcon(iconId = iconsR.drawable.mozac_ic_warning_fill_24)
                 }
 
-                InfoType.Confirmation -> {
-                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_checkmark_24)
-                }
-
                 InfoType.Error -> {
                     InfoCardIcon(iconId = iconsR.drawable.mozac_ic_critical_fill_24)
                 }
 
-                InfoType.Info,
-                InfoType.InfoPlain,
-                -> {
+                InfoType.Info -> {
                     InfoCardIcon(iconId = iconsR.drawable.mozac_ic_information_fill_24)
                 }
             }
@@ -170,11 +166,6 @@ enum class InfoType {
     Warning,
 
     /**
-     * Stylizes the card to indicate an action occurred successfully or to confirm an action.
-     */
-    Confirmation,
-
-    /**
      * Stylizes the card to indicate a serious error has occurred.
      */
     Error,
@@ -184,10 +175,6 @@ enum class InfoType {
      */
     Info,
 
-    /**
-     * Stylizes the card for informative messages in muted tones.
-     */
-    InfoPlain,
     ;
 
     val cardBackgroundColor: Color
@@ -195,10 +182,8 @@ enum class InfoType {
         @ReadOnlyComposable
         get() = when (this) {
             Warning -> FirefoxTheme.colors.layerWarning
-            Confirmation -> FirefoxTheme.colors.layerSuccess
             Error -> FirefoxTheme.colors.layerCritical
             Info -> FirefoxTheme.colors.layerInformation
-            InfoPlain -> Color.Transparent
         }
 
     val buttonBackgroundColor: Color
@@ -206,10 +191,8 @@ enum class InfoType {
         @ReadOnlyComposable
         get() = when (this) {
             Warning -> FirefoxTheme.colors.actionWarning
-            Confirmation -> FirefoxTheme.colors.actionSuccess
             Error -> FirefoxTheme.colors.actionCritical
             Info -> FirefoxTheme.colors.actionInformation
-            InfoPlain -> FirefoxTheme.colors.actionSecondary
         }
 
     val buttonTextColor: Color
@@ -217,7 +200,6 @@ enum class InfoType {
         @ReadOnlyComposable
         get() = when {
             this == Info && !isSystemInDarkTheme() -> FirefoxTheme.colors.textOnColorPrimary
-            this == InfoPlain -> FirefoxTheme.colors.textActionSecondary
             else -> MaterialTheme.colorScheme.onSurface
         }
 }
@@ -238,30 +220,45 @@ private class PreviewModelParameterProvider : PreviewParameterProvider<InfoType>
     override val values = enumValues<InfoType>().asSequence()
 }
 
+@Composable
+private fun InfoCardPreviewContent(type: InfoType) {
+    Surface {
+        InfoCard(
+            title = "Title text",
+            type = type,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(all = 16.dp),
+            description = "Description text",
+            footer = "Primary link text with an underlined hyperlink." to LinkTextState(
+                text = "underlined hyperlink",
+                url = "https://www.mozilla.org",
+                onClick = {},
+            ),
+            buttonText = InfoCardButtonText(
+                text = "Button text",
+                onClick = {},
+            ),
+        )
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun InfoCardPreview(
     @PreviewParameter(PreviewModelParameterProvider::class) type: InfoType,
 ) {
     FirefoxTheme {
-        Surface {
-            InfoCard(
-                title = "Title text",
-                type = type,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 16.dp),
-                description = "Description text",
-                footer = "Primary link text with an underlined hyperlink." to LinkTextState(
-                    text = "underlined hyperlink",
-                    url = "https://www.mozilla.org",
-                    onClick = {},
-                ),
-                buttonText = InfoCardButtonText(
-                    text = "Button text",
-                    onClick = {},
-                ),
-            )
-        }
+        InfoCardPreviewContent(type = type)
+    }
+}
+
+@Preview
+@Composable
+private fun InfoCardPrivatePreview(
+    @PreviewParameter(PreviewModelParameterProvider::class) type: InfoType,
+) {
+    FirefoxTheme(theme = Theme.Private) {
+        InfoCardPreviewContent(type = type)
     }
 }

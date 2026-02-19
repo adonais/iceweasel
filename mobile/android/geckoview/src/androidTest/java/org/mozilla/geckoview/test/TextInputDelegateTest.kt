@@ -421,6 +421,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         })
     }
 
+    @WithDisplay(width = 100, height = 100)
     @Test fun restartInput_disableEnable() {
         assumeThat("input only", id, equalTo("#input"))
 
@@ -462,6 +463,45 @@ class TextInputDelegateTest : BaseSessionTest() {
         promise.value
 
         assertThat("hideSoftInput isn't called", true, equalTo(true))
+    }
+
+    // When navigating away from a page with a focused input field, the keyboard should be dismissed.
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun restartInput_dismissAfterNavigation() {
+        assumeThat("input only", id, equalTo("#input"))
+
+        mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
+        mainSession.loadTestPath(RESUBMIT_CONFIRM)
+        mainSession.waitForPageStop()
+
+        mainSession.evaluateJS("document.querySelector('#text').focus()")
+
+        mainSession.waitUntilCalled(object : TextInputDelegate {
+            @AssertCalled(count = 1)
+            override fun restartInput(session: GeckoSession, reason: Int) {
+                assertThat(
+                    "Reason should be correct",
+                    reason,
+                    equalTo(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS),
+                )
+            }
+        })
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        pressKeyNoWait(ic, KeyEvent.KEYCODE_ENTER)
+
+        mainSession.waitUntilCalled(object : TextInputDelegate, GeckoSession.ProgressDelegate {
+            @AssertCalled(count = 1)
+            override fun hideSoftInput(session: GeckoSession) {
+            }
+
+            @AssertCalled(count = 1)
+            override fun onPageStop(session: GeckoSession, success: Boolean) {
+            }
+        })
+
+        assertThat("hideSoftInput is called once", true, equalTo(true))
     }
 
     private fun getText(ic: InputConnection) =

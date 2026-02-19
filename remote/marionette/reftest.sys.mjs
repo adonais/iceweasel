@@ -15,7 +15,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   navigate: "chrome://remote/content/marionette/navigate.sys.mjs",
   print: "chrome://remote/content/shared/PDF.sys.mjs",
-  windowManager: "chrome://remote/content/shared/WindowManager.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
@@ -170,7 +169,7 @@ reftest.Runner = class {
     this.windowUtils = reftestWin.windowUtils;
     this.reftestWin = reftestWin;
 
-    let windowHandle = lazy.windowManager.getWindowProperties(reftestWin);
+    let windowHandle = this.driver.getWindowProperties(reftestWin);
     await this.driver.setWindowHandle(windowHandle, true);
 
     const url = await this.driver._getCurrentURL();
@@ -243,9 +242,7 @@ reftest.Runner = class {
   async abort() {
     if (this.reftestWin && this.reftestWin != this.parentWindow) {
       await this.driver.closeChromeWindow();
-      let parentHandle = lazy.windowManager.getWindowProperties(
-        this.parentWindow
-      );
+      let parentHandle = this.driver.getWindowProperties(this.parentWindow);
       await this.driver.setWindowHandle(parentHandle);
     }
     this.reftestWin = null;

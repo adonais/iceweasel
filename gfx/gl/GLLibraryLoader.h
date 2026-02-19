@@ -6,7 +6,6 @@
 #define GLLIBRARYLOADER_H_
 
 #include <array>
-#include <stdio.h>
 
 #include "GLDefs.h"
 #include "nscore.h"

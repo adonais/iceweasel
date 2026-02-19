@@ -749,23 +749,18 @@ async function promiseFormsProcessed(expectedCount = 1) {
 }
 
 async function loadFormIntoWindow(origin, html, win, expectedCount = 1, task) {
-  let loadedPromise = new Promise(resolve => {
-    win.addEventListener(
-      "load",
-      function (event) {
-        if (event.target.location.href.endsWith("blank.html")) {
-          resolve();
-        }
-      },
-      { once: true }
-    );
-  });
+  const token = `channel${Math.random().toString().slice(2)}`;
+  const bc = new BroadcastChannel(token);
+  const loadedPromise = new Promise(resolve => (bc.onmessage = resolve));
 
   let processedPromise = promiseFormsProcessed(expectedCount);
   win.location =
-    origin + "/tests/toolkit/components/passwordmgr/test/mochitest/blank.html";
+    origin +
+    `/tests/toolkit/components/passwordmgr/test/mochitest` +
+    `/file_postmessage_channel.html?token=${token}`;
   info(`Waiting for window to load for origin: ${origin}`);
   await loadedPromise;
+  bc.close();
 
   await SpecialPowers.spawn(
     win,

@@ -485,7 +485,7 @@ export var TPS = {
                 (await passwordOb.Find()) != -1,
                 "password not found"
               );
-              passwordOb.Update();
+              await passwordOb.Update();
             }
             break;
           default:

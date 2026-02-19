@@ -67,6 +67,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 group = 'org.mozilla.apilint'
 
 spotless {
+    lineEndings = com.diffplug.spotless.LineEnding.UNIX
     java {
         googleJavaFormat(libs.versions.google.java.format.get())
     }

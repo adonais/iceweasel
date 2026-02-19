@@ -6,8 +6,8 @@ package org.mozilla.fenix.components
 
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.State
+import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 
 /**
@@ -31,7 +31,7 @@ class LogMiddleware<S : State, A : Action>(
     },
 ) : Middleware<S, A> {
     override fun invoke(
-        context: MiddlewareContext<S, A>,
+        store: Store<S, A>,
         next: (A) -> Unit,
         action: A,
     ) {

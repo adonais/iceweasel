@@ -5,7 +5,7 @@
 // @ts-check
 
 /**
- * @import { GetTextOptions } from './PageExtractor.js'
+ * @import { GetTextOptions } from './PageExtractor.d.ts'
  */
 
 /**
@@ -34,12 +34,31 @@ class ExtractionContext {
   #textContent = "";
 
   /**
+   * When extracting content just from the viewport, this value will be set.
+   *
+   * @type {{ top: number; left: number; right: number; bottom: number } | null}
+   */
+  #viewportRect = null;
+
+  /**
    * Constructs a new extraction context with the provided options.
    *
+   * @param {Document} document
    * @param {GetTextOptions} options
    */
-  constructor(options) {
+  constructor(document, options) {
     this.#options = options;
+
+    if (options.justViewport) {
+      const { visualViewport } = document.defaultView;
+      const { offsetTop, offsetLeft, width, height } = visualViewport;
+      this.#viewportRect = {
+        top: offsetTop,
+        left: offsetLeft,
+        right: offsetLeft + width,
+        bottom: offsetTop + height,
+      };
+    }
   }
 
   /**
@@ -90,6 +109,34 @@ class ExtractionContext {
   }
 
   /**
+   * When capturing content only in the viewport, skip nodes that are outside of it.
+   *
+   * @param {Node} node
+   */
+  maybeOutOfViewport(node) {
+    if (!this.#viewportRect) {
+      // We don't have a viewport rect, so skip this check.
+      return false;
+    }
+    const element = getHTMLElementForStyle(node);
+    if (!element) {
+      return false;
+    }
+
+    const rect = element.getBoundingClientRect();
+    if (!rect) {
+      return false;
+    }
+
+    return (
+      rect.bottom <= this.#viewportRect.top ||
+      rect.top >= this.#viewportRect.bottom ||
+      rect.right <= this.#viewportRect.left ||
+      rect.left >= this.#viewportRect.right
+    );
+  }
+
+  /**
    * Append the node's text content to the accumulated text only if the node
    * itself as well as no ancestor of the node has already been processed.
    *
@@ -103,6 +150,11 @@ class ExtractionContext {
     this.#processedNodes.add(node);
 
     if (isNodeHidden(node)) {
+      return;
+    }
+
+    if (this.maybeOutOfViewport(node)) {
+      // This only can return true when we're capturing just the viewport nodes.
       return;
     }
 
@@ -136,11 +188,11 @@ class ExtractionContext {
  * @returns {string}
  */
 export function extractTextFromDOM(document, options) {
-  const context = new ExtractionContext(options);
+  const context = new ExtractionContext(document, options);
 
   subdivideAndExtractText(document.body, context);
 
-  return context.textContent;
+  return context.textContent.trim();
 }
 
 /**
@@ -349,7 +401,6 @@ function isNodeHidden(node) {
   }
 
   // This is an issue with the DOM library generation.
-  // @ts-expect-error Property 'display' does not exist on type 'CSSStyleDeclaration'.ts(2339)
   const { display, visibility, opacity } = style;
 
   return (

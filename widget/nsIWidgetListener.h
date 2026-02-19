@@ -5,8 +5,6 @@
 #ifndef nsIWidgetListener_h__
 #define nsIWidgetListener_h__
 
-#include <stdint.h>
-
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/TimeStamp.h"
@@ -55,23 +53,18 @@ class nsIWidgetListener {
   virtual mozilla::PresShell* GetPresShell() { return nullptr; }
 
   /**
-   * Called when a window is moved to location (x, y). Returns true if the
-   * notification was handled. Coordinates are outer window screen coordinates.
+   * Called when a window is moved to location.
+   * Coordinates are outer window screen coordinates.
    */
   enum class ByMoveToRect : bool { No, Yes };
-  virtual bool WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY,
-                           ByMoveToRect) {
-    return false;
-  }
+  virtual void WindowMoved(nsIWidget*, const mozilla::LayoutDeviceIntPoint&,
+                           ByMoveToRect) {}
 
   /**
-   * Called when a window is resized to (width, height). Returns true if the
-   * notification was handled. Coordinates are outer window screen coordinates.
+   * Called when a window is resized.
+   * Coordinates are outer window screen coordinates.
    */
-  virtual bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
-                             int32_t aHeight) {
-    return false;
-  }
+  virtual void WindowResized(nsIWidget*, const mozilla::LayoutDeviceIntSize&) {}
 
   /**
    * Called when the size mode (minimized, maximized, fullscreen) is changed.

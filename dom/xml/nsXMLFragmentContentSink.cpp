@@ -18,7 +18,6 @@
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
 #include "nsIContent.h"
-#include "nsIDTD.h"
 #include "nsIDocShell.h"
 #include "nsIExpatSink.h"
 #include "nsIFragmentContentSink.h"
@@ -55,7 +54,7 @@ class nsXMLFragmentContentSink : public nsXMLContentSink,
                          bool* aRetval) override;
 
   // nsIContentSink
-  NS_IMETHOD WillBuildModel(nsDTDMode aDTDMode) override;
+  NS_IMETHOD WillBuildModel() override;
   NS_IMETHOD DidBuildModel(bool aTerminated) override;
   virtual void SetDocumentCharset(NotNull<const Encoding*> aEncoding) override;
   virtual nsISupports* GetTarget() override;
@@ -135,7 +134,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(nsXMLFragmentContentSink, nsXMLContentSink,
                                    mTargetDocument, mRoot)
 
 NS_IMETHODIMP
-nsXMLFragmentContentSink::WillBuildModel(nsDTDMode aDTDMode) {
+nsXMLFragmentContentSink::WillBuildModel() {
   if (mRoot) {
     return NS_OK;
   }

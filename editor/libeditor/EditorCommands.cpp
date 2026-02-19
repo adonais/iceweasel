@@ -11,6 +11,7 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"  // for mozilla::detail::Any
+#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCommandParams.h"
@@ -432,9 +433,34 @@ bool PasteCommand::IsCommandEnabled(Command aCommand,
 
 nsresult PasteCommand::DoCommand(Command aCommand, EditorBase& aEditorBase,
                                  nsIPrincipal* aPrincipal) const {
+  RefPtr<dom::DataTransfer> dataTransfer;
+  nsCOMPtr<nsIPrincipal> subjectPrincipal =
+      aPrincipal ? aPrincipal
+                 : nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
+  MOZ_ASSERT(subjectPrincipal);
+
+  // If we don't need to get user confirmation for clipboard access, we could
+  // just let EditorBase::PasteAsAction() to create DataTransfer instance
+  // synchronously for paste event. Otherwise, we need to spin the event loop to
+  // wait for the clipboard paste contextmenu to be shown and get user
+  // confirmation which are all handled in parent process before sending the
+  // paste event.
+  if (!nsContentUtils::PrincipalHasPermission(*subjectPrincipal,
+                                              nsGkAtoms::clipboardRead)) {
+    MOZ_DIAGNOSTIC_ASSERT(StaticPrefs::dom_execCommand_paste_enabled(),
+                          "How did we get here?");
+    // This will spin the event loop.
+    nsCOMPtr<nsPIDOMWindowOuter> window = aEditorBase.GetWindow();
+    dataTransfer = dom::DataTransfer::WaitForClipboardDataSnapshotAndCreate(
+        window, subjectPrincipal);
+    if (!dataTransfer) {
+      return NS_SUCCESS_DOM_NO_OPERATION;
+    }
+  }
+
   nsresult rv = aEditorBase.PasteAsAction(nsIClipboard::kGlobalClipboard,
                                           EditorBase::DispatchPasteEvent::Yes,
-                                          nullptr, aPrincipal);
+                                          dataTransfer, aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::PasteAsAction(nsIClipboard::"
                        "kGlobalClipboard, DispatchPasteEvent::Yes) failed");

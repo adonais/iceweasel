@@ -17,7 +17,7 @@ class SingleTestMixin:
     """Utility functions for per-test testing like test verification and per-test coverage."""
 
     def __init__(self, **kwargs):
-        super(SingleTestMixin, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.suites = {}
         self.tests_downloaded = False
@@ -346,78 +346,61 @@ class SingleTestMixin:
             # code may run before the device is ready, so rely on configuration
             from mozinfo.platforminfo import android_api_to_os_version
 
-            mozinfo.update(
-                {"android_version": str(self.config.get("android_version", 34))}
-            )
-            mozinfo.update(
-                {
-                    "os_version": android_api_to_os_version(
-                        self.config.get("android_version", 34)
-                    )
-                }
-            )
+            mozinfo.update({
+                "android_version": str(self.config.get("android_version", 34))
+            })
+            mozinfo.update({
+                "os_version": android_api_to_os_version(
+                    self.config.get("android_version", 34)
+                )
+            })
             mozinfo.update({"is_emulator": self.config.get("is_emulator", True)})
 
         # variants
         mozinfo.update({"e10s": self.config.get("e10s", True)})
-        mozinfo.update(
-            {
-                "fission": "fission.autostart=false"
-                not in self.config.get("extra_prefs", [])
-            }
-        )
+        mozinfo.update({
+            "fission": "fission.autostart=false"
+            not in self.config.get("extra_prefs", [])
+        })
         mozinfo.update({"headless": self.config.get("headless", False)})
         mozinfo.update({"a11y_checks": self.config.get("a11y_checks", False)})
-        mozinfo.update(
-            {
-                "socketprocess_e10s": "media.peerconnection.mtransport_process=true"
-                in self.config.get("extra_prefs", [])
-            }
-        )
-        mozinfo.update(
-            {
-                "socketprocess_networking": "network.http.network_access_on_socket_process.enabled=true"
-                in self.config.get("extra_prefs", [])
-            }
-        )
-        mozinfo.update(
-            {
-                "swgl": "gfx.webrender.software=true"
-                in self.config.get("extra_prefs", [])
-            }
-        )
-        mozinfo.update(
-            {"wmfme": "media-engine-compatible" in self.config.get("test_tags", [])}
-        )
-        mozinfo.update(
-            {
-                "emewmf": "media.wmf.media-engine.enabled=2"
-                in self.config.get("extra_prefs", [])
-            }
-        )
+        mozinfo.update({
+            "socketprocess_e10s": "media.peerconnection.mtransport_process=true"
+            in self.config.get("extra_prefs", [])
+        })
+        mozinfo.update({
+            "socketprocess_networking": "network.http.network_access_on_socket_process.enabled=true"
+            in self.config.get("extra_prefs", [])
+        })
+        mozinfo.update({
+            "swgl": "gfx.webrender.software=true" in self.config.get("extra_prefs", [])
+        })
+        mozinfo.update({
+            "wmfme": "media-engine-compatible" in self.config.get("test_tags", [])
+        })
+        mozinfo.update({
+            "emewmf": "media.wmf.media-engine.enabled=2"
+            in self.config.get("extra_prefs", [])
+        })
         mozinfo.update({"mda_gpu": "media-gpu" in self.config.get("test_tags", [])})
-        mozinfo.update(
-            {
-                "nogpu": "layers.gpu-process.enabled=false"
-                in self.config.get("extra_prefs", [])
-            }
-        )
+        mozinfo.update({
+            "nogpu": "layers.gpu-process.enabled=false"
+            in self.config.get("extra_prefs", [])
+        })
         mozinfo.update({"msix": "msix" in self.config.get("variant", "")})
-        mozinfo.update(
-            {"vertical_tab": "vertical-tabs" in self.config.get("test_tags", [])}
-        )
-        mozinfo.update(
-            {"inc_origin_init": "inc-origin-init" in self.config.get("test_tags", [])}
-        )
-        mozinfo.update(
-            {"privateBrowsing": "privatebrowsing" in self.config.get("test_tags", [])}
-        )
-        mozinfo.update(
-            {
-                "sessionHistoryInParent": "fission.disableSessionHistoryInParent=true"
-                in self.config.get("extra_prefs", [])
-            }
-        )
+        mozinfo.update({
+            "vertical_tab": "vertical-tabs" in self.config.get("test_tags", [])
+        })
+        mozinfo.update({
+            "inc_origin_init": "inc-origin-init" in self.config.get("test_tags", [])
+        })
+        mozinfo.update({
+            "privateBrowsing": "privatebrowsing" in self.config.get("test_tags", [])
+        })
+        mozinfo.update({
+            "sessionHistoryInParent": "fission.disableSessionHistoryInParent=true"
+            in self.config.get("extra_prefs", [])
+        })
         mozinfo.update({"http2": self.config.get("useHttp2Server", False)})
         mozinfo.update({"http3": self.config.get("useHttp3Server", False)})
         mozinfo.update({"xorigin": self.config.get("enable_xorigin_tests", False)})
@@ -570,13 +553,12 @@ class SingleTestMixin:
                     if key in all_suites.keys()
                 )
                 self.info("Per-test suites: %s" % suites)
-            else:
-                # Until test zips are downloaded, manifests are not available,
-                # so it is not possible to determine which suites are active/
-                # required for per-test mode; assume all suites from supported
-                # suite categories are required.
-                if category in ["mochitest", "xpcshell", "reftest"]:
-                    suites = all_suites
+            # Until test zips are downloaded, manifests are not available,
+            # so it is not possible to determine which suites are active/
+            # required for per-test mode; assume all suites from supported
+            # suite categories are required.
+            elif category in ["mochitest", "xpcshell", "reftest"]:
+                suites = all_suites
         return suites
 
     def log_per_test_status(self, test_name, tbpl_status, log_level):

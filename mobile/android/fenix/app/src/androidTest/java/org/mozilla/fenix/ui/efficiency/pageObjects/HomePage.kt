@@ -54,7 +54,7 @@ class HomePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *
         NavigationRegistry.register(
             from = "MainMenuPage",
             to = "DownloadsPage",
-            steps = listOf(NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON)),
+            steps = listOf(NavigationStep.Click(MainMenuSelectors.DOWLOADS_BUTTON)),
         )
 
         NavigationRegistry.register(

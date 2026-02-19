@@ -451,9 +451,13 @@ bool BrowserChild::DoUpdateZoomConstraints(
 }
 
 nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
-                            WindowGlobalChild* aInitialWindowChild) {
-  MOZ_ASSERT_IF(aInitialWindowChild,
-                aInitialWindowChild->BrowsingContext() == mBrowsingContext);
+                            WindowGlobalChild* aInitialWindowChild,
+                            nsIOpenWindowInfo* aOpenWindowInfo) {
+  MOZ_ASSERT(aOpenWindowInfo, "Must have openwindowinfo");
+  MOZ_ASSERT(aInitialWindowChild, "Must have window child");
+  MOZ_ASSERT(aInitialWindowChild->BrowsingContext() == mBrowsingContext);
+  MOZ_ASSERT(aInitialWindowChild->DocumentPrincipal() ==
+             aOpenWindowInfo->PrincipalToInheritForAboutBlank());
 
   nsCOMPtr<nsIWidget> widget = nsIWidget::CreatePuppetWidget(this);
   mPuppetWidget = static_cast<PuppetWidget*>(widget.get());
@@ -465,7 +469,12 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
                                   widget::InitData());
 
   mWebBrowser = nsWebBrowser::Create(this, mPuppetWidget, mBrowsingContext,
-                                     aInitialWindowChild);
+                                     aInitialWindowChild, aOpenWindowInfo);
+  if (!mWebBrowser) {
+    // At least the JS recursion depth check can cause an early return
+    // here. dom/base/crashtests/1419902.html
+    return NS_ERROR_FAILURE;
+  }
   nsIWebBrowser* webBrowser = mWebBrowser;
 
   mWebNav = do_QueryInterface(webBrowser);
@@ -3644,6 +3653,13 @@ mozilla::ipc::IPCResult BrowserChild::RecvUIResolutionChanged(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult BrowserChild::RecvTransparencyChanged(
+    const bool& aIsTransparent) {
+  mIsTransparent = aIsTransparent;
+  SchedulePaint();
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult BrowserChild::RecvSafeAreaInsetsChanged(
     const mozilla::LayoutDeviceIntMargin& aSafeAreaInsets) {
   mPuppetWidget->UpdateSafeAreaInsets(aSafeAreaInsets);
@@ -4190,9 +4206,7 @@ void BrowserChild::NotifyContentBlockingEvent(
     const Maybe<
         mozilla::ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
         aReason,
-    const Maybe<ContentBlockingNotifier::CanvasFingerprinter>&
-        aCanvasFingerprinter,
-    const Maybe<bool> aCanvasFingerprinterKnownText) {
+    const Maybe<CanvasFingerprintingEvent>& aCanvasFingerprintingEvent) {
   if (!IPCOpen()) {
     return;
   }
@@ -4201,8 +4215,7 @@ void BrowserChild::NotifyContentBlockingEvent(
   if (NS_SUCCEEDED(PrepareRequestData(aChannel, requestData))) {
     (void)SendNotifyContentBlockingEvent(
         aEvent, requestData, aBlocked, PromiseFlatCString(aTrackingOrigin),
-        aTrackingFullHashes, aReason, aCanvasFingerprinter,
-        aCanvasFingerprinterKnownText);
+        aTrackingFullHashes, aReason, aCanvasFingerprintingEvent);
   }
 }
 

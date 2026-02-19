@@ -403,8 +403,8 @@ add_task(async () => {
 
   // With GetParamsForMessage(), the property with a non-serializable value
   // gets dropped. However, due to the behavior of JSON.stringify(), the
-  // property with a value of null is also dropped, while the property with a
-  // NaN value is kept, but the value is changed to null.
+  // property with the value undefined is also dropped, while the property
+  // with the value NaN is kept, but the value is changed to null.
   let obj2c = getParamsForMessage(obj2a);
   equivArrays(
     Object.keys(obj2c),

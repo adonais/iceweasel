@@ -54,11 +54,15 @@ export class UrlbarProviderAboutPages extends UrlbarProvider {
         let result = new lazy.UrlbarResult({
           type: UrlbarUtils.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-          ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-            title: [aboutUrl, UrlbarUtils.HIGHLIGHT.TYPED],
-            url: [aboutUrl, UrlbarUtils.HIGHLIGHT.TYPED],
+          payload: {
+            title: aboutUrl,
+            url: aboutUrl,
             icon: UrlbarUtils.getIconForUrl(aboutUrl),
-          }),
+          },
+          highlights: {
+            title: UrlbarUtils.HIGHLIGHT.TYPED,
+            url: UrlbarUtils.HIGHLIGHT.TYPED,
+          },
         });
         addCallback(this, result);
       }

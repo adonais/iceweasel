@@ -22,10 +22,6 @@ async function grantOptionalPermission(extension, permissions) {
 var someOtherTab, testTab;
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.manifestV3.enabled", true]],
-  });
-
   // To help diagnose an intermittent later.
   SimpleTest.requestCompleteLog();
 

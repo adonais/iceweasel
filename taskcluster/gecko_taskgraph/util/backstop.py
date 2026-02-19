@@ -45,6 +45,10 @@ def is_backstop(
     if params.get(backstop_strategy, False):
         return True
 
+    # Backstops not used / supported on Github yet.
+    if params["repository_type"] == "git":
+        return True
+
     project = params["project"]
     if project in TRY_PROJECTS:
         return False

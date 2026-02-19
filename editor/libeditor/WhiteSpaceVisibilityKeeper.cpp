@@ -1326,7 +1326,8 @@ WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
       if (auto* const element = Element::FromNode(previousContent)) {
         if (HTMLEditUtils::IsBlockElement(
                 *element, BlockInlineCheck::UseComputedDisplayStyle) ||
-            HTMLEditUtils::IsNonEditableReplacedContent(*element)) {
+            !HTMLEditUtils::IsContainerNode(*element) ||
+            HTMLEditUtils::IsReplacedElement(*element)) {
           break;
         }
         // Ignore invisible inline elements
@@ -1365,7 +1366,8 @@ WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
       if (auto* const element = Element::FromNode(nextContent)) {
         if (HTMLEditUtils::IsBlockElement(
                 *element, BlockInlineCheck::UseComputedDisplayStyle) ||
-            HTMLEditUtils::IsNonEditableReplacedContent(*element)) {
+            !HTMLEditUtils::IsContainerNode(*element) ||
+            HTMLEditUtils::IsReplacedElement(*element)) {
           break;
         }
         // Ignore invisible inline elements

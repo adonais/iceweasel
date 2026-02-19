@@ -22,16 +22,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import mozilla.components.compose.base.button.IconButton
-import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
+import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -39,12 +42,16 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param store [SettingsSearchStore] for the screen.
  * @param onBackClick Invoked when the app bar's back button is clicked.
+ * @param isSearchFocused Whether the search bar is currently focused.
+ * @param onSearchFocusChange Invoked when the search bar's focus state changes.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsSearchBar(
     store: SettingsSearchStore,
     onBackClick: () -> Unit,
+    isSearchFocused: Boolean,
+    onSearchFocusChange: (Boolean) -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -55,6 +62,8 @@ fun SettingsSearchBar(
             SettingsSearchField(
                 store = store,
                 focusRequester = focusRequester,
+                isSearchFocused = isSearchFocused,
+                onSearchFocusChange = onSearchFocusChange,
             )
         },
         navigationIcon = { BackButton(onClick = onBackClick) },
@@ -63,18 +72,18 @@ fun SettingsSearchBar(
             bottom = 0.dp,
         ),
     )
-
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
 }
 
 @Composable
 private fun SettingsSearchField(
     store: SettingsSearchStore,
     focusRequester: FocusRequester,
+    isSearchFocused: Boolean,
+    onSearchFocusChange: (Boolean) -> Unit,
 ) {
     val state by store.observeAsComposableState { it }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     var searchQuery by remember {
         mutableStateOf(
             TextFieldValue(
@@ -90,14 +99,19 @@ private fun SettingsSearchField(
             searchQuery = value
             store.dispatch(SettingsSearchAction.SearchQueryUpdated(value.text))
         },
-        textStyle = AcornTheme.typography.body1,
+        textStyle = FirefoxTheme.typography.body1,
         modifier = Modifier
             .fillMaxWidth()
-            .focusRequester(focusRequester),
+            .focusRequester(focusRequester)
+            .onFocusChanged { focusState ->
+                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    onSearchFocusChange(focusState.isFocused)
+                }
+            },
         placeholder = @Composable {
             Text(
                 text = stringResource(R.string.settings_search_title),
-                style = AcornTheme.typography.body1,
+                style = FirefoxTheme.typography.body1,
             )
         },
         singleLine = true,
@@ -124,6 +138,12 @@ private fun SettingsSearchField(
             }
         },
     )
+
+    LaunchedEffect(Unit) {
+        if (isSearchFocused) {
+            focusRequester.requestFocus()
+        }
+    }
 }
 
 @Composable

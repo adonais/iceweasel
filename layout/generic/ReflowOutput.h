@@ -80,7 +80,7 @@ struct OverflowAreas {
   // Applies overflow clipping (for e.g. overflow: clip) as needed to both our
   // overflow rects.
   void ApplyClipping(const nsRect& aBounds, PhysicalAxes aClipAxes,
-                     const nsSize& aOverflowMargin) {
+                     const nsMargin& aOverflowMargin) {
     ApplyOverflowClippingOnRect(InkOverflow(), aBounds, aClipAxes,
                                 aOverflowMargin);
     ApplyOverflowClippingOnRect(ScrollableOverflow(), aBounds, aClipAxes,
@@ -92,14 +92,14 @@ struct OverflowAreas {
   static nsRect GetOverflowClipRect(const nsRect& aRectToClip,
                                     const nsRect& aBounds,
                                     PhysicalAxes aClipAxes,
-                                    const nsSize& aOverflowMargin);
+                                    const nsMargin& aOverflowMargin);
 
   // Applies the overflow clipping to a given overflow rect, given the frame
   // bounds, and the physical axes on which to apply the overflow clip.
   static void ApplyOverflowClippingOnRect(nsRect& aOverflowRect,
                                           const nsRect& aBounds,
                                           PhysicalAxes aClipAxes,
-                                          const nsSize& aOverflowMargin);
+                                          const nsMargin& aOverflowMargin);
 
  private:
   nsRect mInk;

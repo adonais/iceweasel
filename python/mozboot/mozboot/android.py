@@ -27,7 +27,7 @@ NDK_VERSION = "r29"
 CMDLINE_TOOLS_VERSION_STRING = "19.0"
 CMDLINE_TOOLS_VERSION = "13114758"
 
-BUNDLETOOL_VERSION = "1.18.2"
+BUNDLETOOL_VERSION = "1.18.3"
 BUNDLETOOL_URL = f"https://github.com/google/bundletool/releases/download/{BUNDLETOOL_VERSION}/bundletool-all-{BUNDLETOOL_VERSION}.jar"
 
 # We expect the emulator AVD definitions to be platform agnostic

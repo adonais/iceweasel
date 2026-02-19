@@ -88,7 +88,7 @@ private fun CardView(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(if (pageState.shouldShowElevation) 6.dp else 0.dp),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
@@ -156,14 +156,14 @@ private fun OnboardingPageSetToDefaultPreview() {
         OnboardingPageRedesign(
             pageState = OnboardingPageState(
                 imageRes = R.drawable.ic_notification_permission,
-                title = stringResource(R.string.onboarding_redesign_set_default_browser_title),
-                description = stringResource(R.string.onboarding_redesign_set_default_browser_body),
+                title = stringResource(R.string.nova_onboarding_set_to_default_title_2),
+                description = stringResource(R.string.nova_onboarding_set_to_default_subtitle),
                 primaryButton = Action(
-                    text = stringResource(R.string.juno_onboarding_default_browser_positive_button),
+                    text = stringResource(R.string.nova_onboarding_set_to_default_button),
                     onClick = {},
                 ),
                 secondaryButton = Action(
-                    text = stringResource(R.string.juno_onboarding_default_browser_negative_button),
+                    text = stringResource(R.string.nova_onboarding_negative_button),
                     onClick = {},
                 ),
                 onRecordImpressionEvent = {},
@@ -180,14 +180,14 @@ private fun OnboardingPageSyncPreview() {
         OnboardingPageRedesign(
             pageState = OnboardingPageState(
                 imageRes = R.drawable.ic_notification_permission, // Unused in the redesign.
-                title = stringResource(R.string.onboarding_redesign_sync_title),
-                description = stringResource(R.string.onboarding_redesign_sync_body),
+                title = stringResource(R.string.nova_onboarding_sync_title),
+                description = stringResource(R.string.nova_onboarding_sync_subtitle),
                 primaryButton = Action(
-                    text = stringResource(R.string.onboarding_redesign_sync_positive_button),
+                    text = stringResource(R.string.nova_onboarding_sync_button),
                     onClick = {},
                 ),
                 secondaryButton = Action(
-                    text = stringResource(R.string.onboarding_redesign_sync_negative_button),
+                    text = stringResource(R.string.nova_onboarding_negative_button),
                     onClick = {},
                 ),
                 onRecordImpressionEvent = {},
@@ -204,14 +204,14 @@ private fun OnboardingPageNotificationPreview() {
         OnboardingPageRedesign(
             pageState = OnboardingPageState(
                 imageRes = R.drawable.ic_notification_permission, // Unused in the redesign.
-                title = stringResource(R.string.juno_onboarding_enable_notifications_title_nimbus_2),
-                description = stringResource(R.string.juno_onboarding_enable_notifications_description_nimbus_2),
+                title = stringResource(R.string.nova_onboarding_add_search_widget_title),
+                description = stringResource(R.string.nova_onboarding_add_search_widget_subtitle),
                 primaryButton = Action(
-                    text = stringResource(R.string.juno_onboarding_enable_notifications_positive_button),
+                    text = stringResource(R.string.nova_onboarding_notifications_button),
                     onClick = {},
                 ),
                 secondaryButton = Action(
-                    text = stringResource(R.string.juno_onboarding_enable_notifications_negative_button),
+                    text = stringResource(R.string.nova_onboarding_negative_button),
                     onClick = {},
                 ),
                 onRecordImpressionEvent = {},
@@ -228,14 +228,14 @@ private fun OnboardingPageSearchWidgetPreview() {
         OnboardingPageRedesign(
             pageState = OnboardingPageState(
                 imageRes = R.drawable.ic_notification_permission, // Unused in the redesign.
-                title = stringResource(R.string.juno_onboarding_add_search_widget_title),
-                description = stringResource(R.string.juno_onboarding_add_search_widget_description),
+                title = stringResource(R.string.nova_onboarding_add_search_widget_title),
+                description = stringResource(R.string.nova_onboarding_add_search_widget_subtitle),
                 primaryButton = Action(
-                    text = stringResource(R.string.juno_onboarding_add_search_widget_positive_button),
+                    text = stringResource(R.string.nova_onboarding_add_search_widget_button),
                     onClick = {},
                 ),
                 secondaryButton = Action(
-                    text = stringResource(R.string.juno_onboarding_add_search_widget_negative_button),
+                    text = stringResource(R.string.nova_onboarding_negative_button),
                     onClick = {},
                 ),
                 onRecordImpressionEvent = {},

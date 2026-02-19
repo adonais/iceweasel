@@ -68,6 +68,7 @@ class _SearchTestUtils {
         if (this.#stubs.size) {
           this.#stubs = new Map();
 
+          Services.search.wrappedJSObject._settings._testResetSettings();
           let settingsWritten = SearchTestUtils.promiseSearchNotification(
             "write-settings-to-disk-complete"
           );

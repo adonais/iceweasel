@@ -540,6 +540,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   virtual already_AddRefed<AsyncPanZoomController> NewAPZCInstance(
       LayersId aLayersId, GeckoContentController* aController);
 
+  void SetFixedLayerMarginsOnRootContentApzcs(
+      const RecursiveMutexAutoLock& aProofOfTreeLock) MOZ_REQUIRES(mTreeLock);
+
  public:
   // Public hook for gtests subclass
   virtual SampleTime GetFrameTime();
@@ -1132,6 +1135,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   friend class IAPZHitTester;
   UniquePtr<IAPZHitTester> mHitTester;
+
+  // An array of root content APZCs in this tree.
+  nsTArray<AsyncPanZoomController*> mRootContentApzcs MOZ_GUARDED_BY(mTreeLock);
 
   // NOTE: This ScrollGenerationCounter needs to be per APZCTreeManager since
   // the generation is bumped up on the sampler theread which is per

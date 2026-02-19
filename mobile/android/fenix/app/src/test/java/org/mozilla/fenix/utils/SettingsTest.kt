@@ -914,6 +914,20 @@ class SettingsTest {
     }
 
     @Test
+    fun `GIVEN should not show by default WHEN enablePersistentOnboarding is true THEN shouldShowOnboarding returns true`() {
+        val settings = spyk(settings)
+        every { settings.enablePersistentOnboarding } returns true
+
+        val actual = settings.shouldShowOnboarding(
+            featureEnabled = false,
+            hasUserBeenOnboarded = true,
+            isLauncherIntent = false,
+        )
+
+        assertTrue(actual)
+    }
+
+    @Test
     fun `GIVEN Https-only mode is disabled THEN the engine mode is HttpsOnlyMode#DISABLED`() {
         settings.shouldUseHttpsOnly = false
 

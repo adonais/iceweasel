@@ -353,7 +353,7 @@ export class LoginManagerRustMirror {
         newLoginData = subject.queryElementAt(1, Ci.nsILoginInfo);
         this.#logger.log(`modifying login ${loginToModify.guid}...`);
         try {
-          this.#rustStorage.modifyLogin(loginToModify, newLoginData);
+          await this.#rustStorage.modifyLoginAsync(loginToModify, newLoginData);
           this.#logger.log(`modified login ${loginToModify.guid}.`);
         } catch (e) {
           status = "failure";

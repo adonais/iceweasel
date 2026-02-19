@@ -168,9 +168,13 @@ AndroidWebAuthnService::MakeCredential(uint64_t aTransactionId,
         nsString userVerification;
         (void)aArgs->GetUserVerification(userVerification);
         if (userVerification.EqualsLiteral(
-                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED)) {
-          GECKOBUNDLE_PUT(authSelBundle, "requireUserVerification",
-                          java::sdk::Integer::ValueOf(1));
+                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED) ||
+            userVerification.EqualsLiteral(
+                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED) ||
+            userVerification.EqualsLiteral(
+                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED)) {
+          GECKOBUNDLE_PUT(authSelBundle, "userVerification",
+                          jni::StringParam(userVerification));
         }
 
         nsString authenticatorAttachment;

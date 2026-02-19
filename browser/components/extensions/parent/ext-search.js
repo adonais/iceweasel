@@ -90,13 +90,14 @@ this.search = class extends ExtensionAPI {
             defaultDisposition: "NEW_TAB",
           });
 
-          await SearchUIUtils.loadSearchFromExtension({
+          await SearchUIUtils.loadSearch({
             window: windowTracker.topWindow,
-            query: searchProperties.query,
+            searchText: searchProperties.query,
             where,
             engine,
             tab,
             triggeringPrincipal: context.principal,
+            sapSource: "webextension",
           });
         },
 
@@ -109,12 +110,13 @@ this.search = class extends ExtensionAPI {
             defaultDisposition: "CURRENT_TAB",
           });
 
-          await SearchUIUtils.loadSearchFromExtension({
+          await SearchUIUtils.loadSearch({
             window: windowTracker.topWindow,
-            query: queryProperties.text,
+            searchText: queryProperties.text,
             where,
             tab,
             triggeringPrincipal: context.principal,
+            sapSource: "webextension",
           });
         },
       },

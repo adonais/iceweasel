@@ -419,9 +419,8 @@ this.tabs = class extends ExtensionAPIPersistent {
             },
           });
 
-          // Make sure things like about:blank URIs never inherit,
-          // and instead always get a NullPrincipal.
-          if (url !== null) {
+          // The initial about:blank loads synchronously, so no listener is needed
+          if (url !== null && !url.startsWith("about:blank")) {
             tabListener.initializingTabs.add(nativeTab);
           } else {
             url = "about:blank";

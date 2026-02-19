@@ -202,7 +202,7 @@ class AppLinksInterceptorTest {
         val blocklistedScheme = "blocklisted"
         val feature = AppLinksInterceptor(
             context = mockContext,
-            alwaysDeniedSchemes = setOf(blocklistedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(blocklistedScheme)),
             launchInApp = { true },
             useCases = mockUseCases,
         )
@@ -259,7 +259,7 @@ class AppLinksInterceptorTest {
         val feature = AppLinksInterceptor(
             context = mockContext,
             engineSupportedSchemes = setOf(supportedScheme),
-            alwaysDeniedSchemes = setOf(blocklistedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(blocklistedScheme)),
             launchInApp = { false },
             useCases = mockUseCases,
         )
@@ -279,7 +279,7 @@ class AppLinksInterceptorTest {
         val feature = AppLinksInterceptor(
             context = mockContext,
             engineSupportedSchemes = setOf(supportedScheme),
-            alwaysDeniedSchemes = setOf(notSupportedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(notSupportedScheme)),
             launchInApp = { false },
             useCases = mockUseCases,
         )
@@ -300,7 +300,7 @@ class AppLinksInterceptorTest {
         val feature = AppLinksInterceptor(
             context = mockContext,
             engineSupportedSchemes = setOf(supportedScheme),
-            alwaysDeniedSchemes = setOf(blocklistedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(blocklistedScheme)),
             launchInApp = { true },
             useCases = mockUseCases,
         )
@@ -321,7 +321,7 @@ class AppLinksInterceptorTest {
         val feature = AppLinksInterceptor(
             context = mockContext,
             engineSupportedSchemes = setOf(supportedScheme),
-            alwaysDeniedSchemes = setOf(blocklistedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(blocklistedScheme)),
             launchInApp = { false },
             useCases = mockUseCases,
         )
@@ -343,7 +343,7 @@ class AppLinksInterceptorTest {
         val feature = AppLinksInterceptor(
             context = mockContext,
             engineSupportedSchemes = setOf(supportedScheme),
-            alwaysDeniedSchemes = setOf(blocklistedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(blocklistedScheme)),
             launchInApp = { false },
             useCases = mockUseCases,
         )
@@ -594,7 +594,7 @@ class AppLinksInterceptorTest {
         val feature = AppLinksInterceptor(
             context = mockContext,
             engineSupportedSchemes = setOf(supportedScheme),
-            alwaysDeniedSchemes = setOf(blocklistedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(blocklistedScheme)),
             launchInApp = { true },
             useCases = mockUseCases,
         )
@@ -616,7 +616,7 @@ class AppLinksInterceptorTest {
         val feature = AppLinksInterceptor(
             context = mockContext,
             engineSupportedSchemes = setOf(supportedScheme),
-            alwaysDeniedSchemes = setOf(blocklistedScheme),
+            alwaysDeniedSchemes = AlwaysDeniedSchemes(setOf(blocklistedScheme)),
             launchInApp = { false },
             useCases = mockUseCases,
         )

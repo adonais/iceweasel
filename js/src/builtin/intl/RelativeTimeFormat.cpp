@@ -14,6 +14,7 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
+#include "builtin/intl/LocaleNegotiation.h"
 #include "gc/GCContext.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Printer.h"
@@ -26,6 +27,7 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
+using namespace js::intl;
 
 /**************** RelativeTimeFormat *****************/
 
@@ -53,6 +55,9 @@ const JSClass RelativeTimeFormatObject::class_ = {
 
 const JSClass& RelativeTimeFormatObject::protoClass_ = PlainObject::class_;
 
+static bool relativeTimeFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
+                                                  Value* vp);
+
 static bool relativeTimeFormat_toSource(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -61,8 +66,7 @@ static bool relativeTimeFormat_toSource(JSContext* cx, unsigned argc,
 }
 
 static const JSFunctionSpec relativeTimeFormat_static_methods[] = {
-    JS_SELF_HOSTED_FN("supportedLocalesOf",
-                      "Intl_RelativeTimeFormat_supportedLocalesOf", 1, 0),
+    JS_FN("supportedLocalesOf", relativeTimeFormat_supportedLocalesOf, 1, 0),
     JS_FS_END,
 };
 
@@ -372,5 +376,22 @@ bool js::intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   args.rval().setString(str);
+  return true;
+}
+
+/**
+ * Intl.RelativeTimeFormat.supportedLocalesOf ( locales [ , options ] )
+ */
+static bool relativeTimeFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
+                                                  Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  // Steps 1-3.
+  auto* array = SupportedLocalesOf(cx, AvailableLocaleKind::RelativeTimeFormat,
+                                   args.get(0), args.get(1));
+  if (!array) {
+    return false;
+  }
+  args.rval().setObject(*array);
   return true;
 }

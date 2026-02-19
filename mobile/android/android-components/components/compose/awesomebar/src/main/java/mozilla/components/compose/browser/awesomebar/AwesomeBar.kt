@@ -14,6 +14,9 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import mozilla.components.compose.browser.awesomebar.internal.SuggestionFetcher
 import mozilla.components.compose.browser.awesomebar.internal.Suggestions
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -94,7 +97,10 @@ fun AwesomeBar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("mozac.awesomebar")
+            .semantics {
+                testTagsAsResourceId = true
+                testTag = "mozac.awesomebar"
+            }
             .background(colors.background),
     ) {
         if (groups.isEmpty()) return

@@ -115,7 +115,7 @@ class nsWindowWatcher : public nsIWindowWatcher,
   static uint32_t CalculateChromeFlagsForContent(
       const mozilla::dom::WindowFeatures& aFeatures,
       const mozilla::dom::UserActivation::Modifiers& aModifiers,
-      bool* aIsPopupRequested);
+      bool aCalledFromJS, bool* aIsPopupRequested);
 
   static uint32_t CalculateChromeFlagsForSystem(
       const mozilla::dom::WindowFeatures& aFeatures, bool aDialog,

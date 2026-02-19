@@ -25,6 +25,7 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
+#include "builtin/intl/LocaleNegotiation.h"
 #include "builtin/intl/StringAsciiChars.h"
 #include "builtin/String.h"
 #include "js/Conversions.h"
@@ -140,9 +141,9 @@ static LocaleObject* CreateLocaleObject(JSContext* cx, HandleObject prototype,
     return nullptr;
   }
 
-  locale->setFixedSlot(LocaleObject::LANGUAGE_TAG_SLOT, StringValue(tagStr));
-  locale->setFixedSlot(LocaleObject::BASENAME_SLOT, StringValue(baseName));
-  locale->setFixedSlot(LocaleObject::UNICODE_EXTENSION_SLOT, unicodeExtension);
+  locale->initFixedSlot(LocaleObject::LANGUAGE_TAG_SLOT, StringValue(tagStr));
+  locale->initFixedSlot(LocaleObject::BASENAME_SLOT, StringValue(baseName));
+  locale->initFixedSlot(LocaleObject::UNICODE_EXTENSION_SLOT, unicodeExtension);
 
   return locale;
 }

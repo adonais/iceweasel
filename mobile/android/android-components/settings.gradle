@@ -49,7 +49,6 @@ apply from: file('../autopublish-settings.gradle')
 buildCache {
     local {
         directory = new File(rootDir, '.build-cache')
-        removeUnusedEntriesAfterDays = 30
     }
 }
 

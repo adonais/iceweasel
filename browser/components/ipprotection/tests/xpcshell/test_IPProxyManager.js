@@ -5,7 +5,7 @@
 "use strict";
 
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 add_setup(async function () {
@@ -162,10 +162,7 @@ add_task(async function test_IPPProxyManager_reset() {
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").returns({
     status: 200,
     error: undefined,
-    pass: {
-      isValid: () => true,
-      asBearerToken: () => "Bearer hello world",
-    },
+    pass: new ProxyPass(createProxyPassToken()),
   });
 
   await IPPProxyManager.start();
@@ -254,10 +251,11 @@ add_task(async function test_IPPProxytates_active() {
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
-    pass: {
-      isValid: () => options.validProxyPass,
-      asBearerToken: () => "Bearer helloworld",
-    },
+    pass: new ProxyPass(
+      options.validProxyPass
+        ? createProxyPassToken()
+        : createExpiredProxyPassToken()
+    ),
   });
 
   const waitForReady = waitForEvent(
@@ -327,10 +325,11 @@ add_task(async function test_IPPProxytates_start_stop() {
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
-    pass: {
-      isValid: () => options.validProxyPass,
-      asBearerToken: () => "Bearer helloworld",
-    },
+    pass: new ProxyPass(
+      options.validProxyPass
+        ? createProxyPassToken()
+        : createExpiredProxyPassToken()
+    ),
   });
 
   const waitForReady = waitForEvent(

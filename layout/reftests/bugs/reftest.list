@@ -1935,7 +1935,7 @@ fuzzy(0-13,0-40000) fuzzy-if(winWidget,0-13,0-40000) == 1316719-1b.html 1316719-
 fuzzy(0-13,0-40000) fuzzy-if(winWidget,0-13,0-40000) == 1316719-1c.html 1316719-1-ref.html
 != 1318769-1.html 1318769-1-ref.html
 == 1322512-1.html 1322512-1-ref.html
-skip-if(winWidget&&isDebugBuild) == 1330051.svg 1330051-ref.svg
+== 1330051.svg 1330051-ref.svg
 != 1336591-1.html 1336591-1-ref.html
 == 1348481-1.html 1348481-ref.html
 == 1348481-2.html 1348481-ref.html

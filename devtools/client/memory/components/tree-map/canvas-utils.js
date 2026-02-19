@@ -25,24 +25,25 @@ const FULLSCREEN_STYLE = {
 
 /**
  * Create the canvases, resize handlers, and return references to them all
- *
- * @param  {HTMLDivElement} parentEl
- * @param  {number} debounceRate
- * @return {object}
  */
-function Canvases(parentEl, debounceRate) {
-  EventEmitter.decorate(this);
-  this.container = createContainingDiv(parentEl);
+class Canvases extends EventEmitter {
+  /**
+   *
+   * @param  {HTMLDivElement} parentEl
+   * @param  {number} debounceRate
+   */
+  constructor(parentEl, debounceRate) {
+    super();
 
-  // This canvas contains all of the treemap
-  this.main = createCanvas(this.container, "main");
-  // This canvas contains only the zoomed in portion, overlaying the main canvas
-  this.zoom = createCanvas(this.container, "zoom");
+    this.container = createContainingDiv(parentEl);
 
-  this.removeHandlers = handleResizes(this, debounceRate);
-}
+    // This canvas contains all of the treemap
+    this.main = createCanvas(this.container, "main");
+    // This canvas contains only the zoomed in portion, overlaying the main canvas
+    this.zoom = createCanvas(this.container, "zoom");
 
-Canvases.prototype = {
+    this.removeHandlers = handleResizes(this, debounceRate);
+  }
   /**
    * Remove the handlers and elements
    *
@@ -52,8 +53,8 @@ Canvases.prototype = {
     this.removeHandlers();
     this.container.removeChild(this.main.canvas);
     this.container.removeChild(this.zoom.canvas);
-  },
-};
+  }
+}
 
 module.exports = Canvases;
 

@@ -30,9 +30,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">آختاریش شرطلرینی گیر</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">آچیق تاغ‌لاریز بوردا گؤستریله‌جک</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">آچیق تاغ‌لاریز بوردا گؤستریله‌جک</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">سیزین گیزلی تاغ‌لاریز بوردا گؤستریله‌جک</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">سیزین گیزلی تاغ‌لاریز بوردا گؤستریله‌جک</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d سئچیلیدی</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -44,7 +44,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">چوخ‌سئچیم مودوندان چیخ</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">سئچیلن تاغلاری مجموعه‌ده ساخلا</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">سئچیلن تاغلاری مجموعه‌ده ساخلا</string>
   <!--
     Home - Bookmarks
 
@@ -183,9 +183,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">حساب بیلگی‌لری</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">ال‌توتما</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">ال‌توتما</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">یئنی نه وار</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">یئنی نه وار</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">تنظیم‌‎لر</string>
   <!-- Browser menu button that opens a user's library -->
@@ -193,7 +193,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">دسکتاپ سایت</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">معمولی تاغدا آچ</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">معمولی تاغدا آچ</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">آناصفحه‌یه آرتیر</string>
   <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
@@ -217,7 +217,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s طرفیندن گوج آلیر</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s طرفیندن گوج آلیر</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -230,15 +230,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">اپده آچ</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">اوخوجو گؤرونوشو اؤزللشدیر</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">اوخوجو گؤرونوشو اؤزللشدیر</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">اوْخوجو گؤرونوشو اؤزللشدیر</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">اکله</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">اکله</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">دوزه‌لیش</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">دوزه‌لیش</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">آنایارپاغی اؤزللشدیر</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">آنایارپاغی اؤزللشدیر</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">گیریش</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
@@ -320,19 +320,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">فایرفاکس گیزللیک بیلدیریمی</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">سیزی قوروماغی سئویریک</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">میلیون‌لارجا فایرفاکسی نییه سئودیگینی اؤرگه‌شین</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">داها چوخ سئچیمله گوونلی مورور</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">نفع آختارمیان مورورچوموز، شیرکتلرین سیزی وب‌ده گیزلیجه تعقیب ائتمه‌سینی مسدود ائلییر.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">100 میلیون‌دان چوْخ آدام، منفعت آختارمیان بیر قورولوش طرفیندن آرخالانان بیر موروچویو سئچه‌رک گیزلیلیک‌لرینی قوْرویور.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">تانینمیش ایزله‌ییجی‌لر؟ اوْتوماتیک مسدود اوْلور. اوزانتیْ‌لار؟ بوتون 700. پی‌دی‌اف فایل‌لارینیْ ایمتیحان ائله‌یین؟ داخیلی اوْخویوجوموز بونلاریْ مودیریته آسانلاشدیریر.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">وارساییلان مورورچو ائله</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -952,15 +941,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">گیزلی تاغ آرتیر</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">گیزلی</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">گیزلی</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">دؤنگل</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">دؤنگل</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">بوتون تاغ‌لاری پایلاش</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">بوتون تاغ‌لاری پایلاش</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">سوْن باغلانان تاغ‌لار</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">سون باغلانان‌لار</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">سون باغلانان‌لار</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">حساب تنظیم‌لری</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -968,11 +957,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">بوتون تاغ‌لاریْ باغلا</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">بوکمارک</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">بوکمارک</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">باغلا</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">باغلا</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">سئچیلمیش تاغ‌لاری پایلاش</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">سئچیلمیش تاغ‌لاری پایلاش</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">سئچیلن تاغ‌لار منوسو</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -1421,7 +1410,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">اصلی منودان \"چیخین\" سئچدیگینیز زمان باخیش بیلگی‌لری سیلینیر.</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">چیخ</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">چیخ</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">سیلمک اوچون وقت آرالیغی</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -1922,9 +1911,9 @@
   -->
   <string name="certificate_info_verified_by">دوغرولایان: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">سیل</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">سیل</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">دوزه‌لیش</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">دوزه‌لیش</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">بو رمزی سیلمه‌گه آرخایینسیز؟</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -1932,15 +1921,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">لغو</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">رمز سئچه‌نک‌لری</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">رمز سئچه‌نک‌لری</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">سایت آدرسی اوچون دوزتیله بیلن متن یئرلیکی</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">سایت آدرسی اوچون دوزتیله بیلن متن یئرلیکی</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">قوللانیجیْ آدیْ اوچون دوزتیله بیلن متن یئرلیکی</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">قوللانیجیْ آدیْ اوچون دوزتیله بیلن متن یئرلیکی</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">رمز اوچون دوزتیله بیلن متن یئرلیکی</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">رمز اوچون دوزتیله بیلن متن یئرلیکی</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">دگیشیم‌لری ساخلا.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">دگیشیم‌لری ساخلا.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">رمز دوزه‌لیشی</string>
   <!-- The page title for adding new password. -->

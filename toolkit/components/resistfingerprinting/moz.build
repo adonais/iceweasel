@@ -45,6 +45,7 @@ EXPORTS += [
     "RFPTargets.inc",
 ]
 EXPORTS.mozilla += [
+    "nsRFPIPCUtils.h",
     "RelativeTimeline.h",
 ]
 EXPORTS.mozilla.gtest += ["nsUserCharacteristics.h"]

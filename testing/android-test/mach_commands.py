@@ -61,7 +61,7 @@ def run_android_test(command_context, subproject, test=None, test_objects=[], **
     gradle_command = []
     AC = ("android-components", "ac")
     if subproject == "fenix":
-        gradle_command = ["testDebug", "testFenixDebugUnitTest"]
+        gradle_command = ["testDebug", "testDebugUnitTest"]
         subdir = os.path.join("mobile", "android", "fenix")
         test_path = os.path.join(subdir, "app", "src", "test", "java")
     elif subproject == "focus":

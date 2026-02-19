@@ -11,7 +11,7 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.json.JSONObject
 import org.mozilla.fenix.GleanMetrics.BrokenSiteReport
 import org.mozilla.fenix.GleanMetrics.BrokenSiteReportBrowserInfo
@@ -50,7 +50,7 @@ class WebCompatReporterSubmissionMiddleware(
 ) : Middleware<WebCompatReporterState, WebCompatReporterAction> {
 
     override fun invoke(
-        context: MiddlewareContext<WebCompatReporterState, WebCompatReporterAction>,
+        store: Store<WebCompatReporterState, WebCompatReporterAction>,
         next: (WebCompatReporterAction) -> Unit,
         action: WebCompatReporterAction,
     ) {
@@ -59,32 +59,32 @@ class WebCompatReporterSubmissionMiddleware(
         when (action) {
             is WebCompatReporterAction.SendReportClicked -> {
                 scope.launch {
-                    handleSendReport(context)
+                    handleSendReport(store)
                 }
             }
             is WebCompatReporterAction.OpenPreviewClicked -> {
                 scope.launch {
-                    handleOpenPreviewClicked(context)
+                    handleOpenPreviewClicked(store)
                 }
             }
             is WebCompatReporterAction.AddMoreInfoClicked -> {
                 scope.launch {
-                    handleSendMoreInfoClicked(context)
+                    handleSendMoreInfoClicked(store)
                 }
             }
             else -> {}
         }
     }
 
-    private suspend fun handleSendReport(context: MiddlewareContext<WebCompatReporterState, WebCompatReporterAction>) {
+    private suspend fun handleSendReport(store: Store<WebCompatReporterState, WebCompatReporterAction>) {
         val webCompatInfo = webCompatReporterRetrievalService.retrieveInfo()
 
         webCompatInfo?.let {
-            val enteredUrlMatchesTabUrl = context.state.enteredUrl == webCompatInfo.url
+            val enteredUrlMatchesTabUrl = store.state.enteredUrl == webCompatInfo.url
             if (enteredUrlMatchesTabUrl) {
                 setTabAntiTrackingMetrics(
                     antiTracking = webCompatInfo.antitracking,
-                    sendBlockedUrls = context.state.includeEtpBlockedUrls,
+                    sendBlockedUrls = store.state.includeEtpBlockedUrls,
                 )
                 setTabFrameworksMetrics(frameworks = webCompatInfo.frameworks)
                 setTabLanguageMetrics(languages = webCompatInfo.languages)
@@ -94,24 +94,24 @@ class WebCompatReporterSubmissionMiddleware(
             setBrowserInfoMetrics(browserInfo = webCompatInfo.browser)
             setDevicePixelRatioMetrics(devicePixelRatio = webCompatInfo.devicePixelRatio)
         }
-        setUrlMetrics(url = context.state.enteredUrl)
-        setReasonMetrics(reason = context.state.reason)
-        setDescriptionMetrics(description = context.state.problemDescription)
+        setUrlMetrics(url = store.state.enteredUrl)
+        setReasonMetrics(reason = store.state.reason)
+        setDescriptionMetrics(description = store.state.problemDescription)
         setExperimentMetrics()
 
         Pings.brokenSiteReport.submit()
-        context.store.dispatch(WebCompatReporterAction.ReportSubmitted)
+        store.dispatch(WebCompatReporterAction.ReportSubmitted)
         appStore.dispatch(AppAction.WebCompatAction.WebCompatReportSent)
     }
 
     private suspend fun handleOpenPreviewClicked(
-        context: MiddlewareContext<WebCompatReporterState, WebCompatReporterAction>,
+        store: Store<WebCompatReporterState, WebCompatReporterAction>,
     ) {
         val webCompatInfo = webCompatReporterRetrievalService.retrieveInfo()
 
-        val webCompatJSON = generatePreviewJSON(context.state, webCompatInfo)
+        val webCompatJSON = generatePreviewJSON(store.state, webCompatInfo)
 
-        context.store.dispatch(WebCompatReporterAction.PreviewJSONUpdated(webCompatJSON.toString()))
+        store.dispatch(WebCompatReporterAction.PreviewJSONUpdated(webCompatJSON.toString()))
     }
 
     private fun generatePreviewJSON(
@@ -152,17 +152,17 @@ class WebCompatReporterSubmissionMiddleware(
     }
 
     private suspend fun handleSendMoreInfoClicked(
-        context: MiddlewareContext<WebCompatReporterState, WebCompatReporterAction>,
+        store: Store<WebCompatReporterState, WebCompatReporterAction>,
     ) {
         webCompatReporterMoreInfoSender.sendMoreWebCompatInfo(
-            reason = context.state.reason,
-            problemDescription = context.state.problemDescription,
-            enteredUrl = context.state.enteredUrl,
-            tabUrl = context.state.tabUrl,
+            reason = store.state.reason,
+            problemDescription = store.state.problemDescription,
+            enteredUrl = store.state.enteredUrl,
+            tabUrl = store.state.tabUrl,
             engineSession = browserStore.state.selectedTab?.engineState?.engineSession,
         )
 
-        context.store.dispatch(WebCompatReporterAction.SendMoreInfoSubmitted)
+        store.dispatch(WebCompatReporterAction.SendMoreInfoSubmitted)
     }
 
     private fun setTabAntiTrackingMetrics(

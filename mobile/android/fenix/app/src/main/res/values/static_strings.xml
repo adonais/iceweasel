@@ -73,6 +73,8 @@
     <string name="preferences_debug_settings_compose_logins" translatable="false">Enable Compose Logins</string>
     <!-- Label for enabling Homepage as a New Tab -->
     <string name="preferences_debug_settings_homepage_as_new_tab" translatable="false">Enable Homepage as a New Tab</string>
+    <!-- Label for enabling Firefox Labs -->
+    <string name="preferences_debug_settings_firefox_labs" translatable="false">Enable Firefox Labs</string>
     <!-- Label for enabling Mozilla Ads Client -->
     <string name="preferences_debug_settings_mozilla_ads_client" translatable="false">Enable Mozilla Ads Client</string>
     <!-- Label for enabling Discover more stories -->
@@ -89,14 +91,12 @@
     <string name="preferences_debug_settings_composable_toolbar" translatable="false">Enable Composable Toolbar</string>
     <!-- Label for enabling the redesigned toolbar options -->
     <string name="preferences_debug_settings_toolbar_redesign" translatable="false">Enable Redesigned Toolbar Options</string>
-    <!-- Label for enabling the redesigned simple toolbar -->
-    <string name="preferences_debug_settings_simple_toolbar_customization" tools:ignore="UnusedResources" moz:removedIn="145">Enable simple toolbar customization</string>
-    <!-- Label for enabling the redesigned expanded toolbar -->
-    <string name="preferences_debug_settings_expanded_toolbar_customization" tools:ignore="UnusedResources" moz:removedIn="145">Enable expanded toolbar customization</string>
     <!-- Label for enabling the redesigned toolbar -->
     <string name="preferences_debug_settings_toolbar_customization">Enable Toolbar Customization</string>
     <!-- Label for a longer description of the redesigned toolbar depending on the composable toolbar feature -->
     <string name="preferences_debug_settings_toolbar_redesign_summary" translatable="false">This needs the Composable Toolbar feature enabled</string>
+    <!-- Label for the option of using a minimal bottom tolbar while entering text in a website -->
+    <string name="preferences_debug_settings_use_minimal_bottom_toolbar_while_entering_text" translatable="false">Use a minimal bottom toolbar while entering text in a website</string>
     <!-- Label for the option of using new scroll data for animating the dynamic toolbar -->
     <string name="preferences_debug_settings_use_scroll_data_for_dynamic_toolbar" translatable="false">Animate dynamic toolbars based on website scroll data</string>
     <!-- Label for a longer description of the redesigned toolbar depending on the redesigned toolbar options feature -->
@@ -119,6 +119,11 @@
     <string name="preferences_debug_settings_settings_search" translatable="false">Enable Settings Search</string>
     <!-- Label for enabling the DNS over HTTPS settings -->
     <string name="preferences_debug_settings_enable_doh_settings" translatable="false">Enable DNS over HTTPS settings</string>
+    <!-- Label for enabling the persistent onboarding -->
+    <string name="preferences_debug_settings_enable_persistent_onboarding" translatable="false">Show onboarding on each app cold open</string>
+
+    <!-- Label for toggling the Tab Search feature -->
+    <string name="preferences_tab_search_feature" translatable="false">Enable Tab Search</string>
 
     <!-- Label for toggling the Tab Manager enhancements -->
     <string name="preferences_tab_manager_enhancements" translatable="false">Enable Tab Manager enhancements</string>
@@ -127,6 +132,7 @@
 
     <string name="preferences_terms_of_use_accepted" translatable="false">Terms of Use accepted</string>
     <string name="preferences_terms_of_use_debug_timer" translatable="false">30s ToU timer enabled</string>
+    <string name="preferences_terms_of_use_latest_update_date" translatable="false">Set latest ToU update date to now</string>
 
     <!-- Label for enabling LNA blocking -->
     <string name="preferences_debug_settings_enable_lna_blocking" translatable="false">Enable LNA request blocking</string>
@@ -184,6 +190,8 @@
     <string name="profiler_error">Something went wrong with the profiler</string>
     <string name="profiler_io_error">Something went wrong contacting the Profiler server.</string>
     <string name="profiler_uploaded_url_to_clipboard">URL copied to clipboard successfully</string>
+    <string name="profiler_service_notification_channel_name" translatable="false">App Profiling Status</string>
+    <string name="profiler_service_description" translatable="false">App Profiling Status</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
@@ -262,4 +270,35 @@
 
     <!-- Label for enabling Relay email masks -->
     <string name="preferences_enable_relay_email_masks">Enable Relay email masks</string>
+
+    <!-- Firefox Labs -->
+    <!-- Firefox Labs is the name of a screen in Settings to allow users to learn about
+        experimental and in-development features, and turn those features on and off.
+        The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+        in English. -->
+    <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
+    <!-- Description text displayed in the Firefox Labs screen. %s is the name of the app (for example "Firefox"). -->
+    <string name="firefox_labs_experimental_description">Give our experimental features a try! They’re in development and evolving, which could impact how %s works.</string>
+    <!-- Button text for restoring the default settings by turning off any experimental features in the Firefox Labs screen. -->
+    <string name="firefox_labs_restore_default_button_text">Restore Defaults</string>
+    <!-- Text displayed when no experimental features are available in the Firefox Labs screen. -->
+    <string name="firefox_labs_no_labs_available_description">No experimental features available</string>
+    <!-- The name of an experimental feature displayed in theFirefox Labs screen. This features allows the user to open the homepage as a new tab. -->
+    <string name="firefox_labs_homepage_as_a_new_tab">Homepage as a New Tab</string>
+    <!-- The description of the "Homepage as a New Tab" feature in the Firefox Labs screen. -->
+    <string name="firefox_labs_homepage_as_a_new_tab_description">With this feature enabled, Homepage will behave as a tab.</string>
+    <!-- The title used in a confirmation dialog when toggling on an experimental feature. -->
+    <string name="firefox_labs_enable_feature_dialog_title">Enable experimental feature?</string>
+    <!-- The title used in a confirmation dialog when toggling off an experimental feature. -->
+    <string name="firefox_labs_disable_feature_dialog_title">Disable experimental feature?</string>
+    <!-- The description that is displayed in the confirmation dialog for toggling on and off experimental features. -->
+    <string name="firefox_labs_enable_feature_dialog_message">Toggling this feature will restart %s.</string>
+    <!-- The text for the positive button in the dialog for toggling on and off experimental features. This prompts the user to confirm that they want to restart the app. -->
+    <string name="firefox_labs_dialog_restart_button">Restart</string>
+    <!-- The text for the negative button in the dialog for toggling on and off experimental features. -->
+    <string name="firefox_labs_dialog_cancel_button">Cancel</string>
+    <!-- The title used in a confirmation dialog when restoring the application to its defaults by turning off any experimental features. -->
+    <string name="firefox_labs_restore_defaults_dialog_title">Restore defaults?</string>
+    <!-- The description used in a confirmation dialog when restoring the application to its defaults by turning off any experimental features. -->
+    <string name="firefox_labs_restore_defaults_dialog_message">Resetting experimental features will restart %s.</string>
 </resources>

@@ -329,7 +329,7 @@ void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) {
 
   OutOfLineCode* ool = nullptr;
   if (mir->needsBoundsCheck()) {
-    ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+    ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
       switch (accessType) {
         case Scalar::Int64:
         case Scalar::BigInt64:
@@ -401,7 +401,7 @@ void CodeGenerator::visitWasmAddOffset(LWasmAddOffset* lir) {
     masm.move32(base, out);
   }
   masm.add32(Imm32(mir->offset()), out);
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
   });
   addOutOfLineCode(ool, mir);
@@ -417,7 +417,7 @@ void CodeGenerator::visitWasmAddOffset64(LWasmAddOffset64* lir) {
     masm.move64(base, out);
   }
   masm.add64(Imm64(mir->offset()), out);
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.wasmTrap(wasm::Trap::OutOfBounds, mir->trapSiteDesc());
   });
   addOutOfLineCode(ool, mir);
@@ -522,7 +522,7 @@ void CodeGeneratorX86Shared::bailout(const T& binder, LSnapshot* snapshot) {
   // All bailout code is associated with the bytecodeSite of the block we are
   // bailing out from.
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.push(Imm32(snapshot->snapshotOffset()));
     masm.jmp(&deoptLabel_);
   });
@@ -682,7 +682,7 @@ void CodeGenerator::visitAddI(LAddI* ins) {
   if (ins->snapshot()) {
     if (ins->recoversInput()) {
       auto* ool = new (alloc()) LambdaOutOfLineCode(
-          [=](OutOfLineCode& ool) { emitUndoALUOperationOOL(ins); });
+          [=, this](OutOfLineCode& ool) { emitUndoALUOperationOOL(ins); });
       addOutOfLineCode(ool, ins->mir());
       masm.j(Assembler::Overflow, ool->entry());
     } else {
@@ -720,7 +720,7 @@ void CodeGenerator::visitSubI(LSubI* ins) {
   if (ins->snapshot()) {
     if (ins->recoversInput()) {
       auto* ool = new (alloc()) LambdaOutOfLineCode(
-          [=](OutOfLineCode& ool) { emitUndoALUOperationOOL(ins); });
+          [=, this](OutOfLineCode& ool) { emitUndoALUOperationOOL(ins); });
       addOutOfLineCode(ool, ins->mir());
       masm.j(Assembler::Overflow, ool->entry());
     } else {
@@ -848,21 +848,22 @@ void CodeGenerator::visitMulI(LMulI* ins) {
 
     if (mul->canBeNegativeZero()) {
       // Jump to an OOL path if the result is 0.
-      auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
-        Register result = ToRegister(ins->output());
-        Operand lhsCopy = ToOperand(ins->lhsCopy());
-        Operand rhs = ToOperand(ins->rhs());
-        MOZ_ASSERT_IF(lhsCopy.kind() == Operand::REG,
-                      lhsCopy.reg() != result.code());
+      auto* ool =
+          new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
+            Register result = ToRegister(ins->output());
+            Operand lhsCopy = ToOperand(ins->lhsCopy());
+            Operand rhs = ToOperand(ins->rhs());
+            MOZ_ASSERT_IF(lhsCopy.kind() == Operand::REG,
+                          lhsCopy.reg() != result.code());
 
-        // Result is -0 if lhs or rhs is negative.
-        masm.movl(lhsCopy, result);
-        masm.orl(rhs, result);
-        bailoutIf(Assembler::Signed, ins->snapshot());
+            // Result is -0 if lhs or rhs is negative.
+            masm.movl(lhsCopy, result);
+            masm.orl(rhs, result);
+            bailoutIf(Assembler::Signed, ins->snapshot());
 
-        masm.mov(ImmWord(0), result);
-        masm.jmp(ool.rejoin());
-      });
+            masm.mov(ImmWord(0), result);
+            masm.jmp(ool.rejoin());
+          });
       addOutOfLineCode(ool, mul);
 
       masm.test32(lhs, lhs);
@@ -887,7 +888,7 @@ static void TrapIfDivideByZero(MacroAssembler& masm, LIR* lir, Register rhs) {
 OutOfLineCode* CodeGeneratorX86Shared::emitOutOfLineZeroForDivideByZero(
     Register rhs, Register output) {
   // Truncated division by zero is zero: (±Infinity|0 == 0) and (NaN|0 == 0).
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
     masm.mov(ImmWord(0), output);
     masm.jmp(ool.rejoin());
   });

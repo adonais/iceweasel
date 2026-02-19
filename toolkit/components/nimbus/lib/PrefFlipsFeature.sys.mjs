@@ -165,11 +165,11 @@ export class PrefFlipsFeature {
    * Return the orginal value of the pref on the specific branch if it is set by
    * this feature.
    *
-   * @params {string} pref
-   *         The pref to get the original value of.
+   * @param {string} pref
+   *        The pref to get the original value of.
    *
-   * @params {PrefBranch} branch
-   *         The requested branch for the pref.
+   * @param {PrefBranch} branch
+   *        The requested branch for the pref.
    *
    * @returns {PrefValue | undefined}
    *          The original value of the pref on the specified branch. If the

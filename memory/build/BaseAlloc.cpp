@@ -10,7 +10,7 @@
 
 using namespace mozilla;
 
-MOZ_CONSTINIT BaseAlloc sBaseAlloc;
+constinit BaseAlloc sBaseAlloc;
 
 // Initialize base allocation data structures.
 void BaseAlloc::Init() MOZ_REQUIRES(gInitLock) { mMutex.Init(); }

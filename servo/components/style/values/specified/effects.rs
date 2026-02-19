@@ -4,6 +4,7 @@
 
 //! Specified types for CSS values related to effects.
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::effects::BoxShadow as ComputedBoxShadow;
 use crate::values::computed::effects::SimpleShadow as ComputedSimpleShadow;
@@ -29,7 +30,7 @@ use crate::values::specified::{Angle, NonNegativeNumberOrPercentage, Number, Num
 #[cfg(feature = "servo")]
 use crate::values::Impossible;
 use crate::Zero;
-use cssparser::{BasicParseErrorKind, Parser, Token};
+use cssparser::{match_ignore_ascii_case, BasicParseErrorKind, Parser, Token};
 use style_traits::{ParseError, StyleParseErrorKind, ValueParseErrorKind};
 
 /// A specified value for a single shadow of the `box-shadow` property.

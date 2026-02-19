@@ -347,6 +347,7 @@ class ChromeUtils {
 
   static Nullable<bool> GetGlobalWindowCommandEnabled(GlobalObject&,
                                                       const nsACString& aName);
+  static void GetLastOOMStackTrace(GlobalObject& aGlobal, nsAString& aRetval);
 
   static void EncodeURIForSrcset(GlobalObject&, const nsACString& aIn,
                                  nsACString& aOut);
@@ -366,6 +367,11 @@ class ChromeUtils {
       nsIPrincipal* aLoadingPrincipal, ErrorResult& aRv);
 
   static bool IsJSIdentifier(GlobalObject& aGlobal, const nsAString& aStr);
+
+  static already_AddRefed<Promise> FetchDecodedImage(GlobalObject& aGlobal,
+                                                     nsIURI* aURI,
+                                                     nsIChannel* aChannel,
+                                                     ErrorResult& aRv);
 };
 
 }  // namespace dom

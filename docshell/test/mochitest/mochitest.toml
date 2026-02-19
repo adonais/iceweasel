@@ -280,6 +280,8 @@ skip-if = [
   "http3",
 ]
 
+["test_initial_blank_doc_principal.html"]
+
 ["test_javascript_sandboxed_popup.html"]
 
 ["test_load_during_reload.html"]
@@ -307,6 +309,8 @@ skip-if = [
   "http2",
   "http3",
 ]
+
+["test_remove_iframe_during_append.html"]
 
 ["test_triggeringprincipal_location_seturi.html"]
 skip-if = [

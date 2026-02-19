@@ -12,6 +12,8 @@ prefs = ["remote.messagehandler.modulecache.useBrowserTestRoot=true"]
 
 ["browser_CachedResourceListener.js"]
 
+["browser_ChromeWindowListener.js"]
+
 ["browser_ConsoleAPIListener.js"]
 
 ["browser_ConsoleAPIListener_cached_messages.js"]

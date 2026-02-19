@@ -6,9 +6,27 @@ with Files("**"):
     BUG_COMPONENT = ("Core", "Machine Learning: Frontend")
 
 BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
+XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 
 MOZ_SRC_FILES += [
+    "actors/AIChatContentChild.sys.mjs",
+    "actors/AIChatContentParent.sys.mjs",
     "modules/AIWindow.sys.mjs",
+    "modules/AIWindowAccountAuth.sys.mjs",
+    "modules/AIWindowMenu.sys.mjs",
+    "modules/AIWindowUI.sys.mjs",
+    "modules/ChatConstants.sys.mjs",
+    "modules/ChatConversation.sys.mjs",
+    "modules/ChatEnums.sys.mjs",
+    "modules/ChatMessage.sys.mjs",
+    "modules/ChatMigrations.sys.mjs",
+    "modules/ChatSql.sys.mjs",
+    "modules/ChatStore.sys.mjs",
+    "modules/ChatUtils.sys.mjs",
+]
+
+TESTING_JS_MODULES += [
+    "test/AIWindowTestUtils.sys.mjs",
 ]
 
 JAR_MANIFESTS += ["jar.mn"]

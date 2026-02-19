@@ -536,7 +536,7 @@ FxAccountsClient.prototype = {
   /**
    * Register a new device
    *
-   * @method registerDevice
+   * @function registerDevice
    * @param  sessionTokenHex
    *         Session token obtained from signIn
    * @param  name
@@ -584,7 +584,7 @@ FxAccountsClient.prototype = {
    * Sends a message to other devices. Must conform with the push payload schema:
    * https://github.com/mozilla/fxa-auth-server/blob/master/docs/pushpayloads.schema.json
    *
-   * @method notifyDevice
+   * @function notifyDevice
    * @param  sessionTokenHex
    *         Session token obtained from signIn
    * @param  deviceIds
@@ -627,7 +627,7 @@ FxAccountsClient.prototype = {
   /**
    * Retrieves pending commands for our device.
    *
-   * @method getCommands
+   * @function getCommands
    * @param  sessionTokenHex - Session token obtained from signIn
    * @param  [index] - If specified, only messages received after the one who
    *                   had that index will be retrieved.
@@ -652,7 +652,7 @@ FxAccountsClient.prototype = {
   /**
    * Invokes a command on another device.
    *
-   * @method invokeCommand
+   * @function invokeCommand
    * @param  sessionTokenHex - Session token obtained from signIn
    * @param  command - Name of the command to invoke
    * @param  target - Recipient device ID.
@@ -681,7 +681,7 @@ FxAccountsClient.prototype = {
   /**
    * Update the session or name for an existing device
    *
-   * @method updateDevice
+   * @function updateDevice
    * @param  sessionTokenHex
    *         Session token obtained from signIn
    * @param  id
@@ -726,7 +726,7 @@ FxAccountsClient.prototype = {
    * Get a list of currently registered devices that have been accessed
    * in the last `DEVICES_FILTER_DAYS` days
    *
-   * @method getDeviceList
+   * @function getDeviceList
    * @param  sessionTokenHex
    *         Session token obtained from signIn
    * @return Promise

@@ -45,10 +45,11 @@ function synthesizeKeyForKeyboardMovement(element, keyName) {
 }
 
 add_task(async function test_TabGroupKeyboardFocus() {
-  const tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-  const tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-  const tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-  const tab4 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  const URL = "about:blank";
+  const tab1 = BrowserTestUtils.addTab(gBrowser, URL);
+  const tab2 = BrowserTestUtils.addTab(gBrowser, URL);
+  const tab3 = BrowserTestUtils.addTab(gBrowser, URL);
+  const tab4 = BrowserTestUtils.addTab(gBrowser, URL);
 
   const tabGroup = gBrowser.addTabGroup([tab2, tab3], { insertBefore: tab2 });
 
@@ -183,10 +184,11 @@ add_task(async function test_TabGroupKeyboardFocus() {
 });
 
 add_task(async function test_TabGroupKeyboardMovement() {
-  const tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-  const tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-  const tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-  const tab4 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  const URL = "about:blank";
+  const tab1 = BrowserTestUtils.addTab(gBrowser, URL);
+  const tab2 = BrowserTestUtils.addTab(gBrowser, URL);
+  const tab3 = BrowserTestUtils.addTab(gBrowser, URL);
+  const tab4 = BrowserTestUtils.addTab(gBrowser, URL);
 
   const tabGroup = gBrowser.addTabGroup([tab2, tab3], { insertBefore: tab2 });
 

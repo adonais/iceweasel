@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 24 insertions(+), 12 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index c73a7287bf..246f9f9a1c 100644
+index c01dd4ed48..4ce07a89d1 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -525,6 +525,9 @@ if (!rtc_build_ssl) {
@@ -38,7 +38,7 @@ index c73a7287bf..246f9f9a1c 100644
        ]
        # Added when we removed deps in other places to avoid building
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index ecbb7eae7e..a13fe19324 100644
+index 35a2d46444..0990000a73 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -12,12 +12,10 @@ import("../webrtc.gni")
@@ -116,10 +116,10 @@ index ecbb7eae7e..a13fe19324 100644
    public_configs = []
    if (!build_with_chromium) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index aa626933d5..ad1ce1383a 100644
+index 59a2f60b5d..81c4a6711c 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -1557,6 +1557,7 @@ rtc_source_set("ssl_header") {
+@@ -1574,6 +1574,7 @@ rtc_source_set("ssl_header") {
  }
  
  rtc_library("digest") {
@@ -127,7 +127,7 @@ index aa626933d5..ad1ce1383a 100644
    visibility = [ "*" ]
    sources = [
      "message_digest.cc",
-@@ -1578,8 +1579,10 @@ rtc_library("digest") {
+@@ -1595,8 +1596,10 @@ rtc_library("digest") {
      configs += [ "..:external_ssl_library" ]
    }
  }
@@ -138,7 +138,7 @@ index aa626933d5..ad1ce1383a 100644
    visibility = [ "*" ]
    sources = [
      "crypto_random.cc",
-@@ -1600,6 +1603,7 @@ rtc_library("crypto_random") {
+@@ -1617,6 +1620,7 @@ rtc_library("crypto_random") {
      configs += [ "..:external_ssl_library" ]
    }
  }
@@ -147,7 +147,7 @@ index aa626933d5..ad1ce1383a 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 2866396704..a2c939e3ec 100644
+index 18c5f9c080..06acdc47bb 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -112,7 +112,7 @@ declare_args() {

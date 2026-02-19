@@ -66,11 +66,11 @@ nsresult SVGViewBox::FromString(const nsAString& aStr, SVGViewBox* aViewBox) {
   return NS_OK;
 }
 
-MOZ_CONSTINIT static SVGAttrTearoffTable<SVGAnimatedViewBox, SVGRect>
+constinit static SVGAttrTearoffTable<SVGAnimatedViewBox, SVGRect>
     sBaseSVGViewBoxTearoffTable;
-MOZ_CONSTINIT static SVGAttrTearoffTable<SVGAnimatedViewBox, SVGRect>
+constinit static SVGAttrTearoffTable<SVGAnimatedViewBox, SVGRect>
     sAnimSVGViewBoxTearoffTable;
-MOZ_CONSTINIT SVGAttrTearoffTable<SVGAnimatedViewBox, SVGAnimatedRect>
+constinit SVGAttrTearoffTable<SVGAnimatedViewBox, SVGAnimatedRect>
     SVGAnimatedViewBox::sSVGAnimatedRectTearoffTable;
 
 //----------------------------------------------------------------------

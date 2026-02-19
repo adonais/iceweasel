@@ -791,20 +791,11 @@
     #updateOnTabSplit() {
       if (this.splitview) {
         this.setAttribute("aria-level", 2);
-
-        // Add "Split view" to label if tab is within a split view
-        let splitViewLabel = gBrowser.tabLocalization.formatValueSync(
-          "tabbrowser-tab-label-tab-split-view"
-        );
-        this.setAttribute(
-          "aria-label",
-          `${this.getAttribute("label")}, ${splitViewLabel}`
-        );
       }
     }
 
     #updateOnTabUnsplit() {
-      if (this.splitview) {
+      if (!this.splitview) {
         this.setAttribute("aria-level", 1);
         // `posinset` and `setsize` only need to be set explicitly
         // on split view tabs so that a11y tools can tell users that a
@@ -812,6 +803,35 @@
         this.removeAttribute("aria-posinset");
         this.removeAttribute("aria-setsize");
         this.removeAttribute("aria-label");
+      }
+    }
+
+    /**
+     * Set `aria-label` for this tab to indicate that it's in a Split View,
+     * along with its position within the Split View.
+     *
+     * @param {number} index
+     *   The index of this tab in the Split View.
+     */
+    updateSplitViewAriaLabel(index) {
+      let l10nId = "";
+      switch (index) {
+        case 0:
+          l10nId = window.RTL_UI
+            ? "tabbrowser-tab-label-tab-split-view-right"
+            : "tabbrowser-tab-label-tab-split-view-left";
+          break;
+        case 1:
+          l10nId = window.RTL_UI
+            ? "tabbrowser-tab-label-tab-split-view-left"
+            : "tabbrowser-tab-label-tab-split-view-right";
+          break;
+      }
+      if (l10nId) {
+        const ariaLabel = gBrowser.tabLocalization.formatValueSync(l10nId, {
+          label: this.getAttribute("label"),
+        });
+        this.setAttribute("aria-label", ariaLabel);
       }
     }
   }

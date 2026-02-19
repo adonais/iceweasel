@@ -23,7 +23,6 @@
       --tabpanel-background-color: linear-gradient(45deg, #722291 0%, #45278d 50%, #393473 100%) !important;
     }
   }
-  --dialog-backdrop-color: rgba(28, 27, 34, 0.45);
 }
 
 #navigator-toolbox {
@@ -118,6 +117,7 @@
 .browserSidebarContainer {
   position: absolute;
   inset: 0;
+  anchor-scope: --browser-with-dialog;
 }
 
 .sidebar-browser-stack {
@@ -154,21 +154,48 @@
 
   browser[tabDialogShowing] {
     -moz-user-focus: none !important;
+    /* Used to position .dialogStack on top of this <browser> element so it doesn't overlap
+       the DevTools toolbox */
+    anchor-name: --browser-with-dialog;
+  }
+
+  .split-view-panel {
+    --panel-min-width: 140px;
+    min-width: var(--panel-min-width);
+    max-width: calc(100% - var(--panel-min-width));
+    flex: 1;
+    width: 49.4%;
   }
 
   &[splitview] {
-    --panel-min-width: 140px;
-
-    .split-view-panel {
-      position: relative;
-      flex: 1;
-      min-width: var(--panel-min-width);
-      max-width: calc(100% - var(--panel-min-width));
+    .split-view-panel.split-view-panel-active {
       margin: var(--space-xsmall);
+      position: relative;
+      width: unset;
     }
+
     /* Ensure any dialogs are clipped in an inactive/not-selected panel. */
     :root:not([inDOMFullscreen]) & > .split-view-panel:not(.deck-selected) {
       overflow: clip;
+    }
+
+    /* Ensure split view panels can display in fullscreen mode */
+    :root[inDOMFullscreen] & > .split-view-panel-active:not(.deck-selected) {
+      -moz-subtree-hidden-only-visually: 1;
+    }
+
+    :root[inDOMFullscreen] & > .split-view-splitter {
+      display: none;
+    }
+
+    :root[inDOMFullscreen] & > .split-view-panel-active.deck-selected {
+      margin: 0;
+      position: absolute;
+      max-width: none;
+
+      & > .browserContainer {
+        border-radius: 0;
+      }
     }
 
     .browserContainer {
@@ -204,8 +231,12 @@
     }
 
     /* Display split view footer within inactive panels. */
-    .split-view-panel:not(.deck-selected) > split-view-footer {
-      display: inherit;
+    .split-view-panel:not(.deck-selected) > .browserContainer > .browserStack > split-view-footer {
+      display: flex;
+
+      &[hidden] {
+        display: none;
+      }
     }
   }
 }
@@ -394,6 +425,12 @@ split-view-footer {
   z-index: var(--browser-stack-z-index-dialog-stack);
   position: absolute;
   inset: 0;
+  /* --browser-with-dialog set on browser[tabDialogShowing], we want to position the overlay
+     only on the top of the <browser> element so it doesn't overlap the DevTools toolbox */
+  position-anchor: --browser-with-dialog;
+  position-area: center;
+  width: 100%;
+  height: 100%;
 
   /* Hide tab-modal dialogs when a window-modal one is up. */
   :root[window-modal-open] .browserStack > &,
@@ -553,7 +590,7 @@ split-view-footer {
 
 .dialogOverlay[topmost="true"],
 #window-modal-dialog::backdrop {
-  background-color: var(--dialog-backdrop-color);
+  background-color: var(--background-color-overlay);
 }
 
 .dialogOverlay[hideContent="true"][topmost="true"] {

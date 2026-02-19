@@ -93,6 +93,22 @@ add_task(async function () {
     `::before::marker is properly displayed (${await getHighlighterInfobarText()})`
   );
 
+  info("Highlighting the dialog::backdrop node");
+  const dialogNodeFront = await getNodeFront("dialog", inspector);
+  const { nodes: dialogChildren } =
+    await inspector.walker.children(dialogNodeFront);
+  const dialogBackdropNodeFront = dialogChildren[0];
+  onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+  await selectNode(dialogBackdropNodeFront, inspector, "test-highlight");
+  await onHighlighterShown;
+  is(
+    await getHighlighterInfobarText(),
+    "dialog::backdrop85 × 333",
+    `::backdrop is properly displayed`
+  );
+
   info("Check highlighting for ::view-transition pseudo elements");
   const onMarkupMutation = inspector.once("markupmutation");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {

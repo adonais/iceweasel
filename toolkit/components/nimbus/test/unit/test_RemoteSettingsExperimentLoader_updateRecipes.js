@@ -1878,118 +1878,124 @@ add_task(async function test_updateRecipes_enrollmentStatus_telemetry() {
 
   loader.remoteSettingsClients.experiments.get.resolves(recipes);
 
-  await loader.updateRecipes("test");
-
-  const events = Glean.nimbusEvents.enrollmentStatus.testGetValue("events");
-
-  Assert.deepEqual(events?.map(ev => ev.extra) ?? [], [
-    {
-      reason: "Qualified",
-      branch: "control",
-      slug: "was-enrolled",
-      status: "Enrolled",
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          ?.map(ev => ev.extra),
+        [
+          {
+            reason: "Qualified",
+            branch: "control",
+            slug: "was-enrolled",
+            status: "Enrolled",
+          },
+          {
+            branch: "control",
+            reason: "Qualified",
+            status: "Enrolled",
+            slug: "stays-enrolled",
+          },
+          {
+            branch: "control",
+            slug: "recipe-mismatch",
+            status: "Enrolled",
+            reason: "Qualified",
+          },
+          {
+            branch: "control",
+            slug: "invalid-recipe",
+            reason: "Qualified",
+            status: "Enrolled",
+          },
+          {
+            slug: "invalid-branch",
+            reason: "Qualified",
+            status: "Enrolled",
+            branch: "control",
+          },
+          {
+            status: "Enrolled",
+            reason: "Qualified",
+            slug: "invalid-feature",
+            branch: "control",
+          },
+          {
+            slug: "l10n-missing-locale",
+            status: "Enrolled",
+            branch: "control",
+            reason: "Qualified",
+          },
+          {
+            status: "Enrolled",
+            slug: "l10n-missing-entry",
+            reason: "Qualified",
+            branch: "control",
+          },
+          {
+            branch: "control",
+            slug: "was-enrolled",
+            status: "WasEnrolled",
+          },
+          {
+            reason: "Qualified",
+            slug: "stays-enrolled",
+            branch: "control",
+            status: "Enrolled",
+          },
+          {
+            status: "Disqualified",
+            branch: "control",
+            slug: "recipe-mismatch",
+            reason: "NotTargeted",
+          },
+          {
+            slug: "invalid-recipe",
+            error_string: "invalid-recipe",
+            status: "Disqualified",
+            reason: "Error",
+            branch: "control",
+          },
+          {
+            branch: "control",
+            status: "Disqualified",
+            slug: "invalid-branch",
+            error_string: "invalid-branch",
+            reason: "Error",
+          },
+          {
+            slug: "invalid-feature",
+            status: "Disqualified",
+            branch: "control",
+            reason: "Error",
+            error_string: "invalid-feature",
+          },
+          {
+            reason: "Error",
+            status: "Disqualified",
+            branch: "control",
+            slug: "l10n-missing-locale",
+            error_string: "l10n-missing-locale",
+          },
+          {
+            slug: "l10n-missing-entry",
+            reason: "Error",
+            branch: "control",
+            status: "Disqualified",
+            error_string: "l10n-missing-entry",
+          },
+          {
+            slug: "enrolls",
+            reason: "Qualified",
+            branch: "control",
+            status: "Enrolled",
+          },
+        ]
+      );
     },
-    {
-      branch: "control",
-      reason: "Qualified",
-      status: "Enrolled",
-      slug: "stays-enrolled",
-    },
-    {
-      branch: "control",
-      slug: "recipe-mismatch",
-      status: "Enrolled",
-      reason: "Qualified",
-    },
-    {
-      branch: "control",
-      slug: "invalid-recipe",
-      reason: "Qualified",
-      status: "Enrolled",
-    },
-    {
-      slug: "invalid-branch",
-      reason: "Qualified",
-      status: "Enrolled",
-      branch: "control",
-    },
-    {
-      status: "Enrolled",
-      reason: "Qualified",
-      slug: "invalid-feature",
-      branch: "control",
-    },
-    {
-      slug: "l10n-missing-locale",
-      status: "Enrolled",
-      branch: "control",
-      reason: "Qualified",
-    },
-    {
-      status: "Enrolled",
-      slug: "l10n-missing-entry",
-      reason: "Qualified",
-      branch: "control",
-    },
-    {
-      branch: "control",
-      slug: "was-enrolled",
-      status: "WasEnrolled",
-    },
-    {
-      reason: "Qualified",
-      slug: "stays-enrolled",
-      branch: "control",
-      status: "Enrolled",
-    },
-    {
-      status: "Disqualified",
-      branch: "control",
-      slug: "recipe-mismatch",
-      reason: "NotTargeted",
-    },
-    {
-      slug: "invalid-recipe",
-      error_string: "invalid-recipe",
-      status: "Disqualified",
-      reason: "Error",
-      branch: "control",
-    },
-    {
-      branch: "control",
-      status: "Disqualified",
-      slug: "invalid-branch",
-      error_string: "invalid-branch",
-      reason: "Error",
-    },
-    {
-      slug: "invalid-feature",
-      status: "Disqualified",
-      branch: "control",
-      reason: "Error",
-      error_string: "invalid-feature",
-    },
-    {
-      reason: "Error",
-      status: "Disqualified",
-      branch: "control",
-      slug: "l10n-missing-locale",
-      error_string: "l10n-missing-locale",
-    },
-    {
-      slug: "l10n-missing-entry",
-      reason: "Error",
-      branch: "control",
-      status: "Disqualified",
-      error_string: "l10n-missing-entry",
-    },
-    {
-      slug: "enrolls",
-      reason: "Qualified",
-      branch: "control",
-      status: "Enrolled",
-    },
-  ]);
+    async () => await loader.updateRecipes("test")
+  );
 
   manager.unenroll("stays-enrolled");
   manager.unenroll("enrolls");
@@ -2063,53 +2069,56 @@ add_task(async function test_updateRecipes_enrollmentStatus_notEnrolled() {
 
   loader.remoteSettingsClients.experiments.get.resolves(recipes);
 
-  await loader.updateRecipes("timer");
-
-  Assert.deepEqual(
-    Glean.nimbusEvents.enrollmentStatus
-      .testGetValue("events")
-      ?.map(ev => ev.extra),
-    [
-      {
-        reason: "OptIn",
-        status: "Enrolled",
-        branch: "control",
-        slug: "enrolled-rollout",
-      },
-      {
-        branch: "control",
-        reason: "OptIn",
-        status: "Enrolled",
-        slug: "enrolled-experiment",
-      },
-      {
-        slug: "enrollment-paused",
-        status: "NotEnrolled",
-        reason: "EnrollmentsPaused",
-      },
-      {
-        slug: "no-match",
-        status: "NotEnrolled",
-        reason: "NotTargeted",
-      },
-      {
-        slug: "targeting-only",
-        reason: "NotSelected",
-        status: "NotEnrolled",
-      },
-      {
-        conflict_slug: "enrolled-rollout",
-        slug: "already-enrolled-rollout",
-        reason: "FeatureConflict",
-        status: "NotEnrolled",
-      },
-      {
-        slug: "already-enrolled-experiment",
-        status: "NotEnrolled",
-        conflict_slug: "enrolled-experiment",
-        reason: "FeatureConflict",
-      },
-    ]
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          ?.map(ev => ev.extra),
+        [
+          {
+            reason: "OptIn",
+            status: "Enrolled",
+            branch: "control",
+            slug: "enrolled-rollout",
+          },
+          {
+            branch: "control",
+            reason: "OptIn",
+            status: "Enrolled",
+            slug: "enrolled-experiment",
+          },
+          {
+            slug: "enrollment-paused",
+            status: "NotEnrolled",
+            reason: "EnrollmentsPaused",
+          },
+          {
+            slug: "no-match",
+            status: "NotEnrolled",
+            reason: "NotTargeted",
+          },
+          {
+            slug: "targeting-only",
+            reason: "NotSelected",
+            status: "NotEnrolled",
+          },
+          {
+            conflict_slug: "enrolled-rollout",
+            slug: "already-enrolled-rollout",
+            reason: "FeatureConflict",
+            status: "NotEnrolled",
+          },
+          {
+            slug: "already-enrolled-experiment",
+            status: "NotEnrolled",
+            conflict_slug: "enrolled-experiment",
+            reason: "FeatureConflict",
+          },
+        ]
+      );
+    },
+    async () => await loader.updateRecipes("timer")
   );
 
   manager.unenroll("enrolled-experiment");
@@ -2412,9 +2421,51 @@ add_task(async function testUnenrolledInAnotherProfileBeforeUpdate() {
     read: true,
     sync: true,
   });
-  const { cleanup, store } = await setupTest({
-    experiments: [e1, e2, e3, r1, r2],
-  });
+
+  let cleanup, store;
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          ?.map(ev => ev.extra),
+        [
+          {
+            slug: "experiment-1",
+            status: "NotEnrolled",
+            reason: "UnenrolledInAnotherProfile",
+          },
+          {
+            slug: "experiment-2",
+            status: "NotEnrolled",
+            reason: "UnenrolledInAnotherProfile",
+          },
+          {
+            slug: "experiment-3",
+            branch: "control",
+            status: "Enrolled",
+            reason: "Qualified",
+          },
+          {
+            slug: "rollout-1",
+            branch: "control",
+            status: "Enrolled",
+            reason: "Qualified",
+          },
+          {
+            slug: "rollout-2",
+            branch: "control",
+            status: "Enrolled",
+            reason: "Qualified",
+          },
+        ]
+      );
+    },
+    async () =>
+      ({ cleanup, store } = await setupTest({
+        experiments: [e1, e2, e3, r1, r2],
+      }))
+  );
 
   Assert.ok(
     !store.has("experiment-1"),
@@ -2440,42 +2491,6 @@ add_task(async function testUnenrolledInAnotherProfileBeforeUpdate() {
     await NimbusTestUtils.queryEnrollment("experiment-2"),
     null,
     "Enrollment for experiment-1 does not exist in the database"
-  );
-
-  Assert.deepEqual(
-    Glean.nimbusEvents.enrollmentStatus
-      .testGetValue("events")
-      ?.map(ev => ev.extra),
-    [
-      {
-        slug: "experiment-1",
-        status: "NotEnrolled",
-        reason: "UnenrolledInAnotherProfile",
-      },
-      {
-        slug: "experiment-2",
-        status: "NotEnrolled",
-        reason: "UnenrolledInAnotherProfile",
-      },
-      {
-        slug: "experiment-3",
-        branch: "control",
-        status: "Enrolled",
-        reason: "Qualified",
-      },
-      {
-        slug: "rollout-1",
-        branch: "control",
-        status: "Enrolled",
-        reason: "Qualified",
-      },
-      {
-        slug: "rollout-2",
-        branch: "control",
-        status: "Enrolled",
-        reason: "Qualified",
-      },
-    ]
   );
 
   await NimbusTestUtils.cleanupManager([
@@ -2565,7 +2580,48 @@ add_task(async function testUnenrolledInAnotherProfileBetweenUpdates() {
     })
   );
 
-  await loader.updateRecipes("timer");
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          ?.map(ev => ev.extra),
+        [
+          {
+            slug: "rollout-1",
+            branch: "control",
+            status: "Enrolled",
+            reason: "Qualified",
+          },
+          {
+            slug: "rollout-2",
+            branch: "control",
+            status: "Enrolled",
+            reason: "Qualified",
+          },
+          {
+            slug: "experiment-1",
+            branch: "control",
+            status: "Disqualified",
+            reason: "UnenrolledInAnotherProfile",
+          },
+          {
+            slug: "experiment-2",
+            branch: "control",
+            status: "Disqualified",
+            reason: "UnenrolledInAnotherProfile",
+          },
+          {
+            slug: "experiment-3",
+            branch: "control",
+            status: "Enrolled",
+            reason: "Qualified",
+          },
+        ]
+      );
+    },
+    async () => await loader.updateRecipes("timer")
+  );
 
   {
     const enrollment = store.get("experiment-1");
@@ -2611,44 +2667,6 @@ add_task(async function testUnenrolledInAnotherProfileBetweenUpdates() {
       NimbusTelemetry.UnenrollReason.UNENROLLED_IN_ANOTHER_PROFILE
     );
   }
-
-  Assert.deepEqual(
-    Glean.nimbusEvents.enrollmentStatus
-      .testGetValue("events")
-      ?.map(ev => ev.extra),
-    [
-      {
-        slug: "rollout-1",
-        branch: "control",
-        status: "Enrolled",
-        reason: "Qualified",
-      },
-      {
-        slug: "rollout-2",
-        branch: "control",
-        status: "Enrolled",
-        reason: "Qualified",
-      },
-      {
-        slug: "experiment-1",
-        branch: "control",
-        status: "Disqualified",
-        reason: "UnenrolledInAnotherProfile",
-      },
-      {
-        slug: "experiment-2",
-        branch: "control",
-        status: "Disqualified",
-        reason: "UnenrolledInAnotherProfile",
-      },
-      {
-        slug: "experiment-3",
-        branch: "control",
-        status: "Enrolled",
-        reason: "Qualified",
-      },
-    ]
-  );
 
   await NimbusTestUtils.cleanupManager([
     "experiment-3",

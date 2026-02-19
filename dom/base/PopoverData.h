@@ -63,6 +63,9 @@ class PopoverData {
     mState = aState;
   }
 
+  PopoverAttributeState GetOpenedInMode() const { return mOpenedInMode; }
+  void SetOpenedInMode(PopoverAttributeState aMode) { mOpenedInMode = aMode; }
+
   PopoverVisibilityState GetPopoverVisibilityState() const {
     return mVisibilityState;
   }
@@ -97,6 +100,7 @@ class PopoverData {
  private:
   PopoverVisibilityState mVisibilityState = PopoverVisibilityState::Hidden;
   PopoverAttributeState mState = PopoverAttributeState::None;
+  PopoverAttributeState mOpenedInMode = PopoverAttributeState::None;
   // Popover and dialog don't share mPreviouslyFocusedElement for there are
   // chances to lose the previously focused element.
   // See, https://github.com/whatwg/html/issues/9063

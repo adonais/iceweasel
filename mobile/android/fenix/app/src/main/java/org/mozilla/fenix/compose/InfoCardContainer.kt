@@ -37,13 +37,14 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 private val cardShape = RoundedCornerShape(8.dp)
@@ -158,45 +159,12 @@ fun InfoCardContainer(
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun InfoCardContainerPreview() {
-    FirefoxTheme {
-        Surface {
-            Column(modifier = Modifier.padding(16.dp)) {
-                var isExpanded by remember { mutableStateOf(true) }
-
-                InfoCardContainer(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = "Info Check Card Content",
-                        style = FirefoxTheme.typography.headline8,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                ExpandableInfoCardContainer(
-                    title = "Info Expandable Card",
-                    modifier = Modifier.fillMaxWidth(),
-                    isExpanded = isExpanded,
-                    onExpandToggleClick = { isExpanded = !isExpanded },
-                ) {
-                    Text(
-                        text = "content",
-                        style = FirefoxTheme.typography.body2,
-                    )
-                }
-            }
-        }
-    }
-}
-
 @Preview
 @Composable
-private fun InfoCardContainerPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun InfoCardContainerPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             Column(modifier = Modifier.padding(16.dp)) {
                 var isExpanded by remember { mutableStateOf(true) }

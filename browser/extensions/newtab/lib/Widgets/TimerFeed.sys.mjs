@@ -3,6 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
+
+// eslint-disable-next-line mozilla/use-static-import
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 ChromeUtils.defineESModuleGetters(lazy, {
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
 });
@@ -55,13 +61,22 @@ export class TimerFeed {
         Ci.nsIAlertsService
       );
 
-      alertsService.showAlert(
-        new AlertNotification({
-          imageURL: "chrome://branding/content/icon64.png",
-          title,
-          text: body,
-        })
-      );
+      /**
+       * @backward-compat { version 147 }
+       * Remove `alertsService.showAlertNotification` call once Firefox 147
+       * makes it to the release channel.
+       */
+
+      if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "147.0a1") >= 0) {
+        alertsService.showAlert(
+          new AlertNotification({
+            title,
+            text: body,
+          })
+        );
+      } else {
+        alertsService.showAlertNotification(null, title, body, false, "", null);
+      }
     } catch (err) {
       console.error("Failed to show system notification", err);
     }

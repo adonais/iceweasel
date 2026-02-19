@@ -34,10 +34,10 @@ nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent) {
   return NS_OK;
 }
 
-eMathMLFrameType nsMathMLTokenFrame::GetMathMLFrameType() {
+MathMLFrameType nsMathMLTokenFrame::GetMathMLFrameType() {
   // treat everything other than <mi> as ordinary...
   if (!mContent->IsMathMLElement(nsGkAtoms::mi)) {
-    return eMathMLFrameType_Ordinary;
+    return MathMLFrameType::Ordinary;
   }
 
   StyleMathVariant mathVariant = StyleFont()->mMathVariant;
@@ -48,9 +48,9 @@ eMathMLFrameType nsMathMLTokenFrame::GetMathMLFrameType() {
       mathVariant == StyleMathVariant::BoldItalic ||
       mathVariant == StyleMathVariant::SansSerifItalic ||
       mathVariant == StyleMathVariant::SansSerifBoldItalic) {
-    return eMathMLFrameType_ItalicIdentifier;
+    return MathMLFrameType::ItalicIdentifier;
   }
-  return eMathMLFrameType_UprightIdentifier;
+  return MathMLFrameType::UprightIdentifier;
 }
 
 void nsMathMLTokenFrame::MarkTextFramesAsTokenMathML() {

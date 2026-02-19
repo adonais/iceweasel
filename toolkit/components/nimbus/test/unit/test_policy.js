@@ -39,6 +39,7 @@ add_setup(function setup() {
 async function doTest({
   policies,
   labsEnabled,
+  rolloutsEnabled,
   studiesEnabled,
   existingEnrollments = [],
   expectedEnrollments,
@@ -75,31 +76,36 @@ async function doTest({
   await initExperimentAPI();
 
   Assert.equal(
-    ExperimentAPI.studiesEnabled,
-    studiesEnabled,
-    "Studies are enabled"
-  );
-  Assert.equal(
     ExperimentAPI.labsEnabled,
     labsEnabled,
     "FirefoxLabs is enabled"
   );
+  Assert.equal(
+    ExperimentAPI.rolloutsEnabled,
+    rolloutsEnabled,
+    "Rollouts are enabled"
+  );
+  Assert.equal(
+    ExperimentAPI.studiesEnabled,
+    studiesEnabled,
+    "Studies are enabled"
+  );
 
   Assert.equal(
     loader._enabled,
-    studiesEnabled || labsEnabled,
+    labsEnabled || rolloutsEnabled || studiesEnabled,
     "RemoteSettingsExperimentLoader initialized"
   );
 
   Assert.equal(
     loader.setTimer.called,
-    studiesEnabled || labsEnabled,
+    labsEnabled || rolloutsEnabled || studiesEnabled,
     "RemoteSettingsExperimentLoader polling for recipes"
   );
 
   Assert.equal(
     loader.updateRecipes.called,
-    studiesEnabled || labsEnabled,
+    labsEnabled || rolloutsEnabled || studiesEnabled,
     "RemoteSettingsExperimentLoader polling for recipes"
   );
 
@@ -127,8 +133,9 @@ add_task(async function testDisableStudiesPolicy() {
   await doTest({
     policies: { DisableFirefoxStudies: true },
     labsEnabled: true,
+    rolloutsEnabled: true,
     studiesEnabled: false,
-    expectedEnrollments: [],
+    expectedEnrollments: ["rollout"],
     expectedOptIns: ["optin"],
   });
 });
@@ -137,6 +144,7 @@ add_task(async function testDisableLabsPolicy() {
   await doTest({
     policies: { UserMessaging: { FirefoxLabs: false } },
     labsEnabled: false,
+    rolloutsEnabled: true,
     studiesEnabled: true,
     expectedEnrollments: ["experiment", "rollout"],
     expectedOptIns: [],
@@ -146,10 +154,12 @@ add_task(async function testDisableLabsPolicy() {
 add_task(async function testNimbusDisabled() {
   await doTest({
     policies: {
+      DisableRemoteImprovements: true,
       DisableFirefoxStudies: true,
       UserMessaging: { FirefoxLabs: false },
     },
     labsEnabled: false,
+    rolloutsEnabled: false,
     studiesEnabled: false,
     expectedEnrollments: [],
     expectedOptIns: [],
@@ -160,9 +170,22 @@ add_task(async function testDisableLabsPolicyCausesUnenrollments() {
   await doTest({
     policies: { UserMessaging: { FirefoxLabs: false } },
     labsEnabled: false,
+    rolloutsEnabled: true,
     studiesEnabled: true,
     expectedEnrollments: ["experiment", "rollout"],
     existingEnrollments: ["optin"],
     expectedOptIns: [],
+  });
+});
+
+add_task(async function testDisableRolloutPolicyCausesUnenrollments() {
+  await doTest({
+    policies: { DisableRemoteImprovements: true },
+    labsEnabled: true,
+    rolloutsEnabled: false,
+    studiesEnabled: true,
+    expectedEnrollments: ["experiment"],
+    existingEnrollments: ["rollout"],
+    expectedOptIns: ["optin"],
   });
 });

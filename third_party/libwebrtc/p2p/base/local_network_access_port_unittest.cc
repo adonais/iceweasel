@@ -19,7 +19,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/local_network_access_permission.h"
 #include "api/test/mock_async_dns_resolver.h"
 #include "api/test/mock_local_network_access_permission.h"
@@ -42,6 +41,7 @@
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/wait_until.h"
@@ -71,9 +71,8 @@ enum ServerType { kStun, kTurn };
 
 // Class to test LocalNetworkAccess integration with STUN and TURN ports.
 class LocalNetworkAccessPortTest
-    : public ::testing::Test,
-      public sigslot::has_slots<>,
-      public ::testing::WithParamInterface<
+    : public sigslot::has_slots<>,
+      public ::testing::TestWithParam<
           std::tuple<ServerType, absl::string_view, LnaFakeResult>> {
  public:
   LocalNetworkAccessPortTest() {
@@ -81,8 +80,8 @@ class LocalNetworkAccessPortTest
 
     switch (server_type()) {
       case kStun:
-        stun_server_ =
-            TestStunServer::Create(&ss_, {server_address(), 5000}, thread_);
+        stun_server_ = TestStunServer::Create(env_, {server_address(), 5000},
+                                              ss_, thread_);
         break;
       case kTurn:
         turn_server_.AddInternalSocket({server_address(), 5000}, PROTO_UDP);
@@ -132,10 +131,12 @@ class LocalNetworkAccessPortTest
     };
 
     auto turn_port = TurnPort::Create(args, /*min_port=*/0, /*max_port=*/0);
-    turn_port->SignalPortComplete.connect(
-        this, &LocalNetworkAccessPortTest::OnPortComplete);
-    turn_port->SignalPortError.connect(
-        this, &LocalNetworkAccessPortTest::OnPortError);
+    // The tests wait for either of the callbacks to be fired by checking if
+    // port_ready_ or port_error_ becomes true. If neither happens, the test
+    // will fail after a timeout.
+    turn_port->SubscribePortComplete(
+        [this](Port* port) { OnPortComplete(port); });
+    turn_port->SubscribePortError([this](Port* port) { OnPortError(port); });
 
     return turn_port;
   }
@@ -155,10 +156,9 @@ class LocalNetworkAccessPortTest
 
     auto stun_port = StunPort::Create(
         params, 0, 0, {SocketAddress(server_address, 5000)}, std::nullopt);
-    stun_port->SignalPortComplete.connect(
-        this, &LocalNetworkAccessPortTest::OnPortComplete);
-    stun_port->SignalPortError.connect(
-        this, &LocalNetworkAccessPortTest::OnPortError);
+    stun_port->SubscribePortComplete(
+        [this](Port* port) { OnPortComplete(port); });
+    stun_port->SubscribePortError([this](Port* port) { OnPortError(port); });
 
     return stun_port;
   }
@@ -188,7 +188,7 @@ class LocalNetworkAccessPortTest
   bool port_error_ = false;
 
   ScopedFakeClock fake_clock_;
-  const Environment env_ = CreateEnvironment();
+  const Environment env_ = CreateTestEnvironment();
   VirtualSocketServer ss_;
   AutoSocketServerThread thread_{&ss_};
   MockDnsResolvingPacketSocketFactory socket_factory_{&ss_};
@@ -199,7 +199,8 @@ class LocalNetworkAccessPortTest
                                                     : kLocalAddr};
   Network network_{"unittest", "unittest", local_address_.ipaddr(), 32};
 
-  TestTurnServer turn_server_{&thread_, &ss_, kTurnUdpIntAddr, kTurnUdpExtAddr};
+  TestTurnServer turn_server_{env_, &thread_, &ss_, kTurnUdpIntAddr,
+                              kTurnUdpExtAddr};
   TestStunServer::StunServerPtr stun_server_;
 };
 

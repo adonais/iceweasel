@@ -687,7 +687,7 @@ class Instruction {
       // can set the flags. The others can all write into sp.
       // Note that some logical operations are not available to
       // immediate-operand instructions, so we have to combine two masks here.
-      if (Mask(LogicalImmediateMask & LogicalOpMask) == ANDS) {
+      if (Mask(static_cast<Instr>(LogicalImmediateMask) & LogicalOpMask) == ANDS) {
         return Reg31IsZeroRegister;
       } else {
         return Reg31IsStackPointer;

@@ -29,7 +29,9 @@
       });
 
       add_task(async function testMozSelectProperties() {
-        await testHelpers.testCommonInputProperties("moz-select");
+        await testHelpers.testCommonInputProperties("moz-select", {
+          type: "select-one",
+        });
       });
 
       add_task(async function testMozSelectChange() {
@@ -230,6 +232,52 @@
         // Reset options
         mozOptions[0].disabled = false;
         mozOptions[1].hidden = false;
+      });
+
+      add_task(async function testEmptyMozSelect() {
+        // The only thing we test is that this doesn't throw.
+        await testHelpers.renderTemplate(
+          testHelpers.html`<moz-select></moz-select>`
+        );
+      });
+
+      add_task(async function testMozSelectOptionWithSeparator() {
+        let target = await testHelpers.renderTemplate(
+          testHelpers.html`<moz-select><moz-option value="1" label="One"></moz-option><hr>
+          <moz-option value="2" label="Two"></moz-option></moz-select>`
+        );
+        let mozSelect = target.querySelector("moz-select");
+        await mozSelect.updateComplete;
+
+        const embeddedHr = mozSelect.querySelector("hr");
+        ok(embeddedHr, "Renders the hr");
+        is(mozSelect.children[1], embeddedHr, "Renders hr as the second child");
+
+        target = await testHelpers.renderTemplate(
+          testHelpers.html`<moz-select></moz-select>`
+        );
+
+        mozSelect = target.querySelector("moz-select");
+        await mozSelect.updateComplete;
+        mozSelect.options = [
+          { value: "1", label: "One" },
+          { value: "2", label: "Two" },
+          { separator: true },
+          { value: "3", label: "Three" },
+        ];
+        await mozSelect.updateComplete;
+
+        const renderedHr = mozSelect.shadowRoot.querySelector("hr");
+        ok(renderedHr, "Renders the hr");
+
+        const select = mozSelect.shadowRoot.querySelector("select");
+        is(select.children.length, 4, "moz-select renders four child elements");
+        is(select.children[2], renderedHr, "Renders hr as the third child");
+        is(
+          renderedHr.parentElement,
+          select,
+          "Renders the hr as a direct descendant of select"
+        );
       });
     </script>
   </head>

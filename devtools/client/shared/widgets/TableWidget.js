@@ -53,106 +53,109 @@ Object.defineProperty(this, "EVENTS", {
  * A table widget with various features like resizble/toggleable columns,
  * sorting, keyboard navigation etc.
  *
- * @param {Node} node
- *        The container element for the table widget.
- * @param {object} options
- *        - initialColumns: map of key vs display name for initial columns of
- *                          the table. See @setupColumns for more info.
- *        - uniqueId: the column which will be the unique identifier of each
- *                    entry in the table. Default: name.
- *        - wrapTextInElements: Don't ever use 'value' attribute on labels.
- *                              Default: false.
- *        - emptyText: Localization ID for the text to display when there are
- *                     no entries in the table to display.
- *        - highlightUpdated: true to highlight the changed/added row.
- *        - removableColumns: Whether columns are removeable. If set to false,
- *                            the context menu in the headers will not appear.
- *        - firstColumn: key of the first column that should appear.
- *        - cellContextMenuId: ID of a <menupopup> element to be set as a
- *                             context menu of every cell.
  */
-function TableWidget(node, options = {}) {
-  EventEmitter.decorate(this);
+class TableWidget extends EventEmitter {
+  static EVENTS = EVENTS;
 
-  this.document = node.ownerDocument;
-  this.window = this.document.defaultView;
-  this._parent = node;
+  /**
+   * @param {Node} node
+   *        The container element for the table widget.
+   * @param {object} options
+   *        - initialColumns: map of key vs display name for initial columns of
+   *                          the table. See @setupColumns for more info.
+   *        - uniqueId: the column which will be the unique identifier of each
+   *                    entry in the table. Default: name.
+   *        - wrapTextInElements: Don't ever use 'value' attribute on labels.
+   *                              Default: false.
+   *        - emptyText: Localization ID for the text to display when there are
+   *                     no entries in the table to display.
+   *        - highlightUpdated: true to highlight the changed/added row.
+   *        - removableColumns: Whether columns are removeable. If set to false,
+   *                            the context menu in the headers will not appear.
+   *        - firstColumn: key of the first column that should appear.
+   *        - cellContextMenuId: ID of a <menupopup> element to be set as a
+   *                             context menu of every cell.
+   */
+  constructor(node, options = {}) {
+    super();
 
-  const {
-    initialColumns,
-    emptyText,
-    uniqueId,
-    highlightUpdated,
-    removableColumns,
-    firstColumn,
-    wrapTextInElements,
-    cellContextMenuId,
-    l10n,
-  } = options;
-  this.emptyText = emptyText || "";
-  this.uniqueId = uniqueId || "name";
-  this.wrapTextInElements = wrapTextInElements || false;
-  this.firstColumn = firstColumn || "";
-  this.highlightUpdated = highlightUpdated || false;
-  this.removableColumns = removableColumns !== false;
-  this.cellContextMenuId = cellContextMenuId;
-  this.l10n = l10n;
+    this.document = node.ownerDocument;
+    this.window = this.document.defaultView;
+    this._parent = node;
 
-  this.tbody = this.document.createXULElement("hbox");
-  this.tbody.className = "table-widget-body theme-body";
-  this.tbody.setAttribute("flex", "1");
-  this.tbody.setAttribute("tabindex", "0");
-  this._parent.appendChild(this.tbody);
-  this.afterScroll = this.afterScroll.bind(this);
-  this.tbody.addEventListener("scroll", this.onScroll.bind(this));
+    const {
+      initialColumns,
+      emptyText,
+      uniqueId,
+      highlightUpdated,
+      removableColumns,
+      firstColumn,
+      wrapTextInElements,
+      cellContextMenuId,
+      l10n,
+    } = options;
+    this.emptyText = emptyText || "";
+    this.uniqueId = uniqueId || "name";
+    this.wrapTextInElements = wrapTextInElements || false;
+    this.firstColumn = firstColumn || "";
+    this.highlightUpdated = highlightUpdated || false;
+    this.removableColumns = removableColumns !== false;
+    this.cellContextMenuId = cellContextMenuId;
+    this.l10n = l10n;
 
-  // Prepare placeholder
-  this.placeholder = this.document.createElement("div");
-  this.placeholder.className = "table-widget-empty-text";
-  this._parent.appendChild(this.placeholder);
-  this.setPlaceholder(this.emptyText);
+    this.tbody = this.document.createXULElement("hbox");
+    this.tbody.className = "table-widget-body theme-body";
+    this.tbody.setAttribute("flex", "1");
+    this.tbody.setAttribute("tabindex", "0");
+    this._parent.appendChild(this.tbody);
+    this.afterScroll = this.afterScroll.bind(this);
+    this.tbody.addEventListener("scroll", this.onScroll.bind(this));
 
-  this.items = new Map();
-  this.columns = new Map();
+    // Prepare placeholder
+    this.placeholder = this.document.createElement("div");
+    this.placeholder.className = "table-widget-empty-text";
+    this._parent.appendChild(this.placeholder);
+    this.setPlaceholder(this.emptyText);
 
-  // Setup the column headers context menu to allow users to hide columns at
-  // will.
-  if (this.removableColumns) {
-    this.onPopupCommand = this.onPopupCommand.bind(this);
-    this.setupHeadersContextMenu();
+    this.items = new Map();
+    this.columns = new Map();
+
+    // Setup the column headers context menu to allow users to hide columns at
+    // will.
+    if (this.removableColumns) {
+      this.onPopupCommand = this.onPopupCommand.bind(this);
+      this.setupHeadersContextMenu();
+    }
+
+    if (initialColumns) {
+      this.setColumns(initialColumns, uniqueId);
+    }
+
+    this.bindSelectedRow = id => {
+      this.selectedRow = id;
+    };
+    this.on(EVENTS.ROW_SELECTED, this.bindSelectedRow);
+
+    this.onChange = this.onChange.bind(this);
+    this.onEditorDestroyed = this.onEditorDestroyed.bind(this);
+    this.onEditorTab = this.onEditorTab.bind(this);
+    this.onKeydown = this.onKeydown.bind(this);
+    this.onMousedown = this.onMousedown.bind(this);
+    this.onRowRemoved = this.onRowRemoved.bind(this);
+
+    this.document.addEventListener("keydown", this.onKeydown);
+    this.document.addEventListener("mousedown", this.onMousedown);
   }
 
-  if (initialColumns) {
-    this.setColumns(initialColumns, uniqueId);
-  }
-
-  this.bindSelectedRow = id => {
-    this.selectedRow = id;
-  };
-  this.on(EVENTS.ROW_SELECTED, this.bindSelectedRow);
-
-  this.onChange = this.onChange.bind(this);
-  this.onEditorDestroyed = this.onEditorDestroyed.bind(this);
-  this.onEditorTab = this.onEditorTab.bind(this);
-  this.onKeydown = this.onKeydown.bind(this);
-  this.onMousedown = this.onMousedown.bind(this);
-  this.onRowRemoved = this.onRowRemoved.bind(this);
-
-  this.document.addEventListener("keydown", this.onKeydown);
-  this.document.addEventListener("mousedown", this.onMousedown);
-}
-
-TableWidget.prototype = {
-  items: null,
-  editBookmark: null,
-  scrollIntoViewOnUpdate: null,
-
+  items = null;
+  editBookmark = null;
+  scrollIntoViewOnUpdate = null;
   /**
    * Return true if the table body has a scrollbar.
    */
   get hasScrollbar() {
     return this.tbody.scrollHeight > this.tbody.clientHeight;
-  },
+  }
 
   /**
    * Getter for the headers context menu popup id.
@@ -162,7 +165,7 @@ TableWidget.prototype = {
       return this.menupopup.id;
     }
     return null;
-  },
+  }
 
   /**
    * Select the row corresponding to the json object `id`
@@ -176,7 +179,7 @@ TableWidget.prototype = {
         column.selectRow(null);
       }
     }
-  },
+  }
 
   /**
    * Is a row currently selected?
@@ -189,14 +192,14 @@ TableWidget.prototype = {
       this.columns.get(this.uniqueId) &&
       this.columns.get(this.uniqueId).selectedRow
     );
-  },
+  }
 
   /**
    * Returns the json object corresponding to the selected row.
    */
   get selectedRow() {
     return this.items.get(this.columns.get(this.uniqueId).selectedRow);
-  },
+  }
 
   /**
    * Selects the row at index `index`.
@@ -205,14 +208,14 @@ TableWidget.prototype = {
     for (const column of this.columns.values()) {
       column.selectRowAt(index);
     }
-  },
+  }
 
   /**
    * Returns the index of the selected row.
    */
   get selectedIndex() {
     return this.columns.get(this.uniqueId).selectedIndex;
-  },
+  }
 
   /**
    * Returns the index of the selected row disregarding hidden rows.
@@ -228,7 +231,7 @@ TableWidget.prototype = {
     }
 
     return -1;
-  },
+  }
 
   /**
    * Returns the first visible column.
@@ -245,7 +248,7 @@ TableWidget.prototype = {
     }
 
     return null;
-  },
+  }
 
   /**
    * returns all editable columns.
@@ -273,7 +276,7 @@ TableWidget.prototype = {
 
     const columns = this._parent.querySelectorAll(".table-widget-column");
     return filter(columns);
-  },
+  }
 
   /**
    * Ensures all cells in a specific row have consistent heights by synchronizing their styles.
@@ -310,7 +313,7 @@ TableWidget.prototype = {
         cell.style.height = `${maxHeight}px`;
       }
     }
-  },
+  }
 
   /**
    * Emit all cell edit events.
@@ -353,11 +356,11 @@ TableWidget.prototype = {
     }
 
     this.syncRowHeight(change.items.uniqueKey);
-  },
+  }
 
   onEditorDestroyed() {
     this._editableFieldsEngine = null;
-  },
+  }
 
   /**
    * Called by the inplace editor when Tab / Shift-Tab is pressed in edit-mode.
@@ -457,7 +460,7 @@ TableWidget.prototype = {
 
     // Prevent default input tabbing behaviour
     event.preventDefault();
-  },
+  }
 
   /**
    * Get the cell that will be edited next on tab / shift tab and highlight the
@@ -519,7 +522,7 @@ TableWidget.prototype = {
     }
 
     return cell;
-  },
+  }
 
   /**
    * Reset the editable fields engine if the currently edited row is removed.
@@ -544,7 +547,7 @@ TableWidget.prototype = {
     // The target is lost so we need to hide the remove the textbox from the DOM
     // and reset the target nodes.
     this.onEditorTargetLost();
-  },
+  }
 
   /**
    * Cancel an edit because the edit target has been lost.
@@ -557,7 +560,7 @@ TableWidget.prototype = {
     }
 
     editor.cancelEdit();
-  },
+  }
 
   /**
    * Keydown event handler for the table. Used for keyboard navigation amongst
@@ -626,7 +629,7 @@ TableWidget.prototype = {
         this.emit(EVENTS.ROW_SELECTED, cell.getAttribute("data-id"));
         break;
     }
-  },
+  }
 
   /**
    * Close any editors if the area "outside the table" is clicked. In reality,
@@ -643,7 +646,7 @@ TableWidget.prototype = {
 
     // Force any editor fields to hide due to XUL focus quirks.
     this._editableFieldsEngine.blur();
-  },
+  }
 
   /**
    * Make table fields editable.
@@ -688,7 +691,7 @@ TableWidget.prototype = {
 
       this.emit(EVENTS.FIELDS_EDITABLE, this._editableFieldsEngine);
     }
-  },
+  }
 
   destroy() {
     this.off(EVENTS.ROW_SELECTED, this.bindSelectedRow);
@@ -709,7 +712,7 @@ TableWidget.prototype = {
       this.menupopup.removeEventListener("command", this.onPopupCommand);
       this.menupopup.remove();
     }
-  },
+  }
 
   /**
    * Sets the localization ID of the description to be shown when the table is empty.
@@ -736,7 +739,7 @@ TableWidget.prototype = {
     }
 
     this.l10n.setAttributes(this.placeholder, l10nID);
-  },
+  }
 
   /**
    * Prepares the context menu for the headers of the table columns. This
@@ -755,7 +758,7 @@ TableWidget.prototype = {
     this.menupopup.addEventListener("command", this.onPopupCommand);
     popupset.appendChild(this.menupopup);
     this.populateMenuPopup();
-  },
+  }
 
   /**
    * Populates the header context menu with the names of the columns along with
@@ -792,7 +795,7 @@ TableWidget.prototype = {
     if (checked.length == 2) {
       checked[checked.length - 1].setAttribute("disabled", "true");
     }
-  },
+  }
 
   /**
    * Event handler for the `command` event on the column headers context menu
@@ -809,7 +812,7 @@ TableWidget.prototype = {
     } else if (disabled.length > 1) {
       disabled[disabled.length - 1].removeAttribute("disabled");
     }
-  },
+  }
 
   /**
    * Creates the columns in the table. Without calling this method, data cannot
@@ -877,7 +880,7 @@ TableWidget.prototype = {
     this.sortedOn = sortOn;
     this.sortBy(this.sortedOn);
     this.populateMenuPopup(privateColumns);
-  },
+  }
 
   /**
    * Returns true if the passed string or the row json object corresponds to the
@@ -889,14 +892,14 @@ TableWidget.prototype = {
     }
 
     return this.selectedRow && item == this.selectedRow[this.uniqueId];
-  },
+  }
 
   /**
    * Selects the row corresponding to the `id` json.
    */
   selectRow(id) {
     this.selectedRow = id;
-  },
+  }
 
   /**
    * Selects the next row. Cycles over to the first row if last row is selected
@@ -905,7 +908,7 @@ TableWidget.prototype = {
     for (const column of this.columns.values()) {
       column.selectNextRow();
     }
-  },
+  }
 
   /**
    * Selects the previous row. Cycles over to the last row if first row is
@@ -915,14 +918,14 @@ TableWidget.prototype = {
     for (const column of this.columns.values()) {
       column.selectPreviousRow();
     }
-  },
+  }
 
   /**
    * Clears any selected row.
    */
   clearSelection() {
     this.selectedIndex = -1;
-  },
+  }
 
   /**
    * Adds a row into the table.
@@ -967,7 +970,7 @@ TableWidget.prototype = {
 
     this.emit(EVENTS.ROW_EDIT, item[this.uniqueId]);
     this.syncRowHeight(item[this.uniqueId]);
-  },
+  }
 
   /**
    * Removes the row associated with the `item` object.
@@ -994,7 +997,7 @@ TableWidget.prototype = {
     }
 
     this.emit(EVENTS.ROW_REMOVED, item);
-  },
+  }
 
   /**
    * Updates the items in the row corresponding to the `item` object previously
@@ -1019,7 +1022,7 @@ TableWidget.prototype = {
       this.emit(EVENTS.ROW_UPDATED, item[this.uniqueId]);
       this.emit(EVENTS.ROW_EDIT, item[this.uniqueId]);
     }
-  },
+  }
 
   /**
    * Removes all of the rows from the table.
@@ -1035,7 +1038,7 @@ TableWidget.prototype = {
     this.selectedRow = null;
 
     this.emit(EVENTS.TABLE_CLEARED, this);
-  },
+  }
 
   /**
    * Sorts the table by a given column.
@@ -1064,7 +1067,7 @@ TableWidget.prototype = {
         col.sort(sortedItems);
       }
     }
-  },
+  }
 
   /**
    * Filters the table based on a specific value
@@ -1105,7 +1108,7 @@ TableWidget.prototype = {
       }
     }
     this.emit(EVENTS.TABLE_FILTERED, itemsToHide);
-  },
+  }
 
   /**
    * Calls the afterScroll function when the user has stopped scrolling
@@ -1113,7 +1116,7 @@ TableWidget.prototype = {
   onScroll() {
     clearNamedTimeout("table-scroll");
     setNamedTimeout("table-scroll", AFTER_SCROLL_DELAY, this.afterScroll);
-  },
+  }
 
   /**
    * Emits the "scroll-end" event when the whole table is scrolled
@@ -1124,89 +1127,88 @@ TableWidget.prototype = {
     if (this.tbody.scrollTop >= 0.9 * maxScrollTop) {
       this.emit("scroll-end");
     }
-  },
-};
-
-TableWidget.EVENTS = EVENTS;
+  }
+}
 
 module.exports.TableWidget = TableWidget;
 
 /**
  * A single column object in the table.
- *
- * @param {TableWidget} table
- *        The table object to which the column belongs.
- * @param {string} id
- *        Id of the column.
- * @param {string} header
- *        The displayed string on the column's header.
  */
-function Column(table, id, header) {
-  // By default cells are visible in the UI.
-  this._private = false;
+class Column {
+  /**
+   * @param {TableWidget} table
+   *        The table object to which the column belongs.
+   * @param {string} id
+   *        Id of the column.
+   * @param {string} header
+   *        The displayed string on the column's header.
+   */
+  constructor(table, id, header) {
+    // By default cells are visible in the UI.
+    this._private = false;
 
-  this.tbody = table.tbody;
-  this.document = table.document;
-  this.window = table.window;
-  this.id = id;
-  this.uniqueId = table.uniqueId;
-  this.wrapTextInElements = table.wrapTextInElements;
-  this.table = table;
-  this.cells = [];
-  this.items = {};
+    this.tbody = table.tbody;
+    this.document = table.document;
+    this.window = table.window;
+    this.id = id;
+    this.uniqueId = table.uniqueId;
+    this.wrapTextInElements = table.wrapTextInElements;
+    this.table = table;
+    this.cells = [];
+    this.items = {};
 
-  this.highlightUpdated = table.highlightUpdated;
+    this.highlightUpdated = table.highlightUpdated;
 
-  this.column = this.document.createElementNS(HTML_NS, "div");
-  this.column.id = id;
-  this.column.className = "table-widget-column";
-  this.tbody.appendChild(this.column);
+    this.column = this.document.createElementNS(HTML_NS, "div");
+    this.column.id = id;
+    this.column.className = "table-widget-column";
+    this.tbody.appendChild(this.column);
 
-  this.splitter = this.document.createXULElement("splitter");
-  this.splitter.className = "devtools-side-splitter";
-  this.tbody.appendChild(this.splitter);
+    this.splitter = this.document.createXULElement("splitter");
+    this.splitter.className = "devtools-side-splitter";
+    this.tbody.appendChild(this.splitter);
 
-  this.header = this.document.createXULElement("label");
-  this.header.className = "devtools-toolbar table-widget-column-header";
-  this.header.setAttribute("value", header);
-  this.column.appendChild(this.header);
-  if (table.headersContextMenu) {
-    this.header.setAttribute("context", table.headersContextMenu);
+    this.header = this.document.createXULElement("label");
+    this.header.className = "devtools-toolbar table-widget-column-header";
+    this.header.setAttribute("value", header);
+    this.column.appendChild(this.header);
+    if (table.headersContextMenu) {
+      this.header.setAttribute("context", table.headersContextMenu);
+    }
+    this.toggleColumn = this.toggleColumn.bind(this);
+    this.table.on(EVENTS.HEADER_CONTEXT_MENU, this.toggleColumn);
+
+    this.onColumnSorted = this.onColumnSorted.bind(this);
+    this.table.on(EVENTS.COLUMN_SORTED, this.onColumnSorted);
+
+    this.onRowUpdated = this.onRowUpdated.bind(this);
+    this.table.on(EVENTS.ROW_UPDATED, this.onRowUpdated);
+
+    this.onTableFiltered = this.onTableFiltered.bind(this);
+    this.table.on(EVENTS.TABLE_FILTERED, this.onTableFiltered);
+
+    this.onClick = this.onClick.bind(this);
+    this.onMousedown = this.onMousedown.bind(this);
+    this.column.addEventListener("click", this.onClick);
+    this.column.addEventListener("mousedown", this.onMousedown);
   }
-  this.toggleColumn = this.toggleColumn.bind(this);
-  this.table.on(EVENTS.HEADER_CONTEXT_MENU, this.toggleColumn);
 
-  this.onColumnSorted = this.onColumnSorted.bind(this);
-  this.table.on(EVENTS.COLUMN_SORTED, this.onColumnSorted);
-
-  this.onRowUpdated = this.onRowUpdated.bind(this);
-  this.table.on(EVENTS.ROW_UPDATED, this.onRowUpdated);
-
-  this.onTableFiltered = this.onTableFiltered.bind(this);
-  this.table.on(EVENTS.TABLE_FILTERED, this.onTableFiltered);
-
-  this.onClick = this.onClick.bind(this);
-  this.onMousedown = this.onMousedown.bind(this);
-  this.column.addEventListener("click", this.onClick);
-  this.column.addEventListener("mousedown", this.onMousedown);
-}
-
-Column.prototype = {
   // items is a cell-id to cell-index map. It is basically a reverse map of the
   // this.cells object and is used to quickly reverse lookup a cell by its id
   // instead of looping through the cells array. This reverse map is not kept
   // upto date in sync with the cells array as updating it is in itself a loop
   // through all the cells of the columns. Thus update it on demand when it goes
   // out of sync with this.cells.
-  items: null,
+  items = null;
 
   // _itemsDirty is a flag which becomes true when this.items goes out of sync
   // with this.cells
-  _itemsDirty: null,
+  _itemsDirty = null;
 
-  selectedRow: null,
+  selectedRow = null;
 
-  cells: null,
+  cells = null;
 
   /**
    * Gets whether the table is sorted on this column or not.
@@ -1216,21 +1218,21 @@ Column.prototype = {
    */
   get sorted() {
     return this._sortState || 0;
-  },
+  }
 
   /**
    * Returns a boolean indicating whether the column is hidden.
    */
   get hidden() {
     return this.column.hidden;
-  },
+  }
 
   /**
    * Get the private state of the column (visibility in the UI).
    */
   get private() {
     return this._private;
-  },
+  }
 
   /**
    * Set the private state of the column (visibility in the UI).
@@ -1240,7 +1242,7 @@ Column.prototype = {
    */
   set private(state) {
     this._private = state;
-  },
+  }
 
   /**
    * Sets the sorted value
@@ -1255,7 +1257,7 @@ Column.prototype = {
       );
     }
     this._sortState = value;
-  },
+  }
 
   /**
    * Gets the selected row in the column.
@@ -1265,11 +1267,11 @@ Column.prototype = {
       return -1;
     }
     return this.items[this.selectedRow];
-  },
+  }
 
   get cellNodes() {
     return [...this.column.querySelectorAll(".table-widget-cell")];
-  },
+  }
 
   get visibleCellNodes() {
     const editor = this.table._editableFieldsEngine;
@@ -1282,7 +1284,7 @@ Column.prototype = {
     });
 
     return nodes;
-  },
+  }
 
   /**
    * Called when the column is sorted by.
@@ -1300,7 +1302,7 @@ Column.prototype = {
       this.sorted = 2;
     }
     this.updateZebra();
-  },
+  }
 
   onTableFiltered(itemsToHide) {
     this._updateItems();
@@ -1314,7 +1316,7 @@ Column.prototype = {
       this.cells[this.items[id]].hidden = true;
     }
     this.updateZebra();
-  },
+  }
 
   /**
    * Called when a row is updated e.g. a cell is changed. This means that
@@ -1358,7 +1360,7 @@ Column.prototype = {
     }
 
     this.updateZebra();
-  },
+  }
 
   destroy() {
     this.table.off(EVENTS.COLUMN_SORTED, this.onColumnSorted);
@@ -1374,7 +1376,7 @@ Column.prototype = {
     this.cells = null;
     this.items = null;
     this.selectedRow = null;
-  },
+  }
 
   /**
    * Selects the row at the `index` index
@@ -1393,7 +1395,7 @@ Column.prototype = {
     } else {
       this.selectedRow = null;
     }
-  },
+  }
 
   /**
    * Selects the row with the object having the `uniqueId` value as `id`
@@ -1401,7 +1403,7 @@ Column.prototype = {
   selectRow(id) {
     this._updateItems();
     this.selectRowAt(this.items[id]);
-  },
+  }
 
   /**
    * Selects the next row. Cycles to first if last row is selected.
@@ -1413,7 +1415,7 @@ Column.prototype = {
       index = 0;
     }
     this.selectRowAt(index);
-  },
+  }
 
   /**
    * Selects the previous row. Cycles to last if first row is selected.
@@ -1425,7 +1427,7 @@ Column.prototype = {
       index = this.cells.length - 1;
     }
     this.selectRowAt(index);
-  },
+  }
 
   /**
    * Pushes the `item` object into the column. If this column is sorted on,
@@ -1472,7 +1474,7 @@ Column.prototype = {
 
     this.items[item[this.uniqueId]] = this.cells.length;
     return this.cells.push(new Cell(this, item)) - 1;
-  },
+  }
 
   /**
    * Inserts the `item` object at the given `index` index in the table.
@@ -1484,7 +1486,7 @@ Column.prototype = {
     this.items[item[this.uniqueId]] = index;
     this.cells.splice(index, 0, new Cell(this, item, this.cells[index]));
     this.updateZebra();
-  },
+  }
 
   /**
    * Event handler for the command event coming from the header context menu.
@@ -1515,7 +1517,7 @@ Column.prototype = {
       this.column.hidden = true;
       this.splitter.remove();
     }
-  },
+  }
 
   /**
    * Removes the corresponding item from the column and hide the last visible
@@ -1534,7 +1536,7 @@ Column.prototype = {
     this.cells[index].destroy();
     this.cells.splice(index, 1);
     delete this.items[item[this.uniqueId]];
-  },
+  }
 
   /**
    * Updates the corresponding item from the column.
@@ -1548,7 +1550,7 @@ Column.prototype = {
     }
 
     this.cells[index].value = item[this.id];
-  },
+  }
 
   /**
    * Updates the `this.items` cell-id vs cell-index map to be in sync with
@@ -1562,7 +1564,7 @@ Column.prototype = {
       this.items[this.cells[i].id] = i;
     }
     this._itemsDirty = false;
-  },
+  }
 
   /**
    * Clears the current column
@@ -1574,7 +1576,7 @@ Column.prototype = {
     while (this.header.nextSibling) {
       this.header.nextSibling.remove();
     }
-  },
+  }
 
   /**
    * Sorts the given items and returns the sorted list if the table was sorted
@@ -1629,7 +1631,7 @@ Column.prototype = {
     this._itemsDirty = false;
     this.updateZebra();
     return items;
-  },
+  }
 
   updateZebra() {
     this._updateItems();
@@ -1642,7 +1644,7 @@ Column.prototype = {
       const even = !(i % 2);
       cell.classList.toggle("even", even);
     }
-  },
+  }
 
   /**
    * Click event handler for the column. Used to detect click on header for
@@ -1679,7 +1681,7 @@ Column.prototype = {
         }
       }
     }
-  },
+  }
 
   /**
    * Mousedown event handler for the column. Used to select rows.
@@ -1703,66 +1705,67 @@ Column.prototype = {
       const dataid = closest.getAttribute("data-id");
       this.table.emit(EVENTS.ROW_SELECTED, dataid);
     }
-  },
-};
+  }
+}
 
 /**
  * A single cell in a column
- *
- * @param {Column} column
- *        The column object to which the cell belongs.
- * @param {object} item
- *        The object representing the row. It contains a key value pair
- *        representing the column id and its associated value. The value
- *        can be a DOMNode that is appended or a string value.
- * @param {Cell} nextCell
- *        The cell object which is next to this cell. null if this cell is last
- *        cell of the column
  */
-function Cell(column, item, nextCell) {
-  const document = column.document;
+class Cell {
+  /**
+   * @param {Column} column
+   *        The column object to which the cell belongs.
+   * @param {object} item
+   *        The object representing the row. It contains a key value pair
+   *        representing the column id and its associated value. The value
+   *        can be a DOMNode that is appended or a string value.
+   * @param {Cell} nextCell
+   *        The cell object which is next to this cell. null if this cell is last
+   *        cell of the column
+   */
+  constructor(column, item, nextCell) {
+    const document = column.document;
 
-  this.wrapTextInElements = column.wrapTextInElements;
-  this.label = document.createXULElement("label");
-  this.label.setAttribute("crop", "end");
-  this.label.className = "table-widget-cell";
+    this.wrapTextInElements = column.wrapTextInElements;
+    this.label = document.createXULElement("label");
+    this.label.setAttribute("crop", "end");
+    this.label.className = "table-widget-cell";
 
-  if (nextCell) {
-    column.column.insertBefore(this.label, nextCell.label);
-  } else {
-    column.column.appendChild(this.label);
+    if (nextCell) {
+      column.column.insertBefore(this.label, nextCell.label);
+    } else {
+      column.column.appendChild(this.label);
+    }
+
+    if (column.table.cellContextMenuId) {
+      this.label.setAttribute("context", column.table.cellContextMenuId);
+      this.label.addEventListener("contextmenu", () => {
+        // Make the ID of the clicked cell available as a property on the table.
+        // It's then available for the popupshowing or command handler.
+        column.table.contextMenuRowId = this.id;
+      });
+    }
+
+    this.value = item[column.id];
+    this.id = item[column.uniqueId];
   }
 
-  if (column.table.cellContextMenuId) {
-    this.label.setAttribute("context", column.table.cellContextMenuId);
-    this.label.addEventListener("contextmenu", () => {
-      // Make the ID of the clicked cell available as a property on the table.
-      // It's then available for the popupshowing or command handler.
-      column.table.contextMenuRowId = this.id;
-    });
-  }
-
-  this.value = item[column.id];
-  this.id = item[column.uniqueId];
-}
-
-Cell.prototype = {
   set id(value) {
     this._id = value;
     this.label.setAttribute("data-id", value);
-  },
+  }
 
   get id() {
     return this._id;
-  },
+  }
 
   get hidden() {
     return this.label.hidden;
-  },
+  }
 
   set hidden(value) {
     this.label.hidden = value;
-  },
+  }
 
   set value(value) {
     this._value = value;
@@ -1783,15 +1786,15 @@ Cell.prototype = {
     } else {
       this.label.setAttribute("value", value + "");
     }
-  },
+  }
 
   get value() {
     return this._value;
-  },
+  }
 
   get classList() {
     return this.label.classList;
-  },
+  }
 
   /**
    * Flashes the cell for a brief time. This when done for with cells in all
@@ -1810,78 +1813,79 @@ Cell.prototype = {
     };
     this.label.addEventListener("animationend", onAnimEnd);
     this.label.classList.add("flash-out");
-  },
+  }
 
   focus() {
     this.label.focus();
-  },
+  }
 
   scrollIntoView() {
     this.label.scrollIntoView(false);
-  },
+  }
 
   destroy() {
     this.label.remove();
     this.label = null;
-  },
-};
+  }
+}
 
 /**
  * Simple widget to make nodes matching a CSS selector editable.
- *
- * @param {object} options
- *        An object with the following format:
- *          {
- *            // The node that will act as a container for the editor e.g. a
- *            // div or table.
- *            root: someNode,
- *
- *            // The onTab event to be handled by the caller.
- *            onTab: function(event) { ... }
- *
- *            // Optional event used to trigger the editor. By default this is
- *            // dblclick.
- *            onTriggerEvent: "dblclick",
- *
- *            // Array or comma separated string of CSS Selectors matching
- *            // elements that are to be made editable.
- *            selectors: [
- *              "#name .table-widget-cell",
- *              "#value .table-widget-cell"
- *            ]
- *          }
  */
-function EditableFieldsEngine(options) {
-  EventEmitter.decorate(this);
+class EditableFieldsEngine extends EventEmitter {
+  /**
+   * @param {object} options
+   *        An object with the following format:
+   *          {
+   *            // The node that will act as a container for the editor e.g. a
+   *            // div or table.
+   *            root: someNode,
+   *
+   *            // The onTab event to be handled by the caller.
+   *            onTab: function(event) { ... }
+   *
+   *            // Optional event used to trigger the editor. By default this is
+   *            // dblclick.
+   *            onTriggerEvent: "dblclick",
+   *
+   *            // Array or comma separated string of CSS Selectors matching
+   *            // elements that are to be made editable.
+   *            selectors: [
+   *              "#name .table-widget-cell",
+   *              "#value .table-widget-cell"
+   *            ]
+   *          }
+   */
+  constructor(options) {
+    super();
 
-  if (!Array.isArray(options.selectors)) {
-    options.selectors = [options.selectors];
+    if (!Array.isArray(options.selectors)) {
+      options.selectors = [options.selectors];
+    }
+
+    this.root = options.root;
+    this.selectors = options.selectors;
+    this.onTab = options.onTab;
+    this.onTriggerEvent = options.onTriggerEvent || "dblclick";
+    this.items = options.items;
+
+    this.edit = this.edit.bind(this);
+    this.cancelEdit = this.cancelEdit.bind(this);
+    this.destroy = this.destroy.bind(this);
+
+    this.onTrigger = this.onTrigger.bind(this);
+    this.root.addEventListener(this.onTriggerEvent, this.onTrigger);
   }
 
-  this.root = options.root;
-  this.selectors = options.selectors;
-  this.onTab = options.onTab;
-  this.onTriggerEvent = options.onTriggerEvent || "dblclick";
-  this.items = options.items;
-
-  this.edit = this.edit.bind(this);
-  this.cancelEdit = this.cancelEdit.bind(this);
-  this.destroy = this.destroy.bind(this);
-
-  this.onTrigger = this.onTrigger.bind(this);
-  this.root.addEventListener(this.onTriggerEvent, this.onTrigger);
-}
-
-EditableFieldsEngine.prototype = {
-  INPUT_ID: "inlineEditor",
+  INPUT_ID = "inlineEditor";
 
   get changePending() {
     return this.isEditing && this.textbox.value !== this.currentValue;
-  },
+  }
 
   get isEditing() {
     return this.root && !this.textbox.hidden;
-  },
+  }
 
   get textbox() {
     if (!this._textbox) {
@@ -1897,7 +1901,7 @@ EditableFieldsEngine.prototype = {
     }
 
     return this._textbox;
-  },
+  }
 
   /**
    * Called when a trigger event is detected (default is dblclick).
@@ -1907,7 +1911,7 @@ EditableFieldsEngine.prototype = {
    */
   onTrigger({ target }) {
     this.edit(target);
-  },
+  }
 
   /**
    * Handle keydowns when in edit mode:
@@ -1938,7 +1942,7 @@ EditableFieldsEngine.prototype = {
         }
         break;
     }
-  },
+  }
 
   /**
    * Overlay the target node with an edit field.
@@ -1981,7 +1985,7 @@ EditableFieldsEngine.prototype = {
 
     this.textbox.focus();
     this.textbox.select();
-  },
+  }
 
   completeEdit() {
     if (!this.isEditing) {
@@ -2012,7 +2016,7 @@ EditableFieldsEngine.prototype = {
 
       this.emit("change", data);
     }
-  },
+  }
 
   /**
    * Cancel an edit.
@@ -2026,7 +2030,7 @@ EditableFieldsEngine.prototype = {
     }
 
     this.textbox.hidden = true;
-  },
+  }
 
   /**
    * Stop edit mode and apply changes.
@@ -2035,7 +2039,7 @@ EditableFieldsEngine.prototype = {
     if (this.isEditing) {
       this.completeEdit();
     }
-  },
+  }
 
   /**
    * Copies various styles from one node to another.
@@ -2070,7 +2074,7 @@ EditableFieldsEngine.prototype = {
 
     // We need to set the label width to 100% to work around a XUL flex bug.
     destination.style.width = "100%";
-  },
+  }
 
   /**
    * Destroys all editors in the current document.
@@ -2090,5 +2094,5 @@ EditableFieldsEngine.prototype = {
     this.currentTarget = this.currentValue = null;
 
     this.emit("destroyed");
-  },
-};
+  }
+}

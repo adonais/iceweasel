@@ -1127,6 +1127,11 @@ class EditorBase : public nsIEditor,
       return *mSelection;
     }
 
+    Text* GetCachedTextNode() const {
+      MOZ_ASSERT(mEditorBase.IsTextEditor());
+      return mTextNode;
+    }
+
     nsIPrincipal* GetPrincipal() const { return mPrincipal; }
     EditAction GetEditAction() const { return mEditAction; }
 
@@ -1223,14 +1228,7 @@ class EditorBase : public nsIEditor,
         mParentData->OnEditorDestroy();
       }
     }
-    void OnEditorInitialized() {
-      if (mEditorWasDestroyedDuringHandlingEditAction) {
-        mEditorWasReinitialized = true;
-      }
-      if (mParentData) {
-        mParentData->OnEditorInitialized();
-      }
-    }
+    void OnEditorInitialized();
     /**
      * Return true if the editor was destroyed at least once while the
      * EditAction is being handled.  Note that the editor may have already been
@@ -1436,6 +1434,11 @@ class EditorBase : public nsIEditor,
     RefPtr<Selection> mSelection;
     nsTArray<OwningNonNull<Selection>> mRetiredSelections;
 
+    // mTextNode is the text node if and only if the instance is TextEditor.
+    // This is set when the instance is created and updated when the TextEditor
+    // is reinitialized with the new native anonymous subtree.
+    RefPtr<Text> mTextNode;
+
     // True if the selection was created by doubleclicking a word.
     bool mSelectionCreatedByDoubleclick{false};
 
@@ -1592,6 +1595,22 @@ class EditorBase : public nsIEditor,
     MOZ_ASSERT(mEditActionData->SelectionRef().GetType() ==
                SelectionType::eNormal);
     return mEditActionData->SelectionRef();
+  }
+
+  // Return the Text if and only if we're a TextEditor instance.  It's cached
+  // while we're handling an edit action, so, this stores the latest value even
+  // after we have been destroyed.
+  Text* GetCachedTextNode() {
+    MOZ_ASSERT(IsTextEditor());
+    return mEditActionData ? mEditActionData->GetCachedTextNode() : nullptr;
+  }
+
+  // Return the Text if and only if we're a TextEditor instance.  It's cached
+  // while we're handling an edit action, so, this stores the latest value even
+  // after we have been destroyed.
+  const Text* GetCachedTextNode() const {
+    MOZ_ASSERT(IsTextEditor());
+    return const_cast<EditorBase*>(this)->GetCachedTextNode();
   }
 
   nsIPrincipal* GetEditActionPrincipal() const {
@@ -2495,6 +2514,18 @@ class EditorBase : public nsIEditor,
    * asynchronously if it's not safe to dispatch.
    */
   MOZ_CAN_RUN_SCRIPT void DispatchInputEvent();
+
+  /**
+   * Return true if it's NOT blocked by the pref to dispatch `input` event
+   * immediately before `compositionend`.
+   */
+  [[nodiscard]] bool CanDispatchInputEventBeforeCompositionEnd() const;
+
+  /**
+   * Return true if it's NOT blocked by the pref to dispatch `input` event
+   * immediately after `compositionend`.
+   */
+  [[nodiscard]] bool CanDispatchInputEventAfterCompositionEnd() const;
 
   /**
    * Called after a transaction is done successfully.

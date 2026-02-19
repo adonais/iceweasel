@@ -28,5 +28,8 @@
   pref("pdfjs.enableHighlightFloatingButton", true);
 
   pref("pdfjs.enableAltTextForEnglish", false);
+  pref("pdfjs.enableAltText", true);
+  pref("pdfjs.enableAltTextModelDownload", false);
+  pref("pdfjs.enableGuessAltText", false);
 
 #endif

@@ -26,13 +26,18 @@ class AndroidGamepadManager final
   AndroidGamepadManager() = delete;
 
  public:
-  static jni::ByteArray::LocalRef NativeAddGamepad() {
+  static jni::ByteArray::LocalRef NativeAddGamepad(jni::String::Param aName) {
     RefPtr<GamepadPlatformService> service =
         GamepadPlatformService::GetParentService();
     MOZ_RELEASE_ASSERT(service);
 
+    nsCString name = aName->ToCString();
+    if (name.IsEmpty()) {
+      name.AssignLiteral("android");
+    }
+
     const GamepadHandle gamepadHandle = service->AddGamepad(
-        "android", GamepadMappingType::Standard, GamepadHand::_empty,
+        name.get(), GamepadMappingType::Standard, GamepadHand::_empty,
         kStandardGamepadButtons, kStandardGamepadAxes, 0, 0, 0);
 
     return mozilla::jni::ByteArray::New(

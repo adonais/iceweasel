@@ -27,10 +27,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
@@ -72,26 +73,12 @@ internal fun SubmenuHeader(
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun SubmenuHeaderPreview() {
-    FirefoxTheme {
-        Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface),
-        ) {
-            SubmenuHeader(
-                header = "sub-menu header",
-                onClick = {},
-            )
-        }
-    }
-}
-
 @Preview
 @Composable
-private fun SubmenuMenuHeaderPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun SubmenuHeaderPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Column(
             modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.surface),

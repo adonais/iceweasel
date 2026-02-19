@@ -626,8 +626,7 @@ void nsXULPopupManager::AdjustPopupsOnWindowChange(
   // is no need to check these popups, only the noautohide popups.
 
   // The items are added to a list so that they can be adjusted bottom to top.
-  nsTArray<nsMenuPopupFrame*> list;
-
+  AutoTArray<nsMenuPopupFrame*, 8> list;
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
     // only move popups that are within the same window and where auto
     // positioning has not been disabled
@@ -635,15 +634,7 @@ void nsXULPopupManager::AdjustPopupsOnWindowChange(
       continue;
     }
     nsMenuPopupFrame* frame = item->Frame();
-    nsIContent* popup = frame->GetContent();
-    if (!popup) {
-      continue;
-    }
-    Document* document = popup->GetUncomposedDoc();
-    if (!document) {
-      continue;
-    }
-    nsPIDOMWindowOuter* window = document->GetWindow();
+    nsPIDOMWindowOuter* window = frame->PresContext()->Document()->GetWindow();
     if (!window) {
       continue;
     }
@@ -653,8 +644,9 @@ void nsXULPopupManager::AdjustPopupsOnWindowChange(
     }
   }
 
-  for (int32_t l = list.Length() - 1; l >= 0; l--) {
-    list[l]->SetPopupPosition(true);
+  for (nsMenuPopupFrame* popup : Reversed(list)) {
+    popup->SetPopupPosition(true);
+    popup->SchedulePendingWidgetMoveResize();
   }
 }
 

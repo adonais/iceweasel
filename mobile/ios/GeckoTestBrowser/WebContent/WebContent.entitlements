@@ -8,5 +8,7 @@
 	<true/>
 	<key>com.apple.developer.memory.transfer-accept</key>
 	<string>org.mozilla.ios.GeckoTestBrowser</string>
+	<key>com.apple.developer.kernel.extended-virtual-addressing</key>
+	<true/>
 </dict>
 </plist>

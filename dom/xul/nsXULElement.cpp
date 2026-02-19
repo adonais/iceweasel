@@ -102,7 +102,6 @@
 #include "nsIObjectOutputStream.h"
 #include "nsIRunnable.h"
 #include "nsIScriptContext.h"
-#include "nsISizeOf.h"
 #include "nsISupportsUtils.h"
 #include "nsIURI.h"
 #include "nsIXPConnect.h"
@@ -236,26 +235,7 @@ already_AddRefed<Element> nsXULElement::CreateFromPrototype(
   }
 
   nsXULElement* element = FromNode(baseElement);
-
-  if (aPrototype->mHasIdAttribute) {
-    element->SetHasID();
-  }
-  if (aPrototype->mHasClassAttribute) {
-    element->SetMayHaveClass();
-  }
-  if (aPrototype->mHasStyleAttribute) {
-    element->SetMayHaveStyle();
-  }
-
   element->MakeHeavyweight(aPrototype);
-
-  // Check each attribute on the prototype to see if we need to do
-  // any additional processing and hookup that would otherwise be
-  // done 'automagically' by SetAttr().
-  for (const auto& attribute : aPrototype->mAttributes) {
-    element->AddListenerForAttributeIfNeeded(attribute.mName);
-  }
-
   return baseElement.forget();
 }
 
@@ -518,12 +498,6 @@ void nsXULElement::AddListenerForAttributeIfNeeded(nsAtom* aLocalName) {
     nsAutoString value;
     GetAttr(aLocalName, value);
     SetEventHandler(aLocalName, value, true);
-  }
-}
-
-void nsXULElement::AddListenerForAttributeIfNeeded(const nsAttrName& aName) {
-  if (aName.IsAtom()) {
-    AddListenerForAttributeIfNeeded(aName.Atom());
   }
 }
 
@@ -1021,39 +995,12 @@ nsresult nsXULElement::AddPopupListener(nsAtom* aName) {
 //----------------------------------------------------------------------
 
 nsresult nsXULElement::MakeHeavyweight(nsXULPrototypeElement* aPrototype) {
-  if (!aPrototype) {
-    return NS_OK;
-  }
-
-  size_t i;
-  nsresult rv;
-  for (i = 0; i < aPrototype->mAttributes.Length(); ++i) {
-    nsXULPrototypeAttribute* protoattr = &aPrototype->mAttributes[i];
-    nsAttrValue attrValue;
-
-    // Style rules need to be cloned.
-    if (protoattr->mValue.Type() == nsAttrValue::eCSSDeclaration) {
-      DeclarationBlock* decl = protoattr->mValue.GetCSSDeclarationValue();
-      RefPtr<DeclarationBlock> declClone = decl->Clone();
-
-      nsString stringValue;
-      protoattr->mValue.ToString(stringValue);
-
-      attrValue.SetTo(declClone.forget(), &stringValue);
-    } else {
-      attrValue.SetTo(protoattr->mValue);
-    }
-
-    bool oldValueSet;
-    // XXX we might wanna have a SetAndTakeAttr that takes an nsAttrName
-    if (protoattr->mName.IsAtom()) {
-      rv = mAttrs.SetAndSwapAttr(protoattr->mName.Atom(), attrValue,
-                                 &oldValueSet);
-    } else {
-      rv = mAttrs.SetAndSwapAttr(protoattr->mName.NodeInfo(), attrValue,
-                                 &oldValueSet);
-    }
-    NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(aPrototype);
+  for (const auto& protoattr : aPrototype->mAttributes) {
+    nsAttrValue value(protoattr.mValue);
+    MOZ_TRY(SetParsedAttr(
+        protoattr.mName.NamespaceID(), protoattr.mName.LocalName(),
+        protoattr.mName.GetPrefix(), value, /* aNotify = */ false));
   }
   return NS_OK;
 }
@@ -1381,7 +1328,6 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
   }
 
   if (mAttributes[aPos].mName.Equals(nsGkAtoms::id) && !aValue.IsEmpty()) {
-    mHasIdAttribute = true;
     // Store id as atom.
     // id="" means that the element has no id. Not that it has
     // emptystring as id.
@@ -1399,13 +1345,11 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
 
     return NS_OK;
   } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::_class)) {
-    mHasClassAttribute = true;
     // Compute the element's class list
     mAttributes[aPos].mValue.ParseAtomArray(aValue);
 
     return NS_OK;
   } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::style)) {
-    mHasStyleAttribute = true;
     // Parse the element's 'style' attribute
 
     // This is basically duplicating what nsINode::NodePrincipal() does
@@ -1422,6 +1366,7 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
         aValue, data, eCompatibility_FullStandards, nullptr,
         StyleCssRuleType::Style);
     if (declaration) {
+      declaration->SetImmutable();
       mAttributes[aPos].mValue.SetTo(declaration.forget(), &aValue);
 
       return NS_OK;
@@ -2014,8 +1959,13 @@ void nsXULPrototypeScript::Set(JS::Stencil* aStencil) { mStencil = aStencil; }
 
 void nsXULPrototypeScript::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
                                                   size_t* aNodeSize) const {
-  if (nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mSrcURI)) {
-    *aNodeSize += iface->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+  // It is okay to include the size of mSrcURI here even though it might have
+  // strong references from elsewhere because the URI was created for this
+  // object, in XULContentSinkImpl::OpenScript() or
+  // nsXULPrototypeElement::Deserialize(). Only objects that created their own
+  // URI will call nsIURI::SizeOfIncludingThis().
+  if (mSrcURI) {
+    *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
   }
 }
 

@@ -55,19 +55,12 @@ std::unique_ptr<IceCandidate> IceCandidate::Create(absl::string_view mid,
   if (!ParseCandidate(sdp, &candidate, error, true)) {
     return nullptr;
   }
-  // TODO(bugs.webrtc.org/42233526): The Candidate::transport_name() property
-  // has been deprecated. At this level, the mid is already a property of
-  // IceCandidate and reduntant for Candidate. Remove this when removing
-  // Candidate::transport_name().
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  candidate.set_transport_name(mid);
-#pragma clang diagnostic pop
   return std::make_unique<IceCandidate>(mid, sdp_mline_index, candidate);
 }
 
 IceCandidateCollection IceCandidateCollection::Clone() const {
   IceCandidateCollection new_collection;
+  new_collection.candidates_.reserve(candidates_.size());
   for (const auto& candidate : candidates_) {
     new_collection.candidates_.push_back(std::make_unique<IceCandidate>(
         candidate->sdp_mid(), candidate->sdp_mline_index(),

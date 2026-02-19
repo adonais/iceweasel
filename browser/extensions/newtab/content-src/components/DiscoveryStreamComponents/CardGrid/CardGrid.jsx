@@ -10,7 +10,6 @@ import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
 import React, { useEffect, useRef } from "react";
 import { connect } from "react-redux";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
-const PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
@@ -125,7 +124,6 @@ export class _CardGrid extends React.PureComponent {
 
     const { topicsLoading } = DiscoveryStream;
     const mayHaveSectionsCards = prefs[PREF_SECTIONS_CARDS_ENABLED];
-    const mayHaveThumbsUpDown = prefs[PREF_THUMBS_UP_DOWN_ENABLED];
     const showTopics = prefs[PREF_TOPICS_ENABLED];
     const selectedTopics = prefs[PREF_TOPICS_SELECTED];
     const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
@@ -188,7 +186,6 @@ export class _CardGrid extends React.PureComponent {
             ctaButtonVariant={ctaButtonVariant}
             recommendation_id={rec.recommendation_id}
             firstVisibleTimestamp={this.props.firstVisibleTimestamp}
-            mayHaveThumbsUpDown={mayHaveThumbsUpDown}
             mayHaveSectionsCards={mayHaveSectionsCards}
             corpus_item_id={rec.corpus_item_id}
             scheduled_corpus_item_id={rec.scheduled_corpus_item_id}
@@ -199,6 +196,7 @@ export class _CardGrid extends React.PureComponent {
             isTimeSensitive={rec.isTimeSensitive}
             tabIndex={currentCardIndex === this.state.focusedIndex ? 0 : -1}
             onFocus={() => this.onCardFocus(currentCardIndex)}
+            attribution={rec.attribution}
           />
         );
       }

@@ -10,6 +10,7 @@
 #include "gfxMatrix.h"
 #include "gfxRect.h"
 #include "mozilla/DisplaySVGItem.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/ISVGDisplayableFrame.h"
 #include "nsIFrame.h"
 
@@ -91,13 +92,14 @@ class SVGGeometryFrame final : public nsIFrame, public ISVGDisplayableFrame {
                 imgDrawingParams& aImgParams) override;
   nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
   void ReflowSVG() override;
-  void NotifySVGChanged(uint32_t aFlags) override;
+  void NotifySVGChanged(ChangeFlags aFlags) override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
                               uint32_t aFlags) override;
   bool IsDisplayContainer() override { return false; }
 
-  enum { eRenderFill = 1, eRenderStroke = 2 };
-  void Render(gfxContext* aContext, uint32_t aRenderComponents,
+  enum class RenderFlag { Fill, Stroke };
+  using RenderFlags = EnumSet<RenderFlag>;
+  void Render(gfxContext* aContext, RenderFlags aRenderComponents,
               const gfxMatrix& aTransform, imgDrawingParams& aImgParams);
 
   bool CreateWebRenderCommands(

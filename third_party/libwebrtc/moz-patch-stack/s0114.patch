@@ -17,10 +17,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/506d4efaf2dc29472
  3 files changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 651ea6ac51..85aecb7b1e 100644
+index f501b517fd..0a6ccf4011 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
-@@ -554,6 +554,10 @@ rtc_library("desktop_capture") {
+@@ -557,6 +557,10 @@ rtc_library("desktop_capture") {
        "../../rtc_base:sanitizer",
        "../portal",
      ]

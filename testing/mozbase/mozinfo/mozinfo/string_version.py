@@ -14,7 +14,7 @@ class StringVersion(str):
     pat = re.compile(r"(\d+)|([^\d.]+)")
 
     def __init__(self, vstring):
-        super(StringVersion, self).__init__()
+        super().__init__()
 
         # We'll use unicode internally.
         # This check is mainly for python2 strings (which are bytes).

@@ -274,9 +274,9 @@ function appendFiltersForContentType(
  *        containing all the data used within this method.
  * @param win
  *        The window used for opening the file picker
- * @return Promise
- * @resolve a boolean. When true, it indicates that the file picker dialog
- *          is accepted.
+ * @returns {Promise<boolean>}
+ *   Resolves when the dialog is closed. When resolved to true, it indicates that
+ *   the file picker dialog is accepted.
  */
 function promiseTargetFile(aFpP, win) {
   return (async function () {

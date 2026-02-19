@@ -368,7 +368,10 @@ class ImportRowProcessor {
             summaryRow.login
           );
         } else if (summaryRow.result === "modified") {
-          Services.logins.modifyLogin(summaryRow.login, summaryRow.propBag);
+          await Services.logins.modifyLoginAsync(
+            summaryRow.login,
+            summaryRow.propBag
+          );
         }
       } catch (e) {
         console.error(e);

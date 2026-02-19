@@ -29,10 +29,10 @@
 #include <sys/prctl.h>
 #include "sqlite3.h"
 #include "Linker.h"
-#include "BaseProfiler.h"
 #include "application.ini.h"
 
 #include "mozilla/arm.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/Bootstrap.h"
 #include "mozilla/Printf.h"
 #include "mozilla/ProcessType.h"
@@ -135,7 +135,8 @@ void abortThroughJava(const char* msg) {
   env->PopLocalFrame(nullptr);
 }
 
-MOZ_CONSTINIT Bootstrap::UniquePtr gBootstrap;
+constinit Bootstrap::UniquePtr gBootstrap;
+
 #ifndef MOZ_FOLD_LIBS
 static void* sqlite_handle = nullptr;
 static void* nspr_handle = nullptr;

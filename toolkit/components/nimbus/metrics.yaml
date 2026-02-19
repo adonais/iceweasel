@@ -34,6 +34,7 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1983122
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997164
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995896
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2011286
     data_reviews: &targeting_context_data_reviews
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1928107
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1937207
@@ -46,6 +47,7 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1983122
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997164
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995896
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2011286
     notification_emails: &targeting_context_notification_emails
       - beth@mozilla.com
       - project-nimbus@mozilla.com
@@ -76,6 +78,7 @@ nimbus_targeting_environment:
       - technical
     type: labeled_counter
     labels:
+      - "browser.ai.control.default"
       - "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons"
       - "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features"
       - "browser.newtabpage.activity-stream.feeds.section.highlights"
@@ -178,6 +181,8 @@ nimbus_targeting_environment:
     structure:
       type: object
       properties:
+        browser__ai__control__default:
+          type: string
         browser__newtabpage__activity_stream__asrouter__userprefs__cfr__addons:
           type: boolean
         browser__newtabpage__activity_stream__asrouter__userprefs__cfr__features:
@@ -1043,10 +1048,12 @@ nimbus_events:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817481
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1955169
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2006752
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817481
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1955169
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2006752
     data_sensitivity:
       - technical
     notification_emails:
@@ -1054,6 +1061,7 @@ nimbus_events:
       - project-nimbus@mozilla.com
     expires: never
     disabled: true
+    send_in_pings: *targeting_context_pings
 
   migration:
     type: event

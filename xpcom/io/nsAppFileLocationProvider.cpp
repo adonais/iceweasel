@@ -25,7 +25,6 @@
 #  include <shlobj.h>
 #elif defined(XP_UNIX)
 #  include <unistd.h>
-#  include <stdlib.h>
 #  include <sys/param.h>
 #endif
 

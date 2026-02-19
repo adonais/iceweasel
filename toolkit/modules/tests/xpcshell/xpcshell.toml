@@ -116,6 +116,9 @@ skip-if = [
 ["test_Services.js"]
 
 ["test_UpdateUtils_updatechannel.js"]
+skip-if = [
+  "os == 'android'",
+]
 
 ["test_UpdateUtils_url.js"]
 run-if = [

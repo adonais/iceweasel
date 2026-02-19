@@ -844,7 +844,7 @@ export var PreferenceExperiments = {
    * Get the experiment object for the experiment.
    *
    * @param {string} experimentSlug
-   * @resolves {Experiment}
+   * @returns {Promise<Experiment>}
    * @rejects {Error}
    *   If no preference experiment exists with the given slug.
    */
@@ -863,7 +863,7 @@ export var PreferenceExperiments = {
   /**
    * Get a list of all stored experiment objects.
    *
-   * @resolves {Experiment[]}
+   * @returns {Promise<Experiment[]>}
    */
   async getAll() {
     const store = await ensureStorage();
@@ -875,7 +875,7 @@ export var PreferenceExperiments = {
   /**
    * Get a list of experiment objects for all active experiments.
    *
-   * @resolves {Experiment[]}
+   * @returns {Promise<Experiment[]>}
    */
   async getAllActive() {
     const store = await ensureStorage();
@@ -888,7 +888,8 @@ export var PreferenceExperiments = {
    * Check if an experiment exists with the given slug.
    *
    * @param {string} experimentSlug
-   * @resolves {boolean} True if the experiment exists, false if it doesn't.
+   * @returns {Promise<boolean>}
+   *   Resolves to true if the experiment exists, false if it doesn't.
    */
   async has(experimentSlug) {
     log.debug(`PreferenceExperiments.has(${experimentSlug})`);

@@ -13,6 +13,7 @@ import android.os.Binder;
 import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
+import android.os.Process;
 import android.os.RemoteException;
 import android.system.ErrnoException;
 import android.system.Os;
@@ -53,7 +54,8 @@ public final class CrashHelper extends Service {
       // "steal" the crash report of another main process. We should add
       // additional separation within the crash generation code to prevent this
       // from happening even though it's very unlikely.
-      CrashHelper.crash_generator(breakpadFd.detachFd(), minidumpPath, serverFd.detachFd());
+      CrashHelper.crash_generator(
+          Process.myPid(), breakpadFd.detachFd(), minidumpPath, serverFd.detachFd());
 
       return false;
     }
@@ -174,7 +176,8 @@ public final class CrashHelper extends Service {
   // `stopWithTask` flag set in the manifest, so the service manager will
   // tear it down for us.
 
-  protected static native void crash_generator(int breakpadFd, String minidumpPath, int serverFd);
+  protected static native void crash_generator(
+      int clientPid, int breakpadFd, String minidumpPath, int serverFd);
 
   protected static native boolean set_breakpad_opts(int breakpadFd);
 }

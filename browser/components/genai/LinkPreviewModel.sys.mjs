@@ -26,9 +26,12 @@ const BOS_TOKEN = 1;
 // Token id for end of sequence
 const EOS_TOKEN = 2;
 
+const FEATURE_ID = "link-preview";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
+  FEATURES: "chrome://global/content/ml/EngineProcess.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
   BlockListManager: "chrome://global/content/ml/Utils.sys.mjs",
   RemoteSettingsManager: "chrome://global/content/ml/Utils.sys.mjs",
@@ -131,6 +134,14 @@ export const LinkPreviewModel = {
    * @type {BlockListManager}
    */
   blockListManager: null,
+
+  get id() {
+    return FEATURE_ID;
+  },
+
+  get engineId() {
+    return lazy.FEATURES[this.id].engineId;
+  },
 
   /**
    * Blocked token list
@@ -406,7 +417,8 @@ export const LinkPreviewModel = {
       engine = await this.createEngine(
         {
           backend: "best-llama",
-          engineId: "wllamapreview",
+          engineId: this.engineId,
+          featureId: this.id,
           kvCacheDtype: "q8_0",
           modelFile: "smollm2-360m-instruct-q8_0.gguf",
           modelHubRootUrl: "https://model-hub.mozilla.org",

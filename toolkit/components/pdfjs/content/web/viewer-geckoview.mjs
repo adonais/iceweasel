@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.445
- * pdfjsBuild = ec5330f78
+ * pdfjsVersion = 5.4.551
+ * pdfjsBuild = 29413be02
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -584,6 +584,11 @@ function apiPageModeToSidebarView(mode) {
 function toggleCheckedBtn(button, toggle, view = null) {
   button.classList.toggle("toggled", toggle);
   button.setAttribute("aria-checked", toggle);
+  view?.classList.toggle("hidden", !toggle);
+}
+function toggleSelectedBtn(button, toggle, view = null) {
+  button.classList.toggle("selected", toggle);
+  button.setAttribute("aria-selected", toggle);
   view?.classList.toggle("hidden", !toggle);
 }
 function toggleExpandedBtn(button, toggle, view = null) {
@@ -2243,10 +2248,10 @@ const PDFFindBar = null;
 const PDFLayerViewer = null;
 const PDFOutlineViewer = null;
 const PDFPresentationMode = null;
-const PDFSidebar = null;
 const PDFThumbnailViewer = null;
 const SecondaryToolbar = null;
 const SignatureManager = null;
+const ViewsManager = null;
 
 ;// ./web/caret_browsing.js
 const PRECISION = 1e-1;
@@ -2456,13 +2461,17 @@ class CaretBrowsingMode {
 
 ;// ./web/sidebar.js
 
+const RESIZE_TIMEOUT = 400;
 class Sidebar {
-  #minWidth = 0;
-  #maxWidth = 0;
   #initialWidth = 0;
   #width = 0;
   #coefficient;
-  #visible = false;
+  #resizeTimeout = null;
+  #resizer;
+  #isResizerOnTheLeft;
+  #isKeyboardResizing = false;
+  #resizeObserver;
+  #prevX = 0;
   constructor({
     sidebar,
     resizer,
@@ -2470,41 +2479,57 @@ class Sidebar {
   }, ltr, isResizerOnTheLeft) {
     this._sidebar = sidebar;
     this.#coefficient = ltr === isResizerOnTheLeft ? -1 : 1;
+    this.#resizer = resizer;
+    this.#isResizerOnTheLeft = isResizerOnTheLeft;
     const style = window.getComputedStyle(sidebar);
-    this.#minWidth = parseFloat(style.getPropertyValue("--sidebar-min-width"));
-    this.#maxWidth = parseFloat(style.getPropertyValue("--sidebar-max-width"));
     this.#initialWidth = this.#width = parseFloat(style.getPropertyValue("--sidebar-width"));
-    this.#makeSidebarResizable(resizer, isResizerOnTheLeft);
-    toggleButton.addEventListener("click", this.toggle.bind(this));
-    sidebar.hidden = true;
-  }
-  #makeSidebarResizable(resizer, isResizerOnTheLeft) {
-    resizer.ariaValueMin = this.#minWidth;
-    resizer.ariaValueMax = this.#maxWidth;
+    resizer.ariaValueMin = parseFloat(style.getPropertyValue("--sidebar-min-width"));
+    resizer.ariaValueMax = parseFloat(style.getPropertyValue("--sidebar-max-width"));
     resizer.ariaValueNow = this.#width;
+    this.#makeSidebarResizable();
+    toggleButton.addEventListener("click", this.toggle.bind(this));
+    this._isOpen = false;
+    sidebar.hidden = true;
+    this.#resizeObserver = new ResizeObserver(([{
+      borderBoxSize: [{
+        inlineSize
+      }]
+    }]) => {
+      if (!isNaN(this.#prevX)) {
+        this.#prevX += this.#coefficient * (inlineSize - this.#width);
+      }
+      this.#setWidth(inlineSize);
+    });
+    this.#resizeObserver.observe(sidebar);
+  }
+  #makeSidebarResizable() {
+    const sidebarStyle = this._sidebar.style;
     let pointerMoveAC;
     const cancelResize = () => {
-      this.#width = MathClamp(this.#width, this.#minWidth, this.#maxWidth);
+      this.#resizeTimeout = null;
       this._sidebar.classList.remove("resizing");
       pointerMoveAC?.abort();
       pointerMoveAC = null;
+      this.#isKeyboardResizing = false;
+      this.onStopResizing();
+      this.#prevX = NaN;
     };
-    resizer.addEventListener("pointerdown", e => {
+    this.#resizer.addEventListener("pointerdown", e => {
       if (pointerMoveAC) {
         cancelResize();
         return;
       }
+      this.onStartResizing();
       const {
         clientX
       } = e;
       stopEvent(e);
-      let prevX = clientX;
+      this.#prevX = clientX;
       pointerMoveAC = new AbortController();
       const {
         signal
       } = pointerMoveAC;
       const sidebar = this._sidebar;
-      const sidebarStyle = sidebar.style;
       sidebar.classList.add("resizing");
       const parentStyle = sidebar.parentElement.style;
       parentStyle.minWidth = 0;
@@ -2516,11 +2541,7 @@ class Sidebar {
           return;
         }
         stopEvent(ev);
-        const {
-          clientX: x
-        } = ev;
-        this.#setNewWidth(x - prevX, parentStyle, resizer, sidebarStyle, isResizerOnTheLeft, false);
-        prevX = x;
+        sidebarStyle.width = `${Math.round(this.#width + this.#coefficient * (ev.clientX - this.#prevX))}px`;
       }, {
         signal,
         capture: true
@@ -2537,39 +2558,49 @@ class Sidebar {
         signal
       });
     });
-    resizer.addEventListener("keydown", e => {
+    this.#resizer.addEventListener("keydown", e => {
       const {
         key
       } = e;
       const isArrowLeft = key === "ArrowLeft";
       if (isArrowLeft || key === "ArrowRight") {
+        if (!this.#isKeyboardResizing) {
+          this._sidebar.classList.add("resizing");
+          this.#isKeyboardResizing = true;
+          this.onStartResizing();
+        }
         const base = e.ctrlKey || e.metaKey ? 10 : 1;
         const dx = base * (isArrowLeft ? -1 : 1);
-        this.#setNewWidth(dx, this._sidebar.parentElement.style, resizer, this._sidebar.style, isResizerOnTheLeft, true);
+        clearTimeout(this.#resizeTimeout);
+        this.#resizeTimeout = setTimeout(cancelResize, RESIZE_TIMEOUT);
+        sidebarStyle.width = `${Math.round(this.#width + this.#coefficient * dx)}px`;
         stopEvent(e);
       }
     });
   }
-  #setNewWidth(dx, parentStyle, resizer, sidebarStyle, isResizerOnTheLeft, isFromKeyboard) {
-    let newWidth = this.#width + this.#coefficient * dx;
-    if (!isFromKeyboard) {
-      this.#width = newWidth;
+  #setWidth(newWidth) {
+    this.#width = newWidth;
+    this.#resizer.ariaValueNow = Math.round(newWidth);
+    if (this.#isResizerOnTheLeft) {
+      this._sidebar.parentElement.style.insetInlineStart = `${(this.#initialWidth - newWidth).toFixed(3)}px`;
     }
-    if ((newWidth > this.#maxWidth || newWidth < this.#minWidth) && (this.#width === this.#maxWidth || this.#width === this.#minWidth)) {
-      return;
-    }
-    newWidth = MathClamp(newWidth, this.#minWidth, this.#maxWidth);
-    if (isFromKeyboard) {
-      this.#width = newWidth;
-    }
-    resizer.ariaValueNow = Math.round(newWidth);
-    sidebarStyle.width = `${newWidth.toFixed(3)}px`;
-    if (isResizerOnTheLeft) {
-      parentStyle.insetInlineStart = `${(this.#initialWidth - newWidth).toFixed(3)}px`;
-    }
+    this.onResizing(newWidth);
   }
-  toggle() {
-    this._sidebar.hidden = !(this.#visible = !this.#visible);
+  get width() {
+    return this.#width;
+  }
+  set width(newWidth) {
+    this._sidebar.style.width = `${newWidth}px`;
+  }
+  onStartResizing() {}
+  onStopResizing() {}
+  onResizing(_newWidth) {}
+  toggle(visibility = !this._isOpen) {
+    this._sidebar.hidden = !(this._isOpen = visibility);
+  }
+  destroy() {
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = null;
   }
 }
 
@@ -3859,7 +3890,7 @@ const CHARACTERS_TO_NORMALIZE = {
 const DIACRITICS_EXCEPTION = new Set([0x3099, 0x309a, 0x094d, 0x09cd, 0x0a4d, 0x0acd, 0x0b4d, 0x0bcd, 0x0c4d, 0x0ccd, 0x0d3b, 0x0d3c, 0x0d4d, 0x0dca, 0x0e3a, 0x0eba, 0x0f84, 0x1039, 0x103a, 0x1714, 0x1734, 0x17d2, 0x1a60, 0x1b44, 0x1baa, 0x1bab, 0x1bf2, 0x1bf3, 0x2d7f, 0xa806, 0xa82c, 0xa8c4, 0xa953, 0xa9c0, 0xaaf6, 0xabed, 0x0c56, 0x0f71, 0x0f72, 0x0f7a, 0x0f7b, 0x0f7c, 0x0f7d, 0x0f80, 0x0f74]);
 let DIACRITICS_EXCEPTION_STR;
 const DIACRITICS_REG_EXP = /\p{M}+/gu;
-const SPECIAL_CHARS_REG_EXP = /([*+^${}()|[\]\\])|(\p{P}+)|(\s+)|(\p{M})|(\p{L})/gu;
+const SPECIAL_CHARS_REG_EXP = /([+^$|])|(\p{P}+)|(\s+)|(\p{M})|(\p{L})/gu;
 const NOT_DIACRITIC_FROM_END_REG_EXP = /([^\p{M}])\p{M}*$/u;
 const NOT_DIACRITIC_FROM_START_REG_EXP = /^\p{M}*([^\p{M}])/u;
 const SYLLABLES_REG_EXP = /[\uAC00-\uD7AF\uFA6C\uFACF-\uFAD1\uFAD5-\uFAD7]+/g;
@@ -4269,10 +4300,10 @@ class PDFFindController {
     };
     query = query.replaceAll(SPECIAL_CHARS_REG_EXP, (match, p1, p2, p3, p4, p5) => {
       if (p1) {
-        return addExtraWhitespaces(p1, `\\${p1}`);
+        return addExtraWhitespaces(p1, RegExp.escape(p1));
       }
       if (p2) {
-        return addExtraWhitespaces(p2, p2.replaceAll(/[.?]/g, "\\$&"));
+        return addExtraWhitespaces(p2, RegExp.escape(p2));
       }
       if (p3) {
         return "[ ]+";
@@ -6244,8 +6275,9 @@ function createLinkAnnotation({
 class Autolinker {
   static #index = 0;
   static #regex;
+  static #numericTLDRegex;
   static findLinks(text) {
-    this.#regex ??= /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|\b[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[\p{P}<>]]+(?:\.[\S--[\p{P}<>]]+)+)/gmv;
+    this.#regex ??= /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|(?=\p{L})[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[\p{P}<>]]+(?:\.[\S--[\p{P}<>]]+)+)/gmv;
     const [normalizedText, diffs] = normalize(text, {
       ignoreDashEOL: true
     });
@@ -6256,11 +6288,17 @@ class Autolinker {
       let raw;
       if (url.startsWith("www.") || url.startsWith("http://") || url.startsWith("https://")) {
         raw = url;
-      } else if (URL.canParse(`http://${emailDomain}`)) {
-        raw = url.startsWith("mailto:") ? url : `mailto:${url}`;
-      } else {
-        continue;
+      } else if (emailDomain) {
+        const hostname = URL.parse(`http://${emailDomain}`)?.hostname;
+        if (!hostname) {
+          continue;
+        }
+        this.#numericTLDRegex ??= /\.\d+$/;
+        if (this.#numericTLDRegex.test(hostname)) {
+          continue;
+        }
       }
+      raw ??= url.startsWith("mailto:") ? url : `mailto:${url}`;
       const absoluteURL = createValidAbsoluteUrl(raw, null, {
         addDefaultProtocol: true
       });
@@ -6799,6 +6837,8 @@ class StructTreeLayerBuilder {
   #elementAttributes = new Map();
   #rawDims;
   #elementsToAddToTextLayer = null;
+  #elementsToHideInTextLayer = null;
+  #elementsToStealFromTextLayer = null;
   constructor(pdfPage, rawDims) {
     this.#promise = pdfPage.getStructTree();
     this.#rawDims = rawDims;
@@ -6907,15 +6947,43 @@ class StructTreeLayerBuilder {
     style.top = `${calc}${pageHeight - bbox[3] + pageY}px)`;
     return true;
   }
-  addElementsToTextLayer() {
-    if (!this.#elementsToAddToTextLayer) {
-      return;
+  updateTextLayer() {
+    if (this.#elementsToAddToTextLayer) {
+      for (const [id, img] of this.#elementsToAddToTextLayer) {
+        document.getElementById(id)?.append(img);
+      }
+      this.#elementsToAddToTextLayer.clear();
+      this.#elementsToAddToTextLayer = null;
     }
-    for (const [id, img] of this.#elementsToAddToTextLayer) {
-      document.getElementById(id)?.append(img);
+    if (this.#elementsToHideInTextLayer) {
+      for (const id of this.#elementsToHideInTextLayer) {
+        const elem = document.getElementById(id);
+        if (elem) {
+          elem.ariaHidden = true;
+        }
+      }
+      this.#elementsToHideInTextLayer.length = 0;
+      this.#elementsToHideInTextLayer = null;
     }
-    this.#elementsToAddToTextLayer.clear();
-    this.#elementsToAddToTextLayer = null;
+    if (this.#elementsToStealFromTextLayer) {
+      for (let i = 0, ii = this.#elementsToStealFromTextLayer.length; i < ii; i += 2) {
+        const element = this.#elementsToStealFromTextLayer[i];
+        const ids = this.#elementsToStealFromTextLayer[i + 1];
+        let textContent = "";
+        for (const id of ids) {
+          const elem = document.getElementById(id);
+          if (elem) {
+            textContent += elem.textContent.trim() || "";
+            elem.ariaHidden = "true";
+          }
+        }
+        if (textContent) {
+          element.textContent = textContent;
+        }
+      }
+      this.#elementsToStealFromTextLayer.length = 0;
+      this.#elementsToStealFromTextLayer = null;
+    }
   }
   #walk(node) {
     if (!node) {
@@ -6926,7 +6994,21 @@ class StructTreeLayerBuilder {
       const {
         role
       } = node;
-      element = MathMLElements.has(role) ? document.createElementNS(MathMLNamespace, role) : document.createElement("span");
+      if (MathMLElements.has(role)) {
+        element = document.createElementNS(MathMLNamespace, role);
+        const ids = [];
+        (this.#elementsToStealFromTextLayer ||= []).push(element, ids);
+        for (const {
+          type,
+          id
+        } of node.children || []) {
+          if (type === "content" && id) {
+            ids.push(id);
+          }
+        }
+      } else {
+        element = document.createElement("span");
+      }
       const match = role.match(HEADING_PATTERN);
       if (match) {
         element.setAttribute("role", "heading");
@@ -6942,9 +7024,19 @@ class StructTreeLayerBuilder {
           element.setHTML(node.mathML, {
             sanitizer: MathMLSanitizer.sanitizer
           });
+          for (const {
+            id
+          } of node.children || []) {
+            if (!id) {
+              continue;
+            }
+            (this.#elementsToHideInTextLayer ||= []).push(id);
+          }
+          delete node.alt;
         }
         if (!node.mathML && node.children.length === 1 && node.children[0].role !== "math") {
           element = document.createElementNS(MathMLNamespace, "math");
+          delete node.alt;
         }
       }
     }
@@ -7750,7 +7842,7 @@ class PDFPageView extends BasePDFPageView {
     const treeDom = await this.structTreeLayer?.render();
     if (treeDom) {
       this.l10n.pause();
-      this.structTreeLayer?.addElementsToTextLayer();
+      this.structTreeLayer?.updateTextLayer();
       if (this.canvas && treeDom.parentNode !== this.canvas) {
         this.canvas.append(treeDom);
       }
@@ -8366,7 +8458,7 @@ class PDFViewer {
   #textLayerMode = TextLayerMode.ENABLE;
   #viewerAlert = null;
   constructor(options) {
-    const viewerVersion = "5.4.445";
+    const viewerVersion = "5.4.551";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9865,7 +9957,7 @@ class PDFViewer {
     const updater = async () => {
       this.#cleanupSwitchAnnotationEditorMode();
       this.#annotationEditorMode = mode;
-      await this.#annotationEditorUIManager.updateMode(mode, editId, isFromKeyboard, mustEnterInEditMode, editComment);
+      await this.#annotationEditorUIManager.updateMode(mode, editId, true, isFromKeyboard, mustEnterInEditMode, editComment);
       if (mode !== this.#annotationEditorMode || pdfDocument !== this.pdfDocument) {
         return;
       }
@@ -10109,7 +10201,7 @@ const PDFViewerApplication = {
   pdfLinkService: null,
   pdfTextExtractor: null,
   pdfHistory: null,
-  pdfSidebar: null,
+  viewsManager: null,
   pdfOutlineViewer: null,
   pdfAttachmentViewer: null,
   pdfLayerViewer: null,
@@ -10384,9 +10476,9 @@ const PDFViewerApplication = {
     renderingQueue.setViewer(pdfViewer);
     linkService.setViewer(pdfViewer);
     pdfScriptingManager.setViewer(pdfViewer);
-    if (appConfig.sidebar?.thumbnailView) {
+    if (appConfig.viewsManager?.thumbnailsView) {
       this.pdfThumbnailViewer = new PDFThumbnailViewer({
-        container: appConfig.sidebar.thumbnailView,
+        container: appConfig.viewsManager.thumbnailsView,
         eventBus,
         renderingQueue,
         linkService,
@@ -10459,38 +10551,38 @@ const PDFViewerApplication = {
     if (appConfig.passwordOverlay) {
       this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay, overlayManager, this.isViewerEmbedded);
     }
-    if (appConfig.sidebar?.outlineView) {
+    if (appConfig.viewsManager?.outlinesView) {
       this.pdfOutlineViewer = new PDFOutlineViewer({
-        container: appConfig.sidebar.outlineView,
+        container: appConfig.viewsManager.outlinesView,
         eventBus,
         l10n,
         linkService,
         downloadManager
       });
     }
-    if (appConfig.sidebar?.attachmentsView) {
+    if (appConfig.viewsManager?.attachmentsView) {
       this.pdfAttachmentViewer = new PDFAttachmentViewer({
-        container: appConfig.sidebar.attachmentsView,
+        container: appConfig.viewsManager.attachmentsView,
         eventBus,
         l10n,
         downloadManager
       });
     }
-    if (appConfig.sidebar?.layersView) {
+    if (appConfig.viewsManager?.layersView) {
       this.pdfLayerViewer = new PDFLayerViewer({
-        container: appConfig.sidebar.layersView,
+        container: appConfig.viewsManager.layersView,
         eventBus,
         l10n
       });
     }
-    if (appConfig.sidebar) {
-      this.pdfSidebar = new PDFSidebar({
-        elements: appConfig.sidebar,
+    if (appConfig.viewsManager) {
+      this.viewsManager = new ViewsManager({
+        elements: appConfig.viewsManager,
         eventBus,
         l10n
       });
-      this.pdfSidebar.onToggled = this.forceRendering.bind(this);
-      this.pdfSidebar.onUpdateThumbnails = () => {
+      this.viewsManager.onToggled = this.forceRendering.bind(this);
+      this.viewsManager.onUpdateThumbnails = () => {
         for (const pageView of pdfViewer.getCachedPageViews()) {
           if (pageView.renderingState === RenderingStates.FINISHED) {
             this.pdfThumbnailViewer.getThumbnail(pageView.id - 1)?.setImage(pageView);
@@ -10702,7 +10794,7 @@ const PDFViewerApplication = {
     this._hasAnnotationEditors = false;
     promises.push(this.pdfScriptingManager.destroyPromise, this.passwordPrompt.close());
     this.setTitle();
-    this.pdfSidebar?.reset();
+    this.viewsManager?.reset();
     this.pdfOutlineViewer?.reset();
     this.pdfAttachmentViewer?.reset();
     this.pdfLayerViewer?.reset();
@@ -11172,7 +11264,7 @@ const PDFViewerApplication = {
       }
     };
     this.isInitialViewSet = true;
-    this.pdfSidebar?.setInitialView(sidebarView);
+    this.viewsManager?.setInitialView(sidebarView);
     setViewerModes(scrollMode, spreadMode);
     if (this.initialBookmark) {
       setRotation(this.initialRotation);
@@ -11199,7 +11291,7 @@ const PDFViewerApplication = {
   },
   forceRendering() {
     this.pdfRenderingQueue.printing = !!this.printService;
-    this.pdfRenderingQueue.isThumbnailViewEnabled = this.pdfSidebar?.visibleView === SidebarView.THUMBS;
+    this.pdfRenderingQueue.isThumbnailViewEnabled = this.viewsManager?.visibleView === SidebarView.THUMBS;
     this.pdfRenderingQueue.renderHighestPriority();
   },
   beforePrint() {
@@ -11492,7 +11584,7 @@ function onPageRendered({
   if (pageNumber === this.page) {
     this.toolbar?.updateLoadingIndicatorState(false);
   }
-  if (!isDetailView && this.pdfSidebar?.visibleView === SidebarView.THUMBS) {
+  if (!isDetailView && this.viewsManager?.visibleView === SidebarView.THUMBS) {
     const pageView = this.pdfViewer.getPageView(pageNumber - 1);
     const thumbnailView = this.pdfThumbnailViewer?.getThumbnail(pageNumber - 1);
     if (pageView) {
@@ -11528,7 +11620,7 @@ function onPageMode({
       console.error('Invalid "pagemode" hash parameter: ' + mode);
       return;
   }
-  this.pdfSidebar?.switchView(view, true);
+  this.viewsManager?.switchView(view, true);
 }
 function onNamedAction(evt) {
   switch (evt.action) {
@@ -11680,7 +11772,7 @@ function onPageChanging({
 }) {
   this.toolbar?.setPageNumber(pageNumber, pageLabel);
   this.secondaryToolbar?.setPageNumber(pageNumber);
-  if (this.pdfSidebar?.visibleView === SidebarView.THUMBS) {
+  if (this.viewsManager?.visibleView === SidebarView.THUMBS) {
     this.pdfThumbnailViewer?.scrollThumbnailIntoView(pageNumber);
   }
   const currentPage = this.pdfViewer.getPageView(pageNumber - 1);
@@ -11964,7 +12056,7 @@ function onKeyDown(evt) {
         this.rotatePages(90);
         break;
       case 115:
-        this.pdfSidebar?.toggle();
+        this.viewsManager?.toggle();
         break;
     }
     if (turnPage !== 0 && (!turnOnlyIfPageFit || pdfViewer.currentScaleValue === "page-fit")) {

@@ -18,7 +18,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 
-#include <cstdint>
 #include <cstring>
 #include <limits>
 #include <type_traits>

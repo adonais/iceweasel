@@ -406,7 +406,7 @@ class StoreBuffer {
 #endif
 
   template <typename Buffer, typename Edge>
-  void unput(Buffer& buffer, const Edge& edge) {
+  void unputEdge(Buffer& buffer, const Edge& edge) {
     checkAccess();
     if (!isEnabled()) {
       return;
@@ -418,7 +418,7 @@ class StoreBuffer {
   }
 
   template <typename Buffer, typename Edge>
-  void put(Buffer& buffer, const Edge& edge, JS::GCReason overflowReason) {
+  void putEdge(Buffer& buffer, const Edge& edge, JS::GCReason overflowReason) {
     checkAccess();
     if (!isEnabled()) {
       return;
@@ -432,6 +432,23 @@ class StoreBuffer {
 
     PutResult r = buffer.put(edge);
 
+    if (MOZ_UNLIKELY(r == PutResult::AboutToOverflow)) {
+      setAboutToOverflow(overflowReason);
+    }
+  }
+
+  template <typename Buffer, typename Edge>
+  void putEdgeFromTenured(Buffer& buffer, const Edge& edge,
+                          JS::GCReason overflowReason) {
+    MOZ_ASSERT(edge.maybeInRememberedSet(nursery_));
+    checkAccess();
+
+    if (!isEnabled()) {
+      return;
+    }
+
+    mozilla::ReentrancyGuard g(*this);
+    PutResult r = buffer.put(edge);
     if (MOZ_UNLIKELY(r == PutResult::AboutToOverflow)) {
       setAboutToOverflow(overflowReason);
     }
@@ -492,34 +509,40 @@ class StoreBuffer {
 
   /* Insert a single edge into the buffer/remembered set. */
   void putValue(JS::Value* vp) {
-    put(bufferVal, ValueEdge(vp), JS::GCReason::FULL_VALUE_BUFFER);
+    putEdge(bufferVal, ValueEdge(vp), JS::GCReason::FULL_VALUE_BUFFER);
   }
-  void unputValue(JS::Value* vp) { unput(bufferVal, ValueEdge(vp)); }
+  void unputValue(JS::Value* vp) { unputEdge(bufferVal, ValueEdge(vp)); }
 
   void putCell(JSString** strp) {
-    put(bufStrCell, StringPtrEdge(strp),
-        JS::GCReason::FULL_CELL_PTR_STR_BUFFER);
+    putEdge(bufStrCell, StringPtrEdge(strp),
+            JS::GCReason::FULL_CELL_PTR_STR_BUFFER);
   }
-  void unputCell(JSString** strp) { unput(bufStrCell, StringPtrEdge(strp)); }
+  void unputCell(JSString** strp) {
+    unputEdge(bufStrCell, StringPtrEdge(strp));
+  }
 
   void putCell(JS::BigInt** bip) {
-    put(bufBigIntCell, BigIntPtrEdge(bip),
-        JS::GCReason::FULL_CELL_PTR_BIGINT_BUFFER);
+    putEdge(bufBigIntCell, BigIntPtrEdge(bip),
+            JS::GCReason::FULL_CELL_PTR_BIGINT_BUFFER);
   }
-  void unputCell(JS::BigInt** bip) { unput(bufBigIntCell, BigIntPtrEdge(bip)); }
+  void unputCell(JS::BigInt** bip) {
+    unputEdge(bufBigIntCell, BigIntPtrEdge(bip));
+  }
 
   void putCell(JSObject** strp) {
-    put(bufObjCell, ObjectPtrEdge(strp),
-        JS::GCReason::FULL_CELL_PTR_OBJ_BUFFER);
+    putEdge(bufObjCell, ObjectPtrEdge(strp),
+            JS::GCReason::FULL_CELL_PTR_OBJ_BUFFER);
   }
-  void unputCell(JSObject** strp) { unput(bufObjCell, ObjectPtrEdge(strp)); }
+  void unputCell(JSObject** strp) {
+    unputEdge(bufObjCell, ObjectPtrEdge(strp));
+  }
 
   void putCell(js::GetterSetter** gsp) {
-    put(bufGetterSetterCell, GetterSetterPtrEdge(gsp),
-        JS::GCReason::FULL_CELL_PTR_GETTER_SETTER_BUFFER);
+    putEdge(bufGetterSetterCell, GetterSetterPtrEdge(gsp),
+            JS::GCReason::FULL_CELL_PTR_GETTER_SETTER_BUFFER);
   }
   void unputCell(js::GetterSetter** gsp) {
-    unput(bufGetterSetterCell, GetterSetterPtrEdge(gsp));
+    unputEdge(bufGetterSetterCell, GetterSetterPtrEdge(gsp));
   }
 
   void putSlot(NativeObject* obj, int kind, uint32_t start, uint32_t count) {
@@ -527,16 +550,20 @@ class StoreBuffer {
     if (bufferSlot.last_.touches(edge)) {
       bufferSlot.last_.merge(edge);
     } else {
-      put(bufferSlot, edge, JS::GCReason::FULL_SLOT_BUFFER);
+      putEdge(bufferSlot, edge, JS::GCReason::FULL_SLOT_BUFFER);
     }
   }
 
   void putWasmAnyRef(wasm::AnyRef* vp) {
-    put(bufferWasmAnyRef, WasmAnyRefEdge(vp),
-        JS::GCReason::FULL_WASM_ANYREF_BUFFER);
+    putEdge(bufferWasmAnyRef, WasmAnyRefEdge(vp),
+            JS::GCReason::FULL_WASM_ANYREF_BUFFER);
+  }
+  void putWasmAnyRefEdgeFromTenured(wasm::AnyRef* vp) {
+    putEdgeFromTenured(bufferWasmAnyRef, WasmAnyRefEdge(vp),
+                       JS::GCReason::FULL_WASM_ANYREF_BUFFER);
   }
   void unputWasmAnyRef(wasm::AnyRef* vp) {
-    unput(bufferWasmAnyRef, WasmAnyRefEdge(vp));
+    unputEdge(bufferWasmAnyRef, WasmAnyRefEdge(vp));
   }
 
   static inline bool isInWholeCellBuffer(Cell* cell);
@@ -549,7 +576,7 @@ class StoreBuffer {
   /* Insert an entry into the generic buffer. */
   template <typename T>
   void putGeneric(const T& t) {
-    put(bufferGeneric, t, JS::GCReason::FULL_GENERIC_BUFFER);
+    putEdge(bufferGeneric, t, JS::GCReason::FULL_GENERIC_BUFFER);
   }
 
   void setMayHavePointersToDeadCells() { mayHavePointersToDeadCells_ = true; }

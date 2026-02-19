@@ -86,14 +86,16 @@ fun Fragment.showToolbar(title: String) {
  * Throws if the fragment is not attached to an [AppCompatActivity].
  *
  * @param title The title of the toolbar.
+ * @param contentDescription The content description of the icon button for accessibility.
  * @param iconResId The resource ID of the icon to be displayed.
  * @param onClick The click event for the icon button.
  */
 fun Fragment.showToolbarWithIconButton(
-        title: String,
-        iconResId: Int,
-        onClick: () -> Unit,
- ) {
+    title: String,
+    contentDescription: String,
+    iconResId: Int,
+    onClick: () -> Unit,
+) {
     val activity = requireActivity() as AppCompatActivity
     activity.title = title
     activity.setNavigationIcon(iconsR.drawable.mozac_ic_back_24)
@@ -106,6 +108,7 @@ fun Fragment.showToolbarWithIconButton(
 
             val item = menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "")
             item.setIcon(iconResId)
+            item.contentDescription = contentDescription
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
             item.setOnMenuItemClickListener {
                 onClick()

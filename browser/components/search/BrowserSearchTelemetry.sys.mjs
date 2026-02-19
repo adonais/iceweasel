@@ -48,6 +48,7 @@ class BrowserSearchTelemetryHandler {
     ["urlbar-persisted", "urlbar_persisted"],
     ["urlbar-searchmode", "urlbar_searchmode"],
     ["webextension", "webextension"],
+    ["aiwindow_assistant", "aiwindow_assistant"],
   ]);
 
   /**

@@ -20,8 +20,6 @@ skip-if = [
 
 ["test_restore_sidebar_automatic.py"]
 
-["test_restore_split_view.py"]
-
 ["test_restore_windows_after_close_last_tabs.py"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",

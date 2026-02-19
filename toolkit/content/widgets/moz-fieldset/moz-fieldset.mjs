@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, ifDefined } from "../vendor/lit.all.mjs";
+import { classMap, html, ifDefined } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
 /**
@@ -11,9 +11,9 @@ import { MozLitElement } from "../lit-utils.mjs";
  * @type {Record<number, (label: string) => ReturnType<typeof html>>}
  */
 const HEADING_LEVEL_TEMPLATES = {
-  1: label => html`<h1>${label}</h1>`,
-  2: label => html`<h2>${label}</h2>`,
-  3: label => html`<h3>${label}</h3>`,
+  1: label => html`<h1 class="text-box-trim-start">${label}</h1>`,
+  2: label => html`<h2 class="text-box-trim-start">${label}</h2>`,
+  3: label => html`<h3 class="text-box-trim-start">${label}</h3>`,
   4: label => html`<h4>${label}</h4>`,
   5: label => html`<h5>${label}</h5>`,
   6: label => html`<h6>${label}</h6>`,
@@ -106,10 +106,10 @@ export default class MozFieldset extends MozLitElement {
 
   descriptionTemplate() {
     if (this.description) {
-      return html`<span id="description" class="description">
-          ${this.description}
-        </span>
-        ${this.supportPageTemplate()}`;
+      return html`<div class="description">
+        <span id="description">${this.description}</span>
+        ${this.supportPageTemplate()}
+      </div>`;
     }
     return "";
   }
@@ -135,7 +135,17 @@ export default class MozFieldset extends MozLitElement {
     if (!this.iconSrc) {
       return "";
     }
-    return html`<img src=${this.iconSrc} role="presentation" class="icon" />`;
+    return html`<img
+      src=${this.iconSrc}
+      role="presentation"
+      class=${classMap({
+        icon: true,
+        "heading-xlarge": this.headingLevel == 1,
+        "heading-large": this.headingLevel == 2,
+        "heading-medium": this.headingLevel == 3,
+        "text-box-trim-start": this.headingLevel >= 1 && this.headingLevel <= 3,
+      })}
+    />`;
   }
 
   render() {

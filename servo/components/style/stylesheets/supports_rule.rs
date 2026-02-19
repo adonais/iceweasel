@@ -4,6 +4,7 @@
 
 //! [@supports rules](https://drafts.csswg.org/css-conditional-3/#at-supports)
 
+use crate::derives::*;
 use crate::font_face::{FontFaceSourceFormatKeyword, FontFaceSourceTechFlags};
 use crate::parser::ParserContext;
 use crate::properties::{PropertyDeclaration, PropertyId, SourcePropertyDeclaration};
@@ -12,8 +13,8 @@ use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::{CssRuleType, CssRules};
 use cssparser::parse_important;
+use cssparser::{match_ignore_ascii_case, ParseError as CssParseError, ParserInput};
 use cssparser::{Delimiter, Parser, SourceLocation, Token};
-use cssparser::{ParseError as CssParseError, ParserInput};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use selectors::parser::{Selector, SelectorParseErrorKind};

@@ -353,7 +353,7 @@
   }
 
   .divider {
-    border-top: 1px var(--newtab-border-color) solid;
+    border-block-start: 1px var(--border-color) solid;
     margin: 0 calc(var(--space-large) * -1);
   }
 
@@ -509,7 +509,9 @@
     padding-inline-start: var(--space-xlarge);
     -moz-context-properties: fill;
     fill: currentColor;
-    min-height: var(--space-large);
+    min-height: var(--size-item-small);
+    margin-inline-start: var(--space-xsmall);
+    margin-block-start: var(--space-xsmall);
 
     h1 {
       font-size: var(--font-size-root);

@@ -11,24 +11,24 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IPPExceptionsManager:
-    "resource:///modules/ipprotection/IPPExceptionsManager.sys.mjs",
-  IPProtection: "resource:///modules/ipprotection/IPProtection.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs",
+  IPProtection:
+    "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
-import { IPPProxyManager } from "resource:///modules/ipprotection/IPPProxyManager.sys.mjs";
-import { IPPAutoStartHelpers } from "resource:///modules/ipprotection/IPPAutoStart.sys.mjs";
-import { IPPEnrollAndEntitleManager } from "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs";
-import { IPPNimbusHelper } from "resource:///modules/ipprotection/IPPNimbusHelper.sys.mjs";
-import { IPPOnboardingMessage } from "resource:///modules/ipprotection/IPPOnboardingMessageHelper.sys.mjs";
-import { IPProtectionServerlist } from "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs";
-import { IPPSignInWatcher } from "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs";
-import { IPPStartupCache } from "resource:///modules/ipprotection/IPPStartupCache.sys.mjs";
-import { IPPOptOutHelper } from "resource:///modules/ipprotection/IPPOptOutHelper.sys.mjs";
-import { IPPVPNAddonHelper } from "resource:///modules/ipprotection/IPPVPNAddonHelper.sys.mjs";
+import { IPPProxyManager } from "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs";
+import { IPPAutoStartHelpers } from "moz-src:///browser/components/ipprotection/IPPAutoStart.sys.mjs";
+import { IPPEnrollAndEntitleManager } from "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs";
+import { IPPNimbusHelper } from "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs";
+import { IPPOnboardingMessage } from "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs";
+import { IPProtectionServerlist } from "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs";
+import { IPPSignInWatcher } from "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs";
+import { IPPStartupCache } from "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs";
+import { IPPOptOutHelper } from "moz-src:///browser/components/ipprotection/IPPOptOutHelper.sys.mjs";
 
 /**
  * This simple class controls the UI activation/deactivation.
@@ -87,7 +87,6 @@ const IPPHelpers = [
   IPPOnboardingMessage,
   IPPProxyManager,
   new UIHelper(),
-  IPPVPNAddonHelper,
   ...IPPAutoStartHelpers,
   IPPOptOutHelper,
   IPPNimbusHelper,

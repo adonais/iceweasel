@@ -931,7 +931,7 @@ class PreferencesTest : BaseSessionTest() {
             sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(stringPref))
         val stringSet = stringPrefInitial.defaultValue as String + "?"
 
-        val floatPref = "dom.image-lazy-loading.root-margin.bottom"
+        val floatPref = "dom.lazy-loading.margin.bottom"
         val floatPrefInitial =
             sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(floatPref))
         val floatSet = floatPrefInitial.defaultValue as String + "1"

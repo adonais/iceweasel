@@ -1256,19 +1256,7 @@ export class nsContextMenu {
       }
 
       // Update sub-menu items.
-      let fragment = lazy.LoginManagerContextMenu.addLoginsToMenu(
-        this.targetIdentifier,
-        this.browser,
-        formOrigin
-      );
-
-      if (!fragment) {
-        return;
-      }
-
-      showUseSavedLogin = true;
-      let popup = document.getElementById("fill-login-popup");
-      popup.appendChild(fragment);
+      this.updatePasswordManagerSubMenuItems(document, formOrigin);
     } finally {
       const documentURI = this.contentData?.documentURIObject;
       const showRelay =
@@ -1292,6 +1280,25 @@ export class nsContextMenu {
           : true
       );
     }
+  }
+
+  async updatePasswordManagerSubMenuItems(document, formOrigin) {
+    const fragment = await lazy.LoginManagerContextMenu.addLoginsToMenu(
+      this.targetIdentifier,
+      this.browser,
+      formOrigin
+    );
+
+    if (!fragment) {
+      return;
+    }
+
+    let popup = document.getElementById("fill-login-popup");
+    popup.appendChild(fragment);
+
+    this.showItem("fill-login", true);
+
+    this.setItemAttr("passwordmgr-items-separator", "ensureHidden", null);
   }
 
   initSyncItems() {
@@ -2694,9 +2701,7 @@ export class nsContextMenu {
     const translateSelectionItem = this.document.getElementById(
       "context-translate-selection"
     );
-    const translationsEnabled = Services.prefs.getBoolPref(
-      "browser.translations.enable"
-    );
+    const translationsEnabled = lazy.TranslationsParent.AIFeature.isEnabled;
     const selectTranslationsEnabled = Services.prefs.getBoolPref(
       "browser.translations.select.enable"
     );
@@ -2946,7 +2951,7 @@ export class nsContextMenu {
       engine,
       policyContainer,
       searchUrlType,
-      usePrivate,
+      usePrivateWindow: usePrivate,
       window: this.window,
       searchText: searchTerms,
       triggeringPrincipal: principal,

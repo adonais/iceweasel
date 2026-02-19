@@ -177,10 +177,12 @@ bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
       region.mode = wr::ClipMode::ClipOut;
       region.radii = wr::EmptyBorderRadius();
 
-      auto rect_clip = aBuilder.DefineRectClip(Nothing(), layoutRect);
-      auto complex_clip = aBuilder.DefineRoundedRectClip(Nothing(), region);
-      auto clipChain =
-          aBuilder.DefineClipChain({rect_clip, complex_clip}, true);
+      std::array<wr::WrClipId, 2> clips = {
+          aBuilder.DefineRectClip(Nothing(), layoutRect),
+          aBuilder.DefineRoundedRectClip(Nothing(), region),
+      };
+      auto clipChain = aBuilder.DefineClipChain(
+          clips, aBuilder.CurrentClipChainIdIfNotRoot());
       clipOut.emplace(aBuilder, clipChain);
     }
   } else {
@@ -229,7 +231,7 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayAbsoluteContinuations(aBuilder, aLists);
+    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 
   nsDisplayListCollection contentDisplayItems(aBuilder);

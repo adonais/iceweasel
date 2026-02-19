@@ -11,6 +11,7 @@
         "android-hardware-buffer-header-workaround_clang_21.patch",
         "arm64e-hack.patch",
         "no-no-rosegment.patch",
+        "sanitizer_deadlock_suppression_clang_22.patch",
         "compiler-rt-rss-limit-heap-profile.patch"
     ]
 }

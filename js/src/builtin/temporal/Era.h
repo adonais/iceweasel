@@ -11,7 +11,6 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <initializer_list>
-#include <stddef.h>
 #include <stdint.h>
 #include <string_view>
 

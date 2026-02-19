@@ -17,7 +17,6 @@ import mozilla.appservices.logins.LoginsApiException
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.LoginsStorage
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.settings.SupportUtils
 
@@ -48,19 +47,19 @@ internal class LoginsMiddleware(
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
     override fun invoke(
-        context: MiddlewareContext<LoginsState, LoginsAction>,
+        store: Store<LoginsState, LoginsAction>,
         next: (LoginsAction) -> Unit,
         action: LoginsAction,
     ) {
-        val preReductionState = context.state
+        val preReductionState = store.state
         next(action)
 
         when (action) {
             is LoginsListAppeared -> {
-                context.store.loadLoginsList()
+                store.loadLoginsList()
             }
             is SearchLogins -> {
-                context.store.loadLoginsList()
+                store.loadLoginsList()
             }
             is LoginsListBackClicked -> {
                 exitLogins()
@@ -86,7 +85,7 @@ internal class LoginsMiddleware(
                 }
             }
             is LoginsListSortMenuAction -> ioScope.launch {
-                persistLoginsSortOrder(context.store.state.sortOrder)
+                persistLoginsSortOrder(store.state.sortOrder)
             }
             is LearnMoreAboutSync -> {
                 openTab(
@@ -113,13 +112,13 @@ internal class LoginsMiddleware(
                 getNavController().navigate(LoginsDestinations.LIST)
             }
             is AddLoginAction.AddLoginSaveClicked -> {
-                context.store.handleAddLogin()
+                store.handleAddLogin()
             }
             is EditLoginBackClicked -> {
                 getNavController().navigate(LoginsDestinations.LOGIN_DETAILS)
             }
             is EditLoginAction.SaveEditClicked -> {
-                context.store.handleEditLogin(loginItem = action.login)
+                store.handleEditLogin(loginItem = action.login)
             }
             is LoginsLoaded,
             is EditLoginAction.UsernameChanged,

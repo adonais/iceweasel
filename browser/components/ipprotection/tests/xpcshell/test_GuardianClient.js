@@ -7,7 +7,7 @@ const { HttpServer, HTTP_404 } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
 const { GuardianClient } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
 );
 
 function makeGuardianServer(
@@ -310,7 +310,7 @@ add_task(async function test_fetchProxyPass() {
   const testcases = [
     {
       name: "It should parse a valid response",
-      sends: ok({ token: "header.payload.signature" }),
+      sends: ok({ token: createProxyPassToken() }),
       expects: {
         status: 200,
         error: null,
@@ -336,17 +336,8 @@ add_task(async function test_fetchProxyPass() {
       },
     },
     {
-      name: "It should handle a missing Cache-Control header",
-      sends: ok({ token: "header.payload.signature" }, { "Cache-Control": "" }),
-      expects: {
-        status: 200,
-        error: "invalid_response",
-        validPass: false,
-      },
-    },
-    {
       name: "It should handle an invalid token format",
-      sends: ok({ token: "invalid-token-format" }),
+      sends: ok({ token: "header.body.signature" }),
       expects: {
         status: 200,
         error: "invalid_response",
@@ -384,13 +375,8 @@ add_task(async function test_fetchProxyPass() {
             "string",
             `${name}: pass.token should be a string`
           );
-          Assert.strictEqual(
-            typeof pass.until,
-            "number",
-            `${name}: pass.until should be a number`
-          );
           Assert.greater(
-            pass.until,
+            pass.until.epochMilliseconds,
             Date.now(),
             `${name}: pass.until should be in the future`
           );
@@ -436,5 +422,47 @@ add_task(async function test_parseGuardianSuccessURL() {
 
     Assert.equal(result.ok, expects.ok, `${name}: ok should match`);
     Assert.equal(result.error, expects.error, `${name}: error should match`);
+  });
+});
+
+add_task(async function test_proxyPassShouldRotate() {
+  const oneHour = Temporal.Duration.from({ hours: 1 });
+  const from = Temporal.Instant.from("2025-12-08T12:00:00Z"); // Static point in time
+  // The pass is valid for 1 hour from 'from'
+  const until = from.add(oneHour);
+  const rotationTime = ProxyPass.ROTATION_TIME;
+
+  const testcases = [
+    {
+      name: "Should not rotate when before rotation time",
+      currentTime: until.subtract(rotationTime).subtract({ seconds: 1 }),
+      expects: { shouldRotate: false },
+    },
+    {
+      name: "Should rotate when at rotation time",
+      currentTime: until.subtract(rotationTime),
+      expects: { shouldRotate: true },
+    },
+    {
+      name: "Should rotate when after rotation time",
+      currentTime: until.subtract(rotationTime).add({ seconds: 1 }),
+      expects: { shouldRotate: true },
+    },
+    {
+      name: "Should rotate when pass is expired",
+      currentTime: until.add({ seconds: 1 }),
+      expects: { shouldRotate: true },
+    },
+  ];
+
+  testcases.forEach(({ name, currentTime, expects }) => {
+    info(`Running test case: ${name}`);
+    const proxyPass = new ProxyPass(createProxyPassToken(from, until));
+    const result = proxyPass.shouldRotate(currentTime);
+    Assert.equal(
+      result,
+      expects.shouldRotate,
+      `${name}: shouldRotate should match`
+    );
   });
 });

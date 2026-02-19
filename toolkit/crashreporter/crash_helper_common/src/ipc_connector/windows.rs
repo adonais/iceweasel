@@ -231,8 +231,12 @@ impl IPCConnector {
     where
         T: Message,
     {
+        let expected_payload_len = message.payload_size();
+        let expected_ancillary_data = message.has_ancillary_data();
         let header = message.header();
         let (payload, ancillary_data) = message.into_payload();
+        assert!(payload.len() == expected_payload_len);
+        assert!(ancillary_data.is_some() == expected_ancillary_data);
 
         // Send the message header
         OverlappedOperation::send(&self.handle, self.event.as_handle(), header)?;

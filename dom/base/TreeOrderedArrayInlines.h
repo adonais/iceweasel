@@ -19,8 +19,10 @@ template <typename Node>
 size_t TreeOrderedArray<Node>::Insert(Node& aNode, nsINode* aCommonAncestor) {
   static_assert(std::is_base_of_v<nsINode, Node>, "Should be a node");
 
-  if (mList.IsEmpty()) {
-    mList.AppendElement(&aNode);
+  auto span = Base::AsSpan();
+  auto len = span.Length();
+  if (!len) {
+    Base::AppendElement(&aNode);
     return 0;
   }
 
@@ -39,16 +41,15 @@ size_t TreeOrderedArray<Node>::Insert(Node& aNode, nsINode* aCommonAncestor) {
   };
 
   PositionComparator cmp{aNode, aCommonAncestor};
-  if (cmp(mList.LastElement()) > 0) {
+  if (cmp(span[len - 1]) > 0) {
     // Appending is a really common case, optimize for it.
-    auto index = mList.Length();
-    mList.AppendElement(&aNode);
-    return index;
+    Base::AppendElement(&aNode);
+    return len;
   }
 
   size_t idx;
-  BinarySearchIf(mList, 0, mList.Length(), cmp, &idx);
-  mList.InsertElementAt(idx, &aNode);
+  BinarySearchIf(span, 0, len, cmp, &idx);
+  Base::InsertElementAt(idx, &aNode);
   return idx;
 }
 

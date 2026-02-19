@@ -150,7 +150,7 @@ class FakeIceTransport : public IceTransportInternal {
     RTC_DCHECK_RUN_ON(network_thread_);
     transport_state_ = state;
     legacy_transport_state_ = legacy_state;
-    SignalIceTransportStateChanged(this);
+    NotifyIceTransportStateChanged(this);
   }
 
   void SetConnectionCount(size_t connection_count) {
@@ -163,7 +163,7 @@ class FakeIceTransport : public IceTransportInternal {
     // In this fake transport channel, `connection_count_` determines the
     // transport state.
     if (connection_count_ < old_connection_count) {
-      SignalIceTransportStateChanged(this);
+      NotifyIceTransportStateChanged(this);
     }
   }
 
@@ -176,7 +176,7 @@ class FakeIceTransport : public IceTransportInternal {
   }
 
   // Convenience functions for accessing ICE config and other things.
-  int receiving_timeout() const {
+  TimeDelta receiving_timeout() const {
     RTC_DCHECK_RUN_ON(network_thread_);
     return ice_config_.receiving_timeout_or_default();
   }
@@ -388,7 +388,7 @@ class FakeIceTransport : public IceTransportInternal {
     network_route_ = network_route;
     SendTask(network_thread_, [this] {
       RTC_DCHECK_RUN_ON(network_thread_);
-      SignalNetworkRouteChanged(network_route_);
+      NotifyNetworkRouteChanged(network_route_);
     });
   }
 
@@ -505,9 +505,9 @@ class FakeIceTransport : public IceTransportInternal {
     RTC_LOG(LS_INFO) << "Change writable_ to " << writable;
     writable_ = writable;
     if (writable_) {
-      SignalReadyToSend(this);
+      NotifyReadyToSend(this);
     }
-    SignalWritableState(this);
+    NotifyWritableState(this);
   }
 
   void set_receiving(bool receiving)
@@ -516,7 +516,7 @@ class FakeIceTransport : public IceTransportInternal {
       return;
     }
     receiving_ = receiving;
-    SignalReceivingState(this);
+    NotifyReceivingState(this);
   }
 
   bool SendPacketInternal(const CopyOnWriteBuffer& packet,

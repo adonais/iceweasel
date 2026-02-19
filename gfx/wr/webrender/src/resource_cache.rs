@@ -27,7 +27,6 @@ use crate::glyph_cache::{GlyphCache, CachedGlyphInfo};
 use crate::glyph_cache::GlyphCacheEntry;
 use glyph_rasterizer::{GLYPH_FLASHING, FontInstance, GlyphFormat, GlyphKey, GlyphRasterizer, GlyphRasterJob};
 use glyph_rasterizer::{SharedFontResources, BaseFontInstance};
-use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use crate::gpu_types::UvRectKind;
 use crate::internal_types::{
     CacheTextureId, FastHashMap, FastHashSet, TextureSource, ResourceUpdateList,
@@ -37,7 +36,7 @@ use crate::profiler::{self, TransactionProfile, bytes_to_mb};
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
 use crate::render_task_cache::{RenderTaskCache, RenderTaskCacheKey, RenderTaskParent};
 use crate::render_task_cache::{RenderTaskCacheEntry, RenderTaskCacheEntryHandle};
-use crate::renderer::GpuBufferBuilderF;
+use crate::renderer::{GpuBufferAddress, GpuBufferBuilder, GpuBufferBuilderF, GpuBufferHandle};
 use crate::surface::SurfaceBuilder;
 use euclid::point2;
 use smallvec::SmallVec;
@@ -64,10 +63,13 @@ static NEXT_NATIVE_SURFACE_ID: AtomicUsize = AtomicUsize::new(0);
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GlyphFetchResult {
     pub index_in_text_run: i32,
-    pub uv_rect_address: GpuCacheAddress,
+    pub uv_rect_address: GpuBufferAddress,
     pub offset: DevicePoint,
     pub size: DeviceIntSize,
     pub scale: f32,
+    pub subpx_offset_x: u8,
+    pub subpx_offset_y: u8,
+    pub is_packed_glyph: bool,
 }
 
 // These coordinates are always in texels.
@@ -84,7 +86,7 @@ pub struct GlyphFetchResult {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CacheItem {
     pub texture_id: TextureSource,
-    pub uv_rect_handle: GpuCacheHandle,
+    pub uv_rect_handle: GpuBufferHandle,
     pub uv_rect: DeviceIntRect,
     pub user_data: [f32; 4],
 }
@@ -93,7 +95,7 @@ impl CacheItem {
     pub fn invalid() -> Self {
         CacheItem {
             texture_id: TextureSource::Invalid,
-            uv_rect_handle: GpuCacheHandle::new(),
+            uv_rect_handle: GpuBufferHandle::INVALID,
             uv_rect: DeviceIntRect::zero(),
             user_data: [0.0; 4],
         }
@@ -575,7 +577,7 @@ impl ResourceCache {
         let cached_glyphs = GlyphCache::new();
         let fonts = SharedFontResources::new(IdNamespace(0));
         let picture_textures = PictureTextures::new(
-            crate::picture::TILE_SIZE_DEFAULT,
+            crate::tile_cache::TILE_SIZE_DEFAULT,
             TextureFilter::Nearest,
         );
 
@@ -632,18 +634,16 @@ impl ResourceCache {
         key: Option<RenderTaskCacheKey>,
         is_opaque: bool,
         parent: RenderTaskParent,
-        gpu_cache: &mut GpuCache,
         gpu_buffer_builder: &mut GpuBufferBuilderF,
         rg_builder: &mut RenderTaskGraphBuilder,
         surface_builder: &mut SurfaceBuilder,
-        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF, &mut GpuCache) -> RenderTaskId,
+        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF) -> RenderTaskId,
     ) -> RenderTaskId {
         self.cached_render_tasks.request_render_task(
             key.clone(),
             &mut self.texture_cache,
             is_opaque,
             parent,
-            gpu_cache,
             gpu_buffer_builder,
             rg_builder,
             surface_builder,
@@ -657,13 +657,12 @@ impl ResourceCache {
         size: DeviceIntSize,
         rg_builder: &mut RenderTaskGraphBuilder,
         gpu_buffer_builder: &mut GpuBufferBuilderF,
-        gpu_cache: &mut GpuCache,
         is_opaque: bool,
         adjustment: &AdjustedImageSource,
-        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF, &mut GpuCache) -> RenderTaskId,
+        f: &mut dyn FnMut(&mut RenderTaskGraphBuilder, &mut GpuBufferBuilderF) -> RenderTaskId,
     ) -> RenderTaskId {
 
-        let task_id = f(rg_builder, gpu_buffer_builder, gpu_cache);
+        let task_id = f(rg_builder, gpu_buffer_builder);
 
         let render_task = rg_builder.get_task_mut(task_id);
 
@@ -727,7 +726,7 @@ impl ResourceCache {
             None,
             user_data,
             DirtyRect::All,
-            gpu_cache,
+            gpu_buffer_builder,
             None,
             render_task.uv_rect_kind(),
             Eviction::Manual,
@@ -1101,7 +1100,7 @@ impl ResourceCache {
     pub fn request_image(
         &mut self,
         mut request: ImageRequest,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
     ) -> DeviceIntSize {
         debug_assert_eq!(self.state, State::AddResources);
 
@@ -1202,7 +1201,7 @@ impl ResourceCache {
             ImageResult::Err(_) => panic!("Errors should already have been handled"),
         };
 
-        let needs_upload = self.texture_cache.request(&entry.texture_cache_handle, gpu_cache);
+        let needs_upload = self.texture_cache.request(&entry.texture_cache_handle, gpu_buffer);
 
         if !needs_upload && entry.dirty_rect.is_empty() {
             return size;
@@ -1276,7 +1275,7 @@ impl ResourceCache {
         &mut self,
         mut font: FontInstance,
         glyph_keys: &[GlyphKey],
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
     ) {
         debug_assert_eq!(self.state, State::AddResources);
 
@@ -1287,11 +1286,11 @@ impl ResourceCache {
             font,
             glyph_keys,
             |key| {
-                if let Some(entry) = glyph_key_cache.try_get(key) {
+                let cache_key = key.cache_key();
+                if let Some(entry) = glyph_key_cache.try_get(&cache_key) {
                     match entry {
                         GlyphCacheEntry::Cached(ref glyph) => {
-                            // Skip the glyph if it is already has a valid texture cache handle.
-                            if !texture_cache.request(&glyph.texture_cache_handle, gpu_cache) {
+                            if !texture_cache.request(&glyph.texture_cache_handle, gpu_buffer) {
                                 return false;
                             }
                             // This case gets hit when we already rasterized the glyph, but the
@@ -1303,7 +1302,7 @@ impl ResourceCache {
                     }
                 };
 
-                glyph_key_cache.add_glyph(*key, GlyphCacheEntry::Pending);
+                glyph_key_cache.add_glyph(cache_key, GlyphCacheEntry::Pending);
 
                 true
             }
@@ -1321,8 +1320,8 @@ impl ResourceCache {
         &self,
         mut font: FontInstance,
         glyph_keys: &[GlyphKey],
+        gpu_buffer: &GpuBufferBuilderF,
         fetch_buffer: &mut Vec<GlyphFetchResult>,
-        gpu_cache: &mut GpuCache,
         mut f: F,
     ) where
         F: FnMut(TextureSource, GlyphFormat, &[GlyphFetchResult]),
@@ -1337,9 +1336,10 @@ impl ResourceCache {
         debug_assert!(fetch_buffer.is_empty());
 
         for (loop_index, key) in glyph_keys.iter().enumerate() {
-            let (cache_item, glyph_format) = match *glyph_key_cache.get(key) {
+            let cache_key = key.cache_key();
+            let (cache_item, glyph_format, is_packed_glyph) = match *glyph_key_cache.get(&cache_key) {
                 GlyphCacheEntry::Cached(ref glyph) => {
-                    (self.texture_cache.get(&glyph.texture_cache_handle), glyph.format)
+                    (self.texture_cache.get(&glyph.texture_cache_handle), glyph.format, glyph.is_packed_glyph)
                 }
                 GlyphCacheEntry::Blank | GlyphCacheEntry::Pending => continue,
             };
@@ -1352,12 +1352,16 @@ impl ResourceCache {
                 current_texture_id = cache_item.texture_id;
                 current_glyph_format = glyph_format;
             }
+            let (subpx_offset_x, subpx_offset_y) = key.subpixel_offset();
             fetch_buffer.push(GlyphFetchResult {
                 index_in_text_run: loop_index as i32,
-                uv_rect_address: gpu_cache.get_address(&cache_item.uv_rect_handle),
+                uv_rect_address: gpu_buffer.resolve_handle(cache_item.uv_rect_handle),
                 offset: DevicePoint::new(cache_item.user_data[0], cache_item.user_data[1]),
                 size: cache_item.uv_rect.size(),
                 scale: cache_item.user_data[2],
+                subpx_offset_x: subpx_offset_x as u8,
+                subpx_offset_y: subpx_offset_y as u8,
+                is_packed_glyph,
             });
         }
 
@@ -1469,7 +1473,7 @@ impl ResourceCache {
         })
     }
 
-    pub fn begin_frame(&mut self, stamp: FrameStamp, gpu_cache: &mut GpuCache, profile: &mut TransactionProfile) {
+    pub fn begin_frame(&mut self, stamp: FrameStamp, profile: &mut TransactionProfile) {
         profile_scope!("begin_frame");
         debug_assert_eq!(self.state, State::Idle);
         self.state = State::AddResources;
@@ -1490,12 +1494,12 @@ impl ResourceCache {
         v.clear();
         self.deleted_blob_keys.push_back(v);
 
-        self.texture_cache.run_compaction(gpu_cache);
+        self.texture_cache.run_compaction();
     }
 
     pub fn block_until_all_resources_added(
         &mut self,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilder,
         profile: &mut TransactionProfile,
     ) {
         profile_scope!("block_until_all_resources_added");
@@ -1509,6 +1513,7 @@ impl ResourceCache {
         self.glyph_rasterizer.resolve_glyphs(
             |job, can_use_r8_format| {
                 let GlyphRasterJob { font, key, result } = job;
+                let cache_key = key.cache_key();
                 let glyph_key_cache = cached_glyphs.get_glyph_key_cache_for_font_mut(&*font);
                 let glyph_info = match result {
                     Err(_) => GlyphCacheEntry::Blank,
@@ -1517,7 +1522,7 @@ impl ResourceCache {
                     }
                     Ok(glyph) => {
                         let mut texture_cache_handle = TextureCacheHandle::invalid();
-                        texture_cache.request(&texture_cache_handle, gpu_cache);
+                        texture_cache.request(&texture_cache_handle, &mut gpu_buffer.f32);
                         texture_cache.update(
                             &mut texture_cache_handle,
                             ImageDescriptor {
@@ -1531,7 +1536,7 @@ impl ResourceCache {
                             Some(CachedImageData::Raw(Arc::new(glyph.bytes))),
                             [glyph.left, -glyph.top, glyph.scale, 0.0],
                             DirtyRect::All,
-                            gpu_cache,
+                            &mut gpu_buffer.f32,
                             Some(glyph_key_cache.eviction_notice()),
                             UvRectKind::Rect,
                             Eviction::Auto,
@@ -1541,19 +1546,20 @@ impl ResourceCache {
                         GlyphCacheEntry::Cached(CachedGlyphInfo {
                             texture_cache_handle,
                             format: glyph.format,
+                            is_packed_glyph: glyph.is_packed_glyph,
                         })
                     }
                 };
-                glyph_key_cache.insert(key, glyph_info);
+                glyph_key_cache.insert(cache_key, glyph_info);
             },
             profile,
         );
 
         // Apply any updates of new / updated images (incl. blobs) to the texture cache.
-        self.update_texture_cache(gpu_cache);
+        self.update_texture_cache(gpu_buffer);
     }
 
-    fn update_texture_cache(&mut self, gpu_cache: &mut GpuCache) {
+    fn update_texture_cache(&mut self, gpu_buffer: &mut GpuBufferBuilder) {
         profile_scope!("update_texture_cache");
 
         if self.fallback_handle == TextureCacheHandle::invalid() {
@@ -1575,7 +1581,7 @@ impl ResourceCache {
                 Some(CachedImageData::Raw(Arc::new(fallback_color))),
                 [0.0; 4],
                 DirtyRect::All,
-                gpu_cache,
+                &mut gpu_buffer.f32,
                 None,
                 UvRectKind::Rect,
                 Eviction::Manual,
@@ -1693,7 +1699,7 @@ impl ResourceCache {
                     Some(image_data),
                     [0.0; 4],
                     dirty_rect,
-                    gpu_cache,
+                    &mut gpu_buffer.f32,
                     None,
                     UvRectKind::Rect,
                     eviction,

@@ -5,8 +5,6 @@
 
 #include "mozilla/Assertions.h"
 
-#include <stdio.h>
-
 #include "jit/riscv64/constant/Constant-riscv-c.h"
 #include "jit/riscv64/constant/Constant-riscv-d.h"
 #include "jit/riscv64/constant/Constant-riscv-f.h"

@@ -54,11 +54,11 @@ class nsFontCache final : public nsIObserver {
 
   // Number of cache misses before we assume that a font fingerprinting attempt
   // is being made.
-  static constexpr int32_t kFingerprintingCacheMissThreshold = 20;
+  static constexpr int32_t kFingerprintingCacheMissThreshold = 10;
   // We assume that fingerprinters will lookup a large number of fonts in a
   // short amount of time.
   static constexpr PRTime kFingerprintingLastNSec =
-      PRTime(PR_USEC_PER_SEC) * 3;  // 3 seconds
+      PRTime(PR_USEC_PER_SEC) * 6;  // 6 seconds
 
   static_assert(kFingerprintingCacheMissThreshold < kMaxCacheEntries);
 

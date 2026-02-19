@@ -836,6 +836,10 @@ MOZ_GLOBINIT struct TestCase {
     TestCase("IndirectCall", NoStubAddressCheck),
     TestCase("MovImm64", NoStubAddressCheck),
     TestCase("RexCmpRipRelativeBytePtr", NoStubAddressCheck),
+    TestCase("AndWithSib", NoStubAddressCheck),
+    TestCase("AndWithoutSib", NoStubAddressCheck),
+    TestCase("RexAndWithSib", NoStubAddressCheck),
+    TestCase("RexAndWithoutSib", NoStubAddressCheck),
     TestCase("JmpInsideEarlyBytes", ExpectedFail),
     TestCase("CallInsideEarlyBytes", ExpectedFail),
 #  elif defined(_M_IX86)

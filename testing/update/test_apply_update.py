@@ -55,9 +55,9 @@ class TestApplyUpdate(MarionetteTestCase):
         if environ.get("BALROG_STAGING"):
             print("staging")
             patch_url = root[0][0].get("URL")
-            assert (
-                f"{target_ver}" in patch_url
-            ), f"{target_ver} not in patch url: {patch_url}"
+            assert f"{target_ver}" in patch_url, (
+                f"{target_ver} not in patch url: {patch_url}"
+            )
             patch_response = requests.get(patch_url)
             patch_response.raise_for_status()
             return True

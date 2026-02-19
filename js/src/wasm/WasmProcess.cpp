@@ -133,9 +133,9 @@ static const size_t MinVirtualMemoryLimitForHugeMemory =
 
 static bool sHugeMemoryEnabled32 = false;
 
-bool wasm::IsHugeMemoryEnabled(wasm::AddressType t) {
-  if (t == AddressType::I64) {
-    // No support for huge memory with 64-bit memories
+bool wasm::IsHugeMemoryEnabled(wasm::AddressType t, wasm::PageSize sz) {
+  if (t == AddressType::I64 || sz != wasm::PageSize::Standard) {
+    // No support for huge memory with 64-bit memories or custom page sizes.
     return false;
   }
   return sHugeMemoryEnabled32;

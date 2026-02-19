@@ -54,16 +54,17 @@ static_assert(sizeof(BLOCKSIZE) < (SIGNATURE_BLOCK_OFFSET + sizeof(uint32_t)),
    instead of the NSPR equivalents. */
 #ifdef XP_WIN
 #  include <winsock2.h>
-/* Include stdio.h before redefining ftello and fseeko to avoid clobbering
- * the ftello() and fseeko() function declarations in MinGW's stdio.h. */
-#  include <stdio.h>
+#  ifdef __MINGW32__
+/*   Include stdio.h before redefining ftello and fseeko to avoid clobbering
+     the ftello() and fseeko() function declarations in MinGW's stdio.h. */
+#    include <stdio.h>
+#  endif
 #  define ftello _ftelli64
 #  define fseeko _fseeki64
 #else
 #  define _FILE_OFFSET_BITS 64
 #  include <netinet/in.h>
 #  include <unistd.h>
-#  include <stdio.h>
 #endif
 
 #define HOST_TO_NETWORK64(x)                                               \

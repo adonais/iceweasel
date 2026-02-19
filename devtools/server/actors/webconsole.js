@@ -128,7 +128,7 @@ function isObject(value) {
  * The WebConsoleActor implements capabilities needed for the Web Console
  * feature.
  *
- * @constructor
+ * @class
  * @param object connection
  *        The connection to the client, DevToolsServerConnection.
  * @param object [targetActor]

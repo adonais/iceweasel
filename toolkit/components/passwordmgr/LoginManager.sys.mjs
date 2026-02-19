@@ -278,6 +278,7 @@ LoginManager.prototype = {
 
   /**
    * Change the specified login to match the new login or new properties.
+   * Deprecated: use modifyLoginAsync instead.
    */
   modifyLogin(oldLogin, newLogin) {
     lazy.log.debug(
@@ -285,6 +286,17 @@ LoginManager.prototype = {
       oldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid
     );
     return this._storage.modifyLogin(oldLogin, newLogin);
+  },
+
+  /**
+   * Async: Change the specified login to match the new login or new properties.
+   */
+  async modifyLoginAsync(oldLogin, newLogin) {
+    lazy.log.debug(
+      "Modifying login",
+      oldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid
+    );
+    await this._storage.modifyLoginAsync(oldLogin, newLogin);
   },
 
   /**
@@ -397,8 +409,10 @@ LoginManager.prototype = {
       `Searching for matching logins for origin: ${matchData.origin}`
     );
 
-    if (!matchData.origin) {
-      throw new Error("searchLoginsAsync: An `origin` is required");
+    if (!matchData.guid && !matchData.origin) {
+      lazy.log.warn(
+        "A `guid` or `origin` field is recommended for searchLoginsAsync matchData."
+      );
     }
 
     return this._storage.searchLoginsAsync(matchData);
@@ -406,6 +420,7 @@ LoginManager.prototype = {
 
   /**
    * @return {nsILoginInfo[]} which are decrypted.
+   * Deprecated: use searchLoginsAsync instead
    */
   searchLogins(matchData) {
     lazy.log.debug(

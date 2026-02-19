@@ -19,18 +19,23 @@ import { LinkParagraph } from "./LinkParagraph";
 import { ContentTiles } from "./ContentTiles";
 import { InstallButton } from "./InstallButton";
 
+const DEFAULT_AUTO_ADVANCE_MS = 20000;
+
 export const MultiStageProtonScreen = props => {
   const { autoAdvance, handleAction, order } = props;
   useEffect(() => {
     if (autoAdvance) {
+      const value = autoAdvance?.actionEl ?? autoAdvance;
+      const timeout = autoAdvance?.actionTimeMS ?? DEFAULT_AUTO_ADVANCE_MS;
+
       const timer = setTimeout(() => {
         handleAction({
           currentTarget: {
-            value: autoAdvance,
+            value,
           },
           name: "AUTO_ADVANCE",
         });
-      }, 20000);
+      }, timeout);
       return () => clearTimeout(timer);
     }
     return () => {};

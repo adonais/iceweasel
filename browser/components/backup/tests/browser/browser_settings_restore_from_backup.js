@@ -158,7 +158,7 @@ add_task(async function test_restore_from_backup() {
     let recoverFromBackupArchiveStub = sandbox
       .stub(BackupService.prototype, "recoverFromBackupArchive")
       .resolves();
-    sandbox.stub(BackupService.prototype, "state").get(() => mockBackupState);
+    sandbox.stub(BackupService.get(), "state").get(() => mockBackupState);
 
     MockFilePicker.showCallback = () => {
       Assert.ok(true, "Filepicker shown");

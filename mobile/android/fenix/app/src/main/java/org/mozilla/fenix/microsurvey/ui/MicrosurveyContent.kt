@@ -31,13 +31,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 private val shape = RoundedCornerShape(8.dp)
@@ -115,29 +116,12 @@ private fun Header(icon: Int, question: String) {
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun MicrosurveyContentPreview() {
-    FirefoxTheme {
-        MicrosurveyContent(
-            question = "How satisfied are you with printing in Firefox?",
-            icon = iconsR.drawable.mozac_ic_print_24,
-            answers = listOf(
-                stringResource(id = R.string.likert_scale_option_1),
-                stringResource(id = R.string.likert_scale_option_2),
-                stringResource(id = R.string.likert_scale_option_3),
-                stringResource(id = R.string.likert_scale_option_4),
-                stringResource(id = R.string.likert_scale_option_5),
-            ),
-            onSelectionChange = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun MicrosurveyContentPrivatereview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun MicrosurveyContentPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         MicrosurveyContent(
             question = "How satisfied are you with printing in Firefox?",
             icon = iconsR.drawable.mozac_ic_print_24,

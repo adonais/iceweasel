@@ -1243,30 +1243,6 @@ newtab.search:
     send_in_pings:
       - newtab
 
-newtab.handoff_preference:
-  enabled:
-    lifetime: application
-    type: boolean
-    description: >
-      Records whether the
-      browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar preference is
-      enabled or disabled
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1864496
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1892148
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1940643
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1978995
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1864496
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1892148
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1940643
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1978995
-    data_sensitivity:
-      - interaction
-    expires: 151
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-
 topsites:
   enabled:
     lifetime: application
@@ -2047,6 +2023,28 @@ pocket:
     send_in_pings:
       - newtab
 
+  spoc_placeholder_duration:
+      type: timing_distribution
+      time_unit: millisecond
+      description: >
+        Time in milliseconds that a placeholder for a sponsored story (spoc) is
+        visible to the user before being replaced with actual sponsored content.
+        This measures how long users see loading placeholders when spocs need to
+        be fetched, which can happen during startup, cache expiration, or other
+        loading scenarios.
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1993586
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1993586
+      data_sensitivity:
+        - technical
+      notification_emails:
+        - mcrawford@mozilla.com
+      expires: never
+      send_in_pings:
+        - newtab
+
+
   shim:
     type: text
     lifetime: ping
@@ -2107,59 +2105,6 @@ pocket:
     expires: never
     send_in_pings:
       - spoc
-
-  thumb_voting_interaction:
-    type: event
-    description: >
-      Recorded when a thumbs up/down on a tile is clicked.
-      Only happens on click. Not on middle-click. Not on "Open in new Tab"-like
-      options in the context menu.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902099
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1937200
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902099
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - mcrawford@mozilla.com
-    expires: never
-    extra_keys:
-      newtab_visit_id: *newtab_visit_id
-      recommendation_id: *recommendation_id
-      tile_id: *pocket_tile_id
-      format: *format
-      position: *pocket_position
-      thumbs_up:
-        description: >
-          If the user clicked thumbs up.
-        type: boolean
-      thumbs_down:
-        description: >
-          If the user clicked thumbs down.
-        type: boolean
-      scheduled_corpus_item_id: *scheduled_corpus_item_id
-      corpus_item_id: *corpus_item_id
-      received_rank: *received_rank
-      recommended_at: *recommended_at
-      topic:
-        description: The topic of the recommendation. Like "entertainment".
-        type: string
-      section:
-        description: >
-          If event belongs in a section, the name of the section
-        type: string
-      section_position:
-        description: >
-          If event belongs in a section, the numeric position of the section
-        type: string
-      is_section_followed: *is_section_followed
-      content_redacted:
-        description: >
-          Are content details sent separately in the newtab_content ping
-        type: boolean
-    send_in_pings:
-      - newtab
 
 newtab_content:
 
@@ -2490,57 +2435,6 @@ newtab_content:
       is_section_followed:
         description: >
           If click belongs in a section, if that section is followed
-        type: boolean
-    send_in_pings:
-      - newtab-content
-
-  thumb_voting_interaction:
-    type: event
-    description: >
-      Recorded when a thumbs up/down on a tile is clicked.
-      Only happens on click. Not on middle-click. Not on "Open in new Tab"-like
-      options in the context menu.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902099
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1937200
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902099
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - mcrawford@mozilla.com
-    expires: never
-    extra_keys:
-      recommendation_id: *recommendation_id
-      tile_id: *pocket_tile_id
-      format: *format
-      position: *pocket_position
-      thumbs_up:
-        description: >
-          If the user clicked thumbs up.
-        type: boolean
-      thumbs_down:
-        description: >
-          If the user clicked thumbs down.
-        type: boolean
-      scheduled_corpus_item_id: *scheduled_corpus_item_id
-      corpus_item_id: *corpus_item_id
-      received_rank: *received_rank
-      recommended_at: *recommended_at
-      topic:
-        description: The topic of the recommendation. Like "entertainment".
-        type: string
-      section:
-        description: >
-          If event belongs in a section, the name of the section
-        type: string
-      section_position:
-        description: >
-          If event belongs in a section, the numberic position of the section
-        type: string
-      is_section_followed:
-        description: >
-          If event belongs in a section, if that section is followed
         type: boolean
     send_in_pings:
       - newtab-content

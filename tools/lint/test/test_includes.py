@@ -39,9 +39,9 @@ def test_lint_api_yml(lint):
     mfbt_dir = os.path.join(topsrcdir, "mfbt")
     for header, categories in description.items():
         header_path = os.path.join(mfbt_dir, header)
-        assert os.path.exists(
-            header_path
-        ), f"{header} described in {api_yaml}, but missing in mfbt/"
+        assert os.path.exists(header_path), (
+            f"{header} described in {api_yaml}, but missing in mfbt/"
+        )
 
         with open(header_path) as fd:
             header_content = fd.read()
@@ -55,12 +55,12 @@ def test_lint_api_yml(lint):
                 symbol_found = re.search(
                     category_re[category].format(symbol), header_content
                 )
-                assert (
-                    symbol_found
-                ), f"{symbol} described as a {category} available in {header}, but cannot be found there"
+                assert symbol_found, (
+                    f"{symbol} described as a {category} available in {header}, but cannot be found there"
+                )
 
 
-def test_lint_includes(lint, paths):
+def test_lint_mfbt_includes(lint, paths):
     results = lint(paths("correct_assert.h"))
     assert not results
 
@@ -77,6 +77,37 @@ def test_lint_includes(lint, paths):
     assert len(results) == 1
     assert results[0].message.endswith(
         "incorrect_literal.h includes Literals.h but does not reference any of its API"
+    )
+
+
+def test_lint_std_includes(lint, paths):
+    results = lint(paths("correct_tuple.h"))
+    assert not results
+
+    results = lint(paths("incorrect_tuple.h"))
+    assert len(results) == 1
+    assert results[0].message.endswith(
+        "incorrect_tuple.h includes <tuple> but does not reference any of its API"
+    )
+
+
+def test_lint_c_std_includes(lint, paths):
+    results = lint(paths("correct_stdio.h"))
+    assert not results
+
+    results = lint(paths("correct_cstdio.h"))
+    assert not results
+
+    results = lint(paths("incorrect_stdio.h"))
+    assert len(results) == 1
+    assert results[0].message.endswith(
+        "incorrect_stdio.h includes <stdio.h> but does not reference any of its API"
+    )
+
+    results = lint(paths("incorrect_cstdio.h"))
+    assert len(results) == 1
+    assert results[0].message.endswith(
+        "incorrect_cstdio.h includes <cstdio> but does not reference any of its API"
     )
 
 

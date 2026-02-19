@@ -1784,6 +1784,8 @@ impl LayerCompositor for WrLayerCompositor {
         transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
         image_rendering: ImageRendering,
+        rounded_clip_rect: DeviceIntRect,
+        rounded_clip_radii: ClipRadius,
     ) {
         let layer = &self.visual_tree[index];
 
@@ -1794,8 +1796,8 @@ impl LayerCompositor for WrLayerCompositor {
                 &transform,
                 clip_rect,
                 image_rendering,
-                clip_rect,
-                ClipRadius::EMPTY,
+                rounded_clip_rect,
+                rounded_clip_radii,
             );
         }
     }
@@ -2067,15 +2069,13 @@ pub extern "C" fn wr_window_new(
                 use_native_compositor,
             )),
         }
+    } else if use_layer_compositor {
+        CompositorConfig::Layer {
+            compositor: Box::new(WrLayerCompositor::new(compositor)),
+        }
     } else if use_native_compositor {
-        if use_layer_compositor {
-            CompositorConfig::Layer {
-                compositor: Box::new(WrLayerCompositor::new(compositor)),
-            }
-        } else {
-            CompositorConfig::Native {
-                compositor: Box::new(WrCompositor(compositor)),
-            }
+        CompositorConfig::Native {
+            compositor: Box::new(WrCompositor(compositor)),
         }
     } else {
         CompositorConfig::Draw {
@@ -3217,7 +3217,6 @@ pub extern "C" fn wr_dp_push_stacking_context(
         params.mix_blend_mode,
         &filters,
         &r_filter_datas,
-        &[],
         glyph_raster_space,
         params.flags,
         unsafe { params.snapshot.as_ref() }.cloned(),
@@ -3552,28 +3551,7 @@ pub extern "C" fn wr_dp_push_backdrop_filter(
     state
         .frame_builder
         .dl_builder
-        .push_backdrop_filter(&prim_info, &filters, &filter_datas, &[]);
-}
-
-#[no_mangle]
-pub extern "C" fn wr_dp_push_clear_rect(
-    state: &mut WrState,
-    rect: LayoutRect,
-    clip_rect: LayoutRect,
-    parent: &WrSpaceAndClipChain,
-) {
-    debug_assert!(unsafe { !is_in_render_thread() });
-
-    let space_and_clip = parent.to_webrender(state.pipeline_id);
-
-    let prim_info = CommonItemProperties {
-        clip_rect,
-        clip_chain_id: space_and_clip.clip_chain_id,
-        spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(true, /* prefer_compositor_surface */ false),
-    };
-
-    state.frame_builder.dl_builder.push_clear_rect(&prim_info, rect);
+        .push_backdrop_filter(&prim_info, &filters, &filter_datas);
 }
 
 #[no_mangle]

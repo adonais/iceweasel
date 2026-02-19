@@ -22,16 +22,14 @@ from gecko_taskgraph.util.scriptworker import (
 
 transforms = TransformSequence()
 
-beetmover_description_schema = Schema(
-    {
-        Required("attributes"): task_description_schema["attributes"],
-        Required("dependencies"): task_description_schema["dependencies"],
-        Required("label"): str,
-        Required("name"): str,
-        Required("shipping-phase"): task_description_schema["shipping-phase"],
-        Required("task-from"): task_description_schema["task-from"],
-    }
-)
+beetmover_description_schema = Schema({
+    Required("attributes"): task_description_schema["attributes"],
+    Required("dependencies"): task_description_schema["dependencies"],
+    Required("label"): str,
+    Required("name"): str,
+    Required("shipping-phase"): task_description_schema["shipping-phase"],
+    Required("task-from"): task_description_schema["task-from"],
+})
 
 transforms.add_validate(beetmover_description_schema)
 

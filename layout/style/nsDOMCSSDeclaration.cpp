@@ -140,6 +140,15 @@ void nsDOMCSSDeclaration::GetPropertyValue(const nsACString& aPropertyName,
   }
 }
 
+bool nsDOMCSSDeclaration::HasLonghandProperty(const nsACString& aPropertyName) {
+  if (auto* decl = GetOrCreateCSSDeclaration(Operation::Read, nullptr)) {
+    return Servo_DeclarationBlock_HasLonghandProperty(decl->Raw(),
+                                                      &aPropertyName);
+  }
+
+  return false;
+}
+
 void nsDOMCSSDeclaration::GetPropertyPriority(const nsACString& aPropertyName,
                                               nsACString& aPriority) {
   MOZ_ASSERT(aPriority.IsEmpty());

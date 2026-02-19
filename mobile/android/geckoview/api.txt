@@ -1043,7 +1043,6 @@ package org.mozilla.geckoview {
     method @NonNull public int getLargeKeepaliveFactor();
     method @Nullable public Boolean getLnaBlockTrackers();
     method @Nullable public Boolean getLnaBlocking();
-    method @Deprecated @DeprecationSchedule(id="deprecated-lna-api",version=148) public boolean getLnaBlockingEnabled();
     method @Nullable public Boolean getLnaEnabled();
     method @Nullable public String[] getLocales();
     method public boolean getLoginAutofillEnabled();
@@ -1101,7 +1100,6 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings setLargeKeepaliveFactor(int);
     method @NonNull public GeckoRuntimeSettings setLnaBlockTrackers(boolean);
     method @NonNull public GeckoRuntimeSettings setLnaBlocking(boolean);
-    method @Deprecated @DeprecationSchedule(id="deprecated-lna-api",version=148) @NonNull public GeckoRuntimeSettings setLnaBlockingEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setLnaEnabled(boolean);
     method public void setLocales(@Nullable String[]);
     method @NonNull public GeckoRuntimeSettings setLoginAutofillEnabled(boolean);
@@ -1180,7 +1178,6 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings.Builder screenSizeOverride(int, int);
     method @NonNull public GeckoRuntimeSettings.Builder setLnaBlockTrackers(@NonNull Boolean);
     method @NonNull public GeckoRuntimeSettings.Builder setLnaBlocking(@NonNull Boolean);
-    method @Deprecated @DeprecationSchedule(id="deprecated-lna-api",version=148) @NonNull public GeckoRuntimeSettings.Builder setLnaBlockingEnabled(@NonNull Boolean);
     method @NonNull public GeckoRuntimeSettings.Builder setLnaEnabled(@NonNull Boolean);
     method @NonNull public GeckoRuntimeSettings.Builder setSameDocumentNavigationOverridesLoadType(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder setSameDocumentNavigationOverridesLoadTypeForceDisable(@NonNull String);
@@ -1352,17 +1349,18 @@ package org.mozilla.geckoview {
   }
 
   public static class GeckoSession.ContentDelegate.ContextElement {
-    ctor protected ContextElement(@Nullable String, @Nullable String, @Nullable String, @Nullable String, @NonNull String, @Nullable String, @Nullable String);
-    ctor protected ContextElement(@Nullable String, @Nullable String, @Nullable String, @Nullable String, @NonNull String, @Nullable String);
+    ctor protected ContextElement(@Nullable String, @Nullable String, @Nullable String, @Nullable String, @NonNull String, @Nullable String, @Nullable String, @Nullable String);
+    ctor @Deprecated @DeprecationSchedule(id="context-element-api-updates",version=151) protected ContextElement(@Nullable String, @Nullable String, @Nullable String, @Nullable String, @NonNull String, @Nullable String);
     field public static final int TYPE_AUDIO = 3;
     field public static final int TYPE_IMAGE = 1;
     field public static final int TYPE_NONE = 0;
     field public static final int TYPE_VIDEO = 2;
     field @Nullable public final String altText;
     field @Nullable public final String baseUri;
+    field @Nullable public final String linkText;
     field @Nullable public final String linkUri;
     field @Nullable public final String srcUri;
-    field @Nullable public final String textContent;
+    field @Deprecated @DeprecationSchedule(id="context-element-api-updates",version=151) @Nullable public final String textContent;
     field @Nullable public final String title;
     field public final int type;
   }

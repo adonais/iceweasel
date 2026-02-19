@@ -110,6 +110,27 @@ nsFrameList AbsoluteContainingBlock::StealPushedChildList() {
   return std::move(mPushedAbsoluteFrames);
 }
 
+void AbsoluteContainingBlock::DrainPushedChildList(
+    const nsIFrame* aDelegatingFrame) {
+  MOZ_ASSERT(aDelegatingFrame->GetAbsoluteContainingBlock() == this,
+             "aDelegatingFrame's absCB should be us!");
+
+  // Our pushed absolute child list might be non-empty if our next-in-flow
+  // hasn't reflowed yet. Move any child in that list that is a first-in-flow,
+  // or whose prev-in-flow is not in our absolute child list, into our absolute
+  // child list.
+  for (auto iter = mPushedAbsoluteFrames.begin();
+       iter != mPushedAbsoluteFrames.end();) {
+    // Advance the iterator first, so it's safe to move |child|.
+    nsIFrame* const child = *iter++;
+    if (!child->GetPrevInFlow() ||
+        child->GetPrevInFlow()->GetParent() != aDelegatingFrame) {
+      mPushedAbsoluteFrames.RemoveFrame(child);
+      mAbsoluteFrames.AppendFrame(nullptr, child);
+    }
+  }
+}
+
 bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     nsContainerFrame* aDelegatingFrame) {
   if (!aDelegatingFrame->PresContext()
@@ -133,23 +154,28 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     }
   }
 
-  // Our pushed absolute child list might be non-empty if our next-in-flow
-  // hasn't reflowed yet. Move any child in that list that is a first-in-flow,
-  // or whose prev-in-flow is not in our absolute child list, into our absolute
-  // child list.
-  nsIFrame* child = mPushedAbsoluteFrames.FirstChild();
-  while (child) {
-    nsIFrame* next = child->GetNextInFlow();
-    if (!child->GetPrevInFlow() ||
-        child->GetPrevInFlow()->GetParent() != aDelegatingFrame) {
-      mPushedAbsoluteFrames.RemoveFrame(child);
-      mAbsoluteFrames.AppendFrame(nullptr, child);
-    }
-    child = next;
-  }
+  DrainPushedChildList(aDelegatingFrame);
 
-  // TODO (Bug 1994346 or Bug 1997696): Consider stealing absolute frames from
-  // our next-in-flow's absolute child list.
+  // Steal absolute frame's first-in-flow from our next-in-flow's child lists.
+  for (const nsIFrame* nextInFlow = aDelegatingFrame->GetNextInFlow();
+       nextInFlow; nextInFlow = nextInFlow->GetNextInFlow()) {
+    AbsoluteContainingBlock* nextAbsCB =
+        nextInFlow->GetAbsoluteContainingBlock();
+    MOZ_ASSERT(nextAbsCB,
+               "If this delegating frame has an absCB, its next-in-flow must "
+               "have one, too!");
+
+    nextAbsCB->DrainPushedChildList(nextInFlow);
+
+    for (auto iter = nextAbsCB->GetChildList().begin();
+         iter != nextAbsCB->GetChildList().end();) {
+      nsIFrame* const child = *iter++;
+      if (!child->GetPrevInFlow()) {
+        nextAbsCB->StealFrame(child);
+        mAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
+      }
+    }
+  }
 
   return HasAbsoluteFrames();
 }
@@ -252,14 +278,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                      const nsRect& aContainingBlock,
                                      AbsPosReflowFlags aFlags,
                                      OverflowAreas* aOverflowAreas) {
-  // PageContentFrame replicates fixed pos children so we really don't want
-  // them contributing to overflow areas because that means we'll create new
-  // pages ad infinitum if one of them overflows the page.
-  if (aDelegatingFrame->IsPageContentFrame()) {
-    MOZ_ASSERT(mChildListID == FrameChildListID::Fixed);
-    aOverflowAreas = nullptr;
-  }
-
   const auto scrollableContainingBlock = [&]() -> nsRect {
     switch (aDelegatingFrame->Style()->GetPseudoType()) {
       case PseudoStyleType::scrolledContent:
@@ -350,12 +368,13 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
             nextFrame = aPresContext->PresShell()
                             ->FrameConstructor()
                             ->CreateContinuingFrame(kidFrame, aDelegatingFrame);
+            nextFrame->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
             mPushedAbsoluteFrames.AppendFrame(nullptr, nextFrame);
           } else if (nextFrame->GetParent() !=
                      aDelegatingFrame->GetNextInFlow()) {
             nextFrame->GetParent()->GetAbsoluteContainingBlock()->StealFrame(
                 nextFrame);
-            mPushedAbsoluteFrames.AppendFrame(nullptr, nextFrame);
+            mPushedAbsoluteFrames.AppendFrame(aDelegatingFrame, nextFrame);
           }
           reflowStatus.MergeCompletionStatusFrom(kidStatus);
         } else if (nextFrame) {
@@ -1225,6 +1244,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       break;
   }
 
+  const auto* baseStyle = aKidFrame->Style();
   // Set the current fallback to the given index, or reset to the base position
   // if Nothing() is passed.
   auto SeekFallbackTo = [&](Maybe<uint32_t> aIndex) -> bool {
@@ -1244,8 +1264,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     while (true) {
       nextFallback = &fallbacks[index];
       nextFallbackStyle = aPresContext->StyleSet()->ResolvePositionTry(
-          *aKidFrame->GetContent()->AsElement(), *aKidFrame->Style(),
-          *nextFallback);
+          *aKidFrame->GetContent()->AsElement(), *baseStyle, *nextFallback);
       if (nextFallbackStyle) {
         break;
       }

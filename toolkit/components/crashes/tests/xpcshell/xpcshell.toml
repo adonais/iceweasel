@@ -22,5 +22,3 @@ skip-if = [
 
 ["test_remote_settings_crash_pull.js"]
 support-files = ["../../../../../toolkit/crashreporter/test/browser/head.js"]
-
-["test_remote_settings_crash_pull_nightly.js"]

@@ -73,16 +73,14 @@ if __name__ == "__main__":
         if args.result_json is None:
             return
         if info is not None:
-            results["failures"].append(
-                {
-                    "column": info["column"],
-                    "file": args.changelog_file.name,
-                    "line": info["line"],
-                    "msg": info["message"],
-                    "rule": info["rule"],
-                    "error": True,
-                }
-            )
+            results["failures"].append({
+                "column": info["column"],
+                "file": args.changelog_file.name,
+                "line": info["line"],
+                "msg": info["message"],
+                "rule": info["rule"],
+                "error": True,
+            })
         args.result_json.seek(0)
         args.result_json.truncate(0)
         json.dump(results, args.result_json)
@@ -90,16 +88,14 @@ if __name__ == "__main__":
     try:
         (lineNumber, expectedApiVersion) = findApiVersion(args.changelog_file)
     except MissingApiVersionError:
-        dumpJsonError(
-            {
-                "column": 0,
-                "line": 1,
-                "message": "The api changelog file does not have a version pin. "
-                "Please update the file and add the following line: "
-                f"[api-version]: {currentApiVersion}",
-                "rule": "missing_api_version",
-            }
-        )
+        dumpJsonError({
+            "column": 0,
+            "line": 1,
+            "message": "The api changelog file does not have a version pin. "
+            "Please update the file and add the following line: "
+            f"[api-version]: {currentApiVersion}",
+            "rule": "missing_api_version",
+        })
         print(
             "ERROR: The api changelog file does not have a version pin. Please update"
         )
@@ -115,16 +111,14 @@ if __name__ == "__main__":
         sys.exit(11)
 
     if currentApiVersion != expectedApiVersion:
-        dumpJsonError(
-            {
-                "column": 14,
-                "line": lineNumber,
-                "message": "The api changelog file is out of date. Please update the "
-                "file and modify the [api-version] line as follows: "
-                f"[api-version]: {currentApiVersion}",
-                "rule": "wrong_api_version",
-            }
-        )
+        dumpJsonError({
+            "column": 14,
+            "line": lineNumber,
+            "message": "The api changelog file is out of date. Please update the "
+            "file and modify the [api-version] line as follows: "
+            f"[api-version]: {currentApiVersion}",
+            "rule": "wrong_api_version",
+        })
         print("ERROR: The api changelog file is out of date. Please update the file at")
         print("")
         print(args.changelog_file.name)

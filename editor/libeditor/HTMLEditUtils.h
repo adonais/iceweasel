@@ -108,27 +108,56 @@ class HTMLEditUtils final {
    */
   static bool IsNeverElementContentsEditableByUser(const nsIContent& aContent) {
     return aContent.IsElement() &&
+           // XXX I think we should not treat <button> contents as editable
+           !aContent.IsHTMLElement(nsGkAtoms::button) &&
            (!HTMLEditUtils::IsContainerNode(aContent) ||
-            aContent.IsAnyOfHTMLElements(
-                nsGkAtoms::applet, nsGkAtoms::colgroup, nsGkAtoms::frameset,
-                nsGkAtoms::head, nsGkAtoms::html, nsGkAtoms::iframe,
-                nsGkAtoms::meter, nsGkAtoms::progress, nsGkAtoms::select,
-                nsGkAtoms::textarea));
+            HTMLEditUtils::IsReplacedElement(*aContent.AsElement()) ||
+            aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::colgroup,
+                                         nsGkAtoms::frameset, nsGkAtoms::head,
+                                         nsGkAtoms::html));
   }
 
+  enum class ReplaceOrVoidElementOption {
+    LookForOnlyVoidElement,
+    LookForOnlyReplaceElement,
+    LookForOnlyNonVoidReplacedElement,
+    LookForReplacedOrVoidElement,
+  };
+
   /**
-   * IsNonEditableReplacedContent() returns true when aContent is an inclusive
-   * descendant of a replaced element whose content shouldn't be editable by
-   * user's operation.
+   * Return an inclusive ancestor replaced element or void element of aContent.
+   * I.e., if this returns non-nullptr, aContent is in a replaced element or a
+   * void element.
    */
-  static bool IsNonEditableReplacedContent(const nsIContent& aContent) {
-    for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
-      if (element->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::option,
-                                       nsGkAtoms::optgroup)) {
-        return true;
+  [[nodiscard]] static Element* GetInclusiveAncestorReplacedOrVoidElement(
+      const nsIContent& aContent, ReplaceOrVoidElementOption aOption) {
+    const bool lookForAnyReplaceElement =
+        aOption == ReplaceOrVoidElementOption::LookForOnlyReplaceElement ||
+        aOption == ReplaceOrVoidElementOption::LookForReplacedOrVoidElement;
+    const bool lookForNonVoidReplacedElement =
+        aOption ==
+        ReplaceOrVoidElementOption::LookForOnlyNonVoidReplacedElement;
+    const bool lookForVoidElement =
+        aOption == ReplaceOrVoidElementOption::LookForOnlyVoidElement ||
+        aOption == ReplaceOrVoidElementOption::LookForReplacedOrVoidElement;
+    Element* lastReplacedOrVoidElement = nullptr;
+    for (Element* const element :
+         aContent.InclusiveAncestorsOfType<Element>()) {
+      // XXX I think we should not treat <button> contents as editable
+      if (lookForAnyReplaceElement &&
+          !element->IsHTMLElement(nsGkAtoms::button) &&
+          HTMLEditUtils::IsReplacedElement(*element)) {
+        lastReplacedOrVoidElement = element;
+      } else if (lookForNonVoidReplacedElement &&
+                 !element->IsHTMLElement(nsGkAtoms::button) &&
+                 HTMLEditUtils::IsNonVoidReplacedElement(*element)) {
+        lastReplacedOrVoidElement = element;
+      } else if (lookForVoidElement &&
+                 !HTMLEditUtils::IsContainerNode(*element)) {
+        lastReplacedOrVoidElement = element;
       }
     }
-    return false;
+    return lastReplacedOrVoidElement;
   }
 
   /*
@@ -423,6 +452,19 @@ class HTMLEditUtils final {
   [[nodiscard]] static bool IsMailCiteElement(const Element& aElement);
 
   /**
+   * Return true if aElement is a replaced element.
+   */
+  [[nodiscard]] static bool IsReplacedElement(const Element& aElement);
+
+  /**
+   * Return true if aElement is a non-void replaced element such as <iframe>,
+   * <embed>, <audio>, <video>, <select>, etc.
+   */
+  [[nodiscard]] static bool IsNonVoidReplacedElement(const Element& aElement) {
+    return IsReplacedElement(aElement) && IsContainerNode(aElement);
+  }
+
+  /**
    * Return true if aElement is a form widget, i.e., a replaced element for the
    * <form>.
    */
@@ -486,6 +528,64 @@ class HTMLEditUtils final {
     nsHTMLTag parentTagEnum =
         nsHTMLTags::AtomTagToId(const_cast<nsAtom*>(&aParentNodeName));
     return HTMLEditUtils::CanNodeContain(parentTagEnum, childTagEnum);
+  }
+
+  /**
+   * Return a point where can insert a node whose name is aInsertNodeName.
+   * Note that if the container of aPointToInsert is not an element, this check
+   * whether aInsertNodeName can be inserted into the element.  Therefore, the
+   * caller may need to split the container when actually inserting a node.
+   */
+  [[nodiscard]] static EditorDOMPoint GetPossiblePointToInsert(
+      const EditorDOMPoint& aPointToInsert, const nsAtom& aInsertNodeName,
+      const Element& aEditingHost) {
+    if (MOZ_UNLIKELY(!aPointToInsert.IsInContentNode())) {
+      return EditorDOMPoint();
+    }
+    EditorDOMPoint pointToInsert(aPointToInsert);
+    // We shouldn't modify the subtree in a replaced element so that we need to
+    // test whether aInsertNodeName is inserted with inclusive ancestors
+    // starting from the most distant replaced element ancestor.
+    if (Element* const replacedOrVoidElement =
+            HTMLEditUtils::GetInclusiveAncestorReplacedOrVoidElement(
+                *aPointToInsert.GetContainer()->AsContent(),
+                ReplaceOrVoidElementOption::LookForReplacedOrVoidElement)) {
+      if (MOZ_UNLIKELY(replacedOrVoidElement == &aEditingHost) ||
+          MOZ_UNLIKELY(
+              !replacedOrVoidElement->IsInclusiveDescendantOf(&aEditingHost))) {
+        return EditorDOMPoint();
+      }
+      pointToInsert.Set(replacedOrVoidElement);
+    }
+    if ((pointToInsert.IsInTextNode() &&
+         &aInsertNodeName == nsGkAtoms::textTagName) ||
+        HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
+                                      aInsertNodeName)) {
+      return pointToInsert;
+    }
+    if (pointToInsert.IsInTextNode()) {
+      Element* const parentElement =
+          pointToInsert.GetContainerParentAs<Element>();
+      if (NS_WARN_IF(!parentElement)) {
+        return EditorDOMPoint();
+      }
+      if (HTMLEditUtils::CanNodeContain(*parentElement, aInsertNodeName)) {
+        // Okay, the insertion point should be fine even though the caller needs
+        // to split the `Text`.
+        return pointToInsert;
+      }
+    }
+    nsIContent* lastContent = pointToInsert.GetContainer()->AsContent();
+    for (Element* const element : lastContent->AncestorsOfType<Element>()) {
+      if (HTMLEditUtils::CanNodeContain(*element, aInsertNodeName)) {
+        return EditorDOMPoint(lastContent);
+      }
+      if (MOZ_UNLIKELY(element == &aEditingHost)) {
+        return EditorDOMPoint();
+      }
+      lastContent = element;
+    }
+    return pointToInsert;
   }
 
   /**
@@ -573,7 +673,9 @@ class HTMLEditUtils final {
                                            nsGkAtoms::tbody, nsGkAtoms::tfoot,
                                            nsGkAtoms::thead, nsGkAtoms::tr) &&
              !HTMLEditUtils::IsNeverElementContentsEditableByUser(aContent) &&
-             !HTMLEditUtils::IsNonEditableReplacedContent(aContent);
+             !HTMLEditUtils::GetInclusiveAncestorReplacedOrVoidElement(
+                 aContent,
+                 ReplaceOrVoidElementOption::LookForReplacedOrVoidElement);
     }
     return aContent.IsText() && aContent.Length() > 0;
   }

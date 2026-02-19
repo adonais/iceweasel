@@ -66,6 +66,8 @@ class SyncDeviceName extends MozLitElement {
     this.value = inputVal === "" ? this.defaultValue : inputVal;
     this._isInEditMode = false;
     this.setFocus();
+
+    this.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   /**

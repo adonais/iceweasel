@@ -849,16 +849,6 @@ impl YamlFrameReader {
         dl.push_rect(info, bounds, color);
     }
 
-    fn handle_clear_rect(
-        &self,
-        dl: &mut DisplayListBuilder,
-        item: &Yaml,
-        info: &CommonItemProperties,
-    ) {
-        let bounds = item["bounds"].as_rect().expect("clear-rect type must have bounds");
-        dl.push_clear_rect(info, bounds);
-    }
-
     fn handle_hit_test(
         &mut self,
         dl: &mut DisplayListBuilder,
@@ -1598,7 +1588,6 @@ impl YamlFrameReader {
             match item_type {
                 "rect" => self.handle_rect(dl, item, &info),
                 "hit-test" => self.handle_hit_test(dl, item, &mut info),
-                "clear-rect" => self.handle_clear_rect(dl, item, &info),
                 "line" => self.handle_line(dl, item, &mut info),
                 "image" => self.handle_image(dl, wrench, item, &mut info),
                 "yuv-image" => self.handle_yuv_image(dl, wrench, item, &mut info),
@@ -1905,12 +1894,15 @@ impl YamlFrameReader {
             .as_point()
             .unwrap_or(default_transform_origin);
 
+        let is_2d = yaml["is-2d"].as_bool().unwrap_or(false);
+        let should_snap = yaml["should-snap"].as_bool().unwrap_or(false);
+
         let reference_frame_kind = if !yaml["perspective"].is_badvalue() {
             ReferenceFrameKind::Perspective { scrolling_relative_to: None }
         } else {
             ReferenceFrameKind::Transform {
-                is_2d_scale_translation: false,
-                should_snap: false,
+                is_2d_scale_translation: is_2d,
+                should_snap,
                 paired_with_perspective: yaml["paired-with-perspective"].as_bool().unwrap_or(false),
             }
         };
@@ -2059,7 +2051,6 @@ impl YamlFrameReader {
 
         let filters = yaml["filters"].as_vec_filter_op().unwrap_or_default();
         let filter_datas = yaml["filter-datas"].as_vec_filter_data().unwrap_or_default();
-        let filter_primitives = yaml["filter-primitives"].as_vec_filter_primitive().unwrap_or_default();
 
         let snapshot = if !yaml["snapshot"].is_badvalue() {
             let yaml = &yaml["snapshot"];
@@ -2095,7 +2086,6 @@ impl YamlFrameReader {
             mix_blend_mode,
             &filters,
             &filter_datas,
-            &filter_primitives,
             raster_space,
             flags,
             snapshot,
@@ -2126,13 +2116,11 @@ impl YamlFrameReader {
 
         let filters = item["filters"].as_vec_filter_op().unwrap_or_default();
         let filter_datas = item["filter-datas"].as_vec_filter_data().unwrap_or_default();
-        let filter_primitives = item["filter-primitives"].as_vec_filter_primitive().unwrap_or_default();
 
         dl.push_backdrop_filter(
             info,
             &filters,
             &filter_datas,
-            &filter_primitives,
         );
     }
 }

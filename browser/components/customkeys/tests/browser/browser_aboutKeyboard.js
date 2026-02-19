@@ -242,6 +242,13 @@ addAboutKbTask(async function testChange(tab) {
     1,
     "Correct telemetry for change action"
   );
+  info(`Pressing ${consts.unusedKey}`);
+  EventUtils.synthesizeKey(consts.unusedKey, {}, window);
+  await SpecialPowers.spawn(tab, [consts], async _consts => {
+    await content.selected;
+    is(content.input.value, "Invalid", "Input shows invalid");
+    content.selected = ContentTaskUtils.waitForEvent(content.input, "select");
+  });
   info(`Pressing ${consts.unusedModifiersDisplay}`);
   EventUtils.synthesizeKey(...consts.unusedModifiersArgs, window);
   await SpecialPowers.spawn(tab, [consts], async _consts => {
@@ -251,9 +258,34 @@ addAboutKbTask(async function testChange(tab) {
       _consts.unusedModifiersDisplay,
       "Input shows modifiers as they're pressed"
     );
-    info(`Pressing ${_consts.unusedDisplay}`);
+    content.selected = ContentTaskUtils.waitForEvent(content.input, "select");
+  });
+  info(`Pressing Shift+${consts.unusedKey}`);
+  EventUtils.synthesizeKey(consts.unusedKey, { shiftKey: true }, window);
+  await SpecialPowers.spawn(tab, [consts], async _consts => {
+    await content.selected;
+    is(content.input.value, "Invalid", "Input shows invalid");
+    content.selected = ContentTaskUtils.waitForEvent(content.input, "select");
+  });
+  info(`Pressing ${consts.unusedModifiersDisplay}`);
+  EventUtils.synthesizeKey(...consts.unusedModifiersArgs, window);
+  await SpecialPowers.spawn(tab, [consts], async _consts => {
+    await content.selected;
+    is(
+      content.input.value,
+      _consts.unusedModifiersDisplay,
+      "Input shows modifiers as they're pressed"
+    );
+    content.selected = ContentTaskUtils.waitForEvent(content.input, "select");
+  });
+  info("Pressing Backspace");
+  EventUtils.synthesizeKey("KEY_Backspace", {}, window);
+  await SpecialPowers.spawn(tab, [consts], async _consts => {
+    await content.selected;
+    is(content.input.value, "Invalid", "Input shows invalid");
     content.focused = ContentTaskUtils.waitForEvent(content.change, "focus");
   });
+  info(`Pressing ${consts.unusedDisplay}`);
   EventUtils.synthesizeKey(consts.unusedKey, consts.unusedOptions, window);
   await SpecialPowers.spawn(tab, [consts], async _consts => {
     await content.focused;
@@ -734,4 +766,46 @@ addAboutKbTask(async function testFunctionKey(tab) {
     );
   });
   CustomKeys.resetAll();
+});
+
+// Test that changing to an arrow key works correctly.
+addAboutKbTask(async function testFunctionKey(tab) {
+  await SpecialPowers.spawn(tab, [consts], async _consts => {
+    content.backRow = content.document.querySelector(
+      '.key[data-id="goBackKb"]'
+    );
+    ok(
+      !content.backRow.classList.contains("customized"),
+      "goBackKb is not customized"
+    );
+    info("Clicking Change for goBackKb");
+    content.input = content.backRow.querySelector(".new");
+    let focused = ContentTaskUtils.waitForEvent(content.input, "focus");
+    content.change = content.backRow.querySelector(".change");
+    content.change.click();
+    await focused;
+    ok(true, "New key input got focus");
+    content.focused = ContentTaskUtils.waitForEvent(content.change, "focus");
+  });
+  await Services.fog.testFlushAllChildren();
+  is(
+    Glean.browserCustomkeys.actions.change.testGetValue(),
+    6,
+    "Correct telemetry for change action"
+  );
+  info(`Pressing ${consts.backDisplay}`);
+  EventUtils.synthesizeKey(...consts.backArgs, window);
+  await SpecialPowers.spawn(tab, [consts], async _consts => {
+    await content.focused;
+    ok(true, "Change button got focus");
+    ok(
+      !content.backRow.classList.contains("customized"),
+      "goBackKb is not customized"
+    );
+    is(
+      content.backRow.children[1].textContent,
+      _consts.backDisplay,
+      "Key is the default key"
+    );
+  });
 });

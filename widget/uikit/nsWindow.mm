@@ -960,7 +960,7 @@ void nsWindow::PaintWindow() {
   }
 }
 
-void nsWindow::ReportMoveEvent() { NotifyWindowMoved(mBounds.x, mBounds.y); }
+void nsWindow::ReportMoveEvent() { NotifyWindowMoved(mBounds.TopLeft()); }
 
 void nsWindow::ReportSizeModeEvent(nsSizeMode aMode) {
   if (mWidgetListener) {
@@ -984,12 +984,11 @@ void nsWindow::ReportSizeEvent() {
   LayoutDeviceIntRect innerBounds = GetClientBounds();
 
   if (mWidgetListener) {
-    mWidgetListener->WindowResized(this, innerBounds.width, innerBounds.height);
+    mWidgetListener->WindowResized(this, innerBounds.Size());
   }
 
   if (mAttachedWidgetListener) {
-    mAttachedWidgetListener->WindowResized(this, innerBounds.width,
-                                           innerBounds.height);
+    mAttachedWidgetListener->WindowResized(this, innerBounds.Size());
   }
 }
 

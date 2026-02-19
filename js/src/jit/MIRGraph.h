@@ -448,7 +448,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   bool resumePointsEmpty() const { return resumePoints_.empty(); }
 #endif
   MInstructionIterator begin() { return instructions_.begin(); }
-  MInstructionIterator begin(MInstruction* at) {
+  MInstructionIterator begin(const MInstruction* at) {
     MOZ_ASSERT(at->block() == this);
     return instructions_.begin(at);
   }

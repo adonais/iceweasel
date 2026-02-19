@@ -302,14 +302,14 @@ class StoreTest {
         val storeDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
         val middleware = object : Middleware<TestState, TestAction> {
             override fun invoke(
-                context: MiddlewareContext<TestState, TestAction>,
+                store: Store<TestState, TestAction>,
                 next: (TestAction) -> Unit,
                 action: TestAction,
             ) {
                 if (action is TestAction.DecrementAction) {
                     middlewareJobs += this@runTest.launch(middlewareDispatcher) {
                         delay(5)
-                        context.store.dispatch(TestAction.IncrementAction)
+                        store.dispatch(TestAction.IncrementAction)
                     }
                 }
                 next(action)

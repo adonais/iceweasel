@@ -18,6 +18,7 @@ async def is_local_file_option_shown(client, credentials, platform):
         condition="elem.innerText.replaceAll(' ', '').includes('Login')",
         is_displayed=True,
     ).click()
+    await client.stall(1)
     client.await_css(
         "button",
         condition="elem.innerText.includes('Login with Email')",

@@ -6,6 +6,7 @@
 
 use crate::counter_style::{parse_counter_style_body, parse_counter_style_name_definition};
 use crate::custom_properties::parse_name as parse_custom_property_name;
+use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 use crate::font_face::parse_font_face_block;
 use crate::media_queries::MediaList;
@@ -36,8 +37,9 @@ use crate::values::computed::font::FamilyName;
 use crate::values::{CssUrl, CustomIdent, DashedIdent, KeyframesName};
 use crate::{Atom, Namespace, Prefix};
 use cssparser::{
-    AtRuleParser, BasicParseError, BasicParseErrorKind, CowRcStr, DeclarationParser, Parser,
-    ParserState, QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourcePosition,
+    match_ignore_ascii_case, AtRuleParser, BasicParseError, BasicParseErrorKind, CowRcStr,
+    DeclarationParser, Parser, ParserState, QualifiedRuleParser, RuleBodyItemParser,
+    RuleBodyParser, SourcePosition,
 };
 use selectors::parser::{ParseRelative, SelectorList};
 use servo_arc::Arc;

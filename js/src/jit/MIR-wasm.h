@@ -1730,14 +1730,14 @@ class MWasmFloatRegisterResult : public MWasmResultBase<FloatRegister> {
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
-class MWasmBuiltinFloatRegisterResult : public MWasmResultBase<FloatRegister> {
-  MWasmBuiltinFloatRegisterResult(MIRType type, FloatRegister reg, bool hardFP)
+class MWasmSystemFloatRegisterResult : public MWasmResultBase<FloatRegister> {
+  MWasmSystemFloatRegisterResult(MIRType type, FloatRegister reg, bool hardFP)
       : MWasmResultBase(classOpcode, type, reg), hardFP_(hardFP) {}
 
   bool hardFP_;
 
  public:
-  INSTRUCTION_HEADER(WasmBuiltinFloatRegisterResult)
+  INSTRUCTION_HEADER(WasmSystemFloatRegisterResult)
   TRIVIAL_NEW_WRAPPERS
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
@@ -2554,6 +2554,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
     // "if you want to widen the value when it is loaded, the destination type
     // must be Int32".
     MOZ_ASSERT_IF(wideningOp != MWideningOp::None, type == MIRType::Int32);
+    // Check the alias set is one of the expected kinds.
     MOZ_ASSERT(
         aliases.flags() ==
             AliasSet::Load(AliasSet::WasmStructOutlineDataPointer).flags() ||
@@ -2568,6 +2569,14 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
         aliases.flags() ==
             AliasSet::Load(AliasSet::WasmArrayDataArea).flags() ||
         aliases.flags() == AliasSet::Load(AliasSet::Any).flags());
+    // Check the alias set is consistent with the result type.
+    MOZ_ASSERT(
+        (aliases.flags() ==
+         AliasSet::Load(AliasSet::WasmStructOutlineDataPointer).flags()) ==
+        (type == MIRType::WasmStructData));
+    MOZ_ASSERT((aliases.flags() ==
+                AliasSet::Load(AliasSet::WasmArrayDataPointer).flags()) ==
+               (type == MIRType::WasmArrayData));
     setResultType(type);
     if (maybeTrap_) {
       // This is safe, but see bug 1992059 for associated details.
@@ -2576,13 +2585,6 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
       setMovable();
     }
     initWasmRefType(maybeRefType);
-    if (aliases_.flags() ==
-            AliasSet::Load(AliasSet::WasmStructOutlineDataPointer).flags() ||
-        aliases_.flags() ==
-            AliasSet::Load(AliasSet::WasmArrayDataPointer).flags()) {
-      aliases_ = AliasSet::Store(AliasSet::Any);
-      setNotMovableUnchecked();
-    }
   }
 
  public:
@@ -2787,6 +2789,7 @@ class MWasmStoreFieldRef : public MAryInstruction<4>,
     MOZ_ASSERT(base->type() == TargetWordMIRType() ||
                base->type() == MIRType::Pointer ||
                base->type() == MIRType::WasmAnyRef ||
+               base->type() == MIRType::WasmStructData ||
                base->type() == MIRType::WasmArrayData);
     MOZ_ASSERT(offset <= INT32_MAX);
     MOZ_ASSERT(value->type() == MIRType::WasmAnyRef);
@@ -3229,14 +3232,10 @@ class MWasmNewStructObject : public MBinaryInstruction,
   }
   const wasm::TypeDef& typeDef() { return *typeDef_; }
   const wasm::StructType& structType() const { return typeDef_->structType(); }
-  bool isOutline() const {
-    return WasmStructObject::requiresOutlineBytes(typeDef_->structType().size_);
-  }
+  bool isOutline() const { return typeDef_->structType().hasOOL(); }
   bool zeroFields() const { return zeroFields_; }
   const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }
-  gc::AllocKind allocKind() const {
-    return WasmStructObject::allocKindForTypeDef(typeDef_);
-  }
+  gc::AllocKind allocKind() const { return typeDef_->structType().allocKind_; }
 };
 
 class MWasmNewArrayObject : public MTernaryInstruction,

@@ -133,18 +133,6 @@ features:
           }
         }
 
-  growth-data:
-    description: A feature measuring campaign growth data
-    variables:
-      enabled:
-        description: If true, the feature is active
-        type: Boolean
-        default: false
-    defaults:
-      - channel: release
-        value:
-          enabled: true
-
   re-engagement-notification:
     description: A feature that shows the re-engagement notification if the user is inactive.
     variables:
@@ -404,14 +392,16 @@ features:
         description: >
           When the feature is enabled the user will see a new composable toolbar instead the previous View based one.
         type: Boolean
+        default: true
+
+  minimal-addressbar:
+    description: Show a smaller height bottom addressbar with just the URL.
+    variables:
+      at-bottom-while-entering-text:
+        description: >
+          Whether to show the smaller height bottom addressbar with just the URL when entering text in a website.
+        type: Boolean
         default: false
-    defaults:
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: developer
-        value:
-          enabled: true
 
   remote-tab-management:
     description: >
@@ -707,6 +697,14 @@ features:
         type: Boolean
         default: false
 
+  homepage-opening-screen-default:
+    description: Configure the default option for the homepage opening screen.
+    variables:
+      default-option:
+        description: The default option for the homepage opening screen.
+        type: OpeningScreenOption
+        default: homepage-four-hours
+
   unified-trust-panel:
     description: Enables the unified trust panel.
     variables:
@@ -851,6 +849,9 @@ features:
         - channel: nightly
           value:
             enabled: true
+        - channel: beta
+          value:
+            enabled: true
 
   toolbar-redesign-option:
     description: Control the visibility of toolbar redesign option in settings.
@@ -901,7 +902,26 @@ features:
       - channel: nightly
         value:
           enabled: true
-          opening_animation_enabled: true
+          opening_animation_enabled: false
+
+  tab-search:
+    description: Control the visibility of the tab search feature.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable the tab search feature.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: release
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
 
   suppress-sponsored-top-sites:
     description: Suppress sponsored top sites for new users for 14 days.
@@ -951,6 +971,16 @@ features:
         description: Whether or not to enable the new trigger criteria.
         type: Boolean
         default: false
+
+  # Created this in addition to the `custom-review-prompt` flag to keep changes minimal and make it easier to uplift.
+  # See: https://bugzilla.mozilla.org/show_bug.cgi?id=2014083
+  custom-review-prompt-ui:
+    description: Feature that controls the custom UI for review prompt.
+    variables:
+      enabled:
+        description: When enabled we show the custom review prompt UI. Otherwise we try to directly show the Play Store in-app review prompt.
+        type: Boolean
+        default: true
 
   default-browser-prompt:
     description: Feature that controls when the default browser prompt is shown.
@@ -1109,3 +1139,16 @@ types:
             Uses the following copy:
             - Title: "A note from Firefox"
             - Learn more: "You can learn more here."
+
+    OpeningScreenOption:
+      description: The types of different experiment branches for the opening screen.
+      variants:
+        homepage:
+          description:
+            Uses the homepage as the opening screen.
+        last-tab:
+          description:
+            Uses the last tab as the opening screen.
+        homepage-four-hours:
+          description:
+            Uses the homepage after four hours of inactivity as the opening screen.

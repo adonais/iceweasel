@@ -60,7 +60,7 @@ class nsMathMLmfracFrame final : public nsMathMLContainerFrame {
   friend nsIFrame* NS_NewMathMLmfracFrame(mozilla::PresShell* aPresShell,
                                           ComputedStyle* aStyle);
 
-  eMathMLFrameType GetMathMLFrameType() override;
+  MathMLFrameType GetMathMLFrameType() override;
 
   void Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
              ReflowOutput& aDesiredSize) override;

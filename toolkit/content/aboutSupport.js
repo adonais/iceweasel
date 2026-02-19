@@ -410,10 +410,11 @@ var snapshotFormatters = {
     if (!AppConstants.MOZ_PLACES) {
       return;
     }
+    const { prefs } = data;
     const statsBody = $("place-database-stats-tbody");
     $.append(
       statsBody,
-      data.map(function (entry) {
+      prefs.map(function (entry) {
         return $.new("tr", [
           $.new("td", entry.entity),
           $.new("td", entry.count),
@@ -443,6 +444,45 @@ var snapshotFormatters = {
         }
       }
     );
+
+    const formatter = new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    });
+
+    const maintenanceDateElement = $(
+      "place-database-last-idle-maintenance-data"
+    );
+    if (data.lastMaintenanceDate) {
+      maintenanceDateElement.textContent = formatter.format(
+        new Date(data.lastMaintenanceDate)
+      );
+    } else {
+      document.l10n.setAttributes(maintenanceDateElement, "missing");
+    }
+
+    const vacuumDateElement = $("place-database-last-vacuum-date");
+    if (data.lastVacuumDate) {
+      vacuumDateElement.textContent = formatter.format(
+        new Date(data.lastVacuumDate)
+      );
+    } else {
+      document.l10n.setAttributes(vacuumDateElement, "missing");
+    }
+
+    const integrityCorruptionDateElement = $(
+      "place-database-last-integrity-corruption-date"
+    );
+    if (data.lastIntegrityCorruptionDate) {
+      integrityCorruptionDateElement.textContent = formatter.format(
+        new Date(data.lastIntegrityCorruptionDate)
+      );
+    } else {
+      document.l10n.setAttributes(integrityCorruptionDateElement, "missing");
+    }
   },
 
   printingPreferences(data) {

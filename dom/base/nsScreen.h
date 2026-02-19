@@ -84,6 +84,8 @@ class nsScreen : public mozilla::DOMEventTargetHelper {
     return mScreenOrientation.get();
   }
 
+  bool IsScreen() const override { return true; }
+
  protected:
   nsDeviceContext* GetDeviceContext() const;
   mozilla::CSSIntRect GetRect();
@@ -100,5 +102,27 @@ class nsScreen : public mozilla::DOMEventTargetHelper {
 
   RefPtr<mozilla::dom::ScreenOrientation> mScreenOrientation;
 };
+
+namespace mozilla::dom {
+
+inline nsScreen* EventTarget::GetAsScreen() {
+  return IsScreen() ? AsScreen() : nullptr;
+}
+
+inline const nsScreen* EventTarget::GetAsScreen() const {
+  return IsScreen() ? AsScreen() : nullptr;
+}
+
+inline nsScreen* EventTarget::AsScreen() {
+  MOZ_DIAGNOSTIC_ASSERT(IsScreen());
+  return static_cast<nsScreen*>(this);
+}
+
+inline const nsScreen* EventTarget::AsScreen() const {
+  MOZ_DIAGNOSTIC_ASSERT(IsScreen());
+  return static_cast<const nsScreen*>(this);
+}
+
+}  // namespace mozilla::dom
 
 #endif /* nsScreen_h___ */

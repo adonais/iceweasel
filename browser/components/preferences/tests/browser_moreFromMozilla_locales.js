@@ -343,7 +343,7 @@ add_task(async function test_Monitor_US_region_desc() {
     monitorPromoCard.nextElementSibling.querySelector(".description");
   is(
     monitorDescElement.getAttribute("data-l10n-id"),
-    "more-from-moz-mozilla-monitor-us-description",
+    "more-from-moz-mozilla-monitor-global-description",
     "US Region desc set"
   );
 

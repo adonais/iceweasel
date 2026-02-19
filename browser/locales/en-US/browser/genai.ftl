@@ -70,6 +70,9 @@ genai-menu-remove-provider =
     .label = Remove { $provider }
 genai-menu-remove-sidebar =
     .label = Remove from Sidebar
+# $provider (string) - name of the AI chat provider
+genai-shortcut-button =
+    .aria-label = Ask { $provider }
 
 genai-menu-new-badge = New
 genai-menu-summarize-page = Summarize Page
@@ -194,13 +197,13 @@ link-preview-reading-time =
     }
 
 # Error message displayed when a link preview cannot be generated
-link-preview-error-message = We can’t preview this link
+link-preview-error-message-v2 = { -brand-short-name } can’t preview this link
 
 # Text for the link to visit the original URL when in error state
 link-preview-visit-link = Visit link
 
-# Error message when we can't generate key points (summary highlights or main ideas of page content) for a page
-link-preview-generation-error-missing-data = We can’t generate key points for this webpage.
+# Error message when key points generation (summary highlights or main ideas of page content) fails for a page
+link-preview-generation-error-missing-data-v2 = { -brand-short-name } can’t generate key points for this webpage.
 
 # Error message when something went wrong during key point generation
 link-preview-generation-error-unexpected = Something went wrong.

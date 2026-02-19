@@ -477,12 +477,55 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
       DXGI_FORMAT_B8G8R8A8_UNORM, aSize.width, aSize.height, 1, 1,
       D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
 
-  if (aFormat == SurfaceFormat::NV12) {
-    newDesc.Format = DXGI_FORMAT_NV12;
-  } else if (aFormat == SurfaceFormat::P010) {
-    newDesc.Format = DXGI_FORMAT_P010;
-  } else if (aFormat == SurfaceFormat::P016) {
-    newDesc.Format = DXGI_FORMAT_P016;
+  // This supported formats list matches DXGITextureHostD3D11::PushDisplayItems.
+  switch (aFormat) {
+    case gfx::SurfaceFormat::B8G8R8X8:
+    case gfx::SurfaceFormat::R8G8B8X8:
+      newDesc.Format = DXGI_FORMAT_B8G8R8X8_UNORM;
+      break;
+    case gfx::SurfaceFormat::B8G8R8A8:
+    case gfx::SurfaceFormat::R8G8B8A8:
+      newDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+      break;
+    case gfx::SurfaceFormat::R10G10B10A2_UINT32:
+    case gfx::SurfaceFormat::R10G10B10X2_UINT32:
+      newDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
+      break;
+    case gfx::SurfaceFormat::R16G16B16A16F:
+      newDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+      break;
+    case gfx::SurfaceFormat::NV12:
+      newDesc.Format = DXGI_FORMAT_NV12;
+      break;
+    case gfx::SurfaceFormat::P010:
+      newDesc.Format = DXGI_FORMAT_P010;
+      break;
+    case gfx::SurfaceFormat::P016:
+      newDesc.Format = DXGI_FORMAT_P016;
+      break;
+    case gfx::SurfaceFormat::A8R8G8B8:
+    case gfx::SurfaceFormat::X8R8G8B8:
+    case gfx::SurfaceFormat::R8G8B8:
+    case gfx::SurfaceFormat::B8G8R8:
+    case gfx::SurfaceFormat::R5G6B5_UINT16:
+    case gfx::SurfaceFormat::A8:
+    case gfx::SurfaceFormat::A16:
+    case gfx::SurfaceFormat::R8G8:
+    case gfx::SurfaceFormat::R16G16:
+    case gfx::SurfaceFormat::YUV420:
+    case gfx::SurfaceFormat::YUV420P10:
+    case gfx::SurfaceFormat::YUV422P10:
+    case gfx::SurfaceFormat::NV16:
+    case gfx::SurfaceFormat::YUY2:
+    case gfx::SurfaceFormat::HSV:
+    case gfx::SurfaceFormat::Lab:
+    case gfx::SurfaceFormat::Depth:
+    case gfx::SurfaceFormat::UNKNOWN:
+      // Per advice from Sotaro, these formats are not supported for video.
+      gfxCriticalNoteOnce
+          << "D3D11TextureData::Create: Unsupported SurfaceFormat %u"
+          << static_cast<unsigned int>(aFormat);
+      return nullptr;
   }
 
   newDesc.MiscFlags =
@@ -1069,7 +1112,10 @@ uint32_t DXGITextureHostD3D11::NumSubTextures() {
     case gfx::SurfaceFormat::R8G8B8X8:
     case gfx::SurfaceFormat::R8G8B8A8:
     case gfx::SurfaceFormat::B8G8R8A8:
-    case gfx::SurfaceFormat::B8G8R8X8: {
+    case gfx::SurfaceFormat::B8G8R8X8:
+    case gfx::SurfaceFormat::R10G10B10A2_UINT32:
+    case gfx::SurfaceFormat::R10G10B10X2_UINT32:
+    case gfx::SurfaceFormat::R16G16B16A16F: {
       return 1;
     }
     case gfx::SurfaceFormat::NV12:
@@ -1100,7 +1146,10 @@ void DXGITextureHostD3D11::PushResourceUpdates(
     case gfx::SurfaceFormat::R8G8B8X8:
     case gfx::SurfaceFormat::R8G8B8A8:
     case gfx::SurfaceFormat::B8G8R8A8:
-    case gfx::SurfaceFormat::B8G8R8X8: {
+    case gfx::SurfaceFormat::B8G8R8X8:
+    case gfx::SurfaceFormat::R10G10B10A2_UINT32:
+    case gfx::SurfaceFormat::R10G10B10X2_UINT32:
+    case gfx::SurfaceFormat::R16G16B16A16F: {
       MOZ_ASSERT(aImageKeys.length() == 1);
 
       wr::ImageDescriptor descriptor(mSize, GetFormat());
@@ -1170,7 +1219,20 @@ void DXGITextureHostD3D11::PushDisplayItems(
     preferExternalCompositing = false;
   }
 
+  // This supported format list matches D3D11TextureData::Create.
   switch (GetFormat()) {
+    case gfx::SurfaceFormat::R10G10B10A2_UINT32:
+    case gfx::SurfaceFormat::R10G10B10X2_UINT32:
+    case gfx::SurfaceFormat::R16G16B16A16F: {
+      // WebRender isn't HDR ready so we have to push to the compositor.
+      preferCompositorSurface = preferExternalCompositing = true;
+      MOZ_ASSERT(aImageKeys.length() == 1);
+      aBuilder.PushImage(aBounds, aClip, true, false, aFilter, aImageKeys[0],
+                         !(mFlags & TextureFlags::NON_PREMULTIPLIED),
+                         wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
+                         preferCompositorSurface, preferExternalCompositing);
+      break;
+    }
     case gfx::SurfaceFormat::R8G8B8X8:
     case gfx::SurfaceFormat::R8G8B8A8:
     case gfx::SurfaceFormat::B8G8R8A8:
@@ -1183,13 +1245,22 @@ void DXGITextureHostD3D11::PushDisplayItems(
       break;
     }
     case gfx::SurfaceFormat::P010:
-    case gfx::SurfaceFormat::P016:
-    case gfx::SurfaceFormat::NV12: {
+    case gfx::SurfaceFormat::P016: {
       // DXGI_FORMAT_P010 stores its 10 bit value in the most significant bits
       // of each 16 bit word with the unused lower bits cleared to zero so that
       // it may be handled as if it was DXGI_FORMAT_P016. This is approximately
       // perceptually correct. However, due to rounding error, the precise
       // quantized value after sampling may be off by 1.
+      MOZ_ASSERT(aImageKeys.length() == 2);
+      aBuilder.PushP010Image(
+          aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
+          wr::ColorDepth::Color16,
+          wr::ToWrYuvColorSpace(ToYUVColorSpace(mColorSpace)),
+          wr::ToWrColorRange(mColorRange), aFilter, preferCompositorSurface,
+          preferExternalCompositing);
+      break;
+    }
+    case gfx::SurfaceFormat::NV12: {
       MOZ_ASSERT(aImageKeys.length() == 2);
       aBuilder.PushNV12Image(
           aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
@@ -1200,7 +1271,25 @@ void DXGITextureHostD3D11::PushDisplayItems(
           preferExternalCompositing);
       break;
     }
-    default: {
+    case gfx::SurfaceFormat::A8R8G8B8:
+    case gfx::SurfaceFormat::X8R8G8B8:
+    case gfx::SurfaceFormat::R8G8B8:
+    case gfx::SurfaceFormat::B8G8R8:
+    case gfx::SurfaceFormat::R5G6B5_UINT16:
+    case gfx::SurfaceFormat::A8:
+    case gfx::SurfaceFormat::A16:
+    case gfx::SurfaceFormat::R8G8:
+    case gfx::SurfaceFormat::R16G16:
+    case gfx::SurfaceFormat::YUV420:
+    case gfx::SurfaceFormat::YUV420P10:
+    case gfx::SurfaceFormat::YUV422P10:
+    case gfx::SurfaceFormat::NV16:
+    case gfx::SurfaceFormat::YUY2:
+    case gfx::SurfaceFormat::HSV:
+    case gfx::SurfaceFormat::Lab:
+    case gfx::SurfaceFormat::Depth:
+    case gfx::SurfaceFormat::UNKNOWN: {
+      // Per advice from Sotaro, these formats are not supported for video.
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     }
   }
@@ -1211,9 +1300,9 @@ bool DXGITextureHostD3D11::SupportsExternalCompositing(
   if (aBackend == WebRenderBackend::SOFTWARE) {
     return true;
   }
-  // XXX Add P010 and P016 support.
   if (GetFormat() == gfx::SurfaceFormat::NV12 ||
-      GetFormat() == gfx::SurfaceFormat::P010) {
+      GetFormat() == gfx::SurfaceFormat::P010 ||
+      GetFormat() == gfx::SurfaceFormat::P016) {
     if ((mFlags & TextureFlags::SOFTWARE_DECODED_VIDEO) &&
         (gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin())) {
       return true;
@@ -1223,7 +1312,42 @@ bool DXGITextureHostD3D11::SupportsExternalCompositing(
       return true;
     }
   }
+
+  bool useDcompTextureOverlay =
+      wr::RenderDXGITextureHost::UseDCompositionTextureOverlay(GetFormat()) &&
+      mFencesHolderId.isSome() &&
+      !(mFlags & TextureFlags::ALLOC_BY_BUFFER_PROVIDER);
+  if (useDcompTextureOverlay) {
+    return true;
+  }
+
   return false;
+}
+
+void DXGITextureHostD3D11::NotifyNotUsed() {
+  if (!mReadFence || mFencesHolderId.isNothing()) {
+    return;
+  }
+
+  auto* fenceHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
+  if (!fenceHolderMap) {
+    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    return;
+  }
+  fenceHolderMap->SetReadFence(mFencesHolderId.ref(), mReadFence);
+  mReadFence = nullptr;
+}
+
+void DXGITextureHostD3D11::SetReadFence(Fence* aReadFence) {
+  MOZ_ASSERT(aReadFence);
+  MOZ_ASSERT(aReadFence->AsFenceD3D11());
+
+  if (!aReadFence || !aReadFence->AsFenceD3D11() ||
+      mFencesHolderId.isNothing()) {
+    return;
+  }
+
+  mReadFence = aReadFence->AsFenceD3D11();
 }
 
 DXGIYCbCrTextureHostD3D11::DXGIYCbCrTextureHostD3D11(
@@ -1352,14 +1476,15 @@ void DXGIYCbCrTextureHostD3D11::NotifyNotUsed() {
   mReadFence = nullptr;
 }
 
-void DXGIYCbCrTextureHostD3D11::SetReadFence(RefPtr<FenceD3D11> aReadFence) {
+void DXGIYCbCrTextureHostD3D11::SetReadFence(Fence* aReadFence) {
   MOZ_ASSERT(aReadFence);
+  MOZ_ASSERT(aReadFence->AsFenceD3D11());
 
-  if (!aReadFence) {
+  if (!aReadFence || !aReadFence->AsFenceD3D11()) {
     return;
   }
 
-  mReadFence = aReadFence;
+  mReadFence = aReadFence->AsFenceD3D11();
 }
 
 bool DataTextureSourceD3D11::Update(DataSourceSurface* aSurface,

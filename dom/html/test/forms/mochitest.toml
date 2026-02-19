@@ -6,7 +6,10 @@ support-files = [
   "FAIL.html",
   "PASS.html",
 ]
-prefs = ["formhelper.autozoom.force-disable.test-only=true"]
+prefs = [
+  "formhelper.autozoom.force-disable.test-only=true",
+  "dom.forms.html_color_picker.enabled=false",
+]
 
 ["test_MozEditableElement_setUserInput.html"]
 

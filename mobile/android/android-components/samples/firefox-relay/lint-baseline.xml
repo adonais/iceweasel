@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<issues format="6" by="lint 8.13.0" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0)" variant="all" version="8.13.0">
+
+    <issue
+        id="ButtonStyleXmlDetector"
+        message="All buttons must have a style, try using NeutralButton or similar."
+        errorLine1="        &lt;Button"
+        errorLine2="         ~~~~~~">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="23"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ButtonStyleXmlDetector"
+        message="All buttons must have a style, try using NeutralButton or similar."
+        errorLine1="        &lt;Button"
+        errorLine2="         ~~~~~~">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="30"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ButtonStyleXmlDetector"
+        message="All buttons must have a style, try using NeutralButton or similar."
+        errorLine1="        &lt;Button"
+        errorLine2="         ~~~~~~">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="37"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="ButtonStyleXmlDetector"
+        message="All buttons must have a style, try using NeutralButton or similar."
+        errorLine1="        &lt;Button"
+        errorLine2="         ~~~~~~">
+        <location
+            file="src/main/res/layout/activity_main.xml"
+            line="44"
+            column="10"/>
+    </issue>
+
+</issues>

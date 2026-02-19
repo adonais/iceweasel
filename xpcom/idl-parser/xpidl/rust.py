@@ -61,9 +61,9 @@ class AutoIndent:
 
             self.fd.write("    " * indent + s + "\n")
             for c in s:
-                if c == "(" or c == "{" or c == "[":
+                if c in {"(", "{", "["}:
                     self.indent += 1
-                elif c == ")" or c == "}" or c == "]":
+                elif c in {")", "}", "]"}:
                     self.indent -= 1
 
 
@@ -354,7 +354,7 @@ def print_rust_bindings(idl, fd, relpath):
     # import statements
 
     for p in idl.productions:
-        if p.kind == "include" or p.kind == "cdata" or p.kind == "forward":
+        if p.kind in {"include", "cdata", "forward"}:
             continue
 
         if p.kind == "interface":

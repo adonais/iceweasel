@@ -1390,6 +1390,19 @@ const TargetingGetters = {
   },
 };
 
+function addAIWindowTargeting(targeting) {
+  if (!targeting || targeting === "true") {
+    // Default behavior: Classic-only if no targeting is specified
+    return `!isAIWindow`;
+  }
+
+  if (/\bisAIWindow\b/.test(targeting)) {
+    return targeting;
+  }
+
+  return `((${targeting}) && !isAIWindow)`;
+}
+
 export const ASRouterTargeting = {
   Environment: TargetingGetters,
 
@@ -1531,14 +1544,13 @@ export const ASRouterTargeting = {
       Array.from(arguments) // eslint-disable-line prefer-rest-params
     );
 
-    // If no targeting is specified,
-    if (!message.targeting) {
-      return true;
-    }
+    let { targeting } = message;
+    targeting = addAIWindowTargeting(targeting);
+
     let result;
     try {
       if (shouldCache) {
-        result = this.getCachedEvaluation(message.targeting);
+        result = this.getCachedEvaluation(targeting);
         if (result) {
           return result.value;
         }
@@ -1546,9 +1558,9 @@ export const ASRouterTargeting = {
       // Used to report the source of the targeting error in the case of
       // undesired events
       targetingContext.setTelemetrySource(message.id);
-      result = await targetingContext.evalWithDefault(message.targeting);
+      result = await targetingContext.evalWithDefault(targeting);
       if (shouldCache) {
-        jexlEvaluationCache.set(message.targeting, {
+        jexlEvaluationCache.set(targeting, {
           timestamp: Date.now(),
           value: result,
         });

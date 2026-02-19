@@ -9,7 +9,6 @@
 #include "nsICookieService.h"
 #include "nsICookieManager.h"
 #include "nsICookie.h"
-#include <stdio.h>
 #include "plstr.h"
 #include "nsNetUtil.h"
 #include "nsIChannel.h"

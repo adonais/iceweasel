@@ -251,7 +251,7 @@ BufferOffset AssemblerMIPSShared::nopAlign(int alignment) {
 
 BufferOffset AssemblerMIPSShared::as_nop() {
   spew("nop");
-  return writeInst(op_special | ff_sll);
+  return writeInst(static_cast<uint32_t>(op_special) | ff_sll);
 }
 
 // Logical operations.

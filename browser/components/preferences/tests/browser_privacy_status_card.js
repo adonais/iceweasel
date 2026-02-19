@@ -3,7 +3,7 @@
 
 "use strict";
 
-const FEATURE_PREF = "privacy.ui.status_card";
+const FEATURE_PREF = "browser.settings-redesign.enabled";
 const CARD_NAME = "security-privacy-card";
 const ISSUE_CONTROL_ID = "securityWarningsGroup";
 
@@ -71,11 +71,11 @@ function getCardAndCheckHeader(document, expectedHeaderL10n) {
 }
 
 function assertHappyBullets(card) {
-  let bullets = card.shadowRoot.querySelectorAll(".status-bullet > img");
+  let bullets = card.shadowRoot.querySelectorAll("li");
   Assert.equal(bullets.length, 2);
   for (const bullet of bullets) {
     Assert.equal(
-      bullet.classList.contains("check-bullet"),
+      bullet.classList.contains("status-ok"),
       true,
       "All bullets must be happy!"
     );
@@ -180,15 +180,12 @@ add_task(async function test_issue_present() {
         browser.contentDocument,
         "security-privacy-status-problem-header"
       );
-      let bulletIcons = card.shadowRoot.querySelectorAll(
-        ".status-bullet > img"
-      );
+      let bulletIcons = card.shadowRoot.querySelectorAll("li");
       Assert.equal(bulletIcons.length, 2);
       let problemsBulletIcon = bulletIcons[0];
-      Assert.ok(problemsBulletIcon.classList.contains("alert-bullet"));
-      let bulletLink = card.shadowRoot.querySelector(".status-bullet");
+      Assert.ok(problemsBulletIcon.classList.contains("status-alert"));
       Assert.notEqual(
-        bulletLink.querySelector("a"),
+        problemsBulletIcon.querySelector("a"),
         null,
         "Link to issues is present"
       );
@@ -211,6 +208,7 @@ add_task(async function test_issue_fix() {
       ["privacy.ui.status_card.testing.show_issue", true],
     ].concat(RESET_PROBLEMATIC_TEST_DEFAULTS),
   });
+  Services.fog.testResetFOG();
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:preferences#privacy" },
@@ -242,6 +240,28 @@ add_task(async function test_issue_fix() {
         ),
         "Pref has no user value after clicking the fix button"
       );
+      let events =
+        Glean.securityPreferencesWarnings.warningFixed.testGetValue();
+      Assert.equal(events.length, 1, "One telemetry event was recorded");
+      Assert.equal(
+        events[0].category,
+        "security.preferences.warnings",
+        "Category is correct"
+      );
+      Assert.equal(events[0].name, "warning_fixed", "Event name is correct");
+
+      let warningsShownEvents =
+        Glean.securityPreferencesWarnings.warningsShown.testGetValue();
+      Assert.equal(
+        warningsShownEvents.length,
+        1,
+        "warningsShown telemetry was recorded exactly once"
+      );
+      Assert.equal(
+        warningsShownEvents[0].extra.count,
+        "1",
+        "Count of warnings shown is correct"
+      );
     }
   );
 
@@ -255,6 +275,7 @@ add_task(async function test_issue_dismiss() {
       ["privacy.ui.status_card.testing.show_issue", true],
     ].concat(RESET_PROBLEMATIC_TEST_DEFAULTS),
   });
+  Services.fog.testResetFOG();
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:preferences#privacy" },
@@ -286,8 +307,62 @@ add_task(async function test_issue_dismiss() {
         ),
         "Pref has no user value after clicking the fix button"
       );
+      let events =
+        Glean.securityPreferencesWarnings.warningDismissed.testGetValue();
+      Assert.equal(events.length, 1, "One telemetry event was recorded");
+      Assert.equal(
+        events[0].category,
+        "security.preferences.warnings",
+        "Category is correct"
+      );
+      Assert.equal(
+        events[0].name,
+        "warning_dismissed",
+        "Event name is correct"
+      );
+      let warningsShownEvents =
+        Glean.securityPreferencesWarnings.warningsShown.testGetValue();
+      Assert.equal(
+        warningsShownEvents.length,
+        1,
+        "warningsShown telemetry was recorded exactly once"
+      );
+      Assert.equal(
+        warningsShownEvents[0].extra.count,
+        "1",
+        "Count of warnings shown is correct"
+      );
       Services.prefs.clearUserPref(
         "browser.preferences.config_warning.warningTest.dismissed"
+      );
+    }
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_dismiss_all_hides_issues() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [FEATURE_PREF, true],
+      ["privacy.ui.status_card.testing.show_issue", true],
+      ["browser.preferences.config_warning.dismissAll", true],
+    ].concat(RESET_PROBLEMATIC_TEST_DEFAULTS),
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences#privacy" },
+    async function (browser) {
+      let card = getCardAndCheckHeader(
+        browser.contentDocument,
+        "security-privacy-status-ok-header"
+      );
+      assertHappyBullets(card);
+
+      let configCard = browser.contentDocument.getElementById(ISSUE_CONTROL_ID);
+      Assert.ok(
+        BrowserTestUtils.isHidden(configCard),
+        "Issue card is not present when dismissAll is true"
       );
     }
   );
@@ -302,15 +377,11 @@ add_task(async function test_update_status_indicator() {
 
   // Define testers for each UI state.
   let absent = card => {
-    let label = card.shadowRoot.querySelector(
-      "div.status-bullet:nth-child(4) > .status-label-holder > div"
-    );
+    let label = card.shadowRoot.querySelector("li:nth-child(3) p");
     Assert.equal(label, null, "No install status label is present");
   };
   let issue = card => {
-    let label = card.shadowRoot.querySelector(
-      "div.status-bullet:nth-child(4) > .status-label-holder > div"
-    );
+    let label = card.shadowRoot.querySelector("li:nth-child(3) p");
     Assert.equal(
       label.attributes.getNamedItem("data-l10n-id").value,
       "security-privacy-status-update-error-label",
@@ -318,9 +389,7 @@ add_task(async function test_update_status_indicator() {
     );
   };
   let needed = card => {
-    let label = card.shadowRoot.querySelector(
-      "div.status-bullet:nth-child(4) > .status-label-holder > div"
-    );
+    let label = card.shadowRoot.querySelector("li:nth-child(3) p");
     Assert.equal(
       label.attributes.getNamedItem("data-l10n-id").value,
       "security-privacy-status-update-needed-label",
@@ -328,9 +397,7 @@ add_task(async function test_update_status_indicator() {
     );
   };
   let ok = card => {
-    let label = card.shadowRoot.querySelector(
-      "div.status-bullet:nth-child(4) > div"
-    );
+    let label = card.shadowRoot.querySelector("li:nth-child(3) p");
     Assert.equal(
       label.attributes.getNamedItem("data-l10n-id").value,
       "security-privacy-status-up-to-date-label",
@@ -338,9 +405,7 @@ add_task(async function test_update_status_indicator() {
     );
   };
   let checking = card => {
-    let label = card.shadowRoot.querySelector(
-      "div.status-bullet:nth-child(4) > div"
-    );
+    let label = card.shadowRoot.querySelector("li:nth-child(3) p");
     Assert.equal(
       label.attributes.getNamedItem("data-l10n-id").value,
       "security-privacy-status-update-checking-label",

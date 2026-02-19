@@ -92,6 +92,7 @@
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/css/ImageLoader.h"
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/AnimationTimelinesController.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -234,7 +235,7 @@ using namespace mozilla::layout;
 using PaintFrameFlags = nsLayoutUtils::PaintFrameFlags;
 typedef ScrollableLayerGuid::ViewID ViewID;
 
-MOZ_CONSTINIT PresShell::CapturingContentInfo PresShell::sCapturingContentInfo;
+constinit PresShell::CapturingContentInfo PresShell::sCapturingContentInfo;
 
 // RangePaintInfo is used to paint ranges to offscreen buffers
 struct RangePaintInfo {
@@ -889,9 +890,7 @@ void PresShell::Init(nsPresContext* aPresContext) {
   }
 #endif
 
-  for (DocumentTimeline* timelines : mDocument->Timelines()) {
-    timelines->UpdateLastRefreshDriverTime();
-  }
+  mDocument->TimelinesController().UpdateLastRefreshDriverTime();
 
   // Get our activeness from the docShell.
   ActivenessMaybeChanged();
@@ -1716,9 +1715,15 @@ nsresult PresShell::Initialize() {
     // fires, if painting is still locked down, then we will go ahead and
     // trigger a full invalidate and allow painting to proceed normally.
     mPaintingSuppressed = true;
-    // Don't suppress painting if the document isn't loading.
-    Document::ReadyState readyState = mDocument->GetReadyStateEnum();
-    if (readyState != Document::READYSTATE_COMPLETE) {
+    // Don't suppress painting if the document isn't loading. However,
+    // the initial about:blank appears not to be loading, but we still
+    // want to suppress painting.
+    nsIDocShell* docShell = mDocument->GetDocShell();
+    if ((docShell &&
+         !nsDocShell::Cast(docShell)
+              ->HasStartedLoadingOtherThanInitialBlankURI() &&
+         mDocument->IsInitialDocument()) ||
+        mDocument->GetReadyStateEnum() != Document::READYSTATE_COMPLETE) {
       mPaintSuppressionTimer = NS_NewTimer();
     }
     if (!mPaintSuppressionTimer) {
@@ -3049,8 +3054,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     return NS_ERROR_FAILURE;
   }
 
-  const Element* root = mDocument->GetRootElement();
-  if (root && root->IsSVGElement(nsGkAtoms::svg)) {
+  if (mDocument->GetSVGRootElement()) {
     // We need to execute this even if there is an empty anchor name
     // so that any existing SVG fragment identifier effect is removed
     if (SVGFragmentIdentifier::ProcessFragmentIdentifier(mDocument,
@@ -3507,13 +3511,9 @@ static Maybe<nsPoint> ScrollToShowRect(
   }
   ScrollStyles ss = aScrollContainerFrame->GetScrollStyles();
   nsRect allowedRange(scrollPt, nsSize(0, 0));
-  ScrollDirections directions =
-      aScrollContainerFrame->GetAvailableScrollingDirections();
 
-  if (((aScrollFlags & ScrollFlags::ScrollOverflowHidden) ||
-       ss.mVertical != StyleOverflow::Hidden) &&
-      (!aVertical.mOnlyIfPerceivedScrollableDirection ||
-       (directions.contains(ScrollDirection::eVertical)))) {
+  if ((aScrollFlags & ScrollFlags::ScrollOverflowHidden) ||
+      ss.mVertical != StyleOverflow::Hidden) {
     if (ComputeNeedToScroll(aVertical.mWhenToScroll, lineSize.height, aRect.y,
                             aRect.YMost(), visibleRect.y + padding.top,
                             visibleRect.YMost() - padding.bottom)) {
@@ -3531,10 +3531,8 @@ static Maybe<nsPoint> ScrollToShowRect(
     }
   }
 
-  if (((aScrollFlags & ScrollFlags::ScrollOverflowHidden) ||
-       ss.mHorizontal != StyleOverflow::Hidden) &&
-      (!aHorizontal.mOnlyIfPerceivedScrollableDirection ||
-       (directions.contains(ScrollDirection::eHorizontal)))) {
+  if ((aScrollFlags & ScrollFlags::ScrollOverflowHidden) ||
+      ss.mHorizontal != StyleOverflow::Hidden) {
     if (ComputeNeedToScroll(aHorizontal.mWhenToScroll, lineSize.width, aRect.x,
                             aRect.XMost(), visibleRect.x + padding.left,
                             visibleRect.XMost() - padding.right)) {
@@ -10374,9 +10372,7 @@ void PresShell::DidDoReflow(bool aInterruptible) {
       docShell->NotifyReflowObservers(aInterruptible, mLastReflowStart, now);
     }
 
-    if (StaticPrefs::layout_reflow_synthMouseMove()) {
-      SynthesizeMouseMove(false);
-    }
+    SynthesizeMouseMove(false);
 
     mPresContext->NotifyMissingFonts();
   }

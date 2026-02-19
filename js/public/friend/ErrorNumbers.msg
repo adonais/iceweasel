@@ -439,6 +439,7 @@ MSG_DEF(JSMSG_WASM_BAD_TAG_SIG,        2, JSEXN_WASMLINKERROR, "imported tag '{0
 MSG_DEF(JSMSG_WASM_BAD_IMP_ADDRESS,    2, JSEXN_WASMLINKERROR, "imported {0} with incompatible address type {1}")
 MSG_DEF(JSMSG_WASM_BAD_IMP_SIZE,       1, JSEXN_WASMLINKERROR, "imported {0} with incompatible size")
 MSG_DEF(JSMSG_WASM_BAD_IMP_MAX,        1, JSEXN_WASMLINKERROR, "imported {0} with incompatible maximum size")
+MSG_DEF(JSMSG_WASM_BAD_IMP_PAGE_SIZE,  0, JSEXN_WASMLINKERROR, "imported memory with incompatible page size")
 MSG_DEF(JSMSG_WASM_IMP_SHARED_REQD,    0, JSEXN_WASMLINKERROR, "imported unshared memory but shared required")
 MSG_DEF(JSMSG_WASM_IMP_SHARED_BANNED,  0, JSEXN_WASMLINKERROR, "imported shared memory but unshared required")
 MSG_DEF(JSMSG_WASM_NO_SHMEM_LINK,      0, JSEXN_WASMLINKERROR, "shared memory is disabled")
@@ -688,6 +689,10 @@ MSG_DEF(JSMSG_INVALID_CLASS_SET_OP,        0, JSEXN_SYNTAXERR, "invalid class se
 MSG_DEF(JSMSG_INVALID_CHAR_IN_CLASS,       0, JSEXN_SYNTAXERR, "invalid character in class in regular expression")
 MSG_DEF(JSMSG_NEGATED_CLASS_WITH_STR,      0, JSEXN_SYNTAXERR, "negated character class with strings in regular expression")
 MSG_DEF(JSMSG_MULTIPLE_FLAG_DASHES,        0, JSEXN_SYNTAXERR, "multiple dashes in flag group")
+MSG_DEF(JSMSG_INCOMPATIBLE_RECEIVER, 1, JSEXN_TYPEERR, "RegExp static property '{0}' called with incompatible receiver")
+MSG_DEF(JSMSG_REGEXP_STATIC_EMPTY, 1, JSEXN_TYPEERR, "RegExp static property '{0}' is invalid")
+MSG_DEF(JSMSG_REGEXP_CROSS_REALM, 0, JSEXN_TYPEERR, "RegExp operation not permitted on object from different realm")
+MSG_DEF(JSMSG_REGEXP_LEGACY_FEATURES_DISABLED, 0, JSEXN_TYPEERR, "RegExp legacy features are disabled")
 
 // Typed object
 MSG_DEF(JSMSG_TYPEDOBJECT_SETTING_IMMUTABLE, 0, JSEXN_ERR, "setting immutable field")
@@ -838,6 +843,7 @@ MSG_DEF(JSMSG_BAD_WEAKREF_TARGET,                        0, JSEXN_TYPEERR, "cann
 
 // Iterator Helpers
 MSG_DEF(JSMSG_NEGATIVE_LIMIT,                            0, JSEXN_RANGEERR, "Iterator limits cannot be negative")
+MSG_DEF(JSMSG_INVALID_CHUNKSIZE,                         0, JSEXN_RANGEERR, "Iterator chunkSize must be an integer between 1 and 2**32-1 inclusive")
 MSG_DEF(JSMSG_ITERATOR_ZIP_INVALID_OPTION_TYPE,          2, JSEXN_TYPEERR, "invalid type for \"{0}\" option: {1}")
 MSG_DEF(JSMSG_ITERATOR_ZIP_INVALID_OPTION_VALUE,         2, JSEXN_TYPEERR, "invalid value for \"{0}\" option: {1}")
 MSG_DEF(JSMSG_ITERATOR_ZIP_STRICT_OPEN_ITERATOR,         0, JSEXN_TYPEERR, "too few iterator results for \"strict\" mode")

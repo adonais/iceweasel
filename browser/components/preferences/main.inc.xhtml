@@ -5,6 +5,7 @@
 <!-- General panel -->
 
 <script src="chrome://browser/content/preferences/main.js"/>
+<script src="chrome://browser/content/preferences/translations.js"/>
 
 #ifdef MOZ_UPDATER
   <script src="chrome://browser/content/aboutDialog-appUpdater.js"/>
@@ -77,37 +78,7 @@
 </groupbox>
 
 <!-- Colors -->
-<groupbox id="contrastControlGroup" data-category="paneGeneral" hidden="true">
-  <label><html:h2 data-l10n-id="preferences-contrast-control-header"/></label>
-  <description class="description-deemphasized" data-l10n-id="preferences-contrast-control-description"/>
-
-  <radiogroup id="contrastControlSettings" preference="browser.display.document_color_use">
-    <radio id="contrastSettingsAuto"
-           value="0"
-           data-l10n-id="preferences-contrast-control-use-platform-settings"/>
-    <radio id="contrastSettingsOff"
-           value="1"
-           data-l10n-id="preferences-contrast-control-off"/>
-    <vbox align="start">
-      <radio id="contrastSettingsOn"
-           value="2"
-           flex="1"
-           data-l10n-id="preferences-contrast-control-custom"/>
-      <button id="colors"
-              is="highlightable-button"
-              class="accessory-button indent"
-              data-l10n-id="preferences-colors-manage-button"
-              search-l10n-ids="
-                colors-text-and-background,
-                colors-text,
-                colors-text-background,
-                colors-links-header,
-                colors-links-unvisited,
-                colors-links-visited
-              "/>
-    </vbox>
-  </radiogroup>
-</groupbox>
+<html:setting-group id="contrastControlGroup" groupid="contrast" data-category="paneGeneral" hidden="true" />
 
 <!-- Fonts -->
 <groupbox id="fontsGroup" data-category="paneGeneral" hidden="true">
@@ -200,21 +171,7 @@
 </groupbox>
 
 <!-- Zoom -->
-<groupbox id="zoomGroup" data-category="paneGeneral" hidden="true" data-srd-groupid="zoom">
-  <label><html:h2 data-l10n-id="preferences-zoom-header"/></label>
-  <hbox id="zoomBox" align="center" hidden="true">
-    <label control="defaultZoom" data-l10n-id="preferences-default-zoom"/>
-    <menulist id="defaultZoom">
-      <menupopup/>
-    </menulist>
-  </hbox>
-  <html:moz-message-bar id="text-zoom-override-warning" data-l10n-id="preferences-text-zoom-override-warning"/>
-  <checkbox id="zoomText"
-    data-l10n-id="preferences-zoom-text-only"/>
-
-</groupbox>
-
-<html:setting-group hidden="true" data-category="paneGeneral" groupid="zoom" />
+<html:setting-group id="zoomGroup" groupid="zoom" data-category="paneGeneral" hidden="true" />
 
 <!-- Languages -->
 <groupbox id="languagesGroup" data-category="paneGeneral" hidden="true">
@@ -259,7 +216,10 @@
             data-l10n-args='{"localeName": "und"}'
             preference="intl.regional_prefs.use_os_locales"/>
 
-  <!-- This Firefox Translations UI manages the prefs for the addon only. -->
+  <!-- This Translations UI manages the prefs for the addon only.
+       We were planning to remove this once ESR 115 went away, but it seems
+       that it may live forever. I think it can be safely removed from a current
+       version of Firefox, though, especially once the Settings Redesign is finalized. -->
   <hbox id="fxtranslationsBox" hidden="true" data-subcategory="fxtranslations">
     <description flex="1" control="fxtranslateButton" data-l10n-id="fx-translate-web-pages"/>
     <button id="fxtranslateButton"
@@ -272,8 +232,9 @@
           data-l10n-id="check-user-spelling"
           preference="layout.spellcheckDefault"/>
 
-  <!-- Translations -->
-  <vbox id="translationsGroup" hidden="true" data-subcategory="translations">
+  <!-- This Translations UI is the pre-settings-redesign UI and should be removed
+       when getting ready for the settings redesign to fully ship. -->
+  <vbox id="translationsGroup" data-srd-groupid="translations" hidden="true" data-subcategory="translations">
     <label><html:h2 data-l10n-id="translations-manage-header"/></label>
     <hbox id="translations-manage-description" align="center">
       <description flex="1" data-l10n-id="translations-manage-intro-2"/>
@@ -297,6 +258,9 @@
     </vbox>
   </vbox>
 </groupbox>
+
+<!-- This Translations UI is compatible with the settings redesign -->
+<html:setting-group data-category="paneGeneral" groupid="translations" hidden="true"/>
 
 <!-- Files and Applications -->
 <hbox id="filesAndApplicationsCategory"
@@ -521,6 +485,9 @@
 #endif
 #endif
 </groupbox>
+
+<!-- Support -->
+<html:setting-group groupid="support" data-category="paneGeneral" hidden="true" />
 
 <hbox id="performanceCategory"
       class="subcategory"

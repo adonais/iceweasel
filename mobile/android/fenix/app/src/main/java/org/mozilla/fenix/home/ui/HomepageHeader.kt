@@ -31,7 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -40,6 +40,7 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTON
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -142,10 +143,12 @@ internal fun getAttr(resId: Int): Int {
     return newResId
 }
 
+@Preview
 @Composable
-@PreviewLightDark
-private fun HomepageHeaderPreview() {
-    FirefoxTheme {
+private fun HomepageHeaderPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             HomepageHeader(
                 wordmarkTextColor = null,
@@ -155,25 +158,6 @@ private fun HomepageHeaderPreview() {
                     ),
                 ),
                 browsingMode = BrowsingMode.Normal,
-                browsingModeChanged = {},
-            )
-        }
-    }
-}
-
-@Composable
-@Preview
-private fun PrivateHomepageHeaderPreview() {
-    FirefoxTheme(theme = Theme.Private) {
-        Surface {
-            HomepageHeader(
-                wordmarkTextColor = null,
-                privateBrowsingButtonColor = colorResource(
-                    getAttr(
-                        iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                    ),
-                ),
-                browsingMode = BrowsingMode.Private,
                 browsingModeChanged = {},
             )
         }

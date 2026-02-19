@@ -8,6 +8,7 @@
 
 use crate::attr::{AttrIdentifier, AttrValue};
 use crate::computed_value_flags::ComputedValueFlags;
+use crate::derives::*;
 use crate::dom::{OpaqueNode, TElement, TNode};
 use crate::invalidation::element::document_state::InvalidationMatchingData;
 use crate::invalidation::element::element_wrapper::ElementSnapshot;
@@ -17,7 +18,10 @@ use crate::selector_parser::AttrValue as SelectorAttrValue;
 use crate::selector_parser::{PseudoElementCascadeType, SelectorParser};
 use crate::values::{AtomIdent, AtomString};
 use crate::{Atom, CaseSensitivityExt, LocalName, Namespace, Prefix};
-use cssparser::{serialize_identifier, CowRcStr, Parser as CssParser, SourceLocation, ToCss};
+use cssparser::{
+    match_ignore_ascii_case, serialize_identifier, CowRcStr, Parser as CssParser, SourceLocation,
+    ToCss,
+};
 use dom::{DocumentState, ElementState};
 use rustc_hash::FxHashMap;
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};

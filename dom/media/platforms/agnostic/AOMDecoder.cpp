@@ -317,6 +317,17 @@ bool AOMDecoder::IsAV1(const nsACString& aMimeType) {
 }
 
 /* static */
+bool AOMDecoder::IsMainProfile(const MediaByteBuffer* aBox) {
+  if (!aBox || aBox->IsEmpty()) {
+    return false;
+  }
+  AV1SequenceInfo av1Info;
+  MediaResult seqHdrResult;
+  TryReadAV1CBox(aBox, av1Info, seqHdrResult);
+  return seqHdrResult.Code() == NS_OK && av1Info.mProfile == 0;
+}
+
+/* static */
 bool AOMDecoder::IsKeyframe(Span<const uint8_t> aBuffer) {
   aom_codec_stream_info_t info;
   PodZero(&info);

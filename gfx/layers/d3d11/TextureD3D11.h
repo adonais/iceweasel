@@ -391,6 +391,10 @@ class DXGITextureHostD3D11 : public TextureHost {
 
   DXGITextureHostD3D11* AsDXGITextureHostD3D11() override { return this; }
 
+  void NotifyNotUsed() override;
+
+  void SetReadFence(Fence* aReadFence) override;
+
   const RefPtr<gfx::FileHandleWrapper> mHandle;
   const Maybe<GpuProcessTextureId> mGpuProcessTextureId;
   const uint32_t mArrayIndex;
@@ -400,6 +404,9 @@ class DXGITextureHostD3D11 : public TextureHost {
   const Maybe<CompositeProcessFencesHolderId> mFencesHolderId;
   const gfx::ColorSpace2 mColorSpace;
   const gfx::ColorRange mColorRange;
+
+ protected:
+  RefPtr<FenceD3D11> mReadFence;
 };
 
 class DXGIYCbCrTextureHostD3D11 : public TextureHost {
@@ -451,7 +458,7 @@ class DXGIYCbCrTextureHostD3D11 : public TextureHost {
     return this;
   }
 
-  void SetReadFence(RefPtr<FenceD3D11> aReadFence);
+  void SetReadFence(Fence* aReadFence) override;
 
   // Handles will be closed automatically when `UniqueFileHandle` gets
   // destroyed.

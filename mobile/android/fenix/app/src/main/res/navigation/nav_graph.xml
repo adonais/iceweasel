@@ -756,8 +756,22 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_settingsFragment_to_firefoxLabsFragment"
+            app:destination="@id/firefoxLabsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
             android:id="@+id/action_settingsFragment_to_linkSharingFragment"
             app:destination="@id/linkSharingFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_settingsFragment_to_remoteImprovementsFragment"
+            app:destination="@id/remoteImprovementsFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
@@ -1054,7 +1068,7 @@
     </fragment>
     <fragment
         android:id="@+id/openDownloadsSettingsFragment"
-        android:name="org.mozilla.fenix.settings.DownloadsSettingsFragment">
+        android:name="org.mozilla.fenix.settings.downloads.DownloadsSettingsFragment">
         <argument
             android:name="preference_to_scroll_to"
             android:defaultValue="@null"
@@ -1062,8 +1076,14 @@
             app:nullable="true" />
     </fragment>
     <fragment
+        android:id="@+id/firefoxLabsFragment"
+        android:name="org.mozilla.fenix.settings.labs.FirefoxLabsFragment" />
+    <fragment
         android:id="@+id/linkSharingFragment"
         android:name="org.mozilla.fenix.settings.LinkSharingFragment" />
+    <fragment
+        android:id="@+id/remoteImprovementsFragment"
+        android:name="org.mozilla.fenix.settings.RemoteImprovementsFragment" />
     <fragment
         android:id="@+id/deleteBrowsingDataFragment"
         android:name="org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataFragment"
@@ -1838,9 +1858,9 @@
             app:argType="mozilla.components.concept.engine.permission.SitePermissions"
             app:nullable="true" />
         <argument
-            android:name="certificateName"
-            android:defaultValue=" "
-            app:argType="string" />
+            android:name="certificate"
+            app:argType="java.security.cert.X509Certificate"
+            app:nullable="true" />
         <argument
             android:name="permissionHighlights"
             app:argType="mozilla.components.browser.state.state.content.PermissionHighlightsState" />
@@ -1873,9 +1893,9 @@
                 app:argType="mozilla.components.concept.engine.permission.SitePermissions"
                 app:nullable="true" />
             <argument
-                android:name="certificateName"
-                android:defaultValue=" "
-                app:argType="string" />
+                android:name="certificate"
+                app:argType="java.security.cert.X509Certificate"
+                app:nullable="true" />
             <argument
                 android:name="permissionHighlights"
                 app:argType="mozilla.components.browser.state.state.content.PermissionHighlightsState" />

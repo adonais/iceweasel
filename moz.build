@@ -13,6 +13,9 @@ with Files("LICENSE"):
 with Files("mots.yaml"):
     BUG_COMPONENT = ("Conduit", "mots")
 
+with Files("CODEOWNERS"):
+    BUG_COMPONENT = ("Conduit", "mots")
+
 with Files("Cargo.*"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 

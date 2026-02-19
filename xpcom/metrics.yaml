@@ -56,6 +56,34 @@ memory_watcher:
         type: string
     telemetry_mirror: Memory_watcher_OnHighMemory_Stats
 
+  process_oom_killed:
+    type: event
+    description: >
+      Recorded when a content process is killed by the Linux OOM killer (SIGKILL).
+      PSI (Pressure Stall Information) metrics are included to understand memory
+      pressure context at the time of the kill. This helps analyze memory pressure
+      patterns and OOM kill correlation.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995907
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995907
+    notification_emails:
+      - tli@mozilla.com
+    expires: never
+    extra_keys:
+      psi_some_avg10:
+        description: PSI some avg10 value (10-second average partial stall percentage)
+        type: string
+      psi_some_avg60:
+        description: PSI some avg60 value (60-second average partial stall percentage)
+        type: string
+      psi_full_avg10:
+        description: PSI full avg10 value (10-second average complete stall percentage)
+        type: string
+      psi_full_avg60:
+        description: PSI full avg60 value (60-second average complete stall percentage)
+        type: string
+
 memory_phc:
   slop:
     type: memory_distribution

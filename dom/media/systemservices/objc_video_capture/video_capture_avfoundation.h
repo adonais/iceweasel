@@ -14,6 +14,7 @@
 #include "api/sequence_checker.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "mozilla/Maybe.h"
+#include "system_wrappers/include/clock.h"
 
 @class VideoCaptureAdapter;
 
@@ -26,11 +27,12 @@ namespace webrtc::videocapturemodule {
  */
 class VideoCaptureAvFoundation : public VideoCaptureImpl {
  public:
-  VideoCaptureAvFoundation(AVCaptureDevice* _Nonnull aDevice);
+  VideoCaptureAvFoundation(Clock* _Nonnull clock,
+                           AVCaptureDevice* _Nonnull aDevice);
   virtual ~VideoCaptureAvFoundation();
 
   static webrtc::scoped_refptr<VideoCaptureModule> Create(
-      const char* _Nullable aDeviceUniqueIdUTF8);
+      Clock* _Nonnull clock, const char* _Nullable aDeviceUniqueIdUTF8);
 
   // Implementation of VideoCaptureImpl. Single threaded.
 

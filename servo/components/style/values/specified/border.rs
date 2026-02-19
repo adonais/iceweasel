@@ -4,6 +4,7 @@
 
 //! Specified types for CSS values related to borders.
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::border::BorderSideWidth as ComputedBorderSideWidth;
 use crate::values::computed::{Context, ToComputedValue};
@@ -100,6 +101,7 @@ impl BorderImageSlice {
 
 /// https://drafts.csswg.org/css-backgrounds-3/#typedef-line-width
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[typed_value(derive_fields)]
 pub enum LineWidth {
     /// `thin`
     Thin,
@@ -168,6 +170,7 @@ impl ToComputedValue for LineWidth {
 /// A specified value for a single side of the `border-width` property. The difference between this
 /// and LineWidth is whether we snap to device pixels or not.
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[typed_value(derive_fields)]
 pub struct BorderSideWidth(LineWidth);
 
 impl BorderSideWidth {

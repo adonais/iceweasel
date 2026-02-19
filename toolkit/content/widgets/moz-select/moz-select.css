@@ -24,6 +24,11 @@
   --select-icon-fill: var(--button-icon-fill);
 }
 
+:host([inputlayout="inline-end"]) {
+  --select-margin-block: 0;
+  --select-margin-inline: 0;
+}
+
 .select-wrapper {
   position: relative;
   overflow: hidden;

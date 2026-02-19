@@ -534,7 +534,7 @@ export class LoginFormState {
    * field AND whether the username is still filled in with the username AND
    * whether the associated password field has the matching password.
    *
-   * @note This could possibly be unified with getFieldContext but they have
+   * Note: This could possibly be unified with getFieldContext but they have
    * slightly different use cases. getFieldContext looks up recipes whereas this
    * method doesn't need to since it's only returning a boolean based upon the
    * recipes used for the last fill (in _fillForm).

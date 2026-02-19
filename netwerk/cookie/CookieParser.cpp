@@ -499,7 +499,6 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
                              const nsACString& aExpires,
                              const nsACString& aMaxage,
                              const nsACString& aDateHeader, bool aFromHttp) {
-  int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
   int64_t creationTimeInMSec =
       aCookieData.creationTimeInUSec() / int64_t(PR_USEC_PER_MSEC);
 
@@ -517,10 +516,8 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
     if (maxage == INT64_MIN) {
       aCookieData.expiryInMSec() = maxage;
     } else {
-      CheckedInt<int64_t> value(creationTimeInMSec);
-      value += (maxageCap ? std::min(maxage, maxageCap) : maxage) * 1000;
-
-      aCookieData.expiryInMSec() = value.isValid() ? value.value() : INT64_MAX;
+      aCookieData.expiryInMSec() =
+          CookieCommons::MaybeCapMaxAge(creationTimeInMSec, maxage);
     }
 
     return false;

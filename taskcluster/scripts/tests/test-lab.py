@@ -90,9 +90,13 @@ def setup_environment():
         sys.exit(1)
 
     run_command(["gcloud", "config", "set", "project", project_id])
-    run_command(
-        ["gcloud", "auth", "activate-service-account", "--key-file", credentials_file]
-    )
+    run_command([
+        "gcloud",
+        "auth",
+        "activate-service-account",
+        "--key-file",
+        credentials_file,
+    ])
 
 
 def execute_tests(
@@ -131,12 +135,10 @@ def execute_tests(
     geckoRev = os.environ.get("GECKO_HEAD_REV")
 
     if matrixLabel is not None and geckoRev is not None:
-        flank_command.extend(
-            [
-                "--client-details",
-                f"matrixLabel={urlparse(matrixLabel).path.rpartition('/')[-1]},geckoRev={geckoRev}",
-            ]
-        )
+        flank_command.extend([
+            "--client-details",
+            f"matrixLabel={urlparse(matrixLabel).path.rpartition('/')[-1]},geckoRev={geckoRev}",
+        ])
 
     # Add androidTest APK if provided (optional) as robo test or instrumentation test
     if apk_test:

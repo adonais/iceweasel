@@ -2,11 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// @ts-nocheck - TODO - Remove this to type check this file.
+
 // The following globals are defined in dom/webidl/ONNX.webidl
 /* global Tensor, InferenceSession */
 
 /**
  * @typedef {import("../../content/Utils.sys.mjs").ProgressAndStatusCallbackParams} ProgressAndStatusCallbackParams
+ */
+
+/**
+ * @typedef {object} PipelineMetrics
+ * @property {number} [preprocessingTime] - Time spent preprocessing inputs (ms).
+ * @property {number} [tokenizingTime] - Time spent tokenizing (same as preprocessingTime, for Glean consistency) (ms).
+ * @property {number} [inferenceTime] - Time spent running the model (ms).
+ * @property {number} [decodingTime] - Time spent decoding outputs (ms).
+ * @property {number} inputTokens - Number of tokens in the input.
+ * @property {number} outputTokens - Number of tokens in the output.
+ * @property {number|null} [timeToFirstToken] - Time to the first generated token (ms).
+ * @property {number} [tokensPerSecond] - Inference throughput (tokens/s).
+ * @property {number} [timePerOutputToken] - Latency per output token (ms).
+ * @property {Array<object>} [runTimestamps] - Timeline of execution events.
  */
 
 /* eslint-disable-next-line mozilla/reject-import-system-module-from-non-system */
@@ -63,7 +79,7 @@ let transformers = null;
  * @function importTransformers
  * @param {string} backend - The backend to use (e.g. "onnx-native" or "onnx").
  * @returns {Promise<import("chrome://global/content/ml/transformers-dev.js")>}
- *   A promise that resolves once the Transformers library is imported.
+ * A promise that resolves once the Transformers library is imported.
  */
 export async function importTransformers(backend) {
   if (transformers) {
@@ -163,7 +179,10 @@ async function echo(request, _model, _tokenizer, _processor, config) {
 
   return {
     metrics: {
-      tokenizingTime: 0,
+      preprocessingTime: 0,
+      decodingTime: 0,
+      inputTokens: 0,
+      outputTokens: 0,
     },
     output: result,
   };
@@ -189,10 +208,16 @@ async function imageToText(request, model, tokenizer, processor, _config) {
   let result = {
     metrics: {
       inferenceTime: 0,
-      tokenizingTime: 0,
+      preprocessingTime: 0,
+      decodingTime: 0,
+      inputTokens: null,
+      outputTokens: 0,
     },
   };
-  let start = Date.now();
+  // Destructure to simplify assignments
+  const { metrics } = result;
+
+  let startLoad = ChromeUtils.now();
   let rawImage;
 
   if ("url" in request) {
@@ -206,27 +231,28 @@ async function imageToText(request, model, tokenizer, processor, _config) {
     );
   }
 
-  lazy.console.debug("Image loaded in ", Date.now() - start);
+  lazy.console.debug("Image loaded in ", ChromeUtils.now() - startLoad);
 
+  const startProcessing = ChromeUtils.now();
   const { pixel_values } = await processor(rawImage);
-  result.metrics.tokenizingTime += Date.now() - start;
+  metrics.preprocessingTime += ChromeUtils.now() - startProcessing;
   const toReturn = [];
   const streamer = request.options?.streamer;
   for (const batch of pixel_values) {
     batch.dims = [1, ...batch.dims];
-    start = Date.now();
+    const startInference = ChromeUtils.now();
     const output = await model.generate({ inputs: batch, streamer });
-    result.metrics.inferenceTime += Date.now() - start;
-    start = Date.now();
+    metrics.inferenceTime += ChromeUtils.now() - startInference;
+    const startDecoding = ChromeUtils.now();
     const decoded = tokenizer
       .batch_decode(output, {
         skip_special_tokens: true,
       })
       .map(x => ({ generated_text: x.trim() }));
-    result.metrics.tokenizingTime += Date.now() - start;
+    metrics.decodingTime += ChromeUtils.now() - startDecoding;
     toReturn.push(decoded);
   }
-  lazy.console.debug("Inference done in ", Date.now() - start);
+  lazy.console.debug("Inference done in ", ChromeUtils.now() - startProcessing);
   result.output = toReturn[0][0].generated_text;
 
   // Bug 1918220 - replace the result for models with that bug
@@ -267,11 +293,14 @@ async function textToGoal(
 ) {
   const result = {
     metrics: {
-      tokenizingTime: 0,
+      preprocessingTime: 0,
       inferenceTime: 0,
+      inputTokens: 0,
+      outputTokens: 0,
     },
     output: [],
   };
+  const { metrics } = result;
 
   const texts = request.args?.[0] ?? [];
   const taskTypes = request.args?.[1] ?? []; // ["query", "page", ...]
@@ -282,7 +311,7 @@ async function textToGoal(
     const task = taskTypes[i] ?? "query";
     const domain = domains[i] ?? "";
 
-    const startToken = Date.now();
+    const startToken = ChromeUtils.now();
 
     const encoded = await tokenizer(text, {
       padding: "max_length",
@@ -290,7 +319,7 @@ async function textToGoal(
       max_length: 64,
       return_attention_mask: true,
     });
-    result.metrics.tokenizingTime += Date.now() - startToken;
+    metrics.preprocessingTime += ChromeUtils.now() - startToken;
     const input_ids = encoded.input_ids.ort_tensor;
     const attention_mask = encoded.attention_mask.ort_tensor;
     const domain_vocab = modelConfig["transformers.js_config"].domain_vocab;
@@ -318,10 +347,11 @@ async function textToGoal(
       task_type,
     };
 
-    const startInfer = Date.now();
+    const startInfer = ChromeUtils.now();
     const session = model.sessions.model;
     const output = await session.run(inputs);
-    result.metrics.inferenceTime += Date.now() - startInfer;
+    metrics.inferenceTime += ChromeUtils.now() - startInfer;
+    metrics.inputTokens += encoded.input_ids.ort_tensor.dims[1];
 
     result.output.push({
       embedding: Array.from(output.embedding.data),
@@ -621,7 +651,7 @@ export class ONNXPipeline {
 
   async #metricsSnapShot({ name, snapshot = {} }) {
     if (!("when" in snapshot)) {
-      snapshot.when = Date.now();
+      snapshot.when = ChromeUtils.now();
     }
     this.#metrics.push({ name, ...snapshot });
   }
@@ -639,7 +669,7 @@ export class ONNXPipeline {
    */
   static async initialize(mlEngineWorker, runtime, options, errorFactory) {
     let snapShot = {
-      when: Date.now(),
+      when: ChromeUtils.now(),
     };
 
     if (options.logLevel) {
@@ -760,11 +790,51 @@ export class ONNXPipeline {
   async run(request, requestId, inferenceProgressCallback = null) {
     lazy.console.debug("Running task: ", this.#config.taskName);
 
-    let result;
-    await this.#metricsSnapShot({ name: "runStart" });
+    /** @type {PipelineMetrics} */
+    const metrics = {
+      inputTokens: 0,
+      outputTokens: 0,
+      preprocessingTime: 0,
+      tokenizingTime: 0, // Same as preprocessingTime, but named for Glean consistency
+      inferenceTime: 0,
+      decodingTime: 0,
+      timeToFirstToken: null,
+      tokensPerSecond: 0,
+      timePerOutputToken: 0,
+      runTimestamps: [],
+    };
+
+    /**
+     * Helper to record a timestamp in the metrics timeline.
+     *
+     * @param {string} name
+     */
+    const snapshot = name => {
+      metrics.runTimestamps.push({ name, when: ChromeUtils.now() });
+    };
+
+    const runStartTime = ChromeUtils.now();
+    snapshot("runStart");
 
     const tokenizer =
       this.#genericPipelineFunction?.tokenizer ?? this.#tokenizer;
+
+    if (this.#genericPipelineFunction && tokenizer && request.args?.[0]) {
+      try {
+        const inputs = [request.args[0]].flat();
+        for (const text of inputs) {
+          if (typeof text === "string") {
+            const encoded = await tokenizer.encode(text);
+            metrics.inputTokens += encoded.length;
+          }
+        }
+      } catch (e) {
+        lazy.console.debug(
+          "Could not count input tokens for generic pipeline",
+          e
+        );
+      }
+    }
 
     const progressInfo = {
       ok: true,
@@ -772,74 +842,62 @@ export class ONNXPipeline {
     };
 
     const streamerOptions = {
-      perTokens: false,
+      perTokens: true,
       skipPrompt: true,
       returnTokens: false,
       ...request.streamerOptions,
     };
 
-    let streamer = undefined;
+    let streamer;
     let chunkTokens = [];
-    let chunkText = "";
-    let nextTokensArePrompt = !streamerOptions.skipPrompt;
-    let restoreTokenizer = false;
+    // Removed unused chunkText declaration here
 
-    if (tokenizer && inferenceProgressCallback) {
-      const flushPrompts = _tokens => {
-        streamer.token_cache = _tokens;
-        streamer.end();
-        streamer.tokenizer = {
-          decode: () => {
-            streamer.token_cache = [];
-            return "";
-          },
-        };
-        restoreTokenizer = true;
-        streamer.next_tokens_are_prompt = false;
-      };
+    let firstTokenTimestamp = null;
+    if (tokenizer) {
       streamer = new transformers.TextStreamer(tokenizer, {
         skip_prompt: streamerOptions.skipPrompt,
         decode_kwargs: {
           skip_special_tokens: true,
         },
         token_callback_function: tokens => {
-          if (restoreTokenizer) {
-            streamer.tokenizer = tokenizer;
-            restoreTokenizer = false;
+          // Record Time To First Token on the very first callback
+          const now = ChromeUtils.now();
+          if (metrics.timeToFirstToken === null) {
+            metrics.timeToFirstToken = now - runStartTime;
+            firstTokenTimestamp = now;
+          }
+
+          metrics.outputTokens += tokens.length;
+
+          // Only proceed with buffering if we have a callback to call
+          if (!inferenceProgressCallback) {
+            return;
+          }
+
+          if (streamerOptions.perTokens) {
+            // Logic handled in callback_function
+          } else {
+            // Append newly received tokens.
+            chunkTokens.push(tokens);
+          }
+        },
+        // Per-word (or per-token if perTokens=true) callback function
+        callback_function: text => {
+          if (!inferenceProgressCallback) {
+            return;
           }
           if (streamerOptions.perTokens) {
-            if (nextTokensArePrompt) {
-              flushPrompts(tokens);
-            }
-
             inferenceProgressCallback({
               ...progressInfo,
               metadata: {
-                text: chunkText,
-                tokens: streamerOptions.returnTokens ? tokens : null,
-                isPrompt: nextTokensArePrompt,
+                text,
+                tokens: streamerOptions.returnTokens ? chunkTokens : null,
                 requestId,
+                isPrompt: false, // skipping prompt, so assumed false
               },
               type: lazy.Progress.ProgressType.INFERENCE,
               statusText: lazy.Progress.ProgressStatusText.IN_PROGRESS,
             });
-
-            // We have sent the text, now resetting it
-            chunkText = "";
-          } else {
-            // Append newly received tokens.
-            chunkTokens.push(tokens);
-
-            if (nextTokensArePrompt) {
-              flushPrompts(tokens);
-            }
-          }
-          nextTokensArePrompt = false;
-        },
-        // Per-word callback function
-        callback_function: text => {
-          if (streamerOptions.perTokens) {
-            chunkText = text;
           } else {
             inferenceProgressCallback({
               ...progressInfo,
@@ -847,7 +905,7 @@ export class ONNXPipeline {
                 text,
                 tokens: streamerOptions.returnTokens ? chunkTokens : null,
                 requestId,
-                isPrompt: nextTokensArePrompt,
+                isPrompt: false,
               },
               type: lazy.Progress.ProgressType.INFERENCE,
               statusText: lazy.Progress.ProgressStatusText.IN_PROGRESS,
@@ -859,13 +917,13 @@ export class ONNXPipeline {
       });
     }
 
-    // Override streamer in options
-    const requestWithCallback = inferenceProgressCallback
-      ? {
-          ...request,
-          options: { ...request.options, streamer },
-        }
-      : request;
+    // Inject streamer into request options
+    const requestWithCallback = {
+      ...request,
+      options: { ...request.options, streamer },
+    };
+
+    let result;
 
     if (this.#genericPipelineFunction) {
       if (this.#config.modelId === "test-echo") {
@@ -873,15 +931,19 @@ export class ONNXPipeline {
           output: requestWithCallback.args,
           config: this.#config,
           multiThreadSupported: isMultiThreadSupported(),
+          metrics: { ...metrics },
         };
       } else {
-        result = await this.#genericPipelineFunction(
+        const start = ChromeUtils.now();
+        let output = await this.#genericPipelineFunction(
           ...requestWithCallback.args,
           requestWithCallback.options || {}
         );
-        if (result instanceof transformers.Tensor) {
-          result = result.tolist();
+        metrics.inferenceTime = ChromeUtils.now() - start;
+        if (output instanceof transformers.Tensor) {
+          output = output.tolist();
         }
+        result = output;
       }
     } else {
       result = await this.#pipelineFunction(
@@ -892,9 +954,49 @@ export class ONNXPipeline {
         this.#config,
         this.#modelConfig
       );
+      result.metrics ??= {};
     }
-    await this.#metricsSnapShot({ name: "runEnd" });
-    result.metrics = this.#metrics;
+
+    if (result.metrics) {
+      for (const [key, value] of Object.entries(result.metrics)) {
+        if (value !== undefined && value !== null) {
+          metrics[key] = value;
+        }
+      }
+    }
+
+    snapshot("runEnd");
+    const runEndTime = ChromeUtils.now();
+
+    // Calculate metrics
+    try {
+      // If we streamed, decoding time is Time(End) - Time(FirstToken).
+      // Otherwise, we fallback to inferenceTime (e.g. for embeddings or image-to-text without streaming).
+      if (metrics.timeToFirstToken !== null && firstTokenTimestamp !== null) {
+        metrics.decodingTime = runEndTime - firstTokenTimestamp;
+      } else {
+        metrics.decodingTime = metrics.inferenceTime;
+      }
+
+      // Sync tokenizingTime with preprocessingTime for Glean metrics consistency
+      metrics.tokenizingTime = metrics.preprocessingTime;
+
+      // Calculate throughput metrics if we have the necessary data
+      if (metrics.inferenceTime > 0 && metrics.outputTokens > 0) {
+        metrics.tokensPerSecond =
+          metrics.outputTokens / (metrics.inferenceTime / 1000);
+        metrics.timePerOutputToken =
+          metrics.inferenceTime / metrics.outputTokens;
+      }
+    } catch (e) {
+      lazy.console.debug("Error computing throughput metrics", e);
+    }
+
+    // Merge initialization snapshots from this.#metrics into runTimestamps
+    // so tests can access all timing data
+    metrics.runTimestamps = [...this.#metrics, ...metrics.runTimestamps];
+
+    result.metrics = metrics;
 
     if (streamer) {
       inferenceProgressCallback?.({

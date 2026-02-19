@@ -843,7 +843,6 @@ DownloadsPlacesView.prototype = {
     dt.mozSetDataAt("application/x-moz-file", file, 0);
     let url = Services.io.newFileURI(file).spec;
     dt.setData("text/uri-list", url);
-    dt.setData("text/plain", url);
     dt.effectAllowed = "copyMove";
     dt.addElement(selectedItem);
   },

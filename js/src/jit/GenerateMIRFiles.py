@@ -59,6 +59,8 @@ type_policies = {
     "Double": "DoublePolicy",
     "String": "StringPolicy",
     "Symbol": "SymbolPolicy",
+    "NoTypePolicy": "NoTypePolicy",
+    "Slots": "NoTypePolicy",
 }
 
 
@@ -66,15 +68,21 @@ def decide_type_policy(types, no_type_policy):
     if no_type_policy:
         return "public NoTypePolicy::Data"
 
-    if len(types) == 1:
-        return f"public {type_policies[types[0]]}<0>::Data"
-
     type_num = 0
     mixed_type_policies = []
     for mir_type in types:
         policy = type_policies[mir_type]
+        if policy == "NoTypePolicy":
+            type_num += 1
+            continue
         mixed_type_policies.append(f"{policy}<{type_num}>")
         type_num += 1
+
+    if len(mixed_type_policies) == 0:
+        return "public NoTypePolicy::Data"
+
+    if len(mixed_type_policies) == 1:
+        return f"public {mixed_type_policies[0]}::Data"
 
     return "public MixPolicy<{}>::Data".format(", ".join(mixed_type_policies))
 
@@ -235,7 +243,9 @@ def gen_mir_class(
         code += "    setGuard();\\\n"
     if movable:
         code += "    setMovable();\\\n"
-    if result:
+    # Note: MIRType::None is the default MIR result type so don't generate a
+    # setResultType call for it.
+    if result and result != "None":
         code += f"    setResultType(MIRType::{result});\\\n"
     code += "  }\\\n public:\\\n"
     if arguments:

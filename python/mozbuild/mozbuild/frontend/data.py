@@ -1399,20 +1399,18 @@ class GeneratedFile(ContextDerived):
             self.required_during_compile = [
                 f
                 for f in self.outputs
-                if f.endswith(
-                    (
-                        ".asm",
-                        ".c",
-                        ".cpp",
-                        ".inc",
-                        ".m",
-                        ".mm",
-                        ".def",
-                        ".s",
-                        ".S",
-                        "symverscript",
-                    )
-                )
+                if f.endswith((
+                    ".asm",
+                    ".c",
+                    ".cpp",
+                    ".inc",
+                    ".m",
+                    ".mm",
+                    ".def",
+                    ".s",
+                    ".S",
+                    "symverscript",
+                ))
             ]
         else:
             self.required_during_compile = required_during_compile

@@ -763,11 +763,11 @@ function isDomainKnown(asciiHost) {
 }
 
 /**
- * Checks the suffix of info.fixedURI against the Public Suffix List.
- * If the suffix is unknown due to a typo this will try to fix it up.
+ * Checks the suffix of ``info.fixedURI`` against the Public Suffix List.
+ * If the suffix is unknown due to a typo this will try to fix it up in-place,
+ * by modifying the public suffix of ``info.fixedURI``.
  *
  * @param {URIFixupInfo} info about the uri to check.
- * @note this may modify the public suffix of info.fixedURI.
  * @returns {object} result The lookup result.
  * @returns {string} result.suffix The public suffix if one can be identified.
  * @returns {boolean} result.hasUnknownSuffix True when the suffix is not in the
@@ -910,8 +910,7 @@ function maybeSetAlternateFixedURI(info, fixupFlags) {
  * Try to fixup a file URI.
  *
  * @param {string} uriString The file URI to fix.
- * @returns {nsIURI} a fixed uri or null.
- * @note FileURIFixup only returns a URI if it has to add the file: protocol.
+ * @returns {?nsIURI} a fixed uri if it has to add the file: protocol or null.
  */
 function fileURIFixup(uriString) {
   let attemptFixup = false;

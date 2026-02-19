@@ -253,7 +253,7 @@ static const wchar_t kUser32LibName[] = L"user32.dll";
 
 uint32_t nsWindow::sInstanceCount = 0;
 bool nsWindow::sIsOleInitialized = false;
-MOZ_CONSTINIT nsIWidget::Cursor nsWindow::sCurrentCursor = {};
+constinit nsIWidget::Cursor nsWindow::sCurrentCursor = {};
 nsWindow* nsWindow::sCurrentWindow = nullptr;
 bool nsWindow::sJustGotDeactivate = false;
 bool nsWindow::sJustGotActivate = false;
@@ -1525,7 +1525,7 @@ bool nsWindow::ShouldAssociateWithWinAppSDK() const {
   //
   // TODO(emilio): That might not be true anymore after bug 1993474,
   // consider re-testing and removing that special-case.
-  return IsTopLevelWidget() && !mIsPIPWindow;
+  return IsTopLevelWidget() && mPiPType == PiPType::NoPiP;
 }
 
 bool nsWindow::AssociateWithNativeWindow() {
@@ -1774,7 +1774,8 @@ void nsWindow::Show(bool aState) {
             ::ShowWindow(mWnd, SW_SHOWMINIMIZED);
             break;
           default:
-            if (CanTakeFocus() && !mAlwaysOnTop) {
+            if (CanTakeFocus() &&
+                (!mAlwaysOnTop || mPiPType == PiPType::DocumentPiP)) {
               ::ShowWindow(mWnd, SW_SHOWNORMAL);
             } else {
               ::ShowWindow(mWnd, SW_SHOWNOACTIVATE);
@@ -1807,7 +1808,7 @@ void nsWindow::Show(bool aState) {
         if (wasVisible) {
           flags |= SWP_NOZORDER;
         }
-        if (mAlwaysOnTop || mIsAlert) {
+        if ((mAlwaysOnTop && mPiPType != PiPType::DocumentPiP) || mIsAlert) {
           flags |= SWP_NOACTIVATE;
         }
 
@@ -2802,7 +2803,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     // frame sizes for left, right and bottom since Windows will automagically
     // position the edges "offscreen" for maximized windows.
     metrics.mOffset.top = metrics.mCaptionHeight;
-  } else if (mIsPIPWindow &&
+  } else if (mPiPType == PiPType::MediaPiP &&
              !StaticPrefs::widget_windows_pip_decorations_enabled()) {
     metrics.mOffset = metrics.DefaultMargins();
   } else {
@@ -5541,16 +5542,11 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_NCLBUTTONDOWN: {
-      // TODO(rkraesig): do we really need this? It should be the same as
-      // wParam, and when it's not we probably don't want it here.
-      auto const hitTest =
-          ClientMarginHitTestPoint(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-
       // Dispatch a custom event when this happens in the draggable region, so
       // that non-popup-based panels can react to it. This doesn't send an
       // actual mousedown event because that would break dragging or interfere
       // with other mousedown handling in the caption area.
-      if (hitTest == HTCAPTION) {
+      if (wParam == HTCAPTION) {
         DispatchCustomEvent(u"draggableregionleftmousedown"_ns);
         mDraggingWindowWithMouse = true;
       }
@@ -6383,7 +6379,7 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
   // Handle window position changes
   if (!(wp->flags & SWP_NOMOVE)) {
     mBounds.MoveTo(wp->x, wp->y);
-    NotifyWindowMoved(wp->x, wp->y);
+    NotifyWindowMoved(mBounds.TopLeft());
   }
 
   // Handle window size changes
@@ -6913,25 +6909,21 @@ void nsWindow::OnDestroy() {
 }
 
 // Send a resize message to the listener
-bool nsWindow::OnResize(const LayoutDeviceIntSize& aSize) {
+void nsWindow::OnResize(const LayoutDeviceIntSize& aSize) {
   if (mCompositorWidgetDelegate &&
       !mCompositorWidgetDelegate->OnWindowResize(aSize)) {
-    return false;
+    return;
   }
 
-  bool result = false;
   if (mWidgetListener) {
-    result = mWidgetListener->WindowResized(this, aSize.width, aSize.height);
+    mWidgetListener->WindowResized(this, aSize);
   }
 
   // If there is an attached view, inform it as well as the normal widget
   // listener.
   if (mAttachedWidgetListener) {
-    return mAttachedWidgetListener->WindowResized(this, aSize.width,
-                                                  aSize.height);
+    mAttachedWidgetListener->WindowResized(this, aSize);
   }
-
-  return result;
 }
 
 void nsWindow::OnSizeModeChange() {

@@ -24,16 +24,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.utils.Settings
 
 private const val SECOND_IN_MILLISECOND = 1000L
@@ -111,18 +112,12 @@ internal fun convertMillisToDHMS(milliseconds: Long): String {
     return DateUtils.formatElapsedTime(milliseconds / SECOND_IN_MILLISECOND)
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun CrashToolsPreview() {
-    FirefoxTheme {
-        CrashTools(Settings(LocalContext.current))
-    }
-}
-
-@Preview
-@Composable
-private fun CrashToolsPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun CrashToolsPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         CrashTools(Settings(LocalContext.current))
     }
 }

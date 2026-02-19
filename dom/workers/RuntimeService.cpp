@@ -345,9 +345,11 @@ void LoadJSGCMemoryOptions(const char* aPrefName, void* /* aClosure */) {
     JSGCParamKey key;
   };
 
-#define PREF(suffix_, key_)   \
-  {nsLiteralCString(suffix_), \
-   PREF_JS_OPTIONS_PREFIX PREF_MEM_OPTIONS_PREFIX suffix_, key_}
+#define PREF(suffix_, key_)                                          \
+  {                                                                  \
+    nsLiteralCString(suffix_),                                       \
+        PREF_JS_OPTIONS_PREFIX PREF_MEM_OPTIONS_PREFIX suffix_, key_ \
+  }
   constexpr WorkerGCPref kWorkerPrefs[] = {
       PREF("max", JSGC_MAX_BYTES),
       PREF("gc_high_frequency_time_limit_ms", JSGC_HIGH_FREQUENCY_TIME_LIMIT),
@@ -725,6 +727,22 @@ static bool DelayedDispatchToEventLoop(
   return true;
 }
 
+static void AsyncTaskStarted(void* aClosure, JS::Dispatchable* aDispatchable) {
+  // See comment at JS::InitDispatchsToEventLoop() below for how we know the
+  // WorkerPrivate is alive.
+  WorkerPrivate* workerPrivate = reinterpret_cast<WorkerPrivate*>(aClosure);
+  workerPrivate->AssertIsOnWorkerThread();
+  workerPrivate->JSAsyncTaskStarted(aDispatchable);
+}
+
+static void AsyncTaskFinished(void* aClosure, JS::Dispatchable* aDispatchable) {
+  // See comment at JS::InitDispatchsToEventLoop() below for how we know the
+  // WorkerPrivate is alive.
+  WorkerPrivate* workerPrivate = reinterpret_cast<WorkerPrivate*>(aClosure);
+  workerPrivate->AssertIsOnWorkerThread();
+  workerPrivate->JSAsyncTaskFinished(aDispatchable);
+}
+
 static bool ConsumeStream(JSContext* aCx, JS::Handle<JSObject*> aObj,
                           JS::MimeType aMimeType,
                           JS::StreamConsumer* aConsumer) {
@@ -766,9 +784,9 @@ bool InitJSContextForWorker(WorkerPrivate* aWorkerPrivate,
 
   // A WorkerPrivate lives strictly longer than its JSRuntime so we can safely
   // store a raw pointer as the callback's closure argument on the JSRuntime.
-  JS::InitDispatchsToEventLoop(aWorkerCx, DispatchToEventLoop,
-                               DelayedDispatchToEventLoop,
-                               (void*)aWorkerPrivate);
+  JS::InitAsyncTaskCallbacks(aWorkerCx, DispatchToEventLoop,
+                             DelayedDispatchToEventLoop, AsyncTaskStarted,
+                             AsyncTaskFinished, (void*)aWorkerPrivate);
 
   JS::InitConsumeStreamCallback(aWorkerCx, ConsumeStream,
                                 FetchUtil::ReportJSStreamError);

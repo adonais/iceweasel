@@ -32,8 +32,10 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.webextension.WebExtension
@@ -147,21 +149,27 @@ interface AddonUpdater {
 }
 
 /**
- * An implementation of [AddonUpdater] that uses the work manager api for scheduling new updates.
+ * An implementation of [AddonUpdater] that uses [WorkManager] for scheduling add-on updates.
+ *
+ * This class handles both periodic checks for updates and immediate update requests.
+ *
+ * When an update requires new permissions, it presents a system notification to the user.
+ * The update flow is then paused until the user either grants or denies the new permissions via the notification.
+ *
  * @property applicationContext The application context.
- * @param frequency (Optional) indicates how often updates should be performed, defaults
- * to one day.
+ * @param frequency How often periodic updates should be checked for. Defaults to once a day.
+ * @param notificationsDelegate The delegate responsible for posting system notifications.
  */
 @Suppress("LargeClass")
 class DefaultAddonUpdater(
     private val applicationContext: Context,
     private val frequency: Frequency = Frequency(1, TimeUnit.DAYS),
     private val notificationsDelegate: NotificationsDelegate,
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AddonUpdater {
     private val logger = Logger("DefaultAddonUpdater")
 
-    @VisibleForTesting
-    internal var scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     @VisibleForTesting
     internal val updateStatusStorage = UpdateStatusStorage()

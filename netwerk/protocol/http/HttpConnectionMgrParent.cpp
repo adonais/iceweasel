@@ -235,7 +235,6 @@ nsresult HttpConnectionMgrParent::SpeculativeConnect(
     overriderArgs->parallelSpeculativeConnectLimit() =
         overrider->GetParallelSpeculativeConnectLimit();
     overriderArgs->ignoreIdle() = overrider->GetIgnoreIdle();
-    overriderArgs->isFromPredictor() = overrider->GetIsFromPredictor();
     overriderArgs->allow1918() = overrider->GetAllow1918();
   }
 

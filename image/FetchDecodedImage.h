@@ -13,6 +13,7 @@
 #include "nsIContentPolicy.h"
 
 class imgIContainer;
+class nsIChannel;
 
 namespace mozilla::image {
 
@@ -34,6 +35,10 @@ RefPtr<FetchDecodedImagePromise> FetchDecodedImage(
         nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
     nsContentPolicyType aContentPolicyType =
         nsIContentPolicy::TYPE_INTERNAL_IMAGE);
+
+RefPtr<FetchDecodedImagePromise> FetchDecodedImage(nsIURI* aURI,
+                                                   nsIChannel* aChannel,
+                                                   gfx::IntSize aSize);
 
 }  // namespace mozilla::image
 

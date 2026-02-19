@@ -43,6 +43,12 @@ class IntentReceiverActivity : Activity() {
         // DO NOT MOVE ANYTHING ABOVE THIS getProfilerTime CALL.
         val startTimeProfiler = components.core.engine.profiler?.getProfilerTime()
 
+        // The intent property is nullable, but the rest of the code below
+        // assumes it is not. If it's null, then we make a new one and open
+        // the HomeActivity.
+        val intent = intent?.let { Intent(it) } ?: Intent()
+        intent.sanitize().stripUnwantedFlags()
+
         // DO NOT MOVE the app link intent launch type setting below the super.onCreate call
         // as it impacts the activity lifecycle observer and causes false launch type detection.
         // e.g. COLD launch is interpreted as WARM due to [Activity.onActivityCreated] being called
@@ -57,11 +63,6 @@ class IntentReceiverActivity : Activity() {
             super.onCreate(savedInstanceState)
         }
 
-        // The intent property is nullable, but the rest of the code below
-        // assumes it is not. If it's null, then we make a new one and open
-        // the HomeActivity.
-        val intent = intent?.let { Intent(it) } ?: Intent()
-        intent.sanitize().stripUnwantedFlags()
         processIntent(intent)
 
         components.core.engine.profiler?.addMarker(
@@ -158,7 +159,7 @@ class IntentReceiverActivity : Activity() {
         val r = try {
             // NB: referrer can be spoofed by the calling application. Use with caution.
             referrer
-        } catch (e: RuntimeException) {
+        } catch (_: RuntimeException) {
             // this could happen if the referrer intent contains data we can't deserialize
             return
         } ?: return

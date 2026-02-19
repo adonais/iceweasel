@@ -1029,7 +1029,7 @@ var AddonDatabase = {
   /**
    * Flush any pending I/O on the addons.json file
    *
-   * @return: Promise{null}
+   * @returns {Promise<null>}
    *          Resolves when the pending I/O (writing out or deleting
    *          addons.json) completes
    */

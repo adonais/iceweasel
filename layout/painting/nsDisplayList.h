@@ -1108,10 +1108,10 @@ class nsDisplayListBuilder {
     nsDisplayListBuilder* mBuilder;
     const nsIFrame* mPrevFrame;
     const nsIFrame* mPrevReferenceFrame;
-    nsPoint mPrevOffset;
-    Maybe<nsPoint> mPrevAdditionalOffset;
     nsRect mPrevVisibleRect;
     nsRect mPrevDirtyRect;
+    nsPoint mPrevOffset;
+    Maybe<nsPoint> mPrevAdditionalOffset;
     gfx::CompositorHitTestInfo mPrevCompositorHitTestInfo;
     bool mPrevAncestorHasApzAwareEventHandler;
     bool mPrevBuildingInvisibleItems;
@@ -1206,12 +1206,10 @@ class nsDisplayListBuilder {
           mSavedActiveScrolledRoot(aBuilder->mCurrentActiveScrolledRoot),
           mContentClipASR(aBuilder->ClipState().GetContentClipASR()),
           mDescendantsStartIndex(aBuilder->mActiveScrolledRoots.Length()),
-          mUsed(false),
           mOldScrollParentId(aBuilder->mCurrentScrollParentId),
           mOldForceLayer(aBuilder->mForceLayerForScrollParent),
           mOldContainsNonMinimalDisplayPort(
-              mBuilder->mContainsNonMinimalDisplayPort),
-          mCanBeScrollParent(false) {}
+              mBuilder->mContainsNonMinimalDisplayPort) {}
 
     void SetCurrentScrollParentId(ViewID aScrollId) {
       // Update the old scroll parent id.
@@ -1294,11 +1292,11 @@ class nsDisplayListBuilder {
      * EnterScrollFrame / InsertScrollFrame is called per instance of this
      * class.
      */
-    bool mUsed;
     ViewID mOldScrollParentId;
+    bool mUsed = false;
     bool mOldForceLayer;
     bool mOldContainsNonMinimalDisplayPort;
-    bool mCanBeScrollParent;
+    bool mCanBeScrollParent = false;
   };
 
   /**
@@ -2787,16 +2785,6 @@ class nsDisplayItem {
    * returning empty invalidation region.
    */
   virtual bool NeedsGeometryUpdates() const { return false; }
-
-  /**
-   * When this item is rendered using fallback rendering, whether it should use
-   * blob rendering (i.e. a recording DrawTarget), as opposed to a pixel-backed
-   * DrawTarget.
-   * Some items, such as those calling into the native themed widget machinery,
-   * are more efficiently painted without blob recording. Those should return
-   * false here.
-   */
-  virtual bool ShouldUseBlobRenderingForFallback() const { return true; }
 
   /**
    * If this has a child list where the children are in the same coordinate
@@ -4533,10 +4521,6 @@ class nsDisplayThemedBackground : public nsPaintedDisplayItem {
       layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override;
 
-  bool ShouldUseBlobRenderingForFallback() const override {
-    return !XRE_IsParentProcess();
-  }
-
   /**
    * GetBounds() returns the background painting area.
    */
@@ -4862,12 +4846,6 @@ class nsDisplayOutline final : public nsPaintedDisplayItem {
   MOZ_COUNTED_DTOR_FINAL(nsDisplayOutline)
 
   NS_DISPLAY_DECL_NAME("Outline", TYPE_OUTLINE)
-
-  bool ShouldUseBlobRenderingForFallback() const override {
-    MOZ_ASSERT(IsThemedOutline(),
-               "The only fallback path we have is for themed outlines");
-    return !XRE_IsParentProcess();
-  }
 
   bool CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,

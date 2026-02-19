@@ -52,6 +52,7 @@
   .label {
     grid-area: label;
     font-weight: var(--box-label-font-weight, normal);
+    align-self: var(--box-label-alignment);
   }
 
   .icon {
@@ -61,6 +62,12 @@
     -moz-context-properties: fill, stroke;
     fill: var(--box-icon-fill);
     stroke: var(--box-icon-stroke);
+    border-radius: var(--box-icon-border-radius);
+
+    &:not(.nav-icon) {
+      fill: var(--box-icon-start-fill, var(--box-icon-fill));
+      stroke: var(--box-icon-start-stroke, var(--box-icon-stroke));
+    }
   }
 
   .description {
@@ -68,6 +75,7 @@
     display: flex;
     justify-content: center;
     gap: var(--space-small);
+    align-self: var(--box-description-alignment);
   }
 }
 

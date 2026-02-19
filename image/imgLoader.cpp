@@ -56,7 +56,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIMemoryReporter.h"
-#include "nsINetworkPredictor.h"
 #include "nsIProgressEventSink.h"
 #include "nsIProtocolHandler.h"
 #include "nsImageModule.h"
@@ -1890,9 +1889,6 @@ bool imgLoader::ValidateRequestWithNewChannel(
   // Add the proxy without notifying
   hvc->AddProxy(req);
 
-  mozilla::net::PredictorLearn(aURI, aInitialDocumentURI,
-                               nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE,
-                               aLoadGroup);
   rv = newChannel->AsyncOpen(listener);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     req->CancelAndForgetObserver(rv);
@@ -2568,10 +2564,6 @@ nsresult imgLoader::LoadImage(
     MOZ_LOG(gImgLog, LogLevel::Debug,
             ("[this=%p] imgLoader::LoadImage -- Calling channel->AsyncOpen()\n",
              this));
-
-    mozilla::net::PredictorLearn(aURI, aInitialDocumentURI,
-                                 nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE,
-                                 aLoadGroup);
 
     nsresult openRes;
     openRes = newChannel->AsyncOpen(listener);

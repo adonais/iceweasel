@@ -5,11 +5,11 @@
 "use strict";
 
 const { IPPChannelFilter } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPChannelFilter.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs"
 );
 
 const { MasqueProtocol, ConnectProtocol, Server } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 add_task(async function test_constructProxyInfo_masque_protocol() {

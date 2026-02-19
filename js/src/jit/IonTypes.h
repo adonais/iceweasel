@@ -511,14 +511,15 @@ enum class MIRType : uint8_t {
   MagicUninitializedLexical,  // JS_UNINITIALIZED_LEXICAL magic value.
   // Types above are specialized.
   Value,
-  None,           // Invalid, used as a placeholder.
-  Slots,          // A slots vector
-  Elements,       // An elements vector
-  Pointer,        // An opaque pointer that receives no special treatment
-  WasmAnyRef,     // Wasm Ref/AnyRef/NullRef: a raw JSObject* or a raw (void*)0
-  WasmArrayData,  // A WasmArrayObject data pointer
-  StackResults,   // Wasm multi-value stack result area, which may contain refs
-  Shape,          // A Shape pointer.
+  None,            // Invalid, used as a placeholder.
+  Slots,           // A slots vector
+  Elements,        // An elements vector
+  Pointer,         // An opaque pointer that receives no special treatment
+  WasmAnyRef,      // Wasm Ref/AnyRef/NullRef: a raw JSObject* or a raw (void*)0
+  WasmStructData,  // A WasmStructObject data pointer (to OOL storage only)
+  WasmArrayData,   // A WasmArrayObject data pointer (to IL or OOL storage)
+  StackResults,    // Wasm multi-value stack result area, which may contain refs
+  Shape,           // A Shape pointer.
   Last = Shape
 };
 
@@ -661,6 +662,8 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "Pointer";
     case MIRType::WasmAnyRef:
       return "WasmAnyRef";
+    case MIRType::WasmStructData:
+      return "WasmStructData";
     case MIRType::WasmArrayData:
       return "WasmArrayData";
     case MIRType::StackResults:

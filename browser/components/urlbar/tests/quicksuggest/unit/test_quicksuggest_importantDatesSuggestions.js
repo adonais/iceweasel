@@ -351,7 +351,6 @@ add_task(async function testTwoSuggestions() {
       title: "Top Pick Suggestion 1",
       url: "https://foo.com/",
       telemetryType: "other_suggestions",
-      displayUrl: "foo.com",
       description: "A suggestion that just so happens to have the same keyword",
       isManageable: true,
       isSponsored: false,
@@ -500,13 +499,25 @@ async function checkDatesResults(query, expected) {
         expected,
       })
   );
+
+  let queryContext = createContext(query, {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
   await check_results({
-    context: createContext(query, {
-      providers: [UrlbarProviderQuickSuggest.name],
-      isPrivate: false,
-    }),
+    context: queryContext,
     matches: expected ? [expected].flat() : [],
   });
+
+  if (expected?.payload) {
+    info("Check the highligts");
+    let { value, highlights } =
+      queryContext.results[0].getDisplayableValueAndHighlights("title", {
+        tokens: queryContext.tokens,
+      });
+    Assert.equal(expected.payload.title, value);
+    Assert.deepEqual([[0, expected.payload.title.length]], highlights);
+  }
 }
 
 function makeExpectedResult({

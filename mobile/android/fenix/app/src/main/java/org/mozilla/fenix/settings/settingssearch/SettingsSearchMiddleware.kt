@@ -11,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 
 /**
  * [Middleware] for the settings search screen.
@@ -30,11 +30,10 @@ class SettingsSearchMiddleware(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : Middleware<SettingsSearchState, SettingsSearchAction> {
     override fun invoke(
-        context: MiddlewareContext<SettingsSearchState, SettingsSearchAction>,
+        store: Store<SettingsSearchState, SettingsSearchAction>,
         next: (SettingsSearchAction) -> Unit,
         action: SettingsSearchAction,
     ) {
-        val store = context.store as SettingsSearchStore
         when (action) {
             is SettingsSearchAction.Init -> {
                 next(action)
@@ -90,7 +89,7 @@ class SettingsSearchMiddleware(
      *
      * @param store The [SettingsSearchStore] to dispatch the updates to.
      */
-    private fun observeRecentSearches(store: SettingsSearchStore) {
+    private fun observeRecentSearches(store: Store<SettingsSearchState, SettingsSearchAction>) {
         scope.launch {
             recentSettingsSearchesRepository.recentSearches.collect { recents ->
                 store.dispatch(SettingsSearchAction.RecentSearchesUpdated(recents))

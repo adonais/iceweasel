@@ -115,7 +115,7 @@ class Http3Server:
             if "server listening" in msg:
                 searchObj = re.search(
                     r"HTTP3 server listening on ports ([0-9]+), ([0-9]+), ([0-9]+), ([0-9]+), ([0-9]+) and ([0-9]+)."
-                    " EchConfig is @([\x00-\x7F]+)@",
+                    " EchConfig is @([\x00-\x7f]+)@",
                     msg,
                     0,
                 )

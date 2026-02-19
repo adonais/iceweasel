@@ -9,12 +9,18 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import io.mockk.MockKAnnotations
 import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import mozilla.components.browser.engine.gecko.profiler.Profiler
+import mozilla.components.concept.engine.Engine
 import mozilla.components.support.base.android.NotificationsDelegate
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -26,8 +32,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.components.Components
+import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.helpers.FenixRobolectricTestApplication
+import org.mozilla.gecko.GeckoJavaSampler.INTENT_PROFILER_STATE_CHANGED
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
@@ -37,9 +44,10 @@ import org.robolectric.shadows.ShadowNotificationManager
 import org.robolectric.shadows.ShadowService
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = FenixRobolectricTestApplication::class)
+@Config(application = FenixRobolectricTestApplication::class, sdk = [Build.VERSION_CODES.TIRAMISU])
 class ProfilerServiceTest {
 
+    private val testDispatcher = StandardTestDispatcher()
     private lateinit var context: Context
     private lateinit var notificationManager: NotificationManager
     private lateinit var shadowNotificationManager: ShadowNotificationManager
@@ -48,17 +56,26 @@ class ProfilerServiceTest {
     private lateinit var shadowService: ShadowService
 
     @RelaxedMockK
-    lateinit var mockComponents: Components
+    lateinit var mockCore: Core
+
+    @RelaxedMockK
+    lateinit var mockEngine: Engine
+
+    @MockK
+    lateinit var mockProfiler: Profiler
 
     @Before
     fun setup() {
         MockKAnnotations.init(this, relaxUnitFun = true)
 
         context = ApplicationProvider.getApplicationContext()
+
+        val shadowApp = Shadows.shadowOf(context as FenixRobolectricTestApplication)
+        shadowApp.grantPermissions("org.mozilla.fenix.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+
         notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         shadowNotificationManager = Shadows.shadowOf(notificationManager)
         val fenixApp = context as FenixRobolectricTestApplication
-        mockComponents = fenixApp.components
 
         val mockNotificationsDelegate = mockk<NotificationsDelegate>(relaxed = true)
         every {
@@ -71,43 +88,62 @@ class ProfilerServiceTest {
             onPermissionGranted.invoke()
         }
 
-        every { mockComponents.notificationsDelegate } returns mockNotificationsDelegate
+        every { fenixApp.components.notificationsDelegate } returns mockNotificationsDelegate
+        every { fenixApp.components.core } returns mockCore
+        every { mockCore.engine } returns mockEngine
+        every { mockEngine.profiler } returns mockProfiler
 
-        serviceController = Robolectric.buildService(ProfilerService::class.java)
-        serviceController.create()
-        service = serviceController.get()
-        shadowService = Shadows.shadowOf(service)
+        // Mock profiler methods
+        every { mockProfiler.isProfilerActive() } returns true
+        every { mockProfiler.stopProfiler(any(), any()) } answers {
+            val onError = secondArg<(Throwable) -> Unit>()
+            onError(Exception("Test error"))
+        }
     }
 
     @After
     fun tearDown() {
+        if (::serviceController.isInitialized) {
+            serviceController.destroy()
+        }
         unmockkAll()
     }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
     fun `GIVEN SDK is O+ WHEN service is created THEN notification channel is created`() {
+        val shadowApp = Shadows.shadowOf(context as FenixRobolectricTestApplication)
+        shadowApp.grantPermissions("org.mozilla.fenix.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+
+        serviceController = Robolectric.buildService(ProfilerService::class.java)
+        serviceController.create()
+        service = serviceController.get()
+        shadowService = Shadows.shadowOf(service)
+
         val createdChannels = shadowNotificationManager.notificationChannels
-        val channel = createdChannels.find { it.id == ProfilerService.PROFILING_CHANNEL_ID }
+        val channel = createdChannels.find { it.id == PROFILING_CHANNEL_ID }
 
         assertNotNull(
-            "Channel with ID '${ProfilerService.PROFILING_CHANNEL_ID}' should be created on Oreo+",
+            "Channel with ID '${PROFILING_CHANNEL_ID}' should be created on Oreo+",
             channel,
         )
-        assertEquals("Channel ID mismatch", ProfilerService.PROFILING_CHANNEL_ID, channel?.id)
+        assertEquals("Channel ID mismatch", PROFILING_CHANNEL_ID, channel?.id)
         assertEquals("Channel name mismatch", "App Profiling Status", channel?.name.toString())
         assertEquals("Channel importance mismatch", NotificationManager.IMPORTANCE_DEFAULT, channel?.importance)
     }
 
     @Test
-    fun `WHEN onStartCommand receives START action THEN service starts foreground and posts notification`() {
-        val startIntent = Intent(context, ProfilerService::class.java).apply {
-            action = ProfilerService.ACTION_START_PROFILING
-        }
+    fun `WHEN onStartCommand is called THEN service starts foreground and posts notification`() {
+        serviceController = Robolectric.buildService(ProfilerService::class.java)
+        serviceController.create()
+        service = serviceController.get()
+        shadowService = Shadows.shadowOf(service)
+
+        val startIntent = Intent(context, ProfilerService::class.java)
 
         service.onStartCommand(startIntent, 0, 1)
 
-        val postedNotification: Notification? = shadowNotificationManager.getNotification(ProfilerService.PROFILING_NOTIFICATION_ID)
+        val postedNotification: Notification? = shadowNotificationManager.getNotification(PROFILING_NOTIFICATION_ID)
         assertNotNull("Notification should be posted after start action", postedNotification)
 
         val shadowNotification = Shadows.shadowOf(postedNotification)
@@ -120,39 +156,48 @@ class ProfilerServiceTest {
     }
 
     @Test
-    fun `GIVEN profiler service is running WHEN onStartCommand receives 'stop action' THEN the profiler service stops`() {
-        val startIntent = Intent(context, ProfilerService::class.java).apply {
-            action = ProfilerService.ACTION_START_PROFILING
-        }
+    fun `GIVEN profiler service is running WHEN receiving inactive broadcast THEN the service stops`() = runTest(testDispatcher) {
+        serviceController = Robolectric.buildService(ProfilerService::class.java)
+        serviceController.create()
+        service = serviceController.get()
+        shadowService = Shadows.shadowOf(service)
+
+        val startIntent = Intent(context, ProfilerService::class.java)
         service.onStartCommand(startIntent, 0, 1)
         assertNotNull(
             "Notification should be present after starting",
-            shadowNotificationManager.getNotification(ProfilerService.PROFILING_NOTIFICATION_ID),
+            shadowNotificationManager.getNotification(PROFILING_NOTIFICATION_ID),
         )
 
-        val stopIntent = Intent(context, ProfilerService::class.java).apply {
-            action = ProfilerService.ACTION_STOP_PROFILING
+        val broadcast = Intent(INTENT_PROFILER_STATE_CHANGED).apply {
+            putExtra(ProfilerService.IS_PROFILER_ACTIVE, false)
+            setPackage(context.packageName)
         }
 
-        service.onStartCommand(stopIntent, 0, 2)
+        context.sendBroadcast(broadcast)
+
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         assertNull(
-            "Notification should be removed after stop action",
-            shadowNotificationManager.getNotification(ProfilerService.PROFILING_NOTIFICATION_ID),
+            "Notification should be removed after inactive broadcast",
+            shadowNotificationManager.getNotification(PROFILING_NOTIFICATION_ID),
         )
-        assertTrue("Service should be foreground-stopped after stop action", shadowService.isForegroundStopped)
-        assertTrue("Service should be self-stopped after stop action", shadowService.isStoppedBySelf)
+        assertTrue("Service should be foreground-stopped after inactive broadcast", shadowService.isForegroundStopped)
+        assertTrue("Service should be self-stopped after inactive broadcast", shadowService.isStoppedBySelf)
     }
 
     @Test
-    fun `GIVEN the profiler service is running WHEN onStartCommand receives an unknown action THEN the profiler service stops`() {
-        val startIntent = Intent(context, ProfilerService::class.java).apply {
-            action = ProfilerService.ACTION_START_PROFILING
-        }
+    fun `GIVEN the profiler service is running WHEN onStartCommand receives an unknown action THEN the profiler service stays running`() {
+        serviceController = Robolectric.buildService(ProfilerService::class.java)
+        serviceController.create()
+        service = serviceController.get()
+        shadowService = Shadows.shadowOf(service)
+
+        val startIntent = Intent(context, ProfilerService::class.java)
         service.onStartCommand(startIntent, 0, 1)
         assertNotNull(
             "Notification should be present after starting",
-            shadowNotificationManager.getNotification(ProfilerService.PROFILING_NOTIFICATION_ID),
+            shadowNotificationManager.getNotification(PROFILING_NOTIFICATION_ID),
         )
 
         val unknownIntent = Intent(context, ProfilerService::class.java).apply {
@@ -161,34 +206,37 @@ class ProfilerServiceTest {
 
         service.onStartCommand(unknownIntent, 0, 2)
 
-        assertNull(
-            "Notification should be removed after unknown action",
-            shadowNotificationManager.getNotification(ProfilerService.PROFILING_NOTIFICATION_ID),
+        assertNotNull(
+            "Notification should remain after unknown action",
+            shadowNotificationManager.getNotification(PROFILING_NOTIFICATION_ID),
         )
-        assertTrue("Service should be foreground-stopped after unknown action", shadowService.isForegroundStopped)
-        assertTrue("Service should be self-stopped after unknown action", shadowService.isStoppedBySelf)
+        assertFalse("Service should not be foreground-stopped after unknown action", shadowService.isForegroundStopped)
+        assertFalse("Service should not be self-stopped after unknown action", shadowService.isStoppedBySelf)
     }
 
     @Test
-    fun `GIVEN the profiler service is running WHEN onStartCommand receives a null action THEN the profiler service stops`() {
-        val startIntent = Intent(context, ProfilerService::class.java).apply {
-            action = ProfilerService.ACTION_START_PROFILING
-        }
+    fun `GIVEN the profiler service is running WHEN onStartCommand receives a null action THEN the profiler service stays running`() {
+        serviceController = Robolectric.buildService(ProfilerService::class.java)
+        serviceController.create()
+        service = serviceController.get()
+        shadowService = Shadows.shadowOf(service)
+
+        val startIntent = Intent(context, ProfilerService::class.java)
         service.onStartCommand(startIntent, 0, 1)
         assertNotNull(
             "Notification should be present after starting",
-            shadowNotificationManager.getNotification(ProfilerService.PROFILING_NOTIFICATION_ID),
+            shadowNotificationManager.getNotification(PROFILING_NOTIFICATION_ID),
         )
 
         val nullActionIntent = Intent(context, ProfilerService::class.java)
 
         service.onStartCommand(nullActionIntent, 0, 2)
 
-        assertNull(
-            "Notification should be removed after null action",
-            shadowNotificationManager.getNotification(ProfilerService.PROFILING_NOTIFICATION_ID),
+        assertNotNull(
+            "Notification should remain after null action",
+            shadowNotificationManager.getNotification(PROFILING_NOTIFICATION_ID),
         )
-        assertTrue("Service should be foreground-stopped after null action", shadowService.isForegroundStopped)
-        assertTrue("Service should be self-stopped after null action", shadowService.isStoppedBySelf)
+        assertFalse("Service should not be foreground-stopped after null action", shadowService.isForegroundStopped)
+        assertFalse("Service should not be self-stopped after null action", shadowService.isStoppedBySelf)
     }
 }

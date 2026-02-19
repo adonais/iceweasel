@@ -85,7 +85,7 @@ class MFCDMChild final : public PMFCDMChild {
   void EnsureRemote();
   void Shutdown();
 
-  nsISerialEventTarget* ManagerThread() { return mManagerThread; }
+  nsISerialEventTarget* ManagerThread() const { return mManagerThread; }
   void AssertOnManagerThread() const {
     MOZ_ASSERT(mManagerThread->IsOnCurrentThread());
   }
@@ -97,7 +97,7 @@ class MFCDMChild final : public PMFCDMChild {
 
   const nsString mKeySystem;
 
-  const RefPtr<nsISerialEventTarget> mManagerThread;
+  const nsCOMPtr<nsISerialEventTarget> mManagerThread;
   RefPtr<MFCDMChild> mIPDLSelfRef;
 
   using RemotePromise = GenericNonExclusivePromise;

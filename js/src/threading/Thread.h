@@ -9,7 +9,6 @@
 
 #include "mozilla/TimeStamp.h"
 
-#include <stdint.h>
 #include <type_traits>
 #include <utility>
 

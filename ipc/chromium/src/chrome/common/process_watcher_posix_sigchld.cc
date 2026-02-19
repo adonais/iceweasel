@@ -31,6 +31,12 @@
 #  include "mozilla/ipc/ForkServiceChild.h"
 #endif
 
+#if defined(XP_LINUX) && !defined(ANDROID)
+#  include "mozilla/AvailableMemoryWatcher.h"
+#  include "mozilla/glean/XpcomMetrics.h"
+#  include "nsPrintfCString.h"
+#endif
+
 // Just to make sure the moz.build is doing the right things with
 // TARGET_OS and/or OS_TARGET:
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
@@ -99,6 +105,26 @@ static mozilla::StaticDataMutex<mozilla::StaticAutoPtr<nsTArray<PendingChild>>>
 static int gSignalPipe[2] = {-1, -1};
 static mozilla::Atomic<bool> gProcessWatcherShutdown;
 
+#if defined(XP_LINUX) && !defined(ANDROID)
+// Record Glean event when a content process is killed by OOM killer
+static void RecordContentProcessOOMKilled() {
+  // Get PSI data
+  mozilla::PSIInfo psi;
+  nsresult rv = mozilla::GetLastPSISnapshot(psi);
+
+  if (NS_SUCCEEDED(rv)) {
+    // Record Glean event with PSI metrics
+    mozilla::glean::memory_watcher::process_oom_killed.Record(
+        mozilla::Some(mozilla::glean::memory_watcher::ProcessOomKilledExtra{
+            mozilla::Some(nsPrintfCString("%lu", psi.some_avg10)),
+            mozilla::Some(nsPrintfCString("%lu", psi.some_avg60)),
+            mozilla::Some(nsPrintfCString("%lu", psi.full_avg10)),
+            mozilla::Some(nsPrintfCString("%lu", psi.full_avg60)),
+        }));
+  }
+}
+#endif
+
 // A wrapper around WaitForProcess to simplify the result (true if the
 // process exited and the pid is now freed for reuse, false if it's
 // still running), and handle the case where "blocking" mode doesn't
@@ -133,6 +159,14 @@ static bool IsProcessDead(pid_t pid, BlockingWait aBlock) {
     case base::ProcessStatus::Killed:
       CHROMIUM_LOG(WARNING)
           << "process " << pid << " exited on signal " << info;
+#if defined(XP_LINUX) && !defined(ANDROID)
+      // Record telemetry for OOM kills
+      if (info == SIGKILL) {
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("ContentProcessOOMTelemetry",
+                                   []() { RecordContentProcessOOMKilled(); }));
+      }
+#endif
       return true;
 
     case base::ProcessStatus::Error:

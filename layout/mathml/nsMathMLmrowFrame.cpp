@@ -29,7 +29,8 @@ nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent) {
   // let the base class get the default from our parent
   nsMathMLContainerFrame::InheritAutomaticData(aParent);
 
-  mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
+  mPresentationData.flags +=
+      MathMLPresentationFlag::StretchAllChildrenVertically;
 
   return NS_OK;
 }
@@ -56,7 +57,7 @@ nsresult nsMathMLmrowFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 /* virtual */
-eMathMLFrameType nsMathMLmrowFrame::GetMathMLFrameType() {
+MathMLFrameType nsMathMLmrowFrame::GetMathMLFrameType() {
   if (!IsMrowLike()) {
     nsIMathMLFrame* child = do_QueryFrame(mFrames.FirstChild());
     if (child) {

@@ -117,11 +117,6 @@ interface FeatureSettingsHelper {
     var isTermsOfServiceAccepted: Boolean
 
     /**
-     * Enable or disable the composable logins.
-     */
-    var isComposeLoginsEnabled: Boolean
-
-    /**
      * The Open links in External apps settings, between the following options:
      * - Ask before opening
      * - Never

@@ -183,7 +183,7 @@ function promiseWarn(error) {
  * While waiting for a reps fix in https://github.com/firefox-devtools/reps/issues/92,
  * translate nodeFront to a grip-like object that can be used with an ElementNode rep.
  *
- * @params  {NodeFront} nodeFront
+ * @param {NodeFront} nodeFront
  *          The NodeFront for which we want to create a grip-like object.
  * @returns {object} a grip-like object that can be used with Reps.
  */

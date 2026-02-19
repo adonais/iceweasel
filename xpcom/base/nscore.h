@@ -15,7 +15,6 @@
 /**
  * Incorporate the integer data types which XPCOM uses.
  */
-#include <stddef.h>  // IWYU pragma: export
 #include <stdint.h>  // IWYU pragma: export
 
 #include "mozilla/RefCountType.h"

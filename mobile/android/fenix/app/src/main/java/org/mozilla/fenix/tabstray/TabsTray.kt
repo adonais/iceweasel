@@ -220,7 +220,6 @@ fun TabsTray(
             HorizontalPager(
                 modifier = Modifier.fillMaxSize(),
                 state = pagerState,
-                beyondViewportPageCount = 2,
                 userScrollEnabled = false,
             ) { position ->
                 when (Page.positionToPage(position = position, enhancementsEnabled = false)) {
@@ -276,6 +275,10 @@ fun TabsTray(
                             syncedTabs = tabsTrayState.syncedTabs,
                             onTabClick = onSyncedTabClick,
                             onTabClose = onSyncedTabClose,
+                            expandedState = tabsTrayState.expandedSyncedTabs,
+                            onSectionExpansionToggled = { index ->
+                                tabsTrayStore.dispatch(TabsTrayAction.SyncedTabsHeaderToggled(index))
+                            },
                         )
                     }
                 }

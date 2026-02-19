@@ -49,7 +49,7 @@ nsresult SVGGFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
     // Also note that SVGTransformableElement::GetAttributeChangeHint will
     // return nsChangeHint_UpdateOverflow for "transform" attribute changes
     // and cause DoApplyRenderingChangeToTree to make the SchedulePaint call.
-    NotifySVGChanged(TRANSFORM_CHANGED);
+    NotifySVGChanged(ChangeFlag::TransformChanged);
   }
 
   return NS_OK;

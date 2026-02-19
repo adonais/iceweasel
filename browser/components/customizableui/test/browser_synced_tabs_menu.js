@@ -259,6 +259,10 @@ add_task(async function () {
 
 // Test the "Sync Now" button
 add_task(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.remoteSVGIconDecoding", true]],
+  });
+
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
     syncEnabled: true,
@@ -336,6 +340,7 @@ add_task(async function () {
         tabs: [
           {
             title: "http://example.com/6",
+            icon: "http://example.com/favicon.ico",
             lastUsed: 6,
           },
         ],
@@ -398,6 +403,14 @@ add_task(async function () {
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/6");
+  // Check the favicon image.
+  let image = new URL(childNode.getAttribute("image"));
+  is(image.protocol, "moz-remote-image:", "image protocol is correct");
+  is(
+    image.searchParams.get("url"),
+    "http://example.com/favicon.ico",
+    "image url is correct"
+  );
   node = node.nextElementSibling;
   is(node, null, "no more siblings");
 
@@ -451,6 +464,8 @@ add_task(async function () {
   ok(didSync, "clicking the button called the correct function");
 
   await hideOverflow();
+
+  await SpecialPowers.popPrefEnv();
 });
 
 // Test the pagination capabilities (Show More/All tabs)

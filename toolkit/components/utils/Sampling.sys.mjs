@@ -66,7 +66,9 @@ export var Sampling = {
   },
 
   /**
-   * @promise A hash of `data`, truncated to the 12 most significant characters.
+   * @returns {Promise<string>}
+   *   Resolves to a hash of `data`, truncated to the 12 most significant
+   *   characters.
    */
   async truncatedHash(data) {
     const hasher = crypto.subtle;
@@ -85,7 +87,8 @@ export var Sampling = {
    * @param    {object}  input Input to hash to determine the sample.
    * @param    {number}  rate  Number between 0.0 and 1.0 to sample at. A value of
    *                           0.25 returns true 25% of the time.
-   * @promises {boolean} True if the input is in the sample.
+   * @returns {Promise<boolean>}
+   *   Resovles to true if the input is in the sample.
    */
   async stableSample(input, rate) {
     const inputHash = await Sampling.truncatedHash(input);
@@ -107,8 +110,9 @@ export var Sampling = {
    * @param {integer}    start Index of the bucket to start checking.
    * @param {integer}    count Number of buckets to check.
    * @param {integer}    total Total number of buckets to group inputs into.
-   * @promises {boolean} True if the given input is within the range of buckets
-   *                     we're checking.
+   * @returns {Promise<boolean>}
+   *   Resolves to true if the given input is within the range of buckets we're
+   *   checking.
    */
   async bucketSample(input, start, count, total) {
     const inputHash = await Sampling.truncatedHash(input);
@@ -142,9 +146,9 @@ export var Sampling = {
    * inputs.
    *
    * @param {object} input
-   * @param {Array<integer>} ratios
-   * @promises {integer}
-   *   Index of the ratio that matched the input
+   * @param {Array<number>} ratios
+   * @returns {Promise<number>}
+   *   Resolves to the index of the ratio that matched the input.
    * @rejects {Error}
    *   If the list of ratios doesn't have at least one element
    */

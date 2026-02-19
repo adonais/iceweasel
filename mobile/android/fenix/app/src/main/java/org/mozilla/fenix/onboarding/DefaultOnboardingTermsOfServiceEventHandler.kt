@@ -33,7 +33,7 @@ class DefaultOnboardingTermsOfServiceEventHandler(
         telemetryRecorder.onTermsOfServicePrivacyNoticeLinkClick()
         openLink(
             url.trim().ifNullOrEmpty {
-                SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE)
+                SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE)
             },
         )
     }

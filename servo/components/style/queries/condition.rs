@@ -9,10 +9,11 @@
 
 use super::{FeatureFlags, FeatureType, QueryFeatureExpression};
 use crate::custom_properties;
+use crate::derives::*;
 use crate::stylesheets::CustomMediaEvaluator;
 use crate::values::{computed, AtomString, DashedIdent};
-use crate::{error_reporting::ContextualParseError, parser::ParserContext};
-use cssparser::{Parser, SourcePosition, Token};
+use crate::{error_reporting::ContextualParseError, parser::Parse, parser::ParserContext};
+use cssparser::{match_ignore_ascii_case, Parser, SourcePosition, Token};
 use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
@@ -405,6 +406,11 @@ impl QueryCondition {
             Ok(expr) => return Ok(Self::Feature(expr)),
             Err(e) => e,
         };
+        if static_prefs::pref!("layout.css.custom-media.enabled") {
+            if let Ok(custom) = input.try_parse(|input| DashedIdent::parse(context, input)) {
+                return Ok(Self::Custom(custom));
+            }
+        }
         if let Ok(inner) = Self::parse(context, input, feature_type) {
             return Ok(Self::InParens(Box::new(inner)));
         }

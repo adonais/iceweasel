@@ -73,7 +73,7 @@ class CSSStyleRule final : public css::GroupRule {
                               bool aRelevantLinkVisited);
   Element* GetScopeRootFor(uint32_t aSelectorIndex, dom::Element&,
                            const nsAString& aPseudo, bool aRelevantLinkVisited);
-  NotNull<DeclarationBlock*> GetDeclarationBlock() const;
+  DeclarationBlock& GetDeclarationBlock() const;
   void GetSelectorWarnings(nsTArray<SelectorWarning>& aResult) const;
   already_AddRefed<nsINodeList> QuerySelectorAll(nsINode& aRoot);
 

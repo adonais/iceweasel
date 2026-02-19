@@ -2,8 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import java.time.format.DateTimeFormatter
+
 import org.yaml.snakeyaml.Yaml
+
+import java.time.format.DateTimeFormatter
 
 buildscript {
     if (!gradle.root.hasProperty("mozconfig")){
@@ -203,7 +205,7 @@ gradle.projectsLoaded { ->
             // This is consistent with existing gradle / taskcluster
             // configurations but less consistent with the result of the
             // non-gradle build system.
-            buildDir = topObjPath.resolve("gradle/build").resolve(relativePath)
+            project.layout.buildDirectory.set(topObjPath.resolve("gradle/build").resolve(relativePath).toFile())
         }
     }
 }

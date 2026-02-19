@@ -1,15 +1,22 @@
-async function newFocusedWindow(trigger) {
+async function newFocusedWindow(trigger, isInitialBlank = false) {
   let winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
   let delayedStartupPromise = BrowserTestUtils.waitForNewWindow();
 
   await trigger();
 
   let win = await winPromise;
-  // New windows get focused after the first paint, see bug 1262946
-  await BrowserTestUtils.waitForContentEvent(
-    win.gBrowser.selectedBrowser,
-    "MozAfterPaint"
-  );
+  // New windows get focused after the first paint, see bug 1262946,
+  // but this is racy for the initial about:blank
+  if (!isInitialBlank) {
+    await BrowserTestUtils.waitForContentEvent(
+      win.gBrowser.selectedBrowser,
+      "MozAfterPaint"
+    );
+  } else {
+    await new Promise(res =>
+      win.requestAnimationFrame(() => win.requestAnimationFrame(res))
+    );
+  }
   await delayedStartupPromise;
   return win;
 }

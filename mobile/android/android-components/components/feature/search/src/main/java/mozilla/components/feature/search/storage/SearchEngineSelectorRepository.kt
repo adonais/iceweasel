@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.search.storage
 
+import android.content.Context
 import android.graphics.Bitmap
 import mozilla.appservices.remotesettings.RemoteSettingsClient
 import mozilla.appservices.remotesettings.RemoteSettingsRecord
@@ -30,10 +31,16 @@ import kotlin.coroutines.CoroutineContext
 /**
  * A repository implementation for loading and reading [SearchEngineDefinition]s from RemoteSettings.
  *
+ * @param context [Context] used by [SearchEngineReader] to resolve the current locale.
  * @param searchEngineSelectorConfig [SearchEngineSelectorConfig] holds configuration options for
- *          [SearchUserEnvironment]
+ * [SearchUserEnvironment].
+ * @param defaultSearchEngineIcon The [Bitmap] to use as the fallback icon for any search engine
+ * when a specific remote icon cannot be found or loaded.
+ * @param client Optional [RemoteSettingsClient] for fetching search engine definitions.
+ * @param selector The [SearchEngineSelector] which manages and applies search configuration
  */
 class SearchEngineSelectorRepository(
+    context: Context,
     private val searchEngineSelectorConfig: SearchEngineSelectorConfig,
     private val defaultSearchEngineIcon: Bitmap,
     client: RemoteSettingsClient?,
@@ -41,7 +48,7 @@ class SearchEngineSelectorRepository(
 ) : SearchEngineRepository {
 
     private val searchConfigIconsUpdateService: SearchConfigIconsUpdateService = SearchConfigIconsUpdateService(client)
-    private val reader: SearchEngineReader = SearchEngineReader(type = SearchEngine.Type.BUNDLED)
+    private val reader: SearchEngineReader = SearchEngineReader(context = context, type = SearchEngine.Type.BUNDLED)
     private val logger = Logger("SearchEngineSelectorRepository")
     private val parser = SearchConfigIconsParser()
 

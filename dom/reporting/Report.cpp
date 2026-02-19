@@ -39,6 +39,8 @@ JSObject* Report::WrapObject(JSContext* aCx,
   return Report_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+const nsString& Report::Type() const { return mType; }
+
 void Report::GetType(nsAString& aType) const { aType = mType; }
 
 void Report::GetUrl(nsAString& aURL) const { aURL = mURL; }

@@ -1720,32 +1720,6 @@
     "keyed": true,
     "description": "HTTP channel (keys: uses_http3_page, uses_http3_sub, supports_http3_page, supports_http3_sub): Overall load time - network (ms)"
   },
-  "HTTP3_PERF_PAGE_LOAD_TIME_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox"],
-    "alert_emails": ["necko@mozilla.com", "ddamjanovic@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "high": 50000,
-    "n_buckets": 100,
-    "bug_numbers": [1675503],
-    "keyed": true,
-    "description": "Time in milliseconds from navigationStart to loadEventStart for the foreground http or https root content document. This is collected only on page load where the main document uses or suppports HTTP3"
-  },
-  "HTTP3_PERF_FIRST_CONTENTFUL_PAINT_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox"],
-    "alert_emails": ["necko@mozilla.com", "ddamjanovic@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "high": 50000,
-    "n_buckets": 100,
-    "bug_numbers": [1675503],
-    "keyed": true,
-    "description": "The time between navigationStart and the first contentful paint of a foreground http or https root content document, in milliseconds. The contentful paint timestamp is taken during display list building and does not include rasterization or compositing of that paint. This is collected only on page load where the main document uses or suppports HTTP3"
-  },
   "H3P_PERF_PAGE_LOAD_TIME_MS": {
     "record_in_processes": ["content"],
     "products": ["firefox"],
@@ -1818,19 +1792,6 @@
     "high": 60000,
     "n_buckets": 100,
     "description": "Time in milliseconds that http channel spent suspended between AsyncOpen and OnStartRequest."
-  },
-  "HTTP_UPLOAD_BANDWIDTH_MBPS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["necko@mozilla.com", "acreskey@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "high": 10000,
-    "n_buckets": 100,
-    "bug_numbers": [1830087],
-    "keyed": true,
-    "description": "The upload bandwidth for requests larger than 10MB. Measured in megabits per second, Mbps. Keyed by HTTP protocol version."
   },
   "NETWORKING_DOWNLOAD_THROUGHPUT_HTTP_1": {
     "record_in_processes": ["main"],
@@ -2058,18 +2019,6 @@
     "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
     "bug_numbers": [1354405]
   },
-  "NETWORK_RACE_CACHE_BANDWIDTH_NOT_RACE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 32,
-    "high": 16777216,
-    "n_buckets": 100,
-    "description": "Amount of bytes received when we decide not to race cache with network.",
-    "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
-    "bug_numbers": [1354405]
-  },
   "NETWORK_RACE_CACHE_VALIDATION": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
@@ -2115,58 +2064,6 @@
     "high": 60000,
     "n_buckets": 100,
     "description": "The delay caused by the e10s back pressure suspension(ms)"
-  },
-  "NETWORK_ASYNC_OPEN_CHILD_TO_TRANSACTION_PENDING_EXP_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com", "acreskey@mozilla.com"],
-    "bug_numbers": [1789468],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "keyed": true,
-    "kind": "exponential",
-    "high": 2000,
-    "n_buckets": 50,
-    "description": "The time spent from HttpChannelChild::AsyncOpen to adding the transactionto the nsHttpConnectionMgr, in milliseconds, keyed by the classOfService flags"
-  },
-  "NETWORK_RESPONSE_START_PARENT_TO_CONTENT_EXP_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com", "acreskey@mozilla.com"],
-    "bug_numbers": [1793975],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "keyed": true,
-    "kind": "exponential",
-    "high": 2000,
-    "n_buckets": 50,
-    "description": "The time spent relaying response start from the socket thread of the parent process to the content process, in milliseconds, keyed by the classOfService flags"
-  },
-  "NETWORK_DNS_END_TO_CONNECT_START_EXP_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com", "acreskey@mozilla.com"],
-    "bug_numbers": [1791077],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "keyed": true,
-    "kind": "exponential",
-    "high": 2000,
-    "n_buckets": 50,
-    "description": "The time spent from dns resolution to connect start, in milliseconds, keyed by protocol version and the classOfService flags"
-  },
-  "NETWORK_RESPONSE_END_PARENT_TO_CONTENT_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com", "acreskey@mozilla.com"],
-    "bug_numbers": [1795775],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "keyed": true,
-    "kind": "exponential",
-    "high": 2000,
-    "n_buckets": 50,
-    "description": "The time spent relaying response completion from the socket thread of the parent process to the content process, in milliseconds, keyed by the classOfService flags"
   },
   "TLS_EARLY_DATA_NEGOTIATED": {
     "record_in_processes": ["main", "socket"],
@@ -3375,19 +3272,6 @@
     "kind": "enumerated",
     "description": "The reason why we failed to connect with an HTTPSSVC record"
   },
-  "DNS_PERF_FIRST_CONTENTFUL_PAINT_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox"],
-    "alert_emails": ["necko@mozilla.com", "acreskey@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "high": 50000,
-    "n_buckets": 100,
-    "bug_numbers": [1796639],
-    "keyed": true,
-    "description": "The time between navigationStart and the first contentful paint of a foreground http or https root content document, in milliseconds. The contentful paint timestamp is taken during display list building and does not include rasterization or compositing of that paint. Keyed by TRR domain for DoH or 'Native' otherwise"
-  },
   "DNS_PERF_FIRST_BYTE_MS": {
     "record_in_processes": ["content"],
     "products": ["firefox"],
@@ -3420,221 +3304,6 @@
     "kind": "exponential",
     "high": 1000,
     "n_buckets": 50
-  },
-  "PREDICTOR_LEARN_ATTEMPTS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000000,
-    "n_buckets": 50,
-    "description": "Number of times nsINetworkPredictor::Learn is called and attempts to learn"
-  },
-  "PREDICTOR_WAIT_TIME": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "Amount of time a predictor event waits in the queue (ms)"
-  },
-  "PREDICTOR_PREDICT_WORK_TIME": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "Amount of time spent doing the work for predict (ms)",
-    "alert_emails": ["necko@mozilla.com"]
-  },
-  "PREDICTOR_LEARN_WORK_TIME": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "Amount of time spent doing the work for learn (ms)"
-  },
-  "PREDICTOR_TOTAL_PREDICTIONS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000000,
-    "n_buckets": 50,
-    "description": "How many actual predictions (preresolves, preconnects, ...) happen"
-  },
-  "PREDICTOR_TOTAL_PREFETCHES": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1016628],
-    "kind": "exponential",
-    "high": 1000000,
-    "n_buckets": 50,
-    "description": "How many actual prefetches happen"
-  },
-  "PREDICTOR_PREFETCH_USE_STATUS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1016628, 1312057],
-    "kind": "categorical",
-    "labels": [
-      "Used",
-      "Not200",
-      "Expired",
-      "WouldVary",
-      "WaitedTooLong",
-      "Etag",
-      "Auth",
-      "Redirect"
-    ],
-    "description": "If and why prefetches are used/unused."
-  },
-  "PREDICTOR_PREFETCH_TIME": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1016628],
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "How long it takes from OnStartRequest to OnStopRequest for a prefetch"
-  },
-  "PREDICTOR_TOTAL_PRECONNECTS": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "kind": "exponential",
-    "high": 1000000,
-    "n_buckets": 50,
-    "description": "How many actual preconnects happen"
-  },
-  "PREDICTOR_TOTAL_PRERESOLVES": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000000,
-    "n_buckets": 50,
-    "description": "How many actual preresolves happen"
-  },
-  "PREDICTOR_PREDICTIONS_CALCULATED": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000000,
-    "n_buckets": 50,
-    "description": "How many prediction calculations are performed"
-  },
-  "PREDICTOR_GLOBAL_DEGRADATION": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 50,
-    "description": "The global degradation calculated"
-  },
-  "PREDICTOR_SUBRESOURCE_DEGRADATION": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 50,
-    "description": "The degradation calculated for a subresource"
-  },
-  "PREDICTOR_BASE_CONFIDENCE": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 50,
-    "description": "The base confidence calculated for a subresource"
-  },
-  "PREDICTOR_CONFIDENCE": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 50,
-    "description": "The final confidence calculated for a subresource"
-  },
-  "PREDICTOR_PREDICT_TIME_TO_ACTION": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "How long it takes from the time Predict() is called to the time we take action",
-    "alert_emails": ["necko@mozilla.com"]
-  },
-  "PREDICTOR_PREDICT_TIME_TO_INACTION": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [881804],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "How long it takes from the time Predict() is called to the time we figure out there's nothing to do"
-  },
-  "PREDICTOR_PREFETCH_DECISION_REASON": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 15,
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1409542, 1430322, 1312057],
-    "description": "Why the predictor determined a particular resource was eligible for future prefetch (or not). See PrefetchDecisionReason in Predictor.cpp for value meanings"
-  },
-  "PREDICTOR_PREFETCH_IGNORE_REASON": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 15,
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1409542, 1430322, 1312057],
-    "description": "Why the predictor determined a particular resource that was marked eligible for prefetch should not be prefetched. See PrefetchIgnoreReason in Predictor.cpp for value meanings"
   },
   "TAB_COUNT": {
     "record_in_processes": ["main"],

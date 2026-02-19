@@ -12,7 +12,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "nsQueryObject.h"
 
-#undef LOG
 mozilla::LazyLogModule gMediaChildLog("MediaChild");
 #define LOG(args) MOZ_LOG(gMediaChildLog, mozilla::LogLevel::Debug, args)
 
@@ -92,3 +91,5 @@ bool DeallocPMediaChild(media::PMediaChild* aActor) {
 }
 
 }  // namespace mozilla::media
+
+#undef LOG

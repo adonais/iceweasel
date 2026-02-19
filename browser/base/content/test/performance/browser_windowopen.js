@@ -23,6 +23,8 @@ add_setup(async function setup() {
   });
 });
 
+const SIDEBAR_REVAMP = Services.prefs.getBoolPref("sidebar.revamp");
+
 /*
  * This test ensures that there are no unexpected
  * uninterruptible reflows or flickering areas when opening new windows.
@@ -48,6 +50,7 @@ add_task(async function () {
   let alreadyFocused = false;
   let inRange = (val, min, max) => min <= val && val <= max;
   let tabBoundingRect = undefined;
+  let urlbarBoundingRect = undefined;
   let expectations = {
     expectedReflows: EXPECTED_REFLOWS,
     frames: {
@@ -68,11 +71,17 @@ add_task(async function () {
       exceptions: [
         {
           name: "bug 1421463 - reload toolbar icon shouldn't flicker",
-          condition: r =>
-            inRange(r.h, 13, 14) &&
-            inRange(r.w, 14, 16) && // icon size
-            inRange(r.y1, 40, 80) && // in the toolbar
-            inRange(r.x1, 65, 100), // near the left side of the screen
+          condition: r => {
+            // sidebar.revamp places the sidebar button in the toolbar,
+            // which offsets the position of the reload button by about 36px.
+            const xOffset = SIDEBAR_REVAMP ? 36 : 0;
+            return (
+              inRange(r.h, 13, 14) &&
+              inRange(r.w, 14, 16) && // icon size
+              inRange(r.y1, 40, 80) && // in the toolbar
+              inRange(r.x1, 65 + xOffset, 100 + xOffset) // near the left side of the screen
+            );
+          },
         },
         {
           name: "bug 1555842 - the urlbar shouldn't flicker",
@@ -87,6 +96,17 @@ add_task(async function () {
               r.y1 >= inputFieldRect.top &&
               r.y2 <= inputFieldRect.bottom
             );
+          },
+        },
+        {
+          name: "Pixel snapping on urlbar bottom border on MacOS & Windows",
+          condition(r) {
+            if (!urlbarBoundingRect) {
+              urlbarBoundingRect = document
+                .getElementById("urlbar")
+                .getBoundingClientRect();
+            }
+            return rectMatchesBottomBorder(r, urlbarBoundingRect);
           },
         },
         {

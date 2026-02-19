@@ -35,7 +35,7 @@
   color: var(--text-color);
   text-align: center;
   /* Bug 1986645: Border radius tokens are not shipped in Android, so we use a variable with fallback */
-  /* stylelint-disable-next-line  stylelint-plugin-mozilla/use-border-radius-tokens */
+  /* stylelint-disable-next-line  stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--aboutlogging-border-radius-small);
   padding: var(--space-medium);
   opacity: 0;
@@ -158,7 +158,7 @@ input[type="text"] {
   margin-bottom: 0.5em;
   border: 1px solid var(--aboutlogging-box-border-color);
   /* Bug 1986645: Border radius tokens are not shipped in Android, so we use a variable with fallback */
-  /* stylelint-disable-next-line  stylelint-plugin-mozilla/use-border-radius-tokens */
+  /* stylelint-disable-next-line  stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--aboutlogging-border-radius-small);
   background-color: var(--aboutlogging-box-background);
 }

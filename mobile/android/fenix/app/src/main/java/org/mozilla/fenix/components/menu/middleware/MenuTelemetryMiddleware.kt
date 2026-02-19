@@ -5,7 +5,7 @@
 package org.mozilla.fenix.components.menu.middleware
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.AppMenu
 import org.mozilla.fenix.GleanMetrics.Events
@@ -30,11 +30,11 @@ class MenuTelemetryMiddleware(
 
     @Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")
     override fun invoke(
-        context: MiddlewareContext<MenuState, MenuAction>,
+        store: Store<MenuState, MenuAction>,
         next: (MenuAction) -> Unit,
         action: MenuAction,
     ) {
-        val currentState = context.state
+        val currentState = store.state
 
         next(action)
 

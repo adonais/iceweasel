@@ -5,16 +5,16 @@
 "use strict";
 
 const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs"
 );
 const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPProxyManager.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs"
 );
 const { ProxyPass } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
@@ -90,9 +90,46 @@ function setupStubs(
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
-    pass: {
-      isValid: () => options.validProxyPass,
-      asBearerToken: () => "Bearer helloworld",
-    },
+    pass: new ProxyPass(
+      options.validProxyPass
+        ? createProxyPassToken()
+        : createExpiredProxyPassToken()
+    ),
   });
 }
+
+/**
+ * Creates a Token that can be fed as a Network Response from Guardian
+ * to simulate a Proxy Pass.
+ *
+ * @param {Temporal.Instant} from
+ * @param {Temporal.Instant} until
+ * @returns {string} JWT Token
+ */
+function createProxyPassToken(
+  from = Temporal.Now.instant(),
+  until = from.add({ hours: 24 })
+) {
+  const header = {
+    alg: "HS256",
+    typ: "JWT",
+  };
+  const body = {
+    iat: Math.floor(from.add({ seconds: 1 }).epochMilliseconds / 1000),
+    nbf: Math.floor(from.epochMilliseconds / 1000),
+    exp: Math.floor(until.epochMilliseconds / 1000),
+    sub: "proxy-pass-user-42",
+    aud: "guardian-proxy",
+    iss: "vpn.mozilla.org",
+  };
+  const encode = obj => btoa(JSON.stringify(obj));
+  return [encode(header), encode(body), "signature"].join(".");
+}
+/* exported createExpiredProxyPassToken */
+function createExpiredProxyPassToken() {
+  return createProxyPassToken(
+    Temporal.Now.instant().subtract({ hours: 2 }),
+    Temporal.Now.instant().subtract({ hours: 1 })
+  );
+}
+/* exported createExpiredProxyPassToken */

@@ -669,6 +669,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Новы спіс
+newtab-widget-section-title = Віджэты
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Схаваць віджэты
+    .aria-label = Схаваць усе віджэты
+newtab-widget-section-maximize =
+    .title = Разгарнуць віджэты
+    .aria-label = Разгарнуць усе віджэты ў поўны памер
+newtab-widget-section-minimize =
+    .title = Згарнуць віджэты
+    .aria-label = Згарнуць усе віджэты ў кампактны памер
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -691,8 +702,6 @@ newtab-widget-timer-menu-notifications = Выключыць апавяшчэнн
 newtab-widget-timer-menu-notifications-on = Уключыць апавяшчэнні
 newtab-widget-timer-menu-hide = Схаваць таймер
 newtab-widget-timer-menu-learn-more = Падрабязней
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Прагартайце, каб даведацца больш
 newtab-widget-message-title = Заставайцеся сканцэнтраванымі з дапамогай спісаў і ўбудаванага таймера
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Паспявайце ўсё з дапамогай хуткіх напамінаў, спісаў задач, заняткаў па канцэнтрацыі ўвагі ды перапынкаў на размінку.

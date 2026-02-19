@@ -17,8 +17,8 @@ export class PageInfoPreviewChild extends JSWindowActorChild {
       return undefined;
     }
 
-    const physWidth = img.width || 0;
-    const physHeight = img.height || 0;
+    const naturalWidth = img.naturalWidth || 0;
+    const naturalHeight = img.naturalHeight || 0;
 
     if (data.width !== undefined) {
       img.width = data.width;
@@ -28,8 +28,8 @@ export class PageInfoPreviewChild extends JSWindowActorChild {
     }
 
     return {
-      physWidth,
-      physHeight,
+      naturalWidth,
+      naturalHeight,
       width: img.width,
       height: img.height,
     };

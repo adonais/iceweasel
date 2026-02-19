@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import zipfile
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from io import StringIO
@@ -235,9 +236,13 @@ def install_package(virtualenv_manager, package, ignore_failure=False):
             return True
     with silence():
         try:
-            subprocess.check_call(
-                [virtualenv_manager.python_path, "-m", "pip", "install", package]
-            )
+            subprocess.check_call([
+                virtualenv_manager.python_path,
+                "-m",
+                "pip",
+                "install",
+                package,
+            ])
             return True
         except Exception:
             if not ignore_failure:
@@ -280,19 +285,17 @@ def install_requirements_file(
         cwd = os.getcwd()
         try:
             os.chdir(Path(requirements_file).parent)
-            subprocess.check_call(
-                [
-                    virtualenv_manager.python_path,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    requirements_file,
-                    "--no-index",
-                    "--find-links",
-                    "https://pypi.pub.build.mozilla.org/pub/",
-                ]
-            )
+            subprocess.check_call([
+                virtualenv_manager.python_path,
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                requirements_file,
+                "--no-index",
+                "--find-links",
+                "https://pypi.pub.build.mozilla.org/pub/",
+            ])
             return True
         except Exception:
             if not ignore_failure:
@@ -663,3 +666,66 @@ def archive_folder(folder_to_archive, output_path, archive_name=None):
         tar.add(folder_to_archive, arcname=archive_name)
 
     return full_archive_path
+
+
+def archive_files(files, output_dir, archive_name, prefix=""):
+    """Archives individual files into a zip file, with optional append mode.
+
+    Args:
+        files: List of Path objects to archive
+        output_dir: Path object - directory where the archive should be created
+        archive_name: Name for the archive
+        prefix: Optional prefix for archived filenames
+
+    Returns:
+        Path to the archive if created/updated, None otherwise
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = output_dir / f"{archive_name}.zip"
+
+    mode = "a" if archive_path.exists() else "w"
+
+    with zipfile.ZipFile(archive_path, mode, compression=zipfile.ZIP_DEFLATED) as zf:
+        for file_path in files:
+            base_name = file_path.name
+
+            if prefix:
+                archive_name = f"{prefix}-{base_name}"
+            else:
+                archive_name = base_name
+
+            print(f"Adding {archive_name} to archive")
+            zf.write(file_path, arcname=archive_name)
+
+    return archive_path
+
+
+def extract_tgz_and_find_files(output_dir, tgz_name, patterns):
+    """Extract TGZ file if on CI and find files matching patterns.
+
+    Args:
+        output_dir: Path object - directory where files are located or where TGZ should be extracted
+        tgz_name: Name of the TGZ file (without extension)
+        patterns: List of patterns for file extensions (e.g., ["*.data", "*.json.gz"])
+
+    Returns:
+        Tuple of (files, work_dir) where work_dir is the temp directory to clean up (or None)
+    """
+    work_dir = None
+    search_dir = output_dir
+
+    if ON_TRY:
+        tgz_path = output_dir / f"{tgz_name}.tgz"
+        if tgz_path.exists():
+            work_dir = Path(tempfile.mkdtemp())
+            with tarfile.open(tgz_path, "r:gz") as tar:
+                tar.extractall(path=work_dir)
+            search_dir = work_dir
+
+    found_files = []
+    for pattern in patterns:
+        found_files.extend(search_dir.rglob(pattern))
+
+    valid_files = [f for f in found_files if f.is_file()]
+
+    return (valid_files, work_dir)

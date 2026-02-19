@@ -33,8 +33,9 @@ class nsMathMLmunderoverFrame final : public nsMathMLContainerFrame,
 
   NS_IMETHOD TransmitAutomaticData() override;
 
-  NS_IMETHOD UpdatePresentationData(uint32_t aFlagsValues,
-                                    uint32_t aFlagsToUpdate) override;
+  NS_IMETHOD UpdatePresentationData(
+      MathMLPresentationFlags aFlagsValues,
+      MathMLPresentationFlags aFlagsToUpdate) override;
 
   void Destroy(DestroyContext&) override;
 

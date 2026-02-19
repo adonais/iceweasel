@@ -243,7 +243,7 @@ struct DeviceState {
   bool mOperationInProgress = false;
 
   // true if we are allowed to turn off the underlying source while all tracks
-  // are disabled. Only affects disabling; always turns off on user-agent mute.
+  // are disabled or muted.
   // MainThread only.
   bool mOffWhileDisabled = false;
 
@@ -4367,10 +4367,12 @@ DeviceListener::InitializeAsync() {
              MediaManager::Get()->mMediaThread, __func__,
              [this, self = RefPtr(this), principal = GetPrincipalHandle(),
               device = mDeviceState->mDevice,
-              track = mDeviceState->mTrackSource->mTrack,
-              deviceMuted = mDeviceState->mDeviceMuted] {
-               nsresult rv = Initialize(principal, device, track,
-                                        /*aStartDevice=*/!deviceMuted);
+              track = mDeviceState->mTrackSource->mTrack] {
+               // Start the device if not muted, or if mOffWhileDisabled is
+               // false (the device should remain on even when muted).
+               bool startDevice = !mDeviceState->mDeviceMuted ||
+                                  !mDeviceState->mOffWhileDisabled;
+               nsresult rv = Initialize(principal, device, track, startDevice);
                if (NS_SUCCEEDED(rv)) {
                  return GenericPromise::CreateAndResolve(
                      true, "DeviceListener::InitializeAsync success");

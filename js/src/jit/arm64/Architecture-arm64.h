@@ -180,7 +180,7 @@ class Registers {
   static const SetType ArgRegMask =
       (1 << Registers::x0) | (1 << Registers::x1) | (1 << Registers::x2) |
       (1 << Registers::x3) | (1 << Registers::x4) | (1 << Registers::x5) |
-      (1 << Registers::x6) | (1 << Registers::x7) | (1 << Registers::x8);
+      (1 << Registers::x6) | (1 << Registers::x7);
 
   static const SetType VolatileMask =
       (1 << Registers::x0) | (1 << Registers::x1) | (1 << Registers::x2) |

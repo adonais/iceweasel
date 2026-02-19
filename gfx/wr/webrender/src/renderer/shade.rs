@@ -15,7 +15,7 @@ use crate::renderer::{
     BlendMode, DebugFlags, RendererError, WebRenderOptions,
     TextureSampler, VertexArrayKind, ShaderPrecacheFlags,
 };
-use crate::profiler::{self, TransactionProfile, ns_to_ms};
+use crate::profiler::{self, RenderCommandLog, TransactionProfile, ns_to_ms};
 
 use gleam::gl::GlType;
 
@@ -77,12 +77,6 @@ pub(crate) enum ShaderKind {
     ClipCache(VertexArrayKind),
     Brush,
     Text,
-    #[allow(dead_code)]
-    VectorStencil,
-    #[allow(dead_code)]
-    VectorCover,
-    #[allow(dead_code)]
-    Resolve,
     Composite,
     Clear,
     Copy,
@@ -155,7 +149,11 @@ impl LazilyCompiledShader {
         texture_size: Option<DeviceSize>,
         renderer_errors: &mut Vec<RendererError>,
         profile: &mut TransactionProfile,
+        history: &mut Option<RenderCommandLog>,
     ) {
+        if let Some(history) = history {
+            history.set_shader(self.name);
+        }
         let update_projection = self.cached_projection != *projection;
         let program = match self.get_internal(device, ShaderPrecacheFlags::FULL_COMPILE, Some(profile)) {
             Ok(program) => program,
@@ -184,7 +182,7 @@ impl LazilyCompiledShader {
         if self.program.is_none() {
             let start_time = zeitstempel::now();
             let program = match self.kind {
-                ShaderKind::Primitive | ShaderKind::Brush | ShaderKind::Text | ShaderKind::Resolve | ShaderKind::Clear | ShaderKind::Copy => {
+                ShaderKind::Primitive | ShaderKind::Brush | ShaderKind::Text | ShaderKind::Clear | ShaderKind::Copy => {
                     create_prim_shader(
                         self.name,
                         device,
@@ -192,20 +190,6 @@ impl LazilyCompiledShader {
                     )
                 }
                 ShaderKind::Cache(..) => {
-                    create_prim_shader(
-                        self.name,
-                        device,
-                        &self.features,
-                    )
-                }
-                ShaderKind::VectorStencil => {
-                    create_prim_shader(
-                        self.name,
-                        device,
-                        &self.features,
-                    )
-                }
-                ShaderKind::VectorCover => {
                     create_prim_shader(
                         self.name,
                         device,
@@ -245,10 +229,7 @@ impl LazilyCompiledShader {
                 ShaderKind::Brush |
                 ShaderKind::Text => VertexArrayKind::Primitive,
                 ShaderKind::Cache(format) => format,
-                ShaderKind::VectorStencil => VertexArrayKind::VectorStencil,
-                ShaderKind::VectorCover => VertexArrayKind::VectorCover,
                 ShaderKind::ClipCache(format) => format,
-                ShaderKind::Resolve => VertexArrayKind::Resolve,
                 ShaderKind::Composite => VertexArrayKind::Composite,
                 ShaderKind::Clear => VertexArrayKind::Clear,
                 ShaderKind::Copy => VertexArrayKind::Copy,
@@ -264,12 +245,8 @@ impl LazilyCompiledShader {
                 VertexArrayKind::Blur => &desc::BLUR,
                 VertexArrayKind::ClipRect => &desc::CLIP_RECT,
                 VertexArrayKind::ClipBoxShadow => &desc::CLIP_BOX_SHADOW,
-                VertexArrayKind::VectorStencil => &desc::VECTOR_STENCIL,
-                VertexArrayKind::VectorCover => &desc::VECTOR_COVER,
                 VertexArrayKind::Border => &desc::BORDER,
                 VertexArrayKind::Scale => &desc::SCALE,
-                VertexArrayKind::Resolve => &desc::RESOLVE,
-                VertexArrayKind::SvgFilter => &desc::SVG_FILTER,
                 VertexArrayKind::SvgFilterNode => &desc::SVG_FILTER_NODE,
                 VertexArrayKind::Composite => &desc::COMPOSITE,
                 VertexArrayKind::Clear => &desc::CLEAR,
@@ -287,7 +264,6 @@ impl LazilyCompiledShader {
                             ("sColor0", TextureSampler::Color0),
                             ("sTransformPalette", TextureSampler::TransformPalette),
                             ("sRenderTasks", TextureSampler::RenderTasks),
-                            ("sGpuCache", TextureSampler::GpuCache),
                             ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
                             ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
                             ("sGpuBufferF", TextureSampler::GpuBufferF),
@@ -305,7 +281,6 @@ impl LazilyCompiledShader {
                             ("sDither", TextureSampler::Dither),
                             ("sTransformPalette", TextureSampler::TransformPalette),
                             ("sRenderTasks", TextureSampler::RenderTasks),
-                            ("sGpuCache", TextureSampler::GpuCache),
                             ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
                             ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
                             ("sClipMask", TextureSampler::ClipMask),
@@ -622,7 +597,6 @@ pub struct Shaders {
     cs_linear_gradient: ShaderHandle,
     cs_radial_gradient: ShaderHandle,
     cs_conic_gradient: ShaderHandle,
-    cs_svg_filter: ShaderHandle,
     cs_svg_filter_node: ShaderHandle,
 
     // Brush shaders
@@ -759,13 +733,6 @@ impl Shaders {
             ShaderKind::Cache(VertexArrayKind::Blur),
             "cs_blur",
             &["COLOR_TARGET"],
-            &shader_list,
-        )?;
-
-        let cs_svg_filter = loader.create_shader(
-            ShaderKind::Cache(VertexArrayKind::SvgFilter),
-            "cs_svg_filter",
-            &[],
             &shader_list,
         )?;
 
@@ -1099,7 +1066,6 @@ impl Shaders {
             cs_conic_gradient,
             cs_border_solid,
             cs_scale,
-            cs_svg_filter,
             cs_svg_filter_node,
             brush_solid,
             brush_image,
@@ -1314,7 +1280,6 @@ impl Shaders {
     pub fn cs_linear_gradient(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_linear_gradient) }
     pub fn cs_radial_gradient(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_radial_gradient) }
     pub fn cs_conic_gradient(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_conic_gradient) }
-    pub fn cs_svg_filter(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_svg_filter) }
     pub fn cs_svg_filter_node(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_svg_filter_node) }
     pub fn cs_clip_rectangle_slow(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_clip_rectangle_slow) }
     pub fn cs_clip_rectangle_fast(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_clip_rectangle_fast) }

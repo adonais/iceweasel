@@ -14,7 +14,7 @@ class FunctionalTestProcessor(mozlog.handlers.StreamHandler):
 
     def __init__(self, *args, **kwargs):
         self._match = []
-        super(FunctionalTestProcessor, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, data):
         formatted = self.formatter(data)

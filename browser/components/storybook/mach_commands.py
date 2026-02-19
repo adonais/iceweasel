@@ -90,7 +90,7 @@ def start_browser(command_context):
     # This delay is used to avoid launching the browser before the Storybook server has started.
     time.sleep(5)
     subprocess.run(
-        run_mach(command_context, "storybook", subcommand="launch"), check=False
+        run_mach(command_context, "storybook", subcommand="launch"), check=True
     )
 
 

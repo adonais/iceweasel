@@ -293,13 +293,11 @@ def retrigger_multiple(parameters, graph_config, input, task_group_id, task_id):
             for rerun_taskid in label_to_taskids[label]:
                 _rerun_task(rerun_taskid, label)
 
-        retrigger_tasks.extend(
-            [
-                label
-                for label in request.get("tasks")
-                if _should_retrigger(full_task_graph, label)
-            ]
-        )
+        retrigger_tasks.extend([
+            label
+            for label in request.get("tasks")
+            if _should_retrigger(full_task_graph, label)
+        ])
 
     create_tasks(
         graph_config,

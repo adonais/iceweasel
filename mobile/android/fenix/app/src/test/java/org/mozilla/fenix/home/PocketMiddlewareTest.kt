@@ -9,10 +9,8 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.PocketStoriesService
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
@@ -20,12 +18,9 @@ import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.PocketStory.SponsoredContentCallbacks
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import mozilla.components.support.utils.RunWhenReadyQueue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -40,11 +35,9 @@ import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesSelectedCategory
 
 class PocketMiddlewareTest {
-    @get:Rule
-    val mainCoroutineTestRule = MainCoroutineRule()
 
     @Test
-    fun `WHEN PocketStoriesShown is dispatched THEN update PocketStoriesService`() = runTestOnMain {
+    fun `WHEN PocketStoriesShown is dispatched THEN update PocketStoriesService`() = runTest {
         val story1 = PocketRecommendedStory(
             "title",
             "url1",
@@ -61,7 +54,7 @@ class PocketMiddlewareTest {
             lazy { pocketService },
             mockk(),
             FakePocketSettings(),
-            RunWhenReadyQueue(),
+            RunWhenReadyQueue(this),
             this,
         )
         val appstore = AppStore(
@@ -83,12 +76,13 @@ class PocketMiddlewareTest {
                 ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         coVerify { pocketService.updateStoriesTimesShown(listOf(story2.copy(timesShown = 1))) }
     }
 
     @Test
-    fun `WHEN needing to persist impressions is called THEN update PocketStoriesService`() = runTestOnMain {
+    fun `WHEN needing to persist impressions is called THEN update PocketStoriesService`() = runTest {
         val story = PocketRecommendedStory(
             "title",
             "url1",
@@ -139,6 +133,7 @@ class PocketMiddlewareTest {
             pocketStoriesService = pocketService,
             updatedStories = stories,
         )
+        testScheduler.advanceUntilIdle()
 
         coVerify {
             pocketService.updateStoriesTimesShown(listOf(expectedStoryUpdate))
@@ -147,7 +142,6 @@ class PocketMiddlewareTest {
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `WHEN PocketStoriesCategoriesChange is dispatched THEN intercept and dispatch PocketStoriesCategoriesSelectionsChange`() = runTest {
         val dataStore = FakeDataStore()
@@ -156,7 +150,7 @@ class PocketMiddlewareTest {
             mockk(),
             dataStore,
             FakePocketSettings(),
-            RunWhenReadyQueue(),
+            RunWhenReadyQueue(this),
             this,
         )
         val appStore = spyk(
@@ -172,7 +166,7 @@ class PocketMiddlewareTest {
 
         appStore.dispatch(ContentRecommendationsAction.PocketStoriesCategoriesChange(currentCategories))
 
-        advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
 
         verify {
             appStore.dispatch(
@@ -185,7 +179,7 @@ class PocketMiddlewareTest {
     }
 
     @Test
-    fun `WHEN SelectPocketStoriesCategory is dispatched THEN persist details in DataStore and in memory`() = runTestOnMain {
+    fun `WHEN SelectPocketStoriesCategory is dispatched THEN persist details in DataStore and in memory`() = runTest {
         val categ1 = PocketRecommendedStoriesCategory("categ1")
         val categ2 = PocketRecommendedStoriesCategory("categ2")
         val dataStore = FakeDataStore()
@@ -193,7 +187,7 @@ class PocketMiddlewareTest {
             mockk(),
             dataStore,
             FakePocketSettings(),
-            RunWhenReadyQueue(),
+            RunWhenReadyQueue(this),
             this,
         )
         val appStore = spyk(
@@ -206,20 +200,27 @@ class PocketMiddlewareTest {
                 listOf(pocketMiddleware),
             ),
         )
+
+        testScheduler.advanceUntilIdle()
+
         dataStore.assertSelectedCategories()
         appStore.assertSelectedCategories()
 
         appStore.dispatch(ContentRecommendationsAction.SelectPocketStoriesCategory(categ2.name))
+        testScheduler.advanceUntilIdle()
+
         dataStore.assertSelectedCategories(categ2.name)
         appStore.assertSelectedCategories(categ2.name)
 
         appStore.dispatch(ContentRecommendationsAction.SelectPocketStoriesCategory(categ1.name))
+        testScheduler.advanceUntilIdle()
+
         dataStore.assertSelectedCategories(categ2.name, categ1.name)
         appStore.assertSelectedCategories(categ2.name, categ1.name)
     }
 
     @Test
-    fun `WHEN DeselectPocketStoriesCategory is dispatched THEN persist details in DataStore and in memory`() = runTestOnMain {
+    fun `WHEN DeselectPocketStoriesCategory is dispatched THEN persist details in DataStore and in memory`() = runTest {
         val categ1 = PocketRecommendedStoriesCategory("categ1")
         val categ2 = PocketRecommendedStoriesCategory("categ2")
         val persistedCateg1 = PocketRecommendedStoriesSelectedCategory("categ1")
@@ -229,7 +230,7 @@ class PocketMiddlewareTest {
             mockk(),
             dataStore,
             FakePocketSettings(),
-            RunWhenReadyQueue(),
+            RunWhenReadyQueue(this),
             this,
         )
         val appStore = spyk(
@@ -243,31 +244,37 @@ class PocketMiddlewareTest {
                 listOf(pocketMiddleware),
             ),
         )
+
         dataStore.assertSelectedCategories(persistedCateg1.name, persistedCateg2.name)
         appStore.assertSelectedCategories(persistedCateg1.name, persistedCateg2.name)
 
         appStore.dispatch(ContentRecommendationsAction.DeselectPocketStoriesCategory(categ2.name))
+        testScheduler.advanceUntilIdle()
+
         dataStore.assertSelectedCategories(persistedCateg1.name)
         appStore.assertSelectedCategories(persistedCateg1.name)
 
         appStore.dispatch(ContentRecommendationsAction.DeselectPocketStoriesCategory(categ1.name))
+        testScheduler.advanceUntilIdle()
+
         dataStore.assertSelectedCategories()
         appStore.assertSelectedCategories()
     }
 
     @Test
-    fun `WHEN persistCategories is called THEN update dataStore`() = runTestOnMain {
+    fun `WHEN persistCategories is called THEN update dataStore`() = runTest {
         val newCategoriesSelection = listOf(PocketRecommendedStoriesSelectedCategory("categ1"))
         val dataStore = FakeDataStore()
         dataStore.assertSelectedCategories()
 
         persistSelectedCategories(this, newCategoriesSelection, dataStore)
+        testScheduler.advanceUntilIdle()
 
         dataStore.assertSelectedCategories(newCategoriesSelection[0].name)
     }
 
     @Test
-    fun `WHEN restoreSelectedCategories is called THEN dispatch PocketStoriesCategoriesSelectionsChange with data read from the persistence layer`() = runTestOnMain {
+    fun `WHEN restoreSelectedCategories is called THEN dispatch PocketStoriesCategoriesSelectionsChange with data read from the persistence layer`() = runTest {
         val dataStore = FakeDataStore("testCategory")
         val currentCategories = listOf<PocketRecommendedStoriesCategory>()
         val captorMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
@@ -282,6 +289,8 @@ class PocketMiddlewareTest {
             store = appStore,
             selectedPocketCategoriesDataStore = dataStore,
         )
+
+        testScheduler.advanceUntilIdle()
 
         captorMiddleware.assertLastAction(PocketStoriesCategoriesSelectionsChange::class) {
             assertEquals(1, it.categoriesSelected.size)
@@ -318,17 +327,18 @@ class PocketMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN hasPocketSponsoredStoriesProfileMigrated is false WHEN App is Started THEN delete the old Pocket profile`() = runTestOnMain {
+    fun `GIVEN hasPocketSponsoredStoriesProfileMigrated is false WHEN App is Started THEN delete the old Pocket profile`() = runTest {
         val pocketService: PocketStoriesService = mockk(relaxed = true)
         val pocketMiddleware = PocketMiddleware(
             lazy { pocketService },
             mockk(),
             FakePocketSettings(hasPocketSponsoredStoriesProfileMigrated = false),
-            RunWhenReadyQueue().also { it.ready() },
+            RunWhenReadyQueue(this).also { it.ready() },
             this,
         )
 
         pocketMiddleware.invoke(mockk(), {}, AppAction.AppLifecycleAction.StartAction)
+        testScheduler.advanceUntilIdle()
 
         verify {
             pocketService.deleteProfile()
@@ -336,13 +346,13 @@ class PocketMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN hasPocketSponsoredStoriesProfileMigrated is true WHEN App is Started THEN don't try to delete the old Pocket profile`() = runTestOnMain {
+    fun `GIVEN hasPocketSponsoredStoriesProfileMigrated is true WHEN App is Started THEN don't try to delete the old Pocket profile`() = runTest {
         val pocketService: PocketStoriesService = mockk(relaxed = true)
         val pocketMiddleware = PocketMiddleware(
             lazy { pocketService },
             mockk(),
             FakePocketSettings(),
-            RunWhenReadyQueue().also { it.ready() },
+            RunWhenReadyQueue(this).also { it.ready() },
             this,
         )
 
@@ -354,17 +364,18 @@ class PocketMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN pocket settings are true WHEN App is Started THEN start the Pocket workers`() = runTestOnMain {
+    fun `GIVEN pocket settings are true WHEN App is Started THEN start the Pocket workers`() = runTest {
         val pocketService: PocketStoriesService = mockk(relaxed = true)
         val pocketMiddleware = PocketMiddleware(
             lazy { pocketService },
             mockk(),
             FakePocketSettings(),
-            RunWhenReadyQueue().also { it.ready() },
+            RunWhenReadyQueue(this).also { it.ready() },
             this,
         )
 
-        pocketMiddleware.invoke(mockk(), {}, AppAction.AppLifecycleAction.StartAction)
+        pocketMiddleware.invoke(mockk(relaxed = true), {}, AppAction.AppLifecycleAction.StartAction)
+        testScheduler.advanceUntilIdle()
 
         verify {
             pocketService.startPeriodicContentRecommendationsRefresh()
@@ -373,13 +384,13 @@ class PocketMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN pocket settings are false WHEN App is Started THEN don't start the Pocket workers`() = runTestOnMain {
+    fun `GIVEN pocket settings are false WHEN App is Started THEN don't start the Pocket workers`() = runTest {
         val pocketService: PocketStoriesService = mockk(relaxed = true)
         val pocketMiddleware = PocketMiddleware(
             lazy { pocketService },
             mockk(),
             FakePocketSettings(showPocketRecommendationsFeature = false, showPocketSponsoredStories = false),
-            RunWhenReadyQueue().also { it.ready() },
+            RunWhenReadyQueue(this).also { it.ready() },
             this,
         )
 

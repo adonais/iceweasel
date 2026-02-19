@@ -12,11 +12,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Composable for the delete credit card dialog.
@@ -57,14 +57,10 @@ internal fun DeleteCreditCardDialog(
     )
 }
 
-private class ThemePreviewParameterProvider(
-    override val values: Sequence<Theme> = Theme.entries.asSequence(),
-) : PreviewParameterProvider<Theme>
-
 @Composable
 @Preview
 private fun PreviewDeleteCreditCardDialog(
-    @PreviewParameter(ThemePreviewParameterProvider::class) theme: Theme,
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
 ) = FirefoxTheme(theme) {
     DeleteCreditCardDialog()
 }

@@ -65,6 +65,7 @@ nsresult nsCaret::Init(PresShell* aPresShell) {
 
   selection->AddSelectionListener(this);
   mDomSelectionWeak = selection;
+  UpdateHiddenDuringSelection();
   UpdateCaretPositionFromSelectionIfNeeded();
 
   return NS_OK;
@@ -133,6 +134,7 @@ Selection* nsCaret::GetSelection() { return mDomSelectionWeak; }
 void nsCaret::SetSelection(Selection* aDOMSel) {
   MOZ_ASSERT(aDOMSel);
   mDomSelectionWeak = aDOMSel;
+  UpdateHiddenDuringSelection();
   UpdateCaretPositionFromSelectionIfNeeded();
   ResetBlinking();
   SchedulePaint();
@@ -379,10 +381,7 @@ void nsCaret::SetVisibilityDuringSelection(bool aVisibility) {
     return;
   }
   mShowDuringSelection = aVisibility;
-  if (mHiddenDuringSelection && aVisibility) {
-    RemoveForceHide();
-    mHiddenDuringSelection = false;
-  }
+  UpdateHiddenDuringSelection();
   SchedulePaint();
 }
 
@@ -555,15 +554,7 @@ nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel, int16_t aReason,
 
   // Check if we need to hide / un-hide the caret due to the selection being
   // collapsed.
-  if (!mShowDuringSelection &&
-      !aDomSel->IsCollapsed() != mHiddenDuringSelection) {
-    if (mHiddenDuringSelection) {
-      RemoveForceHide();
-    } else {
-      AddForceHide();
-    }
-    mHiddenDuringSelection = !mHiddenDuringSelection;
-  }
+  UpdateHiddenDuringSelection();
 
   // We don't bother computing the caret position when invisible. We'll do it if
   // we become visible in CaretVisibilityMaybeChanged().
@@ -573,6 +564,20 @@ nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel, int16_t aReason,
   }
 
   return NS_OK;
+}
+
+void nsCaret::UpdateHiddenDuringSelection() {
+  const bool shouldShowCaret = mShowDuringSelection || !mDomSelectionWeak ||
+                               mDomSelectionWeak->IsCollapsed();
+  if (!shouldShowCaret == mHiddenDuringSelection) {
+    return;
+  }
+  if (shouldShowCaret) {
+    RemoveForceHide();
+  } else {
+    AddForceHide();
+  }
+  mHiddenDuringSelection = !shouldShowCaret;
 }
 
 void nsCaret::ResetBlinking() {

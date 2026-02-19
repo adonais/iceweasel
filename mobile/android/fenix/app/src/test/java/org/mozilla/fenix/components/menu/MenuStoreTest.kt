@@ -6,21 +6,17 @@ package org.mozilla.fenix.components.menu
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.feature.addons.Addon
 import mozilla.components.lib.state.Middleware
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mozilla.fenix.components.menu.store.BookmarkState
 import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.ExtensionMenuState
@@ -31,11 +27,7 @@ import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.components.menu.store.copyWithBrowserMenuState
 import org.mozilla.fenix.components.menu.store.copyWithExtensionMenuState
 
-@RunWith(AndroidJUnit4::class)
 class MenuStoreTest {
-
-    @get:Rule
-    val coroutineTestRule = MainCoroutineRule()
 
     @Test
     fun `WHEN store is created THEN init action is dispatched`() {

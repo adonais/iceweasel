@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include dithering
+#include dithering,gpu_buffer
 
 // Gradient GPU cache address.
 // Packed in to a vector to work around bug 1630356.

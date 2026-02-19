@@ -96,7 +96,7 @@
     Text shown in the notification description that pops up to remind the user that a browsing session is active
     for Android 14+.
   -->
-  <string name="notification_erase_text_android_14_1">Klepnutím nebo přejetím po tomto oznámení bezpečně vymažete historii procházení.</string>
+  <string name="notification_erase_text_android_14_1">Klepnutím nebo přejetím prstem po tomto oznámení bezpečně vymažete historii prohlížení.</string>
   <string name="notification_erase_text">Vymazat historii prohlížení</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">Otevřít</string>
@@ -225,15 +225,15 @@
   <!-- Item in autocomplete settings that will open a new preference screen for adding and removing URLs to the user-defined list -->
   <string name="preference_autocomplete_subitem_manage_sites">Spravovat stránky</string>
   <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
-  <string name="preference_autocomplete_action_add">+ Přidat vlastní URL adresu</string>
+  <string name="preference_autocomplete_action_add">+ Přidat vlastní adresu URL</string>
   <!-- Explanation text above the list of custom autocomplete URLs. -->
   <string name="preference_autocomplete_explanation_text">Váš seznam automatického doplňování:</string>
   <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
   <string name="preference_autocomplete_action_add2">Přidat URL</string>
   <!-- Title of the screen for adding custom autocomplete URLs. -->
-  <string name="preference_autocomplete_title_add">Přidat vlastní URL adresu</string>
+  <string name="preference_autocomplete_title_add">Přidat vlastní adresu URL</string>
   <!-- Label for the button to quick add custom autocomplete URLs. -->
-  <string name="custom_autocomplete_quick_add">Přidat vlastní URL adresu</string>
+  <string name="custom_autocomplete_quick_add">Přidat vlastní adresu URL</string>
   <!-- Label for the button to quick add the current URL to the custom autocomplete list -->
   <string name="add_custom_autocomplete_label">Přidat odkaz na našeptávání</string>
   <!-- Preference category for settings about cookies and site data -->
@@ -241,27 +241,27 @@
   <!-- Preference category for settings about data choices -->
   <string name="preference_category_data_choices">Možnosti hlášení</string>
   <!-- Title of the screen for removing custom autocomplete URLs. -->
-  <string name="preference_autocomplete_title_remove">Odebrat vlastní URL adresy</string>
+  <string name="preference_autocomplete_title_remove">Odebrat vlastní adresy URL</string>
   <!-- A link to SUMO at autocomplete settings. -->
   <string name="preference_autocomplete_learn_more">Zjistit více</string>
   <!-- Preference summary: Custom (user-defined) autocomplete URLs. -->
   <string name="preference_autocomplete_custom_summary">Přidání a správa vlastních URL adres pro automatické doplňování.</string>
   <!-- Label for the "custom autocomplete URL" input field -->
-  <string name="preference_autocomplete_add_title">URL adresa k přidání</string>
+  <string name="preference_autocomplete_add_title">Adresa URL k přidání</string>
   <!-- "Hint" text for the "custom autocomplete URL" input field. Shown when the field is empty. -->
-  <string name="preference_autocomplete_add_hint">Vložte nebo zadejte URL adresu</string>
+  <string name="preference_autocomplete_add_hint">Vložte nebo zadejte adresu URL</string>
   <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
   <string name="preference_autocomplete_add_example2">Příklad: mozilla.cz</string>
   <!-- To be removed once the new hint has been translated -->
   <string name="preference_autocomplete_add_example">Příklad: example.com</string>
   <!-- Confirmation "snackbar" shown after a new custom autocomplete URL has been added. -->
-  <string name="preference_autocomplete_add_confirmation">Vlastní URL adresa přidána.</string>
+  <string name="preference_autocomplete_add_confirmation">Vlastní adresa URL přidána.</string>
   <!-- Menu item to remove existing autocomplete URLs. -->
   <string name="preference_autocomplete_menu_remove">Odebrat</string>
   <!-- Content description (not visible, for screen readers etc.): Button that will delete all selected custom autocomplete URLs. -->
   <string name="preference_autocomplete_action_remove_content_description">Odebrat</string>
   <!-- Error message shown if the entered custom autocomplete URL is not valid or empty. -->
-  <string name="preference_autocomplete_add_error">Zkontrolujte zadanou URL adresu.</string>
+  <string name="preference_autocomplete_add_error">Zkontrolujte zadanou adresu URL.</string>
   <string name="preference_language">Jazyk</string>
   <!--
     This is shown when the user hasn't set a focus specific language, i.e. when Focus
@@ -582,7 +582,7 @@
   <string name="security_popup_security_verified">Ověřil: %1$s</string>
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">Zabezpečení stránky</string>
-  <string name="preference_autocomplete_duplicate_url_error">URL adresa už existuje</string>
+  <string name="preference_autocomplete_duplicate_url_error">Adresa URL už existuje</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Najít na stránce</string>
   <!-- Watermark/Hint for the find in page input field -->
@@ -610,7 +610,7 @@
   <!-- Checkbox menu item text to request desktop site -->
   <string name="preference_performance_request_desktop_site2">Verze stránky pro počítač</string>
   <!-- Displayed after a user long presses on the URL in a custom tab to copy the URL -->
-  <string name="custom_tab_copy_url_action">URL adresa zkopírována</string>
+  <string name="custom_tab_copy_url_action">Adresa URL zkopírována</string>
   <!-- Description of what a user may find in the Advanced Setting category, used for debugging -->
   <string name="preference_advanced_summary">Vývojářské nástroje</string>
   <!-- Preference for open links in third party apps -->
@@ -733,7 +733,7 @@
   -->
   <string name="biometric_auth_moved_too_quickly">Pohyb prstem byl příliš rychlý. Zkuste to znovu.</string>
   <!-- Title for the prompt to enable search suggestions -->
-  <string name="enable_search_suggestion_title2">Našeptávat dotazy pro vyhledávač?</string>
+  <string name="enable_search_suggestion_title2">Zobrazovat návrhy vyhledávání?</string>
   <!--
     Description for the prompt to enable search suggestions
     %1$s will be replaced by the app name (e.g. Firefox Focus)
@@ -784,9 +784,9 @@
   <!-- Preference for switching to a new tab immediately after opening -->
   <string name="preference_open_new_tab">Přepnout ihned na odkaz v novém panelu</string>
   <!-- Preference title for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
-  <string name="preference_safe_browsing_title">Blokovat potenciálně nebezpečné a klamavé stránky</string>
+  <string name="preference_safe_browsing_title">Blokovat potenciálně nebezpečné a podvodné stránky</string>
   <!-- Preference summary for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
-  <string name="preference_safe_browsing_summary">Blokuje hlášené klamavé a útočné stránky, stránky s malwarem a stránky s nevyžádaným obsahem.</string>
+  <string name="preference_safe_browsing_summary">Blokuje nahlášené podvodné a útočné stránky, stránky s malwarem a stránky s nevyžádaným obsahem.</string>
   <!-- Title of the preference to enable "HTTPS-Only" mode -->
   <string name="preference_https_only_title">Režim „pouze HTTPS“</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->

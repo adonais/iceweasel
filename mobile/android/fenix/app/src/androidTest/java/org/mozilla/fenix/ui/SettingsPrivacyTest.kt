@@ -38,9 +38,9 @@ class SettingsPrivacyTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2092698
     @Test
     fun settingsPrivacyItemsTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
             verifySettingsToolbar()
             verifyPrivacyHeading()
             verifyPrivateBrowsingButton()
@@ -62,7 +62,10 @@ class SettingsPrivacyTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243362
     @Test
     fun verifyDataCollectionSettingsTest() {
-        homeScreen {}.openThreeDotMenu {}.openSettings {}.openSettingsSubMenuDataCollection {
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openSettingsSubMenuDataCollection {
             // Studies depends on the telemetry switch,  if telemetry is off studies will be
             // turned off as well, and will require the app to be restarted.
             // Daily usage ping should default to telemetry pref value
@@ -93,16 +96,16 @@ class SettingsPrivacyTest : TestSetup() {
             clearNotifications()
         }
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.togglePrivateBrowsingMode()
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openNotificationShade {
             verifySystemNotificationExists("Close private tabs?")
-        }.closeNotificationTray {
+        }.closeNotificationTray(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
             verifySettingsOptionSummary("Notifications", "Allowed")
         }.openSettingsSubMenuNotifications {
             verifyAllSystemNotificationsToggleState(true)
@@ -114,9 +117,9 @@ class SettingsPrivacyTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2939287
     @Test
     fun verifyTheDailyUsagePingCanBeEnabledAndDisabledTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openSettingsSubMenuDataCollection {
             verifyDailyUsagePingToggle(composeTestRule, isChecked = true)
             clickDailyUsagePingToggle(composeTestRule)
@@ -127,9 +130,9 @@ class SettingsPrivacyTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3215044
     @Test
     fun verifyTheCrashReportsOptionsTest() {
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openSettingsSubMenuDataCollection {
             verifyTheCrashReportsSection(composeTestRule)
             verifyTheCrashReportOptionStates(

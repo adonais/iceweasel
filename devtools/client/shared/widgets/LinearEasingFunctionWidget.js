@@ -33,7 +33,7 @@ const percentFormatter = new Intl.NumberFormat("en", {
  * only handle points inside [0,0] [1,1] to represent most common use cases (even though
  * the line will properly link points outside of this range)
  *
- * @emits "updated" events whenever the line is changed, with the updated property value.
+ * @fires "updated" events whenever the line is changed, with the updated property value.
  */
 class LinearEasingFunctionWidget extends EventEmitter {
   /**

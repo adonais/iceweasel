@@ -35,6 +35,28 @@ class ShapeListObject : public ListObject {
   bool traceWeak(JSTracer* trc);
 };
 
+// Similar to ShapeListObject. But here we keep a list of the shape and the
+// corresponding offset of a particular access (e.g. obj.a).
+// The values are saved as: [shape1, offset1, shape2, offset2 ...].
+class ShapeListWithOffsetsObject : public ListObject {
+ public:
+  static const JSClass class_;
+  static const JSClassOps classOps_;
+
+  static constexpr size_t MaxLength = 16;
+
+  static ShapeListWithOffsetsObject* create(JSContext* cx);
+  static void trace(JSTracer* trc, JSObject* obj);
+
+  uint32_t numShapes() const;
+  Shape* getShape(uint32_t index) const;
+  Shape* getShapeUnbarriered(uint32_t index) const;
+
+  uint32_t getOffset(uint32_t index) const;
+
+  bool traceWeak(JSTracer* trc);
+};
+
 }  // namespace js::jit
 
 #endif  // jit_ShapeList_h

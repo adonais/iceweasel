@@ -116,7 +116,7 @@ void SVGGeometryFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   if (StyleDisplay()->CalcTransformPropertyDifference(
           *aOldComputedStyle->StyleDisplay())) {
-    NotifySVGChanged(TRANSFORM_CHANGED);
+    NotifySVGChanged(ChangeFlag::TransformChanged);
   }
 
   if (element->IsGeometryChangedViaCSS(*Style(), *aOldComputedStyle) ||
@@ -177,17 +177,18 @@ void SVGGeometryFrame::PaintSVG(gfxContext& aContext,
 
   uint32_t paintOrder = StyleSVG()->mPaintOrder;
   if (!paintOrder) {
-    Render(&aContext, eRenderFill | eRenderStroke, newMatrix, aImgParams);
+    Render(&aContext, RenderFlags(RenderFlag::Fill, RenderFlag::Stroke),
+           newMatrix, aImgParams);
     PaintMarkers(aContext, aTransform, aImgParams);
   } else {
     while (paintOrder) {
       auto component = StylePaintOrder(paintOrder & kPaintOrderMask);
       switch (component) {
         case StylePaintOrder::Fill:
-          Render(&aContext, eRenderFill, newMatrix, aImgParams);
+          Render(&aContext, RenderFlag::Fill, newMatrix, aImgParams);
           break;
         case StylePaintOrder::Stroke:
-          Render(&aContext, eRenderStroke, newMatrix, aImgParams);
+          Render(&aContext, RenderFlag::Stroke, newMatrix, aImgParams);
           break;
         case StylePaintOrder::Markers:
           PaintMarkers(aContext, aTransform, aImgParams);
@@ -309,8 +310,9 @@ void SVGGeometryFrame::ReflowSVG() {
   }
 }
 
-void SVGGeometryFrame::NotifySVGChanged(uint32_t aFlags) {
-  MOZ_ASSERT(aFlags & (TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED),
+void SVGGeometryFrame::NotifySVGChanged(ChangeFlags aFlags) {
+  MOZ_ASSERT(aFlags.contains(ChangeFlag::TransformChanged) ||
+                 aFlags.contains(ChangeFlag::CoordContextChanged),
              "Invalidation logic may need adjusting");
 
   // Changes to our ancestors may affect how we render when we are rendered as
@@ -326,7 +328,7 @@ void SVGGeometryFrame::NotifySVGChanged(uint32_t aFlags) {
   // overflow rects or not, and we sometimes deliberately include stroke
   // when it's not visible. See the complexities of GetBBoxContribution.
 
-  if (aFlags & COORD_CONTEXT_CHANGED) {
+  if (aFlags.contains(ChangeFlag::CoordContextChanged)) {
     auto* geom = static_cast<SVGGeometryElement*>(GetContent());
     // Stroke currently contributes to our mRect, which is why we have to take
     // account of stroke-width here. Note that we do not need to take account
@@ -342,7 +344,8 @@ void SVGGeometryFrame::NotifySVGChanged(uint32_t aFlags) {
     }
   }
 
-  if ((aFlags & TRANSFORM_CHANGED) && StyleSVGReset()->HasNonScalingStroke()) {
+  if (aFlags.contains(ChangeFlag::TransformChanged) &&
+      StyleSVGReset()->HasNonScalingStroke()) {
     // Stroke currently contributes to our mRect, and our stroke depends on
     // the transform to our outer-<svg> if |vector-effect:non-scaling-stroke|.
     SVGUtils::ScheduleReflowSVG(this);
@@ -397,8 +400,9 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   SVGContentUtils::AutoStrokeOptions strokeOptions;
   if (getStroke) {
-    SVGContentUtils::GetStrokeOptions(&strokeOptions, element, Style(), nullptr,
-                                      SVGContentUtils::eIgnoreStrokeDashing);
+    SVGContentUtils::GetStrokeOptions(
+        &strokeOptions, element, Style(), nullptr,
+        SVGContentUtils::StrokeOptionFlag::IgnoreStrokeDashing);
   } else {
     // Override the default line width of 1.f so that when we call
     // GetGeometryBounds below the result doesn't include stroke bounds.
@@ -547,7 +551,8 @@ gfxMatrix SVGGeometryFrame::GetCanvasTM() {
   return content->ChildToUserSpaceTransform() * parent->GetCanvasTM();
 }
 
-void SVGGeometryFrame::Render(gfxContext* aContext, uint32_t aRenderComponents,
+void SVGGeometryFrame::Render(gfxContext* aContext,
+                              RenderFlags aRenderComponents,
                               const gfxMatrix& aTransform,
                               imgDrawingParams& aImgParams) {
   MOZ_ASSERT(!aTransform.IsSingular());
@@ -599,7 +604,7 @@ void SVGGeometryFrame::Render(gfxContext* aContext, uint32_t aRenderComponents,
   SVGContextPaint* contextPaint =
       SVGContextPaint::GetContextPaint(GetContent());
 
-  if (aRenderComponents & eRenderFill) {
+  if (aRenderComponents.contains(RenderFlag::Fill)) {
     GeneralPattern fillPattern;
     SVGUtils::MakeFillPatternFor(this, aContext, &fillPattern, aImgParams,
                                  contextPaint);
@@ -614,7 +619,7 @@ void SVGGeometryFrame::Render(gfxContext* aContext, uint32_t aRenderComponents,
     }
   }
 
-  if ((aRenderComponents & eRenderStroke) &&
+  if (aRenderComponents.contains(RenderFlag::Stroke) &&
       SVGUtils::HasStroke(this, contextPaint)) {
     // Account for vector-effect:non-scaling-stroke:
     gfxMatrix userToOuterSVG;

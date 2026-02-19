@@ -25,7 +25,7 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
   friend nsIFrame* NS_NewMathMLmoFrame(mozilla::PresShell* aPresShell,
                                        ComputedStyle* aStyle);
 
-  eMathMLFrameType GetMathMLFrameType() override;
+  MathMLFrameType GetMathMLFrameType() override;
 
   void DidSetComputedStyle(ComputedStyle* aOldStyle) override;
 

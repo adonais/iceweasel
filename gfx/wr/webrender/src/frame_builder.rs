@@ -13,11 +13,11 @@ use crate::spatial_node::SpatialNodeType;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::composite::{CompositorKind, CompositeState, CompositeStatePreallocator};
 use crate::debug_item::DebugItem;
-use crate::gpu_cache::{GpuCache, GpuCacheHandle};
-use crate::gpu_types::{PrimitiveHeaders, TransformPalette, ZBufferIdGenerator};
+use crate::gpu_types::{ImageBrushPrimitiveData, PrimitiveHeaders, TransformPalette, ZBufferIdGenerator};
 use crate::gpu_types::{QuadSegment, TransformData};
-use crate::internal_types::{FastHashMap, PlaneSplitter, FrameId, FrameStamp};
-use crate::picture::{DirtyRegion, SliceId, TileCacheInstance};
+use crate::internal_types::{FastHashMap, PlaneSplitter, FrameStamp};
+use crate::invalidation::DirtyRegion;
+use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::picture::{SurfaceInfo, SurfaceIndex, ResolvedSurfaceTexture};
 use crate::picture::{SubpixelMode, RasterConfig, PictureCompositeMode};
 use crate::prepare::prepare_picture;
@@ -25,7 +25,7 @@ use crate::prim_store::{PictureIndex, PrimitiveScratchBuffer};
 use crate::prim_store::{DeferredResolve, PrimitiveInstance};
 use crate::profiler::{self, TransactionProfile};
 use crate::render_backend::{DataStores, ScratchBuffer};
-use crate::renderer::{GpuBufferF, GpuBufferBuilderF, GpuBufferI, GpuBufferBuilderI, GpuBufferBuilder};
+use crate::renderer::{GpuBufferAddress, GpuBufferBuilder, GpuBufferBuilderF, GpuBufferBuilderI, GpuBufferF, GpuBufferI, GpuBufferDataF};
 use crate::render_target::{PictureCacheTarget, PictureCacheTargetKind};
 use crate::render_target::{RenderTargetContext, RenderTargetKind, RenderTarget};
 use crate::render_task_graph::{Pass, RenderTaskGraph, RenderTaskId, SubPassSurface};
@@ -74,46 +74,37 @@ pub struct FrameBuilderConfig {
     pub precise_conic_gradients: bool,
 }
 
-/// A set of common / global resources that are retained between
-/// new display lists, such that any GPU cache handles can be
-/// persisted even when a new display list arrives.
+/// A set of default / global resources that are re-built each frame.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct FrameGlobalResources {
     /// The image shader block for the most common / default
     /// set of image parameters (color white, stretch == rect.size).
-    pub default_image_handle: GpuCacheHandle,
+    pub default_image_data: GpuBufferAddress,
 
     /// A GPU cache config for drawing cut-out rectangle primitives.
     /// This is used to 'cut out' overlay tiles where a compositor
     /// surface exists.
-    pub default_black_rect_handle: GpuCacheHandle,
+    pub default_black_rect_address: GpuBufferAddress,
 }
 
 impl FrameGlobalResources {
-    pub fn empty() -> Self {
+    pub fn new(gpu_buffers: &mut GpuBufferBuilder) -> Self {
+        let mut writer = gpu_buffers.f32.write_blocks(ImageBrushPrimitiveData::NUM_BLOCKS);
+        writer.push(&ImageBrushPrimitiveData {
+            color: PremultipliedColorF::WHITE,
+            background_color: PremultipliedColorF::WHITE,
+            // -ve means use prim rect for stretch size
+            stretch_size: LayoutSize::new(-1.0, 0.0),
+        });
+        let default_image_data = writer.finish();
+
+        let mut writer = gpu_buffers.f32.write_blocks(1);
+        writer.push_one(PremultipliedColorF::BLACK);
+        let default_black_rect_address = writer.finish();
+
         FrameGlobalResources {
-            default_image_handle: GpuCacheHandle::new(),
-            default_black_rect_handle: GpuCacheHandle::new(),
-        }
-    }
-
-    pub fn update(
-        &mut self,
-        gpu_cache: &mut GpuCache,
-    ) {
-        if let Some(mut request) = gpu_cache.request(&mut self.default_image_handle) {
-            request.push(PremultipliedColorF::WHITE);
-            request.push(PremultipliedColorF::WHITE);
-            request.push([
-                -1.0,       // -ve means use prim rect for stretch size
-                0.0,
-                0.0,
-                0.0,
-            ]);
-        }
-
-        if let Some(mut request) = gpu_cache.request(&mut self.default_black_rect_handle) {
-            request.push(PremultipliedColorF::BLACK);
+            default_image_data,
+            default_black_rect_address,
         }
     }
 }
@@ -142,7 +133,6 @@ impl FrameScratchBuffer {
 /// Produces the frames that are sent to the renderer.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct FrameBuilder {
-    pub globals: FrameGlobalResources,
     #[cfg_attr(feature = "capture", serde(skip))]
     prim_headers_prealloc: Preallocator,
     #[cfg_attr(feature = "capture", serde(skip))]
@@ -166,7 +156,6 @@ pub struct FrameBuildingState<'a> {
     pub rg_builder: &'a mut RenderTaskGraphBuilder,
     pub clip_store: &'a mut ClipStore,
     pub resource_cache: &'a mut ResourceCache,
-    pub gpu_cache: &'a mut GpuCache,
     pub transforms: &'a mut TransformPalette,
     pub segment_builder: SegmentBuilder,
     pub surfaces: &'a mut Vec<SurfaceInfo>,
@@ -268,7 +257,6 @@ pub struct PictureState {
 impl FrameBuilder {
     pub fn new() -> Self {
         FrameBuilder {
-            globals: FrameGlobalResources::empty(),
             prim_headers_prealloc: Preallocator::new(0),
             composite_state_prealloc: CompositeStatePreallocator::default(),
             plane_splitters: Vec::new(),
@@ -283,7 +271,6 @@ impl FrameBuilder {
         present: bool,
         global_screen_world_rect: WorldRect,
         resource_cache: &mut ResourceCache,
-        gpu_cache: &mut GpuCache,
         rg_builder: &mut RenderTaskGraphBuilder,
         global_device_pixel_scale: DevicePixelScale,
         scene_properties: &SceneProperties,
@@ -395,7 +382,7 @@ impl FrameBuilder {
                 let mut visibility_state = FrameVisibilityState {
                     clip_store: &mut scene.clip_store,
                     resource_cache,
-                    gpu_cache,
+                    frame_gpu_data,
                     data_stores,
                     clip_tree: &mut scene.clip_tree,
                     composite_state,
@@ -455,7 +442,7 @@ impl FrameBuilder {
                         let mut visibility_state = FrameVisibilityState {
                             clip_store: &mut scene.clip_store,
                             resource_cache,
-                            gpu_cache,
+                            frame_gpu_data,
                             data_stores,
                             clip_tree: &mut scene.clip_tree,
                             composite_state,
@@ -527,7 +514,6 @@ impl FrameBuilder {
             rg_builder,
             clip_store: &mut scene.clip_store,
             resource_cache,
-            gpu_cache,
             transforms: transform_palette,
             segment_builder: SegmentBuilder::new(),
             surfaces: &mut scene.surfaces,
@@ -631,7 +617,7 @@ impl FrameBuilder {
             profile_marker!("BlockOnResources");
 
             resource_cache.block_until_all_resources_added(
-                gpu_cache,
+                frame_gpu_data,
                 profile,
             );
         }
@@ -642,7 +628,6 @@ impl FrameBuilder {
         scene: &mut BuiltScene,
         present: bool,
         resource_cache: &mut ResourceCache,
-        gpu_cache: &mut GpuCache,
         rg_builder: &mut RenderTaskGraphBuilder,
         stamp: FrameStamp,
         device_origin: DeviceIntPoint,
@@ -661,18 +646,22 @@ impl FrameBuilder {
         profile_marker!("BuildFrame");
 
         let mut frame_memory = FrameMemory::new(chunk_pool, stamp.frame_id());
+        // TODO(gw): Recycle backing vec buffers for gpu buffer builder between frames
+        let mut gpu_buffer_builder = GpuBufferBuilder {
+            f32: GpuBufferBuilderF::new(&frame_memory, 8 * 1024, stamp.frame_id()),
+            i32: GpuBufferBuilderI::new(&frame_memory, 2 * 1024, stamp.frame_id()),
+        };
 
         profile.set(profiler::PRIMITIVES, scene.prim_instances.len());
         profile.set(profiler::PICTURE_CACHE_SLICES, scene.tile_cache_config.picture_cache_slice_count);
         scratch.begin_frame();
-        gpu_cache.begin_frame(stamp);
-        resource_cache.begin_frame(stamp, gpu_cache, profile);
+        resource_cache.begin_frame(stamp, profile);
 
         // TODO(gw): Follow up patches won't clear this, as they'll be assigned
         //           statically during scene building.
         scene.surfaces.clear();
 
-        self.globals.update(gpu_cache);
+        let globals = FrameGlobalResources::new(&mut gpu_buffer_builder);
 
         spatial_tree.update_tree(scene_properties);
         let mut transform_palette = spatial_tree.build_transform_palette(&frame_memory);
@@ -698,18 +687,11 @@ impl FrameBuilder {
 
         let mut cmd_buffers = CommandBufferList::new();
 
-        // TODO(gw): Recycle backing vec buffers for gpu buffer builder between frames
-        let mut gpu_buffer_builder = GpuBufferBuilder {
-            f32: GpuBufferBuilderF::new(&frame_memory),
-            i32: GpuBufferBuilderI::new(&frame_memory),
-        };
-
         self.build_layer_screen_rects_and_cull_layers(
             scene,
             present,
             screen_world_rect,
             resource_cache,
-            gpu_cache,
             rg_builder,
             global_device_pixel_scale,
             scene_properties,
@@ -735,7 +717,7 @@ impl FrameBuilder {
         // Finish creating the frame graph and build it.
         let render_tasks = rg_builder.end_frame(
             resource_cache,
-            gpu_cache,
+            &mut gpu_buffer_builder,
             &mut deferred_resolves,
             scene.config.max_shared_surface_size,
             &frame_memory,
@@ -769,7 +751,7 @@ impl FrameBuilder {
                     surfaces: &scene.surfaces,
                     scratch: &mut scratch.primitive,
                     screen_world_rect,
-                    globals: &self.globals,
+                    globals: &globals,
                     tile_caches,
                     root_spatial_node_index: spatial_tree.root_reference_frame_index(),
                     frame_memory: &mut frame_memory,
@@ -779,7 +761,6 @@ impl FrameBuilder {
                     pass,
                     output_size,
                     &mut ctx,
-                    gpu_cache,
                     &mut gpu_buffer_builder,
                     &render_tasks,
                     &scene.clip_store,
@@ -812,7 +793,7 @@ impl FrameBuilder {
                     surfaces: &scene.surfaces,
                     scratch: &mut scratch.primitive,
                     screen_world_rect,
-                    globals: &self.globals,
+                    globals: &globals,
                     tile_caches,
                     root_spatial_node_index: spatial_tree.root_reference_frame_index(),
                     frame_memory: &mut frame_memory,
@@ -821,7 +802,7 @@ impl FrameBuilder {
                 self.build_composite_pass(
                     scene,
                     &mut ctx,
-                    gpu_cache,
+                    &mut gpu_buffer_builder,
                     &mut deferred_resolves,
                     &mut composite_state,
                 );
@@ -829,8 +810,6 @@ impl FrameBuilder {
         }
 
         profile.end_time(profiler::FRAME_BATCHING_TIME);
-
-        let gpu_cache_frame_id = gpu_cache.end_frame(profile).frame_id();
 
         resource_cache.end_frame(profile);
 
@@ -854,7 +833,6 @@ impl FrameBuilder {
             transform_palette: transform_palette.finish(),
             render_tasks,
             deferred_resolves,
-            gpu_cache_frame_id,
             has_been_rendered: false,
             has_texture_cache_tasks,
             prim_headers,
@@ -1006,7 +984,7 @@ impl FrameBuilder {
         &self,
         scene: &BuiltScene,
         ctx: &RenderTargetContext,
-        gpu_cache: &mut GpuCache,
+        gpu_buffers: &mut GpuBufferBuilder,
         deferred_resolves: &mut FrameVec<DeferredResolve>,
         composite_state: &mut CompositeState,
     ) {
@@ -1034,7 +1012,7 @@ impl FrameBuilder {
                         tile_cache,
                         device_clip_rect,
                         ctx.resource_cache,
-                        gpu_cache,
+                        &mut gpu_buffers.f32,
                         deferred_resolves,
                     );
                 }
@@ -1055,7 +1033,6 @@ pub fn build_render_pass(
     src_pass: &Pass,
     screen_size: DeviceIntSize,
     ctx: &mut RenderTargetContext,
-    gpu_cache: &mut GpuCache,
     gpu_buffer_builder: &mut GpuBufferBuilder,
     render_tasks: &RenderTaskGraph,
     clip_store: &ClipStore,
@@ -1093,7 +1070,6 @@ pub fn build_render_pass(
                             target.add_task(
                                 *task_id,
                                 ctx,
-                                gpu_cache,
                                 gpu_buffer_builder,
                                 render_tasks,
                                 clip_store,
@@ -1118,7 +1094,6 @@ pub fn build_render_pass(
                             target.add_task(
                                 *task_id,
                                 ctx,
-                                gpu_cache,
                                 gpu_buffer_builder,
                                 render_tasks,
                                 clip_store,
@@ -1167,7 +1142,6 @@ pub fn build_render_pass(
                                 cmd,
                                 spatial_node_index,
                                 ctx,
-                                gpu_cache,
                                 render_tasks,
                                 prim_headers,
                                 transforms,
@@ -1256,7 +1230,6 @@ pub fn build_render_pass(
                     texture.add_task(
                         *task_id,
                         ctx,
-                        gpu_cache,
                         gpu_buffer_builder,
                         render_tasks,
                         clip_store,
@@ -1272,7 +1245,6 @@ pub fn build_render_pass(
 
     pass.color.build(
         ctx,
-        gpu_cache,
         render_tasks,
         prim_headers,
         transforms,
@@ -1283,7 +1255,6 @@ pub fn build_render_pass(
     );
     pass.alpha.build(
         ctx,
-        gpu_cache,
         render_tasks,
         prim_headers,
         transforms,
@@ -1296,7 +1267,6 @@ pub fn build_render_pass(
     for target in &mut pass.texture_cache.values_mut() {
         target.build(
             ctx,
-            gpu_cache,
             render_tasks,
             prim_headers,
             transforms,
@@ -1328,9 +1298,6 @@ pub struct Frame {
     pub transform_palette: FrameVec<TransformData>,
     pub render_tasks: RenderTaskGraph,
     pub prim_headers: PrimitiveHeaders,
-
-    /// The GPU cache frame that the contents of Self depend on
-    pub gpu_cache_frame_id: FrameId,
 
     /// List of textures that we don't know about yet
     /// from the backend thread. The render thread

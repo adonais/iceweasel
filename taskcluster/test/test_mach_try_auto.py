@@ -9,22 +9,20 @@ from tryselect.selectors.auto import TRY_AUTO_PARAMETERS
 
 pytestmark = pytest.mark.slow
 PARAMS = TRY_AUTO_PARAMETERS.copy()
-PARAMS.update(
-    {
-        "files_changed": [
-            "dom/html/HTMLDetailsElement.cpp",
-            "gfx/thebes/gfxUserFontSet.cpp",
-        ],
-        "head_repository": "https://hg.mozilla.org/try",
-        "project": "try",
-        "target_kind": "mochitest",
-        # These ensure this isn't considered a backstop. The pushdate must
-        # be slightly higher than the one in data/pushes.json, and
-        # pushlog_id must not be a multiple of 10.
-        "pushdate": 1593029536,
-        "pushlog_id": "2",
-    }
-)
+PARAMS.update({
+    "files_changed": [
+        "dom/html/HTMLDetailsElement.cpp",
+        "gfx/thebes/gfxUserFontSet.cpp",
+    ],
+    "head_repository": "https://hg.mozilla.org/try",
+    "project": "try",
+    "target_kind": "mochitest",
+    # These ensure this isn't considered a backstop. The pushdate must
+    # be slightly higher than the one in data/pushes.json, and
+    # pushlog_id must not be a multiple of 10.
+    "pushdate": 1593029536,
+    "pushlog_id": "2",
+})
 
 
 def test_generate_graph(optimized_task_graph):

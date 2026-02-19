@@ -179,9 +179,15 @@
   <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">Usar %1$s como fornitor de accesso</string>
   <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
-  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[Le accesso a %1$s con un conto %2$s es subjecte a lor <a href=\"%3$s\">Politica de confidentialitate</a> e <a href=\"%4$s\">Terminos de servicio</a>]]></string>
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[Le accesso a %1$s con un conto %2$s es subjecte a lor <a href=\"%3$s\">politica de confidentialitate</a> e <a href=\"%4$s\">conditiones de uso del servicio</a>]]></string>
   <!-- Text for the positive button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_continue">Continuar</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_cancel">Cancellar</string>
+  <!--
+    Email Mask Autofill
+
+    Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
+  -->
+  <string name="mozac_feature_relay_chip_text">Usar masca de e-mail</string>
 </resources>

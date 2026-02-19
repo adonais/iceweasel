@@ -113,16 +113,16 @@ void PresShellWidgetListener::DetachFromTopLevelWidget() {
 
 PresShell* PresShellWidgetListener::GetPresShell() { return mPresShell; }
 
-bool PresShellWidgetListener::WindowResized(nsIWidget* aWidget, int32_t aWidth,
-                                            int32_t aHeight) {
+void PresShellWidgetListener::WindowResized(nsIWidget*,
+                                            const LayoutDeviceIntSize& aSize) {
   RefPtr<PresShell> ps = GetPresShell();
   if (!ps) {
-    return false;
+    return;
   }
 
   nsPresContext* pc = ps->GetPresContext();
   if (!pc) {
-    return false;
+    return;
   }
 
   // ensure DPI is up-to-date, in case of window being opened and sized
@@ -135,18 +135,16 @@ bool PresShellWidgetListener::WindowResized(nsIWidget* aWidget, int32_t aWidth,
     // due to a call to e.g. nsDocumentViewer::GetContentSize or so.
     frame->InvalidateFrame();
   }
-  const LayoutDeviceIntSize size(aWidth, aHeight);
-  ps->SetLayoutViewportSize(LayoutDeviceIntSize::ToAppUnits(size, p2a),
+  ps->SetLayoutViewportSize(LayoutDeviceIntSize::ToAppUnits(aSize, p2a),
                             /* aDelay = */ false);
 
   if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
     pm->AdjustPopupsOnWindowChange(ps);
   }
-
-  return true;
 }
 
-void PresShellWidgetListener::DynamicToolbarMaxHeightChanged(ScreenIntCoord aHeight) {
+void PresShellWidgetListener::DynamicToolbarMaxHeightChanged(
+    ScreenIntCoord aHeight) {
   MOZ_ASSERT(XRE_IsParentProcess(),
              "Should be only called for the browser parent process");
   CallOnAllRemoteChildren(
@@ -156,7 +154,8 @@ void PresShellWidgetListener::DynamicToolbarMaxHeightChanged(ScreenIntCoord aHei
       });
 }
 
-void PresShellWidgetListener::DynamicToolbarOffsetChanged(ScreenIntCoord aOffset) {
+void PresShellWidgetListener::DynamicToolbarOffsetChanged(
+    ScreenIntCoord aOffset) {
   MOZ_ASSERT(XRE_IsParentProcess(),
              "Should be only called for the browser parent process");
   CallOnAllRemoteChildren(

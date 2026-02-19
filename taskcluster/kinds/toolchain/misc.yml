@@ -256,7 +256,7 @@ macosx-custom-car:
         toolchain-artifact: public/build/car_macosx.tar.zst
     fetches:
         toolchain:
-            - MacOSX26.1.sdk
+            - MacOSX26.2.sdk
 
 macosx-arm64-custom-car:
     description: "Custom chromium-as-release build for mac (apple silicon)"
@@ -292,10 +292,11 @@ macosx-arm64-custom-car:
         toolchain-artifact: public/build/car_macosx_arm.tar.zst
     fetches:
         toolchain:
-            - MacOSX26.1.sdk
+            - MacOSX26.2.sdk
 
 android-custom-car:
     description: "Custom chromium-as-release build for Android"
+    worker-type: b-linux-docker-xlarge-amd
     attributes:
         cached_task: false
     treeherder:
@@ -328,6 +329,7 @@ android-custom-car:
 
 linux64-custom-car:
     description: "Custom chromium-as-release build for Linux"
+    worker-type: b-linux-docker-xlarge-amd
     attributes:
         cached_task: false
     treeherder:
@@ -610,7 +612,7 @@ linux64-samply:
             - samply
         toolchain:
             - linux64-clang-toolchain
-            - linux64-rust-toolchain
+            - linux64-rust
             - sysroot-x86_64-linux-gnu
 
 macosx64-samply:
@@ -630,7 +632,7 @@ macosx64-samply:
             - samply
         toolchain:
             - linux64-clang-toolchain
-            - linux64-rust-macos-toolchain
+            - linux64-rust-macos
             - macosx64-sdk-toolchain
 
 macosx64-aarch64-samply:
@@ -650,7 +652,7 @@ macosx64-aarch64-samply:
             - samply
         toolchain:
             - linux64-clang-toolchain
-            - linux64-rust-macos-toolchain
+            - linux64-rust-macos
             - macosx64-sdk-toolchain
 
 win64-samply:
@@ -670,7 +672,7 @@ win64-samply:
             - samply
         toolchain:
             - linux64-clang-toolchain
-            - linux64-rust-windows-toolchain
+            - linux64-rust-windows
             - vs-toolchain
 
 win64-mozmake:
@@ -757,9 +759,6 @@ win64-vs2022:
         resources:
             - build/vs/vs2022.yaml
         toolchain-artifact: project/gecko/vs/vs.tar.zst
-        toolchain-alias:
-            - vs
-            - vs-toolchain
 
 win64-vs2026:
     description: "VS 2026"
@@ -777,6 +776,9 @@ win64-vs2026:
         resources:
             - build/vs/vs2026.yaml
         toolchain-artifact: project/gecko/vs/vs.tar.zst
+        toolchain-alias:
+            - vs
+            - vs-toolchain
 
 win64-WindowsAppSDK:
     description: "WindowsAppSDK headers and libraries (x86_64)"
@@ -841,7 +843,6 @@ win64-aarch64-vs2022:
         resources:
             - build/vs/vs2022-aarch64.yaml
         toolchain-artifact: project/gecko/vs/vs.tar.zst
-        toolchain-alias: win64-aarch64-vs
 
 win64-aarch64-vs2026:
     description: "VS 2026 (AArch64)"
@@ -859,6 +860,7 @@ win64-aarch64-vs2026:
         resources:
             - build/vs/vs2026-aarch64.yaml
         toolchain-artifact: project/gecko/vs/vs.tar.zst
+        toolchain-alias: win64-aarch64-vs
 
 linux64-afl-instrumentation-4.0:
     description: "AFL++ instrumentation toolchain build"

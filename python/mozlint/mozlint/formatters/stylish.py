@@ -29,9 +29,7 @@ class StylishFormatter:
 
     fmt = """
   {c1}{lineno}{column}  {c2}{level}{normal}  {message}  {c1}{rule}({linter}){source}{normal}
-{diff}""".lstrip(
-        "\n"
-    )
+{diff}""".lstrip("\n")
     fmt_summary = (
         "{t.bold}{c}\u2716 {problem} ({error}, {warning}{failure}, {fixed}){t.normal}"
     )

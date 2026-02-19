@@ -188,6 +188,22 @@
   position: relative;
 }
 
+.tabbrowser-tab[dragtarget],
+tab-split-view-wrapper[dragtarget] {
+  /* Margin needs to be at least 4px to not clip multiselect stacking effect */
+  overflow-clip-margin: 4px;
+  z-index: 3 !important;
+  position: absolute !important;
+  pointer-events: none; /* avoid blocking dragover events on scroll buttons */
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.tabs.dragDrop.multiselectStacking") {
+    &[multiselected]:not([small-stack], [big-stack]) {
+      visibility: hidden;
+    }
+  }
+}
+
 .tabbrowser-tab {
   --tab-label-mask-size: 1em;
 
@@ -225,25 +241,10 @@
         --tab-min-width-extra-icons: 24px;
       }
       &[tab-note]:not([muted], [soundplaying], [activemedia-blocked]) {
-        --tab-min-width-extra-icons: 24px;
+        --tab-min-width-extra-icons: 20px;
       }
       &[tab-note]:is([muted], [soundplaying], [activemedia-blocked]) {
-        --tab-min-width-extra-icons: 48px;
-      }
-    }
-  }
-
-  &[dragtarget] {
-    /* Margin needs to be at least 4px to not clip multiselect stacking effect */
-    overflow-clip-margin: 4px;
-    z-index: 3 !important;
-    position: absolute !important;
-    pointer-events: none; /* avoid blocking dragover events on scroll buttons */
-
-    /* stylelint-disable-next-line media-query-no-invalid */
-    @media -moz-pref("browser.tabs.dragDrop.multiselectStacking") {
-      &[multiselected]:not([small-stack], [big-stack]) {
-        visibility: hidden;
+        --tab-min-width-extra-icons: 44px;
       }
     }
   }
@@ -1323,13 +1324,14 @@ tab-group > tab-split-view-wrapper {
   margin-inline: var(--space-small);
   padding: var(--space-xsmall);
   border-radius: var(--tab-border-radius);
+  position: relative; /* prevents splitview wrappers from shifting during other drag events*/
 
   &[hasactivetab] {
     background-color: var(--tab-hover-background-color);
 
     @media (forced-colors) {
       border: 1px solid SelectedItem;
-      background: ButtonFace;
+      background: SelectedItemText;
     }
   }
 
@@ -1343,6 +1345,12 @@ tab-group > tab-split-view-wrapper {
 
     .tab-content {
       padding-inline: var(--space-medium);
+
+      @media (forced-colors) {
+        #tabbrowser-tabs tab-split-view-wrapper[hasactivetab] .tabbrowser-tab:not([selected]) & {
+          color: SelectedItem;
+        }
+      }
     }
 
     &:first-child {
@@ -1813,6 +1821,7 @@ tab-group {
     font-size: 0;
     width: 16px;
     height: 16px;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
     padding: var(--focus-outline-offset);
     border: var(--focus-outline-width) solid transparent;
     border-radius: var(--border-radius-medium);
@@ -1877,13 +1886,41 @@ tab-group {
   }
 
   .panel-body {
+    display: flex;
     padding-block: var(--space-medium);
   }
 
-  #tab-note-text {
-    width: 100%;
-    box-sizing: border-box;
-    padding: var(--space-medium);
+  .panel-action-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-large);
+  }
+}
+
+#tab-note-text {
+  width: 100%;
+  padding: var(--space-medium);
+  resize: none;
+  min-height: 3lh;
+  max-height: 352px;
+  overflow-y: auto;
+}
+
+#tab-note-overflow-indicator {
+  font-size: 0.85em;
+  visibility: hidden;
+  color: var(--text-color-deemphasized);
+
+  /* This will apply to both the overflow=warn state (the user has almost
+   * overflowed the limit) and the overflow=overflow state (the user actually
+   * has overflowed the limit).
+   */
+  .tab-note-editor-panel[overflow] & {
+    visibility: inherit;
+  }
+
+  .tab-note-editor-panel[overflow="overflow"] & {
+    color: var(--text-color-error);
   }
 }
 
@@ -2557,12 +2594,12 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   display: none;
   box-sizing: border-box;
 
-  width: calc(var(--icon-size) + 8px);
-  height: calc(var(--icon-size) + 8px);
+  width: calc(var(--icon-size-xsmall) + 8px);
+  height: calc(var(--icon-size-xsmall) + 8px);
   padding: 4px;
-  margin-inline-end: calc(var(--tab-inline-padding) / -2);
+  margin-inline-end: calc(var(--tab-close-button-padding) / -2);
 
-  list-style-image: url("chrome://global/skin/icons/tab-notes.svg");
+  list-style-image: url("chrome://global/skin/icons/tab-notes-12.svg");
   -moz-context-properties: fill;
   fill: var(--icon-color);
 
@@ -2572,7 +2609,8 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
      * the close button is not showing because the tab is not being hovered.
      */
     .tabbrowser-tab:not(:hover) & {
-      margin-inline-end: calc(var(--icon-size) + 8px - var(--tab-close-button-padding));
+      /* .tab-close-button is 24px wide with border-box sizing */
+      margin-inline-end: calc(24px - var(--tab-close-button-padding));
     }
     .tabbrowser-tab:is([visuallyselected], :hover) & {
       margin-inline-end: calc(var(--tab-close-button-padding) / -2);

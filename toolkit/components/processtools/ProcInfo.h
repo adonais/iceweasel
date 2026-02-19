@@ -181,7 +181,7 @@ struct ProcInfoRequest {
   ProcInfoRequest(base::ProcessId aPid, ProcType aProcessType,
                   const nsACString& aOrigin, nsTArray<WindowInfo>&& aWindowInfo,
                   nsTArray<UtilityInfo>&& aUtilityInfo, uint32_t aChildId = 0
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
                   ,
                   mach_port_t aChildTask = 0
 #endif  // XP_DARWIN
@@ -192,7 +192,7 @@ struct ProcInfoRequest {
         windowInfo(std::move(aWindowInfo)),
         utilityInfo(std::move(aUtilityInfo)),
         childId(aChildId)
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
         ,
         childTask(aChildTask)
 #endif  // XP_DARWIN
@@ -205,7 +205,7 @@ struct ProcInfoRequest {
   const nsTArray<UtilityInfo> utilityInfo;
   // If the process is a child, its child id, otherwise `0`.
   const int32_t childId;
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
   const mach_port_t childTask;
 #endif  // XP_DARWIN
 };

@@ -358,9 +358,12 @@ def test_bugbug_multiple_pushes(responses, params):
     labels = [
         t.label for t in default_tasks if not opt.should_remove_task(t, params, {})
     ]
-    assert sorted(labels) == sorted(
-        ["task-0-label", "task-1-label", "task-2-label", "task-4-label"]
-    )
+    assert sorted(labels) == sorted([
+        "task-0-label",
+        "task-1-label",
+        "task-2-label",
+        "task-4-label",
+    ])
 
 
 def test_bugbug_timeout(monkeypatch, responses, params):

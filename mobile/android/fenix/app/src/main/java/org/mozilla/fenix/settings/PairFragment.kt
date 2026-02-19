@@ -74,10 +74,11 @@ class PairFragment : Fragment(R.layout.fragment_pair), UserInteractionHandler {
             owner = this,
             view = view,
         )
+    }
 
-        qrFeature.withFeature {
-            it.scan(R.id.pair_layout)
-        }
+    override fun onStart() {
+        super.onStart()
+        qrFeature.withFeature { it.scan(R.id.pair_layout) }
     }
 
     override fun onResume() {

@@ -645,8 +645,6 @@ newtab-widget-timer-menu-notifications = Անջատել ծանուցումներ
 newtab-widget-timer-menu-notifications-on = Միացնել ծանուցումները
 newtab-widget-timer-menu-hide = Թաքցնել ժամաչափը
 newtab-widget-timer-menu-learn-more = Իմանալ ավելին
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Գլորեք՝ ավելին տեսնելու համար
 newtab-widget-message-title = Մնացեք կենտրոնացած ցուցակների և ներկառուցված ժամանակաչափի միջոցով
 newtab-promo-card-title = Աջակցել { -brand-product-name }-ին
 newtab-promo-card-body = Մեր հովանավորները աջակցում են ավելի լավ համացանց կերտելու մեր առաքելությանը

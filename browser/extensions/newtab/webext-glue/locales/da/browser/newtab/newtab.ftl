@@ -669,6 +669,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Ny liste
+newtab-widget-section-title = Widgets
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Skjul widgets
+    .aria-label = Skjul alle widgets
+newtab-widget-section-maximize =
+    .title = Udvid widgets
+    .aria-label = Udvid alle widgets til fuld størrelse
+newtab-widget-section-minimize =
+    .title = Minimer widgets
+    .aria-label = Sammenfold alle widgets til kompakt størrelse
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -691,8 +702,6 @@ newtab-widget-timer-menu-notifications = Slå notifikationer fra
 newtab-widget-timer-menu-notifications-on = Slå notifikationer til
 newtab-widget-timer-menu-hide = Skjul timer
 newtab-widget-timer-menu-learn-more = Læs mere
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Scroll for at se mere
 newtab-widget-message-title = Hold fokus med lister og den indbyggede timer
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Fra hurtige påmindelser til daglige opgaver — funktionen Fokus hjælper dig med at have styr på tingene og din tid.

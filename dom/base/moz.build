@@ -190,6 +190,7 @@ EXPORTS.mozilla.dom += [
     "EventSource.h",
     "EventSourceEventService.h",
     "External.h",
+    "FastFrontRemovableArray.h",
     "FilteredNodeIterator.h",
     "FormData.h",
     "FragmentDirective.h",

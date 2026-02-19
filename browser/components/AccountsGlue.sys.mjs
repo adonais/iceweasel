@@ -250,13 +250,7 @@ export const AccountsGlue = {
         }
       };
 
-      // Specify an icon because on Windows no icon is shown at the moment
-      let imageURL;
-      if (AppConstants.platform == "win") {
-        imageURL = "chrome://branding/content/icon64.png";
-      }
       let alert = new AlertNotification({
-        imageURL,
         title,
         text: body,
         textClickable: true,
@@ -327,11 +321,6 @@ export const AccountsGlue = {
       }
     };
 
-    let imageURL;
-    if (AppConstants.platform == "win") {
-      imageURL = "chrome://branding/content/icon64.png";
-    }
-
     // Reset the count only if there are no pending notifications
     if (!lazy.CloseRemoteTab.hasPendingCloseTabNotification) {
       lazy.CloseRemoteTab.closeTabNotificationCount = 0;
@@ -347,7 +336,6 @@ export const AccountsGlue = {
 
     try {
       let alert = new AlertNotification({
-        imageURL,
         title,
         text: body,
         textClickable: true,
@@ -361,10 +349,6 @@ export const AccountsGlue = {
 
   async _onVerifyLoginNotification({ body, title, url }) {
     let tab;
-    let imageURL;
-    if (AppConstants.platform == "win") {
-      imageURL = "chrome://branding/content/icon64.png";
-    }
     let win = lazy.BrowserWindowTracker.getTopWindow({ private: false });
     if (!win) {
       win = await this._openURLInNewWindow(url);
@@ -383,7 +367,6 @@ export const AccountsGlue = {
 
     try {
       let alert = new AlertNotification({
-        imageURL,
         title,
         body,
         textClickable: true,

@@ -6,6 +6,7 @@
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -22,10 +23,14 @@ ChromeUtils.defineLazyGetter(
   "l10n",
   () => new Localization(["browser/genai.ftl"])
 );
+const PREF_CHAT_ENABLED = "browser.ml.chat.enabled";
+const PREF_CHAT_PAGE = "browser.ml.chat.page";
+const PREF_CHAT_PROVIDER = "browser.ml.chat.provider";
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "chatEnabled",
-  "browser.ml.chat.enabled",
+  PREF_CHAT_ENABLED,
   null,
   (_pref, _old, val) => onChatEnabledChange(val)
 );
@@ -53,7 +58,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.ml.chat.openSidebarOnProviderChange",
   true
 );
-XPCOMUtils.defineLazyPreferenceGetter(lazy, "chatPage", "browser.ml.chat.page");
+XPCOMUtils.defineLazyPreferenceGetter(lazy, "chatPage", PREF_CHAT_PAGE);
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "chatPageMenuBadge",
@@ -67,7 +72,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "chatProvider",
-  "browser.ml.chat.provider",
+  PREF_CHAT_PROVIDER,
   null,
   (_pref, _old, val) => onChatProviderChange(val)
 );
@@ -113,6 +118,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "shortcutMouseoverCount",
   "browser.ml.chat.shortcut.onboardingMouseoverCount",
   0
+);
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "parserUtils",
+  "@mozilla.org/parserutils;1",
+  Ci.nsIParserUtils
 );
 
 export const GenAI = {
@@ -395,7 +407,15 @@ export const GenAI = {
     }
     aiActionButton.initialized = true;
 
+    const setAIButtonAriaLabel = (chatProviderName = "localhost") => {
+      document.l10n.setAttributes(aiActionButton, "genai-shortcut-button", {
+        provider: chatProviderName,
+      });
+    };
+
     const document = aiActionButton.ownerDocument;
+    const initialChatProvider = this.chatProviders.get(lazy.chatProvider);
+    setAIButtonAriaLabel(initialChatProvider?.name);
     const buttonActiveState = "icon";
     const buttonDefaultState = "icon ghost";
     const chatShortcutsOptionsPanel = document.getElementById(
@@ -460,8 +480,12 @@ export const GenAI = {
       const vbox = chatShortcutsOptionsPanel.querySelector("vbox");
       vbox.innerHTML = "";
 
-      const chatProvider = this.chatProviders.get(lazy.chatProvider);
       const showWarning = this.isContextTooLong(aiActionButton.data.selection);
+      const chatProvider = this.chatProviders.get(lazy.chatProvider);
+
+      if (initialChatProvider !== chatProvider?.name) {
+        setAIButtonAriaLabel(chatProvider?.name);
+      }
 
       // Show warning if selection is too long
       if (showWarning) {
@@ -977,7 +1001,7 @@ export const GenAI = {
                 selection: `%selection|${this.estimateSelectionLimit(
                   this.chatProviders.get(lazy.chatProvider)?.maxLength
                 )}%`,
-                tabTitle: "%tabTitle%",
+                tabTitle: "%tabTitle|50%",
                 url: "%url%",
               },
             },
@@ -999,18 +1023,50 @@ export const GenAI = {
    *
    * @param {MozMenuItem} item Use value falling back to label
    * @param {object} context Placeholder keys with values to replace
+   * @param {Document} document Document for sanitizing context values
    * @returns {string} Prompt with placeholders replaced
    */
-  buildChatPrompt(item, context = {}) {
+  buildChatPrompt(item, context = {}, document = null) {
     // Combine prompt prefix with the item then replace placeholders from the
     // original prompt (and not from context)
     return (this.chatPromptPrefix + (item.value || item.label)).replace(
       // Handle %placeholder% as key|options
       /\%(\w+)(?:\|([^%]+))?\%/g,
-      (placeholder, key, options) =>
+      (placeholder, key, options) => {
         // Currently only supporting numeric options for slice with `undefined`
-        // resulting in whole string
-        `<${key}>${context[key]?.slice(0, options) ?? placeholder}</${key}>`
+        // resulting in whole string. Also remove fake int tags from untrusted content.
+        const value = context[key];
+        let sanitized;
+
+        // Sanitize and truncate context values before sending prompt
+        // otherwise return placeholder
+        if (value !== undefined) {
+          const contextElement = document.createElement("div");
+          sanitized = lazy.parserUtils.parseFragment(
+            value,
+            Ci.nsIParserUtils.SanitizerDropForms |
+              Ci.nsIParserUtils.SanitizerDropMedia,
+            false,
+            Services.io.newURI("about:blank"),
+            contextElement
+          ).textContent;
+
+          if (options) {
+            sanitized = sanitized.slice(0, Number(options));
+          }
+
+          sanitized = sanitized
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        } else {
+          sanitized = placeholder;
+        }
+
+        return `<${key}>${sanitized}</${key}>`;
+      }
     );
   },
 
@@ -1192,7 +1248,13 @@ export const GenAI = {
 
     // Build prompt after provider is confirmed to use correct length limits
     await this.prepareChatPromptPrefix();
-    const prompt = this.buildChatPrompt(promptObj, context);
+    const prompt = this.buildChatPrompt(
+      promptObj,
+      {
+        ...context,
+      },
+      context.window.document
+    );
 
     // Pass the prompt via GET url ?q= param or request header
     const {
@@ -1251,7 +1313,52 @@ export const GenAI = {
       this.setupAutoSubmit(browser, prompt, context);
     }
   },
+
+  get id() {
+    return "sidebar-chatbot";
+  },
+
+  get isBlocked() {
+    return !lazy.chatEnabled;
+  },
+
+  get isEnabled() {
+    return (lazy.chatEnabled && lazy.chatProvider != "") || lazy.chatPage;
+  },
+
+  get isAllowed() {
+    return true;
+  },
+
+  get isManagedByPolicy() {
+    return (
+      Services.prefs.prefIsLocked(PREF_CHAT_ENABLED) ||
+      Services.prefs.prefIsLocked(PREF_CHAT_PROVIDER) ||
+      Services.prefs.prefIsLocked(PREF_CHAT_PAGE)
+    );
+  },
+
+  async reset() {
+    Services.prefs.clearUserPref(PREF_CHAT_ENABLED);
+    Services.prefs.clearUserPref(PREF_CHAT_PAGE);
+    Services.prefs.clearUserPref(PREF_CHAT_PROVIDER);
+  },
+
+  async enable() {
+    Services.prefs.setBoolPref(PREF_CHAT_ENABLED, true);
+    Services.prefs.setBoolPref(PREF_CHAT_PAGE, true);
+    // We don't know what to set browser.ml.chat.provider to, so really we'll be
+    // "available" unless it's set elsewhere.
+  },
+
+  async disable() {
+    Services.prefs.setBoolPref(PREF_CHAT_ENABLED, false);
+    Services.prefs.setBoolPref(PREF_CHAT_PAGE, false);
+    Services.prefs.clearUserPref(PREF_CHAT_PROVIDER);
+  },
 };
+
+Object.setPrototypeOf(GenAI, AIFeature);
 
 /**
  * Ensure the chat sidebar get closed.

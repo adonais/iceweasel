@@ -338,6 +338,7 @@ export class TopSiteLink extends React.PureComponent {
             source: NEWTAB_SOURCE,
             visible_topsites: visibleTopSites,
             frecency_boosted: link.type === "frecency-boost",
+            attribution: link.attribution,
           }}
           // For testing.
           IntersectionObserver={this.props.IntersectionObserver}
@@ -554,6 +555,7 @@ export class TopSite extends React.PureComponent {
               card_type: "spoc",
               tile_id: this.props.link.id,
               shim: this.props.link.shim && this.props.link.shim.click,
+              attribution: this.props.link.attribution,
             },
           })
         );
@@ -569,6 +571,7 @@ export class TopSite extends React.PureComponent {
               tile_id: this.props.link.id,
               advertiser: title.toLocaleLowerCase(),
               source: NEWTAB_SOURCE,
+              attribution: this.props.link.attribution,
             },
           })
         );
@@ -587,6 +590,7 @@ export class TopSite extends React.PureComponent {
               source: NEWTAB_SOURCE,
               visible_topsites: this.props.visibleTopSites,
               frecency_boosted: this.props.link.type === "frecency-boost",
+              attribution: this.props.link.attribution,
             },
           })
         );

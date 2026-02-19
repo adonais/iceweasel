@@ -11,10 +11,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <numeric>
 #include <optional>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -83,6 +85,14 @@ aom_superblock_size_t GetSuperblockSize(int width, int height, int threads) {
     return AOM_SUPERBLOCK_SIZE_DYNAMIC;
 }
 
+void PopulateEncodedImageFromVideoFrame(const VideoFrame& frame,
+                                        EncodedImage& encoded_image) {
+  encoded_image.SetRtpTimestamp(frame.rtp_timestamp());
+  encoded_image.SetPresentationTimestamp(frame.presentation_timestamp());
+  encoded_image.capture_time_ms_ = frame.render_time_ms();
+  encoded_image.rotation_ = frame.rotation();
+  encoded_image.SetColorSpace(frame.color_space());
+}
 class LibaomAv1Encoder final : public VideoEncoder {
  public:
   LibaomAv1Encoder(const Environment& env, LibaomAv1EncoderSettings settings);
@@ -132,6 +142,19 @@ class LibaomAv1Encoder final : public VideoEncoder {
   // will be the input resolution.
   void AdjustScalingFactorsForTopActiveLayer();
 
+  using EncodeResult = std::variant<aom_codec_err_t, EncodedImage>;
+
+  // Duration is specified in ticks based on aom_codec_enc_cfg_t::g_timebase,
+  // in practice that that is kVideoPayloadTypeFrequency (90kHz).
+  EncodeResult DoEncode(uint32_t duration,
+                        aom_enc_frame_flags_t flags,
+                        ScalableVideoController::LayerFrameConfig* layer_frame);
+
+  CodecSpecificInfo CreateCodecSpecificInfo(
+      const EncodedImage& image,
+      const ScalableVideoController::LayerFrameConfig& layer_frame,
+      bool end_of_picture);
+
   std::unique_ptr<ScalableVideoController> svc_controller_;
   std::optional<ScalabilityMode> scalability_mode_;
   // Original scaling factors for all configured layers active and inactive.
@@ -160,6 +183,8 @@ class LibaomAv1Encoder final : public VideoEncoder {
   FrameSampler psnr_frame_sampler_;
   // TODO(webrtc:388070060): Remove after rollout.
   const bool calculate_psnr_;
+  const bool drop_repeat_frames_on_enhancement_layers_;
+  std::map<int, uint32_t> last_encoded_timestamp_by_sid_;
 };
 
 int32_t VerifyCodecSettings(const VideoCodec& codec_settings) {
@@ -203,7 +228,9 @@ LibaomAv1Encoder::LibaomAv1Encoder(const Environment& env,
       post_encode_frame_drop_(!env.field_trials().IsDisabled(
           "WebRTC-LibaomAv1Encoder-PostEncodeFrameDrop")),
       calculate_psnr_(
-          env.field_trials().IsEnabled("WebRTC-Video-CalculatePsnr")) {}
+          env.field_trials().IsEnabled("WebRTC-Video-CalculatePsnr")),
+      drop_repeat_frames_on_enhancement_layers_(env.field_trials().IsEnabled(
+          "WebRTC-LibaomAv1Encoder-DropRepeatFramesOnEnhancementLayers")) {}
 
 LibaomAv1Encoder::~LibaomAv1Encoder() {
   Release();
@@ -643,6 +670,35 @@ int32_t LibaomAv1Encoder::Encode(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
+  if (drop_repeat_frames_on_enhancement_layers_ && frame.is_repeat_frame()) {
+    bool all_layers_droppable = !layer_frames.empty();
+    for (const auto& layer_frame : layer_frames) {
+      if (layer_frame.TemporalId() == 0) {
+        all_layers_droppable = false;
+        break;
+      }
+      if (auto it =
+              last_encoded_timestamp_by_sid_.find(layer_frame.SpatialId());
+          it != last_encoded_timestamp_by_sid_.end()) {
+        // Get the time since the last encoded frame for this spatial layer.
+        // Don't drop enhancement layer repeat frame if last encode was more
+        // than one second ago.
+        if ((frame.rtp_timestamp() - it->second) > kVideoPayloadTypeFrequency) {
+          all_layers_droppable = false;
+          break;
+        }
+      }
+    }
+
+    if (all_layers_droppable) {
+      RTC_LOG(LS_VERBOSE) << "Dropping repeat frame on enhancement layers.";
+      for (const auto& layer_frame : layer_frames) {
+        svc_controller_->OnEncodeDone(layer_frame);
+      }
+      return WEBRTC_VIDEO_CODEC_OK;  // Frame dropped
+    }
+  }
+
   scoped_refptr<VideoFrameBuffer> buffer = frame.video_frame_buffer();
   absl::InlinedVector<VideoFrameBuffer::Type, kMaxPreferredPixelFormats>
       supported_formats = {VideoFrameBuffer::Type::kI420,
@@ -766,118 +822,154 @@ int32_t LibaomAv1Encoder::Encode(
       SetSvcRefFrameConfig(*layer_frame);
     }
 
-    // Encode a frame. The presentation timestamp `pts` should not use real
-    // timestamps from frames or the wall clock, as that can cause the rate
-    // controller to misbehave.
-    aom_codec_err_t ret =
-        aom_codec_encode(&ctx_, frame_for_encode_, timestamp_, duration, flags);
-    if (ret != AOM_CODEC_OK) {
-      RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::Encode returned " << ret
-                          << " on aom_codec_encode.";
-      return WEBRTC_VIDEO_CODEC_ERROR;
+    EncodeResult result = DoEncode(duration, flags, layer_frame);
+    if (aom_codec_err_t* status = std::get_if<aom_codec_err_t>(&result);
+        status != nullptr) {
+      if (*status == AOM_CODEC_OK) {
+        // AOM_CODEC_OK means success with no image, so do nothing.
+        continue;
+      } else {
+        RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::Encode returned " << status
+                            << " on aom_codec_encode.";
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
     }
 
     if (non_encoded_layer_frame) {
       continue;
     }
 
-    // Get encoded image data.
-    EncodedImage encoded_image;
-    const aom_codec_cx_pkt_t* pkt;
-    aom_codec_iter_t iter = nullptr;
-    int data_pkt_count = 0;
-    while ((pkt = aom_codec_get_cx_data(&ctx_, &iter)) != nullptr) {
-      if (pkt->kind == AOM_CODEC_CX_FRAME_PKT && pkt->data.frame.sz > 0) {
-        if (data_pkt_count > 0) {
-          RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::Encoder returned more than "
-                                 "one data packet for an input video frame.";
-          Release();
-        }
-        encoded_image.SetEncodedData(EncodedImageBuffer::Create(
-            /*data=*/static_cast<const uint8_t*>(pkt->data.frame.buf),
-            /*size=*/pkt->data.frame.sz));
+    RTC_DCHECK(std::holds_alternative<EncodedImage>(result));
+    EncodedImage encoded_image = std::get<EncodedImage>(std::move(result));
 
-        if ((pkt->data.frame.flags & AOM_FRAME_IS_KEY) != 0) {
-          layer_frame->Keyframe();
-        }
+    RTC_DCHECK_GT(encoded_image.size(), 0u);
+    PopulateEncodedImageFromVideoFrame(frame, encoded_image);
+    CodecSpecificInfo codec_specifics =
+        CreateCodecSpecificInfo(encoded_image, *layer_frame, end_of_picture);
 
-        encoded_image._frameType = layer_frame->IsKeyframe()
-                                       ? VideoFrameType::kVideoFrameKey
-                                       : VideoFrameType::kVideoFrameDelta;
-        encoded_image.SetRtpTimestamp(frame.rtp_timestamp());
-        encoded_image.SetPresentationTimestamp(frame.presentation_timestamp());
-        encoded_image.capture_time_ms_ = frame.render_time_ms();
-        encoded_image.rotation_ = frame.rotation();
-        encoded_image.content_type_ = VideoContentType::UNSPECIFIED;
-        // If encoded image width/height info are added to aom_codec_cx_pkt_t,
-        // use those values in lieu of the values in frame.
-        if (svc_params_) {
-          int n = scaling_factors_num_[layer_frame->SpatialId()];
-          int d = scaling_factors_den_[layer_frame->SpatialId()];
-          encoded_image._encodedWidth = encoder_settings_.width * n / d;
-          encoded_image._encodedHeight = encoder_settings_.height * n / d;
-          encoded_image.SetSpatialIndex(layer_frame->SpatialId());
-          encoded_image.SetTemporalIndex(layer_frame->TemporalId());
-        } else {
-          encoded_image._encodedWidth = cfg_.g_w;
-          encoded_image._encodedHeight = cfg_.g_h;
-        }
-        encoded_image.timing_.flags = VideoSendTiming::kInvalid;
-
-        int qp = -1;
-        SET_ENCODER_PARAM_OR_RETURN_ERROR(AOME_GET_LAST_QUANTIZER, &qp);
-        encoded_image.qp_ = qp;
-
-        encoded_image.SetColorSpace(frame.color_space());
-        ++data_pkt_count;
-      } else if (pkt->kind == AOM_CODEC_PSNR_PKT) {
-        // PSNR index: 0: total, 1: Y, 2: U, 3: V
-        encoded_image.set_psnr(
-            EncodedImage::Psnr({.y = pkt->data.psnr.psnr[1],
-                                .u = pkt->data.psnr.psnr[2],
-                                .v = pkt->data.psnr.psnr[3]}));
-      }
-    }
-
-    // Deliver encoded image data.
-    if (encoded_image.size() > 0) {
-      CodecSpecificInfo codec_specific_info;
-      codec_specific_info.codecType = kVideoCodecAV1;
-      codec_specific_info.end_of_picture = end_of_picture;
-      codec_specific_info.scalability_mode = scalability_mode_;
-      bool is_keyframe = layer_frame->IsKeyframe();
-      codec_specific_info.generic_frame_info =
-          svc_controller_->OnEncodeDone(*layer_frame);
-      if (is_keyframe && codec_specific_info.generic_frame_info) {
-        codec_specific_info.template_structure =
-            svc_controller_->DependencyStructure();
-        auto& resolutions = codec_specific_info.template_structure->resolutions;
-        if (SvcEnabled()) {
-          resolutions.resize(svc_params_->number_spatial_layers);
-          for (int sid = 0; sid < svc_params_->number_spatial_layers; ++sid) {
-            int n = scaling_factors_num_[sid];
-            int d = scaling_factors_den_[sid];
-            resolutions[sid] =
-                RenderResolution(encoder_settings_.width * n / d,
-                                 encoder_settings_.height * n / d);
-          }
-        } else {
-          resolutions = {RenderResolution(cfg_.g_w, cfg_.g_h)};
-        }
-      }
-      encoded_images.emplace_back(std::move(encoded_image),
-                                  std::move(codec_specific_info));
-    }
+    encoded_images.emplace_back(std::move(encoded_image),
+                                std::move(codec_specifics));
   }
+
   if (!encoded_images.empty()) {
     encoded_images.back().second.end_of_picture = true;
   }
-  for (auto& [encoded_image, codec_specific_info] : encoded_images) {
-    encoded_image_callback_->OnEncodedImage(encoded_image,
-                                            &codec_specific_info);
+  for (auto& [encoded_image, codec_specifics] : encoded_images) {
+    encoded_image_callback_->OnEncodedImage(encoded_image, &codec_specifics);
+    if (encoded_image.SpatialIndex().has_value()) {
+      last_encoded_timestamp_by_sid_[*encoded_image.SpatialIndex()] =
+          frame.rtp_timestamp();
+    }
   }
 
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+LibaomAv1Encoder::EncodeResult LibaomAv1Encoder::DoEncode(
+    uint32_t duration,
+    aom_enc_frame_flags_t flags,
+    ScalableVideoController::LayerFrameConfig* layer_frame) {
+  // Encode a frame. The presentation timestamp `pts` should not use real
+  // timestamps from frames or the wall clock, as that can cause the rate
+  // controller to misbehave.
+  aom_codec_err_t ret =
+      aom_codec_encode(&ctx_, frame_for_encode_, timestamp_, duration, flags);
+  if (ret != AOM_CODEC_OK) {
+    return ret;
+  }
+
+  // Get encoded image data.
+  aom_codec_iter_t iter = nullptr;
+  int data_pkt_count = 0;
+  EncodedImage encoded_image;
+  const aom_codec_cx_pkt_t* pkt = nullptr;
+  while ((pkt = aom_codec_get_cx_data(&ctx_, &iter)) != nullptr) {
+    if (pkt->kind == AOM_CODEC_CX_FRAME_PKT && pkt->data.frame.sz > 0) {
+      if (data_pkt_count > 0) {
+        RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::Encoder returned more than "
+                               "one data packet for an input video frame.";
+        Release();
+        return AOM_CODEC_ERROR;
+      }
+      encoded_image.SetEncodedData(EncodedImageBuffer::Create(
+          /*data=*/static_cast<const uint8_t*>(pkt->data.frame.buf),
+          /*size=*/pkt->data.frame.sz));
+
+      if ((pkt->data.frame.flags & AOM_FRAME_IS_KEY) != 0) {
+        layer_frame->Keyframe();
+      }
+
+      encoded_image._frameType = layer_frame->IsKeyframe()
+                                     ? VideoFrameType::kVideoFrameKey
+                                     : VideoFrameType::kVideoFrameDelta;
+
+      encoded_image.content_type_ = VideoContentType::UNSPECIFIED;
+      // If encoded image width/height info are added to aom_codec_cx_pkt_t,
+      // use those values in lieu of the values in frame.
+      if (svc_params_) {
+        int n = scaling_factors_num_[layer_frame->SpatialId()];
+        int d = scaling_factors_den_[layer_frame->SpatialId()];
+        encoded_image._encodedWidth = encoder_settings_.width * n / d;
+        encoded_image._encodedHeight = encoder_settings_.height * n / d;
+        encoded_image.SetSpatialIndex(layer_frame->SpatialId());
+        encoded_image.SetTemporalIndex(layer_frame->TemporalId());
+      } else {
+        encoded_image._encodedWidth = cfg_.g_w;
+        encoded_image._encodedHeight = cfg_.g_h;
+      }
+      encoded_image.timing_.flags = VideoSendTiming::kInvalid;
+
+      if (!SetEncoderControlParameters(AOME_GET_LAST_QUANTIZER,
+                                       &encoded_image.qp_)) {
+        RTC_LOG(LS_WARNING) << "Unable to fetch QP for frame.";
+        return AOM_CODEC_ERROR;
+      }
+
+      ++data_pkt_count;
+    } else if (pkt->kind == AOM_CODEC_PSNR_PKT) {
+      // PSNR index: 0: total, 1: Y, 2: U, 3: V
+      encoded_image.set_psnr(EncodedImage::Psnr({.y = pkt->data.psnr.psnr[1],
+                                                 .u = pkt->data.psnr.psnr[2],
+                                                 .v = pkt->data.psnr.psnr[3]}));
+    }
+  }
+
+  if (encoded_image.size() == 0) {
+    // Encode success, but no image produced.
+    return AOM_CODEC_OK;
+  }
+
+  return encoded_image;
+}
+
+CodecSpecificInfo LibaomAv1Encoder::CreateCodecSpecificInfo(
+    const EncodedImage& image,
+    const ScalableVideoController::LayerFrameConfig& layer_frame,
+    bool end_of_picture) {
+  CodecSpecificInfo codec_specific_info;
+  codec_specific_info.codecType = kVideoCodecAV1;
+  codec_specific_info.end_of_picture = end_of_picture;
+  codec_specific_info.scalability_mode = scalability_mode_;
+  bool is_keyframe = layer_frame.IsKeyframe();
+  codec_specific_info.generic_frame_info =
+      svc_controller_->OnEncodeDone(layer_frame);
+  if (is_keyframe && codec_specific_info.generic_frame_info) {
+    codec_specific_info.template_structure =
+        svc_controller_->DependencyStructure();
+    auto& resolutions = codec_specific_info.template_structure->resolutions;
+    if (SvcEnabled()) {
+      resolutions.resize(svc_params_->number_spatial_layers);
+      for (int sid = 0; sid < svc_params_->number_spatial_layers; ++sid) {
+        int n = scaling_factors_num_[sid];
+        int d = scaling_factors_den_[sid];
+        resolutions[sid] = RenderResolution(encoder_settings_.width * n / d,
+                                            encoder_settings_.height * n / d);
+      }
+    } else {
+      resolutions = {RenderResolution(cfg_.g_w, cfg_.g_h)};
+    }
+  }
+  return codec_specific_info;
 }
 
 void LibaomAv1Encoder::SetRates(const RateControlParameters& parameters) {
@@ -941,6 +1033,9 @@ VideoEncoder::EncoderInfo LibaomAv1Encoder::GetEncoderInfo() const {
           : VideoEncoder::ScalingSettings(kLowQindex, kHighQindex);
   info.preferred_pixel_formats = {VideoFrameBuffer::Type::kI420,
                                   VideoFrameBuffer::Type::kNV12};
+  if (inited_) {
+    info.mapped_resolution = VideoEncoder::Resolution(cfg_.g_w, cfg_.g_h);
+  }
   if (SvcEnabled()) {
     for (int sid = 0; sid < svc_params_->number_spatial_layers; ++sid) {
       info.fps_allocation[sid].resize(svc_params_->number_temporal_layers);

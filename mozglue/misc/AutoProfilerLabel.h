@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 
 #include "mozilla/Types.h"
+#include <cstdint>
 #include <tuple>
 
 // The Gecko Profiler defines AutoProfilerLabel, an RAII class for

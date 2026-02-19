@@ -59,7 +59,7 @@
 #include "call/receive_time_calculator.h"
 #include "call/rtp_config.h"
 #include "call/rtp_stream_receiver_controller.h"
-#include "call/rtp_transport_controller_send_factory.h"
+#include "call/rtp_transport_controller_send.h"
 #include "call/version.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
@@ -514,14 +514,8 @@ class Call final : public webrtc::Call,
 }  // namespace internal
 
 std::unique_ptr<Call> Call::Create(CallConfig config) {
-  std::unique_ptr<RtpTransportControllerSendInterface> transport_send;
-  if (config.rtp_transport_controller_send_factory != nullptr) {
-    transport_send = config.rtp_transport_controller_send_factory->Create(
-        config.ExtractTransportConfig());
-  } else {
-    transport_send = RtpTransportControllerSendFactory().Create(
-        config.ExtractTransportConfig());
-  }
+  auto transport_send = std::make_unique<RtpTransportControllerSend>(
+      config.ExtractTransportConfig());
 
   return std::make_unique<internal::Call>(std::move(config),
                                           std::move(transport_send));

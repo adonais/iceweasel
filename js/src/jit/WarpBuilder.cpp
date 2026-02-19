@@ -3383,6 +3383,9 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
   const WarpCacheIRBase* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc);
   if (!cacheIRSnapshot) {
     cacheIRSnapshot = getOpSnapshot<WarpCacheIRWithShapeList>(loc);
+    if (!cacheIRSnapshot) {
+      cacheIRSnapshot = getOpSnapshot<WarpCacheIRWithShapeListAndOffsets>(loc);
+    }
   }
   if (cacheIRSnapshot) {
     return TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, inputs);

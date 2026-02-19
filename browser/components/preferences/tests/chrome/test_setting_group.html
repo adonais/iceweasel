@@ -165,7 +165,8 @@
         ) {
           await waitForRenderUpdate();
           ok(group, "setting-group is created");
-          let [control1, control2] = group.querySelectorAll("setting-control");
+          let control1 = group.querySelector(`#setting-control-${SETTING_ONE}`);
+          let control2 = group.querySelector(`#setting-control-${SETTING_TWO}`);
           ok(
             BrowserTestUtils.isHidden(control1),
             "First setting-control should be hidden"
@@ -308,6 +309,7 @@
 
         const SETTING_ONE = "setting-item-one";
         const SETTING_TWO = "setting-item-two";
+        const SETTING_NESTED = "setting-item-nested";
         await SpecialPowers.pushPrefEnv({
           set: [
             [PREF_ONE, false],
@@ -324,10 +326,24 @@
           pref: PREF_TWO,
           visible: (_, setting) => setting.value,
         });
+        // This nested setting is always visible, but its parent may be hidden.
+        Preferences.addSetting({
+          id: SETTING_NESTED,
+          get: () => true,
+        });
         let config = {
           l10nId: GROUP_L10N_ID,
           items: [
-            { l10nId: LABEL_L10N_ID, id: SETTING_ONE },
+            {
+              l10nId: LABEL_L10N_ID,
+              id: SETTING_ONE,
+              items: [
+                {
+                  id: SETTING_NESTED,
+                  l10nId: LABEL_L10N_ID,
+                },
+              ],
+            },
             { l10nId: LABEL_L10N_ID, id: SETTING_TWO },
           ],
         };

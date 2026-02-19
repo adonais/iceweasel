@@ -7,6 +7,7 @@
 
 include protocol PContent;
 include protocol PHttpChannel;
+include protocol PCacheEntryWriteHandle;
 include protocol PCookieService;
 include protocol PBrowser;
 #ifdef MOZ_WIDGET_GTK
@@ -50,6 +51,7 @@ namespace net {
 {
   manager PContent;
   manages PHttpChannel;
+  manages PCacheEntryWriteHandle;
   manages PCookieService;
   manages PWebSocket;
   manages PWebSocketEventListener;
@@ -91,15 +93,6 @@ parent:
 
   async PWebSocketEventListener(uint64_t aInnerWindowID);
 
-  /* Predictor Methods */
-  async PredPredict(nullable nsIURI targetURI, nullable nsIURI sourceURI,
-                    uint32_t reason, OriginAttributes originAttributes,
-                    bool hasVerifier);
-  [Priority=low]
-  async PredLearn(nullable nsIURI targetURI, nullable nsIURI sourceURI,
-                  uint32_t reason, OriginAttributes originAttributes);
-  async PredReset();
-
   async SpeculativeConnect(nullable nsIURI uri,
                            nullable nsIPrincipal principal,
                            OriginAttributes? originAttributes,
@@ -136,7 +129,10 @@ parent:
   async RequestContextAfterDOMContentLoaded(uint64_t rcid);
   async RemoveRequestContext(uint64_t rcid);
 
-  async PAltDataOutputStream(nsCString type, int64_t predictedSize, PHttpChannel channel);
+  async PCacheEntryWriteHandle(PHttpChannel channel);
+
+  async PAltDataOutputStream(nsCString type, int64_t predictedSize, PHttpChannel? channel, PCacheEntryWriteHandle? handle);
+
 
   async PStunAddrsRequest();
 
@@ -162,12 +158,12 @@ parent:
   async GetPageThumbStream(nullable nsIURI uri, LoadInfoArgs loadInfo) returns (RemoteStreamInfo? info);
   async GetPageIconStream(nullable nsIURI uri, LoadInfoArgs loadInfo) returns (RemoteStreamInfo? info);
 
-child:
-  /* Predictor Methods */
-  async PredOnPredictPrefetch(nullable nsIURI uri, uint32_t httpStatus);
-  async PredOnPredictPreconnect(nullable nsIURI uri);
-  async PredOnPredictDNS(nullable nsIURI uri);
+  /**
+   * New Tab wallpaper remote resource loading
+   */
+  async GetMozNewTabWallpaperStream(nullable nsIURI uri, LoadInfoArgs loadInfo) returns (RemoteStreamInfo? info);
 
+child:
   async SpeculativeConnectRequest();
 
   // Using medium high priority to deliver this notification possibly sooner than we

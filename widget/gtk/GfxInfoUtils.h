@@ -10,6 +10,8 @@
 
 #define LOG_PIPE 2
 
+#include <cstdarg>
+
 static bool enable_logging = false;
 static void log(const char* format, ...) {
   if (!enable_logging) {

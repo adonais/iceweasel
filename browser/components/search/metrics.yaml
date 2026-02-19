@@ -164,6 +164,7 @@ sap:
           `urlbar_persisted`,
           `urlbar_searchmode`,
           `webextension`
+          `aiwindow_assistant`
 
           Prior to Firefox 142, the possible source values were:
           `abouthome`, `contextmenu`, `newtab`, `searchbar`, `system`, `urlbar`,
@@ -339,6 +340,7 @@ serp:
           `tabhistory`,
           `unknown`,
           `webextension`
+          `aiwindow_assistant`
         type: string
       search_mode:
         description: >
@@ -901,6 +903,20 @@ browser.engagement.navigation:
     expires: never
     telemetry_mirror: BROWSER_ENGAGEMENT_NAVIGATION_WEBEXTENSION
 
+  aiwindow_assistant:
+    type: labeled_counter
+    description: >
+      The count URI loads triggered in a subsession from the AI window assistant
+      search handoff button.
+    bugs:
+      - https://bugzil.la/2001519
+    data_reviews:
+      - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
 browser.search.content:
   urlbar:
     type: labeled_counter
@@ -1144,6 +1160,22 @@ browser.search.content:
       - rev-data@mozilla.com
     expires: never
     telemetry_mirror: BROWSER_SEARCH_CONTENT_WEBEXTENSION
+
+  aiwindow_assistant:
+    type: labeled_counter
+    description: >
+      Records counts for in-content searches where the search was most
+      likely started from the AI window assistant. The key format is
+      <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
+      See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
+    bugs:
+      - https://bugzil.la/2001519
+    data_reviews:
+      - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
 
   system:
     type: labeled_counter
@@ -1426,6 +1458,23 @@ browser.search.withads:
     expires: never
     telemetry_mirror: BROWSER_SEARCH_WITHADS_WEBEXTENSION
 
+  aiwindow_assistant:
+    type: labeled_counter
+    description: >
+      Records counts of SERP pages with adverts displayed where the search
+      was started from the AI window assistant. The key format is
+      ‘<provider>:<tagged|organic>’ See https://firefox-source-
+      docs.mozilla.org/browser/search/telemetry.html#browser-search-
+      content.
+    bugs:
+      - https://bugzil.la/2001519
+    data_reviews:
+      - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
   system:
     type: labeled_counter
     description: >
@@ -1688,6 +1737,21 @@ browser.search.adclicks:
       - rev-data@mozilla.com
     expires: never
     telemetry_mirror: BROWSER_SEARCH_ADCLICKS_WEBEXTENSION
+
+  aiwindow_assistant:
+    type: labeled_counter
+    description: >
+      Records clicks of adverts on SERP pages where the search was started
+      from the AI window assistant. The key format is ‘<provider>:<tagged|organic>’
+      See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
+    bugs:
+      - https://bugzil.la/2001519
+    data_reviews:
+      - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
 
   system:
     type: labeled_counter

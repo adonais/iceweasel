@@ -8,24 +8,25 @@
  * An instance of EditingSession tracks changes that have been made during the
  * modification of box model values. All of these changes can be reverted by
  * calling revert.
- *
- * @param  {InspectorPanel} inspector
- *         The inspector panel.
- * @param  {Document} doc
- *         A DOM document that can be used to test style rules.
- * @param  {Array} rules
- *         An array of the style rules defined for the node being
- *         edited. These should be in order of priority, least
- *         important first.
  */
-function EditingSession({ inspector, doc, elementRules }) {
-  this._doc = doc;
-  this._inspector = inspector;
-  this._rules = elementRules;
-  this._modifications = new Map();
-}
-
-EditingSession.prototype = {
+class EditingSession {
+  /**
+   * @param {object} options
+   * @param  {InspectorPanel} options.inspector
+   *         The inspector panel.
+   * @param  {Document} options.doc
+   *         A DOM document that can be used to test style rules.
+   * @param  {Array} options.elementRules
+   *         An array of the style rules defined for the node being
+   *         edited. These should be in order of priority, least
+   *         important first.
+   */
+  constructor({ inspector, doc, elementRules }) {
+    this._doc = doc;
+    this._inspector = inspector;
+    this._rules = elementRules;
+    this._modifications = new Map();
+  }
   /**
    * Gets the value of a single property from the CSS rule.
    *
@@ -46,7 +47,7 @@ EditingSession.prototype = {
     const dummyStyle = this._element.style;
     dummyStyle.cssText = rule.cssText;
     return dummyStyle.getPropertyValue(property);
-  },
+  }
 
   /**
    * Returns the current value for a property as a string or the empty string if
@@ -74,7 +75,7 @@ EditingSession.prototype = {
     }
     div.remove();
     return "";
-  },
+  }
 
   /**
    * Get the index of a given css property name in a CSS rule.
@@ -92,7 +93,7 @@ EditingSession.prototype = {
     }
 
     return rule.declarations.findIndex(p => p.name === name);
-  },
+  }
 
   /**
    * Sets a number of properties on the node.
@@ -137,7 +138,7 @@ EditingSession.prototype = {
 
       await modifications.apply();
     }
-  },
+  }
 
   /**
    * Reverts all of the property changes made by this instance.
@@ -174,7 +175,7 @@ EditingSession.prototype = {
 
       await modifications.apply();
     }
-  },
+  }
 
   destroy() {
     this._modifications.clear();
@@ -184,7 +185,7 @@ EditingSession.prototype = {
     this._inspector = null;
     this._modifications = null;
     this._rules = null;
-  },
-};
+  }
+}
 
 module.exports = EditingSession;

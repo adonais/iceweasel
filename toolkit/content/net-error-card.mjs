@@ -13,12 +13,14 @@ import {
   getHostName,
   getSubjectAltNames,
   getFailedCertificatesAsPEMString,
+  handleNSSFailure,
   recordSecurityUITelemetry,
   gOffline,
   retryThis,
   errorHasNoUserFix,
   COOP_MDN_DOCS,
   COEP_MDN_DOCS,
+  HTTPS_UPGRADES_MDN_DOCS,
 } from "chrome://global/content/aboutNetErrorHelpers.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
@@ -39,10 +41,12 @@ export class NetErrorCard extends MozLitElement {
     advancedShowing: { type: Boolean, reflect: true },
     certErrorDebugInfoShowing: { type: Boolean, reflect: true },
     certificateErrorText: { type: String },
+    showPrefReset: { type: Boolean },
   };
 
   static queries = {
     copyButtonTop: "#copyToClipboardTop",
+    copyButtonBot: "#copyToClipboardBot",
     exceptionButton: "#exception-button",
     errorCode: "#errorCode",
     advancedContainer: ".advanced-container",
@@ -57,10 +61,35 @@ export class NetErrorCard extends MozLitElement {
     whatCanYouDo: "#whatCanYouDo",
     whyDangerous: "#fp-why-site-dangerous",
     netErrorTitleText: "#neterror-title-text",
+    netErrorIntro: "#netErrorIntro",
     netErrorLearnMoreLink: "#neterror-learn-more-link",
+    httpAuthIntroText: "#fp-http-auth-disabled-intro-text",
+    tryAgainButton: "#tryAgainButton",
+    prefResetButton: "#prefResetButton",
   };
 
+  static NSS_ERRORS = [
+    "MOZILLA_PKIX_ERROR_INVALID_INTEGER_ENCODING",
+    "MOZILLA_PKIX_ERROR_ISSUER_NO_LONGER_TRUSTED",
+    "MOZILLA_PKIX_ERROR_KEY_PINNING_FAILURE",
+    "MOZILLA_PKIX_ERROR_SIGNATURE_ALGORITHM_MISMATCH",
+    "SEC_ERROR_BAD_DER",
+    "SEC_ERROR_BAD_SIGNATURE",
+    "SEC_ERROR_CERT_NOT_IN_NAME_SPACE",
+    "SEC_ERROR_EXTENSION_VALUE_INVALID",
+    "SEC_ERROR_INADEQUATE_CERT_TYPE",
+    "SEC_ERROR_INADEQUATE_KEY_USAGE",
+    "SEC_ERROR_INVALID_KEY",
+    "SEC_ERROR_PATH_LEN_CONSTRAINT_INVALID",
+    "SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION",
+    "SEC_ERROR_UNSUPPORTED_EC_POINT_FORM",
+    "SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE",
+    "SEC_ERROR_UNSUPPORTED_KEYALG",
+    "SEC_ERROR_UNTRUSTED_CERT",
+  ];
+
   static ERROR_CODES = new Set([
+    "SEC_ERROR_UNTRUSTED_ISSUER",
     "SEC_ERROR_REVOKED_CERTIFICATE",
     "SEC_ERROR_UNKNOWN_ISSUER",
     "SSL_ERROR_BAD_CERT_DOMAIN",
@@ -72,29 +101,50 @@ export class NetErrorCard extends MozLitElement {
     "NS_ERROR_OFFLINE",
     "NS_ERROR_DOM_COOP_FAILED",
     "NS_ERROR_DOM_COEP_FAILED",
+    "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE",
+    "NS_ERROR_BASIC_HTTP_AUTH_DISABLED",
+    "NS_ERROR_NET_EMPTY_RESPONSE",
+    ...NetErrorCard.NSS_ERRORS,
   ]);
+
+  static CUSTOM_ERROR_CODES = {
+    blockedByCOOP: "NS_ERROR_DOM_COOP_FAILED",
+    blockedByCOEP: "NS_ERROR_DOM_COEP_FAILED",
+    basicHttpAuthDisabled: "NS_ERROR_BASIC_HTTP_AUTH_DISABLED",
+    netReset: "NS_ERROR_NET_EMPTY_RESPONSE",
+  };
+
+  static getCustomErrorCode(defaultCode) {
+    return gOffline
+      ? "NS_ERROR_OFFLINE"
+      : NetErrorCard.CUSTOM_ERROR_CODES[defaultCode];
+  }
+
+  static findSupportedErrorCode(errorInfo) {
+    let defaultErrorCode = errorInfo.errorCodeString
+      ? errorInfo.errorCodeString
+      : gErrorCode;
+    return NetErrorCard.ERROR_CODES.has(defaultErrorCode)
+      ? defaultErrorCode
+      : NetErrorCard.getCustomErrorCode(defaultErrorCode);
+  }
 
   static isSupported() {
     if (!FELT_PRIVACY_REFRESH) {
       return false;
     }
 
-    const errorInfo = gIsCertError
-      ? document.getFailedCertSecurityInfo()
-      : document.getNetErrorInfo();
-    let errorCode = errorInfo.errorCodeString
-      ? errorInfo.errorCodeString
-      : gErrorCode;
-
-    if (gOffline) {
-      errorCode = "NS_ERROR_OFFLINE";
-    } else if (gErrorCode === "blockedByCOOP") {
-      errorCode = "NS_ERROR_DOM_COOP_FAILED";
-    } else if (gErrorCode === "blockedByCOEP") {
-      errorCode = "NS_ERROR_DOM_COEP_FAILED";
+    let errorInfo;
+    try {
+      errorInfo = gIsCertError
+        ? document.getFailedCertSecurityInfo()
+        : document.getNetErrorInfo();
+    } catch {
+      return false;
     }
 
-    return NetErrorCard.ERROR_CODES.has(errorCode);
+    const supportedErrorCode = NetErrorCard.findSupportedErrorCode(errorInfo);
+    return !!supportedErrorCode;
   }
 
   constructor() {
@@ -107,6 +157,7 @@ export class NetErrorCard extends MozLitElement {
     this.domainMismatchNamesPromise = null;
     this.certificateErrorTextPromise = null;
     this.showCustomNetErrorCard = false;
+    this.showPrefReset = false;
   }
 
   async getUpdateComplete() {
@@ -136,17 +187,6 @@ export class NetErrorCard extends MozLitElement {
     document.dispatchEvent(
       new CustomEvent("AboutNetErrorLoad", { bubbles: true })
     );
-
-    // Record telemetry when the error page loads
-    if (gIsCertError && !isCaptive()) {
-      if (this.failedCertInfo) {
-        recordSecurityUITelemetry(
-          "securityUiCerterror",
-          "loadAboutcerterror",
-          this.failedCertInfo
-        );
-      }
-    }
   }
 
   shouldHideExceptionButton() {
@@ -170,6 +210,31 @@ export class NetErrorCard extends MozLitElement {
 
     this.errorInfo = this.getErrorInfo();
     this.hideExceptionButton = this.shouldHideExceptionButton();
+
+    // Record telemetry when the error page loads
+    if (gIsCertError && !isCaptive()) {
+      recordSecurityUITelemetry(
+        "securityUiCerterror",
+        "loadAboutcerterror",
+        this.errorInfo
+      );
+    }
+
+    // Check if the connection is being man-in-the-middled. When the parent
+    // detects an intercepted connection, the page may be reloaded with a new
+    // error code (MOZILLA_PKIX_ERROR_MITM_DETECTED).
+    const mitmPrimingEnabled = RPMGetBoolPref(
+      "security.certerrors.mitm.priming.enabled"
+    );
+    if (
+      mitmPrimingEnabled &&
+      this.errorInfo.errorCodeString == "SEC_ERROR_UNKNOWN_ISSUER" &&
+      // Only do this check for top-level failures.
+      window.parent == window
+    ) {
+      RPMSendAsyncMessage("Browser:PrimeMitm");
+    }
+
     this.hostname = HOST_NAME;
 
     // We show an offline support page in case of a system-wide error,
@@ -193,6 +258,47 @@ export class NetErrorCard extends MozLitElement {
     }
   }
 
+  handlePrefChangeDetected() {
+    this.showPrefReset = true;
+    this.focusPrefResetButton();
+  }
+
+  async focusPrefResetButton() {
+    await this.getUpdateComplete();
+
+    if (window.top != window) {
+      return;
+    }
+
+    if (!this.prefResetButton) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      this.prefResetButton.focus();
+    });
+  }
+
+  handlePrefResetClick() {
+    RPMSendAsyncMessage("Browser:ResetSSLPreferences");
+  }
+
+  prefResetContainerTemplate() {
+    if (!this.showPrefReset) {
+      return null;
+    }
+
+    return html`<div id="prefChangeContainer" class="button-container">
+      <p data-l10n-id="neterror-pref-reset"></p>
+      <moz-button
+        id="prefResetButton"
+        type="primary"
+        data-l10n-id="neterror-pref-reset-button"
+        @click=${this.handlePrefResetClick}
+      ></moz-button>
+    </div>`;
+  }
+
   getErrorInfo() {
     const errorInfo = gIsCertError
       ? document.getFailedCertSecurityInfo()
@@ -200,26 +306,41 @@ export class NetErrorCard extends MozLitElement {
 
     if (!errorInfo.errorCodeString) {
       this.showCustomNetErrorCard = true;
-      if (gOffline) {
-        errorInfo.errorCodeString = "NS_ERROR_OFFLINE";
-      } else if (gErrorCode === "blockedByCOOP") {
-        errorInfo.errorCodeString = "NS_ERROR_DOM_COOP_FAILED";
-      } else if (gErrorCode === "blockedByCOEP") {
-        errorInfo.errorCodeString = "NS_ERROR_DOM_COEP_FAILED";
-      }
+      errorInfo.errorCodeString = NetErrorCard.getCustomErrorCode(gErrorCode);
+    }
 
-      errorInfo.errorCodeString = errorInfo.errorCodeString ?? gErrorCode;
+    if (gErrorCode === "nssFailure2") {
+      handleNSSFailure(() => this.handlePrefChangeDetected());
     }
     return errorInfo;
   }
 
   introContentTemplate() {
     switch (this.errorInfo.errorCodeString) {
-      case "SEC_ERROR_REVOKED_CERTIFICATE":
-      case "SEC_ERROR_UNKNOWN_ISSUER":
-      case "SSL_ERROR_BAD_CERT_DOMAIN":
-      case "SEC_ERROR_EXPIRED_CERTIFICATE":
+      case "MOZILLA_PKIX_ERROR_INVALID_INTEGER_ENCODING":
+      case "MOZILLA_PKIX_ERROR_ISSUER_NO_LONGER_TRUSTED":
+      case "MOZILLA_PKIX_ERROR_KEY_PINNING_FAILURE":
+      case "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE":
       case "MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT":
+      case "MOZILLA_PKIX_ERROR_SIGNATURE_ALGORITHM_MISMATCH":
+      case "SEC_ERROR_BAD_DER":
+      case "SEC_ERROR_BAD_SIGNATURE":
+      case "SEC_ERROR_CERT_NOT_IN_NAME_SPACE":
+      case "SEC_ERROR_EXPIRED_CERTIFICATE":
+      case "SEC_ERROR_EXTENSION_VALUE_INVALID":
+      case "SEC_ERROR_INADEQUATE_CERT_TYPE":
+      case "SEC_ERROR_INADEQUATE_KEY_USAGE":
+      case "SEC_ERROR_INVALID_KEY":
+      case "SEC_ERROR_PATH_LEN_CONSTRAINT_INVALID":
+      case "SEC_ERROR_REVOKED_CERTIFICATE":
+      case "SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION":
+      case "SEC_ERROR_UNKNOWN_ISSUER":
+      case "SEC_ERROR_UNSUPPORTED_EC_POINT_FORM":
+      case "SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE":
+      case "SEC_ERROR_UNSUPPORTED_KEYALG":
+      case "SEC_ERROR_UNTRUSTED_CERT":
+      case "SEC_ERROR_UNTRUSTED_ISSUER":
+      case "SSL_ERROR_BAD_CERT_DOMAIN":
         return html`<p
           id="certErrorIntro"
           data-l10n-id="fp-certerror-intro"
@@ -227,7 +348,7 @@ export class NetErrorCard extends MozLitElement {
         ></p>`;
       case "SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE":
         return html`<p
-          data-l10n-id="fp-certerror-expired-intro"
+          data-l10n-id="fp-certerror-expired-into"
           data-l10n-args='{"hostname": "${this.hostname}"}'
         ></p>`;
       case "SSL_ERROR_NO_CYPHER_OVERLAP":
@@ -248,6 +369,23 @@ export class NetErrorCard extends MozLitElement {
       case "NS_ERROR_DOM_COOP_FAILED":
       case "NS_ERROR_DOM_COEP_FAILED":
         return html`<p data-l10n-id="fp-neterror-coop-coep-intro"></p>`;
+      case "NS_ERROR_BASIC_HTTP_AUTH_DISABLED":
+        return html`<p
+            id="fp-http-auth-disabled-intro-text"
+            data-l10n-id="fp-neterror-http-auth-disabled-intro"
+          ></p>
+          ${this.hideExceptionButton
+            ? html`<p
+                id="fp-http-auth-disabled-secure-connection-text"
+                data-l10n-id="fp-neterror-http-auth-disabled-secure-connection"
+              ></p> `
+            : null} `;
+      case "NS_ERROR_NET_EMPTY_RESPONSE":
+        return html`<p
+          id="netErrorIntro"
+          data-l10n-id="neterror-http-empty-response-description"
+          data-l10n-args='{"hostname": "${this.hostname}"}'
+        ></p> `;
     }
 
     return null;
@@ -261,6 +399,21 @@ export class NetErrorCard extends MozLitElement {
     let content;
 
     switch (this.errorInfo.errorCodeString) {
+      case "SEC_ERROR_UNTRUSTED_ISSUER": {
+        content = this.advancedSectionTemplate({
+          whyDangerousL10nId:
+            "fp-certerror-untrusted-issuer-why-dangerous-body",
+          whyDangerousL10nArgs: {
+            hostname: this.hostname,
+          },
+          whatCanYouDoL10nId:
+            "fp-certerror-untrusted-issuer-what-can-you-do-body",
+          learnMoreL10nId: "fp-learn-more-about-cert-issues",
+          learnMoreSupportPage: "connection-not-secure",
+          viewCert: true,
+        });
+        break;
+      }
       case "SEC_ERROR_REVOKED_CERTIFICATE": {
         content = this.advancedSectionTemplate({
           whyDangerousL10nId: "fp-certerror-revoked-why-dangerous-body",
@@ -374,10 +527,7 @@ export class NetErrorCard extends MozLitElement {
         content = this.advancedSectionTemplate({
           whyDangerousL10nId: "fp-neterror-cypher-overlap-why-dangerous-body",
           whatCanYouDoL10nId: "fp-neterror-cypher-overlap-what-can-you-do-body",
-          learnMoreL10nId: "fp-cert-error-code",
-          learnMoreL10nArgs: {
-            error: this.errorInfo.errorCodeString,
-          },
+          learnMoreL10nId: "fp-learn-more-about-secure-connection-failures",
           learnMoreSupportPage: "connection-not-secure",
         });
         break;
@@ -395,12 +545,74 @@ export class NetErrorCard extends MozLitElement {
         });
         break;
       }
+      case "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE": {
+        const notBefore = this.errorInfo.validNotBefore;
+        content = this.advancedSectionTemplate({
+          whyDangerousL10nId:
+            "fp-certerror-pkix-not-yet-valid-why-dangerous-body",
+          whyDangerousL10nArgs: {
+            date: notBefore,
+          },
+          whatCanYouDoL10nId:
+            "fp-certerror-pkix-not-yet-valid-what-can-you-do-body",
+          whatCanYouDoL10nArgs: {
+            date: Date.now(),
+          },
+          learnMoreL10nId: "fp-learn-more-about-time-related-errors",
+          learnMoreSupportPage: "time-errors",
+          viewCert: true,
+        });
+        break;
+      }
+      case "NS_ERROR_BASIC_HTTP_AUTH_DISABLED": {
+        content = this.advancedSectionTemplate({
+          whyDangerousL10nId:
+            "fp-neterror-http-auth-disabled-why-dangerous-body",
+          whyDangerousL10nArgs: {
+            hostname: this.hostname,
+          },
+          whatCanYouDoL10nId:
+            "fp-neterror-http-auth-disabled-what-can-you-do-body",
+          learnMoreL10nId: "fp-learn-more-about-https-connections",
+          learnMoreSupportPage: HTTPS_UPGRADES_MDN_DOCS,
+        });
+        break;
+      }
+      case "MOZILLA_PKIX_ERROR_INVALID_INTEGER_ENCODING":
+      case "MOZILLA_PKIX_ERROR_ISSUER_NO_LONGER_TRUSTED":
+      case "MOZILLA_PKIX_ERROR_KEY_PINNING_FAILURE":
+      case "MOZILLA_PKIX_ERROR_SIGNATURE_ALGORITHM_MISMATCH":
+      case "SEC_ERROR_BAD_DER":
+      case "SEC_ERROR_BAD_SIGNATURE":
+      case "SEC_ERROR_CERT_NOT_IN_NAME_SPACE":
+      case "SEC_ERROR_EXTENSION_VALUE_INVALID":
+      case "SEC_ERROR_INADEQUATE_CERT_TYPE":
+      case "SEC_ERROR_INADEQUATE_KEY_USAGE":
+      case "SEC_ERROR_INVALID_KEY":
+      case "SEC_ERROR_PATH_LEN_CONSTRAINT_INVALID":
+      case "SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION":
+      case "SEC_ERROR_UNSUPPORTED_EC_POINT_FORM":
+      case "SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE":
+      case "SEC_ERROR_UNSUPPORTED_KEYALG":
+      case "SEC_ERROR_UNTRUSTED_CERT": {
+        content = this.advancedSectionTemplate({
+          titleL10nId: "fp-certerror-body-title",
+          whyDangerousL10nId: this.getNSSErrorWhyDangerousL10nId(
+            this.errorInfo.errorCodeString
+          ),
+        });
+        break;
+      }
     }
 
     return html`<div class="advanced-container">
       <h2 data-l10n-id="fp-certerror-advanced-title"></h2>
       ${content}
     </div>`;
+  }
+
+  getNSSErrorWhyDangerousL10nId(errorString) {
+    return errorString.toLowerCase().replace(/_/g, "-");
   }
 
   advancedSectionTemplate(params) {
@@ -416,29 +628,37 @@ export class NetErrorCard extends MozLitElement {
       viewCert,
       viewDateTime,
     } = params;
-    return html`<p>
+    return html`<div>
         ${whyDangerousL10nId
-          ? html`<strong
-                data-l10n-id="fp-certerror-why-site-dangerous"
-              ></strong>
-              <span
+          ? html`<h3 data-l10n-id="fp-certerror-why-site-dangerous"></h3>
+              <p
                 id="fp-why-site-dangerous"
                 data-l10n-id=${whyDangerousL10nId}
                 data-l10n-args=${JSON.stringify(whyDangerousL10nArgs)}
-              ></span>`
+              ></p>`
           : null}
-      </p>
+      </div>
       ${whatCanYouDoL10nId
-        ? html`<p>
-            <strong data-l10n-id="fp-certerror-what-can-you-do"></strong>
-            <span
+        ? html`<div>
+            <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>
+            <p
               id="whatCanYouDo"
               data-l10n-id=${whatCanYouDoL10nId}
               data-l10n-args=${JSON.stringify(whatCanYouDoL10nArgs)}
-            ></span>
-          </p>`
+            ></p>
+          </div>`
         : null}
       ${importantNote ? html`<p data-l10n-id=${importantNote}></p>` : null}
+      ${this.prefResetContainerTemplate()}
+      ${viewCert
+        ? html`<p>
+            <a
+              id="viewCertificate"
+              data-l10n-id="fp-certerror-view-certificate-link"
+              href="javascript:void(0)"
+            ></a>
+          </p>`
+        : null}
       ${learnMoreL10nId
         ? html`<p>
             <a
@@ -449,15 +669,6 @@ export class NetErrorCard extends MozLitElement {
               data-telemetry-id="learn_more_link"
               id="learnMoreLink"
               @click=${this.handleTelemetryClick}
-            ></a>
-          </p>`
-        : null}
-      ${viewCert
-        ? html`<p>
-            <a
-              id="viewCertificate"
-              data-l10n-id="fp-certerror-view-certificate-link"
-              href="javascript:void(0)"
             ></a>
           </p>`
         : null}
@@ -533,6 +744,26 @@ export class NetErrorCard extends MozLitElement {
         });
         break;
       }
+      case "NS_ERROR_BASIC_HTTP_AUTH_DISABLED": {
+        content = this.customNetErrorSectionTemplate({
+          titleL10nId: "fp-certerror-body-title",
+          buttons: {
+            goBack: window.self === window.top,
+          },
+          useAdvancedSection: true,
+        });
+        break;
+      }
+      case "NS_ERROR_NET_EMPTY_RESPONSE": {
+        content = this.customNetErrorSectionTemplate({
+          titleL10nId: "problem-with-this-site-title",
+          whatCanYouDoL10nId: "neterror-http-empty-response",
+          buttons: {
+            tryAgain: true,
+          },
+        });
+        break;
+      }
     }
 
     return html`<div class="custom-net-error-card">${content}</div>`;
@@ -541,6 +772,8 @@ export class NetErrorCard extends MozLitElement {
   customNetErrorSectionTemplate(params) {
     const {
       titleL10nId,
+      whyDangerousL10nId,
+      whyDangerousL10nArgs,
       whyDidThisHappenL10nId,
       whyDidThisHappenL10nArgs,
       whatCanYouDoL10nId,
@@ -548,29 +781,39 @@ export class NetErrorCard extends MozLitElement {
       learnMoreL10nId,
       learnMoreSupportPage,
       buttons = {},
+      useAdvancedSection,
     } = params;
 
     const { goBack = false, tryAgain = false } = buttons;
 
-    return html`<h1 id="neterror-title-text" data-l10n-id=${titleL10nId}></h1>
-      ${this.introContentTemplate()}
+    const content = html`
+      ${whyDangerousL10nId
+        ? html`<div>
+            <h3 data-l10n-id="fp-certerror-why-site-dangerous"></h3>
+            <p
+              data-l10n-id=${whyDangerousL10nId}
+              data-l10n-args=${JSON.stringify(whyDangerousL10nArgs)}
+            ></p>
+          </div>`
+        : null}
       ${whatCanYouDoL10nId
-        ? html`<p>
-            <strong data-l10n-id="fp-certerror-what-can-you-do"></strong>
-            <span
+        ? html`<div>
+            <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>
+            <p
+              id="whatCanYouDo"
               data-l10n-id=${whatCanYouDoL10nId}
               data-l10n-args=${JSON.stringify(whatCanYouDoL10nArgs)}
-            ></span>
-          </p>`
+            ></p>
+          </div>`
         : null}
       ${whyDidThisHappenL10nId
-        ? html`<p>
-            <strong data-l10n-id="fp-certerror-what-can-you-do"></strong>
-            <span
+        ? html`<div>
+            <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>
+            <p
               data-l10n-id=${whyDidThisHappenL10nId}
               data-l10n-args=${JSON.stringify(whyDidThisHappenL10nArgs)}
-            ></span>
-          </p>`
+            ></p>
+          </div>`
         : null}
       ${learnMoreL10nId
         ? html`<p>
@@ -606,7 +849,42 @@ export class NetErrorCard extends MozLitElement {
               @click=${this.handleGoBackClick}
             ></moz-button
           ></moz-button-group>`
-        : null}`;
+        : null}
+    `;
+
+    return html`<h1 id="neterror-title-text" data-l10n-id=${titleL10nId}></h1>
+      ${this.introContentTemplate()}
+      ${useAdvancedSection
+        ? html`<moz-button-group>
+            ${goBack
+              ? html`<moz-button
+                  type="primary"
+                  data-l10n-id="fp-certerror-return-to-previous-page-recommended-button"
+                  data-telemetry-id="return_button_adv"
+                  id="returnButton"
+                  @click=${this.handleGoBackClick}
+                ></moz-button>`
+              : null}
+            ${tryAgain
+              ? html`<moz-button
+                  id="tryAgainButton"
+                  type="primary"
+                  data-l10n-id="neterror-try-again-button"
+                  data-telemetry-id="try_again_button"
+                  @click=${this.handleTryAgain}
+                ></moz-button>`
+              : null}
+            <moz-button
+              id="advanced-button"
+              data-l10n-id=${this.advancedShowing
+                ? "fp-certerror-hide-advanced-button"
+                : "fp-certerror-advanced-button"}
+              data-telemetry-id="advanced_button"
+              @click=${this.toggleAdvancedShowing}
+            ></moz-button
+          ></moz-button-group>`
+        : content}
+      ${useAdvancedSection ? this.advancedContainerTemplate() : null} `;
   }
 
   async getDomainMismatchNames() {
@@ -650,6 +928,7 @@ export class NetErrorCard extends MozLitElement {
       ></moz-button>
       <div id="certificateErrorText">${this.certificateErrorText}</div>
       <moz-button
+        id="copyToClipboardBot"
         data-telemetry-id="clipboard_button_bot"
         data-l10n-id="neterror-copy-to-clipboard-button"
         @click=${this.copyCertErrorTextToClipboard}
@@ -790,10 +1069,23 @@ export class NetErrorCard extends MozLitElement {
     );
   }
 
+  getErrorImage(errorCode) {
+    switch (errorCode) {
+      case "NS_ERROR_NET_EMPTY_RESPONSE": {
+        return "chrome://global/skin/illustrations/no-connection.svg";
+      }
+      default: {
+        return "chrome://global/skin/illustrations/security-error.svg";
+      }
+    }
+  }
+
   render() {
     if (!this.errorInfo) {
       return null;
     }
+
+    const img = this.getErrorImage(this.errorInfo.errorCodeString);
 
     return html`<link
         rel="stylesheet"
@@ -801,7 +1093,7 @@ export class NetErrorCard extends MozLitElement {
       />
       <article class="felt-privacy-container">
         <div class="img-container">
-          <img src="chrome://global/skin/illustrations/security-error.svg" />
+          <img src=${img} />
         </div>
         <div class="container">
           ${this.showCustomNetErrorCard

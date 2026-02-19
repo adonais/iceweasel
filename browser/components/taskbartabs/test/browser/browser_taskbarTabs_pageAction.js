@@ -179,7 +179,7 @@ add_task(async function testRightClick() {
   });
 
   const uri = Services.io.newURI(BASE_URL);
-  const taskbarTab = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+  const taskbarTab = await createTaskbarTab(TaskbarTabs, uri, 0);
   is(
     await TaskbarTabs.getCountForId(taskbarTab.id),
     0,
@@ -333,10 +333,12 @@ add_task(async function testPrefIsMonitored() {
 });
 
 add_task(async function test_moveTabIntoTaskbarTabCreation() {
-  // Ensure example.com does not have a Taskbar Tab.
   const uri = Services.io.newURI(BASE_URL);
-  const tt = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
-  await TaskbarTabs.removeTaskbarTab(tt.id);
+  Assert.equal(
+    await TaskbarTabs.findTaskbarTab(uri, 0),
+    null,
+    "example.com does not already have a taskbar tab"
+  );
 
   await BrowserTestUtils.withNewTab("https://example.com/", async browser => {
     const tab = window.gBrowser.getTabForBrowser(browser);
@@ -345,13 +347,14 @@ add_task(async function test_moveTabIntoTaskbarTabCreation() {
     const found = TaskbarTabsUtils.getTaskbarTabIdFromWindow(move.window);
     is(found, move.taskbarTab.id, "Returned Taskbar Tab matches window");
     await BrowserTestUtils.closeWindow(move.window);
+    await TaskbarTabs.removeTaskbarTab(found);
   });
 });
 
 add_task(async function test_moveTabIntoTaskbarTabReuse() {
   // Ensure example.com has a Taskbar Tab.
   const uri = Services.io.newURI(BASE_URL);
-  const tt = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+  const tt = await createTaskbarTab(TaskbarTabs, uri, 0);
 
   await BrowserTestUtils.withNewTab("https://example.com/", async browser => {
     const tab = window.gBrowser.getTabForBrowser(browser);
@@ -360,8 +363,8 @@ add_task(async function test_moveTabIntoTaskbarTabReuse() {
     const found = TaskbarTabsUtils.getTaskbarTabIdFromWindow(move.window);
     is(found, move.taskbarTab.id, "Returned Taskbar Tab matches window");
     is(tt.id, move.taskbarTab.id, "Returned Taskbar Tab existed before");
-    await TaskbarTabs.removeTaskbarTab(tt.id);
     await BrowserTestUtils.closeWindow(move.window);
+    await TaskbarTabs.removeTaskbarTab(tt.id);
   });
 });
 
@@ -379,7 +382,7 @@ add_task(async function test_page_action_uses_manifest() {
     const win = await newWinPromise;
 
     const uri = Services.io.newURI(url);
-    const tt = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+    const tt = await TaskbarTabs.findTaskbarTab(uri, 0);
     is(
       await TaskbarTabsUtils.getTaskbarTabIdFromWindow(win),
       tt.id,
@@ -387,7 +390,7 @@ add_task(async function test_page_action_uses_manifest() {
     );
     is(tt.name, "Mochitest", "Manifest name was used");
 
-    await TaskbarTabs.removeTaskbarTab(tt.id);
     await BrowserTestUtils.closeWindow(win);
+    await TaskbarTabs.removeTaskbarTab(tt.id);
   });
 });

@@ -206,6 +206,8 @@ void WaylandSurface::RequestFrameCallbackLocked(
 
   // Frame callback will be added by Map.
   if (!mIsMapped) {
+    LOGVERBOSE(
+        "WaylandSurface::RequestFrameCallbackLocked(): is not mapped, quit.");
     return;
   }
 
@@ -228,10 +230,15 @@ void WaylandSurface::RequestFrameCallbackLocked(
   }
 
   if (!mFrameCallbackEnabled || !mFrameCallbackHandler.IsSet()) {
+    LOGVERBOSE(
+        "WaylandSurface::RequestFrameCallbackLocked(): quit, frame callback is "
+        "not set/enabled.");
     return;
   }
 
   if (!mFrameCallback) {
+    LOGVERBOSE(
+        "WaylandSurface::RequestFrameCallbackLocked(): adding frame callback");
     static const struct wl_callback_listener listener{
         [](void* aData, struct wl_callback* callback, uint32_t time) {
           RefPtr waylandSurface = static_cast<WaylandSurface*>(aData);
@@ -287,12 +294,14 @@ void WaylandSurface::RequestFrameCallbackLocked(
 
 void WaylandSurface::ClearFrameCallbackLocked(
     const WaylandSurfaceLock& aProofOfLock) {
+  LOGVERBOSE("WaylandSurface::ClearFrameCallbackLocked()");
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   MozClearPointer(mFrameCallback, wl_callback_destroy);
 }
 
 void WaylandSurface::ClearFrameCallbackHandlerLocked(
     const WaylandSurfaceLock& aProofOfLock) {
+  LOGVERBOSE("WaylandSurface::ClearFrameCallbackHandlerLocked()");
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   mFrameCallbackHandler = FrameCallback{};
 }
@@ -332,6 +341,7 @@ void WaylandSurface::SetFrameCallbackStateLocked(
 void WaylandSurface::SetFrameCallbackStateHandlerLocked(
     const WaylandSurfaceLock& aProofOfLock,
     const std::function<void(bool)>& aFrameCallbackStateHandler) {
+  LOGVERBOSE("WaylandSurface::SetFrameCallbackStateHandlerLocked()");
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   mFrameCallbackStateHandler = aFrameCallbackStateHandler;
 }
@@ -447,9 +457,6 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
   LOGWAYLAND(" subsurface position [%d,%d]", (int)mSubsurfacePosition.x,
              (int)mSubsurfacePosition.y);
 
-  LOGWAYLAND("  register frame callback");
-  RequestFrameCallbackLocked(aProofOfLock);
-
   MOZ_DIAGNOSTIC_ASSERT(!mVisibleFrameCallback);
   static const struct wl_callback_listener listener{
       [](void* aData, struct wl_callback* callback, uint32_t time) {
@@ -459,10 +466,13 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
   mVisibleFrameCallback = wl_surface_frame(mSurface);
   wl_callback_add_listener(mVisibleFrameCallback, &listener, this);
 
+  mIsMapped = true;
+
+  LOGWAYLAND("  register frame callback");
+  RequestFrameCallbackLocked(aProofOfLock);
+
   CommitLocked(aProofOfLock, /* aForceCommit */ true,
                /* aForceDisplayFlush */ true);
-
-  mIsMapped = true;
 
   if (mUseDMABufFormats) {
     EnableDMABufFormatsLocked(aProofOfLock, mDMABufFormatRefreshCallback);
@@ -545,7 +555,7 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
 
   MozClearPointer(mViewport, wp_viewport_destroy);
   mViewportDestinationSize = DesktopIntSize(-1, -1);
-  mViewportSourceRect = gfx::Rect(-1, -1, -1, -1);
+  mViewportSourceRect = DesktopIntRect(-1, -1, -1, -1);
 
   MozClearPointer(mFractionalScaleListener, wp_fractional_scale_v1_destroy);
   MozClearPointer(mSubsurface, wl_subsurface_destroy);
@@ -794,7 +804,7 @@ void WaylandSurface::SetCeiledScaleLocked(
 }
 
 void WaylandSurface::SetViewPortDestLocked(
-    const WaylandSurfaceLock& aProofOfLock, DesktopIntSize aDestSize) {
+    const WaylandSurfaceLock& aProofOfLock, const DesktopIntSize& aDestSize) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
   if (!mViewport) {
     return;
@@ -802,47 +812,51 @@ void WaylandSurface::SetViewPortDestLocked(
   if (mViewportDestinationSize == aDestSize) {
     return;
   }
+  mViewportDestinationSize = aDestSize;
   LOGWAYLAND("WaylandSurface::SetViewPortDestLocked(): Size [%d x %d]",
-             aDestSize.width, aDestSize.height);
-  if (aDestSize.width < 1 || aDestSize.height < 1) {
+             mViewportDestinationSize.width, mViewportDestinationSize.height);
+  if (mViewportDestinationSize.width < 1 ||
+      mViewportDestinationSize.height < 1) {
     NS_WARNING(
         nsPrintfCString(
             "WaylandSurface::SetViewPortDestLocked(%s): Wrong coordinates!",
-            ToString(aDestSize).c_str())
+            ToString(mViewportDestinationSize).c_str())
             .get());
-    aDestSize.width = aDestSize.height = -1;
+    mViewportDestinationSize.width = mViewportDestinationSize.height = -1;
   }
-  mViewportDestinationSize = aDestSize;
   wp_viewport_set_destination(mViewport, mViewportDestinationSize.width,
                               mViewportDestinationSize.height);
   mSurfaceNeedsCommit = true;
 }
 
 void WaylandSurface::SetViewPortSourceRectLocked(
-    const WaylandSurfaceLock& aProofOfLock, gfx::Rect aRect) {
+    const WaylandSurfaceLock& aProofOfLock, const DesktopIntRect& aRect) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
 
   if (!mViewport || mViewportSourceRect == aRect) {
     return;
   }
+  mViewportSourceRect = aRect;
 
   LOGWAYLAND(
-      "WaylandSurface::SetViewPortSourceRectLocked(): [%f, %f] -> [%f x %f]",
-      aRect.x, aRect.y, aRect.width, aRect.height);
+      "WaylandSurface::SetViewPortSourceRectLocked(): [%d, %d] -> [%d x %d]",
+      mViewportSourceRect.x, mViewportSourceRect.y, mViewportSourceRect.width,
+      mViewportSourceRect.height);
 
   // Don't throw protocol error with bad coords
-  if (aRect.x < 0 || aRect.y < 0 || aRect.width < 1 || aRect.height < 1) {
+  if (mViewportSourceRect.x < 0 || mViewportSourceRect.y < 0 ||
+      mViewportSourceRect.width < 1 || mViewportSourceRect.height < 1) {
     NS_WARNING(nsPrintfCString("WaylandSurface::SetViewPortSourceRectLocked(%s)"
                                ": Wrong coordinates!",
                                ToString(aRect).c_str())
                    .get());
-    aRect.x = aRect.y = aRect.width = aRect.height = -1;
+    mViewportSourceRect = DesktopIntRect(-1, -1, -1, -1);
   }
 
-  mViewportSourceRect = aRect;
-  wp_viewport_set_source(
-      mViewport, wl_fixed_from_double(aRect.x), wl_fixed_from_double(aRect.y),
-      wl_fixed_from_double(aRect.width), wl_fixed_from_double(aRect.height));
+  wp_viewport_set_source(mViewport, wl_fixed_from_int(mViewportSourceRect.x),
+                         wl_fixed_from_int(mViewportSourceRect.y),
+                         wl_fixed_from_int(mViewportSourceRect.width),
+                         wl_fixed_from_int(mViewportSourceRect.height));
   mSurfaceNeedsCommit = true;
 }
 

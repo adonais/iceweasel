@@ -213,19 +213,12 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
    * This method is called when the parser finishes creating the script
    * element's children, if any are present.
    *
-   * @return whether the parser will be blocked while this script is being
-   *         loaded
+   * @param aParser If non-null, a parser that can be blocked until the script
+   *        becomes available.
+   * @return whether a non-null aParser would be blocked while this script is
+   *         being loaded.
    */
-  bool AttemptToExecute() {
-    mDoneAddingChildren = true;
-    bool block = MaybeProcessScript();
-    if (!mAlreadyStarted) {
-      // Need to lose parser-insertedness here to allow another script to cause
-      // execution later.
-      LoseParserInsertedness();
-    }
-    return block;
-  }
+  bool AttemptToExecute(nsCOMPtr<nsIParser> aParser);
 
   /**
    * Get the CORS mode of the script element
@@ -277,7 +270,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
    * @return whether the parser will be blocked while this script is being
    *         loaded
    */
-  virtual bool MaybeProcessScript() = 0;
+  virtual bool MaybeProcessScript(nsCOMPtr<nsIParser> aParser) = 0;
 
   /**
    * Since we've removed the XPCOM interface to HTML elements, we need a way to

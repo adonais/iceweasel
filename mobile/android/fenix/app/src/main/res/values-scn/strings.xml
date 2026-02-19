@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Scrivi i tèrmini dâ risciduta</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">I to schedi graputi vennu mustrati cca.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">I to schedi graputi vennu mustrati cca.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">I to schedi privati vennu mustrati cca.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">I to schedi privati vennu mustrati cca.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d scartati</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
@@ -48,7 +48,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Nesci dâ mudalità di scartata mùrtipla</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Sarba i schedi scartati nnâ ricota</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Sarba i schedi scartati nnâ ricota</string>
   <!--
     Home - Bookmarks
 
@@ -189,7 +189,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Stinneri</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Ài stinneri nzitati ma nun abbilitati</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Ài stinneri nzitati ma nun abbilitati</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Manija stinneri</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -210,9 +210,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Nfurmazzioni dû cuntu</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Ajutu</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Ajutu</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Nuvità</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Nuvità</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Mpustazzioni</string>
   <!-- Browser menu button that opens a user's library -->
@@ -220,7 +220,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Situ dû scagnu</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Grapi nta na scheda nurmali</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Grapi nta na scheda nurmali</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Junci â schirmata mastra</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -246,7 +246,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">FATTU CU %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">FATTU CU %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -259,15 +259,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Grapi nta n’app</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Pirsunalizza a mudalità di littura</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Pirsunalizza a mudalità di littura</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Pirsunalizza a mudalità di littura</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Junci</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Junci</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Cancia</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Cancia</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Pirsunalizza a pàggina mastra</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Pirsunalizza a pàggina mastra</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Trasi</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -286,16 +286,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">Chiuji u minù</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navicazzioni</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Ajutu</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Mpustazzioni</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Chiuji u minù dî stinneri</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Chiuji u minù dî stinneri</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Chiuji u minù dî sarbataggi</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Chiuji u minù dî sarbataggi</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Chiuji u minù dî stigghi</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Chiuji u minù dî stigghi</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Chiuji u minù dâ pirsunalizzazzioni dî schedi</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -307,7 +303,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Traduci pàggina</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Signalija situ ruttu…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Signalija situ ruttu…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Signalija situ ruttu</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -419,19 +415,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Abbisu di privatizza di Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Ni piaci tinìriti ô sicuru</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Scopri picchì a miliuna di cristiani ci piaci Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Navicazzioni privata cu cchiù assai scartati</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">U nostru navicaturi senza scopu di lucru t’ajuta a bluccari ’n autumàticu l’urganizzazzioni chi, ’n sicritu, ti sicùtanu riti riti mentri chi nàvichi.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Cchiù assai di 100 miliuna di cristiani prutègginu a so privatizza scartannu un navicaturi criatu di n’urganizzazzioni senza scopu di lucru.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Trazzatura canusciuti? Bluccati ’n autumàticu. Stinneri? I po’ pruvari tutti, cci nn’è 700. PDF? U nostru litturi ntigratu tî fa manijari fàcili.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Mposta comu navicaturi pridifinutu</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -949,8 +934,6 @@
   <string name="alternative_app_icon_group_solid_colors">Culura chiatti</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Sfumaturi</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Autru</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Vo’ canciari a cona di l\'app?</string>
   <!-- Dialog button text for cancelling app icon change -->
@@ -1287,9 +1270,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Attivi</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Prova i funzioni e i pinzati novi prima chi vennu fatti pùbblichi.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Prova i funzioni e i pinzati novi prima chi vennu fatti pùbblichi.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Nzita e abbìa studi</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Nzita e abbìa studi</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Cchiù nfurmazzioni</string>
   <!--
@@ -1320,15 +1303,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Junci na scheda privata</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Privata</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privata</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sincrunizza</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sincrunizza</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Sparti tutti i schedi</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Sparti tutti i schedi</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Schedi chiujuti di picca</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Chiujuti di picca</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Chiujuti di picca</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Mpustazzioni dû cuntu</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1336,11 +1319,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Chiuji tutti i schedi</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Junci ê nzingalibbra</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Junci ê nzingalibbra</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Chiuji</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Chiuji</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Sparti schedi scartati</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Sparti schedi scartati</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Minù dî schedi scartati</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -2066,7 +2049,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Scancella ’n autumàticu i dati di navicazzioni quannu ammacchi “Nesci” dû minù principali</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Nesci</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Nesci</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Piriudu di tempu di scancillari</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2683,9 +2666,9 @@
   -->
   <string name="certificate_info_verified_by">Virificatu di: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Scancella</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Scancella</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Cancia</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Cancia</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Scancillari sta chiavi?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -2693,15 +2676,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Sfai</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Prifirenzi dâ chiavi</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Prifirenzi dâ chiavi</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">U campu di testu canciàbbili pû nnirizzu dû situ.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">U campu di testu canciàbbili pû nnirizzu dû situ.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">U campu di testu canciàbbili pû nomu utenti.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">U campu di testu canciàbbili pû nomu utenti.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">U campu di testu canciàbbili pâ chiavi.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">U campu di testu canciàbbili pâ chiavi.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">Sarba i canci.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Sarba i canci.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Cancia a chiavi</string>
   <!-- The page title for adding new password. -->

@@ -23,7 +23,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.InfoCard
@@ -31,6 +31,7 @@ import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -121,10 +122,12 @@ internal fun getNeverTranslateSitesList(): List<String> {
     }
 }
 
+@Preview
 @Composable
-@PreviewLightDark
-private fun NeverTranslateSitePreferencePreview() {
-    FirefoxTheme {
+private fun NeverTranslateSitePreferencePreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         NeverTranslateSitesPreference(
             neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
             hasNeverTranslateSitesError = false,
@@ -132,32 +135,12 @@ private fun NeverTranslateSitePreferencePreview() {
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun NeverTranslateSitePreferenceErrorPreview() {
-    FirefoxTheme {
-        NeverTranslateSitesPreference(
-            neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
-            hasNeverTranslateSitesError = true,
-        ) {}
-    }
-}
-
-@Composable
 @Preview
-private fun NeverTranslateSitePreferencePrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
-        NeverTranslateSitesPreference(
-            neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
-            hasNeverTranslateSitesError = false,
-        ) {}
-    }
-}
-
 @Composable
-@Preview
-private fun NeverTranslateSitePreferenceErrorPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun NeverTranslateSitePreferenceErrorPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         NeverTranslateSitesPreference(
             neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
             hasNeverTranslateSitesError = true,

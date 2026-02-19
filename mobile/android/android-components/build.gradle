@@ -2,9 +2,8 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.gradle.internal.logging.text.StyledTextOutput.Style
-import org.gradle.internal.logging.text.StyledTextOutputFactory
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 buildscript {
@@ -276,6 +275,10 @@ subprojects {
         doLast {
             logging.removeStandardErrorListener(listener)
         }
+    }
+
+    tasks.withType(AbstractTestTask).configureEach {
+        failOnNoDiscoveredTests = false
     }
 }
 

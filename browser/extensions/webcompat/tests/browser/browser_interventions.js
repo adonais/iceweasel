@@ -11,6 +11,7 @@ const ValidIssueList = [
   "broken-comments",
   "broken-cookie-banner",
   "broken-editor",
+  "broken-font",
   "broken-images",
   "broken-interactive-elements",
   "broken-layout",

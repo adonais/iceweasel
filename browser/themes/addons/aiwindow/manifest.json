@@ -1,0 +1,41 @@
+{
+  "manifest_version": 2,
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "firefox-aiwindow@mozilla.org"
+    }
+  },
+
+  "name": "Firefox AI Window",
+  "description": "Base theme for AI Window",
+  "author": "Mozilla",
+  "version": "1.0.0",
+
+  "theme": {
+    "properties": {
+      "color_scheme": "light",
+      "ai_gradient": "radial-gradient(circle at 50% 90%, rgba(253, 244, 243, 1) 0%, rgba(253, 244, 243, 1) 30%, rgba(216, 202, 247, 1) 100%)"
+    },
+    "colors": {
+      "frame": "hsla(240, 20%, 98%, 1)",
+      "toolbar": "transparent",
+      "tab_background_text": "hsla(257, 55%, 40%, 1)",
+      "toolbar_text": "hsla(257, 55%, 40%, 1)",
+      "icon_color": "hsla(257, 55%, 40%, 1)",
+      "toolbar_field_text": "hsla(257, 55%, 40%, 1)",
+      "toolbar_field_text_focus": "hsla(257, 55%, 40%, 1)",
+      "toolbar_bottom_separator": "transparent",
+      "toolbar_top_separator": "transparent",
+      "tab_line": "transparent",
+      "tab_selected": "rgba(255, 255, 255, 0.3)"
+    }
+  },
+
+  "theme_experiment": {
+    "stylesheet": "aiwindow-theme.css",
+    "properties": {
+      "ai_gradient": "--ai-gradient"
+    }
+  }
+}

@@ -11,9 +11,9 @@
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/ipc/MessageChannel.h"
+#include "mozilla/SharedLibraries.h"
 #include "mozilla/Vector.h"
 #include "nsStringFwd.h"
-#include "SharedLibraries.h"
 
 namespace mozilla {
 namespace Telemetry {

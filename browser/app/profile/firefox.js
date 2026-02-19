@@ -424,7 +424,11 @@ pref("browser.urlbar.deduplication.thresholdDays", 0);
 
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.trustPanel.featureGate", true);
+#else
 pref("browser.urlbar.trustPanel.featureGate", false);
+#endif
 
 // Once Perplexity has entered search mode at least once,
 // we no longer show the Perplexity onboarding callout.
@@ -677,7 +681,7 @@ pref("browser.urlbar.merino.ohttpConfigURL", "");
 pref("browser.urlbar.merino.ohttpRelayURL", "");
 
 // OHTTP hpke for DAP
-pref("dap.ohttp.hpke", "https://dap-09-3.api.divviup.org/ohttp-configs");
+pref("dap.ohttp.hpke", "gAAgJSO22Y3HKzRSese15JtQVuuFfOIcTrZ56lQ5kDQwS0oABAABAAE");
 
 // OHTTP relay URL for DAP
 pref("dap.ohttp.relayURL", "https://mozilla-ohttp-dap.mozilla.fastly-edge.com/");
@@ -883,7 +887,11 @@ pref("browser.search.serpMetricsRecordedCounter", 0);
 // days
 pref("browser.search.widget.removeAfterDaysUnused", 120);
 
+#ifdef NIGHTLY_BUILD
+pref("browser.search.widget.new", true);
+#else
 pref("browser.search.widget.new", false);
+#endif
 
 // The number of times the search function in the URL bar has been used,
 // capped at 100.
@@ -1063,7 +1071,7 @@ pref("browser.tabs.notes.enabled", false);
 #endif
 
 // KMEANS_WITH_ANCHOR or NEAREST_NEIGHBOR or LOGISTIC_REGRESSION
-pref("browser.tabs.groups.smart.suggestOtherTabsMethod", "NEAREST_NEIGHBOR");
+pref("browser.tabs.groups.smart.suggestOtherTabsMethod", "LOGISTIC_REGRESSION");
 pref("browser.tabs.groups.smart.topicModelRevision", "latest");
 pref("browser.tabs.groups.smart.embeddingModelRevision", "latest");
 // value should be <= 1000 to be correctly converted (275 -> 0.275)
@@ -1361,6 +1369,8 @@ pref("accessibility.typeaheadfind.flashBar", 1);
 pref("browser.preferences.experimental.hidden", false);
 // Whether we show the "More from Mozilla" section.
 pref("browser.preferences.moreFromMozilla", false);
+// Whether we show the "AI Controls" pane.
+pref("browser.preferences.aiControls", true);
 
 // Used by settings to track whether the user customized advanced
 // performance settings. Not used directly elsewhere.
@@ -1736,6 +1746,7 @@ pref("services.sync.prefs.sync.media.eme.enabled", true);
 pref("services.sync.prefs.sync-seen.media.eme.enabled", false);
 pref("services.sync.prefs.sync.media.videocontrols.picture-in-picture.video-toggle.enabled", true);
 pref("services.sync.prefs.sync.network.cookie.cookieBehavior", true);
+pref("services.sync.prefs.sync.nimbus.rollouts.enabled", true);
 pref("services.sync.prefs.sync.permissions.default.image", true);
 pref("services.sync.prefs.sync.pref.downloads.disable_button.edit_actions", true);
 pref("services.sync.prefs.sync.pref.privacy.disable_button.cookie_exceptions", true);
@@ -1855,12 +1866,28 @@ pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-c", false);
 // Show refined card layout on newtab
 pref("browser.newtabpage.activity-stream.discoverystream.refinedCardsLayout.enabled", true);
 
+/**
+ * @backward-compat { version 148 }
+ *
+ * Temporary dual implementation to support train hopping. The old handoff UI
+ * is kept alongside the new contentSearchHandoffUI.mjs custom element until
+ * the module lands on all channels. Controlled by the pref
+ * browser.newtabpage.activity-stream.search.useHandoffComponent.
+ * Remove the old implementation and the pref once this ships to Release.
+ */
+pref("browser.newtabpage.activity-stream.search.useHandoffComponent", true);
+pref("browser.newtabpage.activity-stream.externalComponents.enabled", true);
+
 // Mozilla Ad Routing Service (MARS) unified ads service
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", false);
 pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", false);
 pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://%.invalid");
 pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.enabled", false);
+#ifdef NIGHTLY_BUILD
+pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", true);
+#else
 pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", false);
+#endif
 
 // Weather widget for newtab
 pref("browser.newtabpage.activity-stream.showWeather", true);
@@ -2036,22 +2063,22 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-basic-config", "
 pref("browser.newtabpage.activity-stream.discoverystream.pocket-feed-parameters", "");
 pref("browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment", false);
 
-pref("browser.newtabpage.activity-stream.discoverystream.personalization.enabled", true);
+pref("browser.newtabpage.activity-stream.discoverystream.personalization.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.override", false);
 // Configurable keys used by personalization.
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.modelKeys", "nb_model_arts_and_entertainment, nb_model_autos_and_vehicles, nb_model_beauty_and_fitness, nb_model_blogging_resources_and_services, nb_model_books_and_literature, nb_model_business_and_industrial, nb_model_computers_and_electronics, nb_model_finance, nb_model_food_and_drink, nb_model_games, nb_model_health, nb_model_hobbies_and_leisure, nb_model_home_and_garden, nb_model_internet_and_telecom, nb_model_jobs_and_education, nb_model_law_and_government, nb_model_online_communities, nb_model_people_and_society, nb_model_pets_and_animals, nb_model_real_estate, nb_model_reference, nb_model_science, nb_model_shopping, nb_model_sports, nb_model_travel");
 // System pref to allow Pocket stories personalization to be turned on/off.
 pref("browser.newtabpage.activity-stream.discoverystream.recs.personalized", false);
 // System pref to allow Pocket sponsored content personalization to be turned on/off.
-pref("browser.newtabpage.activity-stream.discoverystream.spocs.personalized", true);
+pref("browser.newtabpage.activity-stream.discoverystream.spocs.personalized", false);
 
 // List of locales that get thumbs up/down on recommended stories by default.
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thumbs-config", "en-US, en-GB, en-CA");
 
-pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", true);
 
 // Redacts content interaction ids from original New Tab ping once data processing migrated to the Newtab_content private ping
-pref("browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled", false);
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled", true);
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs", 5000);
 
   // Include differentialy private inferred New Tab interests with New Tab content Ping. Only used when user has enabled personalization.
@@ -2075,9 +2102,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enable
 
 // User pref to show stories on newtab (feeds.system.topstories has to be set to true as well)
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
-
-// The pref controls if search hand-off is enabled for Activity Stream.
-pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", false);
 
 pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
@@ -2143,6 +2167,9 @@ pref("nimbus.profilesdatastoreservice.sync.enabled", false);
   pref("nimbus.telemetry.targetingContextEnabled", false);
 #endif
 
+// Enable Rollouts by default.
+pref("nimbus.rollouts.enabled", true);
+
 // Nimbus QA prefs. Used to monitor pref-setting test experiments.
 pref("nimbus.qa.pref-1", "default");
 pref("nimbus.qa.pref-2", "default");
@@ -2168,11 +2195,12 @@ pref("pdfjs.handleOctetStream", true);
 
 // Is the sidebar positioned ahead of the content browser
 pref("sidebar.position_start", true);
-pref("sidebar.revamp", false);
-// This is nightly only for now, as we need to address bug 1933527 and bug 1934039.
 #ifdef NIGHTLY_BUILD
+pref("sidebar.revamp", true);
+// This is nightly only for now, as we need to address bug 1933527 and bug 1934039.
 pref("sidebar.revamp.round-content-area", true);
 #else
+pref("sidebar.revamp", false);
 pref("sidebar.revamp.round-content-area", false);
 #endif
 pref("sidebar.animation.enabled", true);
@@ -2240,7 +2268,16 @@ pref("browser.ml.smartAssist.model", "");
 pref("browser.ml.smartAssist.overrideNewTab", false);
 
 // AI Window Feature
+pref("browser.aiwindow.apiKey", '');
+pref("browser.aiwindow.chatStore.loglevel", "Error");
 pref("browser.aiwindow.enabled", false);
+pref("browser.aiwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
+pref("browser.aiwindow.memories", false);
+pref("browser.aiwindow.memoriesLogLevel", "Warn");
+pref("browser.aiwindow.firstrun.autoAdvanceMS", 3000);
+pref("browser.aiwindow.firstrun.modelChoice", "");
+pref("browser.aiwindow.model", "qwen3-235b-a22b-instruct-2507-maas");
+pref("browser.aiwindow.preferences.enabled", false);
 
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);
@@ -2359,9 +2396,6 @@ pref("browser.translation.neverForLanguages", "");
 // Enable Firefox translations powered by the Bergamot translations
 // engine https://browser.mt/.
 pref("browser.translations.enable", true);
-
-// Enable the new Firefox Translations Settings UI Design
-pref("browser.translations.newSettingsUI.enable", false);
 
 // Enable Firefox Select translations powered by Bergamot translations
 // engine https://browser.mt/.
@@ -2617,6 +2651,10 @@ pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 // the pref to hide the icons
 pref("privacy.webrtc.showIndicatorsOnMacos14AndAbove", true);
 
+// Testing pref: adds artificial delay (in ms) to gUM requests in webrtc-preview.
+// Used for testing abort logic. 0 means no delay.
+pref("privacy.webrtc.preview.testGumDelayMs", 0);
+
 // Enable Smartblock embed placeholders
 pref("extensions.webcompat.smartblockEmbeds.enabled", true);
 
@@ -2659,7 +2697,14 @@ pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", true);
 pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 // Whether tabs can be "split" or displayed side by side at once.
-pref("browser.tabs.splitView.enabled", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.tabs.splitView.enabled", true);
+#else
+  pref("browser.tabs.splitView.enabled", false);
+#endif
+
+// Whether SVG favicons should be safely re-encoded using the moz-remote-image:// protocol.
+pref("browser.tabs.remoteSVGIconDecoding", false);
 
 // If true, unprivileged extensions may use experimental APIs on
 // nightly and developer edition.
@@ -2901,7 +2946,12 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 // Felt Privacy pref to control simplified private browsing UI
 pref("browser.privatebrowsing.felt-privacy-v1", false);
-pref("security.certerrors.felt-privacy-v1", false);
+#if defined(NIGHTLY_BUILD)
+  pref("security.certerrors.felt-privacy-v1", true);
+#else
+  pref("security.certerrors.felt-privacy-v1", false);
+#endif
+
 
 // Prefs to control the Firefox Account toolbar menu.
 // This pref will surface existing Firefox Account information
@@ -3474,7 +3524,7 @@ pref("browser.backup.template.fallback-download.aurora", "https://www.firefox.co
 pref("browser.backup.template.fallback-download.nightly", "https://www.firefox.com/channel/desktop/?utm_medium=firefox-desktop&utm_source=html-backup");
 pref("browser.backup.template.fallback-download.esr", " https://www.firefox.com/download/all/desktop-esr/?utm_medium=firefox-desktop&utm_source=html-backup");
 pref("browser.backup.errorCode", 0);
-pref("browser.backup.backup-retry-limit", 100);
+pref("browser.backup.backup-retry-limit", 10);
 pref("browser.backup.disabled-on-idle-backup-retry", false);
 // Limit of number of unremovable staging directories and archives that are
 // permitted before backup will stop making additional backups.  Unremovable
@@ -3534,9 +3584,6 @@ pref("browser.ipProtection.variant", "");
 pref("browser.ipProtection.panelOpenCount", 0);
 // Pref to enable support for site exceptions
 pref("browser.ipProtection.features.siteExceptions", false);
-pref("browser.ipProtection.exceptionsMode", "all");
-pref("browser.ipProtection.domainExclusions", "");
-pref("browser.ipProtection.domainInclusions", "");
 pref("browser.ipProtection.log", false);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("browser.ipProtection.added", false);

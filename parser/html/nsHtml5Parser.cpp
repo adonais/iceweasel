@@ -6,6 +6,8 @@
 
 #include "nsHtml5Parser.h"
 
+#include "ErrorList.h"
+#include "encoding_rs_statics.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCRT.h"
@@ -17,7 +19,8 @@
 #include "nsNetUtil.h"
 
 NS_INTERFACE_TABLE_HEAD(nsHtml5Parser)
-  NS_INTERFACE_TABLE(nsHtml5Parser, nsIParser, nsISupportsWeakReference)
+  NS_INTERFACE_TABLE(nsHtml5Parser, nsIParser, nsISupportsWeakReference,
+                     nsIStreamListener)
   NS_INTERFACE_TABLE_TO_MAP_SEGUE_CYCLE_COLLECTION(nsHtml5Parser)
 NS_INTERFACE_MAP_END
 
@@ -38,7 +41,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsHtml5Parser)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 nsHtml5Parser::nsHtml5Parser()
-    : mLastWasCR(false),
+    : mAboutBlankMode(false),
+      mLastWasCR(false),
       mDocWriteSpeculativeLastWasCR(false),
       mBlocked(0),
       mDocWriteSpeculatorActive(false),
@@ -99,9 +103,13 @@ void nsHtml5Parser::SetDocumentCharset(NotNull<const Encoding*> aEncoding,
                                        int32_t aCharsetSource,
                                        bool aForceAutoDetection) {
   MOZ_ASSERT(!mExecutor->HasStarted(), "Document charset set too late.");
-  MOZ_ASSERT(GetStreamParser(), "Setting charset on a script-only parser.");
-  GetStreamParser()->SetDocumentCharset(
-      aEncoding, (nsCharsetSource)aCharsetSource, aForceAutoDetection);
+  if (mAboutBlankMode) {
+    MOZ_ASSERT(aEncoding == UTF_8_ENCODING);
+  } else {
+    MOZ_ASSERT(GetStreamParser(), "Setting charset on a script-only parser.");
+    GetStreamParser()->SetDocumentCharset(
+        aEncoding, (nsCharsetSource)aCharsetSource, aForceAutoDetection);
+  }
   mExecutor->SetDocumentCharsetAndSource(aEncoding,
                                          (nsCharsetSource)aCharsetSource);
 }
@@ -109,12 +117,14 @@ void nsHtml5Parser::SetDocumentCharset(NotNull<const Encoding*> aEncoding,
 nsresult nsHtml5Parser::GetChannel(nsIChannel** aChannel) {
   if (GetStreamParser()) {
     return GetStreamParser()->GetChannel(aChannel);
-  } else {
-    return NS_ERROR_NOT_AVAILABLE;
   }
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 nsIStreamListener* nsHtml5Parser::GetStreamListener() {
+  if (mAboutBlankMode) {
+    return this;
+  }
   return mStreamListener;
 }
 
@@ -125,10 +135,14 @@ nsHtml5Parser::ContinueInterruptedParsing() {
 }
 
 NS_IMETHODIMP_(void)
-nsHtml5Parser::BlockParser() { mBlocked++; }
+nsHtml5Parser::BlockParser() {
+  MOZ_ASSERT(!mAboutBlankMode, "Must not block about:blank");
+  mBlocked++;
+}
 
 NS_IMETHODIMP_(void)
 nsHtml5Parser::UnblockParser() {
+  MOZ_ASSERT(!mAboutBlankMode, "Must not unblock about:blank");
   MOZ_DIAGNOSTIC_ASSERT(mBlocked > 0);
   if (MOZ_LIKELY(mBlocked > 0)) {
     mBlocked--;
@@ -162,11 +176,14 @@ nsHtml5Parser::Parse(nsIURI* aURL) {
    */
   MOZ_ASSERT(!mExecutor->HasStarted(),
              "Tried to start parse without initializing the parser.");
-  MOZ_ASSERT(GetStreamParser(),
-             "Can't call this Parse() variant on script-created parser");
+  if (!mAboutBlankMode) {
+    MOZ_ASSERT(GetStreamParser(),
+               "Can't call this Parse() variant on script-created parser");
 
-  GetStreamParser()->SetViewSourceTitle(aURL);  // In case we're viewing source
-  mExecutor->SetStreamParser(GetStreamParser());
+    GetStreamParser()->SetViewSourceTitle(
+        aURL);  // In case we're viewing source
+    mExecutor->SetStreamParser(GetStreamParser());
+  }
   mExecutor->SetParser(this);
   return NS_OK;
 }
@@ -519,6 +536,8 @@ void nsHtml5Parser::MarkAsNotScriptCreated(const char* aCommand) {
     mode = PLAIN_TEXT;
   } else if (!nsCRT::strcmp(aCommand, kLoadAsData)) {
     mode = LOAD_AS_DATA;
+  } else if (!nsCRT::strcmp(aCommand, "about-blank")) {
+    mode = ABOUT_BLANK;
   }
 #ifdef DEBUG
   else {
@@ -528,11 +547,17 @@ void nsHtml5Parser::MarkAsNotScriptCreated(const char* aCommand) {
                  "Unsupported parser command!");
   }
 #endif
-  mStreamListener =
-      new nsHtml5StreamListener(new nsHtml5StreamParser(mExecutor, this, mode));
+  if (mode == ABOUT_BLANK) {
+    mAboutBlankMode = true;
+  } else {
+    mStreamListener = new nsHtml5StreamListener(
+        new nsHtml5StreamParser(mExecutor, this, mode));
+  }
 }
 
 bool nsHtml5Parser::IsScriptCreated() { return !GetStreamParser(); }
+
+bool nsHtml5Parser::IsAboutBlankMode() { return mAboutBlankMode; }
 
 /* End nsIParser  */
 
@@ -710,4 +735,63 @@ void nsHtml5Parser::ContinueAfterFailedCharsetSwitch() {
       GetStreamParser(),
       "Tried to continue after failed charset switch without a stream parser");
   GetStreamParser()->ContinueAfterFailedCharsetSwitch();
+}
+
+NS_IMETHODIMP nsHtml5Parser::OnStartRequest(nsIRequest* aRequest) {
+  if (!mAboutBlankMode) {
+    MOZ_ASSERT(false,
+               "Attempted to use nsHtml5Parser as stream listener in "
+               "non-about:blank mode.");
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  MOZ_RELEASE_ASSERT(!GetStreamParser(),
+                     "Should not have stream parser in about:blank mode.");
+  mTokenizer->start();
+  mExecutor->Start();
+  nsresult rv = mExecutor->WillBuildModel();
+  NS_ENSURE_SUCCESS(rv, rv);
+  PermanentlyUndefineInsertionPoint();
+  mTokenizer->eof();
+  if (NS_FAILED((rv = mTreeBuilder->IsBroken()))) {
+    mExecutor->MarkAsBroken(rv);
+  } else {
+    mTreeBuilder->StreamEnded();
+  }
+  auto r = mTreeBuilder->Flush();
+  if (r.isErr()) {
+    return mExecutor->MarkAsBroken(r.unwrapErr());
+  }
+  mExecutor->FlushDocumentWrite();
+  // The below call does memory cleanup, so call it even if the
+  // parser has been marked as broken.
+  mTokenizer->end();
+  return rv;
+}
+
+NS_IMETHODIMP nsHtml5Parser::OnDataAvailable(nsIRequest* aRequest,
+                                             nsIInputStream* aInStream,
+                                             uint64_t aSourceOffset,
+                                             uint32_t aLength) {
+  if (!mAboutBlankMode) {
+    MOZ_ASSERT(false,
+               "Attempted to use nsHtml5Parser as stream listener in "
+               "non-about:blank mode.");
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  if (aLength) {
+    MOZ_ASSERT(false, "Non-zero-length stream in about:blank mode.");
+    return NS_ERROR_ILLEGAL_INPUT;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsHtml5Parser::OnStopRequest(nsIRequest* aRequest,
+                                           nsresult aStatus) {
+  if (!mAboutBlankMode) {
+    MOZ_ASSERT(false,
+               "Attempted to use nsHtml5Parser as stream listener in "
+               "non-about:blank mode.");
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  return NS_OK;
 }

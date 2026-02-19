@@ -54,41 +54,40 @@ const LAST_HOST = "devtools.toolbox.host";
 const PREVIOUS_HOST = "devtools.toolbox.previousHost";
 let ID_COUNTER = 1;
 
-function ToolboxHostManager(commands, hostType, hostOptions) {
-  this.commands = commands;
+class ToolboxHostManager {
+  constructor(commands, hostType, hostOptions) {
+    this.commands = commands;
 
-  // When debugging a local tab, we keep a reference of the current tab into which the toolbox is displayed.
-  // This will only change from the descriptor's localTab when we start debugging popups (i.e. window.open).
-  this.currentTab = this.commands.descriptorFront.localTab;
+    // When debugging a local tab, we keep a reference of the current tab into which the toolbox is displayed.
+    // This will only change from the descriptor's localTab when we start debugging popups (i.e. window.open).
+    this.currentTab = this.commands.descriptorFront.localTab;
 
-  // Keep the previously instantiated Host for all tabs where we displayed the Toolbox.
-  // This will only be useful when we start debugging popups (i.e. window.open).
-  // This is used to re-use the previous host instance when we re-select the original tab
-  // we were debugging before the popup opened.
-  this.hostPerTab = new Map();
+    // Keep the previously instantiated Host for all tabs where we displayed the Toolbox.
+    // This will only be useful when we start debugging popups (i.e. window.open).
+    // This is used to re-use the previous host instance when we re-select the original tab
+    // we were debugging before the popup opened.
+    this.hostPerTab = new Map();
 
-  this.frameId = ID_COUNTER++;
+    this.frameId = ID_COUNTER++;
 
-  if (!hostType) {
-    hostType = Services.prefs.getCharPref(LAST_HOST);
-    if (!Hosts[hostType]) {
-      // If the preference value is unexpected, restore to the default value.
-      Services.prefs.clearUserPref(LAST_HOST);
+    if (!hostType) {
       hostType = Services.prefs.getCharPref(LAST_HOST);
+      if (!Hosts[hostType]) {
+        // If the preference value is unexpected, restore to the default value.
+        Services.prefs.clearUserPref(LAST_HOST);
+        hostType = Services.prefs.getCharPref(LAST_HOST);
+      }
     }
+    this.eventController = new AbortController();
+    this.host = this.createHost(hostType, hostOptions);
+    this.hostType = hostType;
+    // List of event which are collected when a new host is created for a popup
+    // from `switchHostToTab` method.
+    this.collectPendingMessages = null;
+    this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
+    this._onMessage = this._onMessage.bind(this);
+    Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
   }
-  this.eventController = new AbortController();
-  this.host = this.createHost(hostType, hostOptions);
-  this.hostType = hostType;
-  // List of event which are collected when a new host is created for a popup
-  // from `switchHostToTab` method.
-  this.collectPendingMessages = null;
-  this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
-  this._onMessage = this._onMessage.bind(this);
-  Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
-}
-
-ToolboxHostManager.prototype = {
   /**
    * Create a Toolbox
    *
@@ -130,7 +129,7 @@ ToolboxHostManager.prototype = {
 
     this.setMinWidthWithZoom();
     return toolbox;
-  },
+  }
 
   setMinWidthWithZoom() {
     const zoomValue = parseFloat(Services.prefs.getCharPref(ZOOM_VALUE_PREF));
@@ -153,7 +152,7 @@ ToolboxHostManager.prototype = {
       this.host.frame.style.minWidth =
         WIDTH_CHEVRON_AND_MEATBALL * zoomValue + "px";
     }
-  },
+  }
 
   _onToolboxDestroyed() {
     // Delay self-destruction to let the debugger complete async destruction.
@@ -162,7 +161,7 @@ ToolboxHostManager.prototype = {
     DevToolsUtils.executeSoon(() => {
       this.destroy();
     });
-  },
+  }
 
   _onMessage(event) {
     if (!event.data) {
@@ -195,12 +194,12 @@ ToolboxHostManager.prototype = {
         this.host.setTitle(msg.title);
         break;
     }
-  },
+  }
 
   postMessage(data) {
     const window = this.host.frame.contentWindow;
     window.postMessage(data, "*");
-  },
+  }
 
   destroy() {
     Services.prefs.removeObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
@@ -216,7 +215,7 @@ ToolboxHostManager.prototype = {
     this.host = null;
     this.hostType = null;
     this.commands = null;
-  },
+  }
 
   /**
    * Create a host object based on the given host type.
@@ -237,7 +236,7 @@ ToolboxHostManager.prototype = {
     }
     const newHost = new Hosts[hostType](this.currentTab, options);
     return newHost;
-  },
+  }
 
   /**
    * Migrate the toolbox to a new host, while keeping it fully functional.
@@ -326,7 +325,7 @@ ToolboxHostManager.prototype = {
       name: "switched-host",
       hostType,
     });
-  },
+  }
 
   /**
    * When we are debugging popup, we are moving around the toolbox between original tab
@@ -374,7 +373,7 @@ ToolboxHostManager.prototype = {
       name: "switched-host-to-tab",
       browsingContextID: tabBrowsingContextID,
     });
-  },
+  }
 
   /**
    * Destroy the current host, and remove event listeners from its frame.
@@ -383,6 +382,7 @@ ToolboxHostManager.prototype = {
    */
   destroyHost() {
     return this.host.destroy();
-  },
-};
+  }
+}
+
 exports.ToolboxHostManager = ToolboxHostManager;

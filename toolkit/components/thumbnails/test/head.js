@@ -188,11 +188,10 @@ function bgCaptureIfMissing(aURL, aOptions) {
  * @param {string} aURL The URL of the page to capture.
  * @param {object} aOptions The options object to pass to BackgroundPageThumbs.
  *
- * @returns {Promise}
- * @resolves {Array} Resolves once the capture has completed with an Array of
- * results. The first element of the Array is the URL of the captured page,
- * and the second element is the completion reason from the BackgroundPageThumbs
- * module.
+ * @returns {Promise<Array>}
+ *   Resolves once the capture has completed with an Array of results. The
+ *   first element of the Array is the URL of the captured page, and the second
+ *   element is the completion reason from the BackgroundPageThumbs module.
  */
 function bgCaptureWithMethod(aMethodName, aURL, aOptions = {}) {
   // We'll get oranges if the expiration filter removes the file during the

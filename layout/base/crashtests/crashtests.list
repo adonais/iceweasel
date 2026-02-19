@@ -200,7 +200,7 @@ load 411870-1.html
 load 412651-1.html
 load 413587-1.svg
 load 415503.xhtml
-asserts(1-1) load 416107.xhtml # bug 489100, ASSERTION: Out-of-flow frame got reflowed before its placeholder
+load 416107.xhtml
 HTTP load 419985.html
 load 420031-1.html
 load 420213-1.html
@@ -577,5 +577,5 @@ load 1929445.html
 asserts(1-3) load 1931933.html
 load 1984507.html
 load 2000121.html
-load 2000753.html
+skip-if(debug) load 2000753.html # bug 2005045
 load 2000991.html

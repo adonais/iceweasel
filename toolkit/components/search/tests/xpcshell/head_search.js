@@ -504,11 +504,19 @@ async function enableEnterprise() {
  * A simple observer to ensure we get only the expected notifications.
  */
 class SearchObserver {
-  constructor(expectedNotifications, returnEngineForNotification = false) {
+  /**
+   *
+   * @param {Array<[string, string|null]>} expectedNotifications
+   *   An array of [notificationType, engineName] tuples. Use null for
+   *   engineName if we don't care which engine triggered the notification.
+   */
+  constructor(expectedNotifications) {
     this.observer = this.observer.bind(this);
     this.deferred = Promise.withResolvers();
-    this.expectedNotifications = expectedNotifications;
-    this.returnEngineForNotification = returnEngineForNotification;
+    this.expectedNotifications = expectedNotifications.map(([type, name]) => {
+      return { type, name };
+    });
+    this.receivedNotifications = [];
 
     Services.obs.addObserver(this.observer, SearchUtils.TOPIC_ENGINE_MODIFIED);
 
@@ -520,10 +528,18 @@ class SearchObserver {
   }
 
   handleTimeout() {
+    let stillExpecting = this.expectedNotifications
+      .map(n => `[type: ${n.type}, name: ${n.name}]`)
+      .join(", ");
+    let received = this.receivedNotifications
+      .map(n => `[type: ${n.type}, name: ${n.engineName}]`)
+      .join(", ");
+
     this.deferred.reject(
       new Error(
-        "Waiting for Notifications timed out, only received: " +
-          this.expectedNotifications.join(",")
+        `Waiting for Notifications timed out:
+          still expecting - [${stillExpecting || "(none)"}]
+          received - [${received || "(none);"}]`
       )
     );
   }
@@ -534,20 +550,25 @@ class SearchObserver {
       0,
       "Should be expecting a notification"
     );
-    Assert.equal(
-      data,
-      this.expectedNotifications[0],
-      "Should have received the next expected notification"
+
+    let maybeEngine = subject.QueryInterface(Ci.nsISearchEngine);
+    let engineName = maybeEngine?.name ?? null;
+    this.receivedNotifications.push({ type: data, engineName });
+
+    let matchIndex = this.expectedNotifications.findIndex(
+      expected =>
+        expected.type == data &&
+        (expected.name == null || expected.name == engineName)
     );
 
-    if (
-      this.returnEngineForNotification &&
-      data == this.returnEngineForNotification
-    ) {
-      this.engineToReturn = subject.QueryInterface(Ci.nsISearchEngine);
+    if (matchIndex == -1) {
+      info(
+        `SearchObserver received unexpected notification: ${data}, ${engineName}`
+      );
+      return;
     }
 
-    this.expectedNotifications.shift();
+    this.expectedNotifications.splice(matchIndex, 1);
 
     if (!this.expectedNotifications.length) {
       clearTimeout(this.timeout);

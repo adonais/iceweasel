@@ -5,7 +5,7 @@
 package org.mozilla.fenix.onboarding.store
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.GleanMetrics.Onboarding
 
 /**
@@ -14,7 +14,7 @@ import org.mozilla.fenix.GleanMetrics.Onboarding
 class PrivacyPreferencesTelemetryMiddleware :
     Middleware<PrivacyPreferencesState, PrivacyPreferencesAction> {
     override fun invoke(
-        context: MiddlewareContext<PrivacyPreferencesState, PrivacyPreferencesAction>,
+        store: Store<PrivacyPreferencesState, PrivacyPreferencesAction>,
         next: (PrivacyPreferencesAction) -> Unit,
         action: PrivacyPreferencesAction,
     ) {

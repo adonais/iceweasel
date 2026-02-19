@@ -670,7 +670,7 @@ class CssLogic {
         // the viewedElement (or its parents).
         if (
           // check if the property is assigned
-          (rule.getPropertyValue(property) ||
+          (rule.isPropertyAssigned(property) ||
             // or if this is a css variable, if it's being used in the rule.
             (property.startsWith("--") &&
               // we may have false positive for dashed ident or the variable being
@@ -816,7 +816,7 @@ class CssSheet {
   /**
    * A safe way to access cached bits of information about a stylesheet.
    *
-   * @constructor
+   * @class
    * @param {CssLogic} cssLogic pointer to the CssLogic instance working with
    * this CssSheet object.
    * @param {CSSStyleSheet} domSheet reference to a DOM CSSStyleSheet object.
@@ -1030,7 +1030,7 @@ class CssRule {
    * will be an InspectorDeclaration (object of the form {style: element.style, declarationOrigin: string}).
    * @param {Element} [element] If the rule comes from element.style, then this
    * argument must point to the element.
-   * @constructor
+   * @class
    */
   constructor(cssSheet, domRule, element) {
     this.#cssSheet = cssSheet;
@@ -1114,6 +1114,16 @@ class CssRule {
   }
 
   /**
+   * Returns whether or not the given property is set in the current CSSStyleRule.
+   *
+   * @param {string} property the CSS property name
+   * @return {boolean}
+   */
+  isPropertyAssigned(property) {
+    return this.getStyle().hasLonghandProperty(property);
+  }
+
+  /**
    * Retrieve the style property priority from the current CSSStyleRule.
    *
    * @param {string} property the CSS property name for which you want the
@@ -1161,7 +1171,7 @@ class CssSelector {
    * The CSS selector class allows us to document the ranking of various CSS
    * selectors.
    *
-   * @constructor
+   * @class
    * @param {CssRule} cssRule the CssRule instance from where the selector comes.
    * @param {string} selector The selector that we wish to investigate.
    * @param {number} index The index of the selector within it's rule.
@@ -1317,7 +1327,7 @@ class CssPropertyInfo {
    *
    * @param {CssLogic} cssLogic Reference to the parent CssLogic instance
    * @param {string} property The CSS property we are gathering information for
-   * @constructor
+   * @class
    */
   constructor(cssLogic, property) {
     this.#cssLogic = cssLogic;
@@ -1410,9 +1420,8 @@ class CssPropertyInfo {
    */
   #processMatchedSelector(selector, status, distance) {
     const cssRule = selector.cssRule;
-    const value = cssRule.getPropertyValue(this.property);
     if (
-      value &&
+      cssRule.isPropertyAssigned(this.property) &&
       (status == STATUS.MATCHED ||
         (status == STATUS.PARENT_MATCH &&
           InspectorUtils.isInheritedProperty(
@@ -1423,7 +1432,11 @@ class CssPropertyInfo {
       const selectorInfo = new CssSelectorInfo(
         selector,
         this.property,
-        value,
+        // FIXME: If this is a property that is coming from a longhand property which is
+        // using CSS variables, we would get an empty string at this point.
+        // It would be nice to try to display a value that would make sense to the user.
+        // See Bug 2003264
+        cssRule.getPropertyValue(this.property),
         status,
         distance
       );
@@ -1476,7 +1489,6 @@ class CssSelectorInfo {
    *        the selector.
    * @param {STATUS} status The selector match status.
    * @param {number} distance See CssLogic.#buildMatchedRules for definition.
-   * @constructor
    */
   constructor(selector, property, value, status, distance) {
     this.selector = selector;

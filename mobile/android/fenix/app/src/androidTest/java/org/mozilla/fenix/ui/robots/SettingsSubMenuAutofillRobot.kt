@@ -350,6 +350,7 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
     @OptIn(ExperimentalTestApi::class)
     fun fillAndSaveAddress(
+        composeTestRule: ComposeTestRule,
         navigateToAutofillSettings: Boolean,
         isAddressAutofillEnabled: Boolean = true,
         userHasSavedAddress: Boolean = false,
@@ -363,9 +364,9 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         emailAddress: String,
     ) {
         if (navigateToAutofillSettings) {
-            homeScreen {
+            homeScreen(composeTestRule) {
             }.openThreeDotMenu {
-            }.openSettings {
+            }.clickSettingsButton {
             }.openAutofillSubMenu(composeTestRule) {
                 verifyAddressAutofillSection(isAddressAutofillEnabled, userHasSavedAddress)
                 clickAddAddressButton()
@@ -679,13 +680,13 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
             return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
-        fun goBackToBrowser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun goBackToBrowser(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "goBackToBrowser: Trying to click the device back button")
             mDevice.pressBack()
             Log.i(TAG, "goBackToBrowser: Clicked the device back button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
     }
 }

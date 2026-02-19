@@ -1048,7 +1048,7 @@ static bool intrinsic_RegExpCreate(JSContext* cx, unsigned argc, Value* vp) {
                 args[1].isString() || args[1].isUndefined());
   MOZ_ASSERT(!args.isConstructing());
 
-  return RegExpCreate(cx, args[0], args.get(1), args.rval());
+  return RegExpCreate(cx, args[0], args.get(1), args.rval(), nullptr);
 }
 
 static bool intrinsic_RegExpGetSubstitution(JSContext* cx, unsigned argc,
@@ -1939,7 +1939,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_NumberFormat", intl_NumberFormat, 2, 0),
     JS_FN("intl_SelectPluralRule", intl_SelectPluralRule, 2, 0),
     JS_FN("intl_SelectPluralRuleRange", intl_SelectPluralRuleRange, 3, 0),
-    JS_FN("intl_SupportedValuesOf", intl_SupportedValuesOf, 1, 0),
     JS_FN("intl_TryValidateAndCanonicalizeLanguageTag",
           intl_TryValidateAndCanonicalizeLanguageTag, 1, 0),
     JS_FN("intl_ValidateAndCanonicalizeLanguageTag",

@@ -24,6 +24,8 @@ task-defaults:
     fetches:
         toolchain:
             - android-sdk-linux
+            - linux64-embedded-uniffi-bindgen
+            - linux64-nimbus-fml
     worker-type: b-linux-medium
     worker:
         docker-image: {in-tree: android-ui-tests}

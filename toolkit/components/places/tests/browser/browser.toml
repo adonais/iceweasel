@@ -30,6 +30,12 @@ skip-if = [
   "verify-standalone",
 ]
 
+["browser_bug680727_feltPrivacy.js"]
+https_first_disabled = true
+skip-if = [
+  "verify-standalone",
+]
+
 ["browser_bug1601563.js"]
 https_first_disabled = true
 support-files = [

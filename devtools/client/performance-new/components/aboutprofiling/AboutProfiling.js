@@ -76,7 +76,7 @@ function encodeShellValue(value) {
  * This component implements the button that triggers the menu that makes it
  * possible to show more actions.
  *
- * @extends {React.PureComponent<ButtonProps, ButtonState>}
+ * @augments {React.PureComponent<ButtonProps, ButtonState>}
  */
 class MoreActionsButtonImpl extends PureComponent {
   state = {
@@ -249,7 +249,7 @@ const MoreActionsButton = connect(mapStateToButtonProps)(MoreActionsButtonImpl);
  * This is the top level component for the about:profiling page. It shares components
  * with the popup and DevTools page.
  *
- * @extends {React.PureComponent<Props>}
+ * @augments {React.PureComponent<Props>}
  */
 class AboutProfiling extends PureComponent {
   render() {

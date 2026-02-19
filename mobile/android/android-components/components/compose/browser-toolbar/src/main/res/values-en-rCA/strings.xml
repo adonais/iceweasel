@@ -21,4 +21,6 @@
   <string name="mozac_toolbar_cfr_title">Designed for Android. Refined for You</string>
   <!-- Text for the description displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
   <string name="mozac_toolbar_cfr_description">We’ve refreshed the design with a sleek, modern feel</string>
+  <!-- Content description (not visible, for screen readers etc.) for the "minimal toolbar" containing just the URL instead of the big toolbar containing also other buttons. %1$s will be replaced with the domain name of the current website. -->
+  <string name="mozac_minimal_display_toolbar_content_description">Entering text in %1$s. Double tap to stop</string>
 </resources>

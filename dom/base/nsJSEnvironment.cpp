@@ -1806,8 +1806,9 @@ void nsJSContext::EnsureStatics() {
 
   JS::SetCreateGCSliceBudgetCallback(jsapi.cx(), CreateGCSliceBudget);
 
-  JS::InitDispatchsToEventLoop(jsapi.cx(), DispatchToEventLoop,
-                               DelayedDispatchToEventLoop, nullptr);
+  JS::InitAsyncTaskCallbacks(jsapi.cx(), DispatchToEventLoop,
+                             DelayedDispatchToEventLoop, nullptr, nullptr,
+                             nullptr);
 
   JS::InitConsumeStreamCallback(jsapi.cx(), ConsumeStream,
                                 FetchUtil::ReportJSStreamError);

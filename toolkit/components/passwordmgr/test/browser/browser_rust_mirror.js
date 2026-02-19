@@ -74,7 +74,7 @@ add_task(async function test_mirror_modifyLogin() {
   const modifyLoginFinishedPromise = TestUtils.topicObserved(
     "rust-mirror.event.modifyLogin.finished"
   );
-  Services.logins.modifyLogin(storedLoginInfo, modifiedLoginInfo);
+  await Services.logins.modifyLoginAsync(storedLoginInfo, modifiedLoginInfo);
   await modifyLoginFinishedPromise;
 
   const rustStorage = new LoginManagerRustStorage();
@@ -560,7 +560,7 @@ add_task(async function test_rust_mirror_addLogin_failure() {
   const [evt1] = Glean.pwmgr.rustWriteFailure.testGetValue();
   Assert.equal(
     evt1.extra?.error_message,
-    "Login has illegal origin",
+    "Login has illegal origin: relative URL without a base",
     "event has error_message"
   );
   Assert.equal(

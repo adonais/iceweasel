@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,6 +62,7 @@ import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.modifier.thenConditional
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
@@ -201,7 +203,7 @@ private fun TabStripContent(
                 IconButton(onClick = onAddTabClick) {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_plus_24),
-                        tint = FirefoxTheme.colors.iconPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         contentDescription = stringResource(R.string.add_tab),
                     )
                 }
@@ -390,7 +392,7 @@ private fun TabItem(
                     Text(
                         text = state.title,
                         modifier = Modifier.align(Alignment.CenterStart),
-                        color = FirefoxTheme.colors.textPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         softWrap = false,
                         maxLines = 1,
                         style = FirefoxTheme.typography.subtitle2,
@@ -410,9 +412,9 @@ private fun TabItem(
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                         tint = if (state.isSelected) {
-                            FirefoxTheme.colors.iconPrimary
+                            MaterialTheme.colorScheme.onSurface
                         } else {
-                            FirefoxTheme.colors.iconSecondary
+                            MaterialTheme.colorScheme.onSurfaceVariant
                         },
                         contentDescription = stringResource(
                             id = R.string.close_tab_title,
@@ -445,6 +447,11 @@ private fun TabStripIcon(
                 modifier = Modifier
                     .size(tabStripIconSize)
                     .clip(CircleShape),
+            )
+        } else if (url == ABOUT_HOME_URL) {
+            Favicon(
+                imageResource = R.drawable.ic_firefox,
+                size = tabStripIconSize,
             )
         } else {
             Favicon(

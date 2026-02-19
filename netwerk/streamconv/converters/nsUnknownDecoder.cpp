@@ -556,6 +556,12 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest) {
     return true;
   }
 
+  if (StaticPrefs::network_mimesniff_non_standard_html_comment() &&
+      StringBeginsWith(substr, "!--"_ns)) {
+    mContentType = TEXT_HTML;
+    return true;
+  }
+
   if (StaticPrefs::network_mimesniff_extra_moz_html_tags()) {
     if (MATCHES_TAG("frameset") || MATCHES_TAG("img") || MATCHES_TAG("link") ||
         MATCHES_TAG("base") || MATCHES_TAG("applet") || MATCHES_TAG("meta") ||

@@ -255,14 +255,13 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   Result CheckRevocationByOCSP(
       const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
       mozilla::pkix::Duration validityDuration, const nsCString& aiaLocation,
-      const bool crliteCoversCertificate, const Result crliteResult,
       /*optional*/ const mozilla::pkix::Input* stapledOCSPResponse);
 
   Result SynchronousCheckRevocationWithServer(
       const mozilla::pkix::CertID& certID, const nsCString& aiaLocation,
       mozilla::pkix::Time time, uint16_t maxOCSPLifetimeInDays,
-      const Result cachedResponseResult, const Result stapledOCSPResponseResult,
-      const bool crliteFilterCoversCertificate, const Result crliteResult);
+      const Result cachedResponseResult,
+      const Result stapledOCSPResponseResult);
   Result HandleOCSPFailure(const Result cachedResponseResult,
                            const Result stapledOCSPResponseResult,
                            const Result error);

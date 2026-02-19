@@ -34,20 +34,20 @@
           <hbox>
             <image id="trustpanel-graphic-image"></image>
             <vbox id="trustpanel-graphic-section-text">
-              <label when-connection="secure secure-ev secure-cert-user-overridden chrome"
+              <label when-connection="secure secure-ev secure-cert-user-overridden chrome file extension"
                      id="trustpanel-header"
                      class="trustpanel-header"></label>
               <label when-connection="not-secure cert-error-page net-error-page https-only-error-page"
                      class="trustpanel-header"
                      data-l10n-id="trustpanel-header-enabled-insecure"></label>
-              <label when-connection="secure secure-ev secure-cert-user-overridden chrome"
+              <label when-connection="secure secure-ev secure-cert-user-overridden chrome file extension"
                      id="trustpanel-description"></label>
               <label when-connection="not-secure cert-error-page net-error-page https-only-error-page"
                      data-l10n-id="trustpanel-description-enabled-insecure"></label>
             </vbox>
           </hbox>
           <vbox id="trustpanel-blocker-section" class="trustpanel-graphic-inner">
-            <label data-l10n-id="trustpanel-blocker-section-header" data-l10n-args='{"count":0}' id="trustpanel-blocker-section-header" class="trustpanel-header"></label>
+            <label data-l10n-id="trustpanel-blocker-section-header2" data-l10n-args='{"count":0}' id="trustpanel-blocker-section-header" class="trustpanel-header"></label>
             <label data-l10n-id="trustpanel-blocker-description"></label>
             <html:moz-button-group>
               <html:moz-button id="trustpanel-blocker-see-all" data-l10n-id="trustpanel-blocker-see-all" default="true" size="small" type="primary"></html:moz-button>

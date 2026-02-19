@@ -328,7 +328,7 @@ def artifact_toolchain(
 
     class DownloadRecord(FileRecord):
         def __init__(self, url, *args, **kwargs):
-            super(DownloadRecord, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
             self.url = url
             self.basename = self.filename
 
@@ -339,7 +339,7 @@ def artifact_toolchain(
         def validate(self):
             if self.size is None and self.digest is None:
                 return True
-            return super(DownloadRecord, self).validate()
+            return super().validate()
 
     class ArtifactRecord(DownloadRecord):
         def __init__(self, task_id, artifact_name):
@@ -367,9 +367,7 @@ def artifact_toolchain(
                 artifact_name,
                 use_proxy=not artifact_name.startswith("public/"),
             )
-            super(ArtifactRecord, self).__init__(
-                artifact_url, name, None, digest, algorithm, unpack=True
-            )
+            super().__init__(artifact_url, name, None, digest, algorithm, unpack=True)
 
     records = OrderedDict()
     downloaded = []

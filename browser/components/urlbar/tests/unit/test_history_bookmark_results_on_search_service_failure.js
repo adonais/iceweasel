@@ -56,7 +56,7 @@ add_task(
           uri: "http://cat/",
           heuristic: true,
           source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-          fallbackTitle: "cat/",
+          title: "cat/",
         }),
         makeBookmarkResult(context, {
           title: "cat",
@@ -107,9 +107,15 @@ add_task(
       matches: [
         makeVisitResult(context, {
           type: 3,
+          title: "example/",
+          uri: "http://example/",
+          heuristic: true,
+          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        }),
+        makeVisitResult(context, {
+          type: 3,
           title: "example",
           uri: "http://example.com/",
-          heuristic: true,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         }),
       ],

@@ -1147,13 +1147,16 @@ function makePreview(row) {
         return;
       }
 
-      if (data.width != data.physWidth || data.height != data.physHeight) {
+      if (
+        data.width != data.naturalWidth ||
+        data.height != data.naturalHeight
+      ) {
         document.l10n.setAttributes(
           document.getElementById("imagedimensiontext"),
           "media-dimensions-scaled",
           {
-            dimx: formatNumber(data.physWidth),
-            dimy: formatNumber(data.physHeight),
+            dimx: formatNumber(data.naturalWidth),
+            dimy: formatNumber(data.naturalHeight),
             scaledx: formatNumber(data.width),
             scaledy: formatNumber(data.height),
           }

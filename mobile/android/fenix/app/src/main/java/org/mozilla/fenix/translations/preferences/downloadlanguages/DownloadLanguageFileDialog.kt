@@ -27,7 +27,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import mozilla.components.compose.base.button.FilledButton
@@ -37,6 +37,7 @@ import mozilla.components.feature.downloads.FileSizeFormatter
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Download Languages File Dialog.
@@ -196,10 +197,12 @@ sealed class DownloadLanguageFileDialogType {
     data object TranslationRequest : DownloadLanguageFileDialogType()
 }
 
+@Preview
 @Composable
-@PreviewLightDark
-private fun PrefDownloadLanguageFileDialogPreviewAllLanguages() {
-    FirefoxTheme {
+private fun PrefDownloadLanguageFileDialogPreviewAllLanguages(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         DownloadLanguageFileDialog(
             downloadLanguageDialogType = DownloadLanguageFileDialogType.AllLanguages,
             fileSizeFormatter = DefaultFileSizeFormatter(LocalContext.current),
@@ -212,42 +215,12 @@ private fun PrefDownloadLanguageFileDialogPreviewAllLanguages() {
     }
 }
 
-@Composable
 @Preview
-private fun PrefDownloadLanguageFileDialogPrivatePreviewAllLanguages() {
-    FirefoxTheme(theme = Theme.Private) {
-        DownloadLanguageFileDialog(
-            downloadLanguageDialogType = DownloadLanguageFileDialogType.AllLanguages,
-            fileSizeFormatter = DefaultFileSizeFormatter(LocalContext.current),
-            fileSize = 4000L,
-            isCheckBoxEnabled = true,
-            onSavingModeStateChange = {},
-            onConfirmDownload = {},
-            onCancel = {},
-        )
-    }
-}
-
 @Composable
-@PreviewLightDark
-private fun PrefDownloadLanguageFileDialogPreview() {
-    FirefoxTheme {
-        DownloadLanguageFileDialog(
-            downloadLanguageDialogType = DownloadLanguageFileDialogType.Default,
-            fileSizeFormatter = DefaultFileSizeFormatter(LocalContext.current),
-            fileSize = 4000L,
-            isCheckBoxEnabled = false,
-            onSavingModeStateChange = {},
-            onConfirmDownload = {},
-            onCancel = {},
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun PrefDownloadLanguageFileDialogPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun PrefDownloadLanguageFileDialogPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         DownloadLanguageFileDialog(
             downloadLanguageDialogType = DownloadLanguageFileDialogType.Default,
             fileSizeFormatter = DefaultFileSizeFormatter(LocalContext.current),

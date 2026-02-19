@@ -6,34 +6,34 @@
   --card-padding: 24px;
   --exit-icon-size: 12px;
   --exit-icon-position: calc((var(--card-padding) - var(--exit-icon-size)) / 2);
-  --social-color: #9059ff;
-  --cookie-color: #0090f4;
-  --tracker-color: #2ac3a2;
-  --fingerprinter-color: #ffa436;
-  --cryptominer-color: #adadbc;
+  --social-color: var(--color-violet-50);
+  --cookie-color: var(--color-blue-40);
+  --tracker-color: var(--color-cyan-30);
+  --fingerprinter-color: var(--color-orange-30);
+  --cryptominer-color: var(--color-gray-50);
 
   /* Highlight colors for trackers */
-  --social-highlight-color: #7b4cdb;
-  --cookie-highlight-color: #0081db;
-  --tracker-highlight-color: #23a488;
-  --fingerprinter-highlight-color: #d37f17;
-  --cryptominer-highlight-color: #9292a0;
+  --social-highlight-color: var(--color-violet-60);
+  --cookie-highlight-color: var(--color-blue-50);
+  --tracker-highlight-color: var(--color-cyan-50);
+  --fingerprinter-highlight-color: var(--color-orange-50);
+  --cryptominer-highlight-color: var(--color-gray-60);
 
   --tab-highlight: var(--social-color); /* start with social selected */
   --column-width: 16px;
-  --graph-empty: #cececf;
+  --graph-empty: var(--color-gray-30);
   --graph-curve: cubic-bezier(0.66, 0.75, 0.59, 0.91);
 
   /* Colors for the loading indicator */
-  --protection-report-loader-color-stop: #aeaeae3d;
+  --protection-report-loader-color-stop: oklch(from var(--color-gray-50) l c h / 24%);
   --protection-report-loader-gradient-opacity: 0.95;
 
-  --grey-70: #38383d;
-  --grey-90-a60: rgba(12, 12, 13, 0.6);
+  --gear-icon-fill: oklch(from var(--color-gray-100) l c h / 60%);
+  --hover-grey-link: var(--color-gray-80);
 
-  --gear-icon-fill: var(--grey-90-a60);
-  --hover-grey-link: var(--grey-70);
-  --feature-banner-color: rgba(0, 0, 0, 0.05);
+  --block-background-color: var(--color-gray-70);
+  --breaches-background-color: var(--color-orange-30);
+  --feature-banner-color: var(--color-black-alpha-10);
 }
 
 body {
@@ -200,15 +200,15 @@ a.hidden,
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --social-highlight-color: #9661ff;
-    --cookie-highlight-color: #2ba8ff;
-    --tracker-highlight-color: #39e1bc;
-    --fingerprinter-highlight-color: #ffb65e;
-    --cryptominer-highlight-color: #bebeca;
+    --social-highlight-color: var(--color-violet-50);
+    --cookie-highlight-color: var(--color-blue-40);
+    --tracker-highlight-color: var(--color-cyan-20);
+    --fingerprinter-highlight-color: var(--color-orange-30);
+    --cryptominer-highlight-color: var(--color-gray-50);
 
-    --gear-icon-fill: rgba(249, 249, 250, 0.6);
+    --gear-icon-fill: oklch(from var(--color-gray-05) l c h / 60%);
     --hover-grey-link: var(--grey-30);
-    --feature-banner-color: rgba(255, 255, 255, 0.1);
+    --feature-banner-color: var(--color-white-alpha-10);
   }
 
   .etp-card .icon.dark,
@@ -392,42 +392,52 @@ a.hidden,
 }
 
 .social-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--social-color);
 }
 
 .hover-social .social-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--social-highlight-color);
 }
 
 .cookie-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cookie-color);
 }
 
 .hover-cookie .cookie-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cookie-highlight-color);
 }
 
 .tracker-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--tracker-color);
 }
 
 .hover-tracker .tracker-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--tracker-highlight-color);
 }
 
 .fingerprinter-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--fingerprinter-color);
 }
 
 .hover-fingerprinter .fingerprinter-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--fingerprinter-highlight-color);
 }
 
 .cryptominer-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cryptominer-color);
 }
 
 .hover-cryptominer .cryptominer-bar {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cryptominer-highlight-color);
 }
 
@@ -479,6 +489,7 @@ input[type="radio"] {
 }
 
 #highlight {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--tab-highlight);
   position: absolute;
   height: 3px;
@@ -587,6 +598,7 @@ label:hover {
 input[data-type="social"]:checked ~ #highlight,
 .hover-social label[for="tab-social"] ~ #highlight-hover,
 label[for="tab-social"]:hover ~ #highlight-hover {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--social-color);
   grid-area: social;
 }
@@ -594,6 +606,7 @@ label[for="tab-social"]:hover ~ #highlight-hover {
 input[data-type="cookie"]:checked ~ #highlight,
 .hover-cookie label[for="tab-cookie"] ~ #highlight-hover,
 label[for="tab-cookie"]:hover ~ #highlight-hover {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cookie-color);
   grid-area: cookie;
 }
@@ -601,6 +614,7 @@ label[for="tab-cookie"]:hover ~ #highlight-hover {
 input[data-type="tracker"]:checked ~ #highlight,
 .hover-tracker label[for="tab-tracker"] ~ #highlight-hover,
 label[for="tab-tracker"]:hover ~ #highlight-hover {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--tracker-color);
   grid-area: tracker;
 }
@@ -608,6 +622,7 @@ label[for="tab-tracker"]:hover ~ #highlight-hover {
 input[data-type="fingerprinter"]:checked ~ #highlight,
 .hover-fingerprinter label[for="tab-fingerprinter"] ~ #highlight-hover,
 label[for="tab-fingerprinter"]:hover ~ #highlight-hover {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--fingerprinter-color);
   grid-area: fingerprinter;
 }
@@ -615,6 +630,7 @@ label[for="tab-fingerprinter"]:hover ~ #highlight-hover {
 input[data-type="cryptominer"]:checked ~ #highlight,
 .hover-cryptominer label[for="tab-cryptominer"] ~ #highlight-hover,
 label[for="tab-cryptominer"]:hover ~ #highlight-hover {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--cryptominer-color);
   grid-area: cryptominer;
 }
@@ -662,7 +678,8 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 }
 
 .block {
-  background-color: var(--grey-60);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--block-background-color);
   border-radius: var(--border-radius-small);
   text-align: center;
   font-size: 1.125em;
@@ -969,7 +986,8 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 
 .number-of-breaches.block {
   font-size: 1.45em;
-  background-color: var(--orange-50);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--breaches-background-color);
   padding: 15px;
   grid-column: 1 / 2;
   width: 70px;
@@ -1086,6 +1104,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 
 .new-banner {
   width: 100%;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: var(--feature-banner-color);
 }
 

@@ -27,7 +27,7 @@
   <string name="teaser">Penjelajahan pribadi otomatis.\nJelajahi. Hapus. Ulangi.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">Riwayat penjelajahan Anda sudah dihapus.</string>
-  <string name="feedback_erase2">Riwayat penjelajahan dihapus</string>
+  <string name="feedback_erase2">Riwayat penjelajahan dibersihkan</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Riwayat penjelajahan tab telah dihapus.</string>
   <!--
@@ -57,7 +57,7 @@
   <!-- Menu item: Add the current site as a shortcut on the Home screen -->
   <string name="menu_add_to_shortcuts">Tambahkan ke Pintasan</string>
   <!-- Menu item: Remove the current site as a shortcut from the Home screen -->
-  <string name="menu_remove_from_shortcuts">Hapuskan dari Pintasan</string>
+  <string name="menu_remove_from_shortcuts">Hapus dari Pintasan</string>
   <!-- Menu item: Shows information about features and changes that are new to this version -->
   <string name="menu_settings">Pengaturan</string>
   <string name="menu_about">Tentang</string>
@@ -70,7 +70,7 @@
     blocking of trackers for the current browsing session - for example if the current website
     doesn't work correctly with blocked content.
   -->
-  <string name="menu_trackers_blocked_title">Pelacak terblokir</string>
+  <string name="menu_trackers_blocked_title">Pelacak diblokir</string>
   <!--
     Menu item: This is the subtitle for the Trackers blocked menu entry that shows how many
     trackers have been blocked for the currently loaded website.

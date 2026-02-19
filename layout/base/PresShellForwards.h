@@ -119,23 +119,13 @@ struct ScrollAxis final {
    *     visible.
    *   * WhenToScroll::Always: Move the frame regardless of its current
    *     visibility.
-   *
-   * aOnlyIfPerceivedScrollableDirection:
-   *   If the direction is not a perceived scrollable direction (i.e. no
-   *   scrollbar showing and less than one device pixel of scrollable
-   *   distance), don't scroll. Defaults to false.
    */
   explicit ScrollAxis(WhereToScroll aWhere = WhereToScroll::Nearest,
-                      WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible,
-                      bool aOnlyIfPerceivedScrollableDirection = false)
-      : mWhereToScroll(aWhere),
-        mWhenToScroll(aWhen),
-        mOnlyIfPerceivedScrollableDirection(
-            aOnlyIfPerceivedScrollableDirection) {}
+                      WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible)
+      : mWhereToScroll(aWhere), mWhenToScroll(aWhen) {}
 
   WhereToScroll mWhereToScroll;
   WhenToScroll mWhenToScroll;
-  bool mOnlyIfPerceivedScrollableDirection : 1;
 };
 
 enum class ScrollFlags : uint8_t {

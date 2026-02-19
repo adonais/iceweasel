@@ -41,10 +41,12 @@ add_task(async function test_deduplication_of_embedded_url_autofill_result() {
     {
       uri: "http://example.com/?url=http://kitten.com/",
       title: "kitten",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
     {
       uri: "http://kitten.com/",
       title: "kitten",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
 

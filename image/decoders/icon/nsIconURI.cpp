@@ -603,6 +603,11 @@ bool nsMozIconURI::Deserialize(const URIParams& aParams) {
   return true;
 }
 
+size_t nsMozIconURI::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
+  // We don't need to calculate this unless it shows up in DMD.
+  return 0;
+};
+
 NS_IMETHODIMP
 nsMozIconURI::GetInnerURI(nsIURI** aURI) {
   nsCOMPtr<nsIURI> iconURL = mIconURL;

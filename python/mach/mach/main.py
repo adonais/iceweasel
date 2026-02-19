@@ -528,7 +528,7 @@ def get_argument_parser(context=None, action=CommandAction, topsrcdir=None):
 
     parser = ArgumentParser(
         add_help=False,
-        usage="%(prog)s [global arguments] " "command [command arguments]",
+        usage="%(prog)s [global arguments] command [command arguments]",
     )
 
     # WARNING!!! If you add a global argument here, also add it to the

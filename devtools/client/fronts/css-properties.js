@@ -62,21 +62,22 @@ class CssPropertiesFront extends FrontClassWithSpec(cssPropertiesSpec) {
  * Prototype functions are bound to 'this' so they can be passed around as helper
  * functions.
  *
- * @param {object} db
- *                 A database of CSS properties
- * @param {object} inheritedList
- *                 The key is the property name, the value is whether or not
- *                 that property is inherited.
  */
-function CssProperties(db) {
-  this.properties = db.properties;
+class CssProperties {
+  /**
+   * @param {object} db
+   *                 A database of CSS properties
+   * @param {object} inheritedList
+   *                 The key is the property name, the value is whether or not
+   *                 that property is inherited.
+   */
+  constructor(db) {
+    this.properties = db.properties;
 
-  this.isKnown = this.isKnown.bind(this);
-  this.isInherited = this.isInherited.bind(this);
-  this.supportsType = this.supportsType.bind(this);
-}
-
-CssProperties.prototype = {
+    this.isKnown = this.isKnown.bind(this);
+    this.isInherited = this.isInherited.bind(this);
+    this.supportsType = this.supportsType.bind(this);
+  }
   /**
    * Checks to see if the property is known by the browser. This function has
    * `this` already bound so that it can be passed around by reference.
@@ -88,7 +89,7 @@ CssProperties.prototype = {
     // Custom Property Names (aka CSS Variables) are case-sensitive; do not lowercase.
     property = property.startsWith("--") ? property : property.toLowerCase();
     return !!this.properties[property] || isCssVariable(property);
-  },
+  }
 
   /**
    * Checks to see if the property is an inherited one.
@@ -98,7 +99,7 @@ CssProperties.prototype = {
    */
   isInherited(property) {
     return this.properties[property]?.isInherited;
-  },
+  }
 
   /**
    * Checks if the property supports the given CSS type.
@@ -114,7 +115,7 @@ CssProperties.prototype = {
       (this.properties[property].supports.includes(type) ||
         this.properties[property].supports.includes(id))
     );
-  },
+  }
 
   /**
    * Gets the CSS values for a given property name.
@@ -124,7 +125,7 @@ CssProperties.prototype = {
    */
   getValues(property) {
     return this.properties[property] ? this.properties[property].values : [];
-  },
+  }
 
   /**
    * Gets the CSS property names.
@@ -133,7 +134,7 @@ CssProperties.prototype = {
    */
   getNames() {
     return Object.keys(this.properties);
-  },
+  }
 
   /**
    * Return a list of subproperties for the given property.  If |name|
@@ -154,8 +155,8 @@ CssProperties.prototype = {
       return [name];
     }
     return [];
-  },
-};
+  }
+}
 
 /**
  * Even if the target has the cssProperties actor, the returned data may not be in the

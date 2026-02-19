@@ -1,8 +1,9 @@
-commit 2312907b9b426cb2e9ae50aff25119319ab4e2d4
-Author: Philip Chimento <pchimento@igalia.com>
-Date:   Tue Nov 11 10:21:00 2025 -0800
+commit 4869a68f71f9ea4c1b50ac7b1283e1fc81525581
+Author: Frank Yung-Fong Tang <ftang@chromium.org>
+Date:   Wed Dec 10 08:37:46 2025 -0800
 
-    Intl Era Monthcode: Fix up locale frontmatter for Hijri fallback
+    Add test for ECMA402 PR 1015 to verify  (new Intl.Segmenter()).segment("123")[Symbol.iterator].name (#4635)
     
-    We don't require an en-u-ca-islamic locale to run this test, in fact
-    it's the intention that it will fall back to another Hijri calendar.
+    * Add test for ECMA402 PR 1015
+    
+    https://github.com/tc39/ecma402/pull/1015

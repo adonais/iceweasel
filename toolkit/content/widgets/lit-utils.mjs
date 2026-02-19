@@ -262,8 +262,9 @@ export class MozBaseInputElement extends MozLitElement {
     parentDisabled: { type: Boolean, state: true },
     ariaLabel: { type: String, mapped: true },
     ariaDescription: { type: String, mapped: true },
+    inputLayout: { type: String, reflect: true, attribute: "inputlayout" },
   };
-  /** @type {"inline" | "block"} */
+  /** @type {"inline" | "block" | "inline-end"} */
   static inputLayout = "inline";
   /** @type {keyof MozBaseInputElement} */
   static activatedProperty = null;
@@ -271,6 +272,9 @@ export class MozBaseInputElement extends MozLitElement {
   constructor() {
     super();
     this.disabled = false;
+    this.inputLayout = /** @type {typeof MozBaseInputElement} */ (
+      this.constructor
+    ).inputLayout;
     this.#internals = this.attachInternals();
   }
 
@@ -291,7 +295,6 @@ export class MozBaseInputElement extends MozLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.setAttribute("inputlayout", this.constructor.inputLayout);
     /** @type {string} val */
     let val = this.getAttribute("value") || this.value;
     this.defaultValue = val;
@@ -383,10 +386,6 @@ export class MozBaseInputElement extends MozLitElement {
     return this.#internals.states.has("has-label");
   }
 
-  get isInlineLayout() {
-    return this.constructor.inputLayout == "inline";
-  }
-
   get isDisabled() {
     return !!(this.disabled || this.parentDisabled);
   }
@@ -441,20 +440,22 @@ export class MozBaseInputElement extends MozLitElement {
         href="chrome://global/content/elements/moz-input-common.css"
       />
       ${this.inputStylesTemplate()}
-      <span class="label-wrapper">
-        <label
-          is="moz-label"
-          id="label"
-          part="label"
-          for="input"
-          shownaccesskey=${ifDefined(this.accessKey)}
-          >${this.isInlineLayout
-            ? this.inputTemplate()
-            : ""}${this.labelTemplate()}</label
-        >${this.hasDescription ? "" : this.supportLinkTemplate()}
-      </span>
-      ${this.descriptionTemplate()}
-      ${!this.isInlineLayout ? this.inputTemplate() : ""}
+      <div class="content-wrapper">
+        <span class="label-wrapper">
+          <label
+            is="moz-label"
+            id="label"
+            part="label"
+            for="input"
+            shownaccesskey=${ifDefined(this.accessKey)}
+            >${this.inputLayout === "inline"
+              ? this.inputTemplate()
+              : ""}${this.labelTemplate()}</label
+          >${this.hasDescription ? "" : this.supportLinkTemplate()}
+          ${this.descriptionTemplate()}
+        </span>
+        ${this.inputLayout !== "inline" ? this.inputTemplate() : ""}
+      </div>
       ${this.nestedFieldsTemplate()}
     `;
   }
@@ -463,12 +464,19 @@ export class MozBaseInputElement extends MozLitElement {
     if (!this.label) {
       return "";
     }
-    return html`<span class="text-container"
-      >${this.iconTemplate()}<span
-        class="text"
+    let labelEl;
+    if (this.getAttribute("headinglevel") == "2") {
+      // Undocumented hack for AI controls, do not use, it WILL be removed. (bug 2012250)
+      labelEl = html`<h2
+        class="text text-box-trim-start"
         .textContent=${this.label}
-      ></span
-    ></span>`;
+      ></h2>`;
+    } else {
+      labelEl = html`<span class="text" .textContent=${this.label}></span>`;
+    }
+    return html`<span class="text-container"
+      >${this.iconTemplate()}${labelEl}</span
+    >`;
   }
 
   descriptionTemplate() {
@@ -498,7 +506,7 @@ export class MozBaseInputElement extends MozLitElement {
         is="moz-support-link"
         support-page=${this.supportPage}
         part="support-link"
-        aria-describedby=${this.isInlineLayout ? nothing : "label description"}
+        aria-describedby="label description"
       ></a>`;
     }
     return html`<slot

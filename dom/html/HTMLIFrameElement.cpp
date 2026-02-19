@@ -71,6 +71,8 @@ NS_IMPL_ELEMENT_CLONE(HTMLIFrameElement)
 
 void HTMLIFrameElement::BindToBrowsingContext(BrowsingContext*) {
   RefreshFeaturePolicy(true /* parse the feature policy attribute */);
+  RefreshEmbedderReferrerPolicy(
+      ReferrerPolicyFromAttr(GetParsedAttr(nsGkAtoms::referrerpolicy)));
 }
 
 bool HTMLIFrameElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
@@ -198,6 +200,13 @@ void HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     }
   }
 
+  if (aName == nsGkAtoms::referrerpolicy) {
+    const auto newValue = ReferrerPolicyFromAttr(aValue);
+    if (newValue != ReferrerPolicyFromAttr(aOldValue)) {
+      RefreshEmbedderReferrerPolicy(newValue);
+    }
+  }
+
   return nsGenericHTMLFrameElement::AfterSetAttr(
       aNameSpaceID, aName, aValue, aOldValue, aMaybeScriptedPrincipal, aNotify);
 }
@@ -310,6 +319,17 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
 
   mFeaturePolicy->InheritPolicy(OwnerDoc()->FeaturePolicy());
   MaybeStoreCrossOriginFeaturePolicy();
+}
+
+void HTMLIFrameElement::RefreshEmbedderReferrerPolicy(ReferrerPolicy aPolicy) {
+  auto* browsingContext = GetExtantBrowsingContext();
+  if (!browsingContext || !browsingContext->IsContentSubframe()) {
+    return;
+  }
+
+  if (ContentChild* cc = ContentChild::GetSingleton()) {
+    (void)cc->SendSetReferrerPolicyForEmbedderFrame(browsingContext, aPolicy);
+  }
 }
 
 void HTMLIFrameElement::UpdateLazyLoadState() {

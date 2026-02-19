@@ -140,6 +140,12 @@ skip-if = [
 
 ["test_fetch_lnk.html"]
 
+["test_http_auth_cache.html"]
+support-files = ["authenticate.sjs", "../../../toolkit/components/prompts/test/prompt_common.js", "../../../toolkit/components/prompts/test/chromeScript.js"]
+skip-if = [
+  "os == 'android'", # bug 1267092: auth prompt helpers don't work on android
+]
+
 ["test_idn_redirect.html"]
 skip-if = [
   "http2",

@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Ipasok ang mga search term</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Ipapakita rito ang iyong nakabukas na mga tab.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ipapakita rito ang iyong nakabukas na mga tab.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Ipapakita rito ang iyong mga pribadong tab.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ipapakita rito ang iyong mga pribadong tab.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d ang napili</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -46,7 +46,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Umalis sa multiselect mode</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">I-save ang mga napiling tab sa koleksyon</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">I-save ang mga napiling tab sa koleksyon</string>
   <!--
     Home - Bookmarks
 
@@ -185,7 +185,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Mga extension</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Mayroon kang mga naka-install na extension, pero hindi naka-enable</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Mayroon kang mga naka-install na extension, pero hindi naka-enable</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Pamahalaan ang mga extension</string>
   <!--
@@ -202,9 +202,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Impormasyon ng account</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">Tulong</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Tulong</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">Ano ang Bago</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Ano ang Bago</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Mga Setting</string>
   <!-- Browser menu button that opens a user's library -->
@@ -212,7 +212,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Desktop site</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Buksan sa regular na tab</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Buksan sa regular na tab</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Idagdag sa Home screen</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -238,7 +238,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">PINATATAKBO NG %1$s</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">PINATATAKBO NG %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -251,15 +251,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Buksan sa app</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">Customize reader view</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Customize reader view</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Ipasadya ang Reader View</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">Idagdag</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Idagdag</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">Baguhin</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Baguhin</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">Ipasadya ang homepage</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Ipasadya ang homepage</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Mag-sign in</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
@@ -270,22 +270,18 @@
   <string name="browser_menu_new_private_tab">Bagong pribadong tab</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Mga password</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Tulong</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Mga setting</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Isara ang extension menu sheet</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Isara ang extension menu sheet</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Isara ang save menu sheet</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Isara ang save menu sheet</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Isara ang tools menu sheet</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Isara ang tools menu sheet</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Isara ang pasadyang tab menu sheet</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">Baguhin ang bookmark</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">Mag-ulat ng sirang site…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Mag-ulat ng sirang site…</string>
   <!--
     Browser menu label for the Delete browsing data on quit feature.
     %1$s is the name of the app (for example "Firefox").
@@ -382,19 +378,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Abiso sa Pribasiya ng Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Nais naming panatilihin kang ligtas</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Alamin kung bakit milyun-milyon ang mahilig sa Firefox</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Ligtas na pag-browse nang may karagdagang mga pagpipilian</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Ang browser namin na suportado ng isang non-profit ay tumutulong para pigilan ng mga kumpanya na manmanan ka online.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Napoprotektahan ng higit sa 100 milyong tao ang kanilang pribasiya sa pagpili ng browser na suportado ng isang nonprofit.</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Kilalang mga tracker? Kusang hinaharang. Mga extension? Subukan mo lahat ng 700 extension. Mga PDF? Mas madali gamit ang aming built-in reader.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Itakda bilang default browser</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -1134,9 +1119,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Aktibo</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Subukan ang mga feature at ideya bago pa ito mailabas sa lahat.</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Subukan ang mga feature at ideya bago pa ito mailabas sa lahat.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Mag-install at magpatakbo ng mga study</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Mag-install at magpatakbo ng mga study</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Alamin</string>
   <!--
@@ -1154,15 +1139,15 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Idagdag sa pribadong tab</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Pribado</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Pribado</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Sync</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sync</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Ibahagi lahat ng mga tab</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Ibahagi lahat ng mga tab</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Mga isinarang tab kamakailan</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Isinara kamakailan</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Isinara kamakailan</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Mga account setting</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1170,11 +1155,11 @@
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Isara lahat ng mga tab</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Bookmark</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Bookmark</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Isara</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Isara</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Ibahagi ang mga napiling tab</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Ibahagi ang mga napiling tab</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menu para sa mga napiling tab</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1802,7 +1787,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Kusang magbubura ng browsing data kapag pinili mo ang \"Umalis\" mula sa main menu</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">Umalis</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Umalis</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Saklaw ng oras upang burahin</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2391,9 +2376,9 @@
   -->
   <string name="certificate_info_verified_by">Naberipika ng: %1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">Burahin</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Burahin</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">Baguhin</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Baguhin</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Sigurado ka ba na gusto mong i-delete ang password na ito?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -2401,15 +2386,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Ikansela</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">Mga pamimilian sa password</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Mga pamimilian sa password</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">Ang editable text field para sa address ng website.</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Ang editable text field para sa address ng website.</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">Ang editable text field para sa username.</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Ang editable text field para sa username.</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">Ang editable text field para sa password.</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Ang editable text field para sa password.</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">I-save ang mga pagbabago.</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">I-save ang mga pagbabago.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Baguhin ang password</string>
   <!-- The page title for adding new password. -->

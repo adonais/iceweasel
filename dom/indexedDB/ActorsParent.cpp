@@ -1326,6 +1326,7 @@ class DatabaseConnection::UpdateRefcountFunction::FileInfoEntry final {
     }
   }
   void DecBySavepointDelta() { mDelta -= mSavepointDelta; }
+  void ResetSavepointDelta() { mSavepointDelta = 0; }
   SafeRefPtr<DatabaseFileInfo> ReleaseFileInfo() {
     return std::move(mFileInfo);
   }
@@ -7630,6 +7631,7 @@ void DatabaseConnection::UpdateRefcountFunction::RollbackSavepoint() {
 
   for (const auto& entry : mSavepointEntriesIndex.Values()) {
     entry->DecBySavepointDelta();
+    entry->ResetSavepointDelta();
   }
 
   mInSavepoint = false;
@@ -10639,8 +10641,8 @@ already_AddRefed<PBackgroundIDBCursorParent> TransactionBase::AllocCursor(
   if (NS_AUUF_OR_WARN_IF(!objectStoreMetadata)) {
     return nullptr;
   }
-  if (aTrustParams && NS_AUUF_OR_WARN_IF(!VerifyRequestParams(
-                          commonParams.optionalKeyRange()))) {
+  if (!aTrustParams && NS_AUUF_OR_WARN_IF(!VerifyRequestParams(
+                           commonParams.optionalKeyRange()))) {
     return nullptr;
   }
   direction = commonParams.direction();
@@ -19145,7 +19147,8 @@ nsresult ObjectStoreAddOrPutRequestOp::DoDatabaseWork(
 
         // Update index keys if primary key is preserved in child.
         for (auto& updateInfo : mParams.indexUpdateInfos()) {
-          updateInfo.value().MaybeUpdateAutoIncrementKey(autoIncrementNum);
+          QM_TRY(
+              updateInfo.value().MaybeUpdateAutoIncrementKey(autoIncrementNum));
         }
       } else if (key.IsFloat()) {
         double numericKey = key.ToFloat();

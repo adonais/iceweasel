@@ -32,6 +32,8 @@ support-files = [
 
 ["browser_aboutCertError_noSubjectAltName.js"]
 
+["browser_aboutCertError_notYetValid.js"]
+
 ["browser_aboutCertError_offlineSupport.js"]
 
 ["browser_aboutCertError_offlineSupport_feltPrivacyV1.js"]
@@ -39,6 +41,8 @@ support-files = [
 ["browser_aboutCertError_revoked.js"]
 
 ["browser_aboutCertError_telemetry.js"]
+
+["browser_aboutCertError_untrustedIssuer.js"]
 
 ["browser_aboutDialog_distribution.js"]
 skip-if = [
@@ -64,7 +68,13 @@ support-files = [
   "csp_iframe.sjs",
 ]
 
+["browser_aboutNetError_emptyResponse.js"]
+
+["browser_aboutNetError_httpAuthDisabled.js"]
+
 ["browser_aboutNetError_internet_connection_offline.js"]
+
+["browser_aboutNetError_invalid_cert_noUserFix.js"]
 
 ["browser_aboutNetError_invalid_header.js"]
 support-files = [

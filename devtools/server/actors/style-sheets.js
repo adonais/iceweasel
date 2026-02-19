@@ -53,10 +53,7 @@ class StyleSheetsActor extends Actor {
 
   getTraits() {
     return {
-      traits: {
-        // @backward-compat { version 146 } getStyleSheetIndentation was added in 146
-        hasGetStyleSheetIndentation: true,
-      },
+      traits: {},
     };
   }
 

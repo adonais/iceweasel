@@ -372,9 +372,9 @@ Function getUIString
   ${Select} $0
     ${Case} "cleanup_header"
       ${If} $ProfileCleanupPromptType == 1
-        Push "$(STUB_CLEANUP_REINSTALL_HEADER2)"
+        Push "$(STUB_CLEANUP_REINSTALL_HEADER3)"
       ${Else}
-        Push "$(STUB_CLEANUP_PAVEOVER_HEADER2)"
+        Push "$(STUB_CLEANUP_PAVEOVER_HEADER3)"
       ${EndIf}
     ${Case} "cleanup_button"
       ${If} $ProfileCleanupPromptType == 1
@@ -383,21 +383,27 @@ Function getUIString
         Push "$(STUB_CLEANUP_PAVEOVER_BUTTON2)"
       ${EndIf}
     ${Case} "cleanup_checkbox"
-      Push "$(STUB_CLEANUP_CHECKBOX_LABEL2)"
-    ${Case} "installing_header"
-      Push "$(STUB_INSTALLING_HEADLINE2)"
+      Push "$(STUB_CLEANUP_CHECKBOX_LABEL3)"
     ${Case} "installing_label"
       Push "$(STUB_INSTALLING_LABEL2)"
-    ${Case} "installing_content"
-      Push "$(STUB_INSTALLING_BODY2)"
     ${Case} "installing_blurb_0"
-      Push "$(STUB_BLURB_FIRST1)"
+      !ifdef DEV_EDITION
+        Push "$(STUB_BLURB_FIRST2_DEVEDITION)"
+      !else
+        Push "$(STUB_BLURB_FIRST2)"
+      !endif
     ${Case} "installing_blurb_1"
-      Push "$(STUB_BLURB_SECOND1)"
+      !ifdef DEV_EDITION
+        Push "$(STUB_BLURB_SECOND2_DEVEDITION)"
+      !else
+        Push "$(STUB_BLURB_SECOND2)"
+      !endif
     ${Case} "installing_blurb_2"
-      Push "$(STUB_BLURB_THIRD1)"
-    ${Case} "global_footer"
-      Push "$(STUB_BLURB_FOOTER2)"
+      !ifdef DEV_EDITION
+        Push "$(STUB_BLURB_THIRD2_DEVEDITION)"
+      !else
+        Push "$(STUB_BLURB_THIRD2)"
+      !endif
     ${Default}
       Push ""
   ${EndSelect}
@@ -1225,7 +1231,7 @@ Function DisplayDownloadError
   ${ITBL3SetProgressValue} "100" "100"
   ${ITBL3SetProgressState} "${TBPF_ERROR}"
 
-  MessageBox MB_OKCANCEL|MB_ICONSTOP "$(ERROR_DOWNLOAD_CONT)" IDCANCEL +2 IDOK +1
+  MessageBox MB_OKCANCEL|MB_ICONSTOP "$(ERROR_DOWNLOAD_CONT2)" IDCANCEL +2 IDOK +1
   Call LaunchHelpPage
   Call SendPing
 FunctionEnd
@@ -1569,9 +1575,9 @@ Function CommonOnInit
   ${Unless} ${AtLeastWin10}
     StrCpy $ExitCode "${ERR_PREINSTALL_SYS_OS_REQ}"
     ${If} "$CpuSupportsSSE" == "0"
-      strCpy $R7 "$(WARN_MIN_SUPPORTED_OSVER_CPU_MSG)"
+      strCpy $R7 "$(WARN_MIN_SUPPORTED_OSVER_CPU_MSG2)"
     ${Else}
-      strCpy $R7 "$(WARN_MIN_SUPPORTED_OSVER_MSG)"
+      strCpy $R7 "$(WARN_MIN_SUPPORTED_OSVER_MSG2)"
     ${EndIf}
     MessageBox MB_OKCANCEL|MB_ICONSTOP "$R7" /SD IDCANCEL IDCANCEL +2
     ExecShell "open" "${URLWinPre10NeedsEsr115}"
@@ -1582,7 +1588,7 @@ Function CommonOnInit
   ; SSE2 CPU support
   ${If} "$CpuSupportsSSE" == "0"
     StrCpy $ExitCode "${ERR_PREINSTALL_SYS_HW_REQ}"
-    MessageBox MB_OKCANCEL|MB_ICONSTOP "$(WARN_MIN_SUPPORTED_CPU_MSG)" /SD IDCANCEL IDCANCEL +2
+    MessageBox MB_OKCANCEL|MB_ICONSTOP "$(WARN_MIN_SUPPORTED_CPU_MSG2)" /SD IDCANCEL IDCANCEL +2
     ExecShell "open" "${URLSystemRequirements}"
     StrCpy $AbortInstallation "true"
     Return
@@ -1728,7 +1734,7 @@ Function CommonOnInit
   Call CanWrite
   ${If} "$CanWriteToInstallDir" == "false"
     StrCpy $ExitCode "${ERR_PREINSTALL_NOT_WRITABLE}"
-    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_WRITE_ACCESS_QUIT)$\n$\n$INSTDIR" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_WRITE_ACCESS_QUIT2)$\n$\n$INSTDIR" /SD IDOK
     StrCpy $AbortInstallation "true"
     Return
   ${EndIf}
@@ -1738,7 +1744,7 @@ Function CommonOnInit
   Call CheckSpace
   ${If} "$HasRequiredSpaceAvailable" == "false"
       StrCpy $ExitCode "${ERR_PREINSTALL_SPACE}"
-    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_DISK_SPACE_QUIT)"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_DISK_SPACE_QUIT2)"
     StrCpy $AbortInstallation "true"
     Return
   ${EndIf}

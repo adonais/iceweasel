@@ -48,6 +48,7 @@ Please note that some targeting attributes require stricter controls on the tele
 * [hasSelectableProfiles](#hasselectableprofiles)
 * [homePageSettings](#homepagesettings)
 * [isBackgroundTaskMode](#isbackgroundtaskmode)
+* [isAIWindow] (#isaiwindow)
 * [isChinaRepack](#ischinarepack)
 * [isDefaultBrowser](#isdefaultbrowser)
 * [isDefaultBrowserUncached](#isdefaultbrowseruncached)
@@ -853,6 +854,36 @@ actually emit from tabs, this is always true. For other triggers, like
 
 ```ts
 declare const browserIsSelected: boolean;
+```
+
+### `isAIWindow`
+
+A context property included for all triggers that evaluates to `true` when the
+message comes from an AI Window, and `false` otherwise.
+
+#### Definition
+
+```ts
+declare const isAIWindow: boolean;
+```
+
+#### Examples
+
+* Target AI Windows only:
+```javascript
+isAIWindow
+```
+
+* Target Classic Windows only:
+```javascript
+!isAIWindow
+```
+
+* Target both AI Windows and Classic Windows:
+```javascript
+isAIWindow == isAIWindow
+or equivalently
+(isAIWindow || !isAIWindow)
 ```
 
 ### `isChinaRepack`

@@ -314,7 +314,7 @@ export class UrlbarController {
       return;
     }
 
-    if (this.view.isOpen && executeAction && this._lastQueryContextWrapper) {
+    if (executeAction) {
       // In native inputs on most platforms, Shift+Up/Down moves the caret to the
       // start/end of the input and changes its selection, so in that case defer
       // handling to the input instead of changing the view's selection.
@@ -326,11 +326,11 @@ export class UrlbarController {
         return;
       }
 
-      let { queryContext } = this._lastQueryContextWrapper;
       let handled = false;
       if (lazy.UrlbarPrefs.get("scotchBonnet.enableOverride")) {
         handled = this.input.searchModeSwitcher.handleKeyDown(event);
-      } else {
+      } else if (this.view.isOpen && this._lastQueryContextWrapper) {
+        let { queryContext } = this._lastQueryContextWrapper;
         handled = this.view.oneOffSearchButtons?.handleKeyDown(
           event,
           this.view.visibleRowCount,
@@ -1628,21 +1628,20 @@ class TelemetryEvent {
     this.#previousSearchWordsSet = null;
   }
 
+  /**
+   * Prefs to record in telemetry.
+   *
+   * If a pref is a `fallbackPref` for a Nimbus variable, list the variable
+   * instead of the pref. That way, the metric will record the variable value
+   * when the variable is defined and the pref value otherwise.
+   */
   #PING_PREFS = {
     maxRichResults: Glean.urlbar.prefMaxResults,
-    "quicksuggest.online.available": Glean.urlbar.prefSuggestOnlineAvailable,
+    quickSuggestOnlineAvailable: Glean.urlbar.prefSuggestOnlineAvailable,
     "quicksuggest.online.enabled": Glean.urlbar.prefSuggestOnlineEnabled,
     "suggest.quicksuggest.all": Glean.urlbar.prefSuggestAll,
     "suggest.quicksuggest.sponsored": Glean.urlbar.prefSuggestSponsored,
     "suggest.topsites": Glean.urlbar.prefSuggestTopsites,
-  };
-
-  // Used to record telemetry for prefs that are fallbacks for Nimbus variables.
-  // `onNimbusChanged` is called for these variables rather than `onPrefChanged`
-  // but we want to record telemetry as if the prefs themselves changed. This
-  // object maps Nimbus variable names to their fallback prefs.
-  #PING_NIMBUS_VARIABLES = {
-    quickSuggestOnlineAvailable: "quicksuggest.online.available",
   };
 
   #readPingPrefs() {
@@ -1651,19 +1650,20 @@ class TelemetryEvent {
     }
   }
 
-  #recordPref(pref, newValue = undefined) {
+  #recordPref(pref) {
     const metric = this.#PING_PREFS[pref];
-    const prefValue = newValue ?? lazy.UrlbarPrefs.get(pref);
     if (metric) {
-      metric.set(prefValue);
+      metric.set(lazy.UrlbarPrefs.get(pref));
     }
+
     switch (pref) {
       case "suggest.quicksuggest.all":
       case "suggest.quicksuggest.sponsored":
       case "quicksuggest.enabled":
-        if (!prefValue) {
+        if (!lazy.UrlbarPrefs.get(pref)) {
           this.handleDisableSuggest();
         }
+        break;
     }
   }
 
@@ -1671,10 +1671,8 @@ class TelemetryEvent {
     this.#recordPref(pref);
   }
 
-  onNimbusChanged(name, newValue) {
-    if (this.#PING_NIMBUS_VARIABLES.hasOwnProperty(name)) {
-      this.#recordPref(this.#PING_NIMBUS_VARIABLES[name], newValue);
-    }
+  onNimbusChanged(variable) {
+    this.#recordPref(variable);
   }
 
   // Used to avoid re-entering `record()`.

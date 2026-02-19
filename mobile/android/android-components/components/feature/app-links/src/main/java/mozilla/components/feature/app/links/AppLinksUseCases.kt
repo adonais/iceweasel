@@ -52,7 +52,7 @@ private const val ANDROID_RESOLVER_PACKAGE_NAME = "android"
 class AppLinksUseCases(
     private val context: Context,
     private var launchInApp: () -> Boolean = { false },
-    private val alwaysDeniedSchemes: Set<String> = ALWAYS_DENY_SCHEMES,
+    private val alwaysDeniedSchemes: AlwaysDeniedSchemes = AlwaysDeniedSchemes(ALWAYS_DENY_SCHEMES),
     private val installedBrowsers: Browsers = BrowsersCache.all(context),
 ) {
     @Suppress(
@@ -159,7 +159,7 @@ class AppLinksUseCases(
 
             val appIntent = when {
                 intent?.data == null -> null
-                alwaysDeniedSchemes.contains(intent.data?.scheme) -> null
+                alwaysDeniedSchemes.shouldDeny(intent.data?.scheme) -> null
                 else -> intent
             }
 
@@ -249,7 +249,7 @@ class AppLinksUseCases(
             appIntent?.let {
                 try {
                     val scheme = appIntent.data?.scheme
-                    if (scheme != null && alwaysDeniedSchemes.contains(scheme)) {
+                    if (alwaysDeniedSchemes.shouldDeny(scheme)) {
                         return
                     }
 

@@ -316,16 +316,6 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
              : media::DecodeSupportSet{};
 }
 
-static bool IsAV1MainProfile(const MediaByteBuffer* aBox) {
-  if (!aBox || aBox->IsEmpty()) {
-    return false;
-  }
-  AOMDecoder::AV1SequenceInfo av1Info;
-  MediaResult seqHdrResult;
-  AOMDecoder::TryReadAV1CBox(aBox, av1Info, seqHdrResult);
-  return seqHdrResult.Code() == NS_OK && av1Info.mProfile == 0;
-}
-
 already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
   // Temporary - forces use of VPXDecoder when alpha is present.
@@ -337,7 +327,7 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
   }
 
   if (AOMDecoder::IsAV1(aParams.mConfig.mMimeType) &&
-      !IsAV1MainProfile(aParams.VideoConfig().mExtraData)) {
+      !AOMDecoder::IsMainProfile(aParams.VideoConfig().mExtraData)) {
     return nullptr;
   }
 

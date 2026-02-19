@@ -123,7 +123,7 @@ export var FirstStartup = {
 
       this.elapsed = 0;
       Services.tm.spinEventLoopUntil("FirstStartup.sys.mjs:init", () => {
-        this.elapsed = Math.round(ChromeUtils.now() - startingTime);
+        this.elapsed = Math.ceil(ChromeUtils.now() - startingTime);
         if (this.elapsed >= timeout) {
           this._state = this.TIMED_OUT;
           return true;

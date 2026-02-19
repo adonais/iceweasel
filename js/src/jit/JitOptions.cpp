@@ -117,6 +117,12 @@ DefaultJitOptions::DefaultJitOptions() {
   // Toggles whether CacheIR stubs are used.
   SET_DEFAULT(disableCacheIR, false);
 
+  // Toggles whether stubs are folded.
+  SET_DEFAULT(disableStubFolding, false);
+
+  // Toggles whether stubs with different offsets in Loads or Stores are folded.
+  SET_DEFAULT(disableStubFoldingLoadsAndStores, false);
+
   // Toggles whether sink code motion is globally disabled.
   SET_DEFAULT(disableSink, true);
 

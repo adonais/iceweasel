@@ -46,7 +46,7 @@
   color: var(--theme-selection-color);
 }
 
-.result-list li .result-item-icon {
+.result-list li .dbg-img-result-item-icon {
   background-color: var(--theme-icon-dimmed-color);
 }
 
@@ -56,11 +56,11 @@
   margin-inline-start: 4px;
 }
 
-.result-list .result-item-icon {
+.result-list .dbg-img-result-item-icon {
   display: block;
 }
 
-.result-list .selected .result-item-icon {
+.result-list .selected .dbg-img-result-item-icon {
   background-color: var(--theme-selection-color);
 }
 

@@ -802,11 +802,22 @@ void NativeLayerWayland::UpdateLayerPlacementLocked(
   mSurface->MoveLocked(aProofOfLock, rect.TopLeft());
   mSurface->SetViewPortDestLocked(aProofOfLock, rect.Size());
 
+  LOGVERBOSE(
+      "NativeLayerWayland::UpdateLayerPlacement(): destination [%d,%d] -> [%d "
+      "x %d]",
+      rect.x, rect.y, rect.width, rect.height);
+
   auto transform2DInversed = transform2D.Inverse();
   Rect bufferClip = transform2DInversed.TransformBounds(surfaceRectClipped);
-  mSurface->SetViewPortSourceRectLocked(
-      aProofOfLock,
+  auto viewportRect = gfx::RoundedToInt(
       bufferClip.Intersect(Rect(0, 0, mSize.width, mSize.height)));
+
+  LOGVERBOSE(
+      "NativeLayerWayland::UpdateLayerPlacement(): source [%d,%d] -> [%d x %d]",
+      viewportRect.x, viewportRect.y, viewportRect.width, viewportRect.height);
+
+  mSurface->SetViewPortSourceRectLocked(
+      aProofOfLock, DesktopIntRect::FromUnknownRect(viewportRect));
 }
 
 void NativeLayerWayland::RenderLayer(double aScale) {

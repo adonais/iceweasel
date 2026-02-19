@@ -28,13 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Top-level card container for profiler dialogs
@@ -194,35 +195,15 @@ fun ProfilerErrorDialog(
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun ProfilerDialogueCardPreview() {
-    val radioOptions = listOf("Firefox", "Graphics", "Media", "Networking")
-    val selectedOption = remember { mutableStateOf("Firefox") }
-
-    FirefoxTheme {
-        ProfilerDialogueCard {
-            radioOptions.forEach { text ->
-                ProfilerLabeledRadioButton(
-                    text = text,
-                    subText = "Sub",
-                    selected = selectedOption.value == text,
-                    onClick = {
-                        selectedOption.value = text
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
 @Preview
-private fun ProfilerDialogueCardPrivatePreview() {
+@Composable
+private fun ProfilerDialogueCardPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val radioOptions = listOf("Firefox", "Graphics", "Media", "Networking")
     val selectedOption = remember { mutableStateOf("Firefox") }
 
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         ProfilerDialogueCard {
             radioOptions.forEach { text ->
                 ProfilerLabeledRadioButton(

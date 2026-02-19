@@ -1,7 +1,7 @@
 [DEFAULT]
 tags = "search-telemetry"
 support-files = ["head.js", "head-spa.js"]
-prefs = ["browser.search.log=true"]
+prefs = ["browser.search.log=true", "browser.search.widget.new=false"]
 
 ["browser_search_glean_serp_event_telemetry_categorization_enabled_by_pref.js"]
 support-files = ["searchTelemetryDomainCategorizationReporting.html"]
@@ -17,8 +17,6 @@ support-files = [
   "searchTelemetryAd.html",
   "searchTelemetryAd_components_text.html",
 ]
-
-["browser_search_telemetry_aboutHome.js"]
 
 ["browser_search_telemetry_adImpression_component.js"]
 support-files = [
@@ -203,9 +201,6 @@ support-files = ["searchTelemetryAd_shopping.html"]
 support-files = ["searchTelemetry.html"]
 
 ["browser_search_telemetry_sources.js"]
-support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
-
-["browser_search_telemetry_sources_about.js"]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
 
 ["browser_search_telemetry_sources_ads.js"]

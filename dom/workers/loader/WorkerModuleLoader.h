@@ -79,9 +79,9 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
       JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
       JS::MutableHandle<JSObject*> aModuleScript) override;
 
-  nsresult CompileJavaScriptModule(JSContext* aCx, JS::CompileOptions& aOptions,
-                                   ModuleLoadRequest* aRequest,
-                                   JS::MutableHandle<JSObject*> aModuleScript);
+  nsresult CompileJavaScriptOrWasmModule(
+      JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+      JS::MutableHandle<JSObject*> aModuleScript);
 
   nsresult CompileJsonModule(JSContext* aCx, JS::CompileOptions& aOptions,
                              ModuleLoadRequest* aRequest,

@@ -845,6 +845,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void RecordOnStartTelemetry(nsresult aStatus, bool aIsNavigation);
 
+  void MaybeGenerateNELReport();
+
   // Timer used to delay the network request, or to trigger the network
   // request if retrieving the cache entry takes too long.
   nsCOMPtr<nsITimer> mNetworkTriggerTimer;

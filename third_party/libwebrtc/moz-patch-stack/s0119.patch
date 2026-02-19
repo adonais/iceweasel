@@ -12,7 +12,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f
  3 files changed, 7 insertions(+), 23 deletions(-)
 
 diff --git a/call/call.cc b/call/call.cc
-index 91ec1a54bc..e41922dffa 100644
+index e500c02b29..08944d2932 100644
 --- a/call/call.cc
 +++ b/call/call.cc
 @@ -513,19 +513,6 @@ class Call final : public webrtc::Call,
@@ -33,8 +33,8 @@ index 91ec1a54bc..e41922dffa 100644
 -}
 -
  std::unique_ptr<Call> Call::Create(CallConfig config) {
-   std::unique_ptr<RtpTransportControllerSendInterface> transport_send;
-   if (config.rtp_transport_controller_send_factory != nullptr) {
+   auto transport_send = std::make_unique<RtpTransportControllerSend>(
+       config.ExtractTransportConfig());
 diff --git a/call/call.h b/call/call.h
 index b2146118ff..cda8733859 100644
 --- a/call/call.h
@@ -66,10 +66,10 @@ index b2146118ff..cda8733859 100644
    static std::unique_ptr<Call> Create(CallConfig config);
  
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 85aecb7b1e..8447de5d9f 100644
+index 0a6ccf4011..aa174d524f 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
-@@ -391,6 +391,11 @@ rtc_library("desktop_capture") {
+@@ -394,6 +394,11 @@ rtc_library("desktop_capture") {
      ]
      if (build_with_mozilla) {
        libs -= [ "Xtst" ]

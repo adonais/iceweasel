@@ -1,0 +1,28 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* stylelint-disable */
+
+.chat-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
+/* Temporary chat bubble styling */
+.chat-bubble {
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-large);
+  box-sizing: border-box;
+  border: 1px dashed #ccc;
+}
+
+.chat-bubble-user {
+  align-items: flex-end;
+}
+
+.chat-bubble-assistant {
+  gap: var(--space-small);
+}

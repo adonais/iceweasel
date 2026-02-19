@@ -18,15 +18,18 @@
   color: var(--text-color, #15141a);
 
   /* Variables used in the page layout */
-  --AT-input-padding: 20px;
+  --AT-input-padding: 16px;
   /* This is somewhat arbitrary, but works well for the current design. If the computed
      header height changes, this will need to be adjusted. */
   --AT-header-height: 156px;
 
-  --AT-input-height: calc(clamp(300px, 100vh - var(--AT-header-height), 300px) - var(--AT-viewport-padding) * 2);
+  --AT-section-height: calc(clamp(300px, 100vh - var(--AT-header-height), 300px) - var(--AT-viewport-padding) * 2);
 
-  --AT-content-width: calc(var(--AT-input-height) * 4.5);
+  --AT-content-width: calc(var(--AT-section-height) * 4.5);
   --AT-content-max: calc(100vw - var(--AT-viewport-padding) * 2);
+
+  --AT-square-button-large: calc(var(--size-item-large) + var(--space-small));
+  --AT-square-button-small: var(--size-item-large);
 }
 
 body {
@@ -36,7 +39,7 @@ body {
   align-items: flex-start;
   visibility: hidden;
   margin: 0;
-  row-gap: var(--space-xlarge);
+  row-gap: var(--space-xxlarge);
   padding: var(--AT-page-padding-block-start) var(--AT-viewport-padding) var(--AT-page-padding-block-end);
 }
 
@@ -79,34 +82,117 @@ body {
 }
 
 .about-translations-select {
-  font-size: var(--font-size-large);
-  width: 100%;
-  margin: 0;
+  --select-min-height: var(--AT-square-button-large);
 }
 
-#about-translations-swap-languages-button[type~="icon"]::part(button) {
-  width: var(--size-item-xlarge);
-  height: var(--size-item-xlarge);
-  transform: rotate(90deg) scaleX(-1);
-  background-image: url("chrome://global/skin/icons/arrows-updown.svg");
-  background-size: var(--size-item-medium);
+#about-translations-swap-languages-button {
+  align-self: center;
+
+  &[type~="icon"]::part(button) {
+    width: var(--AT-square-button-large);
+    height: var(--AT-square-button-large);
+    transform: rotate(90deg) scaleX(-1);
+    background-image: url("chrome://global/skin/icons/arrows-updown.svg");
+    background-size: var(--size-item-medium);
+  }
 }
 
-#about-translations-input-section {
+#about-translations-clear-button[type~="icon"]::part(button) {
+  width: var(--AT-square-button-small);
+  height: var(--AT-square-button-small);
+  background-image: url("chrome://global/skin/icons/close.svg");
+  background-size: var(--size-item-small);
+}
+
+#about-translations-source-section,
+#about-translations-target-section {
   width: 100%;
-  height: var(--AT-input-height);
-  max-height: var(--AT-input-height);
-  min-height: calc(var(--AT-input-height) * 0.5);
+  min-height: var(--AT-section-height);
+}
+
+#about-translations-source-section {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  background-color: var(--background-color-box);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;
+
+  &.focus-section {
+    outline: var(--focus-outline);
+    outline-offset: -1px;
+  }
+}
+
+#about-translations-target-section {
+  background-color: var(--background-color-box);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;
+
+  &.focus-section {
+    outline: var(--focus-outline);
+    outline-offset: -1px;
+  }
 }
 
 .about-translations-textarea {
   width: 100%;
-  height: var(--AT-input-height);
-  min-height: var(--AT-input-height);
   margin: 0;
   padding: var(--AT-input-padding);
   overflow: hidden;
   resize: none;
+}
+
+#about-translations-source-textarea {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  padding-inline: var(--AT-input-padding) var(--space-xsmall);
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  :dir(ltr) > &:dir(rtl),
+  :dir(rtl) > &:dir(ltr) {
+    /*
+      We need to reverse which side has the small padding when the
+      locale direction is different than the textarea direction.
+    */
+    padding-inline: var(--space-xsmall) var(--AT-input-padding);
+  }
+}
+
+#about-translations-source-actions {
+  padding: var(--space-xsmall);
+  min-width: var(--AT-square-button-small);
+  background-color: transparent;
+}
+
+#about-translations-target-textarea {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  padding-block-end: var(--space-xsmall);
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+#about-translations-target-actions {
+  padding: var(--space-xsmall);
+  padding-block-end: var(--space-small);
+  background-color: transparent;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+#about-translations-copy-button::part(button) {
+  padding-inline: calc(var(--space-small) + var(--space-xxsmall));
 }
 
 #about-translations-empty-section {
@@ -122,7 +208,7 @@ body {
   #about-translations-main-user-interface {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: auto 1fr 1fr;
+    grid-template-rows: auto auto auto;
     margin: 0;
     width: 100%;
     gap: var(--space-medium);
@@ -152,12 +238,12 @@ body {
     display: none;
   }
 
-  #about-translations-input-section {
+  #about-translations-source-section {
     grid-column: 1 / -1;
     grid-row: 2;
   }
 
-  #about-translations-target-textarea {
+  #about-translations-target-section {
     grid-column: 1 / -1;
     grid-row: 3;
   }

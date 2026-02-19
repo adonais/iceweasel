@@ -44,6 +44,7 @@
 #include "gc/StoreBuffer-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/PlainObject-inl.h"  // js::PlainObject::createWithTemplate
+#include "vm/Shape-inl.h"        // js::GetPropertyAttributes
 
 using namespace js;
 
@@ -1808,10 +1809,9 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
   }
 
   // Check whether id is still to come.
-  Rooted<JSLinearString*> idStr(cx);
   IteratorProperty* cursor = ni->nextProperty();
   for (; cursor < ni->propertiesEnd(); ++cursor) {
-    idStr = cursor->asString();
+    JSLinearString* idStr = cursor->asString();
     // Common case: both strings are atoms.
     if (idStr->isAtom() && str->isAtom()) {
       if (idStr != str) {
@@ -1825,27 +1825,25 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
 
     // Check whether another property along the prototype chain became
     // visible as a result of this deletion.
-    RootedObject proto(cx);
-    if (!GetPrototype(cx, obj, &proto)) {
-      return false;
-    }
-    if (proto) {
-      RootedId id(cx);
-      RootedValue idv(cx, StringValue(idStr));
-      if (!PrimitiveValueToId<CanGC>(cx, idv, &id)) {
-        return false;
-      }
-
-      Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
-      RootedObject holder(cx);
-      if (!GetPropertyDescriptor(cx, proto, id, &desc, &holder)) {
-        return false;
-      }
-
-      // If deletion just made something up the chain visible, no need to
-      // do anything.
-      if (desc.isSome() && desc->enumerable()) {
-        return true;
+    if (obj->hasStaticPrototype()) {
+      JSObject* proto = obj->staticPrototype();
+      if (proto) {
+        JSAtom* atom = AtomizeString(cx, str);
+        if (!atom) {
+          return false;
+        }
+        PropertyKey key = AtomToId(atom);
+        NativeObject* holder = nullptr;
+        PropertyResult prop;
+        if (LookupPropertyPure(cx, proto, key, &holder, &prop) &&
+            prop.isFound()) {
+          // If deletion just made something up the chain visible, no need to
+          // do anything.
+          JS::PropertyAttributes attrs = GetPropertyAttributes(holder, prop);
+          if (attrs.enumerable()) {
+            return true;
+          }
+        }
       }
     }
 
@@ -1955,9 +1953,9 @@ static const JSFunctionSpec iterator_static_methods[] = {
     JS_SELF_HOSTED_FN("concat", "IteratorConcat", 0, 0),
 #ifdef NIGHTLY_BUILD
     JS_SELF_HOSTED_FN("range", "IteratorRange", 3, 0),
+#endif
     JS_SELF_HOSTED_FN("zip", "IteratorZip", 2, 0),
     JS_SELF_HOSTED_FN("zipKeyed", "IteratorZipKeyed", 2, 0),
-#endif
     JS_FS_END,
 };
 
@@ -1982,6 +1980,7 @@ static const JSFunctionSpec iterator_methods[] = {
 #ifdef NIGHTLY_BUILD
     JS_SELF_HOSTED_FN("chunks", "IteratorChunks", 1, 0),
     JS_SELF_HOSTED_FN("windows", "IteratorWindows", 2, 0),
+    JS_SELF_HOSTED_FN("join", "IteratorJoin", 1, 0),
 #endif
     JS_FS_END,
 };

@@ -1131,38 +1131,6 @@ const QuotaCleaner = {
   },
 };
 
-const PredictorNetworkCleaner = {
-  async deleteAll() {
-    // Predictive network data - like cache, no way to clear this per
-    // domain, so just trash it all
-    let np = Cc["@mozilla.org/network/predictor;1"].getService(
-      Ci.nsINetworkPredictor
-    );
-    np.reset();
-  },
-
-  // TODO: We should call the NetworkPredictor to clear by principal, rather
-  // than over-clearing for user requests or bailing out for programmatic calls.
-  async deleteByPrincipal(aPrincipal, aIsUserRequest) {
-    if (!aIsUserRequest) {
-      return;
-    }
-    await this.deleteAll();
-  },
-
-  // TODO: Same as above, but for base domain.
-  async deleteBySite(
-    _aSchemelessSite,
-    _aOriginAttributesPattern,
-    aIsUserRequest
-  ) {
-    if (!aIsUserRequest) {
-      return;
-    }
-    await this.deleteAll();
-  },
-};
-
 const PushNotificationsCleaner = {
   /**
    * Clear entries for aDomain including subdomains of aDomain.
@@ -2330,11 +2298,6 @@ const FLAGS_MAP = [
   },
 
   { flag: Ci.nsIClearDataService.CLEAR_DOM_QUOTA, cleaners: [QuotaCleaner] },
-
-  {
-    flag: Ci.nsIClearDataService.CLEAR_PREDICTOR_NETWORK_DATA,
-    cleaners: [PredictorNetworkCleaner],
-  },
 
   {
     flag: Ci.nsIClearDataService.CLEAR_DOM_PUSH_NOTIFICATIONS,

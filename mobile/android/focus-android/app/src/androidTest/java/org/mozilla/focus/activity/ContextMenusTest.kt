@@ -158,7 +158,7 @@ class ContextMenusTest : TestSetup() {
         val fileName = "rabbit.jpg"
 
         searchScreen {
-        }.loadPage(imagesTestPage.url.toString()) {
+        }.loadPage(imagesTestPage.url) {
             longPressLink(fileName)
         }.clickSaveImage {
             // If permission dialog appears on devices with API<30, grant it

@@ -3,27 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * 8.2.1 Intl.getCanonicalLocales ( locales )
- *
- * ES2017 Intl draft rev 947aa9a0c853422824a0c9510d8f09be3eb416b9
- */
-function Intl_getCanonicalLocales(locales) {
-  // Steps 1-2.
-  return CanonicalizeLocaleList(locales);
-}
-
-/**
- * Intl.supportedValuesOf ( key )
- */
-function Intl_supportedValuesOf(key) {
-  // Step 1.
-  key = ToString(key);
-
-  // Steps 2-9.
-  return intl_SupportedValuesOf(key);
-}
-
-/**
  * This function is a custom function in the style of the standard Intl.*
  * functions, that isn't part of any spec or proposal yet.
  *

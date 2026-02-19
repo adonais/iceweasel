@@ -7,7 +7,7 @@ The navigation panel provides various features for the current file.
 .. image:: img/navigation-panel.png
     :class: border
     :alt: The navigation panel
-    :width: 319px
+    :width: 288px
 
 In the directory listing and some other cases, the navigation panel is collapsed by default.
 Clicking the triangle icon at the left end expands/collapses the navigation panel.
@@ -15,8 +15,33 @@ Clicking the triangle icon at the left end expands/collapses the navigation pane
 .. image:: img/navigation-panel-collapsed.png
     :class: border
     :alt: The navigation panel in a closed state
-    :width: 246px
+    :width: 193px
 
+If the window width is less than 1024px, the panle is collapsed by default also in the source listing.
+This behavior can be configured in the `settings page <https://searchfox.org/firefox-main/pages/settings.html>`_.
+
+Header
+------
+
+The navigation panel provides various features for the current file.
+
+.. image:: img/navigation-panel-header.png
+    :class: border
+    :alt: The navigation panel header
+    :width: 320px
+
+Toggle button
+  Expand/collapse the navigation panel.
+
+Help button
+  Open this documentation.
+
+Settings button
+  Open the `settings page <https://searchfox.org/firefox-main/pages/settings.html>`_.
+
+
+Enable keyboard shortcuts
+  Enable the keyboard shortcuts for the panel items.
 
 Source code
 -----------

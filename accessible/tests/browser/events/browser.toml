@@ -20,6 +20,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1962169
 ]
 
+["browser_initial_blank_load.js"]
+
 ["browser_menu_and_alerts.js"]
 
 ["browser_tab_name_change.js"]

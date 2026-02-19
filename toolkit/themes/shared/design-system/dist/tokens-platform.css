@@ -16,6 +16,7 @@
     /** Background Color **/
     --background-color-box-info: color-mix(in srgb, currentColor 20%, transparent);
     --background-color-canvas: Canvas;
+    --background-color-list-item-hover: color-mix(in srgb, currentColor 20%, transparent);
     --table-row-background-color-alternate: light-dark(
       rgba(0, 0, 0, 0.05),
       rgba(255, 255, 255, 0.05)

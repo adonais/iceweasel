@@ -34,8 +34,6 @@ class nsAppShell : public nsBaseAppShell {
 
   NS_IMETHOD Run(void) override;
   NS_IMETHOD Exit(void) override;
-  // Called by the application delegate
-  void WillTerminate(void);
 
   static nsAppShell* gAppShell;
 
@@ -51,9 +49,9 @@ class nsAppShell : public nsBaseAppShell {
   CFRunLoopRef mCFRunLoop;
   CFRunLoopSourceRef mCFRunLoopSource;
 
+  bool mUsingNativeEventLoop;
   bool mRunningEventLoop;
   bool mTerminated;
-  bool mNotifiedWillTerminate;
 };
 
 #endif  // nsAppShell_h_

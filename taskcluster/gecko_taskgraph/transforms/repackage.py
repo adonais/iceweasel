@@ -17,102 +17,100 @@ from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.platforms import architecture, archive_format
 from gecko_taskgraph.util.workertypes import worker_type_implementation
 
-packaging_description_schema = Schema(
-    {
-        # unique label to describe this repackaging task
-        Optional("label"): str,
-        Optional("worker-type"): str,
-        Optional("worker"): object,
-        Optional("attributes"): job_description_schema["attributes"],
-        Optional("dependencies"): job_description_schema["dependencies"],
-        # treeherder is allowed here to override any defaults we use for repackaging.  See
-        # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
-        # below transforms for defaults of various values.
-        Optional("treeherder"): job_description_schema["treeherder"],
-        # If a l10n task, the corresponding locale
-        Optional("locale"): str,
-        # Routes specific to this task, if defined
-        Optional("routes"): [str],
-        # passed through directly to the job description
-        Optional("extra"): job_description_schema["extra"],
-        # passed through to job description
-        Optional("fetches"): job_description_schema["fetches"],
-        Optional("run-on-projects"): job_description_schema["run-on-projects"],
-        Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
-        # Shipping product and phase
-        Optional("shipping-product"): job_description_schema["shipping-product"],
-        Optional("shipping-phase"): job_description_schema["shipping-phase"],
-        Required("package-formats"): optionally_keyed_by(
-            "build-platform", "release-type", "build-type", [str]
+packaging_description_schema = Schema({
+    # unique label to describe this repackaging task
+    Optional("label"): str,
+    Optional("worker-type"): str,
+    Optional("worker"): object,
+    Optional("attributes"): job_description_schema["attributes"],
+    Optional("dependencies"): job_description_schema["dependencies"],
+    # treeherder is allowed here to override any defaults we use for repackaging.  See
+    # taskcluster/gecko_taskgraph/transforms/task.py for the schema details, and the
+    # below transforms for defaults of various values.
+    Optional("treeherder"): job_description_schema["treeherder"],
+    # If a l10n task, the corresponding locale
+    Optional("locale"): str,
+    # Routes specific to this task, if defined
+    Optional("routes"): [str],
+    # passed through directly to the job description
+    Optional("extra"): job_description_schema["extra"],
+    # passed through to job description
+    Optional("fetches"): job_description_schema["fetches"],
+    Optional("run-on-projects"): job_description_schema["run-on-projects"],
+    Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
+    # Shipping product and phase
+    Optional("shipping-product"): job_description_schema["shipping-product"],
+    Optional("shipping-phase"): job_description_schema["shipping-phase"],
+    Required("package-formats"): optionally_keyed_by(
+        "build-platform", "release-type", "build-type", [str]
+    ),
+    Optional("msix"): {
+        Optional("channel"): optionally_keyed_by(
+            "package-format",
+            "level",
+            "build-platform",
+            "release-type",
+            "shipping-product",
+            str,
         ),
-        Optional("msix"): {
-            Optional("channel"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("identity-name"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("publisher"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("publisher-display-name"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("vendor"): str,
-        },
-        Optional("flatpak"): {
-            Required("name"): optionally_keyed_by(
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Required("branch"): optionally_keyed_by(
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-        },
-        # All l10n jobs use mozharness
-        Required("mozharness"): {
-            Extra: object,
-            # Config files passed to the mozharness script
-            Required("config"): optionally_keyed_by("build-platform", [str]),
-            # Additional paths to look for mozharness configs in. These should be
-            # relative to the base of the source checkout
-            Optional("config-paths"): [str],
-            # if true, perform a checkout of a comm-central based branch inside the
-            # gecko checkout
-            Optional("comm-checkout"): bool,
-            Optional("run-as-root"): bool,
-            Optional("use-caches"): Any(bool, [str]),
-        },
-        Optional("task-from"): job_description_schema["task-from"],
-    }
-)
+        Optional("identity-name"): optionally_keyed_by(
+            "package-format",
+            "level",
+            "build-platform",
+            "release-type",
+            "shipping-product",
+            str,
+        ),
+        Optional("publisher"): optionally_keyed_by(
+            "package-format",
+            "level",
+            "build-platform",
+            "release-type",
+            "shipping-product",
+            str,
+        ),
+        Optional("publisher-display-name"): optionally_keyed_by(
+            "package-format",
+            "level",
+            "build-platform",
+            "release-type",
+            "shipping-product",
+            str,
+        ),
+        Optional("vendor"): str,
+    },
+    Optional("flatpak"): {
+        Required("name"): optionally_keyed_by(
+            "level",
+            "build-platform",
+            "release-type",
+            "shipping-product",
+            str,
+        ),
+        Required("branch"): optionally_keyed_by(
+            "level",
+            "build-platform",
+            "release-type",
+            "shipping-product",
+            str,
+        ),
+    },
+    # All l10n jobs use mozharness
+    Required("mozharness"): {
+        Extra: object,
+        # Config files passed to the mozharness script
+        Required("config"): optionally_keyed_by("build-platform", [str]),
+        # Additional paths to look for mozharness configs in. These should be
+        # relative to the base of the source checkout
+        Optional("config-paths"): [str],
+        # if true, perform a checkout of a comm-central based branch inside the
+        # gecko checkout
+        Optional("comm-checkout"): bool,
+        Optional("run-as-root"): bool,
+        Optional("use-caches"): Any(bool, [str]),
+    },
+    Optional("task-from"): job_description_schema["task-from"],
+})
 
 # The configuration passed to the mozharness repackage script. This defines the
 # arguments passed to `mach repackage`
@@ -532,19 +530,17 @@ def make_job_description(config, jobs):
 
                 dependencies.update({t.label: t.label})
 
-                fetches.update(
-                    {
-                        t.label: [
-                            {
-                                "artifact": f"{loc}/target.langpack.xpi",
-                                "extract": False,
-                                # Otherwise we can't disambiguate locales!
-                                "dest": f"distribution/extensions/{loc}",
-                            }
-                            for loc in t.attributes["chunk_locales"]
-                        ]
-                    }
-                )
+                fetches.update({
+                    t.label: [
+                        {
+                            "artifact": f"{loc}/target.langpack.xpi",
+                            "extract": False,
+                            # Otherwise we can't disambiguate locales!
+                            "dest": f"distribution/extensions/{loc}",
+                        }
+                        for loc in t.attributes["chunk_locales"]
+                    ]
+                })
 
         elif config.kind in ("repackage-deb", "repackage-rpm"):
             attributes["repackage_type"] = config.kind
@@ -593,19 +589,17 @@ def make_job_description(config, jobs):
 
                 dependencies.update({t.label: t.label})
 
-                fetches.update(
-                    {
-                        t.label: [
-                            {
-                                "artifact": f"{loc}/target.langpack.xpi",
-                                "extract": False,
-                                # Otherwise we can't disambiguate locales!
-                                "dest": f"extensions/{loc}",
-                            }
-                            for loc in locales
-                        ]
-                    }
-                )
+                fetches.update({
+                    t.label: [
+                        {
+                            "artifact": f"{loc}/target.langpack.xpi",
+                            "extract": False,
+                            # Otherwise we can't disambiguate locales!
+                            "dest": f"extensions/{loc}",
+                        }
+                        for loc in locales
+                    ]
+                })
 
         _fetch_subst_locale = "en-US"
         if locale:
@@ -678,27 +672,23 @@ def make_job_description(config, jobs):
             repackage_config.append(command)
 
         run = job.get("mozharness", {})
-        run.update(
-            {
-                "using": "mozharness",
-                "script": "mozharness/scripts/repackage.py",
-                "job-script": "taskcluster/scripts/builder/repackage.sh",
-                "actions": ["setup", "repackage"],
-                "extra-config": {
-                    "repackage_config": repackage_config,
-                },
-                "run-as-root": run.get("run-as-root", False),
-            }
-        )
+        run.update({
+            "using": "mozharness",
+            "script": "mozharness/scripts/repackage.py",
+            "job-script": "taskcluster/scripts/builder/repackage.sh",
+            "actions": ["setup", "repackage"],
+            "extra-config": {
+                "repackage_config": repackage_config,
+            },
+            "run-as-root": run.get("run-as-root", False),
+        })
 
         worker = job.get("worker", {})
-        worker.update(
-            {
-                "chain-of-trust": True,
-                # Don't add generic artifact directory.
-                "skip-artifacts": True,
-            }
-        )
+        worker.update({
+            "chain-of-trust": True,
+            # Don't add generic artifact directory.
+            "skip-artifacts": True,
+        })
         worker.setdefault("max-run-time", 3600)
 
         if locale:
@@ -744,15 +734,13 @@ def make_job_description(config, jobs):
         }
 
         if build_platform.startswith("macosx"):
-            task.setdefault("fetches", {}).setdefault("toolchain", []).extend(
-                [
-                    "linux64-libdmg",
-                    "linux64-hfsplus",
-                    "linux64-node",
-                    "linux64-xar",
-                    "linux64-mkbom",
-                ]
-            )
+            task.setdefault("fetches", {}).setdefault("toolchain", []).extend([
+                "linux64-libdmg",
+                "linux64-hfsplus",
+                "linux64-node",
+                "linux64-xar",
+                "linux64-mkbom",
+            ])
 
         if "shipping-phase" in job:
             task["shipping-phase"] = job["shipping-phase"]
@@ -778,11 +766,9 @@ def _generate_download_config(
         fetch.update(existing_fetch)
 
     if repackage_signing_task and build_platform.startswith("win"):
-        fetch.update(
-            {
-                repackage_signing_task: [f"{locale_path}target.installer.exe"],
-            }
-        )
+        fetch.update({
+            repackage_signing_task: [f"{locale_path}target.installer.exe"],
+        })
     elif build_platform.startswith("linux") or build_platform.startswith("macosx"):
         signing_fetch = [
             {
@@ -791,25 +777,21 @@ def _generate_download_config(
             },
         ]
         if config.kind == "repackage-deb-l10n":
-            signing_fetch.append(
-                {
-                    "artifact": f"{locale_path}target.langpack.xpi",
-                    "extract": False,
-                }
-            )
+            signing_fetch.append({
+                "artifact": f"{locale_path}target.langpack.xpi",
+                "extract": False,
+            })
         fetch.update({signing_task: signing_fetch})
     elif build_platform.startswith("win"):
-        fetch.update(
-            {
-                signing_task: [
-                    {
-                        "artifact": f"{locale_path}target.zip",
-                        "extract": False,
-                    },
-                    f"{locale_path}setup.exe",
-                ],
-            }
-        )
+        fetch.update({
+            signing_task: [
+                {
+                    "artifact": f"{locale_path}target.zip",
+                    "extract": False,
+                },
+                f"{locale_path}setup.exe",
+            ],
+        })
 
         use_stub = task.attributes.get("stub-installer")
         if use_stub:
@@ -838,15 +820,13 @@ def _generate_task_output_files(
 
     output_files = []
     for config in repackage_config:
-        output_files.append(
-            {
-                "type": "file",
-                "path": "{}outputs/{}{}".format(
-                    local_prefix, locale_output_path, config["output"]
-                ),
-                "name": "{}/{}{}".format(
-                    artifact_prefix, locale_output_path, config["output"]
-                ),
-            }
-        )
+        output_files.append({
+            "type": "file",
+            "path": "{}outputs/{}{}".format(
+                local_prefix, locale_output_path, config["output"]
+            ),
+            "name": "{}/{}{}".format(
+                artifact_prefix, locale_output_path, config["output"]
+            ),
+        })
     return output_files

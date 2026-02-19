@@ -31,10 +31,6 @@ notes = "This is the upstream code plus the ARM intrinsics workaround from qcms,
 audit-as-crates-io = true
 notes = "This is the upstream code plus a few local fixes, see bug 1685697."
 
-[policy.bhttp]
-audit-as-crates-io = true
-notes = "This is upstream code in between released versions."
-
 [policy."bindgen:0.72.0@git:9366e0af8da529c958b4cd4fcbe492d951c86f5c"]
 audit-as-crates-io = true
 notes = "This is the upstream code not yet released"
@@ -193,10 +189,6 @@ notes = "This is a pinned version of the upstream code, pending update of the cr
 audit-as-crates-io = true
 notes = "This is the upstream code plus a backported fix."
 
-[policy.ohttp]
-audit-as-crates-io = true
-notes = "This is upstream code in between released versions."
-
 [policy.osclientcerts]
 audit-as-crates-io = false
 notes = "This is a first-party crate that happens to have been pushed to crates.io a very long time ago but was yanked."
@@ -226,6 +218,10 @@ notes = "This is a first-party crate which is also published to crates.io, but w
 [policy.servo_arc]
 audit-as-crates-io = true
 notes = "This is a first-party crate which is also published to crates.io, but we should publish audits for it for the benefit of the ecosystem."
+
+[policy.spirv]
+audit-as-crates-io = true
+notes = "Contains only upstream mainline history pending release."
 
 [policy.storage]
 audit-as-crates-io = false

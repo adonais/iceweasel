@@ -75,6 +75,7 @@ namespace jit {
 
 class CallInfo;
 class ShapeListSnapshot;
+class ShapeListWithOffsetsSnapshot;
 
 #ifdef JS_JITSPEW
 // Helper for debug printing.  Avoids creating a MIR.h <--> MIRGraph.h cycle.
@@ -954,6 +955,8 @@ class MDefinition : public MNode {
     return AliasType::MayAlias;
   }
 
+  bool dominates(const MDefinition* other) const;
+
   virtual bool canRecoverOnBailout() const { return false; }
 };
 
@@ -1363,6 +1366,22 @@ enum class MemoryBarrierRequirement : bool {
   NotRequired,
   Required,
 };
+
+inline Synchronization SynchronizeLoad(
+    MemoryBarrierRequirement requiresBarrier) {
+  if (requiresBarrier == MemoryBarrierRequirement::Required) {
+    return Synchronization::Load();
+  }
+  return Synchronization::None();
+}
+
+inline Synchronization SynchronizeStore(
+    MemoryBarrierRequirement requiresBarrier) {
+  if (requiresBarrier == MemoryBarrierRequirement::Required) {
+    return Synchronization::Store();
+  }
+  return Synchronization::None();
+}
 
 MIR_OPCODE_CLASS_GENERATED
 
@@ -7961,6 +7980,41 @@ class MStoreFixedSlot
   ALLOW_CLONE(MStoreFixedSlot)
 };
 
+class MStoreFixedSlotFromOffset
+    : public MTernaryInstruction,
+      public MixPolicy<ObjectPolicy<0>, UnboxedInt32Policy<1>,
+                       NoFloatPolicy<2>>::Data {
+  bool needsBarrier_;
+
+  MStoreFixedSlotFromOffset(MDefinition* obj, MDefinition* offset,
+                            MDefinition* rval, bool barrier)
+      : MTernaryInstruction(classOpcode, obj, offset, rval),
+        needsBarrier_(barrier) {
+    MOZ_ASSERT(obj->type() == MIRType::Object);
+  }
+
+ public:
+  INSTRUCTION_HEADER(StoreFixedSlotFromOffset)
+  NAMED_OPERANDS((0, object), (1, offset), (2, value))
+
+  static MStoreFixedSlotFromOffset* NewBarriered(TempAllocator& alloc,
+                                                 MDefinition* obj,
+                                                 MDefinition* offset,
+                                                 MDefinition* rval) {
+    return new (alloc) MStoreFixedSlotFromOffset(obj, offset, rval, true);
+  }
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::FixedSlot);
+  }
+  bool needsBarrier() const { return needsBarrier_; }
+  void setNeedsBarrier(bool needsBarrier = true) {
+    needsBarrier_ = needsBarrier;
+  }
+
+  ALLOW_CLONE(MStoreFixedSlotFromOffset)
+};
+
 class MGetPropertyCache : public MBinaryInstruction,
                           public MixPolicy<BoxExceptPolicy<0, MIRType::Object>,
                                            CacheIdPolicy<1>>::Data {
@@ -8391,6 +8445,33 @@ class MStoreDynamicSlot : public MBinaryInstruction,
 #endif
 
   ALLOW_CLONE(MStoreDynamicSlot)
+};
+
+class MStoreDynamicSlotFromOffset
+    : public MTernaryInstruction,
+      public MixPolicy<UnboxedInt32Policy<1>, NoFloatPolicy<2>>::Data {
+  MStoreDynamicSlotFromOffset(MDefinition* slots, MDefinition* offset,
+                              MDefinition* rval, bool barrier)
+      : MTernaryInstruction(classOpcode, slots, offset, rval) {
+    MOZ_ASSERT(slots->type() == MIRType::Slots);
+  }
+
+ public:
+  INSTRUCTION_HEADER(StoreDynamicSlotFromOffset)
+  NAMED_OPERANDS((0, slots), (1, offset), (2, value))
+
+  static MStoreDynamicSlotFromOffset* New(TempAllocator& alloc,
+                                          MDefinition* slots,
+                                          MDefinition* offset,
+                                          MDefinition* rval) {
+    return new (alloc) MStoreDynamicSlotFromOffset(slots, offset, rval, true);
+  }
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::DynamicSlot);
+  }
+
+  ALLOW_CLONE(MStoreDynamicSlotFromOffset)
 };
 
 class MSetPropertyCache : public MTernaryInstruction,

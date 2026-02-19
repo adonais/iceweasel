@@ -56,6 +56,7 @@ avoid-blacklist-and-whitelist:
         - browser/components/tabbrowser/test/browser/tabs/browser_new_file_whitelisted_http_tab.js
         - browser/components/tabbrowser/test/browser/tabs/browser_tab_drag_drop_perwindow.js
         - browser/components/urlbar/tests/browser/browser_searchSingleWordNotification.js
+        - browser/components/urlbar/tests/browser/browser_trust_panel.js
         - browser/components/urlbar/tests/browser/browser_UrlbarInput_trimURLs.js
         - browser/components/urlbar/tests/unit/test_providerHeuristicFallback.js
         - browser/components/urlbar/tests/unit/test_search_suggestions.js

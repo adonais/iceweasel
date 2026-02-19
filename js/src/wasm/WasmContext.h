@@ -20,36 +20,22 @@
 #define wasm_context_h
 
 #ifdef ENABLE_WASM_JSPI
-#  include "mozilla/DoublyLinkedList.h"
-
 #  include "gc/Barrier.h"
 #endif  // ENABLE_WASM_JSPI
 
 #include "js/NativeStackLimits.h"
 
+#ifdef _WIN32
+struct _NT_TIB;
+#endif
+
 namespace js::wasm {
 
 #ifdef ENABLE_WASM_JSPI
-
 class SuspenderObject;
-class SuspenderObjectData;
-
-class SuspenderContext {
- private:
-  HeapPtr<SuspenderObject*> activeSuspender_;
-  // Using double-linked list to avoid allocation in the JIT code.
-  mozilla::DoublyLinkedList<SuspenderObjectData> suspendedStacks_;
-
- public:
-  SuspenderContext();
-  ~SuspenderContext();
-  SuspenderObject* activeSuspender();
-  void setActiveSuspender(SuspenderObject* obj);
-  void trace(JSTracer* trc);
-  void traceRoots(JSTracer* trc);
-
-  friend class SuspenderObject;
-};
+using SuspenderObjectSet =
+    HashSet<SuspenderObject*, PointerHasher<SuspenderObject*>,
+            SystemAllocPolicy>;
 #endif  // ENABLE_WASM_JSPI
 
 // wasm::Context lives in JSContext and contains the wasm-related per-context
@@ -58,21 +44,41 @@ class SuspenderContext {
 class Context {
  public:
   Context();
+  ~Context();
 
   static constexpr size_t offsetOfStackLimit() {
     return offsetof(Context, stackLimit);
   }
-#ifdef ENABLE_WASM_JSPI
-  static constexpr size_t offsetOfOnSuspendableStack() {
-    return offsetof(Context, onSuspendableStack);
+  static constexpr size_t offsetOfMainStackLimit() {
+    return offsetof(Context, mainStackLimit);
   }
-#endif
 
   void initStackLimit(JSContext* cx);
 
 #ifdef ENABLE_WASM_JSPI
-  void enterSuspendableStack(JS::NativeStackLimit newStackLimit);
+  static constexpr size_t offsetOfActiveSuspender() {
+    return offsetof(Context, activeSuspender_);
+  }
+#  ifdef _WIN32
+  static constexpr size_t offsetOfTib() { return offsetof(Context, tib_); }
+  static constexpr size_t offsetOfTibStackBase() {
+    return offsetof(Context, tibStackBase_);
+  }
+  static constexpr size_t offsetOfTibStackLimit() {
+    return offsetof(Context, tibStackLimit_);
+  }
+#  endif
+
+  SuspenderObject* activeSuspender() { return activeSuspender_; }
+  bool onSuspendableStack() const { return activeSuspender_ != nullptr; }
+
+  void enterSuspendableStack(JSContext* cx, SuspenderObject* suspender);
   void leaveSuspendableStack(JSContext* cx);
+
+  SuspenderObject* findSuspenderForStackAddress(const void* stackAddress);
+
+  void trace(JSTracer* trc);
+  void traceRoots(JSTracer* trc);
 #endif
 
   // Used by wasm::EnsureThreadSignalHandlers(cx) to install thread signal
@@ -84,13 +90,27 @@ class Context {
   // use the stack limit for interrupts, but it does update it for stack
   // switching.
   JS::NativeStackLimit stackLimit;
+  // The original stack limit before any stack switches. Cached for easy
+  // restoration.
+  JS::NativeStackLimit mainStackLimit;
 
 #ifdef ENABLE_WASM_JSPI
-  // Boolean value set to true when the top wasm frame is currently executed on
-  // a suspendable stack. Aligned to int32_t to be used on JIT code.
-  int32_t onSuspendableStack;
-  mozilla::Atomic<uint32_t> suspendableStacksCount;
-  SuspenderContext promiseIntegration;
+#  if defined(_WIN32)
+  // On WIN64, the Thread Information Block stack limits must be updated on
+  // stack switches to avoid failures on SP checks during vectored exeption
+  // handling for traps. We store the original limits and the TIB here for
+  // easy restoration.
+  _NT_TIB* tib_ = nullptr;
+  void* tibStackBase_ = nullptr;
+  void* tibStackLimit_ = nullptr;
+#  endif
+
+  // The currently active suspender object. Null if we're executing on the
+  // system stack, otherwise we're on a wasm suspendable stack.
+  HeapPtr<SuspenderObject*> activeSuspender_;
+
+  // All of the allocated suspender objects.
+  SuspenderObjectSet suspenders_;
 #endif
 };
 

@@ -79,7 +79,8 @@ void NativeLayerRemoteMac::AttachExternalImage(
 
   bool isHDR = false;
   MacIOSurface* macIOSurface = texture->GetSurface();
-  if (macIOSurface->GetYUVColorSpace() == gfx::YUVColorSpace::BT2020) {
+  if (macIOSurface->GetYUVColorSpace() == gfx::YUVColorSpace::BT2020 &&
+      StaticPrefs::gfx_color_management_hdr_video_assume_rec2020_uses_pq()) {
     // BT2020 colorSpace is a signifier of HDR.
     isHDR = true;
   }
@@ -88,7 +89,7 @@ void NativeLayerRemoteMac::AttachExternalImage(
     // 10-bit color is a signifier of HDR.
     isHDR = true;
   }
-  mIsHDR = isHDR;
+  mIsHDR = isHDR && StaticPrefs::gfx_color_management_hdr_video();
 
   mDirtyLayerInfo |= changedDisplayRect;
   mSnapshotLayer.mMutatedFrontSurface = true;

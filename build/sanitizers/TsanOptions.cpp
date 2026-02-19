@@ -200,6 +200,12 @@ extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
          "deadlock:EncryptedClientHelloServer\n"
          // Bug 1682861 - permanent
          "deadlock:nsDOMWindowUtils::CompareCanvases\n"
+         // Bug 1984952 - not technically necessarily a deadlock, but a weird case of
+         // recursive locking that tsan normally doesn't allow, that is not clear yet
+         // how it happens and whether it's actually problematic, but it's originating
+         // from a system library so we can't do much about fixing it (except if it's
+         // actually a tsan bug).
+         "deadlock:libgallium-*.so\n"
 
 
 

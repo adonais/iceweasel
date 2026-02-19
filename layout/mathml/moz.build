@@ -55,5 +55,4 @@ JAR_MANIFESTS += ["jar.mn"]
 
 RESOURCE_FILES.fonts += [
     "mathfont.properties",
-    "mathfontUnicode.properties",
 ]

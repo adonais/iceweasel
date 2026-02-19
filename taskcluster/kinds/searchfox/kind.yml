@@ -48,7 +48,7 @@ tasks:
             max-run-time: 10800
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
-                MOZSEARCH_PLATFORM: "linux"
+                MOZSEARCH_PLATFORM: "linux64-opt"
         run:
             using: mozharness
             actions: [build]
@@ -80,7 +80,7 @@ tasks:
             max-run-time: 10800
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
-                MOZSEARCH_PLATFORM: "linux"
+                MOZSEARCH_PLATFORM: "linux64"
         run:
             using: mozharness
             actions: [build]
@@ -112,7 +112,7 @@ tasks:
             max-run-time: 10800
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
-                MOZSEARCH_PLATFORM: "macosx"
+                MOZSEARCH_PLATFORM: "macosx64"
         run:
             using: mozharness
             actions: [get-secrets, build]
@@ -147,7 +147,7 @@ tasks:
             max-run-time: 10800
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
-                MOZSEARCH_PLATFORM: "macosx"
+                MOZSEARCH_PLATFORM: "macosx64-aarch64-opt"
         run:
             using: mozharness
             actions: [get-secrets, build]
@@ -185,7 +185,7 @@ tasks:
             max-run-time: 10800
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
-                MOZSEARCH_PLATFORM: "macosx"
+                MOZSEARCH_PLATFORM: "macosx64-aarch64"
         run:
             using: mozharness
             actions: [get-secrets, build]
@@ -263,7 +263,7 @@ tasks:
             max-run-time: 10800
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
-                MOZSEARCH_PLATFORM: "windows"
+                MOZSEARCH_PLATFORM: "win64-opt"
         run:
             using: mozharness
             options: [append-env-variables-from-configs]
@@ -307,7 +307,7 @@ tasks:
             max-run-time: 10800
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
-                MOZSEARCH_PLATFORM: "windows"
+                MOZSEARCH_PLATFORM: "win64"
         run:
             using: mozharness
             options: [append-env-variables-from-configs]
@@ -369,6 +369,8 @@ tasks:
                 - android-gradle-dependencies
                 - android-ndk-linux
                 - android-sdk-linux
+                - linux64-embedded-uniffi-bindgen
+                - linux64-nimbus-fml
                 - linux64-jdk
                 - linux64-clang
                 - linux64-rust-cross

@@ -268,6 +268,9 @@ class ScriptLoadRequest : public nsISupports,
   bool HasDirtyCache() const { return mHasDirtyCache_; }
   void SetHasDirtyCache() { mHasDirtyCache_ = true; }
 
+  bool HadPostponed() const { return mHadPostponed_; }
+  void SetHadPostponed() { mHadPostponed_ = true; }
+
  public:
   // Fields.
 
@@ -292,6 +295,9 @@ class ScriptLoadRequest : public nsISupports,
   // This request should go to necko, and when the response is received,
   // the cache should be either revived or evicted.
   bool mHasDirtyCache_ : 1;
+
+  // Set to true if this script had already been postponed in the scheduling.
+  bool mHadPostponed_ : 1;
 
   enum class CachingPlan : uint8_t {
     // This is not yet considered for caching.

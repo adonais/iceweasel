@@ -61,9 +61,9 @@ class XdgConfigHomeTestCase(MarionetteTestCase):
         self.process_handler = subprocess.Popen(self._cmd, env=self._env)
 
     def assert_safe_homedir(self):
-        assert (
-            "mozrunner-xdg_config-test" in self.homedir
-        ), f"HOME is not real user's home: {self.homedir}"
+        assert "mozrunner-xdg_config-test" in self.homedir, (
+            f"HOME is not real user's home: {self.homedir}"
+        )
 
     def get_home_root(self):
         rv = tempfile.mkdtemp(prefix="{}.".format("run"), dir=self.tmproot)

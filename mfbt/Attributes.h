@@ -9,8 +9,6 @@
 #ifndef mozilla_Attributes_h
 #define mozilla_Attributes_h
 
-#include "mozilla/Compiler.h"
-
 /*
  * MOZ_ALWAYS_INLINE is a macro which expands to tell the compiler that the
  * method decorated with it must be inlined, even if the compiler thinks
@@ -654,7 +652,6 @@
  *   expression. If a member of another class uses this class, or if another
  *   class inherits from this class, then it is considered to be a non-heap
  *   class as well, although this attribute need not be provided in such cases.
- * MOZ_CONSTINIT: pre-C++20 equivalent to `constinit`.
  * MOZ_RUNINIT: Applies to global variables with runtime initialization.
  * MOZ_GLOBINIT: Applies to global variables with potential runtime
  *   initialization (e.g. inside macro or when initialisation status depends on
@@ -1079,19 +1076,6 @@
 #  define MOZ_EMPTY_BASES __declspec(empty_bases)
 #else
 #  define MOZ_EMPTY_BASES
-#endif
-
-/**
- * Pre- C++20 equivalent to constinit
- */
-#if defined(__cpp_constinit)
-#  define MOZ_CONSTINIT constinit
-#elif defined(__clang__)
-#  define MOZ_CONSTINIT [[clang::require_constant_initialization]]
-#elif MOZ_GCC_VERSION_AT_LEAST(10, 1, 0)
-#  define MOZ_CONSTINIT __constinit
-#else
-#  define MOZ_CONSTINIT
 #endif
 
 // XXX: GCC somehow does not allow attributes before lambda return types, while

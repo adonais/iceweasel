@@ -8,10 +8,10 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.GleanMetrics.Addresses
 
 /**
@@ -19,31 +19,33 @@ import org.mozilla.fenix.GleanMetrics.Addresses
  *
  * @param environment used to hold the dependencies.
  * @param scope a [CoroutineScope] used to launch coroutines.
+ * @param mainDispatcher the dispatcher to run UI-related code on.
  * @param ioDispatcher the dispatcher to run background code on.
  */
 class AddressMiddleware(
     private val environment: AddressEnvironment,
-    private val scope: CoroutineScope = MainScope(),
+    private val scope: CoroutineScope,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val ioDispatcher: CoroutineDispatcher = IO,
 ) : Middleware<AddressState, AddressAction> {
     override fun invoke(
-        context: MiddlewareContext<AddressState, AddressAction>,
+        store: Store<AddressState, AddressAction>,
         next: (AddressAction) -> Unit,
         action: AddressAction,
     ) {
         next(action)
         when (action) {
             is SaveTapped -> runAndNavigateBack {
-                context.state.guidToUpdate?.let {
-                    environment.updateAddress(it, context.state.address)
+                store.state.guidToUpdate?.let {
+                    environment.updateAddress(it, store.state.address)
                     Addresses.updated.add()
                 } ?: run {
-                    environment.createAddress(context.state.address)
+                    environment.createAddress(store.state.address)
                     Addresses.saved.add()
                 }
             }
             is DeleteDialogAction.DeleteTapped -> runAndNavigateBack {
-                context.state.guidToUpdate?.also {
+                store.state.guidToUpdate?.also {
                     environment.deleteAddress(it)
                     Addresses.deleted.add()
                 }
@@ -56,7 +58,7 @@ class AddressMiddleware(
     private fun runAndNavigateBack(action: suspend () -> Unit) = scope.launch(ioDispatcher) {
         action()
 
-        scope.launch(Dispatchers.Main) {
+        withContext(mainDispatcher) {
             environment.navigateBack()
         }
     }

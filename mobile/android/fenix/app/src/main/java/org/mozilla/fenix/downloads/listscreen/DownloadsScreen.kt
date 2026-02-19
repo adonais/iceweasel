@@ -84,6 +84,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param downloadsStore The [DownloadUIStore] used to manage and access the state of download items.
  * @param onItemClick Callback invoked when a download item is clicked.
  * @param onNavigationIconClick Callback for the back button click in the toolbar.
+ * @param onSettingsClick Callback for the settings button click in the toolbar.
  */
 @Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
@@ -91,6 +92,7 @@ fun DownloadsScreen(
     downloadsStore: DownloadUIStore,
     onItemClick: (FileItem) -> Unit,
     onNavigationIconClick: () -> Unit,
+    onSettingsClick: () -> Unit,
 ) {
     val uiState by downloadsStore.observeAsState(initialValue = downloadsStore.state) { it }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -171,6 +173,15 @@ fun DownloadsScreen(
                     }
                 },
                 actions = {
+                    if (uiState.isSettingsIconVisible) {
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(
+                                painter = painterResource(iconsR.drawable.mozac_ic_settings_24),
+                                contentDescription = stringResource(R.string.download_navigate_settings_description),
+                                tint = toolbarConfig.iconColor,
+                            )
+                        }
+                    }
                     if (uiState.mode is Mode.Editing) {
                         ToolbarEditActions(
                             downloadsStore = downloadsStore,
@@ -748,6 +759,13 @@ private fun DownloadsScreenPreviews(
                         )
                     }
                 },
+                onSettingsClick = {
+                    scope.launch {
+                        snackbarHostState.displaySnackbar(
+                            message = "Navigation to Downloads Settings clicked",
+                        )
+                    }
+                },
             )
             SnackbarHost(
                 hostState = snackbarHostState,
@@ -781,6 +799,13 @@ private fun DownloadsScreenPrivatePreviews(
                     scope.launch {
                         snackbarHostState.displaySnackbar(
                             message = "Navigation Icon clicked",
+                        )
+                    }
+                },
+                onSettingsClick = {
+                    scope.launch {
+                        snackbarHostState.displaySnackbar(
+                            message = "Navigation to Downloads Settings clicked",
                         )
                     }
                 },

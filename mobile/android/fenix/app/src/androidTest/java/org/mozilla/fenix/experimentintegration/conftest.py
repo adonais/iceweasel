@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -91,7 +92,7 @@ def fixture_load_branches(experiment_url):
             data = requests.get(f"{KLAATU_SERVER_URL}/experiment").json()
         except ConnectionRefusedError:
             logging.warn("No URL or experiment slug provided, exiting.")
-            exit()
+            sys.exit()
         else:
             for item in reversed(data):
                 data = item
@@ -144,7 +145,7 @@ def fixture_experiment_url(request, variables):
             data = requests.get(f"{KLAATU_SERVER_URL}/experiment").json()
         except requests.exceptions.ConnectionError:
             logging.error("No URL or experiment slug provided, exiting.")
-            exit()
+            sys.exit()
         else:
             for item in data:
                 if isinstance(item, dict):

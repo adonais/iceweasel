@@ -60,7 +60,7 @@ const modifiedStyleSheets = new WeakMap();
 /**
  * Manage stylesheets related to a given Target Actor.
  *
- * @emits stylesheet-updated: emitted when there was changes in a stylesheet
+ * @fires stylesheet-updated: emitted when there was changes in a stylesheet
  *        First arg is an object with the following properties:
  *        - resourceId {String}: The id that was assigned to the stylesheet
  *        - updateKind {String}: Which kind of update it is ("style-applied",
@@ -316,7 +316,7 @@ class StyleSheetsManager extends EventEmitter {
    * Return resourceId of the given style sheet or create one if the stylesheet wasn't
    * registered yet.
    *
-   * @params {StyleSheet} styleSheet
+   * @param {StyleSheet} styleSheet
    * @returns {string} resourceId
    */
   getStyleSheetResourceId(styleSheet) {
@@ -335,7 +335,7 @@ class StyleSheetsManager extends EventEmitter {
    * Return the associated resourceId of the given registered style sheet, or null if the
    * stylesheet wasn't registered yet.
    *
-   * @params {StyleSheet} styleSheet
+   * @param {StyleSheet} styleSheet
    * @returns {string} resourceId
    */
   #findStyleSheetResourceId(styleSheet) {
@@ -354,7 +354,7 @@ class StyleSheetsManager extends EventEmitter {
   /**
    * Return owner node of the style sheet of the given resource id.
    *
-   * @params {string} resourceId
+   * @param {string} resourceId
    *                  The id associated with the stylesheet
    * @returns {Element|null}
    */
@@ -366,7 +366,7 @@ class StyleSheetsManager extends EventEmitter {
   /**
    * Return the index of given stylesheet of the given resource id.
    *
-   * @params {string} resourceId
+   * @param {string} resourceId
    *                  The id associated with the stylesheet
    * @returns {number}
    */
@@ -393,7 +393,7 @@ class StyleSheetsManager extends EventEmitter {
   /**
    * Get the text of a stylesheet given its resourceId.
    *
-   * @params {string} resourceId
+   * @param {string} resourceId
    *                  The id associated with the stylesheet
    * @returns {string}
    */
@@ -414,7 +414,7 @@ class StyleSheetsManager extends EventEmitter {
   /**
    * Toggle the disabled property of the stylesheet
    *
-   * @params {string} resourceId
+   * @param {string} resourceId
    *                  The id associated with the stylesheet
    * @return {boolean} the disabled state after toggling.
    */
@@ -725,6 +725,31 @@ class StyleSheetsManager extends EventEmitter {
         atRules.push({
           type: "position-try",
           positionTryName: rule.name,
+          line: InspectorUtils.getRelativeRuleLine(rule),
+          column: InspectorUtils.getRuleColumn(rule),
+        });
+      } else if (className === "CSSCustomMediaRule") {
+        const customMediaQuery = [];
+        if (typeof rule.query === "boolean") {
+          customMediaQuery.push({
+            text: rule.query.toString(),
+            matches: rule.query === true,
+          });
+        } else {
+          // if query is not a boolean, it's a MediaList
+          for (let i = 0, len = rule.query.length; i < len; i++) {
+            customMediaQuery.push({
+              text: rule.query[i],
+              // For now always consider the media query as matching.
+              // This should be changed as part of Bug 2006379
+              matches: true,
+            });
+          }
+        }
+        atRules.push({
+          type: "custom-media",
+          customMediaName: rule.name,
+          customMediaQuery,
           line: InspectorUtils.getRelativeRuleLine(rule),
           column: InspectorUtils.getRuleColumn(rule),
         });

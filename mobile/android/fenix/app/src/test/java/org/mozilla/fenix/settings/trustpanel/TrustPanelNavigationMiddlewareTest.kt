@@ -12,9 +12,8 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
-import mozilla.components.support.test.rule.MainCoroutineRule
-import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.PhoneFeature
@@ -25,10 +24,6 @@ import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
 
 class TrustPanelNavigationMiddlewareTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-    private val scope = coroutinesTestRule.scope
-
     private val navController: NavController = mockk(relaxed = true) {
         every { navigate(any<NavDirections>(), any<NavOptions>()) } just runs
         every { currentDestination?.id } returns R.id.trustPanelFragment
@@ -37,8 +32,9 @@ class TrustPanelNavigationMiddlewareTest {
     @Test
     fun `WHEN navigate to privacy security settings action is dispatched THEN navigate to privacy and security settings`() = runTest {
         val privacySecurityPrefKey = "pref_key_privacy_security_category"
-        val store = createStore(privacySecurityPrefKey = privacySecurityPrefKey)
+        val store = createStore(privacySecurityPrefKey = privacySecurityPrefKey, scope = this)
         store.dispatch(TrustPanelAction.Navigate.PrivacySecuritySettings)
+        testScheduler.advanceUntilIdle()
 
         verify {
             navController.navigate(
@@ -52,8 +48,9 @@ class TrustPanelNavigationMiddlewareTest {
 
     @Test
     fun `WHEN navigate to manage phone feature is dispatched THEN navigate to manage phone feature`() = runTest {
-        val store = createStore()
+        val store = createStore(scope = this)
         store.dispatch(TrustPanelAction.Navigate.ManagePhoneFeature(PhoneFeature.CAMERA))
+        testScheduler.advanceUntilIdle()
 
         verify {
             navController.navigate(
@@ -66,6 +63,7 @@ class TrustPanelNavigationMiddlewareTest {
     private fun createStore(
         trustPanelState: TrustPanelState = TrustPanelState(),
         privacySecurityPrefKey: String = "",
+        scope: CoroutineScope,
     ) = TrustPanelStore(
         initialState = trustPanelState,
         middleware = listOf(

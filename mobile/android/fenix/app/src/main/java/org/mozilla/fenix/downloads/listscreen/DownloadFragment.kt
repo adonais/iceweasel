@@ -26,6 +26,8 @@ import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIStore
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.settings.settingssearch.PreferenceFileInformation
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -68,6 +70,11 @@ class DownloadFragment : Fragment() {
                         this@DownloadFragment.findNavController().popBackStack()
                     }
                 },
+                onSettingsClick = {
+                    findNavController().navigate(
+                        resId = PreferenceFileInformation.DownloadsSettingsPreferences.fragmentId,
+                    )
+                },
             )
         }
     }
@@ -95,5 +102,10 @@ class DownloadFragment : Fragment() {
                 ).show()
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideToolbar()
     }
 }

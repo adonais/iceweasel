@@ -668,6 +668,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Új lista
+newtab-widget-section-title = Kisalkalmazások
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Kisalkalmazások elrejtése
+    .aria-label = Összes kisalkalmazás elrejtése
+newtab-widget-section-maximize =
+    .title = Kisalkalmazások kibontása
+    .aria-label = Összes kisalkalmazás kibontása teljes méretűre
+newtab-widget-section-minimize =
+    .title = Kisalkalmazások minimalizálása
+    .aria-label = Összes kisalkalmazás összecsukása kompakt méretre
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -690,8 +701,6 @@ newtab-widget-timer-menu-notifications = Értesítések kikapcsolása
 newtab-widget-timer-menu-notifications-on = Értesítések bekapcsolása
 newtab-widget-timer-menu-hide = Időzítő elrejtése
 newtab-widget-timer-menu-learn-more = További tudnivalók
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Görgessen a továbbiakért
 newtab-widget-message-title = Maradjon fókuszált a listákkal és a beépített időzítővel
 # to-dos stands for "things to do".
 newtab-widget-message-copy = A gyors emlékeztetőktől a napi tennivalókig, fókuszált munkaszakaszoktól a nyújtó szünetekig — maradjon a feladatnál és időben.

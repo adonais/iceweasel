@@ -139,6 +139,7 @@ skip-if = [
 ["browser_canvasframe_helper_06.js"]
 
 ["browser_compatibility_cssIssues.js"]
+tags = "devtools-compat-data"
 
 ["browser_connectToFrame.js"]
 

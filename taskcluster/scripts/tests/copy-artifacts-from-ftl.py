@@ -189,7 +189,10 @@ def gsutil_cp(artifact, dest):
     logging.info(f"Copying {artifact} to {dest}")
     try:
         result = subprocess.run(
-            ["gsutil", "cp", artifact, dest], capture_output=True, text=True
+            ["gsutil", "cp", artifact, dest],
+            check=False,
+            capture_output=True,
+            text=True,
         )
         if result.returncode != 0:
             if "AccessDeniedException" in result.stderr:

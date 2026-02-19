@@ -2,27 +2,27 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const { IPProtectionPanel } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs"
 );
 
 const { IPProtection, IPProtectionWidget } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtection.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs"
 );
 
 const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs"
 );
 
 const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPProxyManager.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs"
 );
 
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
@@ -34,7 +34,7 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
 );
 
 const { Server } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -45,7 +45,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const { ProxyPass } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
@@ -387,10 +387,25 @@ async function cleanupExperiment() {
 }
 /* exported cleanupExperiment */
 
-function makePass() {
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30";
-  return new ProxyPass(token, Date.now() + 31536000 * 1000);
+function makePass(
+  from = Temporal.Now.instant(),
+  until = from.add({ hours: 24 })
+) {
+  const header = {
+    alg: "HS256",
+    typ: "JWT",
+  };
+  const body = {
+    iat: Math.floor(from.add({ seconds: 1 }).epochMilliseconds / 1000),
+    nbf: Math.floor(from.epochMilliseconds / 1000),
+    exp: Math.floor(until.epochMilliseconds / 1000),
+    sub: "proxy-pass-user-42",
+    aud: "guardian-proxy",
+    iss: "vpn.mozilla.org",
+  };
+  const encode = obj => btoa(JSON.stringify(obj));
+  const token = [encode(header), encode(body), "signature"].join(".");
+  return new ProxyPass(token);
 }
 /* exported makePass */
 

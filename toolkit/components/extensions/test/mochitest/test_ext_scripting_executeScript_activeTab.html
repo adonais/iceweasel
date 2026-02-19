@@ -27,10 +27,7 @@ const makeExtension = ({ manifest: manifestProps, ...otherProps }) => {
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["extensions.manifestV3.enabled", true],
-      ["extensions.originControls.grantByDefault", false],
-    ],
+    set: [["extensions.originControls.grantByDefault", false]],
   });
 });
 

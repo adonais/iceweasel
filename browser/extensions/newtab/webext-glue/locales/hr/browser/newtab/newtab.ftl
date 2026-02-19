@@ -320,6 +320,9 @@ newtab-custom-pocket-subtitle = Izuzetan sadržaj kojeg odabire { -pocket-brand-
 newtab-custom-stories-toggle =
     .label = Preporučene priče
     .description = Izvanredni sadržaj odabran od { -brand-product-name } obitelji
+newtab-custom-stories-personalized-toggle =
+    .label = Priče
+newtab-custom-stories-personalized-checkbox-label = Personalizirane priče temeljene na tvojoj aktivnosti
 newtab-custom-pocket-sponsored = Sponzorirane priče
 newtab-custom-pocket-show-recent-saves = Prikaži nedavna spremanja
 newtab-custom-recent-title = Nedavna aktivnost
@@ -355,6 +358,7 @@ newtab-wallpaper-custom-color = Odaberi boju
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Slika premašuje ograničenje veličine datoteke od { $file_size } MB. Pokušaj prenijeti manju datoteku.
+newtab-wallpaper-error-upload-file-type = Ne možemo prenijeti tvoju datoteka. Pokušaj ponovo sa slikovnom datotekom.
 newtab-wallpaper-error-file-type = Nismo mogli prenijeti tvoju datoteku. Pokušaj ponovo s jednom drugom vrstom datoteke.
 newtab-wallpaper-light-red-panda = Crvena panda
 newtab-wallpaper-light-mountain = Bijela planina
@@ -434,6 +438,10 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
+
 ## Celestial
 
 # “Celestial” referring to astronomy; positioned in or relating to the sky,
@@ -456,10 +464,10 @@ newtab-weather-see-forecast =
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-sponsored = { $provider } ∙ Sponzorirano
-newtab-weather-menu-change-location = Promijeni mjesto
+newtab-weather-menu-change-location = Promijeni lokaciju
 newtab-weather-change-location-search-input-placeholder =
-    .placeholder = Traži mjesto
-    .aria-label = Traži mjesto
+    .placeholder = Traži lokaciju
+    .aria-label = Traži lokaciju
 newtab-weather-menu-weather-display = Prikaz vremena
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -475,8 +483,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Prebaci na Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Prebaci na Celzijeve stupnjeve
 newtab-weather-menu-hide-weather = Sakrij vremensku prognozu na novoj kartici
 newtab-weather-menu-learn-more = Saznaj više
+newtab-weather-menu-detect-my-location = Otkrij moju lokaciju
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Podaci o vremenu trenutačno nisu dostupni.
+newtab-weather-opt-in-see-weather = Želiš li vidjeti vremensku prognozu za svoju lokaciju?
+newtab-weather-opt-in-not-now =
+    .label = Ne sada
+newtab-weather-opt-in-yes =
+    .label = Da
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -643,6 +659,9 @@ newtab-widget-lists-input-menu-move-up = Pomakni gore
 newtab-widget-lists-input-menu-move-down = Pomakni dolje
 newtab-widget-lists-input-menu-delete = Obriši
 newtab-widget-lists-input-menu-edit = Uredi
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Stvori novi popis
 newtab-widget-lists-name-label-default =
     .label = Popis zadataka
 newtab-widget-lists-name-placeholder-default =
@@ -650,6 +669,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Novi popis
+newtab-widget-section-title = Widgeti
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Sakrij widgete
+    .aria-label = Sakrij sve widgete
+newtab-widget-section-maximize =
+    .title = Proširi widgete
+    .aria-label = Proširi sve widgete na punu veličinu
+newtab-widget-section-minimize =
+    .title = Smanji widgete
+    .aria-label = Smanji sve widgete na kompaktnu veličinu
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -672,8 +702,6 @@ newtab-widget-timer-menu-notifications = Isključi obavijesti
 newtab-widget-timer-menu-notifications-on = Uključi obavijesti
 newtab-widget-timer-menu-hide = Sakrij odbrojavanje
 newtab-widget-timer-menu-learn-more = Saznaj više
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Pomaknite za više informacija
 newtab-widget-message-title = Ostanite fokusirani uz popise i ugrađeno odbrojavanje
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Od brzih podsjetnika do dnevnih obaveza, sesija za fokusiranje do pauza za istezanje — ostanite usredotočeni na zadatak i na vrijeme.

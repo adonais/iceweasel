@@ -5,7 +5,10 @@
 #tab-preview-panel {
   --panel-width: 280px;
   --panel-padding: 0;
-  pointer-events: none;
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.tabs.notes.enabled") {
+    pointer-events: none;
+  }
 }
 
 .tab-preview-text-container {
@@ -14,6 +17,8 @@
 
 .tab-preview-title {
   overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-weight: var(--heading-font-weight);
 }
@@ -32,9 +37,10 @@
 }
 
 .tab-preview-thumbnail-container {
-  width: 280px;
-  height: 140px;
-  border-top: 1px solid var(--panel-border-color);
+  width: 264px;
+  margin: 0 auto var(--space-small);
+  overflow: hidden;
+
   &.hide-thumbnail {
     display: none;
   }
@@ -45,6 +51,24 @@
     display: block;
     width: 100%;
     animation: tab-hover-preview-fadein 0.2s ease;
+    border: 1px solid var(--border-color-deemphasized);
+    border-radius: var(--border-radius-medium);
+    box-sizing: border-box;
+  }
+}
+
+.tab-note-text-container:not(:empty) {
+  font: menu;
+  margin: 0 var(--space-large) var(--space-large);
+}
+
+.tab-preview-add-note {
+  --box-border-color: transparent;
+  --box-padding: var(--space-medium);
+  margin: 0 var(--space-small) var(--space-small);
+
+  &[hidden] {
+    display: none;
   }
 }
 

@@ -32,35 +32,35 @@ const NUMERIC = /^-?[\d\.]+$/;
 
 /**
  * A singleton instance of the box model controllers.
- *
- * @param  {Inspector} inspector
- *         An instance of the Inspector currently loaded in the toolbox.
- * @param  {Window} window
- *         The document window of the toolbox.
  */
-function BoxModel(inspector, window) {
-  this.document = window.document;
-  this.inspector = inspector;
-  this.store = inspector.store;
+class BoxModel {
+  /**
+   * @param  {Inspector} inspector
+   *         An instance of the Inspector currently loaded in the toolbox.
+   * @param  {Window} window
+   *         The document window of the toolbox.
+   */
+  constructor(inspector, window) {
+    this.document = window.document;
+    this.inspector = inspector;
+    this.store = inspector.store;
 
-  this.store.injectReducer("boxModel", boxModelReducer);
+    this.store.injectReducer("boxModel", boxModelReducer);
 
-  this.updateBoxModel = this.updateBoxModel.bind(this);
+    this.updateBoxModel = this.updateBoxModel.bind(this);
 
-  this.onHideGeometryEditor = this.onHideGeometryEditor.bind(this);
-  this.onMarkupViewLeave = this.onMarkupViewLeave.bind(this);
-  this.onMarkupViewNodeHover = this.onMarkupViewNodeHover.bind(this);
-  this.onNewSelection = this.onNewSelection.bind(this);
-  this.onShowBoxModelEditor = this.onShowBoxModelEditor.bind(this);
-  this.onShowRulePreviewTooltip = this.onShowRulePreviewTooltip.bind(this);
-  this.onSidebarSelect = this.onSidebarSelect.bind(this);
-  this.onToggleGeometryEditor = this.onToggleGeometryEditor.bind(this);
+    this.onHideGeometryEditor = this.onHideGeometryEditor.bind(this);
+    this.onMarkupViewLeave = this.onMarkupViewLeave.bind(this);
+    this.onMarkupViewNodeHover = this.onMarkupViewNodeHover.bind(this);
+    this.onNewSelection = this.onNewSelection.bind(this);
+    this.onShowBoxModelEditor = this.onShowBoxModelEditor.bind(this);
+    this.onShowRulePreviewTooltip = this.onShowRulePreviewTooltip.bind(this);
+    this.onSidebarSelect = this.onSidebarSelect.bind(this);
+    this.onToggleGeometryEditor = this.onToggleGeometryEditor.bind(this);
 
-  this.inspector.selection.on("new-node-front", this.onNewSelection);
-  this.inspector.sidebar.on("select", this.onSidebarSelect);
-}
-
-BoxModel.prototype = {
+    this.inspector.selection.on("new-node-front", this.onNewSelection);
+    this.inspector.sidebar.on("select", this.onSidebarSelect);
+  }
   /**
    * Destruction function called when the inspector is destroyed. Removes event listeners
    * and cleans up references.
@@ -85,7 +85,7 @@ BoxModel.prototype = {
     this._tooltip = null;
     this.document = null;
     this.inspector = null;
-  },
+  }
 
   get highlighters() {
     if (!this._highlighters) {
@@ -94,7 +94,7 @@ BoxModel.prototype = {
     }
 
     return this._highlighters;
-  },
+  }
 
   get rulePreviewTooltip() {
     if (!this._tooltip) {
@@ -102,7 +102,7 @@ BoxModel.prototype = {
     }
 
     return this._tooltip;
-  },
+  }
 
   /**
    * Returns an object containing the box model's handler functions used in the box
@@ -114,7 +114,7 @@ BoxModel.prototype = {
       onShowRulePreviewTooltip: this.onShowRulePreviewTooltip,
       onToggleGeometryEditor: this.onToggleGeometryEditor,
     };
-  },
+  }
 
   /**
    * Returns true if the layout panel is visible, and false otherwise.
@@ -126,7 +126,7 @@ BoxModel.prototype = {
       this.inspector.toolbox.currentToolId === "inspector" &&
       this.inspector.sidebar.getCurrentTabID() === "layoutview"
     );
-  },
+  }
 
   /**
    * Returns true if the layout panel is visible and the current element is valid to
@@ -138,21 +138,21 @@ BoxModel.prototype = {
       this.inspector.selection.isConnected() &&
       this.inspector.selection.isElementNode()
     );
-  },
+  }
 
   /**
    * Starts listening to reflows in the current tab.
    */
   trackReflows() {
     this.inspector.on("reflow-in-selected-target", this.updateBoxModel);
-  },
+  }
 
   /**
    * Stops listening to reflows in the current tab.
    */
   untrackReflows() {
     this.inspector.off("reflow-in-selected-target", this.updateBoxModel);
-  },
+  }
 
   /**
    * Updates the box model panel by dispatching the new layout data.
@@ -228,7 +228,7 @@ BoxModel.prototype = {
       });
 
     this._lastRequest = lastRequest;
-  },
+  }
 
   /**
    * Hides the geometry editor and updates the box moodel store with the new
@@ -242,7 +242,7 @@ BoxModel.prototype = {
       this._geometryEditorEventsAbortController.abort();
       this._geometryEditorEventsAbortController = null;
     }
-  },
+  }
 
   /**
    * Handler function that re-shows the geometry editor for an element that already
@@ -259,7 +259,7 @@ BoxModel.prototype = {
 
     const nodeFront = this.inspector.selection.nodeFront;
     this.highlighters.showGeometryEditor(nodeFront);
-  },
+  }
 
   /**
    * Handler function that temporarily hides the geomery editor when the
@@ -267,7 +267,7 @@ BoxModel.prototype = {
    */
   onMarkupViewNodeHover() {
     this.highlighters.hideGeometryEditor();
-  },
+  }
 
   /**
    * Selection 'new-node-front' event handler.
@@ -285,7 +285,7 @@ BoxModel.prototype = {
     }
 
     this.updateBoxModel("new-selection");
-  },
+  }
 
   /**
    * Shows the RulePreviewTooltip when a box model editable value is hovered on the
@@ -306,7 +306,7 @@ BoxModel.prototype = {
     if (!isHighlighted) {
       this.rulePreviewTooltip.show(target);
     }
-  },
+  }
 
   /**
    * Shows the inplace editor when a box model editable value is clicked on the
@@ -374,7 +374,7 @@ BoxModel.prototype = {
       },
       event
     );
-  },
+  }
 
   /**
    * Handler for the inspector sidebar select event. Starts tracking reflows if the
@@ -395,7 +395,7 @@ BoxModel.prototype = {
     }
 
     this.updateBoxModel();
-  },
+  }
 
   /**
    * Toggles on/off the geometry editor for the current element when the geometry editor
@@ -435,11 +435,11 @@ BoxModel.prototype = {
       this._geometryEditorEventsAbortController.abort();
       this._geometryEditorEventsAbortController = null;
     }
-  },
+  }
 
   getCurrentInspectorFront() {
     return this.inspector.selection.nodeFront.inspectorFront;
-  },
-};
+  }
+}
 
 module.exports = BoxModel;

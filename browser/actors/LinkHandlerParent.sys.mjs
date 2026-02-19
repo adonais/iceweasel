@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import {
-  TYPE_SVG,
   TYPE_ICO,
+  SVG_DATA_URI_PREFIX,
   TRUSTED_FAVICON_SCHEMES,
   blobAsDataURL,
 } from "moz-src:///browser/modules/FaviconUtils.sys.mjs";
@@ -224,7 +224,7 @@ export class LinkHandlerParent extends JSWindowActorParent {
     if (
       !images &&
       !TRUSTED_FAVICON_SCHEMES.includes(iconURI.scheme) &&
-      !iconURL.startsWith(`data:${TYPE_SVG};base64,`)
+      !iconURL.startsWith(SVG_DATA_URI_PREFIX)
     ) {
       console.error(
         `Not allowed to set favicon "${iconURL}" with that scheme!`

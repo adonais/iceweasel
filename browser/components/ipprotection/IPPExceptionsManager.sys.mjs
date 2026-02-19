@@ -2,22 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
-const MODE_PREF = "browser.ipProtection.exceptionsMode";
-
-const MODE = {
-  ALL: "all",
-  SELECT: "select",
-};
-
 const PERM_NAME = "ipp-vpn";
 
 /**
- * Manages site inclusions and exclusions for IP Protection.
+ * Manages site exceptions for IP Protection.
  * It communicates with Services.perms to update the ipp-vpn permission type.
- * Site exclusions are marked as permissions with DENY capabilities, whereas
- * site inclusions are marked as permissions with ALLOW capabilities.
+ * Site exclusions are marked as permissions with DENY capabilities.
  *
  * While permissions related UI (eg. panels and dialogs) already handle changes to ipp-vpn,
  * the intention of this class is to abstract methods for updating ipp-vpn as needed
@@ -25,27 +15,12 @@ const PERM_NAME = "ipp-vpn";
  */
 class ExceptionsManager {
   #inited = false;
-  #mode = MODE.ALL;
-
-  /**
-   * The type of site exceptions for VPN.
-   * Valid types are "all" and "select".
-   *
-   * @returns {"all" | "select"}
-   *  The site exception type.
-   *
-   * @see MODE
-   */
-  get mode() {
-    return this.#mode;
-  }
 
   init() {
     if (this.#inited) {
       return;
     }
 
-    this.#mode = this.exceptionsMode;
     this.#inited = true;
   }
 
@@ -57,40 +32,18 @@ class ExceptionsManager {
     this.#inited = false;
   }
 
-  onModeUpdate() {
-    this.#mode = this.exceptionsMode;
-  }
-
   /**
-   * If mode is MODE.ALL, adds a new principal to ipp-vpn with DENY capability.
-   * If mode is MODE.SELECT, adds a new principal to ipp-vpn with ALLOW capability.
+   * Adds a principal to ipp-vpn with capability DENY_ACTION
+   * for site exclusions.
    *
    * @param {nsIPrincipal} principal
    *  The principal that we want to add as a site exception.
-   *
-   * @see MODE
    */
-  addException(principal) {
-    if (this.#mode === MODE.ALL) {
-      this.#addExclusionFromPrincipal(principal);
-    } else if (this.#mode === MODE.SELECT) {
-      this.#addInclusionFromPrincipal(principal);
-    }
-  }
-
-  #addExclusionFromPrincipal(principal) {
+  addExclusion(principal) {
     Services.perms.addFromPrincipal(
       principal,
       PERM_NAME,
       Ci.nsIPermissionManager.DENY_ACTION
-    );
-  }
-
-  #addInclusionFromPrincipal(principal) {
-    Services.perms.addFromPrincipal(
-      principal,
-      PERM_NAME,
-      Ci.nsIPermissionManager.ALLOW_ACTION
     );
   }
 
@@ -99,15 +52,30 @@ class ExceptionsManager {
    *
    * @param {nsIPrincipal} principal
    *  The principal that we want to remove as a site exception.
-   *
-   * @see MODE
    */
-  removeException(principal) {
+  removeExclusion(principal) {
     Services.perms.removeFromPrincipal(principal, PERM_NAME);
   }
 
   /**
-   * Get the permission object for a site exception if it is in ipp-vpn.
+   * Returns true if the principal already exists in ipp-vpn
+   * and is registered as a permission with a DENY_ACTION
+   * capability (site exclusions).
+   * Else returns false if no such principal exists.
+   *
+   * @param {nsIPrincipal} principal
+   *  The principal that we want to check is saved in ipp-vpn
+   *  as a site exclusion.
+   * @returns {boolean}
+   *  True if the principal exists as a site exclusion.
+   */
+  hasExclusion(principal) {
+    let permission = this.getExceptionPermissionObject(principal);
+    return permission?.capability === Ci.nsIPermissionManager.DENY_ACTION;
+  }
+
+  /**
+   * Get the permission object for a site exception if it exists in ipp-vpn.
    *
    * @param {nsIPrincipal} principal
    *  The principal that we want to check is saved in ipp-vpn.
@@ -116,23 +84,14 @@ class ExceptionsManager {
    *  The permission object for a site exception, or null if unavailable.
    */
   getExceptionPermissionObject(principal) {
-    let permission = Services.perms.getPermissionObject(
+    let permissionObject = Services.perms.getPermissionObject(
       principal,
       PERM_NAME,
       true /* exactHost */
     );
-    return permission;
+    return permissionObject;
   }
 }
 
 const IPPExceptionsManager = new ExceptionsManager();
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  IPPExceptionsManager,
-  "exceptionsMode",
-  MODE_PREF,
-  MODE.ALL,
-  () => IPPExceptionsManager.onModeUpdate()
-);
-
 export { IPPExceptionsManager };

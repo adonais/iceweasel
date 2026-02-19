@@ -3,9 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-import concurrent.futures as futures
 import logging
 import os
+from concurrent import futures
 
 from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.util.taskcluster import CONCURRENCY, cancel_task

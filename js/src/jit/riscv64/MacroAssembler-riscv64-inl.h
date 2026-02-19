@@ -1833,6 +1833,13 @@ void MacroAssembler::mulFloat32(FloatRegister src, FloatRegister dest) {
 void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   mul(srcDest, srcDest, rhs);
 }
+void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+  MOZ_ASSERT(srcDest != scratch);
+  mov(rhs, scratch);
+  mulPtr(scratch, srcDest);
+}
 
 void MacroAssembler::negateDouble(FloatRegister reg) { fneg_d(reg, reg); }
 

@@ -111,7 +111,8 @@ already_AddRefed<DOMSVGAnimatedLength> SVGPatternElement::Height() {
 }
 
 already_AddRefed<DOMSVGAnimatedString> SVGPatternElement::Href() {
-  return mStringAttributes[HREF].IsExplicitlySet()
+  return mStringAttributes[HREF].IsExplicitlySet() ||
+                 !mStringAttributes[XLINK_HREF].IsExplicitlySet()
              ? mStringAttributes[HREF].ToDOMAnimatedString(this)
              : mStringAttributes[XLINK_HREF].ToDOMAnimatedString(this);
 }

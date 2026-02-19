@@ -24,7 +24,7 @@ class GlobalPrivacyControlTest : TestSetup() {
     private lateinit var gpcPage: TestAsset
 
     @get:Rule(order = 0)
-    val activityTestRule =
+    val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(
                 skipOnboarding = true,
@@ -43,18 +43,18 @@ class GlobalPrivacyControlTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2429327
     @Test
     fun testGPCinNormalBrowsing() {
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(gpcPage.url) {
             verifyPageContent("GPC not enabled.")
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openEnhancedTrackingProtectionSubMenu {
             scrollToGCPSettings()
             verifyGPCTextWithSwitchWidget()
             verifyGPCSwitchEnabled(false)
             switchGPCToggle()
         }.goBack {
-        }.goBackToBrowser {
+        }.goBackToBrowser(composeTestRule) {
             verifyPageContent("GPC is enabled.")
         }
     }
@@ -62,19 +62,21 @@ class GlobalPrivacyControlTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2429364
     @Test
     fun testGPCinPrivateBrowsing() {
-        homeScreen { }.togglePrivateBrowsingMode()
-        navigationToolbar {
+        homeScreen(composeTestRule) {
+        }.togglePrivateBrowsingMode()
+
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(gpcPage.url) {
             verifyPageContent("GPC is enabled.")
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openEnhancedTrackingProtectionSubMenu {
             scrollToGCPSettings()
             verifyGPCTextWithSwitchWidget()
             verifyGPCSwitchEnabled(false)
             switchGPCToggle()
         }.goBack {
-        }.goBackToBrowser {
+        }.goBackToBrowser(composeTestRule) {
             verifyPageContent("GPC is enabled.")
         }
     }

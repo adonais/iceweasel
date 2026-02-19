@@ -360,13 +360,15 @@ bool SVGUtils::GetParentSVGTransforms(const nsIFrame* aFrame,
   return false;
 }
 
-void SVGUtils::NotifyChildrenOfSVGChange(nsIFrame* aFrame, uint32_t aFlags) {
+void SVGUtils::NotifyChildrenOfSVGChange(
+    nsIFrame* aFrame, ISVGDisplayableFrame::ChangeFlags aFlags) {
   for (nsIFrame* kid : aFrame->PrincipalChildList()) {
     ISVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
     if (SVGFrame) {
       SVGFrame->NotifySVGChanged(aFlags);
     } else {
-      NS_ASSERTION(kid->IsSVGFrame() || kid->IsInSVGTextSubtree(),
+      NS_ASSERTION(kid->IsSVGFrame() || kid->IsInSVGTextSubtree() ||
+                       kid->IsPlaceholderFrame(),
                    "SVG frame expected");
       // recurse into the children of container frames e.g. <clipPath>, <mask>
       // in case they have child frames with transformation matrices

@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <stdarg.h>
 #include <stdio.h>
 #include <type_traits>
 

@@ -300,6 +300,7 @@ option {
   will-change: -moz-fixed-pos-containing-block !important;
 
   min-block-size: 1em;
+  min-inline-size: min-content;
   padding-block: 2px;
   user-select: none;
   /*

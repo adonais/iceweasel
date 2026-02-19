@@ -1,6 +1,7 @@
 package org.mozilla.fenix.ui
 
 import android.os.Build
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.filters.SdkSuppress
 import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.Rule
@@ -22,7 +23,9 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
 class UploadPermissionsTest : TestSetup() {
 
     @get:Rule
-    val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+    val composeTestRule = AndroidComposeTestRule(
+        HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
+    ) { it.activity }
 
     @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
@@ -43,9 +46,9 @@ class UploadPermissionsTest : TestSetup() {
     fun fileUploadPermissionTest() {
         val testPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage.url) {
-            clickPageObject(itemWithResId("upload_file"))
+            clickPageObject(composeTestRule, itemWithResId("upload_file"))
             // Grant app permission to access storage
             grantSystemPermission()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -61,9 +64,9 @@ class UploadPermissionsTest : TestSetup() {
     fun uploadSelectedAudioFilesWhileNoPermissionGrantedTest() {
         val testPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage.url) {
-            clickPageObject(itemWithResId("audioFileUpload"))
+            clickPageObject(composeTestRule, itemWithResId("audioFileUpload"))
             // Deny app access to voice recording
             denyPermission()
             // Deny app access to audio files storage
@@ -77,9 +80,9 @@ class UploadPermissionsTest : TestSetup() {
     fun uploadSelectedAudioFilesWhenStoragePermissionGrantedTest() {
         val testPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage.url) {
-            clickPageObject(itemWithResId("audioFileUpload"))
+            clickPageObject(composeTestRule, itemWithResId("audioFileUpload"))
             // Deny app access to voice recording
             denyPermission()
             // Grant app access to audio files storage
@@ -95,9 +98,9 @@ class UploadPermissionsTest : TestSetup() {
     fun uploadSelectedVideoOrImageFilesWhenStoragePermissionGrantedTest() {
         val testPage = mockWebServer.htmlControlsFormAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(testPage.url) {
-            clickPageObject(itemWithResId("photosUpload"))
+            clickPageObject(composeTestRule, itemWithResId("photosUpload"))
             // Deny app access to pictures and video recordings
             denyPermission()
             verifySystemPhotoAndVideoPickerExists()

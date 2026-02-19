@@ -122,7 +122,7 @@ treechildren::-moz-tree-cell-text(primary, dropOn) {
 }
 
 treechildren::-moz-tree-drop-feedback {
-  background-color: SelectedItem;
+  background-color: AccentColor;
   width: 50px;
   height: 2px;
   margin-inline-start: 5px;

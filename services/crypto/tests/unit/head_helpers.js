@@ -60,8 +60,8 @@ function base64UrlDecode(s) {
  *
  * @param [arg0, arg1, arg2, ...]
  *        Any number of arguments to print out
- * @usage _("Hello World") -> prints "Hello World"
- * @usage _(1, 2, 3) -> prints "1 2 3"
+ * Usage: _("Hello World") -> prints "Hello World"
+ * Usage: _(1, 2, 3) -> prints "1 2 3"
  */
 var _ = function () {
   print(Array.from(arguments).join(" "));

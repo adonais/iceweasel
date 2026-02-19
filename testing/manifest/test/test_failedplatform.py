@@ -15,9 +15,10 @@ def test_get_possible_build_types():
     fp = FailedPlatform({"build_type1": {"test_variant1": {}}})
     assert fp.get_possible_build_types() == ["build_type1"]
 
-    fp = FailedPlatform(
-        {"build_type1": {"test_variant1": {}}, "build_type2": {"test_variant1": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}},
+        "build_type2": {"test_variant1": {}},
+    })
     assert fp.get_possible_build_types() == ["build_type1", "build_type2"]
 
 
@@ -33,9 +34,10 @@ def test_get_possible_test_variants():
     fp = FailedPlatform({"build_type1": {"test_variant1": {}}})
     assert fp.get_possible_test_variants("build_type1") == ["test_variant1"]
 
-    fp = FailedPlatform(
-        {"build_type1": {"test_variant1": {}}, "build_type2": {"test_variant2": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}},
+        "build_type2": {"test_variant2": {}},
+    })
     assert fp.get_possible_test_variants("build_type2") == ["test_variant2"]
 
     fp = FailedPlatform({"build_type1": {"test_variant1": {}, "test_variant2": {}}})
@@ -110,21 +112,17 @@ def test_is_full_fail():
     fp.failures["build_type1"] = {"test_variant1": 1, "test_variant2": 1}
     assert fp.is_full_fail()
 
-    fp = FailedPlatform(
-        {
-            "build_type1": {"test_variant1": {}, "test_variant2": {}},
-            "build_type2": {"test_variant1": {}, "test_variant2": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}, "test_variant2": {}},
+        "build_type2": {"test_variant1": {}, "test_variant2": {}},
+    })
     fp.failures["build_type1"] = {"test_variant1": 1, "test_variant2": 1}
     assert not fp.is_full_fail()
 
-    fp = FailedPlatform(
-        {
-            "build_type1": {"test_variant1": {}, "test_variant2": {}},
-            "build_type2": {"test_variant1": {}, "test_variant2": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}, "test_variant2": {}},
+        "build_type2": {"test_variant1": {}, "test_variant2": {}},
+    })
     fp.failures["build_type1"] = {"test_variant1": 1, "test_variant2": 1}
     fp.failures["build_type2"] = {"test_variant1": 1, "test_variant2": 1}
     assert fp.is_full_fail()
@@ -150,30 +148,26 @@ def test_get_no_variant_conditions():
     )
 
     # Handle composite variants
-    fp = FailedPlatform(
-        {
-            "build_type1": {
-                "test_variant1": {},
-                "socketprocess_networking+!fission": {},
-                "no_variant": {},
-            }
+    fp = FailedPlatform({
+        "build_type1": {
+            "test_variant1": {},
+            "socketprocess_networking+!fission": {},
+            "no_variant": {},
         }
-    )
+    })
     assert (
         fp.get_no_variant_conditions(" && ", "build_type1")
         == " && !test_variant1 && !socketprocess_networking && fission"
     )
 
     # Handle mutually exclusive variants
-    fp = FailedPlatform(
-        {
-            "build_type1": {
-                "fission": {},
-                "socketprocess_networking+!fission": {},
-                "no_variant": {},
-            }
+    fp = FailedPlatform({
+        "build_type1": {
+            "fission": {},
+            "socketprocess_networking+!fission": {},
+            "no_variant": {},
         }
-    )
+    })
     assert (
         fp.get_no_variant_conditions(" && ", "build_type1")
         == " && !socketprocess_networking"
@@ -203,27 +197,27 @@ def test_get_test_variant_condition():
     )
 
     # Returns the negation of the composite if any
-    fp = FailedPlatform(
-        {"build_type1": {"test_variant1": {}, "test_variant1+test_variant2": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}, "test_variant1+test_variant2": {}}
+    })
     assert (
         fp.get_test_variant_condition(" && ", "build_type1", "test_variant1")
         == " && test_variant1 && !test_variant2"
     )
 
     # Ignores composite variants it is not part of
-    fp = FailedPlatform(
-        {"build_type1": {"test_variant1": {}, "test_variant2+test_variant3": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}, "test_variant2+test_variant3": {}}
+    })
     assert (
         fp.get_test_variant_condition(" && ", "build_type1", "test_variant1")
         == " && test_variant1"
     )
 
     # Convert a composite test variant
-    fp = FailedPlatform(
-        {"build_type1": {"test_variant1": {}, "test_variant1+test_variant2": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}, "test_variant1+test_variant2": {}}
+    })
     assert (
         fp.get_test_variant_condition(
             " && ", "build_type1", "test_variant1+test_variant2"
@@ -232,14 +226,12 @@ def test_get_test_variant_condition():
     )
 
     # Handles composite variants included in other composites
-    fp = FailedPlatform(
-        {
-            "build_type1": {
-                "test_variant1+test_variant2": {},
-                "test_variant1+test_variant2+test_variant3": {},
-            }
+    fp = FailedPlatform({
+        "build_type1": {
+            "test_variant1+test_variant2": {},
+            "test_variant1+test_variant2+test_variant3": {},
         }
-    )
+    })
     assert (
         fp.get_test_variant_condition(
             " && ", "build_type1", "test_variant1+test_variant2"
@@ -248,14 +240,12 @@ def test_get_test_variant_condition():
     )
 
     # Detects if the composite or in scrambled order
-    fp = FailedPlatform(
-        {
-            "build_type1": {
-                "test_variant2+test_variant1": {},
-                "test_variant1+test_variant3+test_variant2": {},
-            }
+    fp = FailedPlatform({
+        "build_type1": {
+            "test_variant2+test_variant1": {},
+            "test_variant1+test_variant3+test_variant2": {},
         }
-    )
+    })
     assert (
         fp.get_test_variant_condition(
             " && ", "build_type1", "test_variant2+test_variant1"
@@ -264,15 +254,13 @@ def test_get_test_variant_condition():
     )
 
     # Handles when variant is included in several composites
-    fp = FailedPlatform(
-        {
-            "build_type1": {
-                "test_variant1+test_variant2": {},
-                "test_variant1+test_variant2+test_variant3": {},
-                "test_variant1+test_variant4+test_variant2": {},
-            }
+    fp = FailedPlatform({
+        "build_type1": {
+            "test_variant1+test_variant2": {},
+            "test_variant1+test_variant2+test_variant3": {},
+            "test_variant1+test_variant4+test_variant2": {},
         }
-    )
+    })
     assert (
         fp.get_test_variant_condition(
             " && ", "build_type1", "test_variant2+test_variant1"
@@ -281,14 +269,12 @@ def test_get_test_variant_condition():
     )
 
     # Simply returns the current composite variant if it is not fully contained in another
-    fp = FailedPlatform(
-        {
-            "build_type1": {
-                "test_variant1+test_variant2": {},
-                "test_variant1+test_variant3": {},
-            }
+    fp = FailedPlatform({
+        "build_type1": {
+            "test_variant1+test_variant2": {},
+            "test_variant1+test_variant3": {},
         }
-    )
+    })
     assert (
         fp.get_test_variant_condition(
             " && ", "build_type1", "test_variant1+test_variant2"
@@ -297,12 +283,10 @@ def test_get_test_variant_condition():
     )
 
     # Ignore matching composite variants in other build types
-    fp = FailedPlatform(
-        {
-            "build_type1": {"test_variant1": {}},
-            "build_type2": {"test_variant1+test_variant2": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}},
+        "build_type2": {"test_variant1+test_variant2": {}},
+    })
     assert (
         fp.get_test_variant_condition(" && ", "build_type1", "test_variant1")
         == " && test_variant1"
@@ -324,9 +308,10 @@ def test_is_full_high_freq_fail():
     assert fp.is_full_high_freq_fail()
 
     # Several build types
-    fp = FailedPlatform(
-        {"build_type1": {"no_variant": {}}, "build_type2": {"no_variant": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"no_variant": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert not fp.is_full_high_freq_fail()
 
     for i in range(0, 7):
@@ -341,12 +326,10 @@ def test_is_full_high_freq_fail():
     assert fp.is_full_high_freq_fail()
 
     # Several build types and test variants
-    fp = FailedPlatform(
-        {
-            "build_type1": {"no_variant": {}, "test_variant1": {}},
-            "build_type2": {"no_variant": {}, "test_variant1": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"no_variant": {}, "test_variant1": {}},
+        "build_type2": {"no_variant": {}, "test_variant1": {}},
+    })
     assert not fp.is_full_high_freq_fail()
 
     for i in range(0, 7):
@@ -382,69 +365,64 @@ def test_get_skip_string():
 
     # Fail only on some build types without test variant
     # => only failed build types returned
-    fp = FailedPlatform(
-        {"build_type1": {"no_variant": {}}, "build_type2": {"no_variant": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"no_variant": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert fp.get_skip_string(" && ", "build_type1", "no_variant") == " && build_type1"
 
     # Fail only on one build type with test variant
     # => only failed build types returned with negated test variants
-    fp = FailedPlatform(
-        {
-            "build_type1": {"no_variant": {}, "test_variant1": {}},
-            "build_type2": {"no_variant": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"no_variant": {}, "test_variant1": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert (
         fp.get_skip_string(" && ", "build_type1", "no_variant")
         == " && build_type1 && !test_variant1"
     )
 
     # Full test variant fail on single line => only build type returned
-    fp = FailedPlatform(
-        {"build_type1": {"test_variant1": {}}, "build_type2": {"no_variant": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert (
         fp.get_skip_string(" && ", "build_type1", "test_variant1") == " && build_type1"
     )
 
-    fp = FailedPlatform(
-        {
-            "build_type1": {"test_variant1+test_variant2": {}},
-            "build_type2": {"no_variant": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1+test_variant2": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert (
         fp.get_skip_string(" && ", "build_type1", "test_variant1+test_variant2")
         == " && build_type1"
     )
 
     # Fail only on some test variants => build type and test variant returned
-    fp = FailedPlatform(
-        {
-            "build_type1": {"test_variant1": {}, "test_variant2": {}},
-            "build_type2": {"no_variant": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}, "test_variant2": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert (
         fp.get_skip_string(" && ", "build_type1", "test_variant1")
         == " && build_type1 && test_variant1"
     )
 
     # Full fail on second call
-    fp = FailedPlatform(
-        {"build_type1": {"no_variant": {}}, "build_type2": {"no_variant": {}}}
-    )
+    fp = FailedPlatform({
+        "build_type1": {"no_variant": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert fp.get_skip_string(" && ", "build_type1", "no_variant") == " && build_type1"
     assert fp.get_skip_string(" && ", "build_type2", "no_variant") == ""
 
     # Full fail on second call with test variants
-    fp = FailedPlatform(
-        {
-            "build_type1": {"test_variant1+test_variant2": {}},
-            "build_type2": {"test_variant1+test_variant2": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1+test_variant2": {}},
+        "build_type2": {"test_variant1+test_variant2": {}},
+    })
     assert (
         fp.get_skip_string(" && ", "build_type1", "test_variant1+test_variant2")
         == " && build_type1"
@@ -461,12 +439,10 @@ def test_get_skip_string():
     assert fp.get_skip_string(" && ", "build_type1", "test_variant2") == ""
 
     # Fail on variant and no_variant
-    fp = FailedPlatform(
-        {
-            "build_type1": {"test_variant1": {}, "no_variant": {}},
-            "build_type2": {"no_variant": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {"test_variant1": {}, "no_variant": {}},
+        "build_type2": {"no_variant": {}},
+    })
     assert (
         fp.get_skip_string(" && ", "build_type1", "test_variant1")
         == " && build_type1 && test_variant1"
@@ -474,16 +450,14 @@ def test_get_skip_string():
     assert fp.get_skip_string(" && ", "build_type1", "no_variant") == " && build_type1"
 
     # Complex cases
-    fp = FailedPlatform(
-        {
-            "build_type1": {
-                "test_variant1": {},
-                "test_variant2": {},
-                "test_variant1+test_variant2": {},
-            },
-            "build_type2": {"no_variant": {}, "test_variant1": {}, "test_variant2": {}},
-        }
-    )
+    fp = FailedPlatform({
+        "build_type1": {
+            "test_variant1": {},
+            "test_variant2": {},
+            "test_variant1+test_variant2": {},
+        },
+        "build_type2": {"no_variant": {}, "test_variant1": {}, "test_variant2": {}},
+    })
     assert (
         fp.get_skip_string(" && ", "build_type1", "test_variant1")
         == " && build_type1 && test_variant1 && !test_variant2"

@@ -145,20 +145,15 @@ js::UniqueChars js::intl::EncodeLocale(JSContext* cx, JSString* locale) {
   MOZ_ASSERT(locale->length() > 0);
 
   js::UniqueChars chars = EncodeAscii(cx, locale);
-
-#ifdef DEBUG
-  // Ensure the returned value contains only valid BCP 47 characters.
-  // (Lambdas can't be placed inside MOZ_ASSERT, so move the checks in an
-  // #ifdef block.)
-  if (chars) {
-    auto alnumOrDash = [](char c) {
-      return mozilla::IsAsciiAlphanumeric(c) || c == '-';
-    };
-    MOZ_ASSERT(mozilla::IsAsciiAlpha(chars[0]));
-    MOZ_ASSERT(
-        std::all_of(chars.get(), chars.get() + locale->length(), alnumOrDash));
+  if (!chars) {
+    return nullptr;
   }
-#endif
+
+  // Ensure the returned value contains only valid BCP 47 characters.
+  MOZ_ASSERT(mozilla::IsAsciiAlpha(chars[0]));
+  MOZ_ASSERT(std::all_of(
+      chars.get(), chars.get() + locale->length(),
+      [](char c) { return mozilla::IsAsciiAlphanumeric(c) || c == '-'; }));
 
   return chars;
 }

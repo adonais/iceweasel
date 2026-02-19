@@ -46,6 +46,10 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/link.js",
   true
 );
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  getMdnLinkParams: "resource://devtools/shared/mdn.mjs",
+});
 
 const STYLE_INSPECTOR_PROPERTIES =
   "devtools/shared/locales/styleinspector.properties";
@@ -1040,9 +1044,7 @@ class PropertyView {
     this.isCustomProperty = isCustomProperty;
 
     if (!this.isCustomProperty) {
-      this.link =
-        "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/" +
-        name;
+      this.link = `https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/${name}?${lazy.getMdnLinkParams("computed-panel")}`;
     }
 
     this.#propertyInfo = new PropertyInfo(tree, name);

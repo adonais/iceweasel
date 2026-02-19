@@ -464,7 +464,7 @@ const isAccessibleFront = value => value && value.typeName === "accessible";
  * translate accessibleFront to a grip-like object that can be used with an Accessible
  * rep.
  *
- * @params  {accessibleFront} accessibleFront
+ * @param {AccessibleFront} accessibleFront
  *          The AccessibleFront for which we want to create a grip-like object.
  * @returns {object} a grip-like object that can be used with Reps.
  */

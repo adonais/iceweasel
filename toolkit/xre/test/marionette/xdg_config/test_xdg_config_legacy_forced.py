@@ -7,7 +7,6 @@ from xdg_config_home_test_case import XdgConfigHomeTestCase
 
 
 class TestXdgConfigHomeLegacy(XdgConfigHomeTestCase):
-
     def setUp(self):
         assert "MOZ_LEGACY_HOME" not in self._env.keys()
         self._env.update({"MOZ_LEGACY_HOME": "1"})

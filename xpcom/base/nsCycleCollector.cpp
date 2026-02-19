@@ -827,12 +827,16 @@ struct CCGraph {
   static const uint32_t kInitialMapLength = 16384;
 
  public:
-  CCGraph()
-      : mRootCount(0), mPtrInfoMap(kInitialMapLength), mOutOfMemory(false) {}
+  CCGraph() : mRootCount(0), mOutOfMemory(false) {}
 
   ~CCGraph() = default;
 
-  void Init() { MOZ_ASSERT(IsEmpty(), "Failed to call CCGraph::Clear"); }
+  void Init() {
+    MOZ_ASSERT(IsEmpty(), "Failed to call CCGraph::Clear");
+    if (!mPtrInfoMap.reserve(kInitialMapLength)) {
+      MOZ_CRASH("OOM");
+    }
+  }
 
   void Clear() {
     mNodes.Clear();

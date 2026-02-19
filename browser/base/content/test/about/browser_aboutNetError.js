@@ -17,12 +17,15 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsINativeDNSResolverOverride
 );
 
+const DES_PREF = "security.ssl3.deprecated.rsa_des_ede3_sha";
+
 // This includes all the cipher suite prefs we have.
 function resetPrefs() {
   Services.prefs.clearUserPref("security.tls.version.min");
   Services.prefs.clearUserPref("security.tls.version.max");
   Services.prefs.clearUserPref("security.tls.version.enable-deprecated");
   Services.prefs.clearUserPref("browser.fixup.alternate.enabled");
+  Services.prefs.clearUserPref(DES_PREF);
 }
 
 const SSL_ERROR_BASE = -0x3000;
@@ -289,18 +292,76 @@ add_task(async function onlyAllow3DESWithDeprecatedTLS() {
     }
   );
 
-  // 3DES can be disabled separately.
-  Services.prefs.setBoolPref(
-    "security.ssl3.deprecated.rsa_des_ede3_sha",
-    false
-  );
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:blank" },
-    async browser => {
-      BrowserTestUtils.startLoadingURIString(browser, TRIPLEDES_PAGE);
-      await BrowserTestUtils.waitForErrorPage(browser);
-    }
-  );
+  for (let feltPrivacy of [true, false]) {
+    // 3DES can be disabled separately.
+    Services.prefs.setBoolPref(DES_PREF, false);
+    await SpecialPowers.pushPrefEnv({
+      set: [["security.certerrors.felt-privacy-v1", feltPrivacy]],
+    });
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: "about:blank" },
+      async browser => {
+        BrowserTestUtils.startLoadingURIString(browser, TRIPLEDES_PAGE);
+        await BrowserTestUtils.waitForErrorPage(browser);
+        let prefWasReset = TestUtils.waitForPrefChange(DES_PREF);
+
+        if (feltPrivacy) {
+          await SpecialPowers.spawn(browser, [], async function () {
+            const doc = content.document;
+            const netErrorCard =
+              doc.querySelector("net-error-card")?.wrappedJSObject;
+            Assert.ok(netErrorCard, "netErrorCard is rendered.");
+
+            netErrorCard.advancedButton.scrollIntoView();
+            EventUtils.synthesizeMouseAtCenter(
+              netErrorCard.advancedButton,
+              {},
+              content
+            );
+            await ContentTaskUtils.waitForCondition(
+              () => ContentTaskUtils.isVisible(netErrorCard.advancedContainer),
+              "Advanced container is visible"
+            );
+
+            const prefResetButton = netErrorCard.prefResetButton;
+            Assert.ok(prefResetButton, "prefResetButton exists in the DOM.");
+            netErrorCard.prefResetButton.scrollIntoView();
+            await ContentTaskUtils.waitForCondition(
+              () => ContentTaskUtils.isVisible(netErrorCard.prefResetButton),
+              "Pref reset button is visible"
+            );
+            ok(
+              ContentTaskUtils.isVisible(prefResetButton),
+              "prefResetButton is visible"
+            );
+
+            prefResetButton.click();
+          });
+        } else {
+          await SpecialPowers.spawn(browser, [], async function () {
+            const doc = content.document;
+
+            const prefResetButton = doc.getElementById("prefResetButton");
+            Assert.ok(prefResetButton, "prefResetButton exists in the DOM.");
+
+            await ContentTaskUtils.waitForCondition(
+              () => ContentTaskUtils.isVisible(prefResetButton),
+              "Pref reset button is visible"
+            );
+            ok(
+              ContentTaskUtils.isVisible(prefResetButton),
+              "prefResetButton is visible"
+            );
+
+            prefResetButton.click();
+          });
+        }
+
+        await prefWasReset;
+      }
+    );
+  }
 
   resetPrefs();
 });

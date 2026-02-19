@@ -19,26 +19,24 @@ from gecko_taskgraph.util.attributes import (
 
 transforms = TransformSequence()
 
-langpack_sign_push_description_schema = Schema(
-    {
-        Required("label"): str,
-        Required("description"): str,
-        Required("worker-type"): optionally_keyed_by("release-level", str),
-        Required("worker"): {
-            Required("channel"): optionally_keyed_by(
-                "project", "platform", Any("listed", "unlisted")
-            ),
-            Required("upstream-artifacts"): None,  # Processed here below
-        },
-        Required("run-on-projects"): [],
-        Required("scopes"): optionally_keyed_by("release-level", [str]),
-        Required("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("task-from"): task_description_schema["task-from"],
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+langpack_sign_push_description_schema = Schema({
+    Required("label"): str,
+    Required("description"): str,
+    Required("worker-type"): optionally_keyed_by("release-level", str),
+    Required("worker"): {
+        Required("channel"): optionally_keyed_by(
+            "project", "platform", Any("listed", "unlisted")
+        ),
+        Required("upstream-artifacts"): None,  # Processed here below
+    },
+    Required("run-on-projects"): [],
+    Required("scopes"): optionally_keyed_by("release-level", [str]),
+    Required("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("task-from"): task_description_schema["task-from"],
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 @transforms.add
@@ -68,13 +66,13 @@ def resolve_keys(config, jobs):
             job,
             "worker-type",
             item_name=job["label"],
-            **{"release-level": release_level(config.params["project"])},
+            **{"release-level": release_level(config.params)},
         )
         resolve_keyed_by(
             job,
             "scopes",
             item_name=job["label"],
-            **{"release-level": release_level(config.params["project"])},
+            **{"release-level": release_level(config.params)},
         )
         resolve_keyed_by(
             job,

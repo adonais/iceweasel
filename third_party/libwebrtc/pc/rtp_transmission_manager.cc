@@ -335,9 +335,11 @@ RtpTransmissionManager::CreateAndAddTransceiver(
   }
   if (header_extensions.empty()) {
     if (sender->media_type() == MediaType::AUDIO) {
-      header_extensions = media_engine()->voice().GetRtpHeaderExtensions();
+      header_extensions =
+          media_engine()->voice().GetRtpHeaderExtensions(&env_.field_trials());
     } else {
-      header_extensions = media_engine()->video().GetRtpHeaderExtensions();
+      header_extensions =
+          media_engine()->video().GetRtpHeaderExtensions(&env_.field_trials());
     }
   }
 
@@ -761,7 +763,7 @@ RtpTransmissionManager::FindReceiverById(const std::string& receiver_id) const {
   return nullptr;
 }
 
-MediaEngineInterface* RtpTransmissionManager::media_engine() const {
+const MediaEngineInterface* RtpTransmissionManager::media_engine() const {
   return context_->media_engine();
 }
 

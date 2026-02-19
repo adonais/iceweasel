@@ -6,10 +6,11 @@
 
 #![deny(missing_docs)]
 
+use crate::derives::*;
 use crate::stylesheets::{Namespaces, Origin, UrlExtraData};
 use crate::values::serialize_atom_identifier;
 use crate::Atom;
-use cssparser::{Parser as CssParser, ParserInput};
+use cssparser::{match_ignore_ascii_case, Parser as CssParser, ParserInput};
 use dom::ElementState;
 use selectors::parser::{ParseRelative, SelectorList};
 use std::fmt::{self, Debug, Write};

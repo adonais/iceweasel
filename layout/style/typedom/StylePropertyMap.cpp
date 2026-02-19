@@ -24,11 +24,13 @@
 
 namespace mozilla::dom {
 
-StylePropertyMap::StylePropertyMap(nsCOMPtr<nsISupports> aParent,
-                                   bool aComputed)
-    : StylePropertyMapReadOnly(std::move(aParent), aComputed) {
+StylePropertyMap::StylePropertyMap(Element* aElement, bool aComputed)
+    : StylePropertyMapReadOnly(aElement, aComputed) {
   MOZ_DIAGNOSTIC_ASSERT(!aComputed);
 }
+
+StylePropertyMap::StylePropertyMap(CSSStyleRule* aRule)
+    : StylePropertyMapReadOnly(aRule) {}
 
 JSObject* StylePropertyMap::WrapObject(JSContext* aCx,
                                        JS::Handle<JSObject*> aGivenProto) {
@@ -70,7 +72,7 @@ void StylePropertyMap::Set(
 
   // Step 4
 
-  const auto valuePropertyId = styleValue.GetPropertyId();
+  const auto* valuePropertyId = styleValue.GetPropertyId();
 
   if (valuePropertyId && *valuePropertyId != propertyId) {
     aRv.ThrowTypeError("Invalid type for property"_ns);

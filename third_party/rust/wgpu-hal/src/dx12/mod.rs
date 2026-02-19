@@ -54,7 +54,7 @@ the limit is merely 2048 unique samplers in existence, which is much more reason
 
 ## Resource binding
 
-See ['Device::create_pipeline_layout`] documentation for the structure
+See [`crate::Device::create_pipeline_layout`] documentation for the structure
 of the root signature corresponding to WebGPU pipeline layout.
 
 Binding groups is mostly straightforward, with one big caveat:
@@ -79,6 +79,7 @@ mod dcomp;
 mod descriptor;
 mod device;
 mod instance;
+mod pipeline_desc;
 mod sampler;
 mod shader_compilation;
 mod suballocation;
@@ -148,6 +149,13 @@ struct D3D12Lib {
     lib: DynLib,
 }
 
+#[derive(Clone, Copy)]
+pub enum CreateDeviceError {
+    GetProcAddress,
+    D3D12CreateDevice(windows_core::HRESULT),
+    RetDeviceIsNull,
+}
+
 impl D3D12Lib {
     fn new() -> Result<Self, libloading::Error> {
         unsafe { DynLib::new("d3d12.dll").map(|lib| Self { lib }) }
@@ -157,7 +165,7 @@ impl D3D12Lib {
         &self,
         adapter: &DxgiAdapter,
         feature_level: Direct3D::D3D_FEATURE_LEVEL,
-    ) -> Result<Option<Direct3D12::ID3D12Device>, crate::DeviceError> {
+    ) -> Result<Direct3D12::ID3D12Device, CreateDeviceError> {
         // Calls windows::Win32::Graphics::Direct3D12::D3D12CreateDevice on d3d12.dll
         type Fun = extern "system" fn(
             padapter: *mut ffi::c_void,
@@ -166,7 +174,8 @@ impl D3D12Lib {
             ppdevice: *mut *mut ffi::c_void,
         ) -> windows_core::HRESULT;
         let func: libloading::Symbol<Fun> =
-            unsafe { self.lib.get(c"D3D12CreateDevice".to_bytes()) }?;
+            unsafe { self.lib.get(c"D3D12CreateDevice".to_bytes()) }
+                .map_err(|_| CreateDeviceError::GetProcAddress)?;
 
         let mut result__: Option<Direct3D12::ID3D12Device> = None;
 
@@ -176,20 +185,13 @@ impl D3D12Lib {
             // TODO: Generic?
             &Direct3D12::ID3D12Device::IID,
             <*mut _>::cast(&mut result__),
-        )
-        .ok();
+        );
 
-        if let Err(ref err) = res {
-            match err.code() {
-                Dxgi::DXGI_ERROR_UNSUPPORTED => return Ok(None),
-                Dxgi::DXGI_ERROR_DRIVER_INTERNAL_ERROR => return Err(crate::DeviceError::Lost),
-                _ => {}
-            }
+        if res.is_err() {
+            return Err(CreateDeviceError::D3D12CreateDevice(res));
         }
 
-        res.into_device_result("Device creation")?;
-
-        result__.ok_or(crate::DeviceError::Unexpected).map(Some)
+        result__.ok_or(CreateDeviceError::RetDeviceIsNull)
     }
 
     fn serialize_root_signature(
@@ -473,6 +475,7 @@ pub struct Instance {
     memory_budget_thresholds: wgt::MemoryBudgetThresholds,
     compiler_container: Arc<shader_compilation::CompilerContainer>,
     options: wgt::Dx12BackendOptions,
+    telemetry: Option<crate::Telemetry>,
 }
 
 impl Instance {
@@ -597,6 +600,7 @@ enum MemoryArchitecture {
 #[derive(Debug, Clone, Copy)]
 struct PrivateCapabilities {
     instance_flags: wgt::InstanceFlags,
+    workarounds: Workarounds,
     #[allow(unused)]
     heterogeneous_resource_heaps: bool,
     memory_architecture: MemoryArchitecture,
@@ -618,11 +622,11 @@ impl PrivateCapabilities {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Copy, Clone)]
 struct Workarounds {
-    // On WARP, temporary CPU descriptors are still used by the runtime
-    // after we call `CopyDescriptors`.
-    avoid_cpu_descriptor_overwrites: bool,
+    // On WARP 1.0.13+, debug information in shaders in certain situations causes the device
+    // to hang. https://github.com/gfx-rs/wgpu/issues/8368
+    avoid_shader_debug_info: bool,
 }
 
 pub struct Adapter {
@@ -632,9 +636,6 @@ pub struct Adapter {
     dcomp_lib: Arc<DCompLib>,
     private_caps: PrivateCapabilities,
     presentation_timer: auxil::dxgi::time::PresentationTimer,
-    // Note: this isn't used right now, but we'll need it later.
-    #[allow(unused)]
-    workarounds: Workarounds,
     memory_budget_thresholds: wgt::MemoryBudgetThresholds,
     compiler_container: Arc<shader_compilation::CompilerContainer>,
     options: wgt::Dx12BackendOptions,
@@ -1618,115 +1619,26 @@ pub enum ShaderModuleSource {
     HlslPassthrough(HlslPassthroughShader),
 }
 
-#[repr(C)]
-#[derive(Debug)]
-struct MeshShaderPipelineStateStream {
-    root_signature: *mut Direct3D12::ID3D12RootSignature,
-    task_shader: Direct3D12::D3D12_SHADER_BYTECODE,
-    mesh_shader: Direct3D12::D3D12_SHADER_BYTECODE,
-    pixel_shader: Direct3D12::D3D12_SHADER_BYTECODE,
-    blend_state: Direct3D12::D3D12_BLEND_DESC,
-    sample_mask: u32,
-    rasterizer_state: Direct3D12::D3D12_RASTERIZER_DESC,
-    depth_stencil_state: Direct3D12::D3D12_DEPTH_STENCIL_DESC,
-    primitive_topology_type: Direct3D12::D3D12_PRIMITIVE_TOPOLOGY_TYPE,
-    rtv_formats: Direct3D12::D3D12_RT_FORMAT_ARRAY,
-    dsv_format: Dxgi::Common::DXGI_FORMAT,
-    sample_desc: Dxgi::Common::DXGI_SAMPLE_DESC,
-    node_mask: u32,
-    cached_pso: Direct3D12::D3D12_CACHED_PIPELINE_STATE,
-    flags: Direct3D12::D3D12_PIPELINE_STATE_FLAGS,
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum FeatureLevel {
+    _11_0,
+    _11_1,
+    _12_0,
+    _12_1,
+    _12_2,
 }
-impl MeshShaderPipelineStateStream {
-    /// # Safety
-    ///
-    /// Returned bytes contain pointers into this struct, for them to be valid,
-    /// this struct may be at the same location. As if `as_bytes<'a>(&'a self) -> Vec<u8> + 'a`
-    pub unsafe fn to_bytes(&self) -> Vec<u8> {
-        use Direct3D12::*;
-        let mut bytes = Vec::new();
 
-        macro_rules! push_subobject {
-            ($subobject_type:expr, $data:expr) => {{
-                // Ensure 8-byte alignment for the subobject start
-                let alignment = 8;
-                let aligned_length = bytes.len().next_multiple_of(alignment);
-                bytes.resize(aligned_length, 0);
-
-                // Append the type tag (u32)
-                let tag: u32 = $subobject_type.0 as u32;
-                bytes.extend_from_slice(&tag.to_ne_bytes());
-
-                // Align the data
-                let obj_align = align_of_val(&$data);
-                let data_start = bytes.len().next_multiple_of(obj_align);
-                bytes.resize(data_start, 0);
-
-                // Append the data itself
-                #[allow(clippy::ptr_as_ptr, trivial_casts)]
-                let data_ptr = &$data as *const _ as *const u8;
-                let data_size = size_of_val(&$data);
-                let slice = unsafe { core::slice::from_raw_parts(data_ptr, data_size) };
-                bytes.extend_from_slice(slice);
-            }};
-        }
-        push_subobject!(
-            D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_ROOT_SIGNATURE,
-            self.root_signature
-        );
-        if !self.task_shader.pShaderBytecode.is_null() {
-            push_subobject!(D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS, self.task_shader);
-        }
-        push_subobject!(D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_MS, self.mesh_shader);
-        if !self.pixel_shader.pShaderBytecode.is_null() {
-            push_subobject!(D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS, self.pixel_shader);
-        }
-        push_subobject!(D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_BLEND, self.blend_state);
-        push_subobject!(
-            D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_MASK,
-            self.sample_mask
-        );
-        push_subobject!(
-            D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RASTERIZER,
-            self.rasterizer_state
-        );
-        push_subobject!(
-            D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL,
-            self.depth_stencil_state
-        );
-        push_subobject!(
-            D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PRIMITIVE_TOPOLOGY,
-            self.primitive_topology_type
-        );
-        if self.rtv_formats.NumRenderTargets != 0 {
-            push_subobject!(
-                D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RENDER_TARGET_FORMATS,
-                self.rtv_formats
-            );
-        }
-        if self.dsv_format != Dxgi::Common::DXGI_FORMAT_UNKNOWN {
-            push_subobject!(
-                D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL_FORMAT,
-                self.dsv_format
-            );
-        }
-        push_subobject!(
-            D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_DESC,
-            self.sample_desc
-        );
-        if self.node_mask != 0 {
-            push_subobject!(
-                D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_NODE_MASK,
-                self.node_mask
-            );
-        }
-        if !self.cached_pso.pCachedBlob.is_null() {
-            push_subobject!(
-                D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_CACHED_PSO,
-                self.cached_pso
-            );
-        }
-        push_subobject!(D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_FLAGS, self.flags);
-        bytes
-    }
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ShaderModel {
+    _5_1,
+    _6_0,
+    _6_1,
+    _6_2,
+    _6_3,
+    _6_4,
+    _6_5,
+    _6_6,
+    _6_7,
+    _6_8,
+    _6_9,
 }

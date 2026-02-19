@@ -449,12 +449,10 @@ class RangeBoundaryBase {
 
     if (mTreeKind == TreeKind::Flat) {
       if (const auto* slot = dom::HTMLSlotElement::FromNode(mParent)) {
-        const auto& assignedNodes = slot->AssignedNodes();
-        const auto index = assignedNodes.IndexOf(aCurrentNode);
-        if (index != assignedNodes.NoIndex &&
-            index + 1 < assignedNodes.Length()) {
-          if (RawRefType* nextSibling =
-                  RawRefType::FromNode(assignedNodes.ElementAt(index + 1))) {
+        const Span assigned = slot->AssignedNodes();
+        const auto index = assigned.IndexOf(aCurrentNode);
+        if (index != assigned.npos && index + 1 < assigned.Length()) {
+          if (auto* nextSibling = RawRefType::FromNode(assigned[index + 1])) {
             return nextSibling;
           }
           return nullptr;
@@ -468,9 +466,9 @@ class RangeBoundaryBase {
     MOZ_ASSERT(aNode);
     if (mTreeKind == TreeKind::Flat) {
       if (const auto* slot = dom::HTMLSlotElement::FromNode(aNode)) {
-        const auto& assignedNodes = slot->AssignedNodes();
-        if (!assignedNodes.IsEmpty()) {
-          if (RawRefType* child = RawRefType::FromNode(assignedNodes[0])) {
+        const Span assigned = slot->AssignedNodes();
+        if (!assigned.IsEmpty()) {
+          if (RawRefType* child = RawRefType::FromNode(assigned[0])) {
             return child;
           }
           return nullptr;
@@ -506,9 +504,9 @@ class RangeBoundaryBase {
     MOZ_ASSERT(aNode);
     if (mTreeKind == TreeKind::Flat) {
       if (const auto* slot = dom::HTMLSlotElement::FromNode(aNode)) {
-        const auto& assignedNodes = slot->AssignedNodes();
-        if (!assignedNodes.IsEmpty()) {
-          return assignedNodes.Length();
+        const Span assigned = slot->AssignedNodes();
+        if (!assigned.IsEmpty()) {
+          return assigned.Length();
         }
       }
 
@@ -531,9 +529,9 @@ class RangeBoundaryBase {
     MOZ_ASSERT(aParent);
     if (mTreeKind == TreeKind::Flat) {
       if (const auto* slot = dom::HTMLSlotElement::FromNode(aParent)) {
-        const auto& assignedNodes = slot->AssignedNodes();
-        if (!assignedNodes.IsEmpty()) {
-          return RawRefType::FromNode(assignedNodes.LastElement());
+        const Span assigned = slot->AssignedNodes();
+        if (!assigned.IsEmpty()) {
+          return RawRefType::FromNode(assigned[assigned.Length() - 1]);
         }
       }
       if (const auto* shadowRoot = aParent->GetShadowRoot()) {

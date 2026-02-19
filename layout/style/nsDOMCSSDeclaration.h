@@ -87,6 +87,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
                   mozilla::ErrorResult& aRv) override;
   void GetPropertyValue(const nsACString& propertyName,
                         nsACString& _retval) override;
+  bool HasLonghandProperty(const nsACString& propertyName) override;
   void RemoveProperty(const nsACString& propertyName, nsACString& _retval,
                       mozilla::ErrorResult& aRv) override;
   void GetPropertyPriority(const nsACString& propertyName,

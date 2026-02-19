@@ -279,16 +279,15 @@ add_task(async function allEnabled_sponsoredEnabled_sponsoredSearch() {
   // The title should include the full keyword and em dash, and the part of the
   // title that the search string does not match should be highlighted.
   let result = context.results[0];
+  let { value, highlights } = result.getDisplayableValueAndHighlights("title", {
+    tokens: context.tokens,
+  });
   Assert.equal(
-    result.title,
+    value,
     `${SPONSORED_SEARCH_STRING} — Amp Suggestion`,
-    "result.title should be correct"
+    "The title should be correct"
   );
-  Assert.deepEqual(
-    result.titleHighlights,
-    [],
-    "result.titleHighlights should be correct"
-  );
+  Assert.deepEqual(highlights, [], "The highlights should be correct");
 });
 
 // Tests with both `all` and sponsored enabled with a non-sponsored search
@@ -310,16 +309,15 @@ add_task(async function allEnabled_sponsoredEnabled_nonsponsoredSearch() {
   // The title should include the full keyword and em dash, and the part of the
   // title that the search string does not match should be highlighted.
   let result = context.results[0];
+  let { value, highlights } = result.getDisplayableValueAndHighlights("title", {
+    tokens: context.tokens,
+  });
   Assert.equal(
-    result.title,
+    value,
     `${NONSPONSORED_SEARCH_STRING} — Wikipedia Suggestion`,
-    "result.title should be correct"
+    "The title should be correct"
   );
-  Assert.deepEqual(
-    result.titleHighlights,
-    [],
-    "result.titleHighlights should be correct"
-  );
+  Assert.deepEqual(highlights, [], "The highlights should be correct");
 });
 
 // Tests with both `all` and sponsored enabled with a search string that doesn't
@@ -1077,6 +1075,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
     [dupeURL, ...badTimestampURLs].map(uri => ({
       uri,
       title: TIMESTAMP_SEARCH_STRING,
+      transition: PlacesUtils.history.TRANSITION_TYPED,
     }))
   );
 
@@ -1197,7 +1196,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
   // Check the quick suggest's payload excluding the timestamp-related
   // properties.
   let actualQuickSuggest = context.results[QUICK_SUGGEST_INDEX];
-  let ignore = ["displayUrl", "sponsoredClickUrl", "url", "urlTimestampIndex"];
+  let ignore = ["sponsoredClickUrl", "url", "urlTimestampIndex"];
   Assert.deepEqual(
     getPayload(actualQuickSuggest, { ignore }),
     getPayload(expectedQuickSuggest, { ignore }),
@@ -1436,7 +1435,10 @@ add_task(async function tabToSearch() {
   let engine = Services.search.getEngineByName("Test");
 
   // Also need to add a visit to trigger TTS.
-  await PlacesTestUtils.addVisits(engineURL);
+  await PlacesTestUtils.addVisits({
+    url: engineURL,
+    transition: PlacesUtils.history.TRANSITION_TYPED,
+  });
 
   let context = createContext(SPONSORED_SEARCH_STRING, {
     isPrivate: false,
@@ -1511,7 +1513,6 @@ add_task(async function globalAction() {
     },
     { skipUnload: true }
   );
-  let engine = Services.search.getEngineByName("Amp");
 
   await PlacesTestUtils.addVisits(engineURL);
 
@@ -1536,8 +1537,6 @@ add_task(async function globalAction() {
             providerName: "ActionsProviderContextualSearch",
           },
         ],
-        providesSearchMode: true,
-        engine: engine.name,
         query: "",
         input: "",
         inputLength: context.searchString.length,

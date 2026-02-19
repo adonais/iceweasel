@@ -84,8 +84,15 @@ BYPASS_PROXY_METHOD2(void,
 END_PROXY_MAP(DataChannel)
 }  // namespace
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 InternalDataChannelInit::InternalDataChannelInit(const DataChannelInit& base)
     : DataChannelInit(base), open_handshake_role(kOpener) {
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
   // If the channel is externally negotiated, do not send the OPEN message.
   if (base.negotiated) {
     open_handshake_role = kNone;

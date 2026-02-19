@@ -387,9 +387,9 @@ void WorkletThread::EnsureCycleCollectedJSContext(
 
   // A thread lives strictly longer than its JSRuntime so we can safely
   // store a raw pointer as the callback's closure argument on the JSRuntime.
-  JS::InitDispatchsToEventLoop(context->Context(), DispatchToEventLoop,
-                               DelayedDispatchToEventLoop,
-                               NS_GetCurrentThread());
+  JS::InitAsyncTaskCallbacks(context->Context(), DispatchToEventLoop,
+                             DelayedDispatchToEventLoop, nullptr, nullptr,
+                             NS_GetCurrentThread());
 
   JS_SetNativeStackQuota(context->Context(),
                          WORKLET_CONTEXT_NATIVE_STACK_LIMIT);

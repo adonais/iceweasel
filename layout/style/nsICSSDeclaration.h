@@ -101,6 +101,11 @@ class nsICSSDeclaration : public nsISupports, public nsWrapperCache {
                                    nsACString& aPriority) = 0;
   virtual mozilla::css::Rule* GetParentRule() = 0;
 
+  // [Chrome only]
+  virtual bool HasLonghandProperty(const nsACString& aPropName) {
+    return false;
+  };
+
  protected:
   bool IsReadOnly();
 };

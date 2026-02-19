@@ -12,7 +12,7 @@ const TEST_DATA_ISSUES = {
       overflow-anchor: auto;
     }
     div {
-      scrollbar-color: auto;
+      user-select: auto;
     }
     </style>
     <body>
@@ -31,8 +31,8 @@ const TEST_DATA_ISSUES = {
       url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
     },
     {
-      property: "scrollbar-color",
-      url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
+      property: "user-select",
+      url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select",
     },
   ],
 };

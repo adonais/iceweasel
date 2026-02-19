@@ -220,9 +220,11 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                 aAttributes->getValue(nsHtml5AttributeName::ATTR_SIZES);
             nsHtml5String fetchPriority =
                 aAttributes->getValue(nsHtml5AttributeName::ATTR_FETCHPRIORITY);
+            nsHtml5String type =
+                aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
             mSpeculativeLoadQueue.AppendElement()->InitImage(
                 url, crossOrigin, /* aMedia = */ nullptr, referrerPolicy,
-                srcset, sizes, false, fetchPriority);
+                srcset, sizes, false, fetchPriority, type);
           }
         } else if (nsGkAtoms::source == aName) {
           nsHtml5String srcset =
@@ -439,9 +441,11 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                       nsHtml5AttributeName::ATTR_IMAGESRCSET);
                   nsHtml5String sizes = aAttributes->getValue(
                       nsHtml5AttributeName::ATTR_IMAGESIZES);
+                  nsHtml5String type =
+                      aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
                   mSpeculativeLoadQueue.AppendElement()->InitImage(
                       url, crossOrigin, media, referrerPolicy, srcset, sizes,
-                      true, fetchPriority);
+                      true, fetchPriority, type);
                 } else if (as.LowerCaseEqualsASCII("font")) {
                   mSpeculativeLoadQueue.AppendElement()->InitFont(
                       url, crossOrigin, media, referrerPolicy, fetchPriority);
@@ -500,7 +504,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
 
             mSpeculativeLoadQueue.AppendElement()->InitImage(
                 url, nullptr, nullptr, nullptr, nullptr, nullptr, false,
-                fetchPriority);
+                fetchPriority, nullptr);
           }
         } else if (nsGkAtoms::style == aName) {
           mImportScanner.Start();
@@ -562,7 +566,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
 
             mSpeculativeLoadQueue.AppendElement()->InitImage(
                 url, crossOrigin, /* aMedia = */ nullptr, nullptr, nullptr,
-                nullptr, false, fetchPriority);
+                nullptr, false, fetchPriority, nullptr);
           }
         } else if (nsGkAtoms::script == aName) {
           nsHtml5TreeOperation* treeOp =

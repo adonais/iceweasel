@@ -32,7 +32,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", () =>
  * Consumers should wait until {@link initializationPromise} resolves before
  * calling methods on the object.
  *
- * @constructor
+ * @class
  * @param {string} [aOptions.defaults=null] the URI to load the recipes from.
  *                                          If it's null, nothing is loaded.
  */

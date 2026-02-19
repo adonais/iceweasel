@@ -119,6 +119,10 @@ bool jit::InitializeJit() {
   MIPSFlags::Init();
 #endif
 
+#ifdef JS_CODEGEN_RISCV64
+  RVFlags::Init();
+#endif
+
 #ifndef JS_CODEGEN_NONE
   MOZ_ASSERT(js::jit::CPUFlagsHaveBeenComputed());
 #endif

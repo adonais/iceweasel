@@ -970,6 +970,8 @@ pub enum ConstantEvaluatorError {
         "Expected reject and accept args. to be scalars of vectors of the same type, got something else",
     )]
     SelectAcceptRejectTypeMismatch,
+    #[error("Cooperative operations can't be constant")]
+    CooperativeOperation,
 }
 
 impl<'a> ConstantEvaluator<'a> {
@@ -1189,8 +1191,13 @@ impl<'a> ConstantEvaluator<'a> {
                 Behavior::Wgsl(WgslRestrictions::Const(_)) => {
                     Err(ConstantEvaluatorError::OverrideExpr)
                 }
-                Behavior::Glsl(_) => {
-                    unreachable!()
+
+                // GLSL specialization constants (constant_id) become Override expressions
+                Behavior::Glsl(GlslRestrictions::Runtime(_)) => {
+                    Ok(self.append_expr(expr, span, ExpressionKind::Override))
+                }
+                Behavior::Glsl(GlslRestrictions::Const) => {
+                    Err(ConstantEvaluatorError::OverrideExpr)
                 }
             },
             ExpressionKind::Runtime => {
@@ -1356,6 +1363,9 @@ impl<'a> ConstantEvaluator<'a> {
             Expression::SubgroupBallotResult => Err(ConstantEvaluatorError::SubgroupExpression),
             Expression::SubgroupOperationResult { .. } => {
                 Err(ConstantEvaluatorError::SubgroupExpression)
+            }
+            Expression::CooperativeLoad { .. } | Expression::CooperativeMultiplyAdd { .. } => {
+                Err(ConstantEvaluatorError::CooperativeOperation)
             }
         }
     }

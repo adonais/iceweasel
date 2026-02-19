@@ -218,11 +218,7 @@ def create_patch(from_file, to_file, destination_patch):
     """Create a patch between 2 xz compressed files"""
     log(f"{from_file} -> {destination_patch}", "create_patch")
 
-    with (
-        NamedTemporaryFile() as from_fd,
-        NamedTemporaryFile() as to_fd,
-        NamedTemporaryFile() as patch_fd,
-    ):
+    with NamedTemporaryFile() as from_fd, NamedTemporaryFile() as to_fd, NamedTemporaryFile() as patch_fd:
         xz_cmd(("--decompress",), from_file, from_fd.name)
 
         # TODO: Potentially don't decompress to_mar files once per thread?

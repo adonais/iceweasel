@@ -19,6 +19,13 @@
       let html;
       let testHelpers = new LitTestHelpers();
 
+      async function keyboardNavigate(direction, boxGroup) {
+        let keyCode = `KEY_Arrow${
+          direction.charAt(0).toUpperCase() + direction.slice(1)
+        }`;
+        synthesizeKey(keyCode);
+        await boxGroup.updateComplete;
+      }
       add_setup(async function setup() {
         ({ html } = await testHelpers.setupLit());
         let templateFn = () => html`
@@ -227,14 +234,6 @@
             "moz-box-item, moz-box-button, moz-box-link"
           );
 
-        async function keyboardNavigate(direction) {
-          let keyCode = `KEY_Arrow${
-            direction.charAt(0).toUpperCase() + direction.slice(1)
-          }`;
-          synthesizeKey(keyCode);
-          await boxGroup.updateComplete;
-        }
-
         isnot(document.activeElement, boxGroup, "Box group is not focused.");
         beforeButton.focus();
 
@@ -260,28 +259,28 @@
           "Focus moves to the second button action element in the moz-box-item."
         );
 
-        await keyboardNavigate("left");
+        await keyboardNavigate("left", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
           "Focus moves to the toggle action element in moz-box-item."
         );
 
-        await keyboardNavigate("left");
+        await keyboardNavigate("left", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector(".first-button"),
           "Focus moves to the first button action element in moz-box-item."
         );
 
-        await keyboardNavigate("right");
+        await keyboardNavigate("right", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
           "Focus moves to the toggle action element in the moz-box-item."
         );
 
-        await keyboardNavigate("right");
+        await keyboardNavigate("right", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector(".second-button"),
@@ -391,28 +390,28 @@
           "Focus moves to the second button action element in the moz-box-item."
         );
 
-        await keyboardNavigate("left");
+        await keyboardNavigate("left", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
           "Focus moves to the toggle action element in moz-box-item."
         );
 
-        await keyboardNavigate("left");
+        await keyboardNavigate("left", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector(".first-button"),
           "Focus moves to the first button action element in moz-box-item."
         );
 
-        await keyboardNavigate("right");
+        await keyboardNavigate("right", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
           "Focus moves to the toggle action element in moz-box-item."
         );
 
-        await keyboardNavigate("right");
+        await keyboardNavigate("right", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector(".second-button"),
@@ -440,7 +439,7 @@
           "Focus moves to the last element in the group."
         );
 
-        await keyboardNavigate("up");
+        await keyboardNavigate("up", boxGroup);
         is(
           document.activeElement,
           footerButton,
@@ -454,49 +453,49 @@
           "Focus moves to the last element in the list."
         );
 
-        await keyboardNavigate("up");
+        await keyboardNavigate("up", boxGroup);
         is(
           document.activeElement,
           boxLink,
           "Focus moves to the moz-box-link element."
         );
 
-        await keyboardNavigate("up");
+        await keyboardNavigate("up", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector(".second-button"),
           "Focus moves to the second button action element in the moz-box-item."
         );
 
-        await keyboardNavigate("left");
+        await keyboardNavigate("left", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
           "Focus moves to the toggle action element in the moz-box-item."
         );
 
-        await keyboardNavigate("up");
+        await keyboardNavigate("up", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
           "Up arrow key does not move focus out of the group from the first item."
         );
 
-        await keyboardNavigate("down");
+        await keyboardNavigate("down", boxGroup);
         is(
           document.activeElement,
           boxLink,
           "Focus moves to the moz-box-link element."
         );
 
-        await keyboardNavigate("down");
+        await keyboardNavigate("down", boxGroup);
         is(
           document.activeElement,
           boxButton,
           "Focus moves to the moz-box-button element."
         );
 
-        await keyboardNavigate("down");
+        await keyboardNavigate("down", boxGroup);
         is(
           document.activeElement,
           boxButton,
@@ -509,8 +508,8 @@
         });
 
         // Navigate up to focus moz-box-item
-        await keyboardNavigate("up");
-        await keyboardNavigate("up");
+        await keyboardNavigate("up", boxGroup);
+        await keyboardNavigate("up", boxGroup);
 
         is(
           document.activeElement,
@@ -518,21 +517,21 @@
           "Focus moves to the second button action element in the moz-box-item."
         );
 
-        await keyboardNavigate("right");
+        await keyboardNavigate("right", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
           "Focus moves to the toggle action element in the moz-box-item."
         );
 
-        await keyboardNavigate("right");
+        await keyboardNavigate("right", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector(".first-button"),
           "Focus moves to the first button action element in the moz-box-item."
         );
 
-        await keyboardNavigate("left");
+        await keyboardNavigate("left", boxGroup);
         is(
           document.activeElement,
           boxItem.querySelector("moz-toggle"),
@@ -688,6 +687,78 @@
           boxGroup.querySelector("moz-box-item:nth-of-type(4)"),
           footer,
           "footer is still in the forth position."
+        );
+      });
+
+      /*
+        Assert that the tabIndex attribute is removed from all list
+        items if the length of the list items changes. Otherwise,
+        there's a possibility that a user will not be able to keyboard
+        navigate back to the list due to the items having tabindex="-1"
+      **/
+      add_task(async function testWhenListItemsChange() {
+        const removeSelf = event => {
+          event.target.closest("moz-box-item").remove();
+        };
+        let listTemplate = html` <moz-button>Focus me!</moz-button>
+          <moz-box-group type="list">
+            <moz-box-item label="item 1">
+              <moz-button slot="actions" label="item 1 action 1"></moz-button>
+            </moz-box-item>
+            <moz-box-item label="item 2">
+              <moz-button slot="actions" label="item 2 action 1"></moz-button>
+            </moz-box-item>
+            <moz-box-item label="item 3">
+              <moz-button
+                slot="actions"
+                label="item 3 action 1"
+                @click=${removeSelf}
+              ></moz-button>
+            </moz-box-item>
+          </moz-box-group>`;
+        let {
+          children: [beforeButton, boxGroup],
+        } = await testHelpers.renderTemplate(listTemplate);
+
+        let list = boxGroup.shadowRoot.querySelector("ul");
+        ok(list, "Box group has a list element.");
+
+        // Focus the button outside of the list so we can easily
+        // move focus via the Tab key.
+        beforeButton.focus();
+        await synthesizeKey("KEY_Tab");
+
+        // Move through the list until we reach the item that can be
+        // removed.
+        await keyboardNavigate("down", boxGroup);
+        await keyboardNavigate("down", boxGroup);
+        await keyboardNavigate("down", boxGroup);
+        is(
+          document.activeElement.label,
+          "item 3 action 1",
+          "The last action in the box group should be focused."
+        );
+        await synthesizeKey("KEY_Enter");
+
+        await boxGroup.updateComplete;
+        await Promise.all(boxGroup.listItems.map(item => item.updateComplete));
+
+        // Ensure the tabindex attribute has been removed from all the
+        // list items.
+        boxGroup.listItems.forEach(item => {
+          ok(
+            !item.getAttribute("tabindex"),
+            "List item should not have tab index due to an item being removed"
+          );
+        });
+
+        // Ensure that we can tab navigate back to the box group
+        beforeButton.focus();
+        await synthesizeKey("KEY_Tab");
+
+        ok(
+          boxGroup.contains(document.activeElement),
+          "Focus should be able to move back into the box group after a list item is removed"
         );
       });
     </script>

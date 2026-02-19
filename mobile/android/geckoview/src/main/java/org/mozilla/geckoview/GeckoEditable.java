@@ -1853,7 +1853,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                   .append(", toggleSoftInput=")
                   .append(toggleSoftInput)
                   .append(")");
-              MozLog.d(LOGTAG, sb.toString());
+              MozLog.d(MOZLOGTAG, sb.toString());
             }
 
             // Avoid multiple toggleSoftInput call. If this becomes true, onCreateInputConnection is
@@ -1889,7 +1889,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                     // Unnecessary to track onCreateInputConnection.
                     mIsNewICCreated = true;
 
-                    toggleSoftInput(/* force */ false, state);
+                    // GeckoSession and mFocusedChild would be null due to navigating away or blur.
+                    // So we should set force flag to dismiss software keyboard.
+                    final boolean force =
+                        reason == GeckoSession.TextInputDelegate.RESTART_REASON_BLUR
+                            && state == SessionTextInput.EditableListener.IME_STATE_DISABLED;
+                    toggleSoftInput(force, state);
                   }
                 });
           }

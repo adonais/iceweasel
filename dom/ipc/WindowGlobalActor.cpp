@@ -64,6 +64,10 @@ WindowGlobalInit WindowGlobalActor::BaseInitializer(
 
 WindowGlobalInit WindowGlobalActor::AboutBlankInitializer(
     dom::BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      aPrincipal && aPrincipal->GetIsNullPrincipal(),
+      "AboutBlankInitializer is a dummy that should not be web-exposed");
+
   WindowGlobalInit init =
       BaseInitializer(aBrowsingContext, nsContentUtils::GenerateWindowId(),
                       nsContentUtils::GenerateWindowId());
@@ -72,6 +76,7 @@ WindowGlobalInit WindowGlobalActor::AboutBlankInitializer(
   init.storagePrincipal() = aPrincipal;
   (void)NS_NewURI(getter_AddRefs(init.documentURI()), "about:blank");
   init.isInitialDocument() = true;
+  init.isUncommittedInitialDocument() = true;
 
   return init;
 }
@@ -89,6 +94,7 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
   Document* doc = aWindow->GetDocument();
 
   init.isInitialDocument() = doc->IsInitialDocument();
+  init.isUncommittedInitialDocument() = doc->IsUncommittedInitialDocument();
   init.blockAllMixedContent() = doc->GetBlockAllMixedContent(false);
   init.upgradeInsecureRequests() = doc->GetUpgradeInsecureRequests(false);
   init.sandboxFlags() = doc->GetSandboxFlags();

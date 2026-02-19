@@ -3,7 +3,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-// const { Services } = ChromeUtils.importESModule("resource://gre/modules/Services.sys.mjs");
 const { Sqlite } = ChromeUtils.importESModule(
   "resource://gre/modules/Sqlite.sys.mjs"
 );

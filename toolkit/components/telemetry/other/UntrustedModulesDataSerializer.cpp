@@ -10,11 +10,11 @@
 #include "js/Array.h"               // JS::NewArrayObject
 #include "js/PropertyAndElement.h"  // JS_DefineElement, JS_DefineProperty, JS_GetProperty
 #include "jsapi.h"
+#include "mozilla/SharedLibraries.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsITelemetry.h"
 #include "nsUnicharUtils.h"
 #include "nsXULAppAPI.h"
-#include "SharedLibraries.h"
 
 namespace mozilla {
 namespace Telemetry {

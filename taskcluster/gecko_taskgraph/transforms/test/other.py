@@ -313,9 +313,9 @@ def set_target(config, tasks):
                 )
                 task["mozharness"]["installer-url"] = installer_url
             else:
-                task["mozharness"][
-                    "installer-url"
-                ] = f"<{target['upstream-task']}/{target['name']}>"
+                task["mozharness"]["installer-url"] = (
+                    f"<{target['upstream-task']}/{target['name']}>"
+                )
         else:
             task["mozharness"]["build-artifact-name"] = get_artifact_path(task, target)
 
@@ -458,12 +458,10 @@ def setup_browsertime(config, tasks):
             evaluate_keyed_by(fs, "fetches.fetch", task)
         )
 
-        extra_options.extend(
-            (
-                "--browsertime-browsertimejs",
-                "$MOZ_FETCHES_DIR/browsertime/node_modules/browsertime/bin/browsertime.js",
-            )
-        )  # noqa: E501
+        extra_options.extend((
+            "--browsertime-browsertimejs",
+            "$MOZ_FETCHES_DIR/browsertime/node_modules/browsertime/bin/browsertime.js",
+        ))  # noqa: E501
 
         eos = {
             "by-test-platform": {
@@ -1080,11 +1078,9 @@ def add_gecko_profile_symbolication_deps(config, tasks):
     startup_profile = env.get("MOZ_PROFILER_STARTUP") == "1"
 
     for task in tasks:
-
         if (gecko_profile and task["suite"] in ["talos", "raptor"]) or (
             startup_profile and "mochitest" in task["suite"]
         ):
-
             fetches = task.setdefault("fetches", {})
             fetch_toolchains = fetches.setdefault("toolchain", [])
             fetch_toolchains.append("symbolicator-cli")

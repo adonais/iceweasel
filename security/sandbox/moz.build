@@ -22,7 +22,7 @@ DIRS += ["common"]
 
 if CONFIG["OS_ARCH"] == "Linux":
     DIRS += ["linux"]
-elif CONFIG["OS_ARCH"] == "Darwin":
+elif CONFIG["TARGET_OS"] == "OSX":
     DIRS += ["mac"]
 elif CONFIG["OS_ARCH"] == "WINNT":
     Library("sandbox_s")

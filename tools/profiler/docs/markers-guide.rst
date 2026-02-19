@@ -149,7 +149,7 @@ case the advice is the same but the equivalent headers are from the Base Profile
 
     #include "mozilla/BaseProfilerMarkers.h" // Only own/untyped/text markers
     #include "mozilla/BaseProfilerMarkerTypes.h" // Only common markers
-    #include "BaseProfiler.h" // Markers and other profiler functions
+    #include "mozilla/BaseProfiler.h" // Markers and other profiler functions
 
 Untyped Markers
 ^^^^^^^^^^^^^^^

@@ -32,6 +32,11 @@ security-privacy-status-update-needed-description = Update { -brand-short-name }
 security-privacy-status-update-button-label =
   .label = Update { -brand-short-name }
 
+security-privacy-image-warning =
+  .alt = The { -brand-short-name } mascot, expressing concern over your security warnings
+security-privacy-image-ok =
+  .alt = The { -brand-short-name } mascot, pleased that you have no outstanding security issues
+
 security-privacy-issue-card =
   .heading = Security warnings
 issue-card-reset-button =
@@ -46,47 +51,47 @@ security-privacy-issue-warning-test =
 
 security-privacy-issue-warning-fingerprinters =
   .label = Known fingerprinters are not blocked
-  .description = Allowing fingerprinters may allow you to be tracked without cookies
+  .description = Fingerprinters can track you across websites without using cookies
 
 security-privacy-issue-warning-third-party-cookies =
   .label = Third-party cookies are enabled
-  .description = Third-party cookies are often used to track users across sites
+  .description = Third-party cookies are often used to track you across sites
 
 security-privacy-issue-warning-password-manager =
   .label = Password manager is disabled
-  .description = Password managers help you use strong passwords for all of your online accounts
+  .description = Strong, unique passwords for all of your online accounts are harder to maintain
 
 security-privacy-issue-warning-popup-blocker =
   .label = Popup blocker is disabled
-  .description = Popups are annoying and can be deceptive
+  .description = Annoying and deceptive windows can appear unexpectedly
 
 security-privacy-issue-warning-extension-install =
   .label = Websites can install extensions
-  .description = Extensions are a powerful feature, and not just every website should install them without asking
+  .description = Extensions are powerful and should not be installed by most websites without your permission
 
 security-privacy-issue-warning-safe-browsing =
   .label = Dangerous and deceptive content is not blocked
-  .description = Some websites are known to serve malware or phishing pages, and we can block them for you
+  .description = Some websites are known to serve malware or phishing pages, and we are not blocking them for you
 
 security-privacy-issue-warning-doh =
   .label = DNS over HTTPS is disabled
-  .description = DNS over HTTPS helps hide what websites you visit from your network provider
+  .description = Your network provider can see what websites you visit
 
 security-privacy-issue-warning-ech =
   .label = Encrypted Client Hello is disabled
-  .description = Encrypted Client Hello helps hide what websites you visit from your network provider
+  .description = Your network provider can see what websites you visit
 
 security-privacy-issue-warning-ct =
   .label = Certificate Transparency is disabled
-  .description = Rogue certificates allows attackers to intercept traffic, and certificate transparency helps stop them
+  .description = Rogue certificates that may make your connection insecure are harder to detect
 
 security-privacy-issue-warning-crlite =
   .label = Certificate revocation is disabled
-  .description = Some certificates can become insecure, so websites need to make their certificates no longer valid
+  .description = Certificates that a website no longer trusts can not be disabled
 
 security-privacy-issue-warning-certificate-pinning =
   .label = Certificate pinning is disabled
-  .description = Rogue certificates allow attackers to intercept traffic, and certificate pinning helps stop them
+  .description = Rogue certificates that may make your connection insecure are harder to detect
 
 security-privacy-issue-warning-tlsmin =
   .label = Unsafe TLS versions are enabled
@@ -94,43 +99,43 @@ security-privacy-issue-warning-tlsmin =
 
 security-privacy-issue-warning-tlsmax =
   .label = The latest TLS version is disabled
-  .description = TLS is how we encrypt your network traffic, and the latest version is the best security we have to offer
+  .description = TLS is how we protect your network traffic, and the latest version is the best security we have to offer
 
 security-privacy-issue-warning-proxy-autodetection =
   .label = Proxy auto-configuration is enabled
-  .description = Proxy auto-configuration could allow untrusted networks to monitor your web activity
+  .description = Untrusted networks could monitor your web activity
 
-security-privacy-issue-warning-priveleged-constraint =
-  .label = Priveleged context hardening is disabled
-  .description = We disable some web features inside of { -brand-short-name } to protect against attacks against your browser
+security-privacy-issue-warning-privileged-constraint =
+  .label = Privileged context hardening is disabled
+  .description = Certain internal browser pages have some web features that could be disabled to improve security
 
 security-privacy-issue-warning-process-sandbox =
   .label = Process sandbox features are disabled
-  .description = We disable featues for different parts of { -brand-short-name } that don`t need them
+  .description = Some browser components have features enabled that could be disabled to improve security
 
 security-privacy-issue-warning-content-resource-uri =
   .label = Resource URI protection is disabled
-  .description = Some { -brand-short-name } internal resources should not be available to every website you visit
+  .description = Websites can access { -brand-short-name } internal resources
 
 security-privacy-issue-warning-worker-mime =
   .label = Worker MIME type restriction is disabled
-  .description = Workers should only be allowed to run content intended to be run as Javascript
+  .description = Content not hosted as Javascript may be run in a worker
 
 security-privacy-issue-warning-top-level-data-uri =
   .label = Data URI navigations are not blocked
-  .description = Phishing websites sometimes navigate to data: URIs to trick you into entering your information
+  .description = Phishing sites may use this technique to trick you into entering your information
 
 security-privacy-issue-warning-active-mixed-content =
   .label = Active mixed content is not blocked
-  .description = Websites that load scripts over HTTP are vulnerable to network attackers injecting Javascript to pages you visit
+  .description = Network attackers can inject malicious scripts into some pages you visit
 
 security-privacy-issue-warning-inner-html-ltgt =
   .label = HTML attribute sanitization is disabled
-  .description = Attackers may try to inject Javascript into a page through the HTML tag attributes
+  .description = Attackers can inject Javascript through HTML tag attributes
 
 security-privacy-issue-warning-file-uri-origin =
   .label = File URI strict origin policy is disabled
-  .description = Files loaded in { -brand-short-name } should be cross-origin from files in the same folder
+  .description = Local files in the same folder can share information with each other
 
 ## DNS-Over-HTTPS
 
@@ -245,6 +250,12 @@ preferences-etp-advanced-settings-group =
 preferences-etp-customize-button =
     .label = Customize
 
+
+preferences-etp-reload-tabs-hint =
+    .message = Reload your tabs to apply these changes.
+preferences-etp-reload-tabs-hint-button =
+  .label = Reload all tabs
+
 preferences-etp-rfp-warning-message =
     .message = You’re using Resist Fingerprinting (RFP), which replaces some of { -brand-short-name }’s fingerprinting protection settings. This might cause some sites to break.
 
@@ -255,3 +266,96 @@ preferences-etp-level-warning-message =
 preferences-etp-manage-exceptions-button =
     .label = Manage exceptions
     .description = Manage websites where Enhanced Tracking Protection is disabled.
+
+preferences-etp-customize-header =
+    .heading = Customize privacy protection
+    .description = Aut voluptates deleniti ut. Aut et praesentium voluptas dolore nostrum occaecati.
+
+preferences-etp-reset =
+    .label = Reset
+    .description = Aut voluptates deleniti ut. Aut et praesentium voluptas dolore nostrum occaecati. Fugit soluta dolor aut soluta sapiente ut vel.
+
+
+preferences-etp-reset-standard-button =
+    .label = Reset to standard
+
+preferences-etp-reset-strict-button =
+    .label = Reset to strict
+
+preferences-etp-custom-control-group =
+    .label = Tracking protection
+
+preferences-etp-custom-cookies-enabled =
+    .label = Cookies
+    .description = Description
+
+preferences-etp-custom-cookie-behavior =
+    .aria-label = { preferences-etp-custom-cookies-enabled.label }
+
+preferences-etpc-custom-cookie-behavior-accept-all =
+    .label = Allow all cookies
+
+preferences-etp-custom-tracking-protection-enabled =
+    .label = Tracking content
+    .description = Description
+
+preferences-etp-custom-tracking-protection-enabled-context =
+    .aria-label = { preferences-etp-custom-tracking-protection-enabled.label }
+
+preferences-etp-custom-crypto-mining-protection-enabled =
+    .label = Cryptominers
+
+preferences-etp-custom-known-fingerprinting-protection-enabled =
+    .label = Known fingerprinters
+
+preferences-etp-custom-suspect-fingerprinting-protection-enabled =
+    .label = Suspected fingerprinters
+    .description = Description
+
+preferences-etp-custom-suspect-fingerprinting-protection-enabled-context =
+    .aria-label = { preferences-etp-custom-suspect-fingerprinting-protection-enabled.label }
+
+## Relay integration
+
+preferences-privacy-relay-available =
+    .label = Suggest { -relay-brand-name } email masks
+    .description = Hides your real email address to protect your inbox from spam.
+
+## Additional protections
+
+do-not-track-removal3 =
+    .message = We no longer support the “Do Not Track” feature
+
+non-technical-privacy-heading =
+    .label = Website Privacy Preferences
+
+## Site Data
+
+sitedata-heading =
+    .label = Browsing data
+    .description = Manage your cookies, history, cache, website data, and more.
+
+sitedata-settings3 =
+    .label = Clear data for specific sites
+    .accesskey = s
+
+sitedata-cookies-exceptions3 =
+    .label = Manage exceptions
+    .accesskey = x
+    .description = Choose how specific sites handle cookies and site data.
+
+## History
+
+history-header2 =
+    .heading = History
+
+history-section-header =
+    .label = History
+    .description = Choose what you want { -brand-short-name } to remember when you close the browser.
+
+history-custom-section-header =
+    .label = Advanced settings
+    .description = Customize what you want { -brand-short-name } to remember when you close the browser.
+
+history-custom-button =
+    .label = Choose what you want { -brand-short-name } to remember

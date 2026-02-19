@@ -13,7 +13,7 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/DateTimeFormat.h"
 #include "builtin/intl/FormatBuffer.h"
-#include "builtin/intl/IntlObject.h"
+#include "builtin/intl/LocaleNegotiation.h"
 #include "builtin/intl/NumberFormat.h"
 #include "builtin/temporal/TimeZone.h"
 #include "gc/Tracer.h"

@@ -2,21 +2,13 @@ import pytest
 
 URL = "https://tutor-uksouth.classroom.cloud/"
 
-SUPPORTED_TEXT = "Access Denied"
-UNSUPPORTED_TEXT = "your browser is not supported"
-
-
-@pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
-    await client.navigate(URL, wait="none")
-    assert client.await_text(SUPPORTED_TEXT, is_displayed=True)
-    assert not client.find_text(UNSUPPORTED_TEXT, is_displayed=True)
+SUPPORTED_CSS = "#classroom-sign-in-email"
+UNSUPPORTED_TEXT = "not supported"
 
 
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
-async def test_disabled(client):
+async def test_regression(client):
     await client.navigate(URL, wait="none")
-    assert client.await_text(UNSUPPORTED_TEXT, is_displayed=True)
-    assert not client.find_text(SUPPORTED_TEXT, is_displayed=True)
+    assert client.await_css(SUPPORTED_CSS, is_displayed=True)
+    assert not client.find_text(UNSUPPORTED_TEXT, is_displayed=True)

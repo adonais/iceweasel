@@ -435,12 +435,10 @@ def test_confirm_failures(mocker, responses, run_action, get_artifact):
         },
     )
 
-    errorsummary_content = b"\n".join(
-        [
-            b'{"test": "dom/tests/test_example.html", "status": "FAIL", "expected": "PASS", "group": "dom/tests"}',
-            b'{"test": "dom/tests/test_another.html", "status": "FAIL", "expected": "PASS", "group": "dom/tests"}',
-        ]
-    )
+    errorsummary_content = b"\n".join([
+        b'{"test": "dom/tests/test_example.html", "status": "FAIL", "expected": "PASS", "group": "dom/tests"}',
+        b'{"test": "dom/tests/test_another.html", "status": "FAIL", "expected": "PASS", "group": "dom/tests"}',
+    ])
     responses.get(
         f"{ROOT_URL}/api/queue/v1/task/{task_id}/artifacts/public%2Flogs%2Ferrorsummary.log",
         status=200,
@@ -622,9 +620,6 @@ def test_add_all_browsertime(mocker, run_action, get_artifact):
     assert "build" not in to_run
 
 
-@pytest.mark.xfail(
-    reason="Index API artifact handling issue - _handle_artifact doesn't parse YAML correctly for index artifacts"
-)
 def test_gecko_profile(mocker, responses, run_action, get_artifact):
     task_id = "tid"
     task_def = {
@@ -739,20 +734,18 @@ def test_release_promotion(
     responses.get(
         f"{ROOT_URL}/api/queue/v1/task/decision-task-id/artifacts/public%2Fparameters.yml",
         status=200,
-        body=yaml.dump(
-            {
-                "base_repository": "http://hg.example.com",
-                "head_repository": "http://hg.example.com",
-                "head_rev": "abcdef",
-                "project": "try",
-                "level": "1",
-                "pushlog_id": "100",
-                "required_signoffs": [],
-                "signoff_urls": {},
-                "release_product": "firefox",
-                "release_type": "nightly",
-            }
-        ),
+        body=yaml.dump({
+            "base_repository": "http://hg.example.com",
+            "head_repository": "http://hg.example.com",
+            "head_rev": "abcdef",
+            "project": "try",
+            "level": "1",
+            "pushlog_id": "100",
+            "required_signoffs": [],
+            "signoff_urls": {},
+            "release_product": "firefox",
+            "release_type": "nightly",
+        }),
         content_type="application/x-yaml",
     )
     responses.get(

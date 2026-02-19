@@ -4,8 +4,8 @@
 
 package org.mozilla.fenix.browser.store
 
+import android.content.Context
 import androidx.fragment.app.FragmentManager
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
@@ -14,16 +14,15 @@ import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.state.Middleware
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
-import mozilla.components.support.test.robolectric.testContext
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CancelPrivateDownloadsOnPrivateTabsClosedAccepted
 import org.mozilla.fenix.browser.store.BrowserScreenMiddleware.Companion.CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG
 
-@RunWith(AndroidJUnit4::class)
 class BrowserScreenMiddlewareTest {
     private val fragmentManager: FragmentManager = mockk(relaxed = true)
     private val crashReporter: CrashReporter = mockk(relaxed = true)
+
+    private val testContext: Context = mockk()
 
     @Test
     fun `WHEN the last private tab is closing THEN record a breadcrumb and show a warning dialog`() {

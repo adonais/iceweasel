@@ -2,11 +2,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
-""" buildbase.py.
+"""buildbase.py.
 
 provides a base class for fx desktop builds
 
 """
+
 import copy
 import json
 import os
@@ -73,7 +74,7 @@ class MakeUploadOutputParser(OutputParser):
     tbpl_error_list = TBPL_UPLOAD_ERRORS
 
     def __init__(self, **kwargs):
-        super(MakeUploadOutputParser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.tbpl_status = TBPL_SUCCESS
 
     def parse_single_line(self, line):
@@ -211,7 +212,7 @@ class BuildingConfig(BaseConfig):
         # importance
         for i, cf in enumerate(all_config_files):
             if cf == options.build_variant:
-                variant_cfg_file = all_config_files[i]
+                variant_cfg_file = cf
 
         # now remove it from the list
         if variant_cfg_file:
@@ -219,16 +220,15 @@ class BuildingConfig(BaseConfig):
 
         # now let's update config with the remaining config files.
         # this functionality is the same as the base class
-        all_config_dicts.extend(
-            super(BuildingConfig, self).get_cfgs_from_files(all_config_files, options)
-        )
+        all_config_dicts.extend(super().get_cfgs_from_files(all_config_files, options))
 
         # stack variant cfg file on top of that, if it is present
         if variant_cfg_file:
             # take the whole config
-            all_config_dicts.append(
-                (variant_cfg_file, parse_config_file(variant_cfg_file))
-            )
+            all_config_dicts.append((
+                variant_cfg_file,
+                parse_config_file(variant_cfg_file),
+            ))
         return all_config_dicts
 
 
@@ -516,7 +516,7 @@ class BuildScript(
         # objdir is referenced in _query_abs_dirs() so let's make sure we
         # have that attribute before calling BaseScript.__init__
         self.objdir = None
-        super(BuildScript, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # epoch is only here to represent the start of the build
         # that this mozharn script came from. until I can grab bbot's
         # status.build.gettime()[0] this will have to do as a rough estimate
@@ -603,7 +603,7 @@ items from that key's value."
 
         # let's evoke the base query_env and make a copy of it
         # as we don't always want every key below added to the same dict
-        env = copy.deepcopy(super(BuildScript, self).query_env(**kwargs))
+        env = copy.deepcopy(super().query_env(**kwargs))
 
         if self.query_is_nightly() or self.query_is_nightly_promotion():
             # taskcluster sets the update channel for shipping builds
@@ -690,12 +690,10 @@ items from that key's value."
             os.path.join(dirs["abs_src_dir"], "toolchains.json"),
         ]
         if manifest_src:
-            cmd.extend(
-                [
-                    "--tooltool-manifest",
-                    os.path.join(dirs["abs_src_dir"], manifest_src),
-                ]
-            )
+            cmd.extend([
+                "--tooltool-manifest",
+                os.path.join(dirs["abs_src_dir"], manifest_src),
+            ])
         cache = c["env"].get("TOOLTOOL_CACHE")
         if cache:
             cmd.extend(["--cache-dir", cache])
@@ -709,9 +707,7 @@ items from that key's value."
         if mozbuild_path:
             self.mkdir_p(mozbuild_path)
         else:
-            self.warning(
-                "mozbuild_path could not be determined. skipping " "creating it."
-            )
+            self.warning("mozbuild_path could not be determined. skipping creating it.")
 
     def preflight_build(self):
         """set up machine state for a complete build."""
@@ -734,9 +730,11 @@ items from that key's value."
         """Run mach static-analysis autotest, in order to make sure we dont regress"""
         self.preflight_build()
         self._run_mach_command_in_build_env(["configure"])
-        self._run_mach_command_in_build_env(
-            ["static-analysis", "autotest", "--intree-tool"]
-        )
+        self._run_mach_command_in_build_env([
+            "static-analysis",
+            "autotest",
+            "--intree-tool",
+        ])
 
     def _query_mach(self):
         return [sys.executable, "mach"]
@@ -961,12 +959,10 @@ items from that key's value."
         }
 
         for name, duration in phases.items():
-            data["subtests"].append(
-                {
-                    "name": name,
-                    "value": duration,
-                }
-            )
+            data["subtests"].append({
+                "name": name,
+                "value": duration,
+            })
 
         return data
 
@@ -1136,25 +1132,21 @@ items from that key's value."
             return alert
 
         if installer.endswith(".apk"):  # Android
-            yield filter_alert(
-                {
-                    "name": "installer size",
-                    "value": installer_size,
-                    "alertChangeType": "absolute",
-                    "alertThreshold": (200 * 1024),
-                    "subtests": size_measurements,
-                }
-            )
+            yield filter_alert({
+                "name": "installer size",
+                "value": installer_size,
+                "alertChangeType": "absolute",
+                "alertThreshold": (200 * 1024),
+                "subtests": size_measurements,
+            })
         else:
-            yield filter_alert(
-                {
-                    "name": "installer size",
-                    "value": installer_size,
-                    "alertChangeType": "absolute",
-                    "alertThreshold": (100 * 1024),
-                    "subtests": size_measurements,
-                }
-            )
+            yield filter_alert({
+                "name": "installer size",
+                "value": installer_size,
+                "alertChangeType": "absolute",
+                "alertThreshold": (100 * 1024),
+                "subtests": size_measurements,
+            })
 
     def _get_sections(self, file, filter=None):
         """
@@ -1248,13 +1240,11 @@ items from that key's value."
                     for k, v in list(section_details.items()):
                         section_measurements.append({"name": k, "value": v})
                         lib_size += v
-                    lib_details.append(
-                        {
-                            "name": lib_type,
-                            "size": lib_size,
-                            "sections": section_measurements,
-                        }
-                    )
+                    lib_details.append({
+                        "name": lib_type,
+                        "size": lib_size,
+                        "sections": section_measurements,
+                    })
 
         for lib_detail in lib_details:
             yield {
@@ -1302,14 +1292,12 @@ items from that key's value."
         )
 
         if warnings is not None:
-            perfherder_data["suites"].append(
-                {
-                    "name": "compiler warnings",
-                    "value": len(warnings.strip().splitlines()),
-                    "alertThreshold": 100.0,
-                    "subtests": [],
-                }
-            )
+            perfherder_data["suites"].append({
+                "name": "compiler warnings",
+                "value": len(warnings.strip().splitlines()),
+                "alertThreshold": 100.0,
+                "subtests": [],
+            })
 
         build_metrics = self._load_build_resources()
         if build_metrics:

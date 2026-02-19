@@ -200,7 +200,12 @@ export class SearchModeSwitcher {
   }
 
   observe(_subject, topic, data) {
-    if (!this.#input.window || this.#input.window.closed) {
+    if (
+      !this.#input.window ||
+      this.#input.window.closed ||
+      // TODO bug 2005783 stop observing when input is disconnected.
+      !this.#input.isConnected
+    ) {
       return;
     }
 
@@ -249,8 +254,7 @@ export class SearchModeSwitcher {
   }
 
   /**
-   * If the user presses Option+Up or Option+Down while navigating the urlbar results
-   * we open the engine list.
+   * If the user presses Option+Up or Option+Down we open the engine list.
    *
    * @param {KeyboardEvent} event
    *   The key down event.
@@ -333,8 +337,10 @@ export class SearchModeSwitcher {
       labelEl.textContent = label;
     }
 
-    // If keyword.enabled is true, then the tooltip is already set.
-    if (!lazy.UrlbarPrefs.get("keyword.enabled")) {
+    if (
+      !lazy.UrlbarPrefs.get("keyword.enabled") &&
+      this.#input.sapName != "searchbar"
+    ) {
       this.#input.document.l10n.setAttributes(
         this.#toolbarbutton,
         "urlbar-searchmode-no-keyword"
@@ -498,16 +504,11 @@ export class SearchModeSwitcher {
     }
 
     if (openEngineHomePage) {
-      opts.focus = false;
-      opts.startQuery = false;
-    }
-
-    this.#input.search(search, opts);
-
-    if (openEngineHomePage) {
       this.#input.openEngineHomePage(search, {
         searchEngine: opts.searchEngine,
       });
+    } else {
+      this.#input.search(search, opts);
     }
 
     this.#popup.hidePopup();

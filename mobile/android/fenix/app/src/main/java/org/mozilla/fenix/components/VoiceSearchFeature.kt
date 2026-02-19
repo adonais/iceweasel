@@ -12,7 +12,9 @@ import android.speech.RecognizerIntent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
@@ -37,6 +39,7 @@ class VoiceSearchFeature(
     private val context: Context,
     private val appStore: AppStore,
     private val voiceSearchLauncher: ActivityResultLauncher<Intent>,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
 
     private var scope: CoroutineScope? = null
@@ -51,7 +54,7 @@ class VoiceSearchFeature(
     }
 
     private fun observeVoiceSearchRequests() {
-        scope = appStore.flowScoped { flow ->
+        scope = appStore.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.map { state -> state.voiceSearchState }
                 .distinctUntilChangedBy { it.isRequestingVoiceInput }
                 .collect { voiceSearchState ->

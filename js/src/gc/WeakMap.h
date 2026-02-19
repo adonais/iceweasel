@@ -327,8 +327,35 @@ class WeakMap : public WeakMapBase {
   using Lookup = typename Map::Lookup;
   using Entry = typename Map::Entry;
   using Range = typename Map::Range;
-  using Ptr = typename Map::Ptr;
-  using AddPtr = typename Map::AddPtr;
+
+  // Restrict the interface of HashMap::Ptr and AddPtr to remove mutable access
+  // to the hash table entry which could otherwise bypass our barriers.
+
+  using MutablePtr = typename Map::Ptr;
+  class Ptr {
+    MutablePtr ptr;
+    friend class WeakMap;
+
+   public:
+    explicit Ptr(const MutablePtr& ptr) : ptr(ptr) {}
+    bool found() const { return ptr.found(); }
+    explicit operator bool() const { return found(); }
+    const Entry& operator*() const { return *ptr; }
+    const Entry* operator->() const { return &*ptr; }
+  };
+
+  using MutableAddPtr = typename Map::AddPtr;
+  class AddPtr {
+    MutableAddPtr ptr;
+    friend class WeakMap;
+
+   public:
+    explicit AddPtr(const MutableAddPtr& ptr) : ptr(ptr) {}
+    bool found() const { return ptr.found(); }
+    explicit operator bool() const { return found(); }
+    const Entry& operator*() const { return *ptr; }
+    const Entry* operator->() const { return &*ptr; }
+  };
 
   struct Enum : public Map::Enum {
     explicit Enum(WeakMap& map) : Map::Enum(map.map()) {}
@@ -343,7 +370,7 @@ class WeakMap : public WeakMapBase {
   bool empty() const { return map().empty(); }
   bool has(const Lookup& lookup) const { return map().has(lookup); }
   void remove(const Lookup& lookup) { return map().remove(lookup); }
-  void remove(Ptr ptr) { return map().remove(ptr); }
+  void remove(Ptr ptr) { return map().remove(ptr.ptr); }
 
   size_t shallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return map().shallowSizeOfExcludingThis(aMallocSizeOf);
@@ -354,7 +381,7 @@ class WeakMap : public WeakMapBase {
 
   // Get the value associated with a key, or a default constructed Value if the
   // key is not present in the map.
-  Value get(const Lookup& l) {
+  Value get(const Lookup& l) const {
     Ptr ptr = lookup(l);
     if (!ptr) {
       return Value();
@@ -365,17 +392,17 @@ class WeakMap : public WeakMapBase {
   // Add a read barrier to prevent a gray value from escaping the weak map. This
   // is necessary because we don't unmark gray through weak maps.
   Ptr lookup(const Lookup& l) const {
-    Ptr p = map().lookup(l);
+    Ptr p = lookupUnbarriered(l);
     if (p) {
       valueReadBarrier(p->value());
     }
     return p;
   }
 
-  Ptr lookupUnbarriered(const Lookup& l) const { return map().lookup(l); }
+  Ptr lookupUnbarriered(const Lookup& l) const { return Ptr(map().lookup(l)); }
 
   AddPtr lookupForAdd(const Lookup& l) {
-    AddPtr p = map().lookupForAdd(l);
+    AddPtr p(map().lookupForAdd(l));
     if (p) {
       valueReadBarrier(p->value());
     }
@@ -385,13 +412,13 @@ class WeakMap : public WeakMapBase {
   [[nodiscard]] bool add(AddPtr& p, const Key& k, const Value& v) {
     MOZ_ASSERT(gc::ToMarkable(k));
     writeBarrier(k, v);
-    return map().add(p, k, v);
+    return map().add(p.ptr, k, v);
   }
 
   [[nodiscard]] bool relookupOrAdd(AddPtr& p, const Key& k, const Value& v) {
     MOZ_ASSERT(gc::ToMarkable(k));
     writeBarrier(k, v);
-    return map().relookupOrAdd(p, k, v);
+    return map().relookupOrAdd(p.ptr, k, v);
   }
 
   [[nodiscard]] bool put(const Key& k, const Value& v) {
@@ -415,8 +442,8 @@ class WeakMap : public WeakMapBase {
   }
 
 #ifdef DEBUG
-  bool hasEntry(const Key& key, const Value& value) {
-    Ptr p = map().lookup(key);
+  bool hasEntry(const Key& key, const Value& value) const {
+    Ptr p = lookupUnbarriered(key);
     return p && p->value() == value;
   }
 #endif
@@ -437,6 +464,9 @@ class WeakMap : public WeakMapBase {
   }
   static size_t offsetOfTable() {
     return offsetof(WeakMap, map_) + UnbarrieredMap::offsetOfTable();
+  }
+  static size_t offsetOfEntryCount() {
+    return offsetof(WeakMap, map_) + UnbarrieredMap::offsetOfEntryCount();
   }
 
  protected:
@@ -464,6 +494,10 @@ class WeakMap : public WeakMapBase {
   // Map accessor uses a cast to add barriers.
   Map& map() { return reinterpret_cast<Map&>(map_); }
   const Map& map() const { return reinterpret_cast<const Map&>(map_); }
+
+  MutablePtr lookupMutableUnbarriered(const Lookup& l) {
+    return map().lookup(l);
+  }
 
   static void valueReadBarrier(const JS::Value& v) {
     JS::ExposeValueToActiveJS(v);

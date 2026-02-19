@@ -671,8 +671,8 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
 }
 
 Result<EditActionResult, nsresult> HTMLEditor::CanHandleHTMLEditSubAction(
-    CheckSelectionInReplacedElement aCheckSelectionInReplacedElement
-    /* = CheckSelectionInReplacedElement::Yes */) const {
+    CheckSelectionInReplacedElement
+        aCheckSelectionInReplacedElement /* = ::Yes */) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(Destroyed())) {
@@ -699,18 +699,26 @@ Result<EditActionResult, nsresult> HTMLEditor::CanHandleHTMLEditSubAction(
     return Err(NS_ERROR_FAILURE);
   }
 
+  using ReplaceOrVoidElementOption = HTMLEditUtils::ReplaceOrVoidElementOption;
+
   if (selStartNode == selEndNode) {
     if (aCheckSelectionInReplacedElement ==
             CheckSelectionInReplacedElement::Yes &&
-        HTMLEditUtils::IsNonEditableReplacedContent(
-            *selStartNode->AsContent())) {
+        HTMLEditUtils::GetInclusiveAncestorReplacedOrVoidElement(
+            *selStartNode->AsContent(),
+            ReplaceOrVoidElementOption::LookForOnlyNonVoidReplacedElement)) {
       return EditActionResult::CanceledResult();
     }
     return EditActionResult::IgnoredResult();
   }
 
-  if (HTMLEditUtils::IsNonEditableReplacedContent(*selStartNode->AsContent()) ||
-      HTMLEditUtils::IsNonEditableReplacedContent(*selEndNode->AsContent())) {
+  if (aCheckSelectionInReplacedElement != CheckSelectionInReplacedElement::No &&
+      (HTMLEditUtils::GetInclusiveAncestorReplacedOrVoidElement(
+           *selStartNode->AsContent(),
+           ReplaceOrVoidElementOption::LookForOnlyNonVoidReplacedElement) ||
+       HTMLEditUtils::GetInclusiveAncestorReplacedOrVoidElement(
+           *selEndNode->AsContent(),
+           ReplaceOrVoidElementOption::LookForOnlyNonVoidReplacedElement))) {
     return EditActionResult::CanceledResult();
   }
 
@@ -972,7 +980,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
        ToString(aPurpose).c_str()));
 
   {
-    Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction();
+    Result<EditActionResult, nsresult> result =
+        CanHandleHTMLEditSubAction(CheckSelectionInReplacedElement::No);
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING("HTMLEditor::CanHandleHTMLEditSubAction() failed");
       return result;
@@ -1072,17 +1081,12 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
 
   // If the point is not in an element which can contain text nodes, climb up
   // the DOM tree.
-  if (!pointToInsert.IsInTextNode()) {
-    while (!HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
-                                          *nsGkAtoms::textTagName)) {
-      if (NS_WARN_IF(pointToInsert.GetContainer() == editingHost) ||
-          NS_WARN_IF(!pointToInsert.GetContainerParentAs<nsIContent>())) {
-        NS_WARNING("Selection start point couldn't have text nodes");
-        return Err(NS_ERROR_FAILURE);
-      }
-      pointToInsert.Set(pointToInsert.ContainerAs<nsIContent>());
-    }
+  pointToInsert = HTMLEditUtils::GetPossiblePointToInsert(
+      pointToInsert, *nsGkAtoms::textTagName, *editingHost);
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return Err(NS_ERROR_FAILURE);
   }
+  MOZ_ASSERT(pointToInsert.IsInContentNode());
 
   if (InsertingTextForComposition(aPurpose)) {
     if (aInsertionString.IsEmpty()) {

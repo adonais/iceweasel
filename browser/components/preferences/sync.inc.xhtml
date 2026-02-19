@@ -13,7 +13,7 @@
   <html:h1 data-l10n-id="pane-sync-title3"/>
 </hbox>
 
-<deck id="weavePrefsDeck" data-category="paneSync" hidden="true"
+<deck id="weavePrefsDeck" data-category="paneSync" data-srd-groupid="sync" hidden="true"
       data-hidden-from-search="true">
   <groupbox id="noFxaAccount">
     <hbox>
@@ -245,6 +245,13 @@
     </vbox>
 </vbox>
 </deck>
+
+<!-- Mozilla account -->
+<html:setting-group groupid="account" hidden="true" data-category="paneSync"/>
+
+<!-- Sync -->
+<html:setting-group groupid="sync" hidden="true" data-category="paneSync"/>
+
 <!-- Firefox Backup -->
 <hbox id="backupCategory"
     class="subcategory"

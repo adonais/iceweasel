@@ -192,8 +192,8 @@ async function testChangingColorShouldEmitEvents(container, doc) {
   );
   testChangingColorShouldEmitEventsHelper(s, sendDownKey, [125, 62, 62, 1]);
   testChangingColorShouldEmitEventsHelper(s, sendLeftKey, [125, 63, 63, 1]);
-  testChangingColorShouldEmitEventsHelper(s, sendUpKey, [128, 64, 64, 1]);
-  testChangingColorShouldEmitEventsHelper(s, sendRightKey, [127, 63, 63, 1]);
+  testChangingColorShouldEmitEventsHelper(s, sendUpKey, [127, 64, 64, 1]);
+  testChangingColorShouldEmitEventsHelper(s, sendRightKey, [128, 63, 63, 1]);
 
   info(
     "Test that moving the hue slider with arrow keys emits color changed event."
@@ -211,8 +211,8 @@ async function testChangingColorShouldEmitEvents(container, doc) {
     "spectrum-hue-input",
     "Hue slider has successfully received focus."
   );
-  testChangingColorShouldEmitEventsHelper(s, sendRightKey, [127, 66, 63, 1]);
-  testChangingColorShouldEmitEventsHelper(s, sendLeftKey, [127, 63, 63, 1]);
+  testChangingColorShouldEmitEventsHelper(s, sendRightKey, [128, 66, 63, 1]);
+  testChangingColorShouldEmitEventsHelper(s, sendLeftKey, [128, 63, 63, 1]);
 
   info(
     "Test that moving the hue slider with arrow keys emits color changed event."
@@ -224,8 +224,8 @@ async function testChangingColorShouldEmitEvents(container, doc) {
     "spectrum-alpha-input",
     "Alpha slider has successfully received focus."
   );
-  testChangingColorShouldEmitEventsHelper(s, sendLeftKey, [127, 63, 63, 0.99]);
-  testChangingColorShouldEmitEventsHelper(s, sendRightKey, [127, 63, 63, 1]);
+  testChangingColorShouldEmitEventsHelper(s, sendLeftKey, [128, 63, 63, 0.99]);
+  testChangingColorShouldEmitEventsHelper(s, sendRightKey, [128, 63, 63, 1]);
 
   s.destroy();
 }

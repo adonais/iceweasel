@@ -87,6 +87,7 @@ const HIGHLIGHT_PSEUDO_ELEMENTS = [
 const REGEXP_HIGHLIGHT_PSEUDO_ELEMENTS = new RegExp(
   `${HIGHLIGHT_PSEUDO_ELEMENTS.join("|")}`
 );
+const REGEXP_UPPERCASE_CHAR = /[A-Z]/;
 
 const FIRST_LINE_PSEUDO_ELEMENT_STYLING_SPEC_URL =
   "https://www.w3.org/TR/css-pseudo-4/#first-line-styling";
@@ -399,7 +400,11 @@ class InactivePropertyHelper {
       // clear property used on non-floating elements.
       {
         invalidProperties: ["clear"],
-        when: () => !this.isBlockLevel(),
+        when: () =>
+          !this.isBlockLevel() &&
+          // The br element is a special case and allows clear for backwards compatibility to make its clear attribute work.
+          // https://html.spec.whatwg.org/multipage/rendering.html#phrasing-content-3
+          this.localName != "br",
         fixId: "inactive-css-not-block-fix",
         msgId: "inactive-css-not-block",
       },
@@ -801,57 +806,14 @@ class InactivePropertyHelper {
     },
     // Constrained set of properties on @position-try rules
     {
-      // List from Object.keys(CSSPositionTryDescriptors.prototype)
-      // We should directly retrieve the properties from the CSSPositionTryDescriptors.prototype
-      // See Bug 2005233
-      acceptedProperties: new Set([
-        "position-anchor",
-        "position-area",
-        // Inset property descriptors
-        "top",
-        "left",
-        "bottom",
-        "right",
-        "inset-block-start",
-        "inset-block-end",
-        "inset-inline-start",
-        "inset-inline-end",
-        "inset-block",
-        "inset-inline",
-        "inset",
-        // Margin property descriptors
-        "margin-top",
-        "margin-left",
-        "margin-bottom",
-        "margin-right",
-        "margin-block-start",
-        "margin-block-end",
-        "margin-inline-start",
-        "margin-inline-end",
-        "margin",
-        "margin-block",
-        "margin-inline",
-        "-moz-margin-start",
-        "-moz-margin-end",
-        // Sizing property descriptors
-        "width",
-        "height",
-        "min-width",
-        "min-height",
-        "max-width",
-        "max-height",
-        "block-size",
-        "inline-size",
-        "min-block-size",
-        "min-inline-size",
-        "max-block-size",
-        "max-inline-size",
-        // Self-alignment property descriptors
-        "align-self",
-        "justify-self",
-        "place-self",
-        "-webkit-align-self",
-      ]),
+      acceptedProperties: new Set(
+        Object.keys(globalThis.CSSPositionTryDescriptors.prototype).filter(
+          // CSSPositionTryDescriptors.prototype gives us both css property names
+          // and their JS equivalent (e.g. `min-width` and `minWidth`).
+          // We can filter out the latter by checking if the property has an uppercase
+          p => !REGEXP_UPPERCASE_CHAR.test(p)
+        )
+      ),
       rejectCustomProperties: true,
       when: () =>
         ChromeUtils.getClassName(this.cssRule) === "CSSPositionTryRule",

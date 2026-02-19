@@ -83,6 +83,7 @@ var gPermissionManager = {
    * @param {boolean} params.sessionVisible Display the "Allow for Session" button in the dialog (Only for Cookie & HTTPS-Only permissions)
    * @param {boolean} params.allowVisible Display the "Allow" button in the dialog
    * @param {boolean} params.disableETPVisible Display the "Add Exception" button in the dialog (Only for ETP permissions)
+   * @param {boolean} params.addVisible Display the "Add" button in the dialog (Only for ipp-vpn permissions)
    * @param {boolean} params.hideStatusColumn Hide the "Status" column in the dialog
    * @param {boolean} params.forcedHTTP Save inputs whose URI has a HTTPS scheme with a HTTP scheme (Used by HTTPS-Only)
    * @param {number} params.capabilityFilter Display permissions that have the specified capability only. See Ci.nsIPermissionManager.
@@ -106,30 +107,13 @@ var gPermissionManager = {
     this._btnAllow = document.getElementById("btnAllow");
     this._btnHttpsOnlyOff = document.getElementById("btnHttpsOnlyOff");
     this._btnHttpsOnlyOffTmp = document.getElementById("btnHttpsOnlyOffTmp");
+    this._btnAdd = document.getElementById("btnAdd");
 
     this._capabilityFilter = params.capabilityFilter;
 
     let permissionsText = document.getElementById("permissionsText");
 
-    let l10n;
-
-    // For ipp-vpn, we want to override strings based on capability.
-    // Valid capabilities for this permission are ALLOW and DENY.
-    if (this._type === "ipp-vpn") {
-      if (params.capabilityFilter === Ci.nsIPermissionManager.ALLOW_ACTION) {
-        l10n = {
-          window: "ip-protection-exceptions-dialog-window",
-          description: "ip-protection-inclusions-desc",
-        };
-      } else {
-        l10n = {
-          window: "ip-protection-exceptions-dialog-window",
-          description: "ip-protection-exclusions-desc",
-        };
-      }
-    } else {
-      l10n = permissionExceptionsL10n[this._type];
-    }
+    let l10n = permissionExceptionsL10n[this._type];
 
     document.l10n.setAttributes(permissionsText, l10n.description);
     document.l10n.setAttributes(document.documentElement, l10n.window);
@@ -138,7 +122,8 @@ var gPermissionManager = {
       params.blockVisible ||
       params.sessionVisible ||
       params.allowVisible ||
-      params.disableETPVisible;
+      params.disableETPVisible ||
+      params.addVisible;
 
     this._urlField = document.getElementById("url");
     this._urlField.value = params.prefilledHost;
@@ -163,6 +148,7 @@ var gPermissionManager = {
       params.sessionVisible && this._type == "https-only-load-insecure"
     );
     document.getElementById("btnAllow").hidden = !params.allowVisible;
+    document.getElementById("btnAdd").hidden = !params.addVisible;
 
     this.onHostInput(this._urlField);
 
@@ -254,6 +240,10 @@ var gPermissionManager = {
             Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION
           );
           break;
+        case "btnAdd":
+          // This button is for ipp-vpn, which only supports
+          // site exclusions at this time.
+          gPermissionManager.addPermission(Ci.nsIPermissionManager.DENY_ACTION);
       }
     });
   },
@@ -577,6 +567,8 @@ var gPermissionManager = {
         document.getElementById("btnHttpsOnlyOff").click();
       } else if (!document.getElementById("btnDisableETP").hidden) {
         document.getElementById("btnDisableETP").click();
+      } else if (!document.getElementById("btnAdd").hidden) {
+        document.getElementById("btnAdd").click();
       }
     }
   },
@@ -592,6 +584,7 @@ var gPermissionManager = {
     this._btnDisableETP.disabled =
       this._btnDisableETP.hidden || !siteField.value;
     this._btnAllow.disabled = this._btnAllow.hidden || !siteField.value;
+    this._btnAdd.disabled = this._btnAdd.hidden || !siteField.value;
   },
 
   _setRemoveButtonState() {

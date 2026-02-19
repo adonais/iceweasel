@@ -664,6 +664,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nove lista
+newtab-widget-section-title = Widgets
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Celar widgets
+    .aria-label = Celar tote le widgets
+newtab-widget-section-maximize =
+    .title = Expander widgets
+    .aria-label = Expander tote le widgets a dimension real
+newtab-widget-section-minimize =
+    .title = Minimisar widgets
+    .aria-label = Collaber tote le widgets a dimension compacte
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -686,8 +697,6 @@ newtab-widget-timer-menu-notifications = Disactivar notificationes
 newtab-widget-timer-menu-notifications-on = Activar notificationes
 newtab-widget-timer-menu-hide = Celar temporisator
 newtab-widget-timer-menu-learn-more = Pro saper plus
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Rola pro vider plus
 newtab-widget-message-title = Remane concentrate con le listas e un temporisator integrate
 # to-dos stands for "things to do".
 newtab-widget-message-copy = De rememorationes a travalios, de concentration a relaxation – resta attente e a tempore.

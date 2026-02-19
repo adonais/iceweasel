@@ -3,8 +3,6 @@
 /* stylelint-disable max-nesting-depth */
 
 $top-sites-size: $grid-unit-small;
-$top-sites-border-radius: var(--border-radius-medium);
-$top-sites-icon-border-radius: var(--border-radius-small);
 $rich-icon-size: 96px;
 $default-icon-wrapper-size: 40px;
 $default-icon-size: 40px;
@@ -153,7 +151,8 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 // container for drop zone
 .top-site-outer {
   width: 120px;
-  margin-block-end: 0;
+  // Compact layout spacing migrated from .thumbs-ui-compact
+  margin-block-end: var(--space-medium);
   border-radius: var(--border-radius-large);
   display: inline-block;
 
@@ -444,9 +443,16 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   }
 }
 
+// Preserve shortcuts-refresh variant from compact thumbs UI
+.shortcuts-refresh {
+  .top-site-outer {
+    margin-block-end: 0;
+  }
+}
+
 .edit-topsites-wrapper {
   .top-site-inner > .top-site-button > .tile {
-    border: 1px solid var(--newtab-border-color);
+    border: 1px solid var(--border-color);
   }
 
   .modal {
@@ -541,7 +547,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
         &:not(:placeholder-shown) {
           direction: ltr;
-          text-align: right;
+          text-align: end;
         }
       }
     }
@@ -593,7 +599,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     input {
       &[type='text'] {
         background-color: var(--newtab-background-color-secondary);
-        border: $input-border;
+        border: 1px solid var(--border-color-interactive);
         margin: var(--space-small) 0;
         padding: 0 var(--space-small);
         height: 32px;
@@ -601,7 +607,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
         font-size: inherit;
 
         &[disabled] {
-          border: $input-border;
+          border: 1px solid var(--border-color-interactive-disabled);
           box-shadow: none;
           opacity: 0.4;
         }
@@ -611,7 +617,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     .invalid {
       input {
         &[type='text'] {
-          border: $input-error-border;
+          border: 1px solid var(--outline-color-error);
           box-shadow: $input-error-boxshadow;
         }
       }
@@ -689,7 +695,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   [type='checkbox']:not(:checked) + label::before,
   [type='checkbox']:checked + label::before {
     background: var(--newtab-background-color);
-    border: $input-border;
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius-small);
     content: '';
     height: 21px;

@@ -12,7 +12,6 @@
 #include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/Currency.h"
-#include "mozilla/intl/Locale.h"
 #include "mozilla/intl/MeasureUnitGenerated.h"
 #include "mozilla/intl/TimeZone.h"
 
@@ -24,18 +23,15 @@
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
-#include "builtin/intl/FormatBuffer.h"
+#include "builtin/intl/LocaleNegotiation.h"
 #include "builtin/intl/NumberingSystemsGenerated.h"
 #include "builtin/intl/SharedIntlData.h"
-#include "builtin/intl/StringAsciiChars.h"
 #include "ds/Sort.h"
 #include "js/Class.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/GCAPI.h"
 #include "js/GCVector.h"
 #include "js/PropertySpec.h"
-#include "js/Result.h"
-#include "js/StableStringChars.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSAtomUtils.h"  // ClassName
 #include "vm/JSContext.h"
@@ -46,6 +42,7 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
+using namespace js::intl;
 
 /******************** Intl ********************/
 
@@ -109,110 +106,6 @@ bool js::intl_GetCalendarInfo(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static void ReportBadKey(JSContext* cx, JSString* key) {
-  if (UniqueChars chars = QuoteString(cx, key, '"')) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_KEY,
-                              chars.get());
-  }
-}
-
-static bool SameOrParentLocale(const JSLinearString* locale,
-                               const JSLinearString* otherLocale) {
-  // Return true if |locale| is the same locale as |otherLocale|.
-  if (locale->length() == otherLocale->length()) {
-    return EqualStrings(locale, otherLocale);
-  }
-
-  // Also return true if |locale| is the parent locale of |otherLocale|.
-  if (locale->length() < otherLocale->length()) {
-    return HasSubstringAt(otherLocale, locale, 0) &&
-           otherLocale->latin1OrTwoByteChar(locale->length()) == '-';
-  }
-
-  return false;
-}
-
-using SupportedLocaleKind = js::intl::SharedIntlData::SupportedLocaleKind;
-
-// 9.2.2 BestAvailableLocale ( availableLocales, locale )
-static JS::Result<JSLinearString*> BestAvailableLocale(
-    JSContext* cx, SupportedLocaleKind kind, Handle<JSLinearString*> locale,
-    Handle<JSLinearString*> defaultLocale) {
-  // In the spec, [[availableLocales]] is formally a list of all available
-  // locales. But in our implementation, it's an *incomplete* list, not
-  // necessarily including the default locale (and all locales implied by it,
-  // e.g. "de" implied by "de-CH"), if that locale isn't in every
-  // [[availableLocales]] list (because that locale is supported through
-  // fallback, e.g. "de-CH" supported through "de").
-  //
-  // If we're considering the default locale, augment the spec loop with
-  // additional checks to also test whether the current prefix is a prefix of
-  // the default locale.
-
-  intl::SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
-
-  auto findLast = [](const auto* chars, size_t length) {
-    auto rbegin = std::make_reverse_iterator(chars + length);
-    auto rend = std::make_reverse_iterator(chars);
-    auto p = std::find(rbegin, rend, '-');
-
-    // |dist(chars, p.base())| is equal to |dist(p, rend)|, pick whichever you
-    // find easier to reason about when using reserve iterators.
-    ptrdiff_t r = std::distance(chars, p.base());
-    MOZ_ASSERT(r == std::distance(p, rend));
-
-    // But always subtract one to convert from the reverse iterator result to
-    // the correspoding forward iterator value, because reserve iterators point
-    // to one element past the forward iterator value.
-    return r - 1;
-  };
-
-  // Step 1.
-  Rooted<JSLinearString*> candidate(cx, locale);
-
-  // Step 2.
-  while (true) {
-    // Step 2.a.
-    bool supported = false;
-    if (!sharedIntlData.isSupportedLocale(cx, kind, candidate, &supported)) {
-      return cx->alreadyReportedError();
-    }
-    if (supported) {
-      return candidate.get();
-    }
-
-    if (defaultLocale && SameOrParentLocale(candidate, defaultLocale)) {
-      return candidate.get();
-    }
-
-    // Step 2.b.
-    ptrdiff_t pos;
-    if (candidate->hasLatin1Chars()) {
-      JS::AutoCheckCannotGC nogc;
-      pos = findLast(candidate->latin1Chars(nogc), candidate->length());
-    } else {
-      JS::AutoCheckCannotGC nogc;
-      pos = findLast(candidate->twoByteChars(nogc), candidate->length());
-    }
-
-    if (pos < 0) {
-      return nullptr;
-    }
-
-    // Step 2.c.
-    size_t length = size_t(pos);
-    if (length >= 2 && candidate->latin1OrTwoByteChar(length - 2) == '-') {
-      length -= 2;
-    }
-
-    // Step 2.d.
-    candidate = NewDependentString(cx, candidate, 0, length);
-    if (!candidate) {
-      return cx->alreadyReportedError();
-    }
-  }
-}
-
 // 9.2.2 BestAvailableLocale ( availableLocales, locale )
 //
 // Carries an additional third argument in our implementation to provide the
@@ -221,7 +114,9 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 3);
 
-  SupportedLocaleKind kind;
+  using AvailableLocaleKind = js::intl::AvailableLocaleKind;
+
+  AvailableLocaleKind kind;
   {
     JSLinearString* typeStr = args[0].toString()->ensureLinear(cx);
     if (!typeStr) {
@@ -229,24 +124,24 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     if (StringEqualsLiteral(typeStr, "Collator")) {
-      kind = SupportedLocaleKind::Collator;
+      kind = AvailableLocaleKind::Collator;
     } else if (StringEqualsLiteral(typeStr, "DateTimeFormat")) {
-      kind = SupportedLocaleKind::DateTimeFormat;
+      kind = AvailableLocaleKind::DateTimeFormat;
     } else if (StringEqualsLiteral(typeStr, "DisplayNames")) {
-      kind = SupportedLocaleKind::DisplayNames;
+      kind = AvailableLocaleKind::DisplayNames;
     } else if (StringEqualsLiteral(typeStr, "DurationFormat")) {
-      kind = SupportedLocaleKind::DurationFormat;
+      kind = AvailableLocaleKind::DurationFormat;
     } else if (StringEqualsLiteral(typeStr, "ListFormat")) {
-      kind = SupportedLocaleKind::ListFormat;
+      kind = AvailableLocaleKind::ListFormat;
     } else if (StringEqualsLiteral(typeStr, "NumberFormat")) {
-      kind = SupportedLocaleKind::NumberFormat;
+      kind = AvailableLocaleKind::NumberFormat;
     } else if (StringEqualsLiteral(typeStr, "PluralRules")) {
-      kind = SupportedLocaleKind::PluralRules;
+      kind = AvailableLocaleKind::PluralRules;
     } else if (StringEqualsLiteral(typeStr, "RelativeTimeFormat")) {
-      kind = SupportedLocaleKind::RelativeTimeFormat;
+      kind = AvailableLocaleKind::RelativeTimeFormat;
     } else {
       MOZ_ASSERT(StringEqualsLiteral(typeStr, "Segmenter"));
-      kind = SupportedLocaleKind::Segmenter;
+      kind = AvailableLocaleKind::Segmenter;
     }
   }
 
@@ -254,54 +149,6 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
   if (!locale) {
     return false;
   }
-
-#ifdef DEBUG
-  {
-    MOZ_ASSERT(StringIsAscii(locale), "language tags are ASCII-only");
-
-    // |locale| is a structurally valid language tag.
-    mozilla::intl::Locale tag;
-
-    using ParserError = mozilla::intl::LocaleParser::ParserError;
-    mozilla::Result<mozilla::Ok, ParserError> parse_result = Ok();
-    {
-      intl::StringAsciiChars chars(locale);
-      if (!chars.init(cx)) {
-        return false;
-      }
-
-      parse_result = mozilla::intl::LocaleParser::TryParse(chars, tag);
-    }
-
-    if (parse_result.isErr()) {
-      MOZ_ASSERT(parse_result.unwrapErr() == ParserError::OutOfMemory,
-                 "locale is a structurally valid language tag");
-
-      intl::ReportInternalError(cx);
-      return false;
-    }
-
-    MOZ_ASSERT(!tag.GetUnicodeExtension(),
-               "locale must contain no Unicode extensions");
-
-    if (auto result = tag.Canonicalize(); result.isErr()) {
-      MOZ_ASSERT(
-          result.unwrapErr() !=
-          mozilla::intl::Locale::CanonicalizationError::DuplicateVariant);
-      intl::ReportInternalError(cx);
-      return false;
-    }
-
-    intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
-    if (auto result = tag.ToString(buffer); result.isErr()) {
-      intl::ReportInternalError(cx, result.unwrapErr());
-      return false;
-    }
-
-    MOZ_ASSERT(StringEqualsAscii(locale, buffer.data(), buffer.length()),
-               "locale is a canonicalized language tag");
-  }
-#endif
 
   MOZ_ASSERT(args[2].isNull() || args[2].isString());
 
@@ -313,132 +160,16 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  JSString* result;
-  JS_TRY_VAR_OR_RETURN_FALSE(
-      cx, result, BestAvailableLocale(cx, kind, locale, defaultLocale));
-
+  Rooted<JSLinearString*> result(cx);
+  if (!intl::BestAvailableLocale(cx, kind, locale, defaultLocale, &result)) {
+    return false;
+  }
   if (result) {
     args.rval().setString(result);
   } else {
     args.rval().setUndefined();
   }
   return true;
-}
-
-JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
-  const char* locale = cx->realm()->getLocale();
-  if (!locale) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  auto span = mozilla::MakeStringSpan(locale);
-
-  mozilla::intl::Locale tag;
-  bool canParseLocale =
-      mozilla::intl::LocaleParser::TryParse(span, tag).isOk() &&
-      tag.Canonicalize().isOk();
-
-  Rooted<JSLinearString*> candidate(cx);
-  if (!canParseLocale) {
-    candidate = NewStringCopyZ<CanGC>(cx, intl::LastDitchLocale());
-    if (!candidate) {
-      return nullptr;
-    }
-  } else {
-    // The default locale must be in [[AvailableLocales]], and that list must
-    // not contain any locales with Unicode extension sequences, so remove any
-    // present in the candidate.
-    tag.ClearUnicodeExtension();
-
-    intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
-    if (auto result = tag.ToString(buffer); result.isErr()) {
-      intl::ReportInternalError(cx, result.unwrapErr());
-      return nullptr;
-    }
-
-    candidate = buffer.toAsciiString(cx);
-    if (!candidate) {
-      return nullptr;
-    }
-
-    // Certain old-style language tags lack a script code, but in current
-    // usage they *would* include a script code. Map these over to modern
-    // forms.
-    for (const auto& mapping : js::intl::oldStyleLanguageTagMappings) {
-      const char* oldStyle = mapping.oldStyle;
-      const char* modernStyle = mapping.modernStyle;
-
-      if (StringEqualsAscii(candidate, oldStyle)) {
-        candidate = NewStringCopyZ<CanGC>(cx, modernStyle);
-        if (!candidate) {
-          return nullptr;
-        }
-        break;
-      }
-    }
-  }
-
-  // 9.1 Internal slots of Service Constructors
-  //
-  // - [[AvailableLocales]] is a List [...]. The list must include the value
-  //   returned by the DefaultLocale abstract operation (6.2.4), [...].
-  //
-  // That implies we must ignore any candidate which isn't supported by all
-  // Intl service constructors.
-
-  Rooted<JSLinearString*> supportedCollator(cx);
-  JS_TRY_VAR_OR_RETURN_NULL(
-      cx, supportedCollator,
-      BestAvailableLocale(cx, SupportedLocaleKind::Collator, candidate,
-                          nullptr));
-
-  Rooted<JSLinearString*> supportedDateTimeFormat(cx);
-  JS_TRY_VAR_OR_RETURN_NULL(
-      cx, supportedDateTimeFormat,
-      BestAvailableLocale(cx, SupportedLocaleKind::DateTimeFormat, candidate,
-                          nullptr));
-
-#ifdef DEBUG
-  // Note: We don't test the supported locales of the remaining Intl service
-  // constructors, because the set of supported locales is exactly equal to
-  // the set of supported locales of Intl.DateTimeFormat.
-  for (auto kind : {
-           SupportedLocaleKind::DisplayNames,
-           SupportedLocaleKind::DurationFormat,
-           SupportedLocaleKind::ListFormat,
-           SupportedLocaleKind::NumberFormat,
-           SupportedLocaleKind::PluralRules,
-           SupportedLocaleKind::RelativeTimeFormat,
-           SupportedLocaleKind::Segmenter,
-       }) {
-    JSLinearString* supported;
-    JS_TRY_VAR_OR_RETURN_NULL(
-        cx, supported, BestAvailableLocale(cx, kind, candidate, nullptr));
-
-    MOZ_ASSERT(!!supported == !!supportedDateTimeFormat);
-    MOZ_ASSERT_IF(supported, EqualStrings(supported, supportedDateTimeFormat));
-  }
-#endif
-
-  // Accept the candidate locale if it is supported by all Intl service
-  // constructors.
-  if (supportedCollator && supportedDateTimeFormat) {
-    // Use the actually supported locale instead of the candidate locale. For
-    // example when the candidate locale "en-US-posix" is supported through
-    // "en-US", use "en-US" as the default locale.
-    //
-    // Also prefer the supported locale with more subtags. For example when
-    // requesting "de-CH" and Intl.DateTimeFormat supports "de-CH", but
-    // Intl.Collator only "de", still return "de-CH" as the result.
-    if (SameOrParentLocale(supportedCollator, supportedDateTimeFormat)) {
-      return supportedDateTimeFormat;
-    }
-    return supportedCollator;
-  }
-
-  // Return the last ditch locale if the candidate locale isn't supported.
-  return NewStringCopyZ<CanGC>(cx, intl::LastDitchLocale());
 }
 
 using StringList = GCVector<JSLinearString*>;
@@ -492,14 +223,10 @@ template <size_t N>
 static ArrayObject* CreateArrayFromSortedList(
     JSContext* cx, const std::array<const char*, N>& list) {
   // Ensure the list is sorted and doesn't contain duplicates.
-#ifdef DEBUG
-  // See bug 1583449 for why the lambda can't be in the MOZ_ASSERT.
-  auto isLargerThanOrEqual = [](const auto& a, const auto& b) {
-    return std::strcmp(a, b) >= 0;
-  };
-#endif
   MOZ_ASSERT(std::adjacent_find(std::begin(list), std::end(list),
-                                isLargerThanOrEqual) == std::end(list));
+                                [](const auto& a, const auto& b) {
+                                  return std::strcmp(a, b) >= 0;
+                                }) == std::end(list));
 
   size_t length = std::size(list);
 
@@ -522,8 +249,8 @@ static ArrayObject* CreateArrayFromSortedList(
 /**
  * Create an array from an intl::Enumeration.
  */
-template <const auto& unsupported, class Enumeration>
-static bool EnumerationIntoList(JSContext* cx, Enumeration values,
+template <const auto& unsupported>
+static bool EnumerationIntoList(JSContext* cx, auto values,
                                 MutableHandle<StringList> list) {
   for (auto value : values) {
     if (value.isErr()) {
@@ -562,10 +289,6 @@ static constexpr auto UnsupportedCalendars() {
   };
 }
 
-// Defined outside of the function to workaround bugs in GCC<9.
-// Also see <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85589>.
-static constexpr auto UnsupportedCalendarsArray = UnsupportedCalendars();
-
 /**
  * AvailableCalendars ( )
  */
@@ -583,7 +306,7 @@ static ArrayObject* AvailableCalendars(JSContext* cx) {
       return nullptr;
     }
 
-    static constexpr auto& unsupported = UnsupportedCalendarsArray;
+    static constexpr auto unsupported = UnsupportedCalendars();
 
     if (!EnumerationIntoList<unsupported>(cx, keywords.unwrap(), &list)) {
       return nullptr;
@@ -604,10 +327,6 @@ static constexpr auto UnsupportedCollations() {
   };
 }
 
-// Defined outside of the function to workaround bugs in GCC<9.
-// Also see <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85589>.
-static constexpr auto UnsupportedCollationsArray = UnsupportedCollations();
-
 /**
  * AvailableCollations ( )
  */
@@ -625,7 +344,7 @@ static ArrayObject* AvailableCollations(JSContext* cx) {
       return nullptr;
     }
 
-    static constexpr auto& unsupported = UnsupportedCollationsArray;
+    static constexpr auto unsupported = UnsupportedCollations();
 
     if (!EnumerationIntoList<unsupported>(cx, keywords.unwrap(), &list)) {
       return nullptr;
@@ -649,22 +368,6 @@ static constexpr auto UnsupportedCurrencies() {
 }
 
 /**
- * Return a list of known, missing currencies which aren't returned by
- * |Currency::GetISOCurrencies()|.
- */
-static constexpr auto MissingCurrencies() {
-  return std::array{
-      "SLE",  // https://unicode-org.atlassian.net/browse/ICU-21989
-      "VED",  // https://unicode-org.atlassian.net/browse/ICU-21989
-  };
-}
-
-// Defined outside of the function to workaround bugs in GCC<9.
-// Also see <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85589>.
-static constexpr auto UnsupportedCurrenciesArray = UnsupportedCurrencies();
-static constexpr auto MissingCurrenciesArray = MissingCurrencies();
-
-/**
  * AvailableCurrencies ( )
  */
 static ArrayObject* AvailableCurrencies(JSContext* cx) {
@@ -681,20 +384,9 @@ static ArrayObject* AvailableCurrencies(JSContext* cx) {
       return nullptr;
     }
 
-    static constexpr auto& unsupported = UnsupportedCurrenciesArray;
+    static constexpr auto unsupported = UnsupportedCurrencies();
 
     if (!EnumerationIntoList<unsupported>(cx, currencies.unwrap(), &list)) {
-      return nullptr;
-    }
-  }
-
-  // Add known missing values.
-  for (const char* value : MissingCurrenciesArray) {
-    auto* string = NewStringCopyZ<CanGC>(cx, value);
-    if (!string) {
-      return nullptr;
-    }
-    if (!list.append(string)) {
       return nullptr;
     }
   }
@@ -764,37 +456,70 @@ static ArrayObject* AvailableUnits(JSContext* cx) {
   return CreateArrayFromSortedList(cx, simpleMeasureUnitNames);
 }
 
-bool js::intl_SupportedValuesOf(JSContext* cx, unsigned argc, JS::Value* vp) {
+/**
+ * Intl.getCanonicalLocales ( locales )
+ */
+static bool intl_getCanonicalLocales(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 1);
-  MOZ_ASSERT(args[0].isString());
 
-  JSLinearString* key = args[0].toString()->ensureLinear(cx);
+  // Step 1.
+  Rooted<LocalesList> locales(cx, cx);
+  if (!CanonicalizeLocaleList(cx, args.get(0), &locales)) {
+    return false;
+  }
+
+  // Step 2.
+  auto* array = LocalesListToArray(cx, locales);
+  if (!array) {
+    return false;
+  }
+  args.rval().setObject(*array);
+  return true;
+}
+
+/**
+ * Intl.supportedValuesOf ( key )
+ */
+static bool intl_supportedValuesOf(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  // Step 1.
+  auto* key = ToString(cx, args.get(0));
   if (!key) {
     return false;
   }
 
+  auto* linearKey = key->ensureLinear(cx);
+  if (!linearKey) {
+    return false;
+  }
+
+  // Steps 2-8.
   ArrayObject* list;
-  if (StringEqualsLiteral(key, "calendar")) {
+  if (StringEqualsLiteral(linearKey, "calendar")) {
     list = AvailableCalendars(cx);
-  } else if (StringEqualsLiteral(key, "collation")) {
+  } else if (StringEqualsLiteral(linearKey, "collation")) {
     list = AvailableCollations(cx);
-  } else if (StringEqualsLiteral(key, "currency")) {
+  } else if (StringEqualsLiteral(linearKey, "currency")) {
     list = AvailableCurrencies(cx);
-  } else if (StringEqualsLiteral(key, "numberingSystem")) {
+  } else if (StringEqualsLiteral(linearKey, "numberingSystem")) {
     list = AvailableNumberingSystems(cx);
-  } else if (StringEqualsLiteral(key, "timeZone")) {
+  } else if (StringEqualsLiteral(linearKey, "timeZone")) {
     list = AvailableTimeZones(cx);
-  } else if (StringEqualsLiteral(key, "unit")) {
+  } else if (StringEqualsLiteral(linearKey, "unit")) {
     list = AvailableUnits(cx);
   } else {
-    ReportBadKey(cx, key);
+    if (UniqueChars chars = QuoteString(cx, linearKey, '"')) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_INVALID_KEY,
+                                chars.get());
+    }
     return false;
   }
   if (!list) {
     return false;
   }
 
+  // Step 9.
   args.rval().setObject(*list);
   return true;
 }
@@ -807,8 +532,8 @@ static bool intl_toSource(JSContext* cx, unsigned argc, Value* vp) {
 
 static const JSFunctionSpec intl_static_methods[] = {
     JS_FN("toSource", intl_toSource, 0, 0),
-    JS_SELF_HOSTED_FN("getCanonicalLocales", "Intl_getCanonicalLocales", 1, 0),
-    JS_SELF_HOSTED_FN("supportedValuesOf", "Intl_supportedValuesOf", 1, 0),
+    JS_FN("getCanonicalLocales", intl_getCanonicalLocales, 1, 0),
+    JS_FN("supportedValuesOf", intl_supportedValuesOf, 1, 0),
     JS_FS_END,
 };
 

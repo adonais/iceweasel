@@ -61,7 +61,6 @@ add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({"set": [
     ["browser.safebrowsing.malware.enabled", true],
     ["urlclassifier.malwareTable", "test-malware-simple,test-unwanted-simple"],
-    ["network.predictor.enabled", false],
     ["urlclassifier.gethash.timeout_ms", 30000],
   ]});
 

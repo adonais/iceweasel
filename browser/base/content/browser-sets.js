@@ -230,6 +230,10 @@ document.addEventListener(
           case "Tools:AIWindow":
             OpenBrowserWindow({ aiWindow: true });
             break;
+          case "Tools:ChatsHistory":
+            // @todo Bug 2006543
+            // Implement opening the chat history view
+            break;
           case "Tools:Sanitize":
             Sanitizer.showUI(window);
             break;

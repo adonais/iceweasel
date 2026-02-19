@@ -49,7 +49,7 @@ var makeDefaultCommands = () => {
 /**
  * This class handles tests for peer connections.
  *
- * @constructor
+ * @class
  * @param {object} [options={}]
  *        Optional options for the peer connection test
  * @param {object} [options.commands=commandsPeerConnection]
@@ -688,7 +688,7 @@ PeerConnectionTest.prototype.getSignalingMessage = function (messageType) {
  *
  * @param dataChannel
  * @param peerConnectionWrapper
- * @constructor
+ * @class
  */
 function DataChannelWrapper(dataChannel, peerConnectionWrapper) {
   this._channel = dataChannel;
@@ -848,7 +848,7 @@ DataChannelWrapper.prototype = {
 /**
  * This class acts as a wrapper around a PeerConnection instance.
  *
- * @constructor
+ * @class
  * @param {string} label
  *        Description for the peer connection instance
  * @param {object} configuration

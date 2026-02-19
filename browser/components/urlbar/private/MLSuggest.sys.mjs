@@ -14,8 +14,14 @@ const lazy = XPCOMUtils.declareLazy({
 });
 
 /**
- * @import {EngineRunRequest, EngineRunResponse, MLEntry} from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs"
- * @typedef {Parameters<typeof lazy.createEngine>[0]} MLEngineOptions
+ * @import {
+ *   EngineRequests,
+ *   EngineResponses,
+ *   EngineFeatureIds,
+ *   EngineCreateOptions,
+ *   EngineOptions
+ * } from "../../../../toolkit/components/ml/ml.d.ts"
+ * @import { MLEngine } from "resource://gre/actors/MLEngineParent.sys.mjs"
  * @typedef {Awaited<ReturnType<typeof lazy.createEngine>>} MLEngine
  */
 
@@ -33,37 +39,37 @@ const NAME_PUNCTUATION_EXCEPT_DOT = NAME_PUNCTUATION.filter(p => p !== ".");
  */
 class _MLSuggest {
   /**
-   * @type {Map<string, MLEngine>}
+   * @type {Partial<{ [K in EngineFeatureIds]: MLEngine<K> }>}
    */
-  #modelEngines = new Map();
+  #modelEngines = {};
 
   INTENT_OPTIONS = {
-    taskName: "text-classification",
-    featureId: "suggest-intent-classification",
+    taskName: /** @type {const} */ ("text-classification"),
+    featureId: /** @type {const} */ ("suggest-intent-classification"),
     timeoutMS: -1,
     numThreads: 2,
     backend: "onnx-native",
   };
 
   INTENT_OPTIONS_FALLBACK = {
-    taskName: "text-classification",
-    featureId: "suggest-intent-classification",
+    taskName: /** @type {const} */ ("text-classification"),
+    featureId: /** @type {const} */ ("suggest-intent-classification"),
     timeoutMS: -1,
     numThreads: 2,
     backend: "onnx",
   };
 
   NER_OPTIONS = {
-    taskName: "token-classification",
-    featureId: "suggest-NER",
+    taskName: /** @type {const} */ ("token-classification"),
+    featureId: /** @type {const} */ ("suggest-NER"),
     timeoutMS: -1,
     numThreads: 2,
     backend: "onnx-native",
   };
 
   NER_OPTIONS_FALLBACK = {
-    taskName: "token-classification",
-    featureId: "suggest-NER",
+    taskName: /** @type {const} */ ("token-classification"),
+    featureId: /** @type {const} */ ("suggest-NER"),
     timeoutMS: -1,
     numThreads: 2,
     backend: "onnx",
@@ -72,7 +78,9 @@ class _MLSuggest {
   /**
    * Helper to wrap createEngine for testing purposes.
    *
-   * @param {MLEngineOptions} options
+   * @template {EngineFeatureIds} FeatureId
+   *
+   * @param {EngineOptions<FeatureId>} options
    *   Configuration options for the ML engine.
    */
   createEngine(options) {
@@ -167,12 +175,12 @@ class _MLSuggest {
    * Shuts down all initialized engines.
    */
   async shutdown() {
-    for (const [key, engine] of this.#modelEngines.entries()) {
+    for (const [key, engine] of Object.entries(this.#modelEngines)) {
       try {
         await engine.terminate?.();
       } finally {
         // Remove each engine after termination
-        this.#modelEngines.delete(key);
+        delete this.#modelEngines[key];
       }
     }
   }
@@ -180,16 +188,19 @@ class _MLSuggest {
   /**
    * Initializes a engine model.
    *
-   * @param {MLEngineOptions} options
+   * @template {EngineFeatureIds} FeatureId
+   *
+   * @param {EngineCreateOptions[FeatureId]} options
    *   Configuration options for the ML engine.
-   * @param {MLEngineOptions} [fallbackOptions]
+   * @param {EngineCreateOptions[FeatureId]} [fallbackOptions]
    *   Fallback options if creating with the main options fails.
    */
   async #initializeModelEngine(options, fallbackOptions = null) {
+    /** @type {EngineFeatureIds} */
     const featureId = options.featureId;
 
     // uses cache if engine was used
-    let engine = this.#modelEngines.get(featureId);
+    let engine = this.#modelEngines[featureId];
     if (engine) {
       return engine;
     }
@@ -205,8 +216,9 @@ class _MLSuggest {
       }
     }
 
-    // Cache the engine
-    this.#modelEngines.set(featureId, engine);
+    // Cache the engine. Cast the featureId to "any" here since there's not an easy
+    // way to assert
+    this.#modelEngines[featureId] = /** @type {MLEngine<any>} */ (engine);
     return engine;
   }
 
@@ -216,18 +228,17 @@ class _MLSuggest {
    *
    * @param {string} query
    *   The user's input query.
-   * @param {Omit<EngineRunRequest, "args">} [options]
+   * @param {EngineRequests["suggest-intent-classification"]["options"]} [options]
    *   The options for the engine pipeline
    */
   async _findIntent(query, options = {}) {
-    const engineIntentClassifier = this.#modelEngines.get(
-      this.INTENT_OPTIONS.featureId
-    );
+    const engineIntentClassifier =
+      this.#modelEngines[this.INTENT_OPTIONS.featureId];
     if (!engineIntentClassifier) {
       return null;
     }
 
-    /** @type {EngineRunResponse} */
+    /** @type {Awaited<ReturnType<typeof engineIntentClassifier["run"]>>} */
     let res;
     try {
       res = await engineIntentClassifier.run({
@@ -237,7 +248,7 @@ class _MLSuggest {
     } catch (error) {
       // engine could timeout or fail, so remove that from cache
       // and reinitialize
-      this.#modelEngines.delete(this.INTENT_OPTIONS.featureId);
+      delete this.#modelEngines[this.INTENT_OPTIONS.featureId];
       this.#initializeModelEngine(
         this.INTENT_OPTIONS,
         this.INTENT_OPTIONS_FALLBACK
@@ -253,17 +264,17 @@ class _MLSuggest {
    *
    * @param {string} query
    *   The user's input query.
-   * @param {Omit<EngineRunRequest, "args">} options
+   * @param {EngineRequests["suggest-intent-classification"]["options"]} options
    *   The options for the engine pipeline
    */
   async _findNER(query, options = {}) {
-    const engineNER = this.#modelEngines.get(this.NER_OPTIONS.featureId);
+    const engineNER = this.#modelEngines[this.NER_OPTIONS.featureId];
     try {
       return engineNER?.run({ args: [query], options });
     } catch (error) {
       // engine could timeout or fail, so remove that from cache
       // and reinitialize
-      this.#modelEngines.delete(this.NER_OPTIONS.featureId);
+      delete this.#modelEngines[this.NER_OPTIONS.featureId];
       this.#initializeModelEngine(this.NER_OPTIONS, this.NER_OPTIONS_FALLBACK);
       return null;
     }
@@ -275,7 +286,7 @@ class _MLSuggest {
    * If the highest-scoring intent in the result exceeds the threshold, its label
    * is returned; otherwise, the label defaults to 'unknown'.
    *
-   * @param {EngineRunResponse} intentResult
+   * @param {EngineResponses["suggest-intent-classification"]} intentResult
    *   The result of the intent classification model, where each item includes
    *   a `label` and `score`.
    * @param {number} intentThreshold
@@ -300,7 +311,7 @@ class _MLSuggest {
    * - B-CITYSTATE, I-CITYSTATE: Identifies tokens that represent a combined
    *   city and state.
    *
-   * @param {EngineRunResponse} nerResult
+   * @param {EngineResponses["suggest-NER"]} nerResult
    *   The NER results containing tokens and their corresponding entity labels.
    * @param {number} nerThreshold
    *   The confidence threshold for including entities. Tokens with a confidence
@@ -357,7 +368,7 @@ class _MLSuggest {
    * - Handles punctuation tokens like ".", "-", or "'".
    * - Ensures continuity for entities split across multiple tokens.
    *
-   * @param {MLEntry} res
+   * @param {EngineResponses["suggest-NER"][number]} res
    *   The NER result token to process. Should include:
    *   - {string} word: The word or token from the NER output.
    *   - {number} score: The confidence score for the token.

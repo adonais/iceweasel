@@ -242,8 +242,13 @@ export class BackupUIParent extends JSWindowActorParent {
       return { success: true };
     } else if (message.name == "EnableEncryption") {
       try {
+        let wasEncrypted = this.#bs.state.encryptionEnabled;
         await this.#bs.enableEncryption(message.data.password);
-        Glean.browserBackup.passwordAdded.record();
+        if (wasEncrypted) {
+          Glean.browserBackup.passwordChanged.record();
+        } else {
+          Glean.browserBackup.passwordAdded.record();
+        }
       } catch (e) {
         lazy.logConsole.error(`Failed to enable encryption`, e);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
@@ -256,19 +261,6 @@ export class BackupUIParent extends JSWindowActorParent {
         Glean.browserBackup.passwordRemoved.record();
       } catch (e) {
         lazy.logConsole.error(`Failed to disable encryption`, e);
-        return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
-      }
-
-      return await this.#triggerCreateBackup({ reason: "encryption" });
-    } else if (message.name == "RerunEncryption") {
-      try {
-        let { password } = message.data;
-
-        await this.#bs.disableEncryption();
-        await this.#bs.enableEncryption(password);
-        Glean.browserBackup.passwordChanged.record();
-      } catch (e) {
-        lazy.logConsole.error(`Failed to rerun encryption`, e);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
       }
 

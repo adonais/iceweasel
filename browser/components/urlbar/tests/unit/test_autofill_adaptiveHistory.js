@@ -244,7 +244,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -307,7 +307,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.org/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.org/"),
+            title: UrlbarTestUtils.trimURL("http://example.org/"),
             heuristic: true,
           }),
         context =>
@@ -331,7 +331,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -936,7 +936,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -1001,7 +1001,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -1059,7 +1059,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/test",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/test"),
+            title: UrlbarTestUtils.trimURL("http://example.com/test"),
             heuristic: true,
           }),
         context =>
@@ -1128,7 +1128,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -1155,7 +1155,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -1179,7 +1179,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -1203,7 +1203,7 @@ const TEST_DATA = [
         context =>
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
         context =>
@@ -1249,7 +1249,12 @@ add_task(async function inputTest() {
     }
 
     if (visitHistory && visitHistory.length) {
-      await PlacesTestUtils.addVisits(visitHistory);
+      await PlacesTestUtils.addVisits(
+        visitHistory.map(url => ({
+          url,
+          transition: PlacesUtils.history.TRANSITION_TYPED,
+        }))
+      );
     }
     for (const { uri, input } of inputHistory) {
       await UrlbarUtils.addToInputHistory(uri, input);
@@ -1303,7 +1308,9 @@ add_task(async function urlCase() {
   const testVisitFixed = "example.com/ABC/DEF";
   const testVisitURL = `http://${testVisitFixed}`;
   const testInput = "example";
-  await PlacesTestUtils.addVisits([testVisitURL]);
+  await PlacesTestUtils.addVisits([
+    { url: testVisitURL, transition: PlacesUtils.history.TRANSITION_TYPED },
+  ]);
   await UrlbarUtils.addToInputHistory(testVisitURL, testInput);
 
   const userInput = "example.COM/abc/def";
@@ -1320,7 +1327,7 @@ add_task(async function urlCase() {
         matches: [
           makeVisitResult(context, {
             uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+            title: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
           makeVisitResult(context, {
@@ -1353,9 +1360,7 @@ add_task(async function urlCase() {
         matches: [
           makeVisitResult(context, {
             uri: "http://example.com/abc/def",
-            fallbackTitle: UrlbarTestUtils.trimURL(
-              "http://example.com/abc/def"
-            ),
+            title: UrlbarTestUtils.trimURL("http://example.com/abc/def"),
             heuristic: true,
           }),
           makeVisitResult(context, {
@@ -1374,7 +1379,12 @@ add_task(async function urlCase() {
 add_task(async function decayTest() {
   UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
 
-  await PlacesTestUtils.addVisits(["http://example.com/test"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "http://example.com/test",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   await UrlbarUtils.addToInputHistory("http://example.com/test", "exa");
 
   const initContext = createContext("exa", { isPrivate: false });
@@ -1428,7 +1438,7 @@ add_task(async function decayTest() {
     matches: [
       makeVisitResult(context, {
         uri: "http://example.com/",
-        fallbackTitle: UrlbarTestUtils.trimURL("http://example.com"),
+        title: UrlbarTestUtils.trimURL("http://example.com"),
         heuristic: true,
       }),
       makeVisitResult(context, {

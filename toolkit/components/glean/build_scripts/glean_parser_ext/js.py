@@ -167,9 +167,9 @@ def write_metrics(
         template_filename,
     )
 
-    assert (
-        INDEX_BITS + TYPE_BITS + ID_BITS <= ENTRY_WIDTH
-    ), "INDEX_BITS, TYPE_BITS, or ID_BITS are larger than allowed"
+    assert INDEX_BITS + TYPE_BITS + ID_BITS <= ENTRY_WIDTH, (
+        "INDEX_BITS, TYPE_BITS, or ID_BITS are larger than allowed"
+    )
 
     get_metric_id = generate_metric_ids(objs, options)
     # Mapping from a metric's identifier to the entry (metric ID | type id | index)
@@ -223,12 +223,12 @@ def write_metrics(
     # TODO: Merge the method here that creates the metric_type_ids dict with `type_ids_and_categories` in `util.py` - https://bugzilla.mozilla.org/show_bug.cgi?id=1999421
     other_type_ids = list(type_ids_and_categories(objs)[0].items())
     for i, v in enumerate(metric_type_ids):
-        assert (
-            v[1][1] == other_type_ids[i][0]
-        ), f"Metric {v[1][1]} is at index {i} in `glean_parser_ext/js.py`, but {other_type_ids[i][0]} is at that index in `glean_parser_ext/util.py`"
-        assert (
-            v[1][0] == other_type_ids[i][1]["id"]
-        ), f"Metric {v[1][1]} has type_id {v[1][0]} in `glean_parser_ext/js.py`, but its type_id in `glean_parser_ext/util.py` is {other_type_ids[i][1]['id']}"
+        assert v[1][1] == other_type_ids[i][0], (
+            f"Metric {v[1][1]} is at index {i} in `glean_parser_ext/js.py`, but {other_type_ids[i][0]} is at that index in `glean_parser_ext/util.py`"
+        )
+        assert v[1][0] == other_type_ids[i][1]["id"], (
+            f"Metric {v[1][1]} has type_id {v[1][0]} in `glean_parser_ext/js.py`, but its type_id in `glean_parser_ext/util.py` is {other_type_ids[i][1]['id']}"
+        )
 
     # Create a lookup table for the metric categories only
     category_string_table = category_string_table.writeToString("gCategoryStringTable")

@@ -7,8 +7,12 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
-  IPPProxyStates: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
+  IPPExceptionsManager:
+    "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs",
+  IPPProxyManager:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyStates:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "tabTracker", () => {
@@ -160,6 +164,25 @@ this.ippActivator = class extends ExtensionAPI {
             return { baseDomain, host };
           } catch (_) {
             return { baseDomain: "", host: "" };
+          }
+        },
+        hasExclusion(url) {
+          if (
+            !Services.prefs.getBoolPref(
+              "browser.ipProtection.features.siteExceptions",
+              false
+            )
+          ) {
+            return false;
+          }
+
+          try {
+            const uri = Services.io.newURI(url);
+            const principal =
+              Services.scriptSecurityManager.createContentPrincipal(uri, {});
+            return lazy.IPPExceptionsManager.hasExclusion(principal);
+          } catch (e) {
+            return false;
           }
         },
         async showMessage(message, tabId) {

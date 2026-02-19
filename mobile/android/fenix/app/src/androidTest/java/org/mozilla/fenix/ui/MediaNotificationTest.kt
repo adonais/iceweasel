@@ -50,10 +50,10 @@ class MediaNotificationTest : TestSetup() {
     fun verifyVideoPlaybackSystemNotificationTest() {
         val videoTestPage = mockWebServer.videoPageAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(videoTestPage.url) {
             mDevice.waitForIdle()
-            clickPageObject(MatcherHelper.itemWithText("Play"))
+            clickPageObject(composeTestRule, MatcherHelper.itemWithText("Play"))
             assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
         }.openNotificationShade {
             verifySystemNotificationExists(videoTestPage.title)
@@ -63,7 +63,7 @@ class MediaNotificationTest : TestSetup() {
 
         mDevice.pressBack()
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             assertPlaybackState(browserStore, MediaSession.PlaybackState.PAUSED)
         }.openTabDrawer(composeTestRule) {
             closeTab()
@@ -85,10 +85,10 @@ class MediaNotificationTest : TestSetup() {
     fun verifyAudioPlaybackSystemNotificationTest() {
         val audioTestPage = mockWebServer.audioPageAsset
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(audioTestPage.url) {
             mDevice.waitForIdle()
-            clickPageObject(MatcherHelper.itemWithText("Play"))
+            clickPageObject(composeTestRule, MatcherHelper.itemWithText("Play"))
             assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
         }.openNotificationShade {
             verifySystemNotificationExists(audioTestPage.title)
@@ -98,7 +98,7 @@ class MediaNotificationTest : TestSetup() {
 
         mDevice.pressBack()
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             assertPlaybackState(browserStore, MediaSession.PlaybackState.PAUSED)
         }.openTabDrawer(composeTestRule) {
             closeTab()
@@ -119,13 +119,13 @@ class MediaNotificationTest : TestSetup() {
     fun mediaSystemNotificationInPrivateModeTest() {
         val audioTestPage = mockWebServer.audioPageAsset
 
-        homeScreen {
-        }.openTabDrawer(composeTestRule) {
+        homeScreen(composeTestRule) {
+        }.openTabDrawer {
         }.toggleToPrivateTabs {
         }.openNewTab {
         }.submitQuery(audioTestPage.url.toString()) {
             mDevice.waitForIdle()
-            clickPageObject(MatcherHelper.itemWithText("Play"))
+            clickPageObject(composeTestRule, MatcherHelper.itemWithText("Play"))
             assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
         }.openNotificationShade {
             verifySystemNotificationExists("A site is playing media")
@@ -135,7 +135,7 @@ class MediaNotificationTest : TestSetup() {
 
         mDevice.pressBack()
 
-        browserScreen {
+        browserScreen(composeTestRule) {
             assertPlaybackState(browserStore, MediaSession.PlaybackState.PAUSED)
         }.openTabDrawer(composeTestRule) {
             closeTab()
@@ -150,6 +150,7 @@ class MediaNotificationTest : TestSetup() {
 
         // close notification shade before and go back to regular mode before the next test
         mDevice.pressBack()
-        homeScreen { }.togglePrivateBrowsingMode()
+        homeScreen(composeTestRule) {
+        }.togglePrivateBrowsingMode()
     }
 }

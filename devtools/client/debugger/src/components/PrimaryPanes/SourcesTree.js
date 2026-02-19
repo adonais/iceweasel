@@ -37,7 +37,7 @@ import actions from "../../actions/index";
 
 // Components
 import SourcesTreeItem from "./SourcesTreeItem";
-import AccessibleImage from "../shared/AccessibleImage";
+import DebuggerImage from "../shared/DebuggerImage";
 
 const classnames = require("resource://devtools/client/shared/classnames.js");
 const Tree = require("resource://devtools/client/shared/components/Tree.js");
@@ -261,8 +261,8 @@ class SourcesTree extends Component {
           onClick: () => this.props.clearProjectDirectoryRoot(),
           title: L10N.getFormatStr("removeDirectoryRoot.label"),
         },
-        React.createElement(AccessibleImage, {
-          className: "back",
+        React.createElement(DebuggerImage, {
+          name: "back",
         })
       ),
       div({ className: "devtools-separator" }),

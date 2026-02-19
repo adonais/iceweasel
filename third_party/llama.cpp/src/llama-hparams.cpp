@@ -2,6 +2,8 @@
 
 #include "ggml.h"
 
+#include <algorithm>
+
 void llama_hparams::set_swa_pattern(uint32_t n_pattern, bool dense_first) {
     if (dense_first) {
         for (uint32_t il = 0; il < n_layer; ++il) {

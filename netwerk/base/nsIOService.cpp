@@ -262,6 +262,7 @@ static const char* gCallbackPrefsForSocketProcess[] = {
     "network.lna.address_space.public.override",
     "network.lna.websocket.enabled",
     "network.lna.local-network-to-localhost.skip-checks",
+    "network.socket.forcePort",
     nullptr,
 };
 
@@ -333,8 +334,13 @@ nsresult nsIOService::Init() {
 
   InitializeNetworkLinkService();
   InitializeProtocolProxyService();
-
   SetOffline(false);
+
+  // This is just to start the DNS service to make it fast to get later.
+  // Don't invoke directly since we're already in GetService.  RefPtr needed
+  // because already_AddRefed<> doesn't like to be dropped
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      __func__, []() { RefPtr<nsIDNSService> dns = GetOrInitDNSService(); }));
 
   return NS_OK;
 }

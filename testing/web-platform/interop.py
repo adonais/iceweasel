@@ -252,11 +252,11 @@ def get_expected_failures(path: str) -> Mapping[str, set[Optional[str]]]:
                 continue
             if len(entry) > 2:
                 raise ValueError(
-                    f"{path}:{i+1} expected at most two columns, got {len(entry)}"
+                    f"{path}:{i + 1} expected at most two columns, got {len(entry)}"
                 )
             if entry[0][0] != "/":
                 raise ValueError(
-                    f'{path}:{i+1} "{entry[0]}" is not a valid test id (must start with "/")'
+                    f'{path}:{i + 1} "{entry[0]}" is not a valid test id (must start with "/")'
                 )
             test_id = entry[0]
             if test_id not in expected_failures:
@@ -265,7 +265,7 @@ def get_expected_failures(path: str) -> Mapping[str, set[Optional[str]]]:
                 subtest_id = entry[1]
                 if subtest_id == "":
                     print(
-                        f"Warning: {path}:{i+1} got empty string subtest id, remove the trailing comma to make this apply to the full test"
+                        f"Warning: {path}:{i + 1} got empty string subtest id, remove the trailing comma to make this apply to the full test"
                     )
                 expected_failures[test_id].add(subtest_id)
             else:

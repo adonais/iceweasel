@@ -52,6 +52,8 @@
                 message:(id)message
                callback:(id<EventCallback>)callback;
 - (BOOL)hasListener:(NSString*)type;
+// Called when GeckoView is ready to receive dispatched events from Swift.
+- (void)activate;
 @end
 
 @protocol GeckoViewWindow <NSObject>

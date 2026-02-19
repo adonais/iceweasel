@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -171,9 +172,11 @@ class BrowserToolbarCFRPresenter(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_cookies_disabled),
                                 contentDescription = null,
-                                tint = FirefoxTheme.colors.iconPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
+
                             Spacer(modifier = Modifier.width(8.dp))
+
                             Text(
                                 text = context.getString(
                                     R.string.cookie_banner_cfr_title,

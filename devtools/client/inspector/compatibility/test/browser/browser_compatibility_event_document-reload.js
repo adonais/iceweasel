@@ -13,7 +13,7 @@ const TEST_URI = `
     user-modify: read-only;
   }
   div {
-    scrollbar-color: auto;
+    user-select: auto;
   }
   </style>
   <body>
@@ -35,8 +35,8 @@ const TEST_DATA_SELECTED = [
 const TEST_DATA_ALL = [
   ...TEST_DATA_SELECTED,
   {
-    property: "scrollbar-color",
-    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
+    property: "user-select",
+    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select",
   },
 ];
 

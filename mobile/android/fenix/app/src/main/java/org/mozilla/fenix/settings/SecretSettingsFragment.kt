@@ -110,6 +110,24 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                             }
                         }
                     }
+                    requirePreference<SwitchPreference>(
+                        R.string.pref_key_use_minimal_bottom_toolbar_while_entering_text,
+                    ).apply {
+                        isEnabled = newOption
+                        when (newOption) {
+                            true -> {
+                                summary = null
+                            }
+
+                            false -> {
+                                isEnabled = context.settings().shouldUseComposableToolbar
+                                summary = when (context.settings().shouldUseComposableToolbar) {
+                                    true -> null
+                                    false -> getString(R.string.preferences_debug_settings_toolbar_redesign_summary)
+                                }
+                            }
+                        }
+                    }
                 }
                 true
             }
@@ -152,6 +170,17 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                 }
                 true
             }
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_use_minimal_bottom_toolbar_while_entering_text).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isEnabled = context.settings().shouldUseComposableToolbar
+            isChecked = context.settings().shouldUseMinimalBottomToolbarWhenEnteringText
+            summary = when (context.settings().shouldUseComposableToolbar) {
+                true -> null
+                false -> getString(R.string.preferences_debug_settings_toolbar_redesign_summary)
+            }
+            onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_use_scroll_data_for_dynamic_toolbar).apply {
@@ -218,6 +247,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_enable_homepage_as_new_tab).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableHomepageAsNewTab
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_firefox_labs).apply {
+            isChecked = context.settings().enableFirefoxLabs
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -411,6 +445,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreference>(R.string.pref_key_terms_latest_date).apply {
+            isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
+            isChecked = context.settings().isTermsOfUsePublishedDebugDateEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreference>(R.string.pref_key_debug_terms_trigger_time).apply {
             isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
             isChecked = context.settings().isDebugTermsOfServiceTriggerTimeEnabled
@@ -432,6 +472,17 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_enable_relay_email_masks).apply {
             isVisible = Config.channel.isDebug
             isChecked = context.settings().isRelayFeatureEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_persistent_onboarding).apply {
+            isChecked = context.settings().enablePersistentOnboarding
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_tab_search).apply {
+            isVisible = true
+            isChecked = context.settings().tabSearchEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }

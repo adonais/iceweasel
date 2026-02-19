@@ -17,7 +17,7 @@ const TEST_URL =
  *
  * @param {number} aButtonIndex Number indicating which button to click.
  *                              See the constants in this file.
- * @note modified from toolkit/components/passwordmgr/test/browser/head.js
+ * Note: modified from toolkit/components/passwordmgr/test/browser/head.js
  */
 function clickDoorhangerButton(aButtonIndex, browser) {
   let popup = PopupNotifications.getNotification("web-notifications", browser);

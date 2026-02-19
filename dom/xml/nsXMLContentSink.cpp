@@ -69,10 +69,6 @@ using namespace mozilla::dom;
 // 1) what's not allowed - We need to figure out which HTML tags
 //    (prefixed with a HTML namespace qualifier) are explicitly not
 //    allowed (if any).
-// 2) factoring code with nsHTMLContentSink - There's some amount of
-//    common code between this and the HTML content sink. This will
-//    increase as we support more and more HTML elements. How can code
-//    from the code be factored?
 
 nsresult NS_NewXMLContentSink(nsIXMLContentSink** aResult, Document* aDoc,
                               nsIURI* aURI, nsISupports* aContainer,
@@ -152,7 +148,7 @@ NS_IMETHODIMP
 nsXMLContentSink::WillParse(void) { return WillParseImpl(); }
 
 NS_IMETHODIMP
-nsXMLContentSink::WillBuildModel(nsDTDMode aDTDMode) {
+nsXMLContentSink::WillBuildModel() {
   WillBuildModelImpl();
 
   // Notify document that the load is beginning
@@ -646,17 +642,12 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
 
     // Now tell the script that it's ready to go. This may execute the script
     // or return true, or neither if the script doesn't need executing.
-    bool block = sele->AttemptToExecute();
-    if (mParser) {
-      if (block) {
-        GetParser()->BlockParser();
-      }
+    bool block = sele->AttemptToExecute(GetParser());
 
-      // If the parser got blocked, make sure to return the appropriate rv.
-      // I'm not sure if this is actually needed or not.
-      if (!mParser->IsParserEnabled()) {
-        block = true;
-      }
+    // If the parser got blocked, make sure to return the appropriate rv.
+    // I'm not sure if this is actually needed or not.
+    if (mParser && !mParser->IsParserEnabled()) {
+      block = true;
     }
 
     return block ? NS_ERROR_HTMLPARSER_BLOCK : NS_OK;

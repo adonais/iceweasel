@@ -32,7 +32,6 @@
 }
 
 .discoverystream-admin {
-  $border-color: var(--newtab-border-color);
   $monospace: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono',
     'Source Code Pro', monospace;
 
@@ -82,7 +81,7 @@
 
     &.minimal-table {
       border-collapse: collapse;
-      border: 1px solid $border-color;
+      border: 1px solid var(--border-color);
 
       td {
         padding: var(--space-small);
@@ -120,13 +119,13 @@
 
   .message-item {
     &:first-child td {
-      border-top: 1px solid $border-color;
+      border-block-start: 1px solid var(--border-color);
     }
 
     td {
       vertical-align: top;
       padding: var(--space-small);
-      border-bottom: 1px solid $border-color;
+      border-block-end: 1px solid var(--border-color);
 
       &.min {
         width: 1%;
@@ -142,11 +141,11 @@
       }
 
       &:first-child {
-        border-inline-start: 1px solid $border-color;
+        border-inline-start: 1px solid var(--border-color);
       }
 
       &:last-child {
-        border-inline-end: 1px solid $border-color;
+        border-inline-end: 1px solid var(--border-color);
       }
     }
 

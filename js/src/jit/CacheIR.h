@@ -81,6 +81,8 @@ class ValOperandId : public OperandId {
  public:
   ValOperandId() = default;
   explicit ValOperandId(uint16_t id) : OperandId(id) {}
+
+  bool operator==(const ValOperandId& other) const { return id_ == other.id_; }
 };
 
 class ValueTagOperandId : public OperandId {
@@ -239,6 +241,7 @@ class StubField {
     // These fields take up a single word.
     RawInt32,
     RawPointer,
+    ICScript,
     Shape,
     WeakShape,
     JSObject,
@@ -312,6 +315,8 @@ inline const char* StubFieldTypeName(StubField::Type ty) {
       return "RawInt32";
     case StubField::Type::RawPointer:
       return "RawPointer";
+    case StubField::Type::ICScript:
+      return "ICScript";
     case StubField::Type::Shape:
       return "Shape";
     case StubField::Type::WeakShape:

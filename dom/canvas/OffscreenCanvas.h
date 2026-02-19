@@ -175,6 +175,9 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
  private:
   ~OffscreenCanvas();
 
+  void RecordCanvasUsage(CanvasExtractionAPI aExtractionAPI,
+                         CanvasUtils::ImageExtraction aExtractionBehaviour);
+
   already_AddRefed<EncodeCompleteCallback> CreateEncodeCompleteCallback(
       Promise* aPromise);
 

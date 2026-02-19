@@ -144,12 +144,6 @@ SpeculativeConnectionOverrider::GetParallelSpeculativeConnectLimit(
 }
 
 NS_IMETHODIMP
-SpeculativeConnectionOverrider::GetIsFromPredictor(bool* aIsFromPredictor) {
-  *aIsFromPredictor = mArgs.isFromPredictor();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 SpeculativeConnectionOverrider::GetAllow1918(bool* aAllow) {
   *aAllow = mArgs.allow1918();
   return NS_OK;

@@ -46,10 +46,12 @@ class HTMLEditor;
 class ObservedDocShell;
 class ScrollContainerFrame;
 enum class TaskCategory;
+class PresShell;
 namespace dom {
 class ClientInfo;
 class ClientSource;
 class EventTarget;
+class WindowGlobalChild;
 enum class NavigationHistoryBehavior : uint8_t;
 struct NavigationAPIMethodTracker;
 class SessionHistoryInfo;
@@ -76,6 +78,7 @@ class nsIURILoader;
 class nsIWebBrowserFind;
 class nsIWidget;
 class nsIReferrerInfo;
+class nsIOpenWindowInfo;
 
 class nsBrowserStatusFilter;
 class nsCommandManager;
@@ -187,7 +190,13 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::BrowsingContext* aBrowsingContext,
       uint64_t aContentWindowID = 0);
 
-  bool Initialize();
+  bool Initialize(nsIOpenWindowInfo* aOpenWindowInfo,
+                  mozilla::dom::WindowGlobalChild* aWindowActor);
+
+  nsresult InitWindow(nsIWidget* aParentWidget, int32_t aX, int32_t aY,
+                      int32_t aWidth, int32_t aHeight,
+                      nsIOpenWindowInfo* aOpenWindowInfo,
+                      mozilla::dom::WindowGlobalChild* aWindowActor);
 
   NS_IMETHOD Stop() override {
     // Need this here because otherwise nsIWebNavigation::Stop
@@ -400,7 +409,8 @@ class nsDocShell final : public nsDocLoader,
   /**
    * Loads the given URI. See comments on nsDocShellLoadState members for more
    * information on information used.
-   * `aCacheKey` gets passed to DoURILoad call.
+   *
+   * @param aCacheKey gets passed to DoURILoad call.
    */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult InternalLoad(
@@ -413,11 +423,6 @@ class nsDocShell final : public nsDocLoader,
 
   void SetWillChangeProcess() { mWillChangeProcess = true; }
   bool WillChangeProcess() { return mWillChangeProcess; }
-
-  // Create a content viewer within this nsDocShell for the given
-  // `WindowGlobalChild` actor.
-  nsresult CreateDocumentViewerForActor(
-      mozilla::dom::WindowGlobalChild* aWindowActor);
 
   // Creates a real network channel (not a DocumentChannel) using the specified
   // parameters.
@@ -576,8 +581,16 @@ class nsDocShell final : public nsDocLoader,
   // Content Viewer Management
   //
 
-  nsresult EnsureDocumentViewer();
+  // Return whether a viewer exists and assert that we aren't
+  // trying to get a viewer before it's eager creation during docshell
+  // initialization.
+  bool VerifyDocumentViewer();
+
   void DestroyDocumentViewer();
+
+  nsresult CreateInitialDocumentViewer(
+      nsIOpenWindowInfo* aOpenWindowInfo = nullptr,
+      mozilla::dom::WindowGlobalChild* aWindowActor = nullptr);
 
   // aPrincipal can be passed in if the caller wants. If null is
   // passed in, the about:blank principal will end up being used.
@@ -664,9 +677,14 @@ class nsDocShell final : public nsDocLoader,
       bool aNotifiedBeforeUnloadListeners = false);
 
  public:
-  bool IsAboutBlankLoadOntoInitialAboutBlank(nsIURI* aURI,
-                                             bool aInheritPrincipal,
-                                             nsIPrincipal* aPrincipalToInherit);
+  bool ShouldDoInitialAboutBlankSyncLoad(nsIURI* aURI,
+                                         nsDocShellLoadState* aLoadState,
+                                         nsIPrincipal* aPrincipalToInherit);
+
+  void UnsuppressPaintingIfNoNavigationAwayFromAboutBlank(
+      mozilla::PresShell* aPresShell);
+
+  bool HasStartedLoadingOtherThanInitialBlankURI();
 
  private:
   //
@@ -706,6 +724,9 @@ class nsDocShell final : public nsDocLoader,
   //         but the operation fails. NS_OK otherwise.
   MOZ_CAN_RUN_SCRIPT nsresult PerformTrustedTypesPreNavigationCheck(
       nsDocShellLoadState* aLoadState, nsGlobalWindowInner* aWindow) const;
+
+  nsresult CompleteInitialAboutBlankLoad(nsDocShellLoadState* aLoadState,
+                                         nsILoadInfo* aLoadInfo);
 
   static nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                       nsIChannel* aChannel);
@@ -950,6 +971,10 @@ class nsDocShell final : public nsDocLoader,
   // In these cases the initial about:blank will appear to not exist until
   // its real document and window are created.
   void MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal = nullptr);
+
+  // Try to inherit the controller from same-origin parent.
+  void MaybeInheritController(mozilla::dom::ClientSource* aClientSource,
+                              nsIPrincipal* aPrincipal);
 
   // Determine if a service worker is allowed to control a window in this
   // docshell with the given URL.  If there are any reasons it should not,
@@ -1420,7 +1445,12 @@ class nsDocShell final : public nsDocLoader,
   bool mSavingOldViewer : 1;
 
   bool mInvisible : 1;
+
+  // There has been an OnStartRequest for a non-about:blank URI
   bool mHasLoadedNonBlankURI : 1;
+
+  // There has been a DoURILoad that wasn't the initial commit to about:blank
+  bool mHasStartedLoadingOtherThanInitialBlankURI : 1;
 
   // This flag means that mTiming has been initialized but nulled out.
   // We will check the innerWin's timing before creating a new one

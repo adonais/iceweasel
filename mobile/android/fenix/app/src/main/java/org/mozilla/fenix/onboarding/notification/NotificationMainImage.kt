@@ -20,7 +20,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @Composable
 fun NotificationMainImage() {
     Image(
-        painter = painterResource(R.drawable.ic_notification_permission),
+        painter = painterResource(R.drawable.nova_onboarding_notifications),
         contentDescription = null, // Decorative only
     )
 }

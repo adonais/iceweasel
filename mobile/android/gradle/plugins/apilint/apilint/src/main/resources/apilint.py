@@ -449,9 +449,12 @@ class Class:
         self.name = self.fullname[self.fullname.rindex(".") + 1 :]
 
     def __hash__(self):
-        return hash(
-            (self.raw, tuple(self.ctors), tuple(self.fields), tuple(self.methods))
-        )
+        return hash((
+            self.raw,
+            tuple(self.ctors),
+            tuple(self.fields),
+            tuple(self.methods),
+        ))
 
     def __repr__(self):
         return self.raw
@@ -594,7 +597,6 @@ failures = {}
 
 def _fail(clazz, detail, error, rule, msg):
     """Records an API failure to be processed later."""
-    global failures
 
     sig = "%s-%s-%s" % (clazz.fullname, repr(detail), msg)
     sig = sig.replace(" deprecated ", " ")
@@ -614,7 +616,6 @@ noticed = {}
 
 
 def notice(clazz):
-    global noticed
 
     noticed[clazz.fullname] = clazz
 
@@ -765,7 +766,7 @@ def verify_actions(clazz):
             continue
         if f.name.startswith("EXTRA_"):
             continue
-        if f.name == "SERVICE_INTERFACE" or f.name == "PROVIDER_INTERFACE":
+        if f.name in {"SERVICE_INTERFACE", "PROVIDER_INTERFACE"}:
             continue
         if "INTERACTION" in f.name:
             continue
@@ -789,10 +790,10 @@ def verify_actions(clazz):
                         prefix = "android.intent.action"
                     elif clazz.fullname == "android.provider.Settings":
                         prefix = "android.settings"
-                    elif (
-                        clazz.fullname == "android.app.admin.DevicePolicyManager"
-                        or clazz.fullname == "android.app.admin.DeviceAdminReceiver"
-                    ):
+                    elif clazz.fullname in {
+                        "android.app.admin.DevicePolicyManager",
+                        "android.app.admin.DeviceAdminReceiver",
+                    }:
                         prefix = "android.app.action"
                     else:
                         prefix = clazz.pkg.name + ".action"
@@ -1263,9 +1264,8 @@ def verify_layering(clazz):
                 for j in ranking[i]:
                     if p.startswith(j):
                         return i
-            else:
-                if p.startswith(ranking[i]):
-                    return i
+            elif p.startswith(ranking[i]):
+                return i
 
     cr = rank(clazz.pkg.name)
     if cr is None:
@@ -1770,12 +1770,12 @@ def verify_files(clazz):
         for a in m.args:
             if "java.io.File" == a.typ:
                 has_file.add(m)
-            if (
-                "java.io.FileDescriptor" == a.typ
-                or "android.os.ParcelFileDescriptor" == a.typ
-                or "java.io.InputStream" == a.typ
-                or "java.io.OutputStream" == a.typ
-            ):
+            if a.typ in {
+                "java.io.FileDescriptor",
+                "android.os.ParcelFileDescriptor",
+                "java.io.InputStream",
+                "java.io.OutputStream",
+            }:
                 has_stream.add(m.name)
 
     for m in has_file:
@@ -2301,10 +2301,10 @@ def verify_deprecated_annotations(clazz):
 
     def is_deprecated(subject):
         for a in subject.annotations:
-            if (
-                a.typ.name == DEPRECATED_ANNOTATION
-                or a.typ.name == DEPRECATION_SCHEDULE_ANNOTATION
-            ):
+            if a.typ.name in {
+                DEPRECATED_ANNOTATION,
+                DEPRECATION_SCHEDULE_ANNOTATION,
+            }:
                 return True
         return False
 
@@ -2631,7 +2631,6 @@ def verify_compat(cur, prev):
 
 def show_deprecations_at_birth(cur, prev):
     """Show API deprecations at birth."""
-    global failures
 
     # Remove all existing things so we're left with new
     for prev_clazz in prev.values():

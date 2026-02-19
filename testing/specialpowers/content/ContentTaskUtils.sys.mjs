@@ -141,12 +141,11 @@ export var ContentTaskUtils = {
    *        listening should continue. If not specified, the first event with
    *        the specified name resolves the returned promise.
    *
-   * @note Because this function is intended for testing, any error in checkFn
+   * Note: Because this function is intended for testing, any error in checkFn
    *       will cause the returned promise to be rejected instead of waiting for
    *       the next event, since this is probably a bug in the test.
    *
-   * @returns {Promise}
-   * @resolves The Event object.
+   * @returns {Promise<Event>}
    */
   waitForEvent(subject, eventName, capture, checkFn, wantsUntrusted = false) {
     return new Promise((resolve, reject) => {

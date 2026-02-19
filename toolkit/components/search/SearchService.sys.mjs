@@ -2671,7 +2671,7 @@ export class SearchService {
     if (!skipDuplicateCheck && this.#getEngineByName(engine.name)) {
       throw Components.Exception(
         `#addEngineToStore: An engine called ${engine.name} already exists!`,
-        Cr.NS_ERROR_FILE_ALREADY_EXISTS
+        Ci.nsISearchService.ERROR_DUPLICATE_ENGINE
       );
     }
 

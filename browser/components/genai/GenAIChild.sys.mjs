@@ -28,6 +28,11 @@ export class GenAIChild extends JSWindowActorChild {
   debounceDelay = 200;
   pendingHide = false;
 
+  /**
+   * A flag that gets set when this actor is destroyed.
+   */
+  #isDestroyed = false;
+
   registerHideEvents() {
     this.document.addEventListener("selectionchange", this);
     HIDE_EVENTS.forEach(ev =>
@@ -79,6 +84,10 @@ export class GenAIChild extends JSWindowActorChild {
         const { screenX, screenY } = event;
 
         this.mouseUpTimeout = this.contentWindow.setTimeout(() => {
+          if (this.#isDestroyed) {
+            return;
+          }
+
           const selectionInfo = this.getSelectionInfo();
           const delay = event.timeStamp - this.downTimeStamp;
 
@@ -276,5 +285,9 @@ export class GenAIChild extends JSWindowActorChild {
         // Replace duplicate whitespace with either a single newline or space
         .replace(/(\s*\n\s*)|\s{2,}/g, (_, newline) => (newline ? "\n" : " ")),
     };
+  }
+
+  didDestroy() {
+    this.#isDestroyed = true;
   }
 }

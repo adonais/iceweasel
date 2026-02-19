@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/resources/testdriver.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
+<input type="color" id="input" value="#ffffff">
+<script>
+promise_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.forms.html_color_picker.enabled", true],
+      // The pref sets `color(srgb 0.1 0.2 0.3)` on showPicker
+      ["dom.forms.html_color_picker.testing", true],
+    ]
+  });
+});
+
+promise_test(async () => {
+  await test_driver.bless();
+  input.showPicker();
+
+  const { promise, resolve } = Promise.withResolvers();
+  input.addEventListener("change", resolve, { once: true });
+  await promise;
+
+  assert_equals(input.value, "#1a334d", "HTML compatibility serialization should happen");
+}, "Input picker value without alpha nor colorspace attributes");
+</script>

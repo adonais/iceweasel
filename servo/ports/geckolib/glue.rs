@@ -25,6 +25,7 @@ use std::fmt::Write;
 use std::iter;
 use std::os::raw::c_void;
 use std::ptr;
+use std::sync::LazyLock;
 use style::color::mix::ColorInterpolationMethod;
 use style::color::{AbsoluteColor, ColorComponents, ColorSpace};
 use style::computed_value_flags::ComputedValueFlags;
@@ -226,7 +227,7 @@ pub unsafe extern "C" fn Servo_Initialize(
     thread_state::initialize(thread_state::ThreadState::LAYOUT);
 
     debug_assert!(is_main_thread());
-    lazy_static::initialize(&STYLE_THREAD_POOL);
+    LazyLock::force(&STYLE_THREAD_POOL);
 
     // Perform some debug-only runtime assertions.
     origin_flags::assert_flags_match();
@@ -5878,6 +5879,23 @@ pub extern "C" fn Servo_DeclarationBlock_PropertyIsSet(
         decls.contains(PropertyDeclarationId::Longhand(get_longhand_from_id!(
             property
         )))
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_DeclarationBlock_HasLonghandProperty(
+    declarations: &LockedDeclarationBlock,
+    property: &nsACString,
+) -> bool {
+    read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
+        let prop_name = property.as_str_unchecked();
+        if let Ok(property_id) = PropertyId::parse_unchecked(prop_name, None) {
+            if let Err(longhand_or_custom) = property_id.as_shorthand() {
+                return decls.contains(longhand_or_custom);
+            }
+        }
+
+        false
     })
 }
 

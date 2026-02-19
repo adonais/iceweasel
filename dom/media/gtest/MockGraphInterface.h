@@ -4,6 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef MOCK_GRAPH_INTERFACE_H_
+#define MOCK_GRAPH_INTERFACE_H_
+
 #include <tuple>
 
 #include "GraphDriver.h"
@@ -95,3 +98,5 @@ class MockGraphInterface : public GraphInterface {
 };
 
 }  // namespace mozilla
+
+#endif

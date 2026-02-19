@@ -12,6 +12,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentPictureInPicture.h"
 #include "mozilla/dom/UserActivationIPCUtils.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/PermissionDelegateIPCUtils.h"
@@ -614,6 +615,44 @@ bool WindowContext::HasValidTransientUserGestureActivation() {
          (TimeStamp::Now() - mLastActivationTimestamp) <= timeout;
 }
 
+template <typename F>
+static void ConsumeUserGestureActivationBetweenPiP(BrowsingContext* aTop,
+                                                   F&& aCallback) {
+  // https://wicg.github.io/document-picture-in-picture/#user-activation-propagation
+  // Monkey patch to consume user activation
+  if (aTop->GetIsDocumentPiP()) {
+    // 4. If top is a PIP window, then extend navigables with the opener
+    // window's inclusive decendant navigables
+    RefPtr<BrowsingContext> opener = aTop->GetOpener();
+    if (!opener) {
+      return;
+    }
+    opener->GetBrowsingContext()->PreOrderWalk(aCallback);
+  } else {
+    // 5. Get top-level navigable's last opened PiP window
+    nsPIDOMWindowOuter* outer = aTop->GetDOMWindow();
+    NS_ENSURE_TRUE_VOID(outer);
+    nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
+    NS_ENSURE_TRUE_VOID(inner);
+    DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
+    if (!dpip) {
+      return;
+    }
+    nsGlobalWindowInner* pip = dpip->GetWindow();
+    if (!pip) {
+      return;
+    }
+
+    // 6. Extend navigables with the inclusive descendant navigables of the PIP
+    // window.
+    BrowsingContext* pipBC = pip->GetBrowsingContext();
+    NS_ENSURE_TRUE_VOID(pipBC);
+    WindowContext* pipWC = pipBC->GetCurrentWindowContext();
+    NS_ENSURE_TRUE_VOID(pipWC);
+    pipBC->PreOrderWalk(aCallback);
+  }
+}
+
 // https://html.spec.whatwg.org/#consume-user-activation
 bool WindowContext::ConsumeTransientUserGestureActivation() {
   MOZ_ASSERT(IsInProcess());
@@ -631,7 +670,7 @@ bool WindowContext::ConsumeTransientUserGestureActivation() {
 
   // 3. Let navigables be the inclusive descendant navigables of top's active
   // document.
-  top->PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+  auto callback = [&](BrowsingContext* aBrowsingContext) {
     // 4. Let windows be the list of Window objects constructed by taking the
     // active window of each item in navigables.
     WindowContext* windowContext = aBrowsingContext->GetCurrentWindowContext();
@@ -650,7 +689,10 @@ bool WindowContext::ConsumeTransientUserGestureActivation() {
       (void)windowContext->SetUserActivationStateAndModifiers(
           stateAndModifiers.GetRawData());
     }
-  });
+  };
+  top->PreOrderWalk(callback);
+
+  ConsumeUserGestureActivationBetweenPiP(top, callback);
 
   return true;
 }
@@ -804,6 +846,10 @@ bool ParamTraits<MaybeDiscarded<WindowContext>>::Read(
   if (id == 0) {
     *aResult = nullptr;
   } else if (RefPtr<WindowContext> wc = WindowContext::GetById(id)) {
+    if (!wc->Group()->IsKnownForMessageReader(aReader)) {
+      return false;
+    }
+
     *aResult = std::move(wc);
   } else {
     aResult->SetDiscarded(id);

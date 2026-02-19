@@ -337,6 +337,7 @@ mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
   RefPtr<gfx::DataSourceSurface> dataSurface = snapshot->GetDataSurface();
   *out_imageSize = dataSurface->GetSize();
 
+  nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     gfxUtils::GetImageBufferWithRandomNoise(dataSurface,
                                             /* aIsAlphaPremultiplied */ true,
@@ -360,6 +361,7 @@ NS_IMETHODIMP CanvasContext::GetInputStream(
 
   RefPtr<gfx::DataSourceSurface> dataSurface = snapshot->GetDataSurface();
 
+  nsRFPService::PotentiallyDumpImage(PrincipalOrNull(), dataSurface);
   if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
     return gfxUtils::GetInputStreamWithRandomNoise(
         dataSurface, /* aIsAlphaPremultiplied */ true, aMimeType,

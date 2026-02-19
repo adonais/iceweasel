@@ -353,12 +353,6 @@ function TimePicker(context) {
      */
     handleMessage(event) {
       switch (event.data.name) {
-        case "PickerSetValue": {
-          if (!this.context.hidden) {
-            this.set(event.data.detail);
-          }
-          break;
-        }
         case "PickerInit": {
           this.init(event.data.detail);
           break;
@@ -422,28 +416,6 @@ function TimePicker(context) {
         btn.setAttribute("id", id);
         document.l10n.setAttributes(btn, l10nId);
       }
-    },
-
-    /**
-     * Set the time state and update the components with the new state.
-     *
-     * @param {object} timeState
-     *        {
-     *          {Number} hour [optional]
-     *          {Number} minute [optional]
-     *          {Number} second [optional]
-     *          {Number} millisecond [optional]
-     *        }
-     */
-    set(timeState) {
-      if (timeState.hour != undefined) {
-        this.state.isHourSet = true;
-      }
-      if (timeState.minute != undefined) {
-        this.state.isMinuteSet = true;
-      }
-      this.state.timeKeeper.setState(timeState);
-      this._setComponentStates();
     },
   };
 }

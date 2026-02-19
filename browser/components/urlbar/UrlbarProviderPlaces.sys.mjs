@@ -274,7 +274,7 @@ function convertLegacyMatches(context, matches, urls) {
       continue;
     }
     urls.add(makeMapKeyForResult(url, match));
-    let result = makeUrlbarResult(context.tokens, {
+    let result = makeUrlbarResult(context, {
       url,
       // `match.icon` is an empty string if there is no icon. Use undefined
       // instead so that tests can be simplified by not including `icon: ""` in
@@ -300,8 +300,7 @@ function convertLegacyMatches(context, matches, urls) {
 /**
  * Creates a new UrlbarResult from the provided data.
  *
- * @param {UrlbarSearchStringTokenData[]} tokens
- *   The search tokens.
+ * @param {UrlbarQueryContext} queryContext
  * @param {object} info
  * @param {string} info.url
  * @param {string} info.title
@@ -312,7 +311,7 @@ function convertLegacyMatches(context, matches, urls) {
  * @param {number} info.frecency
  * @param {string} info.style
  */
-function makeUrlbarResult(tokens, info) {
+function makeUrlbarResult(queryContext, info) {
   let action = lazy.PlacesUtils.parseActionUrl(info.url);
   if (action) {
     switch (action.type) {
@@ -321,42 +320,42 @@ function makeUrlbarResult(tokens, info) {
         return new lazy.UrlbarResult({
           type: UrlbarUtils.RESULT_TYPE.SEARCH,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-          ...lazy.UrlbarResult.payloadAndSimpleHighlights(tokens, {
+          payload: {
             engine: action.params.engineName,
             isBlockable: true,
             blockL10n: { id: "urlbar-result-menu-remove-from-history" },
             helpUrl:
               Services.urlFormatter.formatURLPref("app.support.baseURL") +
               "awesome-bar-result-menu",
-            suggestion: [
-              action.params.searchSuggestion,
-              UrlbarUtils.HIGHLIGHT.SUGGESTED,
-            ],
+            suggestion: action.params.searchSuggestion,
+            title: action.params.searchSuggestion,
             lowerCaseSuggestion:
               action.params.searchSuggestion.toLocaleLowerCase(),
-          }),
+          },
+          highlights: {
+            suggestion: UrlbarUtils.HIGHLIGHT.SUGGESTED,
+          },
         });
       case "switchtab": {
-        let payloadAndHighlights = lazy.UrlbarResult.payloadAndSimpleHighlights(
-          tokens,
-          {
-            url: [action.params.url, UrlbarUtils.HIGHLIGHT.TYPED],
-            title: [info.title, UrlbarUtils.HIGHLIGHT.TYPED],
+        return new lazy.UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          payload: {
+            url: action.params.url,
+            title: info.title,
             icon: info.icon,
             userContextId: info.userContextId,
             lastVisit: info.lastVisit,
             tabGroup: info.tabGroup,
             frecency: info.frecency,
-          }
-        );
-        if (lazy.UrlbarPrefs.get("secondaryActions.switchToTab")) {
-          payloadAndHighlights.payload.action =
-            UrlbarUtils.createTabSwitchSecondaryAction(info.userContextId);
-        }
-        return new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-          source: UrlbarUtils.RESULT_SOURCE.TABS,
-          ...payloadAndHighlights,
+            action: lazy.UrlbarPrefs.get("secondaryActions.switchToTab")
+              ? UrlbarUtils.createTabSwitchSecondaryAction(info.userContextId)
+              : undefined,
+          },
+          highlights: {
+            url: UrlbarUtils.HIGHLIGHT.TYPED,
+            title: UrlbarUtils.HIGHLIGHT.TYPED,
+          },
         });
       }
       default:
@@ -404,24 +403,39 @@ function makeUrlbarResult(tokens, info) {
     // We should also just include tags that match the searchString.
     tags = titleTags.split(",").filter(tag => {
       let lowerCaseTag = tag.toLocaleLowerCase();
-      return tokens.some(token => lowerCaseTag.includes(token.lowerCaseValue));
+      return queryContext.tokens.some(token =>
+        lowerCaseTag.includes(token.lowerCaseValue)
+      );
     });
+  }
+
+  if (!title && info.url) {
+    try {
+      // If there's no title, show the domain as the title. Not all valid URLs
+      // have a domain.
+      title = new URL(info.url).URI.displayHostPort;
+    } catch (e) {}
   }
 
   return new lazy.UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.URL,
     source,
-    ...lazy.UrlbarResult.payloadAndSimpleHighlights(tokens, {
-      url: [info.url, UrlbarUtils.HIGHLIGHT.TYPED],
+    payload: {
+      url: info.url,
       icon: info.icon,
-      title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
-      tags: [tags, UrlbarUtils.HIGHLIGHT.TYPED],
+      title,
+      tags,
       isBlockable,
       blockL10n,
       helpUrl,
       lastVisit: info.lastVisit,
       frecency: info.frecency,
-    }),
+    },
+    highlights: {
+      url: UrlbarUtils.HIGHLIGHT.TYPED,
+      title: UrlbarUtils.HIGHLIGHT.TYPED,
+      tags: UrlbarUtils.HIGHLIGHT.TYPED,
+    },
   });
 }
 
@@ -559,6 +573,7 @@ class Search {
 
     this.#listener = listener;
     this.#provider = provider;
+    this.#queryContext = queryContext;
   }
 
   /**
@@ -783,6 +798,7 @@ class Search {
   #searchModeEngine;
   #searchTokens;
   #userContextId;
+  #queryContext;
 
   /**
    * Used to avoid adding duplicate entries to the results.
@@ -1070,7 +1086,10 @@ class Search {
     let index = 0;
     if (!this.#groups) {
       this.#groups = [];
-      this.#makeGroups(lazy.UrlbarPrefs.resultGroups, this.#maxResults);
+      this.#makeGroups(
+        lazy.UrlbarPrefs.getResultGroups({ context: this.#queryContext }),
+        this.#maxResults
+      );
     }
 
     let replace = false;

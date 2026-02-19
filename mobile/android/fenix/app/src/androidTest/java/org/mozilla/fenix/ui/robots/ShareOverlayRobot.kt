@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui.robots
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.intent.Intents
@@ -185,23 +186,23 @@ class ShareOverlayRobot {
     }
 
     class Transition {
-        fun clickSaveAsPDF(interact: DownloadRobot.() -> Unit): DownloadRobot.Transition {
+        fun clickSaveAsPDF(composeTestRule: ComposeTestRule, interact: DownloadRobot.() -> Unit): DownloadRobot.Transition {
             Log.i(TAG, "clickSaveAsPDF: Trying to click the \"SAVE AS PDF\" share overlay button")
             itemContainingText("Save as PDF").click()
             Log.i(TAG, "clickSaveAsPDF: Clicked the \"SAVE AS PDF\" share overlay button")
 
-            DownloadRobot().interact()
-            return DownloadRobot.Transition()
+            DownloadRobot(composeTestRule).interact()
+            return DownloadRobot.Transition(composeTestRule)
         }
 
-        fun clickPrintButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun clickPrintButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             itemWithText("Print").waitForExists(waitingTime)
             Log.i(TAG, "clickPrintButton: Trying to click the \"Print\" share overlay button")
             itemWithText("Print").click()
             Log.i(TAG, "clickPrintButton: Clicked the \"Print\" share overlay button")
 
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
         }
     }
 }

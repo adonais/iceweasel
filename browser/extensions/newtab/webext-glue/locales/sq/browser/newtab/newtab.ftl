@@ -685,8 +685,6 @@ newtab-widget-timer-menu-notifications = Çaktivizoni njoftimet
 newtab-widget-timer-menu-notifications-on = Aktivizoni njoftimet
 newtab-widget-timer-menu-hide = Fshihe kohëmatësin
 newtab-widget-timer-menu-learn-more = Mësoni më tepër
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Rrëshqitni për më tepër
 newtab-widget-message-title = Mbani përqendrimin, me lista dhe kohëmatës të brendshëm
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Nga kujtues të shpejtë e deri te për-t’u-bërë të përditshme, nga sesione përqendrimi e deri te pushime — merruni me punë dhe ndiqni kohën.

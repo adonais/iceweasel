@@ -201,7 +201,7 @@ li.error > .stylesheet-info > .stylesheet-more > .stylesheet-error-message {
 }
 
 .media-condition-unmatched {
-  opacity: 0.4;
+  color: var(--theme-text-color-inactive);
 }
 
 .stylesheet-toggle {

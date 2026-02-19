@@ -100,6 +100,7 @@ WindowGlobalParent::WindowGlobalParent(
     uint64_t aOuterWindowId, FieldValues&& aInit)
     : WindowContext(aBrowsingContext, aInnerWindowId, aOuterWindowId,
                     std::move(aInit)),
+      mIsUncommittedInitialDocument(false),
       mSandboxFlags(0),
       mDocumentHasLoaded(false),
       mDocumentHasUserInteracted(false),
@@ -127,6 +128,7 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::CreateDisconnected(
   wgp->mDocumentPrincipal = aInit.principal();
   wgp->mDocumentURI = aInit.documentURI();
   wgp->mIsInitialDocument = Some(aInit.isInitialDocument());
+  wgp->mIsUncommittedInitialDocument = aInit.isUncommittedInitialDocument();
   wgp->mBlockAllMixedContent = aInit.blockAllMixedContent();
   wgp->mUpgradeInsecureRequests = aInit.upgradeInsecureRequests();
   wgp->mSandboxFlags = aInit.sandboxFlags();
@@ -577,9 +579,7 @@ void WindowGlobalParent::NotifyContentBlockingEvent(
     const nsTArray<nsCString>& aTrackingFullHashes,
     const Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
         aReason,
-    const Maybe<ContentBlockingNotifier::CanvasFingerprinter>&
-        aCanvasFingerprinter,
-    const Maybe<bool> aCanvasFingerprinterKnownText) {
+    const Maybe<CanvasFingerprintingEvent>& aCanvasFingerprintingEvent) {
   MOZ_ASSERT(NS_IsMainThread());
   DebugOnly<bool> isCookiesBlocked =
       aEvent == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
@@ -598,7 +598,7 @@ void WindowGlobalParent::NotifyContentBlockingEvent(
 
   Maybe<uint32_t> event = GetContentBlockingLog()->RecordLogParent(
       aTrackingOrigin, aEvent, aBlocked, aReason, aTrackingFullHashes,
-      aCanvasFingerprinter, aCanvasFingerprinterKnownText);
+      aCanvasFingerprintingEvent);
 
   // Notify the OnContentBlockingEvent if necessary.
   if (event) {
@@ -1656,12 +1656,8 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
         GetContentBlockingLog()->ReportLog();
 
         if (mDocumentURI && net::SchemeIsHttpOrHttps(mDocumentURI)) {
-          bool incrementedTopLevelContentDocumentsDestroyed =
-              pageUseCounterResult.contains(
-                  PageUseCounterResultBits::DATA_RECEIVED);
           GetContentBlockingLog()->ReportCanvasFingerprintingLog(
-              DocumentPrincipal(),
-              incrementedTopLevelContentDocumentsDestroyed);
+              DocumentPrincipal());
           GetContentBlockingLog()->ReportFontFingerprintingLog(
               DocumentPrincipal());
           GetContentBlockingLog()->ReportEmailTrackingLog(DocumentPrincipal());

@@ -157,9 +157,9 @@ def build_interface(iface):
     if iface.namemap is None:
         raise Exception("Interface was not resolved.")
 
-    assert (
-        iface.attributes.scriptable
-    ), "Don't generate XPT info for non-scriptable interfaces"
+    assert iface.attributes.scriptable, (
+        "Don't generate XPT info for non-scriptable interfaces"
+    )
 
     # State used while building an interface
     consts = []
@@ -169,23 +169,19 @@ def build_interface(iface):
     needs_scriptable = set()
 
     def build_const(c):
-        consts.append(
-            {
-                "name": c.name,
-                "type": get_type(c.basetype, ""),
-                "value": c.getValue(),  # All of our consts are numbers
-            }
-        )
+        consts.append({
+            "name": c.name,
+            "type": get_type(c.basetype, ""),
+            "value": c.getValue(),  # All of our consts are numbers
+        })
 
     def build_cenum(b):
         for var in b.variants:
-            consts.append(
-                {
-                    "name": var.name,
-                    "type": get_type(b, "in"),
-                    "value": var.value,
-                }
-            )
+            consts.append({
+                "name": var.name,
+                "type": get_type(b, "in"),
+                "value": var.value,
+            })
 
     def build_method(m, needs_scriptable=None):
         params = []
@@ -288,9 +284,9 @@ def build_typelib(idl):
 def link(typelibs):
     """Link a list of typelibs together into a single typelib"""
     linked = list(itertools.chain.from_iterable(typelibs))
-    assert len(set(iface["name"] for iface in linked)) == len(
-        linked
-    ), "Multiple typelibs containing the same interface were linked together"
+    assert len(set(iface["name"] for iface in linked)) == len(linked), (
+        "Multiple typelibs containing the same interface were linked together"
+    )
     return linked
 
 

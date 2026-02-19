@@ -164,7 +164,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
 
   GeckoProcessType GetProcessType() { return mProcessType; }
 
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
   task_t GetChildTask();
 #endif
 
@@ -266,7 +266,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
 
   mozilla::RWLock mHandleLock;
   ProcessHandle mChildProcessHandle MOZ_GUARDED_BY(mHandleLock);
-#if defined(XP_DARWIN)
+#if defined(XP_MACOSX)
   task_t mChildTask MOZ_GUARDED_BY(mHandleLock);
 #endif
 #if defined(MOZ_WIDGET_UIKIT)

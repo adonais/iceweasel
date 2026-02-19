@@ -773,6 +773,28 @@ class CrashReporterTest {
     }
 
     @Test
+    fun `requireInstance can trigger lazy initializer`() {
+        expectException<IllegalStateException> {
+            CrashReporter.requireInstance
+        }
+
+        var initializerCalled: CrashReporter? = null
+        CrashReporter.registerDeferredInitializer {
+            CrashReporter(
+                context = testContext,
+                services = listOf(mock()),
+            ).install(testContext).also {
+                initializerCalled = it
+            }
+        }
+
+        assertEquals("Initializer should not be called until requireInstance is accessed", null, initializerCalled)
+
+        val reified = CrashReporter.requireInstance
+        assertEquals("requireInstance should return our instance", initializerCalled, reified)
+    }
+
+    @Test
     fun `CrashReporter invokes PendingIntent if provided for foreground child process crashes`() {
         val context = Robolectric.buildActivity(Activity::class.java).setup().get()
 

@@ -260,7 +260,6 @@ class DefaultLoader(BaseManifestLoader):
                     if any(x in manifest for x in subsuite_paths):
                         manifests.add(manifest)
             else:
-
                 all_subsuite_paths = [
                     path for paths in WPT_SUBSUITES.values() for path in paths
                 ]
@@ -308,22 +307,13 @@ class DefaultLoader(BaseManifestLoader):
             disabled=False, exists=False, filters=filters, **mozinfo
         )
 
-        all_manifests = {chunk_by_runtime.get_manifest(t) for t in tests}
+        active_manifests = {chunk_by_runtime.get_manifest(t) for t in active_tests}
 
-        active = {}
-        for t in active_tests:
-            mp = chunk_by_runtime.get_manifest(t)
-            dir_relpath = t["dir_relpath"]
-            if not mp.startswith(dir_relpath):
-                active.setdefault(mp, set()).add(dir_relpath)
-            else:
-                active.setdefault(mp, set())
-
-        skipped = all_manifests - set(active.keys())
-
+        skipped_manifests = {chunk_by_runtime.get_manifest(t) for t in tests}
+        skipped_manifests.difference_update(active_manifests)
         return {
-            "active": list(active.keys()),
-            "skipped": list(skipped),
+            "active": list(active_manifests),
+            "skipped": list(skipped_manifests),
             "other_dirs": {},
         }
 

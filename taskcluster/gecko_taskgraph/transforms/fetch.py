@@ -11,8 +11,8 @@ import re
 
 import attr
 import taskgraph
-from mozbuild.shellutil import quote as shell_quote
 from mozpack import path as mozpath
+from mozshellutil import quote as shell_quote
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema, validate_schema
 from taskgraph.util.treeherder import join_symbol
@@ -25,34 +25,32 @@ from ..util.cached_tasks import add_optimization
 
 CACHE_TYPE = "content.v1"
 
-FETCH_SCHEMA = Schema(
-    {
-        # Name of the task.
-        Required("name"): str,
-        # Relative path (from config.path) to the file the task was defined
-        # in.
-        Optional("task-from"): str,
-        # Description of the task.
-        Required("description"): str,
-        Optional(
-            "fetch-alias",
-            description="An alias that can be used instead of the real fetch job name in "
-            "fetch stanzas for jobs.",
-        ): str,
-        Optional(
-            "artifact-prefix",
-            description="The prefix of the taskcluster artifact being uploaded. "
-            "Defaults to `public/`; if it starts with something other than "
-            "`public/` the artifact will require scopes to access.",
-        ): str,
-        Optional("attributes"): {str: object},
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-        Required("fetch"): {
-            Required("type"): str,
-            Extra: object,
-        },
-    }
-)
+FETCH_SCHEMA = Schema({
+    # Name of the task.
+    Required("name"): str,
+    # Relative path (from config.path) to the file the task was defined
+    # in.
+    Optional("task-from"): str,
+    # Description of the task.
+    Required("description"): str,
+    Optional(
+        "fetch-alias",
+        description="An alias that can be used instead of the real fetch job name in "
+        "fetch stanzas for jobs.",
+    ): str,
+    Optional(
+        "artifact-prefix",
+        description="The prefix of the taskcluster artifact being uploaded. "
+        "Defaults to `public/`; if it starts with something other than "
+        "`public/` the artifact will require scopes to access.",
+    ): str,
+    Optional("attributes"): {str: object},
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+    Required("fetch"): {
+        Required("type"): str,
+        Extra: object,
+    },
+})
 
 
 # define a collection of payload builders, depending on the worker implementation
@@ -265,24 +263,20 @@ def create_fetch_url_task(config, name, fetch):
             gpg_key = fh.read()
 
         env["FETCH_GPG_KEY"] = gpg_key
-        command.extend(
-            [
-                "--gpg-sig-url",
-                sig_url,
-                "--gpg-key-env",
-                "FETCH_GPG_KEY",
-            ]
-        )
+        command.extend([
+            "--gpg-sig-url",
+            sig_url,
+            "--gpg-key-env",
+            "FETCH_GPG_KEY",
+        ])
 
     for header in fetch.get("headers", []):
         command.extend(["--header", header])
 
-    command.extend(
-        [
-            fetch["url"],
-            "/builds/worker/artifacts/%s" % artifact_name,
-        ]
-    )
+    command.extend([
+        fetch["url"],
+        "/builds/worker/artifacts/%s" % artifact_name,
+    ])
 
     return {
         "command": command,
@@ -416,7 +410,7 @@ def create_chromium_fetch_task(config, name, fetch):
     cmd = [
         "bash",
         "-c",
-        "cd {} && " "/usr/bin/python3 {} {}".format(workdir, fetch["script"], args),
+        "cd {} && /usr/bin/python3 {} {}".format(workdir, fetch["script"], args),
     ]
 
     return {
@@ -470,7 +464,7 @@ def create_cft_canary_fetch_task(config, name, fetch):
     cmd = [
         "bash",
         "-c",
-        "cd {} && " "/usr/bin/python3 {} {}".format(workdir, fetch["script"], args),
+        "cd {} && /usr/bin/python3 {} {}".format(workdir, fetch["script"], args),
     ]
 
     return {

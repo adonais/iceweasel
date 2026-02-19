@@ -242,6 +242,9 @@ uint32_t CacheIRCloner::getRawInt32Field(uint32_t stubOffset) {
 const void* CacheIRCloner::getRawPointerField(uint32_t stubOffset) {
   return reinterpret_cast<const void*>(readStubWord(stubOffset));
 }
+const ICScript* CacheIRCloner::getICScriptField(uint32_t stubOffset) {
+  return reinterpret_cast<const ICScript*>(readStubWord(stubOffset));
+}
 uint64_t CacheIRCloner::getRawInt64Field(uint32_t stubOffset) {
   return static_cast<uint64_t>(readStubInt64(stubOffset));
 }
@@ -16867,6 +16870,10 @@ AttachDecision CloseIterIRGenerator::tryAttachNoReturnMethod() {
 }
 
 AttachDecision CloseIterIRGenerator::tryAttachScriptedReturn() {
+  if (kind_ == CompletionKind::Throw) {
+    return AttachDecision::NoAction;
+  }
+
   Maybe<PropertyInfo> prop;
   NativeObject* holder = nullptr;
 
@@ -16906,7 +16913,7 @@ AttachDecision CloseIterIRGenerator::tryAttachScriptedReturn() {
   ObjOperandId calleeId = writer.guardToObject(calleeValId);
   emitCalleeGuard(calleeId, callee);
 
-  writer.closeIterScriptedResult(objId, calleeId, kind_, callee->nargs());
+  writer.closeIterScriptedResult(objId, calleeId, callee->nargs());
 
   writer.returnFromIC();
   trackAttached("CloseIter.ScriptedReturn");

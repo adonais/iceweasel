@@ -146,7 +146,7 @@ export var NormandyApi = {
    * Fetch details for an extension from the server.
    *
    * @param extensionId {integer} The ID of the extension to look up
-   * @resolves {object}
+   * @returns {Promise<object>}
    */
   async fetchExtensionDetails(extensionId) {
     const baseUrl = await this.getApiUrl("extension-list");

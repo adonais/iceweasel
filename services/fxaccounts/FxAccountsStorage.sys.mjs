@@ -558,7 +558,7 @@ LoginManagerStorage.prototype = {
         httpRealm: FXA_PWDMGR_REALM,
       });
       if (existingLogins.length) {
-        Services.logins.modifyLogin(existingLogins[0], login);
+        await Services.logins.modifyLoginAsync(existingLogins[0], login);
       } else {
         await Services.logins.addLoginAsync(login);
       }

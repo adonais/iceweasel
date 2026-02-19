@@ -195,6 +195,7 @@ class nsCaret final : public nsISelectionListener {
   // If we're tracking the selection, this updates the caret position and
   // invalidates paint as needed.
   void UpdateCaretPositionFromSelectionIfNeeded();
+  void UpdateHiddenDuringSelection();
 
   mozilla::WeakPtr<mozilla::dom::Selection> mDomSelectionWeak;
 

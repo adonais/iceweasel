@@ -463,7 +463,7 @@ def install_cli(argv=sys.argv[1:]):
         "--destination",
         dest="dest",
         default=os.getcwd(),
-        help="Directory to install application into. " '[default: "%default"]',
+        help='Directory to install application into. [default: "%default"]',
     )
     parser.add_option(
         "--app",

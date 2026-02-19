@@ -65,6 +65,8 @@ class nsHTMLCanvasFrame final : public nsContainerFrame {
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
 
+  nsRect GetDestRect(const nsRect& aFrameContentBox) const;
+
 #ifdef ACCESSIBILITY
   mozilla::a11y::AccType AccessibleType() override;
 #endif

@@ -508,8 +508,8 @@ async function assertContextMenuDisabled(dbg, selector, shouldBeDisabled) {
 /**
  * Asserts that the gutter blackbox context menu items which are visible are correct
  *
- * @params {object} dbg
- * @params {Array} testFixtures
+ * @param {object} dbg
+ * @param {Array} testFixtures
  *                 Details needed for the assertion. Any blackboxed/nonBlackboxed lines
  *                 and any blackboxed/nonBlackboxed sources
  */
@@ -566,8 +566,8 @@ async function assertGutterBlackBoxBoxContextMenuItems(dbg, testFixtures) {
 /**
  * Asserts that the source tree blackbox context menu items which are visible are correct
  *
- * @params {object} dbg
- * @params {Array} testFixtures
+ * @param {object} dbg
+ * @param {Array} testFixtures
  *                 Details needed for the assertion. Any blackboxed/nonBlackboxed sources
  */
 async function assertSourceTreeBlackBoxBoxContextMenuItems(dbg, testFixtures) {
@@ -599,8 +599,8 @@ async function assertSourceTreeBlackBoxBoxContextMenuItems(dbg, testFixtures) {
 /**
  * Asserts that the editor blackbox context menu items which are visible are correct
  *
- * @params {object} dbg
- * @params {Array} testFixtures
+ * @param {object} dbg
+ * @param {Array} testFixtures
  *                 Details needed for the assertion. Any blackboxed/nonBlackboxed lines
  *                 and any blackboxed/nonBlackboxed sources
  */

@@ -670,6 +670,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nuova lista
+newtab-widget-section-title = Widget
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Nascondi widget
+    .aria-label = Nascondi tutti i widget
+newtab-widget-section-maximize =
+    .title = Espandi widget
+    .aria-label = Espandi tutti i widget alla massima dimensione
+newtab-widget-section-minimize =
+    .title = Minimizza widget
+    .aria-label = Comprimi tutti i widget alle dimensione più compatta
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -692,8 +703,6 @@ newtab-widget-timer-menu-notifications = Disattiva notifiche
 newtab-widget-timer-menu-notifications-on = Attiva le notifiche
 newtab-widget-timer-menu-hide = Nascondi timer
 newtab-widget-timer-menu-learn-more = Ulteriori informazioni
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Scorri per altri contenuti
 newtab-widget-message-title = Mantieni la concentrazione utilizzando le liste e il timer integrato
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Da promemoria veloci a liste di attività quotidiane, da sessioni di concentrazione a pause per rilassarsi: mantieni l’attenzione e rispetta i tempi.

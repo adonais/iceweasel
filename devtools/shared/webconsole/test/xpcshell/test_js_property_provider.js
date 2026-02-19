@@ -245,6 +245,8 @@ function runChecks(dbgObject, environment, sandbox) {
   test_has_result(results, "charAt");
   results = propertyProvider("`\\\\`.");
   test_has_result(results, "charAt");
+  results = propertyProvider(`"🧑".c`);
+  test_has_result(results, "codePointAt");
 
   info("Test that suggestions are not given for syntax errors.");
   results = propertyProvider("'foo\"");

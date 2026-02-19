@@ -67,6 +67,60 @@ excluded_tests = [
 ]
 directive = "; skip-if: !wasmThreadsEnabled() || helperThreadCount() === 0;"
 
+[[repos]]
+name = "custom-page-sizes"
+url = "https://github.com/WebAssembly/custom-page-sizes"
+branch = "main"
+parent = "spec"
+excluded_tests = [
+  # tests that are unrelated and out of date
+  "^address.wast.js",
+  "^align.wast.js",
+  "^binary.wast.js",
+  "^binary-leb128.wast.js",
+  "^br_if.wast.js",
+  "^br_table.wast.js",
+  "^call_indirect.wast.js",
+  "^comments.wast.js",
+  "^custom.wast.js",
+  "^data.wast.js",
+  "^elem.wast.js",
+  "^exports.wast.js",
+  "^f32.wast.js",
+  "^f64.wast.js",
+  "^float_exprs.wast.js",
+  "^float_literals.wast.js",
+  "^float_memory.wast.js",
+  "^float_misc.wast.js",
+  "^func.wast.js",
+  "^global.wast.js",
+  "^if.wast.js",
+  "^imports.wast.js",
+  "^linking.wast.js",
+  "^load.wast.js",
+  "^local_get.wast.js",
+  "^local_tee.wast.js",
+  "^memory_copy.wast.js",
+  "^memory_fill.wast.js",
+  "^memory_grow.wast.js",
+  "^memory_init.wast.js",
+  "^memory_size.wast.js",
+  "^memory.wast.js",
+  "^ref_func.wast.js",
+  "^ref_is_null.wast.js",
+  "^ref_null.wast.js",
+  "^select.wast.js",
+  "^store.wast.js",
+  "^simd_.*.wast.js",
+  "^table.*.wast.js",
+  "^token.wast.js",
+  "^tokens.wast.js",
+  "^unreachable.wast.js",
+  "^unreached-.*.wast.js",
+  "^utf8-.*.wast.js",
+]
+directive = "; skip-if: !wasmCustomPageSizesEnabled(); test-also=-P wasm_custom_page_sizes; test-also=--wasm-compiler=baseline -P wasm_custom_page_sizes; test-also=--wasm-compiler=optimizing -P wasm_custom_page_sizes; test-also=--disable-wasm-huge-memory -P wasm_custom_page_sizes"
+
 # Example proposal config:
 #
 # [[repos]]

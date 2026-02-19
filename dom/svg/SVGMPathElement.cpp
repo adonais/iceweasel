@@ -59,7 +59,8 @@ SVGMPathElement::SVGMPathElement(
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGMPathElement)
 
 already_AddRefed<DOMSVGAnimatedString> SVGMPathElement::Href() {
-  return mStringAttributes[HREF].IsExplicitlySet()
+  return mStringAttributes[HREF].IsExplicitlySet() ||
+                 !mStringAttributes[XLINK_HREF].IsExplicitlySet()
              ? mStringAttributes[HREF].ToDOMAnimatedString(this)
              : mStringAttributes[XLINK_HREF].ToDOMAnimatedString(this);
 }

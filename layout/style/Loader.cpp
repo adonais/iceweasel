@@ -57,7 +57,6 @@
 #include "nsICookieJarSettings.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
-#include "nsINetworkPredictor.h"
 #include "nsIPrincipal.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
@@ -1154,11 +1153,6 @@ nsresult Loader::LoadSheetSyncInternal(SheetLoadData& aLoadData,
   // channel to make error recovery simpler.
   auto streamLoader = MakeRefPtr<StreamLoader>(aLoadData);
 
-  if (mDocument) {
-    net::PredictorLearn(aLoadData.mURI, mDocument->GetDocumentURI(),
-                        nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE, mDocument);
-  }
-
   // Synchronous loads should only be used internally. Therefore no CORS
   // policy is needed.
   nsCOMPtr<nsIChannel> channel;
@@ -1444,10 +1438,6 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
   // model is: Necko owns the stream loader, which owns the load data,
   // which owns us
   auto streamLoader = MakeRefPtr<StreamLoader>(aLoadData);
-  if (mDocument) {
-    net::PredictorLearn(aLoadData.mURI, mDocument->GetDocumentURI(),
-                        nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE, mDocument);
-  }
 
 #ifdef DEBUG
   {

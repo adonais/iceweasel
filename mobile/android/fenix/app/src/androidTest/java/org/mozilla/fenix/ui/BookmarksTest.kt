@@ -42,7 +42,6 @@ class BookmarksTest : TestSetup() {
     val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityIntentTestRule(
-                isMenuRedesignEnabled = false,
                 isMenuRedesignCFREnabled = false,
                 shouldUseBottomToolbar = true,
             ),
@@ -56,15 +55,16 @@ class BookmarksTest : TestSetup() {
 
         createBookmarkItem(website.url.toString(), website.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
             verifyBookmarkTitle("Test_Page_1")
             createFolder(bookmarkFolderName)
             verifyFolderTitle(bookmarkFolderName)
         }.openThreeDotMenu("Test_Page_1") {
         }.clickEdit {
             clickParentFolderSelector()
+            expandSelectableFolder("Bookmarks")
             selectFolder(bookmarkFolderName)
             navigateUp()
             saveEditBookmark()
@@ -73,6 +73,7 @@ class BookmarksTest : TestSetup() {
         }.openThreeDotMenu("My Folder 2") {
         }.clickEdit {
             clickParentFolderSelector()
+            expandSelectableFolder("Bookmarks")
             selectFolder(bookmarkFolderName)
             navigateUp()
             saveEditBookmark()
@@ -95,10 +96,10 @@ class BookmarksTest : TestSetup() {
     fun editBookmarksNameAndUrlTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-        }.bookmarkPage {
+        }.clickBookmarkThisPageButton {
             verifySnackBarText("Saved in “Bookmarks”")
             clickSnackbarButton(composeTestRule, "EDIT")
         }
@@ -108,9 +109,9 @@ class BookmarksTest : TestSetup() {
             changeBookmarkUrl(testBookmark.url)
             saveEditBookmark()
         }
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
             verifyBookmarkTitle(testBookmark.title)
             verifyBookmarkedURL("https://www.example.com/")
         }.openBookmarkWithTitle(testBookmark.title) {
@@ -126,9 +127,9 @@ class BookmarksTest : TestSetup() {
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickShare {
             verifyShareTabLayout()
@@ -153,17 +154,17 @@ class BookmarksTest : TestSetup() {
         createBookmarkItem(webPages[0].url.toString(), webPages[0].title, null)
         createBookmarkItem(webPages[1].url.toString(), webPages[1].title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
             longClickBookmarkedItem(webPages[0].title)
             selectBookmarkedItem(webPages[1].title)
         }
 
-        multipleSelectionToolbar {
+        multipleSelectionToolbar(composeTestRule) {
             verifyMultiSelectionCounter(2, composeTestRule)
             clickMultiSelectThreeDotButton(composeTestRule)
-        }.clickOpenInNewTabButton(composeTestRule) {
+        }.clickOpenInNewTabButton {
             verifyTabTrayIsOpen()
             verifyNormalBrowsingButtonIsSelected()
             verifyNormalTabsList()
@@ -183,14 +184,14 @@ class BookmarksTest : TestSetup() {
         createBookmarkItem(webPages[0].url.toString(), webPages[0].title, null)
         createBookmarkItem(webPages[1].url.toString(), webPages[1].title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
             longClickBookmarkedItem(webPages[0].title)
             selectBookmarkedItem(webPages[1].title)
         }
 
-        multipleSelectionToolbar {
+        multipleSelectionToolbar(composeTestRule) {
             verifyMultiSelectionCounter(2, composeTestRule)
             clickMultiSelectThreeDotButton(composeTestRule)
             clickMultiSelectDeleteButton(composeTestRule)
@@ -204,7 +205,7 @@ class BookmarksTest : TestSetup() {
             selectBookmarkedItem(webPages[1].title)
         }
 
-        multipleSelectionToolbar {
+        multipleSelectionToolbar(composeTestRule) {
             verifyMultiSelectionCounter(2, composeTestRule)
             clickMultiSelectThreeDotButton(composeTestRule)
             clickMultiSelectDeleteButton(composeTestRule)
@@ -228,33 +229,33 @@ class BookmarksTest : TestSetup() {
         createBookmarkItem(firstWebPage.url.toString(), firstWebPage.title, null, newFolder)
         createBookmarkItem(secondWebPage.url.toString(), secondWebPage.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.clickSearchButton {
             // Search for a valid term
             typeSearch(firstWebPage.title)
-            verifySearchSuggestionsAreDisplayed(composeTestRule, firstWebPage.url.toString())
-            verifySuggestionsAreNotDisplayed(composeTestRule, secondWebPage.url.toString())
+            verifySearchSuggestionsAreDisplayed(firstWebPage.url.toString())
+            verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
             // Search for invalid term
             typeSearch("Android")
-            verifySuggestionsAreNotDisplayed(composeTestRule, firstWebPage.url.toString())
-            verifySuggestionsAreNotDisplayed(composeTestRule, secondWebPage.url.toString())
+            verifySuggestionsAreNotDisplayed(firstWebPage.url.toString())
+            verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833710
+    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifySearchBookmarksViewTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.clickSearchButton {
-            verifySearchView()
             verifySearchToolbar(true)
             verifySearchSelectorButton()
             verifySearchEngineIcon("Bookmarks")
@@ -266,16 +267,16 @@ class BookmarksTest : TestSetup() {
         composeBookmarksMenu(composeTestRule) {
         }.goBackToBrowserScreen {
         }.openThreeDotMenu {
-        }.openSettings {
+        }.clickSettingsButton {
         }.openCustomizeSubMenu {
             clickTopToolbarToggle()
         }
 
         exitMenu()
 
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.clickSearchButton {
             verifySearchToolbar(true)
             verifySearchEngineIcon("Bookmarks")
@@ -290,10 +291,10 @@ class BookmarksTest : TestSetup() {
     fun verifyAddBookmarkButtonTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-        }.bookmarkPage {
+        }.clickBookmarkThisPageButton {
             verifySnackBarText("Saved in “Bookmarks”")
             clickSnackbarButton(composeTestRule, "EDIT")
         }
@@ -310,10 +311,10 @@ class BookmarksTest : TestSetup() {
     fun createBookmarkFolderTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-        }.bookmarkPage {
+        }.clickBookmarkThisPageButton {
             verifySnackBarText("Saved in “Bookmarks”")
             clickSnackbarButton(composeTestRule, "EDIT")
         }
@@ -325,9 +326,9 @@ class BookmarksTest : TestSetup() {
             saveNewFolder()
             navigateUp()
         }
-        browserScreen {
+        browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
             verifyFolderTitle(bookmarkFolderName)
             verifyBookmarkFolderDescription(numberOfBookmarksInFolder = "1")
             selectFolder(bookmarkFolderName)
@@ -342,9 +343,9 @@ class BookmarksTest : TestSetup() {
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickCopy {
             waitForBookmarksSnackBarToBeGone(snackbarText = "URL copied")
@@ -362,9 +363,9 @@ class BookmarksTest : TestSetup() {
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickOpenInNewTab {
             verifyTabTrayIsOpen()
@@ -372,7 +373,7 @@ class BookmarksTest : TestSetup() {
         }.closeTabDrawer {
         }.goBack {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openBookmarkWithTitle(defaultWebPage.title) {
             verifyUrl(defaultWebPage.url.toString())
         }
@@ -385,9 +386,9 @@ class BookmarksTest : TestSetup() {
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickOpenInPrivateTab {
             verifyTabTrayIsOpen()
@@ -402,9 +403,9 @@ class BookmarksTest : TestSetup() {
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickDelete {
             clickSnackbarButton(composeTestRule, "UNDO")
@@ -430,9 +431,9 @@ class BookmarksTest : TestSetup() {
         createBookmarkItem(webPages[2].url.toString(), webPages[2].title, null, subFolderGuid)
         createBookmarkItem(webPages[3].url.toString(), webPages[3].title, null, rootFolderGuid)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openThreeDotMenu("root") {
         }.clickOpenAllInTabs(composeTestRule) {
             verifyTabTrayIsOpen()
@@ -461,9 +462,9 @@ class BookmarksTest : TestSetup() {
         createBookmarkItem(webPages[0].url.toString(), webPages[0].title, null, rootFolderGuid)
         createBookmarkItem(webPages[1].url.toString(), webPages[1].title, null, subFolderGuid)
 
-        homeScreen {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
-        }.openBookmarksMenu(composeTestRule) {
+        }.clickBookmarksButton {
         }.openThreeDotMenu("root") {
         }.clickOpenAllInPrivateTabs(composeTestRule) {
             verifyTabTrayIsOpen()

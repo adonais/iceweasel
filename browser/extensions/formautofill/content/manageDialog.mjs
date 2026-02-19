@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const EDIT_ADDRESS_URL = "chrome://formautofill/content/editAddress.xhtml";
-
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -336,13 +334,10 @@ export class ManageAddresses extends ManageRecords {
    * @param  {object} address [optional]
    */
   openEditDialog(address) {
-    this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, undefined, {
-      record: address,
-      // Don't validate in preferences since it's fine for fields to be missing
-      // for autofill purposes. For PaymentRequest addresses get more validation.
-      noValidate: true,
-      l10nStrings: ManageAddresses.getAddressL10nStrings(),
-    });
+    return lazy.FormAutofillPreferences.openEditAddressDialog(
+      address,
+      this.prefWin
+    );
   }
 
   getLabelInfo(address) {

@@ -30,8 +30,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.hideToolbar
-import org.mozilla.focus.ext.requireComponents
-import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.ui.theme.FocusTheme
 import org.mozilla.focus.ui.theme.focusColors
 import mozilla.components.ui.icons.R as iconsR
@@ -60,7 +58,7 @@ abstract class BaseComposeFragment : Fragment() {
      * Callback for the up navigation button shown in toolbar.
      */
     open fun onNavigateUp(): () -> Unit = {
-        requireComponents.appStore.dispatch(AppAction.NavigateUp())
+        activity?.onBackPressedDispatcher?.onBackPressed()
     }
 
     /**

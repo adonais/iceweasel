@@ -7,20 +7,6 @@
  * Retrieves and displays icons in native menu items on Mac OS X.
  */
 
-/* exception_defines.h defines 'try' to 'if (true)' which breaks objective-c
-   exceptions and produces errors like: error: unexpected '@' in program'.
-   If we define __EXCEPTIONS exception_defines.h will avoid doing this.
-
-   See bug 666609 for more information.
-
-   We use <limits> to get the libstdc++ version. */
-#include <limits>
-#if __GLIBCXX__ <= 20070719
-#  ifndef __EXCEPTIONS
-#    define __EXCEPTIONS
-#  endif
-#endif
-
 #include "MOZIconHelper.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"

@@ -48,7 +48,7 @@ importScripts("resource://gre/modules/workers/require.js");
  * - {Array} transfers An array of objects that should be transferred
  *   instead of being copied.
  *
- * @constructor
+ * @class
  */
 function Meta(data, meta) {
   this.data = data;

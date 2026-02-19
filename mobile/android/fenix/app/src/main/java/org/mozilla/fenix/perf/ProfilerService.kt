@@ -9,12 +9,31 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
+import androidx.annotation.VisibleForTesting
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.SupervisorJob
+import mozilla.components.support.base.log.Log
+import mozilla.components.support.utils.ext.stopForegroundCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
+import org.mozilla.gecko.GeckoJavaSampler.INTENT_PROFILER_STATE_CHANGED
+
+@VisibleForTesting
+internal const val PROFILING_CHANNEL_ID = "mozilla.perf.profiling"
+
+@VisibleForTesting
+internal const val PROFILING_NOTIFICATION_ID = 99
+
+private const val REQUEST_CODE = 3
 
 /**
  * A foreground service that manages profiling notifications in the Firefox Android app.
@@ -33,68 +52,85 @@ class ProfilerService : Service() {
      * profiling operations.
      */
     companion object {
-        const val ACTION_START_PROFILING = "mozilla.perf.action.START_PROFILING"
-        const val ACTION_STOP_PROFILING = "mozilla.perf.action.STOP_PROFILING"
-        const val PROFILING_CHANNEL_ID = "mozilla.perf.profiling"
-        const val PROFILING_NOTIFICATION_ID = 99
-        private const val REQUEST_CODE = 3
+        const val PROFILER_SERVICE_LOG = "ProfilerService"
+        const val IS_PROFILER_ACTIVE = "isActive"
     }
 
+    private val serviceJob = SupervisorJob()
     private val notificationsDelegate by lazy {
         components.notificationsDelegate
     }
+    private var stateReceiver: BroadcastReceiver? = null
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        stateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == INTENT_PROFILER_STATE_CHANGED) {
+                    val active = intent.getBooleanExtra(IS_PROFILER_ACTIVE, false)
+                    if (!active) {
+                        disableProfilerProvider()
+                        stopForegroundCompat(true)
+                        stopSelf()
+                    }
+                }
+            }
+        }
+        val filter = IntentFilter(INTENT_PROFILER_STATE_CHANGED)
+        val permission = "${applicationContext.packageName}.permission.PROFILER_INTERNAL"
+        ContextCompat.registerReceiver(
+            applicationContext,
+            stateReceiver!!,
+            filter,
+            permission,
+            null,
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+    }
+
+    override fun onDestroy() {
+        serviceJob.cancel()
+        stateReceiver?.let { receiver ->
+            applicationContext.unregisterReceiver(receiver)
+            stateReceiver = null
+        }
+        super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_START_PROFILING -> {
-                startProfilingWithNotification()
-            }
-            ACTION_STOP_PROFILING -> {
-                stopForegroundCompat()
-                stopSelf()
-            }
-            else -> {
-                stopForegroundCompat()
-                stopSelf()
-            }
-        }
+        val notification = createNotification()
+        startForeground(PROFILING_NOTIFICATION_ID, notification)
+        requestNotificationPermissionIfNeeded()
+        enableProfilerProvider()
         return START_NOT_STICKY
     }
 
     /**
-     * Starts profiling with notification using NotificationsDelegate.
-     * The delegate handles permission requests and notification display.
+     * Request permission for notification using NotificationsDelegate and update if needed
      */
-    private fun startProfilingWithNotification() {
-        val notification = createNotification()
+    private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationsDelegate.requestNotificationPermission(
                 onPermissionGranted = {
-                    startForeground(PROFILING_NOTIFICATION_ID, notification)
+                    val updated = createNotification()
+                    startForeground(PROFILING_NOTIFICATION_ID, updated)
                 },
                 showPermissionRationale = false,
             )
-        } else {
-            startForeground(PROFILING_NOTIFICATION_ID, notification)
         }
     }
 
-    private fun stopForegroundCompat() {
-        stopForeground(STOP_FOREGROUND_REMOVE)
-    }
-
+    /**
+     * Creates the notification channel for profiler status notifications.
+     */
     private fun createNotificationChannel() {
         val profilingChannel = NotificationChannel(
             PROFILING_CHANNEL_ID,
-            "App Profiling Status",
+            getString(R.string.profiler_service_notification_channel_name),
             NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
-            description = "Shows when app profiling is active"
+            description = getString(R.string.profiler_service_description)
             setShowBadge(false)
             enableLights(false)
             enableVibration(false)
@@ -108,8 +144,7 @@ class ProfilerService : Service() {
         val notificationIntent = Intent(this, StopProfilerActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntentFlags =
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val pendingIntent = PendingIntent.getActivity(
             this,
             REQUEST_CODE,
@@ -135,5 +170,43 @@ class ProfilerService : Service() {
 
     override fun onBind(p0: Intent?): IBinder? {
         return null
+    }
+
+    /**
+     * The Profiler Content Provider is set to false in the manifest to make sure it does not
+     * initialize during startup. So, it has to  instantiated whenever the Service starts.
+     */
+    private fun enableProfilerProvider() {
+        try {
+            val componentName = ComponentName(this, ProfilerProvider::class.java)
+            packageManager.setComponentEnabledSetting(
+                componentName,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP,
+            )
+        } catch (e: IllegalArgumentException) {
+            Log.log(Log.Priority.WARN, PROFILER_SERVICE_LOG, e, "Failed to enable ProfilerProvider")
+        } catch (e: SecurityException) {
+            Log.log(Log.Priority.WARN, PROFILER_SERVICE_LOG, e, "Permission denied to enable ProfilerProvider")
+        }
+    }
+
+    /**
+     * Since it the provider isn't managed by the manifest, it also has to be manually disabled.
+     */
+    private fun disableProfilerProvider() {
+        try {
+            val componentName = ComponentName(this, ProfilerProvider::class.java)
+            packageManager.setComponentEnabledSetting(
+                componentName,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP,
+            )
+            Log.log(Log.Priority.DEBUG, PROFILER_SERVICE_LOG, message = "ProfilerProvider disabled")
+        } catch (e: IllegalArgumentException) {
+            Log.log(Log.Priority.WARN, PROFILER_SERVICE_LOG, e, "Failed to disable ProfilerProvider")
+        } catch (e: SecurityException) {
+            Log.log(Log.Priority.WARN, PROFILER_SERVICE_LOG, e, "Permission denied to disable ProfilerProvider")
+        }
     }
 }

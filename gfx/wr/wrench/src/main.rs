@@ -787,7 +787,6 @@ pub fn main() {
     } else if let Some(subargs) = args.subcommand_matches("png") {
         let surface = match subargs.value_of("surface") {
             Some("screen") | None => png::ReadSurface::Screen,
-            Some("gpu-cache") => png::ReadSurface::GpuCache,
             _ => panic!("Unknown surface argument value")
         };
         let output_path = subargs.value_of("OUTPUT").map(PathBuf::from);

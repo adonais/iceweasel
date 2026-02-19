@@ -5531,19 +5531,10 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     LayersUpdateFlags aLayersUpdateFlags) {
   AssertOnUpdaterThread();
 
-  const FrameMetrics& aLayerMetrics = aScrollMetadata.GetMetrics();
-  ScreenMargin fixedLayerMargins;
-  // Get the fixed layers margins for if the new data is the root content one.
-  // NOTE: This needs to be done before obtaining |mRecursiveMutex| below to
-  // respect the APZ lock ordering principle.
-  if (aLayerMetrics.IsRootContent()) {
-    if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-      fixedLayerMargins = treeManagerLocal->GetCompositorFixedLayerMargins();
-    }
-  }
-
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   bool isDefault = mScrollMetadata.IsDefault();
+
+  const FrameMetrics& aLayerMetrics = aScrollMetadata.GetMetrics();
 
   if ((aScrollMetadata == mLastContentPaintMetadata) && !isDefault) {
     // No new information here, skip it.
@@ -6139,7 +6130,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     // So we pass the compositor fixed layers margins which is representing the
     // dynamic toolbar state to RecalculateLayoutViewportOffset to avoid such
     // unintentional layout offset changes.
-    Metrics().RecalculateLayoutViewportOffset(fixedLayerMargins.bottom);
+    Metrics().RecalculateLayoutViewportOffset(
+        GetFixedLayerMargins(lock).bottom);
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     if (ShouldCancelAnimationForScrollUpdate(Nothing())) {
       CancelAnimation();
@@ -7149,6 +7141,16 @@ CSSPoint AsyncPanZoomController::MaybeFillOutOverscrollGutter(
   SetVisualScrollOffset(origin + delta);
   Metrics().RecalculateLayoutViewportOffset();
   return Metrics().GetVisualScrollOffset() - origin;
+}
+
+ScreenMargin AsyncPanZoomController::GetFixedLayerMargins(
+    const RecursiveMutexAutoLock& aProofOfLock) const {
+  return mCompositorFixedLayerMargins;
+}
+
+void AsyncPanZoomController::SetFixedLayerMargins(const ScreenMargin& aMargin) {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  mCompositorFixedLayerMargins = aMargin;
 }
 
 std::ostream& operator<<(std::ostream& aOut,

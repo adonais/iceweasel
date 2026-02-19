@@ -152,9 +152,13 @@ struct StackMap final {
     POD = 0,
     AnyRef = 1,
 
-    // The data pointer for a WasmArrayObject, which may be an interior pointer
-    // to the object itself. See WasmArrayObject::inlineStorage.
-    ArrayDataPointer = 2,
+    // The data pointer for a WasmStructObject that requires OOL storage.
+    StructDataPointer = 2,
+
+    // The data pointer for a WasmArrayObject, which is either an interior
+    // pointer to the object itself, or a pointer to OOL storage managed by
+    // BufferAllocator. See WasmArrayObject::data_/inlineStorage.
+    ArrayDataPointer = 3,
 
     Limit,
   };
@@ -210,6 +214,8 @@ struct StackMap final {
   inline void set(uint32_t index, Kind kind) {
     MOZ_ASSERT(index < header.numMappedWords);
     MOZ_ASSERT(kind < Kind::Limit);
+    // Because we don't zero out the field before writing it ..
+    MOZ_ASSERT(get(index) == (Kind)0);
     uint32_t wordIndex = index / mappedWordsPerBitmapElem;
     uint32_t wordOffset = index % mappedWordsPerBitmapElem * bitsPerMappedWord;
     bitmap[wordIndex] |= (kind << wordOffset);

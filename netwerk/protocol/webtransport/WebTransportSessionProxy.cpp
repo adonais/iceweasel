@@ -9,6 +9,7 @@
 #include "ScopedNSSTypes.h"
 #include "WebTransportSessionProxy.h"
 #include "WebTransportStreamProxy.h"
+#include "WebTransportEventService.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
@@ -17,10 +18,12 @@
 #include "nsIX509Cert.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
+#include "nsILoadInfo.h"
 #include "nsSocketTransportService2.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/LoadInfo.h"
 
 namespace mozilla::net {
 
@@ -52,7 +55,7 @@ WebTransportSessionProxy::~WebTransportSessionProxy() {
 
   MOZ_ASSERT(mState != WebTransportSessionProxyState::SESSION_CLOSE_PENDING,
              "We can not be in the SESSION_CLOSE_PENDING state in destructor, "
-             "because should e an runnable  that holds reference to this"
+             "because should be a runnable that holds reference to this"
              "object.");
 
   (void)gSocketTransportService->Dispatch(NS_NewRunnableFunction(
@@ -71,15 +74,15 @@ nsresult WebTransportSessionProxy::AsyncConnect(
     WebTransportSessionEventListener* aListener,
     nsIWebTransport::HTTPVersion aVersion) {
   return AsyncConnectWithClient(aURI, aDedicated, std::move(aServerCertHashes),
-                                aPrincipal, aSecurityFlags, aListener,
+                                aPrincipal, 0, aSecurityFlags, aListener,
                                 Maybe<dom::ClientInfo>(), aVersion);
 }
 
 nsresult WebTransportSessionProxy::AsyncConnectWithClient(
     nsIURI* aURI, bool aDedicated,
     const nsTArray<RefPtr<nsIWebTransportHash>>& aServerCertHashes,
-    nsIPrincipal* aPrincipal, uint32_t aSecurityFlags,
-    WebTransportSessionEventListener* aListener,
+    nsIPrincipal* aPrincipal, uint64_t aBrowsingContextID,
+    uint32_t aSecurityFlags, WebTransportSessionEventListener* aListener,
     const Maybe<dom::ClientInfo>& aClientInfo,
     nsIWebTransport::HTTPVersion aVersion) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -181,6 +184,21 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
   if (NS_SUCCEEDED(rv)) {
     cleanup.release();
   }
+
+  mHttpChannelID = httpChannel->ChannelId();
+
+  // Setting the BrowsingContextID here to let WebTransport requests show up in
+  // devtools. Normally that would automatically happen if we would pass the
+  // nsILoadGroup in ns_NewChannel above, but the nsILoadGroup is inaccessible
+  // here in the ParentProcess. The nsILoadGroup only exists in ContentProcess
+  // as part of the document and nsDocShell. It is also not yet determined which
+  // ContentProcess this load belongs to.
+  if (aBrowsingContextID != 0) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    static_cast<LoadInfo*>(loadInfo.get())
+        ->UpdateBrowsingContextID(aBrowsingContextID);
+  }
+
   return rv;
 }
 
@@ -566,6 +584,12 @@ WebTransportSessionProxy::GetMaxDatagramSize() {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+WebTransportSessionProxy::GetHttpChannelID(uint64_t* _retval) {
+  *_retval = mHttpChannelID;
+  return NS_OK;
+}
+
 //-----------------------------------------------------------------------------
 // WebTransportSessionProxy::nsIStreamListener
 //-----------------------------------------------------------------------------
@@ -924,7 +948,7 @@ WebTransportSessionProxy::OnIncomingUnidirectionalStreamAvailable(
 
 NS_IMETHODIMP
 WebTransportSessionProxy::OnSessionReady(uint64_t ready) {
-  MOZ_ASSERT(false, "Should not b called");
+  MOZ_ASSERT(false, "Should not be called");
   return NS_OK;
 }
 

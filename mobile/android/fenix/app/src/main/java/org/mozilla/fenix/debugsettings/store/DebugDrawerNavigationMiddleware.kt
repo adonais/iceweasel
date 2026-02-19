@@ -8,7 +8,7 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerRoute
 import org.mozilla.fenix.debugsettings.ui.DEBUG_DRAWER_HOME_ROUTE
 
@@ -24,7 +24,7 @@ class DebugDrawerNavigationMiddleware(
 ) : Middleware<DebugDrawerState, DebugDrawerAction> {
 
     override fun invoke(
-        context: MiddlewareContext<DebugDrawerState, DebugDrawerAction>,
+        store: Store<DebugDrawerState, DebugDrawerAction>,
         next: (DebugDrawerAction) -> Unit,
         action: DebugDrawerAction,
     ) {

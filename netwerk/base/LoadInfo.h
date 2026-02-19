@@ -8,6 +8,7 @@
 #define mozilla_LoadInfo_h
 
 #include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
 #include "nsIInterceptionInfo.h"
 #include "nsILoadInfo.h"
@@ -42,6 +43,7 @@ namespace net {
 class EarlyHintPreloader;
 class LoadInfoArgs;
 class LoadInfo;
+class WebTransportSessionProxy;
 }  // namespace net
 
 namespace ipc {
@@ -350,6 +352,9 @@ class LoadInfo final : public nsILoadInfo {
   void SetBrowserWouldUpgradeInsecureRequests();
   void SetIsFromProcessingFrameAttributes();
 
+  dom::ReferrerPolicy GetFrameReferrerPolicySnapshot() const;
+  void SetFrameReferrerPolicySnapshot(dom::ReferrerPolicy aPolicy);
+
   // Hands off from the cspToInherit functionality!
   //
   // For navigations, GetCSPToInherit returns what the spec calls the
@@ -458,10 +463,12 @@ class LoadInfo final : public nsILoadInfo {
   void SetIncludeCookiesSecFlag();
   friend class mozilla::dom::XMLHttpRequestMainThread;
 
-  // nsDocShell::OpenInitializedChannel and EarlyHintPreloader::OpenChannel
-  // needs to update the loadInfo with the correct browsingContext.
+  // nsDocShell::OpenInitializedChannel, EarlyHintPreloader::OpenChannel and
+  // WebTransportSessionProxy::AsyncConnectWithClient need to update the
+  // loadInfo with the correct browsingContext.
   friend class ::nsDocShell;
   friend class mozilla::net::EarlyHintPreloader;
+  friend class mozilla::net::WebTransportSessionProxy;
   void UpdateBrowsingContextID(uint64_t aBrowsingContextID) {
     mBrowsingContextID = aBrowsingContextID;
   }
@@ -499,6 +506,8 @@ class LoadInfo final : public nsILoadInfo {
   nsWeakPtr mContextForTopLevelLoad;
   nsSecurityFlags mSecurityFlags;
   uint32_t mSandboxFlags;
+  dom::ReferrerPolicy mFrameReferrerPolicySnapshot =
+      dom::ReferrerPolicy::_empty;
   nsContentPolicyType mInternalContentPolicyType;
   LoadTainting mTainting = LoadTainting::Basic;
 

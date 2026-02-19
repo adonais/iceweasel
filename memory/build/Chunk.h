@@ -210,6 +210,7 @@ enum ShouldCommit {
   ReserveAndCommit,
 };
 
-void* pages_mmap_aligned(size_t size, size_t alignment, ShouldCommit committed);
+void* pages_mmap_aligned(size_t size, size_t alignment,
+                         ShouldCommit should_commit);
 
 #endif /* ! CHUNK_H */

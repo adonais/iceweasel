@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">ᱥᱮᱸᱫᱽᱨᱟ ᱚᱞ ᱠᱚ ᱟᱫᱮᱨ ᱢᱮ</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">ᱟᱢᱟᱜ ᱠᱷᱩᱞᱟᱹ ᱟᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱫᱚ ᱱᱚᱰᱮ ᱫᱮᱠᱷᱟᱣᱜᱼᱟ ᱾</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ᱟᱢᱟᱜ ᱠᱷᱩᱞᱟᱹ ᱟᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱫᱚ ᱱᱚᱰᱮ ᱫᱮᱠᱷᱟᱣᱜᱼᱟ ᱾</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">ᱟᱢᱟᱜ ᱱᱤᱡᱚᱨᱟᱜ ᱴᱮᱵᱽ ᱠᱚ ᱫᱚ ᱱᱚᱰᱮ ᱩᱫᱩᱜ ᱦᱩᱭᱩᱜ-ᱟ ᱾</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ᱟᱢᱟᱜ ᱱᱤᱡᱚᱨᱟᱜ ᱴᱮᱵᱽ ᱠᱚ ᱫᱚ ᱱᱚᱰᱮ ᱩᱫᱩᱜ ᱦᱩᱭᱩᱜ-ᱟ ᱾</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">ᱱᱤᱡᱮᱨᱟᱜ ᱵᱽᱨᱟᱣᱡᱤᱝ</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">ᱢᱟᱹᱞᱴᱤᱥᱤᱞᱮᱠᱼᱴ ᱢᱳᱰ ᱵᱟᱹᱰ</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">ᱵᱟᱪᱷᱟᱣᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱛᱩᱢᱟᱹᱞ ᱥᱟᱺᱪᱟᱣ ᱢᱮ</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ᱵᱟᱪᱷᱟᱣᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱛᱩᱢᱟᱹᱞ ᱥᱟᱺᱪᱟᱣ ᱢᱮ</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">ᱡᱟᱦᱟᱸ ᱥᱟᱫᱷᱚᱱ ᱠᱷᱚᱱ ᱴᱮᱵᱽᱠᱚ ᱥᱟᱵ ᱢᱮ</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">ᱮᱠᱥᱴᱮᱱᱥᱚᱱᱠᱚ</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">ᱟᱢ ᱴᱷᱮᱱ ᱮᱠᱥᱴᱮᱱᱥᱚᱱ ᱵᱚᱦᱟᱞ ᱢᱮᱱᱟᱜ ᱠᱟᱫᱟ, ᱢᱮᱱᱠᱷᱟᱱ ᱵᱟᱝ ᱮᱢ ᱟᱠᱟᱱᱟ</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">ᱟᱢ ᱴᱷᱮᱱ ᱮᱠᱥᱴᱮᱱᱥᱚᱱ ᱵᱚᱦᱟᱞ ᱢᱮᱱᱟᱜ ᱠᱟᱫᱟ, ᱢᱮᱱᱠᱷᱟᱱ ᱵᱟᱝ ᱮᱢ ᱟᱠᱟᱱᱟ</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">ᱮᱠᱮᱴᱮᱱᱮᱚᱱ ᱠᱚ ᱢᱮᱱᱟᱡᱽ ᱢᱮ</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -229,9 +229,9 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">ᱠᱷᱟᱛᱟ ᱵᱤᱵᱨᱚᱬ</string>
   <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help">ᱜᱚᱲᱚ</string>
+  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">ᱜᱚᱲᱚ</string>
   <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new">ᱪᱮᱫ ᱱᱟᱶᱟ ᱢᱮᱱᱟᱜ-ᱟ</string>
+  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">ᱪᱮᱫ ᱱᱟᱶᱟ ᱢᱮᱱᱟᱜ-ᱟ</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">ᱥᱟᱡᱟᱣ ᱠᱚ</string>
   <!-- Browser menu button that opens a user's library -->
@@ -239,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">ᱰᱮᱥᱠᱴᱟᱹᱯ ᱥᱟᱭᱤᱴ</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">ᱱᱟᱶᱟ ᱴᱮᱵᱽ ᱨᱮ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">ᱱᱟᱶᱟ ᱴᱮᱵᱽ ᱨᱮ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">ᱚᱲᱟᱜ ᱥᱠᱨᱤᱱ ᱨᱮ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -267,7 +267,7 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by">%1$s ᱫᱟᱨᱟᱭ ᱛᱮ ᱫᱟᱲᱮ ᱮᱢ</string>
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s ᱫᱟᱨᱟᱭ ᱛᱮ ᱫᱟᱲᱮ ᱮᱢ</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -280,15 +280,15 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">ᱮᱯ ᱨᱮ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view">ᱨᱤᱰᱟᱹᱨ ᱣᱤᱣ ᱠᱚᱥᱴᱚᱢᱟᱭᱤᱡᱽ ᱢᱮ</string>
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">ᱨᱤᱰᱟᱹᱨ ᱣᱤᱣ ᱠᱚᱥᱴᱚᱢᱟᱭᱤᱡᱽ ᱢᱮ</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">ᱨᱤᱰᱟᱹᱨ ᱣᱤᱣ ᱠᱚᱥᱴᱚᱢᱟᱭᱤᱡᱽ ᱢᱮ</string>
   <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add">ᱥᱮᱞᱮᱫᱽ</string>
+  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">ᱥᱮᱞᱮᱫᱽ</string>
   <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit">ᱥᱟᱯᱲᱟᱣ</string>
+  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">ᱥᱟᱯᱲᱟᱣ</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1">ᱚᱲᱟᱜᱥᱟᱦᱴᱟ ᱠᱩᱥᱤᱛᱮ ᱫᱚᱦᱚᱭ ᱢᱮ</string>
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">ᱚᱲᱟᱜᱥᱟᱦᱴᱟ ᱠᱩᱥᱤᱛᱮ ᱫᱚᱦᱚᱭ ᱢᱮ</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -307,16 +307,12 @@
   <string name="browser_close_main_menu_handlebar_content_description">ᱢᱮᱱᱩ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">ᱯᱟᱱᱛᱮ ᱚᱲᱟᱜ</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">ᱜᱚᱲᱚ</string>
-  <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">ᱥᱟᱡᱟᱣ ᱠᱚ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">ᱮᱠᱥᱴᱮᱱᱥᱚᱱ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ᱮᱠᱥᱴᱮᱱᱥᱚᱱ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">ᱥᱮᱵᱽ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ᱥᱮᱵᱽ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">ᱦᱟᱹᱛᱤᱭᱟᱨ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ᱦᱟᱹᱛᱤᱭᱟᱨ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">ᱠᱟᱥᱴᱚᱢ ᱴᱮᱵᱽ ᱢᱮᱱᱩ ᱥᱤᱴ ᱵᱚᱱᱫᱚᱭ ᱢᱮ</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -328,7 +324,7 @@
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ᱥᱟᱦᱴᱟ ᱛᱚᱨᱡᱚᱢᱟᱭ ᱢᱮ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter">ᱨᱟᱹᱯᱩᱫ ᱥᱟᱭᱤᱴ ᱠᱷᱚᱵᱚᱨ ᱢᱮ …</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">ᱨᱟᱹᱯᱩᱫ ᱥᱟᱭᱤᱴ ᱠᱷᱚᱵᱚᱨ ᱢᱮ …</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">ᱨᱟᱹᱯᱩᱫ ᱥᱟᱭᱤᱴ ᱨᱤᱯᱚᱨᱴ ᱢᱮ</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
@@ -452,19 +448,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">ᱯᱷᱚᱭᱟᱨᱯᱷᱚᱠᱥ ᱡᱟᱹᱯᱛᱤ ᱠᱷᱚᱵᱚᱨ ᱾</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">ᱟᱢ ᱴᱷᱤᱠ ᱨᱮ ᱫᱚᱦᱚᱢᱮᱪᱷᱚ ᱞᱟᱹᱜᱤᱫ ᱠᱩᱥᱤᱭᱟᱜᱼᱟ ᱞᱮ</string>
-  <!--
-    Title for set firefox as default browser screen used by Nimbus experiments.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">ᱪᱮᱫᱟᱜ ᱢᱤᱞᱤᱭᱚᱱ ᱦᱚᱲ ᱯᱷᱟᱭᱟᱨᱯᱷᱚᱠᱥ ᱠᱚ ᱫᱩᱞᱟᱹᱲᱟᱜ ᱠᱟᱱᱟ</string>
-  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">ᱵᱟᱹᱲᱛᱤ ᱵᱟᱪᱷᱟᱣ ᱥᱟᱶᱛᱮ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱵᱽᱨᱟᱣᱡᱤᱝ</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">ᱟᱞᱮᱭᱟᱜ ᱵᱮᱼᱯᱷᱟᱭᱫᱟ ᱵᱽᱨᱟᱣᱡᱚᱨ ᱫᱚ ᱵᱟᱦᱨᱮ ᱠᱚᱢᱯᱟᱱᱤ ᱠᱚ ᱣᱮᱵᱽ ᱨᱮ ᱟᱢ ᱯᱟᱸᱡᱟ ᱠᱚ ᱵᱚᱸᱫᱚᱜᱼᱟ ᱾</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">100 ᱠᱳᱴᱤ ᱠᱷᱚᱱ ᱦᱚᱸ ᱡᱟᱹᱥᱛᱤ ᱦᱚᱲ ᱢᱤᱫᱴᱟᱹᱝ ᱵᱟᱣᱨᱟᱣᱡᱟᱨ ᱵᱟᱪᱷᱱᱟᱣ ᱠᱟᱛᱮ ᱩᱱᱠᱩᱣᱟᱜ ᱱᱤᱡᱛᱟ ᱮ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱭᱟ ᱾</string>
-  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">ᱵᱟᱰᱟᱭᱚᱜ ᱠᱟᱱ ᱴᱨᱮᱠᱥᱚᱨ? ᱟᱡ ᱛᱮ ᱟᱠᱚᱴ ᱟᱠᱟᱱᱟ ᱾ ᱮᱠᱥᱴᱮᱱᱥᱚᱱᱠᱚ ? ᱡᱷᱚᱛᱚ ᱗᱐᱐ ᱜᱟᱱ ᱪᱮᱥᱴᱟᱭ ᱢᱮ ᱾ PDFs? ᱟᱞᱮᱭᱟᱜ ᱵᱮᱱᱟᱣ ᱟᱠᱟᱱ ᱯᱟᱲᱦᱟᱣᱤᱭᱟᱹ ᱫᱚ ᱱᱚᱣᱟ ᱠᱚ ᱪᱟᱞᱟᱣ ᱫᱚ ᱟᱞᱜᱟᱭᱟ ᱾</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">ᱢᱩᱞ ᱵᱽᱨᱟᱣᱩᱡᱟᱹᱨ ᱞᱮᱠᱷᱟ ᱥᱟᱡᱟᱣ ᱢᱮ</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -554,60 +539,60 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Android ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱯᱟᱨᱥᱟᱞ ᱢᱮ</string>
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Android ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱯᱟᱨᱥᱟᱞ ᱢᱮ</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one">ᱥᱟᱭᱤᱴ ᱠᱚ ᱵᱤᱡᱽᱞᱤ ᱞᱮᱠᱟ ᱞᱚᱜᱚᱱ ᱞᱟᱫᱮ ᱟᱭ</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">ᱥᱟᱭᱤᱴ ᱠᱚ ᱵᱤᱡᱽᱞᱤ ᱞᱮᱠᱟ ᱞᱚᱜᱚᱱ ᱞᱟᱫᱮ ᱟᱭ</string>
   <!-- Terms of use (ToU) second subheader. -->
-  <string name="onboarding_redesign_tou_subheader_two">ᱟᱡ ᱛᱮ ᱪᱟᱞᱟᱜ ᱴᱨᱮᱠᱤᱝ ᱨᱩᱠᱷᱤᱭᱟᱹ</string>
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">ᱟᱡ ᱛᱮ ᱪᱟᱞᱟᱜ ᱴᱨᱮᱠᱤᱝ ᱨᱩᱠᱷᱤᱭᱟᱹ</string>
   <!-- Terms of use (ToU) third subheader. -->
-  <string name="onboarding_redesign_tou_subheader_three">ᱦᱟᱡᱟᱨ ᱜᱟᱱ ᱠᱟᱥᱴᱚᱢᱟᱭᱡᱮᱥᱚᱱ</string>
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">ᱦᱟᱡᱟᱨ ᱜᱟᱱ ᱠᱟᱥᱴᱚᱢᱟᱭᱡᱮᱥᱚᱱ</string>
   <!--
     Terms of use (ToU) first body text. %1$s is replaced by an active link,
     using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="onboarding_redesign_tou_body_one">ᱞᱟᱦᱟᱜ ᱠᱟᱛᱮ, ᱟᱢ %1$s ᱨᱮᱢ ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟ ᱾</string>
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">ᱞᱟᱦᱟᱜ ᱠᱟᱛᱮ, ᱟᱢ %1$s ᱨᱮᱢ ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟ ᱾</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
-  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Firefox ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Firefox ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
   <!--
     Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
   -->
-  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox ᱟᱢᱟᱜ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚᱱ ᱤᱫᱤᱭᱟᱭ ᱾ ᱟᱞᱮᱭᱟᱜ %1$s ᱨᱮ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ ᱾</string>
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox ᱟᱢᱟᱜ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚᱱ ᱤᱫᱤᱭᱟᱭ ᱾ ᱟᱞᱮᱭᱟᱜ %1$s ᱨᱮ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ ᱾</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text">ᱫᱟᱱᱟᱝ ᱠᱷᱚᱵᱚᱨ</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">ᱫᱟᱱᱟᱝ ᱠᱷᱚᱵᱚᱨ</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
   -->
-  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱥᱩᱫᱷᱨᱟᱹᱣ ᱜᱚᱲᱚ ᱞᱟᱹᱜᱤᱫ, Firefox ᱫᱚ Mozilla ᱴᱷᱮᱱ ᱰᱟᱭᱜᱽᱱᱚᱥᱴᱤᱠ ᱟᱨ ᱜᱟᱯᱟᱞᱢᱟᱨᱟᱣ ᱰᱟᱴᱟ ᱠᱩᱞᱟ ᱾ %1$s</string>
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱥᱩᱫᱷᱨᱟᱹᱣ ᱜᱚᱲᱚ ᱞᱟᱹᱜᱤᱫ, Firefox ᱫᱚ Mozilla ᱴᱷᱮᱱ ᱰᱟᱭᱜᱽᱱᱚᱥᱴᱤᱠ ᱟᱨ ᱜᱟᱯᱟᱞᱢᱟᱨᱟᱣ ᱰᱟᱴᱟ ᱠᱩᱞᱟ ᱾ %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text">ᱥᱟᱡᱟᱣ ᱠᱚ ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">ᱥᱟᱡᱟᱣ ᱠᱚ ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
-  <string name="onboarding_redesign_tou_agree_and_continue_button_label">ᱞᱮᱛᱟᱲ</string>
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">ᱞᱮᱛᱟᱲ</string>
   <!-- Onboarding header for the toolbar selection card. -->
-  <string name="onboarding_redesign_customize_toolbar_title">ᱟᱢᱟᱜ ᱴᱷᱤᱠᱟᱹᱱᱟ ᱵᱟᱨ ᱚᱠᱟᱨᱮᱢ ᱠᱷᱚᱡᱚᱜ ᱠᱟᱱᱟ ?</string>
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">ᱟᱢᱟᱜ ᱴᱷᱤᱠᱟᱹᱱᱟ ᱵᱟᱨ ᱚᱠᱟᱨᱮᱢ ᱠᱷᱚᱡᱚᱜ ᱠᱟᱱᱟ ?</string>
   <!-- Onboarding label for 'Continue' button. -->
-  <string name="onboarding_redesign_continue_button">ᱞᱮᱛᱟᱲ</string>
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">ᱞᱮᱛᱟᱲ</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Firefox ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟ ᱞᱮᱢ</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Firefox ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟ ᱞᱮᱢ</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾</string>
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
-  <string name="onboarding_marketing_redesign_learn_more">ᱟᱵᱚ ᱰᱟᱴᱟ ᱪᱮᱫ ᱞᱮᱠᱟ ᱵᱚᱱ ᱵᱮᱵᱷᱟᱨᱮᱫᱟ</string>
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">ᱟᱵᱚ ᱰᱟᱴᱟ ᱪᱮᱫ ᱞᱮᱠᱟ ᱵᱚᱱ ᱵᱮᱵᱷᱟᱨᱮᱫᱟ</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_redesign_positive_button">ᱴᱷᱟᱹᱣᱠᱟᱹ</string>
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">ᱴᱷᱟᱹᱣᱠᱟᱹ</string>
   <!-- Set to default browser onboarding redesign title. -->
-  <string name="onboarding_redesign_set_default_browser_title">ᱢᱩᱞ ᱞᱮᱠᱟᱛᱮ ᱟᱡ ᱛᱮ ᱪᱟᱞᱟᱜ ᱴᱨᱮᱠᱤᱝ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱧᱟᱢ ᱢᱮ</string>
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">ᱢᱩᱞ ᱞᱮᱠᱟᱛᱮ ᱟᱡ ᱛᱮ ᱪᱟᱞᱟᱜ ᱴᱨᱮᱠᱤᱝ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱧᱟᱢ ᱢᱮ</string>
   <!-- Set to default browser onboarding redesign body. -->
-  <string name="onboarding_redesign_set_default_browser_body">ᱢᱤᱫ ᱴᱮᱯ ᱠᱚᱢᱯᱟᱱᱤ ᱠᱚ ᱟᱢᱟᱜ ᱚᱛᱟ ᱨᱮ ᱡᱟᱹᱥᱩᱲᱤ ᱠᱚ ᱵᱚᱱᱫᱚ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟᱭᱟ ᱾</string>
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">ᱢᱤᱫ ᱴᱮᱯ ᱠᱚᱢᱯᱟᱱᱤ ᱠᱚ ᱟᱢᱟᱜ ᱚᱛᱟ ᱨᱮ ᱡᱟᱹᱥᱩᱲᱤ ᱠᱚ ᱵᱚᱱᱫᱚ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟᱭᱟ ᱾</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">ᱟᱢ ᱡᱟᱸᱦᱟ ᱨᱮᱜᱮ Firefox ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ ᱚᱱᱰᱮ ᱥᱤᱱᱠ ᱢᱮ</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱡᱟᱸᱦᱟ ᱨᱮᱜᱮ Firefox ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ ᱚᱱᱰᱮ ᱥᱤᱱᱠ ᱢᱮ</string>
   <!-- Sync onboarding redesign body. -->
-  <string name="onboarding_redesign_sync_body">ᱡᱟᱦᱟᱱ ᱰᱤᱵᱷᱟᱭᱤᱥ ᱨᱮ ᱵᱩᱠᱢᱟᱨᱠ, ᱴᱮᱵᱽ ᱟᱨ ᱯᱟᱥᱣᱟᱨᱰ ᱧᱟᱢ ᱢᱮ᱾ ᱮᱱᱠᱨᱤᱯᱥᱚᱱ ᱛᱮ ᱥᱟᱱᱟᱢ ᱠᱚ ᱨᱟᱠᱷᱟ ᱢᱮᱱᱟᱜᱼᱟ ᱾</string>
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">ᱡᱟᱦᱟᱱ ᱰᱤᱵᱷᱟᱭᱤᱥ ᱨᱮ ᱵᱩᱠᱢᱟᱨᱠ, ᱴᱮᱵᱽ ᱟᱨ ᱯᱟᱥᱣᱟᱨᱰ ᱧᱟᱢ ᱢᱮ᱾ ᱮᱱᱠᱨᱤᱯᱥᱚᱱ ᱛᱮ ᱥᱟᱱᱟᱢ ᱠᱚ ᱨᱟᱠᱷᱟ ᱢᱮᱱᱟᱜᱼᱟ ᱾</string>
   <!-- Sync onboarding redesign positive button text. -->
-  <string name="onboarding_redesign_sync_positive_button">ᱥᱤᱱᱠᱤᱝ ᱮᱦᱚᱵ ᱢᱮ</string>
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">ᱥᱤᱱᱠᱤᱝ ᱮᱦᱚᱵ ᱢᱮ</string>
   <!-- Sync onboarding redesign negative button text. -->
-  <string name="onboarding_redesign_sync_negative_button">ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ</string>
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Firefox ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟ ᱞᱮᱢ</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -627,46 +612,46 @@
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
-  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">ᱞᱮᱛᱟᱲ</string>
+  <string name="nova_onboarding_continue_button">ᱞᱮᱛᱟᱲ</string>
   <!-- "Not now" onboarding button. -->
-  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ</string>
+  <string name="nova_onboarding_negative_button">ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ᱯᱷᱨᱤ ᱫᱟᱹᱲ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱛᱟᱦᱮᱱ ᱢᱮ</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">ᱞᱚᱜᱚᱱ, ᱨᱚᱯᱟ ᱨᱮ, ᱟᱨ ᱟᱢ ᱵᱟᱦᱨᱮ ᱵᱟᱝ ᱟᱠᱨᱤᱧ ᱢᱮᱭᱟᱭ ᱾\nᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱫᱚ ᱱᱤᱛ ᱜᱮ ᱵᱮᱥ ᱮᱱᱟ ᱾</string>
+  <string name="nova_onboarding_tou_subtitle">ᱞᱚᱜᱚᱱ, ᱨᱚᱯᱟ ᱨᱮ, ᱟᱨ ᱟᱢ ᱵᱟᱦᱨᱮ ᱵᱟᱝ ᱟᱠᱨᱤᱧ ᱢᱮᱭᱟᱭ ᱾\nᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱫᱚ ᱱᱤᱛ ᱜᱮ ᱵᱮᱥ ᱮᱱᱟ ᱾</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
   -->
-  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">ᱞᱟᱦᱟᱜ ᱠᱟᱛᱮ, ᱟᱢ %1$s ᱨᱮᱢ ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟ ᱾</string>
+  <string name="nova_onboarding_tou_body_line_1">ᱞᱟᱦᱟᱜ ᱠᱟᱛᱮ, ᱟᱢ %1$s ᱨᱮᱢ ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟ ᱾</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Firefox ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Firefox ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
   <!--
     Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
   -->
-  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox ᱟᱢᱟᱜ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚᱱ ᱤᱫᱤᱭᱟᱭ ᱾ ᱟᱞᱮᱭᱟᱜ %1$s ᱨᱮ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ ᱾</string>
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox ᱟᱢᱟᱜ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚᱱ ᱤᱫᱤᱭᱟᱭ ᱾ ᱟᱞᱮᱭᱟᱜ %1$s ᱨᱮ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ ᱾</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">ᱫᱟᱱᱟᱝ ᱠᱷᱚᱵᱚᱨ</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">ᱫᱟᱱᱟᱝ ᱠᱷᱚᱵᱚᱨ</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
-  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱥᱩᱫᱷᱨᱟᱹᱣ ᱜᱚᱲᱚ ᱞᱟᱹᱜᱤᱫ, Firefox ᱫᱚ Mozilla ᱴᱷᱮᱱ ᱰᱟᱭᱜᱽᱱᱚᱥᱴᱤᱠ ᱟᱨ ᱜᱟᱯᱟᱞᱢᱟᱨᱟᱣ ᱰᱟᱴᱟ ᱠᱩᱞᱟ ᱾ %1$s</string>
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱥᱩᱫᱷᱨᱟᱹᱣ ᱜᱚᱲᱚ ᱞᱟᱹᱜᱤᱫ, Firefox ᱫᱚ Mozilla ᱴᱷᱮᱱ ᱰᱟᱭᱜᱽᱱᱚᱥᱴᱤᱠ ᱟᱨ ᱜᱟᱯᱟᱞᱢᱟᱨᱟᱣ ᱰᱟᱴᱟ ᱠᱩᱞᱟ ᱾ %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">ᱥᱟᱡᱟᱣ ᱠᱚ ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">ᱥᱟᱡᱟᱣ ᱠᱚ ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">ᱵᱚᱛᱚᱨᱟᱱ ᱴᱨᱮᱠᱟᱨ ᱠᱚ ᱵᱤᱫᱟᱹ ᱢᱮᱱ ᱢᱮ</string>
   <!-- "Set to default" onboarding subtitle. -->
-  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">ᱟᱞᱮ ᱟᱢᱟᱜ ᱰᱟᱴᱟ ᱞᱮ ᱨᱩᱠᱷᱤᱭᱟᱹᱭᱟ ᱟᱨ ᱟᱢᱟᱜ ᱠᱞᱤᱠ ᱨᱮ ᱡᱟᱹᱥᱛᱤ ᱠᱷᱚᱱ ᱠᱚᱢᱯᱟᱱᱤ ᱠᱚ ᱟᱡ ᱛᱮ ᱵᱚᱱ ᱵᱚᱱᱫᱚ ᱠᱚᱣᱟ᱾</string>
+  <string name="nova_onboarding_set_to_default_subtitle">ᱟᱞᱮ ᱟᱢᱟᱜ ᱰᱟᱴᱟ ᱞᱮ ᱨᱩᱠᱷᱤᱭᱟᱹᱭᱟ ᱟᱨ ᱟᱢᱟᱜ ᱠᱞᱤᱠ ᱨᱮ ᱡᱟᱹᱥᱛᱤ ᱠᱷᱚᱱ ᱠᱚᱢᱯᱟᱱᱤ ᱠᱚ ᱟᱡ ᱛᱮ ᱵᱚᱱ ᱵᱚᱱᱫᱚ ᱠᱚᱣᱟ᱾</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">ᱢᱩᱞ ᱵᱽᱨᱟᱣᱩᱡᱟᱹᱨ ᱞᱮᱠᱷᱟ ᱥᱟᱡᱟᱣ ᱢᱮ</string>
+  <string name="nova_onboarding_set_to_default_button">ᱢᱩᱞ ᱵᱽᱨᱟᱣᱩᱡᱟᱹᱨ ᱞᱮᱠᱷᱟ ᱥᱟᱡᱟᱣ ᱢᱮ</string>
   <!-- Toolbar selection onboarding title. -->
-  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">ᱟᱢᱟᱜ ᱴᱷᱤᱠᱟᱹᱱᱟ ᱵᱟᱨ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
+  <string name="nova_onboarding_toolbar_selection_title">ᱟᱢᱟᱜ ᱴᱷᱤᱠᱟᱹᱱᱟ ᱵᱟᱨ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
   <!-- Toolbar selection onboarding "top" option label. -->
-  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">ᱪᱮᱛᱟᱱ</string>
+  <string name="nova_onboarding_toolbar_selection_top_label">ᱪᱮᱛᱟᱱ</string>
   <!-- Toolbar selection onboarding "bottom" option label. -->
-  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">ᱞᱟᱛᱟᱨ</string>
+  <string name="nova_onboarding_toolbar_selection_bottom_label">ᱞᱟᱛᱟᱨ</string>
   <!-- Theme selection onboarding title. -->
   <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">ᱟᱢᱟᱜ ᱛᱷᱤᱢ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -676,32 +661,32 @@
   <!-- Theme selection onboarding "dark" option label. -->
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">ᱧᱩᱛ</string>
   <!-- Sync onboarding title. -->
-  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">ᱞᱚᱜᱚᱱ ᱪᱟᱞᱟᱜ ᱢᱮ ᱡᱟᱦᱟᱸ ᱨᱮ ᱢᱟᱲᱟᱝ ᱛᱟᱦᱮᱸ ᱠᱟᱱᱟᱢ</string>
+  <string name="nova_onboarding_sync_title">ᱞᱚᱜᱚᱱ ᱪᱟᱞᱟᱜ ᱢᱮ ᱡᱟᱦᱟᱸ ᱨᱮ ᱢᱟᱲᱟᱝ ᱛᱟᱦᱮᱸ ᱠᱟᱱᱟᱢ</string>
   <!-- Sync onboarding subtitle. -->
-  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">ᱢᱤᱫ ᱥᱱᱮᱯ ᱨᱮ ᱡᱟᱦᱟᱱ ᱥᱟᱫᱷᱚᱱ ᱨᱮ ᱵᱩᱠᱢᱟᱨᱠ, ᱯᱟᱥᱣᱟᱨᱰ ᱟᱨ ᱟᱭᱢᱟ ᱥᱟᱵ ᱢᱮ ᱾ ᱟᱢᱟᱜ ᱯᱚᱨᱥᱚᱱᱟᱞ ᱰᱟᱴᱟ ᱮᱱᱠᱨᱤᱯᱥᱚᱱ ᱥᱟᱶ ᱨᱚᱯᱟ ᱟᱨ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱛᱟᱦᱮᱱᱟ ᱾</string>
+  <string name="nova_onboarding_sync_subtitle">ᱢᱤᱫ ᱥᱱᱮᱯ ᱨᱮ ᱡᱟᱦᱟᱱ ᱥᱟᱫᱷᱚᱱ ᱨᱮ ᱵᱩᱠᱢᱟᱨᱠ, ᱯᱟᱥᱣᱟᱨᱰ ᱟᱨ ᱟᱭᱢᱟ ᱥᱟᱵ ᱢᱮ ᱾ ᱟᱢᱟᱜ ᱯᱚᱨᱥᱚᱱᱟᱞ ᱰᱟᱴᱟ ᱮᱱᱠᱨᱤᱯᱥᱚᱱ ᱥᱟᱶ ᱨᱚᱯᱟ ᱟᱨ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱛᱟᱦᱮᱱᱟ ᱾</string>
   <!-- Sync onboarding button. -->
-  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">ᱥᱤᱱᱠᱤᱝ ᱮᱦᱚᱵ ᱢᱮ</string>
+  <string name="nova_onboarding_sync_button">ᱥᱤᱱᱠᱤᱝ ᱮᱦᱚᱵ ᱢᱮ</string>
   <!-- Marketing onboarding title. -->
-  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">ᱟᱞᱮ ᱵᱮᱥ ᱤᱱᱴᱟᱨᱱᱮᱴ ᱵᱮᱱᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱞᱮᱢ</string>
+  <string name="nova_onboarding_marketing_title">ᱟᱞᱮ ᱵᱮᱥ ᱤᱱᱴᱟᱨᱱᱮᱴ ᱵᱮᱱᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱞᱮᱢ</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾%1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾%1$s</string>
   <!-- Marketing onboarding body link text. -->
-  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">ᱟᱵᱚ ᱰᱟᱴᱟ ᱪᱮᱫ ᱞᱮᱠᱟ ᱵᱚᱱ ᱵᱮᱵᱷᱟᱨᱮᱫᱟ</string>
+  <string name="nova_onboarding_marketing_body_link_text">ᱟᱵᱚ ᱰᱟᱴᱟ ᱪᱮᱫ ᱞᱮᱠᱟ ᱵᱚᱱ ᱵᱮᱵᱷᱟᱨᱮᱫᱟ</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Firefox ᱮᱛᱞᱟᱤᱭᱟᱹ ᱥᱟᱞᱟᱜ ᱟᱢ ᱴᱷᱤᱠ ᱨᱮ ᱫᱚᱦᱚᱢᱮ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱚᱜᱼᱟᱭ</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Firefox ᱨᱮ ᱱᱟᱶᱟ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱯᱷᱤᱪᱟᱨ ᱠᱚ ᱯᱟᱱᱛᱮ ᱢᱮ ᱡᱮᱢᱚᱱ ᱟᱢ ᱥᱟᱨᱟ ᱜᱷᱟᱹᱲᱤᱡ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱛᱟᱦᱮᱱ ᱞᱟᱹᱜᱤᱫ ᱱᱟᱦᱟᱜ ᱛᱮ ᱛᱟᱦᱮᱱ ᱢᱮ᱾</string>
   <!-- Notifications onboarding button. -->
-  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">ᱠᱷᱚᱵᱚᱨ ᱠᱚ ᱦᱮᱡ ᱪᱷᱚᱭ ᱢᱮ</string>
+  <string name="nova_onboarding_notifications_button">ᱠᱷᱚᱵᱚᱨ ᱠᱚ ᱦᱮᱡ ᱪᱷᱚᱭ ᱢᱮ</string>
   <!-- "Add search widget" onboarding title. -->
-  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">ᱥᱟᱱᱟᱢ ᱥᱮᱸᱫᱽᱨᱟ ᱟᱨᱦᱚᱸ ᱯᱨᱟᱭᱣᱮᱴ ᱢᱮ</string>
+  <string name="nova_onboarding_add_search_widget_title">ᱥᱟᱱᱟᱢ ᱥᱮᱸᱫᱽᱨᱟ ᱟᱨᱦᱚᱸ ᱯᱨᱟᱭᱣᱮᱴ ᱢᱮ</string>
   <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">ᱟᱢᱟᱜ ᱯᱷᱚᱱ ᱨᱮᱭᱟᱜ ᱦᱚᱢ ᱥᱠᱨᱤᱱ ᱠᱷᱚᱱ ᱥᱟᱱᱟᱢ ᱥᱮᱸᱫᱽᱨᱟ ᱮᱦᱚᱵ ᱢᱮ ᱟᱨ ᱵᱟᱲᱟᱭ ᱢᱮ Firefox ᱨᱮᱭᱟᱜ ᱟᱡ ᱛᱮ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱟᱢᱟᱜ ᱫᱮᱭᱟ ᱨᱮ ᱢᱮᱱᱟᱜᱼᱟ ᱾</string>
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">ᱟᱢᱟᱜ ᱯᱷᱚᱱ ᱨᱮᱭᱟᱜ ᱦᱚᱢ ᱥᱠᱨᱤᱱ ᱠᱷᱚᱱ ᱥᱟᱱᱟᱢ ᱥᱮᱸᱫᱽᱨᱟ ᱮᱦᱚᱵ ᱢᱮ ᱟᱨ ᱵᱟᱲᱟᱭ ᱢᱮ Firefox ᱨᱮᱭᱟᱜ ᱟᱡ ᱛᱮ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱟᱢᱟᱜ ᱫᱮᱭᱟ ᱨᱮ ᱢᱮᱱᱟᱜᱼᱟ ᱾</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Firefox ᱣᱤᱡᱮᱴ ᱥᱮᱞᱮᱫ ᱢᱮ</string>
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Firefox ᱣᱤᱡᱮᱴ ᱥᱮᱞᱮᱫ ᱢᱮ</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -1137,8 +1122,6 @@
   <string name="alternative_app_icon_group_solid_colors">ᱠᱮᱴᱮᱡ ᱨᱚᱝ</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">ᱜᱽᱨᱮᱰᱤᱭᱮᱱᱴᱥ</string>
-  <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">ᱮᱴᱟᱜᱽ-ᱟᱜ</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">ᱥᱚᱫᱚᱨ ᱟᱠᱟᱱ</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1505,9 +1488,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">ᱩᱥᱨᱟᱹᱣ</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">ᱡᱷᱚᱛᱚ ᱦᱚᱲ ᱞᱟᱹᱜᱤᱫ ᱨᱤᱞᱤᱡᱽ ᱞᱟᱦᱟᱨᱮ ᱯᱷᱤᱪᱟᱨ ᱠᱚ ᱟᱨ ᱟᱭᱰᱤᱭᱟᱥ ᱠᱚ ᱧᱮᱞ ᱵᱤᱰᱟᱹᱣ ᱢᱮ ᱾</string>
+  <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">ᱡᱷᱚᱛᱚ ᱦᱚᱲ ᱞᱟᱹᱜᱤᱫ ᱨᱤᱞᱤᱡᱽ ᱞᱟᱦᱟᱨᱮ ᱯᱷᱤᱪᱟᱨ ᱠᱚ ᱟᱨ ᱟᱭᱰᱤᱭᱟᱥ ᱠᱚ ᱧᱮᱞ ᱵᱤᱰᱟᱹᱣ ᱢᱮ ᱾</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">ᱯᱟᱲᱦᱟᱣ ᱠᱚ ᱵᱚᱦᱟᱞ ᱢᱮ ᱟᱨ ᱪᱟᱹᱞᱩᱭ ᱢᱮ</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">ᱯᱟᱲᱦᱟᱣ ᱠᱚ ᱵᱚᱦᱟᱞ ᱢᱮ ᱟᱨ ᱪᱟᱹᱞᱩᱭ ᱢᱮ</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ</string>
   <!--
@@ -1544,17 +1527,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">ᱱᱤᱡᱮᱨᱟᱜ ᱴᱮᱵᱽ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">ᱯᱨᱭᱣᱮᱴ</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">ᱯᱨᱭᱣᱮᱴ</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">ᱥᱭᱝᱠ</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">ᱥᱭᱝᱠ</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">ᱟᱢᱟᱜ ᱴᱮᱵᱽ ᱠᱚ ᱥᱮᱸᱫᱽᱨᱟᱭ ᱢᱮ</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">ᱡᱷᱚᱛᱚ ᱴᱮᱵᱽ ᱠᱚ ᱦᱟᱹᱴᱧ ᱢᱮ</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">ᱡᱷᱚᱛᱚ ᱴᱮᱵᱽ ᱠᱚ ᱦᱟᱹᱴᱧ ᱢᱮ</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">ᱱᱤᱛᱚᱜᱽᱼᱟᱜ ᱵᱚᱸᱫᱚᱼᱟᱜ ᱴᱮᱵᱽ ᱠᱚ</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱵᱚᱸᱫᱚᱼᱟᱜ</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">ᱱᱤᱛᱚᱜ ᱵᱚᱸᱫᱚᱼᱟᱜ</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">ᱠᱷᱟᱛᱟ ᱨᱮᱭᱟᱜ ᱥᱟᱡᱟᱣ ᱠᱚ</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1570,11 +1553,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">ᱵᱟᱹᱰᱨᱟᱹ</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">ᱵᱩᱻᱠᱢᱟᱨᱠ</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">ᱵᱩᱻᱠᱢᱟᱨᱠ</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">ᱵᱟᱪᱷᱟᱣ ᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱵᱩᱠᱢᱟᱨᱠ ᱢᱮ</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">ᱵᱚᱸᱫᱽ</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">ᱵᱚᱸᱫᱽ</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">ᱵᱟᱪᱷᱟᱣᱟᱠ ᱴᱮᱵᱽ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1582,7 +1565,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">ᱱᱟᱶᱟ ᱛᱩᱢᱟᱹᱞ ᱨᱮ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱦᱟᱹᱴᱤᱧ ᱢᱮ</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱦᱟᱹᱴᱤᱧ ᱢᱮ</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱ ᱴᱮᱵᱽ ᱢᱮᱱᱭᱩ ᱠᱚ</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -2200,7 +2183,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">ᱥᱭᱝᱠ ᱞᱟᱹᱜᱤᱫ ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ ᱢᱮ</string>
   <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in">ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ</string>
+  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ᱡᱚᱛᱚ ᱥᱟᱫᱷᱚᱱ ᱛᱮ ᱵᱷᱮᱡᱟᱭᱢᱮ</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2360,7 +2343,7 @@
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">ᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱰᱟᱴᱟ ᱟᱡ ᱛᱮ ᱢᱮᱴᱟᱣ ᱛᱟᱦᱮᱱᱟᱭ ᱡᱚᱠᱷᱚᱱ ᱟᱢ \"ᱟᱲᱟᱹᱜ\" ᱵᱟᱪᱷᱟᱣ ᱛᱟᱦᱮᱱᱟᱢ ᱢᱩᱞ ᱢᱮᱱᱩ ᱠᱷᱚᱱ</string>
   <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action">ᱟᱲᱟᱹᱜ ᱢᱮ</string>
+  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">ᱟᱲᱟᱹᱜ ᱢᱮ</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">ᱢᱮᱴᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱚᱠᱛᱚ ᱨᱮᱭᱟᱜ ᱨᱮᱧᱡᱽ</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -3059,9 +3042,9 @@
   -->
   <string name="certificate_info_verified_by">ᱯᱚᱨᱢᱟᱱᱤᱡᱺ%1$s</string>
   <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button">ᱢᱮᱴᱟᱣ ᱢᱮ</string>
+  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">ᱢᱮᱴᱟᱣ ᱢᱮ</string>
   <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button">ᱥᱟᱯᱲᱟᱣ</string>
+  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">ᱥᱟᱯᱲᱟᱣ</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">ᱪᱮᱫ ᱟᱢ ᱜᱚᱴᱟ ᱛᱮ ᱢᱮᱱᱟᱢᱼᱟ ᱱᱚᱶᱟ ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫᱽ ᱢᱮᱴᱟᱣ ᱞᱟ.ᱜᱤᱛ ᱛᱮ?</string>
   <!-- Positive action of a dialog asking to delete -->
@@ -3069,15 +3052,15 @@
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">ᱵᱟᱹᱰᱨᱟᱹ</string>
   <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫ ᱨᱮᱭᱟᱜ ᱵᱟᱪᱷᱟᱣ ᱠᱚ</string>
+  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫ ᱨᱮᱭᱟᱜ ᱵᱟᱪᱷᱟᱣ ᱠᱚ</string>
   <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3">ᱣᱤᱵᱽ ᱴᱷᱤᱠᱬᱟᱹ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱚᱞ ᱡᱟᱭᱜᱟ ᱾</string>
+  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">ᱣᱤᱵᱽ ᱴᱷᱤᱠᱬᱟᱹ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱚᱞ ᱡᱟᱭᱜᱟ ᱾</string>
   <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3">ᱵᱤᱵᱷᱟᱨᱤᱭᱟᱹᱧᱩᱛᱩᱢ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱚᱞ ᱡᱟᱭᱜᱟ ᱾</string>
+  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">ᱵᱤᱵᱷᱟᱨᱤᱭᱟᱹᱧᱩᱛᱩᱢ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱚᱞ ᱡᱟᱭᱜᱟ ᱾</string>
   <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱚᱞ ᱡᱟᱭᱜᱟ ᱾</string>
+  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱚᱞ ᱡᱟᱭᱜᱟ ᱾</string>
   <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2">ᱵᱚᱫᱚᱞ ᱠᱚ ᱥᱟᱺᱪᱟᱣ ᱢᱮ ᱾</string>
+  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">ᱵᱚᱫᱚᱞ ᱠᱚ ᱥᱟᱺᱪᱟᱣ ᱢᱮ ᱾</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫᱽ ᱥᱟᱯᱲᱟᱣ ᱢᱮ</string>
   <!-- The page title for adding new password. -->

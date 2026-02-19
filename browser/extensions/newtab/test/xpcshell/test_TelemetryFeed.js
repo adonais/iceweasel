@@ -592,6 +592,10 @@ add_task(async function test_endSession_no_ping_on_no_visibility_event() {
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
   Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, true);
   let instance = new TelemetryFeed();
+
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(instance, "configureContentPing");
+
   instance.addSession("foo");
 
   Services.telemetry.clearEvents();
@@ -603,6 +607,8 @@ add_task(async function test_endSession_no_ping_on_no_visibility_event() {
 
   Services.prefs.clearUserPref(PREF_TELEMETRY);
   Services.prefs.clearUserPref(PREF_EVENT_TELEMETRY);
+
+  sandbox.restore();
 });
 
 add_task(async function test_endSession_send_ping() {
@@ -617,6 +623,7 @@ add_task(async function test_endSession_send_ping() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(instance, "createSessionEndEvent");
   sandbox.stub(instance.utEvents, "sendSessionEndEvent");
+  sandbox.stub(instance, "configureContentPing");
 
   let session = instance.addSession("foo");
 
@@ -1418,6 +1425,7 @@ add_task(async function test_sendPageTakeoverData_homepage_category() {
 
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
   sandbox.stub(HomePage, "get").returns("https://searchprovider.com");
+  sandbox.stub(instance, "configureContentPing");
   instance._classifySite = () => Promise.resolve("other");
 
   await instance.sendPageTakeoverData();
@@ -1441,6 +1449,7 @@ add_task(async function test_sendPageTakeoverData_newtab_category_custom() {
     .stub(AboutNewTab, "newTabURL")
     .get(() => "https://searchprovider.com");
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+  sandbox.stub(instance, "configureContentPing");
   instance._classifySite = () => Promise.resolve("other");
 
   await instance.sendPageTakeoverData();
@@ -1460,6 +1469,7 @@ add_task(async function test_sendPageTakeoverData_newtab_category_custom() {
   Services.fog.testResetFOG();
 
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+  sandbox.stub(instance, "configureContentPing");
   instance._classifySite = () => Promise.resolve("other");
 
   await instance.sendPageTakeoverData();
@@ -1483,6 +1493,7 @@ add_task(async function test_sendPageTakeoverData_newtab_category_extension() {
   sandbox.stub(ExtensionSettingsStore, "getSetting").returns({ id: ID });
 
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+  sandbox.stub(instance, "configureContentPing");
   instance._classifySite = () => Promise.resolve("other");
 
   await instance.sendPageTakeoverData();
@@ -1503,6 +1514,7 @@ add_task(async function test_sendPageTakeoverData_newtab_disabled() {
 
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
   Services.prefs.setBoolPref("browser.newtabpage.enabled", false);
+  sandbox.stub(instance, "configureContentPing");
   instance._classifySite = () => Promise.resolve("other");
 
   await instance.sendPageTakeoverData();
@@ -1523,6 +1535,7 @@ add_task(async function test_sendPageTakeoverData_homepage_disabled() {
 
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
   sandbox.stub(HomePage, "overridden").get(() => true);
+  sandbox.stub(instance, "configureContentPing");
 
   await instance.sendPageTakeoverData();
   Assert.equal(Glean.newtab.homepageCategory.testGetValue(), "disabled");
@@ -1538,6 +1551,7 @@ add_task(async function test_sendPageTakeoverData_newtab_ping() {
   Services.fog.testResetFOG();
 
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+  sandbox.stub(instance, "configureContentPing");
 
   let pingSubmitted = new Promise(resolve => {
     GleanPings.newtab.testBeforeNextSubmit(reason => {
@@ -1599,13 +1613,14 @@ add_task(
           is_sponsored: String(false),
           position: String(POS_1),
           recommendation_id: "decaf-c0ff33",
-          tile_id: String(1),
+          content_redacted: String(true),
         });
         Assert.deepEqual(pocketImpressions[1].extra, {
           newtab_visit_id: SESSION_ID,
           is_sponsored: String(true),
           position: String(POS_2),
           tile_id: String(2),
+          content_redacted: String(true),
         });
         Assert.equal(Glean.pocket.shim.testGetValue(), SHIM);
         Assert.deepEqual(
@@ -2412,8 +2427,9 @@ add_task(
     Assert.deepEqual(clicks[0].extra, {
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(true),
-      position: ACTION_POSITION,
+      position: String(ACTION_POSITION),
       tile_id: String(448685088),
+      content_redacted: String(true),
     });
 
     await pingSubmitted;
@@ -2421,88 +2437,6 @@ add_task(
     sandbox.restore();
   }
 );
-
-add_task(
-  async function test_handleDiscoveryStreamUserEvent_thumbs_down_event() {
-    info(
-      "TelemetryFeed.handleDiscoveryStreamUserEvent instruments a thumbs down" +
-        " event of an organic story"
-    );
-
-    let sandbox = sinon.createSandbox();
-    let instance = new TelemetryFeed();
-    Services.fog.testResetFOG();
-    const ACTION_POSITION = 42;
-    let action = actionCreators.DiscoveryStreamUserEvent({
-      event: "POCKET_THUMBS_DOWN",
-      action_position: ACTION_POSITION,
-      value: {
-        card_type: "organic",
-        recommendation_id: "decaf-c0ff33",
-        tile_id: 314623757745896,
-        thumbs_down: true,
-        thumbs_up: false,
-      },
-    });
-
-    const SESSION_ID = "decafc0ffee";
-    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
-
-    instance.handleDiscoveryStreamUserEvent(action);
-
-    let thumbVotes = Glean.pocket.thumbVotingInteraction.testGetValue();
-    Assert.equal(thumbVotes.length, 1, "Recorded 1 thumbs down");
-    Assert.deepEqual(thumbVotes[0].extra, {
-      newtab_visit_id: SESSION_ID,
-      recommendation_id: "decaf-c0ff33",
-      tile_id: String(314623757745896),
-      thumbs_down: String(true),
-      thumbs_up: String(false),
-    });
-
-    sandbox.restore();
-  }
-);
-
-add_task(async function test_handleDiscoveryStreamUserEvent_thumbs_up_event() {
-  info(
-    "TelemetryFeed.handleDiscoveryStreamUserEvent instruments a thumbs up" +
-      " event of an organic story"
-  );
-
-  let sandbox = sinon.createSandbox();
-  let instance = new TelemetryFeed();
-  Services.fog.testResetFOG();
-  const ACTION_POSITION = 42;
-  let action = actionCreators.DiscoveryStreamUserEvent({
-    event: "POCKET_THUMBS_DOWN",
-    action_position: ACTION_POSITION,
-    value: {
-      card_type: "organic",
-      recommendation_id: "decaf-c0ff33",
-      tile_id: 314623757745896,
-      thumbs_down: false,
-      thumbs_up: true,
-    },
-  });
-
-  const SESSION_ID = "decafc0ffee";
-  sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
-
-  instance.handleDiscoveryStreamUserEvent(action);
-
-  let thumbVotes = Glean.pocket.thumbVotingInteraction.testGetValue();
-  Assert.equal(thumbVotes.length, 1, "Recorded 1 thumbs down");
-  Assert.deepEqual(thumbVotes[0].extra, {
-    newtab_visit_id: SESSION_ID,
-    recommendation_id: "decaf-c0ff33",
-    tile_id: String(314623757745896),
-    thumbs_down: String(false),
-    thumbs_up: String(true),
-  });
-
-  sandbox.restore();
-});
 
 add_task(
   async function test_handleAboutSponsoredTopSites_record_showPrivacyClick() {
@@ -2733,4 +2667,77 @@ add_task(function test_randomizeOrganicContentEvent() {
   Assert.deepEqual(result, allRecs[3]);
 
   sandbox.restore();
+});
+
+add_task(async function test_handleSpocPlaceholderDuration_records_metric() {
+  info(
+    "TelemetryFeed.handleSpocPlaceholderDuration should record the " +
+      "spoc_placeholder_duration metric"
+  );
+
+  let instance = new TelemetryFeed();
+  Services.fog.testResetFOG();
+
+  const DURATION_MS = 150;
+  let action = {
+    type: actionTypes.DISCOVERY_STREAM_SPOC_PLACEHOLDER_DURATION,
+    data: { duration: DURATION_MS },
+  };
+
+  instance.handleSpocPlaceholderDuration(action);
+
+  let recordedDuration = Glean.pocket.spocPlaceholderDuration.testGetValue();
+  Assert.ok(recordedDuration, "Metric should be recorded");
+  Assert.equal(recordedDuration.count, 1, "Should have 1 sample");
+  Assert.greaterOrEqual(
+    recordedDuration.sum,
+    DURATION_MS,
+    "Duration should be at least the input value"
+  );
+});
+
+add_task(async function test_handleSpocPlaceholderDuration_ignores_negative() {
+  info(
+    "TelemetryFeed.handleSpocPlaceholderDuration should ignore negative durations"
+  );
+
+  let instance = new TelemetryFeed();
+  Services.fog.testResetFOG();
+
+  let action = {
+    type: actionTypes.DISCOVERY_STREAM_SPOC_PLACEHOLDER_DURATION,
+    data: { duration: -1 },
+  };
+
+  instance.handleSpocPlaceholderDuration(action);
+
+  let recordedDuration = Glean.pocket.spocPlaceholderDuration.testGetValue();
+  Assert.equal(
+    recordedDuration,
+    null,
+    "Metric should not be recorded for negative duration"
+  );
+});
+
+add_task(async function test_handleSpocPlaceholderDuration_ignores_undefined() {
+  info(
+    "TelemetryFeed.handleSpocPlaceholderDuration should ignore undefined durations"
+  );
+
+  let instance = new TelemetryFeed();
+  Services.fog.testResetFOG();
+
+  let action = {
+    type: actionTypes.DISCOVERY_STREAM_SPOC_PLACEHOLDER_DURATION,
+    data: {},
+  };
+
+  instance.handleSpocPlaceholderDuration(action);
+
+  let recordedDuration = Glean.pocket.spocPlaceholderDuration.testGetValue();
+  Assert.equal(
+    recordedDuration,
+    null,
+    "Metric should not be recorded for undefined duration"
+  );
 });

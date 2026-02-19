@@ -30,11 +30,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.compose.base.Dropdown
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.DestructiveButton
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.OutlinedButton
@@ -58,6 +58,7 @@ import org.mozilla.fenix.settings.address.store.isEditing
 import org.mozilla.fenix.settings.address.utils.generateAddress
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.compose.base.text.Text as DropdownText
 
 /**
@@ -318,46 +319,28 @@ private fun createStore(
     listOf(),
 ).also { it.dispatch(ViewAppeared) }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun AddAddressPreview() {
+private fun AddAddressPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val store = createStore()
 
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         EditAddressScreen(store)
     }
 }
 
-@Preview
+@FlexibleWindowPreview
 @Composable
-private fun AddAddressPrivatePreview() {
-    val store = createStore()
-
-    FirefoxTheme(theme = Theme.Private) {
-        EditAddressScreen(store)
-    }
-}
-
-@FlexibleWindowLightDarkPreview
-@Composable
-private fun EditAddressPreview() {
+private fun EditAddressPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val store = createStore(
         address = generateAddress(),
     )
 
-    FirefoxTheme {
-        EditAddressScreen(store)
-    }
-}
-
-@Preview
-@Composable
-private fun EditAddressPrivatePreview() {
-    val store = createStore(
-        address = generateAddress(),
-    )
-
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         EditAddressScreen(store)
     }
 }

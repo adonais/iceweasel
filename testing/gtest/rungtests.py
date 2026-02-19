@@ -259,19 +259,19 @@ class GTests:
 
 class gtestOptions(argparse.ArgumentParser):
     def __init__(self):
-        super(gtestOptions, self).__init__()
+        super().__init__()
 
         self.add_argument(
             "--cwd",
             dest="cwd",
             default=os.getcwd(),
-            help="absolute path to directory from which " "to run the binary",
+            help="absolute path to directory from which to run the binary",
         )
         self.add_argument(
             "--xre-path",
             dest="xre_path",
             default=None,
-            help="absolute path to directory containing XRE " "(probably xulrunner)",
+            help="absolute path to directory containing XRE (probably xulrunner)",
         )
         self.add_argument(
             "--symbols-path",

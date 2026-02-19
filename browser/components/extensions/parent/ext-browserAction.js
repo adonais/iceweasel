@@ -913,37 +913,41 @@ this.browserAction = class extends ExtensionAPIPersistent {
   }
 
   getIconData(icons) {
-    let getIcon = (icon, theme) => {
+    const getIcon = (icon, theme) => {
       if (typeof icon === "object") {
         return IconDetails.escapeUrl(icon[theme]);
       }
       return IconDetails.escapeUrl(icon);
     };
 
-    let getStyle = (name, icon1x, icon2x) => {
-      return `
-        --webextension-${name}: image-set(
-          url("${getIcon(icon1x, "default")}"),
-          url("${getIcon(icon2x, "default")}") 2x
-        );
-        --webextension-${name}-light: image-set(
-          url("${getIcon(icon1x, "light")}"),
-          url("${getIcon(icon2x, "light")}") 2x
-        );
-        --webextension-${name}-dark: image-set(
-          url("${getIcon(icon1x, "dark")}"),
-          url("${getIcon(icon2x, "dark")}") 2x
-        );
-      `;
+    const getBackgroundImage = (icon1x, icon2x = icon1x) => {
+      const image1x = `url("${icon1x}")`;
+      if (icon2x === icon1x) {
+        return image1x;
+      }
+
+      const image2x = `url("${icon2x}")`;
+      return `image-set(${image1x} 1dppx, ${image2x} 2dppx);`;
     };
 
-    let icon16 = IconDetails.getPreferredIcon(icons, this.extension, 16).icon;
-    let icon32 = IconDetails.getPreferredIcon(icons, this.extension, 32).icon;
-    let icon64 = IconDetails.getPreferredIcon(icons, this.extension, 64).icon;
+    const getStyle = (cssVarName, icon1x, icon2x) => {
+      return `${cssVarName}: ${getBackgroundImage(
+        getIcon(icon1x, "light"),
+        getIcon(icon2x, "light")
+      )};
+      ${cssVarName}-dark: ${getBackgroundImage(
+        getIcon(icon1x, "dark"),
+        getIcon(icon2x, "dark")
+      )};`;
+    };
+
+    const icon16 = IconDetails.getPreferredIcon(icons, this.extension, 16).icon;
+    const icon32 = IconDetails.getPreferredIcon(icons, this.extension, 32).icon;
+    const icon64 = IconDetails.getPreferredIcon(icons, this.extension, 64).icon;
 
     return `
-        ${getStyle("menupanel-image", icon32, icon64)}
-        ${getStyle("toolbar-image", icon16, icon32)}
+        ${getStyle("--webextension-menupanel-image", icon32, icon64)}
+        ${getStyle("--webextension-toolbar-image", icon16, icon32)}
       `;
   }
 

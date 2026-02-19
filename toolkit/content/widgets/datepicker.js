@@ -380,46 +380,11 @@ function DatePicker(context) {
      */
     handleMessage(event) {
       switch (event.data.name) {
-        case "PickerSetValue": {
-          if (!this.context.root.hidden) {
-            this.set(event.data.detail);
-          }
-          break;
-        }
         case "PickerInit": {
           this.init(event.data.detail);
           break;
         }
       }
-    },
-
-    /**
-     * Set the date state and update the components with the new state.
-     *
-     * @param {object} dateState
-     *        {
-     *          {Number} year [optional]
-     *          {Number} month [optional]
-     *          {Number} date [optional]
-     *        }
-     */
-    set({ year, month, day }) {
-      if (!this.state) {
-        return;
-      }
-
-      const { dateKeeper } = this.state;
-
-      dateKeeper.setCalendarMonth({
-        year,
-        month,
-      });
-      dateKeeper.setSelection({
-        year,
-        month,
-        day,
-      });
-      this._update({ noSmoothScroll: true });
     },
   };
 

@@ -32,7 +32,7 @@ import { RESTRequest } from "resource://services-common/rest.sys.mjs";
  *   @param {string} options.serverURL
  *   The URL of the profile server to query.
  *   Example: https://profile.accounts.firefox.com/v1
- * @constructor
+ * @class
  */
 export var FxAccountsProfileClient = function (options) {
   if (!options?.serverURL) {
@@ -232,7 +232,7 @@ FxAccountsProfileClient.prototype = {
  *          Error description
  *   @param {string | null} [details.message]
  *          Error message
- * @constructor
+ * @class
  */
 export var FxAccountsProfileClientError = function (details) {
   details = details || {};

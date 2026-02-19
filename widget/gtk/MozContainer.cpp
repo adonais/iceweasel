@@ -59,7 +59,7 @@ GType moz_container_get_type(void) {
     };
 
     moz_container_type =
-        g_type_register_static(GTK_TYPE_CONTAINER, "MozContainer",
+        g_type_register_static(GTK_TYPE_WIDGET, "MozContainer",
                                &moz_container_info, static_cast<GTypeFlags>(0));
   }
 

@@ -19,7 +19,6 @@ import mozilla.components.browser.state.action.UpdateDistribution
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import mozilla.components.service.location.LocationService
 
@@ -39,14 +38,14 @@ class RegionMiddleware(
     internal var updateJob: Job? = null
 
     override fun invoke(
-        context: MiddlewareContext<BrowserState, BrowserAction>,
+        store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
         action: BrowserAction,
     ) {
         if (action is InitAction || action is SearchAction.RefreshSearchEnginesAction) {
-            updateJob = determineRegion(context.store)
+            updateJob = determineRegion(store)
         } else if (action is UpdateDistribution) {
-            updateJob = determineRegion(context.store, action.distributionId)
+            updateJob = determineRegion(store, action.distributionId)
         }
 
         next(action)

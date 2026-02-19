@@ -669,6 +669,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
     static mozilla::DoublyLinkedListElement<T>& Get(T* aThis) {
       return aThis->debuggerLink;
     }
+    static const mozilla::DoublyLinkedListElement<T>& Get(const T* aThis) {
+      return aThis->debuggerLink;
+    }
   };
 
   // List of all js::Breakpoints in this debugger.
@@ -1472,6 +1475,9 @@ class BreakpointSite {
   template <typename T>
   struct SiteLinkAccess {
     static mozilla::DoublyLinkedListElement<T>& Get(T* aThis) {
+      return aThis->siteLink;
+    }
+    static const mozilla::DoublyLinkedListElement<T>& Get(const T* aThis) {
       return aThis->siteLink;
     }
   };

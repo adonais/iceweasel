@@ -6,6 +6,7 @@ package mozilla.components.support.utils.ext
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.graphics.Rect
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.TIRAMISU
 import android.view.View
@@ -15,6 +16,10 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.addCallback
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
+import androidx.annotation.VisibleForTesting
+import androidx.core.view.ViewCompat
+import androidx.core.view.ViewCompat.getRootWindowInsets
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.findViewTreeLifecycleOwner
@@ -75,4 +80,43 @@ private fun findBackPressedDispatcherOwner(context: Context): OnBackPressedDispa
         innerContext = innerContext.baseContext
     }
     return null
+}
+
+/**
+ * Checks if the keyboard is visible
+ *
+ * Inspired by https://stackoverflow.com/questions/2150078/how-to-check-visibility-of-software-keyboard-in-android
+ * API 30 adds a native method for this. We should use it (and a compat method if one
+ * is added) when it becomes available
+ */
+fun View.isKeyboardVisible(): Boolean {
+    return getKeyboardHeight() > 0
+}
+
+/**
+ * Calculates the height of the onscreen keyboard.
+ */
+fun View.getKeyboardHeight(
+    rootViewHeight: Int = rootView.height,
+    windowVisibleDisplayFrame: Rect = getWindowVisibleDisplayFrame(),
+    bottomInset: Int = getWindowInsets()?.bottom() ?: 0,
+): Int {
+    val statusBarHeight = windowVisibleDisplayFrame.top
+    return rootViewHeight - (windowVisibleDisplayFrame.height() + statusBarHeight) - bottomInset
+}
+
+/**
+ * A safer version of [ViewCompat.getRootWindowInsets] that does not throw a NullPointerException
+ * if the view is not attached.
+ */
+fun View.getWindowInsets(): WindowInsetsCompat? {
+    return rootWindowInsets?.let {
+        WindowInsetsCompat.toWindowInsetsCompat(it)
+    }
+}
+
+@VisibleForTesting
+internal fun View.getWindowVisibleDisplayFrame(): Rect = with(Rect()) {
+    getWindowVisibleDisplayFrame(this)
+    this
 }

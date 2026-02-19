@@ -27,6 +27,9 @@ annotated diff
 full diff
   Open the full diff view on the repository, e.g. on `hg.mozilla.org`.
 
+Phabricator Revision
+  Open the Phabricator revision for the commit.
+
 Show latest version without this line
   Open the revision-specific URL of the last revision before the given commit.
 

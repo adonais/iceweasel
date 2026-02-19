@@ -29,6 +29,7 @@ dependencies {
     implementation project(':components:service-location')
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')
+    implementation project(':components:support-locale')
     implementation project(':components:support-remotesettings')
     implementation project(':components:support-utils')
     implementation project(':components:ui-colors')

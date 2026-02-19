@@ -35,7 +35,7 @@
 
   .promo-card-dismiss-button {
     position: absolute;
-    top: var(--space-small);
+    inset-block-start: var(--space-small);
     inset-inline-end: var(--space-small);
     margin: 0;
   }

@@ -127,6 +127,8 @@ pub struct AdapterInformation<S> {
     backend: wgt::Backend,
     support_use_shared_texture_in_swap_chain: bool,
     transient_saves_memory: bool,
+    subgroup_min_size: u32,
+    subgroup_max_size: u32,
 }
 
 #[repr(C)]

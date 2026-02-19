@@ -50,6 +50,7 @@ def params():
         "project": "autoland",
         "pushdate": LAST_BACKSTOP_PUSHDATE + 1,
         "pushlog_id": f"{LAST_BACKSTOP_PUSHID + 1}",
+        "repository_type": "hg",
         "target_tasks_method": "default",
     }
 
@@ -145,6 +146,14 @@ def params():
             True,
             id="last backstop failed",
         ),
+        pytest.param(
+            {},
+            {
+                "repository_type": "git",
+            },
+            True,
+            id="git",
+        ),
     ),
 )
 def test_is_backstop(
@@ -161,9 +170,10 @@ def test_is_backstop(
 
     urls = {
         "index": get_index_url(
-            BACKSTOP_INDEX.format(
-                **{"trust-domain": "gecko", "project": params["project"]}
-            )
+            BACKSTOP_INDEX.format(**{
+                "trust-domain": "gecko",
+                "project": params["project"],
+            })
         ),
         "artifact": get_artifact_url(LAST_BACKSTOP_PUSHID, "public%2Fparameters.yml"),
         "status": get_task_url(LAST_BACKSTOP_PUSHID) + "/status",

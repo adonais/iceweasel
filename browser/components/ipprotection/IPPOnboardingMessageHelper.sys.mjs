@@ -7,14 +7,15 @@ import { ONBOARDING_PREF_FLAGS } from "chrome://browser/content/ipprotection/ipp
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
-  IPPProxyStates: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyManager:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyStates:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
 });
 
 const ONBOARDING_MESSAGE_MASK_PREF =
   "browser.ipProtection.onboardingMessageMask";
 const AUTOSTART_PREF = "browser.ipProtection.autoStartEnabled";
-const MODE_PREF = "browser.ipProtection.exceptionsMode";
 const PERM_NAME = "ipp-vpn";
 
 /**
@@ -23,8 +24,19 @@ const PERM_NAME = "ipp-vpn";
  * according to feature (general VPN, autostart, site exceptions) through bit mask
  */
 class IPPOnboardingMessageHelper {
+  #observingPermChanges = false;
+
   constructor() {
     this.handleEvent = this.#handleEvent.bind(this);
+
+    // If at least one exception is saved, don't show site exceptions onboarding message
+    let savedSites = Services.perms.getAllByTypes([PERM_NAME]);
+    if (savedSites.length) {
+      this.setOnboardingFlag(ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS);
+    } else {
+      Services.obs.addObserver(this, "perm-changed");
+      this.#observingPermChanges = true;
+    }
 
     Services.prefs.addObserver(AUTOSTART_PREF, () =>
       this.setOnboardingFlag(ONBOARDING_PREF_FLAGS.EVER_TURNED_ON_AUTOSTART)
@@ -33,16 +45,6 @@ class IPPOnboardingMessageHelper {
     let autoStartPref = Services.prefs.getBoolPref(AUTOSTART_PREF, false);
     if (autoStartPref) {
       this.setOnboardingFlag(ONBOARDING_PREF_FLAGS.EVER_TURNED_ON_AUTOSTART);
-    }
-
-    Services.prefs.addObserver(MODE_PREF, () =>
-      this.setOnboardingFlag(ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS)
-    );
-
-    // If at least one exception is saved, don't show site exceptions onboarding message
-    let savedSites = Services.perms.getAllByTypes([PERM_NAME]);
-    if (savedSites.length !== 0) {
-      this.setOnboardingFlag(ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS);
     }
   }
 
@@ -56,10 +58,26 @@ class IPPOnboardingMessageHelper {
   initOnStartupCompleted() {}
 
   uninit() {
+    if (this.#observingPermChanges) {
+      Services.obs.removeObserver(this, "perm-changed");
+      this.#observingPermChanges = false;
+    }
+
     lazy.IPPProxyManager.removeEventListener(
       "IPPProxyManager:StateChanged",
       this.handleEvent
     );
+  }
+
+  observe(subject, topic, data) {
+    let permission = subject.QueryInterface(Ci.nsIPermission);
+    if (
+      topic === "perm-changed" &&
+      permission.type === PERM_NAME &&
+      data === "added"
+    ) {
+      this.setOnboardingFlag(ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS);
+    }
   }
 
   readPrefMask() {

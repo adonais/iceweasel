@@ -42,11 +42,15 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructIL(
     gc::AllocSite* allocSite, js::gc::Heap initialHeap) {
   // It is up to our caller to ensure that `typeDefData` refers to a type that
   // doesn't need OOL storage.
+  MOZ_ASSERT(typeDefData->cached.strukt.totalSizeOOL == 0);
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
+  MOZ_ASSERT(!IsFinalizedKind(typeDefData->cached.strukt.allocKind));
+
   AutoSetNewObjectMetadata metadata(cx);
-  debugCheckNewObject(typeDefData->shape, typeDefData->allocKind, initialHeap);
+  debugCheckNewObject(typeDefData->shape, typeDefData->cached.strukt.allocKind,
+                      initialHeap);
 
   mozilla::DebugOnly<const wasm::TypeDef*> typeDef = typeDefData->typeDef;
   MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
@@ -54,22 +58,19 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructIL(
   // This doesn't need to be rooted, since all we do with it prior to
   // return is to zero out the fields (and then only if ZeroFields is true).
   WasmStructObject* structObj = (WasmStructObject*)cx->newCell<WasmGcObject>(
-      typeDefData->allocKind, initialHeap, typeDefData->clasp, allocSite);
+      typeDefData->cached.strukt.allocKind, initialHeap, typeDefData->clasp,
+      allocSite);
   if (MOZ_UNLIKELY(!structObj)) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  MOZ_ASSERT((uintptr_t(structObj->inlineData()) % sizeof(uintptr_t)) == 0);
   structObj->initShape(typeDefData->shape);
   structObj->superTypeVector_ = typeDefData->superTypeVector;
-  structObj->outlineData_ = nullptr;
   if constexpr (ZeroFields) {
-    uint32_t totalBytes = typeDefData->structTypeSize;
-    MOZ_ASSERT(totalBytes == typeDef->structType().size_);
-    MOZ_ASSERT(totalBytes <= WasmStructObject_MaxInlineBytes);
-    MOZ_ASSERT((totalBytes % sizeof(uintptr_t)) == 0);
-    memset(structObj->inlineData(), 0, totalBytes);
+    size_t headerSize = typeDefData->cached.strukt.payloadOffsetIL;
+    memset((uint8_t*)structObj + headerSize, 0,
+           typeDefData->cached.strukt.totalSizeIL - headerSize);
   }
 
   MOZ_ASSERT(typeDefData->clasp->shouldDelayMetadataBuilder());
@@ -88,51 +89,52 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructOOL(
     gc::AllocSite* allocSite, js::gc::Heap initialHeap) {
   // It is up to our caller to ensure that `typeDefData` refers to a type that
   // needs OOL storage.
+  MOZ_ASSERT(typeDefData->cached.strukt.totalSizeOOL > 0);
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
+  MOZ_ASSERT(!IsFinalizedKind(typeDefData->cached.strukt.allocKind));
+
   AutoSetNewObjectMetadata metadata(cx);
-  debugCheckNewObject(typeDefData->shape, typeDefData->allocKind, initialHeap);
+  debugCheckNewObject(typeDefData->shape, typeDefData->cached.strukt.allocKind,
+                      initialHeap);
 
   mozilla::DebugOnly<const wasm::TypeDef*> typeDef = typeDefData->typeDef;
   MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
 
-  uint32_t totalBytes = typeDefData->structTypeSize;
-  MOZ_ASSERT(totalBytes == typeDef->structType().size_);
-  MOZ_ASSERT(totalBytes > WasmStructObject_MaxInlineBytes);
-  MOZ_ASSERT((totalBytes % sizeof(uintptr_t)) == 0);
+  uint32_t outlineBytes = typeDefData->cached.strukt.totalSizeOOL;
 
-  uint32_t inlineBytes, outlineBytes;
-  WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
-  MOZ_ASSERT(inlineBytes == WasmStructObject_MaxInlineBytes);
-  MOZ_ASSERT(outlineBytes > 0);
-
-  // See corresponding comment in WasmArrayObject::createArray.
-  Rooted<WasmStructObject*> structObj(cx);
-  structObj = (WasmStructObject*)cx->newCell<WasmGcObject>(
-      typeDefData->allocKind, initialHeap, typeDefData->clasp, allocSite);
+  // This doesn't need to be Rooted because the AllocateCellBuffer call that
+  // follows can't trigger GC.
+  auto* structObj = (WasmStructObject*)cx->newCell<WasmGcObject>(
+      typeDefData->cached.strukt.allocKind, initialHeap, typeDefData->clasp,
+      allocSite);
   if (MOZ_UNLIKELY(!structObj)) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  uint8_t* outlineData = AllocateCellBuffer<uint8_t>(
-      cx, structObj, outlineBytes, MaxNurseryTrailerSize);
-  if (MOZ_UNLIKELY(!outlineData)) {
-    structObj->outlineData_ = nullptr;
-    return nullptr;
-  }
-
-  MOZ_ASSERT((uintptr_t(structObj->inlineData()) % sizeof(uintptr_t)) == 0);
   structObj->initShape(typeDefData->shape);
   structObj->superTypeVector_ = typeDefData->superTypeVector;
 
-  // Initialize the outline data fields
-  structObj->outlineData_ = outlineData;
+  uint8_t* outlineData = AllocateCellBuffer<uint8_t>(
+      cx, structObj, outlineBytes, MaxNurseryTrailerSize);
+  if (MOZ_UNLIKELY(!outlineData)) {
+    // AllocateCellBuffer will have called ReportOutOfMemory(cx) itself,
+    // so no need to do that here.
+    structObj->setOOLPointer(typeDefData, nullptr);
+    return nullptr;
+  }
+
+  // Initialize the inline and outline data fields
   if constexpr (ZeroFields) {
-    memset(structObj->inlineData(), 0, inlineBytes);
+    size_t headerSize = typeDefData->cached.strukt.payloadOffsetIL;
+    memset((uint8_t*)structObj + headerSize, 0,
+           typeDefData->cached.strukt.totalSizeIL - headerSize);
     memset(outlineData, 0, outlineBytes);
   }
+
+  structObj->setOOLPointer(typeDefData, outlineData);
 
   MOZ_ASSERT(typeDefData->clasp->shouldDelayMetadataBuilder());
   cx->realm()->setObjectPendingMetadata(structObj);
@@ -181,7 +183,6 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
-  MOZ_ASSERT(typeDefData->allocKind == gc::AllocKind::INVALID);
   gc::AllocKind allocKind = allocKindForOOL();
   AutoSetNewObjectMetadata metadata(cx);
   debugCheckNewObject(typeDefData->shape, allocKind, initialHeap);
@@ -210,8 +211,8 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
   }
 
   DataHeader* outlineHeader = (DataHeader*)outlineAlloc;
-  uint8_t* outlineData = (uint8_t*)(outlineHeader + 1);
   *outlineHeader = DataIsOOL;
+  uint8_t* outlineData = dataHeaderToDataPointer(outlineHeader);
 
   arrayObj->initShape(typeDefData->shape);
   arrayObj->superTypeVector_ = typeDefData->superTypeVector;
@@ -219,7 +220,7 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
   arrayObj->data_ = outlineData;
   if constexpr (ZeroFields) {
     uint32_t dataBytes = storageBytes - sizeof(DataHeader);
-    MOZ_ASSERT(dataBytes >= numElements * typeDefData->arrayElemSize);
+    MOZ_ASSERT(dataBytes >= numElements * typeDefData->cached.array.elemSize);
     memset(arrayObj->data_, 0, dataBytes);
   }
 
@@ -253,7 +254,6 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
-  MOZ_ASSERT(typeDefData->allocKind == gc::AllocKind::INVALID);
   AutoSetNewObjectMetadata metadata(cx);
   gc::AllocKind allocKind = allocKindForIL(storageBytes);
   debugCheckNewObject(typeDefData->shape, allocKind, initialHeap);
@@ -284,7 +284,7 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
 
   if constexpr (ZeroFields) {
     uint32_t dataBytes = storageBytes - sizeof(DataHeader);
-    MOZ_ASSERT(dataBytes >= numElements * typeDefData->arrayElemSize);
+    MOZ_ASSERT(dataBytes >= numElements * typeDefData->cached.array.elemSize);
 
     if (numElements > 0) {
       memset(arrayObj->data_, 0, dataBytes);
@@ -317,10 +317,10 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArray(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
     uint32_t numElements) {
-  MOZ_ASSERT(typeDefData->arrayElemSize ==
+  MOZ_ASSERT(typeDefData->cached.array.elemSize ==
              typeDefData->typeDef->arrayType().elementType().size());
   mozilla::CheckedUint32 storageBytes =
-      calcStorageBytesChecked(typeDefData->arrayElemSize, numElements);
+      calcStorageBytesChecked(typeDefData->cached.array.elemSize, numElements);
   if (!storageBytes.isValid() ||
       storageBytes.value() > uint32_t(wasm::MaxArrayPayloadBytes)) {
     js::ReportOversizedAllocation(cx, JSMSG_WASM_ARRAY_IMP_LIMIT);

@@ -322,19 +322,6 @@ const POSTPROCESSORS = {
     return value;
   },
 
-  manifestVersionCheck(value, context) {
-    if (
-      value == 2 ||
-      (value == 3 &&
-        Services.prefs.getBoolPref("extensions.manifestV3.enabled", false))
-    ) {
-      return value;
-    }
-    const msg = `Unsupported manifest version: ${value}`;
-    context.logError(context.makeError(msg));
-    throw new Error(msg);
-  },
-
   webAccessibleMatching(value, context) {
     // Ensure each object has at least one of matches or extension_ids array.
     for (let obj of value) {

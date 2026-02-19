@@ -825,9 +825,9 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
   // in the cache have changed, in which case we'd want to give them a
   // try instead.
   //
-  nsHttpAuthEntry* entry = nullptr;
+  RefPtr<nsHttpAuthEntry> entry;
   (void)authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
-                                         &entry);
+                                         entry);
 
   // hold reference to the auth session state (in case we clear our
   // reference to the entry).
@@ -1385,9 +1385,9 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthAvailable(
   }
 
   nsHttpAuthCache* authCache = gHttpHandler->AuthCache(mIsPrivate);
-  nsHttpAuthEntry* entry = nullptr;
+  RefPtr<nsHttpAuthEntry> entry;
   (void)authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
-                                         &entry);
+                                         entry);
 
   nsCOMPtr<nsISupports> sessionStateGrip;
   if (entry) sessionStateGrip = entry->mMetaData;
@@ -1570,7 +1570,7 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     nsHttpAuthCache* authCache, const nsHttpAtom& header,
     const nsACString& scheme, const nsACString& host, int32_t port,
     const nsACString& path, nsHttpAuthIdentity& ident) {
-  nsHttpAuthEntry* entry = nullptr;
+  RefPtr<nsHttpAuthEntry> entry;
   nsresult rv;
 
   // set informations that depend on whether
@@ -1601,7 +1601,7 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     GetOriginAttributesSuffix(chan, suffix);
   }
 
-  rv = authCache->GetAuthEntryForPath(scheme, host, port, path, suffix, &entry);
+  rv = authCache->GetAuthEntryForPath(scheme, host, port, path, suffix, entry);
   if (NS_SUCCEEDED(rv)) {
     // if we are trying to add a header for origin server auth and if the
     // URL contains an explicit username, then try the given username first.

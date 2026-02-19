@@ -489,7 +489,10 @@ async function recordFrames(testPromise, win = window) {
   win.addEventListener("MozAfterPaint", afterPaintListener);
 
   // If the test is using an existing window, capture a frame immediately.
-  if (win.document.readyState == "complete") {
+  if (
+    win.document.readyState == "complete" &&
+    win.location.href != "about:blank"
+  ) {
     afterPaintListener();
   }
 
@@ -1079,4 +1082,18 @@ function isLikelyFocusChange(rects, frame) {
     return true;
   }
   return false;
+}
+
+// See if the rect might match the coordinates of the bottom-border of an element
+// given its DOMRect.
+function rectMatchesBottomBorder(r, domRect) {
+  return (
+    r.h <= 2 &&
+    r.x1 >= domRect.x &&
+    r.x1 < domRect.x + domRect.width &&
+    r.x2 > domRect.x &&
+    r.x2 <= domRect.x + domRect.width &&
+    r.y1 >= domRect.bottom - 1.5 &&
+    r.y2 <= domRect.bottom + 1.5
+  );
 }

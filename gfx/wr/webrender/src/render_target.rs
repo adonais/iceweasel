@@ -13,12 +13,13 @@ use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::SpatialTree;
 use crate::clip::{ClipStore, ClipItemKind};
 use crate::frame_builder::FrameGlobalResources;
-use crate::gpu_cache::{GpuCache, GpuCacheAddress};
-use crate::gpu_types::{BorderInstance, SvgFilterInstance, SVGFEFilterInstance, BlurDirection, BlurInstance, PrimitiveHeaders, ScalingInstance};
+use crate::gpu_types::{BorderInstance, SVGFEFilterInstance, BlurDirection, BlurInstance, PrimitiveHeaders, ScalingInstance};
 use crate::gpu_types::{TransformPalette, ZBufferIdGenerator, MaskInstance, ClipSpace, BlurEdgeMode};
 use crate::gpu_types::{ZBufferId, QuadSegment, PrimitiveInstanceData, TransformPaletteId};
-use crate::internal_types::{CacheTextureId, FastHashMap, FilterGraphOp, FrameAllocator, FrameMemory, FrameVec, TextureSource};
-use crate::picture::{SliceId, SurfaceInfo, ResolvedSurfaceTexture, TileCacheInstance};
+use crate::internal_types::{CacheTextureId, FastHashMap, FrameAllocator, FrameMemory, FrameVec, TextureSource};
+use crate::svg_filter::FilterGraphOp;
+use crate::picture::{SurfaceInfo, ResolvedSurfaceTexture};
+use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::quad;
 use crate::prim_store::{PrimitiveInstance, PrimitiveStore, PrimitiveScratchBuffer};
 use crate::prim_store::gradient::{
@@ -28,7 +29,7 @@ use crate::prim_store::gradient::{
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilder};
 use crate::render_backend::DataStores;
 use crate::render_task::{RenderTaskKind, RenderTaskAddress, SubPass};
-use crate::render_task::{RenderTask, ScalingTask, SvgFilterInfo, MaskSubPass, SVGFEFilterTask};
+use crate::render_task::{RenderTask, ScalingTask, MaskSubPass, SVGFEFilterTask};
 use crate::render_task_graph::{RenderTaskGraph, RenderTaskId};
 use crate::resource_cache::ResourceCache;
 use crate::spatial_tree::SpatialNodeIndex;
@@ -108,7 +109,6 @@ impl RenderTargetList {
     pub fn build(
         &mut self,
         ctx: &mut RenderTargetContext,
-        gpu_cache: &mut GpuCache,
         render_tasks: &RenderTaskGraph,
         prim_headers: &mut PrimitiveHeaders,
         transforms: &mut TransformPalette,
@@ -124,7 +124,6 @@ impl RenderTargetList {
         for target in &mut self.targets {
             target.build(
                 ctx,
-                gpu_cache,
                 render_tasks,
                 prim_headers,
                 transforms,
@@ -162,7 +161,6 @@ pub struct RenderTarget {
     pub vertical_blurs: FastHashMap<TextureSource, FrameVec<BlurInstance>>,
     pub horizontal_blurs: FastHashMap<TextureSource, FrameVec<BlurInstance>>,
     pub scalings: FastHashMap<TextureSource, FrameVec<ScalingInstance>>,
-    pub svg_filters: FrameVec<(BatchTextures, FrameVec<SvgFilterInstance>)>,
     pub svg_nodes: FrameVec<(BatchTextures, FrameVec<SVGFEFilterInstance>)>,
     pub blits: FrameVec<BlitJob>,
     alpha_tasks: FrameVec<RenderTaskId>,
@@ -231,7 +229,6 @@ impl RenderTarget {
             vertical_blurs: FastHashMap::default(),
             horizontal_blurs: FastHashMap::default(),
             scalings: FastHashMap::default(),
-            svg_filters: memory.new_vec(),
             svg_nodes: memory.new_vec(),
             blits: memory.new_vec(),
             alpha_tasks: memory.new_vec(),
@@ -256,7 +253,6 @@ impl RenderTarget {
     pub fn build(
         &mut self,
         ctx: &mut RenderTargetContext,
-        gpu_cache: &mut GpuCache,
         render_tasks: &RenderTaskGraph,
         prim_headers: &mut PrimitiveHeaders,
         transforms: &mut TransformPalette,
@@ -313,7 +309,6 @@ impl RenderTarget {
                             cmd,
                             spatial_node_index,
                             ctx,
-                            gpu_cache,
                             render_tasks,
                             prim_headers,
                             transforms,
@@ -354,7 +349,6 @@ impl RenderTarget {
         &mut self,
         task_id: RenderTaskId,
         ctx: &RenderTargetContext,
-        gpu_cache: &mut GpuCache,
         gpu_buffer_builder: &mut GpuBufferBuilder,
         render_tasks: &RenderTaskGraph,
         clip_store: &ClipStore,
@@ -436,18 +430,6 @@ impl RenderTarget {
                 }
                 self.alpha_tasks.push(task_id);
             }
-            RenderTaskKind::SvgFilter(ref task_info) => {
-                add_svg_filter_instances(
-                    &mut self.svg_filters,
-                    render_tasks,
-                    &task_info.info,
-                    task_id,
-                    task.children.get(0).cloned(),
-                    task.children.get(1).cloned(),
-                    task_info.extra_gpu_cache_handle.map(|handle| gpu_cache.get_address(&handle)),
-                    &ctx.frame_memory,
-                )
-            }
             RenderTaskKind::SVGFENode(ref task_info) => {
                 add_svg_filter_node_instances(
                     &mut self.svg_nodes,
@@ -456,7 +438,7 @@ impl RenderTarget {
                     task,
                     task.children.get(0).cloned(),
                     task.children.get(1).cloned(),
-                    task_info.extra_gpu_cache_handle.map(|handle| gpu_cache.get_address(&handle)),
+                    task_info.extra_gpu_data,
                     &ctx.frame_memory,
                 )
             }
@@ -471,7 +453,6 @@ impl RenderTarget {
                     task_info.clip_node_range,
                     task_info.root_spatial_node_index,
                     render_tasks,
-                    gpu_cache,
                     clip_store,
                     transforms,
                     task_info.actual_rect,
@@ -675,102 +656,6 @@ fn add_scaling_instances(
         ));
 }
 
-fn add_svg_filter_instances(
-    instances: &mut FrameVec<(BatchTextures, FrameVec<SvgFilterInstance>)>,
-    render_tasks: &RenderTaskGraph,
-    filter: &SvgFilterInfo,
-    task_id: RenderTaskId,
-    input_1_task: Option<RenderTaskId>,
-    input_2_task: Option<RenderTaskId>,
-    extra_data_address: Option<GpuCacheAddress>,
-    memory: &FrameMemory,
-) {
-    let mut textures = BatchTextures::empty();
-
-    if let Some(id) = input_1_task {
-        textures.input.colors[0] = render_tasks[id].get_texture_source();
-    }
-
-    if let Some(id) = input_2_task {
-        textures.input.colors[1] = render_tasks[id].get_texture_source();
-    }
-
-    let kind = match filter {
-        SvgFilterInfo::Blend(..) => 0,
-        SvgFilterInfo::Flood(..) => 1,
-        SvgFilterInfo::LinearToSrgb => 2,
-        SvgFilterInfo::SrgbToLinear => 3,
-        SvgFilterInfo::Opacity(..) => 4,
-        SvgFilterInfo::ColorMatrix(..) => 5,
-        SvgFilterInfo::DropShadow(..) => 6,
-        SvgFilterInfo::Offset(..) => 7,
-        SvgFilterInfo::ComponentTransfer(..) => 8,
-        SvgFilterInfo::Identity => 9,
-        SvgFilterInfo::Composite(..) => 10,
-    };
-
-    let input_count = match filter {
-        SvgFilterInfo::Flood(..) => 0,
-
-        SvgFilterInfo::LinearToSrgb |
-        SvgFilterInfo::SrgbToLinear |
-        SvgFilterInfo::Opacity(..) |
-        SvgFilterInfo::ColorMatrix(..) |
-        SvgFilterInfo::Offset(..) |
-        SvgFilterInfo::ComponentTransfer(..) |
-        SvgFilterInfo::Identity => 1,
-
-        // Not techincally a 2 input filter, but we have 2 inputs here: original content & blurred content.
-        SvgFilterInfo::DropShadow(..) |
-        SvgFilterInfo::Blend(..) |
-        SvgFilterInfo::Composite(..) => 2,
-    };
-
-    let generic_int = match filter {
-        SvgFilterInfo::Blend(mode) => *mode as u16,
-        SvgFilterInfo::ComponentTransfer(data) =>
-            (data.r_func.to_int() << 12 |
-             data.g_func.to_int() << 8 |
-             data.b_func.to_int() << 4 |
-             data.a_func.to_int()) as u16,
-        SvgFilterInfo::Composite(operator) =>
-            operator.as_int() as u16,
-        SvgFilterInfo::LinearToSrgb |
-        SvgFilterInfo::SrgbToLinear |
-        SvgFilterInfo::Flood(..) |
-        SvgFilterInfo::Opacity(..) |
-        SvgFilterInfo::ColorMatrix(..) |
-        SvgFilterInfo::DropShadow(..) |
-        SvgFilterInfo::Offset(..) |
-        SvgFilterInfo::Identity => 0,
-    };
-
-    let instance = SvgFilterInstance {
-        task_address: task_id.into(),
-        input_1_task_address: input_1_task.map(|id| id.into()).unwrap_or(RenderTaskAddress(0)),
-        input_2_task_address: input_2_task.map(|id| id.into()).unwrap_or(RenderTaskAddress(0)),
-        kind,
-        input_count,
-        generic_int,
-        padding: 0,
-        extra_data_address: extra_data_address.unwrap_or(GpuCacheAddress::INVALID),
-    };
-
-    for (ref mut batch_textures, ref mut batch) in instances.iter_mut() {
-        if let Some(combined_textures) = batch_textures.combine_textures(textures) {
-            batch.push(instance);
-            // Update the batch textures to the newly combined batch textures
-            *batch_textures = combined_textures;
-            return;
-        }
-    }
-
-    let mut vec = memory.new_vec();
-    vec.push(instance);
-
-    instances.push((textures, vec));
-}
-
 /// Generates SVGFEFilterInstances from a single SVGFEFilterTask, this is what
 /// prepares vertex data for the shader, and adds it to the appropriate batch.
 ///
@@ -786,7 +671,7 @@ fn add_svg_filter_node_instances(
     target_task: &RenderTask,
     input_1_task: Option<RenderTaskId>,
     input_2_task: Option<RenderTaskId>,
-    extra_data_address: Option<GpuCacheAddress>,
+    extra_data_address: Option<GpuBufferAddress>,
     memory: &FrameMemory,
 ) {
     let node = &task_info.node;
@@ -808,7 +693,7 @@ fn add_svg_filter_node_instances(
         input_2_task_address: RenderTaskId::INVALID.into(),
         kind: 0,
         input_count: node.inputs.len() as u16,
-        extra_data_address: extra_data_address.unwrap_or(GpuCacheAddress::INVALID),
+        extra_data_address: extra_data_address.unwrap_or(GpuBufferAddress::INVALID).as_int(),
     };
 
     // Must match FILTER_* in cs_svg_filter_node.glsl
@@ -1060,12 +945,12 @@ fn build_mask_tasks(
                 for tile in clip_store.visible_mask_tiles(&clip_instance) {
                     let clip_prim_address = quad::write_prim_blocks(
                         &mut gpu_buffer_builder.f32,
-                        rect,
-                        rect,
+                        rect.to_untyped(),
+                        rect.to_untyped(),
                         pattern.base_color,
                         pattern.texture_input.task_id,
                         &[QuadSegment {
-                            rect: tile.tile_rect,
+                            rect: tile.tile_rect.to_untyped(),
                             task_id: tile.task_id,
                         }],
                         ScaleOffset::identity(),
@@ -1130,8 +1015,8 @@ fn build_mask_tasks(
 
             let main_prim_address = quad::write_prim_blocks(
                 &mut gpu_buffer_builder.f32,
-                task_world_rect.cast_unit(),
-                task_world_rect.cast_unit(),
+                task_world_rect.to_untyped(),
+                task_world_rect.to_untyped(),
                 pattern.base_color,
                 pattern.texture_input.task_id,
                 &[],

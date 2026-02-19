@@ -54,7 +54,10 @@ requestLongerTimeout(2);
 add_setup(async function () {
   // We do not want http://example.com etc. to be upgraded to https
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.security.https_first", false]],
+    set: [
+      ["browser.urlbar.trustPanel.featureGate", false],
+      ["dom.security.https_first", false],
+    ],
   });
 
   // Load recipes for this test.
@@ -486,7 +489,7 @@ add_task(async function test_pwOnlyOldLoginMatchesUPForm() {
   // Change the timePasswordChanged to be old so that the password won't be
   // revealed in the doorhanger.
   let oldTimeMS = new Date("2009-11-15").getTime();
-  Services.logins.modifyLogin(
+  await Services.logins.modifyLoginAsync(
     login2,
     LoginHelper.newPropertyBag({
       timeCreated: oldTimeMS,

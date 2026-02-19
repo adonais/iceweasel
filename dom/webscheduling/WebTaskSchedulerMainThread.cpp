@@ -13,8 +13,8 @@
 
 namespace mozilla::dom {
 
-MOZ_CONSTINIT uint32_t
-    gNumNormalOrHighPriorityQueuesHaveTaskScheduledMainThread = 0;
+constinit uint32_t gNumNormalOrHighPriorityQueuesHaveTaskScheduledMainThread =
+    0;
 
 NS_IMETHODIMP WebTaskMainThreadRunnable::Run() {
   if (mScheduler) {

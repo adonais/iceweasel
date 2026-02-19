@@ -72,7 +72,7 @@ def populate_repack_manifests_url(config, tasks):
                 task,
                 property,
                 property,
-                **{"release-level": release_level(config.params["project"])},
+                **{"release-level": release_level(config.params)},
             )
 
         if task["worker"]["env"]["REPACK_MANIFESTS_URL"].startswith("git@"):
@@ -129,13 +129,11 @@ def add_command_arguments(config, tasks):
         # blocks that. It's space-separated string of ids in the end.
         task["worker"]["env"]["UPSTREAM_TASKIDS"] = {
             # We only want signing related tasks here, not build (used by mac builds for signing artifact resolution)
-            "task-reference": " ".join(
-                [
-                    f"<{dep}>"
-                    for dep in task["dependencies"]
-                    if ("signing" in dep or "notarization" in dep)
-                ]
-            )
+            "task-reference": " ".join([
+                f"<{dep}>"
+                for dep in task["dependencies"]
+                if ("signing" in dep or "notarization" in dep)
+            ])
         }
 
         # Forward the release type for bouncer product construction
@@ -158,11 +156,9 @@ def add_macos_signing_artifacts(config, tasks):
         assert build_dep, f"repackage job {task['name']} has no build dependency"
         for path, artifact in build_dep.task["payload"]["artifacts"].items():
             if path.startswith("public/build/security/"):
-                task["worker"].setdefault("artifacts", []).append(
-                    {
-                        "name": path,
-                        "path": artifact["path"],
-                        "type": "file",
-                    }
-                )
+                task["worker"].setdefault("artifacts", []).append({
+                    "name": path,
+                    "path": artifact["path"],
+                    "type": "file",
+                })
         yield task

@@ -117,18 +117,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       // When you add state, update _copyState() as necessary.
     };
 
-    // Show Top Sites above trending results.
-    let showSearchSuggestionsFirst =
-      context.searchString ||
-      (!lazy.UrlbarPrefs.get("suggest.trending") &&
-        !lazy.UrlbarPrefs.get("suggest.recentsearches"));
-
-    // Determine the result groups to use for this sort.  In search mode with
-    // an engine, show search suggestions first.
-    let rootGroup =
-      context.searchMode?.engineName || !showSearchSuggestionsFirst
-        ? lazy.UrlbarPrefs.makeResultGroups({ showSearchSuggestionsFirst })
-        : lazy.UrlbarPrefs.resultGroups;
+    // Determine the result groups to use for this sort.
+    let rootGroup = lazy.UrlbarPrefs.getResultGroups({ context });
     lazy.logger.debug("Root groups", rootGroup);
 
     // We must do a first pass over the result to reorder some groups.

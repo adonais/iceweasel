@@ -24,7 +24,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.button.ExtendedFloatingActionButton
 import mozilla.components.compose.base.button.FloatingActionButtonDefaults
+import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.animateRotation
@@ -49,9 +49,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
-import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.TabsTrayAction
 import org.mozilla.fenix.tabstray.TabsTrayState
 import org.mozilla.fenix.tabstray.TabsTrayState.Mode
@@ -70,7 +68,6 @@ import mozilla.components.ui.icons.R as iconsR
  * @param expanded Controls the expansion state of this FAB. In an expanded state, the FAB will
  * show both the icon and text. In a collapsed state, the FAB will show only the icon.
  * @param pbmLocked Whether the private browsing mode is currently locked.
- * @param featureHelper The feature flag helper for the Tab Manager feature.
  * @param onOpenNewNormalTabClicked Invoked when the fab is clicked in [Page.NormalTabs].
  * @param onOpenNewPrivateTabClicked Invoked when the fab is clicked in [Page.PrivateTabs].
  * @param onSyncedTabsFabClicked Invoked when the fab is clicked in [Page.SyncedTabs].
@@ -87,7 +84,6 @@ internal fun TabManagerFloatingToolbar(
     modifier: Modifier = Modifier,
     expanded: Boolean = true,
     pbmLocked: Boolean = false,
-    featureHelper: TabManagementFeatureHelper = DefaultTabManagementFeatureHelper,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
@@ -114,7 +110,6 @@ internal fun TabManagerFloatingToolbar(
             ) {
                 FloatingToolbarActions(
                     state = state,
-                    featureHelper = featureHelper,
                     onMenuShown = {
                         tabsTrayStore.dispatch(TabsTrayAction.ThreeDotMenuShown)
                     },
@@ -154,7 +149,6 @@ internal fun TabManagerFloatingToolbar(
 @Composable
 private fun FloatingToolbarActions(
     state: TabsTrayState,
-    featureHelper: TabManagementFeatureHelper,
     onMenuShown: () -> Unit,
     onEnterMultiselectModeClick: () -> Unit,
     onTabSettingsClick: () -> Unit,
@@ -190,7 +184,7 @@ private fun FloatingToolbarActions(
             modifier = Modifier.padding(all = FirefoxTheme.layout.space.static100),
             horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static50),
         ) {
-            if (featureHelper.tabSearchEnabled && state.searchIconVisible) {
+            if (state.searchIconVisible) {
                 IconButton(
                     onClick = onSearchClicked,
                     modifier = Modifier.testTag(TabsTrayTestTag.TAB_SEARCH_ICON),
@@ -335,18 +329,16 @@ private fun CloseAllTabsConfirmationDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(
-                    text = stringResource(R.string.tab_manager_close_all_tabs_dialog_confirm),
-                )
-            }
+            TextButton(
+                text = stringResource(R.string.tab_manager_close_all_tabs_dialog_confirm),
+                onClick = onConfirm,
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.tab_manager_close_all_tabs_dialog_cancel),
-                )
-            }
+            TextButton(
+                text = stringResource(R.string.tab_manager_close_all_tabs_dialog_cancel),
+                onClick = onDismiss,
+            )
         },
     )
 }
@@ -432,77 +424,99 @@ private class TabManagerFloatingToolbarParameterProvider :
     PreviewParameterProvider<TabManagerFloatingToolbarPreviewModel> {
     override val values: Sequence<TabManagerFloatingToolbarPreviewModel>
         get() = sequenceOf(
-            // Normal tab page, disabled search icon, collapsed fab
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.NormalTabs),
-                expanded = false,
-            ),
-            // Normal tab page, disabled search icon, expanded fab
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.NormalTabs),
-                expanded = true,
-            ),
-            // Normal tab page, enabled search icon, collapsed fab
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
+                    tabSearchEnabled = false,
                     normalTabs = listOf(createTab(url = "url")),
                 ),
                 expanded = false,
             ),
-            // Normal tab page, enabled search icon, expanded fab
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
+                    tabSearchEnabled = false,
                     normalTabs = listOf(createTab(url = "url")),
                 ),
                 expanded = true,
             ),
-            // Private tab page, disabled search icon, collapsed fab
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.PrivateTabs),
-                expanded = false,
-            ),
-            // Private tab page, disabled search icon, expanded fab
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.PrivateTabs),
-                expanded = true,
-            ),
-            // Private tab page, enabled search icon, collapsed fab
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
-                    selectedPage = Page.PrivateTabs,
-                    privateTabs = listOf(createTab(url = "url")),
+                    selectedPage = Page.NormalTabs,
+                    tabSearchEnabled = true,
+                    normalTabs = listOf(createTab(url = "url")),
                 ),
                 expanded = false,
             ),
-            // Private tab page, enabled search icon, expanded fab
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
-                    selectedPage = Page.PrivateTabs,
-                    privateTabs = listOf(createTab(url = "url")),
+                    selectedPage = Page.NormalTabs,
+                    tabSearchEnabled = true,
+                    normalTabs = listOf(createTab(url = "url")),
                 ),
                 expanded = true,
             ),
-            // Synced tab page, signed-in, collapsed fab
             TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.SyncedTabs),
-                expanded = false,
-            ),
-            // Synced tab page, signed-in, expanded fab
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.SyncedTabs),
+                state = TabsTrayState(
+                    selectedPage = Page.NormalTabs,
+                    tabSearchEnabled = true,
+                    normalTabs = emptyList(),
+                ),
                 expanded = true,
             ),
-            // Synced tab page, signed-out, collapsed fab
             TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.SyncedTabs),
+                state = TabsTrayState(
+                    selectedPage = Page.PrivateTabs,
+                    tabSearchEnabled = true,
+                    privateTabs = listOf(createTab(url = "url", private = true)),
+                ),
+                expanded = false,
+            ),
+            TabManagerFloatingToolbarPreviewModel(
+                state = TabsTrayState(
+                    selectedPage = Page.PrivateTabs,
+                    tabSearchEnabled = true,
+                    privateTabs = listOf(createTab(url = "url", private = true)),
+                ),
+                expanded = true,
+            ),
+            TabManagerFloatingToolbarPreviewModel(
+                state = TabsTrayState(
+                    selectedPage = Page.PrivateTabs,
+                    tabSearchEnabled = true,
+                    privateTabs = emptyList(),
+                ),
+                expanded = true,
+            ),
+            TabManagerFloatingToolbarPreviewModel(
+                state = TabsTrayState(
+                    selectedPage = Page.SyncedTabs,
+                    tabSearchEnabled = true,
+                ),
+                expanded = false,
+                isSignedIn = true,
+            ),
+            TabManagerFloatingToolbarPreviewModel(
+                state = TabsTrayState(
+                    selectedPage = Page.SyncedTabs,
+                    tabSearchEnabled = true,
+                ),
+                expanded = true,
+                isSignedIn = true,
+            ),
+            TabManagerFloatingToolbarPreviewModel(
+                state = TabsTrayState(
+                    selectedPage = Page.SyncedTabs,
+                    tabSearchEnabled = true,
+                ),
                 expanded = false,
                 isSignedIn = false,
             ),
-            // Synced tab page, signed-out, expanded fab
             TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(selectedPage = Page.SyncedTabs),
+                state = TabsTrayState(
+                    selectedPage = Page.SyncedTabs,
+                    tabSearchEnabled = true,
+                ),
                 expanded = true,
                 isSignedIn = false,
             ),

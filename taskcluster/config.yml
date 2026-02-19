@@ -295,6 +295,7 @@ treeherder:
         'samples-crash': 'samples-crash'
         'samples-dataprotect': 'samples-dataprotect'
         'samples-firefox-accounts': 'samples-firefox-accounts'
+        'samples-firefox-relay': 'samples-firefox-relay'
         'samples-glean-library': 'samples-glean-library'
         'samples-glean': 'samples-glean'
         'samples-sync-logins': 'samples-sync-logins'
@@ -530,7 +531,7 @@ taskgraph:
 
 workers:
     aliases:
-        b-linux.*:
+        b-linux(|-docker(|-x?large)-amd|-medium|-aarch64|-xlarge|-kvm):
             provisioner: '{trust-domain}-{level}'
             implementation: docker-worker
             os: linux

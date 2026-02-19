@@ -12,7 +12,7 @@ import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.MiddlewareContext
+import mozilla.components.lib.state.Store
 import mozilla.components.support.utils.RunWhenReadyQueue
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
@@ -37,7 +37,7 @@ class AppVisualCompletenessMiddleware(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
 ) : Middleware<AppState, AppAction> {
     override fun invoke(
-        context: MiddlewareContext<AppState, AppAction>,
+        store: Store<AppState, AppAction>,
         next: (AppAction) -> Unit,
         action: AppAction,
     ) {
@@ -62,7 +62,7 @@ class BrowserVisualCompletenessMiddleware(
     private val queue: RunWhenReadyQueue,
 ) : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
-        context: MiddlewareContext<BrowserState, BrowserAction>,
+        store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
         action: BrowserAction,
     ) {

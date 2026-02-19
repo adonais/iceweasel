@@ -309,15 +309,21 @@ function fetchMLMetric(metrics, name, key) {
 }
 
 function fetchLatencyMetrics(metrics, isFirstRun) {
+  let timestamps = [];
+  if (Array.isArray(metrics?.runTimestamps)) {
+    timestamps = metrics.runTimestamps;
+  } else if (Array.isArray(metrics)) {
+    timestamps = metrics;
+  }
   const pipelineLatency =
-    fetchMLMetric(metrics, PIPELINE_READY_END, WHEN) -
-    fetchMLMetric(metrics, PIPELINE_READY_START, WHEN);
+    fetchMLMetric(timestamps, PIPELINE_READY_END, WHEN) -
+    fetchMLMetric(timestamps, PIPELINE_READY_START, WHEN);
   const initLatency =
-    fetchMLMetric(metrics, INIT_END, WHEN) -
-    fetchMLMetric(metrics, INIT_START, WHEN);
+    fetchMLMetric(timestamps, INIT_END, WHEN) -
+    fetchMLMetric(timestamps, INIT_START, WHEN);
   const runLatency =
-    fetchMLMetric(metrics, RUN_END, WHEN) -
-    fetchMLMetric(metrics, RUN_START, WHEN);
+    fetchMLMetric(timestamps, RUN_END, WHEN) -
+    fetchMLMetric(timestamps, RUN_START, WHEN);
   return {
     [`${isFirstRun ? COLD_START_PREFIX : ""}${PIPELINE_READY_LATENCY}`]:
       pipelineLatency,
@@ -573,7 +579,7 @@ async function runInference({
     const res = await run();
     runEndTime = performance.now();
     const decodingTime = runEndTime - startTime;
-    metrics = fetchMetrics(res.metrics || [], isFirstRun);
+    metrics = fetchMetrics(res.metrics?.runTimestamps || [], isFirstRun);
     metrics[`${isFirstRun ? COLD_START_PREFIX : ""}${TOTAL_MEMORY_USAGE}`] =
       await getTotalMemoryUsage();
 

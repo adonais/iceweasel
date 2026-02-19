@@ -117,10 +117,6 @@ export var SelectParentHelper = {
       selectStyle = uaStyle;
     }
 
-    if (selectStyle["background-color"] == "rgba(0, 0, 0, 0)") {
-      selectStyle["background-color"] = uaStyle["background-color"];
-    }
-
     if (selectStyle.color == selectStyle["background-color"]) {
       selectStyle.color = uaStyle.color;
     }

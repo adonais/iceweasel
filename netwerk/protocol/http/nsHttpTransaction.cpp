@@ -1313,11 +1313,13 @@ static void MaybeRemoveSSLToken(nsITransportSecurityInfo* aSecurityInfo) {
        static_cast<uint32_t>(rv)));
 }
 
-const int64_t TELEMETRY_REQUEST_SIZE_10M = (int64_t)10 * (int64_t)(1 << 20);
+const int64_t TELEMETRY_REQUEST_SIZE_1M = (int64_t)(1 << 20);
+const int64_t TELEMETRY_REQUEST_SIZE_10M =
+    (int64_t)10 * TELEMETRY_REQUEST_SIZE_1M;
 const int64_t TELEMETRY_REQUEST_SIZE_50M =
-    (int64_t)5 * TELEMETRY_REQUEST_SIZE_10M;
+    (int64_t)50 * TELEMETRY_REQUEST_SIZE_1M;
 const int64_t TELEMETRY_REQUEST_SIZE_100M =
-    (int64_t)10 * TELEMETRY_REQUEST_SIZE_10M;
+    (int64_t)100 * TELEMETRY_REQUEST_SIZE_1M;
 
 void nsHttpTransaction::Close(nsresult reason) {
   LOG(("nsHttpTransaction::Close [this=%p reason=%" PRIx32 "]\n", this,
@@ -1721,11 +1723,6 @@ void nsHttpTransaction::Close(nsresult reason) {
       }
       default:
         break;
-    }
-
-    if (!serverKey.IsEmpty()) {
-      glean::network::http_fetch_duration.Get(serverKey).AccumulateRawDuration(
-          elapsed);
     }
   }
 
@@ -3664,21 +3661,23 @@ nsHttpTransaction::GetName(nsACString& aName) {
 bool nsHttpTransaction::GetSupportsHTTP3() { return mSupportsHTTP3; }
 
 void nsHttpTransaction::CollectTelemetryForUploads() {
-  if ((mRequestSize < TELEMETRY_REQUEST_SIZE_10M) ||
+  if ((mRequestSize < TELEMETRY_REQUEST_SIZE_1M) ||
       mTimings.requestStart.IsNull() || mTimings.responseStart.IsNull()) {
     return;
   }
 
-  // We will briefly continue to collect HTTP_UPLOAD_BANDWIDTH_MBPS
-  // (a keyed histogram) while live experiments depend on it.
-  // Once complete, we can remove and use the glean probes,
-  // http_1/2/3_upload_throughput.
   nsAutoCString protocolVersion(nsHttp::GetProtocolVersion(mHttpVersion));
   TimeDuration sendTime = mTimings.responseStart - mTimings.requestStart;
   double megabits = static_cast<double>(mRequestSize) * 8.0 / 1000000.0;
   uint32_t mpbs = static_cast<uint32_t>(megabits / sendTime.ToSeconds());
-  glean::http::upload_bandwidth_mbps.Get(protocolVersion)
-      .AccumulateSingleSample(mpbs);
+
+  if (mRequestSize <= TELEMETRY_REQUEST_SIZE_10M) {
+    if (mHttpVersion == HttpVersion::v3_0) {
+      glean::networking::http_3_upload_throughput_1_10.AccumulateSingleSample(
+          mpbs);
+    }
+    return;
+  }
 
   switch (mHttpVersion) {
     case HttpVersion::v1_0:

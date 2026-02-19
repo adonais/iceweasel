@@ -30,20 +30,16 @@ def _generate_task_output_files(job, filenames, locale=None):
 
     data = list()
     for filename in filenames:
-        data.append(
-            {
-                "type": "file",
-                "path": f"/home/worker/artifacts/{filename}",
-                "name": f"{artifact_prefix}/{locale_output_path}{filename}",
-            }
-        )
-    data.append(
-        {
+        data.append({
             "type": "file",
-            "path": "/home/worker/artifacts/manifest.json",
-            "name": f"{artifact_prefix}/{locale_output_path}manifest.json",
-        }
-    )
+            "path": f"/home/worker/artifacts/{filename}",
+            "name": f"{artifact_prefix}/{locale_output_path}{filename}",
+        })
+    data.append({
+        "type": "file",
+        "path": "/home/worker/artifacts/manifest.json",
+        "name": f"{artifact_prefix}/{locale_output_path}manifest.json",
+    })
     return data
 
 
@@ -150,7 +146,7 @@ def make_task_description(config, jobs):
                 "MAR_CHANNEL_ID": attributes["mar-channel-id"],
             },
         }
-        if release_level(config.params["project"]) == "staging":
+        if release_level(config.params) == "staging":
             worker["env"]["FUNSIZE_ALLOW_STAGING_PREFIXES"] = "true"
 
         task = {
@@ -167,9 +163,9 @@ def make_task_description(config, jobs):
         }
 
         # We only want caching on linux/windows due to bug 1436977
-        if int(level) == 3 and any(
-            [build_platform.startswith(prefix) for prefix in ["linux", "win"]]
-        ):
+        if int(level) == 3 and any([
+            build_platform.startswith(prefix) for prefix in ["linux", "win"]
+        ]):
             task["scopes"].append(
                 "auth:aws-s3:read-write:tc-gp-private-1d-us-east-1/releng/mbsdiff-cache/"
             )

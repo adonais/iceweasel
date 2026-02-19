@@ -51,7 +51,7 @@ class SVGDocumentWrapper final : public nsIStreamListener,
    * Returns the root <svg> element for the wrapped document, or nullptr on
    * failure.
    */
-  mozilla::dom::SVGSVGElement* GetRootSVGElem() const;
+  mozilla::dom::SVGSVGElement* GetSVGRootElement() const;
 
   /**
    * Returns the root nsIFrame* for the wrapped document, or nullptr on failure.

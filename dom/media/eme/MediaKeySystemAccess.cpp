@@ -45,7 +45,7 @@ namespace mozilla::dom {
 #ifdef MOZ_WMF_CDM
 #  include "nsIWindowsMediaFoundationCDMOriginsListService.h"
 
-MOZ_CONSTINIT static nsTArray<IPCOriginStatusEntry> sOriginStatusEntries;
+constinit static nsTArray<IPCOriginStatusEntry> sOriginStatusEntries;
 #endif
 
 #define LOG(msg, ...) \

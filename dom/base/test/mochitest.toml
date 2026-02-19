@@ -175,6 +175,7 @@ support-files = [
   "referrer_change_server.sjs",
   "file_change_policy_redirect.html",
   "file_bug1198095.js",
+  "file_bug1126851_post_unload.html",
   "file_bug1250148.sjs",
   "file_bug1268962.sjs",
   "iframe_meta_refresh.sjs",
@@ -305,8 +306,6 @@ run-if = [
 ["test_bug238409.html"]
 
 ["test_bug254337.html"]
-
-["test_bug270145.xhtml"]
 
 ["test_bug276037-1.html"]
 
@@ -1091,9 +1090,6 @@ skip-if = [
 ]
 
 ["test_ckeditor4_compat_hack.html"]
-skip-if = [
-  "true", # https://bugzilla.mozilla.org/show_bug.cgi?id=2003720
-]
 
 ["test_clearTimeoutIntervalNoArg.html"]
 

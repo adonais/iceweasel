@@ -323,6 +323,13 @@ export class PlacesFeed {
     ];
   }
 
+  /**
+   * @backward-compat { version 148 }
+   *
+   * This, and all newtab-specific handoff searchbar handling can be removed
+   * once 147 is released, as all handoff UI and logic will be handled by
+   * contentSearchHandoffUI and the ContentSearch JSWindowActors.
+   */
   handoffSearchToAwesomebar(action) {
     const { _target, data, meta } = action;
     const searchEngine = this._getDefaultSearchEngine(

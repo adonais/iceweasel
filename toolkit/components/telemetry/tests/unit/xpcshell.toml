@@ -40,6 +40,12 @@ skip-if = [
 ]
 tags = "addons"
 
+["test_MainPingDisablement.js"]
+skip-if = [
+  "appname == 'thunderbird'", # testing feature not applicable to Thunderbird
+  "os == 'android'", # Legacy telemetry is always disabled on Android
+]
+
 ["test_MigratePendingPings.js"]
 run-if = [
   "os != 'android'", # Legacy telemetry is a lways disabled on Android
@@ -100,6 +106,12 @@ tags = "addons"
 ["test_TelemetryController_idle.js"]
 run-if = [
   "os != 'android'", # Legacy telemetry is a lways disabled on Android
+]
+
+["test_TelemetryController_pingDisablement.js"]
+skip-if = [
+  "appname == 'thunderbird'", # testing feature not applicable to Thunderbird
+  "os == 'android'", # Legacy telemetry is always disabled on Android
 ]
 
 ["test_TelemetryEnvironment.js"]

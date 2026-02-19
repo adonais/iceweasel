@@ -2573,6 +2573,10 @@ JSStructuredCloneReader::JSStructuredCloneReader(
       callbacks(cb),
       closure(cbClosure),
       gcHeap(in.context()) {
+  // Readers should never enable SAB for a DifferentProcess scope.
+  MOZ_RELEASE_ASSERT(!(scope == JS::StructuredCloneScope::DifferentProcess &&
+                       cloneDataPolicy.areSharedMemoryObjectsAllowed()));
+
   // Avoid the need to bounds check by keeping a never-matching element at the
   // base of the `objState` stack. This append() will always succeed because
   // the objState vector has a nonzero MinInlineCapacity.
@@ -3458,6 +3462,12 @@ bool JSStructuredCloneReader::readHeader() {
     return false;
   }
 
+  if (allowedScope == JS::StructuredCloneScope::DifferentProcess) {
+    MOZ_RELEASE_ASSERT(
+        !cloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed());
+    MOZ_RELEASE_ASSERT(!cloneDataPolicy.areSharedMemoryObjectsAllowed());
+  }
+
   return true;
 }
 
@@ -3670,7 +3680,13 @@ JSObject* JSStructuredCloneReader::readSavedFrameHeader(
     }
 
     if (mutedErrors.isBoolean()) {
-      if (!startRead(&source, AtomizeStrings) || !source.isString()) {
+      if (!startRead(&source, AtomizeStrings)) {
+        return nullptr;
+      }
+      if (!source.isString()) {
+        JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                                  JSMSG_SC_BAD_SERIALIZED_DATA,
+                                  "bad source string");
         return nullptr;
       }
     } else if (mutedErrors.isString()) {
@@ -3679,7 +3695,9 @@ JSObject* JSStructuredCloneReader::readSavedFrameHeader(
       source = mutedErrors;
       mutedErrors.setBoolean(true);  // Safe default value.
     } else {
-      // Invalid type.
+      JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                                JSMSG_SC_BAD_SERIALIZED_DATA,
+                                "invalid mutedErrors");
       return nullptr;
     }
   }

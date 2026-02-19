@@ -11,42 +11,29 @@ task-defaults:
         script: repack_rust.py
         toolchain-artifact: public/build/rustc.tar.zst
 
-linux64-rust-1.82:
+linux64-rust-1.87:
     treeherder:
-        symbol: TL(rust-1.82)
+        symbol: TL(rust-1.87)
     run:
         arguments: [
-            '--channel', '1.82.0',
-            '--host', 'x86_64-unknown-linux-gnu',
-            '--target', 'x86_64-unknown-linux-gnu',
-            '--target', 'i686-unknown-linux-gnu',
-            '--target', 'wasm32-wasi',
-        ]
-        toolchain-alias:
-            - linux64-rust-base
-
-linux64-rust-1.83:
-    treeherder:
-        symbol: TL(rust-1.83)
-    run:
-        arguments: [
-            '--channel', '1.83.0',
+            '--channel', '1.87.0',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-unknown-linux-gnu',
             '--target', 'i686-unknown-linux-gnu',
             '--target', 'aarch64-unknown-linux-gnu',
-            '--target', 'wasm32-wasi',
+            '--target', 'wasm32-wasip1',
         ]
         toolchain-alias:
+            - linux64-rust-base
             - linux64-rust-toolchain
 
-linux64-rust-macos-1.83:
+linux64-rust-macos-1.87:
     description: "rust repack with macos-cross support"
     treeherder:
-        symbol: TL(rust-macos-1.83)
+        symbol: TL(rust-macos-1.87)
     run:
         arguments: [
-            '--channel', '1.83.0',
+            '--channel', '1.87.0',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-apple-darwin',
@@ -54,13 +41,13 @@ linux64-rust-macos-1.83:
         ]
         toolchain-alias: linux64-rust-macos-toolchain
 
-linux64-rust-windows-1.83:
+linux64-rust-windows-1.87:
     description: "rust repack with windows-cross support"
     treeherder:
-        symbol: TL(rust-win-1.83)
+        symbol: TL(rust-win-1.87)
     run:
         arguments: [
-            '--channel', '1.83.0',
+            '--channel', '1.87.0',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-pc-windows-msvc',
@@ -68,16 +55,6 @@ linux64-rust-windows-1.83:
             '--target', 'aarch64-pc-windows-msvc',
         ]
         toolchain-alias: linux64-rust-windows-toolchain
-
-win64-rust-1.83:
-    treeherder:
-        symbol: TW64(rust-1.83)
-    run:
-        arguments: [
-            '--channel', '1.83.0',
-            '--host', 'x86_64-pc-windows-msvc',
-            '--target', 'x86_64-pc-windows-msvc',
-        ]
 
 linux64-rust-1.90:
     treeherder:
@@ -98,7 +75,7 @@ linux64-rust-1.90:
 
 # A patched rust toolchain that allows us to use sanitizers in our vendored
 # build environment. See the rust fetch's comments for more details.
-linux64-rust-1.82-dev:
+linux64-rust-1.90-dev:
     description: "build rust from source"
     worker-type: b-linux-docker-large-amd
     treeherder:
@@ -111,22 +88,53 @@ linux64-rust-1.82-dev:
     run:
         arguments: [
             '--patch', 'rust-vendor-std.patch',
+            '--patch', 'Zprofile.patch',
             '--channel', 'dev',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-unknown-linux-gnu',
         ]
         resources:
             - build/build-rust/rust-vendor-std.patch
+            - build/build-rust/Zprofile.patch
         toolchain-alias:
             by-project:
                 toolchains: null
                 default: linux64-rust-dev
     fetches:
         fetch:
-            - rust-1.82.0
+            - rust-1.90.0
         toolchain:
             - linux64-clang-toolchain
             - linux64-toolchain-sysroot
+
+win64-rust-1.90-dev:
+    description: "build rust from source"
+    worker-type: b-win2022
+    treeherder:
+        symbol: TW64(rust-dev)
+    run:
+        arguments: [
+            '--patch', 'rust-vendor-std.patch',
+            '--patch', 'Zprofile.patch',
+            '--channel', 'dev',
+            '--host', 'x86_64-pc-windows-msvc',
+            '--target', 'x86_64-pc-windows-msvc',
+        ]
+        resources:
+            - build/build-rust/rust-vendor-std.patch
+            - build/build-rust/Zprofile.patch
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: win64-rust-dev
+    fetches:
+        fetch:
+            - rust-1.90.0
+            - win64-ninja
+        toolchain:
+            - win64-clang-toolchain
+            - win64-cmake
+            - vs
 
 linux64-rust-cross-1.90:
     description: "rust repack with macos and windows cross support"
@@ -328,12 +336,14 @@ linux64-rust-nightly-dev:
     run:
         arguments: [
             '--patch', 'rust-vendor-std.patch',
+            '--patch', 'Zprofile-1.92.patch',
             '--channel', 'dev',
             '--host', 'x86_64-unknown-linux-gnu',
             '--target', 'x86_64-unknown-linux-gnu',
         ]
         resources:
             - build/build-rust/rust-vendor-std.patch
+            - build/build-rust/Zprofile-1.92.patch
         toolchain-alias:
             by-project:
                 toolchains: linux64-rust-dev
@@ -344,6 +354,37 @@ linux64-rust-nightly-dev:
         toolchain:
             - linux64-clang-toolchain
             - linux64-toolchain-sysroot
+
+win64-rust-nightly-dev:
+    attributes:
+        cached_task: false
+    description: "build rust from source"
+    worker-type: b-win2022
+    treeherder:
+        symbol: TW64(rust-dev-nightly)
+    run:
+        arguments: [
+            '--patch', 'rust-vendor-std.patch',
+            '--patch', 'Zprofile-1.92.patch',
+            '--channel', 'dev',
+            '--host', 'x86_64-pc-windows-msvc',
+            '--target', 'x86_64-pc-windows-msvc',
+        ]
+        resources:
+            - build/build-rust/rust-vendor-std.patch
+            - build/build-rust/Zprofile-1.92.patch
+        toolchain-alias:
+            by-project:
+                toolchains: win64-rust-dev
+                default: null
+    fetches:
+        fetch:
+            - rust-nightly
+            - win64-ninja
+        toolchain:
+            - win64-clang-toolchain
+            - win64-cmake
+            - vs
 
 linux64-rust-cross-nightly:
     attributes:

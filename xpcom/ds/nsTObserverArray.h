@@ -333,7 +333,8 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
     }
 
     // Removes the element at the current iterator position.
-    // (the last element returned from |GetNext()|)
+    // This is the last element returned from |GetNext()|, unless
+    // the array was modified in the meantime.
     // This will not affect the next call to |GetNext()|
     void Remove() {
       return base_type::mArray.RemoveElementAt(base_type::mPosition - 1);

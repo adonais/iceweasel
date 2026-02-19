@@ -406,7 +406,7 @@ class SourceBuffer final {
     }
 
     Chunk& operator=(Chunk&& aOther) {
-      free(mData);
+      mFree(mData);
       mCapacity = aOther.mCapacity;
       mLength = aOther.mLength;
       mData = aOther.mData;
@@ -431,6 +431,10 @@ class SourceBuffer final {
 
     bool SetCapacity(size_t aCapacity) {
       MOZ_ASSERT(mData, "Allocation failed but nobody checked for it");
+      MOZ_ASSERT(aCapacity > 0, "zero sized resize");
+      if (aCapacity == 0) {
+        return false;
+      }
       char* data = static_cast<char*>(mRealloc(mData, aCapacity));
       if (!data) {
         return false;

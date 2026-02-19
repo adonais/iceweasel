@@ -23,6 +23,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
 #include "mozilla/ServoCSSParser.h"
+#include "mozilla/ServoComputedData.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_signon.h"
 #include "mozilla/TextControlState.h"
@@ -802,6 +803,16 @@ nsresult HTMLInputElement::InitColorPicker() {
   if (IsPickerBlocked(doc)) {
     return NS_OK;
   }
+
+  // NOTE(krosylight): Android doesn't support HTML widgets. We can modify
+  // GeckoView to handle MozOpenColorPicker and let it keep using its current
+  // picker, but for now this is ok.
+#ifndef ANDROID
+  if (StaticPrefs::dom_forms_html_color_picker_enabled()) {
+    OpenColorPicker();
+    return NS_OK;
+  }
+#endif
 
   // Get Loc title
   nsAutoString title;
@@ -2046,6 +2057,46 @@ Decimal HTMLInputElement::GetStepBase() const {
   return kDefaultStepBase;
 }
 
+void HTMLInputElement::GetColor(InputPickerColor& aValue) {
+  MOZ_ASSERT(mType == FormControlType::InputColor,
+             "getColor is only for type=color.");
+
+  nsAutoString value;
+  GetValue(value, CallerType::System);
+
+  StyleAbsoluteColor color =
+      MaybeComputeColor(OwnerDoc(), value).valueOr(StyleAbsoluteColor::BLACK);
+  aValue.mComponent1 = color.components._0;
+  aValue.mComponent2 = color.components._1;
+  aValue.mComponent3 = color.components._2;
+  // aValue.mAlpha = color.alpha;
+  // aValue.mColorSpace = mColorSpace;
+}
+
+void HTMLInputElement::SetUserInputColor(const InputPickerColor& aValue) {
+  MOZ_ASSERT(mType == FormControlType::InputColor,
+             "setUserInputColor is only for type=color.");
+
+  // TODO(krosylight): We should ultimately get a helper method where the compat
+  // serialization happens only conditionally
+  nsAutoString serialized;
+  SerializeColorForHTMLCompatibility(
+      StyleAbsoluteColor{
+          .components =
+              StyleColorComponents{
+                  ._0 = aValue.mComponent1,
+                  ._1 = aValue.mComponent2,
+                  ._2 = aValue.mComponent3,
+              },
+          .alpha = 1,
+          .color_space = StyleColorSpace::Srgb,
+      },
+      serialized);
+
+  // (We are either Chrome/UA but the principal doesn't matter for color inputs)
+  SetUserInput(serialized, *NodePrincipal());
+}
+
 Decimal HTMLInputElement::GetValueIfStepped(int32_t aStep,
                                             StepCallerType aCallerType,
                                             ErrorResult& aRv) {
@@ -2308,19 +2359,8 @@ void HTMLInputElement::OpenDateTimePicker(const DateTimeValue& aInitialValue) {
   }
 
   mDateTimeInputBoxValue = MakeUnique<DateTimeValue>(aInitialValue);
-  nsContentUtils::DispatchChromeEvent(OwnerDoc(), static_cast<Element*>(this),
+  nsContentUtils::DispatchChromeEvent(OwnerDoc(), this,
                                       u"MozOpenDateTimePicker"_ns,
-                                      CanBubble::eYes, Cancelable::eYes);
-}
-
-void HTMLInputElement::UpdateDateTimePicker(const DateTimeValue& aValue) {
-  if (NS_WARN_IF(!IsDateTimeInputType(mType))) {
-    return;
-  }
-
-  mDateTimeInputBoxValue = MakeUnique<DateTimeValue>(aValue);
-  nsContentUtils::DispatchChromeEvent(OwnerDoc(), static_cast<Element*>(this),
-                                      u"MozUpdateDateTimePicker"_ns,
                                       CanBubble::eYes, Cancelable::eYes);
 }
 
@@ -2329,13 +2369,23 @@ void HTMLInputElement::CloseDateTimePicker() {
     return;
   }
 
-  nsContentUtils::DispatchChromeEvent(OwnerDoc(), static_cast<Element*>(this),
+  nsContentUtils::DispatchChromeEvent(OwnerDoc(), this,
                                       u"MozCloseDateTimePicker"_ns,
                                       CanBubble::eYes, Cancelable::eYes);
 }
 
 void HTMLInputElement::SetOpenState(bool aIsOpen) {
   SetStates(ElementState::OPEN, aIsOpen);
+}
+
+void HTMLInputElement::OpenColorPicker() {
+  if (NS_WARN_IF(mType != FormControlType::InputColor)) {
+    return;
+  }
+
+  nsContentUtils::DispatchChromeEvent(OwnerDoc(), this,
+                                      u"MozOpenColorPicker"_ns, CanBubble::eYes,
+                                      Cancelable::eYes);
 }
 
 void HTMLInputElement::SetFocusState(bool aIsFocused) {
@@ -4162,13 +4212,14 @@ void EndSubmitClick(EventChainPostVisitor& aVisitor) {
 void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
   auto oldType = FormControlType(NS_CONTROL_TYPE(aVisitor.mItemFlags));
 
+  auto endSubmit = MakeScopeExit([&] { EndSubmitClick(aVisitor); });
+
   if (IsDisabled() && oldType != FormControlType::InputCheckbox &&
       oldType != FormControlType::InputRadio) {
     // Behave as if defaultPrevented when the element becomes disabled by event
     // listeners. Checkboxes and radio buttons should still process clicks for
     // web compat. See:
     // https://html.spec.whatwg.org/multipage/input.html#the-input-element:activation-behaviour
-    EndSubmitClick(aVisitor);
     return;
   }
 
@@ -4216,6 +4267,7 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
           form->MaybeSubmit(this);
         }
         aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+        return;
       }
       break;
 
@@ -4227,8 +4279,6 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
         do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
     HandlePopoverTargetAction(eventTarget);
   }
-
-  EndSubmitClick(aVisitor);
 }
 
 void HTMLInputElement::LegacyCanceledActivationBehavior(

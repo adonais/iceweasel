@@ -691,6 +691,10 @@ static JitFrameLayout* GetLastProfilingFrame(ResumeFromException* rfe) {
 void HandleException(ResumeFromException* rfe) {
   JSContext* cx = TlsContext.get();
 
+  if (!CheckForOOMStackTraceInterrupt(cx)) {
+    return;
+  }
+
   cx->realm()->localAllocSite = nullptr;
 #ifdef DEBUG
   if (!IsPortableBaselineInterpreterEnabled()) {
@@ -1416,8 +1420,7 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
   }
 #endif
 
-  activation->traceRematerializedFrames(trc);
-  activation->traceIonRecovery(trc);
+  activation->trace(trc);
 
   // This is used for sanity checking continuity of the sequence of wasm stack
   // maps as we unwind.  It has no functional purpose.
@@ -1485,7 +1488,7 @@ void TraceJitActivations(JSContext* cx, JSTracer* trc) {
     TraceJitActivation(trc, activations->asJit());
   }
 #ifdef ENABLE_WASM_JSPI
-  cx->wasm().promiseIntegration.traceRoots(trc);
+  cx->wasm().traceRoots(trc);
 #endif
 }
 
@@ -1506,6 +1509,7 @@ void TraceWeakJitActivationsInSweepingZones(JSContext* cx, JSTracer* trc) {
 
 void UpdateJitActivationsForMinorGC(JSRuntime* rt) {
   MOZ_ASSERT(JS::RuntimeHeapIsMinorCollecting());
+  Nursery& nursery = rt->gc.nursery();
   JSContext* cx = rt->mainContextFromOwnThread();
   for (JitActivationIterator activations(cx); !activations.done();
        ++activations) {
@@ -1518,7 +1522,7 @@ void UpdateJitActivationsForMinorGC(JSRuntime* rt) {
       } else if (iter.isWasm()) {
         const wasm::WasmFrameIter& frame = iter.asWasm();
         frame.instance()->updateFrameForMovingGC(
-            frame, frame.resumePCinCurrentFrame());
+            frame, frame.resumePCinCurrentFrame(), nursery);
       }
     }
   }
@@ -1526,6 +1530,7 @@ void UpdateJitActivationsForMinorGC(JSRuntime* rt) {
 
 void UpdateJitActivationsForCompactingGC(JSRuntime* rt) {
   MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
+  Nursery& nursery = rt->gc.nursery();
   JSContext* cx = rt->mainContextFromOwnThread();
   for (JitActivationIterator activations(cx); !activations.done();
        ++activations) {
@@ -1533,7 +1538,7 @@ void UpdateJitActivationsForCompactingGC(JSRuntime* rt) {
       if (iter.isWasm()) {
         const wasm::WasmFrameIter& frame = iter.asWasm();
         frame.instance()->updateFrameForMovingGC(
-            frame, frame.resumePCinCurrentFrame());
+            frame, frame.resumePCinCurrentFrame(), nursery);
       }
     }
   }
@@ -1733,6 +1738,7 @@ bool SnapshotIterator::allocationReadable(const RValueAllocation& alloc,
     case RValueAllocation::INT64_REG:
       return hasRegister(alloc.reg());
     case RValueAllocation::INT64_STACK:
+    case RValueAllocation::INT64_INT32_STACK:
       return hasStack(alloc.stackOffset());
 #endif
 
@@ -1843,6 +1849,7 @@ Value SnapshotIterator::allocationValue(const RValueAllocation& alloc,
 #elif defined(JS_PUNBOX64)
     case RValueAllocation::INT64_REG:
     case RValueAllocation::INT64_STACK:
+    case RValueAllocation::INT64_INT32_STACK:
 #endif
       MOZ_CRASH("Can't read Int64 as Value");
 
@@ -1899,6 +1906,7 @@ bool SnapshotIterator::readMaybeUnpackedBigInt(JSContext* cx,
 #elif defined(JS_PUNBOX64)
     case RValueAllocation::INT64_REG:
     case RValueAllocation::INT64_STACK:
+    case RValueAllocation::INT64_INT32_STACK:
 #endif
     {
       auto* bigInt = JS::BigInt::createFromInt64(cx, allocationInt64(alloc));
@@ -1965,6 +1973,9 @@ int64_t SnapshotIterator::allocationInt64(const RValueAllocation& alloc) {
     }
     case RValueAllocation::INT64_STACK: {
       return static_cast<int64_t>(fromStack(alloc.stackOffset()));
+    }
+    case RValueAllocation::INT64_INT32_STACK: {
+      return static_cast<int64_t>(ReadFrameInt32Slot(fp_, alloc.stackOffset()));
     }
 #endif
     default:
@@ -2039,6 +2050,7 @@ void SnapshotIterator::writeAllocationValuePayload(
 #elif defined(JS_PUNBOX64)
     case RValueAllocation::INT64_REG:
     case RValueAllocation::INT64_STACK:
+    case RValueAllocation::INT64_INT32_STACK:
 #endif
       MOZ_CRASH("Not a GC thing: Unexpected write");
       break;

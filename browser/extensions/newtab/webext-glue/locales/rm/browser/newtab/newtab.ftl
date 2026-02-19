@@ -437,6 +437,10 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
+
 ## Celestial
 
 # “Celestial” referring to astronomy; positioned in or relating to the sky,
@@ -478,8 +482,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Midar a fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Midar a celsius
 newtab-weather-menu-hide-weather = Zuppentar l’aura sin ils novs tabs
 newtab-weather-menu-learn-more = Ulteriuras infurmaziuns
+newtab-weather-menu-detect-my-location = Detectar mia posiziun
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Datas meteorologicas n’èn actualmain betg disponiblas.
+newtab-weather-opt-in-see-weather = Vuls ti vesair l’aura per tes lieu?
+newtab-weather-opt-in-not-now =
+    .label = Betg ussa
+newtab-weather-opt-in-yes =
+    .label = Gea
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -646,6 +658,9 @@ newtab-widget-lists-input-menu-move-up = Spustar ensi
 newtab-widget-lists-input-menu-move-down = Spustar engiu
 newtab-widget-lists-input-menu-delete = Stizzar
 newtab-widget-lists-input-menu-edit = Modifitgar
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Crear ina nova glista
 newtab-widget-lists-name-label-default =
     .label = Glista d’incumbensas
 newtab-widget-lists-name-placeholder-default =
@@ -675,8 +690,6 @@ newtab-widget-timer-menu-notifications = Deactivar las notificaziuns
 newtab-widget-timer-menu-notifications-on = Activar las notificaziuns
 newtab-widget-timer-menu-hide = Zuppentar il svegliarin
 newtab-widget-timer-menu-learn-more = Ulteriuras infurmaziuns
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = Fa defilar per dapli infurmaziuns
 newtab-widget-message-title = Mantegna la concentraziun cun agid da glistas ed in svegliarin integrà
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Cun agid da promemorias ed incumbensas quotidianas, intervals da concentraziun e pausas per relaxar – na perda ni il fil ni il temp.

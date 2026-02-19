@@ -1,8 +1,9 @@
-//! Methods on [`TypeInner`], [`Scalar`], and [`ScalarKind`].
+//! Methods on or related to [`TypeInner`], [`Scalar`], [`ScalarKind`], and [`VectorSize`].
 //!
 //! [`TypeInner`]: crate::TypeInner
 //! [`Scalar`]: crate::Scalar
 //! [`ScalarKind`]: crate::ScalarKind
+//! [`VectorSize`]: crate::VectorSize
 
 use crate::{ir, valid::MAX_TYPE_SIZE};
 
@@ -97,6 +98,31 @@ impl crate::Scalar {
     }
 }
 
+/// Produce all concrete integer [`ir::Scalar`]s.
+///
+/// Note that `I32` and `U32` must come first; this represents conversion rank
+/// in overload resolution.
+pub fn concrete_int_scalars() -> impl Iterator<Item = ir::Scalar> {
+    [
+        ir::Scalar::I32,
+        ir::Scalar::U32,
+        ir::Scalar::I64,
+        ir::Scalar::U64,
+    ]
+    .into_iter()
+}
+
+/// Produce all vector sizes.
+pub fn vector_sizes() -> impl Iterator<Item = ir::VectorSize> + Clone {
+    static SIZES: [ir::VectorSize; 3] = [
+        ir::VectorSize::Bi,
+        ir::VectorSize::Tri,
+        ir::VectorSize::Quad,
+    ];
+
+    SIZES.iter().cloned()
+}
+
 const POINTER_SPAN: u32 = 4;
 
 impl crate::TypeInner {
@@ -115,6 +141,7 @@ impl crate::TypeInner {
         match *self {
             Ti::Scalar(scalar) | Ti::Vector { scalar, .. } => Some(scalar),
             Ti::Matrix { scalar, .. } => Some(scalar),
+            Ti::CooperativeMatrix { scalar, .. } => Some(scalar),
             _ => None,
         }
     }
@@ -182,8 +209,8 @@ impl crate::TypeInner {
 
     pub fn is_atomic_pointer(&self, types: &crate::UniqueArena<crate::Type>) -> bool {
         match *self {
-            crate::TypeInner::Pointer { base, .. } => match types[base].inner {
-                crate::TypeInner::Atomic { .. } => true,
+            Self::Pointer { base, .. } => match types[base].inner {
+                Self::Atomic { .. } => true,
                 _ => false,
             },
             _ => false,
@@ -202,6 +229,12 @@ impl crate::TypeInner {
                 rows,
                 scalar,
             } => Some(super::Alignment::from(rows) * scalar.width as u32 * columns as u32),
+            Self::CooperativeMatrix {
+                columns,
+                rows,
+                scalar,
+                role: _,
+            } => Some(columns as u32 * rows as u32 * scalar.width as u32),
             Self::Pointer { .. } | Self::ValuePointer { .. } => Some(POINTER_SPAN),
             Self::Array {
                 base: _,
@@ -361,6 +394,7 @@ impl crate::TypeInner {
             crate::TypeInner::Scalar(scalar) => Some((None, scalar)),
             crate::TypeInner::Vector { size, scalar } => Some((Some(size), scalar)),
             crate::TypeInner::Matrix { .. }
+            | crate::TypeInner::CooperativeMatrix { .. }
             | crate::TypeInner::Atomic(_)
             | crate::TypeInner::Pointer { .. }
             | crate::TypeInner::ValuePointer { .. }
@@ -385,7 +419,8 @@ impl crate::TypeInner {
             | crate::TypeInner::Matrix { scalar, .. }
             | crate::TypeInner::Atomic(scalar) => scalar.is_abstract(),
             crate::TypeInner::Array { base, .. } => types[base].inner.is_abstract(types),
-            crate::TypeInner::ValuePointer { .. }
+            crate::TypeInner::CooperativeMatrix { .. }
+            | crate::TypeInner::ValuePointer { .. }
             | crate::TypeInner::Pointer { .. }
             | crate::TypeInner::Struct { .. }
             | crate::TypeInner::Image { .. }
@@ -610,5 +645,14 @@ pub fn min_max_float_representable_by(
             crate::Literal::F64(u64::max_float()),
         ),
         _ => unreachable!(),
+    }
+}
+
+/// Helper function that returns the string corresponding to the [`VectorSize`](crate::VectorSize)
+pub const fn vector_size_str(size: crate::VectorSize) -> &'static str {
+    match size {
+        crate::VectorSize::Bi => "2",
+        crate::VectorSize::Tri => "3",
+        crate::VectorSize::Quad => "4",
     }
 }

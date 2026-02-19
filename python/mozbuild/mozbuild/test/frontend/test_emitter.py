@@ -1008,7 +1008,7 @@ class TestEmitterBasic(unittest.TestCase):
         with self.assertRaisesRegex(
             SandboxValidationError, "entry in generated-files not present elsewhere"
         ):
-            self.read_topsrcdir(reader),
+            (self.read_topsrcdir(reader),)
 
     def test_test_manifest_parent_support_files_dir(self):
         """support-files referencing a file in a parent directory works."""
@@ -1058,9 +1058,12 @@ class TestEmitterBasic(unittest.TestCase):
             mozpath.relpath(p, ipdl_collection.topsrcdir)
             for p in ipdl_collection.all_regular_sources()
         )
-        expected = set(
-            ["bar/bar.ipdl", "bar/bar2.ipdlh", "foo/foo.ipdl", "foo/foo2.ipdlh"]
-        )
+        expected = set([
+            "bar/bar.ipdl",
+            "bar/bar2.ipdlh",
+            "foo/foo.ipdl",
+            "foo/foo2.ipdlh",
+        ])
 
         self.assertEqual(ipdls, expected)
 

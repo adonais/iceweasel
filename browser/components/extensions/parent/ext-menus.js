@@ -967,7 +967,7 @@ const libraryTracker = {
     // See WindowTrackerBase#*browserWindows in ext-tabs-base.js for why we
     // can't use the enumerator's windowtype filter.
     for (let window of Services.wm.getEnumerator("")) {
-      if (window.document.readyState === "complete") {
+      if (windowTracker.isBrowserWindowInitialized(window)) {
         if (this.isLibraryWindow(window)) {
           this.notify(window);
         }

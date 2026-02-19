@@ -37,13 +37,16 @@
 #include "mozilla/dom/CacheablePerformanceTimingData.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
-#include "nsHttpResponseHead.h"
 #include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTHashMap.h"
 
 namespace mozilla {
+
+namespace net {
+class nsHttpResponseHead;
+}
 
 // A struct to hold the network-related metadata associated with the cache.
 //
@@ -72,7 +75,7 @@ class SubResourceNetworkMetadataHolder {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SubResourceNetworkMetadataHolder)
 
  private:
-  ~SubResourceNetworkMetadataHolder() = default;
+  ~SubResourceNetworkMetadataHolder();
 
   mozilla::Maybe<dom::CacheablePerformanceTimingData> mPerfData;
   mozilla::UniquePtr<net::nsHttpResponseHead> mResponseHead;

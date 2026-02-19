@@ -22,7 +22,10 @@ async function testOnWindowBody(win, expectedReferrer, rp) {
   let browser = win.gBrowser;
   let tab = browser.selectedTab;
   let b = browser.getBrowserForTab(tab);
-  await promiseTabLoadEvent(tab, TEST_TOP_PAGE);
+  await BrowserTestUtils.loadURIString({
+    browser: tab.linkedBrowser,
+    uriString: TEST_TOP_PAGE,
+  });
 
   info("Loading tracking scripts and tracking images");
   let { iframeReferrer, refreshReferrer } = await SpecialPowers.spawn(

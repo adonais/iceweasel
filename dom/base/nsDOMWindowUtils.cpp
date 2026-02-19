@@ -1583,9 +1583,11 @@ static already_AddRefed<DataSourceSurface> CanvasToDataSourceSurface(
     HTMLCanvasElement* aCanvas) {
   MOZ_ASSERT(aCanvas);
   SurfaceFromElementResult result = nsLayoutUtils::SurfaceFromElement(aCanvas);
-
-  MOZ_ASSERT(result.GetSourceSurface());
-  return result.GetSourceSurface()->GetDataSurface();
+  const RefPtr<SourceSurface> surf = result.GetSourceSurface();
+  if (!surf) {
+    return nullptr;
+  }
+  return surf->GetDataSurface();
 }
 
 NS_IMETHODIMP

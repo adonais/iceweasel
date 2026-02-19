@@ -117,13 +117,11 @@ def run(
     elif release_type == "esr":
         release_type += str(version.major_number)
     task_config = {"version": 2, "parameters": try_config_params or {}}
-    task_config["parameters"].update(
-        {
-            "target_tasks_method": TARGET_TASKS[tasks],
-            "optimize_target_tasks": True,
-            "release_type": release_type,
-        }
-    )
+    task_config["parameters"].update({
+        "target_tasks_method": TARGET_TASKS[tasks],
+        "optimize_target_tasks": True,
+        "release_type": release_type,
+    })
 
     with open(
         os.path.join(vcs.path, "taskcluster/kinds/merge-automation/kind.yml")

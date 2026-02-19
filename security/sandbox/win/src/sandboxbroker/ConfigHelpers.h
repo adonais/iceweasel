@@ -41,7 +41,7 @@ MOZ_RAII class UserFontConfigHelper final {
                        const nsString& aRoamingAppData);
   ~UserFontConfigHelper();
 
-  void AddRules(sandboxing::SizeTrackingConfig& aConfig) const;
+  bool AddRules(sandboxing::SizeTrackingConfig& aConfig) const;
 
   UserFontConfigHelper(const UserFontConfigHelper&) = delete;
   UserFontConfigHelper& operator=(const UserFontConfigHelper&) = delete;

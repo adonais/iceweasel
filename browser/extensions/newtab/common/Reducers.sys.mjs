@@ -205,6 +205,9 @@ export const INITIAL_STATE = {
       isRunning: false,
     },
   },
+  ExternalComponents: {
+    components: [],
+  },
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -1179,6 +1182,18 @@ function ListsWidget(prevState = INITIAL_STATE.ListsWidget, action) {
   }
 }
 
+function ExternalComponents(
+  prevState = INITIAL_STATE.ExternalComponents,
+  action
+) {
+  switch (action.type) {
+    case at.REFRESH_EXTERNAL_COMPONENTS:
+      return { ...prevState, components: action.data };
+    default:
+      return prevState;
+  }
+}
+
 export const reducers = {
   TopSites,
   App,
@@ -1197,4 +1212,5 @@ export const reducers = {
   ListsWidget,
   Wallpapers,
   Weather,
+  ExternalComponents,
 };

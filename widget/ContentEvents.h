@@ -6,8 +6,6 @@
 #ifndef mozilla_ContentEvents_h__
 #define mozilla_ContentEvents_h__
 
-#include <stdint.h>
-
 #include "mozilla/BasicEvents.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/EventTarget.h"

@@ -128,23 +128,6 @@
       }
     ]
   },
-  "1458885": {
-    "label": "ipstack.com",
-    "bugs": {
-      "1458885": {
-        "issue": "broken-layout",
-        "matches": ["*://ipstack.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["desktop"],
-        "content_scripts": {
-          "css": ["bug1458885-ipstack.com-fix-line-break-on-button.css"]
-        }
-      }
-    ]
-  },
   "1457335": {
     "label": "histography.io",
     "bugs": {
@@ -1603,21 +1586,6 @@
       }
     ]
   },
-  "1864999": {
-    "label": "autotrader.ca",
-    "bugs": {
-      "1864999": {
-        "issue": "broken-interactive-elements",
-        "matches": ["*://*.autotrader.ca/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["android"],
-        "ua_string": ["Chrome"]
-      }
-    ]
-  },
   "1865000": {
     "label": "bmo.com",
     "bugs": {
@@ -2178,21 +2146,6 @@
       }
     ]
   },
-  "1898928": {
-    "label": "cleanfeed.net",
-    "bugs": {
-      "1898928": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://cleanfeed.net/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
   "1898929": {
     "label": "app.sessionlinkpro.com",
     "bugs": {
@@ -2270,6 +2223,21 @@
       {
         "platforms": ["all"],
         "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "1898937": {
+    "label": "goodyearfiaetrc.com",
+    "bugs": {
+      "1898937": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://www.goodyearfiaetrc.com/standings*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome_with_FxQuantum"]
       }
     ]
   },
@@ -2463,21 +2431,6 @@
       }
     ]
   },
-  "1898994": {
-    "label": "eportal.uestc.edu.cn",
-    "bugs": {
-      "1898994": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://eportal.uestc.edu.cn/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
   "1898996": {
     "label": "oculus.com and meta.com",
     "bugs": {
@@ -2557,27 +2510,6 @@
         "platforms": ["all"],
         "content_scripts": {
           "css": ["bug1899063-onlinestep.pgc.edu-hide-unsupported-message.css"]
-        }
-      }
-    ]
-  },
-  "1899065": {
-    "label": "CenterParcs UK and Ireland",
-    "bugs": {
-      "1899065": {
-        "issue": "unsupported-warning",
-        "matches": ["*://*.centerparcs.co.uk/*"]
-      },
-      "1902410": {
-        "issue": "unsupported-warning",
-        "matches": ["*://*.centerparcs.ie/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "css": ["bug1899065-centerparcs-hide-unsupported-warning.css"]
         }
       }
     ]
@@ -2757,21 +2689,6 @@
       }
     ]
   },
-  "1902378": {
-    "label": "acesso.processo.rio",
-    "bugs": {
-      "1902378": {
-        "issue": "unsupported-warning",
-        "matches": ["*://acesso.processo.rio/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
   "1902379": {
     "label": "adl.edu.tw",
     "bugs": {
@@ -2804,23 +2721,6 @@
       {
         "platforms": ["all"],
         "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
-  "1902383": {
-    "label": "wpartner.wemakeprice.com",
-    "bugs": {
-      "1902383": {
-        "issue": "unsupported-warning",
-        "matches": ["*://wpartner.wemakeprice.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "css": ["bug1902383-wpartner.wemakeprice.com-hide-recommendation.css"]
-        }
       }
     ]
   },
@@ -3613,7 +3513,7 @@
     "bugs": {
       "1913720": {
         "issue": "firefox-blocked-completely",
-        "matches": ["*://cotota.app/*", "https://is-sets.com/*"]
+        "matches": ["https://h2breeze.com/*", "https://is-sets.com/*"]
       }
     },
     "interventions": [
@@ -5558,25 +5458,6 @@
       }
     ]
   },
-  "1974686": {
-    "label": "hermes.admin.ch",
-    "bugs": {
-      "1974686": {
-        "issue": "broken-layout",
-        "matches": [
-          "*://www.hermes.admin.ch/de/projektmanagement/szenarien/it-entwicklung/szenariouebersicht.html*"
-        ]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "css": ["bug1974686-hermes_admin_ch.css"]
-        }
-      }
-    ]
-  },
   "1980129": {
     "label": "app.simplenote.com",
     "bugs": {
@@ -5754,24 +5635,6 @@
       }
     ]
   },
-  "1987351": {
-    "label": "mirage.decart.ai",
-    "bugs": {
-      "1987351": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://mirage.decart.ai/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "js": ["bug1928941-oasis.decart.ai-window-chrome-shim.js"]
-        },
-        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
-      }
-    ]
-  },
   "1989241": {
     "label": "useinsider.com",
     "bugs": {
@@ -5817,21 +5680,6 @@
       }
     ]
   },
-  "1992121": {
-    "label": "tutor-uksouth.classroom.cloud",
-    "bugs": {
-      "1992121": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://tutor-uksouth.classroom.cloud/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["Chrome_with_FxQuantum"]
-      }
-    ]
-  },
   "1992402": {
     "label": "ehssrisk.sai360.net",
     "bugs": {
@@ -5844,23 +5692,6 @@
       {
         "platforms": ["all"],
         "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
-  "1992923": {
-    "label": "godotfest.com",
-    "bugs": {
-      "1992923": {
-        "issue": "broken-images",
-        "matches": ["*://godotfest.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["android"],
-        "content_scripts": {
-          "css": ["1992923-godotfest.com-fix-blur-effects.css"]
-        }
       }
     ]
   },
@@ -6253,6 +6084,104 @@
         "platforms": ["all"],
         "content_scripts": {
           "css": ["bug2003019-www.jw.org-fix-ruby-text-linebreaks.css"]
+        }
+      }
+    ]
+  },
+  "2003815": {
+    "label": "crea-tv.jp",
+    "bugs": {
+      "2003815": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://crea-tv.jp/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["android"],
+        "ua_string": [
+          { "change": "Chrome_with_FxQuantum", "version": "142.0.0.0" }
+        ]
+      }
+    ]
+  },
+  "2003826": {
+    "label": "tjoy.jp",
+    "bugs": {
+      "2003826": {
+        "issue": "broken-zooming",
+        "matches": ["*://tjoy.jp/shinjuku_wald9/reservation/choice_seat"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["android"],
+        "content_scripts": {
+          "css": ["bug2003826-tjoy.jp-fix-broken-zoom.css"]
+        }
+      }
+    ]
+  },
+  "2004025": {
+    "label": "chatbot.weixin.qq.com",
+    "bugs": {
+      "2004025": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://chatbot.weixin.qq.com/webapp/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome_with_FxQuantum"]
+      }
+    ]
+  },
+  "2004610": {
+    "label": "character.ai",
+    "bugs": {
+      "2004610": {
+        "issue": "broken-font",
+        "matches": ["*://character.ai/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug2004610-character.ai-fix-broken-italics.css"]
+        }
+      }
+    ]
+  },
+  "2004679": {
+    "label": "paybill.com",
+    "bugs": {
+      "2004679": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://paybill.com/occourts/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["replace_colon_in_rv_with_space"]
+      }
+    ]
+  },
+  "2005520": {
+    "label": "portal.adtpulse.com",
+    "bugs": {
+      "2005520": {
+        "issue": "unsupported-warning",
+        "matches": ["*://portal.adtpulse.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug2005520-portal.adtpulse.com-hide-unsupported.css"]
         }
       }
     ]

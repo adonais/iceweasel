@@ -36,15 +36,15 @@ static int8_t ParseStyleValue(nsAtom* aAttribute,
                               const nsAString& aAttributeValue) {
   if (aAttribute == nsGkAtoms::rowalign) {
     if (aAttributeValue.EqualsLiteral("top")) {
-      return static_cast<int8_t>(StyleVerticalAlignKeyword::Top);
+      return static_cast<int8_t>(TableCellAlignment::Top);
     }
     if (aAttributeValue.EqualsLiteral("bottom")) {
-      return static_cast<int8_t>(StyleVerticalAlignKeyword::Bottom);
+      return static_cast<int8_t>(TableCellAlignment::Bottom);
     }
     if (aAttributeValue.EqualsLiteral("center")) {
-      return static_cast<int8_t>(StyleVerticalAlignKeyword::Middle);
+      return static_cast<int8_t>(TableCellAlignment::Middle);
     }
-    return static_cast<int8_t>(StyleVerticalAlignKeyword::Baseline);
+    return static_cast<int8_t>(TableCellAlignment::Baseline);
   }
 
   if (aAttribute == nsGkAtoms::columnalign) {
@@ -1104,9 +1104,9 @@ nsresult nsMathMLmtdFrame::AttributeChanged(int32_t aNameSpaceID,
   return nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
 
-StyleVerticalAlignKeyword nsMathMLmtdFrame::GetVerticalAlign() const {
+TableCellAlignment nsMathMLmtdFrame::GetTableCellAlignment() const {
   // Set the default alignment in case no alignment was specified
-  auto alignment = nsTableCellFrame::GetVerticalAlign();
+  auto alignment = nsTableCellFrame::GetTableCellAlignment();
 
   nsTArray<int8_t>* alignmentList = FindCellProperty(this, RowAlignProperty());
 
@@ -1115,7 +1115,7 @@ StyleVerticalAlignKeyword nsMathMLmtdFrame::GetVerticalAlign() const {
 
     // If the row number is greater than the number of provided rowalign values,
     // we simply repeat the last value.
-    return static_cast<StyleVerticalAlignKeyword>(
+    return static_cast<TableCellAlignment>(
         (rowIndex < alignmentList->Length())
             ? alignmentList->ElementAt(rowIndex)
             : alignmentList->LastElement());

@@ -20,8 +20,6 @@ devtools/shared/heapsnapshot/CoreDump.pb.cc
 devtools/shared/heapsnapshot/CoreDump.pb.h
 devtools/shared/jsbeautify/
 devtools/shared/node-properties/
-devtools/shared/qrcode/decoder/
-devtools/shared/qrcode/encoder/
 devtools/shared/sprintfjs/
 devtools/shared/storage/vendor/
 dom/canvas/test/webgl-conf/checkout/

@@ -58,7 +58,6 @@ def android_api_to_os_version(api_version: str):
 
 
 class PlatformInfo:
-
     variant_data = {}
 
     buildmap = {

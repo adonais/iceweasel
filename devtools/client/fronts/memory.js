@@ -37,11 +37,12 @@ class MemoryFront extends FrontClassWithSpec(memorySpec) {
    * Note that this is safe to call for actors inside sandoxed child processes,
    * as we jump through the correct IPDL hoops.
    *
-   * @params Boolean options.forceCopy
+   * @param {object} options
+   * @param {boolean} options.forceCopy
    *         Always force a bulk data copy of the saved heap snapshot, even when
    *         the server and client share a file system.
    *
-   * @params {object | undefined} options.boundaries
+   * @param {object | undefined} options.boundaries
    *         The boundaries for the heap snapshot. See
    *         ChromeUtils.webidl for more details.
    *

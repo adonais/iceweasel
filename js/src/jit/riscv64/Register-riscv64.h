@@ -127,7 +127,6 @@ static constexpr Register IntArgReg4{Registers::a4};
 static constexpr Register IntArgReg5{Registers::a5};
 static constexpr Register IntArgReg6{Registers::a6};
 static constexpr Register IntArgReg7{Registers::a7};
-static constexpr Register HeapReg{Registers::s7};
 
 // Registers used by RegExpMatcher and RegExpExecMatch stubs (do not use
 // JSReturnOperand).
@@ -149,24 +148,21 @@ static constexpr Register JSReturnReg_Data{Registers::s2};
 static constexpr Register JSReturnReg{Registers::a2};
 static constexpr ValueOperand JSReturnOperand = ValueOperand(JSReturnReg);
 
-// These registers may be volatile or nonvolatile.
+// See "ABI special registers" in Assembler-shared.h for more information.
 static constexpr Register ABINonArgReg0{Registers::t0};
 static constexpr Register ABINonArgReg1{Registers::t1};
 static constexpr Register ABINonArgReg2{Registers::t2};
 static constexpr Register ABINonArgReg3{Registers::t3};
 
-// These registers may be volatile or nonvolatile.
-// Note: these three registers are all guaranteed to be different
+// See "ABI special registers" in Assembler-shared.h for more information.
 static constexpr Register ABINonArgReturnReg0{Registers::t0};
 static constexpr Register ABINonArgReturnReg1{Registers::t1};
 static constexpr Register ABINonVolatileReg{Registers::s1};
 
-// This register is guaranteed to be clobberable during the prologue and
-// epilogue of an ABI call which must preserve both ABI argument, return
-// and non-volatile registers.
+// See "ABI special registers" in Assembler-shared.h for more information.
 static constexpr Register ABINonArgReturnVolatileReg{Registers::t0};
 
-// This register may be volatile or nonvolatile.
+// See "ABI special registers" in Assembler-shared.h for more information.
 // Avoid ft11 which is the scratch register.
 static constexpr FloatRegister ABINonArgDoubleReg{FloatRegisters::ft11};
 
@@ -175,10 +171,10 @@ static constexpr Register WasmTableCallScratchReg1{ABINonArgReg1};
 static constexpr Register WasmTableCallSigReg{ABINonArgReg2};
 static constexpr Register WasmTableCallIndexReg{ABINonArgReg3};
 
-// Instance pointer argument register for WebAssembly functions. This must not
-// alias any other register used for passing function arguments or return
-// values. Preserved by WebAssembly functions. Must be nonvolatile.
+// See "ABI special registers" in Assembler-shared.h, and "The WASM ABIs" in
+// WasmFrame.h for more information.
 static constexpr Register InstanceReg{Registers::s4};
+static constexpr Register HeapReg{Registers::s7};
 
 static constexpr Register WasmJitEntryReturnScratch{Registers::t1};
 

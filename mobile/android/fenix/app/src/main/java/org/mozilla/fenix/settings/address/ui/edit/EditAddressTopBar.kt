@@ -18,7 +18,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.concept.storage.Address
@@ -31,6 +31,7 @@ import org.mozilla.fenix.settings.address.store.SaveTapped
 import org.mozilla.fenix.settings.address.store.isEditing
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -101,44 +102,27 @@ private val AddressState.titleId: Int
         R.string.addresses_add_address
     }
 
-@PreviewLightDark
+@Preview
 @Composable
-private fun AddTopBarPreview() {
+private fun AddTopBarPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val store = AddressStore(AddressState.initial(), listOf())
 
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         EditAddressTopBar(store)
     }
 }
 
 @Preview
 @Composable
-private fun AddTopBarPrivatePreview() {
-    val store = AddressStore(AddressState.initial(), listOf())
-
-    FirefoxTheme(theme = Theme.Private) {
-        EditAddressTopBar(store)
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun EditTopBarPreview() {
+private fun EditTopBarPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
     val address = Address("BEEF", "Work", "Mozilla", "", "", "", "", "", "", "", "")
     val store = AddressStore(AddressState.initial(address = address), listOf())
 
-    FirefoxTheme {
-        EditAddressTopBar(store)
-    }
-}
-
-@Preview
-@Composable
-private fun EditTopBarPrivatePreview() {
-    val address = Address("BEEF", "Work", "Mozilla", "", "", "", "", "", "", "", "")
-    val store = AddressStore(AddressState.initial(address = address), listOf())
-
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme) {
         EditAddressTopBar(store)
     }
 }

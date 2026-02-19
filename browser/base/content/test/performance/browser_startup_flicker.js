@@ -22,6 +22,7 @@ add_task(async function () {
   let alreadyFocused = false;
   let inRange = (val, min, max) => min <= val && val <= max;
   let tabBoundingRect = undefined;
+  let urlbarBoundingRect = undefined;
   for (let i = 1; i < frames.length; ++i) {
     let frame = frames[i],
       previousFrame = frames[i - 1];
@@ -57,6 +58,17 @@ add_task(async function () {
               inRange(r.w, tabRect.width - 4, tabRect.width + 4) &&
               inRange(r.h, tabRect.height - 4, tabRect.height + 4)
             );
+          },
+        },
+        {
+          name: "Pixel snapping on urlbar bottom border on MacOS & Windows",
+          condition(r) {
+            if (!urlbarBoundingRect) {
+              urlbarBoundingRect = document
+                .getElementById("urlbar")
+                .getBoundingClientRect();
+            }
+            return rectMatchesBottomBorder(r, urlbarBoundingRect);
           },
         },
       ];

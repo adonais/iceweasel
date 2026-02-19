@@ -168,7 +168,7 @@ Function TestDontInstallOnOldWindows
     Call CommonOnInit
     !insertmacro AssertEqual ExitCode "${ERR_PREINSTALL_SYS_OS_REQ}"
     !insertmacro AssertEqual AbortInstallation "true"
-    !insertmacro AssertEqual R7 "$(WARN_MIN_SUPPORTED_OSVER_MSG)"
+    !insertmacro AssertEqual R7 "$(WARN_MIN_SUPPORTED_OSVER_MSG2)"
 FunctionEnd
 
 
@@ -192,7 +192,7 @@ Function TestDontInstallOnOldWindowsWithoutSSE
     Call CommonOnInit
     !insertmacro AssertEqual ExitCode "${ERR_PREINSTALL_SYS_OS_REQ}"
     !insertmacro AssertEqual AbortInstallation "true"
-    !insertmacro AssertEqual R7 "$(WARN_MIN_SUPPORTED_OSVER_CPU_MSG)"
+    !insertmacro AssertEqual R7 "$(WARN_MIN_SUPPORTED_OSVER_CPU_MSG2)"
 FunctionEnd
 
 ; Expect to find a known supported architecture for Windows

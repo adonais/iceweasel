@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -34,6 +35,8 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.theme.information
 import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.concept.base.images.ImageLoadRequest
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -177,6 +180,14 @@ private fun FallbackContent(
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.FillWidth,
             )
+        } else if (tab.content.url == ABOUT_HOME_URL) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_firefox),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(FallbackIconSize)
+                    .clip(RoundedCornerShape(8.dp)),
+            )
         } else {
             Favicon(
                 url = tab.content.url,
@@ -217,6 +228,11 @@ private fun ThumbnailImagePreview() {
                 modifier = Modifier
                     .size(50.dp)
                     .background(color = MaterialTheme.colorScheme.information),
+            )
+
+            FallbackContent(
+                tab = createTab(url = ABOUT_HOME_URL, title = "Mozilla"),
+                modifier = Modifier.size(50.dp),
             )
         }
     }

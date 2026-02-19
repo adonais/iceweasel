@@ -34,11 +34,12 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -132,27 +133,12 @@ private fun PlaceholderText() {
     )
 }
 
-@PreviewLightDark
-@Composable
-private fun DownloadSearchFieldPreview() {
-    FirefoxTheme {
-        Surface {
-            DownloadSearchField(
-                initialText = "",
-                onValueChange = {},
-                onSearchDismissRequest = {},
-                modifier = Modifier
-                    .height(56.dp)
-                    .fillMaxWidth(),
-            )
-        }
-    }
-}
-
 @Preview
 @Composable
-private fun DownloadSearchFieldPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun DownloadSearchFieldPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Surface {
             DownloadSearchField(
                 initialText = "",

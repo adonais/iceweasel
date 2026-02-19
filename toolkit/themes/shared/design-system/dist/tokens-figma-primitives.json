@@ -1,4 +1,5 @@
 {
+  "background/color/overlay": "{Colors$color/black/alpha/50}",
   "border/radius/circle": 9999,
   "border/radius/xsmall": 2,
   "border/radius/small": 4,

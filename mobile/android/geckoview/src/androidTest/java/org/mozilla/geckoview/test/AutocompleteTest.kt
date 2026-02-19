@@ -32,7 +32,6 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.PromptDelegate
 import org.mozilla.geckoview.GeckoSession.PromptDelegate.AutocompleteRequest
-import org.mozilla.geckoview.TranslationsController
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 
@@ -1451,6 +1450,64 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
         sessionRule.waitForResult(saveHandled)
+    }
+
+    @Test
+    fun formSubmissionWithUnchangedCreditCardShouldNotTriggerSave() {
+        val ccName = "Jane Doe"
+        val ccNumber = "5555444433331111"
+        val ccExpMonth = "6"
+        val ccExpYear = "2024"
+        val savedCreditCard = CreditCard.Builder()
+            .guid("test-guid-1")
+            .name(ccName)
+            .number(ccNumber)
+            .expirationMonth(ccExpMonth)
+            .expirationYear(ccExpYear)
+            .build()
+
+        val savedCreditCards = arrayOf(savedCreditCard)
+
+        mainSession.loadTestPath(CC_FORM_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        // Setup delegates for fetching data and handling prompts.
+        sessionRule.delegateUntilTestEnd(object : StorageDelegate, PromptDelegate {
+            @AssertCalled
+            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>> {
+                return GeckoResult.fromValue(savedCreditCards)
+            }
+
+            // These should NOT be called because no information has changed.
+            @AssertCalled(count = 0)
+            override fun onCreditCardSave(creditCard: CreditCard) = Unit
+
+            @AssertCalled(count = 0)
+            override fun onCreditCardSave(
+                session: GeckoSession,
+                request: AutocompleteRequest<CreditCardSaveOption>,
+            ): GeckoResult<PromptDelegate.PromptResponse> {
+                // This block should not be reached. If it is, the test will fail.
+                return GeckoResult.fromValue(request.dismiss())
+            }
+        })
+
+        // Fill in the fields with the same saved data
+        mainSession.evaluateJS("document.querySelector('#name').focus()")
+        mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
+        mainSession.evaluateJS("document.querySelector('#name').focus()")
+        mainSession.evaluateJS("document.querySelector('#number').value = '$ccNumber'")
+        mainSession.evaluateJS("document.querySelector('#number').focus()")
+        mainSession.evaluateJS("document.querySelector('#expMonth').value = '$ccExpMonth'")
+        mainSession.evaluateJS("document.querySelector('#expMonth').focus()")
+        mainSession.evaluateJS("document.querySelector('#expYear').value = '$ccExpYear'")
+        mainSession.evaluateJS("document.querySelector('#expYear').focus()")
+
+        // Submit the form
+        mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
+
+        // Wait for the form to submit
+        mainSession.waitForRoundTrip()
     }
 
     @Test

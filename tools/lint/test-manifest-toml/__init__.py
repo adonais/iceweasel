@@ -119,7 +119,7 @@ def check_condition(results: list, config, path: Path, c: str) -> int:
     if c.find("win10_2009") >= 0:
         r = make_result(
             path,
-            "instead of win10_2009 please use os == 'win' && os_version = '10.2009' && arch == 'x86_64'",
+            "instead of win10_2009 please use os == 'win' && os_version == '10.2009' && arch == 'x86_64'",
         )
         results.append(result.from_config(config, **r))
         fixable += 1

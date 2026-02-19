@@ -230,15 +230,18 @@ StyleDisplayMode Gecko_MediaFeatures_GetDisplayMode(const Document* aDocument) {
     }
   }
 
-  static_assert(static_cast<int32_t>(DisplayMode::Browser) ==
-                        static_cast<int32_t>(StyleDisplayMode::Browser) &&
-                    static_cast<int32_t>(DisplayMode::Minimal_ui) ==
-                        static_cast<int32_t>(StyleDisplayMode::MinimalUi) &&
-                    static_cast<int32_t>(DisplayMode::Standalone) ==
-                        static_cast<int32_t>(StyleDisplayMode::Standalone) &&
-                    static_cast<int32_t>(DisplayMode::Fullscreen) ==
-                        static_cast<int32_t>(StyleDisplayMode::Fullscreen),
-                "DisplayMode must mach nsStyleConsts.h");
+  static_assert(
+      static_cast<int32_t>(DisplayMode::Browser) ==
+              static_cast<int32_t>(StyleDisplayMode::Browser) &&
+          static_cast<int32_t>(DisplayMode::Minimal_ui) ==
+              static_cast<int32_t>(StyleDisplayMode::MinimalUi) &&
+          static_cast<int32_t>(DisplayMode::Standalone) ==
+              static_cast<int32_t>(StyleDisplayMode::Standalone) &&
+          static_cast<int32_t>(DisplayMode::Fullscreen) ==
+              static_cast<int32_t>(StyleDisplayMode::Fullscreen) &&
+          static_cast<int32_t>(DisplayMode::Picture_in_picture) ==
+              static_cast<int32_t>(StyleDisplayMode::PictureInPicture),
+      "DisplayMode must mach nsStyleConsts.h");
 
   dom::BrowsingContext* browsingContext = aDocument->GetBrowsingContext();
   if (!browsingContext) {

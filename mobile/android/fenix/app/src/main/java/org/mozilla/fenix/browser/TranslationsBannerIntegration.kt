@@ -24,11 +24,11 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.helpers.AbstractBinding
+import mozilla.components.support.utils.KeyboardState
+import mozilla.components.support.utils.keyboardAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.store.BrowserScreenState
 import org.mozilla.fenix.browser.store.BrowserScreenStore
-import org.mozilla.fenix.compose.utils.KeyboardState
-import org.mozilla.fenix.compose.utils.keyboardAsState
 import org.mozilla.fenix.databinding.FragmentBrowserBinding
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.FirefoxTheme

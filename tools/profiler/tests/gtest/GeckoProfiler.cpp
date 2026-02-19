@@ -2285,6 +2285,77 @@ TEST(GeckoProfiler, Pause)
   }}.join();
 }
 
+// Mock nsIClassOfService for network marker tests
+class MockClassOfService final : public nsIClassOfService {
+ public:
+  NS_DECL_ISUPPORTS
+
+  explicit MockClassOfService(uint32_t aClassFlags, bool aIncremental = false,
+                              nsIClassOfService::FetchPriority aFetchPriority =
+                                  nsIClassOfService::FETCHPRIORITY_UNSET)
+      : mClassFlags(aClassFlags),
+        mIncremental(aIncremental),
+        mFetchPriority(aFetchPriority) {}
+
+  NS_IMETHOD GetClassFlags(uint32_t* aFlags) override {
+    *aFlags = mClassFlags;
+    return NS_OK;
+  }
+
+  NS_IMETHOD SetClassFlags(uint32_t aFlags) override {
+    mClassFlags = aFlags;
+    return NS_OK;
+  }
+
+  NS_IMETHOD ClearClassFlags(uint32_t aFlags) override {
+    mClassFlags &= ~aFlags;
+    return NS_OK;
+  }
+
+  NS_IMETHOD AddClassFlags(uint32_t aFlags) override {
+    mClassFlags |= aFlags;
+    return NS_OK;
+  }
+
+  NS_IMETHOD GetIncremental(bool* aIncremental) override {
+    *aIncremental = mIncremental;
+    return NS_OK;
+  }
+
+  NS_IMETHOD SetIncremental(bool aIncremental) override {
+    mIncremental = aIncremental;
+    return NS_OK;
+  }
+
+  NS_IMETHOD GetFetchPriority(
+      nsIClassOfService::FetchPriority* aFetchPriority) override {
+    *aFetchPriority = mFetchPriority;
+    return NS_OK;
+  }
+
+  NS_IMETHOD SetFetchPriority(
+      nsIClassOfService::FetchPriority aFetchPriority) override {
+    mFetchPriority = aFetchPriority;
+    return NS_OK;
+  }
+
+  NS_IMETHOD SetClassOfService(mozilla::net::ClassOfService s) override {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  NS_IMETHOD_(void)
+  SetFetchPriorityDOM(mozilla::dom::FetchPriority aPriority) override {}
+
+ private:
+  ~MockClassOfService() = default;
+
+  uint32_t mClassFlags;
+  bool mIncremental;
+  nsIClassOfService::FetchPriority mFetchPriority;
+};
+
+NS_IMPL_ISUPPORTS(MockClassOfService, nsIClassOfService)
+
 TEST(GeckoProfiler, Markers)
 {
   uint32_t features = ProfilerFeature::StackWalk;
@@ -2510,6 +2581,8 @@ TEST(GeckoProfiler, Markers)
   ASSERT_TRUE(
       NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), "http://mozilla.org/"_ns)));
   // The marker name will be "Load <aChannelId>: <aURI>".
+  RefPtr<MockClassOfService> classOfService1 =
+      new MockClassOfService(nsIClassOfService::Leader);
   profiler_add_network_marker(
       /* nsIURI* aURI */ uri,
       /* const nsACString& aRequestMethod */ "GET"_ns,
@@ -2523,7 +2596,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheHit,
       /* uint64_t aInnerWindowID */ 78,
       /* bool aIsPrivateBrowsing */ false,
-      /* unsigned long aClassOfServiceFlag */ nsIClassOfService::Leader,
+      /* nsIClassOfService* aClassOfService */ classOfService1,
       /* nsresult aRequestStatus */ NS_OK
       /* const mozilla::net::TimingStruct* aTimings = nullptr */
       /* mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource =
@@ -2537,6 +2610,8 @@ TEST(GeckoProfiler, Markers)
       /* uint64_t aRedirectChannelId = 0 */
   );
 
+  RefPtr<MockClassOfService> classOfService2 =
+      new MockClassOfService(nsIClassOfService::Follower);
   profiler_add_network_marker(
       /* nsIURI* aURI */ uri,
       /* const nsACString& aRequestMethod */ "GET"_ns,
@@ -2550,7 +2625,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
       /* uint64_t aInnerWindowID */ 78,
       /* bool aIsPrivateBrowsing */ false,
-      /* unsigned long aClassOfServiceFlag */ nsIClassOfService::Follower,
+      /* nsIClassOfService* aClassOfService */ classOfService2,
       /* nsresult aRequestStatus */ NS_BINDING_ABORTED,
       /* const mozilla::net::TimingStruct* aTimings = nullptr */ nullptr,
       /* mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource =
@@ -2570,6 +2645,8 @@ TEST(GeckoProfiler, Markers)
   nsCOMPtr<nsIURI> redirectURI;
   ASSERT_TRUE(NS_SUCCEEDED(
       NS_NewURI(getter_AddRefs(redirectURI), "http://example.com/"_ns)));
+  RefPtr<MockClassOfService> classOfService3 =
+      new MockClassOfService(nsIClassOfService::Speculative);
   profiler_add_network_marker(
       /* nsIURI* aURI */ uri,
       /* const nsACString& aRequestMethod */ "GET"_ns,
@@ -2583,7 +2660,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
       /* uint64_t aInnerWindowID */ 78,
       /* bool aIsPrivateBrowsing */ false,
-      /* unsigned long aClassOfServiceFlag */ nsIClassOfService::Speculative,
+      /* nsIClassOfService* aClassOfService */ classOfService3,
       /* nsresult aRequestStatus */ NS_ERROR_UNEXPECTED,
       /* const mozilla::net::TimingStruct* aTimings = nullptr */ nullptr,
       /* mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource =
@@ -2602,6 +2679,8 @@ TEST(GeckoProfiler, Markers)
       nsIChannelEventSink::REDIRECT_TEMPORARY,
       /* uint64_t aRedirectChannelId = 0 */ 103);
 
+  RefPtr<MockClassOfService> classOfService4 =
+      new MockClassOfService(nsIClassOfService::Background);
   profiler_add_network_marker(
       /* nsIURI* aURI */ uri,
       /* const nsACString& aRequestMethod */ "GET"_ns,
@@ -2615,7 +2694,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
       /* uint64_t aInnerWindowID */ 78,
       /* bool aIsPrivateBrowsing */ false,
-      /* unsigned long aClassOfServiceFlag */ nsIClassOfService::Background,
+      /* nsIClassOfService* aClassOfService */ classOfService4,
       /* nsresult aRequestStatus */ NS_ERROR_DOCSHELL_DYING,
       /* const mozilla::net::TimingStruct* aTimings = nullptr */ nullptr,
       /* mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource =
@@ -2634,6 +2713,8 @@ TEST(GeckoProfiler, Markers)
       nsIChannelEventSink::REDIRECT_PERMANENT,
       /* uint64_t aRedirectChannelId = 0 */ 104);
 
+  RefPtr<MockClassOfService> classOfService5 = new MockClassOfService(
+      nsIClassOfService::Unblocked | nsIClassOfService::TailForbidden);
   profiler_add_network_marker(
       /* nsIURI* aURI */ uri,
       /* const nsACString& aRequestMethod */ "GET"_ns,
@@ -2647,8 +2728,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
       /* uint64_t aInnerWindowID */ 78,
       /* bool aIsPrivateBrowsing */ false,
-      /* unsigned long aClassOfServiceFlag */ nsIClassOfService::Unblocked |
-          nsIClassOfService::TailForbidden,
+      /* nsIClassOfService* aClassOfService */ classOfService5,
       /* nsresult aRequestStatus */ NS_ERROR_DOM_CORP_FAILED,
       /* const mozilla::net::TimingStruct* aTimings = nullptr */ nullptr,
       /* mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource =
@@ -2666,6 +2746,9 @@ TEST(GeckoProfiler, Markers)
       /* uint32_t aRedirectFlags = 0 */ nsIChannelEventSink::REDIRECT_INTERNAL,
       /* uint64_t aRedirectChannelId = 0 */ 105);
 
+  RefPtr<MockClassOfService> classOfService6 = new MockClassOfService(
+      nsIClassOfService::Unblocked | nsIClassOfService::Throttleable |
+      nsIClassOfService::TailForbidden);
   profiler_add_network_marker(
       /* nsIURI* aURI */ uri,
       /* const nsACString& aRequestMethod */ "GET"_ns,
@@ -2679,8 +2762,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
       /* uint64_t aInnerWindowID */ 78,
       /* bool aIsPrivateBrowsing */ false,
-      /* unsigned long aClassOfServiceFlag */ nsIClassOfService::Unblocked |
-          nsIClassOfService::Throttleable | nsIClassOfService::TailForbidden,
+      /* nsIClassOfService* aClassOfService */ classOfService6,
       /* nsresult aRequestStatus */ NS_ERROR_BLOCKED_BY_POLICY,
       /* const mozilla::net::TimingStruct* aTimings = nullptr */ nullptr,
       /* mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource =
@@ -2698,6 +2780,9 @@ TEST(GeckoProfiler, Markers)
       /* uint32_t aRedirectFlags = 0 */ nsIChannelEventSink::REDIRECT_INTERNAL |
           nsIChannelEventSink::REDIRECT_STS_UPGRADE,
       /* uint64_t aRedirectChannelId = 0 */ 106);
+
+  RefPtr<MockClassOfService> classOfService7 =
+      new MockClassOfService(nsIClassOfService::Tail);
   profiler_add_network_marker(
       /* nsIURI* aURI */ uri,
       /* const nsACString& aRequestMethod */ "GET"_ns,
@@ -2711,7 +2796,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
       /* uint64_t aInnerWindowID */ 78,
       /* bool aIsPrivateBrowsing */ true,
-      /* unsigned long aClassOfServiceFlag */ nsIClassOfService::Tail,
+      /* nsIClassOfService* aClassOfService */ classOfService7,
       /* nsresult aRequestStatus */ NS_BINDING_REDIRECTED
       /* const mozilla::net::TimingStruct* aTimings = nullptr */
       /* mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource =
@@ -2724,6 +2809,26 @@ TEST(GeckoProfiler, Markers)
       /* nsIURI* aRedirectURI = nullptr */
       /* uint64_t aRedirectChannelId = 0 */
   );
+
+  // Test network marker with FetchPriority to verify priorityHeader
+  RefPtr<MockClassOfService> classOfService8 =
+      new MockClassOfService(nsIClassOfService::Leader, /* incremental */ true,
+                             nsIClassOfService::FETCHPRIORITY_HIGH);
+  profiler_add_network_marker(
+      /* nsIURI* aURI */ uri,
+      /* const nsACString& aRequestMethod */ "GET"_ns,
+      /* int32_t aPriority */ 34,
+      /* uint64_t aChannelId */ 8,
+      /* NetworkLoadType aType */ net::NetworkLoadType::LOAD_START,
+      /* mozilla::TimeStamp aStart */ ts1,
+      /* mozilla::TimeStamp aEnd */ ts2,
+      /* int64_t aCount */ 56,
+      /* nsICacheInfoChannel::CacheDisposition aCacheDisposition */
+      nsICacheInfoChannel::kCacheHit,
+      /* uint64_t aInnerWindowID */ 78,
+      /* bool aIsPrivateBrowsing */ false,
+      /* nsIClassOfService* aClassOfService */ classOfService8,
+      /* nsresult aRequestStatus */ NS_OK);
 
   EXPECT_TRUE(profiler_add_marker_impl(
       "Text in main thread with stack", geckoprofiler::category::OTHER,
@@ -2824,6 +2929,7 @@ TEST(GeckoProfiler, Markers)
     S_NetworkMarkerPayload_redirect_internal,
     S_NetworkMarkerPayload_redirect_internal_sts,
     S_NetworkMarkerPayload_private_browsing,
+    S_NetworkMarkerPayload_priorityHeader,
 
     S_TextWithStack,
     S_TextToMTWithStack,
@@ -3304,6 +3410,30 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_TRUE(payload["isHttpToHttpsRedirect"].isNull());
                   EXPECT_TRUE(payload["redirectId"].isNull());
                   EXPECT_TRUE(payload["contentType"].isNull());
+
+                } else if (nameString == "Load 8: http://mozilla.org/") {
+                  EXPECT_EQ(state, S_NetworkMarkerPayload_priorityHeader);
+                  state = State(S_NetworkMarkerPayload_priorityHeader + 1);
+                  EXPECT_EQ(typeString, "Network");
+                  EXPECT_EQ_JSON(payload["startTime"], Double, ts1Double);
+                  EXPECT_EQ_JSON(payload["endTime"], Double, ts2Double);
+                  EXPECT_EQ_JSON(payload["id"], Int64, 8);
+                  EXPECT_EQ_JSON(payload["URI"], String, "http://mozilla.org/");
+                  EXPECT_EQ_JSON(payload["requestMethod"], String, "GET");
+                  EXPECT_EQ_JSON(payload["pri"], Int64, 34);
+                  EXPECT_EQ_JSON(payload["count"], Int64, 56);
+                  EXPECT_EQ_JSON(payload["cache"], String, "Hit");
+                  EXPECT_TRUE(payload["isPrivateBrowsing"].isNull());
+                  EXPECT_EQ_JSON(payload["classOfService"], String, "Leader");
+                  EXPECT_EQ_JSON(payload["requestStatus"], String, "NS_OK");
+                  EXPECT_TRUE(payload["RedirectURI"].isNull());
+                  EXPECT_TRUE(payload["redirectType"].isNull());
+                  EXPECT_TRUE(payload["isHttpToHttpsRedirect"].isNull());
+                  EXPECT_TRUE(payload["redirectId"].isNull());
+                  EXPECT_TRUE(payload["contentType"].isNull());
+                  EXPECT_FALSE(payload["priorityHeader"].isNull());
+                  EXPECT_EQ_JSON(payload["priorityHeader"], String, "u=4, i");
+
                 } else if (nameString == "Text in main thread with stack") {
                   EXPECT_EQ(state, S_TextWithStack);
                   state = State(S_TextWithStack + 1);

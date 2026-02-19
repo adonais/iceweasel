@@ -667,6 +667,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = 새 목록
+newtab-widget-section-title = 위젯
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = 위젯 숨기기
+    .aria-label = 모든 위젯 숨기기
+newtab-widget-section-maximize =
+    .title = 위젯 펼치기
+    .aria-label = 모든 위젯을 전체 크기로 펼치기
+newtab-widget-section-minimize =
+    .title = 위젯 최소화
+    .aria-label = 모든 위젯을 작은 크기로 접기
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -689,8 +700,6 @@ newtab-widget-timer-menu-notifications = 알림 끄기
 newtab-widget-timer-menu-notifications-on = 알림 켜기
 newtab-widget-timer-menu-hide = 타이머 숨기기
 newtab-widget-timer-menu-learn-more = 더 알아보기
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = 더 보려면 스크롤하세요
 newtab-widget-message-title = 목록과 내장 타이머로 집중하기
 # to-dos stands for "things to do".
 newtab-widget-message-copy = 빠른 알림부터 매일 할 일 목록, 집중 세션부터 스트레칭 휴식까지 — 업무에 집중하고 시간을 준수하세요.

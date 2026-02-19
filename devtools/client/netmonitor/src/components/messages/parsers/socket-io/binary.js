@@ -18,7 +18,7 @@
  * @param {object} packet - event packet with placeholders
  * @param {Array} buffers - binary buffers to put in placeholder positions
  * @return {object} reconstructed packet
- * @api public
+ * @public
  */
 
 exports.reconstructPacket = function (packet, buffers) {

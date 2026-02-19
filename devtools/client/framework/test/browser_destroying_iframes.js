@@ -19,8 +19,9 @@ add_task(async function () {
   for (let i = 0; i < 10; i++) {
     await SpecialPowers.spawn(browser, [], async function () {
       const iframe = content.document.createElement("iframe");
+      const loaded = new Promise(res => (iframe.onload = res));
       content.document.body.appendChild(iframe);
-      await new Promise(res => (iframe.onload = res));
+      await loaded;
       iframe.remove();
     });
   }

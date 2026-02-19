@@ -112,7 +112,7 @@ def parse_args():
     op.add_argument(
         "--xul-info",
         dest="xul_info_src",
-        help="config data for xulRuntime" " (avoids search for config/autoconf.mk)",
+        help="config data for xulRuntime (avoids search for config/autoconf.mk)",
     )
 
     harness_og = op.add_argument_group("Harness Controls", "Control how tests are run.")
@@ -121,19 +121,19 @@ def parse_args():
         "--worker-count",
         type=int,
         default=max(1, get_cpu_count()),
-        help="Number of tests to run in parallel" " (default %(default)s)",
+        help="Number of tests to run in parallel (default %(default)s)",
     )
     harness_og.add_argument(
         "-t",
         "--timeout",
         type=float,
         default=150.0,
-        help="Set maximum time a test is allows to run" " (in seconds).",
+        help="Set maximum time a test is allows to run (in seconds).",
     )
     harness_og.add_argument(
         "--show-slow",
         action="store_true",
-        help="Show tests taking longer than a minimum time" " (in seconds).",
+        help="Show tests taking longer than a minimum time (in seconds).",
     )
     harness_og.add_argument(
         "--slow-test-threshold",
@@ -168,12 +168,12 @@ def parse_args():
     harness_og.add_argument(
         "--tbpl",
         action="store_true",
-        help="Runs each test in all configurations tbpl" " tests.",
+        help="Runs each test in all configurations tbpl tests.",
     )
     harness_og.add_argument(
         "--tbpl-debug",
         action="store_true",
-        help="Runs each test in some faster configurations" " tbpl tests.",
+        help="Runs each test in some faster configurations tbpl tests.",
     )
     harness_og.add_argument(
         "-g", "--debug", action="store_true", help="Run a test in debugger."
@@ -187,7 +187,7 @@ def parse_args():
     harness_og.add_argument(
         "--passthrough",
         action="store_true",
-        help="Run tests with stdin/stdout attached to" " caller.",
+        help="Run tests with stdin/stdout attached to caller.",
     )
     harness_og.add_argument(
         "--test-reflect-stringify",
@@ -244,14 +244,14 @@ def parse_args():
         action="store",
         type=str,
         default="/data/local/tmp/test_root",
-        help="The remote directory to use as test root" " (e.g. %(default)s)",
+        help="The remote directory to use as test root (e.g. %(default)s)",
     )
     harness_og.add_argument(
         "--localLib",
         dest="local_lib",
         action="store",
         type=str,
-        help="The location of libraries to push -- preferably" " stripped",
+        help="The location of libraries to push -- preferably stripped",
     )
     harness_og.add_argument(
         "--no-xdr",
@@ -319,7 +319,7 @@ def parse_args():
     input_og.add_argument(
         "--no-extensions",
         action="store_true",
-        help="Run only tests conforming to the ECMAScript 5" " standard.",
+        help="Run only tests conforming to the ECMAScript 5 standard.",
     )
     input_og.add_argument(
         "--repeat", type=int, default=1, help="Repeat tests the given number of times."
@@ -336,23 +336,23 @@ def parse_args():
         "-o",
         "--show-output",
         action="store_true",
-        help="Print each test's output to the file given by" " --output-file.",
+        help="Print each test's output to the file given by --output-file.",
     )
     output_og.add_argument(
         "-F",
         "--failed-only",
         action="store_true",
-        help="If a --show-* option is given, only print" " output for failed tests.",
+        help="If a --show-* option is given, only print output for failed tests.",
     )
     output_og.add_argument(
         "--no-show-failed",
         action="store_true",
-        help="Don't print output for failed tests" " (no-op with --show-output).",
+        help="Don't print output for failed tests (no-op with --show-output).",
     )
     output_og.add_argument(
         "-O",
         "--output-file",
-        help="Write all output to the given file" " (default: stdout).",
+        help="Write all output to the given file (default: stdout).",
     )
     output_og.add_argument(
         "--failure-file", help="Write all not-passed tests to the given file."
@@ -375,7 +375,7 @@ def parse_args():
         dest="format",
         default="none",
         choices=["automation", "none"],
-        help="Output format. Either automation or none" " (default %(default)s).",
+        help="Output format. Either automation or none (default %(default)s).",
     )
     output_og.add_argument(
         "--log-wptreport",
@@ -458,9 +458,9 @@ def parse_args():
     # requested tests set.
     if options.test_file:
         for test_file in options.test_file:
-            requested_paths |= set(
-                [line.strip() for line in open(test_file).readlines()]
-            )
+            requested_paths |= set([
+                line.strip() for line in open(test_file).readlines()
+            ])
 
     excluded_paths = set(options.excluded_paths)
 
@@ -556,17 +556,15 @@ def load_wpt_tests(xul_tester, requested_paths, excluded_paths, update_manifest=
     )
 
     kwargs = vars(wptcommandline.create_parser().parse_args([]))
-    kwargs.update(
-        {
-            "config": os.path.join(
-                manifest_root, "_tests", "web-platform", "wptrunner.local.ini"
-            ),
-            "gecko_e10s": False,
-            "product": "firefox",
-            "verify": False,
-            "wasm": xul_tester.test("wasmIsSupported()"),
-        }
-    )
+    kwargs.update({
+        "config": os.path.join(
+            manifest_root, "_tests", "web-platform", "wptrunner.local.ini"
+        ),
+        "gecko_e10s": False,
+        "product": "firefox",
+        "verify": False,
+        "wasm": xul_tester.test("wasmIsSupported()"),
+    })
     wptcommandline.set_from_config(kwargs)
 
     def filter_jsshell_tests(it):
@@ -670,7 +668,7 @@ def load_tests(options, requested_paths, excluded_paths):
         test_count: [int] Number of tests that will be in test_gen
         test_gen: [iterable<Test>] Tests found that should be run.
     """
-    import lib.manifest as manifest
+    from lib import manifest
 
     if options.js_shell is None:
         xul_tester = manifest.NullXULInfoTester()
@@ -793,8 +791,7 @@ def main():
     if options.debug:
         if test_count > 1:
             print(
-                "Multiple tests match command line arguments,"
-                " debugger can only run one"
+                "Multiple tests match command line arguments, debugger can only run one"
             )
             for tc in test_gen:
                 print(f"    {tc.path}")

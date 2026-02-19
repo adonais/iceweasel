@@ -87,7 +87,7 @@ class SVGRootRenderingObserver final : public SVGRenderingObserver {
   }
 
   Element* GetReferencedElementWithoutObserving() final {
-    return mDocWrapper->GetRootSVGElem();
+    return mDocWrapper->GetSVGRootElement();
   }
 
   virtual void OnRenderingChange() override {
@@ -458,7 +458,7 @@ VectorImage::GetWidth(int32_t* aWidth) {
     return NS_ERROR_FAILURE;
   }
 
-  SVGSVGElement* rootElem = mSVGDocumentWrapper->GetRootSVGElem();
+  SVGSVGElement* rootElem = mSVGDocumentWrapper->GetSVGRootElement();
   if (MOZ_UNLIKELY(!rootElem)) {
     // Unlikely to reach this code; we should have a root SVG elem, since we
     // finished loading without errors. But we can sometimes get here during
@@ -489,7 +489,7 @@ VectorImage::GetHeight(int32_t* aHeight) {
     return NS_ERROR_FAILURE;
   }
 
-  SVGSVGElement* rootElem = mSVGDocumentWrapper->GetRootSVGElem();
+  SVGSVGElement* rootElem = mSVGDocumentWrapper->GetSVGRootElement();
   if (MOZ_UNLIKELY(!rootElem)) {
     // Unlikely to reach this code; we should have a root SVG elem, since we
     // finished loading without errors. But we can sometimes get here during
@@ -514,7 +514,7 @@ VectorImage::GetIntrinsicSize(ImageIntrinsicSize* aIntrinsicSize) {
   if (mError || !mIsFullyLoaded) {
     return NS_ERROR_FAILURE;
   }
-  SVGSVGElement* rootElem = mSVGDocumentWrapper->GetRootSVGElem();
+  SVGSVGElement* rootElem = mSVGDocumentWrapper->GetSVGRootElement();
   if (MOZ_UNLIKELY(!rootElem)) {
     return NS_ERROR_FAILURE;
   }
@@ -620,7 +620,7 @@ VectorImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
 
   // Look up height & width
   // ----------------------
-  SVGSVGElement* svgElem = mSVGDocumentWrapper->GetRootSVGElem();
+  SVGSVGElement* svgElem = mSVGDocumentWrapper->GetSVGRootElement();
   MOZ_ASSERT(svgElem,
              "Should have a root SVG elem, since we finished "
              "loading without errors");
@@ -1495,7 +1495,7 @@ void VectorImage::OnSVGDocumentParsed() {
   MOZ_ASSERT(mParseCompleteListener, "Should have the parse complete listener");
   MOZ_ASSERT(mLoadEventListener, "Should have the load event listener");
 
-  if (!mSVGDocumentWrapper->GetRootSVGElem()) {
+  if (!mSVGDocumentWrapper->GetSVGRootElement()) {
     // This is an invalid SVG document. It may have failed to parse, or it may
     // be missing the <svg> root element, or the <svg> root element may not
     // declare the correct namespace. In any of these cases, we'll never be
@@ -1548,7 +1548,7 @@ void VectorImage::SendInvalidationNotifications() {
 }
 
 void VectorImage::OnSVGDocumentLoaded() {
-  MOZ_ASSERT(mSVGDocumentWrapper->GetRootSVGElem(),
+  MOZ_ASSERT(mSVGDocumentWrapper->GetSVGRootElement(),
              "Should have parsed successfully");
   MOZ_ASSERT(!mIsFullyLoaded && !mHaveAnimations,
              "These flags shouldn't get set until OnSVGDocumentLoaded. "

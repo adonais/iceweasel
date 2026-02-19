@@ -266,7 +266,7 @@ class ServoStyleSet {
   already_AddRefed<ComputedStyle> ResolveStartingStyle(dom::Element& aElement);
 
   already_AddRefed<ComputedStyle> ResolvePositionTry(
-      dom::Element& aElement, ComputedStyle& aStyle,
+      dom::Element& aElement, const ComputedStyle& aStyle,
       const StylePositionTryFallbacksItem&);
 
   size_t SheetCount(Origin) const;

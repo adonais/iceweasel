@@ -93,17 +93,14 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 #[inline]
 fn elements_with_id<'a, 'le>(
-    array: *const structs::nsTArray<*mut RawGeckoElement>,
+    array: structs::RustSpan<*const RawGeckoElement>,
 ) -> &'a [GeckoElement<'le>] {
     unsafe {
-        if array.is_null() {
-            return &[];
-        }
-
-        let elements: &[*mut RawGeckoElement] = &**array;
+        let elements: &[*const RawGeckoElement] =
+            std::slice::from_raw_parts(array.begin, array.length);
 
         // NOTE(emilio): We rely on the in-memory representation of
-        // GeckoElement<'ld> and *mut RawGeckoElement being the same.
+        // GeckoElement<'ld> and *const RawGeckoElement being the same.
         #[allow(dead_code)]
         unsafe fn static_assert() {
             mem::transmute::<*mut RawGeckoElement, GeckoElement<'static>>(0xbadc0de as *mut _);
@@ -289,14 +286,14 @@ impl<'ln> GeckoNode<'ln> {
     }
 
     fn flags_atomic_for(flags: &Cell<u32>) -> &AtomicU32 {
-        const_assert!(std::mem::size_of::<Cell<u32>>() == std::mem::size_of::<AtomicU32>());
-        const_assert!(std::mem::align_of::<Cell<u32>>() == std::mem::align_of::<AtomicU32>());
+        const_assert!(mem::size_of::<Cell<u32>>() == mem::size_of::<AtomicU32>());
+        const_assert!(mem::align_of::<Cell<u32>>() == mem::align_of::<AtomicU32>());
 
         // Rust doesn't provide standalone atomic functions like GCC/clang do
         // (via the atomic intrinsics) or via std::atomic_ref, but it guarantees
         // that the memory representation of u32 and AtomicU32 matches:
         // https://doc.rust-lang.org/std/sync/atomic/struct.AtomicU32.html
-        unsafe { std::mem::transmute::<&Cell<u32>, &AtomicU32>(flags) }
+        unsafe { mem::transmute::<&Cell<u32>, &AtomicU32>(flags) }
     }
 
     #[inline]
@@ -592,7 +589,7 @@ pub enum GeckoChildrenIterator<'a> {
     /// replaces it with the next sibling when requested.
     Current(Option<GeckoNode<'a>>),
     /// A Gecko-implemented iterator we need to drop appropriately.
-    GeckoIterator(std::mem::ManuallyDrop<structs::StyleChildrenIterator>),
+    GeckoIterator(mem::ManuallyDrop<structs::StyleChildrenIterator>),
 }
 
 impl<'a> Drop for GeckoChildrenIterator<'a> {
@@ -660,12 +657,22 @@ impl<'le> GeckoElement<'le> {
         self.may_have_animations() && unsafe { Gecko_ElementHasAnimations(self.0) }
     }
 
+    /// Check if mImpl contains a real pointer (not a bloom filter).
+    #[inline(always)]
+    fn has_attr_impl(&self) -> bool {
+        let ptr = self.0.mAttrs.mImpl.mPtr as usize;
+        ptr != 0 && (ptr & 1) == 0
+    }
+
     #[inline(always)]
     fn attrs(&self) -> &[structs::AttrArray_InternalAttr] {
         unsafe {
+            if !self.has_attr_impl() {
+                return &[];
+            }
             match self.0.mAttrs.mImpl.mPtr.as_ref() {
                 Some(attrs) => attrs.mBuffer.as_slice(attrs.mAttrCount as usize),
-                None => return &[],
+                None => &[],
             }
         }
     }
@@ -1061,10 +1068,10 @@ impl<'le> TElement for GeckoElement<'le> {
             || self.may_have_anonymous_children()
         {
             unsafe {
-                let mut iter = std::mem::MaybeUninit::<structs::StyleChildrenIterator>::uninit();
+                let mut iter = mem::MaybeUninit::<structs::StyleChildrenIterator>::uninit();
                 bindings::Gecko_ConstructStyleChildrenIterator(self.0, iter.as_mut_ptr());
                 return LayoutIterator(GeckoChildrenIterator::GeckoIterator(
-                    std::mem::ManuallyDrop::new(iter.assume_init()),
+                    mem::ManuallyDrop::new(iter.assume_init()),
                 ));
             }
         }
@@ -1090,6 +1097,11 @@ impl<'le> TElement for GeckoElement<'le> {
     #[inline]
     fn is_xul_element(&self) -> bool {
         self.namespace_id() == structs::root::kNameSpaceID_XUL as i32
+    }
+
+    #[inline]
+    fn subtree_bloom_filter(&self) -> u64 {
+        unsafe { bindings::Gecko_Element_GetSubtreeBloomFilter(self.0) }
     }
 
     #[inline]
@@ -1128,38 +1140,23 @@ impl<'le> TElement for GeckoElement<'le> {
         if !self.is_html_slot_element() || !self.as_node().is_in_shadow_tree() {
             return &[];
         }
-
-        let slot: &structs::HTMLSlotElement = unsafe { mem::transmute(self.0) };
-
         if cfg!(debug_assertions) {
+            let slot: &structs::HTMLSlotElement = unsafe { mem::transmute(self.0) };
             let base: &RawGeckoElement = &slot._base._base._base;
             assert_eq!(base as *const _, self.0 as *const _, "Bad cast");
         }
-
-        // FIXME(emilio): Workaround a bindgen bug on Android that causes
-        // mAssignedNodes to be at the wrong offset. See bug 1466406.
-        //
-        // Bug 1466580 tracks running the Android layout tests on automation.
-        //
-        // The actual bindgen bug still needs reduction.
-        let assigned_nodes: &[structs::RefPtr<structs::nsINode>] = if !cfg!(target_os = "android") {
-            debug_assert_eq!(
-                unsafe { bindings::Gecko_GetAssignedNodes(self.0) },
-                &slot.mAssignedNodes as *const _,
-            );
-
-            &*slot.mAssignedNodes
-        } else {
-            unsafe { &**bindings::Gecko_GetAssignedNodes(self.0) }
-        };
-
-        debug_assert_eq!(
-            mem::size_of::<structs::RefPtr<structs::nsINode>>(),
-            mem::size_of::<Self::ConcreteNode>(),
-            "Bad cast!"
-        );
-
-        unsafe { mem::transmute(assigned_nodes) }
+        unsafe {
+            let nodes = bindings::Gecko_GetAssignedNodes(self.0);
+            let nodes: &[*const RawGeckoNode] =
+                std::slice::from_raw_parts(nodes.begin, nodes.length);
+            // NOTE(emilio): We rely on the in-memory representation of
+            // GeckoNode<'ld> and *const RawGeckoNode being the same.
+            #[allow(dead_code)]
+            unsafe fn static_assert() {
+                mem::transmute::<*mut RawGeckoNode, GeckoNode<'static>>(0xbadc0de as *mut _);
+            }
+            mem::transmute(nodes)
+        }
     }
 
     #[inline]
@@ -1659,34 +1656,36 @@ impl<'le> TElement for GeckoElement<'le> {
         use crate::properties::longhands::color::SpecifiedValue as SpecifiedColor;
         use crate::stylesheets::layer_rule::LayerOrder;
         use crate::values::specified::{color::Color, font::XTextScale};
-        lazy_static! {
-            static ref TABLE_COLOR_RULE: ApplicableDeclarationBlock = {
-                let global_style_data = &*GLOBAL_STYLE_DATA;
-                let pdb = PropertyDeclarationBlock::with_one(
-                    PropertyDeclaration::Color(SpecifiedColor(Color::InheritFromBodyQuirk.into())),
-                    Importance::Normal,
-                );
-                let arc = Arc::new_leaked(global_style_data.shared_lock.wrap(pdb));
-                ApplicableDeclarationBlock::from_declarations(
-                    arc,
-                    ServoCascadeLevel::PresHints,
-                    LayerOrder::root(),
-                )
-            };
-            static ref MATHML_LANG_RULE: ApplicableDeclarationBlock = {
-                let global_style_data = &*GLOBAL_STYLE_DATA;
-                let pdb = PropertyDeclarationBlock::with_one(
-                    PropertyDeclaration::XLang(SpecifiedLang(atom!("x-math"))),
-                    Importance::Normal,
-                );
-                let arc = Arc::new_leaked(global_style_data.shared_lock.wrap(pdb));
-                ApplicableDeclarationBlock::from_declarations(
-                    arc,
-                    ServoCascadeLevel::PresHints,
-                    LayerOrder::root(),
-                )
-            };
-            static ref SVG_TEXT_DISABLE_SCALE_RULE: ApplicableDeclarationBlock = {
+        use std::sync::LazyLock;
+
+        static TABLE_COLOR_RULE: LazyLock<ApplicableDeclarationBlock> = LazyLock::new(|| {
+            let global_style_data = &*GLOBAL_STYLE_DATA;
+            let pdb = PropertyDeclarationBlock::with_one(
+                PropertyDeclaration::Color(SpecifiedColor(Color::InheritFromBodyQuirk.into())),
+                Importance::Normal,
+            );
+            let arc = Arc::new_leaked(global_style_data.shared_lock.wrap(pdb));
+            ApplicableDeclarationBlock::from_declarations(
+                arc,
+                ServoCascadeLevel::PresHints,
+                LayerOrder::root(),
+            )
+        });
+        static MATHML_LANG_RULE: LazyLock<ApplicableDeclarationBlock> = LazyLock::new(|| {
+            let global_style_data = &*GLOBAL_STYLE_DATA;
+            let pdb = PropertyDeclarationBlock::with_one(
+                PropertyDeclaration::XLang(SpecifiedLang(atom!("x-math"))),
+                Importance::Normal,
+            );
+            let arc = Arc::new_leaked(global_style_data.shared_lock.wrap(pdb));
+            ApplicableDeclarationBlock::from_declarations(
+                arc,
+                ServoCascadeLevel::PresHints,
+                LayerOrder::root(),
+            )
+        });
+        static SVG_TEXT_DISABLE_SCALE_RULE: LazyLock<ApplicableDeclarationBlock> =
+            LazyLock::new(|| {
                 let global_style_data = &*GLOBAL_STYLE_DATA;
                 let pdb = PropertyDeclarationBlock::with_one(
                     PropertyDeclaration::XTextScale(XTextScale::None),
@@ -1698,8 +1697,7 @@ impl<'le> TElement for GeckoElement<'le> {
                     ServoCascadeLevel::PresHints,
                     LayerOrder::root(),
                 )
-            };
-        };
+            });
 
         let ns = self.namespace_id();
         // <th> elements get a default MozCenterOrInherit which may get overridden
@@ -2082,9 +2080,13 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
             },
             NonTSPseudoClass::Dir(ref dir) => self.state().intersects(dir.element_state()),
             NonTSPseudoClass::ActiveViewTransitionType(ref types) => {
-                self.state().intersects(pseudo_class.state_flag()) && unsafe {
-                    bindings::Gecko_HasActiveViewTransitionTypes(self.as_node().owner_doc().0, types)
-                }
+                self.state().intersects(pseudo_class.state_flag())
+                    && unsafe {
+                        bindings::Gecko_HasActiveViewTransitionTypes(
+                            self.as_node().owner_doc().0,
+                            types,
+                        )
+                    }
             },
             NonTSPseudoClass::AnyLink => self.is_link(),
             NonTSPseudoClass::Link => {

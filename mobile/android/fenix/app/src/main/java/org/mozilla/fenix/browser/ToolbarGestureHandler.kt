@@ -25,13 +25,13 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.ktx.android.view.getRectWithViewLocation
 import mozilla.components.support.utils.ext.bottom
+import mozilla.components.support.utils.ext.getWindowInsets
+import mozilla.components.support.utils.ext.isKeyboardVisible
 import mozilla.components.support.utils.ext.mandatorySystemGestureInsets
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.getRectWithScreenLocation
-import org.mozilla.fenix.ext.getWindowInsets
-import org.mozilla.fenix.ext.isKeyboardVisible
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.settings

@@ -99,25 +99,6 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
                                        StaticAtomSet* aElementAttributes,
                                        bool aSafe);
 
-  /**
-   * Logs localized message to either content console or browser console
-   * @param aName              Localization key
-   * @param aParams            Localization parameters
-   * @param aFlags             Logging Flag (see nsIScriptError)
-   */
-  void LogLocalizedString(const char* aName, const nsTArray<nsString>& aParams,
-                          uint32_t aFlags);
-
-  /**
-   * Logs localized message to either content console or browser console
-   * @param aMessage           Message to log
-   * @param aFlags             Logging Flag (see nsIScriptError)
-   * @param aInnerWindowID     Inner Window ID (Logged on browser console if 0)
-   * @param aFromPrivateWindow If from private window
-   */
-  static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
-                         uint64_t aInnerWindowID, bool aFromPrivateWindow);
-
   void AssertIsValid();
 
   void AssertNoLists() {

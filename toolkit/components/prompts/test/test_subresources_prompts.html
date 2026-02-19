@@ -176,8 +176,8 @@ add_task(async function runTestAuth() {
  * @param {string} targetID The ID of the element that will have the event
  * dispatched on.
  * @param {string} type The type of MouseEvent.
- * @returns Promise
- * @resolves Once the event has been dispatched.
+ * @returns {Promise<void>}
+ *   Resolves once the event has been dispatched.
  */
 async function dispatchMouseEvent(targetID, type) {
   /* eslint-disable no-undef */

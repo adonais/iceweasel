@@ -12,6 +12,7 @@ toolkit.jar:
     content/global/translations/translations-engine.worker.js (content/translations-engine.worker.js)
     content/global/translations/Translator.mjs                (content/Translator.mjs)
     content/global/translations/TranslationsTelemetry.sys.mjs (TranslationsTelemetry.sys.mjs)
+    content/global/translations/TranslationsFeature.sys.mjs   (TranslationsFeature.sys.mjs)
     content/global/translations/TranslationsUtils.mjs         (TranslationsUtils.mjs)
 
     # Uncomment the following line to test a local build of Bergamot. It will automatically be loaded in.

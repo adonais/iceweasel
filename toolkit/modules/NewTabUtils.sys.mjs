@@ -295,7 +295,7 @@ var PinnedLinks = {
   /**
    * Checks whether a given link is pinned.
    *
-   * @params aLink The link to check.
+   * @param aLink The link to check.
    * @return whether The link is pinned.
    */
   isPinned: function PinnedLinks_isPinned(aLink) {
@@ -1553,7 +1553,7 @@ var Links = {
    *         aLink1 and aLink2 have the same ordering, or a positive number if
    *         aLink1 is ordered after aLink2.
    *
-   * @note compareLinks's this object is bound to Links below.
+   * Note: compareLinks's this object is bound to Links below.
    */
   compareLinks: function Links_compareLinks(aLink1, aLink2) {
     for (let prop of this._sortProperties) {

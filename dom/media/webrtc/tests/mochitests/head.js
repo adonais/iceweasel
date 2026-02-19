@@ -91,7 +91,7 @@ var DefaultLoopbackTone = null;
  * This class provides helpers around analysing the audio content in a stream
  * using WebAudio AnalyserNodes.
  *
- * @constructor
+ * @class
  * @param {object} stream
  *                 A MediaStream object whose audio track we shall analyse.
  */
@@ -1038,7 +1038,7 @@ const GleanTest = new Proxy(
  * This class executes a series of functions in a continuous sequence.
  * Promise-bearing functions are executed after the previous promise completes.
  *
- * @constructor
+ * @class
  * @param {object} framework
  *        A back reference to the framework which makes use of the class. It is
  *        passed to each command callback.

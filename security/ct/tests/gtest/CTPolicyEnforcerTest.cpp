@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "CTLogVerifier.h"
 #include "CTVerifyResult.h"

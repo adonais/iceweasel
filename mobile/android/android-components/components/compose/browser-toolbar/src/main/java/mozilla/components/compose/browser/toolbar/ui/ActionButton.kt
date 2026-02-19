@@ -6,8 +6,6 @@ package mozilla.components.compose.browser.toolbar.ui
 
 import android.graphics.drawable.Drawable
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,14 +14,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.LongPressIconButton
 import mozilla.components.compose.base.menu.CustomPlacementPopup
@@ -56,7 +51,6 @@ internal fun ActionButton(
     icon: Drawable,
     contentDescription: String,
     state: State = State.DEFAULT,
-    shouldTint: Boolean = true,
     highlighted: Boolean = false,
     onClick: BrowserToolbarInteraction? = null,
     onLongClick: BrowserToolbarInteraction? = null,
@@ -116,14 +110,7 @@ internal fun ActionButton(
             enabled = isEnabled,
             contentDescription = contentDescription,
         ) {
-            Box {
-                ActionButtonIcon(icon, tint, shouldTint)
-                if (highlighted) {
-                    DotHighlight(
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                    )
-                }
-            }
+            ActionButtonIcon(icon, tint, highlighted)
 
             ActionButtonMenu(
                 currentMenuState = currentMenuState,
@@ -143,14 +130,7 @@ internal fun ActionButton(
             enabled = isEnabled,
             contentDescription = contentDescription,
         ) {
-            Box {
-                ActionButtonIcon(icon, tint, shouldTint)
-                if (highlighted) {
-                    DotHighlight(
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                    )
-                }
-            }
+            ActionButtonIcon(icon, tint, highlighted)
 
             ActionButtonMenu(
                 currentMenuState = currentMenuState,
@@ -167,16 +147,12 @@ internal fun ActionButton(
 private fun ActionButtonIcon(
     icon: Drawable,
     tint: Color,
-    shouldTint: Boolean,
+    isHighlighted: Boolean,
 ) {
-    Image(
+    BadgedIcon(
         painter = rememberDrawablePainter(icon),
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        colorFilter = when (shouldTint) {
-            true -> ColorFilter.tint(tint)
-            else -> null
-        },
+        isHighlighted = isHighlighted,
+        tint = tint,
     )
 }
 

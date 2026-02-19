@@ -25,7 +25,7 @@ support-files = [
   "places_v81.sqlite",
   "places_v82.sqlite",
   "places_v83.sqlite",
-  "places_v84.sqlite",
+  "places_v85.sqlite",
 ]
 
 ["test_current_from_downgraded.js"]

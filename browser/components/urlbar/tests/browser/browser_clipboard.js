@@ -69,9 +69,9 @@ add_task(async function testFormattingOfClipboardSuggestion() {
         "The Clipboard suggestion URL should not be decoded."
       );
       Assert.equal(
-        result.payload.fallbackTitle,
+        result.payload.title,
         unicodeURL,
-        "The Clipboard suggestion fallback title should be decoded."
+        "The Clipboard suggestion title should be decoded."
       );
     }
   );

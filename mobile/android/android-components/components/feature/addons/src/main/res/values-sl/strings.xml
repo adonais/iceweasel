@@ -61,7 +61,7 @@
   <!-- Description for the "clipboardWrite" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_write_description">shranjevanje podatkov na odložišče</string>
   <!-- Description for the "declarativeNetRequest" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_declarative_net_request_description">Zavrni vsebino na katerikoli strani</string>
+  <string name="mozac_feature_addons_permissions_declarative_net_request_description">blokiranje vsebine na katerikoli strani</string>
   <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">branje zgodovine brskanja</string>
   <!-- Description for the "downloads" WebExtensions API permission. -->

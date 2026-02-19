@@ -5,8 +5,6 @@
 
 #include "GMPVideoEncoderChild.h"
 
-#include <stdio.h>
-
 #include "GMPContentChild.h"
 #include "GMPPlatform.h"
 #include "GMPVideoEncodedFrameImpl.h"

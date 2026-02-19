@@ -43,6 +43,7 @@
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/dom/CSSBinding.h"
+#include "mozilla/dom/CSSPositionTryDescriptorsBinding.h"
 #include "mozilla/dom/CSSRuleBinding.h"
 #include "mozilla/dom/DirectoryBinding.h"
 #include "mozilla/dom/DocumentBinding.h"
@@ -921,6 +922,9 @@ bool xpc::GlobalProperties::Parse(JSContext* cx, JS::HandleObject obj) {
       ChromeUtils = true;
     } else if (JS_LinearStringEqualsLiteral(nameStr, "CSS")) {
       CSS = true;
+    } else if (JS_LinearStringEqualsLiteral(nameStr,
+                                            "CSSPositionTryDescriptors")) {
+      CSSPositionTryDescriptors = true;
     } else if (JS_LinearStringEqualsLiteral(nameStr, "CSSRule")) {
       CSSRule = true;
     } else if (JS_LinearStringEqualsLiteral(nameStr, "CustomStateSet")) {
@@ -1052,6 +1056,7 @@ bool xpc::GlobalProperties::Define(JSContext* cx, JS::HandleObject obj) {
   DEFINE_WEBIDL_INTERFACE_OR_NAMESPACE(ChromeUtils)
   DEFINE_WEBIDL_INTERFACE_OR_NAMESPACE(Blob)
   DEFINE_WEBIDL_INTERFACE_OR_NAMESPACE(CSS)
+  DEFINE_WEBIDL_INTERFACE_OR_NAMESPACE(CSSPositionTryDescriptors)
   DEFINE_WEBIDL_INTERFACE_OR_NAMESPACE(CSSRule)
   DEFINE_WEBIDL_INTERFACE_OR_NAMESPACE(CustomStateSet)
   DEFINE_WEBIDL_INTERFACE_OR_NAMESPACE(Directory)

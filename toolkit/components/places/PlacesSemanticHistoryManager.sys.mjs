@@ -678,7 +678,7 @@ class PlacesSemanticHistoryManager {
         );
         batchTensors = this.#convertTensor(batchTensors, rowsToAdd.length);
       } catch (ex) {
-        lazy.logger.error(`Error processing tensors: ${ex}`);
+        lazy.logger.error(`Error processing tensors`, ex);
         // If we failed generating tensors skip the addition, but proceed
         // with removals below.
         rowsToAdd.length = 0;

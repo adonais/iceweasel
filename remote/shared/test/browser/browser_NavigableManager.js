@@ -15,10 +15,6 @@ const FRAME_MARKUP = `
 `;
 const TEST_URL = BUILDER_URL + encodeURI(FRAME_MARKUP);
 
-const numberRegex = /[0-9]+/i;
-const uuidRegex =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 describe("NavigableManager", function () {
   let testData;
 

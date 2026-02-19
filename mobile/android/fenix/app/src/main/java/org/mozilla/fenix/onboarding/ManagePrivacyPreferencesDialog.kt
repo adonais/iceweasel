@@ -22,11 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
@@ -37,6 +37,7 @@ import org.mozilla.fenix.onboarding.store.PrivacyPreferencesAction
 import org.mozilla.fenix.onboarding.store.PrivacyPreferencesStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Dialog to manage privacy preferences during onboarding.
@@ -185,18 +186,12 @@ private fun PositiveButton(onDismissRequest: () -> Unit) {
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
-private fun ManagePrivacyPreferencesDialogPreview() {
-    FirefoxTheme {
-        ManagePrivacyPreferencesDialog(PrivacyPreferencesStore(), {}, {}, {})
-    }
-}
-
-@Preview
-@Composable
-private fun ManagePrivacyPreferencesDialogPrivatePreview() {
-    FirefoxTheme(theme = Theme.Private) {
+private fun ManagePrivacyPreferencesDialogPreview(
+    @PreviewParameter(ThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         ManagePrivacyPreferencesDialog(PrivacyPreferencesStore(), {}, {}, {})
     }
 }

@@ -11,6 +11,10 @@ const TEST_URL_2 = "http://127.0.0.1:36325/";
 const TEST_URL_3 = "https://www.wronguri.wronguri/";
 const TEST_URL_4 = "data:text/html,<html><body>test-doc-4</body></html>";
 
+const { ContentTaskUtils } = SpecialPowers.ChromeUtils.importESModule(
+  "resource://testing-common/ContentTaskUtils.sys.mjs"
+);
+
 add_task(async function () {
   // Open the inspector on a valid URL
   const { inspector } = await openInspectorForURL(TEST_URL_1);
@@ -41,6 +45,9 @@ add_task(async function () {
   );
   let domain = TEST_URL_2.match(/^http:\/\/(.*)\/$/)[1];
   let errorMsg = bundle.formatStringFromName("connectionFailure", [domain]);
+  await ContentTaskUtils.waitForCondition(() =>
+    getDisplayedNodeTextContent("#errorShortDesc", inspector)
+  );
   is(
     await getDisplayedNodeTextContent("#errorShortDesc", inspector),
     errorMsg,
@@ -52,6 +59,9 @@ add_task(async function () {
 
   domain = TEST_URL_3.match(/^https:\/\/(.*)\/$/)[1];
   errorMsg = bundle.formatStringFromName("dnsNotFound2", [domain]);
+  await ContentTaskUtils.waitForCondition(() =>
+    getDisplayedNodeTextContent("#errorShortDesc", inspector)
+  );
   is(
     await getDisplayedNodeTextContent("#errorShortDesc", inspector),
     errorMsg,
