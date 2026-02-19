@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">Tên</string>
   <string name="download_rename_dialog_confirm_button">Lưu</string>
   <string name="download_rename_dialog_cancel_button">Hủy bỏ</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Tập tin có tên “%s” đã tồn tại ở vị trí này</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Tên tập tin không được chứa ký tự “/”</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Không thể đổi tên tập tin</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2876,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Tìm hiểu thêm</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Quản lý email ẩn danh</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Bạn đã sử dụng hết 5 email ẩn danh miễn phí, vì vậy chúng tôi đã chọn một cái để bạn sử dụng lại.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Hiện tại email ẩn danh không khả dụng. Hãy thử lại sau vài phút.</string>
   <!--
     Autofill
 

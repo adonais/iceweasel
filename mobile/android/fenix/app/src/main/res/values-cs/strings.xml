@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">Název</string>
   <string name="download_rename_dialog_confirm_button">Uložit</string>
   <string name="download_rename_dialog_cancel_button">Zrušit</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Soubor s názvem „%s“ již v tomto umístění existuje</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Názvy souborů nemohou obsahovat znak „/“</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Soubor se nedá přejmenovat</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2625,7 +2632,7 @@
 
     Preference title for DNS over HTTPS settings
   -->
-  <string name="preference_doh_title">DNS skrze HTTPS</string>
+  <string name="preference_doh_title">DNS over HTTPS</string>
   <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
   <string name="preference_doh_summary">Systém DNS (Domain Name System) přes HTTPS odesílá váš požadavek na název domény prostřednictvím šifrovaného připojení, čímž zajišťuje bezpečný systém DNS a znemožňuje ostatním zjistit, na kterou webovou stránku se chystáte vstoupit. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
@@ -2635,7 +2642,7 @@
   <!-- Content description for the "Info" button -->
   <string name="preference_doh_info_description">Info</string>
   <!-- Content description for the "Add Site" button -->
-  <string name="preference_doh_add_site_description">Přidat stránku</string>
+  <string name="preference_doh_add_site_description">Přidat web</string>
   <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection">Výchozí ochrana</string>
   <!-- Summary displayed for "Default Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
@@ -2695,7 +2702,7 @@
   <!-- Description of "exceptions" for "DNS over HTTPS". %1$s is the name of the app (for example "Firefox"). -->
   <string name="preference_doh_exceptions_summary">%1$s nebude zabezpečené DNS na těchto serverech a jejich subdoménách používat.</string>
   <!-- Text displayed that links to adding website domain for "DNS over HTTPS" exceptions. -->
-  <string name="preference_doh_exceptions_add">Přidat stránku</string>
+  <string name="preference_doh_exceptions_add">Přidat web</string>
   <!-- Text displayed above the input field when adding exceptions for "DNS over HTTPS". -->
   <string name="preference_doh_exceptions_add_site">Server</string>
   <!-- Placeholder URL displayed in the input field when adding exceptions for "DNS over HTTPS". -->
@@ -2876,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Zjistit více</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Spravovat e-mailové masky</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Už jste použili svých 5 bezplatných e-mailových masek, proto jsme pro vás vybrali jednu k opětovnému použití.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">E-mailové masky nyní nejsou k dispozici. Zkuste to znovu za několik minut.</string>
   <!--
     Autofill
 

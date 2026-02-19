@@ -621,6 +621,10 @@
   <string name="nova_onboarding_continue_button">Συνέχεια</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Όχι τώρα</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Ετοιμαστείτε για ελεύθερη περιήγηση</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle">Είναι γρήγορο, ασφαλές και δεν θα σας ξεπουλήσει.\nΗ περιήγηση μόλις έγινε καλύτερη.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
@@ -644,6 +648,10 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Διαχείριση ρυθμίσεων</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Πείτε αντίο στους παρεμβατικούς ιχνηλάτες</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Ανοίξτε όλους τους συνδέσμους σας με ενσωματωμένο απόρρητο</string>
+  <!-- "Set to default" onboarding subtitle. -->
+  <string name="nova_onboarding_set_to_default_subtitle">Προστατεύουμε τα δεδομένα σας και εμποδίζουμε αυτόματα τις εταιρείες από το να κατασκοπεύουν τα κλικ σας.</string>
   <!-- "Set to default" onboarding button. -->
   <string name="nova_onboarding_set_to_default_button">Ορισμός ως προεπιλογή</string>
   <!-- Toolbar selection onboarding title. -->
@@ -662,6 +670,8 @@
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Σκουρόχρωμο</string>
   <!-- Sync onboarding title. -->
   <string name="nova_onboarding_sync_title">Συνεχίστε άμεσα από εκεί που σταματήσατε</string>
+  <!-- Sync onboarding subtitle. -->
+  <string name="nova_onboarding_sync_subtitle">Λάβετε αστραπιαία σελιδοδείκτες, κωδικούς πρόσβασης και πολλά άλλα σε οποιαδήποτε συσκευή. Τα προσωπικά σας δεδομένα παραμένουν ασφαλή με την κρυπτογράφηση.</string>
   <!-- Sync onboarding button. -->
   <string name="nova_onboarding_sync_button">Έναρξη συγχρονισμού</string>
   <!-- Marketing onboarding title. -->
@@ -675,10 +685,16 @@
   <string name="nova_onboarding_marketing_body_link_text">Πώς χρησιμοποιούμε τα δεδομένα</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Οι ειδοποιήσεις σάς βοηθούν να παραμένετε ασφαλείς με το Firefox</string>
+  <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Ανακαλύψτε τις πιο πρόσφατες λειτουργίες απορρήτου του Firefox, ώστε να ενημερώνεστε για το πώς να προστατεύεστε.</string>
   <!-- Notifications onboarding button. -->
   <string name="nova_onboarding_notifications_button">Ενεργοποίηση ειδοποιήσεων</string>
   <!-- "Add search widget" onboarding title. -->
   <string name="nova_onboarding_add_search_widget_title">Κάντε κάθε αναζήτηση πιο ιδιωτική</string>
+  <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Ξεκινήστε κάθε αναζήτηση από την αρχική οθόνη του τηλεφώνου σας με την αυτόματη προστασία του Firefox.</string>
+  <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Προσθήκη γραφικού στοιχείου Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -955,6 +971,11 @@
   <string name="preferences_category_file_storage">Αποθήκευση αρχείων</string>
   <!-- Preference title for downloads default location. -->
   <string name="preferences_downloads_default_location_title">Προεπιλεγμένη τοποθεσία λήψης</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">Δεν έχετε δικαίωμα χρήσης αυτού του φακέλου. Δοκιμάστε να επιλέξετε έναν άλλο.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Διαχείριση λήψεων με άλλη εφαρμογή</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1487,6 +1508,8 @@
   <string name="studies_active">Ενεργές</string>
   <!-- Description for studies -->
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Δοκιμάστε λειτουργίες και ιδέες πριν γίνουν διαθέσιμες σε όλους.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Το Firefox επιλέγει τυχαίους χρήστες για τη δοκιμή λειτουργιών, βελτιώνοντας την ποιότητα για όλους.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Εγκατάσταση και εκτέλεση μελετών</string>
   <!-- Title of the Studies data preference -->
@@ -1499,6 +1522,8 @@
     Title of the Remote Improvements (rollouts) data preference
   -->
   <string name="remote_improvements_title">Αποδοχή απομακρυσμένων βελτιώσεων</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Οι λειτουργίες, οι επιδόσεις και η σταθερότητα του Firefox θα βελτιώνονται με κάθε νέα ενημέρωση. Οι αλλαγές εφαρμόζονται απομακρυσμένα.</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">Μάθετε περισσότερα</string>
   <!-- Title for remote improvements preference in Advanced settings -->
@@ -1696,6 +1721,8 @@
   <string name="download_delete_item">Διαγραφή</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Πλοήγηση προς τα πίσω</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Μετάβαση στις Ρυθμίσεις λήψεων</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Επιστροφή και κλείσιμο αναζήτησης</string>
   <!--
@@ -1727,6 +1754,11 @@
   <string name="download_rename_dialog_label">Όνομα</string>
   <string name="download_rename_dialog_confirm_button">Αποθήκευση</string>
   <string name="download_rename_dialog_cancel_button">Ακύρωση</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Ένα αρχείο με όνομα «%s» υπάρχει ήδη σε αυτήν την τοποθεσία</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Τα ονόματα αρχείων δεν μπορούν να χρησιμοποιούν «/»</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
@@ -2028,6 +2060,8 @@
   <string name="bookmark_empty_list_folder_description">Προσθέστε σελιδοδείκτες καθώς περιηγείστε, ώστε να βρείτε αργότερα τις αγαπημένες σας ιστοσελίδες.</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">Νέος φάκελος</string>
+  <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
+  <string name="bookmark_moved_single_item">Το «%1$s» μετακινήθηκε στον φάκελο «%2$s»</string>
   <!--
     Site Permissions
 
@@ -4078,6 +4112,14 @@
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">εδώ</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
+  <!--
+    Privacy notice homepage banner
+
+    A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link using privacy_notice_updated_homepage_message_privacy_notice as text (Privacy Notice)
+    %2$s is replaced by an active link using privacy_notice_updated_homepage_message_learn_more as text (Learn more)
+  -->
+  <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">Ενημερώσαμε τη %1$s μας ώστε να περιέχει τις πιο πρόσφατες λειτουργίες του Firefox. %2$s</string>
   <!-- The first active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Σημείωση απορρήτου</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->

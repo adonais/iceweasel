@@ -2876,6 +2876,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Pro saper plus</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Gerer mascas de e-mail</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Tu ha usate tu 5 mascas de e-mail gratuite, assi nos eligeva un pro te a reusar.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Le mascas de e-mail non es disponibile in iste momento. Retenta in alcun minutas.</string>
   <!--
     Autofill
 
