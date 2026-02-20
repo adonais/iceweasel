@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">Nomine</string>
   <string name="download_rename_dialog_confirm_button">Salvar</string>
   <string name="download_rename_dialog_cancel_button">Cancellar</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Un file appellate “%s” jam existe in iste position</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Le nomines de file non pote usar “/”</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Impossibile renominar file</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->

@@ -1764,7 +1764,7 @@
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Δεν είναι δυνατή η μετονομασία του αρχείου</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
-  <string name="download_rename_error_cannot_rename_description">Δεν είναι δυνατή η μετονομασία του αρχείου λόγω περιορισμών του συστήματος ή αποθήκευσης.</string>
+  <string name="download_rename_error_cannot_rename_description">Δεν είναι δυνατή η μετονομασία του αρχείου λόγω περιορισμών του συστήματος ή του αποθηκευτικού χώρου.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Σε εξέλιξη</string>
