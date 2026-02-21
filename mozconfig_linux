@@ -1,0 +1,94 @@
+# This file specifies the build flags for Iceweasel.  You can use it by adding:
+# Iceweasel for Linux PGO build
+# Compatible with older stdc++, -D_GLIBCXX_USE_CXX11_ABI=0
+
+# for brower
+. $topsrcdir/browser/config/mozconfig
+ac_add_options --with-app-name=Iceweasel
+
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../$MYOBJ_DIR
+mk_add_options MOZ_MAKE_FLAGS=-j4
+
+# for optimized
+ac_add_options --enable-optimize="-O3"
+
+# setting
+export CC=clang
+export CXX=clang++
+export CFLAGS="$CFLAGS -msse3 -DTT_USE_SSE3"
+export CXXFLAGS="$CXXFLAGS -msse3 -DTT_USE_SSE3"
+
+# for rust
+export RUSTC_OPT_LEVEL=2
+export RUSTFLAGS="$RUSTFLAGS -Ctarget-feature=+sse3 -Clink-args=--icf=safe"
+
+#disable tests
+ac_add_options --disable-tests
+
+# diasble updater
+ac_add_options --disable-updater
+
+# disable crashreporter
+ac_add_options --disable-crashreporter
+
+# disable parental controls
+ac_add_options --disable-parental-controls
+
+# disable more modules
+ac_add_options --disable-necko-wifi
+
+# disable dbm
+# ac_add_options --disable-dbm
+
+# disable googlepad
+# ac_add_options --disable-gamepad
+
+# disable debug
+ac_add_options --disable-debug
+ac_add_options --disable-debug-symbols
+
+# disable sandbox
+ac_add_options --disable-sandbox
+
+# Enable MOZ_ALLOW_LEGACY_EXTENSIONS
+# ac_add_options "MOZ_ALLOW_LEGACY_EXTENSIONS=1"
+
+# Add-on signing is not required
+MOZ_REQUIRE_SIGNING=
+
+# for linux
+ac_add_options --disable-elf-hack
+ac_add_options --with-unsigned-addon-scopes=app
+ac_add_options --allow-addon-sideload
+
+# without wasm sandbo
+ac_add_options --without-wasm-sandboxed-libraries
+
+# enable clang plugins
+#ac_add_options --enable-clang-plugin
+#ac_add_options --enable-mozsearch-plugin
+
+# enable jemalloc, simd
+ac_add_options --enable-rust-simd
+ac_add_options --enable-jemalloc
+ac_add_options --enable-default-toolkit=cairo-gtk3-wayland
+
+# for release
+export MOZILLA_OFFICIAL=1
+ac_add_options --enable-update-channel=release
+ac_add_options --with-branding=browser/branding/iceweasel
+
+# enable l10n
+if test -d "/builds/worker/fetches/l10n"; then
+  ac_add_options --with-l10n-base=/builds/worker/fetches/l10n
+fi
+
+# enable onnxruntime
+if test "$ICEWEASEL_BITS" = "64"; then
+  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime-x86_64-linux-gnu"
+elif test "$ICEWEASEL_BITS" = "32"; then
+  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime-i686-linux-gnu"
+fi
+
+# distribution
+ac_add_options --with-distribution-id=by.adonais
