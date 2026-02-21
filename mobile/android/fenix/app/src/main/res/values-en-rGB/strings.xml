@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">This file can’t be renamed due to system or storage restrictions.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Change file type to %s?</string>
+  <string name="change_file_extension_description">This might open the file in a different app and be risky for your device.</string>
+  <string name="change_file_extension_cancel_button">Cancel</string>
+  <string name="change_file_extension_confirm_button">Yes, change it</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">In progress</string>
   <!--

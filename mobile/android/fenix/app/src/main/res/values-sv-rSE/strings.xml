@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Den här filen kan inte byta namn på grund av system- eller lagringsbegränsningar.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Ändra filtyp till %s?</string>
+  <string name="change_file_extension_description">Detta kan öppna filen i en annan app och vara riskabelt för din enhet.</string>
+  <string name="change_file_extension_cancel_button">Avbryt</string>
+  <string name="change_file_extension_confirm_button">Ja, ändra den</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Pågår</string>
   <!--

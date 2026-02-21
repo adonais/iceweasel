@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Ez a fájl rendszer- vagy tárhelykorlátozások miatt nem nevezhető át.</string>
   <string name="download_rename_error_dismiss_button">Rendben</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Erre módosítja a fájl típusát: %s?</string>
+  <string name="change_file_extension_description">Ez egy másik alkalmazásban nyithatja meg a fájlt, és kockázatos lehet az eszközére.</string>
+  <string name="change_file_extension_cancel_button">Mégse</string>
+  <string name="change_file_extension_confirm_button">Igen, módosítás</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Folyamatban</string>
   <!--

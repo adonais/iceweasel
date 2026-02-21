@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Does dim modd ail-enwi\'r ffeil hon oherwydd cyfyngiadau system neu storio.</string>
   <string name="download_rename_error_dismiss_button">Iawn</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Newid math ffeil i %s?</string>
+  <string name="change_file_extension_description">Gallai hyn agor y ffeil mewn ap gwahanol a gallai fod yn beryglus i\'ch dyfais.</string>
+  <string name="change_file_extension_cancel_button">Diddymu</string>
+  <string name="change_file_extension_confirm_button">Ie, ei newid</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Ar waith</string>
   <!--

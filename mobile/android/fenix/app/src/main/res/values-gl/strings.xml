@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Este ficheiro non se pode renomear debido ás restricións do sistema ou de almacenamento.</string>
   <string name="download_rename_error_dismiss_button">Aceptar</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Cambiar o tipo de ficheiro a %s?</string>
+  <string name="change_file_extension_description">Isto pode abrir o ficheiro nunha aplicación diferente e ser perigoso para o teu dispositivo.</string>
+  <string name="change_file_extension_cancel_button">Cancelar</string>
+  <string name="change_file_extension_confirm_button">Si, cambialo</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">En progreso</string>
   <!--

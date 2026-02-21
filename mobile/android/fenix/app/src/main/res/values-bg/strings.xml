@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Файлът не може да бъде преименуван поради системни ограничения или ограничения на хранилището.</string>
   <string name="download_rename_error_dismiss_button">Добре</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Промяна на файловия тип на %s?</string>
+  <string name="change_file_extension_description">Това може да отвори файла в друго приложение и да бъде рисковано за вашето устройство.</string>
+  <string name="change_file_extension_cancel_button">Отказ</string>
+  <string name="change_file_extension_confirm_button">Да, смени го</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Изпълнява се</string>
   <!--

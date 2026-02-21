@@ -323,6 +323,8 @@
   <string name="browser_menu_save_as_pdf_2">Guardar como PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Traducir página</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Resumir página</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Informar sitio que no carga…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1738,6 +1740,8 @@
   <string name="download_share_url">Compartir URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Compartir archivo</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Renombrar archivo</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">¿Estás seguro de que deseas eliminar los elementos seleccionados?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1750,6 +1754,18 @@
   <string name="download_rename_dialog_label">Nombre</string>
   <string name="download_rename_dialog_confirm_button">Guardar</string>
   <string name="download_rename_dialog_cancel_button">Cancelar</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Un archivo llamado “%s” ya existe en esta ubicación</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Los nombres de archivo no pueden usar “/”</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">No se pudo renombrar el archivo</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Este archivo no se puede renombrar debido a restricciones del sistema o de almacenamiento.</string>
+  <string name="download_rename_error_dismiss_button">Aceptar</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">En proceso</string>
   <!--
@@ -2867,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Aprender más</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Gestionar máscaras de correo electrónico</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Has utilizado tus 5 máscaras de correo electrónico gratuitas, por eso elegimos una para que puedas reutilizarla.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Las máscaras de correo electrónico no están disponibles en este momento. Vuelve a intentarlo en unos minutos.</string>
   <!--
     Autofill
 
