@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">由於系統或儲存空間限制，無法重新命名此檔案。</string>
   <string name="download_rename_error_dismiss_button">確定</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">要將檔案類型更改為 %s 嗎？</string>
+  <string name="change_file_extension_description">可能會使用不同應用程式開啟，而對您的裝置造成風險。</string>
+  <string name="change_file_extension_cancel_button">取消</string>
+  <string name="change_file_extension_confirm_button">確定，請更改</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">進行中</string>
   <!--

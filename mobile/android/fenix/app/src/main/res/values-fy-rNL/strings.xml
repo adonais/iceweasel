@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Dit bestân kin net omneamd wurde fanwegen systeem- of ûnthâldbeheiningen.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Bestânstype wizigje nei %s?</string>
+  <string name="change_file_extension_description">Dit kin it bestân yn in oare app iepenje en riskant wêze foar jo apparaat.</string>
+  <string name="change_file_extension_cancel_button">Annulearje</string>
+  <string name="change_file_extension_confirm_button">Ja, wizigje</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Wurdt útfierd</string>
   <!--

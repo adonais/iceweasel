@@ -1766,6 +1766,7 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">سی دل مئدۊدیتا سیستوم یا جاگه زفت کردن، آلشت نوم ای فایل ٱنجوم نؽگره.</string>
   <string name="download_rename_error_dismiss_button">خا</string>
+  <string name="change_file_extension_cancel_button">لقو</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">هونی پؽش اروه</string>
   <!--

@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">시스템 또는 저장소 제한으로 이 파일의 이름을 변경할 수 없습니다.</string>
   <string name="download_rename_error_dismiss_button">확인</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">%s 파일 형식으로 변경하시겠습니까?</string>
+  <string name="change_file_extension_description">이 작업은 파일을 다른 앱에서 열 수 있으며 기기에 위험할 수 있습니다.</string>
+  <string name="change_file_extension_cancel_button">취소</string>
+  <string name="change_file_extension_confirm_button">변경</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">진행 중</string>
   <!--

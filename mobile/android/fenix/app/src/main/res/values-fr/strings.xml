@@ -1770,10 +1770,10 @@
     Title for the alert dialog to change file extension.
     %s is the file type to change to.
   -->
-  <string name="change_file_extension_title">Changer le type de fichier en %s\u00a0?</string>
-  <string name="change_file_extension_description">Cela peut ouvrir le fichier dans une autre application et présenter un risque pour votre appareil.</string>
+  <string name="change_file_extension_title">Modifier le type de fichier en %s\u00a0?</string>
+  <string name="change_file_extension_description">Il se peut que cela ouvre le fichier dans une autre application et présente un risque pour votre appareil.</string>
   <string name="change_file_extension_cancel_button">Annuler</string>
-  <string name="change_file_extension_confirm_button">Oui, modifiez-le</string>
+  <string name="change_file_extension_confirm_button">Oui, le modifier</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">En cours</string>
   <!--

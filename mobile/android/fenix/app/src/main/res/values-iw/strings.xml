@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">לא ניתן לשנות את שם הקובץ הזה עקב מגבלות מערכת או אחסון.</string>
   <string name="download_rename_error_dismiss_button">אישור</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">לשנות את סוג הקובץ ל־%s?</string>
+  <string name="change_file_extension_description">פעולה זו עלולה לפתוח את הקובץ ביישומון אחר ולהיות מסוכן למכשיר שלך.</string>
+  <string name="change_file_extension_cancel_button">ביטול</string>
+  <string name="change_file_extension_confirm_button">כן, לשנות את זה</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">בתהליך</string>
   <!--
