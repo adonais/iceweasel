@@ -1147,8 +1147,10 @@ bool mozInlineSpellChecker::ShouldSpellCheckNode(EditorBase* aEditorBase,
     // Note that because of the previous check, at this point we know that the
     // node is editable.
     if (content->IsInNativeAnonymousSubtree()) {
-      nsIContent* node =
-          content->GetClosestNativeAnonymousSubtreeRootParentOrHost();
+      nsIContent* node = content->GetParent();
+      while (node && node->IsInNativeAnonymousSubtree()) {
+        node = node->GetParent();
+      }
       if (node && node->IsTextControlElement()) {
         return true;
       }

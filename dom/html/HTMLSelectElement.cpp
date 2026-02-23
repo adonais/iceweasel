@@ -137,7 +137,7 @@ HTMLSelectElement::HTMLSelectElement(
 }
 
 void HTMLSelectElement::SetupShadowTree() {
-  AttachAndSetUAShadowRoot(NotifyUAWidget::No);
+  AttachAndSetUAShadowRoot(NotifyUAWidgetSetup::No);
   RefPtr<ShadowRoot> sr = GetShadowRoot();
   if (NS_WARN_IF(!sr)) {
     return;

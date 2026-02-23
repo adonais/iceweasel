@@ -14,10 +14,10 @@
 #include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
+#include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGSwitchElement.h"
 #include "mozilla/dom/SVGSymbolElement.h"
 #include "mozilla/dom/SVGUseElementBinding.h"
@@ -419,9 +419,7 @@ void SVGUseElement::UpdateShadowTree() {
 
   RefPtr<ShadowRoot> shadow = GetShadowRoot();
   if (!shadow) {
-    ShadowRootInit init;
-    init.mMode = ShadowRootMode::Closed;
-    shadow = AttachShadowWithoutNameChecks(init);
+    shadow = AttachShadowWithoutNameChecks(ShadowRootMode::Closed);
   }
   MOZ_ASSERT(shadow);
 

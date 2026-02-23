@@ -14651,24 +14651,34 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
   nsCOMPtr<nsINode> node = offsets.content;
   uint32_t offset = offsets.offset;
   nsCOMPtr<nsINode> anonNode = node;
-  const bool nodeIsAnonymous = node && node->IsInNativeAnonymousSubtree();
-  bool offsetAndNodeNeedsAdjustment = false;
+  bool nodeIsAnonymous = node && node->IsInNativeAnonymousSubtree();
   if (nodeIsAnonymous) {
     node = ptFrame->GetContent();
     nsINode* nonChrome =
         node->AsContent()->FindFirstNonChromeOnlyAccessContent();
-    auto* textControl = TextControlElement::FromNode(nonChrome);
-    if (!textControl) {
+    HTMLTextAreaElement* textArea = HTMLTextAreaElement::FromNode(nonChrome);
+    nsTextControlFrame* textFrame =
+        do_QueryFrame(nonChrome->AsContent()->GetPrimaryFrame());
+    if (!textFrame) {
       return nullptr;
     }
+
     // If the anonymous content node has a child, then we need to make sure
     // that we get the appropriate child, as otherwise the offset may not be
     // correct when we construct a range for it.
-    if (nsINode* firstChild = anonNode->GetFirstChild()) {
+    nsCOMPtr<nsINode> firstChild = anonNode->GetFirstChild();
+    if (firstChild) {
       anonNode = firstChild;
     }
+
+    if (textArea) {
+      offset = nsContentUtils::GetAdjustedOffsetInTextControl(ptFrame, offset);
+    }
+
     node = nonChrome;
   }
+
+  bool offsetAndNodeNeedsAdjustment = false;
 
   if (StaticPrefs::
           dom_shadowdom_new_caretPositionFromPoint_behavior_enabled()) {

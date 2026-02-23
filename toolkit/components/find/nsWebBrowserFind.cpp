@@ -20,7 +20,7 @@
 #include "nsISelectionController.h"
 #include "nsIFrame.h"
 #include "nsReadableUtils.h"
-#include "nsIContentInlines.h"
+#include "nsIContent.h"
 #include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsFind.h"
@@ -322,7 +322,7 @@ already_AddRefed<Selection> nsWebBrowserFind::UpdateSelection(
   // since the match could be an anonymous textnode inside a
   // <textarea> or text <input>, we need to get the outer frame
   nsIFrame* tcFrame = nullptr;
-  for (; content; content = content->GetFlattenedTreeParent()) {
+  for (; content; content = content->GetParent()) {
     if (!content->IsInNativeAnonymousSubtree()) {
       nsIFrame* f = content->GetPrimaryFrame();
       if (!f) {

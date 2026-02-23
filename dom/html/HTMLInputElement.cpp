@@ -23,7 +23,6 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
-#include "mozilla/RestyleManager.h"
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/ServoComputedData.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -77,14 +76,15 @@
 #include "nsLayoutUtils.h"
 #include "nsLinebreakConverter.h"  //to strip out carriage returns
 #include "nsNetUtil.h"
+#include "nsNumberControlFrame.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
 #include "nsRangeFrame.h"
 #include "nsReadableUtils.h"
 #include "nsRepeatService.h"
+#include "nsSearchControlFrame.h"
 #include "nsStyleConsts.h"
-#include "nsTextControlFrame.h"
 #include "nsUnicharUtils.h"
 #include "nsVariant.h"
 
@@ -1165,6 +1165,7 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
       mNumberControlSpinnerIsSpinning(false),
       mNumberControlSpinnerSpinsUp(false),
       mPickerRunning(false),
+      mIsPreviewEnabled(false),
       mHasBeenTypePassword(false),
       mHasPatternAttribute(false),
       mRadioGroupContainer(nullptr) {
@@ -1550,7 +1551,10 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       mAutocompleteAttrState = nsContentUtils::eAutocompleteAttrState_Unknown;
       mAutocompleteInfoState = nsContentUtils::eAutocompleteAttrState_Unknown;
     } else if (aName == nsGkAtoms::placeholder) {
-      UpdatePlaceholder(aOldValue, aValue);
+      // Full addition / removals of the attribute reconstruct right now.
+      if (nsTextControlFrame* f = do_QueryFrame(GetPrimaryFrame())) {
+        f->PlaceholderChanged(aOldValue, aValue);
+      }
       UpdatePlaceholderShownState();
       needValidityUpdate = true;
     } else if (aName == nsGkAtoms::colorspace || aName == nsGkAtoms::alpha) {
@@ -2458,22 +2462,18 @@ void HTMLInputElement::GetDateTimeInputBoxValue(DateTimeValue& aValue) {
 }
 
 Element* HTMLInputElement::GetDateTimeBoxElement() {
-  if (!CreatesDateTimeWidget()) {
+  if (!GetShadowRoot()) {
     return nullptr;
   }
-  auto* sr = GetShadowRoot();
-  if (!sr) {
-    return nullptr;
-  }
-  // The datetimebox <div> is the only child of the UA Widget Shadow Root
-  // if it is present, but note that during a type change it might not be set up
-  // yet / this might be a previous shadow tree from e.g. a text input.
-  MOZ_ASSERT(sr->IsUAWidget());
 
-  nsIContent* inputAreaContent = sr->GetFirstChild();
-  if (inputAreaContent && inputAreaContent->GetID() == nsGkAtoms::datetimebox) {
+  // The datetimebox <div> is the only child of the UA Widget Shadow Root
+  // if it is present.
+  MOZ_ASSERT(GetShadowRoot()->IsUAWidget());
+  MOZ_ASSERT(1 >= GetShadowRoot()->GetChildCount());
+  if (nsIContent* inputAreaContent = GetShadowRoot()->GetFirstChild()) {
     return inputAreaContent->AsElement();
   }
+
   return nullptr;
 }
 
@@ -2654,6 +2654,33 @@ nsresult HTMLInputElement::CreateEditor() {
   }
   return NS_ERROR_FAILURE;
 }
+
+void HTMLInputElement::SetPreviewValue(const nsAString& aValue) {
+  TextControlState* state = GetEditorState();
+  if (state) {
+    state->SetPreviewText(aValue, true);
+  }
+}
+
+void HTMLInputElement::GetPreviewValue(nsAString& aValue) {
+  TextControlState* state = GetEditorState();
+  if (state) {
+    state->GetPreviewText(aValue);
+  }
+}
+
+void HTMLInputElement::EnablePreview() {
+  if (mIsPreviewEnabled) {
+    return;
+  }
+
+  mIsPreviewEnabled = true;
+  // Reconstruct the frame to append an anonymous preview node
+  nsLayoutUtils::PostRestyleEvent(this, RestyleHint{0},
+                                  nsChangeHint_ReconstructFrame);
+}
+
+bool HTMLInputElement::IsPreviewEnabled() { return mIsPreviewEnabled; }
 
 void HTMLInputElement::GetDisplayFileName(nsAString& aValue) const {
   MOZ_ASSERT(mFileData);
@@ -2874,12 +2901,14 @@ void HTMLInputElement::SetFiles(FileList* aFiles) {
 
 /* static */
 void HTMLInputElement::HandleNumberControlSpin(void* aData) {
-  RefPtr input = static_cast<HTMLInputElement*>(aData);
+  RefPtr<HTMLInputElement> input = static_cast<HTMLInputElement*>(aData);
+
   NS_ASSERTION(input->mNumberControlSpinnerIsSpinning,
                "Should have called nsRepeatService::Stop()");
 
-  if (input->mType != FormControlType::InputNumber ||
-      !input->GetPrimaryFrame()) {
+  nsNumberControlFrame* numberControlFrame =
+      do_QueryFrame(input->GetPrimaryFrame());
+  if (input->mType != FormControlType::InputNumber || !numberControlFrame) {
     // Type has changed (and possibly our frame type hasn't been updated yet)
     // or else we've lost our frame. Either way, stop the timer and don't do
     // anything else.
@@ -3361,27 +3390,6 @@ bool HTMLInputElement::CheckActivationBehaviorPreconditions(
   return outerActivateEvent;
 }
 
-enum class SpinnerDirection { Up, Down, None };
-static SpinnerDirection SpinnerDirectionForEvent(const WidgetEvent& aEvent,
-                                                 Element* aSpinBox) {
-  if (!aSpinBox) {
-    return SpinnerDirection::None;
-  }
-  MOZ_ASSERT(aSpinBox->GetPseudoElementType() ==
-             PseudoStyleType::MozNumberSpinBox);
-  if (aEvent.mOriginalTarget == aSpinBox->GetFirstChild()) {
-    MOZ_ASSERT(aSpinBox->GetFirstChild()->AsElement()->GetPseudoElementType() ==
-               PseudoStyleType::MozNumberSpinUp);
-    return SpinnerDirection::Up;
-  }
-  if (aEvent.mOriginalTarget == aSpinBox->GetLastChild()) {
-    MOZ_ASSERT(aSpinBox->GetLastChild()->AsElement()->GetPseudoElementType() ==
-               PseudoStyleType::MozNumberSpinDown);
-    return SpinnerDirection::Down;
-  }
-  return SpinnerDirection::None;
-}
-
 void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   // Do not process any DOM events if the element is disabled
   aVisitor.mCanHandle = false;
@@ -3441,18 +3449,30 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
       if (aVisitor.mEvent->mMessage == eMouseMove) {
         // Be aggressive about stopping the spin:
         bool stopSpin = true;
-        switch (
-            SpinnerDirectionForEvent(*aVisitor.mEvent, GetTextEditorButton())) {
-          case SpinnerDirection::Up:
-            mNumberControlSpinnerSpinsUp = true;
-            stopSpin = false;
-            break;
-          case SpinnerDirection::Down:
-            mNumberControlSpinnerSpinsUp = false;
-            stopSpin = false;
-            break;
-          case SpinnerDirection::None:
-            break;
+        nsNumberControlFrame* numberControlFrame =
+            do_QueryFrame(GetPrimaryFrame());
+        if (numberControlFrame) {
+          bool oldNumberControlSpinTimerSpinsUpValue =
+              mNumberControlSpinnerSpinsUp;
+          switch (numberControlFrame->GetSpinButtonForPointerEvent(
+              aVisitor.mEvent->AsMouseEvent())) {
+            case nsNumberControlFrame::eSpinButtonUp:
+              mNumberControlSpinnerSpinsUp = true;
+              stopSpin = false;
+              break;
+            case nsNumberControlFrame::eSpinButtonDown:
+              mNumberControlSpinnerSpinsUp = false;
+              stopSpin = false;
+              break;
+          }
+          if (mNumberControlSpinnerSpinsUp !=
+              oldNumberControlSpinTimerSpinsUpValue) {
+            nsNumberControlFrame* numberControlFrame =
+                do_QueryFrame(GetPrimaryFrame());
+            if (numberControlFrame) {
+              numberControlFrame->SpinnerStateChanged();
+            }
+          }
         }
         if (stopSpin) {
           StopNumberControlSpinnerSpin();
@@ -3706,22 +3726,34 @@ void HTMLInputElement::StartNumberControlSpinnerSpin() {
   // Capture the mouse so that we can tell if the pointer moves from one
   // spin button to the other, or to some other element:
   PresShell::SetCapturingContent(this, CaptureFlags::IgnoreAllowedState);
+
+  nsNumberControlFrame* numberControlFrame = do_QueryFrame(GetPrimaryFrame());
+  if (numberControlFrame) {
+    numberControlFrame->SpinnerStateChanged();
+  }
 }
 
 void HTMLInputElement::StopNumberControlSpinnerSpin(SpinnerStopState aState) {
-  if (!mNumberControlSpinnerIsSpinning) {
-    return;
-  }
-  if (PresShell::GetCapturingContent() == this) {
-    PresShell::ReleaseCapturingContent();
-  }
+  if (mNumberControlSpinnerIsSpinning) {
+    if (PresShell::GetCapturingContent() == this) {
+      PresShell::ReleaseCapturingContent();
+    }
 
-  nsRepeatService::GetInstance()->Stop(HandleNumberControlSpin, this);
+    nsRepeatService::GetInstance()->Stop(HandleNumberControlSpin, this);
 
-  mNumberControlSpinnerIsSpinning = false;
+    mNumberControlSpinnerIsSpinning = false;
 
-  if (aState == eAllowDispatchingEvents) {
-    FireChangeEventIfNeeded();
+    if (aState == eAllowDispatchingEvents) {
+      FireChangeEventIfNeeded();
+    }
+
+    nsNumberControlFrame* numberControlFrame = do_QueryFrame(GetPrimaryFrame());
+    if (numberControlFrame) {
+      MOZ_ASSERT(aState == eAllowDispatchingEvents,
+                 "Shouldn't have primary frame for the element when we're not "
+                 "allowed to dispatch events to it anymore.");
+      numberControlFrame->SpinnerStateChanged();
+    }
   }
 }
 
@@ -4153,24 +4185,27 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
           if (mType == FormControlType::InputNumber &&
               aVisitor.mEvent->IsTrusted()) {
             if (mouseEvent->mButton == MouseButton::ePrimary &&
-                !IgnoreInputEventWithModifier(*mouseEvent, false) &&
-                aVisitor.mEvent->mMessage == eMouseDown && IsMutable()) {
-              switch (SpinnerDirectionForEvent(*aVisitor.mEvent,
-                                               GetTextEditorButton())) {
-                case SpinnerDirection::Up:
-                  StepNumberControlForUserEvent(1);
-                  mNumberControlSpinnerSpinsUp = true;
-                  StartNumberControlSpinnerSpin();
-                  aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-                  break;
-                case SpinnerDirection::Down:
-                  StepNumberControlForUserEvent(-1);
-                  mNumberControlSpinnerSpinsUp = false;
-                  StartNumberControlSpinnerSpin();
-                  aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-                  break;
-                case SpinnerDirection::None:
-                  break;
+                !IgnoreInputEventWithModifier(*mouseEvent, false)) {
+              nsNumberControlFrame* numberControlFrame =
+                  do_QueryFrame(GetPrimaryFrame());
+              if (numberControlFrame) {
+                if (aVisitor.mEvent->mMessage == eMouseDown && IsMutable()) {
+                  switch (numberControlFrame->GetSpinButtonForPointerEvent(
+                      aVisitor.mEvent->AsMouseEvent())) {
+                    case nsNumberControlFrame::eSpinButtonUp:
+                      StepNumberControlForUserEvent(1);
+                      mNumberControlSpinnerSpinsUp = true;
+                      StartNumberControlSpinnerSpin();
+                      aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+                      break;
+                    case nsNumberControlFrame::eSpinButtonDown:
+                      StepNumberControlForUserEvent(-1);
+                      mNumberControlSpinnerSpinsUp = false;
+                      StartNumberControlSpinnerSpin();
+                      aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+                      break;
+                  }
+                }
               }
             }
             if (aVisitor.mEventStatus != nsEventStatus_eConsumeNoDefault) {
@@ -4226,15 +4261,22 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                   MouseButton::ePrimary) {
             // TODO(emilio): Handling this should ideally not move focus.
             if (mType == FormControlType::InputSearch) {
-              Element* button = GetTextEditorButton();
-              if (button && aVisitor.mEvent->mOriginalTarget == button) {
-                SetUserInput(EmptyString(),
-                             *nsContentUtils::GetSystemPrincipal());
+              if (nsSearchControlFrame* searchControlFrame =
+                      do_QueryFrame(GetPrimaryFrame())) {
+                Element* clearButton = searchControlFrame->GetButton();
+                if (clearButton &&
+                    aVisitor.mEvent->mOriginalTarget == clearButton) {
+                  SetUserInput(EmptyString(),
+                               *nsContentUtils::GetSystemPrincipal());
+                }
               }
             } else if (mType == FormControlType::InputPassword) {
-              Element* button = GetTextEditorButton();
-              if (button && aVisitor.mEvent->mOriginalTarget == button) {
-                SetRevealPassword(!RevealPassword());
+              if (nsTextControlFrame* textControlFrame =
+                      do_QueryFrame(GetPrimaryFrame())) {
+                auto* reveal = textControlFrame->GetButton();
+                if (reveal && aVisitor.mEvent->mOriginalTarget == reveal) {
+                  SetRevealPassword(!RevealPassword());
+                }
               }
             }
           }
@@ -4590,8 +4632,9 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   // And now make sure our state is up to date
   UpdateValidityElementStates(true);
 
-  if (mDoneCreating && IsInComposedDoc() && CreatesDateTimeWidget()) {
-    SetupShadowTree(/* aNotify = */ false);
+  if (CreatesDateTimeWidget() && IsInComposedDoc()) {
+    // Construct Shadow Root so web content can be hidden in the DOM.
+    AttachAndSetUAShadowRoot(NotifyUAWidgetSetup::Yes, DelegatesFocus::Yes);
   }
 
   MaybeDispatchLoginManagerEvents(mForm);
@@ -4599,51 +4642,8 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   return rv;
 }
 
-void HTMLInputElement::SetupShadowTree(bool aNotify) {
-  MOZ_ASSERT(CreatesUAShadowTree());
-  MOZ_ASSERT(IsInComposedDoc());
-  MOZ_ASSERT(!GetShadowRoot());
-  MOZ_ASSERT(mDoneCreating);
-
-  auto uaWidget = NotifiesUAWidget();
-  AttachAndSetUAShadowRoot(uaWidget,
-                           uaWidget == NotifyUAWidget::Yes ? DelegatesFocus::Yes
-                                                           : DelegatesFocus::No,
-                           aNotify);
-  if (uaWidget == NotifyUAWidget::Yes) {
-    // The UA widget system takes care of this.
-    return;
-  }
-  auto* shadow = GetShadowRoot();
-  if (!shadow) {
-    return;
-  }
-  // For now, only text controls should get here.
-  MOZ_ASSERT(IsSingleLineTextControl());
-  TextControlElement::SetupShadowTree(*shadow, aNotify);
-}
-
-ShadowRoot* HTMLInputElement::CreateShadowTreeFromLayoutIfNeeded() {
-  if (!CreatesUAShadowTree()) {
-    return nullptr;
-  }
-  auto* existing = GetShadowRoot();
-  if (existing) {
-    return nullptr;
-  }
-  if (HasChildren()) [[unlikely]] {
-    // In the unlikely case we have any child, they are guaranteed to not have
-    // frames, but they might still be styled and about to go out of the flat
-    // tree, so need to clear their styles now, before creating the shadow tree.
-    RestyleManager::ClearServoDataFromSubtree(this,
-                                              RestyleManager::IncludeRoot::No);
-  }
-  SetupShadowTree(/* aNotify = */ false);
-  return GetShadowRoot();
-}
-
 void HTMLInputElement::MaybeDispatchLoginManagerEvents(HTMLFormElement* aForm) {
-  // Don't dispatch the event if the <input> is disconnected
+  // Don't disptach the event if the <input> is disconnected
   // or belongs to a disconnected form
   if (!IsInComposedDoc()) {
     return;
@@ -4718,8 +4718,8 @@ void HTMLInputElement::UnbindFromTree(UnbindContext& aContext) {
     RemoveFromRadioGroup();
   }
 
-  if (CreatesUAShadowTree() && IsInComposedDoc()) {
-    TeardownUAShadowRoot(NotifiesUAWidget());
+  if (CreatesDateTimeWidget() && IsInComposedDoc()) {
+    NotifyUAWidgetTeardown();
   }
 
   nsImageLoadingContent::UnbindFromTree();
@@ -4971,22 +4971,17 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   MaybeDispatchLoginManagerEvents(mForm);
 
   if (IsInComposedDoc()) {
-    if (mDoneCreating) {
-      const auto oldNotifiesUAWidget = NotifiesUAWidget(oldType);
-      if (CreatesUAShadowTree()) {
-        const auto notifiesUAWidget = NotifiesUAWidget();
-        if (oldNotifiesUAWidget == notifiesUAWidget &&
-            notifiesUAWidget == NotifyUAWidget::Yes) {
-          NotifyUAWidgetSetupOrChange();
-        } else {
-          TeardownUAShadowRoot(oldNotifiesUAWidget);
-          if (notifiesUAWidget == NotifyUAWidget::Yes) {
-            SetupShadowTree(aNotify);
-          }
-        }
+    if (CreatesDateTimeWidget(oldType)) {
+      if (!CreatesDateTimeWidget()) {
+        // Switch away from date/time type.
+        NotifyUAWidgetTeardown();
       } else {
-        TeardownUAShadowRoot(oldNotifiesUAWidget);
+        // Switch between date and time.
+        NotifyUAWidgetSetupOrChange();
       }
+    } else if (CreatesDateTimeWidget()) {
+      // Switch to date/time type.
+      AttachAndSetUAShadowRoot(NotifyUAWidgetSetup::Yes, DelegatesFocus::Yes);
     }
     // If we're becoming a text control and have focus, make sure to show focus
     // rings.
@@ -5722,6 +5717,12 @@ nsChangeHint HTMLInputElement::GetAttributeChangeHint(
       return true;
     }
 
+    if (PlaceholderApplies() && aAttribute == nsGkAtoms::placeholder &&
+        isAdditionOrRemoval) {
+      // We need to re-create our placeholder text.
+      return true;
+    }
+
     if (mType == FormControlType::InputFile &&
         aAttribute == nsGkAtoms::webkitdirectory) {
       // The presence or absence of the 'directory' attribute determines what
@@ -6444,10 +6445,6 @@ void HTMLInputElement::DoneCreatingElement() {
     }
   }
 
-  if (CreatesDateTimeWidget() && IsInComposedDoc()) {
-    SetupShadowTree(/* aNotify = */ false);
-  }
-
   mShouldInitChecked = false;
 }
 
@@ -7135,6 +7132,16 @@ void HTMLInputElement::UpdateBarredFromConstraintValidation() {
 nsresult HTMLInputElement::GetValidationMessage(nsAString& aValidationMessage,
                                                 ValidityStateType aType) {
   return mInputType->GetValidationMessage(aValidationMessage, aType);
+}
+
+bool HTMLInputElement::IsSingleLineTextControl() const {
+  return IsSingleLineTextControl(false);
+}
+
+bool HTMLInputElement::IsTextArea() const { return false; }
+
+bool HTMLInputElement::IsPasswordTextControl() const {
+  return mType == FormControlType::InputPassword;
 }
 
 Maybe<int32_t> HTMLInputElement::GetNumberInputCols() const {

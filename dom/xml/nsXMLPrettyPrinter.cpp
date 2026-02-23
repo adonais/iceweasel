@@ -88,7 +88,7 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
   }
 
   // Attach an UA Widget Shadow Root on it.
-  rootElement->AttachAndSetUAShadowRoot(Element::NotifyUAWidget::No);
+  rootElement->AttachAndSetUAShadowRoot(Element::NotifyUAWidgetSetup::No);
   RefPtr<ShadowRoot> shadowRoot = rootElement->GetShadowRoot();
   MOZ_RELEASE_ASSERT(shadowRoot && shadowRoot->IsUAWidget(),
                      "There should be a UA Shadow Root here.");

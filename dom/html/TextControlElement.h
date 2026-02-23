@@ -45,17 +45,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
    */
   bool IsTextControlElement() const final { return true; }
 
-  bool IsSingleLineTextControlOrTextArea() const {
-    return IsSingleLineTextControl() || IsTextArea();
-  }
-
-  /**
-   * Find out whether this is a single line text control.  (text or password)
-   * @return whether this is a single line text control
-   */
-  bool IsSingleLineTextControl() const {
-    return nsGenericHTMLFormControlElement::IsSingleLineTextControl(false);
-  }
+  virtual bool IsSingleLineTextControlOrTextArea() const = 0;
 
   NS_IMPL_FROMNODE_HELPER(TextControlElement, IsTextControlElement())
 
@@ -65,18 +55,22 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   virtual void SetValueChanged(bool) = 0;
 
   /**
+   * Find out whether this is a single line text control.  (text or password)
+   * @return whether this is a single line text control
+   */
+  virtual bool IsSingleLineTextControl() const = 0;
+
+  /**
    * Find out whether this control is a textarea.
    * @return whether this is a textarea text control
    */
-  bool IsTextArea() const { return mType == FormControlType::Textarea; }
+  virtual bool IsTextArea() const = 0;
 
   /**
    * Find out whether this is a password control (input type=password)
    * @return whether this is a password ontrol
    */
-  bool IsPasswordTextControl() const {
-    return mType == FormControlType::InputPassword;
-  }
+  virtual bool IsPasswordTextControl() const = 0;
 
   /**
    * Get the cols attribute (if textarea) or a default
@@ -165,12 +159,12 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   /**
    * Update preview value for the text control.
    */
-  void SetPreviewValue(const nsAString& aValue);
+  virtual void SetPreviewValue(const nsAString& aValue) = 0;
 
   /**
    * Get the current preview value for text control.
    */
-  void GetPreviewValue(nsAString& aValue);
+  virtual void GetPreviewValue(nsAString& aValue) = 0;
 
   /**
    * Enable preview or autofilled state for the text control.
@@ -181,6 +175,16 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
    * Get the current preview or autofilled state for the text control.
    */
   virtual void GetAutofillState(nsAString& aState) = 0;
+
+  /**
+   * Enable preview for text control.
+   */
+  virtual void EnablePreview() = 0;
+
+  /**
+   * Find out whether this control enables preview for form autofoll.
+   */
+  virtual bool IsPreviewEnabled() = 0;
 
   /**
    * Initialize the keyboard event listeners.
@@ -229,31 +233,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   static already_AddRefed<TextControlElement>
   GetTextControlElementFromEditingHost(nsIContent* aHost);
 
-  // Returns the ::-moz-text-control-editing-root pseudo-element if it exists.
-  // It always has one text node child.
-  Element* GetTextEditorRoot() const;
-  // Returns the ::placeholder pseudo-element if it exists.
-  // It always has one text node child.
-  Element* GetTextEditorPlaceholder() const;
-  // Returns the ::-moz-text-control-preview pseudo-element if it exists.
-  // It always has one non-empty text node child if it does.
-  Element* GetTextEditorPreview() const;
-  // Returns the auxiliary button pseudo-element like ::-moz-reveal /
-  // ::-moz-search-clear-button / ::-moz-number-spin-box.
-  Element* GetTextEditorButton() const;
-  // Returns whether the given PseudoStyleType is one of the button pseudos we
-  // create for buttons.
-  static bool IsButtonPseudoElement(PseudoStyleType);
-
-  // Updates the text node when not managed by editor.
-  void UpdateValueDisplay(bool aNotify);
-
  protected:
-  void SetupShadowTree(dom::ShadowRoot&, bool aNotify);
-  Element* FindShadowPseudo(PseudoStyleType) const;
-  void UpdatePlaceholder(const nsAttrValue* aOldValue,
-                         const nsAttrValue* aNewValue);
-
   virtual ~TextControlElement() = default;
 
   // The focusability state of this form control.  eUnfocusable means that it

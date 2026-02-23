@@ -1149,10 +1149,6 @@ class ScrollContainerFrame : public nsContainerFrame,
     mScrollPort = aNewScrollPort;
   }
 
-  // Gets the node that is a suitable scroll event target for our events.
-  enum class RootTargetsDocument : bool { No, Yes };
-  RefPtr<nsINode> ScrollEventTargetNode(RootTargetsDocument) const;
-
   /**
    * Return the 'optimal viewing region' as a rect suitable for use by
    * scroll anchoring. This rect is in the same coordinate space as

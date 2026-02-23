@@ -986,13 +986,11 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
     return NS_OK;
   }
 
-  bool detachingShadow = false;
   Element* focusWithinElement = [&]() -> Element* {
     if (auto* el = Element::FromNode(aContent)) {
       return el;
     }
     if (auto* shadow = ShadowRoot::FromNode(aContent)) {
-      detachingShadow = true;
       // Note that we only get here with ShadowRoots for shadow roots of form
       // controls that we can un-attach. So if there's a focused element it must
       // be inside our shadow tree already.
@@ -1029,26 +1027,23 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       // focus-within.
       return NS_OK;
     }
-  } else {
-    if (detachingShadow && previousFocusedElementPtr == focusWithinElement) {
-      // If we're detaching a shadow tree and the already focused element is not
-      // inside, we don't need to do anything.
-      return NS_OK;
-    }
-    if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-            previousFocusedElementPtr, focusWithinElement)) {
-      return NS_OK;
-    }
-    // Even if there's no :focus state on the node, we need to clear focus,
-    // previousFocusedElementPtr could be an <iframe> for example.
+  } else if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+                 previousFocusedElementPtr, focusWithinElement)) {
+    // Otherwise, previousFocusedElementPtr could be an <iframe>, we still need
+    // to clear it in that case.
+    return NS_OK;
   }
 
   RefPtr previousFocusedElement = previousFocusedElementPtr;
   RefPtr window = windowPtr;
-  RefPtr<Element> newFocusedElement =
-      detachingShadow && focusWithinElement->IsHTMLElement(nsGkAtoms::input)
-          ? focusWithinElement
-          : nullptr;
+  RefPtr<Element> newFocusedElement = [&]() -> Element* {
+    if (auto* sr = ShadowRoot::FromNode(aContent)) {
+      if (sr->IsUAWidget() && sr->Host()->IsHTMLElement(nsGkAtoms::input)) {
+        return sr->Host();
+      }
+    }
+    return nullptr;
+  }();
 
   window->SetFocusedElement(newFocusedElement);
 

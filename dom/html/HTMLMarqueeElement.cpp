@@ -60,7 +60,7 @@ void HTMLMarqueeElement::UnbindFromTree(UnbindContext& aContext) {
   if (IsInComposedDoc()) {
     // We don't want to unattach the shadow root because it used to
     // contain a <slot>.
-    TeardownUAShadowRoot(NotifyUAWidget::Yes, UnattachShadowRoot::No);
+    NotifyUAWidgetTeardown(UnattachShadowRoot::No);
   }
 
   nsGenericHTMLElement::UnbindFromTree(aContext);

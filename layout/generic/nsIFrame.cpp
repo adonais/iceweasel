@@ -4773,10 +4773,10 @@ nsresult nsIFrame::GetDataForTableSelection(
   const Element* const independentSelectionLimiter =
       aFrameSelection->GetIndependentSelectionRootElement();
 
-  // If our content node is not under the limiting node,
+  // If our content node is an ancestor of the limiting node,
   // we should stop the search right now.
   if (independentSelectionLimiter &&
-      !independentSelectionLimiter->Contains(GetContent())) {
+      independentSelectionLimiter->IsInclusiveDescendantOf(GetContent())) {
     return NS_OK;
   }
 
@@ -4974,11 +4974,11 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
   // We often get out of sync state issues with mousedown events that
   // get interrupted by alerts/dialogs.
   // Check with the ESM to see if we should process this one
-  EventStateManager* const esm = aPresContext->EventStateManager();
-  if (!esm->EventStatusOK(aMouseEvent)) {
+  if (!aPresContext->EventStateManager()->EventStatusOK(aMouseEvent)) {
     return NS_OK;
   }
 
+  EventStateManager* const esm = aPresContext->EventStateManager();
   if (nsIContent* dragGestureContent = esm->GetTrackingDragGestureContent()) {
     if (dragGestureContent != this->GetContent()) {
       // When the current tracked dragging gesture is different
@@ -11514,9 +11514,6 @@ bool nsIFrame::IsFocusableDueToScrollFrame() {
     return false;
   }
   if (!mContent->IsHTMLElement()) {
-    return false;
-  }
-  if (Style()->IsPseudoElement()) {
     return false;
   }
   if (mContent->IsRootOfNativeAnonymousSubtree()) {

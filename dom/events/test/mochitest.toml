@@ -312,6 +312,8 @@ support-files = ["bug1017086_inner.html"]
 
 ["test_bug1150308.html"]
 
+["test_bug1248459.html"]
+
 ["test_bug1264380.html"]
 skip-if = [
   "os == 'android'", # some clipboard types and drag aren't supported

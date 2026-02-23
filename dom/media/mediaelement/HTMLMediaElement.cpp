@@ -5437,7 +5437,7 @@ void HTMLMediaElement::UnbindFromTree(UnbindContext& aContext) {
   mVisibilityState = Visibility::Untracked;
 
   if (IsInComposedDoc()) {
-    TeardownUAShadowRoot();
+    NotifyUAWidgetTeardown();
   }
 
   nsGenericHTMLElement::UnbindFromTree(aContext);

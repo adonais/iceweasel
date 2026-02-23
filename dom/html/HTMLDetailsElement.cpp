@@ -93,7 +93,7 @@ nsresult HTMLDetailsElement::BindToTree(BindContext& aContext,
 
 void HTMLDetailsElement::SetupShadowTree() {
   const bool kNotify = false;
-  AttachAndSetUAShadowRoot(NotifyUAWidget::No);
+  AttachAndSetUAShadowRoot(NotifyUAWidgetSetup::No);
   RefPtr<ShadowRoot> sr = GetShadowRoot();
   if (NS_WARN_IF(!sr)) {
     return;

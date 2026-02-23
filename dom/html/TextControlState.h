@@ -339,6 +339,10 @@ class TextControlState final : public SupportsWeakPtr {
   }
   int32_t GetRows() { return mTextCtrlElement->GetRows(); }
 
+  // preview methods
+  void SetPreviewText(const nsAString& aValue, bool aNotify);
+  void GetPreviewText(nsAString& aValue);
+
   struct SelectionProperties {
    public:
     bool IsDefault() const {
@@ -521,6 +525,8 @@ class TextControlState final : public SupportsWeakPtr {
    */
   MOZ_CAN_RUN_SCRIPT bool SetValueWithoutTextEditor(
       AutoTextControlHandlingState& aHandlingSetValue);
+
+  IMEContentObserver* GetIMEContentObserver() const;
 
   // When this class handles something which may run script, this should be
   // set to non-nullptr.  If so, this class claims that it's busy and that

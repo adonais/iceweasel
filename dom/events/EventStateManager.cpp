@@ -647,6 +647,7 @@ EventStateManager::EventStateManager()
       mPresContext(nullptr),
       mShouldAlwaysUseLineDeltas(false),
       mShouldAlwaysUseLineDeltasInitialized(false),
+      mGestureDownInTextControl(false),
       mInTouchDrag(false),
       m_haveShutdown(false) {
   if (sESMInstanceCount == 0) {
@@ -2609,6 +2610,7 @@ void EventStateManager::BeginTrackingRemoteDragGesture(
 void EventStateManager::StopTrackingDragGesture(bool aClearInChildProcesses) {
   mGestureDownContent = nullptr;
   mGestureDownFrameOwner = nullptr;
+  mGestureDownInTextControl = false;
   mGestureDownDragStartData = nullptr;
 
   // If a content process starts a drag but the mouse is released before the
@@ -6873,6 +6875,39 @@ void EventStateManager::ContentRemoved(Document* aDocument,
   NotifyContentWillBeRemovedForGesture(*aContent);
 }
 
+void EventStateManager::TextControlRootWillBeRemoved(
+    TextControlElement& aTextControlElement) {
+  if (!mGestureDownInTextControl || !mGestureDownFrameOwner ||
+      !mGestureDownFrameOwner->IsInNativeAnonymousSubtree()) {
+    return;
+  }
+  // If we track gesture to start drag in aTextControlElement, we should keep
+  // tracking it with aTextContrlElement itself for now because this may be
+  // caused by reframing aTextControlElement which may not be intended by the
+  // user.
+  if (&aTextControlElement ==
+      mGestureDownFrameOwner
+          ->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
+    mGestureDownFrameOwner = &aTextControlElement;
+  }
+}
+
+void EventStateManager::TextControlRootAdded(
+    Element& aAnonymousDivElement, TextControlElement& aTextControlElement) {
+  if (!mGestureDownInTextControl ||
+      mGestureDownFrameOwner != &aTextControlElement) {
+    return;
+  }
+  // If we track gesture to start drag in aTextControlElement, but the frame
+  // owner is the text control element itself, the anonymous nodes in it are
+  // recreated by a reframe.  If so, we should keep tracking it with the
+  // recreated native anonymous node.
+  mGestureDownFrameOwner =
+      aAnonymousDivElement.GetFirstChild()
+          ? aAnonymousDivElement.GetFirstChild()
+          : static_cast<nsIContent*>(&aAnonymousDivElement);
+}
+
 bool EventStateManager::EventStatusOK(WidgetGUIEvent* aEvent) {
   return !(aEvent->mMessage == eMouseDown &&
            aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary &&
@@ -7741,6 +7776,10 @@ bool EventStateManager::WheelPrefs::IsOverOnePageScrollAllowedY(
 void EventStateManager::UpdateGestureContent(nsIContent* aContent) {
   mGestureDownContent = aContent;
   mGestureDownFrameOwner = aContent;
+  mGestureDownInTextControl =
+      aContent && aContent->IsInNativeAnonymousSubtree() &&
+      TextControlElement::FromNodeOrNull(
+          aContent->GetClosestNativeAnonymousSubtreeRootParentOrHost());
 }
 
 void EventStateManager::NotifyContentWillBeRemovedForGesture(

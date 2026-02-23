@@ -46,21 +46,20 @@ export class AutoScrollChild extends JSWindowActorChild {
       if (element.isContentEditable) {
         return true;
       }
-
-      // Or if we're pasting into an input field of sorts.
-      let containingHost = node.getRootNode().host;
-      if (
-        containingHost &&
-        (content.HTMLInputElement.isInstance(containingHost) ||
-          content.HTMLTextAreaElement.isInstance(containingHost))
-      ) {
-        return true;
-      }
     }
 
     // Don't start if we're on a link.
     let [href] = lazy.BrowserUtils.hrefAndLinkNodeForClickEvent(event);
     if (href) {
+      return true;
+    }
+
+    // Or if we're pasting into an input field of sorts.
+    let closestInput = mmPaste && node.closest("input,textarea");
+    if (
+      content.HTMLInputElement.isInstance(closestInput) ||
+      content.HTMLTextAreaElement.isInstance(closestInput)
+    ) {
       return true;
     }
 

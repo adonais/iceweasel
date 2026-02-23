@@ -2500,14 +2500,14 @@ class nsContentUtils {
    * Strip all \n, \r and nulls from the given string
    * @param aString the string to remove newlines from [in/out]
    */
-  static void RemoveNewlines(nsAString& aString);
+  static void RemoveNewlines(nsString& aString);
 
   /**
    * Convert Windows and Mac platform linebreaks to \n.
    * @param aString the string to convert the newlines inside [in/out]
    */
-  static void PlatformToDOMLineBreaks(nsAString& aString);
-  [[nodiscard]] static bool PlatformToDOMLineBreaks(nsAString& aString,
+  static void PlatformToDOMLineBreaks(nsString& aString);
+  [[nodiscard]] static bool PlatformToDOMLineBreaks(nsString& aString,
                                                     const mozilla::fallible_t&);
 
   static bool IsHandlingKeyBoardEvent() { return sIsHandlingKeyBoardEvent; }
@@ -2854,6 +2854,21 @@ class nsContentUtils {
                                         Element* aRoot,
                                         uint32_t& aOutStartOffset,
                                         uint32_t& aOutEndOffset);
+
+  /**
+   * Takes a frame for anonymous content within a text control (<input> or
+   * <textarea>), and returns an offset in the text content, adjusted for a
+   * trailing <br> frame.
+   *
+   * @param aOffsetFrame      Frame for the text content in which the offset
+   *                          lies
+   * @param aOffset           Offset as calculated by GetContentOffsetsFromPoint
+   * @param aOutOffset        Output adjusted offset
+   *
+   * @see GetSelectionInTextControl for the original basis of this function.
+   */
+  static int32_t GetAdjustedOffsetInTextControl(nsIFrame* aOffsetFrame,
+                                                int32_t aOffset);
 
   /**
    * Returns pointer to HTML editor instance for the aPresContext when there is.

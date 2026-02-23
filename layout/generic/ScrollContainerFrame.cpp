@@ -1619,7 +1619,7 @@ a11y::AccType ScrollContainerFrame::AccessibleType() {
 
   // Create an accessible regardless of focusable state because the state can be
   // changed during frame life cycle without any notifications to accessibility.
-  if (Style()->IsPseudoElement() ||
+  if (mContent->IsRootOfNativeAnonymousSubtree() ||
       GetScrollStyles().IsHiddenInBothDirections()) {
     return a11y::eNoType;
   }
@@ -5352,9 +5352,9 @@ nsresult ScrollContainerFrame::FireScrollPortEvent() {
       nullptr);
   event.mOrient = orient;
 
+  RefPtr<nsIContent> content = GetContent();
   RefPtr<nsPresContext> presContext = PresContext();
-  RefPtr target = ScrollEventTargetNode(RootTargetsDocument::No);
-  return EventDispatcher::Dispatch(target, presContext, &event);
+  return EventDispatcher::Dispatch(content, presContext, &event);
 }
 
 void ScrollContainerFrame::PostScrollEndEvent() {
@@ -5364,21 +5364,6 @@ void ScrollContainerFrame::PostScrollEndEvent() {
 
   // The ScrollEndEvent constructor registers itself.
   mScrollEndEvent = new ScrollEndEvent(this);
-}
-
-RefPtr<nsINode> ScrollContainerFrame::ScrollEventTargetNode(
-    RootTargetsDocument aRootTargetsDocument) const {
-  if (aRootTargetsDocument == RootTargetsDocument::Yes && mIsRoot) {
-    return PresContext()->Document();
-  }
-  if (Style()->GetPseudoType() == PseudoStyleType::MozTextControlEditingRoot) {
-    // Scroll events from the inner editor root should propagate to the <input>
-    // <textarea>. Note we might want to change a bit the set-up in the future,
-    // to have one scroller for everything (probably owned by the text control
-    // itself), see bug 1239595.
-    return mContent->GetContainingShadowHost();
-  }
-  return mContent.get();
 }
 
 void ScrollContainerFrame::FireScrollEndEvent() {
@@ -5391,7 +5376,8 @@ void ScrollContainerFrame::FireScrollEndEvent() {
   WidgetGUIEvent event(true, eScrollend, nullptr);
   event.mFlags.mBubbles = mIsRoot;
   event.mFlags.mCancelable = false;
-  RefPtr<nsINode> target = ScrollEventTargetNode(RootTargetsDocument::Yes);
+  RefPtr<nsINode> target =
+      mIsRoot ? static_cast<nsINode*>(presContext->Document()) : GetContent();
   EventDispatcher::Dispatch(target, presContext, &event, nullptr, &status);
 }
 
@@ -5821,11 +5807,16 @@ void ScrollContainerFrame::FireScrollEvent() {
   mozilla::layers::ScrollLinkedEffectDetector detector(
       content->GetComposedDoc(),
       presContext->RefreshDriver()->MostRecentRefresh());
-  RefPtr target = ScrollEventTargetNode(RootTargetsDocument::Yes);
-  // scroll events fired at elements don't bubble (although scroll events
-  // fired at documents do, to the window)
-  event.mFlags.mBubbles = mIsRoot;
-  EventDispatcher::Dispatch(target, presContext, &event, nullptr, &status);
+  if (mIsRoot) {
+    if (RefPtr<Document> doc = content->GetUncomposedDoc()) {
+      EventDispatcher::Dispatch(doc, presContext, &event, nullptr, &status);
+    }
+  } else {
+    // scroll events fired at elements don't bubble (although scroll events
+    // fired at documents do, to the window)
+    event.mFlags.mBubbles = false;
+    EventDispatcher::Dispatch(content, presContext, &event, nullptr, &status);
+  }
 }
 
 void ScrollContainerFrame::PostScrollEvent() {

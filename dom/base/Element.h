@@ -1606,8 +1606,8 @@ class Element : public FragmentOrElement {
   enum class ShadowRootDeclarative : bool { No, Yes };
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  already_AddRefed<ShadowRoot> AttachShadow(const ShadowRootInit&,
-                                            ErrorResult&);
+  already_AddRefed<ShadowRoot> AttachShadow(const ShadowRootInit& aInit,
+                                            ErrorResult& aError);
   bool CanAttachShadowDOM() const;
 
   enum class DelegatesFocus : bool { No, Yes };
@@ -1615,23 +1615,29 @@ class Element : public FragmentOrElement {
   enum class ShadowRootSerializable : bool { No, Yes };
 
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
-      const ShadowRootInit&, bool aNotify = true);
+      ShadowRootMode aMode, DelegatesFocus = DelegatesFocus::No,
+      SlotAssignmentMode aSlotAssignmentMode = SlotAssignmentMode::Named,
+      ShadowRootClonable aClonable = ShadowRootClonable::No,
+      ShadowRootSerializable aSerializable = ShadowRootSerializable::No,
+      const nsAString& aReferenceTarget = VoidString());
 
   // Attach UA Shadow Root if it is not attached.
-  enum class NotifyUAWidget : bool { No, Yes };
-  void AttachAndSetUAShadowRoot(NotifyUAWidget = NotifyUAWidget::Yes,
-                                DelegatesFocus = DelegatesFocus::No,
-                                bool aNotify = true);
+  enum class NotifyUAWidgetSetup : bool { No, Yes };
+  void AttachAndSetUAShadowRoot(NotifyUAWidgetSetup = NotifyUAWidgetSetup::Yes,
+                                DelegatesFocus = DelegatesFocus::No);
 
   // Dispatch an event to UAWidgetsChild, triggering construction
   // or onchange callback on the existing widget.
   void NotifyUAWidgetSetupOrChange();
 
-  enum class UnattachShadowRoot : bool { No, Yes };
+  enum class UnattachShadowRoot {
+    No,
+    Yes,
+  };
+
   // Dispatch an event to UAWidgetsChild, triggering UA Widget destruction.
   // and optionally remove the shadow root.
-  void TeardownUAShadowRoot(NotifyUAWidget = NotifyUAWidget::Yes,
-                            UnattachShadowRoot = UnattachShadowRoot::Yes);
+  void NotifyUAWidgetTeardown(UnattachShadowRoot = UnattachShadowRoot::Yes);
 
   void UnattachShadow();
 

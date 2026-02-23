@@ -561,9 +561,12 @@ add_task(async function test_search() {
     );
 
     info("Clear the search query.");
-    let clearButton = SpecialPowers.wrap(
-      searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    let inputChildren = SpecialPowers.InspectorUtils.getChildrenForNode(
+      searchTextbox.inputEl,
+      true,
+      false
+    );
+    let clearButton = inputChildren.find(e => e.localName == "button");
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
       () => listElem.rowEls.length === expectedURLs.length,
@@ -580,9 +583,12 @@ add_task(async function test_search() {
     );
 
     info("Clear the search query.");
-    clearButton = SpecialPowers.wrap(
-      searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    inputChildren = SpecialPowers.InspectorUtils.getChildrenForNode(
+      searchTextbox.inputEl,
+      true,
+      false
+    );
+    clearButton = inputChildren.find(e => e.localName == "button");
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
       () => listElem.rowEls.length === expectedURLs.length,

@@ -200,6 +200,15 @@ class IMEContentObserver final : public nsStubMutationObserver,
   void CancelEditAction();
 
   /**
+   * Called when text control value is changed while this is not observing
+   * mRootElement.  This is typically there is no frame for the editor (i.e.,
+   * no proper anonymous <div> element for the editor yet) or the TextEditor
+   * has not been created (i.e., IMEStateManager has not been reinitialized
+   * this instance with new anonymous <div> element yet).
+   */
+  void OnTextControlValueChangedWhileNotObservable(const nsAString& aNewValue);
+
+  /**
    * Return an Element if and only if this instance is observing the element.
    * The element is the anonymous <div> of a text control element if this is
    * initialized with a TextEditor.  Otherwise, the focused editing host.

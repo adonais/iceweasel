@@ -1793,29 +1793,26 @@ FinderHighlighter.prototype = {
 
   /**
    * For a given node returns its editable parent or null if there is none.
-   * It's enough to check if node is a text node and it's containing shadow
-   * host is an input or textarea.
+   * It's enough to check if node is a text node and its parent's parent is
+   * an input or textarea.
    *
    * @param node the node we want to check
    * @returns the first node in the parent chain that is editable,
    *          null if there is no such node
    */
   _getEditableNode(node) {
-    if (node.nodeType !== node.TEXT_NODE) {
-      return null;
-    }
-    let host = node.getRootNode().host;
-    if (!host) {
-      return null;
-    }
-    let className = ChromeUtils.getClassName(host);
     if (
-      className !== "HTMLInputElement" &&
-      className !== "HTMLTextAreaElement"
+      node.nodeType === node.TEXT_NODE &&
+      node.parentNode &&
+      node.parentNode.parentNode &&
+      (ChromeUtils.getClassName(node.parentNode.parentNode) ===
+        "HTMLInputElement" ||
+        ChromeUtils.getClassName(node.parentNode.parentNode) ===
+          "HTMLTextAreaElement")
     ) {
-      return null;
+      return node.parentNode.parentNode;
     }
-    return host;
+    return null;
   },
 
   /**

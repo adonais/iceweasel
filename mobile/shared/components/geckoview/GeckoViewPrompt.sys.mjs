@@ -73,10 +73,14 @@ export class PromptFactory {
 
     const type = target.type;
     if (type === "month" || type === "week") {
-      // TODO(bug 888320, bug 1283382, bug 1283383): Remove this once we
-      // support UA widgets for month/week inputs.
-      this._handleDateTime(target);
-      aEvent.preventDefault();
+      // If there's a shadow root, the MozOpenDateTimePicker event takes care
+      // of this. Right now for these input types there's never a shadow root.
+      // Once we support UA widgets for month/week inputs (see bug 888320), we
+      // can remove this.
+      if (!target.openOrClosedShadowRoot) {
+        this._handleDateTime(target);
+        aEvent.preventDefault();
+      }
     }
   }
 

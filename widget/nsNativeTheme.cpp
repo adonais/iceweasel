@@ -9,6 +9,7 @@
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
+#include "nsNumberControlFrame.h"
 #include "nsPresContext.h"
 #include "nsString.h"
 #include "nsNameSpaceManager.h"
@@ -37,18 +38,6 @@ nsNativeTheme::nsNativeTheme() : mAnimatedContentTimeout(UINT32_MAX) {}
 
 NS_IMPL_ISUPPORTS(nsNativeTheme, nsITimerCallback, nsINamed)
 
-static HTMLInputElement* GetContainingNumberInput(nsIContent* aContent) {
-  auto* nacHost = aContent->GetClosestNativeAnonymousSubtreeRootParentOrHost();
-  if (!nacHost) {
-    return nullptr;
-  }
-  auto* input = HTMLInputElement::FromNode(nacHost);
-  if (!input || input->ControlType() != FormControlType::InputNumber) {
-    return nullptr;
-  }
-  return input;
-}
-
 /* static */ ElementState nsNativeTheme::GetContentState(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
   if (!aFrame) {
@@ -72,13 +61,12 @@ static HTMLInputElement* GetContainingNumberInput(nsIContent* aContent) {
   MOZ_ASSERT(frameContent && frameContent->IsElement());
 
   ElementState flags = frameContent->AsElement()->StyleState();
-  if (aAppearance == StyleAppearance::SpinnerDownbutton ||
-      aAppearance == StyleAppearance::SpinnerUpbutton) {
-    if (HTMLInputElement* numberInput = GetContainingNumberInput(frameContent);
-        numberInput &&
-        numberInput->StyleState().HasState(ElementState::DISABLED)) {
-      flags |= ElementState::DISABLED;
-    }
+  nsNumberControlFrame* numberControlFrame =
+      nsNumberControlFrame::GetNumberControlFrameForSpinButton(aFrame);
+  if (numberControlFrame &&
+      numberControlFrame->GetContent()->AsElement()->StyleState().HasState(
+          ElementState::DISABLED)) {
+    flags |= ElementState::DISABLED;
   }
 
   if (!isXULElement) {

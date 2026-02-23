@@ -137,8 +137,12 @@ nsIFrame* NS_NewMeterFrame(mozilla::PresShell* aPresShell,
                            mozilla::ComputedStyle* aStyle);
 nsIFrame* NS_NewRangeFrame(mozilla::PresShell* aPresShell,
                            mozilla::ComputedStyle* aStyle);
+nsIFrame* NS_NewNumberControlFrame(mozilla::PresShell* aPresShell,
+                                   mozilla::ComputedStyle* aStyle);
 nsIFrame* NS_NewDateTimeControlFrame(mozilla::PresShell* aPresShell,
                                      mozilla::ComputedStyle* aStyle);
+nsIFrame* NS_NewSearchControlFrame(mozilla::PresShell* aPresShell,
+                                   mozilla::ComputedStyle* aStyle);
 
 // Table frame factories
 class nsTableWrapperFrame;

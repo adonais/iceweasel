@@ -247,7 +247,7 @@ this.DateTimeBoxWidget = class {
   generateContent() {
     const parser = new this.window.DOMParser();
     let parserDoc = parser.parseFromSafeString(
-      `<div class="datetimebox" id="datetimebox" xmlns="http://www.w3.org/1999/xhtml" role="none">
+      `<div class="datetimebox" xmlns="http://www.w3.org/1999/xhtml" role="none">
         <link rel="stylesheet" type="text/css" href="chrome://global/content/bindings/datetimebox.css" />
         <div class="datetime-input-box-wrapper" id="input-box-wrapper" role="presentation">
           <span class="datetime-input-edit-wrapper"

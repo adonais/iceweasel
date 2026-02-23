@@ -3980,11 +3980,10 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         // Clone the Shadow DOM
         ShadowRoot* originalShadowRoot = aNode->AsElement()->GetShadowRoot();
         if (originalShadowRoot) {
-          ShadowRootInit init;
-          // FIXME: Do we need to copy other stuff to the static doc ShadowRoot?
-          init.mMode = originalShadowRoot->Mode();
           RefPtr<ShadowRoot> newShadowRoot =
-              clone->AsElement()->AttachShadowWithoutNameChecks(init);
+              clone->AsElement()->AttachShadowWithoutNameChecks(
+                  originalShadowRoot->Mode());
+
           newShadowRoot->CloneInternalDataFrom(originalShadowRoot);
           for (nsIContent* origChild = originalShadowRoot->GetFirstChild();
                origChild; origChild = origChild->GetNextSibling()) {

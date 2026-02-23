@@ -3446,17 +3446,6 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
       }
       break;
     }
-    case PseudoStyleType::MozReveal:
-    case PseudoStyleType::MozNumberSpinBox: {
-      if (aParentFrame && aParentFrame->StyleDisplay()->EffectiveAppearance() ==
-                              StyleAppearance::Textfield) {
-        // Suppress button-box pseudo-elements with appearance: textfield.
-        static constexpr FrameConstructionData sSuppressData =
-            SUPPRESS_FCDATA();
-        return &sSuppressData;
-      }
-      break;
-    }
     default:
       break;
   }
@@ -3571,6 +3560,25 @@ nsCSSFrameConstructor::FindImgControlData(const Element& aElement,
 
 /* static */
 const nsCSSFrameConstructor::FrameConstructionData*
+nsCSSFrameConstructor::FindSearchControlData(const Element& aElement,
+                                             ComputedStyle& aStyle) {
+  // Bug 1936648: Until we're absolutely sure we've solved the
+  // accessibility issues around the clear search button, we're only
+  // enabling the clear button in chrome contexts. See also Bug 1655503
+  if (StaticPrefs::layout_forms_input_type_search_enabled() ||
+      aElement.OwnerDoc()->ChromeRulesEnabled()) {
+    static constexpr FrameConstructionData sSearchControlData(
+        NS_NewSearchControlFrame);
+    return &sSearchControlData;
+  }
+
+  static constexpr FrameConstructionData sTextControlData(
+      NS_NewTextControlFrame);
+  return &sTextControlData;
+}
+
+/* static */
+const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindInputData(const Element& aElement,
                                      ComputedStyle& aStyle) {
   static constexpr FrameConstructionDataByInt sInputData[] = {
@@ -3588,8 +3596,9 @@ nsCSSFrameConstructor::FindInputData(const Element& aElement,
       SIMPLE_INT_CREATE(FormControlType::InputRange, NS_NewRangeFrame),
       SIMPLE_INT_CREATE(FormControlType::InputPassword, NS_NewTextControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputColor, NS_NewColorControlFrame),
-      SIMPLE_INT_CREATE(FormControlType::InputSearch, NS_NewTextControlFrame),
-      SIMPLE_INT_CREATE(FormControlType::InputNumber, NS_NewTextControlFrame),
+      SIMPLE_INT_CHAIN(FormControlType::InputSearch,
+                       nsCSSFrameConstructor::FindSearchControlData),
+      SIMPLE_INT_CREATE(FormControlType::InputNumber, NS_NewNumberControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputTime, NS_NewDateTimeControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputDate, NS_NewDateTimeControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputDatetimeLocal,
@@ -5171,15 +5180,6 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
       (!(bits & FCDATA_IS_TABLE_PART) ||
        display.mDisplay != StyleDisplay::TableColumn)) {
     return;
-  }
-
-  // Create our shadow tree lazily if needed.
-  // NOTE(emilio): This is rather hacky, we should ideally remove this and make
-  // shadow tree creation faster, see bug 2017005.
-  if (auto* input = HTMLInputElement::FromNode(aContent)) {
-    if (auto* sr = input->CreateShadowTreeFromLayoutIfNeeded()) {
-      StyleNewChildRange(sr->GetFirstChild(), nullptr);
-    }
   }
 
   const bool canHavePageBreak =

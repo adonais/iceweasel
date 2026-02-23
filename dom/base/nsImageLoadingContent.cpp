@@ -1353,7 +1353,7 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
             // positioned so that the user can select the text.
             if (Preferences::GetBool("dom.text-recognition.shadow-dom-enabled",
                                      false)) {
-              el->AttachAndSetUAShadowRoot(Element::NotifyUAWidget::Yes);
+              el->AttachAndSetUAShadowRoot(Element::NotifyUAWidgetSetup::Yes);
               TextRecognition::FillShadow(*el->GetShadowRoot(),
                                           textRecognitionResult);
               el->NotifyUAWidgetSetupOrChange();
