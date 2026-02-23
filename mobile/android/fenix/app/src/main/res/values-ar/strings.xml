@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">يتعذّر إعادة تسمية الملف نظرًا لقيود النظام أو التخزين.</string>
   <string name="download_rename_error_dismiss_button">حسنًا</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">هل تريد تغيير نوع الملف إلى %s؟</string>
+  <string name="change_file_extension_description">قد يفتح هذا الملف في تطبيق مختلف، مما يمكن أن يشكل خطراً على جهازك.</string>
+  <string name="change_file_extension_cancel_button">ألغِ</string>
+  <string name="change_file_extension_confirm_button">نعم، غيِّره</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">جارٍ</string>
   <!--

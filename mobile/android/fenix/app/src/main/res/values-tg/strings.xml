@@ -1754,11 +1754,26 @@
   <string name="download_rename_dialog_label">Ном</string>
   <string name="download_rename_dialog_confirm_button">Нигоҳ доштан</string>
   <string name="download_rename_dialog_cancel_button">Бекор кардан</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Файл бо номи «%s» аллакай дар ин ҷойгиршавӣ вуҷуд дорад</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Номҳои файлҳо наметавонанд аз аломати «/» истифода баранд</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Номи файл иваз карда намешавад</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Номи ин файл аз сабаби маҳдудиятҳои низом ё захирагоҳ иваз карда намешавад.</string>
   <string name="download_rename_error_dismiss_button">ХУБ</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Навъи файлро ба «%s» иваз мекунед?</string>
+  <string name="change_file_extension_description">Ин амал метавонад файлро дар барномаи дигар кушояд ва барои дастгоҳи шумо хатарнок бошад.</string>
+  <string name="change_file_extension_cancel_button">Бекор кардан</string>
+  <string name="change_file_extension_confirm_button">Ҳа, онро иваз кунед</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Дар ҳоли иҷро мебошад</string>
   <!--
@@ -2876,6 +2891,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Маълумоти бештар</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Идоракунии ниқобҳои почтаи электронӣ</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Зеро ки шумо аз ҳамаи 5 ниқоби ройгони почтаи электронии худ истифода кардед, мо барои идомаи истифода ба шумо яке аз онҳоро интихоб намудем.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Дар айни ҳол ниқобҳои почтаи электронӣ дастнорасанд. Пас аз чанд дақиқа аз нав кӯшиш кунед.</string>
   <!--
     Autofill
 

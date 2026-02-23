@@ -1601,6 +1601,8 @@
   <string name="download_share_url">കണ്ണി പങ്കിടുക</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">ഫയൽ പങ്കിടുക</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">ഫയലിന്റെ പേരുമാറ്റുക</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">തിരഞ്ഞെടുക്കപ്പെട്ട ഇനങ്ങൾ മായ്ക്കണമെന്നു് ഉറപ്പുണ്ടോ?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1613,6 +1615,23 @@
   <string name="download_rename_dialog_label">പേരു്</string>
   <string name="download_rename_dialog_confirm_button">കരുതിവയ്ക്കുക</string>
   <string name="download_rename_dialog_cancel_button">റദ്ദാക്കുക</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">ഈ വിലാസത്തിൽ “%s” പേരുള്ള മുമ്പേത്തന്നെ ഇരിപ്പുണ്ടു്\u0020</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">“/” എന്ന അടയാളം ഫയലുപേരിൽ ഉപയോഗിക്കാൻ പാടില്ല</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">ഫയലിന്റെ പേരുമാറ്റാൻ കഴിഞ്ഞില്ല</string>
+  <string name="download_rename_error_dismiss_button">ശരി</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">%s ആയി ഫയൽ തരം മാറ്റണോ?</string>
+  <string name="change_file_extension_cancel_button">റദ്ദാക്കുക</string>
+  <string name="change_file_extension_confirm_button">മാറ്റുക</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">നടപ്പിലാണു്</string>
   <!--
@@ -2665,6 +2684,8 @@
   <string name="preferences_email_masks_suggest_learn_more">കൂടുതല്‍ അറിയുക</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">ഇതപാൽ പൊയ്മുഖങ്ങൾ കൈകാര്യം ചെയ്യുക</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">ഇ-തപാൽ പൊയ്മുഖങ്ങൾ നിലവിൽ ലഭ്യമല്ല. കുറച്ചു മിനിറ്റുകൾക്കുള്ളിൽ വീണ്ടും ശ്രമിക്കുക.</string>
   <!--
     Autofill
 

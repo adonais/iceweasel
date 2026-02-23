@@ -1766,7 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">سی دل مئدۊدیتا سیستوم یا جاگه زفت کردن، آلشت نوم ای فایل ٱنجوم نؽگره.</string>
   <string name="download_rename_error_dismiss_button">خا</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">نوع فایل و %s آلشت داڌه بۊ؟</string>
+  <string name="change_file_extension_description">یو گاشڌ فایل ن من برنومه دیری بوگوشه وو سی دسگا ایسا خترناک بۊ.</string>
   <string name="change_file_extension_cancel_button">لقو</string>
+  <string name="change_file_extension_confirm_button">هری، آلشتس کوݩ</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">هونی پؽش اروه</string>
   <!--

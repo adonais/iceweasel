@@ -1766,6 +1766,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Ova se datoteka ne može preimenovati zbog ograničenja sustava ili spremišta.</string>
   <string name="download_rename_error_dismiss_button">U redu</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Promijeniti vrstu datoteke u %s?</string>
+  <string name="change_file_extension_description">To bi moglo otvoriti datoteku u jednoj drugoj aplikaciji i može biti opasno za tvoj uređaj.</string>
+  <string name="change_file_extension_cancel_button">Odustani</string>
+  <string name="change_file_extension_confirm_button">Da, promijeni</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">U tijeku</string>
   <!--

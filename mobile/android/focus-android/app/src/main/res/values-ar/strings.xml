@@ -329,6 +329,8 @@
   <string name="preference_mozilla_telemetry_summary">اطّلع على المزيد</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2">تحاول موزيلا ألا تجمع أكثر مما تحتاجه لإتاحة %1$s و تحسينه للجميع.</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preference_daily_usage_ping_title">تنبيه الاستخدام اليومي</string>
   <string name="preference_daily_usage_ping_description">يساعد هذا Mozilla على تقدير عدد المستخدمين النشطين.</string>
   <string name="preference_daily_usage_ping_learn_more">اطلع على المزيد</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
@@ -560,6 +562,8 @@
   <string name="tabs_tray_action_erase">امسح تأريخ التصفح</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
   <string name="tabs_tray_action_erase_other">أغلق الألسنة الأخرى</string>
+  <!-- Label for the option in the Focus "tabs tray" to add a new tab. -->
+  <string name="tabs_tray_action_add_new_tab">أضف لسانًا جديدًا</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
