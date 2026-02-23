@@ -90,12 +90,12 @@
 /* Lightweight theme roots */
 
 :root[lwtheme] {
-  body,
+  .browser-toolbox-background,
   toolbar,
   &[lwt-popup="light"] panel {
     color-scheme: light;
   }
-  &[lwtheme-brighttext] body,
+  &[lwtheme-brighttext] .browser-toolbox-background,
   toolbar[brighttext],
   &[lwt-popup="dark"] panel {
     color-scheme: dark;

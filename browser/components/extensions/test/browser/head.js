@@ -1135,10 +1135,10 @@ function isRectContained(actualRect, maxRect) {
 }
 
 function getToolboxBackgroundColor() {
-  let body = document.body;
+  let toolbox = document.getElementById("navigator-toolbox");
   // Ignore any potentially ongoing transition.
-  body.style.transitionProperty = "none";
-  let color = window.getComputedStyle(body).backgroundColor;
-  body.style.transitionProperty = "";
+  toolbox.style.transitionProperty = "none";
+  let color = window.getComputedStyle(toolbox).backgroundColor;
+  toolbox.style.transitionProperty = "";
   return color;
 }

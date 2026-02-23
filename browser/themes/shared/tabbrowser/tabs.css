@@ -635,22 +635,14 @@ tab-split-view-wrapper[dragtarget] {
        */
       --audio-overlay-extra-background: transparent;
       background-color: var(--lwt-accent-color);
+      background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-bgcolor));
       -moz-context-properties: fill;
       fill: var(--tab-selected-textcolor);
       color-scheme: var(--tab-selected-color-scheme);
       border-radius: var(--border-radius-circle);
 
-      background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-bgcolor));
-      &:-moz-window-inactive {
+      .browser-toolbox-background:-moz-window-inactive &:not([selected]) {
         background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-bgcolor-inactive));
-      }
-      &[selected] {
-        background-image:
-          linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor));
-      }
-      &[selected]:-moz-window-inactive {
-        background-image:
-          linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor-inactive));
       }
 
       &:hover {
@@ -659,6 +651,16 @@ tab-split-view-wrapper[dragtarget] {
 
       &:hover:active {
         --audio-overlay-extra-background: var(--button-background-color-ghost-active);
+      }
+
+      &[selected] {
+        background-image:
+          linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor));
+      }
+
+      .browser-toolbox-background:-moz-window-inactive &[selected] {
+        background-image:
+          linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor-inactive));
       }
     }
   }
@@ -711,19 +713,8 @@ tab-split-view-wrapper[dragtarget] {
         color-scheme: var(--tab-selected-color-scheme);
         border-radius: var(--border-radius-circle);
 
-        &:-moz-window-inactive {
+        .browser-toolbox-background:-moz-window-inactive &:not([selected]) {
           background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-bgcolor-inactive));
-        }
-
-        &[selected] {
-          background-image:
-            linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor));
-        }
-
-        &[selected]:-moz-window-inactive {
-          background-image:
-            linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)),
-            linear-gradient(var(--toolbox-bgcolor-inactive));
         }
 
         &:hover {
@@ -732,6 +723,17 @@ tab-split-view-wrapper[dragtarget] {
 
         &:hover:active {
           --audio-overlay-extra-background: var(--button-background-color-ghost-active);
+        }
+
+        &[selected] {
+          background-image:
+            linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor));
+        }
+
+        .browser-toolbox-background:-moz-window-inactive &[selected] {
+          background-image:
+            linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-selected-bgcolor)),
+            linear-gradient(var(--toolbox-bgcolor-inactive));
         }
       }
     }
@@ -772,13 +774,14 @@ tab-split-view-wrapper[dragtarget] {
   color-scheme: var(--tab-selected-color-scheme);
   border-radius: var(--border-radius-circle);
 
-  .tabbrowser-tab &:-moz-window-inactive {
+  .browser-toolbox-background:-moz-window-inactive .tabbrowser-tab:not([selected]) & {
     background-image: linear-gradient(transparent), linear-gradient(var(--toolbox-bgcolor-inactive));
   }
   .tabbrowser-tab[selected] & {
     background-image: linear-gradient(transparent), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor));
   }
-  .tabbrowser-tab[selected] &:-moz-window-inactive {
+
+  .browser-toolbox-background:-moz-window-inactive .tabbrowser-tab[selected] & {
     background-image: linear-gradient(transparent), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor-inactive));
   }
 

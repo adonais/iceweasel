@@ -158,11 +158,31 @@ body {
     box-shadow: var(--content-area-shadow);
     border-bottom-color: var(--chrome-content-separator-color);
   }
+
+  /* Themes define a set of toolbox foreground and background colors which we
+   * want to use across the toolbox and sidebar areas. That happens via the
+   * .browser-toolbox-background class. It's hard to make a theme's background
+   * images work with something other than the toolbox, so for now we ignore
+   * them on other things like the sidebar that could have
+   * .browser-toolbox-background */
+  :root[lwtheme] & {
+    background-image: var(--lwt-additional-images);
+    background-repeat: var(--lwt-background-tiling);
+    background-position: var(--lwt-background-alignment);
+  }
+
+  /* When a theme defines both theme_frame and additional_backgrounds, show
+     the latter atop the former. */
+  :root[lwtheme-image] & {
+    background-image: var(--lwt-header-image), var(--lwt-additional-images);
+    background-repeat: no-repeat, var(--lwt-background-tiling);
+    background-position:
+      right top,
+      var(--lwt-background-alignment);
+  }
 }
 
-body {
-  /* Prevents the background from propagating to the viewport */
-  contain: paint;
+.browser-toolbox-background {
   position: relative;
   background-color: var(--toolbox-bgcolor);
   color: var(--toolbox-textcolor);
@@ -204,25 +224,6 @@ body {
         appearance: auto;
       }
     }
-  }
-}
-
-/* It's hard to make a theme's background images work with something other
- * than the toolbox, so for now we keep them there rather than on the <body>.
- * See bug 1952602 for potentially changing this. */
-:root[lwtheme] #navigator-toolbox {
-  background-image: var(--lwt-additional-images);
-  background-repeat: var(--lwt-background-tiling);
-  background-position: var(--lwt-background-alignment);
-
-  /* When a theme defines both theme_frame and additional_backgrounds, show
-     the latter atop the former. */
-  :root[lwtheme-image] & {
-    background-image: var(--lwt-header-image), var(--lwt-additional-images);
-    background-repeat: no-repeat, var(--lwt-background-tiling);
-    background-position:
-      right top,
-      var(--lwt-background-alignment);
   }
 }
 
@@ -604,7 +605,7 @@ menupopup::part(drop-indicator) {
 
   :root[lwtheme] & {
     background-color: var(--lwt-accent-color);
-    background-image: linear-gradient(var(--toolbar-bgcolor)), var(--lwt-additional-images);
+    background-image: linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)), var(--lwt-additional-images);
     background-repeat: no-repeat, var(--lwt-background-tiling);
     background-position:
       right bottom,
