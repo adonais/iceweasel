@@ -81,3 +81,8 @@ experimental-features-newtab-widget-lists-and-timer-description = Keep your to-d
 experimental-features-semantic-history-search =
     .label = Semantic History Search
 experimental-features-semantic-history-search-description = Use a local Machine Learning model to suggest entries from history that are related to your searches based on natural language understanding in the { -brand-product-name } address bar. <a data-l10n-name="connect">Share feedback</a>
+
+# Tab Notes
+experimental-features-tab-notes =
+    .label = Tab notes
+experimental-features-tab-notes-description = Tab notes are an experimental feature that lets you add sticky notes to your browser tabs. Jot down context, reminders, or next steps so you can come back and remember why you opened it. We’d love your feedback as we keep improving this feature. <a data-l10n-name="connect">Share feedback</a>
