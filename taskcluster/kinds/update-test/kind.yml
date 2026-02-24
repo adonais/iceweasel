@@ -34,6 +34,9 @@ task-defaults:
               path: update-test
               name: public/update-test
         env:
+            # ensure we don't use internal pypi for these tasks
+            PIP_INDEX_URL: https://pypi.python.org/simple/
+            PIP_NO_INDEX: "0"
             UPLOAD_DIR: .
             VERSION_LOG_FILENAME: update-test-version-info.log
     run-on-projects: []
