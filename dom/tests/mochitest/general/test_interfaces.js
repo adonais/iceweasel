@@ -318,11 +318,7 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CloseEvent", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  {
-    name: "CloseWatcher",
-    insecureContext: true,
-    nightly: true,
-  },
+  { name: "CloseWatcher", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CommandEvent", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
