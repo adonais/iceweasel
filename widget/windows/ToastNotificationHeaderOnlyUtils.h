@@ -55,6 +55,7 @@ const wchar_t kLaunchArgProfile[] = L"profile";
 const wchar_t kLaunchArgTag[] = L"windowsTag";
 const wchar_t kLaunchArgLogging[] = L"logging";
 const wchar_t kLaunchArgAction[] = L"action";
+const wchar_t kSkipNotificationKey[] = L"skipNotificationServer";
 
 const DWORD kNotificationServerTimeoutMs = (10 * 1000);
 

@@ -186,16 +186,17 @@ Result<nsString, nsresult> ToastNotificationHandler::GetLaunchArgument() {
   nsString launchArg;
 
   // When the preference is false, the COM notification server will be invoked,
-  // discover that there is no `program`, and exit (successfully), after which
-  // Windows will invoke the in-product Windows 8-style callbacks.  When true,
-  // the COM notification server will launch Firefox with sufficient arguments
-  // for Firefox to handle the notification.
+  // notice that this is a request that it should ignore, and exit
+  // (successfully), after which Windows will invoke the in-product Windows
+  // 8-style callbacks.  When true, the COM notification server will launch
+  // Firefox with sufficient arguments for Firefox to handle the notification.
   if (!Preferences::GetBool(
           "alerts.useSystemBackend.windows.notificationserver.enabled",
           false)) {
-    // Include dummy key/value so that newline appended arguments aren't off by
-    // one line.
-    launchArg += u"invalid key\ninvalid value"_ns;
+    // The COM notification server will look for this specific key and value to
+    // trigger the behavior mentioned above, of exiting and allowing Windows
+    // 8-style callbacks to run.
+    launchArg += u"skipNotificationServer\ntrue"_ns;
     return launchArg;
   }
 

@@ -51,6 +51,10 @@ void NotificationCallback::HandleActivation(LPCWSTR invokedArgs) {
                (L"Invoked with arguments: '%s'", invokedArgs));
   }
   auto maybeArgs = ParseToastArguments(invokedArgs);
+  if (maybeArgs.isSome() && maybeArgs.ref().skipNotificationServer) {
+    // Nothing to do for the Windows 8 style callbacks case.
+    return;
+  }
 
   auto [programPath, cmdLine] = BuildRunCommand(maybeArgs);
 
@@ -104,9 +108,10 @@ mozilla::Maybe<ToastArgs> NotificationCallback::ParseToastArguments(
     return mozilla::Nothing();
   }
   ToastArgs parsedArgs;
+  parsedArgs.skipNotificationServer = false;
 
   std::wistringstream args(invokedArgs);
-  bool hasMozillaArgs = false;
+  bool hasMozillaArgs = false;  // Do the args look like they came from us?
 
   for (std::wstring key, value;
        std::getline(args, key) && std::getline(args, value);) {
@@ -120,6 +125,15 @@ mozilla::Maybe<ToastArgs> NotificationCallback::ParseToastArguments(
       gVerbose = value == L"verbose";
     } else if (key == kLaunchArgAction) {
       parsedArgs.action = value;
+    } else if (key == kSkipNotificationKey) {
+      // This is a special case where it looks like the notification was created
+      // by a Mozilla app that has the pref
+      // "alerts.useSystemBackend.windows.notificationserver.enabled" set to
+      // false. In this case, we want this callback to exit successfully without
+      // launching the app. See ToastNotificationHandler::GetLaunchArgument
+      // comments for more info on this behavior.
+      parsedArgs.skipNotificationServer = true;
+      hasMozillaArgs = true;
     }
   }
 
