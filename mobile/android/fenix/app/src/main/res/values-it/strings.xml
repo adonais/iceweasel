@@ -1640,6 +1640,14 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Apri ricerca nelle schede</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Crea gruppo di schede</string>
+  <string name="create_tab_group_save_button">Salva</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Chiudi Modifica gruppo di schede</string>
+  <!--
     History
 
     Text for the button to search all history

@@ -675,6 +675,8 @@
   <string name="nova_onboarding_notifications_button">Vklopi obvestila</string>
   <!-- "Add search widget" onboarding title. -->
   <string name="nova_onboarding_add_search_widget_title">Naj bo vsako iskanje zasebnejše</string>
+  <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Dodaj pripomoček Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -754,6 +756,8 @@
   <string name="preferences_search">Iskanje</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Iskalnike</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Pripomoček za domači zaslon</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Predlogi iskalnikov</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -943,6 +947,8 @@
   <string name="preferences_open_links_in_apps_ask">Vprašaj pred odpiranjem</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Nikoli</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Shramba datotek</string>
   <!-- Preference title for downloads default location. -->
   <string name="preferences_downloads_default_location_title">Privzeto mesto za prenose</string>
   <!--
@@ -1614,6 +1620,14 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Odpri iskanje zavihkov</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Ustvari skupino zavihkov</string>
+  <string name="create_tab_group_save_button">Shrani</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Zapri urejanje skupine zavihkov</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1737,7 +1751,11 @@
   <string name="download_rename_error_invalid_name_error">Imena datotek ne smejo vsebovati \"/\"</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Datoteke ni mogoče preimenovati</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Te datoteke ni mogoče preimenovati zaradi sistemskih omejitev ali omejitev shrambe.</string>
   <string name="download_rename_error_dismiss_button">V redu</string>
+  <string name="change_file_extension_cancel_button">Prekliči</string>
+  <string name="change_file_extension_confirm_button">Da, spremeni</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">V teku</string>
   <!--
@@ -2477,6 +2495,8 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Popravljaj večje težave s stranmi (priporočeno)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Popravljaj manjše težave s stranmi</string>
+  <!-- Preference description for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_description">Mora se uporabljati hkrati s popravki večjih težav.</string>
   <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_subheader">Popravljaj težave s stranmi</string>
   <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->

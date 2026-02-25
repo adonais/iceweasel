@@ -278,12 +278,20 @@
   <string name="mozac_feature_addons_report">Gānātà\'</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_permissions_dialog_title_2">Nutà\' %1$s</string>
+  <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_optional_permissions_with_data_collection_dialog_title">%1$s nachin’ man sisī huā sa nūtà’t nāgi’hiát doj</string>
+  <!-- This is the title of a dialog that asks the users to grant optional data collection permissions only. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_optional_permissions_with_data_collection_only_dialog_title">%1$s nachin’ man sisī nāgà’huì’t doj nuguan’an</string>
   <!-- Heading for the permissions section in the add-on install dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_required_permissions">Nej sa achin:</string>
   <!-- Heading for the data collection permissions section in the add-on install dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_required_data_collection">Nej nuguan’ dāñû da’huît nāgà’huì’t:</string>
   <!-- Heading for the optional settings section in the add-on install dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_optional_settings">Nej sa huā si ruhuât nādunāt:</string>
+  <!-- Heading for the permissions section in the optional permissions request dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_permissions">Nej sa nākà achín nì’hia:</string>
+  <!-- Heading for the data collection permissions section in the optional permissions request dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_data_collection">Nej nuguan’ nākà naran’anj:</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">Nūtà\'</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
@@ -320,6 +328,14 @@
   <string name="mozac_feature_addons_updater_notification_update_button">Nāgi\'iaj nākà</string>
   <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
   <string name="mozac_feature_addons_updater_notification_cancel_button">Dūyichin\'</string>
+  <!-- The title of the system notification shown to the user when an add-on has a new update that requires new permissions. %1$s is the name of the add-on. -->
+  <string name="mozac_feature_addons_updater_notification_title_2">%1$s ngà hūaj nāhuin nàkaj</string>
+  <!-- A short explanation shown in the notification displayed when an add-on has a new update that requires new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_short_intro">Dūyichin’ si ruhuât gā ngè bersiûn nīkājt dà rû’ huaj akuan’ nïn.</string>
+  <!-- The heading for the permissions section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of sentences. -->
+  <string name="mozac_feature_addons_updater_notification_heading_permissions">A’ngô nej sa nākà achín nì’hia: %1$s</string>
+  <!-- The heading for the data collection permission section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of permissions. -->
+  <string name="mozac_feature_addons_updater_notification_heading_data_collection_permissions">Nej nuguan’ nākà nachinj: Ekstensiûn nākāj man tāj desarroyadôr %1$s.</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">Nej sa huā nahuin nākà riña ekstensiûn</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -350,6 +366,22 @@
   <string name="mozac_feature_addons_extension_failed_to_install">Nu gā\'hue nāñùn ekstensiûn nan.</string>
   <!-- Text shown when installing an add-on has failed. -->
   <string name="mozac_feature_addons_cant_install_extension">Nu gā’hue nà’nïn ekstensiûn</string>
+  <!-- Text shown when attempting to install an extension and a network error happened. -->
+  <string name="mozac_feature_addons_extension_failed_to_install_network_error">Nu nāninj ekstensiûn nan dadin\' nitāj conexión hua.</string>
+  <!-- Text shown when attempting to install an extension and the downloaded file is corrupted. -->
+  <string name="mozac_feature_addons_extension_failed_to_install_corrupt_error">Ekstensiûn nan ni nu nàtaj dadin\' rû\' huaj si hua a\'nan\' ma.</string>
+  <!-- Text shown when attempting to install an add-on and an error occurred because the extension was not signed. -->
+  <string name="mozac_feature_addons_extension_failed_to_install_not_signed_error">Ekstensiûn nan nī nu gā\'hue nàtaj \'hiaj si hìaj natsij aga\' nan man.</string>
+  <!-- Text shown when attempting to install an add-on and an error occurred because the extension was incompatible. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
+  <string name="mozac_feature_addons_failed_to_install_incompatible_error">%1$s nu gā’hue nānunj dadin’ nitāj si aran’anj ngà %2$s %3$s.</string>
+  <!-- Text shown when attempting to install a (hard) blocked add-on. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_blocklisted_2">%1$s nitāj si nìkoj nej nuguan’ āhī huā ‘hiaj Mozilla yi’ì dan na’hue nàñunj riña %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_admin_install_only">%1$s nu gā’hue nāñùnj dadin’ huā niñā yi’nïn’ nû yikïn nā’nïnj man, yī’ì dan nu nāhuin rā’a luguà nan man.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s nitāj si nìkoj nej nuguan’ āhī huā ‘hiaj Mozilla yi’ì dan na’hue nàñunj riña %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s huā chì’ rayi’ij nī sê sī gā’hue nānunj %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Nu ga\'ue nānùn %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -380,10 +412,28 @@
   <string name="mozac_feature_addons_updater_dialog_last_attempt">Sa rūkù ginûn huin:</string>
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">Dàj hua riñaj:</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_installed_dialog_title_2">%1$s ngà nañunj</string>
+  <!-- Used as text for the link in the description of the post-installation dialog. -->
+  <string name="mozac_feature_addons_installed_dialog_description_link_text">nāgi’hiaj riña ēkstensiûn</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">GĀ\'HUE</string>
   <!-- "Learn more" link displayed below an add-on status message. -->
   <string name="mozac_feature_addons_status_learn_more">Gāhuin chrūn doj</string>
   <!-- "See details" link displayed below an add-on status message. -->
   <string name="mozac_feature_addons_status_see_details">Ni\'hio\' dàj huaj</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_status_blocklisted_1">Ganarán riña ekstensiûn nan dadin’ nitāj si nīkāj ni’ñan ngà si nūguàn’ Mozilla yi’ì dan giyichinj si ‘hiaj sunj.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Giyichin’ ekstensiûn nan dadin’ nitāj si nīkāj ni’ñan ngà si nūguàn’ Mozilla. Gā’hue nāchrūnt man, sāni gā’hue gānika sa yī’ìi.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">Huā chì’ yi’îj yi’ì dan giyichinj. Gā’hue nāchrūnt man, sanī gā’hue gā’huì’ yī’ij.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Nitāj si nīkāj nī’ñānj ēkstensiûn nan ngà si nūguàn’ Mozilla. Āhī huaj si gārasunt man.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Huā chì’ rayi’î ēkstensiûn nan. Gā’hue gā’huì’ yī’ij si gārāsunt man.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_status_unsigned">%1$s giyichin’ man dadin’ si gūruhuaj nī nīka sa yī’ìi.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
+  <string name="mozac_feature_addons_status_incompatible">%1$s nu aran’anj ngà si bērsiûn %2$s (bērsiûn %3$s).</string>
 </resources>

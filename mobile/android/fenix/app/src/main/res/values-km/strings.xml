@@ -18,23 +18,23 @@
   -->
   <string name="content_description_menu">ជម្រើសច្រើនទៀត</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing">ការ​រក​មើល​ជា​ឯកជន</string>
+  <string name="content_description_private_browsing">ការច្បោលឯកជន</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">ស្វែងរក ឬ​បញ្ចូល​អាសយដ្ឋាន</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">ស្វែងរក​គេហទំព័រ</string>
   <!-- Placeholder text shown in search bar when using history search -->
-  <string name="history_search_hint">ប្រវត្តិ​ស្វែងរក</string>
+  <string name="history_search_hint">ស្វែងរកប្រវត្តិ</string>
   <!-- Placeholder text shown in search bar when using bookmarks search -->
   <string name="bookmark_search_hint">ស្វែងរកចំណាំ</string>
   <!-- Placeholder text shown in search bar when using tabs search -->
-  <string name="tab_search_hint">របារស្វែងរក</string>
+  <string name="tab_search_hint">ស្វែងរកផ្ទាំង</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">បញ្ចូលពាក្យស្វែងរក</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងដែលបានបើករបស់លោកអ្នក នឹងបង្ហាញនៅទីនេះ។</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងបើករបស់លោកអ្នកនឹងត្រូវបង្ហាញនៅទីនេះ។</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងឯកជនរបស់អ្នកនឹងត្រូវបានបង្ហាញនៅទីនេះ។</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងឯកជនរបស់លោកអ្នកនឹងត្រូវបង្ហាញនៅទីនេះ។</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">ការ​រក​មើល​ជា​ឯកជន</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -62,7 +62,7 @@
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">ចូល</string>
   <!-- Text for the button used to show all stories -->
-  <string name="homepage_all_stories">រឿងទាំងអស់</string>
+  <string name="homepage_all_stories">រឿងរ៉ាវទាំងអស់</string>
   <!--
     Home - Bookmarks
 
@@ -130,7 +130,7 @@
   <!-- Text for the banner message to tell users about our auto close feature. -->
   <string name="tab_tray_close_tabs_banner_message">កំណត់​ផ្ទាំង​ដែល​បើក​ឲ្យ​បិទ​ដោយ​ស្វ័យប្រវត្តិ​ដែល​មិន​ត្រូវ​បាន​មើល​ក្នុង​ថ្ងៃ សប្តាហ៍ ឬ​ខែ​កន្លង​មក។</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
-  <string name="tab_tray_close_tabs_banner_positive_button_text">មើលជម្រើស</string>
+  <string name="tab_tray_close_tabs_banner_positive_button_text">ជម្រើសទិដ្ឋភាព</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
   <string name="tab_tray_close_tabs_banner_negative_button_text">បដិសេធ</string>
   <!-- Text for the banner message to tell users about our inactive tabs feature. -->
@@ -342,7 +342,7 @@
     Content description for a banner within the menu which prompt the user to make this app their default browser.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_default_banner_title">ធ្វើឱ្យ %1$s តាមលំនាំដើមរបស់អ្នក</string>
+  <string name="browser_menu_default_banner_title">ធ្វើឱ្យ %1$s ជាបុរេជម្រើសរបស់អ្នក</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">លឿន ឯកជន និងបង្កើតឡើងសម្រាប់អ្នក។</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
@@ -406,9 +406,9 @@
   -->
   <string name="search_scan_button_2">ស្គែនកូដ QR</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">ការកំណត់ម៉ាស៊ីនស្វែងរក</string>
+  <string name="search_shortcuts_engine_settings">ការកំណត់អេនជីនស្វែងរក</string>
   <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
-  <string name="awesomebar_clipboard_title">បំពេញតំណពីក្ដារតម្បៀតខ្ទាស់</string>
+  <string name="awesomebar_clipboard_title">បំពេញបញ្ជាប់ពីឃ្លីបប៊ត</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">អនុញ្ញាត</string>
   <!-- Button in the search suggestions onboarding that does not allow search suggestions in private sessions -->
@@ -427,7 +427,7 @@
     Content description (not visible, for screen readers etc.): Search engine icon.
     %s is the search engine name (for example: DuckDuckGo).
   -->
-  <string name="search_engine_icon_content_description_1">ម៉ាស៊ីនស្វែងរក៖ %s</string>
+  <string name="search_engine_icon_content_description_1">អេនជីនស្វែងរក៖ %s</string>
   <!--
     Content description (not visible, for screen readers etc.) of the search engine selector from the search toolbar.
     %s is the search engine name (for example: DuckDuckGo).
@@ -589,6 +589,8 @@
   <string name="nova_onboarding_notifications_button">បើកការជូនដំណឹង</string>
   <!-- "Add search widget" onboarding title. -->
   <string name="nova_onboarding_add_search_widget_title">ធ្វើឱ្យការស្វែងរកនីមួយៗកាន់តែឯកជនភាព</string>
+  <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">បន្ថែមធាតុក្រាហ្វិក Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
@@ -622,6 +624,12 @@
     Widget description for widget picker screen
   -->
   <string name="widget_picket_description">ចាប់ផ្តើមការស្វែងរករហ័ស</string>
+  <!--
+    Search Widget
+
+    Content description for searching with a widget. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="search_widget_content_description_2">បើកផ្ទាំង %1$s ថ្មី</string>
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">ស្វែងរក</string>
   <!-- Text preview for larger sized widgets -->
@@ -640,14 +648,20 @@
   <string name="preferences_category_about">អំពី</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">ជ្រើសរើសមួយ</string>
+  <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
+  <string name="preferences_manage_search_shortcuts_2">គ្រប់គ្រងជម្រើសអេនជីនស្វែងរកផ្សេងទៀត</string>
+  <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
+  <string name="preferences_manage_search_shortcuts_summary">កែសម្រួលអេនជីនដែលអាចមើលឃើញនៅក្នុងម៉ឺនុយស្វែងរក</string>
+  <!-- Preference category for settings related to managing search shortcuts for the quick search menu -->
+  <string name="preferences_category_engines_in_search_menu">អេនជីនដែលអាចមើលឃើញនៅលើម៉ឺនុយស្វែងរក</string>
   <!-- Preference for settings related to changing the default search engine -->
-  <string name="preferences_default_search_engine">ម៉ាស៊ីន​ស្វែងរក​លំនាំដើម</string>
+  <string name="preferences_default_search_engine">អេនជីនស្វែងរកបុរេជម្រើស</string>
   <!-- Preference for settings related to Search -->
   <string name="preferences_search">ស្វែងរក</string>
   <!-- Preference for settings related to Search engines -->
-  <string name="preferences_search_engines">ម៉ាស៊ីនស្វែងរក</string>
+  <string name="preferences_search_engines">អេនជីនស្វែងរក</string>
   <!-- Preference for settings related to Search engines suggestions -->
-  <string name="preferences_search_engines_suggestions">ការណែនាំពីម៉ាស៊ីនស្វែងរក</string>
+  <string name="preferences_search_engines_suggestions">ការណែនាំពីអេនជីនស្វែងរក</string>
   <!-- Preference Category for settings related to Search address bar -->
   <string name="preferences_settings_address_bar">ចំណូលចិត្តរបារអាសយដ្ឋាន</string>
   <!-- Preference Category for settings to Firefox Suggest -->
@@ -703,14 +717,34 @@
   <string name="preferences_https_only_in_private_tabs">បើកតែនៅក្នុងផ្ទាំងឯកជនប៉ុណ្ណោះ</string>
   <!-- Preference to override the Mozilla account server -->
   <string name="preferences_override_account_server">ម៉ាស៊ីនបម្រើគណនី Mozilla ផ្ទាល់ខ្លួន</string>
+  <!-- Preference to override the Sync token server -->
+  <string name="preferences_override_sync_tokenserver">សេវូបករណ៍សមកាលកម្មផ្ទាល់ខ្លួន</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">គណនី</string>
+  <!-- Preference for changing where the AddressBar is positioned -->
+  <string name="preferences_toolbar_2">ទីតាំងរបារអាសយដ្ឋាន</string>
+  <!-- Preference for changing toolbar layout -->
+  <string name="preferences_toolbar_layout">ប្លង់របារឧបករណ៍</string>
+  <!-- Preference for changing default theme to dark or light mode -->
+  <string name="preferences_theme">ផ្ទៃស្បែក</string>
+  <!-- Preference for customizing the app icon -->
+  <string name="preferences_app_icon">អាយខនកម្មវិធី</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_shortcut">ផ្លូវកាត់របារឧបករណ៍</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_select_shortcut">ជ្រើសរើសផ្លូវកាត់</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">ធ្វើសមកាលកម្មផ្ទាំង ចំណាំ ពាក្យសម្ងាត់ និងច្រើនទៀត។</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">គណនី Mozilla</string>
+  <!-- Preference for language -->
+  <string name="preferences_language">ភាសា</string>
+  <!-- Preference for translations -->
+  <string name="preferences_translations">ការបកប្រែ</string>
+  <!-- Preference for data collection -->
+  <string name="preferences_data_collection">ការប្រមូលទិន្នន័យ</string>
+  <!-- Preference title for switch preference to show voice search button -->
+  <string name="preferences_show_voice_search">បង្ហាញការស្វែងរកតាមសំឡេង</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">ស្វែងរកចំណាំ</string>
   <!-- Preference for account settings -->
@@ -751,12 +785,35 @@
   <string name="preferences_sync_logins_2">ពាក្យ​សម្ងាត់</string>
   <!-- Preference for syncing tabs -->
   <string name="preferences_sync_tabs_2">បើក​ផ្ទាំង</string>
+  <!-- Title Headers for data collection settings screen -->
+  <string name="crash_reports_data_category">របាយការណ៍​គាំង</string>
+  <string name="usage_data_category">ទិន្នន័យនៃការប្រើប្រាស់</string>
+  <string name="studies_data_category">ការសិក្សា</string>
+  <string name="technical_data_category">ទិន្នន័យបច្ចេកទេស</string>
   <!-- Preference for removing FxA account -->
   <string name="preferences_sync_remove_account">លុបគណនី</string>
+  <!-- Preference for using simple toolbar -->
+  <string name="preference_simple_toolbar">សាមញ្ញ</string>
+  <!-- Preference for using expanded toolbar -->
+  <string name="preference_expanded_toolbar">បានពង្រីក</string>
   <!-- New tab shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_new_tab">បើកផ្ទាំងថ្មីមួយ</string>
+  <!-- Share shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_share">ចែករំលែក</string>
   <!-- Add bookmark shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_add_bookmark">បន្ថែម​ចំណាំ</string>
+  <!-- Translate shortcut in toolbar customization. "Translate" is a verb -->
+  <string name="toolbar_customize_shortcut_translate">បកប្រែ</string>
+  <!-- Homepage shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_homepage">ទំព័រដើម</string>
+  <!-- Back shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_back">ថយក្រោយ</string>
+  <!--
+    App icon Preferences
+
+    Title for the preference that lets the user pick a new app icon
+  -->
+  <string name="preference_select_app_icon_title">ជ្រើសរើសអាយខនកម្មវិធី</string>
   <!--
     Tab Strip Preferences
 
@@ -775,8 +832,24 @@
   <string name="library_history">ប្រវត្តិ</string>
   <!-- Option in Library to open a new tab -->
   <string name="library_new_tab">ផ្ទាំង​ថ្មី</string>
+  <!-- Settings Page Title -->
+  <string name="settings_title">ការ​កំណត់</string>
+  <!-- Content description (not visible, for screen readers etc.): "Close button for library settings" -->
+  <string name="content_description_close_button">បិទ</string>
+  <!-- Dialog button text for confirming open all tabs -->
+  <string name="open_all_warning_confirm">បើក​ផ្ទាំង</string>
   <!-- Dialog button text for canceling open all tabs -->
   <string name="open_all_warning_cancel">បោះបង់</string>
+  <!--
+    Text to show users they have one page in the history group section of the History fragment.
+    %d is a placeholder for the number of pages in the group.
+  -->
+  <string name="history_search_group_site_1">%d ទំព័រ</string>
+  <!--
+    Text to show users they have multiple pages in the history group section of the History fragment.
+    %d is a placeholder for the number of pages in the group.
+  -->
+  <string name="history_search_group_sites_1">%d ទំព័រ</string>
   <!-- Option in library to open Recently Closed Tabs page -->
   <string name="recently_closed_show_full_history">បង្ហាញប្រវត្តិពេញលេញ</string>
   <!--
@@ -787,10 +860,32 @@
   <string name="preferences_tabs">ផ្ទាំង</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">ទិដ្ឋភាពផ្ទាំង</string>
+  <!-- Option for a list tab view -->
+  <string name="tab_view_list">បញ្ជី</string>
+  <!-- Option for a grid tab view -->
+  <string name="tab_view_grid">ក្រឡាចត្រង្គ</string>
   <!-- Title of preference that allows a user to auto close tabs after a specified amount of time -->
   <string name="preferences_close_tabs">បិទ​ផ្ទាំង</string>
+  <!-- Option for auto closing tabs that will never auto close tabs, always allows user to manually close tabs -->
+  <string name="close_tabs_manually">កុំ​ឲ្យសោះ</string>
+  <!-- Option for auto closing tabs that will auto close tabs after one day -->
+  <string name="close_tabs_after_one_day">បន្ទាប់ពីមួយថ្ងៃ</string>
+  <!-- Option for auto closing tabs that will auto close tabs after one week -->
+  <string name="close_tabs_after_one_week">បន្ទាប់ពីមួយសប្តាហ៍</string>
+  <!-- Option for auto closing tabs that will auto close tabs after one month -->
+  <string name="close_tabs_after_one_month">បន្ទាប់ពីមួយខែ</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">បិទ</string>
+  <!-- Option for always opening the homepage when re-opening the app -->
+  <string name="opening_screen_homepage">ទំព័រដើម</string>
   <!-- Option for always opening the user's last-open tab when re-opening the app -->
   <string name="opening_screen_last_tab">ផ្ទាំងចុងក្រោយ</string>
+  <!-- Summary for tabs preference when auto closing tabs setting is set to manual close -->
+  <string name="close_tabs_manually_summary">បិទដោយដៃ</string>
+  <!-- Summary for tabs preference when auto closing tabs setting is set to auto close tabs after one day -->
+  <string name="close_tabs_after_one_day_summary">បិទបន្ទាប់ពីមួយថ្ងៃ</string>
+  <!-- Summary for homepage preference indicating always opening the homepage when re-opening the app -->
+  <string name="opening_screen_homepage_summary">បើកនៅទំព័រដើម</string>
   <!-- Summary for homepage preference indicating always opening the last-open tab when re-opening the app -->
   <string name="opening_screen_last_tab_summary">បើក​ផ្ទាំង​ចុងក្រោយ</string>
   <!--
@@ -799,8 +894,24 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">ផ្លាស់ទីផ្ទាំងចាស់ៗ ទៅអសកម្ម</string>
+  <!--
+    Studies
+
+    Title of the remove studies button
+  -->
+  <string name="studies_remove">យកចេញ</string>
+  <!-- Title of the active section on the studies list -->
+  <string name="studies_active">សកម្ម</string>
+  <!-- Learn more link for studies, links to an article for more information about studies. -->
+  <string name="studies_learn_more">ស្វែងយល់​បន្ថែម</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">ស្វែងយល់​បន្ថែម</string>
+  <!-- Text for the tabs header private tabs -->
+  <string name="tabs_header_private_tabs_title">ឯកជន</string>
   <!-- Text for the tabs header normal tabs -->
   <string name="tabs_header_normal_tabs_title">ផ្ទាំង</string>
+  <!-- Text for the tabs header synced tabs -->
+  <string name="tabs_header_synced_tabs_title">សមកាលកម្ម</string>
   <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
   <string name="tab_manager_floating_action_button_new_normal_tab">ផ្ទាំង​ថ្មី</string>
   <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
@@ -811,6 +922,10 @@
   <string name="add_tab">បន្ថែមផ្ទាំង</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">បន្ថែមផ្ទាំងឯកជន</string>
+  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">ឯកជន</string>
+  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">សមកាលកម្ម</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">ស្វែងរកផ្ទាំងរបស់អ្នក</string>
   <!-- Text shown in the menu for sharing all tabs -->
@@ -835,10 +950,16 @@
   <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">ចំណាំ</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">ចំណាំផ្ទាំងដែលបានជ្រើសរើស</string>
+  <!-- Text shown in the multiselect menu for closing selected tabs. -->
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">បិទ</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">បិទផ្ទាំងដែលបានជ្រើសរើស</string>
+  <!-- Text shown in the multiselect menu for sharing selected tabs. -->
+  <string name="tab_manager_multiselect_menu_item_share">ចែករំលែក</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ចែករំលែកផ្ទាំងដែលបានជ្រើសរើស</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">ទំព័រដើម</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
   <string name="tabs_tray_select_tabs">ជ្រើសរើសផ្ទាំង</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
@@ -855,6 +976,8 @@
   <string name="collection_delete">លុបបណ្តុំ</string>
   <!-- Text for the button to open tabs of the selected collection -->
   <string name="collection_open_tabs">បើក​ផ្ទាំង</string>
+  <!-- Text for the menu button to remove a top site -->
+  <string name="remove_top_site">យកចេញ</string>
   <!-- Text for the menu button to delete a top site from history -->
   <string name="delete_from_history">លុបចេញពីប្រវត្តិ</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
@@ -867,8 +990,16 @@
   <string name="history_delete_single_item_snackbar">បានលុប %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">លុប</string>
+  <!-- Text for the header that groups the history for today -->
+  <string name="history_today">ថ្ងៃ​នេះ</string>
   <!-- Text for the header that groups the history for yesterday -->
   <string name="history_yesterday">ម្សិលមិញ</string>
+  <!-- Text for the header that groups the history the past 7 days -->
+  <string name="history_7_days">7 ថ្ងៃចុងក្រោយ</string>
+  <!-- Text for the header that groups the history the past 30 days -->
+  <string name="history_30_days">30 ថ្ងៃចុងក្រោយ</string>
+  <!-- Text for the header that groups the history older than the last month -->
+  <string name="history_older">ចាស់ជាង</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">គ្មានប្រវត្តិនៅទីនេះទេ</string>
   <!--
@@ -878,10 +1009,23 @@
     %1$d is the number of items deleted.
   -->
   <string name="download_delete_multiple_items_snackbar_2">ធាតុត្រូវបានលុប៖ %1$d</string>
+  <!-- Title for the dialog that prompts the user to choose an app for downloading a file. -->
+  <string name="download_app_dialog_title">ទាញយកឯកសារជាមួយ៖</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
   <string name="download_delete_single_item_snackbar_2">បានលុប “%1$s”</string>
   <!-- Text for the snackbar to confirm that a download has completed. -->
   <string name="download_completed_snackbar">ការទាញយកបានបញ្ចប់</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open">បើក</string>
+  <!-- Text for the snackbar action button to undo deleting a download. -->
+  <string name="download_undo_delete_snackbar_action">អាន់ឌូ</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">មិនទាន់ទាញយកនៅឡើយទេ</string>
+  <!--
+    History multi select title in app bar
+    %1$d is the number of downloads selected
+  -->
+  <string name="download_multi_select_title">បានជ្រើសរើស %1$d</string>
   <!--
     Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
     This button will dismiss the dialog.
@@ -889,6 +1033,17 @@
   <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">បោះបង់</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">លុប</string>
+  <!--
+    Content description for the search bar clear text button on the downloads screen
+
+    Content description for pause action button on the downloads screen
+  -->
+  <string name="download_pause_action">ផ្អាក</string>
+  <!-- Content description for retry download action button on the downloads screen -->
+  <string name="download_retry_action">ព្យាយាម​ម្តង​ទៀត</string>
+  <string name="download_clear_search_description">ជម្រះ</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">ចែករំលែកឯកសារ</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">តើអ្នកពិតជាចង់លុបធាតុដែលបានជ្រើសរើសមែនទេ?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -896,10 +1051,28 @@
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">បោះបង់</string>
   <string name="download_rename_dialog_cancel_button">បោះបង់</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress">កំពុងដំណើរការ</string>
+  <!--
+    Time period headers for downloads
+
+    Text for the header that groups the downloads for today
+  -->
+  <string name="download_time_period_today">ថ្ងៃ​នេះ</string>
   <!-- Text for the header that groups the downloads for yesterday -->
   <string name="download_time_period_yesterday">ម្សិលមិញ</string>
+  <!-- Text for the header that groups the downloads the past 7 days -->
+  <string name="download_time_period_last_7_days">7 ថ្ងៃចុងក្រោយ</string>
+  <!-- Text for the header that groups the downloads the past 30 days -->
+  <string name="download_time_period_last_30_days">30 ថ្ងៃចុងក្រោយ</string>
+  <!-- Text for the header that groups the downloads older than other groups -->
+  <string name="download_time_period_older">ចាស់ជាង</string>
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed">ការ​ទាញ​យក​បាន​បរាជ័យ</string>
+  <!-- Text for the snackbar action button to view failed download details. -->
+  <string name="download_failed_snackbar_action_details">ព័ត៌មានលម្អិត</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found">រកមិនឃើញលទ្ធផល​ទេ</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">ជ្រើសរើសទាំងអស់</string>
   <!--
@@ -908,6 +1081,20 @@
     Text for the filter button to show all files in the downloads list
   -->
   <string name="download_content_type_filter_all">ទាំងអស់</string>
+  <!-- Text for the filter button to show only images in the downloads list -->
+  <string name="download_content_type_filter_image">រូបភាព</string>
+  <!-- Text for the filter button to show only video files in the downloads list -->
+  <string name="download_content_type_filter_video">វីដេអូ</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">ផ្សេងទៀត</string>
+  <!--
+    WebCompat Reporter
+
+    The title of the Web Compat Reporter feature. This is displayed in the top app bar.
+  -->
+  <string name="webcompat_reporter_screen_title">រាយការណ៍គេហទំព័រដែលខូច</string>
+  <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
+  <string name="webcompat_reporter_label_url">URL</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">បោះបង់</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
@@ -916,6 +1103,12 @@
   <string name="tab_crash_close">បិទផ្ទាំង</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">ស្ដារផ្ទាំងឡើងវិញ</string>
+  <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
+  <string name="unsubmitted_crash_dialog_checkbox_label">ផ្ញើរបាយការណ៍គាំងដោយស្វ័យប្រវត្តិ</string>
+  <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
+  <string name="unsubmitted_crash_dialog_negative_button">បិទ</string>
+  <!-- Unsubmitted crash dialog positive button to submit crash report -->
+  <string name="unsubmitted_crash_dialog_positive_button">ផ្ញើ​របាយការណ៍​ដែល​គាំង</string>
   <!--
     Bookmarks
 
@@ -924,6 +1117,20 @@
   <string name="bookmark_delete_folders_confirmation_dialog">តើអ្នកពិតជាចង់លុបធាតុដែលបានជ្រើសរើសមែនទេ?</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">បោះបង់</string>
+  <!-- Screen title for adding a bookmarks folder -->
+  <string name="bookmark_add_folder">បន្ថែមថត</string>
+  <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
+  <string name="bookmark_saved_in_folder_snackbar">រក្សាទុកនៅក្នុង “%s”</string>
+  <!-- Snackbar edit button shown after a bookmark has been created. -->
+  <string name="edit_bookmark_snackbar_action">កែសម្រួល</string>
+  <!-- Bookmark menu move button -->
+  <string name="bookmark_menu_move_button">ផ្លាស់ទី</string>
+  <!-- Bookmark overflow menu edit button -->
+  <string name="bookmark_menu_edit_button">កែសម្រួល</string>
+  <!-- Bookmark overflow menu copy button -->
+  <string name="bookmark_menu_copy_button">ចម្លង</string>
+  <!-- Bookmark overflow menu share button -->
+  <string name="bookmark_menu_share_button">ចែករំលែក</string>
   <!-- Bookmark overflow menu select all bookmarks -->
   <string name="bookmark_menu_select_all_bookmarks">ជ្រើសរើស​ទាំងអស់</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -936,17 +1143,42 @@
   <string name="bookmark_menu_open_all_in_private_tabs_button">បើកទាំងអស់នៅក្នុងផ្ទាំងឯកជន</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">លុប</string>
+  <!--
+    Bookmark multi select title in app bar
+    %1$d is the number of bookmarks selected
+  -->
+  <string name="bookmarks_multi_select_title">បានជ្រើសរើស %1$d</string>
   <!-- Bookmark editing screen title -->
   <string name="edit_bookmark_fragment_title">កែសម្រួល​ចំណាំ</string>
+  <!-- Bookmark folder editing screen title -->
+  <string name="edit_bookmark_folder_fragment_title">កែសម្រួលថត</string>
+  <!-- Bookmark URL editing field label -->
+  <string name="bookmark_url_label">URL</string>
+  <!-- Bookmark FOLDER editing field label -->
+  <string name="bookmark_folder_label">ថត</string>
+  <!-- Text indicating which folder a bookmark or folder will be saved in -->
+  <string name="bookmark_save_in_label">រក្សាទុកក្នុង</string>
+  <!-- Bookmark NAME editing field label -->
+  <string name="bookmark_name_label">ឈ្មោះ</string>
+  <!-- Label for a text input field for a bookmark or folder name -->
+  <string name="bookmark_name_label_normal_case">ឈ្មោះ</string>
+  <!-- Bookmark select folder screen title -->
+  <string name="bookmark_select_folder_fragment_label">ជ្រើសរើស​ថត</string>
+  <!-- Bookmark editing error missing or improper URL -->
+  <string name="bookmark_invalid_url_error">URL មិនត្រឹមត្រូវ</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">បានលុប %1$s</string>
+  <!-- Bookmark undo button for deletion snackbar action -->
+  <string name="bookmark_undo_deletion">អាន់ឌូ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
   <string name="bookmark_delete_single_item">បានលុប %s</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">ធាតុដែលបានលុប៖ %s</string>
+  <!-- Content description for the bookmark list new folder navigation bar button -->
+  <string name="bookmark_add_new_folder_button_content_description">បន្ថែមថតថ្មី</string>
   <!-- Content description for the bookmark screen delete bookmark navigation bar button -->
   <string name="bookmark_delete_bookmark_content_description">លុបចំណាំ</string>
   <!-- Content description for the bookmark screen delete bookmark folder navigation bar button -->
@@ -955,10 +1187,30 @@
   <string name="bookmark_search_button_content_description">ស្វែងរកចំណាំ</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">ថតឯកសារថ្មី</string>
+  <!--
+    Site Permissions
+
+    Button label that take the user to the Android App setting
+  -->
+  <string name="phone_feature_go_to_settings">ចូល​ទៅ​កាន់​ការ​កំណត់</string>
+  <!-- Button label for clearing all the information of site permissions -->
+  <string name="clear_permissions">ជម្រះការអនុញ្ញាត</string>
+  <!-- Text for the OK button on Clear permissions dialog -->
+  <string name="clear_permissions_positive">យល់ព្រម</string>
   <!-- Text for the cancel button on Clear permissions dialog -->
   <string name="clear_permissions_negative">បោះបង់</string>
+  <!-- Button label for clearing a site permission -->
+  <string name="clear_permission">ជម្រះការអនុញ្ញាត</string>
+  <!-- Text for the OK button on Clear permission dialog -->
+  <string name="clear_permission_positive">យល់ព្រម</string>
   <!-- Text for the cancel button on Clear permission dialog -->
   <string name="clear_permission_negative">បោះបង់</string>
+  <!-- Button label for clearing all the information on all sites -->
+  <string name="clear_permissions_on_all_sites">ជម្រះការអនុញ្ញាតនៅលើគេហទំព័រទាំងអស់</string>
+  <!-- Preference for altering the camera access for all websites -->
+  <string name="preference_phone_feature_camera">កាមេរ៉ា</string>
+  <!-- Preference for altering the microphone access for all websites -->
+  <string name="preference_phone_feature_microphone">ម៉ាយក្រូផូន</string>
   <!-- Summary of tracking protection preference if tracking protection is set to off -->
   <string name="tracking_protection_off">បិទ</string>
   <!-- Summary of delete browsing data on quit preference if it is set to off -->
@@ -1168,8 +1420,20 @@
   <string name="addressess_confirm_dialog_cancel_button">បោះបង់</string>
   <!-- The text for the "Delete address" menu item for deleting an address -->
   <string name="address_menu_delete_address">លុបអាសយដ្ឋាន</string>
+  <!-- Title of the Add search engine screen -->
+  <string name="search_engine_add_custom_search_engine_title">បន្ថែមអេនជីនស្វែងរក</string>
+  <!-- Content description (not visible, for screen readers etc.): Title for the button that navigates to add new engine screen -->
+  <string name="search_engine_add_custom_search_engine_button_content_description">បន្ថែមអេនជីនស្វែងរកថ្មី</string>
+  <!-- Title of the Edit search engine screen -->
+  <string name="search_engine_edit_custom_search_engine_title">កែសម្រួលអេនជីនស្វែងរក</string>
   <!-- Text for the menu button to delete a search engine -->
   <string name="search_engine_delete">លុប</string>
+  <!-- Placeholder text shown in the Search Engine Name text field before a user enters text -->
+  <string name="search_add_custom_engine_name_hint_2">ឈ្មោះអេនជីនស្វែងរក</string>
+  <!-- Accessibility description for the form in which details about the custom search engine are entered -->
+  <string name="search_add_custom_engine_form_description">ព័ត៌មានលម្អិតអំពីអេនជីនស្វែងរកផ្ទាល់ខ្លួន</string>
+  <!-- Text shown when a user leaves the name field empty -->
+  <string name="search_add_custom_engine_error_empty_name">បញ្ចូលឈ្មោះអេនជីនស្វែងរក</string>
   <!-- Login overflow menu delete button -->
   <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">លុប</string>
   <!-- Message in delete confirmation dialog for password -->
