@@ -218,11 +218,10 @@ OS_LIBS += [
 
 # mingw is missing Windows toast notification definitions.
 if CONFIG["CC_TYPE"] == "clang-cl":
-    if CONFIG["MOZ_NOTIFICATION_SERVER"]:
-        SOURCES += [
-            "ToastNotification.cpp",
-            "ToastNotificationHandler.cpp",
-        ]
+    SOURCES += [
+        "ToastNotification.cpp",
+        "ToastNotificationHandler.cpp",
+    ]
 
 SPHINX_TREES["/widget/windows"] = "docs"
 

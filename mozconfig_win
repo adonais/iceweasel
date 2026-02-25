@@ -48,7 +48,7 @@ ac_add_options --disable-maintenance-service
 ac_add_options --disable-sandbox
 
 # disable notification server
-ac_add_options --disable-notification-server
+# ac_add_options --disable-notification-server
 
 # disable running in background task mode
 ac_add_options --disable-backgroundtasks

@@ -37,6 +37,19 @@ const { BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN } = Ci.nsICookieService;
 
 const PASSWORD_MANAGER_PREF_ID = "services.passwordSavingEnabled";
 
+ChromeUtils.defineLazyGetter(this, "AlertsServiceDND", function () {
+  try {
+    let alertsService = Cc["@mozilla.org/alerts-service;1"]
+      .getService(Ci.nsIAlertsService)
+      .QueryInterface(Ci.nsIAlertsDoNotDisturb);
+    // This will throw if manualDoNotDisturb isn't implemented.
+    alertsService.manualDoNotDisturb;
+    return alertsService;
+  } catch (ex) {
+    return undefined;
+  }
+});
+
 ChromeUtils.defineLazyGetter(lazy, "AboutLoginsL10n", () => {
   return new Localization(["branding/brand.ftl", "browser/aboutLogins.ftl"]);
 });
@@ -2404,6 +2417,20 @@ Preferences.addSetting({
   onUserClick: () => gPrivacyPane.showAddonExceptions(),
   disabled: ({ warnAddonInstall }) => {
     return !warnAddonInstall.value || warnAddonInstall.locked;
+  },
+});
+Preferences.addSetting({
+  id: "notificationsDoNotDisturb",
+  get: () => {
+    return AlertsServiceDND?.manualDoNotDisturb ?? false;
+  },
+  set: value => {
+    if (AlertsServiceDND) {
+      AlertsServiceDND.manualDoNotDisturb = value;
+    }
+  },
+  visible: () => {
+    return AlertsServiceDND != undefined;
   },
 });
 Preferences.addSetting({
