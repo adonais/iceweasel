@@ -173,7 +173,7 @@ function testAlert(when, { serverEnabled, profD, isBackgroundTaskMode } = {}) {
     if (serverEnabled) {
       s += `program&#xA;${AppConstants.MOZ_APP_NAME}`;
     } else {
-      s += `invalid key&#xA;invalid value`;
+      s += `skipNotificationServer&#xA;true`;
     }
     if (serverEnabled && profD) {
       s += `&#xA;profile&#xA;${profD.path}`;
