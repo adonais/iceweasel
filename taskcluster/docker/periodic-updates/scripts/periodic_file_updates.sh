@@ -610,10 +610,18 @@ function push_repo {
   then
     return 1
   fi
-  # Clean up older review requests
+  # Clean up older review requests of the same type as this run.
+  # Pinning updates (HSTS/HPKP) and periodic updates are separate tasks and
+  # must not abandon each other's patches.
   # Turn  Needs Review D624: No bug, Automated HSTS ...
   # into D624
-  for diff in $($ARC list | grep "Needs Review" | grep -E "${BRANCH} repo-update" | awk 'match($0, /D[0-9]+[^: ]/) { print substr($0, RSTART, RLENGTH)  }')
+  ALL_DIFFS=$($ARC list | grep "Needs Review" | grep -E "${BRANCH} repo-update" || true)
+  if [ "${DO_HSTS}" == "true" ] || [ "${DO_HPKP}" == "true" ]; then
+    OLDER_DIFFS=$(echo "${ALL_DIFFS}" | grep -E "HSTS|HPKP" || true)
+  else
+    OLDER_DIFFS=$(echo "${ALL_DIFFS}" | grep -vE "HSTS|HPKP" || true)
+  fi
+  for diff in $(echo "${OLDER_DIFFS}" | awk 'match($0, /D[0-9]+[^: ]/) { print substr($0, RSTART, RLENGTH)  }')
   do
     echo "Removing old request $diff"
     # There is no 'arc abandon', see bug 1452082
