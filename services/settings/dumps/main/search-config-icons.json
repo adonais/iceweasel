@@ -1,6 +1,40 @@
 {
   "data": [
     {
+      "schema": 1771342005440,
+      "imageSize": 16,
+      "attachment": {
+        "hash": "1658dba5cc1e8acdee34d58496f90e7473375a2012f3a6147bb16777add1c581",
+        "size": 6478,
+        "filename": "duckduckgo.pdf",
+        "location": "main-workspace/search-config-icons/b9f8a8d5-3086-4b98-90f5-a29f577e3014.pdf",
+        "mimetype": "application/pdf"
+      },
+      "engineIdentifiers": [
+        "ddg"
+      ],
+      "filter_expression": "env.appinfo.OS == \"iOS\"",
+      "id": "b50c3e3d-7bd0-4118-856f-19b26b21d01f",
+      "last_modified": 1771343611639
+    },
+    {
+      "schema": 1771200005877,
+      "imageSize": 16,
+      "attachment": {
+        "hash": "6df9691adea0a28299e4392ae2eeb9816182f3bcb2e1820700ab918a3b98bc0c",
+        "size": 3197,
+        "filename": "duckduckgo.svg",
+        "location": "main-workspace/search-config-icons/e668474b-ca25-49f8-b555-d32f7b57c0b7.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "engineIdentifiers": [
+        "ddg"
+      ],
+      "filter_expression": "env.appinfo.OS != \"iOS\"",
+      "id": "a06dc3fd-4bdb-41f3-2ebc-4cbed06a9bd3",
+      "last_modified": 1771343611635
+    },
+    {
       "schema": 1762992360903,
       "imageSize": 16,
       "attachment": {
@@ -1007,22 +1041,6 @@
       "last_modified": 1744118264847
     },
     {
-      "schema": 1743687735700,
-      "imageSize": 16,
-      "attachment": {
-        "hash": "d994f806b1e4225b50be5ab681b2cecf845cc216a19a432d878cea3cb815bafd",
-        "size": 2799,
-        "filename": "ddg-16-firefox.ico",
-        "location": "main-workspace/search-config-icons/c6ae7df5-0396-4892-b76a-b35a00044a13.ico",
-        "mimetype": "image/x-icon"
-      },
-      "engineIdentifiers": [
-        "ddg"
-      ],
-      "id": "a06dc3fd-4bdb-41f3-2ebc-4cbed06a9bd3",
-      "last_modified": 1744118264845
-    },
-    {
       "schema": 1743687839798,
       "imageSize": 16,
       "attachment": {
@@ -1172,5 +1190,5 @@
       "last_modified": 1744118264825
     }
   ],
-  "timestamp": 1765918784979
+  "timestamp": 1771343611639
 }
