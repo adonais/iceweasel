@@ -44,6 +44,8 @@ support-files = [
 ["browser_contentSearch.js"]
 support-files = [
   "contentSearchBadImage.xml",
+  "contentSearchSuggestions.sjs",
+  "contentSearchSuggestions.xml",
   "testEngine_chromeicon.xml",
 ]
 
