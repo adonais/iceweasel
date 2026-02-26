@@ -1373,7 +1373,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Nach oben wischen, um Tabs zu öffnen</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
-  <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Adressleiste zur Seite scrollen, um Tabs zu wechseln</string>
+  <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Adressleiste zur Seite wischen, um Tabs zu wechseln</string>
   <!--
     Library
 
@@ -2934,7 +2934,7 @@
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Enthält Telefonnummern und E-Mail-Adressen</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
-  <string name="preferences_addresses_sync_addresses_across_devices">Synchronisieren Sie Adressen zwischen Geräten</string>
+  <string name="preferences_addresses_sync_addresses_across_devices">Adressen zwischen Geräten synchronisieren</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">Adressen synchronisieren</string>
   <!-- Content description navigating back from autofill settings screen. -->

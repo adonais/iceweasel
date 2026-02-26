@@ -451,7 +451,7 @@
 
     Description for learning more about our privacy notice.
   -->
-  <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">نوکات زفت مهرموویی Firefox</string>
+  <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">نوکات زفت مهرمووه ای Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">ایما عاشوق زفت کردن ٱمنیت ایسانیم</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
@@ -522,7 +522,7 @@
   <string name="startup_crash_restart">گۊشیڌن دووارته %s</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">فشناڌن داده یل فنی وو تعامولا و Mozilla</string>
-  <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا ز Firefox و بؽڌر وابیڌن ویژیی یل، عملکرد وو پایداری پوی هیاری اده.</string>
+  <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا ز Firefox و بؽڌر وابیڌن ویژیی یل، کارایی وو پایداری پوی هیاری اده.</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">قلوه دووسته بۊین</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">ٱنجوم وابی</string>
@@ -539,7 +539,7 @@
   <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox و هریم سیخومی ایسا ٱهمیت اده. قلوه زس من %1$s دووسته بۊین.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
-  <string name="onboarding_term_of_service_line_two_link_text">نوکات زفت مهرموویی</string>
+  <string name="onboarding_term_of_service_line_two_link_text">نوکات زفت مهرمووه ای</string>
   <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">سی هیاری و بؽڌر وابیڌن گشت گر، Firefox داده یل تشخیسی وو تعامولا ن و Mozilla افشنه. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
@@ -565,7 +565,7 @@
   -->
   <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox و هریم سیخومی ایسا ٱهمیت اده. قلوه زس من %1$s دووسته بۊین.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">نوکات زفت مهرموویی</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">نوکات زفت مهرمووه ای</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
@@ -638,7 +638,7 @@
   -->
   <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox و هریم سیخومی ایسا ٱهمیت اده. قلوه زس من %1$s دووسته بۊین.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text">نوکات زفت مهرموویی</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">نوکات زفت مهرمووه ای</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
@@ -1266,7 +1266,7 @@
   <!-- Preference switch for usage and technical learn more link in new compose -->
   <string name="preference_usage_data_learn_more_2">زبار داده یل فنی قلوه دووسته بۊین</string>
   <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
-  <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا و ایما هیاری اده تا ویژیی یل، عملکرد وو پایداری Firefox ن بؽڌر کۊنیم.</string>
+  <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا و ایما هیاری اده تا ویژیی یل، کارایی وو پایداری Firefox ن بؽڌر کۊنیم.</string>
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preferences_daily_usage_ping_title">پینگ و کار گرؽڌن رۊزووه</string>
   <string name="preferences_daily_usage_ping_description">یو Mozilla ن هیاری اده تا منتورا رۊزووه ن بشماره.</string>
@@ -1523,7 +1523,7 @@
   -->
   <string name="remote_improvements_title">امکووݩ بؽڌر وابیڌن ز ره دیر</string>
   <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
-  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox ویژیی یل، عملکرد وو پایداری ن منجا ورۊ رسۊویا بؽڌر اکونه، آلشتکاریا ز ره دیر ائمال ابۊن.</string>
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox ویژیی یل، کارایی وو پایداری ن منجا ورۊ رسۊویا بؽڌر اکونه، آلشتکاریا ز ره دیر ائمال ابۊن.</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">قلوه دووسته بۊین</string>
   <!-- Title for remote improvements preference in Advanced settings -->
@@ -1639,6 +1639,14 @@
   <string name="pwa_site_controls_title_private">%1$s (هالت سیخومی)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">گۊشیڌن بلگه پیتینیڌن</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">وورکل بونکۊ بلگه</string>
+  <string name="create_tab_group_save_button">زفت</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">بستن بونکۊ بلگه آلشت</string>
   <!--
     History
 
@@ -2726,7 +2734,7 @@
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
   <string name="about_crashes">خراوی یل</string>
   <!-- About page link text to open privacy notice link -->
-  <string name="about_privacy_notice">نوکات زفت مهرموویی</string>
+  <string name="about_privacy_notice">نوکات زفت مهرمووه ای</string>
   <!-- About page link text to open know your rights link -->
   <string name="about_know_your_rights">هق خوتووݩ ن دووسته بۊین</string>
   <!-- About page link text to open terms of use link -->
@@ -2882,19 +2890,19 @@
 
     Title for the Email Masks in the settings menu
   -->
-  <string name="preferences_email_masks">بؽڌار کونا ایمیل</string>
+  <string name="preferences_email_masks">ماسکا ایمیل</string>
   <!-- Title for the Suggest Email Masks toggle -->
-  <string name="preferences_email_masks_suggest_title">پؽشنهاڌ بؽڌار کونا ایمیل</string>
+  <string name="preferences_email_masks_suggest_title">پؽشنهاڌ ماسکا ایمیل</string>
   <!-- Summary for the Suggest Email Masks toggle. -->
-  <string name="preferences_email_masks_suggest_summary">ایمیل واقعی خوته بؽڌار کوݩ تا ز سندوق وۊرۊدی جلاو هرزنومه یل زفتت کونه. ی قرد ز وبگه یل ز بؽڌار کونا ایمیل لادراری نؽکونن.</string>
+  <string name="preferences_email_masks_suggest_summary">ایمیل واقعی خوته بؽڌار کوݩ تا سندوق وۊرۊدی خوتووݩ ن ز هرزنومه یل زفت کۊنین. ی قرد ز وبگه یل ز ماسکا ایمیل لادراری نؽکونن.</string>
   <!-- Text that links to additional information about the Email Masks -->
   <string name="preferences_email_masks_suggest_learn_more">قلوه دووسته بۊین</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
-  <string name="preferences_email_masks_manage_title">دؽوۉداری بؽڌار کونا ایمیل</string>
+  <string name="preferences_email_masks_manage_title">دؽوۉداری ماسکا ایمیل</string>
   <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
-  <string name="email_masks_max_free_tier_reached">ایسا ز 5 بؽڌار کوݩ ایمیل خوتووݩ استفاڌه کردینه، سی دل هیمو ایما یکی ن سی و کار گرؽڌن دووارته سی ایسا پسند کردیمه.</string>
+  <string name="email_masks_max_free_tier_reached">ایسا ز 5 ماسک ایمیل خوتووݩ استفاڌه کردینه، سی دل هیمو ایما یکی ن سی و کار گرؽڌن دووارته سی ایسا پسند کردیمه.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
-  <string name="email_masks_error_retrieving_masks">بؽڌار کونا ایمیل سکو من دسرس نؽڌن.\nچن دیقه دی دووارته امتهووݩ کۊنین.</string>
+  <string name="email_masks_error_retrieving_masks">ماسکا ایمیل سکو من دسرس نؽڌن.\nچن دیقه دی دووارته امتهووݩ کۊنین.</string>
   <!--
     Autofill
 
@@ -3729,7 +3737,7 @@
   -->
   <string name="micro_survey_survey_header_2">منشڌسنجی ن کامل کۊنین</string>
   <!-- The privacy notice link -->
-  <string name="micro_survey_privacy_notice_2">نوکات زفت مهرموویی</string>
+  <string name="micro_survey_privacy_notice_2">نوکات زفت مهرمووه ای</string>
   <!-- The submit button label text -->
   <string name="micro_survey_submit_button_label">فشناڌن</string>
   <!-- The survey completion header -->
@@ -4095,7 +4103,7 @@
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">شرتا و کار گرؽڌن</string>
   <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
-  <string name="terms_of_use_prompt_link_privacy_notice">نوکات زفت مهرموویی</string>
+  <string name="terms_of_use_prompt_link_privacy_notice">نوکات زفت مهرمووه ای</string>
   <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
   <string name="terms_of_use_prompt_link_learn_more">قلوه دووسته بۊین</string>
   <!-- Label for a button to accept the terms of use -->
@@ -4129,7 +4137,7 @@
   -->
   <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">ایما %1$s خومووݩ ن ورۊ رسۊوی کردیم تا ویژیی یل نۊ فایرفاکس ن من خوس جا بڌه. %2$s</string>
   <!-- The first active link used in privacy_notice_updated_homepage_message -->
-  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">نوکات زفت مهرموویی</string>
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">نوکات زفت مهرمووه ای</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">قلوه دووسته بۊین</string>
 </resources>

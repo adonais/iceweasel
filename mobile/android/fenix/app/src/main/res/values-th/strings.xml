@@ -1640,6 +1640,13 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">เปิดการค้นหาแท็บ</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">สร้างกลุ่มแท็บ</string>
+  <string name="create_tab_group_save_button">บันทึก</string>
+  <!--
     History
 
     Text for the button to search all history

@@ -190,4 +190,6 @@
     Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
   -->
   <string name="mozac_feature_relay_chip_text">Χρήση μάσκας email</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">Νέο! Οι μάσκες email του %s είναι πλέον διαθέσιμες και σε κινητές συσκευές.</string>
 </resources>

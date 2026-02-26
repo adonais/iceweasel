@@ -15,6 +15,12 @@
   <string name="mozac_feature_media_sharing_microphone">Nga nanûn aga\' uxun nanèe</string>
   <!-- Title of notification shown when the device's camera and microphone is shared with a website (WebRTC) -->
   <string name="mozac_feature_media_sharing_camera_and_microphone">Ngà nanûn sa nari ñanj dū\'uô\' ngà aga\' uxun nanèe</string>
+  <!-- Text of notification shown when the device's camera is shared with a website (WebRTC) -->
+  <string name="mozac_feature_media_sharing_camera_text">Gūru’man ra’a da’ gā’hue nā’nīnt riña rakij ñanj arâj sun si kamarât.</string>
+  <!-- Text of notification shown when the device's microphone is shared with a website (WebRTC) -->
+  <string name="mozac_feature_media_sharing_microphone_text">Gūru’man ra’a da’ gā’hue nā’nīnt riña rakij ñanj arâj sun si microfonôt.</string>
+  <!-- Text of notification shown when the device's camera and microphone is shared with a website (WebRTC) -->
+  <string name="mozac_feature_media_sharing_camera_and_microphone_text">Gūru’man ra’a da’ gā’hue nā’nīnt riña rakij ñanj arâj sun si microfonôt ngà si kamarât.</string>
   <!-- This is the title of the "play" action media shown in the media notification while web content is playing media. Clicking it will resume playing paused media. On most modern Android system only an icon is visible. But screen readers may read this title. -->
   <string name="mozac_feature_media_notification_action_play">Dūguachrá</string>
   <!-- This is the title of the "pause" action shown in the media notification while web content is playing media. Clicking it will pause currently playing media. On most modern Android system only an icon is visible. But screen readers may read this title. -->

@@ -1640,6 +1640,14 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Embojuruja jehekaha tendayképe</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Emoheñói tendayke aty</string>
+  <string name="create_tab_group_save_button">Ñongatu</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Emboty tendayke aty ñembosako’i</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1766,6 +1774,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Marandurenda ndaikatúi emboherajey hekochi’ĩre apopyvusu térã ndorekóire pa’ũ ñeñongaturã.</string>
   <string name="download_rename_error_dismiss_button">MONEĨ</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">¿Emoambue marandurenda peteĩchagua %s-pe?</string>
+  <string name="change_file_extension_description">Kóva ombojurujakuaa marandurenda ambuéva ha ikatútava ombyai ne mba’e’oka.</string>
+  <string name="change_file_extension_cancel_button">Eheja</string>
+  <string name="change_file_extension_confirm_button">Héẽ, emoambue</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Oñemohendavahína</string>
   <!--

@@ -1640,6 +1640,14 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Abrir pesquisa em abas</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Criar grupo de abas</string>
+  <string name="create_tab_group_save_button">Salvar</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Fechar edição de grupo de abas</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1766,6 +1774,12 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Este arquivo não pode ser renomeado devido a restrições do sistema ou do armazenamento.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Alterar o tipo de arquivo para %s?</string>
+  <string name="change_file_extension_cancel_button">Cancelar</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Em andamento</string>
   <!--
