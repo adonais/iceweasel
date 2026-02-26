@@ -63,7 +63,7 @@ export let ContentSearch = {
 
   destroy() {
     if (!this.initialized) {
-      return Promise.resolve();
+      return new Promise();
     }
 
     if (this._destroyedPromise) {
@@ -113,6 +113,30 @@ export let ContentSearch = {
     }
   },
 
+  /**
+   * Construct a state object representing the search engine state.
+   *
+   * @returns {object} state
+   */
+  async currentStateObj() {
+    let state = {
+      engines: [],
+      currentEngine: await this._currentEngineObj(false),
+      currentPrivateEngine: await this._currentEngineObj(true),
+    };
+
+    for (let engine of await lazy.SearchService.getVisibleEngines()) {
+      state.engines.push({
+        name: engine.name,
+        iconData: await this._getEngineIconURL(engine),
+        hidden: engine.hideOneOffButton,
+        isConfigEngine: engine.isConfigEngine,
+      });
+    }
+
+    return state;
+  },
+
   _processEventQueue() {
     if (this._currentEventPromise || !this._eventQueue.length) {
       return;
@@ -136,18 +160,20 @@ export let ContentSearch = {
   async _onMessage(eventItem) {
     let methodName = "_onMessage" + eventItem.name;
     if (methodName in this) {
+      await this._initService();
       await this[methodName](eventItem);
       eventItem.browser.removeEventListener("SwapDocShells", eventItem, true);
     }
   },
 
   async _onMessageGetEngine({ actor }) {
+    let state = await this.currentStateObj();
     let { usePrivateBrowsing } = actor.browsingContext;
     return this._reply(actor, "Engine", {
-      inPrivateBrowsing: usePrivateBrowsing,
+      isPrivateEngine: usePrivateBrowsing,
       engine: usePrivateBrowsing
-        ? await this._currentEngineObj(true)
-        : await this._currentEngineObj(false),
+        ? state.currentPrivateEngine
+        : state.currentEngine,
     });
   },
 
@@ -298,7 +324,7 @@ export let ContentSearch = {
    *
    * @param {SearchEngine} engine
    *   The engine to get the icon for.
-   * @returns {Promise<string|iconData>}
+   * @returns {string|iconData}
    *   The icon's URL or an iconData object containing the icon data.
    */
   async _getEngineIconURL(engine) {
@@ -335,6 +361,13 @@ export let ContentSearch = {
       console.error("Fetch error: ", err);
       return SEARCH_ENGINE_PLACEHOLDER_ICON;
     }
+  },
+
+  _initService() {
+    if (!this._initServicePromise) {
+      this._initServicePromise = lazy.SearchService.init();
+    }
+    return this._initServicePromise;
   },
 };
 
