@@ -30,7 +30,6 @@ MOZ_SRC_FILES += [
     "IPProtectionServerlist.sys.mjs",
     "IPProtectionService.sys.mjs",
     "IPProtectionToolbarButton.sys.mjs",
-    "IPProtectionUsage.sys.mjs",
     "IPPSignInWatcher.sys.mjs",
     "IPPStartupCache.sys.mjs",
 ]

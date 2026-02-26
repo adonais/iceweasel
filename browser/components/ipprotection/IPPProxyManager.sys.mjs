@@ -11,8 +11,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs",
   IPPNetworkUtils:
     "moz-src:///browser/components/ipprotection/IPPNetworkUtils.sys.mjs",
-  IPProtectionUsage:
-    "moz-src:///browser/components/ipprotection/IPProtectionUsage.sys.mjs",
   IPPNetworkErrorObserver:
     "moz-src:///browser/components/ipprotection/IPPNetworkErrorObserver.sys.mjs",
   IPProtectionServerlist:
@@ -135,7 +133,6 @@ class IPPProxyManagerSingleton extends EventTarget {
   #usage = null;
   /**@type {import("./IPPChannelFilter.sys.mjs").IPPChannelFilter | null} */
   #connection = null;
-  #usageObserver = null;
   #networkErrorObserver = null;
   // If this is set, we're awaiting a proxy pass rotation
   #rotateProxyPassPromise = null;
@@ -189,7 +186,6 @@ class IPPProxyManagerSingleton extends EventTarget {
     this.reset();
     this.#usage = null;
     this.#connection = null;
-    this.usageObserver.stop();
   }
 
   /**
@@ -199,13 +195,6 @@ class IPPProxyManagerSingleton extends EventTarget {
    */
   get activatedAt() {
     return this.#state === IPPProxyStates.ACTIVE && this.#activatedAt;
-  }
-
-  get usageObserver() {
-    if (!this.#usageObserver) {
-      this.#usageObserver = new lazy.IPProtectionUsage();
-    }
-    return this.#usageObserver;
   }
 
   get networkErrorObserver() {
@@ -390,9 +379,6 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     this.#connection.initialize(this.#pass.asBearerToken(), server);
 
-    this.usageObserver.start();
-    this.usageObserver.addIsolationKey(this.#connection.isolationKey);
-
     this.networkErrorObserver.start();
     this.networkErrorObserver.addIsolationKey(this.#connection.isolationKey);
 
@@ -575,7 +561,6 @@ class IPPProxyManagerSingleton extends EventTarget {
     // Inject the new token in the current connection
     if (this.#connection?.active) {
       this.#connection.replaceAuthToken(pass.asBearerToken());
-      this.usageObserver.addIsolationKey(this.#connection.isolationKey);
       this.networkErrorObserver.addIsolationKey(this.#connection.isolationKey);
     }
     lazy.logConsole.debug("Successfully rotated token!");
