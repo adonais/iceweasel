@@ -2113,6 +2113,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTops
 // Displays publisher favicons on recommended stories of New Tab page
 pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled", true);
 
+// The pref controls if search hand-off is enabled for Activity Stream.
+pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
+
 pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
 // URLs from the user's history that contain this search param will be hidden
