@@ -269,17 +269,32 @@
      * @type {XULElement}
      */
     #splitViewSplitter = null;
+    #splitterWasDragging = false;
     #splitViewSplitterObserver = new MutationObserver(() => {
       const splitterState = this.#splitViewSplitter.getAttribute("state");
       if (splitterState === "dragging") {
+        this.#splitterWasDragging = true;
         gBrowser.activeSplitView.resetRightPanelWidth();
-      } else if (!this._splitterPendingUpdate) {
-        // wait for the layout flush before doing any measuring
-        this._splitterPendingUpdate = window
-          .promiseDocumentFlushed(() => {})
-          .then(() =>
-            this.updateSplitterAriaAttributes(!!this.#splitViewPanels.length)
-          );
+      } else {
+        const wasDragging = this.#splitterWasDragging;
+        this.#splitterWasDragging = false;
+
+        if (!this._splitterPendingUpdate) {
+          // wait for the layout flush before doing any measuring
+          this._splitterPendingUpdate = window
+            .promiseDocumentFlushed(() => {})
+            .then(() => {
+              this.updateSplitterAriaAttributes(!!this.#splitViewPanels.length);
+
+              // Record telemetry when drag resize completes
+              if (wasDragging) {
+                this.#recordSplitViewResizeTelemetry();
+              }
+            })
+            .finally(() => {
+              this._splitterPendingUpdate = null;
+            });
+        }
       }
     });
 
@@ -297,6 +312,23 @@
     disconnectedCallback() {
       super.disconnectedCallback();
       this.#splitViewSplitterObserver.disconnect();
+    }
+
+    #recordSplitViewResizeTelemetry() {
+      if (!this.#splitViewPanels.length) {
+        return;
+      }
+
+      const leftPanel = document.getElementById(this.#splitViewPanels[0]);
+      if (!leftPanel) {
+        return;
+      }
+
+      const leftWidth = leftPanel.getBoundingClientRect().width;
+      const totalWidth = this.getBoundingClientRect().width;
+      const widthPercentage = Math.round((leftWidth / totalWidth) * 100);
+
+      Glean.splitview.resize.record({ width: widthPercentage });
     }
 
     handleEvent(e) {
@@ -348,17 +380,20 @@
         splitter.setAttribute("role", "separator");
         splitter.setAttribute("data-l10n-id", "tab-splitview-splitter");
         this.#splitViewSplitter = splitter;
+        this.#splitterWasDragging = false;
         splitter.addEventListener("command", () => {
           gBrowser.activeSplitView.resetRightPanelWidth();
+
           // wait for the layout flush before doing any measuring
           if (!this._splitterPendingUpdate) {
             this._splitterPendingUpdate = window
               .promiseDocumentFlushed(() => {})
-              .then(() =>
+              .then(() => {
                 this.updateSplitterAriaAttributes(
                   !!this.#splitViewPanels.length
-                )
-              );
+                );
+                this.#recordSplitViewResizeTelemetry();
+              });
           }
         });
         this.#splitViewSplitterObserver.observe(splitter, {
