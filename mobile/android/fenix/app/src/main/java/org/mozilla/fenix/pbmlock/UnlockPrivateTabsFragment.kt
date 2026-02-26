@@ -15,8 +15,11 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.feature.customtabs.isCustomTabIntent
 import mozilla.components.support.base.feature.UserInteractionHandler
@@ -76,25 +79,30 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler {
                 )
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        // This check handles an edge case related to the screen saver.
-        // When a screen saver is used in combination with a screen lock, cancelling a screen saver
-        // (in some cases) resumes the app briefly, although the screen lock is active. Which, in
-        // this case, allows the app to trigger system windows above the screen lock.
-        val manager = requireContext().getSystemService<KeyguardManager>()
-        val screenLocked = manager?.isDeviceLocked ?: false
-        if (!screenLocked) {
-            requestPrompt()
-        }
+        maybeRequestPrompt()
     }
 
     override fun onBackPressed(): Boolean {
         closeFragment()
         return true
+    }
+
+    private fun maybeRequestPrompt() {
+        // Delay the prompt until this fragment is resumed to ensure that `BiometricPromptFeature`
+        // is wiring up the system `BiometricPrompt` to the right (currently active) fragment.
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.withResumed {
+                // This check handles an edge case related to the screen saver.
+                // When a screen saver is used in combination with a screen lock, cancelling a screen saver
+                // (in some cases) resumes the app briefly, although the screen lock is active. Which, in
+                // this case, allows the app to trigger system windows above the screen lock.
+                val manager = requireContext().getSystemService<KeyguardManager>()
+                val screenLocked = manager?.isDeviceLocked ?: false
+                if (!screenLocked) {
+                    requestPrompt()
+                }
+            }
+        }
     }
 
     private fun requestPrompt() {
