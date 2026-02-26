@@ -1441,6 +1441,10 @@ async function getAttributionContent() {
       };
     }
   }
+  // Display the Smart Window switcher icon
+  if (attribution?.campaign === "smart_window") {
+    Services.prefs.setBoolPref("browser.smartwindow.enabled", true);
+  }
   if (attribution) {
     return {
       ...attribution,
