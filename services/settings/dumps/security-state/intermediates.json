@@ -1,6 +1,84 @@
 {
   "data": [
     {
+      "schema": 1771768749930,
+      "derHash": "oYeK5ubQLuqhAZmSTew5itKFz+LjkEtfZo2SWiOkVhw=",
+      "attachment": {
+        "hash": "893a4d20222ae4567a894f680f4a8a467166ffb158619bab2d03392e41e7c93a",
+        "size": 1435,
+        "filename": "G_ANXI8TwJTdF-AFBM8IiIUPEv0Gf6H5LA_b9guG4yE=.pem",
+        "location": "security-state-staging/intermediates/fa48ee6c-24a6-4de1-b16d-3485ae61235f.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "35dffd53-6ce4-4895-92bb-7792543efc50",
+      "last_modified": 1771772222966
+    },
+    {
+      "schema": 1771768749532,
+      "derHash": "CNSGhe+Ex3C0QfY2XXB7HHqik64v16oVmiRFE4DGATQ=",
+      "attachment": {
+        "hash": "b5710b9fd19897b7b7e53eb516f56a40e69cd92cbd117618e75f9aafa5777f14",
+        "size": 1394,
+        "filename": "G_ANXI8TwJTdF-AFBM8IiIUPEv0Gf6H5LA_b9guG4yE=.pem",
+        "location": "security-state-staging/intermediates/7c07651c-3899-4ad5-92d2-a584c57b6ce2.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "087ae332-ea97-4552-a159-b91d16abeefb",
+      "last_modified": 1771772222963
+    },
+    {
+      "schema": 1771768749044,
+      "derHash": "Kiq7gbaiMYb5LVt+IftZMUZ6zh971K5Dlb9MS4wCZGg=",
+      "attachment": {
+        "hash": "eaec4fbe33c87de727b7117cefd947bafe6015ce3108359dd6f8e46afdd3027d",
+        "size": 2125,
+        "filename": "K89VOmb1cJAN3TK6bf4ezAbJGC1mLcG2Dh97dnwr3VQ=.pem",
+        "location": "security-state-staging/intermediates/2a0242bf-de50-4c50-95ee-f0dc490a89de.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "e58a2fdf-2322-4806-bc7b-c65a94b9f827",
+      "last_modified": 1771772222959
+    },
+    {
+      "schema": 1771768748599,
+      "derHash": "3B5O3ys1zIEelnRE+10TvAF9x+hlJ++KWjUQnsFKHPM=",
+      "attachment": {
+        "hash": "567b78b6fe938997e9cd01da9ff2e02d0ef2c19f317f3e127c7016a5ecfe9190",
+        "size": 2560,
+        "filename": "K89VOmb1cJAN3TK6bf4ezAbJGC1mLcG2Dh97dnwr3VQ=.pem",
+        "location": "security-state-staging/intermediates/931e3924-506f-4fc6-ab52-399480c2a20a.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "e12c2e9a-21d7-4c96-be95-0bcbf5059e82",
+      "last_modified": 1771772222955
+    },
+    {
+      "schema": 1771509557311,
+      "derHash": "wAO4yz8Ey2gNnidXfUl+PG/r4+KkALepKwml6zjJ+sc=",
+      "attachment": {
+        "hash": "bba6fee9c638fc0bb66f0aca6a04feb22f2437cc8810caafa472b61983865cc8",
+        "size": 2300,
+        "filename": "qEARbagEM4uxwIMf9T4As1lIb5Nh6EAgvw2YzeHYK7w=.pem",
+        "location": "security-state-staging/intermediates/cfc4f010-7021-4f72-bae1-e536cb9563a3.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "0dac995c-5c6c-4a1f-af61-1fa908290896",
+      "last_modified": 1771513022842
+    },
+    {
+      "schema": 1771509556805,
+      "derHash": "CDNRe9bX7gEhcyLLqHM8ETRoh/BlNATyTe0fjkhcK2s=",
+      "attachment": {
+        "hash": "0c4094f2c3726037de2909d5d0a0383023b486a974d1d9e84dabff44540c8754",
+        "size": 1772,
+        "filename": "9aRZ9FaploJqrFZWXeqoWgPs7XVI3lOweGuCzG9fKGQ=.pem",
+        "location": "security-state-staging/intermediates/ae47ea83-973b-4d3b-ab78-6537f2989259.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "276adda4-a8c0-4dd4-932d-9428d05875f5",
+      "last_modified": 1771513022838
+    },
+    {
       "schema": 1771379968391,
       "derHash": "WoTJQFTTQNZQopmF75e7OWNS4hWu1sCzPKf/3TvV0qI=",
       "attachment": {
@@ -18791,24 +18869,6 @@
       "last_modified": 1666727872042
     },
     {
-      "schema": 1666727333802,
-      "derHash": "XEUjNNnJyaLqQsx3pxZeF5XunYTrcMt4S0fqnZKlgtk=",
-      "subject": "CN=Soluti CA - DV,O=SOLUTI - SOLUCOES EM NEGOCIOS INTELIGENTES S/A,C=BR",
-      "subjectDN": "MF8xCzAJBgNVBAYTAkJSMTcwNQYDVQQKEy5TT0xVVEkgLSBTT0xVQ09FUyBFTSBORUdPQ0lPUyBJTlRFTElHRU5URVMgUy9BMRcwFQYDVQQDEw5Tb2x1dGkgQ0EgLSBEVg==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "8265936e7b87a7845ad3792c1bfbde5b8469f44276f048e773d7d306888e920a",
-        "size": 1756,
-        "filename": "kAzMeuwjUBWfPL5YEYfQG9qK_ABDxl0BMvPtzwEPN7E=.pem",
-        "location": "security-state-staging/intermediates/8d6429a5-772d-4666-be02-ba8282f7be70.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "kAzMeuwjUBWfPL5YEYfQG9qK/ABDxl0BMvPtzwEPN7E=",
-      "crlite_enrolled": false,
-      "id": "513590d9-2a18-481c-b691-bf785c25086b",
-      "last_modified": 1666727872015
-    },
-    {
       "schema": 1666727379438,
       "derHash": "vLwYxGO2HzoDOxDHSXTtiiwyivzWejONmHFQajUVQZ8=",
       "subject": "CN=e-Szigno Class3 SSL CA 2017,O=Microsec Ltd.,L=Budapest,C=HU",
@@ -19023,24 +19083,6 @@
       "crlite_enrolled": false,
       "id": "9bfb32bb-d95f-4440-a86b-01e4010249cf",
       "last_modified": 1666727871648
-    },
-    {
-      "schema": 1666727391920,
-      "derHash": "Efukp+5XnHDh1X+fm2qMIJ4SGcTx04Rvg//OdOnl4s4=",
-      "subject": "CN=Soluti CA - EV,O=SOLUTI - SOLUCOES EM NEGOCIOS INTELIGENTES S/A,C=BR",
-      "subjectDN": "MF8xCzAJBgNVBAYTAkJSMTcwNQYDVQQKEy5TT0xVVEkgLSBTT0xVQ09FUyBFTSBORUdPQ0lPUyBJTlRFTElHRU5URVMgUy9BMRcwFQYDVQQDEw5Tb2x1dGkgQ0EgLSBFVg==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "b45919819e02ad79724a514eaf858e77f666b1352e04efbd7b970ef878509a6a",
-        "size": 1776,
-        "filename": "Z6aApIGWlcMWZHFtBmP1FgZhyLKarTalSo0g5-EeG0U=.pem",
-        "location": "security-state-staging/intermediates/b2a82526-2d56-4d6f-82ed-ec715bf0fbe2.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "Z6aApIGWlcMWZHFtBmP1FgZhyLKarTalSo0g5+EeG0U=",
-      "crlite_enrolled": false,
-      "id": "2c989aad-c7f6-46c5-b0e4-6b645ccbe43f",
-      "last_modified": 1666727871621
     },
     {
       "schema": 1666727333970,
@@ -19761,24 +19803,6 @@
       "crlite_enrolled": false,
       "id": "4a6655ab-9a9a-43db-bb34-1602419c8ed9",
       "last_modified": 1666727870728
-    },
-    {
-      "schema": 1666727440773,
-      "derHash": "q3SxQRrSPiIn+4iiqTBKGkWlxIQLNjXxA2pG6DdCeaw=",
-      "subject": "CN=Soluti CA - OV,O=SOLUTI - SOLUCOES EM NEGOCIOS INTELIGENTES S/A,C=BR",
-      "subjectDN": "MF8xCzAJBgNVBAYTAkJSMTcwNQYDVQQKEy5TT0xVVEkgLSBTT0xVQ09FUyBFTSBORUdPQ0lPUyBJTlRFTElHRU5URVMgUy9BMRcwFQYDVQQDEw5Tb2x1dGkgQ0EgLSBPVg==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "1289ff9c033377f8edc9f2ded9318205d7263d8c7040b70ff2db68630eaac699",
-        "size": 1776,
-        "filename": "rCbpz2JPbnICZtM69Lt2eclqdTss0Mj0Z4ejXMF1nD4=.pem",
-        "location": "security-state-staging/intermediates/1bbff038-8596-4d1c-aea4-d0a5730155a8.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "rCbpz2JPbnICZtM69Lt2eclqdTss0Mj0Z4ejXMF1nD4=",
-      "crlite_enrolled": false,
-      "id": "bd39f78d-03b0-4fc6-9992-3728009c0be9",
-      "last_modified": 1666727870647
     },
     {
       "schema": 1666727420998,
@@ -25847,24 +25871,6 @@
       "last_modified": 1663786626447
     },
     {
-      "schema": 1663786372899,
-      "derHash": "a+fQTiD/wo8ZjKiPwMNkR4T9FWkDvweBMPuWTAJY26A=",
-      "subject": "CN=United Parcel Service\\, Inc. RSA OV CA,O=United Parcel Service\\, Inc.,L=Atlanta,ST=GA,C=US",
-      "subjectDN": "MIGCMQswCQYDVQQGEwJVUzELMAkGA1UECBMCR0ExEDAOBgNVBAcTB0F0bGFudGExJDAiBgNVBAoTG1VuaXRlZCBQYXJjZWwgU2VydmljZSwgSW5jLjEuMCwGA1UEAxMlVW5pdGVkIFBhcmNlbCBTZXJ2aWNlLCBJbmMuIFJTQSBPViBDQQ==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "5f2f917f15eb321eb42931857ac7ab983a47c6ee7bd3ae860d471c9af6b89cb5",
-        "size": 2142,
-        "filename": "SwXmbcFTOEV-82sxJhAl0R-uGVTqV9eWCnYAM12xQYs=.pem",
-        "location": "security-state-staging/intermediates/4ae82de2-f623-4295-9237-d34d5d6630b1.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "SwXmbcFTOEV+82sxJhAl0R+uGVTqV9eWCnYAM12xQYs=",
-      "crlite_enrolled": false,
-      "id": "b2a58c9b-ce5d-4635-94ac-0b3d767ad225",
-      "last_modified": 1663786626419
-    },
-    {
       "schema": 1663786379170,
       "derHash": "X6SbNsctA+QtqkMCUA1kbJSMh6w27TDMPb3bviTGRjM=",
       "subject": "CN=WebNIC ECC Extended Validation Secure Site CA,OU=Controlled by Sectigo exclusively for WebNIC,O=WebNIC (Web Commerce Communications (Singapore) Pte. Ltd.),L=Singapore,C=SG",
@@ -29049,24 +29055,6 @@
       "crlite_enrolled": false,
       "id": "cfdbbcaf-8ad7-44df-988e-6b0c1d3a6ef0",
       "last_modified": 1650920239252
-    },
-    {
-      "schema": 1650919756111,
-      "derHash": "uCIQzend6g4UvimvZH5LMvlu0qnvGqW6qcxks4tsAco=",
-      "subject": "OU=AC RAIZ FNMT-RCM,O=FNMT-RCM,C=ES",
-      "subjectDN": "MDsxCzAJBgNVBAYTAkVTMREwDwYDVQQKDAhGTk1ULVJDTTEZMBcGA1UECwwQQUMgUkFJWiBGTk1ULVJDTQ==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "dda828b4a97c8a8f24d378bef318af5d144be4d873ff73ba3f07303c1c298e49",
-        "size": 1971,
-        "filename": "L8VmekuaJnjtasatJUZfy_YJS_zZUECXx6j6R63l6Ig=.pem",
-        "location": "security-state-staging/intermediates/c8065d4f-f7f0-4e26-aa22-7e982bf06bba.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "L8VmekuaJnjtasatJUZfy/YJS/zZUECXx6j6R63l6Ig=",
-      "crlite_enrolled": false,
-      "id": "752044c7-55ec-4fd9-a0fa-6bd6b3db2f27",
-      "last_modified": 1650920239183
     },
     {
       "schema": 1650919749373,
@@ -32687,5 +32675,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1771383422979
+  "timestamp": 1772035022350
 }
