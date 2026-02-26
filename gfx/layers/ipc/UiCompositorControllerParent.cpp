@@ -156,13 +156,19 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvRequestScreenPixels(
                   aHardwareBuffer->SerializeToFileDescriptor();
               UniqueFileHandle fenceFd =
                   aHardwareBuffer->GetAndResetAcquireFence();
-              (void)target->SendScreenPixels(
-                  aRequestId,
-                  aHardwareBuffer
-                      ? Some(ipc::FileDescriptor(std::move(bufferFd)))
-                      : Nothing(),
-                  fenceFd ? Some(ipc::FileDescriptor(std::move(fenceFd)))
-                          : Nothing());
+              target
+                  ->SendScreenPixels(
+                      aRequestId,
+                      aHardwareBuffer
+                          ? Some(ipc::FileDescriptor(std::move(bufferFd)))
+                          : Nothing(),
+                      fenceFd ? Some(ipc::FileDescriptor(std::move(fenceFd)))
+                              : Nothing())
+                  // Ensure the hardware buffer remains alive until child side
+                  // has finished using it.
+                  ->Then(GetCurrentSerialEventTarget(), __func__,
+                         [aHardwareBuffer](
+                             ScreenPixelsPromise::ResolveOrRejectValue&&) {});
             },
             [target = RefPtr{this}, aRequestId](nsresult aError) {
               (void)target->SendScreenPixels(aRequestId, Nothing(), Nothing());

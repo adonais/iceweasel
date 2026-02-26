@@ -157,6 +157,10 @@ UiCompositorControllerChild::RequestScreenPixels(gfx::IntRect aSourceRect,
   static uint64_t nextRequestId = 0;
   const uint64_t requestId = nextRequestId++;
   auto promise = MakeRefPtr<ScreenPixelsPromise::Private>(__func__);
+  // Using synchronous dispatch ensures we are done using the hardware buffer
+  // prior to RecvScreenPixels calling aResolver which in turn will cause the
+  // hardware buffer on the parent side to be released.
+  promise->UseSynchronousTaskDispatch(__func__);
   mScreenPixelsPromise.emplace(requestId, promise);
   (void)SendRequestScreenPixels(requestId, aSourceRect, aDestSize);
   return promise;
@@ -257,7 +261,8 @@ UiCompositorControllerChild::RecvNotifyCompositorScrollUpdate(
 
 mozilla::ipc::IPCResult UiCompositorControllerChild::RecvScreenPixels(
     uint64_t aRequestId, Maybe<ipc::FileDescriptor>&& aHardwareBuffer,
-    Maybe<ipc::FileDescriptor>&& aAcquireFence) {
+    Maybe<ipc::FileDescriptor>&& aAcquireFence,
+    ScreenPixelsResolver&& aResolver) {
 #if defined(MOZ_WIDGET_ANDROID)
   if (!mScreenPixelsPromise || mScreenPixelsPromise->first != aRequestId) {
     // Response is for an outdated request whose promise will have already been
@@ -274,10 +279,20 @@ mozilla::ipc::IPCResult UiCompositorControllerChild::RecvScreenPixels(
   if (hardwareBuffer && aAcquireFence) {
     hardwareBuffer->SetAcquireFence(aAcquireFence->TakePlatformHandle());
   }
-  mScreenPixelsPromise->second->Resolve(std::move(hardwareBuffer), __func__);
-  mScreenPixelsPromise.reset();
+  // Note this is resolved synchronously, ensuring we have finished using the
+  // hardware buffer as soon as this call returns (and importantly before the
+  // aResolver call below).
+  mScreenPixelsPromise.extract().second->Resolve(std::move(hardwareBuffer),
+                                                 __func__);
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
+  // Notify the parent side that it can drop its reference to the hardware
+  // buffer. In theory this could be done as soon as we have called
+  // DeserializeFromFileDescriptor(). However, on certain Exynos devices we have
+  // seen that releasing the original hardware buffer frees the underlying
+  // resource even if a reference obtained via (de)serialization remains alive.
+  // See bug 2017901.
+  aResolver(void_t{});
   return IPC_OK();
 }
 
