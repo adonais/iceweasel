@@ -349,6 +349,7 @@ StyleSheetInfo::StyleSheetInfo(CORSMode aCORSMode,
 StyleSheetInfo::StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet)
     : mCORSMode(aCopy.mCORSMode),
       mIntegrity(aCopy.mIntegrity),
+      mOriginClean(aCopy.mOriginClean),
       // We don't rebuild the child because we're making a copy without
       // children.
       mSourceMapURL(aCopy.mSourceMapURL),
