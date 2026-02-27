@@ -2131,10 +2131,13 @@ class ContentHandler {
 
       telemetryState.impressionRecorded = true;
 
+      let { urlBasedAttributes, ...restImpressionInfo } = impressionInfo;
+
       lazy.logConsole.debug(`Reported Impression:`, {
         impressionId,
-        ...impressionInfo,
-        searchMode: impressionInfo.searchMode,
+        ...restImpressionInfo,
+        ...urlBasedAttributes,
+        ...info.elementBasedAttributes,
       });
       Services.obs.notifyObservers(null, "reported-page-with-impression");
     } else if (telemetryState.impressionRecorded) {
@@ -2166,10 +2169,14 @@ class ContentHandler {
 
     telemetryState.impressionRecorded = true;
 
+    let { urlBasedAttributes, ...restImpressionInfo } = impressionInfo;
+
     lazy.logConsole.debug(`Reported Impression:`, {
       impressionId: telemetryState.impressionId,
-      ...impressionInfo,
-      search_mode: impressionInfo.searchMode,
+      ...restImpressionInfo,
+      ...urlBasedAttributes,
+      shopping_tab_displayed: "unknown",
+      has_ai_summary: "unknown",
     });
     Services.obs.notifyObservers(null, "reported-page-with-impression");
   }

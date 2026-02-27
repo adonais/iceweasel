@@ -514,7 +514,14 @@ class SearchAdImpression {
           })
         : Array.from(elements);
 
-      if (!matchedElements.length) {
+      let visibleElements = matchedElements.filter(el =>
+        el.checkVisibility({
+          visibilityProperty: true,
+          opacityProperty: true,
+        })
+      );
+
+      if (!visibleElements.length) {
         continue;
       }
 
