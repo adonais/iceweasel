@@ -223,6 +223,8 @@
   <string name="browser_close_main_menu_handlebar_content_description">Nārán riña menû</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Sun aché nuu</string>
+  <!-- Browser menu label that the saves the currently visited page as a PDF -->
+  <string name="browser_menu_save_as_pdf_2">Nā’nïnj sà’ ngà PDF</string>
   <!--
     Browser Toolbar
 

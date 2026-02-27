@@ -217,7 +217,7 @@
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
   -->
-  <string name="browser_menu_extension_plus_icon_content_description_2">Добавить %1$s</string>
+  <string name="browser_menu_extension_plus_icon_content_description_2">Добавить «%1$s»</string>
   <!-- Browser menu button that opens AMO in a tab -->
   <string name="browser_menu_discover_more_extensions">Откройте для себя больше расширений</string>
   <!-- Browser menu description that is shown when one or more extensions are disabled due to extension errors -->
@@ -3564,7 +3564,7 @@
     The dialog will be presented when the user requests deletion of a language.
     %1$s is the name of the language, for example, "Spanish" and %2$s is the size in kilobytes or megabytes of the language file.
   -->
-  <string name="delete_language_file_dialog_title">Удалить %1$s (%2$s)?</string>
+  <string name="delete_language_file_dialog_title">Удалить: %1$s (%2$s)?</string>
   <!-- Additional information for the dialog used by the translations feature to confirm deleting a language. %1$s is the name of the app (for example "Firefox"). -->
   <string name="delete_language_file_dialog_message">Если вы удалите этот язык, %1$s будет частично скачивать языки в ваш кеш по мере перевода.</string>
   <!--

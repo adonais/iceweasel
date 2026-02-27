@@ -1779,7 +1779,9 @@
     %s is the file type to change to.
   -->
   <string name="change_file_extension_title">Alterar o tipo de arquivo para %s?</string>
+  <string name="change_file_extension_description">Isso pode abrir o arquivo em outro aplicativo e representar um risco para o seu dispositivo!</string>
   <string name="change_file_extension_cancel_button">Cancelar</string>
+  <string name="change_file_extension_confirm_button">Sim, alterar</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Em andamento</string>
   <!--

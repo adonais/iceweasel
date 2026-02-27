@@ -236,7 +236,7 @@
   <!-- The author of an add-on. -->
   <string name="mozac_feature_addons_author">អ្នកនិពន្ធ</string>
   <!-- The last date that the add-on was updated. -->
-  <string name="mozac_feature_addons_last_updated">បានធ្វើបច្ចុប្បន្នភាពចុងក្រោយ</string>
+  <string name="mozac_feature_addons_last_updated">បានអាប់ដេតចុងក្រោយ</string>
   <!-- The developer website (Homepage) of the add-on. -->
   <string name="mozac_feature_addons_home_page">ទំព័រដើម</string>
   <!-- A link where users can find more information about add-ons permissions. -->

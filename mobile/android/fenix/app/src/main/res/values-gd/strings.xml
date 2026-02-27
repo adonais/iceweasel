@@ -1618,6 +1618,13 @@
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Chan eil eachdraidh an-seo</string>
   <!--
+    Downloads
+
+    Text for the snackbar to confirm that a multiple download items have been removed. %1$s is the number of removed download items.
+    %1$d is the number of items deleted.
+  -->
+  <string name="download_delete_multiple_items_snackbar_2">Nithean air an sguabadh às: %1$d</string>
+  <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
   -->
@@ -1643,6 +1650,8 @@
   <string name="webcompat_reporter_url_error_invalid">Cuir a-steach URL dligheach</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Dè tha briste?</string>
+  <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
+  <string name="webcompat_reporter_choose_reason_error">Tagh adhbhar</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Mìnich an duilgheadas (roghainneil)</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->

@@ -35,6 +35,16 @@
   <string name="mozac_feature_prompt_dont_update_2">Sī ga\'hue akuan\' nïn</string>
   <!-- Positive confirmation that we should save the updated login -->
   <string name="mozac_feature_prompt_update_confirmation">Nāgi\'iaj nākà</string>
+  <!-- Error text displayed underneath the password field when it is in an error case -->
+  <string name="mozac_feature_prompt_error_empty_password_2">Gāchrūn da’nga’ huìi</string>
+  <!-- Error text displayed underneath the password field when it is in an error case -->
+  <string name="mozac_feature_prompt_error_unknown_cause_2">Na’hue nā’nïnj sà’aj da’nga’ huìi</string>
+  <!-- Prompt message displayed when app detects a user has entered a new username and password and user decides if app should save the new password. -->
+  <string name="mozac_feature_prompt_login_save_headline_2">Nā’nïnj sà’t da’nga’ huìi aj</string>
+  <!-- Prompt message displayed when app detects a user has entered a new password for an existing login and user decides if app should update the password. -->
+  <string name="mozac_feature_prompt_login_update_headline_2">Nāgi’hiaj nākàt da’nga’ huìi aj</string>
+  <!-- Prompt message displayed when app detects a user has entered a username for an existing login without a username and user decides if app should update the login. -->
+  <string name="mozac_feature_prompt_login_add_username_headline_2">Nāgi’hiaj nākàt siyūgui raj</string>
   <!--
     Text for a label for the field when prompt requesting a text is shown.
 
@@ -47,6 +57,10 @@
   <string name="mozac_feature_prompts_allow">Gā\'nïn</string>
   <!-- Text of a negative button in dialog requesting to open a new window. -->
   <string name="mozac_feature_prompts_deny">Sī ga\'nïnjt</string>
+  <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
+  <string name="mozac_feature_prompts_popup_dialog_title">Gā’nïnt nāyī’nïn riña sitiô nan anj</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">Gā’nïnt nādunā sitiô nan ne’ gān’an anj</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">Huā nīkā ruhuâ raj.</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
@@ -83,8 +97,24 @@
   <string name="mozac_feature_prompts_dec">Ahui hio\' yi</string>
   <!-- Title of the time picker dialog. -->
   <string name="mozac_feature_prompts_set_time">Gānïn ‘ngō diû</string>
+  <!-- Option in expanded select password prompt that links to password settings -->
+  <string name="mozac_feature_prompts_manage_logins_2">Nātsij riña nej da’nga’ huìi</string>
+  <!-- Content description for expanding the saved passwords options in the select password prompt -->
+  <string name="mozac_feature_prompts_expand_logins_content_description_2">Nāgi’hiaj nìkót nej da’nga’ huì nū sà’ aj</string>
+  <!-- Content description for collapsing the saved passwords options in the select password prompt -->
+  <string name="mozac_feature_prompts_collapse_logins_content_description_2">Nāduguâ’t nej da’nga’ huì nū sà’ aj</string>
   <!-- Header for the select password prompt to allow users to fill a form with a saved password -->
   <string name="mozac_feature_prompts_saved_logins_2">Nej da’nga’ huì nū sà’a</string>
+  <!-- Content description for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_content_description">Gīrīrà ‘ngō da’nga’ huì chì’ huaa</string>
+  <!-- Header for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_2">Gārāsun ‘ngō da’nga’ huì chì’ huaa</string>
+  <!-- Title for using the suggest strong password confirmation dialog. %1$s will be replaced with the generated password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_message">Gārāsun ‘ngō da’nga’ huì chì’ huaa: %1$s</string>
+  <!-- Title for using the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_title">Gārāsunt ‘ngō da’nga’ huì chì’ huaa aj</string>
+  <!-- Content description for the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_description_3">Tna’huēj riña si kuendât ngà ‘ngō da’nga’ huì chì’ hua ri mān’an aga’ nan. Nānun sà’ man riña si kuendât da’ gā’hue gārāsunt ne’ rūkù.</string>
   <!-- Pressing this will use the suggested strong password -->
   <string name="mozac_feature_prompts_suggest_strong_password_use_password">Gārāsun da’nga’ huìi</string>
   <!-- Pressing this will dismiss the suggested strong password dialog -->
@@ -98,10 +128,18 @@
   <string name="mozac_feature_prompt_repost_positive_button_text">Nā’nïnj ñû gān’ānj nej dâto</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">Dūyichin\'</string>
+  <!-- Strings show in a dialog that appear when user confirm folder upload -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">Dūsîjt ñanj aj</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Nādusîj</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">Dūyichin\'</string>
+  <!--
+    Credit Card Autofill
+
+    Header for the select card prompt to allow users to fill a form with a saved card.
+  -->
+  <string name="mozac_feature_prompts_select_credit_card_2">Gārāsun tarjeta nū sà’ ‘hiát</string>
   <!-- Text for the title of a save credit card dialog. -->
   <string name="mozac_feature_prompts_save_credit_card_prompt_title">Nā’nïnj sà’ hue’êt tarjeta nan anj.</string>
   <!-- Text for the title of an update credit card dialog. -->

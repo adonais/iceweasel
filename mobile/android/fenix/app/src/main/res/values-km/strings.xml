@@ -36,11 +36,11 @@
   <!-- No Private Tabs Message Description -->
   <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងឯកជនរបស់លោកអ្នកនឹងត្រូវបង្ហាញនៅទីនេះ។</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
-  <string name="tab_manager_empty_private_tabs_page_header">ការ​រក​មើល​ជា​ឯកជន</string>
+  <string name="tab_manager_empty_private_tabs_page_header">ការច្បោលឯកជន</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
   <string name="tab_manager_empty_private_tabs_page_description">%1$s នឹងមិនចងចាំប្រវត្តិ ឬខូគីរបស់អ្នកទេ ប៉ុន្តែចំណាំថ្មីនឹងត្រូវបានរក្សាទុក។</string>
   <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
-  <string name="tab_manager_empty_normal_tabs_page_header">បង្កើតផ្ទាំងថ្មី ដើម្បីចាប់ផ្តើមស្វែងរក</string>
+  <string name="tab_manager_empty_normal_tabs_page_header">បង្កើតផ្ទាំងថ្មី ដើម្បីចាប់ផ្តើមការស្វែងរក</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">បានជ្រើសរើស %1$d</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
@@ -78,7 +78,7 @@
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">ទេវកថាទូទៅអំពីការរុករកឯកជន</string>
   <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
-  <string name="private_browsing_a11y_session_announcement">វគ្គរុករកឯកជន</string>
+  <string name="private_browsing_a11y_session_announcement">កាលានុកាលការច្បោលឯកជន</string>
   <!--
     True Private Browsing Mode
 
@@ -128,7 +128,7 @@
   <!-- Text for the negative action button to dismiss the dialog. -->
   <string name="camera_permissions_needed_negative_button_text">បដិសេធ</string>
   <!-- Text for the banner message to tell users about our auto close feature. -->
-  <string name="tab_tray_close_tabs_banner_message">កំណត់​ផ្ទាំង​ដែល​បើក​ឲ្យ​បិទ​ដោយ​ស្វ័យប្រវត្តិ​ដែល​មិន​ត្រូវ​បាន​មើល​ក្នុង​ថ្ងៃ សប្តាហ៍ ឬ​ខែ​កន្លង​មក។</string>
+  <string name="tab_tray_close_tabs_banner_message">កំណត់ផ្ទាំងបើកដែលមិនត្រូវបានមើលនៅក្នុងថ្ងៃ សប្តាហ៍ ឬខែកន្លងមក ឱ្យបិទដោយស្វ័យប្រវត្តិ។</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
   <string name="tab_tray_close_tabs_banner_positive_button_text">ជម្រើសទិដ្ឋភាព</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
@@ -200,7 +200,7 @@
   -->
   <string name="browser_menu_back">ថយ​ក្រោយ</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
-  <string name="browser_menu_forward">បញ្ជូន​បន្ត</string>
+  <string name="browser_menu_forward">ទៅមុខ</string>
   <!-- Content description (not visible, for screen readers etc.): Refresh current website -->
   <string name="browser_menu_refresh">ផ្ទុក​ឡើងវិញ</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
@@ -420,7 +420,7 @@
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">ស្វែងរកដោយផ្ទាល់ពីរបារអាសយដ្ឋាន</string>
   <!-- Menu option in the search selector menu to open the search settings -->
-  <string name="search_settings_menu_item">ការកំណត់ការស្វែងរក</string>
+  <string name="search_settings_menu_item">ការកំណត់ស្វែងរក</string>
   <!-- Header text for the search selector menu -->
   <string name="search_header_menu_item_2">លើកនេះស្វែងរកនៅក្នុង៖</string>
   <!--
@@ -462,7 +462,7 @@
   -->
   <string name="juno_onboarding_sign_in_description_3" tools:ignore="BrandUsage">Firefox អ៊ិនគ្រីបពាក្យសម្ងាត់ ចំណាំ និងអ្វីច្រើនទៀតរបស់អ្នក នៅពេលអ្នកបានធ្វើសមកាលកម្ម។</string>
   <!-- Text for the button to sign in to sync on the device -->
-  <string name="juno_onboarding_sign_in_positive_button" tools:ignore="UnusedResources">ចូល</string>
+  <string name="juno_onboarding_sign_in_positive_button" tools:ignore="UnusedResources">បញ្ជាប់ចូល</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_sign_in_negative_button" tools:ignore="UnusedResources">មិន​មែន​ឥឡូវ</string>
   <!--
@@ -568,7 +568,7 @@
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
   <string name="nova_onboarding_tou_body_line_3_link_text">គ្រប់គ្រងការកំណត់</string>
   <!-- "Set to default" onboarding button. -->
-  <string name="nova_onboarding_set_to_default_button">កំណត់ជាកម្មវិធីរុករកលំនាំដើម</string>
+  <string name="nova_onboarding_set_to_default_button">កំណត់ជាកម្មវិធីច្បោលបុរេជម្រើស</string>
   <!-- Toolbar selection onboarding title. -->
   <string name="nova_onboarding_toolbar_selection_title">ជ្រើសរបារអាសយដ្ឋានរបស់អ្នក</string>
   <!-- Toolbar selection onboarding "top" option label. -->
@@ -619,7 +619,7 @@
   <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_system_option">ប្រព័ន្ធស្វ័យប្រវត្តិ</string>
   <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
-  <string name="onboarding_customize_theme_content_description">រូបនៃផ្ទៃស្បែក %1$s</string>
+  <string name="onboarding_customize_theme_content_description">រូបភាពនៃផ្ទៃស្បែក %1$s</string>
   <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
   <string name="onboarding_customize_theme_a11y_action_label_select">ជ្រើសរើស</string>
   <!--
@@ -981,16 +981,24 @@
   <string name="close_tabs_after_one_week">បន្ទាប់ពីមួយសប្តាហ៍</string>
   <!-- Option for auto closing tabs that will auto close tabs after one month -->
   <string name="close_tabs_after_one_month">បន្ទាប់ពីមួយខែ</string>
+  <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
+  <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">បិទស្វ័យប្រវត្តិនូវផ្ទាំងបើក</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">បិទ</string>
   <!-- Option for always opening the homepage when re-opening the app -->
   <string name="opening_screen_homepage">ទំព័រដើម</string>
   <!-- Option for always opening the user's last-open tab when re-opening the app -->
   <string name="opening_screen_last_tab">ផ្ទាំងចុងក្រោយ</string>
+  <!-- Option for always opening the homepage when re-opening the app after four hours of inactivity -->
+  <string name="opening_screen_after_four_hours_of_inactivity">ទំព័រដើមបន្ទាប់ពីអសកម្មបួនម៉ោង</string>
   <!-- Summary for tabs preference when auto closing tabs setting is set to manual close -->
   <string name="close_tabs_manually_summary">បិទដោយដៃ</string>
   <!-- Summary for tabs preference when auto closing tabs setting is set to auto close tabs after one day -->
   <string name="close_tabs_after_one_day_summary">បិទបន្ទាប់ពីមួយថ្ងៃ</string>
+  <!-- Summary for tabs preference when auto closing tabs setting is set to auto close tabs after one week -->
+  <string name="close_tabs_after_one_week_summary">បិទបន្ទាប់ពីមួយសប្តាហ៍</string>
+  <!-- Summary for tabs preference when auto closing tabs setting is set to auto close tabs after one month -->
+  <string name="close_tabs_after_one_month_summary">បិទបន្ទាប់ពីមួយខែ</string>
   <!-- Summary for homepage preference indicating always opening the homepage when re-opening the app -->
   <string name="opening_screen_homepage_summary">បើកនៅទំព័រដើម</string>
   <!-- Summary for homepage preference indicating always opening the last-open tab when re-opening the app -->

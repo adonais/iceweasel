@@ -16,11 +16,11 @@
   <!-- Text for a positive button, when an user selects a date in date/time picker. -->
   <string name="mozac_feature_prompts_set_date">កំណត់</string>
   <!-- Text for a button that clears the selected input in the date/time picker. -->
-  <string name="mozac_feature_prompts_clear">សម្អាត</string>
+  <string name="mozac_feature_prompts_clear">ជម្រះ</string>
   <!-- Text for the title of an authentication dialog. -->
   <string name="mozac_feature_prompt_sign_in">ចូល</string>
   <!-- Text for username field in an authentication dialog. -->
-  <string name="mozac_feature_prompt_username_hint">ឈ្មោះ​អ្នក​ប្រើ</string>
+  <string name="mozac_feature_prompt_username_hint">អត្ថនាម</string>
   <!-- Text for password field in an authentication dialog. -->
   <string name="mozac_feature_prompt_password_hint">ពាក្យ​សម្ងាត់</string>
   <!-- Negative confirmation that we should not save the new or updated login -->
@@ -40,7 +40,7 @@
   <!-- Error text displayed underneath the password field when it is in an error case -->
   <string name="mozac_feature_prompt_error_unknown_cause_2">មិនអាចរក្សាទុកពាក្យសម្ងាត់បានទេ</string>
   <!-- Prompt message displayed when app detects a user has entered a new username and password and user decides if app should save the new password. -->
-  <string name="mozac_feature_prompt_login_save_headline_2">បាន​រក្សា​ទុក​ពាក្យ​សម្ងាត់​</string>
+  <string name="mozac_feature_prompt_login_save_headline_2">រក្សាទុកពាក្យសម្ងាត់ឬ?</string>
   <!-- Prompt message displayed when app detects a user has entered a new password for an existing login and user decides if app should update the password. -->
   <string name="mozac_feature_prompt_login_update_headline_2">ធ្វើបច្ចុប្បន្នភាពពាក្យសម្ងាត់?</string>
   <!-- Prompt message displayed when app detects a user has entered a username for an existing login without a username and user decides if app should update the login. -->
@@ -66,7 +66,7 @@
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_body">តើអ្នកចង់ចាកចេញពីគេហទំព័រនេះទេ? ទិន្នន័យដែលអ្នកបានបញ្ចូលអាចនឹងមិនត្រូវបានរក្សាទុកទេ</string>
   <!-- Stay button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to stay in the website. -->
-  <string name="mozac_feature_prompts_before_unload_stay">ស្នាក់នៅ</string>
+  <string name="mozac_feature_prompts_before_unload_stay">នៅបន្ត</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">ចាកចេញ</string>
   <!-- Title of the month chooser dialog. -->
@@ -123,12 +123,15 @@
   <string name="mozac_feature_prompts_suggest_strong_password_updated_snackbar_title">ពាក្យសម្ងាត់ត្រូវបានធ្វើបច្ចុប្បន្នភាព</string>
   <!-- Strings shown in a dialog that appear when users try to refresh a certain kind of webpages -->
   <string name="mozac_feature_prompt_repost_title">ផ្ញើទិន្នន័យឡើងវិញទៅគេហទំព័រនេះ?</string>
+  <string name="mozac_feature_prompt_repost_message">ការផ្ទុកទំព័រនេះឡើងវិញអាចចម្លងសកម្មភាពថ្មីៗ ដូចជាការផ្ញើ ការបង់ប្រាក់ ឬការបង្ហោះមតិយោបល់ពីរដង។</string>
   <!-- Pressing this will dismiss the dialog and reload the page sending again the previous data -->
   <string name="mozac_feature_prompt_repost_positive_button_text">ផ្ញើទិន្នន័យឡើងវិញ</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">បោះបង់</string>
   <!-- Strings show in a dialog that appear when user confirm folder upload -->
-  <string name="mozac_feature_prompt_folder_upload_confirm_title">ផ្ទុកឡើងឯកសារ?</string>
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">អាប់ឡូដឯកសារឬ?</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">ត្រូវប្រាកដថាអ្នកជឿជាក់លើគេហទំព័រនេះ មុនពេលអ្នកអាប់ឡូដពី “%1$s”។</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">ផ្ទុក​ឡើង</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
@@ -139,14 +142,28 @@
     Header for the select card prompt to allow users to fill a form with a saved card.
   -->
   <string name="mozac_feature_prompts_select_credit_card_2">ប្រើកាតដែលបានរក្សាទុក</string>
+  <!-- Content description for expanding the saved card options in the select card prompt. -->
+  <string name="mozac_feature_prompts_expand_credit_cards_content_description_2">ពង្រីកកាតដែលបានរក្សាទុក</string>
+  <!-- Content description for collapsing the saved card options in the select prompt. -->
+  <string name="mozac_feature_prompts_collapse_credit_cards_content_description_2">ពង្រួមកាតដែលបានរក្សាទុក</string>
   <!-- Option in the expanded select card prompt that links to cards settings. -->
   <string name="mozac_feature_prompts_manage_credit_cards_2">គ្រប់គ្រងកាត</string>
+  <!-- Text for the title of a save credit card dialog. -->
+  <string name="mozac_feature_prompts_save_credit_card_prompt_title">រក្សាទុកកាតនេះដោយសុវត្ថិភាព?</string>
+  <!-- Text for the title of an update credit card dialog. -->
+  <string name="mozac_feature_prompts_update_credit_card_prompt_title">អាប់ដេតកាតដែលហួសសុពលភាពឬ?</string>
+  <!-- Subtitle text displayed under the title of the saved card dialog. %s is the name of the app (for example "Firefox"). -->
+  <string name="mozac_feature_prompts_save_credit_card_prompt_body_2">%s អ៊ិនគ្រីបលេខកាតរបស់អ្នក។ កូដសុវត្ថិភាពរបស់អ្នកនឹងមិនត្រូវបានរក្សាទុកឡើយ។</string>
   <!--
     Address Autofill
 
     Header for the select address prompt to allow users to fill a form with a saved address.
   -->
   <string name="mozac_feature_prompts_select_address_2">ជ្រើសរើសអាសយដ្ឋាន</string>
+  <!-- Content description for expanding the saved addresses options in the select address prompt. -->
+  <string name="mozac_feature_prompts_expand_address_content_description_2">ពង្រីកអាសយដ្ឋានដែលបានរក្សាទុក</string>
+  <!-- Content description for collapsing the saved address options in the select address prompt. -->
+  <string name="mozac_feature_prompts_collapse_address_content_description_2">ពង្រួមអាសយដ្ឋានដែលបានរក្សាទុក</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">គ្រប់គ្រងអាសយដ្ឋាន</string>
   <!--
@@ -155,8 +172,12 @@
     Content description for the Account picture in the Select Account FedCM prompt
   -->
   <string name="mozac_feature_prompts_account_picture">រូបភាព​គណនី</string>
+  <!-- Title of the Identity Credential provider dialog chooser. -->
+  <string name="mozac_feature_prompts_identity_credentials_choose_provider">ជ្រើសយកអ្នកផ្តល់សេវាបញ្ជាប់ចូល</string>
   <!-- Title of an account picker dialog for identity credentials. The %1$s will be replaced with the name of the provider -->
   <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">ចូលដោយប្រើគណនី %1$s</string>
+  <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">ប្រើ %1$s ជាអ្នកផ្តល់សេវាបញ្ជាប់ចូល</string>
   <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[ការចូលទៅក្នុង %1$s ជាមួយគណនី %2$s គឺស្ថិតនៅក្រោម <a href=\"%3$s\">គោលការណ៍ឯកជនភាព</a> និង <a href=\"%4$s\">លក្ខខណ្ឌនៃសេវាកម្ម</a> របស់ពួកគេ។]]></string>
   <!-- Text for the positive button of the Identity Credential dialogs. -->
@@ -168,5 +189,7 @@
 
     Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
   -->
-  <string name="mozac_feature_relay_chip_text">ប្រើរបាំងអាសយដ្ឋានអ៊ីមែល</string>
+  <string name="mozac_feature_relay_chip_text">ប្រើម៉ាស់អ៊ីមែល</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">ថ្មី! %s ម៉ាស់អ៊ីមែល ឥឡូវនេះមាននៅលើទូរស័ព្ទដៃហើយ។</string>
 </resources>

@@ -1646,6 +1646,7 @@
   -->
   <string name="create_tab_group_title">สร้างกลุ่มแท็บ</string>
   <string name="create_tab_group_save_button">บันทึก</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">ปิดแก้ไขกลุ่มแท็บ</string>
   <!--
     History
 

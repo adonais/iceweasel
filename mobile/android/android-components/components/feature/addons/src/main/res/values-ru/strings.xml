@@ -278,7 +278,7 @@
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">Пожаловаться</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_permissions_dialog_title_2">Добавить %1$s</string>
+  <string name="mozac_feature_addons_permissions_dialog_title_2">Добавить «%1$s»</string>
   <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_optional_permissions_with_data_collection_dialog_title">%1$s запрашивает дополнительные настройки</string>
   <!-- This is the title of a dialog that asks the users to grant optional data collection permissions only. %1$s is the add-on name. -->
@@ -346,9 +346,9 @@
   <!-- The tile of the notification, this will be shown to the user when more than one newly supported add-ons are available. -->
   <string name="mozac_feature_addons_supported_checker_notification_title_plural" tools:ignore="UnusedResources">Доступны новые дополнения</string>
   <!-- The content of the notification, this will be shown to the user when one newly supported add-on is available. %1$s is the add-on name and %2$s is the app name (in most cases Firefox). -->
-  <string name="mozac_feature_addons_supported_checker_notification_content_one">Добавить %1$s в %2$s</string>
+  <string name="mozac_feature_addons_supported_checker_notification_content_one">Добавить «%1$s» в %2$s</string>
   <!-- The content of the notification, this will be shown to the user when two newly supported add-ons are available. %1$s is the first add-on name. %2$s is the second add-on name. %3$s is the app name (in most cases Firefox). -->
-  <string name="mozac_feature_addons_supported_checker_notification_content_two">Добавить %1$s и %2$s в %3$s</string>
+  <string name="mozac_feature_addons_supported_checker_notification_content_two">Добавить «%1$s» и «%2$s» в %3$s</string>
   <!-- The content of the notification, this will be shown to the user when more than two newly supported add-ons are available. %1$s is the app name (in most cases Firefox). -->
   <string name="mozac_feature_addons_supported_checker_notification_content_more_than_two">Добавить их в %1$s</string>
   <!-- This is the caption for not yet supported screen caption -->
