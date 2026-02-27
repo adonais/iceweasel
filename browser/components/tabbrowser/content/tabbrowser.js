@@ -1712,7 +1712,7 @@
      */
     async _checkIfShouldTriggerTabSelectMessage(oldTab, newTab) {
       const ONE_MINUTE_MS = 60000;
-      const LIMIT_FOR_TRIGGER = 2;
+      const LIMIT_FOR_TRIGGER = 3;
       const now = Date.now();
 
       const oldTabSpec = oldTab.linkedBrowser.currentURI.spec;

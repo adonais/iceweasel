@@ -786,7 +786,7 @@ add_task(async function test_tabSwitch() {
   const triggerData = await receivedTrigger;
   Assert.ok(
     ASRouter.sendTriggerMessage.calledWith(sinon.match({ id: "tabSwitch" })),
-    "tabSwitch trigger sent after switching between tabs 2 times"
+    "tabSwitch trigger sent after switching between tabs 3 times"
   );
   Assert.ok(
     triggerData.context &&
