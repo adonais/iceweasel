@@ -660,10 +660,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         hide_secondary_section: "responsive",
         logo: {},
         title: {
-          string_id: "onboarding-easy-setup-security-and-privacy-title",
+          string_id: "onboarding-refresh-pin-set-default-title",
         },
         subtitle: {
-          string_id: "onboarding-easy-setup-security-and-privacy-subtitle",
+          string_id: "onboarding-refresh-pin-set-default-subtitle",
         },
         tiles: {
           type: "multiselect",
@@ -803,10 +803,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         progress_bar: true,
         logo: {},
         title: {
-          string_id: "onboarding-easy-setup-security-and-privacy-title",
+          string_id: "onboarding-refresh-pin-set-default-title",
         },
         subtitle: {
-          string_id: "onboarding-easy-setup-security-and-privacy-subtitle",
+          string_id: "onboarding-refresh-pin-set-default-subtitle",
         },
         tiles: {
           type: "multiselect",
@@ -924,10 +924,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         progress_bar: true,
         logo: {},
         title: {
-          string_id: "onboarding-easy-setup-security-and-privacy-title",
+          string_id: "onboarding-refresh-pin-set-default-title",
         },
         subtitle: {
-          string_id: "onboarding-easy-setup-security-and-privacy-subtitle",
+          string_id: "onboarding-refresh-pin-set-default-subtitle",
         },
         tiles: {
           type: "multiselect",
@@ -1056,10 +1056,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         progress_bar: true,
         logo: {},
         title: {
-          string_id: "onboarding-easy-setup-security-and-privacy-title",
+          string_id: "onboarding-refresh-pin-set-default-title",
         },
         subtitle: {
-          string_id: "onboarding-easy-setup-security-and-privacy-subtitle",
+          string_id: "onboarding-refresh-pin-set-default-subtitle",
         },
         tiles: {
           type: "multiselect",
@@ -1242,6 +1242,12 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         image_alt_text: {
           string_id: "mr2022-onboarding-import-image-alt",
         },
+        title: {
+          string_id: "onboarding-refresh-import-title",
+        },
+        subtitle: {
+          string_id: "onboarding-refresh-import-subtitle",
+        },
         background:
           "url('chrome://activity-stream/content/data/content/assets/mr-import.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
         progress_bar: true,
@@ -1277,10 +1283,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         progress_bar: true,
         logo: {},
         title: {
-          string_id: "amo-screen-title",
+          string_id: "onboarding-refresh-onboarding-addons-title",
         },
         subtitle: {
-          raw: "Extensions are tiny apps that let you customize Firefox. They can boost your privacy, enhance productivity, improve media, change the way Firefox looks, and so much more.",
+          string_id: "onboarding-refresh-onboarding-addons-subtitle",
         },
         primary_button: {
           label: {
@@ -1320,10 +1326,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         progress_bar: true,
         logo: {},
         title: {
-          string_id: "onboarding-gratitude-security-and-privacy-title",
+          string_id: "onboarding-refresh-gratitude-title",
         },
         subtitle: {
-          string_id: "onboarding-gratitude-security-and-privacy-subtitle",
+          string_id: "onboarding-refresh-gratitude-subtitle",
         },
         primary_button: {
           label: {
@@ -1350,10 +1356,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         progress_bar: true,
         logo: {},
         title: {
-          string_id: "onboarding-sign-up-title",
+          string_id: "onboarding-refresh-sync-title",
         },
         subtitle: {
-          string_id: "onboarding-sign-up-description",
+          string_id: "onboarding-refresh-sync-subtitle",
         },
         secondary_button: {
           label: {
