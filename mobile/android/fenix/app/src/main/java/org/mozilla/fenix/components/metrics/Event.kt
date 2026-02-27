@@ -62,7 +62,7 @@ sealed class Event {
         /**
          * Event recording when user is at least 1 day active on the last 3 days of the first week.
          */
-        object LastThreeDaysActivity : FirstWeekPostInstall("f4hcx7")
+        object LastThreeDaysActivity : FirstWeekPostInstall("89cbkw")
 
         /**
          * Event recording when **both** of the following are true:
@@ -70,7 +70,7 @@ sealed class Event {
          * - At least 2 days active on the last 3 days of the first week
          * - At least 2 days active on the first 4 days of the first week.
          */
-        object RecurrentActivity : FirstWeekPostInstall("474mrs")
+        object RecurrentActivity : FirstWeekPostInstall("yzyixm")
 
         /**
          * Event recording when **both** of the following are true:
@@ -78,6 +78,6 @@ sealed class Event {
          * - Active on every single day in the first week
          * - Default browser on the first 4 days of the first week.
          */
-        object EverydayActivityAndSetToDefault : FirstWeekPostInstall("9alclr")
+        object EverydayActivityAndSetToDefault : FirstWeekPostInstall("v0g2bc")
     }
 }
