@@ -130,6 +130,21 @@ add_task(function tabNotesIsEligible() {
   );
 });
 
+add_task(async function tabNotesCount() {
+  const tab1 = new FakeTab("https://example.com/1");
+  const tab2 = new FakeTab("https://example.com/2");
+
+  Assert.equal(await TabNotes.count(), 0, "should be zero tab notes to start");
+  await TabNotes.set(tab1, "Test note 1");
+  Assert.equal(await TabNotes.count(), 1, "should be one tab note");
+  await TabNotes.set(tab2, "Test note 2");
+  Assert.equal(await TabNotes.count(), 2, "should be two tab notes");
+  await TabNotes.delete(tab2);
+  Assert.equal(await TabNotes.count(), 1, "should be one tab note again");
+  await TabNotes.reset();
+  Assert.equal(await TabNotes.count(), 0, "should be zero tab notes again");
+});
+
 add_task(async function tabNotesSanitizationTests() {
   let tab = new FakeTab("https://example.com/");
   let tooLongValue = "x".repeat(1500);

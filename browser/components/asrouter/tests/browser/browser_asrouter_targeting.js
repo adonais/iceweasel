@@ -31,6 +31,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
+  TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
@@ -1100,6 +1101,62 @@ add_task(async function check_pinned_tabs() {
       gBrowser.unpinTab(tab);
     }
   );
+});
+
+class FakeTabWithNote extends EventTarget {
+  /**
+   * @param {string} canonicalUrl
+   */
+  constructor(canonicalUrl) {
+    super();
+    this.canonicalUrl = canonicalUrl;
+  }
+}
+
+add_task(async function check_tabNotesCount() {
+  const tab1 = new FakeTabWithNote("https://www.example.com/1");
+  const tab2 = new FakeTabWithNote("https://www.example.com/2");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.notes.enabled", true]],
+  });
+  await TabNotes.init();
+
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    0,
+    "No tab notes yet"
+  );
+
+  await TabNotes.set(tab1, "Test note 1");
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    1,
+    "One tab note"
+  );
+
+  await TabNotes.set(tab2, "Test note 2");
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    2,
+    "Two tab notes"
+  );
+
+  await TabNotes.delete(tab2);
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    1,
+    "One tab note again"
+  );
+
+  await TabNotes.reset();
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    0,
+    "No tab notes again"
+  );
+
+  await TabNotes.deinit();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function check_hasAccessedFxAPanel() {
