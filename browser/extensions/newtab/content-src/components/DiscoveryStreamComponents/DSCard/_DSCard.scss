@@ -541,11 +541,10 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     }
 
     .meta {
-      padding-inline: 0;
-      padding-block: var(--space-medium);
+      padding: var(--space-small) var(--space-large);
+      padding-block-end: 0;
 
       .title {
-        text-transform: uppercase;
         font-size: var(--font-size-small);
         font-weight: var(--font-weight);
         color: var(--newtab-text-secondary-color);
@@ -563,14 +562,8 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     &.sections-card-ui {
       .img-wrapper .ds-image img {
         border-radius: var(--border-radius-large);
-      }
-    }
-
-    &.sections-card-ui:hover {
-      box-shadow: none;
-
-      .img-wrapper .ds-image img {
-        box-shadow: 0 2px 14px 0 var(--newtab-section-card-box-shadow-color);
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
       }
     }
 

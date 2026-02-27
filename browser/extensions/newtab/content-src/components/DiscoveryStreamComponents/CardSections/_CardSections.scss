@@ -139,8 +139,6 @@
     .info-wrap {
       flex-grow: initial;
       max-width: unset;
-      max-height: 65px;
-      min-height: 65px;
 
       .title {
         -webkit-line-clamp: 3;
@@ -229,7 +227,7 @@
   grid-row: span 2;
   grid-column: span 2;
 
-  &.refined-cards.ds-card.sections-card-ui {
+  &.ds-card.sections-card-ui {
     box-shadow: var(--box-shadow-card);
 
     @media ($break-point-layout-variant <=width < $break-point-widest),
