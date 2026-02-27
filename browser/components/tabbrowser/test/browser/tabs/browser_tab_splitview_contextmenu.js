@@ -162,7 +162,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return (
         Array.from(tabContainer.children).some(
@@ -191,7 +191,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return (
         !Array.from(tabContainer.children).some(
@@ -249,7 +249,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return (
         Array.from(tabContainer.children).some(
@@ -300,7 +300,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return (
         !Array.from(tabContainer.children).some(
@@ -350,7 +350,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return (
         Array.from(tabContainer.children).some(
@@ -391,7 +391,7 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return (
         Array.from(tabContainer.children).some(
@@ -439,7 +439,7 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return Array.from(tabContainer.children).some(
         tabChild => tabChild.tagName === "tab-group"
@@ -463,10 +463,16 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
     ) => {
       await BrowserTestUtils.waitForMutationCondition(
         removeSplitViewFromGroupItem,
-        { attributes: true },
-        () =>
-          !removeSplitViewFromGroupItem.hidden &&
-          removeSplitViewFromGroupItem.textContent === "Remove from Group",
+        // `attributes` catches `.hidden`
+        // `characterData` and `subtree` catches when the l10n engine modifies
+        // the text content in menuitem > label::before
+        { subtree: true, attributes: true, characterData: true },
+        () => {
+          return (
+            !removeSplitViewFromGroupItem.hidden &&
+            removeSplitViewFromGroupItem.textContent === "Remove from Group"
+          );
+        },
         "removeSplitViewFromGroupItem is visible and has the expected label"
       );
 
@@ -477,7 +483,7 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
 
   await BrowserTestUtils.waitForMutationCondition(
     tabContainer,
-    { children: true },
+    { childList: true },
     () => {
       return !Array.from(tabContainer.children).some(
         tabChild => tabChild.tagName === "tab-group"
