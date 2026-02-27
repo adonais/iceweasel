@@ -64,6 +64,41 @@ add_task(async function test_window_type_and_menu_visibility() {
 });
 
 /**
+ * Test that the File menu doesn't crash and AI items are hidden when
+ * gBrowser is unavailable (simulates macOS hidden window with no
+ * browser windows open).
+ */
+add_task(async function test_file_menu_no_browser_window() {
+  let fileMenuPopup = document.getElementById("menu_FilePopup");
+  if (!fileMenuPopup) {
+    return;
+  }
+
+  let savedGBrowser = window.gBrowser;
+  window.gBrowser = undefined;
+
+  try {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.enabled", false]],
+    });
+
+    await openFileMenu(fileMenuPopup);
+    Assert.ok(
+      document.getElementById("menu_newAIWindow").hidden,
+      "AI Window item should be hidden when pref is disabled and no browser window"
+    );
+    Assert.ok(
+      document.getElementById("menu_newClassicWindow").hidden,
+      "Classic Window item should be hidden when pref is disabled and no browser window"
+    );
+    await closeFileMenu(fileMenuPopup);
+  } finally {
+    window.gBrowser = savedGBrowser;
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+/**
  * Test that clicking AI window and classic window buttons opens the correct window type.
  */
 add_task(async function test_button_actions() {

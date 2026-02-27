@@ -570,6 +570,10 @@ export const AIWindow = {
       Services.prefs.setBoolPref("browser.smartwindow.enabled", true);
     }
 
+    if (!browser && !openNewWindow) {
+      return false;
+    }
+
     if (!openNewWindow) {
       return this._authorizeAndToggleWindow(browser.ownerGlobal);
     }
@@ -577,7 +581,7 @@ export const AIWindow = {
     const isAuthorized = await lazy.AIWindowAccountAuth.canAccessAIWindow();
     const windowPromise = lazy.BrowserWindowTracker.promiseOpenWindow({
       aiWindow: isAuthorized,
-      openerWindow: browser.ownerGlobal,
+      openerWindow: browser?.ownerGlobal,
     });
 
     return this._authorizeAndToggleWindow(await windowPromise);
