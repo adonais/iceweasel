@@ -246,23 +246,48 @@ jobs:
               mozilla-release:
                   - {hour: 7, minute: 0}
                   - {hour: 19, minute: 0}
-              # Bug 1965205: Enable this after esr140 got a release
-              mozilla-esr140: []
+              mozilla-esr140:
+                  - {hour: 7, minute: 0}
+                  - {hour: 19, minute: 0}
+
+    - name: pinning-update
+      job:
+          type: decision-task
+          treeherder-symbol: hfu
+          target-tasks-method: pinning_update
+      # Pinning updates do not run on mozilla-release: HSTS/HPKP preload
+      # updates are not appropriate for the release branch.
+      run-on-projects:
+          - mozilla-central
+          - mozilla-beta
+          - mozilla-esr140
+      when:
+          - {weekday: 'Friday', hour: 17, minute: 0}
 
     - name: periodic-update
       job:
           type: decision-task
-          treeherder-symbol: Nfile
+          treeherder-symbol: pfu
           target-tasks-method: file_update
       run-on-projects:
           - mozilla-central
           - mozilla-beta
           - mozilla-release
-          # Bug 1965206: Enable this once esr140 has branched off of release
-          # - mozilla-esr140
+          - mozilla-esr140
       when:
-          - {weekday: 'Monday', hour: 8, minute: 0}
-          - {weekday: 'Thursday', hour: 8, minute: 0}
+          by-project:
+              mozilla-central:
+                  - {weekday: 'Sunday', hour: 20, minute: 0}
+                  - {weekday: 'Tuesday', hour: 20, minute: 0}
+                  - {weekday: 'Thursday', hour: 20, minute: 0}
+              mozilla-beta:
+                  - {weekday: 'Sunday', hour: 20, minute: 0}
+                  - {weekday: 'Tuesday', hour: 20, minute: 0}
+                  - {weekday: 'Thursday', hour: 20, minute: 0}
+              mozilla-release:
+                  - {weekday: 'Monday', hour: 5, minute: 0}
+              mozilla-esr140:
+                  - {weekday: 'Monday', hour: 5, minute: 0}
 
     - name: daily-beta-perf
       job:
