@@ -84,13 +84,6 @@
   -->
   <string name="felt_privacy_desc_card_title">هیچ اثری بر روی این دستگاه باقی نگذارید</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s کوکی‌ها، تاریخچه و داده‌های وبگاه شما را زمانی که تمام زبانه‌های خصوصی خود را ببندید، حذف می‌کند. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -789,8 +782,6 @@
   <string name="preferences_search_browsing_history">جست‌وجوی تاریخچهٔ مرور</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">جست‌و‌جو نشانک‌ها</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">نمایش میانبرها</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">جست‌وجو در زبانه‌های همگام‌سازی شده</string>
   <!-- Preference for account settings -->

@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Leave no traces on this device</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s deletes your cookies, history, and site data when you close all your private tabs. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Translate page</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Summarise page</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">New</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Report broken site…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -927,8 +922,6 @@
   <string name="preferences_search_browsing_history">Search browsing history</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Search bookmarks</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Show shortcuts</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Search synchronised tabs</string>
   <!-- Preference for account settings -->
@@ -975,7 +968,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">You don’t have permission to use this folder. Try choosing a different one.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">You don’t have permission to use this folder. Try choosing a different one.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Manage downloads with another app</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1647,6 +1640,10 @@
   <string name="create_tab_group_title">Create tab group</string>
   <string name="create_tab_group_save_button">Save</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Close Edit Tab Group</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Group</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Name</string>
   <!--
     History
 
@@ -3673,6 +3670,13 @@
   -->
   <string name="connection_security_panel_verified_by">Verified by %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Issued to %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Qualified as specified in Regulation (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -4072,8 +4076,6 @@
   <string name="content_description_settings_search_navigate_back">Navigate Back</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">No recent searches</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">An error has occurred</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Clear all</string>
   <!-- Section header for recent search results -->

@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">ບໍ່​ປະ​ໃຫ້​ມີ​ການ​ຕິດ​ຕາມໃນ​ອຸ​ປະ​ກອນ​ນີ້​</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s ລຶບຄຸກກີ້, ປະຫວັດ, ແລະ ຂໍ້ມູນເວັບໄຊຂອງທ່ານ ເມື່ອທ່ານປິດແທັບສ່ວນຕົວທັງໝົດຂອງທ່ານ. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -911,8 +904,6 @@
   <string name="preferences_search_browsing_history">ຄົ້ນຫາປະຫວັດການທ່ອງເວັບ</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">ຄົ້ນຫາບຸກມາກ</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">ສະແດງທາງລັດ</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">ຄົ້ນຫາແທັບທີ່ sync ແລ້ວ</string>
   <!-- Preference for account settings -->

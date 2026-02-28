@@ -379,8 +379,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s kunne ikke installeres, fordi den kun kan installeres af en organisation, der benytter virksomhedspolitikker - hvilket ikke understøttes på denne platform.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s overtræder Mozillas politikker og kan ikke installeres i %2$s.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s er begrænset og kan ikke installeres på %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Kunne ikke aktivere %1$s</string>
@@ -427,11 +425,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Denne udvidelse er blokeret for at overtræde Mozillas politikker og er blevet deaktiveret.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Denne udvidelse er begrænset for at overtræde Mozillas politikker og er blevet deaktiveret. Du kan aktivere den, men det kan være risikabelt.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Denne udvidelse er begrænset og er blevet deaktiveret. Du kan aktivere den, men det kan være risikabelt.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Denne udvidelse overtræder Mozillas politikker. Det kan være risikabelt at bruge den.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Denne udvidelse er begrænset. Det kan være risikabelt at bruge den.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

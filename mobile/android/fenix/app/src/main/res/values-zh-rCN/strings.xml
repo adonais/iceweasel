@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">不在设备上留痕迹</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s 会在您关闭所有隐私标签页时删除您的 Cookie、历史记录和网站数据。%2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -927,8 +920,6 @@
   <string name="preferences_search_browsing_history">搜索浏览历史</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">搜索书签</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">显示快捷方式</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">搜索同步的标签页</string>
   <!-- Preference for account settings -->
@@ -975,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">您没有使用此文件夹的权限，请尝试选择其他文件夹。</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">您没有使用此文件夹的权限，请尝试选择其他文件夹。</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">通过其他应用管理下载</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -4045,8 +4036,6 @@
   <string name="content_description_settings_search_navigate_back">浏览上一页</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">无近期搜索记录</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">出错了</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">全部清除</string>
   <!-- Section header for recent search results -->

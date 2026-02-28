@@ -379,8 +379,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">Ezin da %1$s instalatu enpresa-politikak darabiltzan erakunde batek instala dezakeelako soilik eta ez dago honentzako euskarririk plataforma honetan.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s(e)k Mozillaren politikak bortxatzen ditu eta ezin da %2$s(e)n instalatu.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s hedapena mugatuta dago eta ezin da instalatu %2$s(e)n.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Ezin izan da %1$s gaitu</string>
@@ -427,11 +425,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Gehigarri hau blokeatuta dago Mozillaren politikak bortxatzeagatik eta desgaitu egin da.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Hedapen hau mugatuta dago Mozillaren politikak bortxatzeagatik eta desgaitu egin da. Gaitzeko aukera daukazu baina arriskutsua izan liteke.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Hedapen hau mugatuta dago eta desgaitu egin da. Gaitzeko aukera daukazu baina arriskutsua izan liteke.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Hedapen honek Mozillaren politikak bortxatzen ditu. Arriskutsua izan liteke hau erabiltzea.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Hedapen hau mugatuta dago. Erabiltzea arriskutsua izan liteke.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Không để lại dấu vết trên thiết bị này</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s xóa cookie, lịch sử và dữ liệu trang web của bạn khi bạn đóng tất cả các thẻ riêng tư. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -927,8 +920,6 @@
   <string name="preferences_search_browsing_history">Tìm kiếm lịch sử duyệt web</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Tìm kiếm dấu trang</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Hiển thị lối tắt</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Tìm kiếm các thẻ đã đồng bộ hóa</string>
   <!-- Preference for account settings -->
@@ -975,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Bạn không có quyền sử dụng thư mục này. Hãy thử chọn một thư mục khác.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Bạn không có quyền sử dụng thư mục này. Hãy thử chọn một thư mục khác.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Quản lý tải xuống bằng ứng dụng khác</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1640,6 +1631,14 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Mở tìm kiếm thẻ</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Tạo nhóm thẻ</string>
+  <string name="create_tab_group_save_button">Lưu</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Đóng chỉnh sửa nhóm thẻ</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1766,6 +1765,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Không thể đổi tên tập tin này do các hạn chế về hệ thống hoặc dung lượng lưu trữ.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Thay đổi loại tập tin thành %s?</string>
+  <string name="change_file_extension_description">Thao tác này sẽ mở tập tin bằng một ứng dụng khác và có thể gây rủi ro cho thiết bị của bạn.</string>
+  <string name="change_file_extension_cancel_button">Hủy bỏ</string>
+  <string name="change_file_extension_confirm_button">Có, thay đổi</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Trong tiến trình</string>
   <!--
@@ -4056,8 +4063,6 @@
   <string name="content_description_settings_search_navigate_back">Điều hướng quay lại</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Không có tìm kiếm gần đây</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Có lỗi đã xảy ra</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Xóa tất cả</string>
   <!-- Section header for recent search results -->

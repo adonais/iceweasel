@@ -379,8 +379,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">Lisäosaa %1$s ei voitu asentaa, koska sen voi asentaa vain organisaatio, joka käyttää yrityskäytäntöjä, joita tämä alusta ei tue.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s rikkoo Mozillan käytäntöjä, eikä sitä voida asentaa %2$siin.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s on rajoitettu, eikä sitä voida asentaa %2$siin.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Lisäosan %1$s ottaminen käyttöön epäonnistui</string>
@@ -427,11 +425,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Tämä laajennus on estetty Mozillan käytäntöjen rikkomisen vuoksi, ja se on poistettu käytöstä.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Tämä laajennus on rajoitettu Mozillan käytäntöjen rikkomisen vuoksi, ja se on poistettu käytöstä. Voit ottaa laajennuksen käyttöön, mutta se voi olla riskialtista.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Tämä laajennus on rajoitettu ja se on poistettu käytöstä. Voit ottaa sen käyttöön, mutta se voi olla riskialtista.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Tämä laajennus rikkoo Mozillan käytäntöjä. Sen käyttö voi olla riskialtista.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Tämä laajennus on rajoitettu. Sen käyttö voi olla riskialtista.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

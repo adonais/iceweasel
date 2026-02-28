@@ -379,8 +379,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s نتره بپۊره چیناکه تینا و دست سازمووی ک سیاستا سازمۊوی ن و کار اگره تره بپۊره، ک من ای پلتفورم لادراری نؽبۊ.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s خت مشی یل Mozilla ن زؽر پا انه وو نتره و ری %2$s بپۊره.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s مئدۊد وابیڌه وو نتره ری %2$s بپۊره.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">شکست من فعال کردن %1$s</string>
@@ -427,11 +425,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">ای وردنی سی دل زؽر پا ناهاڌن خت مشیا Mozilla مسدۊد ۉ قیر فعال وابیڌه.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">ای وردنی سی دل زؽر پا ناهاڌن خت مشیا Mozilla مسدۊد وو قیر فعال وابیڌه. ترین فعالس کۊنین ٱما یو گاشڌ خترناک بۊ.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">ای وردنی مئدۊد وو قیر فعال وابیڌه. ترین هونه فعال کۊنین ٱما گاشڌ ای کار خترناک بۊ.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">ای وردنی وا سیاستا Mozilla نؽسازه. و کار گرؽڌنس گاشڌ خترناک بۊ.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">ای وردنی مئدۊد وابیڌه. و کار گرؽڌنس گاشڌ خترناک بۊ.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

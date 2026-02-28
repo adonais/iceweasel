@@ -17,6 +17,8 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">Doj sa ga\'ue nagi\'át</string>
+  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
+  <string name="content_description_private_browsing">Riña gachē nu huìt</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Gachrūn nuguan\' ruhuât nanà\'uìt</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -33,8 +35,16 @@
   <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Hiūj nan nāruguì\\’ nej rakïj ñanj huā ni\\’nïnj ïn</string>
   <!-- No Private Tabs Message Description -->
   <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Hiūj nan nāruguì\\’ nej rakïj ñanj huì nīkājt.</string>
+  <!-- The header text displayed on the private tabs page when no private tabs are open -->
+  <string name="tab_manager_empty_private_tabs_page_header">Riña gachē nu huìt</string>
+  <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
+  <string name="tab_manager_empty_private_tabs_page_description">Sê sī nānun ruhuâ %1$s ni’in riña gaché nunt nī nej kokî garâj sunt, sanī nānun sà’ nej si markadôt.</string>
+  <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
+  <string name="tab_manager_empty_normal_tabs_page_header">Nā’nīn riña ‘ngō rakïj ñanj nī gāyi’ì nānà’huì’t</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d sa naguij</string>
+  <!-- Tab tray multi select title in app bar when no tabs are selected -->
+  <string name="tab_tray_multi_select_title_empty">Nāguī nej rakïj ñanj</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">Nūtà\' \'ngō yi\'nïn\' nākàa</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
@@ -45,14 +55,22 @@
   <string name="tab_tray_close_multiselect_content_description">Gāhuī riña multiselección</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Na\'nïnj sà\' nej rakïj ñanj riña \'na\' nej kolexión</string>
+  <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_header">Nāda’a rakïj ñanj nū riña a’ngô mān’an si āgâ’t</string>
+  <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_description">Gāyi’ì sēsiûn da’ gā’hue gārāsunt nej rakïj ñanj nū riña a’ngô nej aga’ huā ‘hiát.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Gāyi\'ì sēsiûn</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">Daran’ nej nuguan’ natsít</string>
   <!--
     Home - Bookmarks
 
     Title for the home screen section with bookmarks.
   -->
   <string name="home_bookmarks_title">Sa raj sun nichrò\' doj</string>
+  <!-- Content description for the button which navigates the user to show all of their bookmarks. -->
+  <string name="home_bookmarks_show_all_content_description">Nādigân daran’ nej mārkadô</string>
   <!-- Text for the menu button to remove a recently saved bookmark from the user's home screen -->
   <string name="home_bookmarks_menu_item_remove">Guxūn</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->

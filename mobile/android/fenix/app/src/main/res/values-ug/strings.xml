@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">بۇ ئۈسكۈنىدە ئىز قالدۇرمايدۇ</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">بارلىق شەخسىيەت بەتكۈچلەر تاقالغاندا %1$s سىزنىڭ cookies، تارىخ ۋە تور بېكەت سانلىق مەلۇماتلىرىڭىزنى ئۆچۈرىدۇ. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -923,8 +916,6 @@
   <string name="preferences_search_browsing_history">زىيارەت تارىخىنى ئىزدە</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">خەتكۈچ ئىزدەيدۇ</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">تېزلەتمىنى كۆرسىتىدۇ</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">قەدەمداش بەتكۈچنى ئىزدەيدۇ</string>
   <!-- Preference for account settings -->
@@ -971,7 +962,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">بۇ قىسقۇچنى ئىشلىتىش ئىجازىتىڭىز يوق. باشقا بىرىنى تاللاپ سىناڭ.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">بۇ قىسقۇچنى ئىشلىتىش ئىجازىتىڭىز يوق. باشقا بىرىنى تاللاپ سىناڭ.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">چۈشۈرۈشنى باشقا ئەپتە باشقۇرىدۇ</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -4028,8 +4019,6 @@
   <string name="content_description_settings_search_navigate_back">كەينىگە قايت</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">يېقىنقى ئىزدەش يوق</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">خاتالىق كۆرۈلدى</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">ھەممىنى تازىلا</string>
   <!-- Section header for recent search results -->

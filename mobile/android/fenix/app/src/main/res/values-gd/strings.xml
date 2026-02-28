@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Na fàg lorg sam bith air an uidheam seo</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Sguabaidh %1$s às na briosgaidean, an eachdraidh is dàta nan làraichean nuair a dhùineas tu an uinneag phrìobhaideach mu dheireadh. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -927,8 +920,6 @@
   <string name="preferences_search_browsing_history">Lorg san eachdraidh bhrabhsaidh</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Lorg sna comharran-lìn</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Seall na h-ath-ghoiridean</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Lorg am measg nan tabaichean sioncronaichte</string>
   <!-- Preference for account settings -->
@@ -975,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Chan eil cead agad am pasgan seo a chleachdadh. Tagh fear eile.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Chan eil cead agad am pasgan seo a chleachdadh. Tagh fear eile.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Stiùirich na luchdaidhean a-nuas le aplacaid eile</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1508,10 +1499,33 @@
   <string name="studies_active">Gnìomhach</string>
   <!-- Description for studies -->
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Feuch gleusan ùra mus fhaigh càch cothrom orra.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Taghaidh Firefox cleachdaichean air thuaiream is bheir e dhaibh cothrom gleusan a chur fo dheuchainn, rud a nì e nas fheàrr dhan a h-uile duine.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Stàlaich is ruith obair-rannsachaidh</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Ceadaich obair-rannsachaidh air gleusan</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Barrachd fiosrachaidh</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Ceadaich leasachadh cèin</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Bheir Firefox piseach air gleusan, dèanadas is seasmhachd fiù eadar tionndaidhean ùra. Thèid na h-atharraichean seo a chur an sàs o chèin.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Barrachd fiosrachaidh</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Leasachadh cèin</string>
+  <!--
+    Sessions
+
+    Title for the list of tabs in the current normal session used by a11y services
+    The %1$s will be replaced by the number of opened normal tabs
+  -->
+  <string name="tabs_header_normal_tabs_counter_title">Tabaichean àbhaisteach a tha fosgailte: %1$s. Thoir gnogag airson leum gu taba eile.</string>
   <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
@@ -1522,6 +1536,18 @@
     The %1$s will be replaced by the number of opened synced tabs
   -->
   <string name="tabs_header_synced_tabs_counter_title">Tha tabaichean sioncronaichte fosgailte: %1$s. Thoir gnogag airson leum gu taba eile.</string>
+  <!-- Text for the tabs header private tabs -->
+  <string name="tabs_header_private_tabs_title">Prìobhaideach</string>
+  <!-- Text for the tabs header normal tabs -->
+  <string name="tabs_header_normal_tabs_title">Tabaichean</string>
+  <!-- Text for the tabs header synced tabs -->
+  <string name="tabs_header_synced_tabs_title">Sioncronachadh</string>
+  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
+  <string name="tab_manager_floating_action_button_new_normal_tab">Taba ùr</string>
+  <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
+  <string name="tab_manager_floating_action_button_new_private_tab">Taba prìobhaideach ùr</string>
+  <!-- Text for floating action button in the Tab Manager used to initiate a re-sync of synced tabs -->
+  <string name="tab_manager_floating_action_button_sync_tabs">Sioncronaich na tabaichean</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Cuir taba ris</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1530,6 +1556,8 @@
   <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Prìobhaideach</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
   <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sioncronaich</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">Lorg sna tabaichean agad</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Co-roinn a h-uile taga</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1542,6 +1570,14 @@
   <string name="tab_tray_menu_tab_settings">Roghainnean nan tabaichean</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Dùin a h-uile taba</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">A bheil thu airson a h-uile taba a dhùnadh?</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">Dùinidh seo gach taba a tha fosgailte.</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">Dùin na tabaichean</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">Sguir dheth</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Comharra-lìn</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
@@ -1564,12 +1600,18 @@
   <string name="remove_tab_from_collection">Thoir an taba air falbh on chruinneachadh</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
   <string name="tabs_tray_select_tabs">Tagh tabaichean</string>
+  <!-- Text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results">Cha deach maids a lorg.</string>
+  <!-- Additional text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results_additional_text">Feuch lorg eile!</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
   <string name="close_tab">Dùin an taba</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
   <string name="close_tab_title">Dùin an taba %s</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
   <string name="open_tabs_menu">Fosgail clàr-taice nan tabaichean</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">Till gu manaidsear nan taba</string>
   <!-- Open tabs menu item to save tabs to collection -->
   <string name="tabs_menu_save_to_collection1">Sàbhail na tabaichean ann an cruinneachadh</string>
   <!-- Text for the menu button to delete a collection -->
@@ -1586,6 +1628,16 @@
   <string name="delete_from_history">Sguab às an eachdraidh</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (Am modh prìobhaideach)</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">Fosgail gleus lorg nan taba</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Cruthaich buidheann thabaichean</string>
+  <string name="create_tab_group_save_button">Sàbhail</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Dùin deasachadh buidheann nan taba</string>
   <!--
     History
 
@@ -1624,6 +1676,24 @@
     %1$d is the number of items deleted.
   -->
   <string name="download_delete_multiple_items_snackbar_2">Nithean air an sguabadh às: %1$d</string>
+  <!-- Title for the dialog that prompts the user to choose an app for downloading a file. -->
+  <string name="download_app_dialog_title">Luchdaich a-nuas am faidhle le:</string>
+  <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
+  <string name="download_delete_single_item_snackbar_2">Chaidh “%1$s” a sguabadh às</string>
+  <!-- Text for the snackbar to confirm that downloads are in progress. -->
+  <string name="download_in_progress_snackbar">Ga luchdadh a-nuas…</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details">Mion-fhiosrachadh</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar">Chaidh a luchdadh a-nuas</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open">Fosgail</string>
+  <!-- Text for the snackbar action button to undo deleting a download. -->
+  <string name="download_undo_delete_snackbar_action">Neo-dhèan</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">Cha deach dad a luchdadh a-nuas fhathast</string>
+  <!-- Text description shown when no download exists -->
+  <string name="download_empty_description">Nochdaidh faidhlichean a luchdaicheas tu a-nuas an-seo.</string>
   <!--
     History multi select title in app bar
     %1$d is the number of downloads selected
@@ -1636,8 +1706,114 @@
     %s is the name of the file to download.
   -->
   <string name="download_file_has_not_enough_storage_dialog_message"><![CDATA[Chan eil àite gu leòr aig an uidheam airson <b>%s</b> a luchdadh a-nuas.]]></string>
+  <!--
+    Text for the confirm button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will navigate the user to the device's storage management settings.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_confirm_button_text">Stiùirich na faidhlichean</string>
+  <!--
+    Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
+    This button will dismiss the dialog.
+  -->
+  <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Sguir dheth</string>
+  <!-- Text for the button to delete a single downloaded file item -->
+  <string name="download_delete_item">Sguab às</string>
+  <!-- Content description for the toolbar "Navigate back" button -->
+  <string name="download_navigate_back_description">Air ais</string>
+  <!-- Content description for the toolbar back button while searching the downloads -->
+  <string name="download_close_search_description">Air ais is dùin an lorg</string>
+  <!--
+    Content description for the search bar clear text button on the downloads screen
+
+    Content description for pause action button on the downloads screen
+  -->
+  <string name="download_pause_action">Cuir na stad</string>
+  <!-- Content description for resume action button on the downloads screen -->
+  <string name="download_resume_action">Lean air</string>
+  <!-- Content description for retry download action button on the downloads screen -->
+  <string name="download_retry_action">Feuch ris a-rithist</string>
+  <string name="download_clear_search_description">Falamhaich</string>
+  <!-- Text for the button to share the download URL -->
+  <string name="download_share_url">Co-roinn an URL</string>
+  <!-- Text for the button to share the download file -->
+  <string name="download_share_file">Co-roinn am faidhle</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
+  <string name="download_delete_multi_select_dialog_confirmation">A bheil thu cinnteach gu bheil thu airson na nithean a thagh thu a sguabadh às?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Sguab às</string>
+  <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
+  <string name="download_delete_multi_select_dialog_cancel">Sguir dheth</string>
+  <!-- Text for the header of in progress downloads -->
+  <string name="download_header_in_progress">Ga phròiseasadh</string>
+  <!--
+    Time period headers for downloads
+
+    Text for the header that groups the downloads for today
+  -->
+  <string name="download_time_period_today">An-diugh</string>
+  <!-- Text for the header that groups the downloads for yesterday -->
+  <string name="download_time_period_yesterday">An-dè</string>
+  <!-- Text for the header that groups the downloads the past 7 days -->
+  <string name="download_time_period_last_7_days">Na 7 làithean seo chaidh</string>
+  <!-- Text for the header that groups the downloads the past 30 days -->
+  <string name="download_time_period_last_30_days">An 30 latha seo chaidh</string>
+  <!-- Text for the header that groups the downloads older than other groups -->
+  <string name="download_time_period_older">Nas sine</string>
+  <!-- Description of an in progress download item, displayed in the downloads list when the download has just started. -->
+  <string name="download_item_in_progress_description_preparing">Ga ullachadh airson luchdadh a-nuas…</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list when the download time remaining is known.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+    %3$s is the amount of time remaining to complete the download.
+  -->
+  <string name="download_item_in_progress_description_2">%1$s / %2$s • ann an %3$s.</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list when the estimated download time remaining is still being calculated.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+  -->
+  <string name="download_item_in_progress_description_pending">%1$s / %2$s • ri thòiseachadh</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list when the total download size is unknown. This results in the estimated download time remaining to be unknown also.
+    %1$s is the current file size that has been downloaded.
+  -->
+  <string name="download_item_in_progress_description_unknown_total_size">%1$s • chan eil fhios dè cho fada</string>
+  <!--
+    Description of a paused download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+  -->
+  <string name="download_item_paused_description">%1$s / %2$s • na stad</string>
+  <!--
+    Description of a paused download item, displayed in the downloads list when the total download size is unknown.
+    %1$s is the current file size that has been downloaded.
+  -->
+  <string name="download_item_paused_description_unknown_total_size">%1$s • na stad</string>
+  <!-- Text to indicate that a download has failed to download. -->
+  <string name="download_item_status_failed">Dh’fhàillig an luchdadh a-nuas</string>
+  <!-- Text for the snackbar action button to view failed download details. -->
+  <string name="download_failed_snackbar_action_details">Mion-fhiosrachadh</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder">Lorg sna chaidh a luchdadh a-nuas</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found">Cha deach toradh a lorg</string>
+  <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
+  <string name="download_select_all_items">Tagh na h-uile</string>
+  <!--
+    Downloads Content Type Filters
+
+    Text for the filter button to show all files in the downloads list
+  -->
+  <string name="download_content_type_filter_all">Na h-uile</string>
+  <!-- Text for the filter button to show only images in the downloads list -->
+  <string name="download_content_type_filter_image">Dealbhan</string>
+  <!-- Text for the filter button to show only video files in the downloads list -->
+  <string name="download_content_type_filter_video">Videothan</string>
+  <!-- Text for the filter button to show only documents in the downloads list -->
+  <string name="download_content_type_filter_document">Sgrìobhainnean</string>
+  <!-- Text for the filter button to show all other file types in the downloads list -->
+  <string name="download_content_type_filter_other_1">Eile</string>
   <!--
     WebCompat Reporter
 
@@ -1654,10 +1830,34 @@
   <string name="webcompat_reporter_choose_reason_error">Tagh adhbhar</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Mìnich an duilgheadas (roghainneil)</string>
+  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
+  <string name="webcompat_reporter_add_more_info">Cuir barrachd fiosrachaidh ris</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Sguir dheth</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Cuir</string>
+  <!--
+    These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
+
+    Broken site reason text for site doesn’t load
+  -->
+  <string name="webcompat_reporter_reason_load">Chan urrainn dhomh an làrach a luchdadh</string>
+  <!-- Broken site reason text for can’t pay, check out or shop -->
+  <string name="webcompat_reporter_reason_checkout">Chan urrainn dhomh pàigheadh, seacadh a-mach no stuth a cheannach</string>
+  <!-- Broken site reason text for site is slow -->
+  <string name="webcompat_reporter_reason_slow2">Tha an làrach slaodach</string>
+  <!-- Broken site reason text for video isn’t playing or loading -->
+  <string name="webcompat_reporter_reason_media2">Tha video ann nach cluich no nach tèid a luchdadh</string>
+  <!-- Broken site reason text for missing content -->
+  <string name="webcompat_reporter_reason_content2">Tha susbaint a dhìth</string>
+  <!-- Broken site reason text for can’t sign in or register -->
+  <string name="webcompat_reporter_reason_account2">Chun urrainn dhomh clàradh a-steach no clàradh</string>
+  <!-- Broken site reason text for site asked to turn off ad blocker -->
+  <string name="webcompat_reporter_reason_turn_off_adblocker">Dh’iarr an làrach bacaiche na sanasachd a chur dheth</string>
+  <!-- Broken site reason text for browser isn’t supported or blocked -->
+  <string name="webcompat_reporter_reason_notsupported">Chan eil taic ris a’ bhrabhsair no tha e air a bhacadh</string>
+  <!-- Broken site reason text for something else -->
+  <string name="webcompat_reporter_reason_other">Rudeigin eile</string>
   <!--
     Crashes
 
@@ -1698,6 +1898,8 @@
   <string name="bookmark_menu_copy_button">Lethbhreac</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Co-roinn</string>
+  <!-- Bookmark overflow menu select all bookmarks -->
+  <string name="bookmark_menu_select_all_bookmarks">Tagh na h-uile</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">Fosgail ann an taba ùr</string>
   <!-- Bookmark overflow menu open in private tab button -->
@@ -1708,6 +1910,16 @@
   <string name="bookmark_menu_open_all_in_private_tabs_button">Fosgail anns gach taba prìobhaideach</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Sguab às</string>
+  <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_custom">Seòrsaich ann an òrdugh gnàthaichte</string>
+  <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_newest">As ùire an toiseach</string>
+  <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_oldest">As sine an toiseach</string>
+  <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_a_to_z">Seòrsaich A gu Z</string>
+  <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
+  <string name="bookmark_sort_menu_z_to_a">Seòrsaich Z gu A</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected

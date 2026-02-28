@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">កុំទុកដាននៅលើឧបករណ៍នេះ</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s លុបខូគី ប្រវត្តិ និងទិន្នន័យគេហទំព័ររបស់អ្នក នៅពេលអ្នកបិទផ្ទាំងឯកជនរបស់អ្នកទាំងអស់។ %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -221,7 +214,7 @@
   <!-- Browser menu button that opens AMO in a tab -->
   <string name="browser_menu_discover_more_extensions">រុករកផ្នែកបន្ថែមជាច្រើនទៀត</string>
   <!-- Browser menu description that is shown when one or more extensions are disabled due to extension errors -->
-  <string name="browser_menu_extensions_disabled_description">បានបិទជាបណ្ដោះអាសន្ន</string>
+  <string name="browser_menu_extensions_disabled_description">បានផ្ដាច់បណ្ដោះអាសន្ន</string>
   <!-- The description of the browser menu appears when the user hasn't installed any extensions. -->
   <string name="browser_menu_no_extensions_installed_description">គ្មាន​កម្មវិធី​បន្ថែម​បាន​បើក​ទេ</string>
   <!-- The description of the browser menu appears when the user hasn't installed any extensions and there are recommended extensions. -->
@@ -415,6 +408,8 @@
   <string name="search_suggestions_onboarding_do_not_allow_button">មិន​អនុញ្ញាត</string>
   <!-- Search suggestion onboarding hint title text -->
   <string name="search_suggestions_onboarding_title">អនុញ្ញាតឱ្យមានការណែនាំស្វែងរកនៅក្នុងកាលានុកាលឯកជនឬ?</string>
+  <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
+  <string name="search_suggestions_onboarding_text">%s នឹងចែករំលែកអ្វីគ្រប់យ៉ាងដែលអ្នកវាយបញ្ចូលក្នុងរបារអាសយដ្ឋានជាមួយអេនជីនស្វែងរកបុរេជម្រើសរបស់អ្នក។</string>
   <!-- Search engine suggestion title text. %s is the name of the suggested engine. -->
   <string name="search_engine_suggestions_title">ស្វែងរក %s</string>
   <!-- Search engine suggestion description text -->
@@ -500,6 +495,8 @@
   <string name="startup_crash_negative">ទេ សូម​អរគុណ</string>
   <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
   <string name="startup_crash_restart">បើក %s ឡើងវិញ</string>
+  <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
+  <string name="onboarding_preferences_dialog_usage_data_title">ផ្ញើទិន្នន័យបច្ចេកទេស និងអន្តរកម្មទៅ Mozilla</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">ស្វែងយល់​បន្ថែម</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">ធ្វើ​រួច</string>
@@ -561,6 +558,8 @@
   <string name="nova_onboarding_continue_button">បន្ត</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">មិន​មែន​ឥឡូវ</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ត្រៀមខ្លួនរុករកដោយសេរី</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">លក្ខខណ្ឌប្រើប្រាស់ Firefox</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
@@ -759,8 +758,6 @@
   <string name="preferences_show_voice_search">បង្ហាញការស្វែងរកតាមសំឡេង</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">ស្វែងរកចំណាំ</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">បង្ហាញផ្លូវកាត់</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">ការកំណត់គណនី</string>
   <!-- Snackbar message shown when user shares a link -->
@@ -781,7 +778,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">អ្នកមិនមានសិទ្ធិប្រើថតនេះទេ។ សូមសាកល្បងជ្រើសយកថតផ្សេង។</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">អ្នកមិនមានសិទ្ធិប្រើថតនេះទេ។ សូមសាកល្បងជ្រើសយកថតផ្សេង។</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">លុបចេញពី %s និងឧបករណ៍</string>
   <!-- Preference for downloads -->
@@ -891,6 +888,12 @@
   <string name="usage_data_category">ទិន្នន័យនៃការប្រើប្រាស់</string>
   <string name="studies_data_category">ការសិក្សា</string>
   <string name="technical_data_category">ទិន្នន័យបច្ចេកទេស</string>
+  <!--
+    Turn On Sync Preferences
+
+    Header of the Sign in preference view
+  -->
+  <string name="preferences_sign_in">បញ្ជាប់ចូល</string>
   <!-- Preference for removing FxA account -->
   <string name="preferences_sync_remove_account">លុបគណនី</string>
   <!-- Preference for using simple toolbar -->

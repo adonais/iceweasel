@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Jangan tinggalkan jejak pada perangkat ini</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s menghapus kuki, riwayat, dan data situs Anda saat Anda menutup semua tab pribadi. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -923,8 +916,6 @@
   <string name="preferences_search_browsing_history">Cari riwayat jelajah</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Cari markah</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Tampilkan pintasan</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Cari tab tersinkron</string>
   <!-- Preference for account settings -->
@@ -971,7 +962,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Anda tidak memiliki izin untuk menggunakan folder ini. Coba pilih yang lain.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Anda tidak memiliki izin untuk menggunakan folder ini. Coba pilih yang lain.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Kelola unduhan dengan aplikasi lain</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -4034,8 +4025,6 @@
   <string name="content_description_settings_search_navigate_back">Navigasi Mundur</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Tidak ada pencarian terkini</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Terjadi kesalahan</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Bersihkan semua</string>
   <!-- Section header for recent search results -->

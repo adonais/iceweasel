@@ -381,8 +381,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s nebolo možné nainštalovať, pretože ho môže nainštalovať iba organizácia používajúca podnikové pravidlá, ktoré táto platforma nepodporuje.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Doplnok %1$s porušuje pravidlá Mozilly a nedá sa do aplikácie %2$s nainštalovať.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">Doplnok %1$s je obmedzený a nedá sa nainštalovať do %2$su.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Doplnok %1$s sa nepodarilo povoliť</string>
@@ -429,11 +427,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Toto rozšírenie je zablokované z dôvodu porušenia pravidiel Mozilly a bolo preto zakázané.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Toto rozšírenie je obmedzené z dôvodu porušovania pravidiel Mozilly a bolo preto zakázané. Môžete ho povoliť, ale môže to byť riskantné.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Toto rozšírenie je obmedzené a bolo zakázané. Môžete ho povoliť, ale môže to byť riskantné.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Toto rozšírenie porušuje pravidlá Mozilly. Jeho používanie môže byť riskantné.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Toto rozšírenie je obmedzené. Jeho používanie môže byť riskantné.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

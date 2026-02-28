@@ -191,5 +191,5 @@
   -->
   <string name="mozac_feature_relay_chip_text">Defnyddiwch arallenw e-bost</string>
   <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
-  <string name="mozac_feature_relay_email_masks_cfr">Newydd! Mae %s masgiau e-bost bellach ar gael ar ffôn symudol.</string>
+  <string name="mozac_feature_relay_email_masks_cfr">Newydd! Mae %s arallenwau e-bost bellach ar gael ar ffôn symudol.</string>
 </resources>

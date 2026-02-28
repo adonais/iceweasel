@@ -190,4 +190,6 @@
     Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
   -->
   <string name="mozac_feature_relay_chip_text">E-mail-maszk használata</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">Új! A %s Relay e-mail-maszkok már mobilon is elérhetőek.</string>
 </resources>

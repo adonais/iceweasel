@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Nezanechávajte na tomto zariadení žiadne stopy</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Keď zatvoríte všetky súkromné karty, %1$s odstráni vaše súbory cookie, históriu a údaje stránok. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -927,8 +920,6 @@
   <string name="preferences_search_browsing_history">Navrhovať z histórie prehliadania</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Navrhovať zo záložiek</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Zobrazovať skratky</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Hľadať v synchronizovaných kartách</string>
   <!-- Preference for account settings -->
@@ -975,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Nemáte povolenie na používanie tohto priečinka. Skúste vybrať iný.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Nemáte povolenie na používanie tohto priečinka. Skúste vybrať iný.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Spravovať sťahovania pomocou inej aplikácie</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -4071,8 +4062,6 @@
   <string name="content_description_settings_search_navigate_back">Navigovať naspäť</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Žiadne nedávne vyhľadávania</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Vyskytla sa chyba</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Vymazať všetko</string>
   <!-- Section header for recent search results -->

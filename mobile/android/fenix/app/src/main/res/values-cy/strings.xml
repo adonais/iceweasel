@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Gadael dim ôl ar y ddyfais hon</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Mae %1$s yn dileu eich cwcis, hanes, a data gwefan pan fyddwch yn cau eich holl dabiau preifat. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Cyfieithu\'r dudalen</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Crynhoi tudalen</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Newydd</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Adrodd ar wefan wedi torri…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -927,8 +922,6 @@
   <string name="preferences_search_browsing_history">Chwilio hanes pori</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Chwilio’r nodau tudalen</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Dangos llwybrau byr</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Chwilio tabiau wedi’u cydweddu</string>
   <!-- Preference for account settings -->
@@ -975,7 +968,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Does gennych chi ddim caniatâd i ddefnyddio\'r ffolder hon. Ceisiwch ddewis un gwahanol.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Does gennych chi ddim caniatâd i ddefnyddio\'r ffolder hon. Ceisiwch ddewis un gwahanol.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Rheoli\'r llwytho i lawr gydag ap arall</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1646,7 +1639,11 @@
   -->
   <string name="create_tab_group_title">Creu grŵp tabiau</string>
   <string name="create_tab_group_save_button">Cadw</string>
-  <string name="edit_tab_group_bottom_sheet_close_content_description">Cau Grŵp Tab Golygu</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Cau Golygu Grŵp Tab</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Grŵp</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Enw</string>
   <!--
     History
 
@@ -3673,6 +3670,13 @@
   -->
   <string name="connection_security_panel_verified_by">Wedi\'i wirio gan %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Rhoddwyd i %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Yn gymwys fel sy\'n cael ei nodi yn Rheoliad (UE) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -4072,8 +4076,6 @@
   <string name="content_description_settings_search_navigate_back">Mynd nôl</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Dim chwilio diweddar</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Digwyddodd gwall</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Clirio\'r cyfan</string>
   <!-- Section header for recent search results -->

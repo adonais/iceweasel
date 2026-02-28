@@ -68,13 +68,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Wag magiwan ng bakas sa device na ito</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Binubura ng %1$s ang iyong mga cookie, kasaysayan, at site data kapag isinara mo ang lahat ng mga pribadong tab. %2$s</string>
-  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -692,8 +685,6 @@
   <string name="preferences_search_browsing_history">Ipakita ang kasaysayan ng pag-browse</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Hanapin sa mga bookmark</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Ipakita ang mga shortcut</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Hanapin sa mga naka-sync na tab</string>
   <!-- Preference for account settings -->

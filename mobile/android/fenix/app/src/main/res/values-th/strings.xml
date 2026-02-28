@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">ไม่ทิ้งร่องรอยใดๆ บนอุปกรณ์นี้</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s จะลบคุกกี้ ประวัติ และข้อมูลไซต์ของคุณเมื่อคุณปิดแท็บส่วนตัวของคุณทั้งหมด %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -927,8 +920,6 @@
   <string name="preferences_search_browsing_history">ค้นหาประวัติการเรียกดู</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">ค้นหาที่คั่นหน้า</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">แสดงทางลัด</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">ค้นหาแท็บที่ซิงค์</string>
   <!-- Preference for account settings -->
@@ -975,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">คุณไม่มีสิทธิ์ใช้โฟลเดอร์นี้ โปรดลองเลือกโฟลเดอร์อื่น</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">คุณไม่มีสิทธิ์ใช้โฟลเดอร์นี้ โปรดลองเลือกโฟลเดอร์อื่น</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">จัดการการดาวน์โหลดด้วยแอปอื่น</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -4072,8 +4063,6 @@
   <string name="content_description_settings_search_navigate_back">นำทางย้อนกลับ</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">ไม่มีการค้นหาล่าสุด</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">เกิดข้อผิดพลาด</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">ล้างทั้งหมด</string>
   <!-- Section header for recent search results -->

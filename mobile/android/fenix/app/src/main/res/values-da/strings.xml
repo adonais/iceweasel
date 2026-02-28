@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Efterlad ingen spor på denne enhed</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s sletter din historik samt dine cookies og websteds-data, når du lukker alle dine private faneblade. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -927,8 +920,6 @@
   <string name="preferences_search_browsing_history">Søg i browserhistorik</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Søg i bogmærker</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Vis genveje</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Søg i synkroniserede faneblade</string>
   <!-- Preference for account settings -->
@@ -975,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Du har ikke tilladelse til at bruge denne mappe. Prøv at vælge en anden.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Du har ikke tilladelse til at bruge denne mappe. Prøv at vælge en anden.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Håndter filhentninger med en anden app</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1640,6 +1631,14 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Åbn søgning i faneblade</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Opret fanebladsgruppe</string>
+  <string name="create_tab_group_save_button">Gem</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Luk redigering af fanebladsgruppe</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1766,6 +1765,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Denne fil kan ikke omdøbes pga. system- eller lagerbegrænsninger.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Skift filtype til %s?</string>
+  <string name="change_file_extension_description">Dette kan åbne filen i en anden app og være risikabelt for din enhed.</string>
+  <string name="change_file_extension_cancel_button">Annuller</string>
+  <string name="change_file_extension_confirm_button">Ja, skift den</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">I gang</string>
   <!--
@@ -4056,8 +4063,6 @@
   <string name="content_description_settings_search_navigate_back">Gå tilbage</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Ingen seneste søgninger</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Der opstod en fejl</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Ryd alt</string>
   <!-- Section header for recent search results -->

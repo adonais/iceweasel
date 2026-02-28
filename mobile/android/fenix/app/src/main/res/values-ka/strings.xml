@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">გამოიყენეთ მოწყობილობა კვალის დაუტოვებლად</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s წაშლის თქვენს ფუნთუშებს, ისტორიასა და საიტის მონაცემებს ყველა პირადი ჩანართის დახურვისას. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -323,6 +316,8 @@
   <string name="browser_menu_save_as_pdf_2">შეინახოს PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">გვერდის თარგმნა</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">გვერდის შეჯამება</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">არეული საიტის მოხსენება…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -434,6 +429,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: საძიებო სისტემის ამრჩევი</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">%1$s წაშლილია ისტორიიდან</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">ამ ჩანაწერის წაშლა ისტორიიდან</string>
   <!--
     Home onboarding
 
@@ -611,6 +610,84 @@
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">თანხმობა და გვერდების მონახულების დაწყება</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button">განაგრძეთ</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button">ახლა არა</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">მოემზადეთ თავისუფლად ნავარდისთვის</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle">სწრაფია, უსაფრთხო და თქვენით არ ვაჭრობს.\nმხოლოდ გვერდების უკეთ მონახულება.</string>
+  <!--
+    Terms of use (ToU) onboarding body line one.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="nova_onboarding_tou_body_line_1">თუ განაგრძობთ, თანახმა ხართ მიიღოთ %1$s.</string>
+  <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">გამოყენების პირობები, რომელსაც გთავაზობთ Firefox</string>
+  <!--
+    Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
+  -->
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox ზრუნავს თქვენს პირადულობაზე. ვრცლად იხილეთ %1$s.</string>
+  <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+  <string name="nova_onboarding_tou_body_line_2_link_text">პირადულობის განაცხადი</string>
+  <!--
+    Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
+  -->
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">ბრაუზერის გასაუმჯობესებლად Firefox გზავნის შემოწმებისა და გამოყენების შედეგებს, რომელთაც გაეცნობა Mozilla. %1$s</string>
+  <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+  <string name="nova_onboarding_tou_body_line_3_link_text">პარამეტრების მართვა</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">დაემშვიდობეთ საძაგელ მეთვალყურეებს</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">გახსენით ყველა ბმული თანმომყოლი პირადულობით</string>
+  <!-- "Set to default" onboarding subtitle. -->
+  <string name="nova_onboarding_set_to_default_subtitle">ჩვენ ვიცავთ თქვენს მონაცემებს, კომპანიებს კი თავისთავად ეზღუდებათ შესაძლებლობა, თვალი ადევნონ თქვენს თითოეულ დაწკაპებას.</string>
+  <!-- "Set to default" onboarding button. -->
+  <string name="nova_onboarding_set_to_default_button">ნაგულისხმევ ბრაუზერად დაყენება</string>
+  <!-- Toolbar selection onboarding title. -->
+  <string name="nova_onboarding_toolbar_selection_title">შეარჩიეთ მისამართების ველი</string>
+  <!-- Toolbar selection onboarding "top" option label. -->
+  <string name="nova_onboarding_toolbar_selection_top_label">ზემოთ</string>
+  <!-- Toolbar selection onboarding "bottom" option label. -->
+  <string name="nova_onboarding_toolbar_selection_bottom_label">ქვემოთ</string>
+  <!-- Theme selection onboarding title. -->
+  <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">გაფორმების შერჩევა</string>
+  <!-- Theme selection onboarding "automatic" option label. -->
+  <string name="nova_onboarding_theme_selection_automatic_label" tools:ignore="UnusedResources">თვითშერჩევა</string>
+  <!-- Theme selection onboarding "light" option label. -->
+  <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">ნათელი</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">მუქი</string>
+  <!-- Sync onboarding title. -->
+  <string name="nova_onboarding_sync_title">მყისვე განაგრძეთ იქიდან, სადაც შეჩერდით</string>
+  <!-- Sync onboarding subtitle. -->
+  <string name="nova_onboarding_sync_subtitle">წამოიღეთ სანიშნები, პაროლები და სხვ. ნებისმიერ მოწყობილობაზე დაუყოვნებლივ. თქვენი პირადი მონაცემები რჩება დაცული და უსაფრთხო დაშიფვრის მეშვეობით.</string>
+  <!-- Sync onboarding button. -->
+  <string name="nova_onboarding_sync_button">დასინქ. დაწყება</string>
+  <!-- Marketing onboarding title. -->
+  <string name="nova_onboarding_marketing_title">დაგვეხმარეთ უკეთესი ინტერნეტის შენებაში</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">გაუზიარეთ Mozilla-ს მოკავშირე სამსახურებს გავრცელების საკითხებში, როგორ აღმოაჩინეთ Firefox და იყენებთ თუ არა. ეს მონაცემები არასდროს გაიყიდება. %1$s</string>
+  <!-- Marketing onboarding body link text. -->
+  <string name="nova_onboarding_marketing_body_link_text">როგორ ვიყენებთ მონაცემებს</string>
+  <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">შეტყობინებები დაგეხმარებათ, მეტად უსაფრთხოდ გამოიყენოთ Firefox</string>
+  <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">გაეცანით, პირადულობის დაცვის თუ რა უახლესი შესაძლებლობებითაა Firefox, რომ არ ჩამორჩეთ სიახლეებს უსაფრთხოების შესანარჩუნებლად.</string>
+  <!-- Notifications onboarding button. -->
+  <string name="nova_onboarding_notifications_button">შეტყობინებების ჩართვა</string>
+  <!-- "Add search widget" onboarding title. -->
+  <string name="nova_onboarding_add_search_widget_title">გახადეთ თითოეული მოძიება მეტად პირადი</string>
+  <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">დაიწყეთ ძიება ტელეფონის მთავარი ეკრანიდან და იცოდეთ, რომ Firefox თავისთავადი დაცვით გიმაგრებთ ზურგს.</string>
+  <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Firefox-ჩანამატი ეკრანზე</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -690,6 +767,8 @@
   <string name="preferences_search">ძიება</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">საძიებოები</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">მთავარი ეკრანის ჩანამატი</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">შემოთავაზებები საძიებოებისგან</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -841,8 +920,6 @@
   <string name="preferences_search_browsing_history">ძიება დათვალიერების ისტორიაში</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">ძიება სანიშნებში</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">მალსახმობების ჩვენება</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">დასინქრონებულ ჩანართებში ძიება</string>
   <!-- Preference for account settings -->
@@ -881,6 +958,15 @@
   <string name="preferences_open_links_in_apps_ask">შეკითხვა გახსნამდე</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">არასდროს</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">ფაილის საცავი</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">ჩამოტვირთვის ნაგულისხმევი მდებარეობა</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">თქვენ არ გაქვთ ამ საქაღალდის გამოყენების ნებართვა. ეცადეთ, აირჩიოთ სხვა.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">მართეთ ჩამოტვირთვები სხვა პროგრამით</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1413,6 +1499,8 @@
   <string name="studies_active">მოქმედი</string>
   <!-- Description for studies -->
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">გამოცადეთ შესაძლებლობები ჯერ კიდევ ჩანაფიქრის დონეზე, სანამ ყველასთვის ხილული გახდება.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox შემთხვევითობით ირჩევს მომხმარებლებს შესაძლებლობების შესამოწმებლად, რაც საყოველთაოდ აუმჯობესებს ხარისხს.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">კვლევების ჩადგმა და გაშვება</string>
   <!-- Title of the Studies data preference -->
@@ -1427,6 +1515,10 @@
   <string name="remote_improvements_title">დაშორებულად გაუმჯობესების ნებართვა</string>
   <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
   <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox შეძლებს გააუმჯობესოს შესაძლებლობები, წარმადობა და მდგრადობა განახლებებს შორის შუალედშიც. ცვლილებები დაშორებული რეჟიმით.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">ვრცლად</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">გაუმჯობესებები დაშორებულად</string>
   <!--
     Sessions
 
@@ -1464,6 +1556,8 @@
   <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">პირადი</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
   <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">დასინქრონება</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">ძიება თქვენს ჩანართებში</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">ყველა ჩანართის გაზიარება</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1506,12 +1600,18 @@
   <string name="remove_tab_from_collection">ჩანართის მოცილება კრებულიდან</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
   <string name="tabs_tray_select_tabs">ჩანართების შერჩევა</string>
+  <!-- Text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results">თანხვედრა ვერ მოიძებნა.</string>
+  <!-- Additional text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results_additional_text">სხვა რამ მოიძიეთ!</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
   <string name="close_tab">ჩანართის დახურვა</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
   <string name="close_tab_title">დაიხუროს ჩანართი %s</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
   <string name="open_tabs_menu">ჩანართების მენიუს გახსნა</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">დაბრუნება ჩანართის სამართავზე</string>
   <!-- Open tabs menu item to save tabs to collection -->
   <string name="tabs_menu_save_to_collection1">ჩანართების კრებულში შენახვა</string>
   <!-- Text for the menu button to delete a collection -->
@@ -1530,6 +1630,14 @@
   <string name="pwa_site_controls_title_private">%1$s (პირადი რეჟიმი)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">გახსენით ჩანართების ძიება</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">ჩანართების ჯგუფის შექმნა</string>
+  <string name="create_tab_group_save_button">შენახვა</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">ჩანართების ჯგუფის ჩასწორების დახურვა</string>
   <!--
     History
 
@@ -1612,6 +1720,8 @@
   <string name="download_delete_item">წაშლა</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">გადასვლა უკან</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">გადასვლა ჩამოტვირთვების პარამეტრებში</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">უკან და ძიების დახურვა</string>
   <!--
@@ -1629,12 +1739,40 @@
   <string name="download_share_url">URL-ბმულის გაზიარება</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">ფაილის გაზიარება</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">ფაილის გადარქმევა</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">ნამდვილად გსურთ მონიშნული ერთეულების წაშლა?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">წაშლა</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">გაუქმება</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">ფაილის გადარქმევა</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">სახელი</string>
+  <string name="download_rename_dialog_confirm_button">შენახვა</string>
+  <string name="download_rename_dialog_cancel_button">გაუქმება</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">ფაილი დასახელებით „%s“ უკვე არსებობს ამ მისამართზე</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">ფაილის სახელში არ უნდა იყოს „/“</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">ფაილის გადარქმევა ვერ ხერხდება</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">ამ ფაილის გადარქმევა ვერ ხერხდება სისტემის ან საცავის შეზღუდვების გამო.</string>
+  <string name="download_rename_error_dismiss_button">კარგი</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">მიეთითოს ფაილს სახეობად %s?</string>
+  <string name="change_file_extension_description">შედეგად შესაძლოა, ფაილი სხვა პროგრამაში გახსნას და თქვენი მოწყობილობისთვის სახიფათო აღმოჩნდეს.</string>
+  <string name="change_file_extension_cancel_button">გაუქმება</string>
+  <string name="change_file_extension_confirm_button">დიახ, შეიცვალოს</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">მიმდინარეობს</string>
   <!--
@@ -1827,6 +1965,8 @@
   <string name="bookmark_error_edit_bookmark">ვერ ჩასწორდა სანიშნი</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">ჩასწორება</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">არჩევა</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">გადატანა</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1903,8 +2043,14 @@
   <string name="bookmark_delete_folder_content_description">საქაღალდის წაშლა</string>
   <!-- Content description for bookmark search floating action button -->
   <string name="bookmark_search_button_content_description">სანიშნების ძიება</string>
+  <!-- Content description for select folder screen search action button ("search" is a verb) -->
+  <string name="select_bookmark_search_button_content_description">ძიება საქაღალდეებში</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">ჩანაწერების მენიუ – %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">საქაღალდის გაშლა: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">საქაღალდის დახურვა: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">სანიშნების დახურვა</string>
   <!-- Title for the bookmark list empty state -->
@@ -1921,6 +2067,8 @@
   <string name="bookmark_empty_list_folder_description">ჩაინიშნეთ გვერდები მონახულებისას, რათა მოგვიანებით ადვილად იპოვოთ რჩეული საიტები.</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">ახალი საქაღალდე</string>
+  <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
+  <string name="bookmark_moved_single_item">%1$s გადატანილია – %2$s</string>
   <!--
     Site Permissions
 
@@ -2728,6 +2876,24 @@
   <string name="saved_logins_sort_strategy_last_used">ბოლოს გამოყენებული</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">პაროლების დალაგების მენიუ</string>
+  <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">ელფოსტის ნიღბები</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">ელფოსტის ნიღბების შემოთავაზება</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">დაფარეთ თქვენი ნამდვილი ელფოსტა შემომავალი უსარგებლო წერილების ასარიდებლად. ზოგიერთ საიტზე მხარდაუჭერელია ელფოსტის ნიღბები.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">ვრცლად</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">ელფოსტის ნიღბების მართვა</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">თქვენ უკვე გამოყენებული გაქვთ ელფოსტის 5 უფასო ნიღაბი, ამიტომ მათგან შეირჩევა რომელიმე კვლავ გამოყენებისთვის.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">ელფოსტის ნიღბები ამჟამად მიუწვდომელია. სცადეთ ხელახლა რამდენიმე წუთში.</string>
   <!--
     Autofill
 
@@ -3897,8 +4063,6 @@
   <string name="content_description_settings_search_navigate_back">გადასვლა უკან</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">ბოლოს მოძიებულები არაა</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">წარმოიქმნა შეცდომა</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">ყველას გასუფთავება</string>
   <!-- Section header for recent search results -->
@@ -3907,6 +4071,8 @@
   <string name="settings_search_no_results_title">ვერაფერი მოინახა</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">იქნებ სხვანაირად მოინახოს?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">პარამეტრებში ძიების ღილაკი</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->
@@ -3935,6 +4101,20 @@
   <string name="terms_of_use_prompt_postpone">მოგვიანებით შეხსენება</string>
   <!-- ==== Experiment strings. ==== -->
 
+  <!-- A title for the popup prompt. -->
+  <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">გამოყენების პირობები</string>
+  <!--
+    A title for the popup prompt.
+    %1$s is the product name "Firefox"
+  -->
+  <string name="terms_of_use_prompt_title_option_b" tools:ignore="UnusedResources">გაცნობებთ %1$s</string>
+  <!--
+    Copy for the Terms of Use popup prompt body line two.
+    %1$s is the string terms_of_use_prompt_body_line_two_alternative_link ("here") that is a link to the Terms of Use
+  -->
+  <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">ვრცლად იხილავთ %1$s.</string>
+  <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
+  <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">აქ</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

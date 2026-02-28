@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">هیچ توری ری ای دسگا نهلی و جا</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s کۊکیا، ویرگار وو داده یل وبگه ایسا ن هر سا ک پوی بلگه یل سیخومی خوتووݩ ن بووندین، پاک اکونه. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">ولرنیڌن بلگه</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">خولاسه بلگه</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">نۊ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">گوزارش خراوی وبگه…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -927,8 +922,6 @@
   <string name="preferences_search_browsing_history">پیتینیڌن ویرگار گشتن</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">پیتینیڌن نشووکا</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">نشووݩ داڌن ره نهنگا</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">پیتینیڌن من بلگه یل هوم گوم وابیڌه</string>
   <!-- Preference for account settings -->
@@ -975,7 +968,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">ایسا نترین ای دوبلگه ن و کار گیرین. ی دوبلگه دی ن و کار بیگیرین.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">ایسا نترین ای دوبلگه ن و کار گیرین. ی دوبلگه دی ن و کار بیگیرین.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">دؽوۉداری دانلودا وا برنومه ای دی</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1647,6 +1640,10 @@
   <string name="create_tab_group_title">وورکل بونکۊ بلگه</string>
   <string name="create_tab_group_save_button">زفت</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">بستن بونکۊ بلگه آلشت</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">بونکۊ</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">نوم</string>
   <!--
     History
 
@@ -2482,7 +2479,7 @@
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[هساوی نڌارین؟ سی هوم گوم وابیڌن منجا دسگایل خوت <u>یکی وورکل کوݩ</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
-  <string name="sign_out_confirmation_message_2">%s هوم گوم وابیڌن وا هساو ایسا ن اواڌارنه، ولی هیچ کویکی ز داده یل ایسا ری ای گشت گر پاک نؽبۊن.</string>
+  <string name="sign_out_confirmation_message_2">%s هوم گوم وابیڌن وا هساو ایسا ن اواڌارنه، ولی هیچ کویکی ز داده یل گشتن ایسا ری ای دسگا پاک نؽبۊن.</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">قت کردن منپیز</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3673,6 +3670,13 @@
   -->
   <string name="connection_security_panel_verified_by">تاییڌ وابیڌه و دست %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">و در تیجنیڌه وابیڌه و %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">ز ری موقررات (EU) 2024/1183 واجد شرایت هڌ.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -4072,8 +4076,6 @@
   <string name="content_description_settings_search_navigate_back">وورگشتن و عقب</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">بؽ پیتینیڌن دیندایی</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">ختایی پؽش ٱووڌه</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">روفتن پوی</string>
   <!-- Section header for recent search results -->

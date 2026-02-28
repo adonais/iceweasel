@@ -378,8 +378,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">Không thể cài đặt %1$s vì nó chỉ có thể được cài đặt bởi tổ chức sử dụng chính sách doanh nghiệp, mà không được hỗ trợ trên nền tảng này.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s vi phạm chính sách của Mozilla và không thể cài đặt trên %2$s.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s bị hạn chế và không thể cài đặt trên %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Không thể bật %1$s</string>
@@ -426,11 +424,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Tiện ích mở rộng này bị chặn do vi phạm chính sách của Mozilla và đã bị vô hiệu hóa.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Tiện ích mở rộng này bị hạn chế do vi phạm chính sách của Mozilla và đã bị vô hiệu hóa. Bạn có thể kích hoạt nó, nhưng điều này có thể có rủi ro.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Tiện ích mở rộng này bị hạn chế và đã bị vô hiệu hóa. Bạn có thể bật nó, nhưng việc này có thể tiềm ẩn rủi ro.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Tiện ích mở rộng này vi phạm chính sách của Mozilla. Sử dụng nó có thể có rủi ro.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Tiện ích mở rộng này bị hạn chế. Sử dụng nó có thể nguy hiểm.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

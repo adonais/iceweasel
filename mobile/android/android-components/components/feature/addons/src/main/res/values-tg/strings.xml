@@ -379,8 +379,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">«%1$s» насб карда нашуд, зеро ки он метавонад танҳо аз ҷониби ташкилоте насб карда шавад, ки сиёсати корхонаро истифода мебарад, аммо он дар ин платформа дастгирӣ намешавад.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">«%1$s» сиёсатҳои «Mozilla»-ро вайрон мекунад ва дар «%2$s» насб карда намешавад.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">«%1$s» маҳдуд шудааст ва дар «%2$s» насб карда намешавад.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Фаъолкунии %1$s иҷро нашуд</string>
@@ -427,11 +425,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Ин васеъшавӣ ба сабаби вайрон кардани сиёсатҳои «Mozilla» манъ карда шуд ва ғайрифаъол шудааст.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Ин васеъшавӣ ба сабаби вайрон кардани сиёсатҳои «Mozilla» маҳдуд карда шуд ва ғайрифаъол шудааст. Шумо метавонед онро фаъол созед, аммо ин метавонад хатарнок бошад.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Ин васеъшавӣ маҳдуд шудааст ва ҳам ғайрифаъол шудааст. Шумо метавонед онро фаъол созед, аммо ин метавонад хатарнок бошад.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Ин васеъшавӣ сиёсати «Mozilla»-ро вайрон мекунад. Истифодаи он метавонад хатарнок бошад.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Ин васеъшавӣ маҳдуд шудааст. Истифодаи он метавонад хатарнок бошад.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

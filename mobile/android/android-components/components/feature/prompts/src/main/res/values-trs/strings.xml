@@ -130,6 +130,8 @@
   <string name="mozac_feature_prompt_repost_negative_button_text">Dūyichin\'</string>
   <!-- Strings show in a dialog that appear when user confirm folder upload -->
   <string name="mozac_feature_prompt_folder_upload_confirm_title">Dūsîjt ñanj aj</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">Gīni’hiāj sisī huā hue’ê rayi’î sitiô nan hìaj nïn’ gàchin gūdusîjt riña “%1$s”.</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Nādusîj</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
@@ -140,16 +142,28 @@
     Header for the select card prompt to allow users to fill a form with a saved card.
   -->
   <string name="mozac_feature_prompts_select_credit_card_2">Gārāsun tarjeta nū sà’ ‘hiát</string>
+  <!-- Content description for expanding the saved card options in the select card prompt. -->
+  <string name="mozac_feature_prompts_expand_credit_cards_content_description_2">Nāgi’hiaj nìkót nej tarjetâ nū sà’a</string>
+  <!-- Content description for collapsing the saved card options in the select prompt. -->
+  <string name="mozac_feature_prompts_collapse_credit_cards_content_description_2">Nādugua\' nej tarjetâ nū sà’a</string>
+  <!-- Option in the expanded select card prompt that links to cards settings. -->
+  <string name="mozac_feature_prompts_manage_credit_cards_2">Nātsij riña nej tārjêta</string>
   <!-- Text for the title of a save credit card dialog. -->
   <string name="mozac_feature_prompts_save_credit_card_prompt_title">Nā’nïnj sà’ hue’êt tarjeta nan anj.</string>
   <!-- Text for the title of an update credit card dialog. -->
   <string name="mozac_feature_prompts_update_credit_card_prompt_title">Nāgi’hiāj nākàt diû gisìj gīrè’ tarjeta nan anj</string>
+  <!-- Subtitle text displayed under the title of the saved card dialog. %s is the name of the app (for example "Firefox"). -->
+  <string name="mozac_feature_prompts_save_credit_card_prompt_body_2">%s nāgi’hiaj ran numerô si tārjetât. Sī na’nïn sà’ man nej da’nga’ chì’ garâj sunt.</string>
   <!--
     Address Autofill
 
     Header for the select address prompt to allow users to fill a form with a saved address.
   -->
   <string name="mozac_feature_prompts_select_address_2">Nāguī ‘ngō dīreksiûn</string>
+  <!-- Content description for expanding the saved addresses options in the select address prompt. -->
+  <string name="mozac_feature_prompts_expand_address_content_description_2">Nāgi’hiaj nìkó nej direksiûn nū sà’a</string>
+  <!-- Content description for collapsing the saved address options in the select address prompt. -->
+  <string name="mozac_feature_prompts_collapse_address_content_description_2">Nādugua\' nej direksiûn nū sà’a</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">Ni’hiāj dàj gā nej dīreksiûn</string>
   <!--
@@ -160,6 +174,8 @@
   <string name="mozac_feature_prompts_account_picture">Ñadu’hua ginù riña kuênda</string>
   <!-- Title of the Identity Credential provider dialog chooser. -->
   <string name="mozac_feature_prompts_identity_credentials_choose_provider">Nāna’huì’ ‘ngō sa rūgûñu’ūnj gāyi’ì’ sēsiûn</string>
+  <!-- Title of an account picker dialog for identity credentials. The %1$s will be replaced with the name of the provider -->
+  <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">Gāyi’ì sēsiûn ngà ‘ngō kuendâ %1$s</string>
   <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">Gārasun %1$s da’ rūgûñu’ūnj man gāyi’ìt sēsiûn</string>
   <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
@@ -168,4 +184,12 @@
   <string name="mozac_feature_prompts_identity_credentials_continue">Guij ne\' ñāan</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_cancel">Dūyichin\'</string>
+  <!--
+    Email Mask Autofill
+
+    Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
+  -->
+  <string name="mozac_feature_relay_chip_text">Gārāsun ‘ngō yâchìj i ngà nā’nīnt si kōrreôt</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">Sa nākàa! nej si yāchìj kōrreo %s ngà huā yūgui man riña aga’ li a’mint.</string>
 </resources>
