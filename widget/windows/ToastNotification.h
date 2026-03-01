@@ -34,6 +34,7 @@ class WindowsAlertNotification final : public AlertNotification,
  protected:
   virtual ~WindowsAlertNotification() = default;
   nsIWindowsAlertNotification::ImagePlacement mImagePlacement = eInline;
+  nsString mImagePathUnchecked;
 };
 
 class ToastNotification final : public nsIWindowsAlertsService,

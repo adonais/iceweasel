@@ -298,23 +298,29 @@ void ToastNotificationHandler::HandleCloseFromBrowser() {
 nsresult ToastNotificationHandler::InitAlertAsync() {
   MOZ_TRY(mAlertNotification->GetId(mWindowsTag));
 
+  // The image file might already have been set by system principal APIs.
+  if (mImageUri.IsEmpty()) {
 #ifdef MOZ_BACKGROUNDTASKS
-  nsAutoString imageUrl;
-  if (BackgroundTasks::IsBackgroundTaskMode() &&
-      NS_SUCCEEDED(mAlertNotification->GetImageURL(imageUrl)) &&
-      !imageUrl.IsEmpty()) {
-    // Bug 1870750: Image decoding relies on gfx and runs on a thread pool,
-    // which expects to have been initialized early and on the main thread.
-    // Since background tasks run headless this never occurs. In this case we
-    // force gfx initialization.
-    (void)NS_WARN_IF(!gfxPlatform::GetPlatform());
-  }
+    nsAutoString imageUrl;
+    if (BackgroundTasks::IsBackgroundTaskMode() &&
+        NS_SUCCEEDED(mAlertNotification->GetImageURL(imageUrl)) &&
+        !imageUrl.IsEmpty()) {
+      // Bug 1870750: Image decoding relies on gfx and runs on a thread pool,
+      // which expects to have been initialized early and on the main thread.
+      // Since background tasks run headless this never occurs. In this case we
+      // force gfx initialization.
+      (void)NS_WARN_IF(!gfxPlatform::GetPlatform());
+    }
 #endif
 
-  nsCOMPtr<imgIContainer> image;
-  MOZ_TRY(mAlertNotification->GetImage(getter_AddRefs(image)));
+    nsCOMPtr<imgIContainer> image;
+    MOZ_TRY(mAlertNotification->GetImage(getter_AddRefs(image)));
 
-  return image ? AsyncSaveImage(image) : TryShowAlert();
+    // Defer showing alert until image has saved to disk.
+    return image ? AsyncSaveImage(image) : TryShowAlert();
+  }
+
+  return TryShowAlert();
 }
 
 nsString ToastNotificationHandler::ActionArgsJSONString(
