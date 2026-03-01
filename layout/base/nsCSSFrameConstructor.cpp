@@ -9180,7 +9180,8 @@ void nsCSSFrameConstructor::ProcessChildren(
       nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
   ComputedStyle* parentStyle = styleParentFrame->Style();
   if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
-      !aContent->IsInNativeAnonymousSubtree()) {
+      !aContent->IsInNativeAnonymousSubtree() &&
+      !aContent->IsHTMLElement(nsGkAtoms::frameset)) {
     CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
                                *parentStyle, PseudoStyleType::Backdrop,
                                itemsToConstruct);
