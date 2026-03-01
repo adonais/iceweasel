@@ -2,9 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
+  return console.createInstance({
+    prefix: "ToastNotification",
+    maxLogLevel: "Warn",
+  });
+});
 
 ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -67,29 +75,81 @@ export const ToastNotification = {
     this.sendUserEventTelemetry("IMPRESSION", message, dispatch);
     dispatch({ type: "IMPRESSION", data: message });
 
-    let image = null;
+    // `content_image_url` specifies the image to display in the notification.
+    // To determine whether the image is a `.gif`, we inspect the file name.
+    // Because the URL may include query parameters, we use a proper URL parser
+    // to extract the canonical file name and consolidate the parsed data in
+    // `imgData` to keep all related information in a single structure.
+    let imageContainer = null;
+    let imageData;
     if (content.image_url) {
+      const url = new URL(content.image_url);
+      imageData = {
+        url,
+        name: url.pathname.split("/").pop(),
+      };
+    }
+
+    // On Windows, animated GIFs are handled as a special case for notifications.
+    // The original GIF file is forwarded unchanged to avoid decoding and
+    // re-encoding the animation.
+    //
+    // AlertsService exposes `imagePathUnchecked` (string), which takes precedence
+    // over `AlertsService.image`. The latter contains the binary image data as an
+    // imageContainer. The naming in this file mirrors that distinction to clearly
+    // separate a file path from in-memory image data.
+    let alert;
+    if (AppConstants.platform === "win" && imageData?.name.endsWith(".gif")) {
+      alert = Cc["@mozilla.org/windows-alert-notification;1"].createInstance(
+        Ci.nsIWindowsAlertNotification
+      );
       try {
-        const uri = Services.io.newURI(
-          Services.urlFormatter.formatURL(content.image_url)
+        const resp = await fetch(imageData.url);
+        if (!resp.ok) {
+          throw new Error(`Could not fetch ${content.image_url}`);
+        }
+
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const uuid = Services.uuid.generateUUID().toString();
+
+        let imagePath = PathUtils.join(
+          PathUtils.tempDir,
+          `${uuid}_${imageData.name}`
         );
-        const channel = Services.io.newChannelFromURI(
-          uri,
-          null,
-          Services.scriptSecurityManager.getSystemPrincipal(),
-          null,
-          Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-          Ci.nsIContentPolicy.TYPE_IMAGE
+
+        lazy.logConsole.info(
+          `Saved ${content.image_url} to path: ${imagePath}`
         );
-        image = await ChromeUtils.fetchDecodedImage(uri, channel);
-      } catch (e) {
-        console.error("showToastNotification image loading failed", e);
+
+        await IOUtils.write(imagePath, bytes);
+
+        alert.imagePathUnchecked = imagePath;
+      } catch (error) {
+        lazy.logConsole.warn(`Animated gif notification: ${error}`);
+      }
+    } else {
+      alert = Cc["@mozilla.org/alert-notification;1"].createInstance(
+        Ci.nsIAlertNotification
+      );
+
+      if (imageData?.url) {
+        try {
+          const uri = Services.io.newURI(imageData.url);
+          const channel = Services.io.newChannelFromURI(
+            uri,
+            null,
+            Services.scriptSecurityManager.getSystemPrincipal(),
+            null,
+            Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+            Ci.nsIContentPolicy.TYPE_IMAGE
+          );
+          imageContainer = await ChromeUtils.fetchDecodedImage(uri, channel);
+        } catch (e) {
+          console.error("showToastNotification image loading failed", e);
+        }
       }
     }
 
-    let alert = Cc["@mozilla.org/alert-notification;1"].createInstance(
-      Ci.nsIAlertNotification
-    );
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     alert.init(
       tag,
@@ -105,7 +165,7 @@ export const ToastNotification = {
       null /* aInPrivateBrowsing */,
       content.requireInteraction
     );
-    alert.image = image;
+    alert.image = imageContainer;
 
     if (content.actions) {
       let actions = Cu.cloneInto(content.actions, {});
@@ -143,6 +203,13 @@ export const ToastNotification = {
     let obs = (subject, topic) => {
       if (topic === "alertshow") {
         shownPromise.resolve();
+      }
+
+      if (topic === "alertfinished" && alert?.imagePathUnchecked) {
+        // Notifiactions shown with `imagePathUnchecked` don't delete the
+        // provided file, so we have to clean it up ourselves.
+        lazy.logConsole.info(`Deleting ${alert.imagePathUnchecked}`);
+        IOUtils.remove(alert.imagePathUnchecked);
       }
     };
 

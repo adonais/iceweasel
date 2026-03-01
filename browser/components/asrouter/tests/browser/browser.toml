@@ -46,6 +46,11 @@ tags = "remote-settings"
 
 ["browser_asrouter_targeting.js"]
 
+["browser_asrouter_toast_notification-gif.js"]
+run-if = [
+  "os == 'win'",
+]
+
 ["browser_asrouter_toast_notification.js"]
 
 ["browser_asrouter_toolbarbadge.js"]

@@ -2076,6 +2076,39 @@ const MESSAGES = () => [
     frequency: { lifetime: 3 },
   },
   {
+    id: "TEST_TOAST_NOTIFICATION_GIF",
+    weight: 100,
+    template: "toast_notification",
+    content: {
+      title: {
+        string_id: "cfr-doorhanger-bookmark-fxa-header",
+      },
+      body: "Body",
+      image_url:
+        "chrome://activity-stream/content/data/content/assets/fox-doodle-waving.gif",
+      launch_url: "https://mozilla.org",
+      requireInteraction: true,
+      actions: [
+        {
+          action: "dismiss",
+          title: "Dismiss",
+          windowsSystemActivationType: true,
+        },
+        {
+          action: "snooze",
+          title: "Snooze",
+          windowsSystemActivationType: true,
+        },
+        { action: "callback", title: "Callback" },
+      ],
+      tag: "test_toast_notification",
+    },
+    groups: ["panel-test-provider"],
+    targeting: "!hasActiveEnterprisePolicies",
+    trigger: { id: "backgroundTaskMessage" },
+    frequency: { lifetime: 3 },
+  },
+  {
     id: "MR2022_BACKGROUND_UPDATE_TOAST_NOTIFICATION",
     weight: 100,
     template: "toast_notification",
