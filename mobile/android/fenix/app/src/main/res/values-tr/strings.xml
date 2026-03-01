@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Sayfayı çevir</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Sayfayı özetle</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Yeni</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Bozuk siteyi rapor et…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1631,6 +1633,17 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Sekme aramayı aç</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Sekme grubu oluştur</string>
+  <string name="create_tab_group_save_button">Kaydet</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Grup</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Adı</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -2048,7 +2061,7 @@
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Henüz yer imi yok</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
-  <string name="bookmarks_folder_description">Yer imlerindeki klasör sayısı: %s</string>
+  <string name="bookmarks_folder_description">Klasördeki yer imi sayısı: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Gezinirken siteleri kaydedin. Eşitlenen diğer cihazlardaki yer imlerinize erişmek için giriş yapın.</string>
   <!-- Text for the button to navigate to sync authentication -->

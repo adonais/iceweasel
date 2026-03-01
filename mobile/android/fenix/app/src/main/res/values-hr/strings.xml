@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Prevedi stranicu</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Sažetak stranice</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Novi</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Prijavi neispravnu stranicu…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1630,6 +1632,18 @@
   <string name="pwa_site_controls_title_private">%1$s (privatni modus)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Otvori pretraživanje kartica</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Stvori grupu kartica</string>
+  <string name="create_tab_group_save_button">Spremi</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Zatvori uređivanje grupe kartica</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Grupa</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Ime</string>
   <!--
     History
 
@@ -3655,6 +3669,13 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">Potvrđuje %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Izdano za %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Kvalificirano prema Uredbi (EU) 2024/1183.</string>
   <!--
     Debug drawer
 

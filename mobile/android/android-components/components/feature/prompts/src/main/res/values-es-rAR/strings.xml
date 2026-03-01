@@ -191,5 +191,5 @@
   -->
   <string name="mozac_feature_relay_chip_text">Usar máscara de correo electrónico</string>
   <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
-  <string name="mozac_feature_relay_email_masks_cfr">¡Nuevo! %s máscaras de correo electrónico ahora están disponibles en dispositivos móviles.</string>
+  <string name="mozac_feature_relay_email_masks_cfr">¡Nuevo! Las máscaras de correo electrónico de %s ahora están disponibles en dispositivos móviles.</string>
 </resources>

@@ -316,6 +316,10 @@
   <string name="browser_menu_save_as_pdf_2">Ruaje si PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Përktheje faqen</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Përmblidhe faqen</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">E re</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Njoftoni për sajt të dëmtuar…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -427,6 +431,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: përzgjedhës motori kërkimesh</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">U fshi %1$s prej historiku</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Fshije këtë zë historiku</string>
   <!--
     Home onboarding
 
@@ -635,6 +643,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Administroni rregullime</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">U thoni lamtumirë gjurmuesve të shpifur</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Hapini krejt lidhjet tuaja me privatësi që brenda</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Ne i mbrojmë të dhënat tuaja dhe bllokojmë automatikisht shoqëri për të mos ju spiunuar përmes klikimeve tuaja.</string>
   <!-- "Set to default" onboarding button. -->
@@ -759,6 +769,8 @@
   <string name="preferences_search">Kërkim</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Motorë kërkimesh</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Widget skene kreu</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Sugjerime prej motorësh kërkimi</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -948,6 +960,15 @@
   <string name="preferences_open_links_in_apps_ask">Pyet para hapjes</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Kurrë</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Depozitim kartelash</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Vendndodhje parazgjedhje shkarkimesh</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">S’keni leje të përdorni këtë dosje. Provoni të zgjidhni një tjetër.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Administroni shkarkime me aplikacion tjetër</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1478,10 +1499,26 @@
   <string name="studies_active">Aktive</string>
   <!-- Description for studies -->
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Provoni veçori dhe ide para se të hidhen në qarkullim për këdo.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox-i përzgjedh kuturu përdorues për të testuar veçori, çka përmirëson cilësinë për gjithkënd.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Instaloni dhe kryeni studime</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Lejoni studim veçorish</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Mësoni më tepër</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Lejoni përmirësime nga larg</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox-i do të përmirësojë veçori, funksionim dhe qëndrueshmëri mes përditësimesh. Ndryshimet aplikohen që së largëti.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Mësoni më tepër</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Përmirësime nga larg</string>
   <!--
     Sessions
 
@@ -1594,6 +1631,18 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Hap kërkim skedash</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Krijoni grup skedash</string>
+  <string name="create_tab_group_save_button">Ruaje</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Mbylle Përpunimin e Grupit të Skedave</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Grup</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Emër</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1675,6 +1724,8 @@
   <string name="download_delete_item">Fshije</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Shko mbrapsht</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Kaloni te Rregullime Shkarkimesh</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Mbrapsht dhe mbylle kërkimin</string>
   <!--
@@ -1692,12 +1743,40 @@
   <string name="download_share_url">Ndani URL-në me të tjerë</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Ndani kartelën me të tjerë</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Riemërtojeni kartelën</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Jeni i sigurt se doni të fshihen objektet e përzgjedhur?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Fshije</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Anuloje</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Riemërtojeni kartelën</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Emër</string>
+  <string name="download_rename_dialog_confirm_button">Ruaje</string>
+  <string name="download_rename_dialog_cancel_button">Anuloje</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Ka tashmë një kartelë me emrin “%s” në këtë vendndodhje</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Emrat e kartelave s’mund të përdorin “/”</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">S’riemërtohet dot kartela</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Kjo kartelë s’mund të riemërtohet, për shkak kufizimesh sistemi, ose depozite.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Të ndryshohet lloji i kartelave në %s?</string>
+  <string name="change_file_extension_description">Kjo mund të hapë kartelën në një tjetër aplikacion dhe mund të jetë e rrezikshme për pajisjen tuaj.</string>
+  <string name="change_file_extension_cancel_button">Anuloje</string>
+  <string name="change_file_extension_confirm_button">Po, ndryshoje</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Në punë e sipër</string>
   <!--
@@ -1890,6 +1969,8 @@
   <string name="bookmark_error_edit_bookmark">S’u përpunua dot faqerojtës</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">PËRPUNOJENI</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Përzgjidhe</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Lëvize</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1970,6 +2051,10 @@
   <string name="select_bookmark_search_button_content_description">Kërko në dosje</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Menu Elementësh për %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Zgjeroje dosjen: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Mbylle dosjen: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Mbylli faqerojtësit</string>
   <!-- Title for the bookmark list empty state -->
@@ -2796,6 +2881,24 @@
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menu renditjeje fjalëkalimesh</string>
   <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Maska email-i</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Sugjero maska email-i</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Fshihni email-in tuaj të njëmendtë, që të mbroni postën tuaj nga mesazhe të padëshiruar. Disa sajte s’mbulojnë maska email-esh.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Mësoni më tepër</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Administroni maska email-i</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Keni përdorur 5 maska falas email-i, ndaj kemi zgjedhur një për ju që ta ripërdorni.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Maskat e email-it s’janë të përdorshme tani. Riprovoni pas pak minutash.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3563,6 +3666,11 @@
   -->
   <string name="connection_security_panel_verified_by">Verifikuar nga %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Lëshuar për %s</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3968,6 +4076,8 @@
   <string name="settings_search_no_results_title">S’u prodhua gjë</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Mbase të provohet një tjetër kërkim?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Buton kërkimi te rregullimet</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

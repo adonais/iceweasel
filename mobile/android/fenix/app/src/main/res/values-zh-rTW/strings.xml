@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">翻譯頁面</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">摘要本頁</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">新功能</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">回報網站問題…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1638,6 +1640,10 @@
   <string name="create_tab_group_title">建立分頁群組</string>
   <string name="create_tab_group_save_button">儲存</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">關閉編輯分頁群組</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">群組</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">名稱</string>
   <!--
     History
 
@@ -3663,6 +3669,13 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">由 %s 驗證</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">簽發給 %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">符合歐盟（EU）2024/1183 法規規範。</string>
   <!--
     Debug drawer
 

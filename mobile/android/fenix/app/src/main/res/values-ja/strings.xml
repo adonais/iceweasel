@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">ページを翻訳</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">ページを要約</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">新機能</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">動作しないサイトを報告...</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1631,6 +1633,18 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">タブ検索を開く</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">タブグループを作成</string>
+  <string name="create_tab_group_save_button">保存</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">タブグループの編集を閉じる</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">グループ</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">グループ名</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1757,6 +1771,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">システムまたはストレージの制限により、このファイルの名前を変更できません。</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">ファイル形式を %s に変更しますか？</string>
+  <string name="change_file_extension_description">この操作はファイルを別のアプリで開くため、端末に危険が及ぶ可能性があります。</string>
+  <string name="change_file_extension_cancel_button">キャンセル</string>
+  <string name="change_file_extension_confirm_button">はい、変更します</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">ダウンロード中</string>
   <!--
@@ -2874,6 +2896,10 @@
   <string name="preferences_email_masks_suggest_learn_more">詳細情報</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">メールマスクを管理</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">無料のメールマスク 5 個を使い切ったので、再利用する 1 個を選びました。</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">メールマスクは現在ご利用いただけません。数分後にもう一度お試しください。</string>
   <!--
     Autofill
 
@@ -3643,6 +3669,13 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">認証局: %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">発行対象: %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Regulation (EU) 2024/1183 に規定された要件を満たしています。</string>
   <!--
     Debug drawer
 

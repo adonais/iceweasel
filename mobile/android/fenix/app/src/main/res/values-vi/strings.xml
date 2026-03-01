@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Dịch trang</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Tóm tắt trang</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Mới</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Báo cáo trang web bị hỏng…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1638,6 +1640,10 @@
   <string name="create_tab_group_title">Tạo nhóm thẻ</string>
   <string name="create_tab_group_save_button">Lưu</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Đóng chỉnh sửa nhóm thẻ</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Nhóm thẻ</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Tên</string>
   <!--
     History
 
@@ -3663,6 +3669,13 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">Đã xác minh bởi %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Cấp cho %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Được chứng nhận/đủ điều kiện theo quy định tại Quy định (EU) 2024/1183.</string>
   <!--
     Debug drawer
 

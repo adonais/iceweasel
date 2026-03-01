@@ -77,6 +77,25 @@
   <string name="about_content">%1$s huin \\’ngō sa giri Mozilla.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Nuguan\' nē huā rayi\'î riña aché nu huì\'</string>
+  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <string name="private_browsing_a11y_session_announcement">Sēsiûn riña gāchē nu huìt</string>
+  <!--
+    True Private Browsing Mode
+
+    Title for info card on private homescreen in True Private Browsing Mode.
+  -->
+  <string name="felt_privacy_desc_card_title">Sī dunâjt ā si ‘ngō da’nga’a riña aga’ nan</string>
+  <!--
+    Description of private browsing mode displayed to users on the homepage when they enable private mode.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="felt_privacy_info_card_subtitle_3">%1$s nādure’ej nej si kokît, nej riña gaché nunt nī nej si nej nuguan’ huā ‘hiát ngà nāránt riña nej rakïj ñanj huì nâ’nïnjt ngà gaché nunt.</string>
+  <!--
+    Clickable portion of the explanation for private browsing that links the user to our
+    about privacy page.
+    This string is used in felt_privacy_info_card_subtitle as the text for the link.
+  -->
+  <string name="felt_privacy_info_card_subtitle_link_text">Ahuin si gā’hue gīni’hiāj nej sa ‘hiâ nānj</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
 
@@ -89,6 +108,12 @@
   <string name="open_in_app_cfr_negative_button_text">Si gi\'hiaj guendô\'</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
+  <!--
+    Address bar swipe "contextual feature recommendation" (CFR)
+
+    Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
+  -->
+  <string name="address_bar_swipe_cfr_message_2">Dūguachîn dukuán màn rasuun gān’an ne’ chrînt asi ne’ huà’t da’ gā’hue nādunāt riña a’ngô rakïj ñanj.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Gārasunj kâmara. Gūij riña sa nagi’hiát si’hiaj Android , nī gārayina si gā’hue gārasunj sa ni’ña.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -175,6 +200,10 @@
   <string name="browser_menu_stop">Gānikïn\'</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">A\'ngô nej ra\'a</string>
+  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Nga nū ekstensiûn ‘hiát, sanī nitāj si ‘hiaj sun nej man akuan’ nïn</string>
+  <!-- Browser menu button that opens the extensions manager -->
+  <string name="browser_menu_manage_extensions">Gānātsij nej ekstensiûn</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
   <string name="browser_menu_more_settings">Doj</string>
   <!--
@@ -182,6 +211,14 @@
     %1$s is the name of the extension (for example: ClearURLs).
   -->
   <string name="browser_menu_extension_plus_icon_content_description_2">Nutà\' %1$s</string>
+  <!-- Browser menu button that opens AMO in a tab -->
+  <string name="browser_menu_discover_more_extensions">Nānà’huì’ doj nej ekstensiûn</string>
+  <!-- Browser menu description that is shown when one or more extensions are disabled due to extension errors -->
+  <string name="browser_menu_extensions_disabled_description">Giyichin’ akuan’ man</string>
+  <!-- The description of the browser menu appears when the user hasn't installed any extensions. -->
+  <string name="browser_menu_no_extensions_installed_description">Gà’ si ‘ngō ekstensiûn nitāj si ‘hiaj sun</string>
+  <!-- The description of the browser menu appears when the user hasn't installed any extensions and there are recommended extensions. -->
+  <string name="browser_menu_try_a_recommended_extension_description">Gīni’hiāj ngà ‘ngō ekstensiûn gatāj aga’ nan gūnïnt nê’èj</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Nuguan’ huā rayi’î kuênta</string>
   <!-- Browser menu button that sends a user to help articles -->
@@ -194,16 +231,26 @@
   <string name="browser_menu_library">Dukuâ ñanj</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Si luguâ eskritôrio</string>
+  <!-- Browser menu button that reopens a private tab as a regular tab -->
+  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Nā’nïn riña rakïj ñanj nāsinùnj un</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Nāchrūn riña pantayâ Ayi\'ìi</string>
+  <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
+  <string name="browser_menu_add_app_to_homescreen">Nāchrūn aplikasiûn riña raga’ gayi’ìt</string>
+  <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
+  <string name="browser_menu_add_to_homescreen_xiaomi">Nej si āga’ Xiaomi nī gāni’ñānj nej man a’ngô nej permiso da’ gā’hue nāñùn akseso direkto riña raga’ ayi’ìj. Gī’hiaj sunūnj un, gānātsij riña gā’hue nāgi’hiát.</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
   <string name="resync_button_content_description">Nāgi’hiaj nūguan’àn ñû</string>
   <!-- Browser menu button that opens the find in page menu -->
   <string name="browser_menu_find_in_page">Nānà\'uì\' riña ñanj</string>
+  <!-- Browser menu button that opens the translations dialog, which has options to translate the current browser page. -->
+  <string name="browser_menu_translations">Pajinâ riñā gā’hue nādunō’ a’ngô nuguan’an</string>
   <!-- Browser menu button that saves the current tab to a collection -->
   <string name="browser_menu_save_to_collection_2">Na\'nïnj sà\' riña màn si yi\'nïnj</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">Dūyingô\'</string>
+  <!-- Browser menu button that goes to the homepage screen -->
+  <string name="browser_menu_homepage">Ñanj ayi\'ì\'</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -227,6 +274,8 @@
   <string name="browser_menu_open_app_link">Na\'nīn\' riña aplikasiûn</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Nāgi’hiaj da’ nānùn man guendâ gāhiāt</string>
+  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
+  <string name="browser_menu_customize_reader_view_2">Nāgi’hiaj da’ Nānùn man guendâ Gāhiāt</string>
   <!-- Browser menu label for adding a bookmark -->
   <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Nūtà\'</string>
   <!-- Browser menu label for editing a bookmark -->

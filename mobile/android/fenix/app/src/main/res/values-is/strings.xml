@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Þýða síðu</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Gera samantekt efnis á síðu</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Nýtt</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Tilkynna bilað vefsvæði…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1631,6 +1633,18 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Opna flipaleit</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Búa til flipahóp</string>
+  <string name="create_tab_group_save_button">Vista</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Loka breytingum á flipahópi</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Hópur</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Heiti</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1745,11 +1759,26 @@
   <string name="download_rename_dialog_label">Heiti</string>
   <string name="download_rename_dialog_confirm_button">Vista</string>
   <string name="download_rename_dialog_cancel_button">Hætta við</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Skrá sem heitir „%s“ er þegar til á þessum stað</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Skráaheiti mega ekki nota „/“</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Ekki er hægt að endurnefna skrá</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Ekki er hægt að endurnefna þessa skrá vegna kerfis- eða geymslutakmarkana.</string>
   <string name="download_rename_error_dismiss_button">Í lagi</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Breyta skráartegund í %s?</string>
+  <string name="change_file_extension_description">Þetta gæti opnað skrána í öðru forriti og verið áhættusamt fyrir tækið þitt.</string>
+  <string name="change_file_extension_cancel_button">Hætta við</string>
+  <string name="change_file_extension_confirm_button">Já, breyta því</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Í vinnslu</string>
   <!--
@@ -2867,6 +2896,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Frekari upplýsingar</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Stýra tölvupósthulum</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Þú hefur notað 5 ókeypis tölvupósthulur, svo við völdum eina fyrir þig til að endurnýta.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Tölvupóstshulur eru ekki tiltækar eins og er. Reyndu aftur eftir nokkrar mínútur.</string>
   <!--
     Autofill
 
@@ -3636,6 +3669,13 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">Sannvottað af: %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Gefið út fyrir %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Hæfni samkvæmt reglugerð (ESB) 2024/1183.</string>
   <!--
     Debug drawer
 
