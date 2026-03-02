@@ -1053,6 +1053,9 @@
   <string name="preferences_daily_usage_ping_learn_more">Obtén más información sobre el ping de uso diario</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Reporte enviado</string>
+  <string name="studies_data_category">Estudios</string>
+  <string name="technical_data_category">Datos técnicos</string>
+  <string name="crash_reporting_description">Los informes de fallos nos permiten diagnosticar y solucionar problemas con el navegador. Los informes pueden incluir datos personales o confidenciales.</string>
   <!-- Preference switch for campaign measurement data (marketing data) collection -->
   <string name="preferences_marketing_data_2">Datos de medición de campañas</string>
   <!--
@@ -1096,6 +1099,8 @@
   <string name="preference_expanded_toolbar">Expandido</string>
   <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
   <string name="preference_toolbar_pref_disabled_explanation">La barra de direcciones debe estar en la parte superior cuando se muestra la barra de pestañas.</string>
+  <!-- New tab shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_new_tab">Abrir una nueva pestaña</string>
   <!-- Share shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_share">Compartir</string>
   <!-- Add bookmark shortcut in toolbar customization -->
@@ -1410,6 +1415,8 @@
   <string name="download_in_progress_snackbar">Descarga en progreso…</string>
   <!-- Text for the snackbar action button to view in progress download details. -->
   <string name="download_in_progress_snackbar_action_details">Detalles</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar">Descarga completa</string>
   <!-- Text for the snackbar action button to open a completed download. -->
   <string name="download_completed_snackbar_action_open">Abrir</string>
   <!-- Text for the snackbar action button to undo deleting a download. -->
@@ -1477,6 +1484,8 @@
     Text for the header that groups the downloads for today
   -->
   <string name="download_time_period_today">Hoy</string>
+  <!-- Text for the header that groups the downloads for yesterday -->
+  <string name="download_time_period_yesterday">Ayer</string>
   <!-- Text for the header that groups the downloads older than other groups -->
   <string name="download_time_period_older">Más antiguas</string>
   <!-- Description of an in progress download item, displayed in the downloads list when the download has just started. -->
@@ -1780,6 +1789,10 @@
   <string name="studies_on">Activado</string>
   <!-- Summary of studies data on quit preference if it is set to off -->
   <string name="studies_off">Desactivado</string>
+  <!-- Toggle if desktop site is turned on -->
+  <string name="browser_feature_desktop_site_on">Activar</string>
+  <!-- Toggle if desktop site is turned off -->
+  <string name="browser_feature_desktop_site_off">Desactivar</string>
   <!-- Category header of a preference that allows a user to alter settings related to web permissions. -->
   <string name="preferences_category_permissions">Permisos</string>
   <!-- Category header of a preference that allows a user to alter settings related to web content. -->
@@ -2345,6 +2358,8 @@
   <string name="preferences_passwords_exceptions_remove_all">Eliminar todas las excepciones</string>
   <!-- Hint for search box in passwords list -->
   <string name="preferences_passwords_saved_logins_search_2">Buscar contraseñas</string>
+  <!-- Content description for the logins navigation bar back button -->
+  <string name="logins_navigate_back_button_content_description">Atrás</string>
   <!-- The header for the site that a login is for -->
   <string name="preferences_passwords_saved_logins_site">Sitio</string>
   <!-- The header for the username for a login -->
@@ -2365,6 +2380,18 @@
   <string name="saved_login_clear_username">Borrar nombre de usuario</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear the hostname field while creating a login -->
   <string name="saved_login_clear_hostname">Borrar nombre de servidor</string>
+  <!-- Edit text for the login detail menu edit button -->
+  <string name="login_detail_menu_edit_button">Editar</string>
+  <!-- Delete text for the login detail menu delete button -->
+  <string name="login_detail_menu_delete_button">Eliminar</string>
+  <!-- Content description, used by tools like screenreaders, to go back and exit the add login view. -->
+  <string name="add_login_navigate_back_button_content_description">Regresar a la navegación</string>
+  <!-- Content description, used by tools like screenreaders, to press on the save new login button. -->
+  <string name="add_login_save_new_login_button_content_description">Guardar nuevo inicio de sesión</string>
+  <!-- Content description, used by tools like screenreaders, to go back and exit the edit login view. -->
+  <string name="edit_login_navigate_back_button_content_description">Regresar a la navegación</string>
+  <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
+  <string name="edit_login_button_content_description">Editar inicio de sesión</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Abrir sitio en el navegador</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2373,6 +2400,10 @@
   <string name="saved_login_hide_password">Ocultar contraseña</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">Desbloquea para ver tus contraseñas guardadas</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">Desbloquear</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">Salir</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">Protege tus contraseñas guardadas</string>
   <!-- Message of warning dialog if users have no device authentication set up -->
@@ -2423,6 +2454,8 @@
   <string name="preferences_addresses_save_and_autofill_addresses_2">Guardar y completar direcciones</string>
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Incluye números de teléfono y direcciones de correo</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
+  <string name="preferences_addresses_sync_addresses_across_devices">Sincronizar direcciones entre dispositivos</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Agregar tarjeta</string>
   <!-- Title of the "Edit card" screen -->
@@ -2715,6 +2748,8 @@
   <string name="google_search_engine_suggestion_header">Búsqueda de Google</string>
   <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. %s is default search engine name. -->
   <string name="other_default_search_engine_suggestion_header">Buscar con %s</string>
+  <!-- Title for recent search suggestions. -->
+  <string name="recent_searches_header">Búsquedas recientes</string>
   <!--
     Default browser experiment
 
@@ -2729,6 +2764,12 @@
   <string name="radio_preference_info_content_description">Clic para más detalles</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Navegar hacia arriba</string>
+  <!--
+    Pocket recommended stories
+
+    Header text for a section on the home screen.
+  -->
+  <string name="pocket_stories_header_2">Historias</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Patrocinado</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3036,6 +3077,8 @@
   <string name="protection_panel_num_trackers_blocked">Rastreadores bloqueados: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">No se encontraron rastreadores</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Permisos</string>
   <!--
     Text for displaying the total number of trackers blocked in the trackers blocked panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3230,6 +3273,18 @@
   -->
   <string name="glean_debug_tools_title">Herramientas de depuración de Glean</string>
   <!--
+    Debug drawer region tools
+
+    Title of the Region tools in the Debug Drawer.
+    This tool allows temporarily overriding the home region (user's default locale)
+    and the current region (device's detected location) for testing purposes.
+  -->
+  <string name="debug_drawer_region_tools_title">Herramientas de región</string>
+  <!-- The description of the Region tools in the Debug Drawer -->
+  <string name="debug_drawer_regin_tools_description">Reemplazar temporalmente los valores de inicio y de región actual para realizar pruebas.</string>
+  <!-- The text label for displaying home region. -->
+  <string name="debug_drawer_home_region_label">Región de origen</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3286,11 +3341,53 @@
   <!-- TextField Design System Component -->
 
   <!--
+    ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
+
+    Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_5_steps_initial_state">Completa los 5 pasos para configurar %1$s y disfrutar de la mejor experiencia de navegación.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_first_step">¡Buen comienzo! Has completado 1 de los 5 pasos.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_second_step">Has completado 2 de los 5 pasos. ¡Buen progreso!</string>
+  <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_5_steps_third_step">¡Ya estás a medio camino! Tres pasos completados y 2 por completar.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">¡Ya casi está listo! Estás a 1 solo un paso de la meta.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Has completado los 5 pasos de configuración. Disfruta de la velocidad, la privacidad y la seguridad de %1$s.</string>
+  <!--
+    ===== Setup checklist feature: Group titles =====
+
+    The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_group_essentials">%1$s elementos esenciales</string>
+  <!-- The title of the 'customize' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_group_customize">Personaliza tu %1$s</string>
+  <!-- The title of the 'helpful tools' group in the setup checklist -->
+  <string name="setup_checklist_group_helpful_tools">Herramientas útiles</string>
+  <!--
+    ===== Setup checklist feature: Button =====
+
+    Text for the 'remove' button for the setup checklist
+  -->
+  <string name="setup_checklist_button_remove">Eliminar lista de verificación</string>
+  <!--
     ===== Setup checklist feature: Accessibility =====
 
     Accessibility description for a check mark on a completed task
   -->
   <string name="a11y_completed_task_description">Tarea completada</string>
+  <!-- Accessibility description for the task icon -->
+  <string name="a11y_task_icon_description">Ícono de tarea</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Habilitar el bloqueo de pantalla de pestañas privadas</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Deshabilitar el bloqueo de pantalla de pestañas privadas</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Configurar el bloqueo de pantalla para ocultar pestañas</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">¿Usar bloqueo de pantalla para ocultar pestañas privadas?</string>
   <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
   <string name="private_tab_cfr_negative">No, gracias</string>
   <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->

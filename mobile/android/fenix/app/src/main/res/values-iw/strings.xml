@@ -1639,6 +1639,7 @@
   -->
   <string name="create_tab_group_title">יצירת קבוצת לשוניות</string>
   <string name="create_tab_group_save_button">שמירה</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">סגירת החלונית של עריכת קבוצת הלשוניות</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name">קבוצה</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->

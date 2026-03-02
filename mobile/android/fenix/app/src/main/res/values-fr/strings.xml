@@ -3673,9 +3673,9 @@
     Text for the connection security panel when the site uses a QWAC.
     %s is a placeholder for the organization for which the certificate was issued.
   -->
-  <string name="connection_security_panel_issued_to">Émis à %s</string>
+  <string name="connection_security_panel_issued_to">Émis pour %s</string>
   <!-- Text for the connection security panel when the site uses a QWAC. -->
-  <string name="connection_security_panel_qualified_certificate">Qualifié conformément au règlement (UE) n°2024/1184.</string>
+  <string name="connection_security_panel_qualified_certificate">Qualifié conformément au règlement (UE) n°\u00a02024/1183.</string>
   <!--
     Debug drawer
 

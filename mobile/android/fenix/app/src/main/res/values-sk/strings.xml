@@ -3611,7 +3611,7 @@
     Title text for the protection panel banner when tracking protection is enabled.
     %s is the name of the app (for example "Firefox").
   -->
-  <string name="protection_panel_banner_protected_title">%s je na stráži</string>
+  <string name="protection_panel_banner_protected_title">%s vás stráži</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">Ste chránení. Ak niečo zistíme, dáme vám vedieť.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->

@@ -1618,6 +1618,10 @@
   <string name="create_tab_group_title">Ustvari skupino zavihkov</string>
   <string name="create_tab_group_save_button">Shrani</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Zapri urejanje skupine zavihkov</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Skupina</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Ime</string>
   <!--
     History
 
@@ -3637,6 +3641,8 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">Overil %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Kvalificirano v skladu z Uredbo (EU) 2024/1183.</string>
   <!--
     Debug drawer
 
