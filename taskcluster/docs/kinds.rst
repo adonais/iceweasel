@@ -606,6 +606,10 @@ repackage-rpm
 ----------------
 These repackage tasks take signed Firefox Linux binaries and puts them in RPM packages.
 
+repackage-rpm-signing
+---------------------
+Repackage-rpm-signing takes the repackaged RPMs and signs them.
+
 repackage-flatpak
 -----------------
 These repackage tasks take signed Firefox Linux binaries and langpacks, and builds a flatpak.

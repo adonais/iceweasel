@@ -46,7 +46,7 @@ def make_beetmover_rpm_task(config, jobs):
         bucket_scope = get_beetmover_bucket_scope(config)
         action_scope = get_beetmover_action_scope(config)
 
-        dependencies = {"repackage-rpm": dep_job.label}
+        dependencies = {"repackage-rpm-signing": dep_job.label}
         treeherder = inherit_treeherder_from_dep(job, dep_job)
         upstream_symbol = dep_job.task["extra"]["treeherder"]["symbol"]
         treeherder.setdefault("symbol", replace_group(upstream_symbol, "BMR"))

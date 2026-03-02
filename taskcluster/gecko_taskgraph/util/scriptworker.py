@@ -630,7 +630,7 @@ def generate_artifact_registry_gcs_sources_rpm(dep):
     """
     gcs_sources = []
     for config in dep.task["payload"]["artifactMap"]:
-        if config["taskId"]["task-reference"] == "<repackage-rpm>":
+        if config["taskId"]["task-reference"] == "<repackage-rpm-signing>":
             for path_info in config["paths"].values():
                 if "destinations" in path_info and path_info["destinations"]:
                     gcs_sources.append(path_info["destinations"][0])

@@ -554,6 +554,7 @@ def make_job_description(config, jobs):
                 package=config.kind.split("-")[1],
             )
 
+        langpack_locales = []
         if config.kind in ("repackage-flatpak", "repackage-rpm"):
             assert not locale
 
@@ -583,9 +584,10 @@ def make_job_description(config, jobs):
                 if t.attributes["build_type"] != "opt":
                     continue
 
-                locales = t.attributes.get(
+                chunk_locales = t.attributes.get(
                     "chunk_locales", t.attributes.get("all_locales")
                 )
+                langpack_locales.extend(chunk_locales)
 
                 dependencies.update({t.label: t.label})
 
@@ -597,7 +599,7 @@ def make_job_description(config, jobs):
                             # Otherwise we can't disambiguate locales!
                             "dest": f"extensions/{loc}",
                         }
-                        for loc in locales
+                        for loc in chunk_locales
                     ]
                 })
 
@@ -704,6 +706,12 @@ def make_job_description(config, jobs):
         attributes["release_artifacts"] = [
             artifact["name"] for artifact in worker["artifacts"]
         ]
+        if config.kind == "repackage-rpm":
+            artifact_prefix = get_artifact_prefix(dep_job)
+            for loc in langpack_locales:
+                attributes["release_artifacts"].append(
+                    f"{artifact_prefix}/langpack-{loc}.noarch.rpm"
+                )
 
         task = {
             "label": job["label"],

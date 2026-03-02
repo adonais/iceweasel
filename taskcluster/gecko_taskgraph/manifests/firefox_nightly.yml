@@ -49,6 +49,7 @@ tasktype_map:
     repackage-deb: repackage
     repackage-deb-l10n: repackage
     repackage-rpm: repackage
+    repackage-rpm-signing: signing
     repackage-signing: repackage
     repackage-signing-msi: repackage
     repackage-signing-shippable-l10n-msix: signing
@@ -478,7 +479,7 @@ mapping:
         pretty_name: firefox-${version}.${filename_platform}.rpm
         checksums_path: ${filename_platform}/rpm/firefox-${version}.rpm
         from:
-            - repackage-rpm
+            - repackage-rpm-signing
         destinations:
             - ${year}/${month}/${upload_date}-${branch}
             - latest-${branch}
@@ -490,7 +491,7 @@ mapping:
         locale_prefix: ''
         source_path_modifier: ''
         from:
-            - repackage-rpm
+            - repackage-rpm-signing
         not_for_locales:
             - en-US
         only_for_platforms:
