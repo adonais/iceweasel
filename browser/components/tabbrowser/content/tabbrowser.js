@@ -3585,8 +3585,6 @@
 
     openSplitViewMenu(anchorElement) {
       const menu = document.getElementById("split-view-menu");
-      // Mark the menu with the source for telemetry purposes
-      // Check if the anchor is a toolbarbutton inside a footer
       const isFromFooter =
         anchorElement?.localName === "toolbarbutton" &&
         anchorElement?.parentElement?.localName === "split-view-footer";
@@ -8891,33 +8889,18 @@
       });
 
       this.splitViewCommandSet.addEventListener("command", event => {
+        const source = document
+          .getElementById("split-view-menu")
+          ?.getAttribute("data-trigger-source");
         switch (event.target.id) {
           case "splitViewCmd_separateTabs":
-            {
-              // Determine trigger based on the menu's data attribute
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.unsplitTabs(`${source ?? "icon"}_separate`);
-            }
+            this.#activeSplitView.unsplitTabs(`${source}_separate`);
             break;
           case "splitViewCmd_reverseTabs":
-            {
-              // Determine trigger based on the menu's data attribute
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.reverseTabs(source ?? "icon");
-            }
+            this.#activeSplitView.reverseTabs(source);
             break;
           case "splitViewCmd_closeTabs":
-            {
-              // Determine trigger based on the menu's data attribute
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.close(`${source ?? "icon"}_close`);
-            }
+            this.#activeSplitView.close(`${source}_close`);
             break;
         }
       });

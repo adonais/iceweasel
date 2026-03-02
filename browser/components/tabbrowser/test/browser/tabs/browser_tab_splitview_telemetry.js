@@ -730,12 +730,14 @@ add_task(async function test_splitview_end_event_footer_separate() {
   await tabIsInSplitView(tab1);
   await tabIsInSplitView(tab2);
 
-  const splitView = tab1.splitview;
-
   await resetTelemetry();
 
-  // Directly call unsplitTabs with footer_separate trigger
-  gBrowser.unsplitTabs(splitView, "footer_separate");
+  const panel2 = document.getElementById(tab2.linkedPanel);
+  const menu = await openSplitViewFooterMenu(panel2);
+  const separateItem = menu.querySelector(
+    'menuitem[command="splitViewCmd_separateTabs"]'
+  );
+  menu.activateItem(separateItem);
 
   // Wait for split view to be removed
   await BrowserTestUtils.waitForCondition(
@@ -843,8 +845,6 @@ add_task(async function test_splitview_end_event_footer_close() {
   await tabIsInSplitView(tab1);
   await tabIsInSplitView(tab2);
 
-  const splitView = tab1.splitview;
-
   await resetTelemetry();
 
   // Wait for tabs to be removed
@@ -853,8 +853,12 @@ add_task(async function test_splitview_end_event_footer_close() {
     BrowserTestUtils.waitForEvent(tab2, "TabClose"),
   ]);
 
-  // Directly call close with footer_close trigger
-  splitView.close("footer_close");
+  const panel2 = document.getElementById(tab2.linkedPanel);
+  const menu = await openSplitViewFooterMenu(panel2);
+  const closeItem = menu.querySelector(
+    'menuitem[command="splitViewCmd_closeTabs"]'
+  );
+  menu.activateItem(closeItem);
   await tabRemovedPromise;
 
   await Services.fog.testFlushAllChildren();
@@ -1001,8 +1005,12 @@ add_task(async function test_splitview_reverse_event_footer() {
   // Store original order to verify reversal
   const originalFirstTab = splitView.tabs[0];
 
-  // Directly call reverseTabs with footer trigger
-  splitView.reverseTabs("footer");
+  const panel2 = document.getElementById(tab2.linkedPanel);
+  const menu = await openSplitViewFooterMenu(panel2);
+  const reverseItem = menu.querySelector(
+    'menuitem[command="splitViewCmd_reverseTabs"]'
+  );
+  menu.activateItem(reverseItem);
 
   // Wait for tabs to be reversed
   await BrowserTestUtils.waitForCondition(
