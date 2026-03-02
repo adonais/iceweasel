@@ -14,7 +14,7 @@
 
 #include <stddef.h>
 
-static const PRTime kCTExpirationTime = INT64_C(1778151164000000);
+static const PRTime kCTExpirationTime = INT64_C(1778443764000000);
 
 namespace mozilla::ct {
 
@@ -327,8 +327,8 @@ const CTLogInfo kCTLogList[] = {
      "\xa3\x4f\x6b\xa3\x37\xdd\xaa\x18\xde\x8a\x12\x25\xdb\x9c\xbd\x03\x72\x61"
      "\xc9",
      91},
-    {"Let's Encrypt 'Oak2026h1'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1765578600000,  // 2025-12-12T22:30:00Z
+    {"Let's Encrypt 'Oak2026h1'", CTLogState::Retired, CTLogFormat::RFC6962,
+     1772236800000,  // 2026-02-28T00:00:00Z
      4,              // operated by Let's Encrypt
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\x99\xd4\x61\x70\x22\xfa\x77\x93\x0d"
@@ -337,8 +337,8 @@ const CTLogInfo kCTLogList[] = {
      "\x48\x90\x23\x40\xde\x7a\x4d\x89\x32\xfb\xd7\x0a\xeb\x5e\x8c\xa2\xf1\xf6"
      "\x49",
      91},
-    {"Let's Encrypt 'Oak2026h2'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1765578600000,  // 2025-12-12T22:30:00Z
+    {"Let's Encrypt 'Oak2026h2'", CTLogState::Retired, CTLogFormat::RFC6962,
+     1772236800000,  // 2026-02-28T00:00:00Z
      4,              // operated by Let's Encrypt
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\x6a\x70\x9d\xb3\x96\xe3\xec\x85\x36"
