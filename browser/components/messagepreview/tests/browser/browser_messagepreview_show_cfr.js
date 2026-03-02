@@ -71,6 +71,10 @@ add_task(async function test_show_cfr_message() {
   let aboutMessagePreviewActor = await getAboutMessagePreviewParent(browser);
   messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
 
+  const popupPromise = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
   await SpecialPowers.spawn(browser, [TEST_CFR_MESSAGE], message =>
     content.wrappedJSObject.MPShowMessage(JSON.stringify(message))
   );
@@ -79,7 +83,7 @@ add_task(async function test_show_cfr_message() {
   Assert.greaterOrEqual(callCount, 1, "showMessage was called");
 
   // Wait for the CFR to show
-  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+  await popupPromise;
 
   Assert.strictEqual(
     document.getElementById("contextual-feature-recommendation-notification")

@@ -64,6 +64,7 @@ add_task(async function test_show_spotlight_message() {
   let aboutMessagePreviewActor = await getAboutMessagePreviewParent(browser);
   messageSandbox.spy(aboutMessagePreviewActor, "showMessage");
 
+  const dialogPromise = TestUtils.topicObserved("subdialog-loaded");
   await SpecialPowers.spawn(browser, [TEST_SPOTLIGHT_MESSAGE], message =>
     content.wrappedJSObject.MPShowMessage(JSON.stringify(message))
   );
@@ -71,7 +72,7 @@ add_task(async function test_show_spotlight_message() {
   const { callCount } = aboutMessagePreviewActor.showMessage;
   Assert.greaterOrEqual(callCount, 1, "showMessage was called");
 
-  const [win] = await TestUtils.topicObserved("subdialog-loaded");
+  const [win] = await dialogPromise;
 
   await test_window_message_content(
     win,
