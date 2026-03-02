@@ -36,6 +36,6 @@ tasks:
                     default: taskcluster/gecko_taskgraph/manifests/firefox_nightly.yml
         run-on-releases:
             - nightly
-            # - beta
+            - beta
             # - release
             # - esr140
