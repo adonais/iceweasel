@@ -205,6 +205,8 @@ support-files = ["file_lnk.lnk",]
 ["browser_link_hover_speculative_connection.js"]
 support-files = ["file_link_hover.sjs"]
 
+["browser_loadinfo_iframe_browsing_context.js"]
+
 ["browser_mock_https_rr.js"]
 skip-if = [
   "http2",

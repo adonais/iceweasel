@@ -300,7 +300,7 @@ LoadInfo::LoadInfo(
     // must be coming from an object (such as a plugin) that's loaded into it
     // instead of a document being loaded. In that case, treat this object like
     // any other non-document-loading element.
-    if (mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
+    if (externalType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
       RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
           do_QueryObject(aLoadingContext);
       RefPtr<nsFrameLoader> fl =
