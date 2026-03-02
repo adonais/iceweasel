@@ -44,6 +44,8 @@ skip-if = [
 
 ["test_tabgroups_restore.py"]
 
+["test_tabnotes_canonicalurl_restore.py"]
+
 ["test_taskbartab_restore.py"]
 run-if = [
   "os == 'win'",

@@ -375,6 +375,8 @@ skip-if = [
 ["browser_tab_label_during_restore.js"]
 https_first_disabled = true
 
+["browser_tab_notes_canonicalurl.js"]
+
 ["browser_tabicon_after_bg_tab_crash.js"]
 run-if = [
   "crashreporter",

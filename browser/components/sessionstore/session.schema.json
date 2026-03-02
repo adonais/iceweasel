@@ -307,6 +307,9 @@
           "additionalProperties": {
             "type": "object"
           }
+        },
+        "canonicalUrl": {
+          "type": "string"
         }
       },
       "required": [
