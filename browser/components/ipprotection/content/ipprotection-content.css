@@ -120,5 +120,6 @@ ipprotection-message-bar.vpn-top-content {
 
 #site-exclusion-label-container {
   display: flex;
+  flex-grow: 1;
   gap: var(--space-small);
 }
