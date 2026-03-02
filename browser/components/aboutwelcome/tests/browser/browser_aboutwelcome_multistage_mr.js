@@ -164,7 +164,7 @@ add_task(async function test_aboutwelcome_gratitude() {
         position: "split",
         split_narrow_bkg_position: "-228px",
         background:
-          "url('chrome://activity-stream/content/data/content/assets/mr-gratitude.svg') var(--mr-secondary-position) no-repeat, var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-gratitude-fox-rock.svg') var(--mr-secondary-position) no-repeat, var(--mr-screen-background-color)",
         progress_bar: true,
         logo: {},
         title: {
@@ -842,7 +842,7 @@ add_task(async function test_aboutwelcome_gratitude() {
         position: "split",
         split_narrow_bkg_position: "-228px",
         background:
-          "url('chrome://activity-stream/content/data/content/assets/fox-doodle-waving-laptop.svg') center center / 80% no-repeat var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-fxa-fox-mirror.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252, 245, 240, 1), rgba(33, 3, 64, 1))",
         progress_bar: true,
         logo: {},
         title: {
