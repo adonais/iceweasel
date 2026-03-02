@@ -305,5 +305,6 @@ async function checkLoadsCorrectIcon(methodName, index, callback) {
     `When the image couldn't be loaded, the default icon was passed to ${methodName}`
   );
 
+  await TaskbarTabs.removeTaskbarTab(taskbarTab.id);
   sandbox.restore();
 }
