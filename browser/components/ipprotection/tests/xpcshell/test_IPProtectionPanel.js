@@ -463,3 +463,115 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
   sandbox.restore();
 });
+
+function dispatchUsageEvent(max, remaining) {
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(max),
+          String(remaining),
+          "3026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+}
+
+/**
+ * Tests that bandwidth threshold telemetry events fire at 50%, 75%, and 90%.
+ */
+add_task(async function test_bandwidth_used_threshold_events() {
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  // 40% used (60% remaining) - no thresholds crossed
+  dispatchUsageEvent(1000000, 600000);
+  Assert.equal(
+    Glean.ipprotection.bandwidthUsedThreshold.testGetValue(),
+    null,
+    "No threshold event should fire at 40% used"
+  );
+
+  // 55% used (45% remaining) - crosses 50%
+  dispatchUsageEvent(1000000, 450000);
+  let events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "One threshold event should fire at 55% used");
+  Assert.equal(events[0].extra.percentage, "50", "Should report 50% threshold");
+
+  // 80% used (20% remaining) - crosses 75%
+  dispatchUsageEvent(1000000, 200000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 2, "Two threshold events total at 80% used");
+  Assert.equal(events[1].extra.percentage, "75", "Should report 75% threshold");
+
+  // 95% used (5% remaining) - crosses 90%
+  dispatchUsageEvent(1000000, 50000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 3, "Three threshold events total at 95% used");
+  Assert.equal(events[2].extra.percentage, "90", "Should report 90% threshold");
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.fog.testResetFOG();
+});
+
+/**
+ * Tests that threshold events are not re-fired within the same usage period.
+ */
+add_task(async function test_bandwidth_thresholds_not_repeated_same_period() {
+  Services.fog.testResetFOG();
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  // Cross 50% threshold
+  dispatchUsageEvent(1000000, 400000);
+  let events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "One event after first call at 60% used");
+
+  // Same usage dispatched again - should not re-fire
+  dispatchUsageEvent(1000000, 400000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(
+    events.length,
+    1,
+    "No additional event when threshold already reported"
+  );
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.fog.testResetFOG();
+});
+
+/**
+ * Tests that thresholds reset when a new usage period begins.
+ */
+add_task(async function test_bandwidth_thresholds_reset_on_new_period() {
+  Services.fog.testResetFOG();
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  // Cross 50% in the current period
+  dispatchUsageEvent(1000000, 400000);
+  let events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "One event in current period");
+  Assert.equal(events[0].extra.percentage, "50");
+
+  // Simulate a period reset by returning to full bandwidth (threshold drops to 0)
+  dispatchUsageEvent(1000000, 1000000);
+  Services.fog.testResetFOG();
+
+  // 50% should fire again since the threshold pref was reset to 0
+  dispatchUsageEvent(1000000, 400000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "50% fires again after period reset");
+  Assert.equal(events[0].extra.percentage, "50");
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.fog.testResetFOG();
+});

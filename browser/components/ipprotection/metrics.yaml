@@ -73,6 +73,27 @@ ipprotection:
       - mhynson@mozilla.com
     expires: never
 
+  bandwidth_used_threshold:
+    type: event
+    description: >
+      Recorded when the percentage of bandwidth used crosses a threshold of 50,
+      75, or 90%.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017744
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017744
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mhynson@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      percentage:
+        type: quantity
+        description: >
+          The bandwidth usage threshold that was crossed (50, 75, or 90).
+
   error:
     type: event
     description: >

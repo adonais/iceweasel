@@ -796,7 +796,15 @@ export class IPProtectionPanel {
         threshold = secondWarning;
       }
 
+      const lastRecordedThreshold = Services.prefs.getIntPref(
+        BANDWIDTH_THRESHOLD_PREF,
+        threshold
+      );
       Services.prefs.setIntPref(BANDWIDTH_THRESHOLD_PREF, threshold);
+
+      if (lastRecordedThreshold !== threshold) {
+        this.#measureBandwidthThreshold(threshold, lastRecordedThreshold);
+      }
 
       // Reset dismissed warnings when usage is reset
       if (threshold === 0) {
@@ -825,5 +833,15 @@ export class IPProtectionPanel {
         this.setState({ bandwidthWarning: false });
       }
     }
+  }
+
+  #measureBandwidthThreshold(threshold, lastRecordedThreshold) {
+    if (!threshold || threshold == lastRecordedThreshold) {
+      return;
+    }
+
+    Glean.ipprotection.bandwidthUsedThreshold.record({
+      percentage: threshold,
+    });
   }
 }
