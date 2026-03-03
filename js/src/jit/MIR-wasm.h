@@ -1358,7 +1358,6 @@ class MWasmLoadTableElement : public MBinaryInstruction,
                         wasm::RefType refType)
       : MBinaryInstruction(classOpcode, elements, index) {
     setResultType(MIRType::WasmAnyRef);
-    setMovable();
     setWasmRefType(wasm::MaybeRefType(refType));
   }
 
