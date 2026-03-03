@@ -6217,6 +6217,16 @@
 #endif
   mirror: always
 
+# Prior to bug 2013389 and bug 2017797, calling structuredClone within a
+# content script would clone most objects within the content script's realm,
+# however a subset of DOM objects would be cloned into the underlying content
+# window's realm. When enabled, this pref preserves this legacy behaviour for
+# compatibility with existing content scripts.
+- name: extensions.webextensions.legacyStructuredCloneBehavior
+  type: bool
+  value: true
+  mirror: always
+
 # This pref governs whether we run webextensions in a separate process (true)
 # or the parent/main process (false)
 - name: extensions.webextensions.remote

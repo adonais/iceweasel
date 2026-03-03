@@ -191,6 +191,8 @@ skip-if = [
 
 ["test_ext_contentscript_slow_frame.js"]
 
+["test_ext_contentscript_structured_clone.js"]
+
 ["test_ext_contentscript_teardown.js"]
 skip-if = [
   "tsan", # Bug 1683730
