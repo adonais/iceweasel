@@ -14,11 +14,30 @@
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.tabs.notes.enabled") {
     pointer-events: none;
+
+    .tab-preview-text-container {
+      order: 1;
+    }
+    .tab-preview-thumbnail-container {
+      order: 2;
+    }
   }
 }
 
-.tab-preview-text-container {
+.tab-preview-content-interactive:not(:empty),
+.tab-preview-content-main {
+  gap: var(--space-small);
+  display: flex;
+  flex-direction: column;
   padding: var(--space-small);
+}
+
+.tab-preview-content-interactive:not(:empty) {
+  padding-block-end: 0;
+}
+
+.tab-preview-text-container {
+  margin: 0 var(--space-small);
 }
 
 .tab-preview-title {
@@ -42,7 +61,7 @@
 
 .tab-preview-thumbnail-container {
   width: 264px;
-  margin: 0 auto var(--space-small);
+  margin: 0 auto;
   overflow: hidden;
 
   &.hide-thumbnail {
@@ -64,7 +83,6 @@
 .tab-preview-add-note {
   --box-border-color: transparent;
   --box-padding: var(--space-medium);
-  margin: 0 var(--space-small) var(--space-small);
 
   &[hidden] {
     display: none;
@@ -74,7 +92,6 @@
 .tab-preview-note-container {
   font: menu;
   position: relative;
-  margin: 0 var(--space-small) var(--space-small);
   padding: var(--space-small);
   border-radius: var(--border-radius-medium);
   background-color: var(--tab-note-text-background);

@@ -62,20 +62,9 @@ export default class TabHoverPanelSet {
       this.#win
     );
 
-    /** @type {HTMLTemplateElement} */
-    const tabPreviewTemplate = win.document.getElementById(
-      "tabPreviewPanelTemplate"
-    );
-    const importedFragment = win.document.importNode(
-      tabPreviewTemplate.content,
-      true
-    );
-    // #tabPreviewPanelTemplate is currently just the .tab-preview-add-note
-    // button element, so append it to the tab preview panel body.
-    const addNoteButton = importedFragment.firstElementChild;
     const tabPreviewPanel =
       this.#win.document.getElementById("tab-preview-panel");
-    tabPreviewPanel.append(addNoteButton);
+
     this.tabPanel = new TabPanel(tabPreviewPanel, this);
     this.tabGroupPanel = new TabGroupPanel(
       this.#win.document.getElementById("tabgroup-preview-panel"),
@@ -276,6 +265,12 @@ class TabPanel extends HoverPanel {
   /** @type {DOMElement|null} */
   #thumbnailElement;
 
+  /** @type {DOMElement|null} */
+  #interactiveArea;
+
+  /** @type {DOMElement|null} */
+  #addNoteButton;
+
   constructor(panel, panelSet) {
     super(panel, panelSet);
 
@@ -299,10 +294,26 @@ class TabPanel extends HoverPanel {
 
     this.#tab = null;
     this.#thumbnailElement = null;
+    this.#interactiveArea = this.panelElement.querySelector(
+      ".tab-preview-content-interactive"
+    );
 
-    this.panelElement
-      .querySelector(".tab-preview-add-note")
-      .addEventListener("click", () => this.#openTabNotePanel());
+    // #tabPreviewPanelTemplate is currently just the .tab-preview-add-note
+    // button element, and it needs to be added the tab preview panel body manually.
+    /** @type {HTMLTemplateElement} */
+    const tabPreviewTemplate = this.win.document.getElementById(
+      "tabPreviewPanelTemplate"
+    );
+    const importedFragment = this.win.document.importNode(
+      tabPreviewTemplate.content,
+      true
+    );
+    this.#addNoteButton = importedFragment.firstElementChild;
+
+    this.#addNoteButton.addEventListener("click", () =>
+      this.#openTabNotePanel()
+    );
+
     this.panelElement
       .querySelector(".tab-preview-note-expand")
       .addEventListener("click", () => (this.#noteExpanded = true));
@@ -311,11 +322,11 @@ class TabPanel extends HoverPanel {
   /**
    * @param {Event} e
    */
-  handleEvent(e) {
+  async handleEvent(e) {
     switch (e.type) {
       case "popupshowing":
-        this.panelElement.addEventListener("mouseout", this);
-        this.#updatePreview();
+        await this.#updatePreview();
+        this.mouseoutTarget?.addEventListener("mouseout", this);
         break;
       case "TabAttrModified":
         this.#updatePreview(e.target);
@@ -324,7 +335,12 @@ class TabPanel extends HoverPanel {
         this.deactivate(null, { force: true });
         break;
       case "mouseout":
-        if (!this.panelElement.contains(e.relatedTarget)) {
+        // Ignore mouseouts from descendant elements of the target -- we only want to know
+        // when the user has moused out from the target itself
+        if (
+          this.mouseoutTarget &&
+          !this.mouseoutTarget.contains(e.relatedTarget)
+        ) {
           this.deactivate();
         }
         break;
@@ -396,7 +412,7 @@ class TabPanel extends HoverPanel {
 
   onBeforeHide() {
     this.panelElement.removeEventListener("popupshowing", this);
-    this.panelElement.removeEventListener("mouseout", this);
+    this.mouseoutTarget?.removeEventListener("mouseout", this);
     this.win.removeEventListener("TabSelect", this);
     this.#tab?.removeEventListener("TabAttrModified", this);
     this.#tab = null;
@@ -405,13 +421,24 @@ class TabPanel extends HoverPanel {
 
   get hoverTargets() {
     let targets = [];
-    if (this._prefUseTabNotes) {
-      targets.push(this.panelElement);
+    if (this.#interactiveArea.childNodes.length) {
+      targets.push(this.#interactiveArea);
     }
     if (this.#tab) {
       targets.push(this.#tab);
     }
     return targets;
+  }
+
+  /**
+   * If mouseoutTarget is set, the panel will register a mouseout listener on
+   * the target element, causing the panel to hide when this element has been
+   * moused out.
+   */
+  get mouseoutTarget() {
+    return this.#interactiveArea.childNodes.length
+      ? this.#interactiveArea
+      : null;
   }
 
   getPrettyURI(uri) {
@@ -529,7 +556,7 @@ class TabPanel extends HoverPanel {
     this.deactivate(this.#tab, { force: true });
   }
 
-  #updatePreview(tab = null) {
+  async #updatePreview(tab = null) {
     if (tab) {
       this.#tab = tab;
     }
@@ -556,35 +583,35 @@ class TabPanel extends HoverPanel {
     const noteTextContainer = noteContainer.querySelector(
       ".tab-preview-note-text"
     );
-    const addNoteButton = this.panelElement.querySelector(
-      ".tab-preview-add-note"
-    );
 
     if (this._prefUseTabNotes && lazy.TabNotes.isEligible(this.#tab)) {
-      lazy.TabNotes.get(this.#tab).then(note => {
-        noteTextContainer.textContent = note?.text || "";
+      let note = await lazy.TabNotes.get(this.#tab);
+      noteTextContainer.textContent = note?.text || "";
 
-        addNoteButton.toggleAttribute("hidden", !!note);
-        noteContainer.toggleAttribute("hidden", !note?.text);
+      if (note) {
+        this.#addNoteButton.remove();
+      } else {
+        this.#interactiveArea.append(this.#addNoteButton);
+      }
 
-        // Allow CSS to see if the note is overflowing
-        this.#noteOverflow =
-          noteTextContainer.scrollHeight > noteTextContainer.clientHeight;
+      noteContainer.toggleAttribute("hidden", !note?.text);
 
-        // Pass the width of the button to CSS so that
-        // they can be used to calculate the correct offset of the gradient mask
-        let button = this.panelElement.querySelector(
-          ".tab-preview-note-expand"
-        );
-        noteTextContainer.style.setProperty(
-          "--tab-note-expand-toggle-width",
-          `${button.offsetWidth}px`
-        );
-      });
+      // Allow CSS to see if the note is overflowing
+      this.#noteOverflow =
+        noteTextContainer.scrollHeight > noteTextContainer.clientHeight;
+
+      // Pass the width of the button to CSS so that
+      // they can be used to calculate the correct offset of the gradient mask
+      let button = this.panelElement.querySelector(".tab-preview-note-expand");
+      noteTextContainer.style.setProperty(
+        "--tab-note-expand-toggle-width",
+        `${button.offsetWidth}px`
+      );
     } else {
       noteTextContainer.textContent = "";
-      addNoteButton.setAttribute("hidden", "");
       noteContainer.setAttribute("hidden", "");
+
+      this.#addNoteButton.remove();
     }
 
     let thumbnailContainer = this.panelElement.querySelector(
@@ -608,6 +635,7 @@ class TabPanel extends HoverPanel {
         })
       );
     }
+
     this.#movePanel();
   }
 
@@ -648,7 +676,7 @@ class TabPanel extends HoverPanel {
       return {
         position: "bottomleft topleft",
         x: 0,
-        y: -2,
+        y: 0,
       };
     }
 
@@ -827,7 +855,7 @@ class TabGroupPanel extends HoverPanel {
       return {
         position: "bottomleft topleft",
         x: 0,
-        y: -2,
+        y: 0,
       };
     }
     if (!this.win.SidebarController._positionStart) {

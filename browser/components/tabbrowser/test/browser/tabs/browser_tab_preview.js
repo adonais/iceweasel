@@ -580,18 +580,52 @@ add_task(async function tabNotesTests() {
     "Preview panel contains no tab note"
   );
   let addNoteButton = previewPanel.querySelector(".tab-preview-add-note");
-  Assert.ok(
-    !addNoteButton.hasAttribute("hidden"),
-    "add note button should be visible on an eligible tab without a tab note"
+  Assert.ok(addNoteButton, "add note button exists in the DOM");
+
+  info(
+    "validate that hovering over the add note button does not hide the preview panel"
   );
+  EventUtils.synthesizeMouseAtCenter(
+    addNoteButton,
+    { type: "mouseover" },
+    window
+  );
+
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  Assert.ok(
+    previewPanel.hasAttribute("panelopen"),
+    "Preview panel is still open"
+  );
+
+  info(
+    "validate that hovering over the panel outside of the add note button hides the panel"
+  );
+  let previewHidden = BrowserTestUtils.waitForPopupEvent(
+    previewPanel,
+    "hidden"
+  );
+  let nonhoverableArea = document.querySelector(".tab-preview-content-main");
+  EventUtils.synthesizeMouseAtCenter(
+    nonhoverableArea,
+    {
+      type: "mouseover",
+    },
+    window
+  );
+  await previewHidden;
+  Assert.ok(
+    !previewPanel.hasAttribute("panelopen"),
+    "Preview panel was hidden"
+  );
+
+  await openTabPreview(tab);
 
   info("choose to add a note from the tab hover preview panel");
   let tabNotePanel = document.getElementById("tabNotePanel");
   let panelShown = BrowserTestUtils.waitForPopupEvent(tabNotePanel, "shown");
-  const previewHidden = BrowserTestUtils.waitForPopupEvent(
-    previewPanel,
-    "hidden"
-  );
+  previewHidden = BrowserTestUtils.waitForPopupEvent(previewPanel, "hidden");
   addNoteButton.click();
   await Promise.all([panelShown, previewHidden]);
 
@@ -632,10 +666,7 @@ add_task(async function tabNotesTests() {
     "New tab note is visible in preview panel"
   );
   addNoteButton = previewPanel.querySelector(".tab-preview-add-note");
-  Assert.ok(
-    addNoteButton.hasAttribute("hidden"),
-    "add note button should be hidden on an eligible tab with a tab note"
-  );
+  Assert.ok(!addNoteButton, "add note button does not exist in the DOM");
   await closeTabPreviews();
 
   info(
