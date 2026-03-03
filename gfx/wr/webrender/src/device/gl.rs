@@ -1816,9 +1816,12 @@ impl Device {
         // On the android emulator, and possibly some Mali devices, glShaderSource
         // can crash if the source strings are not null-terminated.
         // See bug 1591945 and bug 1799722.
+        // Likewise on Lenovo devices with Adreno 750 GPUs we have seen glCompileShader
+        // failures and subsequent crashes due to glGetShaderInfoLog returning invalid
+        // UTF-8. See bug 2014925.
         let requires_null_terminated_shader_source = is_emulator || renderer_name == "Mali-T628"
             || renderer_name == "Mali-T720" || renderer_name == "Mali-T760"
-            || renderer_name == "Mali-G57";
+            || renderer_name == "Mali-G57" || renderer_name == "Adreno (TM) 750";
 
         // The android emulator gets confused if you don't explicitly unbind any texture
         // from GL_TEXTURE_EXTERNAL_OES before binding another to GL_TEXTURE_2D. See bug 1636085.
