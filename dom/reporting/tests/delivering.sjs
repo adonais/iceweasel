@@ -35,13 +35,46 @@ function handleRequest(aRequest, aResponse) {
 
   // Serve iframe with Reporting-Endpoints header
   if (aRequest.method == "GET" && params.get("task") == "iframe") {
-    let url = "https://example.org/tests/dom/reporting/tests/delivering.sjs";
+    let extraParams = [];
+    let iframePath = "tests/dom/reporting/tests/iframe_delivering.html";
+
+    if (params.has("chips") && params.has("worker")) {
+      extraParams.push("chips=true");
+      iframePath =
+        "tests/dom/reporting/tests/iframe_delivering_chips_worker.html";
+    } else if (params.has("chips")) {
+      extraParams.push("chips=true");
+      iframePath = "tests/dom/reporting/tests/iframe_delivering_chips.html";
+    }
+
+    let url =
+      "https://example.org/tests/dom/reporting/tests/delivering.sjs" +
+      (extraParams.length ? "?" + extraParams.join("&") : "");
 
     aResponse.setStatusLine(aRequest.httpVersion, 200, "OK");
     aResponse.setHeader("Content-Type", "text/html", false);
     aResponse.setHeader("Reporting-Endpoints", `default="${url}"`, false);
+    aResponse.write(loadHTMLFromFile(iframePath));
+    return;
+  }
+
+  // Serve worker script with Reporting-Endpoints header
+  if (aRequest.method == "GET" && params.get("task") == "worker") {
+    let extraParams = [];
+
+    if (params.has("chips")) {
+      extraParams.push("chips=true");
+    }
+
+    let url =
+      "https://example.org/tests/dom/reporting/tests/delivering.sjs" +
+      (extraParams.length ? "?" + extraParams.join("&") : "");
+
+    aResponse.setStatusLine(aRequest.httpVersion, 200, "OK");
+    aResponse.setHeader("Content-Type", "application/javascript", false);
+    aResponse.setHeader("Reporting-Endpoints", `default="${url}"`, false);
     aResponse.write(
-      loadHTMLFromFile("tests/dom/reporting/tests/iframe_delivering.html")
+      loadHTMLFromFile("tests/dom/reporting/tests/worker_delivering_chips.js")
     );
     return;
   }
@@ -131,6 +164,14 @@ function handleRequest(aRequest, aResponse) {
       aResponse.setStatusLine(aRequest.httpVersion, 410, "Gone");
     } else {
       aResponse.setStatusLine(aRequest.httpVersion, 200, "OK");
+    }
+
+    if (params.has("chips")) {
+      aResponse.setHeader(
+        "Set-Cookie",
+        "foo=bar; Secure; SameSite=None; Partitioned",
+        false
+      );
     }
     return;
   }
