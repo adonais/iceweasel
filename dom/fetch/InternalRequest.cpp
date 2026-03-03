@@ -32,6 +32,7 @@ SafeRefPtr<InternalRequest> InternalRequest::GetRequestConstructorCopy(
   copy->mHeaders = new InternalHeaders(*mHeaders);
   copy->mTriggeringPrincipalOverride = mTriggeringPrincipalOverride;
   copy->mNeverTaint = mNeverTaint;
+  copy->mCookieJarSettings = mCookieJarSettings;
   copy->SetUnsafeRequest();
   copy->mBodyStream = mBodyStream;
   copy->mBodyLength = mBodyLength;

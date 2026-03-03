@@ -363,6 +363,11 @@ SafeRefPtr<Request> Request::Constructor(
     request->SetNeverTaint(aInit.mNeverTaint.Value());
   }
 
+  if (aInit.mCookieJarSettings.WasPassed() &&
+      aInit.mCookieJarSettings.Value()) {
+    request->SetCookieJarSettings(aInit.mCookieJarSettings.Value());
+  }
+
   // Request constructor step 14.
   if (aInit.mMethod.WasPassed()) {
     nsAutoCString method(aInit.mMethod.Value());
