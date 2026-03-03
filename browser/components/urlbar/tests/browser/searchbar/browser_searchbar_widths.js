@@ -6,10 +6,7 @@
 // Check that when the searchbar has a specific width, opening a new window
 // honours that specific width.
 add_task(async function test_searchbar_width_persistence() {
-  let searchBar = await gCUITestUtils.addSearchBar();
-  registerCleanupFunction(async function () {
-    gCUITestUtils.removeSearchBar();
-  });
+  let searchBar = document.getElementById("searchbar-new");
 
   // Really, we should use the splitter, but drag/drop is hard and fragile in
   // tests, so let's just fake it real quick:
@@ -20,12 +17,17 @@ add_task(async function test_searchbar_width_persistence() {
   container.setAttribute("width", newWidth);
 
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  let otherBar = win.document.getElementById("searchbar");
+  let otherBar = win.document.getElementById("searchbar-new");
   ok(otherBar, "Should have a search bar in the other window");
   if (otherBar) {
     is(
       otherBar.parentNode.getAttribute("width"),
       newWidth,
+      "Should have matching width"
+    );
+    is(
+      otherBar.parentNode.style.width,
+      newWidth + "px",
       "Should have matching width"
     );
   }

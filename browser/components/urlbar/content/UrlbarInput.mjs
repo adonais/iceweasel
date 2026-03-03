@@ -414,6 +414,23 @@ export class UrlbarInput extends HTMLElement {
       return;
     }
 
+    if (
+      this.sapName == "searchbar" &&
+      !document.documentElement.hasAttribute("customizing")
+    ) {
+      // Ensure we get persisted widths back, if we've been in the palette:
+      let storedWidth = Services.xulStore.getValue(
+        document.documentURI,
+        this.parentElement.id,
+        "width"
+      );
+      if (storedWidth) {
+        this.parentElement.setAttribute("width", storedWidth);
+        /** @type {XULElement} */ (this.parentElement).style.width =
+          storedWidth + "px";
+      }
+    }
+
     this._initCopyCutController();
 
     for (let event of UrlbarInput.#inputFieldEvents) {

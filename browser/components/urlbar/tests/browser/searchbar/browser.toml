@@ -23,4 +23,6 @@ prefs = [
 
 ["browser_searchbar_dragdrop.js"]
 
+["browser_searchbar_widths.js"]
+
 ["browser_searchmode.js"]

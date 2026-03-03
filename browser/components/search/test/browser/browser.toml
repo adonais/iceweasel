@@ -112,8 +112,6 @@ skip-if = [
 
 ["browser_searchbar_smallpanel_keyboard_navigation.js"]
 
-["browser_searchbar_widths.js"]
-
 ["browser_tooManyEnginesOffered.js"]
 
 ["browser_trending_suggestions.js"]
