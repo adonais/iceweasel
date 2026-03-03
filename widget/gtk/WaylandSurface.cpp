@@ -141,12 +141,12 @@ void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
   {
     WaylandSurfaceLock lock(this);
 
-    // Don't run emulated callbacks on hidden surfaces
-    if ((emulatedCallback || aRoutedFromChildSurface) && !mIsVisible) {
+    // Don't run emulated callbacks on unmapped surfaces
+    if ((emulatedCallback || aRoutedFromChildSurface) && !mIsMapped) {
       LOGVERBOSE(
           "WaylandSurface::FrameCallbackHandler() quit, emulatedCallback %d "
-          "aRoutedFromChildSurface %d mIsVisible %d",
-          emulatedCallback, aRoutedFromChildSurface, !mIsVisible);
+          "aRoutedFromChildSurface %d mIsMapped %d",
+          emulatedCallback, aRoutedFromChildSurface, !!mIsMapped);
       return;
     }
 
