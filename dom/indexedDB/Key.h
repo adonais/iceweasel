@@ -204,6 +204,9 @@ class Key {
   // Encoding helper. Trims trailing zeros off of mBuffer as a post-processing
   // step.
   void TrimBuffer() {
+    if (mBuffer.IsEmpty()) {
+      return;
+    }
     const char* end = mBuffer.EndReading() - 1;
     while (!*end) {
       --end;
