@@ -88,7 +88,7 @@ fun maybeRequestDefaultBrowserPrompt(
 ) {
     val activity = activityRef.get() ?: return
 
-    activity.settings().lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis()
+    activity.settings().setToDefaultPromptRequested = System.currentTimeMillis()
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
         activity.openSetDefaultBrowserOption()
