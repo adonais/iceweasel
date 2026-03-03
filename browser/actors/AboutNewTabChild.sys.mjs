@@ -21,6 +21,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "NEWTAB_SELF_LOADING",
+  "browser.newtabpage.activity-stream.selfLoading.enabled",
+  false
+);
+
 let gNextPortID = 0;
 
 export class AboutNewTabChild extends RemotePageChild {
@@ -39,27 +46,30 @@ export class AboutNewTabChild extends RemotePageChild {
         return; // about:newtab is a blank page
       }
 
-      const debug = !AppConstants.RELEASE_OR_BETA && lazy.ACTIVITY_STREAM_DEBUG;
-      const debugString = debug ? "-dev" : "";
+      if (!lazy.NEWTAB_SELF_LOADING) {
+        const debug =
+          !AppConstants.RELEASE_OR_BETA && lazy.ACTIVITY_STREAM_DEBUG;
+        const debugString = debug ? "-dev" : "";
 
-      // This list must match any similar ones in render-activity-stream-html.js.
-      const scripts = [
-        "chrome://browser/content/contentTheme.js",
-        `chrome://global/content/vendor/react${debugString}.js`,
-        `chrome://global/content/vendor/react-dom${debugString}.js`,
-        "chrome://global/content/vendor/prop-types.js",
-        "chrome://global/content/vendor/react-transition-group.js",
-        "chrome://global/content/vendor/redux.js",
-        "chrome://global/content/vendor/react-redux.js",
-        "resource://newtab/data/content/activity-stream.bundle.js",
-        "resource://newtab/data/content/newtab-render.js",
-      ];
+        // This list must match any similar ones in render-activity-stream-html.js.
+        const scripts = [
+          "chrome://browser/content/contentTheme.js",
+          `chrome://global/content/vendor/react${debugString}.js`,
+          `chrome://global/content/vendor/react-dom${debugString}.js`,
+          "chrome://global/content/vendor/prop-types.js",
+          "chrome://global/content/vendor/react-transition-group.js",
+          "chrome://global/content/vendor/redux.js",
+          "chrome://global/content/vendor/react-redux.js",
+          "resource://newtab/data/content/activity-stream.bundle.js",
+          "resource://newtab/data/content/newtab-render.js",
+        ];
 
-      for (let script of scripts) {
-        Services.scriptloader.loadSubScriptWithOptions(script, {
-          target: this.contentWindow,
-          ignoreCache: true,
-        });
+        for (let script of scripts) {
+          Services.scriptloader.loadSubScriptWithOptions(script, {
+            target: this.contentWindow,
+            ignoreCache: true,
+          });
+        }
       }
     } else if (event.type == "unload") {
       try {
