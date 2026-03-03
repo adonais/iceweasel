@@ -11928,6 +11928,9 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
     clonePolicy.allowSharedMemoryObjects();
   }
 
+  // 2.7.10 Structured cloning API
+  // Step 1: Let serialized be
+  //   ? StructuredSerializeWithTransfer(value, options["transfer"])
   StructuredCloneHolder holder(StructuredCloneHolder::CloningSupported,
                                StructuredCloneHolder::TransferringSupported,
                                JS::StructuredCloneScope::SameProcess);
@@ -11936,11 +11939,16 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
     return;
   }
 
+  // Step 2: Let deserializeRecord be
+  //   ? StructuredDeserializeWithTransfer(serialized, this's relevant realm).
+  JSAutoRealm ar(aCx, aGlobal->GetGlobalJSObject());
   holder.Read(aCx, aRetval, clonePolicy, aError);
   if (NS_WARN_IF(aError.Failed())) {
     return;
   }
 
+  // Step 3: Return deserializeRecord.[[Deserialized]].
+  //   (discarding deserializeRecord.[[TransferredValues]])
   nsTArray<RefPtr<MessagePort>> ports = holder.TakeTransferredPorts();
   (void)ports;
 }
