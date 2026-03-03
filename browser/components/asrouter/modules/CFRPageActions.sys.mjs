@@ -18,6 +18,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   RemoteL10n: "resource:///modules/asrouter/RemoteL10n.sys.mjs",
 });
@@ -874,6 +875,7 @@ export class PageAction {
       this.window.document.getElementById(content.anchor_id) || this.container;
 
     await this._renderMilestonePopup(message, browser);
+    lazy.NimbusFeatures.privacySecurityMessaging.recordExposureEvent();
     return true;
   }
 }

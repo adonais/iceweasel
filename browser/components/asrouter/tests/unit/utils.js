@@ -279,11 +279,21 @@ export function FakeNimbusFeature() {
   };
 }
 
-export function FakeNimbusFeatures(featureIds) {
-  return Object.fromEntries(
-    featureIds.map(featureId => [featureId, FakeNimbusFeature()])
-  );
-}
+export const FakeNimbusFeatures = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      // Ignore some built-in props like Symbol.toStringTag, etc.
+      if (typeof prop === "symbol") {
+        return target[prop];
+      }
+      if (!(prop in target)) {
+        target[prop] = FakeNimbusFeature();
+      }
+      return target[prop];
+    },
+  }
+);
 
 export class FakeLogger extends FakeConsoleAPI {
   constructor() {

@@ -2458,6 +2458,7 @@ var gProtectionsHandler = {
 
     if (this._milestoneTextSet && !expired) {
       this._protectionsPopup.setAttribute("milestone", this.milestonePref);
+      NimbusFeatures.privacySecurityMessaging.recordExposureEvent();
     } else {
       this._protectionsPopup.removeAttribute("milestone");
     }
