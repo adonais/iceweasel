@@ -32,6 +32,8 @@
       this.addEventListener("TabShow", this);
       this.addEventListener("TabHoverStart", this);
       this.addEventListener("TabHoverEnd", this);
+      this.addEventListener("TabNoteIconHoverStart", this);
+      this.addEventListener("TabNoteIconHoverEnd", this);
       this.addEventListener("TabGroupLabelHoverStart", this);
       this.addEventListener("TabGroupLabelHoverEnd", this);
       // Capture collapse/expand early so we mark animating groups before
@@ -337,6 +339,24 @@
 
     on_TabHoverEnd(event) {
       this.previewPanel?.deactivate(event.target);
+    }
+
+    on_TabNoteIconHoverStart(event) {
+      if (!this._showTabHoverPreview) {
+        return;
+      }
+      this.ensureTabPreviewPanelLoaded();
+      this.previewPanel.activateNotePanel(
+        event.target,
+        event.detail.noteIconElement
+      );
+    }
+
+    on_TabNoteIconHoverEnd(event) {
+      this.previewPanel?.deactivateNotePanel(event.target);
+      if (event.detail.returningToTab) {
+        this.previewPanel?.activate(event.target);
+      }
     }
 
     cancelTabGroupPreview() {

@@ -571,11 +571,6 @@
           <html:div class="tab-preview-activeness"></html:div>
         </html:div>
       </html:div>
-      <html:div class="tab-preview-note-container">
-        <html:div class="tab-preview-note-text"></html:div>
-        <!-- Not using a real button here to avoid having to unset default styles -->
-        <html:div role="button" class="tab-preview-note-expand" data-l10n-id="tab-note-preview-expand"></html:div>
-      </html:div>
     </html:div>
   </panel>
 
@@ -591,6 +586,20 @@
       iconsrc="chrome://global/skin/icons/tab-notes.svg"
     />
   </html:template>
+
+  <panel id="tab-note-preview-panel"
+         type="arrow"
+         orient="vertical"
+         noautofocus="true"
+         norolluponanchor="true"
+         consumeoutsideclicks="false"
+         role="tooltip">
+    <html:div class="tab-note-preview-container">
+      <html:div class="tab-note-preview-text"></html:div>
+      <!-- Not using a real button here to avoid having to unset default styles -->
+      <html:div role="button" class="tab-note-preview-expand" data-l10n-id="tab-note-preview-expand"></html:div>
+    </html:div>
+  </panel>
 
   <panel id="tabgroup-preview-panel"
          role="menu"

@@ -5,12 +5,6 @@
 #tab-preview-panel {
   --panel-width: 280px;
   --panel-padding: 0;
-  --tab-note-text-background: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3));
-  --tab-note-text-border-color: transparent;
-  @media (prefers-contrast) {
-    --tab-note-text-background: transparent;
-    --tab-note-text-border-color: var(--border-color-card);
-  }
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.tabs.notes.enabled") {
     pointer-events: none;
@@ -89,23 +83,34 @@
   }
 }
 
-.tab-preview-note-container {
+/*
+ * Tab note preview panel
+ */
+
+#tab-note-preview-panel {
+  --panel-width: 280px;
+  --panel-padding: var(--space-small);
+  --tab-note-text-background: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3));
+  --tab-note-text-border-color: transparent;
+  @media (prefers-contrast) {
+    --tab-note-text-background: transparent;
+    --tab-note-text-border-color: var(--border-color-card);
+  }
+}
+
+.tab-note-preview-container {
   font: menu;
   position: relative;
   padding: var(--space-small);
   border-radius: var(--border-radius-medium);
   background-color: var(--tab-note-text-background);
   border: var(--border-width) solid var(--tab-note-text-border-color);
-
-  &[hidden] {
-    display: none;
-  }
 }
 
-.tab-preview-note-text {
+.tab-note-preview-text {
   overflow-wrap: break-word;
 
-  #tab-preview-panel:not([note-expanded]) & {
+  #tab-note-preview-panel:not([note-expanded]) & {
     /* Set by Javascript */
     --tab-note-expand-toggle-width: 0;
 
@@ -134,18 +139,16 @@
   }
 }
 
-.tab-preview-note-expand {
+.tab-note-preview-expand {
   display: none;
   text-decoration: underline;
   cursor: pointer;
   position: absolute;
-  /* position at bottom-end of containing box, using the same padding as the
-   * containing box */
   inset-block-end: 0;
   inset-inline-end: 0;
   padding: var(--space-small);
 
-  #tab-preview-panel[note-overflow]:not([note-expanded]) & {
+  #tab-note-preview-panel[note-overflow]:not([note-expanded]) & {
     display: block;
   }
 }
