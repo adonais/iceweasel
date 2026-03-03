@@ -61,8 +61,20 @@ add_task(async function () {
   EventUtils.synthesizeKey("KEY_Enter", {}, contentWindow);
   await prefChangePromise;
 
+  // Wait for the setting-control and moz-select Lit render cycles to
+  // complete after the pref observer chain runs. Without this, assertions
+  // could pass before a corrupted value propagates to the UI (bug 2019296).
+  let settingControl = fontsGroup.querySelector("#setting-control-defaultFont");
+  await settingControl.updateComplete;
+  await mozSelect.updateComplete;
+
   fontFamily = Services.prefs.getCharPref(fontFamilyPref);
   is(mozSelect.value, fontFamily, "The font family has been updated.");
+  is(
+    mozSelect.value,
+    "",
+    "The default font value should be the empty string sentinel."
+  );
   is(
     selectEl.selectedIndex,
     0,
