@@ -3145,6 +3145,7 @@ static bool DecodeImportType(Decoder& d, DefinitionKind importKind,
 static bool AddImport(Decoder& d, CacheableName& moduleName,
                       CacheableName& itemName, ExternType importType,
                       CodeMetadata* codeMeta, ModuleMetadata* moduleMeta) {
+  uint32_t importIndex = moduleMeta->imports.length();
   if (!moduleMeta->imports.emplaceBack(
           std::move(moduleName), std::move(itemName), importType.kind())) {
     return false;
@@ -3178,8 +3179,7 @@ static bool AddImport(Decoder& d, CacheableName& moduleName,
       if (!codeMeta->memories.emplaceBack(MemoryDesc(importType.asMemory()))) {
         return false;
       }
-      codeMeta->memories.back().importIndex =
-          Some(moduleMeta->imports.length());
+      codeMeta->memories.back().importIndex = Some(importIndex);
       break;
     }
     case DefinitionKind::Global: {
