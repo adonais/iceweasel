@@ -225,6 +225,10 @@ void SendReports(nsTArray<ReportDeliver::ReportData>& aReports,
   internalRequest->SetCredentialsMode(RequestCredentials::Same_origin);
   internalRequest->SetUnsafeRequest();
 
+  if (aReports[0].mCookieJarSettings) {
+    internalRequest->SetCookieJarSettings(aReports[0].mCookieJarSettings);
+  }
+
   RefPtr<Request> request =
       new Request(globalObject, std::move(internalRequest), nullptr);
 
@@ -320,6 +324,7 @@ void ReportDeliver::SetGlobalAndUserAgentData(
   aReportData.mGlobalKey = aGlobalKey;
   if (auto reportingGlobal = mGlobalsEndpointLists.Lookup(aGlobalKey)) {
     aReportData.mUserAgent = reportingGlobal->mUserAgentData;
+    aReportData.mCookieJarSettings = reportingGlobal->mCookieJarSettings;
   }
 }
 
@@ -380,7 +385,8 @@ void ReportDeliver::Initialize() {
 /* static */
 void ReportDeliver::WorkerInitializeReportingEndpoints(
     uintptr_t aGlobalKey, nsIURI* aResourceURI, nsCString aHeaderContents,
-    bool aShouldResistFingerprinting) {
+    bool aShouldResistFingerprinting,
+    nsICookieJarSettings* aCookieJarSettings) {
   MOZ_ASSERT(!NS_IsMainThread());
   if (NS_WARN_IF(!aResourceURI) || aHeaderContents.IsEmpty() ||
       aHeaderContents.IsVoid()) {
@@ -390,8 +396,8 @@ void ReportDeliver::WorkerInitializeReportingEndpoints(
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "ReportDeliver::DispatchInitializeReportingEndpoints",
       [aGlobalKey, uri = RefPtr{aResourceURI},
-       header = std::move(aHeaderContents),
-       aShouldResistFingerprinting]() mutable {
+       header = std::move(aHeaderContents), aShouldResistFingerprinting,
+       cookieJarSettings = nsCOMPtr{aCookieJarSettings}]() mutable {
         EndpointsList list;
         ReportingHeader::ParseReportingEndpointsHeader(
             header, uri,
@@ -407,7 +413,8 @@ void ReportDeliver::WorkerInitializeReportingEndpoints(
 
         gReportDeliver->mGlobalsEndpointLists.InsertOrUpdate(
             aGlobalKey,
-            GlobalReportingData{std::move(userAgent), std::move(list)});
+            GlobalReportingData{std::move(userAgent), std::move(list),
+                                cookieJarSettings});
       }));
 }
 
@@ -427,6 +434,11 @@ void ReportDeliver::WindowInitializeReportingEndpoints(
     doc = win->GetExtantDoc();
   }
 
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  if (doc) {
+    cookieJarSettings = doc->CookieJarSettings();
+  }
+
   (void)mozilla::dom::Navigator::GetUserAgent(
       win, doc,
       mozilla::Some(
@@ -434,7 +446,8 @@ void ReportDeliver::WindowInitializeReportingEndpoints(
       userAgentData);
   gReportDeliver->mGlobalsEndpointLists.InsertOrUpdate(
       reinterpret_cast<uintptr_t>(aGlobal),
-      GlobalReportingData{std::move(userAgentData), std::move(aEndpointList)});
+      GlobalReportingData{std::move(userAgentData), std::move(aEndpointList),
+                          std::move(cookieJarSettings)});
 }
 
 nsIURI* ReportDeliver::GetEndpointURLFor(uintptr_t aGlobalKey,

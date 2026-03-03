@@ -16,6 +16,7 @@
 // XXX Avoid including this here by moving function bodies to the cpp file
 #include "nsIPrincipal.h"
 
+class nsICookieJarSettings;
 class nsIPrincipal;
 class nsPIDOMWindowInner;
 class nsIGlobalObject;
@@ -29,6 +30,7 @@ class ReportBody;
 struct GlobalReportingData {
   nsString mUserAgentData;
   EndpointsList mEndpoints;
+  nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
 };
 
 class ReportDeliver final : public nsIObserver, public nsINamed {
@@ -46,6 +48,7 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
     TimeStamp mCreationTime;
     nsCString mReportBodyJSON;
     nsCOMPtr<nsIPrincipal> mPrincipal;
+    nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
     uint32_t mFailures;
     uintptr_t mGlobalKey;
   };
@@ -69,7 +72,8 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
    */
   static void WorkerInitializeReportingEndpoints(
       uintptr_t aGlobalKey, nsIURI* aResourceURI, nsCString aHeaderContents,
-      bool aShouldResistFingerprinting);
+      bool aShouldResistFingerprinting,
+      nsICookieJarSettings* aCookieJarSettings);
 
   /**
    * https://w3c.github.io/reporting/#document-configuration

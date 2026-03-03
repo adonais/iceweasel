@@ -4382,7 +4382,8 @@ void WorkerPrivate::InitializeGlobalReportingEndpoints() {
   ReportDeliver::WorkerInitializeReportingEndpoints(
       reinterpret_cast<uintptr_t>(static_cast<nsIGlobalObject*>(GlobalScope())),
       mLoadInfo.mBaseURI, mLoadInfo.mReportingEndpointsHeader,
-      ShouldResistFingerprinting(RFPTarget::NavigatorUserAgent));
+      ShouldResistFingerprinting(RFPTarget::NavigatorUserAgent),
+      CookieJarSettings());
 }
 
 void WorkerPrivate::SetReportingEndpointsHeader(const nsACString& aHeader) {
