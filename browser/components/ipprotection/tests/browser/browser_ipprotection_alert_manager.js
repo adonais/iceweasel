@@ -8,6 +8,9 @@ const lazy = {};
 ChromeUtils.defineLazyGetter(lazy, "ipProtectionLocalization", () => {
   return new Localization(["browser/ipProtection.ftl"], true);
 });
+const { BANDWIDTH } = ChromeUtils.importESModule(
+  "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
+);
 
 function setState(state) {
   IPPProxyManager.dispatchEvent(
@@ -39,6 +42,9 @@ add_task(async function test_ipprotectionPrompts() {
     "Wait for the proxy state to be active"
   );
 
+  const usage = makeUsage();
+  const maxUsage = Number(usage.max) / BANDWIDTH.BYTES_IN_GB;
+
   const [
     pausedTitle,
     pausedBody,
@@ -48,7 +54,7 @@ add_task(async function test_ipprotectionPrompts() {
     errorBody,
   ] = lazy.ipProtectionLocalization.formatMessagesSync([
     { id: "vpn-paused-alert-title" },
-    { id: "vpn-paused-alert-body", args: { maxUsage: 150 } },
+    { id: "vpn-paused-alert-body", args: { maxUsage } },
     { id: "vpn-paused-alert-close-tabs-button" },
     { id: "vpn-paused-alert-continue-wo-vpn-button" },
     { id: "vpn-error-alert-title" },

@@ -670,16 +670,32 @@ export class IPProtectionPanel {
   /**
    * BigInts throw when using JSON.stringify or when using arithmetic with
    * numbers so we convert them to numbers here so they max and remaining can
-   * be safely used.
+   * be safely used. Check usageInfo first, if that doesn't exist, check the
+   * entitlement. If neither exist, return null.
    *
    * @returns {object} An object with max and remaining as numbers
    */
   #getBandwidthUsage() {
-    if (lazy.BANDWIDTH_USAGE_ENABLED && lazy.IPPProxyManager.usageInfo) {
+    if (
+      lazy.BANDWIDTH_USAGE_ENABLED &&
+      lazy.IPPProxyManager.usageInfo?.max != null
+    ) {
       return {
         max: Number(lazy.IPPProxyManager.usageInfo.max),
         remaining: Number(lazy.IPPProxyManager.usageInfo.remaining),
         reset: lazy.IPPProxyManager.usageInfo.reset,
+      };
+    } else if (
+      lazy.BANDWIDTH_USAGE_ENABLED &&
+      lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes != null
+    ) {
+      // Usage info doesn't exist yet. Check the entitlement
+      return {
+        max: Number(lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes),
+        remaining: Number(
+          lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes
+        ),
+        reset: null,
       };
     }
 
