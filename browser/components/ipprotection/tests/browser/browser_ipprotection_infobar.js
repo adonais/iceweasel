@@ -169,6 +169,51 @@ add_task(async function test_90_percent_overrides_75_percent() {
   IPProtectionInfobarManager.uninit();
 });
 
+add_task(async function test_remove_infobar_after_sign_out() {
+  setupService({ isSignedIn: true, isEnrolledAndEntitled: true });
+  IPProtectionService.updateState();
+
+  IPProtectionInfobarManager.init();
+
+  dispatchUsageEvent(0.2);
+
+  await TestUtils.waitForCondition(
+    () =>
+      window.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-75"
+      ),
+    "Wait for 75% notification to appear"
+  );
+
+  Assert.ok(
+    window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-75"
+    ),
+    "75% notification should be present before sign out"
+  );
+
+  setupService({ isSignedIn: false });
+  IPProtectionService.updateState();
+
+  await TestUtils.waitForCondition(
+    () =>
+      !window.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-75"
+      ),
+    "Wait for 75% notification to be removed after sign out"
+  );
+
+  Assert.ok(
+    !window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-75"
+    ),
+    "75% notification should be removed after sign out"
+  );
+
+  IPProtectionInfobarManager.uninit();
+  cleanupService();
+});
+
 add_task(async function test_handles_missing_usage_data() {
   IPProtectionInfobarManager.init();
 

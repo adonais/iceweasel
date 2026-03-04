@@ -9,6 +9,10 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   IPPProxyManager:
     "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPProtectionService:
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+  IPProtectionStates:
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 /**
@@ -28,6 +32,10 @@ class IPProtectionInfobarManagerClass {
     }
 
     lazy.IPPProxyManager.addEventListener("IPPProxyManager:UsageChanged", this);
+    lazy.IPProtectionService.addEventListener(
+      "IPProtectionService:StateChanged",
+      this
+    );
 
     this.#initialized = true;
   }
@@ -41,11 +49,25 @@ class IPProtectionInfobarManagerClass {
       "IPPProxyManager:UsageChanged",
       this
     );
+    lazy.IPProtectionService.removeEventListener(
+      "IPProtectionService:StateChanged",
+      this
+    );
 
     this.#initialized = false;
   }
 
   handleEvent(event) {
+    if (
+      event.type === "IPProtectionService:StateChanged" &&
+      lazy.IPProtectionService.state !== lazy.IPProtectionStates.READY
+    ) {
+      // Eg. hide warnings when signed out
+      this.#hideInfobar(75);
+      this.#hideInfobar(90);
+      return;
+    }
+
     if (event.type === "IPPProxyManager:UsageChanged") {
       const usage = event.detail.usage;
       if (
@@ -66,6 +88,27 @@ class IPProtectionInfobarManagerClass {
         // Show 75% warning when bandwidth remaining is between 10% and 25%
       } else if (remainingPercent > 0.1 && remainingPercent <= 0.25) {
         this.#showInfobar(75, usage);
+      }
+    }
+  }
+
+  /**
+   * Hide the bandwidth warning infobar if displayed in a browser window.
+   *
+   * @param {number} threshold - The threshold level (75 or 90)
+   */
+  #hideInfobar(threshold) {
+    const notificationId = `ip-protection-bandwidth-warning-${threshold}`;
+    // It's possible for the notification to be in another browser window
+    // after navigating away. Clear the notification from all windows if applicable.
+    for (const win of Services.wm.getEnumerator("navigator:browser")) {
+      if (win.closed) {
+        continue;
+      }
+      const notification =
+        win.gNotificationBox.getNotificationWithValue(notificationId);
+      if (notification) {
+        win.gNotificationBox.removeNotification(notification);
       }
     }
   }
