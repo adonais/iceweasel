@@ -250,8 +250,8 @@ export default class MozBoxGroup extends MozLitElement {
           this.type == GROUP_TYPES.reorderable
         ) {
           item.slot = i;
+          item.setAttribute("position", i);
         }
-        item.setAttribute("position", i);
         item.classList.toggle("first", i == 0 && !headerNode);
         item.classList.toggle(
           "last",
