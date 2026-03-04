@@ -29,16 +29,11 @@ function setupFakeHandler() {
 add_task(async function () {
   setupFakeHandler();
 
-  let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
-
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
-
   is(prefs.selectedPane, "paneGeneral", "General pane was selected");
   let win = gBrowser.selectedBrowser.contentWindow;
-
-  await appHandlerInitialized;
 
   let container = win.document.getElementById("handlersView");
   ok(container, "handlersView is present");
