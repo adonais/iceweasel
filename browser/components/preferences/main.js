@@ -2,11 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** @import MozBoxItem from 'moz-src:///toolkit/content/widgets/moz-box-item/moz-box-item.mjs';*/
-/** @import { MozOption } from 'moz-src:///toolkit/content/widgets/moz-select/moz-select.mjs';*/
-/** @import MozSelect from 'moz-src:///toolkit/content/widgets/moz-select/moz-select.mjs';*/
-/** @import MozBoxGroup from 'chrome://global/content/elements/moz-box-group.mjs'; */
-
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
 /* import-globals-from /toolkit/mozapps/preferences/fontbuilder.js */
@@ -627,51 +622,6 @@ Preferences.addSetting({
   id: "cfrRecommendations-features",
   pref: "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
 });
-
-Preferences.addSetting({
-  id: "handlersView",
-  setup: emitChange => {
-    emitChange();
-    // Load the data and build the list of handlers for applications pane.
-    // By doing this after pageshow, we ensure it doesn't delay painting
-    // of the preferences page.
-    window.addEventListener("pageshow", () => {
-      /**
-       * Don't init when not on General pane
-       */
-      if (location.hash && location.hash !== "#general") {
-        return;
-      }
-      AppFileHandler.preInit();
-    });
-
-    /**
-     * Must support use cases where the user has initially hard
-     * loaded the general preferences from a pane other
-     * than General, but then changes to the General pane.
-     */
-    window.addEventListener("hashchange", () => {
-      AppFileHandler.preInit();
-    });
-  },
-});
-
-Preferences.addSetting({
-  id: "applicationsGroup",
-});
-
-Preferences.addSetting({
-  id: "applicationsFilter",
-  get(val) {
-    return val || "";
-  },
-});
-
-Preferences.addSetting({
-  id: "handleNewFileTypes",
-  pref: "browser.download.always_ask_before_handling_new_types",
-});
-
 Preferences.addSetting({
   id: "browserLayoutRadioGroup",
   pref: "sidebar.verticalTabs",
@@ -3210,43 +3160,6 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
-  applications: {
-    id: "applicationsGroup",
-    l10nId: "applications-setting",
-    headingLevel: 2,
-    items: [
-      {
-        id: "applicationsFilter",
-        control: "moz-input-search",
-        l10nId: "applications-filter",
-        controlAttrs: {
-          "aria-controls": "handlersView",
-          "data-l10n-attrs": "placeholder",
-        },
-      },
-      {
-        id: "handlersView",
-        control: "moz-box-group",
-      },
-      {
-        id: "handleNewFileTypes",
-        l10nId: "applications-setting-new-file-types",
-        control: "moz-radio-group",
-        options: [
-          {
-            l10nId: "applications-save-for-new-types",
-            control: "moz-radio",
-            value: false,
-          },
-          {
-            l10nId: "applications-ask-before-handling",
-            control: "moz-radio",
-            value: true,
-          },
-        ],
-      },
-    ],
-  },
   downloads: {
     l10nId: "downloads-header-2",
     headingLevel: 2,
@@ -5402,7 +5315,6 @@ var gMainPane = {
     initSettingGroup("browserLayout");
     initSettingGroup("appearance");
     initSettingGroup("downloads");
-    initSettingGroup("applications");
     initSettingGroup("drm");
     initSettingGroup("contrast");
     initSettingGroup("websiteLanguage");
@@ -5597,6 +5509,8 @@ var gMainPane = {
     Services.obs.addObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
     Services.obs.addObserver(this, BACKGROUND_UPDATE_CHANGED_TOPIC);
 
+    AppFileHandler._init();
+
     // Listen for window unload so we can remove our preference observers.
     window.addEventListener("unload", this);
 
@@ -5612,8 +5526,14 @@ var gMainPane = {
       // of the preferences page.
       window.addEventListener(
         "pageshow",
-        () => {
-          this.initialized.then(resolve).catch(reject);
+        async () => {
+          await this.initialized;
+          try {
+            await AppFileHandler.preInit();
+            resolve();
+          } catch (ex) {
+            reject(ex);
+          }
         },
         { once: true }
       );
@@ -6811,7 +6731,7 @@ var gMainPane = {
       // Rebuild the list when there are changes to preferences that influence
       // whether or not to show certain entries in the list.
       if (!AppFileHandler._storingAction) {
-        await AppFileHandler._buildView();
+        await AppFileHandler._rebuildView();
       }
     } else if (aTopic == AUTO_UPDATE_CHANGED_TOPIC) {
       if (!AppConstants.MOZ_UPDATER) {
@@ -6844,26 +6764,6 @@ var gMainPane = {
         onUnload();
       }
     }
-  },
-
-  /**
-   * Whether or not the given handler app is valid.
-   *
-   * @todo remove this method and use {@link AppFileHandler.isValidHandlerApp} when #appList dialog is no longer using it.
-   * @param aHandlerApp {nsIHandlerApp} the handler app in question
-   * @returns {boolean} whether or not it's valid
-   */
-  isValidHandlerApp(aHandlerApp) {
-    return AppFileHandler.isValidHandlerApp(aHandlerApp);
-  },
-
-  /**
-   * @todo remove this method and use {@link AppFileHandler._getIconURLForHandlerApp} when #appList dialog is no longer using it.
-   * @param aHandlerApp {nsIHandlerApp}
-   * @returns {string}
-   */
-  _getIconURLForHandlerApp(aHandlerApp) {
-    return AppFileHandler._getIconURLForHandlerApp(aHandlerApp);
   },
 };
 gMainPane.initialized = new Promise(res => {
@@ -6900,14 +6800,27 @@ function getLocalHandlerApp(aFile) {
   return localHandlerApp;
 }
 
-/**
- * @typedef {MozOption & {
- * handlerApp: nsIHandlerApp | null | void
- * }} ApplicationFileHandlerItemActionsMenuOption
- */
+// eslint-disable-next-line no-undef
+let gHandlerListItemFragment = MozXULElement.parseXULToFragment(`
+  <richlistitem>
+    <hbox class="typeContainer" flex="1" align="center">
+      <html:img class="typeIcon" width="16" height="16" />
+      <label class="typeDescription" flex="1" crop="end"/>
+    </hbox>
+    <hbox class="actionContainer" flex="1" align="center">
+      <html:img class="actionIcon" width="16" height="16"/>
+      <label class="actionDescription" flex="1" crop="end"/>
+    </hbox>
+    <hbox class="actionsMenuContainer" flex="1">
+      <menulist class="actionsMenu" flex="1" crop="end" selectedIndex="1" aria-labelledby="actionColumn">
+        <menupopup/>
+      </menulist>
+    </hbox>
+  </richlistitem>
+`);
 
 /**
- * This is associated to <moz-box-item> elements in the handlers view.
+ * This is associated to <richlistitem> elements in the handlers view.
  */
 class HandlerListItem {
   /**
@@ -6926,20 +6839,12 @@ class HandlerListItem {
   }
 
   /**
-   * Temporarily keeps track of the index of an action
-   * menu option item so that its value will always be unique.
    *
-   * @type {number}
-   */
-  actionsMenuOptionCount = 0;
-
-  /**
-   *
-   * @param {Array<[HTMLElement | null, string, string]>} iterable
+   * @param {Array<[string, string, string]>} iterable
    */
   setOrRemoveAttributes(iterable) {
-    for (let [element, name, value] of iterable) {
-      let node = element || this.node;
+    for (let [selector, name, value] of iterable) {
+      let node = selector ? this.node.querySelector(selector) : this.node;
       if (value) {
         node.setAttribute(name, value);
       } else {
@@ -6948,359 +6853,68 @@ class HandlerListItem {
     }
   }
 
-  createNode() {
-    this.node = /** @type {ApplicationFileHandlerItemActionsMenuOption} */ (
-      document.createElement("moz-box-item")
-    );
+  createNode(list) {
+    list.appendChild(document.importNode(gHandlerListItemFragment, true));
+    this.node = list.lastChild;
+    gNodeToObjectMap.set(this.node, this);
+  }
 
-    const iconSrc = this.handlerInfoWrapper._getIcon(16, 1);
-    if (iconSrc) {
-      this.node.setAttribute("iconsrc", iconSrc);
-    }
-
-    this.setOrRemoveAttributes([[null, "type", this.handlerInfoWrapper.type]]);
+  setupNode() {
+    this.node
+      .querySelector(".actionsMenu")
+      .addEventListener("command", event =>
+        AppFileHandler.onSelectAction(event.originalTarget)
+      );
 
     let typeDescription = this.handlerInfoWrapper.typeDescription;
-    localizeElement(this.node, typeDescription);
-
-    this.node.setAttribute("label", typeDescription.raw);
-
-    this.actionsMenu = /** @type {MozSelect} */ (
-      document.createElement("moz-select")
+    this.setOrRemoveAttributes([
+      [null, "type", this.handlerInfoWrapper.type],
+      [".typeIcon", "srcset", this.handlerInfoWrapper.iconSrcSet],
+    ]);
+    localizeElement(
+      this.node.querySelector(".typeDescription"),
+      typeDescription
     );
-    this.actionsMenu.slot = "actions";
-    this.actionsMenu.classList.add("actionsMenu");
-
-    this.node.appendChild(this.actionsMenu);
-
-    this.buildActionsMenu();
-
-    gNodeToObjectMap.set(this.node, this);
-    return this.node;
+    this.showActionsMenu = false;
   }
 
-  /**
-   * Creates an item for the actions dropdown.
-   *
-   * @private
-   * @param {object} options
-   * @param {string | void} [options.iconSrc]
-   * @param {string} [options.l10nId]
-   * @param {string} [options.value]
-   * @param {number} [options.handlerActionId] - The action number associated with the handler
-   * @param {any | void} [options.l10nIdArgs]
-   * @returns {ApplicationFileHandlerItemActionsMenuOption}
-   */
-  _buildActionsMenuOption({
-    iconSrc,
-    l10nId,
-    value,
-    handlerActionId: handlerActionNumber,
-    l10nIdArgs = {},
-  }) {
-    const option = /** @type {ApplicationFileHandlerItemActionsMenuOption} */ (
-      document.createElement("moz-option")
-    );
-    value = value ? value : this.actionsMenuOptionCount++ + "";
-    option.setAttribute("value", value);
-    document.l10n.setAttributes(option, l10nId, l10nIdArgs);
-    if (iconSrc) {
-      option.setAttribute("iconsrc", iconSrc);
+  refreshAction() {
+    let { actionIconClass } = this.handlerInfoWrapper;
+    this.setOrRemoveAttributes([
+      [null, APP_ICON_ATTR_NAME, actionIconClass],
+      [
+        ".actionIcon",
+        "srcset",
+        actionIconClass ? null : this.handlerInfoWrapper.actionIconSrcset,
+      ],
+    ]);
+    const selectedItem = this.node.querySelector("[selected=true]");
+    if (!selectedItem) {
+      console.error("No selected item for " + this.handlerInfoWrapper.type);
+      return;
     }
-    const action =
-      handlerActionNumber || handlerActionNumber === 0
-        ? handlerActionNumber + ""
-        : "";
-    if (action) {
-      option.setAttribute("action", action);
-    }
-    return option;
-  }
-
-  /**
-   * Gets the "Save file" icon that is determined by the user's OS.
-   *
-   * @returns {string} The icon given the current OS
-   */
-  _getSaveFileIcon() {
-    if (AppConstants.platform == "linux") {
-      return "moz-icon://stock/document-save?size=16";
-    }
-    return "chrome://browser/skin/preferences/saveFile.png";
-  }
-
-  /**
-   * @param {HandlerInfoWrapper} handlerInfo
-   * @returns {boolean}
-   */
-  _isInternalMenuItem(handlerInfo) {
-    return (
-      handlerInfo instanceof InternalHandlerInfoWrapper &&
-      !handlerInfo.preventInternalViewing
-    );
-  }
-
-  /**
-   * Builds the default actions menu item based
-   * on the OS default application, if any.
-   *
-   * @param {HandlerInfoWrapper} handlerInfo
-   * @returns {MozOption | void}
-   */
-  _buildActionsMenuDefaultItem(handlerInfo) {
-    if (!handlerInfo.hasDefaultHandler) {
-      return undefined;
-    }
-    const defaultMenuItem = this._buildActionsMenuOption({
-      iconSrc: ICON_URL_APP,
-      handlerActionId: Ci.nsIHandlerInfo.useSystemDefault,
+    const { id, args } = document.l10n.getAttributes(selectedItem);
+    const messageIDs = {
+      "applications-action-save": "applications-action-save-label",
+      "applications-always-ask": "applications-always-ask-label",
+      "applications-open-inapp": "applications-open-inapp-label",
+      "applications-use-app-default": "applications-use-app-default-label",
+      "applications-use-app": "applications-use-app-label",
+      "applications-use-os-default": "applications-use-os-default-label",
+      "applications-use-other": "applications-use-other-label",
+    };
+    localizeElement(this.node.querySelector(".actionDescription"), {
+      id: messageIDs[id],
+      args,
     });
-    // If an internal option is available, don't show the application
-    // name for the OS default to prevent two options from appearing
-    // that may both say "Firefox".
-    if (this._isInternalMenuItem(handlerInfo)) {
-      document.l10n.setAttributes(
-        defaultMenuItem,
-        "applications-use-os-default"
-      );
-      defaultMenuItem.setAttribute("iconsrc", ICON_URL_APP);
-    } else {
-      document.l10n.setAttributes(
-        defaultMenuItem,
-        "applications-use-app-default",
-        {
-          "app-name": handlerInfo.defaultDescription,
-        }
-      );
-      let image = handlerInfo.iconURLForSystemDefault;
-      if (image) {
-        defaultMenuItem.setAttribute("iconsrc", image);
-      }
-    }
-    return defaultMenuItem;
+    localizeElement(this.node.querySelector(".actionsMenu"), { id, args });
   }
 
-  /**
-   * Builds the actions menu for the item.
-   */
-  buildActionsMenu() {
-    const { handlerInfoWrapper: handlerInfo } = this;
-
-    // Clear out existing items.
-    while (this.actionsMenu.hasChildNodes()) {
-      this.actionsMenu.removeChild(this.actionsMenu.lastChild);
-    }
-    this.actionsMenuOptionCount = 0;
-
-    /**
-     * @type {ApplicationFileHandlerItemActionsMenuOption | undefined}
-     */
-    let internalMenuItem;
-    // Add the "Open in Firefox" option for optional internal handlers.
-    if (this._isInternalMenuItem(handlerInfo)) {
-      internalMenuItem = this._buildActionsMenuOption({
-        l10nId: "applications-open-inapp",
-        iconSrc: "chrome://branding/content/icon32.png",
-        handlerActionId: Ci.nsIHandlerInfo.handleInternally,
-      });
-
-      this.actionsMenu.appendChild(internalMenuItem);
-    }
-
-    const askMenuItem = this._buildActionsMenuOption({
-      iconSrc: "chrome://browser/skin/preferences/alwaysAsk.png",
-      l10nId: "applications-always-ask",
-      handlerActionId: Ci.nsIHandlerInfo.alwaysAsk,
-    });
-    this.actionsMenu.appendChild(askMenuItem);
-
-    // Create a menu item for saving to disk.
-    // Note: this option isn't available to protocol types, since we don't know
-    // what it means to save a URL having a certain scheme to disk.
-    /**
-     * @type {MozOption | void}
-     */
-    let saveMenuItem;
-    if (handlerInfo.wrappedHandlerInfo instanceof Ci.nsIMIMEInfo) {
-      saveMenuItem = this._buildActionsMenuOption({
-        l10nId: "applications-action-save",
-        iconSrc: this._getSaveFileIcon(),
-        handlerActionId: Ci.nsIHandlerInfo.saveToDisk,
-      });
-      saveMenuItem.className = "menuitem-iconic";
-      this.actionsMenu.appendChild(saveMenuItem);
-    }
-
-    // Add a separator to distinguish these items from the helper app items
-    // that follow them.
-    this.actionsMenu.appendChild(document.createElement("hr"));
-
-    let defaultMenuItem = this._buildActionsMenuDefaultItem(handlerInfo);
-    if (defaultMenuItem) {
-      this.actionsMenu.appendChild(defaultMenuItem);
-    }
-
-    // Create menu items for possible handlers.
-    let preferredApp = handlerInfo.preferredApplicationHandler;
-    var possibleAppMenuItems = [];
-    for (let possibleApp of handlerInfo.possibleApplicationHandlers.enumerate()) {
-      if (!AppFileHandler.isValidHandlerApp(possibleApp)) {
-        continue;
-      }
-
-      let label;
-      if (possibleApp instanceof Ci.nsILocalHandlerApp) {
-        label = getFileDisplayName(possibleApp.executable);
-      } else {
-        label = possibleApp.name;
-      }
-      let menuItem = this._buildActionsMenuOption({
-        l10nId: "applications-use-app",
-        iconSrc: AppFileHandler._getIconURLForHandlerApp(possibleApp),
-        handlerActionId: Ci.nsIHandlerInfo.useHelperApp,
-        l10nIdArgs: {
-          "app-name": label,
-        },
-      });
-
-      // Attach the handler app object to the menu item so we can use it
-      // to make changes to the datastore when the user selects the item.
-      menuItem.handlerApp = possibleApp;
-
-      this.actionsMenu.appendChild(menuItem);
-      possibleAppMenuItems.push(menuItem);
-    }
-    // Add gio handlers
-    if (gGIOService) {
-      var gioApps = gGIOService.getAppsForURIScheme(handlerInfo.type);
-      let possibleHandlers = handlerInfo.possibleApplicationHandlers;
-      for (let handler of gioApps.enumerate(Ci.nsIHandlerApp)) {
-        // OS handler share the same name, it's most likely the same app, skipping...
-        if (handler.name == handlerInfo.defaultDescription) {
-          continue;
-        }
-        // Check if the handler is already in possibleHandlers
-        let appAlreadyInHandlers = false;
-        for (let i = possibleHandlers.length - 1; i >= 0; --i) {
-          let app = possibleHandlers.queryElementAt(i, Ci.nsIHandlerApp);
-          // nsGIOMimeApp::Equals is able to compare with nsILocalHandlerApp
-          if (handler.equals(app)) {
-            appAlreadyInHandlers = true;
-            break;
-          }
-        }
-        if (!appAlreadyInHandlers) {
-          const menuItem = this._buildActionsMenuOption({
-            value: Ci.nsIHandlerInfo.useHelperApp + "",
-            l10nId: "applications-use-app",
-            iconSrc: AppFileHandler._getIconURLForHandlerApp(handler),
-            handlerActionId: Ci.nsIHandlerInfo.useHelperApp,
-            l10nIdArgs: {
-              "app-name": handler.name,
-            },
-          });
-          // Attach the handler app object to the menu item so we can use it
-          // to make changes to the datastore when the user selects the item.
-          menuItem.handlerApp = handler;
-
-          this.actionsMenu.appendChild(menuItem);
-          possibleAppMenuItems.push(menuItem);
-        }
-      }
-    }
-
-    // Create a menu item for selecting a local application.
-    let canOpenWithOtherApp = true;
-    if (AppConstants.platform == "win") {
-      // On Windows, selecting an application to open another application
-      // would be meaningless so we special case executables.
-      let executableType = Cc["@mozilla.org/mime;1"]
-        .getService(Ci.nsIMIMEService)
-        .getTypeFromExtension("exe");
-      canOpenWithOtherApp = handlerInfo.type != executableType;
-    }
-    if (canOpenWithOtherApp) {
-      let menuItem = this._buildActionsMenuOption({
-        value: "choose-app",
-        l10nId: "applications-use-other",
-      });
-      menuItem.className = "choose-app-item";
-      this.actionsMenu.appendChild(menuItem);
-    }
-
-    // Create a menu item for managing applications.
-    if (possibleAppMenuItems.length) {
-      this.actionsMenu.appendChild(document.createElement("hr"));
-
-      const menuItem = this._buildActionsMenuOption({
-        value: "manage-app",
-        l10nId: "applications-manage-app",
-      });
-      menuItem.className = "manage-app-item";
-      this.actionsMenu.appendChild(menuItem);
-    }
-
-    // Select the item corresponding to the preferred action.  If the always
-    // ask flag is set, it overrides the preferred action.  Otherwise we pick
-    // the item identified by the preferred action (when the preferred action
-    // is to use a helper app, we have to pick the specific helper app item).
-    if (handlerInfo.alwaysAskBeforeHandling) {
-      this.actionsMenu.value = askMenuItem.value;
-    } else {
-      // The nsHandlerInfoAction enumeration values in nsIHandlerInfo identify
-      // the actions the application can take with content of various types.
-      // But since we've stopped support for plugins, there's no value
-      // identifying the "use plugin" action, so we use this constant instead.
-      const kActionUsePlugin = 5;
-
-      switch (handlerInfo.preferredAction) {
-        case Ci.nsIHandlerInfo.handleInternally:
-          if (internalMenuItem) {
-            this.actionsMenu.value = internalMenuItem.value;
-          } else {
-            console.error("No menu item defined to set!");
-          }
-          break;
-        case Ci.nsIHandlerInfo.useSystemDefault:
-          // We might not have a default item if we're not aware of an
-          // OS-default handler for this type:
-          this.actionsMenu.value = defaultMenuItem
-            ? defaultMenuItem.value
-            : askMenuItem.value;
-          break;
-        case Ci.nsIHandlerInfo.useHelperApp:
-          if (preferredApp) {
-            let preferredItem = possibleAppMenuItems.find(v =>
-              v.handlerApp.equals(preferredApp)
-            );
-            if (preferredItem) {
-              this.actionsMenu.value = preferredItem.value;
-            } else {
-              // This shouldn't happen, but let's make sure we end up with a
-              // selected item:
-              let possible = possibleAppMenuItems
-                .map(v => v.handlerApp && v.handlerApp.name)
-                .join(", ");
-              console.error(
-                new Error(
-                  `Preferred handler for ${handlerInfo.type} not in list of possible handlers!? (List: ${possible})`
-                )
-              );
-              this.actionsMenu.value = askMenuItem.value;
-            }
-          }
-          break;
-        case kActionUsePlugin:
-          // We no longer support plugins, select "ask" instead:
-          this.actionsMenu.value = askMenuItem.value;
-          break;
-        case Ci.nsIHandlerInfo.saveToDisk:
-          if (saveMenuItem) {
-            this.actionsMenu.value = saveMenuItem.value;
-          }
-          break;
-      }
-    }
+  set showActionsMenu(value) {
+    this.setOrRemoveAttributes([
+      [".actionContainer", "hidden", value],
+      [".actionsMenuContainer", "hidden", !value],
+    ]);
   }
 }
 
@@ -7308,8 +6922,11 @@ class HandlerListItem {
  * This API facilitates dual-model of some localization APIs which
  * may operate on raw strings of l10n id/args pairs.
  *
- * @param {Element} node - Either raw string to be used
- * @param {any} l10n - Either raw string to be used as text value of the element or the l10n-id, or l10n-id + l10n-args
+ * The l10n can be:
+ *
+ * {raw: string} - raw strings to be used as text value of the element
+ * {id: string} - l10n-id
+ * {id: string, args: object} - l10n-id + l10n-args
  */
 function localizeElement(node, l10n) {
   if (l10n.hasOwnProperty("raw")) {
@@ -7613,7 +7230,6 @@ class HandlerInfoWrapper {
   /**
    * @param {number} aSize
    * @param {number} aScale
-   * @returns {string | null}
    */
   _getIcon(aSize, aScale = 1) {
     if (this.primaryExtension) {
@@ -7706,55 +7322,53 @@ const AppFileHandler = (function () {
      */
     selectedHandlerListItem = null;
 
-    /**
-     * @private
-     * @type {MozBoxGroup}
-     */
-    _list;
+    // Sorting & Filtering
 
     /**
-     * Currently-showing handler items.
-     *
-     * @type {Array<HandlerListItem>}
+     * @type {Element | null}
      */
-    items = [];
+    _sortColumn = null;
+
+    // Convenience & Performance Shortcuts
+
+    get _list() {
+      return document.getElementById("handlersView");
+    }
 
     get _filter() {
-      return /** @type {MozInputSearch} */ (
-        document.getElementById("applicationsFilter")
-      );
+      return document.getElementById("filter");
     }
-    /**
-     * Whether the view has already been initialized and built.
-     *
-     * @type {boolean}
-     */
-    initialized = false;
 
     async preInit() {
-      if (this.initialized) {
-        return;
-      }
-      this.initialized = true;
-      this._list = /** @type {MozBoxGroup}**/ (
-        document.getElementById("handlersView")
-      );
-
-      /**
-       * handlersView won't be available in many
-       * test implementations, so skip initializing for those.
-       */
-      if (!this._list) {
-        return;
-      }
+      this._initListEventHandlers();
       this._loadInternalHandlers();
       this._loadApplicationHandlers();
-      await this._list.updateComplete;
 
-      this.headerElement = this._buildHeader();
-      this._list.appendChild(this.headerElement);
       await this._rebuildVisibleTypes();
-      await this._buildView();
+      await this._rebuildView();
+      await this._sortListView();
+    }
+
+    _init() {
+      setEventListener("filter", "MozInputSearch:search", () => this.filter());
+      setEventListener("typeColumn", "click", e => this.sort(e));
+      setEventListener("actionColumn", "click", e => this.sort(e));
+
+      // Figure out how we should be sorting the list.  We persist sort settings
+      // across sessions, so we can't assume the default sort column/direction.
+      // XXX should we be using the XUL sort service instead?
+      if (
+        document.getElementById("actionColumn").hasAttribute("sortDirection")
+      ) {
+        this._sortColumn = document.getElementById("actionColumn");
+        // The typeColumn element always has a sortDirection attribute,
+        // either because it was persisted or because the default value
+        // from the xul file was used.  If we are sorting on the other
+        // column, we should remove it.
+        document.getElementById("typeColumn").removeAttribute("sortDirection");
+      } else {
+        this._sortColumn = document.getElementById("typeColumn");
+      }
     }
 
     async _rebuildVisibleTypes() {
@@ -7816,6 +7430,30 @@ const AppFileHandler = (function () {
       }
     }
 
+    _initListEventHandlers() {
+      this._list.addEventListener("select", event => {
+        if (event.target != this._list) {
+          return;
+        }
+
+        let handlerListItem =
+          this._list.selectedItem &&
+          HandlerListItem.forNode(this._list.selectedItem);
+        if (this.selectedHandlerListItem == handlerListItem) {
+          return;
+        }
+
+        if (this.selectedHandlerListItem) {
+          this.selectedHandlerListItem.showActionsMenu = false;
+        }
+        this.selectedHandlerListItem = handlerListItem;
+        if (handlerListItem) {
+          this.rebuildActionsMenu();
+          handlerListItem.showActionsMenu = true;
+        }
+      });
+    }
+
     /**
      * Load higher level internal handlers so they can be turned on/off in the
      * applications menu.
@@ -7840,110 +7478,33 @@ const AppFileHandler = (function () {
       }
     }
 
-    /**
-     * Creates the header item.
-     *
-     * @return {MozBoxItem}
-     */
-    _buildHeader() {
-      const headerElement = /** @type {MozBoxItem} */ (
-        document.createElement("moz-box-item")
-      );
-      headerElement.slot = "header";
-      this.typeColumn = document.createElement("label");
-      this.typeColumn.setAttribute("data-l10n-id", "applications-type-heading");
-      headerElement.appendChild(this.typeColumn);
+    async _rebuildView() {
+      let lastSelectedType =
+        this.selectedHandlerListItem &&
+        this.selectedHandlerListItem.handlerInfoWrapper.type;
+      this.selectedHandlerListItem = null;
 
-      this.actionColumn = document.createElement("label");
-      this.actionColumn.slot = "actions";
-      this.actionColumn.setAttribute(
-        "data-l10n-id",
-        "applications-action-heading"
-      );
-      headerElement.appendChild(this.actionColumn);
-
-      return headerElement;
-    }
-
-    /**
-     * Sorts the items alphabetically by their label.
-     *
-     * @param {Array<ApplicationFileHandlerItemActionsMenuOption>} unorderedItems
-     * @returns {Array<ApplicationFileHandlerItemActionsMenuOption>}
-     */
-    _sortItems(unorderedItems) {
-      let comp = new Services.intl.Collator(undefined, {
-        usage: "sort",
-      });
-      const textForNode = item => item.getAttribute("label");
-      let multiplier = 1;
-      return unorderedItems.sort(
-        (a, b) => multiplier * comp.compare(textForNode(a), textForNode(b))
-      );
-    }
-
-    async _buildView() {
-      // Hide entire list of items.
-      for (let item of this.items) {
-        item.node.hidden = true;
-      }
-      let itemsFragment = document.createDocumentFragment();
-
-      /**
-       * @type {Array<ApplicationFileHandlerItemActionsMenuOption>}
-       */
-      const unorderedItems = [];
+      // Clear the list of entries.
+      this._list.textContent = "";
 
       var visibleTypes = this._visibleTypes;
-      for (const visibleType of visibleTypes) {
-        const handlerItem = new HandlerListItem(visibleType);
 
-        const node = handlerItem.createNode();
-        unorderedItems.push(node);
-
-        this.items.push(handlerItem);
-
-        let originalValue = handlerItem.actionsMenu.value;
-
-        handlerItem.actionsMenu.addEventListener("change", async e => {
-          const newValue = handlerItem.actionsMenu.value;
-
-          if (newValue !== "choose-app" && newValue !== "manage-app") {
-            /**
-             * Must explicitly wait for MozSelect to update the value
-             * here, because sometimes it hasn't updated yet.
-             */
-            await handlerItem.actionsMenu.updateComplete;
-
-            this._onSelectActionsMenuOption(handlerItem);
-          } else {
-            /**
-             * Temporarily revert the value back to its original
-             * until dialogs interaction ends.
-             */
-            handlerItem.actionsMenu.value = originalValue;
-
-            /**
-             * Prevent change notification to any parent elements.
-             */
-            e.stopPropagation();
-
-            if (newValue === "choose-app") {
-              this.chooseApp(handlerItem);
-            } else {
-              this.manageApp(handlerItem);
-            }
-          }
-
-          originalValue = newValue;
-        });
+      let items = visibleTypes.map(
+        visibleType => new HandlerListItem(visibleType)
+      );
+      let itemsFragment = document.createDocumentFragment();
+      let lastSelectedItem;
+      for (let item of items) {
+        item.createNode(itemsFragment);
+        if (item.handlerInfoWrapper.type == lastSelectedType) {
+          lastSelectedItem = item;
+        }
       }
-      /**
-       * Append items sorted.
-       */
-      const sortedItems = this._sortItems(unorderedItems);
-      for (const element of sortedItems) {
-        itemsFragment.appendChild(element);
+
+      for (let item of items) {
+        item.setupNode();
+        this.rebuildActionsMenu(item.node, item.handlerInfoWrapper);
+        item.refreshAction();
       }
 
       // If the user is filtering the list, then only show matching types.
@@ -7951,31 +7512,105 @@ const AppFileHandler = (function () {
       // be able to filter by localized values.
       if (this._filter.value) {
         await document.l10n.translateFragment(itemsFragment);
-        this.filter();
+
+        this._filterView(itemsFragment);
 
         document.l10n.pauseObserving();
+        this._list.appendChild(itemsFragment);
         document.l10n.resumeObserving();
-      }
-      // Otherwise we can just append the fragment and it'll
-      // get localized via the Mutation Observer.
-
-      for (const element of unorderedItems) {
-        this._list.appendChild(element);
+      } else {
+        // Otherwise we can just append the fragment and it'll
+        // get localized via the Mutation Observer.
+        this._list.appendChild(itemsFragment);
       }
 
-      this._filter.addEventListener("MozInputSearch:search", () =>
-        this.filter()
-      );
+      if (lastSelectedItem) {
+        this._list.selectedItem = lastSelectedItem.node;
+      }
     }
 
     /**
-     * Filter the list based on the term in the filter input.
+     * Sort the list when the user clicks on a column header.
+     *
+     * @param {CustomEvent} event
+     */
+    sort(event) {
+      if (event.button != 0) {
+        return;
+      }
+      var column = event.target;
+
+      // If the user clicked on a new sort column, remove the direction indicator
+      // from the old column.
+      if (this._sortColumn && this._sortColumn != column) {
+        this._sortColumn.removeAttribute("sortDirection");
+      }
+
+      this._sortColumn = column;
+
+      // Set (or switch) the sort direction indicator.
+      if (column.getAttribute("sortDirection") == "ascending") {
+        column.setAttribute("sortDirection", "descending");
+      } else {
+        column.setAttribute("sortDirection", "ascending");
+      }
+
+      this._sortListView();
+    }
+
+    async _sortListView() {
+      if (!this._sortColumn) {
+        return;
+      }
+      let comp = new Services.intl.Collator(undefined, {
+        usage: "sort",
+      });
+
+      await document.l10n.translateFragment(this._list);
+      let items = Array.from(this._list.children);
+
+      let textForNode;
+      if (this._sortColumn.getAttribute("value") === "type") {
+        textForNode = n => n.querySelector(".typeDescription").textContent;
+      } else {
+        textForNode = n =>
+          n.querySelector(".actionsMenu").getAttribute("label");
+      }
+
+      let sortDir = this._sortColumn.getAttribute("sortDirection");
+      let multiplier = sortDir == "descending" ? -1 : 1;
+      items.sort(
+        (a, b) => multiplier * comp.compare(textForNode(a), textForNode(b))
+      );
+
+      // Re-append items in the correct order:
+      items.forEach(item => this._list.appendChild(item));
+    }
+
+    _filterView(frag = this._list) {
+      const filterValue = this._filter.value.toLowerCase();
+      for (let elem of frag.children) {
+        const typeDescription =
+          elem.querySelector(".typeDescription").textContent;
+        const actionDescription = elem
+          .querySelector(".actionDescription")
+          .getAttribute("value");
+        elem.hidden =
+          !typeDescription.toLowerCase().includes(filterValue) &&
+          !actionDescription.toLowerCase().includes(filterValue);
+      }
+    }
+
+    /**
+     * Filter the list when the user enters a filter term into the filter field.
      */
     filter() {
-      const filterValue = this._filter.value.toLowerCase();
-      for (let item of this.items) {
-        item.node.hidden = !item.node.label.toLowerCase().includes(filterValue);
-      }
+      this._rebuildView(); // FIXME: Should this be await since bug 1508156?
+    }
+
+    focusFilterBox() {
+      this._filter.focus();
+      this._filter.select();
     }
 
     // Changes
@@ -7988,108 +7623,104 @@ const AppFileHandler = (function () {
     // necessary, to avoid calling _rebuildView. bug 1499350 has more details.
     _storingAction = false;
 
-    /**
-     * When an option in the actions menu dropdown is selected.
-     *
-     * @param {HandlerListItem} handlerItem
-     */
-    _onSelectActionsMenuOption(handlerItem) {
-      this._storeAction(handlerItem);
-    }
-
-    /**
-     * @param {HandlerListItem} handlerItem
-     */
-    _storeAction(handlerItem) {
+    onSelectAction(aActionItem) {
       this._storingAction = true;
 
       try {
-        var handlerInfo = handlerItem.handlerInfoWrapper;
-        const selectedOption = handlerItem.actionsMenu.querySelector(
-          `moz-option[value="${handlerItem.actionsMenu.value}"]`
-        );
-        let action = parseInt(selectedOption.getAttribute("action"));
-
-        // Set the preferred application handler.
-        // We leave the existing preferred app in the list when we set
-        // the preferred action to something other than useHelperApp so that
-        // legacy datastores that don't have the preferred app in the list
-        // of possible apps still include the preferred app in the list of apps
-        // the user can choose to handle the type.
-        if (action == Ci.nsIHandlerInfo.useHelperApp) {
-          handlerInfo.preferredApplicationHandler = selectedOption.handlerApp;
-        }
-
-        // Set the "always ask" flag.
-        if (action == Ci.nsIHandlerInfo.alwaysAsk) {
-          handlerInfo.alwaysAskBeforeHandling = true;
-        } else {
-          handlerInfo.alwaysAskBeforeHandling = false;
-        }
-
-        // Set the preferred action.
-        handlerInfo.preferredAction = action;
-
-        handlerInfo.store();
+        this._storeAction(aActionItem);
       } finally {
         this._storingAction = false;
       }
     }
 
-    /**
-     * @param {HandlerListItem} handlerItem
-     */
-    manageApp(handlerItem) {
+    _storeAction(aActionItem) {
+      var handlerInfo = this.selectedHandlerListItem.handlerInfoWrapper;
+
+      let action = parseInt(aActionItem.getAttribute("action"));
+
+      // Set the preferred application handler.
+      // We leave the existing preferred app in the list when we set
+      // the preferred action to something other than useHelperApp so that
+      // legacy datastores that don't have the preferred app in the list
+      // of possible apps still include the preferred app in the list of apps
+      // the user can choose to handle the type.
+      if (action == Ci.nsIHandlerInfo.useHelperApp) {
+        handlerInfo.preferredApplicationHandler = aActionItem.handlerApp;
+      }
+
+      // Set the "always ask" flag.
+      if (action == Ci.nsIHandlerInfo.alwaysAsk) {
+        handlerInfo.alwaysAskBeforeHandling = true;
+      } else {
+        handlerInfo.alwaysAskBeforeHandling = false;
+      }
+
+      // Set the preferred action.
+      handlerInfo.preferredAction = action;
+
+      handlerInfo.store();
+
+      // Update the action label and image to reflect the new preferred action.
+      this.selectedHandlerListItem.refreshAction();
+    }
+
+    manageApp(aEvent) {
+      // Don't let the normal "on select action" handler get this event,
+      // as we handle it specially ourselves.
+      aEvent.stopPropagation();
+
+      var handlerInfo = this.selectedHandlerListItem.handlerInfoWrapper;
+
+      let onComplete = () => {
+        // Rebuild the actions menu so that we revert to the previous selection,
+        // or "Always ask" if the previous default application has been removed
+        this.rebuildActionsMenu();
+
+        // update the richlistitem too. Will be visible when selecting another row
+        this.selectedHandlerListItem.refreshAction();
+      };
+
       gSubDialog.open(
         "chrome://browser/content/preferences/dialogs/applicationManager.xhtml",
-        {
-          features: "resizable=no",
-          closedCallback: () => {
-            // Rebuild menu items to reflect any potential modification of apps in the dialog
-            handlerItem.buildActionsMenu();
-          },
-        },
-        handlerItem.handlerInfoWrapper
+        { features: "resizable=no", closingCallback: onComplete },
+        handlerInfo
       );
     }
 
-    /**
-     * @param {HandlerListItem} handlerItem
-     */
-    async chooseApp(handlerItem) {
-      var handlerInfo = handlerItem.handlerInfoWrapper;
-      /**
-       * @type {nsIHandlerApp}
-       */
-      var handlerApp;
-      let chooseAppCallback =
-        /**
-         * @param {nsIHandlerApp} aHandlerApp
-         */
-        aHandlerApp => {
-          // If the user picked a new app from the menu, select it.
-          if (aHandlerApp) {
-            // Rebuild menu items so that newly-selected app shows up in options.
-            handlerItem.buildActionsMenu();
+    async chooseApp(aEvent) {
+      // Don't let the normal "on select action" handler get this event,
+      // as we handle it specially ourselves.
+      aEvent.stopPropagation();
 
-            let actionsMenu = handlerItem.actionsMenu;
-            for (const [idx, menuItem] of [
-              ...actionsMenu.querySelectorAll("moz-option"),
-            ].entries()) {
-              if (
-                menuItem.handlerApp &&
-                menuItem.handlerApp.equals(aHandlerApp)
-              ) {
-                actionsMenu.value = idx + "";
-                this._storeAction(handlerItem);
-                break;
-              }
+      var handlerApp;
+      let chooseAppCallback = aHandlerApp => {
+        // Rebuild the actions menu whether the user picked an app or canceled.
+        // If they picked an app, we want to add the app to the menu and select it.
+        // If they canceled, we want to go back to their previous selection.
+        this.rebuildActionsMenu();
+
+        // If the user picked a new app from the menu, select it.
+        if (aHandlerApp) {
+          let typeItem = this._list.selectedItem;
+          let actionsMenu = typeItem.querySelector(".actionsMenu");
+          let menuItems = actionsMenu.menupopup.childNodes;
+          for (let i = 0; i < menuItems.length; i++) {
+            let menuItem = menuItems[i];
+            if (
+              menuItem.handlerApp &&
+              menuItem.handlerApp.equals(aHandlerApp)
+            ) {
+              actionsMenu.selectedIndex = i;
+              this.onSelectAction(menuItem);
+              break;
             }
           }
-        };
+        }
+      };
 
       if (AppConstants.platform == "win") {
         var params = {};
+        var handlerInfo = this.selectedHandlerListItem.handlerInfoWrapper;
 
         params.mimeInfo = handlerInfo.wrappedHandlerInfo;
         params.title = await document.l10n.formatValue(
@@ -8142,7 +7773,7 @@ const AppFileHandler = (function () {
             handlerApp.executable = fp.file;
 
             // Add the app to the type's list of possible handlers.
-            let handler = handlerItem.handlerInfoWrapper;
+            let handler = this.selectedHandlerListItem.handlerInfoWrapper;
             handler.addPossibleApplicationHandler(handlerApp);
 
             chooseAppCallback(handlerApp);
@@ -8154,6 +7785,263 @@ const AppFileHandler = (function () {
         fp.init(window.browsingContext, winTitle, Ci.nsIFilePicker.modeOpen);
         fp.appendFilters(Ci.nsIFilePicker.filterApps);
         fp.open(fpCallback);
+      }
+    }
+
+    /**
+     * Rebuild the actions menu for the selected entry.  Gets called by
+     * the richlistitem constructor when an entry in the list gets selected.
+     */
+    rebuildActionsMenu(
+      typeItem = this._list.selectedItem,
+      handlerInfo = this.selectedHandlerListItem.handlerInfoWrapper
+    ) {
+      var menu = typeItem.querySelector(".actionsMenu");
+      var menuPopup = menu.menupopup;
+
+      // Clear out existing items.
+      while (menuPopup.hasChildNodes()) {
+        menuPopup.removeChild(menuPopup.lastChild);
+      }
+
+      let internalMenuItem;
+      // Add the "Open in Firefox" option for optional internal handlers.
+      if (
+        handlerInfo instanceof InternalHandlerInfoWrapper &&
+        !handlerInfo.preventInternalViewing
+      ) {
+        internalMenuItem = document.createXULElement("menuitem");
+        internalMenuItem.setAttribute(
+          "action",
+          Ci.nsIHandlerInfo.handleInternally
+        );
+        internalMenuItem.className = "menuitem-iconic";
+        document.l10n.setAttributes(
+          internalMenuItem,
+          "applications-open-inapp"
+        );
+        internalMenuItem.setAttribute(APP_ICON_ATTR_NAME, "handleInternally");
+        menuPopup.appendChild(internalMenuItem);
+      }
+
+      var askMenuItem = document.createXULElement("menuitem");
+      askMenuItem.setAttribute("action", Ci.nsIHandlerInfo.alwaysAsk);
+      askMenuItem.className = "menuitem-iconic";
+      document.l10n.setAttributes(askMenuItem, "applications-always-ask");
+      askMenuItem.setAttribute(APP_ICON_ATTR_NAME, "ask");
+      menuPopup.appendChild(askMenuItem);
+
+      // Create a menu item for saving to disk.
+      // Note: this option isn't available to protocol types, since we don't know
+      // what it means to save a URL having a certain scheme to disk.
+      if (handlerInfo.wrappedHandlerInfo instanceof Ci.nsIMIMEInfo) {
+        var saveMenuItem = document.createXULElement("menuitem");
+        saveMenuItem.setAttribute("action", Ci.nsIHandlerInfo.saveToDisk);
+        document.l10n.setAttributes(saveMenuItem, "applications-action-save");
+        saveMenuItem.setAttribute(APP_ICON_ATTR_NAME, "save");
+        saveMenuItem.className = "menuitem-iconic";
+        menuPopup.appendChild(saveMenuItem);
+      }
+
+      // Add a separator to distinguish these items from the helper app items
+      // that follow them.
+      let menuseparator = document.createXULElement("menuseparator");
+      menuPopup.appendChild(menuseparator);
+
+      // Create a menu item for the OS default application, if any.
+      if (handlerInfo.hasDefaultHandler) {
+        var defaultMenuItem = document.createXULElement("menuitem");
+        defaultMenuItem.setAttribute(
+          "action",
+          Ci.nsIHandlerInfo.useSystemDefault
+        );
+        // If an internal option is available, don't show the application
+        // name for the OS default to prevent two options from appearing
+        // that may both say "Firefox".
+        if (internalMenuItem) {
+          document.l10n.setAttributes(
+            defaultMenuItem,
+            "applications-use-os-default"
+          );
+          defaultMenuItem.setAttribute("image", ICON_URL_APP);
+        } else {
+          document.l10n.setAttributes(
+            defaultMenuItem,
+            "applications-use-app-default",
+            {
+              "app-name": handlerInfo.defaultDescription,
+            }
+          );
+          let image = handlerInfo.iconURLForSystemDefault;
+          if (image) {
+            defaultMenuItem.setAttribute("image", image);
+          }
+        }
+
+        menuPopup.appendChild(defaultMenuItem);
+      }
+
+      // Create menu items for possible handlers.
+      let preferredApp = handlerInfo.preferredApplicationHandler;
+      var possibleAppMenuItems = [];
+      for (let possibleApp of handlerInfo.possibleApplicationHandlers.enumerate()) {
+        if (!this.isValidHandlerApp(possibleApp)) {
+          continue;
+        }
+
+        let menuItem = document.createXULElement("menuitem");
+        menuItem.setAttribute("action", Ci.nsIHandlerInfo.useHelperApp);
+        let label;
+        if (possibleApp instanceof Ci.nsILocalHandlerApp) {
+          label = getFileDisplayName(possibleApp.executable);
+        } else {
+          label = possibleApp.name;
+        }
+        document.l10n.setAttributes(menuItem, "applications-use-app", {
+          "app-name": label,
+        });
+        let image = this._getIconURLForHandlerApp(possibleApp);
+        if (image) {
+          menuItem.setAttribute("image", image);
+        }
+
+        // Attach the handler app object to the menu item so we can use it
+        // to make changes to the datastore when the user selects the item.
+        menuItem.handlerApp = possibleApp;
+
+        menuPopup.appendChild(menuItem);
+        possibleAppMenuItems.push(menuItem);
+      }
+      // Add gio handlers
+      if (gGIOService) {
+        var gioApps = gGIOService.getAppsForURIScheme(handlerInfo.type);
+        let possibleHandlers = handlerInfo.possibleApplicationHandlers;
+        for (let handler of gioApps.enumerate(Ci.nsIHandlerApp)) {
+          // OS handler share the same name, it's most likely the same app, skipping...
+          if (handler.name == handlerInfo.defaultDescription) {
+            continue;
+          }
+          // Check if the handler is already in possibleHandlers
+          let appAlreadyInHandlers = false;
+          for (let i = possibleHandlers.length - 1; i >= 0; --i) {
+            let app = possibleHandlers.queryElementAt(i, Ci.nsIHandlerApp);
+            // nsGIOMimeApp::Equals is able to compare with nsILocalHandlerApp
+            if (handler.equals(app)) {
+              appAlreadyInHandlers = true;
+              break;
+            }
+          }
+          if (!appAlreadyInHandlers) {
+            let menuItem = document.createXULElement("menuitem");
+            menuItem.setAttribute("action", Ci.nsIHandlerInfo.useHelperApp);
+            document.l10n.setAttributes(menuItem, "applications-use-app", {
+              "app-name": handler.name,
+            });
+
+            let image = this._getIconURLForHandlerApp(handler);
+            if (image) {
+              menuItem.setAttribute("image", image);
+            }
+
+            // Attach the handler app object to the menu item so we can use it
+            // to make changes to the datastore when the user selects the item.
+            menuItem.handlerApp = handler;
+
+            menuPopup.appendChild(menuItem);
+            possibleAppMenuItems.push(menuItem);
+          }
+        }
+      }
+
+      // Create a menu item for selecting a local application.
+      let canOpenWithOtherApp = true;
+      if (AppConstants.platform == "win") {
+        // On Windows, selecting an application to open another application
+        // would be meaningless so we special case executables.
+        let executableType = Cc["@mozilla.org/mime;1"]
+          .getService(Ci.nsIMIMEService)
+          .getTypeFromExtension("exe");
+        canOpenWithOtherApp = handlerInfo.type != executableType;
+      }
+      if (canOpenWithOtherApp) {
+        let menuItem = document.createXULElement("menuitem");
+        menuItem.className = "choose-app-item";
+        menuItem.addEventListener("command", function (e) {
+          gMainPane.chooseApp(e);
+        });
+        document.l10n.setAttributes(menuItem, "applications-use-other");
+        menuPopup.appendChild(menuItem);
+      }
+
+      // Create a menu item for managing applications.
+      if (possibleAppMenuItems.length) {
+        let menuItem = document.createXULElement("menuseparator");
+        menuPopup.appendChild(menuItem);
+        menuItem = document.createXULElement("menuitem");
+        menuItem.className = "manage-app-item";
+        menuItem.addEventListener("command", function (e) {
+          gMainPane.manageApp(e);
+        });
+        document.l10n.setAttributes(menuItem, "applications-manage-app");
+        menuPopup.appendChild(menuItem);
+      }
+
+      // Select the item corresponding to the preferred action.  If the always
+      // ask flag is set, it overrides the preferred action.  Otherwise we pick
+      // the item identified by the preferred action (when the preferred action
+      // is to use a helper app, we have to pick the specific helper app item).
+      if (handlerInfo.alwaysAskBeforeHandling) {
+        menu.selectedItem = askMenuItem;
+      } else {
+        // The nsHandlerInfoAction enumeration values in nsIHandlerInfo identify
+        // the actions the application can take with content of various types.
+        // But since we've stopped support for plugins, there's no value
+        // identifying the "use plugin" action, so we use this constant instead.
+        const kActionUsePlugin = 5;
+
+        switch (handlerInfo.preferredAction) {
+          case Ci.nsIHandlerInfo.handleInternally:
+            if (internalMenuItem) {
+              menu.selectedItem = internalMenuItem;
+            } else {
+              console.error("No menu item defined to set!");
+            }
+            break;
+          case Ci.nsIHandlerInfo.useSystemDefault:
+            // We might not have a default item if we're not aware of an
+            // OS-default handler for this type:
+            menu.selectedItem = defaultMenuItem || askMenuItem;
+            break;
+          case Ci.nsIHandlerInfo.useHelperApp:
+            if (preferredApp) {
+              let preferredItem = possibleAppMenuItems.find(v =>
+                v.handlerApp.equals(preferredApp)
+              );
+              if (preferredItem) {
+                menu.selectedItem = preferredItem;
+              } else {
+                // This shouldn't happen, but let's make sure we end up with a
+                // selected item:
+                let possible = possibleAppMenuItems
+                  .map(v => v.handlerApp && v.handlerApp.name)
+                  .join(", ");
+                console.error(
+                  new Error(
+                    `Preferred handler for ${handlerInfo.type} not in list of possible handlers!? (List: ${possible})`
+                  )
+                );
+                menu.selectedItem = askMenuItem;
+              }
+            }
+            break;
+          case kActionUsePlugin:
+            // We no longer support plugins, select "ask" instead:
+            menu.selectedItem = askMenuItem;
+            break;
+          case Ci.nsIHandlerInfo.saveToDisk:
+            menu.selectedItem = saveMenuItem;
+            break;
+        }
       }
     }
 

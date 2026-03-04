@@ -19,18 +19,22 @@ add_task(async function pdfIsAlwaysPresent() {
 
     // First, find the PDF item.
     let pdfItem = container.querySelector(
-      "moz-box-item[type='application/pdf']"
+      "richlistitem[type='application/pdf']"
     );
     Assert.ok(pdfItem, "pdfItem is present in handlersView when " + test);
     if (pdfItem) {
       pdfItem.scrollIntoView({ block: "center" });
+      pdfItem.closest("richlistbox").selectItem(pdfItem);
 
       // Open its menu
       let list = pdfItem.querySelector(".actionsMenu");
+      let popup = list.menupopup;
+      let popupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
       EventUtils.synthesizeMouseAtCenter(list, {}, win);
+      await popupShown;
 
       let handleInternallyItem = list.querySelector(
-        `moz-option[action='${Ci.nsIHandlerInfo.handleInternally}']`
+        `menuitem[action='${Ci.nsIHandlerInfo.handleInternally}']`
       );
 
       is(

@@ -140,21 +140,27 @@ add_task(async function dialogShowsCorrectContent() {
   let container = win.document.getElementById("handlersView");
 
   // First, find the PDF item.
-  let pdfItem = container.querySelector("moz-box-item[type='application/pdf']");
+  let pdfItem = container.querySelector("richlistitem[type='application/pdf']");
   Assert.ok(pdfItem, "pdfItem is present in handlersView.");
   pdfItem.scrollIntoView({ block: "center" });
+  pdfItem.closest("richlistbox").selectItem(pdfItem);
 
   // Open its menu
   let list = pdfItem.querySelector(".actionsMenu");
+  let popup = list.menupopup;
+  let popupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
   EventUtils.synthesizeMouseAtCenter(list, {}, win);
+  await popupShown;
 
   // Then open the dialog
   const promiseDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"
   );
-  list.value = list.querySelector(".manage-app-item").value;
-  list.dispatchEvent(new CustomEvent("change"));
-
+  EventUtils.synthesizeMouseAtCenter(
+    popup.querySelector(".manage-app-item"),
+    {},
+    win
+  );
   let dialogWin = await promiseDialogLoaded;
 
   // Then verify that the description is correct.

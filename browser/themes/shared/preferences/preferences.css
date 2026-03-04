@@ -361,21 +361,62 @@ setting-group:has(> moz-card).spotlight {
   margin: 2px 0;
 }
 
+#filter {
+  flex: 1;
+  margin: 4px 0 8px;
+}
+
 #handlersView {
-  --box-group-max-height: 500px;
+  height: 25em;
+  margin-inline-end: 0;
+}
 
-  moz-box-item.first label {
-    font-weight: var(--font-weight-semibold);
-  }
+#handlersView > richlistitem {
+  min-height: 30px;
+}
 
-  moz-box-item label[slot="actions"],
-  .actionsMenu {
-    width: 270px;
-  }
+#handlersView .actionsMenu {
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  padding-inline-end: 8px;
+}
 
-  moz-box-item[hidden] {
-    display: none;
+#handlersView .actionsMenu::part(label) {
+  margin: 0;
+}
+
+.typeIcon,
+.actionIcon,
+.actionsMenu::part(icon) {
+  height: 16px;
+  width: 16px;
+}
+
+.typeIcon {
+  margin-inline: 10px 9px !important;
+  &:not([srcset]) {
+    visibility: hidden;
   }
+}
+
+#handlersView .actionsMenu::part(icon),
+.actionIcon {
+  margin-inline: 11px 8px !important;
+}
+
+.actionsMenu > menupopup > menuitem {
+  padding-inline-start: 10px !important;
+}
+
+.actionsMenu > menupopup > menuitem > .menu-icon {
+  margin-inline-end: 8px !important;
+}
+
+/* Increase the specifity to override common.inc.css */
+richlistitem[selected] .actionsMenu:focus-visible {
+  outline-offset: -3px;
 }
 
 /* Home Pane */

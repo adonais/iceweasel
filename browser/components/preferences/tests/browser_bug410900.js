@@ -31,7 +31,7 @@ function runTest(win) {
   var rbox = win.document.getElementById("handlersView");
   ok(rbox, "handlersView is present");
 
-  var items = rbox && rbox.getElementsByTagName("moz-box-item");
+  var items = rbox && rbox.getElementsByTagName("richlistitem");
   ok(items && !!items.length, "App handler list populated");
 
   var handlerAdded = false;
