@@ -265,9 +265,11 @@ let DEFAULT_SERVICE_STATUS = {
 
 let STUBS = {
   isEnrolledAndEntitled: undefined,
+  hasUpgraded: undefined,
   enroll: undefined,
   fetchUserInfo: undefined,
   fetchProxyPass: undefined,
+  isLinkedToGuardian: undefined,
 };
 /* exported STUBS */
 
@@ -308,15 +310,23 @@ function setupStubs(stubs = STUBS) {
     IPPEnrollAndEntitleManager,
     "isEnrolledAndEntitled"
   );
-  stubs.enroll = setupSandbox.stub(IPProtectionService.guardian, "enroll");
-  stubs.fetchUserInfo = setupSandbox.stub(
-    IPProtectionService.guardian,
-    "fetchUserInfo"
+  stubs.hasUpgraded = setupSandbox.stub(
+    IPPEnrollAndEntitleManager,
+    "hasUpgraded"
   );
-  stubs.fetchProxyPass = setupSandbox.stub(
-    IPProtectionService.guardian,
-    "fetchProxyPass"
-  );
+
+  const guardianStub = {
+    enroll: setupSandbox.stub(),
+    fetchUserInfo: setupSandbox.stub(),
+    fetchProxyPass: setupSandbox.stub(),
+    isLinkedToGuardian: setupSandbox.stub().resolves(false),
+  };
+  stubs.enroll = guardianStub.enroll;
+  stubs.fetchUserInfo = guardianStub.fetchUserInfo;
+  stubs.fetchProxyPass = guardianStub.fetchProxyPass;
+  stubs.isLinkedToGuardian = guardianStub.isLinkedToGuardian;
+
+  setupSandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
 }
 /* exported setupStubs */
 
@@ -324,6 +334,7 @@ function setupService(
   {
     isSignedIn,
     isEnrolledAndEntitled,
+    hasUpgraded,
     canEnroll,
     entitlement,
     proxyPass,
@@ -336,6 +347,10 @@ function setupService(
 
   if (typeof isEnrolledAndEntitled != "undefined") {
     stubs.isEnrolledAndEntitled.get(() => isEnrolledAndEntitled);
+  }
+
+  if (typeof hasUpgraded != "undefined") {
+    stubs.hasUpgraded.get(() => hasUpgraded);
   }
 
   if (typeof canEnroll != "undefined") {

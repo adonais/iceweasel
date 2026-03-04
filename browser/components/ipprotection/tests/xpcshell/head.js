@@ -76,40 +76,33 @@ const defaultStubOptions = {
 };
 Object.freeze(defaultStubOptions);
 
-function setupStubs(
-  sandbox,
-  aOptions = {
-    ...defaultStubOptions,
-  }
-) {
+function setupStubs(sandbox, aOptions = { ...defaultStubOptions }) {
   const options = { ...defaultStubOptions, ...aOptions };
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
-  sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
-    .resolves(options.isLinkedToGuardian);
-  sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
-    status: 200,
-    error: null,
-    entitlement: options.entitlement,
-  });
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({
-    status: 200,
-    error: null,
-    ok: true,
-  });
-  sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
-    status: 200,
-    error: undefined,
-    pass: new ProxyPass(
-      options.validProxyPass
-        ? createProxyPassToken()
-        : createExpiredProxyPassToken()
-    ),
-    usage: options.proxyUsage,
-  });
-  sandbox
-    .stub(IPProtectionService.guardian, "fetchProxyUsage")
-    .resolves(options.proxyUsage);
+
+  const guardianStub = {
+    isLinkedToGuardian: sandbox.stub().resolves(options.isLinkedToGuardian),
+    fetchUserInfo: sandbox.stub().resolves({
+      status: 200,
+      error: null,
+      entitlement: options.entitlement,
+    }),
+    enroll: sandbox.stub().resolves({ status: 200, error: null, ok: true }),
+    fetchProxyPass: sandbox.stub().resolves({
+      status: 200,
+      error: undefined,
+      pass: new ProxyPass(
+        options.validProxyPass
+          ? createProxyPassToken()
+          : createExpiredProxyPassToken()
+      ),
+      usage: options.proxyUsage,
+    }),
+    fetchProxyUsage: sandbox.stub().resolves(options.proxyUsage),
+  };
+
+  sandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
+  return guardianStub;
 }
 
 /**

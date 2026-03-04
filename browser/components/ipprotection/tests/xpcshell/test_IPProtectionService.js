@@ -210,3 +210,42 @@ add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
   IPProtectionService.uninit();
   sandbox.restore();
 });
+
+/**
+ * Tests that changing the guardian endpoint preference and reinitializing
+ * the service correctly updates the guardian's endpoint configuration.
+ */
+add_task(async function test_guardian_endpoint_updates_on_reinit() {
+  await IPProtectionService.init();
+
+  let guardian1 = IPProtectionService.guardian;
+  Assert.equal(
+    guardian1.guardianEndpoint,
+    "https://vpn.mozilla.org/",
+    "Initial guardian should have default endpoint"
+  );
+
+  Services.prefs.setCharPref(
+    "browser.ipProtection.guardian.endpoint",
+    "https://test.example.com/"
+  );
+
+  IPProtectionService.uninit();
+  await IPProtectionService.init();
+
+  let guardian2 = IPProtectionService.guardian;
+  Assert.equal(
+    guardian2.guardianEndpoint,
+    "https://test.example.com/",
+    "Guardian should have updated endpoint after reinit"
+  );
+
+  Assert.notStrictEqual(
+    guardian1,
+    guardian2,
+    "Guardian instances should be different after reinit"
+  );
+
+  IPProtectionService.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.guardian.endpoint");
+});
