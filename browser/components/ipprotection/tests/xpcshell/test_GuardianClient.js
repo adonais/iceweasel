@@ -13,6 +13,8 @@ const { JsonSchemaValidator } = ChromeUtils.importESModule(
   "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs"
 );
 
+do_get_profile();
+
 function makeGuardianServer(
   arg = {
     enroll: (_request, _response) => {},
@@ -32,13 +34,42 @@ function makeGuardianServer(
   server.registerPathHandler("/api/v1/fpn/status", callbacks.status);
   server.registerPathHandler("/api/v1/fpn/auth", callbacks.enroll);
   server.start(-1);
-  return server;
+
+  return {
+    server,
+    [Symbol.dispose]: () => {
+      server.stop(() => {});
+    },
+  };
 }
 
-const testGuardianConfig = server => ({
-  withToken: async cb => cb("test-token"),
-  guardianEndpoint: `http://localhost:${server.identity.primaryPort}`,
-  fxaOrigin: `http://localhost:${server.identity.primaryPort}`,
+function makeStallHandler() {
+  const stalledResponses = [];
+  return {
+    handler: (_request, response) => {
+      response.processAsync();
+      stalledResponses.push(response);
+    },
+    [Symbol.dispose]: () => {
+      stalledResponses.forEach(r => {
+        try {
+          r.finish();
+        } catch (e) {}
+      });
+      stalledResponses.length = 0;
+    },
+  };
+}
+
+const testGuardianConfig = serverWrapper => ({
+  getToken: async () => {
+    return {
+      token: "test-token",
+      [Symbol.dispose]: () => {},
+    };
+  },
+  guardianEndpoint: `http://localhost:${serverWrapper.server.identity.primaryPort}`,
+  fxaOrigin: `http://localhost:${serverWrapper.server.identity.primaryPort}`,
 });
 
 add_task(async function test_fetchUserInfo() {
@@ -223,8 +254,8 @@ add_task(async function test_fetchUserInfo() {
   testcases
     .map(({ name, sends, expects }) => {
       return async () => {
-        const server = makeGuardianServer({ status: sends });
-        const client = new GuardianClient(testGuardianConfig(server));
+        using serverWrapper = makeGuardianServer({ status: sends });
+        const client = new GuardianClient(testGuardianConfig(serverWrapper));
 
         const { status, entitlement, error } = await client.fetchUserInfo();
 
@@ -274,8 +305,6 @@ add_task(async function test_fetchUserInfo() {
             `${name}: entitlement should be null`
           );
         }
-
-        server.stop();
       };
     })
     .forEach(test => add_task(test));
@@ -377,8 +406,8 @@ add_task(async function test_fetchProxyPass() {
   testcases
     .map(({ name, sends, expects }) => {
       return async () => {
-        const server = makeGuardianServer({ token: sends });
-        const client = new GuardianClient(testGuardianConfig(server));
+        using serverWrapper = makeGuardianServer({ token: sends });
+        const client = new GuardianClient(testGuardianConfig(serverWrapper));
 
         const { status, pass, error, usage } = await client.fetchProxyPass();
 
@@ -435,8 +464,6 @@ add_task(async function test_fetchProxyPass() {
         } else if (expects.validUsage === false) {
           Assert.equal(usage, null, `${name}: usage should be null`);
         }
-
-        server.stop();
       };
     })
     .forEach(test => add_task(test));
@@ -621,8 +648,8 @@ add_task(async function test_fetchProxyPass_quotaExceeded() {
   testcases
     .map(({ name, sends, expects }) => {
       return async () => {
-        const server = makeGuardianServer({ token: sends });
-        const client = new GuardianClient(testGuardianConfig(server));
+        using serverWrapper = makeGuardianServer({ token: sends });
+        const client = new GuardianClient(testGuardianConfig(serverWrapper));
 
         const { status, pass, error, usage, retryAfter } =
           await client.fetchProxyPass();
@@ -663,8 +690,6 @@ add_task(async function test_fetchProxyPass_quotaExceeded() {
             `${name}: retryAfter should match`
           );
         }
-
-        server.stop();
       };
     })
     .forEach(test => add_task(test));
@@ -727,8 +752,8 @@ add_task(async function test_fetchProxyUsage() {
   testcases
     .map(({ name, sends, expects }) => {
       return async () => {
-        const server = makeGuardianServer({ token: sends });
-        const client = new GuardianClient(testGuardianConfig(server));
+        using serverWrapper = makeGuardianServer({ token: sends });
+        const client = new GuardianClient(testGuardianConfig(serverWrapper));
 
         const usage = await client.fetchProxyUsage();
 
@@ -751,8 +776,6 @@ add_task(async function test_fetchProxyUsage() {
             `${name}: usage.reset should be Temporal.Instant`
           );
         }
-
-        server.stop();
       };
     })
     .forEach(test => add_task(test));
@@ -921,4 +944,103 @@ add_task(async function test_ProxyUsage_serialization() {
     originalUsage.reset.toString(),
     "reset preserved through serialization"
   );
+});
+
+add_task(async function test_fetchProxyPass_abort() {
+  using tokenHandler = makeStallHandler();
+  using serverWrapper = makeGuardianServer({ token: tokenHandler.handler });
+
+  const client = new GuardianClient(testGuardianConfig(serverWrapper));
+  const controller = new AbortController();
+  const promise = client.fetchProxyPass(controller.signal);
+
+  do_timeout(10, () => controller.abort());
+
+  await Assert.rejects(
+    promise,
+    err => err.name === "AbortError",
+    "Should reject with abort error"
+  );
+});
+
+add_task(async function test_fetchUserInfo_abort() {
+  using statusHandler = makeStallHandler();
+  using serverWrapper = makeGuardianServer({ status: statusHandler.handler });
+
+  const client = new GuardianClient(testGuardianConfig(serverWrapper));
+  const controller = new AbortController();
+  const promise = client.fetchUserInfo(controller.signal);
+
+  do_timeout(10, () => controller.abort());
+
+  await Assert.rejects(
+    promise,
+    err => err.name === "AbortError",
+    "Should reject with abort error"
+  );
+});
+
+add_task(async function test_fetchProxyUsage_abort() {
+  using tokenHandler = makeStallHandler();
+  using serverWrapper = makeGuardianServer({ token: tokenHandler.handler });
+
+  const client = new GuardianClient(testGuardianConfig(serverWrapper));
+  const controller = new AbortController();
+  const promise = client.fetchProxyUsage(controller.signal);
+
+  do_timeout(10, () => controller.abort());
+
+  await Assert.rejects(
+    promise,
+    err => err.name === "AbortError",
+    "Should reject with abort error"
+  );
+});
+
+add_task(async function test_abort_before_fetch() {
+  using serverWrapper = makeGuardianServer({
+    token: () => {
+      Assert.ok(
+        false,
+        "Should not make network request with pre-aborted signal"
+      );
+    },
+  });
+
+  const client = new GuardianClient(testGuardianConfig(serverWrapper));
+  const controller = new AbortController();
+  controller.abort();
+
+  await Assert.rejects(
+    client.fetchProxyPass(controller.signal),
+    err => err.name === "AbortError",
+    "Should reject immediately with pre-aborted signal"
+  );
+});
+
+add_task(async function test_gConfig_getToken_abort() {
+  const sandbox = sinon.createSandbox();
+
+  try {
+    const { getFxAccountsSingleton } = ChromeUtils.importESModule(
+      "resource://gre/modules/FxAccounts.sys.mjs"
+    );
+    const fxAccounts = getFxAccountsSingleton();
+
+    sandbox.stub(fxAccounts, "getOAuthToken").returns(new Promise(() => {}));
+
+    const client = new GuardianClient();
+    const controller = new AbortController();
+    const promise = client.getToken(controller.signal);
+
+    do_timeout(10, () => controller.abort());
+
+    await Assert.rejects(
+      promise,
+      () => true,
+      "Should reject when abort signal fires during OAuth token fetch"
+    );
+  } finally {
+    sandbox.restore();
+  }
 });

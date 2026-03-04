@@ -24,7 +24,12 @@ function makeGuardianServer(
 }
 
 const testGuardianConfig = server => ({
-  withToken: async cb => cb("test-token"),
+  getToken: async () => {
+    return {
+      token: "test-token",
+      [Symbol.dispose]: () => {},
+    };
+  },
   guardianEndpoint: `http://localhost:${server.identity.primaryPort}`,
   fxaOrigin: `http://localhost:${server.identity.primaryPort}`,
 });

@@ -44,7 +44,7 @@ export class GuardianClient {
   constructor(config = gConfig) {
     this.guardianEndpoint = config.guardianEndpoint;
     this.fxaOrigin = config.fxaOrigin;
-    this.withToken = config.withToken;
+    this.getToken = config.getToken;
   }
   /**
    * Checks the current user's FxA account to see if it is linked to the Guardian service.
@@ -162,6 +162,7 @@ export class GuardianClient {
   /**
    * Fetches a proxy pass from the Guardian service.
    *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the fetch should be aborted
    * @returns {Promise<{error?: string, status?:number, pass?: ProxyPass, usage?: ProxyUsage|null, retryAfter?: string|null}>} Resolves with an object containing either an error string or the proxy pass data and a status code.
    *
    * Return values:
@@ -178,21 +179,20 @@ export class GuardianClient {
    * - 401: The FxA token was rejected.
    * - 5xx: Internal guardian error.
    */
-  async fetchProxyPass() {
-    const response = await this.withToken(async token => {
-      return await fetch(this.#tokenURL, {
-        method: "GET",
-        cache: "no-cache",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+  async fetchProxyPass(abortSignal = null) {
+    using tokenHandle = await this.getToken(abortSignal);
+    const response = await fetch(this.#tokenURL, {
+      method: "GET",
+      cache: "no-cache",
+      headers: {
+        Authorization: `Bearer ${tokenHandle.token}`,
+        "Content-Type": "application/json",
+      },
+      signal: abortSignal,
     });
     if (!response) {
       return { error: "login_needed", usage: null };
     }
-
     const status = response.status;
 
     let usage = null;
@@ -229,6 +229,7 @@ export class GuardianClient {
   /**
    * Fetches the user's entitlement information.
    *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the fetch should be aborted
    * @returns {Promise<{status?: number, entitlement?: Entitlement|null, error?:string}>} A promise that resolves to an object containing the HTTP status code and the user's entitlement information.
    *
    * Status codes to watch for:
@@ -236,16 +237,16 @@ export class GuardianClient {
    * - 404: User is not a proxy user, no entitlement information available.
    * - 401: The FxA token was rejected, probably guardian and fxa mismatch. (i.e guardian-stage and fxa-prod)
    */
-  async fetchUserInfo() {
-    const response = await this.withToken(async token => {
-      return fetch(this.#statusURL, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-cache",
-      });
+  async fetchUserInfo(abortSignal = null) {
+    using tokenHandle = await this.getToken(abortSignal);
+    const response = await fetch(this.#statusURL, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${tokenHandle.token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-cache",
+      signal: abortSignal,
     });
     if (!response) {
       return { error: "login_needed" };
@@ -268,18 +269,19 @@ export class GuardianClient {
   /**
    * Returns the user's proxy usage information, without fetching a new proxy pass.
    *
+   * @param {AbortSignal} abortSignal - Signal for when this function should be aborted
    * @returns {ProxyUsage | null}
    */
-  async fetchProxyUsage() {
-    const response = await this.withToken(async token => {
-      return await fetch(this.#tokenURL, {
-        method: "HEAD",
-        cache: "no-cache",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+  async fetchProxyUsage(abortSignal) {
+    using tokenHandle = await this.getToken(abortSignal);
+    const response = await fetch(this.#tokenURL, {
+      method: "HEAD",
+      cache: "no-cache",
+      signal: abortSignal,
+      headers: {
+        Authorization: `Bearer ${tokenHandle.token}`,
+        "Content-Type": "application/json",
+      },
     });
     if (!response) {
       return null;
@@ -752,21 +754,35 @@ let gConfig = {
    * Destroys the token after use.
    *
    * @template T
-   * @param {(token: string) => T|Promise<T>} cb
-   * @returns {Promise<T|null>}
+   * @param {AbortSignal} abortSignal - An Abort Signal to abort the fetch.
+   * @returns {Promise<{token:string} & Disposable>} - A disposable, that will auto revoke the token after use.
    */
-  withToken: async cb => {
-    const token = await lazy.fxAccounts.getOAuthToken({
-      scope: ["profile", "https://identity.mozilla.com/apps/vpn"],
-    });
+  getToken: async (abortSignal = null) => {
+    let tasks = [
+      lazy.fxAccounts.getOAuthToken({
+        scope: ["profile", "https://identity.mozilla.com/apps/vpn"],
+      }),
+    ];
+    if (abortSignal) {
+      abortSignal.throwIfAborted();
+      tasks.push(
+        new Promise((_, rej) => {
+          abortSignal?.addEventListener("abort", rej, { once: true });
+        })
+      );
+    }
+    const token = await Promise.race(tasks);
     if (!token) {
       return null;
     }
-    const res = await cb(token);
-    lazy.fxAccounts.removeCachedOAuthToken({
+    return {
       token,
-    });
-    return res;
+      [Symbol.dispose]: () => {
+        lazy.fxAccounts.removeCachedOAuthToken({
+          token,
+        });
+      },
+    };
   },
   guardianEndpoint: "",
   fxaOrigin: "",
