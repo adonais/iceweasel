@@ -824,8 +824,13 @@ export class IPProtectionPanel {
         remainingPercent > BANDWIDTH.THIRD_THRESHOLD
       ) {
         threshold = firstWarning;
-      } else if (remainingPercent <= BANDWIDTH.THIRD_THRESHOLD) {
+      } else if (
+        remainingPercent > 0 &&
+        remainingPercent <= BANDWIDTH.THIRD_THRESHOLD
+      ) {
         threshold = secondWarning;
+      } else if (remainingPercent === 0) {
+        threshold = 100;
       }
 
       const lastRecordedThreshold = Services.prefs.getIntPref(
@@ -854,8 +859,10 @@ export class IPProtectionPanel {
         });
       }
 
-      // Show warning only if threshold is 75 or 90 and higher than dismissed threshold
-      if (
+      // Check threshold and clear or set warning
+      if (threshold === 100) {
+        this.setState({ bandwidthWarning: false });
+      } else if (
         (threshold === firstWarning || threshold === secondWarning) &&
         threshold > this.#lastBandwidthWarningMessageDismissed
       ) {

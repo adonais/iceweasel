@@ -82,6 +82,12 @@ class IPProtectionInfobarManagerClass {
       // Calculate what percentage of bandwidth remains
       const remainingPercent = Number(usage.remaining) / Number(usage.max);
 
+      if (remainingPercent === 0) {
+        this.#hideInfobar(75);
+        this.#hideInfobar(90);
+        return;
+      }
+
       // Show 90% warning when 10% or less bandwidth remains
       if (remainingPercent <= 0.1) {
         this.#showInfobar(90, usage);

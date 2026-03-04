@@ -214,6 +214,54 @@ add_task(async function test_remove_infobar_after_sign_out() {
   cleanupService();
 });
 
+add_task(async function test_hide_infobars_at_zero_remaining() {
+  IPProtectionInfobarManager.init();
+
+  dispatchUsageEvent(0.08);
+
+  await TestUtils.waitForCondition(
+    () =>
+      window.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-90"
+      ),
+    "Wait for 90% notification to appear"
+  );
+
+  Assert.ok(
+    window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-90"
+    ),
+    "90% notification should be present before bandwidth is exhausted"
+  );
+
+  dispatchUsageEvent(0);
+
+  await TestUtils.waitForCondition(
+    () =>
+      !window.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-90"
+      ),
+    "Wait for 90% notification to be removed when bandwidth is exhausted"
+  );
+
+  Assert.equal(
+    window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-90"
+    ),
+    null,
+    "90% notification should be removed when bandwidth is exhausted"
+  );
+  Assert.equal(
+    window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-75"
+    ),
+    null,
+    "75% notification should not be present when bandwidth is exhausted"
+  );
+
+  IPProtectionInfobarManager.uninit();
+});
+
 add_task(async function test_handles_missing_usage_data() {
   IPProtectionInfobarManager.init();
 

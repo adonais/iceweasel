@@ -455,8 +455,8 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
   );
   Assert.equal(
     threshold,
-    90,
-    "bandwidthThreshold pref should be 90 when remaining bandwidth is zero"
+    100,
+    "bandwidthThreshold pref should be 100 when remaining bandwidth is zero"
   );
 
   ipProtectionPanel.uninit();
