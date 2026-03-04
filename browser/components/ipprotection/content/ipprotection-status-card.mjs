@@ -53,21 +53,16 @@ export default class IPProtectionStatusCard extends MozLitElement {
   }
 
   handleButtonClick() {
-    if (!this.protectionEnabled) {
-      this.dispatchEvent(
-        new CustomEvent(this.TOGGLE_ON_EVENT, {
-          bubbles: true,
-          composed: true,
-        })
-      );
-    } else {
-      this.dispatchEvent(
-        new CustomEvent(this.TOGGLE_OFF_EVENT, {
-          bubbles: true,
-          composed: true,
-        })
-      );
-    }
+    const type =
+      this.isActivating || this.protectionEnabled
+        ? this.TOGGLE_OFF_EVENT
+        : this.TOGGLE_ON_EVENT;
+    this.dispatchEvent(
+      new CustomEvent(type, {
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   focus() {
@@ -160,7 +155,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
           buttonL10nId: "ipprotection-button-connecting",
           iconSrc: "chrome://global/skin/icons/loading.svg",
           buttonType: "primary",
-          buttonDisabled: true,
+          buttonDisabled: false,
         })}
       `;
     }

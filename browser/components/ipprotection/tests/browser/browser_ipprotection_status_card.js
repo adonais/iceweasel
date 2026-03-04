@@ -322,12 +322,6 @@ add_task(async function test_status_card_connecting() {
 
   checkLocationAndBandwidth(statusBoxEl, mockLocation, mockBandwidthUsage);
 
-  const button = statusCard.actionButtonEl;
-  Assert.ok(
-    button?.disabled,
-    "Button in connecting state should be present and disabled"
-  );
-
   await closePanel();
   await cleanupStatusCardTest();
 });
