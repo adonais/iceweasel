@@ -50,7 +50,7 @@ Proxy states
 - ``READY``: Service is ``READY`` and the proxy can be activated.
 - ``ACTIVATING``: ``start()`` is creating a channel filter, fetching a proxy pass, and selecting an endpoint.
 - ``ACTIVE``: Proxy connected. Usage and network observers are reporting metrics.
-- ``ERROR``: A recoverable error occurred while activating or rotating credentials. Errors are kept in a bounded history.
+- ``ERROR``: An unrecoverable error occurred while the proxy is connected such as failing when rotating credentials. Stop must be called to change states.
 - ``PAUSED``: Everything is working but the bandwidth limit has been reached so we can't connect to the VPN. The bandwidth will reset next month.
 
 Proxy transitions
@@ -61,7 +61,8 @@ Proxy transitions
   - Any other service state → proxy ``NOT_READY`` (stops active connections).
 - ``start(userAction)`` from ``READY`` moves to ``ACTIVATING``.
   - Successful activation → ``ACTIVE`` and telemetry ``ipprotection.toggled``.
-  - Failures (missing entitlement, server list, proxy pass…) → ``ERROR`` via ``#setErrorState``.
+  - Failures during activation (missing entitlement, server list, proxy pass…) call ``updateState()`` to demote the proxy back to its previous state.
+  - Errors after the proxy is connected  → ``ERROR`` via ``#setErrorState``.
 - ``stop(userAction)`` from ``ACTIVE`` → ``READY`` after closing the channel filter and observers.
 - ``reset()`` or helper‑driven recomputations call ``updateState()`` which demotes the proxy back to ``READY``/``NOT_READY`` and clears the credential cache.
 - Network errors (``proxy-http-error`` with 401) trigger Proxy Pass rotation while staying ``ACTIVE``; repeated failures bubble up through ``#setErrorState``.

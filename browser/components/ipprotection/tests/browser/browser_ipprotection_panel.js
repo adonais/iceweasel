@@ -147,7 +147,9 @@ add_task(async function test_user_enable_count() {
   );
   Assert.equal(initialCount, 0, "userEnableCount should start at 0");
 
-  let startStub = sinon.stub(lazy.IPPProxyManager, "start");
+  let startStub = sinon
+    .stub(lazy.IPPProxyManager, "start")
+    .resolves({ started: true });
 
   let button = document.getElementById(lazy.IPProtectionWidget.WIDGET_ID);
 

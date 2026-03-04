@@ -150,6 +150,17 @@ export class IPProtectionPanel {
   }
 
   /**
+   * Gets the toolbar for this panel's window
+   *
+   * @return {IPProtectionToolbarButton|undefined}
+   *  The toolbarbutton element, or undefined if the window has been garbage collected.
+   */
+  get toolbarButton() {
+    const win = this.#window.get();
+    return lazy.IPProtection.getToolbarButton(win);
+  }
+
+  /**
    * Check the state of the enclosing panel to see if
    * it is active (open or showing).
    */
@@ -281,12 +292,20 @@ export class IPProtectionPanel {
     panelEl.requestUpdate();
   }
 
-  #startProxy() {
-    lazy.IPPProxyManager.start();
+  async #startProxy() {
+    const { started, error } = await lazy.IPPProxyManager.start(true);
+    if (!started) {
+      const errorMessage =
+        error == ERRORS.NETWORK ? ERRORS.NETWORK : ERRORS.GENERIC;
+      this.setState({
+        error: errorMessage,
+      });
+      this.toolbarButton?.updateState(null, { error: errorMessage });
+    }
   }
 
-  #stopProxy() {
-    lazy.IPPProxyManager.stop();
+  async #stopProxy() {
+    await lazy.IPPProxyManager.stop();
   }
 
   /**
@@ -498,6 +517,7 @@ export class IPProtectionPanel {
         this.setState({
           error: "",
         });
+        this.toolbarButton?.updateState(null, { error: "" });
       }
     }
   }
@@ -723,17 +743,9 @@ export class IPProtectionPanel {
       event.type == "IPProtectionService:StateChanged" ||
       event.type === "IPPEnrollAndEntitleManager:StateChanged"
     ) {
-      let hasError =
-        lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR &&
-        (lazy.IPPProxyManager.errors.includes(ERRORS.GENERIC) ||
-          lazy.IPPProxyManager.errors.includes(ERRORS.NETWORK));
-
       let errorType = "";
-      if (hasError) {
-        // Prioritize network error over generic error
-        errorType = lazy.IPPProxyManager.errors.includes(ERRORS.NETWORK)
-          ? ERRORS.NETWORK
-          : ERRORS.GENERIC;
+      if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR) {
+        errorType = ERRORS.GENERIC;
       }
 
       this.setState({

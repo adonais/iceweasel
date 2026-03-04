@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { ERRORS } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
@@ -12,8 +11,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPPExceptionsManager:
     "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs",
-  IPPNetworkUtils:
-    "moz-src:///browser/components/ipprotection/IPPNetworkUtils.sys.mjs",
   IPPProxyManager:
     "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
@@ -65,6 +62,7 @@ export class IPProtectionToolbarButton {
     const win = this.#window.get();
     return win?.gBrowser;
   }
+
   /**
    * Gets the value of the pref
    * browser.ipProtection.features.siteExceptions.
@@ -106,7 +104,6 @@ export class IPProtectionToolbarButton {
     this.#window = Cu.getWeakReference(window);
     this.#widgetId = widgetId;
     this.handleEvent = this.#handleEvent.bind(this);
-    this.observeOfflineStatus = this.#observeOfflineStatus.bind(this);
 
     this.#addProgressListener();
     lazy.IPProtectionService.addEventListener(
@@ -120,11 +117,6 @@ export class IPProtectionToolbarButton {
     lazy.IPPExceptionsManager.addEventListener(
       "IPPExceptionsManager:ExclusionChanged",
       this.handleEvent
-    );
-
-    Services.obs.addObserver(
-      this.observeOfflineStatus,
-      "network:offline-status-changed"
     );
 
     if (this.gBrowser?.tabContainer) {
@@ -184,28 +176,15 @@ export class IPProtectionToolbarButton {
    */
   #handleEvent(event) {
     if (
-      event.type === "IPProtectionService:StateChanged" ||
-      event.type === "IPPProxyManager:StateChanged" ||
-      event.type === "IPPExceptionsManager:ExclusionChanged"
+      event.type !== "IPProtectionService:StateChanged" &&
+      event.type !== "IPPProxyManager:StateChanged" &&
+      event.type !== "IPPExceptionsManager:ExclusionChanged" &&
+      event.type !== "TabSelect"
     ) {
-      this.updateState();
-    } else if (event.type === "TabSelect") {
-      this.updateState();
+      return;
     }
-  }
 
-  /**
-   * Observer for network offline status changes.
-   * Updates the state for every change in case we need to show a different icon.
-   *
-   * @param {nsISupports} _subject
-   * @param {string} topic
-   * @param {string} _data
-   */
-  #observeOfflineStatus(_subject, topic, _data) {
-    if (topic === "network:offline-status-changed") {
-      this.updateState();
-    }
+    this.updateState();
   }
 
   /**
@@ -218,7 +197,8 @@ export class IPProtectionToolbarButton {
    *    exclusion state for a site has changed in ipp-vpn
    * 4. After a location change / page navigation
    * 5. After tab switching
-   * 6. After offline network status changes
+   * 7. After an IPPProxyManager error event occurs
+   * 8. The panel opens or closes.
    *
    * @param {XULElement|null} [toolbaritem]
    *  Optional toolbaritem to update directly.
@@ -228,8 +208,13 @@ export class IPProtectionToolbarButton {
    *  Optional options object
    * @param {boolean} [options.showConfirmationHint=true]
    *  Whether to show confirmation hints for navigation to excluded sites
+   * @param {string} [options.error=undefined]
+   *  Error type to show.
    */
-  updateState(toolbaritem = null, options = { showConfirmationHint: true }) {
+  updateState(
+    toolbaritem = null,
+    options = { showConfirmationHint: true, error: undefined }
+  ) {
     const win = this.#window.get();
     if (!win) {
       return;
@@ -247,13 +232,11 @@ export class IPProtectionToolbarButton {
 
     let isActive = lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
 
-    // Show error icon when proxy manager is in ERROR state or when offline
+    // Show error icon when proxy manager is in ERROR state.
     let hasProxyError =
-      lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR &&
-      (lazy.IPPProxyManager.errors.includes(ERRORS.GENERIC) ||
-        lazy.IPPProxyManager.errors.includes(ERRORS.NETWORK));
-    let isOffline = lazy.IPPNetworkUtils.isOffline;
-    let isError = hasProxyError || isOffline;
+      lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR;
+
+    let isError = hasProxyError || !!options.error;
 
     const showConfirmationHint = options.showConfirmationHint ?? true;
     if (showConfirmationHint) {
@@ -400,11 +383,6 @@ export class IPProtectionToolbarButton {
     lazy.IPPExceptionsManager.removeEventListener(
       "IPPExceptionsManager:ExclusionChanged",
       this.handleEvent
-    );
-
-    Services.obs.removeObserver(
-      this.observeOfflineStatus,
-      "network:offline-status-changed"
     );
   }
 }

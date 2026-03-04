@@ -180,6 +180,20 @@ class IPProtectionWidget {
   }
 
   /**
+   * Get the IPProtectionToolbarButton for a given window.
+   *
+   * @param {Window} window - which window to get the toolbar button for.
+   * @returns {IPProtectionToolbarButton}
+   */
+  getToolbarButton(window) {
+    if (!this.created) {
+      return null;
+    }
+
+    return this.#toolbarButtons.get(window);
+  }
+
+  /**
    * Remove all panels content, but maintains state for if the widget is
    * re-enabled in the same window.
    *

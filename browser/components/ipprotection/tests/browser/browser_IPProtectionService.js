@@ -271,8 +271,8 @@ add_task(async function test_IPProtectionService_pass_errors() {
 
   Assert.equal(
     IPPProxyManager.state,
-    IPPProxyStates.ERROR,
-    "Proxy is not active"
+    IPPProxyStates.READY,
+    "Proxy should be in READY state when activation fails"
   );
 
   let statusBox = content.statusBoxEl;
@@ -302,9 +302,6 @@ add_task(async function test_IPProtectionService_pass_errors() {
   await closePanel();
 
   Assert.equal(content.state.error, "", "Should have no error");
-
-  // Reset the errors
-  IPPProxyManager.errors = [];
 
   await cleanupAlpha();
   cleanupService();
