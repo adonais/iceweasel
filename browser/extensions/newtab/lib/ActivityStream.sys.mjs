@@ -1426,6 +1426,22 @@ export const PREFS_CONFIG = new Map([
       value: true,
     },
   ],
+  [
+    "activationWindow.variant",
+    {
+      title:
+        "Set to the activation window variant if in activation window mode, otherwise the empty string.",
+      value: "",
+    },
+  ],
+  [
+    "selfLoading.enabled",
+    {
+      title:
+        "Communicates to AboutNewTabChild whether or not it should load the classic scripts or do nothing.",
+      value: false,
+    },
+  ],
 ]);
 
 // Array of each feed's FEEDS_CONFIG factory and values to add to PREFS_CONFIG
