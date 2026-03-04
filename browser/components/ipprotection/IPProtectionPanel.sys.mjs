@@ -760,6 +760,10 @@ export class IPProtectionPanel {
         isActivating:
           lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING,
         bandwidthUsage: this.#getBandwidthUsage(),
+        bandwidthWarning:
+          lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
+            ? this.state.bandwidthWarning
+            : false,
       });
     } else if (event.type == "IPPExceptionsManager:ExclusionChanged") {
       this.#updateSiteData();

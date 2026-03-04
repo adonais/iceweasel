@@ -451,6 +451,9 @@ export default class IPProtectionContentElement extends MozLitElement {
       !this._messageDismissed
     ) {
       this._showMessageBar = true;
+    } else if (!this.state.onboardingMessage && !this.state.bandwidthWarning) {
+      // Remove the message bar if we can no longer render messages before they were dismissed
+      this._showMessageBar = false;
     }
 
     const messageBar = this._showMessageBar ? this.messageBarTemplate() : null;

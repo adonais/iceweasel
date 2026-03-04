@@ -299,3 +299,45 @@ add_task(async function test_dismiss() {
 
   await closePanel();
 });
+
+/**
+ * Tests that signing out removes the bandwidth warning from the panel.
+ */
+add_task(async function test_remove_warning_after_sign_out() {
+  setupService({ isSignedIn: true, isEnrolledAndEntitled: true });
+  IPProtectionService.updateState();
+
+  let content = await openPanel({
+    bandwidthWarning: true,
+    bandwidthUsage: mockBandwidthUsage,
+  });
+
+  await BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  let messageBar = content.shadowRoot.querySelector("ipprotection-message-bar");
+  Assert.ok(messageBar, "Message bar should be present");
+
+  let messageBarUnloadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => !content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  setupService({ isSignedIn: false });
+  IPProtectionService.updateState();
+
+  await content.updateComplete;
+  await messageBarUnloadedPromise;
+
+  Assert.ok(
+    !content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Message bar should be removed after sign out"
+  );
+
+  await closePanel();
+  cleanupService();
+});
