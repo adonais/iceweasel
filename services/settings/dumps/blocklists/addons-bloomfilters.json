@@ -2,6 +2,256 @@
   "data": [
     {
       "stash": {
+        "blocked": [
+          "{5023aff9-0c05-464d-be53-581c635f0279}:1.0",
+          "{5023aff9-0c05-464d-be53-581c635f0279}:2.0.0",
+          "{5023aff9-0c05-464d-be53-581c635f0279}:3.0.0",
+          "kaceyberas3673511000@gmail.com:2.0",
+          "kaceyberas367351100@gmail.com:1.9",
+          "kaceyberas36735110@gmail.com:1.8",
+          "kaceyberas3673510@gmail.com:1.7"
+        ],
+        "unblocked": [],
+        "softblocked": [
+          "synchro-maestro@ococo.ovh:1.2",
+          "{f9100695-27ad-4ef5-ae20-78e92170bcd5}:1.0",
+          "favory@sp4ce.pw:3.1.8",
+          "favory@sp4ce.pw:3.1.9",
+          "favory@sp4ce.pw:3.2.1",
+          "gob@grandingroup.it:1.0.3",
+          "gob20260203@grandingroup.it:1.1",
+          "pocket-colors@yourname.com:1.0.1",
+          "{8037a9de-1726-4bdb-80a6-70c49cd73951}:1.0",
+          "franks-native-streamer@local.fedora:5.0",
+          "{e971594a-901e-47ee-a9bd-6067a75662fe}:1.0",
+          "arek.moga@gmail.com:2.6"
+        ]
+      },
+      "schema": 1772541381408,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772562906858,
+      "id": "638ff7d5-3d10-4beb-a743-c20142de3330",
+      "last_modified": 1772562996810
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "yanima-shiki-integration-unlisted@example.com:2.3.8",
+          "{b69842c8-a315-4f6c-af2f-87c366b741f2}:3.0",
+          "pin-link@local.test:0.4.1",
+          "ZenTab@0.0.1-b:0.0.1",
+          "ZenTab@0.0.1-b:0.0.2",
+          "blockai@gav.ink:1.0.0",
+          "yanima-shiki-integration-unlisted@example.com:2.4.2",
+          "addon@sci-helper:1.20260303",
+          "{931b8dc6-63af-4fb4-a353-8f2381b1d587}:1.0",
+          "youran-tab@youran.dev:0.0.1",
+          "youran-tab@youran.dev:0.0.2",
+          "floatingpanel@manhtran.dev:1.1"
+        ]
+      },
+      "schema": 1772519797024,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772541305667,
+      "id": "76f0a039-6e3e-4751-8dd5-6df280a1a63b",
+      "last_modified": 1772541381219
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "zoho-flow-var-inspector@extension:3.3",
+          "zoho-flow-var-inspector@extension:3.4",
+          "{7a0d2cb5-3858-45de-99a6-39b36d9922d2}:1.7.5",
+          "{7a0d2cb5-3858-45de-99a6-39b36d9922d2}:1.7.8",
+          "{7a0d2cb5-3858-45de-99a6-39b36d9922d2}:1.7.9",
+          "{bd957a3a-9e98-4a6e-b547-fdfd932e9464}:1.0.0",
+          "eemjhliengnnmjmbdjagekdddmkhanna@CWS_CRXInstaller:1.1.2",
+          "inf.persistence@gmail.com:0.1.0",
+          "eemjhliengnnmjmbdjagekdddmkhanna@fanta.ima:1.1.2"
+        ]
+      },
+      "schema": 1772498194453,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772519706648,
+      "id": "b3828a63-c253-49f2-a721-f39eae4b58e6",
+      "last_modified": 1772519796689
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "{c1c278fc-b7ed-4cf0-b056-bff8699634fb}:1.0",
+          "nostr-wot@dandelionlabs.io:0.2.0",
+          "{38aec037-47aa-49c3-a124-e5c27ac89db7}:1.0",
+          "{38aec037-47aa-49c3-a124-e5c27ac89db7}:2.0",
+          "enhancer@goldenfox.com:21.0.1"
+        ]
+      },
+      "schema": 1772476596693,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772498106737,
+      "id": "aa9b153d-6bb5-4283-ae11-5e02f827655e",
+      "last_modified": 1772498194195
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "smart-contact-new@cynetcorp.com:1.0.0",
+          "magicoderpro@medbrains.it:1.1.1",
+          "magicoderpro@medbrains.it:1.2.0",
+          "magicoderpro@medbrains.it:1.3.0",
+          "magicoderpro@medbrains.it:1.3.1",
+          "{1203c47a-bb84-4cf2-9cfe-75165155f2e3}:1.0",
+          "{3b143d54-7b63-4ec9-8157-a252d4fa9a89}:1.0",
+          "aula-fixer@tussockyjoker.com:1.4.2",
+          "{41bcc6f2-efbd-4221-8de0-3cc3e7f275ab}:1.0",
+          "{23ef2566-263b-4cb2-b142-131fdce5e35a}:1.0",
+          "{78220b65-f6c2-47b4-a035-246ed24f9ca8}:1.0",
+          "demonstration@email.com:1.0.0.1",
+          "demonstration@email.com:1.0.1",
+          "demonstration@email.com:1.0.2",
+          "demonstration@email.com:1.0.3",
+          "demonstration@email.com:1.0.4",
+          "demonstration@email.com:1.0.5",
+          "demonstration@email.com:1.0.6",
+          "demonstration@email.com:1.0.7",
+          "chzzk-quality-cqc@ext:1.3",
+          "@shopfloor-buddy-extension:0.0.0",
+          "metayoshi@metayoshi.app:0.0.2",
+          "chaitanya.sondur@forcepoint.com:3.2.19",
+          "chaitanya.sondur@forcepoint.com:3.2.19.1001",
+          "chaitanya.sondur@forcepoint.com:3.2.19.1002",
+          "chaitanya.sondur@forcepoint.com:3.2.19.1003",
+          "paywall-bypass@example.com:1.0.1",
+          "paywall-bypass@example.com:1.0.2"
+        ]
+      },
+      "schema": 1772454994352,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772476507130,
+      "id": "b488e26e-e7da-4d3c-adee-5c3efc84cd13",
+      "last_modified": 1772476596354
+    },
+    {
+      "stash": {
+        "blocked": [
+          "focusmode3158@cleanread.dev:1.0.0",
+          "focusmode3158@cleanread.dev:2.0.0",
+          "focusmode3158@cleanread.dev:3.0.0",
+          "pageruler6720@measuretools.com:1.0.0",
+          "pageruler6720@measuretools.com:2.0.0",
+          "pageruler6720@measuretools.com:3.0.0",
+          "colorpicker4619@designtools.org:1.0.0",
+          "colorpicker4619@designtools.org:2.0.0",
+          "colorpicker4619@designtools.org:3.0.0",
+          "{16dcb35f-7c06-4300-8abe-c57298278f99}:1.1",
+          "{16dcb35f-7c06-4300-8abe-c57298278f99}:101.9",
+          "{f295ae67-0243-4fe6-a12d-4e038c65c05c}:1.1",
+          "{f295ae67-0243-4fe6-a12d-4e038c65c05c}:292.1",
+          "{0f75d598-e1cf-49a5-a812-f85f787bc388}:1.1",
+          "{0f75d598-e1cf-49a5-a812-f85f787bc388}:33.1",
+          "{4ac5bc83-0111-4676-90d9-3b3f674b8e25}:1.0",
+          "{4ac5bc83-0111-4676-90d9-3b3f674b8e25}:301.1.3",
+          "{72e8a3ba-d0ce-422b-acd0-60d79ea6499f}:1.2",
+          "{72e8a3ba-d0ce-422b-acd0-60d79ea6499f}:201.1",
+          "{0e1c8acd-8336-47bc-b19c-a03dc540c314}:1.1",
+          "{0e1c8acd-8336-47bc-b19c-a03dc540c314}:101.1",
+          "{c873a6e7-a5ea-4284-8cbb-4f324ccd0d6a}:2.5.6",
+          "{62f93f7d-ebbe-4aee-b68f-5a647ad11a57}:1.0",
+          "{5fe955fc-3926-4f09-aed3-8c69fba9e1da}:1.0",
+          "{ab2c7885-469b-4bf1-88ab-f6dad958d63f}:1.0",
+          "{43c27967-d5b0-446b-8c80-ec3d17a3956f}:1.0",
+          "{9dfd8477-f142-4923-9ed8-79b7178ade24}:1.0",
+          "{e942e096-e514-40a3-ba14-0069c331a1bc}:1.0",
+          "{eeb7f220-15a0-47b7-b385-4f140787a144}:1.0",
+          "{eeb7f220-15a0-47b7-b385-4f140787a144}:1.11",
+          "{da1ce71f-b5ae-4b86-bfbb-0111d6e1df23}:1.0",
+          "{da1ce71f-b5ae-4b86-bfbb-0111d6e1df23}:1.9",
+          "{5be545eb-e8fe-4167-8aff-7680214d4f4d}:2.31",
+          "{5be545eb-e8fe-4167-8aff-7680214d4f4d}:10.5.3",
+          "{a454adc1-426f-4c11-9a13-20234fc8bfcb}:2.32",
+          "{a454adc1-426f-4c11-9a13-20234fc8bfcb}:11.0",
+          "{fea0c929-b269-417d-9e7c-f7f434ce3742}:2.31",
+          "{9afc3a78-6d82-4210-b7c0-64af5e01a785}:1.1",
+          "{9afc3a78-6d82-4210-b7c0-64af5e01a785}:2.1",
+          "{9afc3a78-6d82-4210-b7c0-64af5e01a785}:109.0.1"
+        ],
+        "unblocked": [],
+        "softblocked": [
+          "yanima-shiki-integration-unlisted@example.com:2.2.7",
+          "yanima-shiki-integration-unlisted@example.com:2.3.7",
+          "zappr-qr-scanner@zappr.app:0.1",
+          "joinwhilesave@firefox.whilesave.com:1.1.1",
+          "joinwhilesave@firefox.whilesave.com:1.1.2",
+          "teamsnosleep@zubsero:1.0.0",
+          "{6ead2498-157e-4881-a4f1-9e5423bbc424}:1.0.0",
+          "visualizer-firefox@zgame:6.0"
+        ]
+      },
+      "schema": 1772433390726,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772454907099,
+      "id": "af71c2a8-66cd-429c-aa08-654d075b25c4",
+      "last_modified": 1772454994048
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "{02d1d8b5-1a0d-4be5-bed3-2c331a8c9e5e}:1.0",
+          "yanima-shiki-integration-unlisted@example.com:2.1.2",
+          "yanima-shiki-integration-unlisted@example.com:2.2.6",
+          "CryptoProhome@example.com:1.2",
+          "CryptoProhome@example.com:1.3",
+          "CryptoProhome@example.com:1.4",
+          "CryptoProhome@example.com:1.5",
+          "zodiaque@pno.com:2.6.10",
+          "zodiaque@pno.com:2.6.11",
+          "{bd2d469d-2670-405f-be9d-4a671b7c3433}:1.0.115",
+          "{bd2d469d-2670-405f-be9d-4a671b7c3433}:1.0.116",
+          "{bd2d469d-2670-405f-be9d-4a671b7c3433}:1.0.117",
+          "{bd2d469d-2670-405f-be9d-4a671b7c3433}:1.0.118"
+        ]
+      },
+      "schema": 1772411792498,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772433306637,
+      "id": "fb4f3e9e-428d-4912-b206-4aa2348ab593",
+      "last_modified": 1772433390582
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "@laurentsarrazin.amnesia:1.4.1",
+          "yt-sidebar-filter@yourname.public:1.1.0",
+          "{7ee9d295-eeff-4335-8a64-52615de03cab}:1.0",
+          "{589210a6-4e75-419e-a324-0081e844ffcf}:2.0.2",
+          "{9f3c2a8e-1b4d-4f7a-9c3e-2d1b6a8f0c4e}:1.1.1",
+          "{9f3c2a8e-1b4d-4f7a-9c3e-2d1b6a8f0c4e}:1.1.4",
+          "{9f3c2a8e-1b4d-4f7a-9c3e-2d1b6a8f0c4e}:1.2.8",
+          "{afe43e40-b828-410f-ad16-0d2a1b1c9a83}:1.0",
+          "br-inspector@isekai-nextgen.com:1.0.7",
+          "anef-extension@letranger-dev.com:2.0.4.1"
+        ]
+      },
+      "schema": 1772390194532,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1772411706201,
+      "id": "d6ecb0ef-05a4-46f0-9155-d0ed62235733",
+      "last_modified": 1772411792240
+    },
+    {
+      "stash": {
         "blocked": [],
         "unblocked": [],
         "softblocked": [
@@ -9048,5 +9298,5 @@
       "last_modified": 1767875945345
     }
   ],
-  "timestamp": 1772390194304
+  "timestamp": 1772562996810
 }
