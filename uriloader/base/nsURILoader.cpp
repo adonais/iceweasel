@@ -41,6 +41,7 @@
 #include "nsMimeTypes.h"
 
 #include "nsDocLoader.h"
+#include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Result.h"
@@ -566,7 +567,10 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
     }
   }
 
-  if (mFlags & nsIURILoader::DONT_RETARGET) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  if (mFlags & nsIURILoader::DONT_RETARGET ||
+      loadInfo->GetForceMediaDocument() !=
+          mozilla::dom::ForceMediaDocument::None) {
     LOG(
         ("  External handling forced or (listener not interested and no "
          "stream converter exists), and retargeting disallowed -> aborting"));
