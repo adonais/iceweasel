@@ -20,6 +20,8 @@ prefs = [
 
 ["browser_ipprotection_alert_manager.js"]
 
+["browser_ipprotection_bandwidth_precision.js"]
+
 ["browser_ipprotection_confirmation_hints_site_exclusion.js"]
 
 ["browser_ipprotection_content.js"]

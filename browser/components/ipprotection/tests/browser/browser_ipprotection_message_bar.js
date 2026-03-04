@@ -237,6 +237,114 @@ add_task(async function test_warning_message() {
 });
 
 /**
+ * Tests that the bandwidth warning message bar passes the correct values
+ * through to messageLinkL10nArgs.
+ */
+add_task(async function test_warning_message_decimal_precision() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  const remainingBytes = maxBytes * BANDWIDTH.SECOND_THRESHOLD;
+
+  let content = await openPanel({
+    bandwidthWarning: true,
+    bandwidthUsage: { remaining: remainingBytes, max: maxBytes },
+  });
+
+  const messageBar = content.shadowRoot.querySelector(
+    "ipprotection-message-bar"
+  );
+  Assert.ok(messageBar, "Message bar should be present");
+  Assert.ok(messageBar.messageId, "Should use GB message ID");
+
+  const l10nArgs = JSON.parse(messageBar.messageLinkL10nArgs);
+  Assert.equal(
+    l10nArgs.usageLeft,
+    remainingBytes / BANDWIDTH.BYTES_IN_GB,
+    "usageLeft should be decimal precise GB value"
+  );
+  Assert.equal(
+    l10nArgs.maxUsage,
+    BANDWIDTH.MAX_IN_GB,
+    "maxUsage should match the configured bandwidth limit"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+});
+
+add_task(async function test_warning_message_l10n_args_at_80_percent_used() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  const remaining = Math.floor(maxBytes * 0.2);
+
+  let content = await openPanel({
+    bandwidthWarning: true,
+    bandwidthUsage: { remaining, max: maxBytes },
+  });
+
+  const messageBar = content.shadowRoot.querySelector(
+    "ipprotection-message-bar"
+  );
+  Assert.ok(messageBar, "Message bar should be present");
+  Assert.equal(
+    messageBar.messageId,
+    "ipprotection-message-bandwidth-warning",
+    "Should use GB message ID"
+  );
+
+  const l10nArgs = JSON.parse(messageBar.messageLinkL10nArgs);
+  Assert.equal(
+    l10nArgs.usageLeft,
+    (remaining / BANDWIDTH.BYTES_IN_GB).toFixed(1),
+    "usageLeft should be a decimal GB value when 75% <= pctUsed < 90%"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_warning_message_l10n_args_mb_below_1gb() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  const remaining = Math.floor(0.9 * BANDWIDTH.BYTES_IN_GB);
+
+  let content = await openPanel({
+    bandwidthWarning: true,
+    bandwidthUsage: { remaining, max: maxBytes },
+  });
+
+  const messageBar = content.shadowRoot.querySelector(
+    "ipprotection-message-bar"
+  );
+  Assert.ok(messageBar, "Message bar should be present");
+  Assert.equal(
+    messageBar.messageId,
+    "ipprotection-message-bandwidth-warning-mb",
+    "Should use MB message ID"
+  );
+
+  const l10nArgs = JSON.parse(messageBar.messageLinkL10nArgs);
+  Assert.equal(
+    l10nArgs.usageLeft,
+    Math.floor(remaining / BANDWIDTH.BYTES_IN_MB),
+    "usageLeft should be the floored MB value when remaining < 1 GB"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Tests that dismissing the message bar dispatches the expected events and
  * removes it from the DOM.
  */

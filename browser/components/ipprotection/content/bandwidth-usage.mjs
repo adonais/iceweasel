@@ -28,12 +28,12 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
 
   get bandwidthPercent() {
     const percent = (100 * this.bandwidthUsed) / this.max;
-    if (percent > 90) {
+    if (percent >= 90) {
       return 90;
-    } else if (percent > 75) {
+    } else if (percent >= 75) {
       return 75;
     }
-    return percent.toFixed(0);
+    return Math.floor(percent);
   }
 
   get remainingMB() {
@@ -62,6 +62,10 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
       return Math.floor(this.remainingMB);
     } else if (this.bandwidthUsedGB < 1) {
       return Math.floor(this.remainingGB);
+    }
+
+    if (this.bandwidthPercent === 75) {
+      return parseFloat(this.remainingGB.toFixed(1));
     }
 
     return Math.round(this.remainingGB);
@@ -135,7 +139,7 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
           <progress
             id="progress-bar"
             max=${this.maxGB}
-            value=${this.bandwidthUsedGB}
+            value=${this.maxGB - this.remainingGB}
             percent=${this.bandwidthPercent}
           ></progress>
           <div id="min-progress"></div>
