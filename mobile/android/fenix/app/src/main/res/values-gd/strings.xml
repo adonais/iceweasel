@@ -3801,6 +3801,8 @@
     The title of the Addresses feature in the Debug Drawer.
   -->
   <string name="debug_drawer_addresses_title">Seòlaidhean</string>
+  <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
+  <string name="debug_drawer_addresses_debug_locales_header">Debug locales a thèid a chur an comas</string>
   <!-- The title of the header for the section for managing addresses. -->
   <string name="debug_drawer_addresses_management_header">Stiùirich na seòlaidhean</string>
   <!-- The title of the button in the debug drawer for adding a new address. -->
@@ -3951,6 +3953,10 @@
   <string name="setup_checklist_subtitle_5_steps_second_step">Choilean thu an dàrna ceum às na 5 ceuman. Deagh-adhartas!</string>
   <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
   <string name="setup_checklist_subtitle_5_steps_third_step">Letheach slighe! Rinn thu a’ chùis air dà cheum is chan eil ach 2 ri ghabhail.</string>
+  <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Cha mhòr! Dìreach aon cheum air fhàgail is bidh thu deiseil.</string>
+  <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_5_steps_completed_state">Choilean thu na 5 ceuman. Gabh tlachd san luaths, phrìobhaideachd is tèarainteachd a bheir %1$s dhut.</string>
   <!--
     ===== Setup checklist feature: Task titles =====
 
@@ -3982,6 +3988,14 @@
   -->
   <string name="setup_checklist_button_remove">Thoir an liosta-chromagan air falbh</string>
   <!--
+    ===== Setup checklist feature: Accessibility =====
+
+    Accessibility description for a check mark on a completed task
+  -->
+  <string name="a11y_completed_task_description">Saothair crìochnaichte</string>
+  <!-- Accessibility description for the task icon -->
+  <string name="a11y_task_icon_description">Ìomhaigheag na saothrach</string>
+  <!--
     Private browsing mode authentication screen
 
     Label for the secondary action to exit private browsing mode
@@ -3991,6 +4005,12 @@
   <string name="pbm_authentication_unlock">Thoir a’ ghlas dheth</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Thoir a’ ghlas far nan tabaichean prìobhaideach</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">A bheil thu airson tabaichean prìobhaideach a chur am falach air cùlaibh na sgrìn-ghlasaidh?</string>
+  <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
+  <string name="private_tab_cfr_negative">Chan eil, tapadh leibh</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">Glais tabaichean</string>
   <!-- Section header for recent search results -->
   <string name="settings_search_recent_searches_section_header">Toraidhean luirg o chionn goirid</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->

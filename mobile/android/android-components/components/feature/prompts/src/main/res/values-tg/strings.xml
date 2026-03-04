@@ -191,5 +191,5 @@
   -->
   <string name="mozac_feature_relay_chip_text">Истифодаи ниқоби муҳофизатии почтаи электронӣ</string>
   <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
-  <string name="mozac_feature_relay_email_masks_cfr">Нав! Акнун ниқобҳои почтаи электронии «%@» дар дастгоҳҳои мобилӣ дастрасанд.</string>
+  <string name="mozac_feature_relay_email_masks_cfr">Нав! Акнун ниқобҳои почтаи электронии «%s» дар дастгоҳҳои мобилӣ дастрасанд.</string>
 </resources>

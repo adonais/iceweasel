@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Käännä sivu</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Tee yhteenveto sivusta</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Uusi</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Ilmoita rikkinäisestä sivustosta…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1631,6 +1633,17 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Avaa välilehtihaku</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Luo välilehtiryhmä</string>
+  <string name="create_tab_group_save_button">Tallenna</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">Ryhmä</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">Nimi</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1757,6 +1770,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Tätä tiedostoa ei voi nimetä uudelleen järjestelmä- tai tallennusrajoitusten vuoksi.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Vaihdetaanko tiedostotyypiksi %s?</string>
+  <string name="change_file_extension_description">Tämä saattaa avata tiedoston toisessa sovelluksessa ja olla vaaraksi laitteellesi.</string>
+  <string name="change_file_extension_cancel_button">Peruuta</string>
+  <string name="change_file_extension_confirm_button">Kyllä, vaihda se</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Käynnissä</string>
   <!--
@@ -3647,6 +3668,13 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">Varmistanut %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Myönnetty taholle %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Asetuksen (EU) 2024/1183 mukaisesti kelvollinen.</string>
   <!--
     Debug drawer
 
