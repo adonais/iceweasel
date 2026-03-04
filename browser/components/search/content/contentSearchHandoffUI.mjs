@@ -236,6 +236,8 @@ window.ContentSearchUIController = (function () {
     this.input.setAttribute("aria-controls", tableID);
     tableParent.appendChild(this._makeTable(tableID));
 
+    this._tableParent = tableParent;
+
     this.input.addEventListener("keydown", this);
     this.input.addEventListener("input", this);
     this.input.addEventListener("focus", this);
@@ -300,7 +302,7 @@ window.ContentSearchUIController = (function () {
       let allElts = [
         ...this._suggestionsList.children,
         ...this._oneOffButtons,
-        document.getElementById("contentSearchSettingsButton"),
+        this._tableParent.querySelector("#contentSearchSettingsButton"),
       ];
       for (let i = 0; i < allElts.length; ++i) {
         let elt = allElts[i];
@@ -319,7 +321,7 @@ window.ContentSearchUIController = (function () {
       let allElts = [
         ...this._suggestionsList.children,
         ...this._oneOffButtons,
-        document.getElementById("contentSearchSettingsButton"),
+        this._tableParent.querySelector("#contentSearchSettingsButton"),
       ];
       // If we are selecting a suggestion and a one-off is selected, don't deselect it.
       let excludeIndex =
@@ -343,7 +345,7 @@ window.ContentSearchUIController = (function () {
     get selectedButtonIndex() {
       let elts = [
         ...this._oneOffButtons,
-        document.getElementById("contentSearchSettingsButton"),
+        this._tableParent.querySelector("#contentSearchSettingsButton"),
       ];
       for (let i = 0; i < elts.length; ++i) {
         if (elts[i].classList.contains("selected")) {
@@ -356,7 +358,7 @@ window.ContentSearchUIController = (function () {
     set selectedButtonIndex(idx) {
       let elts = [
         ...this._oneOffButtons,
-        document.getElementById("contentSearchSettingsButton"),
+        this._tableParent.querySelector("#contentSearchSettingsButton"),
       ];
       for (let i = 0; i < elts.length; ++i) {
         let elt = elts[i];
@@ -425,7 +427,7 @@ window.ContentSearchUIController = (function () {
     handleEvent(event) {
       // The event handler is triggered by external events while the search
       // element may no longer be present
-      if (!document.contains(this.input)) {
+      if (!this.input.isConnected) {
         return;
       }
       this["_on" + event.type[0].toUpperCase() + event.type.substr(1)](event);
@@ -854,8 +856,9 @@ window.ContentSearchUIController = (function () {
       this._strings = strings;
       this._updateDefaultEngineHeader();
       this._updateSearchWithHeader();
-      document.getElementById("contentSearchSettingsButton").textContent =
-        this._strings.searchSettings;
+      this._tableParent.querySelector(
+        "#contentSearchSettingsButton"
+      ).textContent = this._strings.searchSettings;
     },
 
     _updateDefaultEngineIcon() {
@@ -872,7 +875,9 @@ window.ContentSearchUIController = (function () {
     },
 
     _updateDefaultEngineHeader() {
-      let header = document.getElementById("contentSearchDefaultEngineHeader");
+      let header = this._tableParent.querySelector(
+        "#contentSearchDefaultEngineHeader"
+      );
       header.firstChild.setAttribute("src", this.defaultEngine.icon);
       if (!this._strings) {
         return;
@@ -891,8 +896,8 @@ window.ContentSearchUIController = (function () {
       if (!this._strings) {
         return;
       }
-      let searchWithHeader = document.getElementById(
-        "contentSearchSearchWithHeader"
+      let searchWithHeader = this._tableParent.querySelector(
+        "#contentSearchSearchWithHeader"
       );
       let labels = searchWithHeader.querySelectorAll("label");
       if (this.input.value) {
@@ -1174,6 +1179,7 @@ window.ContentSearchUIController = (function () {
         button.engineName = engine.name;
         button.addEventListener("click", this);
         button.addEventListener("mousemove", this);
+        button.setAttribute("aria-label", engine.name);
 
         if (engines.length - i <= enginesPerRow - (i % enginesPerRow)) {
           button.classList.add("last-row");
@@ -1215,14 +1221,27 @@ window.ContentSearchUIController = (function () {
 class ContentSearchHandoffUI extends MozLitElement {
   static queries = {
     fakeCaret: ".fake-caret",
+    nonHandoffSearchInput: "#newtab-search-text",
   };
 
   static properties = {
     fakeFocus: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
+    nonHandoff: { type: String, reflect: true },
   };
 
   #controller = null;
+
+  constructor() {
+    super();
+    this.fakeFocus = false;
+    this.disabled = false;
+    this.nonHandoff = "";
+  }
+
+  get nonHandoffMode() {
+    return this.nonHandoff === "true";
+  }
 
   #doSearchHandoff(text = "") {
     this.fakeFocus = true;
@@ -1251,10 +1270,21 @@ class ContentSearchHandoffUI extends MozLitElement {
     }
   }
 
-  connectedCallback() {
-    super.connectedCallback();
+  firstUpdated() {
     if (!this.#controller) {
-      this.#controller = new window.ContentSearchHandoffUIController(this);
+      if (this.nonHandoffMode) {
+        const isNewTab =
+          globalThis.document &&
+          globalThis.document.documentURI === "about:newtab";
+        const healthReportKey = isNewTab ? "newtab" : "abouthome";
+        this.#controller = new window.ContentSearchUIController(
+          this.nonHandoffSearchInput,
+          this.nonHandoffSearchInput.parentElement,
+          healthReportKey
+        );
+      } else {
+        this.#controller = new window.ContentSearchHandoffUIController(this);
+      }
     }
   }
 
@@ -1264,23 +1294,52 @@ class ContentSearchHandoffUI extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/contentSearchHandoffUI.css"
       />
-      <button
-        class="search-handoff-button"
-        @click=${this.#onSearchHandoffClick}
-        tabindex="-1"
-      >
-        <div class="fake-textbox"></div>
-        <input
-          type="search"
-          class="fake-editable"
-          tabindex="-1"
-          aria-hidden="true"
-          @drop=${this.#onSearchHandoffDrop}
-          @paste=${this.#onSearchHandoffPaste}
-        />
-        <div class="fake-caret"></div>
-      </button>
+      ${this.nonHandoffMode
+        ? this.#nonHandoffTemplate()
+        : this.#handoffTemplate()}
     `;
+  }
+
+  #onNonHandoffSearchClick(event) {
+    this.#controller.search(event);
+  }
+
+  #nonHandoffTemplate() {
+    return html`
+      <div class="non-handoff-container">
+        <input
+          id="newtab-search-text"
+          data-l10n-id="newtab-search-box-input"
+          maxlength="256"
+          type="search"
+        />
+        <button
+          id="searchSubmit"
+          class="search-button"
+          data-l10n-id="newtab-search-box-search-button"
+          @click=${this.#onNonHandoffSearchClick}
+        ></button>
+      </div>
+    `;
+  }
+
+  #handoffTemplate() {
+    return html` <button
+      class="search-handoff-button"
+      @click=${this.#onSearchHandoffClick}
+      tabindex="-1"
+    >
+      <div class="fake-textbox"></div>
+      <input
+        type="search"
+        class="fake-editable"
+        tabindex="-1"
+        aria-hidden="true"
+        @drop=${this.#onSearchHandoffDrop}
+        @paste=${this.#onSearchHandoffPaste}
+      />
+      <div class="fake-caret"></div>
+    </button>`;
   }
 }
 
