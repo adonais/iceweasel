@@ -78,7 +78,7 @@ FRAME_CLASSES = [
     Frame("nsHTMLCanvasFrame", "HTMLCanvas", REPLACED_SIZING),
     Frame("nsHTMLFramesetBlankFrame", "None", COMMON | LEAF),
     Frame("nsHTMLFramesetBorderFrame", "None", COMMON | LEAF),
-    Frame("nsHTMLFramesetFrame", "FrameSet", COMMON | LEAF),
+    Frame("nsHTMLFramesetFrame", "FrameSet", COMMON | LEAF | BACKDROP_UNSUPPORTED),
     Frame("nsImageControlFrame", "ImageControl", REPLACED_SIZING | LEAF),
     Frame("nsImageFrame", "Image", REPLACED_SIZING | {"LeafDynamic"}),
     Frame("nsInlineFrame", "Inline", INLINE),
