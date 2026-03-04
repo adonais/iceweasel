@@ -109,11 +109,12 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
    * This is a long-running request that will set isEnrolling while in progress
    * and will only run once until it completes.
    *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the process should be aborted
    * @returns {Promise<object>} result
    * @returns {boolean} result.isEnrolledAndEntitled - True if the user is enrolled and entitled.
    * @returns {string} [result.error] - Error message if enrollment or entitlement failed.
    */
-  async maybeEnrollAndEntitle() {
+  async maybeEnrollAndEntitle(abortSignal = null) {
     if (this.#enrollingPromise) {
       return this.#enrollingPromise;
     }
@@ -121,7 +122,7 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     let deferred = Promise.withResolvers();
     this.#enrollingPromise = deferred.promise;
 
-    const enrolledAndEntitled = await this.#enrollAndEntitle();
+    const enrolledAndEntitled = await this.#enrollAndEntitle(abortSignal);
     deferred.resolve(enrolledAndEntitled);
     this.#enrollingPromise = null;
 
@@ -131,17 +132,20 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   /**
    * Enroll and entitle the current Firefox account.
    *
+   * This will attempt to enroll the user if they are not enrolled, and then fetch
+   *
+   * @param {AbortSignal} abortSignal - a signal to abort the enrollment
    * @returns {Promise<object>} status
    * @returns {boolean} status.isEnrolledAndEntitled - True if the user is enrolled and entitled.
    * @returns {string} [status.error] - Error message if enrollment or entitlement failed.
    */
-  async #enrollAndEntitle() {
+  async #enrollAndEntitle(abortSignal = null) {
     if (this.#entitlement) {
       return { isEnrolledAndEntitled: true };
     }
 
     const { enrollment, error: enrollmentError } =
-      await IPPEnrollAndEntitleManagerSingleton.#enroll();
+      await IPPEnrollAndEntitleManagerSingleton.#enroll(abortSignal);
 
     if (enrollmentError || !enrollment) {
       // Unset the entitlement if enrollment failed.
@@ -212,13 +216,17 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
    *
    * Static to avoid changing internal state of the singleton.
    *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the enrollment should be aborted
    * @returns {Promise<object>} status
    * @returns {boolean} status.enrollment - True if enrollment succeeded.
    * @returns {string} [status.error] - Error message if enrollment failed.
    */
-  static async #enroll() {
+  static async #enroll(abortSignal = null) {
     try {
-      const enrollment = await lazy.IPProtectionService.guardian.enroll();
+      const enrollment = await lazy.IPProtectionService.guardian.enroll(
+        "alpha",
+        abortSignal
+      );
       if (!enrollment?.ok) {
         return { enrollment: null, error: enrollment?.error };
       }

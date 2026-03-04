@@ -503,10 +503,23 @@ add_task(async function test_IPPProxytates_start_stop() {
     "Proxy activation"
   );
 
-  await waitForEvent(
-    IPPProxyManager,
+  // We should expect the Stop to cancel the activation
+  using fail = {
+    listener: () => {
+      if (IPPProxyManager.state === IPPProxyStates.ACTIVE) {
+        Assert.ok(false, "We must abort the activation when calling stop.");
+      }
+    },
+    [Symbol.dispose]: () => {
+      IPPProxyManager.removeEventListener(
+        "IPPProxyManager:StateChanged",
+        fail.listener
+      );
+    },
+  };
+  IPPProxyManager.addEventListener(
     "IPPProxyManager:StateChanged",
-    () => IPPProxyManager.state === IPPProxyStates.ACTIVE
+    fail.listener
   );
 
   await waitForEvent(

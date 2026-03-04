@@ -127,6 +127,7 @@ class IPPProxyManagerSingleton extends EventTarget {
   #state = IPPProxyStates.NOT_READY;
 
   #activatingPromise = null;
+  #activationAbortController = null;
 
   #pass = null;
   /**@type {import("./GuardianClient.sys.mjs").ProxyUsage | null} */
@@ -281,54 +282,76 @@ class IPPProxyManagerSingleton extends EventTarget {
       this.cancelChannelFilter();
       return null;
     }
+    this.#activationAbortController = new AbortController();
+    const abortSignal = this.#activationAbortController.signal;
 
-    const activating = async () => {
-      let started = false;
-      try {
-        started = await this.#startInternal();
-      } catch (error) {
+    // Abort the activation if it takes more than 30 seconds, or if the user cancels it.
+    lazy.setTimeout(
+      () => {
+        this.#activationAbortController?.abort("TimeoutError");
+      },
+      Temporal.Duration.from({ seconds: 30 }).total("milliseconds")
+    );
+
+    this.#setState(IPPProxyStates.ACTIVATING);
+
+    const { promise: abortPromise, reject } = Promise.withResolvers();
+    abortSignal.addEventListener(
+      "abort",
+      () => {
+        reject(abortSignal.reason);
+      },
+      { once: true }
+    );
+
+    this.#activatingPromise = Promise.race([
+      this.#startInternal(abortSignal),
+      abortPromise,
+    ])
+      .catch(error => {
         if (lazy.IPPNetworkUtils.isOffline) {
+          this.#setErrorState(ERRORS.NETWORK, error);
+        } else if (error.name === "AbortError") {
+          this.#setState(IPPProxyStates.READY);
+        } else if (error.name === "TimeoutError") {
           this.#setErrorState(ERRORS.NETWORK, error);
         } else {
           this.#setErrorState(ERRORS.GENERIC, error);
         }
+        this.#activationAbortController = null;
         this.cancelChannelFilter();
-        return;
-      }
-
-      if (
-        this.#state === IPPProxyStates.ERROR ||
-        this.#state === IPPProxyStates.PAUSED
-      ) {
-        return;
-      }
-
-      // Proxy failed to start but no error was given.
-      if (!started) {
-        this.#setState(IPPProxyStates.READY);
-        return;
-      }
-
-      this.#setState(IPPProxyStates.ACTIVE);
-
-      Glean.ipprotection.toggled.record({
-        userAction,
-        enabled: true,
+        return false;
+      })
+      .then(started => {
+        if (
+          this.#state === IPPProxyStates.ERROR ||
+          this.#state === IPPProxyStates.PAUSED
+        ) {
+          return;
+        }
+        // Proxy failed to start but no error was given.
+        if (!started) {
+          this.#setState(IPPProxyStates.READY);
+          return;
+        }
+        this.#setState(IPPProxyStates.ACTIVE);
+        Glean.ipprotection.toggled.record({
+          userAction,
+          enabled: true,
+        });
+      })
+      .finally(() => {
+        this.#activatingPromise = null;
+        this.#activationAbortController = null;
       });
-    };
-
-    this.#setState(IPPProxyStates.ACTIVATING);
-    this.#activatingPromise = activating().finally(
-      () => (this.#activatingPromise = null)
-    );
     return this.#activatingPromise;
   }
 
-  async #startInternal() {
+  async #startInternal(abortSignal) {
     await lazy.IPProtectionServerlist.maybeFetchList();
 
     const enrollAndEntitleData =
-      await lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+      await lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle(abortSignal);
     if (!enrollAndEntitleData || !enrollAndEntitleData.isEnrolledAndEntitled) {
       this.#setErrorState(enrollAndEntitleData.error || ERRORS.GENERIC);
       return false;
@@ -351,7 +374,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     // If the current proxy pass is valid, no need to re-authenticate.
     // Throws an error if the proxy pass is not available.
     if (this.#pass == null || this.#pass.shouldRotate()) {
-      const { pass, usage } = await this.#getPassAndUsage();
+      const { pass, usage } = await this.#getPassAndUsage(abortSignal);
       if (usage) {
         this.#setUsage(usage);
         if (this.#usage.remaining <= 0) {
@@ -403,7 +426,10 @@ class IPPProxyManagerSingleton extends EventTarget {
       if (!this.#activatingPromise) {
         throw new Error("Activating without a promise?!?");
       }
-
+      if (!this.#activationAbortController) {
+        throw new Error("Activating without an abort controller?!?");
+      }
+      this.#activationAbortController?.abort();
       await this.#activatingPromise.then(() => this.stop(userAction));
       return;
     }
@@ -464,11 +490,12 @@ class IPPProxyManagerSingleton extends EventTarget {
    * Fetches a new ProxyPass.
    * Throws an error on failures.
    *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the fetch should be aborted, will then throw an AbortError
    * @returns {Promise<ProxyPass|Error>} - the proxy pass if it available.
    */
-  async #getPassAndUsage() {
+  async #getPassAndUsage(abortSignal = null) {
     let { status, error, pass, usage } =
-      await lazy.IPProtectionService.guardian.fetchProxyPass();
+      await lazy.IPProtectionService.guardian.fetchProxyPass(abortSignal);
     lazy.logConsole.debug("ProxyPass:", {
       status,
       valid: pass?.isValid(),
