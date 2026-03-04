@@ -2053,7 +2053,8 @@ static nsresult CreateNativeGlobalForInner(
   if (!Window_Binding::Wrap(aCx, aNewInner, aNewInner, options,
                             nsJSPrincipals::get(principal), aGlobal) ||
       !xpc::InitGlobalObject(aCx, aGlobal, flags)) {
-    return NS_ERROR_FAILURE;
+    return JS_IsThrowingOutOfMemory(aCx) ? NS_ERROR_OUT_OF_MEMORY
+                                         : NS_ERROR_FAILURE;
   }
 
   MOZ_ASSERT(aNewInner->GetWrapperPreserveColor() == aGlobal);
@@ -2063,7 +2064,8 @@ static nsresult CreateNativeGlobalForInner(
   xpc::SetLocationForGlobal(aGlobal, uri);
 
   if (!InitializeLegacyNetscapeObject(aCx, aGlobal)) {
-    return NS_ERROR_FAILURE;
+    return JS_IsThrowingOutOfMemory(aCx) ? NS_ERROR_OUT_OF_MEMORY
+                                         : NS_ERROR_FAILURE;
   }
 
   return NS_OK;
@@ -2359,13 +2361,15 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       JS::Rooted<JS::Value> unused(cx);
       if (!JS_GetProperty(cx, newInnerGlobal, "window", &unused)) {
         NS_ERROR("can't create the 'window' property");
-        return NS_ERROR_FAILURE;
+        return JS_IsThrowingOutOfMemory(cx) ? NS_ERROR_OUT_OF_MEMORY
+                                            : NS_ERROR_FAILURE;
       }
 
       // And same thing for the "self" property.
       if (!JS_GetProperty(cx, newInnerGlobal, "self", &unused)) {
         NS_ERROR("can't create the 'self' property");
-        return NS_ERROR_FAILURE;
+        return JS_IsThrowingOutOfMemory(cx) ? NS_ERROR_OUT_OF_MEMORY
+                                            : NS_ERROR_FAILURE;
       }
     }
   }

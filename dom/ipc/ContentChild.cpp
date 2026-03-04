@@ -1969,6 +1969,9 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
   nsresult rv = browserChild->Init(
       /* aOpener */ nullptr, windowChild, openWindowInfo);
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (rv == NS_ERROR_OUT_OF_MEMORY) {
+      NS_ABORT_OOM(0);
+    }
     IPC_FAIL_UNSAFE_PRINTF(browserChild, "BrowserChild::Init failed (rv=%s)",
                            mozilla::GetStaticErrorName(rv));
   }

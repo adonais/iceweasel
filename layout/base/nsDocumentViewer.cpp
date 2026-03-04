@@ -837,9 +837,6 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
         nsresult rv = window->SetNewDocument(mDocument, aState, false, aActor);
         if (NS_FAILED(rv)) {
           Destroy();
-          CrashReporter::AppendAppNotesToCrashReport(
-              nsPrintfCString("nsGlobalWindowOuter::SetNewDocument rv=%u.",
-                              static_cast<uint32_t>(rv)));
           return rv;
         }
       }
