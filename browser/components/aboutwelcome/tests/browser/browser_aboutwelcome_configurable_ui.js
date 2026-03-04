@@ -319,6 +319,11 @@ add_task(async function test_aboutwelcome_dismiss_button() {
  * Test rendering a screen with the "split" position
  */
 add_task(async function test_aboutwelcome_split_position() {
+  // Forcing light-mode prevents the test from failing locally if your OS is in dark-mode
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.systemUsesDarkTheme", 0]],
+  });
+
   const TEST_SPLIT_STEP = makeTestContent("TEST_SPLIT_STEP", {
     position: "split",
     hero_text: "hero test",
@@ -356,6 +361,7 @@ add_task(async function test_aboutwelcome_split_position() {
       color: "rgb(21, 20, 26)",
     }
   );
+  await SpecialPowers.popPrefEnv();
   browser.closeBrowser();
 });
 
