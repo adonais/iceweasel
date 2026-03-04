@@ -793,8 +793,8 @@ static nsIFrame* GetFrameForChildrenOnlyTransformHint(nsIFrame* aFrame) {
 
 // This function tries to optimize a position style change by either
 // moving aFrame or ignoring the style change when it's safe to do so.
-// It returns true when that succeeds, otherwise it posts a reflow request
-// and returns false.
+// It returns true when that succeeds, otherwise returns false and the caller
+// will fall back to a full reflow.
 static bool RecomputePosition(nsIFrame* aFrame) {
   // It's pointless to move around frames that have never been reflowed or
   // are dirty (i.e. they will be reflowed), or aren't affected by position
@@ -819,21 +819,15 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   }
 
   if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-    // If the frame has an intrinsic block-size, we resolve its 'auto' margins
-    // after doing layout, since we need to know the frame's block size. See
-    // AbsoluteContainingBlock::ResolveAutoMarginsAfterLayout().
-    //
-    // Since the size of the frame doesn't change, we could modify the below
-    // computation to compute the margin correctly without doing a full reflow,
-    // however we decided to try doing a full reflow for now.
-    if (aFrame->HasIntrinsicKeywordForBSize()) {
-      WritingMode wm = aFrame->GetWritingMode();
-      const auto* styleMargin = aFrame->StyleMargin();
-      const auto anchorResolutionParams =
-          AnchorPosResolutionParams::From(aFrame);
-      if (styleMargin->HasBlockAxisAuto(wm, anchorResolutionParams)) {
-        return false;
-      }
+    // Auto margins on abspos elements are resolved after reflow (see
+    // AbsoluteContainingBlock::ResolveAutoMarginsAfterLayout()), so we must
+    // fall back to a full reflow when any auto margins are present.
+    const auto wm = aFrame->GetWritingMode();
+    const auto* styleMargin = aFrame->StyleMargin();
+    const auto anchorResolutionParams = AnchorPosResolutionParams::From(aFrame);
+    if (styleMargin->HasInlineAxisAuto(wm, anchorResolutionParams) ||
+        styleMargin->HasBlockAxisAuto(wm, anchorResolutionParams)) {
+      return false;
     }
     // Flexbox and Grid layout supports CSS Align and the optimizations below
     // don't support that yet.
