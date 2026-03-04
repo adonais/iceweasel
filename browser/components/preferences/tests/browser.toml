@@ -46,6 +46,8 @@ skip-if = [
   "tsan",
 ]
 
+["browser_bug410900.js"]
+
 ["browser_bug731866.js"]
 
 ["browser_bug795764_cachedisabled.js"]
