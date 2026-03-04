@@ -6693,7 +6693,7 @@
 
       // tell a new window to take the "dropped" tab
       let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-      args.appendElement(aTab);
+      args.appendElement(aTab.splitview ?? aTab);
       return BrowserWindowTracker.openWindow({
         private: PrivateBrowsingUtils.isWindowPrivate(window),
         features: Object.entries(aOptions)
@@ -6715,27 +6715,27 @@
         return this.replaceTabWithWindow(contextTab, aOptions);
       }
 
-      let tabs;
+      let elements;
       if (contextTab.multiselected) {
-        tabs = this.selectedElements;
+        elements = this.selectedElements;
       } else {
-        tabs = [contextTab.splitview ?? contextTab];
+        elements = [contextTab.splitview ?? contextTab];
       }
 
-      if (this.tabs.length == tabs.length) {
+      if (this.tabs.length == elements.length) {
         return null;
       }
 
-      if (tabs.length == 1) {
-        return this.replaceTabWithWindow(tabs[0], aOptions);
+      if (elements.length == 1) {
+        return this.replaceTabWithWindow(elements[0], aOptions);
       }
 
       // Play the closing animation for all selected tabs to give
       // immediate feedback while waiting for the new window to appear.
       if (!gReduceMotion) {
-        for (let tab of tabs) {
-          tab.style.maxWidth = ""; // ensure that fade-out transition happens
-          tab.removeAttribute("fadein");
+        for (let element of elements) {
+          element.style.maxWidth = ""; // ensure that fade-out transition happens
+          element.removeAttribute("fadein");
         }
       }
 
@@ -6746,8 +6746,13 @@
       // However, to avoid multiple tab-switches in the original window, the other tabs
       // should be adopted before the selected one.
       let { selectedTab } = gBrowser;
-      if (!tabs.includes(selectedTab)) {
-        selectedTab = tabs[0];
+      if (
+        !elements.includes(selectedTab) &&
+        !elements.includes(selectedTab.splitview)
+      ) {
+        selectedTab = this.isSplitViewWrapper(elements[0])
+          ? elements[0].tabs[0]
+          : elements[0];
       }
 
       let win = this.replaceTabWithWindow(selectedTab, aOptions);
@@ -6755,18 +6760,19 @@
         "before-initial-tab-adopted",
         () => {
           let tabIndex = 0;
-          for (let tab of tabs) {
-            if (tab !== selectedTab) {
-              const newTab = win.gBrowser.isSplitViewWrapper(tab)
-                ? win.gBrowser.adoptSplitView(tab, { elementIndex: tabIndex })
-                : win.gBrowser.adoptTab(tab, { tabIndex });
+          for (let element of elements) {
+            if (element !== selectedTab && element !== selectedTab.splitview) {
+              const newTab = win.gBrowser.isSplitViewWrapper(element)
+                ? win.gBrowser.adoptSplitView(element, {
+                    elementIndex: tabIndex,
+                  })
+                : win.gBrowser.adoptTab(element, { tabIndex });
               if (!newTab) {
                 // The adoption failed. Restore "fadein" and don't increase the index.
-                tab.setAttribute("fadein", "true");
+                element.setAttribute("fadein", "true");
                 continue;
               }
             }
-
             ++tabIndex;
           }
           // Restore tab selection
@@ -7526,8 +7532,16 @@
      * @param {MozTabbrowserTab} aTab
      */
     addToMultiSelectedTabs(aTab) {
+      if (this.isSplitViewWrapper(aTab)) {
+        for (let tab of aTab.tabs) {
+          this.addToMultiSelectedTabs(tab);
+        }
+        return;
+      }
+
       if (aTab.splitview) {
         aTab.splitview.setAttribute("multiselected", "true");
+        aTab.splitview.setAttribute("aria-selected", "true");
       }
 
       if (aTab.multiselected) {
@@ -7577,10 +7591,13 @@
       if (!aTab.multiselected) {
         return;
       }
-      aTab.removeAttribute("multiselected");
+
       if (aTab.splitview) {
         aTab.splitview.removeAttribute("multiselected");
+        aTab.splitview.removeAttribute("aria-selected");
       }
+
+      aTab.removeAttribute("multiselected");
       aTab.removeAttribute("aria-selected");
       this._multiSelectedTabsSet.delete(aTab);
       this._startMultiSelectChange();

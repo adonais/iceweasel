@@ -532,7 +532,10 @@
             indexForSelectedTab = newIndex;
           } else {
             const newTab = isSplitViewWrapper(tab)
-              ? gBrowser.adoptSplitView(tab, { elementIndex: newIndex })
+              ? gBrowser.adoptSplitView(tab, {
+                  elementIndex: newIndex,
+                  selectTab: true,
+                })
               : gBrowser.adoptTab(tab, {
                   elementIndex: newIndex,
                   selectTab: tab == draggedTab,
@@ -553,10 +556,18 @@
         }
 
         // Restore tab selection
-        gBrowser.addRangeToMultiSelectedTabs(
-          this._tabbrowserTabs.dragAndDropElements[dropIndex],
-          this._tabbrowserTabs.dragAndDropElements[newIndex - 1]
-        );
+        let firstElement = this._tabbrowserTabs.dragAndDropElements[dropIndex];
+        let firstTab = isSplitViewWrapper(firstElement)
+          ? firstElement.tabs[0]
+          : firstElement;
+        let lastElement =
+          this._tabbrowserTabs.dragAndDropElements[newIndex - 1];
+        let lastTab = isSplitViewWrapper(lastElement)
+          ? lastElement.tabs[lastElement.tabs.length - 1]
+          : lastElement;
+        if (firstElement !== lastElement) {
+          gBrowser.addRangeToMultiSelectedTabs(firstTab, lastTab);
+        }
       } else {
         // Pass true to disallow dropping javascript: or data: urls
         let links;

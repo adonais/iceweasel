@@ -358,10 +358,17 @@ var gBrowserInit = {
           Glean.tabgroup.groupInteractions.move_window.add(1);
         } else if (gBrowser.isSplitViewWrapper(tabToAdopt)) {
           let tempBlankTab = gBrowser.selectedTab;
-          gBrowser.adoptSplitView(tabToAdopt, {
+          let splitview = gBrowser.adoptSplitView(tabToAdopt, {
             elementIndex: 0,
             selectTab: true,
           });
+          // If tabs are multiselected, add the newly adopted splitview back into the selection
+          if (gBrowser.selectedTabs.length > 1) {
+            gBrowser.addRangeToMultiSelectedTabs(
+              splitview.tabs[0],
+              splitview.tabs[splitview.tabs.length - 1]
+            );
+          }
           gBrowser.removeTab(tempBlankTab);
         } else {
           if (tabToAdopt.group) {
