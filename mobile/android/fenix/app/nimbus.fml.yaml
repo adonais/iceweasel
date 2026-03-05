@@ -851,17 +851,7 @@ features:
           description: >
             Enables the user to search for settings.
           type: Boolean
-          default: false
-      defaults:
-        - channel: developer
-          value:
-            enabled: true
-        - channel: nightly
-          value:
-            enabled: true
-        - channel: beta
-          value:
-            enabled: true
+          default: true
 
   toolbar-redesign-option:
     description: Control the visibility of toolbar redesign option in settings.
