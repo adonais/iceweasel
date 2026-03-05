@@ -741,6 +741,12 @@ class IPPProxyManagerSingleton extends EventTarget {
       return;
     }
 
+    if (state === IPPProxyStates.PAUSED) {
+      Glean.ipprotection.paused.record({
+        wasActive: this.#state === IPPProxyStates.ACTIVE,
+      });
+    }
+
     this.#state = state;
 
     this.dispatchEvent(

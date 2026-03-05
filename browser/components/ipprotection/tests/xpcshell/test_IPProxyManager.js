@@ -334,6 +334,7 @@ add_task(async function test_IPPProxyManager_activation_failure() {
  * Tests that usage data is preserved when quota is exceeded.
  */
 add_task(async function test_IPPProxyManager_quota_exceeded() {
+  Services.fog.testResetFOG();
   let sandbox = sinon.createSandbox();
 
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
@@ -407,6 +408,14 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
     "Should be in PAUSED state"
   );
 
+  let pausedEvent = Glean.ipprotection.paused.testGetValue();
+  Assert.equal(pausedEvent.length, 1, "Should have recorded the paused event");
+  Assert.equal(
+    pausedEvent[0].extra.wasActive,
+    "false",
+    "Previous state was not active"
+  );
+
   // Verify usage is still accessible in manager
   Assert.notEqual(IPPProxyManager.usageInfo, null, "Usage should be stored");
   Assert.equal(
@@ -427,6 +436,7 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
   );
   IPProtectionService.uninit();
   sandbox.restore();
+  Services.fog.testResetFOG();
 });
 
 /**
@@ -652,6 +662,7 @@ add_task(
 
 add_task(
   async function test_IPPProxyManager_paused_on_rotation_with_zero_quota() {
+    Services.fog.testResetFOG();
     IPPProxyManager.uninit();
     let sandbox = sinon.createSandbox();
     setupStubs(sandbox, {
@@ -714,6 +725,18 @@ add_task(
       "Should not have an isolationKey when paused, as the connection is paused"
     );
 
+    let pausedEvent = Glean.ipprotection.paused.testGetValue();
+    Assert.equal(
+      pausedEvent.length,
+      1,
+      "Should have recorded the paused event"
+    );
+    Assert.equal(
+      pausedEvent[0].extra.wasActive,
+      "true",
+      "Previous state was active"
+    );
+
     await IPPProxyManager.stop();
     Assert.equal(
       IPPProxyManager.state,
@@ -723,6 +746,7 @@ add_task(
 
     IPProtectionService.uninit();
     sandbox.restore();
+    Services.fog.testResetFOG();
   }
 );
 

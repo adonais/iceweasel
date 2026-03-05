@@ -158,3 +158,22 @@ ipprotection:
         description: >
           True if the site was excluded (VPN disabled for site).
           False if the exclusion was removed (VPN re-enabled for site).
+
+  paused:
+    type: event
+    description: >
+      Recorded when the IPP Proxy manager is set to the paused state.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1998500
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1998500
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      wasActive:
+        type: boolean
+        description: >
+          True if the previous state was the active state, otherwise false.
