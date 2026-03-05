@@ -1353,6 +1353,106 @@ add_task(async function test_removeFromGroupForMultipleTabs() {
   });
 });
 
+/*
+ * Tests that using "Add split view to group" on a split view containing an
+ * about:newtab tab correctly adds all split view tabs to the saved group, and
+ * that restoring the group afterwards succeeds. Regression test for bug 2019900.
+ */
+add_task(
+  async function test_tabGroupSaveGroupRestoreAfterAddSplitViewWithNewTab() {
+    let savedTab = BrowserTestUtils.addTab(gBrowser, "https://example.com");
+    let savedGroup = gBrowser.addTabGroup([savedTab], {
+      label: "Test group",
+    });
+    let savedGroupId = savedGroup.id;
+
+    await BrowserTestUtils.browserLoaded(savedTab.linkedBrowser);
+    await lazy.TabGroupTestUtils.saveAndCloseTabGroup(savedGroup);
+
+    let sessionStoreGroups = SessionStore.getSavedTabGroups();
+    Assert.equal(sessionStoreGroups.length, 1, "The group was saved");
+
+    // Add a split view (one real tab + one about:newtab) to the saved group via
+    // the context menu, exercising the "Add split view to group" UI path.
+    let splitRealTab = BrowserTestUtils.addTab(gBrowser, "https://example.com");
+    let splitNewTab = BrowserTestUtils.addTab(gBrowser, "about:newtab");
+    await BrowserTestUtils.browserLoaded(splitRealTab.linkedBrowser);
+    gBrowser.addTabSplitView([splitRealTab, splitNewTab]);
+
+    // Pre-flush before opening the context menu (see bug 1973996).
+    await lazy.TabStateFlusher.flush(splitRealTab.linkedBrowser);
+    await lazy.TabStateFlusher.flush(splitNewTab.linkedBrowser);
+
+    await withTabMenu(splitRealTab, async (_, moveTabToGroupItem) => {
+      const savedGroupsMenu = moveTabToGroupItem.querySelector(
+        "#context_moveTabToSavedGroup"
+      );
+      const savedGroupMenuItem = savedGroupsMenu.querySelector(
+        `[tab-group-id="${savedGroupId}"]`
+      );
+      let tabClosePromises = [splitRealTab, splitNewTab].map(tab =>
+        BrowserTestUtils.waitForEvent(tab, "TabClose")
+      );
+      savedGroupMenuItem.click();
+      await Promise.all(tabClosePromises);
+    });
+
+    // Add another regular tab to the saved group
+    let extraTab = BrowserTestUtils.addTab(gBrowser, "https://example.com");
+    await BrowserTestUtils.browserLoaded(extraTab.linkedBrowser);
+    await lazy.TabStateFlusher.flush(extraTab.linkedBrowser);
+
+    let extraTabClosePromise = BrowserTestUtils.waitForEvent(
+      extraTab,
+      "TabClose"
+    );
+    SessionStore.addTabsToSavedGroup(savedGroupId, [extraTab]);
+    gBrowser.removeTab(extraTab);
+    await extraTabClosePromise;
+
+    sessionStoreGroups = SessionStore.getSavedTabGroups();
+    Assert.equal(sessionStoreGroups.length, 1, "Only one group exists");
+    // The about:newtab from the split view is saveable when it has a splitViewId,
+    // so the split view should be stored.
+    Assert.equal(
+      sessionStoreGroups[0].splitViews.length,
+      1,
+      "Split view data stored for the group"
+    );
+    // The original tab + the 2 split view tabs + the extra tab should be saved.
+    Assert.equal(
+      sessionStoreGroups[0].tabs.length,
+      4,
+      "Four tabs saved in the group"
+    );
+
+    // Restore the group; if the fix is absent the restoreTab error aborts the
+    // restore loop and SSWindowStateReady never fires (test times out).
+    let restorePromise = BrowserTestUtils.waitForEvent(
+      window,
+      "SSWindowStateReady"
+    );
+    SessionStore.openSavedTabGroup(savedGroupId, window);
+    await restorePromise;
+
+    Assert.equal(
+      gBrowser.tabGroups.length,
+      1,
+      "One tab group exists on the tab strip"
+    );
+    let restoredGroup = gBrowser.tabGroups[0];
+    Assert.equal(
+      restoredGroup.id,
+      savedGroupId,
+      "The restored group has the correct id"
+    );
+    Assert.equal(restoredGroup.tabs.length, 4, "Four tabs were restored");
+
+    await lazy.TabGroupTestUtils.removeTabGroup(restoredGroup);
+    lazy.TabGroupTestUtils.forgetSavedTabGroups();
+  }
+);
+
 // Context menu tests: "new tab to right" option
 // ---
 

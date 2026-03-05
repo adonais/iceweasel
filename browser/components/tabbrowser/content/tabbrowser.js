@@ -10787,14 +10787,34 @@ var TabContextMenu = {
   },
 
   addTabsToSavedGroup(groupId) {
+    let seen = new Set();
+    let tabs = [];
+    for (let tab of this.contextTabs) {
+      if (tab.splitview) {
+        for (let splitTab of tab.splitview.tabs) {
+          if (!seen.has(splitTab)) {
+            seen.add(splitTab);
+            tabs.push(splitTab);
+          }
+        }
+      } else if (!seen.has(tab)) {
+        seen.add(tab);
+        tabs.push(tab);
+      }
+    }
     SessionStore.addTabsToSavedGroup(
       groupId,
-      this.contextTabs,
+      tabs,
       gBrowser.TabMetrics.userTriggeredContext(
         gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
       )
     );
-    this.closeContextTabs();
+    gBrowser.removeTabs(tabs, {
+      animate: true,
+      ...gBrowser.TabMetrics.userTriggeredContext(
+        gBrowser.TabMetrics.METRIC_SOURCE.TAB_STRIP
+      ),
+    });
   },
 
   ungroupTabs() {
