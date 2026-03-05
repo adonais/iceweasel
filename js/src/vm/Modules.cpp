@@ -955,8 +955,9 @@ static bool CyclicModuleResolveExport(JSContext* cx,
 
     // Step 9.c. Let resolution be ? importedModule.ResolveExport(exportName,
     //           resolveSet).
-    if (!CyclicModuleResolveExport(cx, importedModule, exportName, resolveSet,
-                                   &resolution, errorInfoOut)) {
+    if (!ModuleResolveExportWithResolveSet(cx, importedModule, exportName,
+                                           resolveSet, &resolution,
+                                           errorInfoOut)) {
       return false;
     }
 
