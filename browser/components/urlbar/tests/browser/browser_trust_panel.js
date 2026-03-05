@@ -19,6 +19,7 @@ const TRACKING_PAGE =
 const ETP_ACTIVE_ICON = 'url("chrome://browser/skin/trust-icon-active.svg")';
 const ETP_DISABLED_ICON =
   'url("chrome://browser/skin/trust-icon-disabled.svg")';
+const INSECURE_ICON = 'url("chrome://browser/skin/trust-icon-insecure.svg")';
 
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
@@ -300,5 +301,20 @@ add_task(async function test_about() {
   await UrlbarTestUtils.openTrustPanel(window);
   Assert.ok(true, "The panel can be opened.");
 
+  await BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function insecure_and_etp_disabled_test() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    opening: "http://example.com",
+    waitForLoad: true,
+  });
+
+  await toggleETP(tab);
+  Assert.equal(urlbarIcon(window), INSECURE_ICON, "Showing url insecure icon");
+
+  await toggleETP(tab);
   await BrowserTestUtils.removeTab(tab);
 });
