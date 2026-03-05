@@ -1262,6 +1262,18 @@ const TargetingGetters = {
   },
 
   /**
+   * Whether the user installed via the Smart Window marketing site.
+   *
+   * @return {boolean} `true` when the link to download the browser was part
+   * of the Smart Window campaign. `false` otherwise.
+   */
+  get isSmartWindowOnboarding() {
+    const { attributionData } = this;
+
+    return attributionData?.campaign === "smart_window";
+  },
+
+  /**
    * Whether the user opted into a special message action represented by an
    * installer attribution campaign and this choice still needs to be honored.
    *

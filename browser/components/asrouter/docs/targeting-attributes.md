@@ -48,7 +48,7 @@ Please note that some targeting attributes require stricter controls on the tele
 * [hasSelectableProfiles](#hasselectableprofiles)
 * [homePageSettings](#homepagesettings)
 * [isBackgroundTaskMode](#isbackgroundtaskmode)
-* [isAIWindow] (#isaiwindow)
+* [isAIWindow](#isaiwindow)
 * [isChinaRepack](#ischinarepack)
 * [isDefaultBrowser](#isdefaultbrowser)
 * [isDefaultBrowserUncached](#isdefaultbrowseruncached)
@@ -61,6 +61,7 @@ Please note that some targeting attributes require stricter controls on the tele
 * [isMSIX](#ismsix)
 * [isPrivateWindow](#isprivatewindow)
 * [isRTAMO](#isrtamo)
+* [isSmartWindowOnboarding](#issmartwindowonboarding)
 * [unhandledCampaignAction](#unhandledCampaignAction)
 * [launchOnLoginEnabled](#launchonloginenabled)
 * [locale](#locale)
@@ -1253,3 +1254,7 @@ Indicates whether the restore function is enabled by BackupService.
 ### `isEncryptedBackup`
 
 Indicates whether a user has selected an encrypted or non-encrypted backup method during the spotlight onboarding flow. (Refers to the `messaging-system-action.backupChooser` pref.)
+
+### `isSmartWindowOnboarding`
+
+A boolean. `true` when a user downloads Firefox from a Smart Window marketing campaign (ie. `attributionData.campaign == "smart_window"`), `false` otherwise.
