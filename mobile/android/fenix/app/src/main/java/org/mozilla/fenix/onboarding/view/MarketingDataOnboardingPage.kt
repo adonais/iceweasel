@@ -145,7 +145,7 @@ fun MarketingDataOnboardingPage(
                             modifier = Modifier.padding(horizontal = 16.dp),
                         ) {
                             LinkText(
-                                text = marketingData.bodyOneText,
+                                text = marketingData.bodyOneText.updateFirstPlaceholder(marketingData.bodyOneLinkText),
                                 linkTextStates = listOf(
                                     LinkTextState(
                                         text = marketingData.bodyOneLinkText,
@@ -200,3 +200,5 @@ private fun MarketingDataOnboardingPagePreview() {
         )
     }
 }
+
+private fun String.updateFirstPlaceholder(text: String) = replace($$"%1$s", text)
