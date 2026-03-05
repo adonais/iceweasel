@@ -4875,6 +4875,44 @@ characteristics:
     data_sensitivity:
       - technical
 
+  avail_top:
+    type: quantity
+    unit: int
+    description: >
+      Available top property
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019245
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019245
+    expires: never
+    data_sensitivity:
+      - technical
+
+  avail_left:
+    type: quantity
+    unit: int
+    description: >
+      Available left property
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019245
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019245
+    expires: never
+    data_sensitivity:
+      - technical
+
   camera_count:
     type: quantity
     unit: int
