@@ -420,3 +420,14 @@ def set_perftest_attributes(config, jobs):
         attributes = job.setdefault("attributes", {})
         attributes["perftest_name"] = job["name"]
         yield job
+
+
+@transforms.add
+def hide_cmd_exe_window_on_windows(config, jobs):
+    for job in jobs:
+        platform = job.get("platform", "")
+        platforms = [platform] if isinstance(platform, str) else platform
+        if any(p.startswith("windows") for p in platforms):
+            worker = job.setdefault("worker", {})
+            worker["hide-cmd-window"] = True
+        yield job
