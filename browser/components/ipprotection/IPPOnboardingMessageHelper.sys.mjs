@@ -79,6 +79,9 @@ class IPPOnboardingMessageHelper {
   }
 
   observe(subject, topic, data) {
+    if (!subject) {
+      return;
+    }
     let permission = subject.QueryInterface(Ci.nsIPermission);
     if (
       topic === "perm-changed" &&
