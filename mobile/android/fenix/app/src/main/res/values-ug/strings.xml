@@ -316,6 +316,10 @@
   <string name="browser_menu_save_as_pdf_2">PDF كە ساقلا</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">بەت تەرجىمىسى</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">بەتنى خۇلاسىلە</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">يېڭى</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">بۇزۇلغان بېكەتنى دوكلات قىلىدۇ…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -639,6 +643,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">تەڭشەك باشقۇرۇش</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">زېرىكىشلىك ئىزلىغۇچىلار بىلەن خوشلىشىڭ</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">ئىچكى شەخسىيەت تۈزۈمى بار بارلىق ئۇلانمىنى توركۆرگۈدە ئاچىدۇ</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">سانلىق مەلۇماتىڭىزنى قوغدايمىز ۋە شىركەتلەرنىڭ چېكىشلىرىڭىزنى نازارەت قىلىشىنى ئۆزلۈكىدىن توسىمىز.</string>
   <!-- "Set to default" onboarding button. -->
@@ -1627,6 +1633,18 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">بەتكۈچ ئىزدەشنى ئاچىدۇ</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">بەتكۈچ گۇرۇپپىسى قۇرىدۇ</string>
+  <string name="create_tab_group_save_button">ساقلا</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">بەتكۈچ گۇرۇپپا تەھرىرلەشنى ياپ</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">گۇرۇپپا</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">ئىسمى</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1727,12 +1745,40 @@
   <string name="download_share_url">تور ئادرېسى ھەمبەھىر</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">ھۆججەت ھەمبەھىر</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">ھۆججەت ئاتىنى ئۆزگەرت</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">تاللىغان تۈرنى راستتىنلا ئۆچۈرەمسىز؟</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">ئۆچۈر</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">ۋاز كەچ</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">ھۆججەت ئاتىنى ئۆزگەرت</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">ئىسمى</string>
+  <string name="download_rename_dialog_confirm_button">ساقلا</string>
+  <string name="download_rename_dialog_cancel_button">ۋاز كەچ</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">بۇ جايدا «%s» ئاتلىق ھۆججەت مەۋجۇت</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">ھۆججەت ئاتىدا «/» نى ئىشلەتكىلى بولمايدۇ</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">ھۆججەت ئاتىنى ئۆزگەرتەلمەيدۇ</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">سىستېما ياكى ساقلىغۇچ چەكلىمىسى تۈپەيلىدىن ھۆججەت ئاتىنى ئۆزگەرتەلمەيدۇ.</string>
+  <string name="download_rename_error_dismiss_button">جەزملە</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">ھۆججەت تۈرىنى %s غا ئۆزگەرتەمدۇ؟</string>
+  <string name="change_file_extension_description">بۇ مەشغۇلات ھۆججەتنى باشقا پەرقلىق ئەپتە ئېچىپ ۋە ئۈسكۈنىڭىزگە خەتەر پەيدا قىلىشى مۇمكىن.</string>
+  <string name="change_file_extension_cancel_button">ۋاز كەچ</string>
+  <string name="change_file_extension_confirm_button">ھەئە، ئۆزگەرت</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">ئىلگىرىلەۋاتىدۇ</string>
   <!--
@@ -2850,6 +2896,10 @@
   <string name="preferences_email_masks_suggest_learn_more">مول بىلىم</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">ئېلخەت نىقابىنى باشقۇرۇش</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">سىز 5 ھەقسىز ئېلخەت نىقابىنى ئىشلەتتىڭىز شۇڭا قايتا ئىشلىتىشىڭىز ئۈچۈن بىرنى تاللىدۇق.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">ھازىر ئىلخەت نىقابىنى ئىشلەتكىلى بولمايدۇ. بىر قانچە مىنۇتتىن كېيىن قايتا سىناڭ.</string>
   <!--
     Autofill
 
@@ -3619,6 +3669,13 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">دەلىللىگۈچى %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">تارقىتىلغۇچى %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">ياۋروپا ئىتتىپاقى (EU) نىڭ 2024/1183 قانۇن ئۆلچىمىگە ماس كېلىدۇ.</string>
   <!--
     Debug drawer
 

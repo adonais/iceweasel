@@ -3670,6 +3670,13 @@
   -->
   <string name="connection_security_panel_verified_by">Air a dhearbhadh le %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Air fhoillseachadh dha %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">A rèir riatanasan Riaghlad (AE) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3783,6 +3790,8 @@
   <string name="microsurvey_close_handle_content_description">Dùin an t-suirbhidh</string>
   <!-- Content description for "X" button that is closing microsurvey. -->
   <string name="microsurvey_close_button_content_description">Dùin</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">Innealan fèin-lìonaidh</string>
   <!--
     Debug drawer logins
 
@@ -3809,6 +3818,16 @@
   <string name="debug_drawer_add_new_address">Cuir seòladh ùr ris airson an sgeama ionadail a thagh thu</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">Sguab gach seòladh às</string>
+  <!--
+    Debug drawer credit cards
+
+    The title of the credit cards feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_credit_cards_title">Cairtean-creideis</string>
+  <!-- The title of the button in the debug drawer for adding a new credit card -->
+  <string name="debug_drawer_add_new_credit_card">Cuir cairt-chreideis ùr ris</string>
+  <!-- The title of the button for deleting in the debug drawer all addresses. -->
+  <string name="debug_drawer_delete_all_credit_cards">Sguab a h-uile cairt-chreideis às</string>
   <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 
@@ -3845,6 +3864,14 @@
   <string name="debug_drawer_override_region">Tar-àithn an roinn-dachaigh is roinn-dùthcha làithreach</string>
   <!-- The title of the button for overriding home region permanently. -->
   <string name="debug_drawer_override_home_region_permanently">Tar-àithn an roinn-dachaigh gu buan</string>
+  <!--
+    Add-ons debug tools
+
+    The description of the Add-ons Tools in the Debug Drawer
+  -->
+  <string name="debug_drawer_addons_tools_title">Innealan thuilleadan</string>
+  <!-- The title of the button used to check for add-on updates. -->
+  <string name="addons_debug_tools_check_for_updates_button">Thoir sùil airson ùrachaidhean</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3971,6 +3998,8 @@
   <string name="setup_checklist_task_toolbar_selection">Tagh àite dhan bhàr-inneal</string>
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">Rùraich na leudachain</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget_2">Rùraich widget an luirg</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 
@@ -4005,18 +4034,84 @@
   <string name="pbm_authentication_unlock">Thoir a’ ghlas dheth</string>
   <!-- Title text instructing the user to unlock private tabs -->
   <string name="pbm_authentication_unlock_private_tabs">Thoir a’ ghlas far nan tabaichean prìobhaideach</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">Cuir glais sgrìn nan tabaichean prìobhaideach an comas</string>
+  <!-- Authentication prompt title to disable the private tabs mode -->
+  <string name="pbm_authentication_disable_lock">Cuir glais sgrìn nan tabaichean prìobhaideach à comas</string>
+  <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
+  <string name="pbm_authentication_lock_device_feature_disabled">Suidhich glais sgrìn airson tabaichean a chur am falach</string>
   <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
   <string name="private_tab_cfr_title">A bheil thu airson tabaichean prìobhaideach a chur am falach air cùlaibh na sgrìn-ghlasaidh?</string>
   <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
   <string name="private_tab_cfr_negative">Chan eil, tapadh leibh</string>
   <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
   <string name="private_tab_cfr_positive">Glais tabaichean</string>
+  <!--
+    Review prompt
+
+    Title for a prompt asking the user about their experience using the app. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="review_prompt_pre_prompt_header">Dè do bheachd air %1$s?</string>
+  <!-- Label for a button negatively rating the user's experience with the app -->
+  <string name="review_prompt_negative_button">Tha duilgheadasan agam</string>
+  <!-- Label for a button positively rating the user's experience with the app -->
+  <string name="review_prompt_positive_button">Tha e fìor-mhath!</string>
+  <!-- Title for a prompt asking the user to rate the app on Google Play Store. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="review_prompt_rate_header">Nach math gu bheil %1$s a’ còrdadh riut. Nach sgaoil thu an gaol le bhith a’ toirt rangachadh dha?</string>
+  <!-- Label for a button proceeding to rate the app on Google Play Store. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="review_prompt_rate_button">Rangaich %1$s sa Play Store</string>
+  <!-- Title for a prompt asking the user send us feedback. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="review_prompt_feedback_header">Tha sinn duilich gu bheil duilgheadasan agad. Nach innis thu dhuinn mar a nì sinn %1$s nas fheàrr dhut?</string>
+  <!-- Label for a button opening a feedback forum -->
+  <string name="review_prompt_feedback_button">Sgrìobh beachd</string>
+  <!--
+    Settings Search Strings
+
+    Title of Settings Search. "Search" is a verb here
+  -->
+  <string name="settings_search_title">Roghainnean luirg</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
+  <string name="content_description_settings_search_clear_search">Falamhaich an lorg</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to navigate back to the Settings page from the Settings Search screen. -->
+  <string name="content_description_settings_search_navigate_back">Air ais</string>
+  <!-- Message displayed when the search field in the Settings Search screen is empty -->
+  <string name="settings_search_empty_query_placeholder">Cha do lorg thu dad o chionn goirid</string>
+  <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
+  <string name="settings_search_clear_recent_searches_message">Falamhaich na h-uile</string>
   <!-- Section header for recent search results -->
   <string name="settings_search_recent_searches_section_header">Toraidhean luirg o chionn goirid</string>
+  <!-- Message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_title">Cha do nochd dad</string>
+  <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_message">Feuch lorg eile ’s dòcha?</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">Putan lorg nan roghainnean</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
+  <!-- Title for the pop up prompt -->
+  <string name="terms_of_use_prompt_title">Fhuair sinn ùrachadh</string>
+  <!--
+    Message for the terms of use pop up prompt
+    %1$s is the product name "Firefox"
+    %2$s is the string terms_of_use_prompt_link_terms_of_use (Terms of Use) that is a link to the terms of use
+    %3$s is the string terms_of_use_prompt_link_privacy_notice (Privacy Notice) that is a link to the privacy notice
+  -->
+  <string name="terms_of_use_prompt_message_1">Thug sinn a-steach %1$s %2$s agus dh’ùraich sinn na %3$s againn.</string>
+  <!--
+    Second part of the terms of use pop up prompt
+    %1$s is the string terms_of_use_prompt_link_learn_more (Learn more) that is a link to a website with more information about the terms of use
+  -->
+  <string name="terms_of_use_prompt_message_2">Gabh mionaid, thoir sùil orra ’s gabh riutha. %1$s.</string>
+  <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
+  <string name="terms_of_use_prompt_link_terms_of_use">teirmichean a’ chleachdaidh</string>
+  <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
+  <string name="terms_of_use_prompt_link_privacy_notice">aithris na prìobhaideachd</string>
+  <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
+  <string name="terms_of_use_prompt_link_learn_more">Barrachd fiosrachaidh</string>
+  <!-- Label for a button to accept the terms of use -->
+  <string name="terms_of_use_prompt_accept">Gabh ris</string>
+  <!-- Label for a button to postpone accepting the terms of use -->
+  <string name="terms_of_use_prompt_postpone">Cuir nam chuimhne an ceann greis</string>
   <!-- ==== Experiment strings. ==== -->
 
   <!-- A title for the popup prompt. -->
