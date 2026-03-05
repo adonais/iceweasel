@@ -11,6 +11,7 @@ const ICONS = {
   file: "chrome://global/skin/icons/page-portrait.svg",
   secure: "chrome://global/skin/icons/security.svg",
   broken: "chrome://global/skin/icons/security-broken.svg",
+  failure: "chrome://global/skin/icons/info.svg",
 };
 
 const TESTS = [
@@ -39,6 +40,12 @@ const TESTS = [
     connectionIcon: ICONS.broken,
     descriptionSection: "trustpanel-header-enabled-insecure",
     isErrorPage: true,
+  },
+  {
+    url: "about:neterror",
+    icon: ICONS.active,
+    connectionIcon: ICONS.failure,
+    descriptionSection: "trustpanel-header-enabled",
   },
 ];
 

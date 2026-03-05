@@ -903,6 +903,10 @@
     & {
     list-style-image: url(chrome://global/skin/icons/security.svg);
   }
+
+  #trustpanel-popup[connection="net-error-page"] & {
+    list-style-image: url(chrome://global/skin/icons/info.svg);
+  }
 }
 
 #trustpanel-popup-icon:not([src]),

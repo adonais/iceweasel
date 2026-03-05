@@ -375,7 +375,6 @@ class TrustPanel {
   }
 
   async #updateMainView() {
-    let secureConnection = this.#isSecurePage();
     let assets = this.#trackingProtectionEnabled
       ? ETP_ENABLED_ASSETS
       : ETP_DISABLED_ASSETS;
@@ -418,9 +417,7 @@ class TrustPanel {
     );
     document.l10n.setAttributes(
       document.getElementById("trustpanel-connection-label"),
-      secureConnection
-        ? "trustpanel-connection-label-secure"
-        : "trustpanel-connection-label-insecure"
+      this.#connectionLabel()
     );
 
     this.#updateAttribute(
@@ -1012,6 +1009,16 @@ class TrustPanel {
       connection = "file";
     }
     return connection;
+  }
+
+  #connectionLabel() {
+    if (this.#isAboutNetErrorPage) {
+      return "identity-connection-failure";
+    }
+    if (this.#isSecurePage()) {
+      return "trustpanel-connection-label-secure";
+    }
+    return "trustpanel-connection-label-insecure";
   }
 
   #mixedContentState() {
