@@ -32,4 +32,5 @@ registerCleanupFunction(async () => {
   document.getElementById("searchbar-new").handleRevert();
   await SearchbarTestUtils.promisePopupClose(window);
   await gCUITestUtils.removeSearchBar();
+  Services.prefs.clearUserPref("browser.search.widget.lastUsed");
 });
