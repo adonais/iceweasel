@@ -363,3 +363,61 @@ add_task(async function test_confirmation_hint_visbility_tab_switch() {
   sandbox.restore();
   await SpecialPowers.popPrefEnv();
 });
+
+/**
+ * Tests that we don't show confirmation hints when we press the exclusion toggle.
+ */
+add_task(async function test_confirmation_hint_exclusions_toggle() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.siteExceptionsHintsEnabled", true]],
+  });
+
+  const sandbox = sinon.createSandbox();
+  Services.perms.removeByType("ipp-vpn");
+
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com"
+  );
+
+  let content = await openPanel({
+    isSignedOut: false,
+    isProtectionEnabled: true,
+    siteData: { isExclusion: false },
+  });
+
+  let showConfirmationHintSpy = sandbox.spy(window.ConfirmationHint, "show");
+
+  let disableVPNEventPromise = BrowserTestUtils.waitForEvent(
+    window,
+    "IPProtection:UserDisableVPNForSite"
+  );
+  content.siteExclusionToggleEl.click();
+
+  await disableVPNEventPromise;
+  Assert.ok(
+    true,
+    "IPProtection:UserDisableVPNForSite dispatched after pressing toggle"
+  );
+
+  Assert.ok(
+    !showConfirmationHintSpy.called,
+    "ConfirmationHint.show() should not be called when the exclusion toggle is pressed"
+  );
+
+  await closePanel();
+  BrowserTestUtils.removeTab(tab);
+
+  Services.perms.removeByType("ipp-vpn");
+  cleanupService();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});

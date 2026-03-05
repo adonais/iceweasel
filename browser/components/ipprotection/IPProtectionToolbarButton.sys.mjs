@@ -184,7 +184,9 @@ export class IPProtectionToolbarButton {
       return;
     }
 
-    this.updateState();
+    let exclusionChanged =
+      event.type === "IPPExceptionsManager:ExclusionChanged";
+    this.updateState(null, { showConfirmationHint: !exclusionChanged });
   }
 
   /**
