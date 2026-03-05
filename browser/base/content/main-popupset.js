@@ -37,6 +37,9 @@ document.addEventListener(
         case "context_separateSplitView":
           TabContextMenu.unsplitTabs();
           break;
+        case "context_reverseSplitView":
+          TabContextMenu.reverseSplitView();
+          break;
         case "context_reloadTab":
           gBrowser.reloadTab(TabContextMenu.contextTab);
           break;
