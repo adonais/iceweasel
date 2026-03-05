@@ -123,7 +123,7 @@ export class UrlbarInput extends HTMLElement {
                          role="button"
                          data-l10n-id="urlbar-searchmode-exit-button" />
           <menupopup class="searchmode-switcher-popup toolbar-menupopup"
-                     consumeoutsideclicks="false">
+                     consumeoutsideclicks="false" native="false"> <!-- Non-native due to bug 2019924 -->
             <menucaption class="searchmode-switcher-popup-description"
                          role="heading" />
             <menuseparator/>
