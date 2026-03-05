@@ -495,6 +495,9 @@ fn prepare_quad_impl(
             }
 
             let task_size = clipped_surface_rect.size().to_i32();
+            if task_size.is_empty() {
+                return;
+            }
 
             let cache_key = cache_key.as_ref().map(|key| {
                 RenderTaskCacheKey {
