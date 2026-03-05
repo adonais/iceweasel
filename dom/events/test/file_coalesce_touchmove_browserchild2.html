@@ -230,7 +230,8 @@
   }
 
   function init() {
-    SpecialPowers.pushPrefEnv({"set": [["dom.w3c_touch_events.enabled", true]]},
+    SpecialPowers.pushPrefEnv({"set": [["dom.w3c_touch_events.enabled", true],
+                                       ["apz.touch_move_tolerance", 0.0]]},
                               runTests);
   }
   </script>
