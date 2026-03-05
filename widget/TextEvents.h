@@ -310,6 +310,10 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
   }
 
   bool CanUserGestureActivateTarget() const {
+    if (IsModifierKeyEvent()) {
+      return false;
+    }
+
     if (mFlags.mIsShortcutKey) {
       // Space is quite common shortcut for playing media.
       return mKeyCode == NS_VK_SPACE ||

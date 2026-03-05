@@ -833,9 +833,12 @@ struct CCGraph {
 
   void Init() {
     MOZ_ASSERT(IsEmpty(), "Failed to call CCGraph::Clear");
-    if (!mPtrInfoMap.reserve(kInitialMapLength)) {
-      MOZ_CRASH("OOM");
-    }
+
+    // This can fail if we're running low on memory, but we can still grow the
+    // hashtable normally at the cost of performance. The process might still
+    // be in an unrecoverably bad state.
+    DebugOnly<bool> ok = mPtrInfoMap.reserve(kInitialMapLength);
+    MOZ_ASSERT(ok, "initial reserve should succeed");
   }
 
   void Clear() {

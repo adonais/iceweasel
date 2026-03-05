@@ -31,11 +31,18 @@ class TermsOfUsePromptPreferencesMiddleware(
             is TermsOfUsePromptAction.OnPromptManuallyDismissed ->
                 repository.updateHasPostponedAcceptingTermsOfUsePreference()
 
-            is TermsOfUsePromptAction.OnPromptDismissed ->
+            is TermsOfUsePromptAction.OnPromptDismissed -> {
                 repository.updateLastTermsOfUsePromptTimeInMillis()
+                repository.isShowingPrompt = false
+            }
 
-            is TermsOfUsePromptAction.OnImpression ->
+            is TermsOfUsePromptAction.OnImpression -> {
                 repository.incrementTermsOfUsePromptDisplayedCount()
+            }
+
+            is TermsOfUsePromptAction.OnPromptCreated -> {
+                repository.isShowingPrompt = true
+            }
 
             // no-ops
             is TermsOfUsePromptAction.OnLearnMoreClicked,

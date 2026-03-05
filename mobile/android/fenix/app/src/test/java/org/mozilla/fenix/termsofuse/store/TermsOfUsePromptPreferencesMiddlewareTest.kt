@@ -83,6 +83,8 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
     fun `WHEN the OnPromptDismissed action is received THEN the expected preference is updated`() {
         assertAllPrefsDefault()
 
+        repository.isShowingPrompt = true
+
         middleware.invoke(
             store = mockk(),
             next = {},
@@ -93,6 +95,7 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertFalse(settings.hasPostponedAcceptingTermsOfUse)
         assertTrue(settings.lastTermsOfUsePromptTimeInMillis > 0)
         assertEquals(0, settings.termsOfUsePromptDisplayedCount)
+        assertFalse(repository.isShowingPrompt)
     }
 
     @Test
@@ -109,6 +112,17 @@ class TermsOfUsePromptPreferencesMiddlewareTest {
         assertFalse(settings.hasPostponedAcceptingTermsOfUse)
         assertFalse(settings.lastTermsOfUsePromptTimeInMillis > 0)
         assertEquals(1, settings.termsOfUsePromptDisplayedCount)
+    }
+
+    @Test
+    fun `WHEN the OnPromptCreated action is received THEN the repository knows the prompt is showing`() {
+        middleware.invoke(
+            store = mockk(),
+            next = {},
+            action = TermsOfUsePromptAction.OnPromptCreated,
+        )
+
+        assertTrue(repository.isShowingPrompt)
     }
 
     @Test

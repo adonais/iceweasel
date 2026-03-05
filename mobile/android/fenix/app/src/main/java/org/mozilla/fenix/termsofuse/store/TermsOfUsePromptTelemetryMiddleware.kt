@@ -88,7 +88,10 @@ internal class TermsOfUsePromptTelemetryMiddleware :
                 )
 
             // no-ops
-            is TermsOfUsePromptAction.OnPromptDismissed -> {}
+            is TermsOfUsePromptAction.OnPromptCreated,
+            is TermsOfUsePromptAction.OnPromptDismissed,
+                -> {
+            }
         }
     }
 }

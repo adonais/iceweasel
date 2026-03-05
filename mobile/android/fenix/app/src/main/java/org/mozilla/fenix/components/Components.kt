@@ -353,8 +353,12 @@ class Components(private val context: Context) {
         )
     }
 
+    val termsOfUsePromptRepository by lazyMonitored {
+        DefaultTermsOfUsePromptRepository(settings)
+    }
+
     val termsOfUseManager by lazyMonitored {
-        TermsOfUseManager(DefaultTermsOfUsePromptRepository(settings))
+        TermsOfUseManager(termsOfUsePromptRepository)
     }
 
     val settingsIndexer by lazyMonitored {

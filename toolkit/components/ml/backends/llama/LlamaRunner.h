@@ -47,6 +47,9 @@
 #include "mozilla/EventQueue.h"
 #include "nsDeque.h"
 #include "mozilla/dom/Blob.h"
+#include "mozilla/dom/WorkerRef.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/GlobalTeardownObserver.h"
 
 namespace mozilla::dom {
 
@@ -173,21 +176,26 @@ using LlamaBackend = ::mozilla::llama::LlamaBackend;
  *
  * It holds a shared strong reference to the backend (LlamaBackend),
  * which may also be retained by other components (e.g., LlamaRunner).
- * All compute-heavy work is performed by the backend’s internal threadpool.
+ * All compute-heavy work is performed by the backend's internal threadpool.
  *
  * Generation results are delivered via LlamaGenerateTask::Generate(), which
  * returns a promise. Once resolved, the result is forwarded to the JS consumer.
  *
  * The stream starts when PullCallbackImpl is first called from JS,
  * launching a background generation task and associating it with a thread.
+ *
+ * Inherits from GlobalTeardownObserver to receive notifications when the
+ * worker/global is shutting down, allowing proper cleanup of background
+ * threads.
  */
-class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper {
+class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper,
+                                public GlobalTeardownObserver {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(LlamaStreamSource)
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(LlamaStreamSource,
                                            UnderlyingSourceAlgorithmsWrapper)
-  LlamaStreamSource(RefPtr<LlamaBackend> aBackend,
+  LlamaStreamSource(nsIGlobalObject* aGlobal, RefPtr<LlamaBackend> aBackend,
                     const LlamaChatOptions& aOptions);
 
   MOZ_CAN_RUN_SCRIPT
@@ -202,8 +210,13 @@ class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper {
   // Links the JS-side stream controller to this source
   void SetControllerStream(RefPtr<ReadableStream> aStream);
 
+  void DisconnectFromOwner() override;
+
  private:
   ~LlamaStreamSource();
+
+  // Helper to properly shut down the worker thread with async cleanup
+  void ShutdownWorkerThread();
 
   RefPtr<LlamaBackend> mBackend;
   const LlamaChatOptions mChatOptions;
@@ -220,6 +233,13 @@ class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper {
 
   // Associated JS stream object
   RefPtr<ReadableStream> mControllerStream;
+
+  // Keeps the worker alive during async operations.
+  // When using AsyncShutdown(), the worker thread cleanup happens
+  // asynchronously. If the worker context is torn down before the thread
+  // finishes shutting down, we can crash. The ThreadSafeWorkerRef keeps the
+  // worker alive until we explicitly release it after shutdown completes.
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
 };
 
 class MetadataCallback;

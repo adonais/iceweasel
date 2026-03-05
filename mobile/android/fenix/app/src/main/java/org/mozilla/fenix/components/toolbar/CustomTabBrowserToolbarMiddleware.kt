@@ -169,49 +169,49 @@ class CustomTabBrowserToolbarMiddleware(
                     Toolbar.ButtonTappedExtra(source = SOURCE_CUSTOM_BAR, item = ACTION_SECURITY_INDICATOR_CLICKED),
                 )
 
-                val customTab = requireNotNull(customTab)
+                val safeCustomTab = customTab ?: return
                 scope.launch(Dispatchers.IO) {
-                    val sitePermissions: SitePermissions? = customTab.content.url.getOrigin()?.let { origin ->
-                        permissionsStorage.findSitePermissionsBy(origin, private = customTab.content.private)
+                    val sitePermissions: SitePermissions? = safeCustomTab.content.url.getOrigin()?.let { origin ->
+                        permissionsStorage.findSitePermissionsBy(origin, private = safeCustomTab.content.private)
                     }
 
                     scope.launch(Dispatchers.Main) {
                         trackingProtectionUseCases.containsException(customTabId) { isExcepted ->
                             scope.launch {
                                 val cookieBannerUIMode = cookieBannersStorage.getCookieBannerUIMode(
-                                    tab = customTab,
+                                    tab = safeCustomTab,
                                     isFeatureEnabledInPrivateMode = settings.shouldUseCookieBannerPrivateMode,
                                     publicSuffixList = publicSuffixList,
                                 )
 
                                 val directions = if (settings.enableUnifiedTrustPanel) {
                                     ExternalAppBrowserFragmentDirections.actionGlobalTrustPanelFragment(
-                                        sessionId = customTab.id,
-                                        url = customTab.content.url,
-                                        title = customTab.content.title,
-                                        isLocalPdf = customTab.content.url.isContentUrl(),
-                                        isSecured = customTab.content.securityInfo.isSecure,
+                                        sessionId = safeCustomTab.id,
+                                        url = safeCustomTab.content.url,
+                                        title = safeCustomTab.content.title,
+                                        isLocalPdf = safeCustomTab.content.url.isContentUrl(),
+                                        isSecured = safeCustomTab.content.securityInfo.isSecure,
                                         sitePermissions = sitePermissions,
-                                        certificate = customTab.content.securityInfo.certificate,
-                                        permissionHighlights = customTab.content.permissionHighlights,
+                                        certificate = safeCustomTab.content.securityInfo.certificate,
+                                        permissionHighlights = safeCustomTab.content.permissionHighlights,
                                         isTrackingProtectionEnabled =
-                                            customTab.trackingProtection.enabled && !isExcepted,
+                                            safeCustomTab.trackingProtection.enabled && !isExcepted,
                                         cookieBannerUIMode = cookieBannerUIMode,
                                     )
                                 } else {
                                     ExternalAppBrowserFragmentDirections
                                         .actionGlobalQuickSettingsSheetDialogFragment(
                                             sessionId = customTabId,
-                                            url = customTab.content.url,
-                                            title = customTab.content.title,
-                                            isLocalPdf = customTab.content.url.isContentUrl(),
-                                            isSecured = customTab.content.securityInfo.isSecure,
+                                            url = safeCustomTab.content.url,
+                                            title = safeCustomTab.content.title,
+                                            isLocalPdf = safeCustomTab.content.url.isContentUrl(),
+                                            isSecured = safeCustomTab.content.securityInfo.isSecure,
                                             sitePermissions = sitePermissions,
                                             gravity = settings.toolbarPosition.androidGravity,
-                                            certificateName = customTab.content.securityInfo.issuer,
-                                            permissionHighlights = customTab.content.permissionHighlights,
+                                            certificateName = safeCustomTab.content.securityInfo.issuer,
+                                            permissionHighlights = safeCustomTab.content.permissionHighlights,
                                             isTrackingProtectionEnabled =
-                                                customTab.trackingProtection.enabled && !isExcepted,
+                                                safeCustomTab.trackingProtection.enabled && !isExcepted,
                                             cookieBannerUIMode = cookieBannerUIMode,
                                         )
                                 }

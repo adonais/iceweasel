@@ -20,6 +20,11 @@ data object TermsOfUsePromptState : State
 sealed interface TermsOfUsePromptAction : Action {
 
     /**
+     * Triggered when the prompt is created.
+     */
+    data object OnPromptCreated : TermsOfUsePromptAction
+
+    /**
      * Triggered when the prompt has been displayed.
      *
      * @property surface The [Surface] that the prompt was displayed on.

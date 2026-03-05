@@ -1155,13 +1155,14 @@ def target_tasks_customv8_update(full_task_graph, parameters, graph_config):
 
 @register_target_task("file_update")
 def target_tasks_file_update(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required to perform nightly in-tree file updates"""
+    """Select the set of tasks required to perform periodic in-tree file updates"""
+    return ["repo-update-periodic-file-update"]
 
-    def filter(task):
-        # For now any task in the repo-update kind is ok
-        return task.kind in ["repo-update"]
 
-    return [l for l, t in full_task_graph.tasks.items() if filter(t)]
+@register_target_task("pinning_update")
+def target_tasks_pinning_update(full_task_graph, parameters, graph_config):
+    """Select the set of tasks required to perform periodic HSTS/HPKP pinning updates"""
+    return ["repo-update-pinning-update"]
 
 
 @register_target_task("l10n_bump")

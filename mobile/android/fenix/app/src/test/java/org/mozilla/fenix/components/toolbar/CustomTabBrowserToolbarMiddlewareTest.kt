@@ -57,16 +57,18 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Events
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.URLCopiedToClipboard
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.DisplayActions.MenuClicked
-import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.EndPageActions.CustomButtonClicked
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.StartBrowserActions.CloseClicked
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.StartPageActions.SiteInfoClicked
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
+import org.mozilla.fenix.telemetry.ACTION_SECURITY_INDICATOR_CLICKED
+import org.mozilla.fenix.telemetry.SOURCE_CUSTOM_BAR
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -464,6 +466,43 @@ class CustomTabBrowserToolbarMiddlewareTest {
         assertEquals(1, toolbarPageActions.size)
         securityIndicator = toolbarPageActions[0]
         assertEquals(expectedInsecureIndicator, securityIndicator)
+    }
+
+    @Test
+    fun `GIVEN current custom tab WHEN the security indicator button is clicked THEN record telemetry`() {
+        val trackingProtectionUseCases: TrackingProtectionUseCases = mockk(relaxed = true)
+        val navController: NavController = mockk(relaxed = true)
+        val middleware = buildMiddleware(
+            trackingProtectionUseCases = trackingProtectionUseCases,
+            navController = navController,
+        )
+        val toolbarStore = buildStore(middleware)
+
+        toolbarStore.dispatch(SiteInfoClicked)
+        mainLooperRule.idle()
+
+        val telemetry = Toolbar.buttonTapped.testGetValue()?.get(0)
+        assertNotNull(telemetry)
+        assertEquals("toolbar", telemetry?.category)
+        assertEquals("button_tapped", telemetry?.name)
+        assertEquals(SOURCE_CUSTOM_BAR, telemetry?.extra?.get("source"))
+        assertEquals(ACTION_SECURITY_INDICATOR_CLICKED, telemetry?.extra?.get("item"))
+    }
+
+    @Test
+    fun `GIVEN unknown custom tab WHEN the security indicator button is clicked THEN record telemetry and fail silently`() {
+        every { customTab.id } returns "unknown"
+        val toolbarStore = buildStore()
+
+        toolbarStore.dispatch(SiteInfoClicked)
+        mainLooperRule.idle()
+
+        val telemetry = Toolbar.buttonTapped.testGetValue()?.get(0)
+        assertNotNull(telemetry)
+        assertEquals("toolbar", telemetry?.category)
+        assertEquals("button_tapped", telemetry?.name)
+        assertEquals(SOURCE_CUSTOM_BAR, telemetry?.extra?.get("source"))
+        assertEquals(ACTION_SECURITY_INDICATOR_CLICKED, telemetry?.extra?.get("item"))
     }
 
     @Test

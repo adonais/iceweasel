@@ -2103,6 +2103,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enable
 // User pref to show stories on newtab (feeds.system.topstories has to be set to true as well)
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
 
+// The pref controls if search hand-off is enabled for Activity Stream.
+pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
+
 pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
 // URLs from the user's history that contain this search param will be hidden
