@@ -3995,7 +3995,11 @@
       }
 
       let lazyBrowserURI;
-      if (createLazyBrowser && uriString != "about:blank") {
+      if (
+        createLazyBrowser &&
+        uriString != "about:blank" &&
+        uriString != "about:opentabs"
+      ) {
         lazyBrowserURI = aURIObject;
         uriString = "about:blank";
       }

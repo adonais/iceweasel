@@ -7479,8 +7479,8 @@ var SessionStoreInternal = {
       !(
         aTabState.entries.length == 1 &&
         (entryUrl == "about:blank" ||
-          entryUrl == "about:home" ||
-          entryUrl == "about:newtab" ||
+          (entryUrl == "about:home" && !aTabState.splitViewId) ||
+          (entryUrl == "about:newtab" && !aTabState.splitViewId) ||
           entryUrl == "about:privatebrowsing") &&
         !aTabState.userTypedValue
       )
