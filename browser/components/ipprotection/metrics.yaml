@@ -20,6 +20,7 @@ ipprotection:
       - interaction
     notification_emails:
       - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
     expires: never
 
   toggled:
@@ -34,6 +35,7 @@ ipprotection:
       - interaction
     notification_emails:
       - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
     expires: never
     extra_keys:
       enabled:
@@ -58,6 +60,7 @@ ipprotection:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1972930
     notification_emails:
       - rking@mozilla.com
+      - vpn-telemetry@mozilla.com
     expires: never
   removed_from_toolbar:
     type: event
@@ -71,6 +74,7 @@ ipprotection:
       - interaction
     notification_emails:
       - mhynson@mozilla.com
+      - vpn-telemetry@mozilla.com
     expires: never
 
   bandwidth_used_threshold:
@@ -106,9 +110,46 @@ ipprotection:
      - interaction
     notification_emails:
       - rking@mozilla.com
+      - vpn-telemetry@mozilla.com
     expires: never
     extra_keys:
       source:
         type: string
         description: >
           Module where the error originated.
+
+  exclusion_added:
+    type: counter
+    description: >
+      Recorded when a site exclusion is added.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017487
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017487
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+
+  exclusion_toggled:
+    type: event
+    description: >
+      Recorded when a site exclusion is added or removed using the panel toggle UI.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017487
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017487
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      excluded:
+        type: boolean
+        description: >
+          True if the site was excluded (VPN disabled for site).
+          False if the exclusion was removed (VPN re-enabled for site).

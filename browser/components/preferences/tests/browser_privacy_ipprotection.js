@@ -253,6 +253,136 @@ add_task(async function test_exclusions_add_button() {
   );
 });
 
+// Test that the exclusion_added counter is incremented
+// when exclusions are added via the permissions dialog
+add_task(async function test_exclusions_telemetry() {
+  const PERM_NAME = "ipp-vpn";
+  await setupVpnPrefs({
+    feature: "beta",
+    siteExceptions: true,
+    entitlementCache: '{"some":"data"}',
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences#privacy" },
+    async function (browser) {
+      let settingGroup = testSettingsGroupVisible(browser);
+      let siteExceptionsGroup = settingGroup?.querySelector(
+        "#ipProtectionExceptions"
+      );
+      let exceptionAllListButton = siteExceptionsGroup?.querySelector(
+        "#ipProtectionExceptionAllListButton"
+      );
+
+      // Clear ipp-vpn and old telemetry
+      Services.perms.removeByType(PERM_NAME);
+      Services.fog.testResetFOG();
+      await Services.fog.testFlushAllChildren();
+
+      // Add an existing exclusion that we'll remove later
+      const site1 = "https://existing.example.com";
+      let principal1 =
+        Services.scriptSecurityManager.createContentPrincipalFromOrigin(site1);
+      Services.perms.addFromPrincipal(
+        principal1,
+        PERM_NAME,
+        Services.perms.DENY_ACTION
+      );
+
+      // Reset telemetry after setting up the existing exclusion
+      Services.fog.testResetFOG();
+      await Services.fog.testFlushAllChildren();
+
+      // Load the permissions dialog
+      let promiseSubDialogLoaded = promiseLoadSubDialog(
+        "chrome://browser/content/preferences/dialogs/permissions.xhtml"
+      );
+
+      exceptionAllListButton.click();
+
+      const win = await promiseSubDialogLoaded;
+
+      let permissionsBox = win.document.getElementById("permissionsBox");
+
+      // Wait for existing exclusion to appear
+      await BrowserTestUtils.waitForMutationCondition(
+        permissionsBox,
+        { subtree: true, childList: true },
+        () => permissionsBox.children.length === 1
+      );
+
+      // Add two new exclusions
+      let siteListUpdatedPromise = BrowserTestUtils.waitForMutationCondition(
+        permissionsBox,
+        { subtree: true, childList: true },
+        () => {
+          return permissionsBox.children.length === 3;
+        }
+      );
+
+      let urlField = win.document.getElementById("url");
+      let addButton = win.document.getElementById("btnAdd");
+
+      const site2 = "https://example.com";
+      urlField.focus();
+      EventUtils.sendString(site2, win);
+      addButton.click();
+
+      const site3 = "https://another.example.com";
+      urlField.focus();
+      EventUtils.sendString(site3, win);
+      addButton.click();
+
+      await siteListUpdatedPromise;
+
+      // Remove the existing exclusion
+      siteListUpdatedPromise = BrowserTestUtils.waitForMutationCondition(
+        permissionsBox,
+        { subtree: true, childList: true },
+        () => {
+          return permissionsBox.children.length === 2;
+        }
+      );
+
+      let removeButton = win.document.getElementById("removePermission");
+      let existingItem = Array.from(permissionsBox.children).find(
+        item => item.getAttribute("origin") === site1
+      );
+      Assert.ok(existingItem, "Should find the existing entry");
+
+      existingItem.click();
+      removeButton.click();
+
+      await siteListUpdatedPromise;
+
+      // Apply the changes and check telemetry
+      let saveButton = win.document.querySelector("dialog").getButton("accept");
+      saveButton.click();
+
+      // First verify the permissions were actually saved
+      let exclusions = Services.perms.getAllByTypes([PERM_NAME]);
+      Assert.equal(
+        exclusions.length,
+        2,
+        "Should have 2 new exclusions saved and remaining, ignoring the removed existing exclusion"
+      );
+
+      await Services.fog.testFlushAllChildren();
+
+      Assert.equal(
+        Glean.ipprotection.exclusionAdded.testGetValue(),
+        2,
+        "exclusion_added counter should be 2, ignoring the removed existing exclusion"
+      );
+
+      // Clean up
+      Services.perms.removeByType(PERM_NAME);
+      Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
+      Services.fog.testResetFOG();
+    }
+  );
+});
+
 // Test that we show the correct number of site exclusions
 add_task(async function test_exclusions_count() {
   const PERM_NAME = "ipp-vpn";

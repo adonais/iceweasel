@@ -15,12 +15,19 @@ const PERM_NAME = "ipp-vpn";
  */
 class ExceptionsManager extends EventTarget {
   #inited = false;
+  #observer = null;
 
   init() {
     if (this.#inited) {
       return;
     }
 
+    // ES6 classes that extend EventTarget cannot be coerced into nsIObserver.
+    // Work around this by using a function as the observer.
+    this.#observer = (subject, topic, data) => {
+      this.observe(subject, topic, data);
+    };
+    Services.obs.addObserver(this.#observer, "perm-changed");
     this.#inited = true;
   }
 
@@ -29,7 +36,35 @@ class ExceptionsManager extends EventTarget {
       return;
     }
 
+    Services.obs.removeObserver(this.#observer, "perm-changed");
+    this.#observer = null;
     this.#inited = false;
+  }
+
+  observe(subject, topic, data) {
+    if (topic !== "perm-changed") {
+      return;
+    }
+
+    let permission = subject.QueryInterface(Ci.nsIPermission);
+    if (permission.type !== PERM_NAME) {
+      return;
+    }
+
+    const isExclusion =
+      permission.capability === Ci.nsIPermissionManager.DENY_ACTION;
+    const added = data === "added" && isExclusion;
+    const removed = data === "deleted" && isExclusion;
+
+    if (added || removed) {
+      if (added) {
+        Glean.ipprotection.exclusionAdded.add(1);
+      }
+
+      this.dispatchEvent(
+        new CustomEvent("IPPExceptionsManager:ExclusionChanged")
+      );
+    }
   }
 
   /**
@@ -102,6 +137,22 @@ class ExceptionsManager extends EventTarget {
   }
 
   /**
+   * Gets the total number of site exclusions added to ipp-vpn.
+   *
+   * @returns {number}
+   *  The count of site exclusions in ipp-vpn.
+   */
+  getExclusionCount() {
+    let count = 0;
+    for (let perm of Services.perms.getAllByTypes([PERM_NAME])) {
+      if (perm.capability === Ci.nsIPermissionManager.DENY_ACTION) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
    * Sets the given principal as an exclusion or non exclusion.
    *
    * @param {nsIPrincipal} principal
@@ -132,10 +183,6 @@ class ExceptionsManager extends EventTarget {
     } else {
       this.removeExclusion(principal);
     }
-
-    this.dispatchEvent(
-      new CustomEvent("IPPExceptionsManager:ExclusionChanged")
-    );
   }
 }
 

@@ -7,6 +7,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  IPPExceptionsManager:
+    "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPProxyManager:
     "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
@@ -313,4 +315,108 @@ add_task(async function removed_from_toolbar() {
     start.area,
     start.position
   );
+});
+
+/*
+ * Tests that the exclusion_toggled event is recorded when the panel toggle
+ * is used to add or remove a site exclusion
+ */
+add_task(async function test_exclusion_toggled() {
+  const PERM_NAME = "ipp-vpn";
+  Services.perms.removeByType(PERM_NAME);
+  lazy.IPPExceptionsManager.init();
+
+  await openPanel();
+
+  Services.fog.testResetFOG();
+
+  // We can simplify our test by dispatching the event used for toggle state changes,
+  // rather than by finding and clicking the toggle directly.
+  document.dispatchEvent(
+    new CustomEvent("IPProtection:UserDisableVPNForSite", { bubbles: true })
+  );
+
+  let toggledEvents = Glean.ipprotection.exclusionToggled.testGetValue();
+  Assert.equal(
+    toggledEvents.length,
+    1,
+    "should have recorded one exclusion_toggled event"
+  );
+  Assert.equal(toggledEvents[0].category, "ipprotection");
+  Assert.equal(toggledEvents[0].name, "exclusion_toggled");
+  Assert.equal(
+    toggledEvents[0].extra.excluded,
+    "true",
+    "excluded should be true when VPN is disabled for site"
+  );
+
+  document.dispatchEvent(
+    new CustomEvent("IPProtection:UserEnableVPNForSite", { bubbles: true })
+  );
+
+  toggledEvents = Glean.ipprotection.exclusionToggled.testGetValue();
+  Assert.equal(
+    toggledEvents.length,
+    2,
+    "should have recorded a second exclusion_toggled event"
+  );
+  Assert.equal(
+    toggledEvents[1].extra.excluded,
+    "false",
+    "excluded should be false when VPN is re-enabled for site"
+  );
+
+  await closePanel();
+
+  Services.fog.testResetFOG();
+  lazy.IPPExceptionsManager.uninit();
+  Services.perms.removeByType(PERM_NAME);
+});
+
+/*
+ * Tests that the exclusion_added counter is incremented when site exclusions
+ * are added
+ */
+add_task(async function test_exclusion_added() {
+  const PERM_NAME = "ipp-vpn";
+  Services.perms.removeByType(PERM_NAME);
+
+  lazy.IPPExceptionsManager.init();
+  Services.fog.testResetFOG();
+
+  const site1 = "https://www.example.com";
+  const site2 = "https://www.another.example.com";
+
+  let principal1 =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(site1);
+  let principal2 =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(site2);
+
+  // Add first exclusion
+  lazy.IPPExceptionsManager.setExclusion(principal1, true);
+  Assert.equal(
+    Glean.ipprotection.exclusionAdded.testGetValue(),
+    1,
+    "should have counted 1 exclusion added"
+  );
+
+  // Add second exclusion
+  lazy.IPPExceptionsManager.setExclusion(principal2, true);
+  Assert.equal(
+    Glean.ipprotection.exclusionAdded.testGetValue(),
+    2,
+    "should have counted 2 exclusions added"
+  );
+
+  // Remove an exclusion — counter should not increment
+  lazy.IPPExceptionsManager.setExclusion(principal1, false);
+  Assert.equal(
+    Glean.ipprotection.exclusionAdded.testGetValue(),
+    2,
+    "counter should not increment on removal"
+  );
+
+  Services.fog.testResetFOG();
+  lazy.IPPExceptionsManager.uninit();
+  Services.perms.removeByType(PERM_NAME);
 });
