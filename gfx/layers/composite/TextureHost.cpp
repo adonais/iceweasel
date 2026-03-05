@@ -280,7 +280,7 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
               reqSize = ImageDataSerializer::ComputeYCbCrBufferSize(
                   ycbcr.ySize(), ycbcr.yStride(), ycbcr.cbCrSize(),
                   ycbcr.cbCrStride(), ycbcr.yOffset(), ycbcr.cbOffset(),
-                  ycbcr.crOffset());
+                  ycbcr.crOffset(), ycbcr.colorDepth());
               break;
             }
             case BufferDescriptor::TRGBDescriptor: {

@@ -81,7 +81,7 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
     size_t descriptorSize = ImageDataSerializer::ComputeYCbCrBufferSize(
         descriptor.ySize(), descriptor.yStride(), descriptor.cbCrSize(),
         descriptor.cbCrStride(), descriptor.yOffset(), descriptor.cbOffset(),
-        descriptor.crOffset());
+        descriptor.crOffset(), descriptor.colorDepth());
     if (NS_WARN_IF(descriptorSize == 0 || descriptorSize > bufferSize)) {
       MOZ_ASSERT_UNREACHABLE("Buffer too small to fit descriptor!");
       return nullptr;
