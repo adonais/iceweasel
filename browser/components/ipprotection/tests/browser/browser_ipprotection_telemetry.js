@@ -26,10 +26,10 @@ async function resetStateToObj(content, originalState) {
 }
 
 /**
- * Tests that the toggled event is recorded when the VPN
+ * Tests that the started and stopped events are recorded when the VPN
  * is turned on or off
  */
-add_task(async function user_toggle_on_and_off() {
+add_task(async function user_start_and_stop() {
   let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
   Assert.ok(
     BrowserTestUtils.isVisible(button),
@@ -78,12 +78,12 @@ add_task(async function user_toggle_on_and_off() {
   // Turn the VPN on
   turnOnButton.click();
   await vpnOnPromise;
-  let toggledEvents = Glean.ipprotection.toggled.testGetValue();
-  Assert.equal(toggledEvents.length, 1, "should have recorded a toggle");
-  Assert.equal(toggledEvents[0].category, "ipprotection");
-  Assert.equal(toggledEvents[0].name, "toggled");
-  Assert.equal(toggledEvents[0].extra.enabled, "true");
-  Assert.equal(toggledEvents[0].extra.userAction, "true");
+  let startedEvents = Glean.ipprotection.started.testGetValue();
+  Assert.equal(startedEvents.length, 1, "should have recorded a started event");
+  Assert.equal(startedEvents[0].category, "ipprotection");
+  Assert.equal(startedEvents[0].name, "started");
+  Assert.equal(startedEvents[0].extra.userAction, "true");
+  Assert.equal(startedEvents[0].extra.inPrivateBrowsing, "false");
 
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
     lazy.IPPProxyManager,
@@ -95,14 +95,13 @@ add_task(async function user_toggle_on_and_off() {
   let turnOffButton = statusCard.actionButtonEl;
   turnOffButton.click();
   await vpnOffPromise;
-  toggledEvents = Glean.ipprotection.toggled.testGetValue();
-  Assert.equal(toggledEvents.length, 2, "should have recorded a second toggle");
-  Assert.equal(toggledEvents[1].category, "ipprotection");
-  Assert.equal(toggledEvents[1].name, "toggled");
-  Assert.equal(toggledEvents[1].extra.enabled, "false");
-  Assert.equal(toggledEvents[1].extra.userAction, "true");
+  let stoppedEvents = Glean.ipprotection.stopped.testGetValue();
+  Assert.equal(stoppedEvents.length, 1, "should have recorded a stopped event");
+  Assert.equal(stoppedEvents[0].category, "ipprotection");
+  Assert.equal(stoppedEvents[0].name, "stopped");
+  Assert.equal(stoppedEvents[0].extra.userAction, "true");
   Assert.greater(
-    Math.ceil(toggledEvents[1].extra.duration),
+    Math.ceil(stoppedEvents[0].extra.duration),
     0,
     "Should have positive duration"
   );
@@ -114,6 +113,48 @@ add_task(async function user_toggle_on_and_off() {
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
   EventUtils.synthesizeKey("KEY_Escape");
   await panelHiddenPromise;
+});
+
+/**
+ * Tests that inPrivateBrowsing is true when the VPN is started from a
+ * private browsing window
+ */
+add_task(async function start_in_private_browsing() {
+  await putServerInRemoteSettings();
+
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  IPProtectionService.updateState();
+
+  Services.fog.testResetFOG();
+  await Services.fog.testFlushAllChildren();
+
+  let vpnOnPromise = BrowserTestUtils.waitForEvent(
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    false,
+    () => !!IPPProxyManager.activatedAt
+  );
+  await lazy.IPPProxyManager.start(true, true);
+  await vpnOnPromise;
+
+  let startedEvents = Glean.ipprotection.started.testGetValue();
+  Assert.equal(startedEvents.length, 1, "should have recorded a started event");
+  Assert.equal(startedEvents[0].extra.inPrivateBrowsing, "true");
+
+  let vpnOffPromise = BrowserTestUtils.waitForEvent(
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    false,
+    () => !IPPProxyManager.activatedAt
+  );
+  await lazy.IPPProxyManager.stop();
+  await vpnOffPromise;
+
+  Services.fog.testResetFOG();
+  cleanupService();
 });
 
 /**
@@ -166,7 +207,11 @@ add_task(async function click_upgrade_button() {
   await panelHiddenPromise;
 
   let upgradeEvent = Glean.ipprotection.clickUpgradeButton.testGetValue();
-  Assert.equal(upgradeEvent.length, 1, "should have recorded a toggle");
+  Assert.equal(
+    upgradeEvent.length,
+    1,
+    "should have recorded a click upgrade button event"
+  );
 
   Services.fog.testResetFOG();
   await resetStateToObj(content, originalState);
@@ -200,10 +245,10 @@ add_task(async function test_error_state() {
 });
 
 /**
- * Tests that the toggled event is recorded when the VPN
+ * Tests that the stopped event is recorded when the VPN
  * turns off at browser shutdown
  */
-add_task(async function toggle_off_on_shutdown() {
+add_task(async function stop_on_shutdown() {
   let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
   Assert.ok(
     BrowserTestUtils.isVisible(button),
@@ -249,23 +294,22 @@ add_task(async function toggle_off_on_shutdown() {
   // Turn the VPN on
   turnOnButton.click();
   await vpnOnPromise;
-  let toggledEvents = Glean.ipprotection.toggled.testGetValue();
-  Assert.equal(toggledEvents.length, 1, "should have recorded a toggle");
-  Assert.equal(toggledEvents[0].category, "ipprotection");
-  Assert.equal(toggledEvents[0].name, "toggled");
-  Assert.equal(toggledEvents[0].extra.enabled, "true");
-  Assert.equal(toggledEvents[0].extra.userAction, "true");
+  let startedEvents = Glean.ipprotection.started.testGetValue();
+  Assert.equal(startedEvents.length, 1, "should have recorded a started event");
+  Assert.equal(startedEvents[0].category, "ipprotection");
+  Assert.equal(startedEvents[0].name, "started");
+  Assert.equal(startedEvents[0].extra.userAction, "true");
+  Assert.equal(startedEvents[0].extra.inPrivateBrowsing, "false");
 
   // Simulate closing the window
   lazy.IPProtectionService.uninit();
-  toggledEvents = Glean.ipprotection.toggled.testGetValue();
-  Assert.equal(toggledEvents.length, 2, "should have recorded a second toggle");
-  Assert.equal(toggledEvents[1].category, "ipprotection");
-  Assert.equal(toggledEvents[1].name, "toggled");
-  Assert.equal(toggledEvents[1].extra.enabled, "false");
-  Assert.equal(toggledEvents[1].extra.userAction, "false");
+  let stoppedEvents = Glean.ipprotection.stopped.testGetValue();
+  Assert.equal(stoppedEvents.length, 1, "should have recorded a stopped event");
+  Assert.equal(stoppedEvents[0].category, "ipprotection");
+  Assert.equal(stoppedEvents[0].name, "stopped");
+  Assert.equal(stoppedEvents[0].extra.userAction, "false");
   Assert.greater(
-    Math.ceil(toggledEvents[1].extra.duration),
+    Math.ceil(stoppedEvents[0].extra.duration),
     0,
     "Should have positive duration"
   );

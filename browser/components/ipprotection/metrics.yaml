@@ -23,14 +23,14 @@ ipprotection:
       - vpn-telemetry@mozilla.com
     expires: never
 
-  toggled:
+  started:
     type: event
     description: >
-      Recorded when IP Protection is toggled.
+      Recorded when IP Protection is started.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972711
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017486
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972711
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017486
     data_sensitivity:
       - interaction
     notification_emails:
@@ -38,18 +38,38 @@ ipprotection:
       - vpn-telemetry@mozilla.com
     expires: never
     extra_keys:
-      enabled:
-        type: boolean
-        description: >
-          True if IP Protection was turned on.
       userAction:
         type: boolean
         description: >
-          If the VPN was connected or disconnected by a user action.
+          If the VPN was connected by a user action.
+      inPrivateBrowsing:
+        type: boolean
+        description: >
+          True if IP Protection was started in a private browsing window.
+
+  stopped:
+    type: event
+    description: >
+      Recorded when IP Protection is stopped.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017486
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017486
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      userAction:
+        type: boolean
+        description: >
+          If the VPN was disconnected by a user action.
       duration:
         type: string
         description: >
-          Amount of time the VPN was connnected in a session.
+          Amount of time the VPN was connected in a session.
   click_upgrade_button:
     type: event
     description: >
