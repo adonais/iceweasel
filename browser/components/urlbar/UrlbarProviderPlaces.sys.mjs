@@ -342,7 +342,8 @@ function makeUrlbarResult(queryContext, info) {
           source: UrlbarUtils.RESULT_SOURCE.TABS,
           payload: {
             url: action.params.url,
-            title: info.title,
+            title:
+              info.title || UrlbarUtils.prepareUrlForDisplay(action.params.url),
             icon: info.icon,
             userContextId: info.userContextId,
             lastVisit: info.lastVisit,
@@ -414,7 +415,9 @@ function makeUrlbarResult(queryContext, info) {
       // If there's no title, show the domain as the title. Not all valid URLs
       // have a domain.
       title = new URL(info.url).URI.displayHostPort;
-    } catch (e) {}
+    } catch (e) {
+      title = UrlbarUtils.prepareUrlForDisplay(info.url);
+    }
   }
 
   return new lazy.UrlbarResult({
