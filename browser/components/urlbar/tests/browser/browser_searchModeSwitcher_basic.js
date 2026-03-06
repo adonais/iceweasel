@@ -14,25 +14,15 @@ add_setup(async function setup() {
 });
 
 add_task(async function open_settings() {
-  const popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
+  await UrlbarTestUtils.openSearchModeSwitcher(window);
 
   let settingsLoaded = BrowserTestUtils.browserLoaded(
     window,
     false,
     "about:preferences#search"
   );
-  if (
-    AppConstants.platform == "macosx" &&
-    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-  ) {
-    // Native menus do not support synthesizing key events
-    popup.activateItem(
-      popup.querySelector(".searchmode-switcher-popup-search-settings-button")
-    );
-  } else {
-    EventUtils.synthesizeKey("KEY_ArrowUp");
-    EventUtils.synthesizeKey("KEY_Enter");
-  }
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  EventUtils.synthesizeKey("KEY_Enter");
   await settingsLoaded;
 
   Assert.ok(true, "Opened settings page");
@@ -56,24 +46,14 @@ add_task(async function open_settings_with_there_is_already_opened_settings() {
 
   info("Open new window");
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
-  const popup = await UrlbarTestUtils.openSearchModeSwitcher(newWin);
+  await UrlbarTestUtils.openSearchModeSwitcher(newWin);
 
   info(
     "Choose open settings item and wait until the window having perference page will get focus"
   );
   let onFocus = BrowserTestUtils.waitForEvent(window, "focus", true);
-  if (
-    AppConstants.platform == "macosx" &&
-    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-  ) {
-    // Native menus do not support synthesizing key events
-    popup.activateItem(
-      popup.querySelector(".searchmode-switcher-popup-search-settings-button")
-    );
-  } else {
-    EventUtils.synthesizeKey("KEY_ArrowUp", {}, newWin);
-    EventUtils.synthesizeKey("KEY_Enter", {}, newWin);
-  }
+  EventUtils.synthesizeKey("KEY_ArrowUp", {}, newWin);
+  EventUtils.synthesizeKey("KEY_Enter", {}, newWin);
   await onFocus;
   Assert.ok(true, "The window that has perference page got focus");
 
@@ -203,16 +183,8 @@ add_task(async function select_with_single_click() {
 
   let target = popup.querySelector("menuitem[label=Bing]");
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  if (
-    AppConstants.platform == "macosx" &&
-    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-  ) {
-    // Native menus do not support synthesizing mouse events
-    popup.activateItem(target);
-  } else {
-    EventUtils.synthesizeMouseAtCenter(target, { type: "mousemove" });
-    EventUtils.synthesizeMouseAtCenter(target, { type: "mouseup" });
-  }
+  EventUtils.synthesizeMouseAtCenter(target, { type: "mousemove" });
+  EventUtils.synthesizeMouseAtCenter(target, { type: "mouseup" });
   await popupHidden;
 
   await UrlbarTestUtils.assertSearchMode(window, {
@@ -462,30 +434,20 @@ add_task(async function open_engine_page_directly() {
     },
   ];
 
-  for (let { action, input, expected } of TEST_DATA) {
-    if (
-      action != "click" &&
-      AppConstants.platform == "macosx" &&
-      Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-    ) {
-      // Native menus do not support synthesizing key events
-      info(`Skipping test for ${JSON.stringify({ action, input, expected })}`);
-      continue;
-    }
+  let searchExtension = await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      search_url: "https://example.com/",
+      favicon_url: "https://example.com/favicon.ico",
+    },
+    { setAsDefault: true, skipUnload: true }
+  );
 
+  for (let { action, input, expected } of TEST_DATA) {
     info(`Test for ${JSON.stringify({ action, input, expected })}`);
 
     info("Open a window");
     let newWin = await BrowserTestUtils.openNewBrowserWindow();
-
-    let searchExtension = await SearchTestUtils.installSearchExtension(
-      {
-        name: "MozSearch",
-        search_url: "https://example.com/",
-        favicon_url: "https://example.com/favicon.ico",
-      },
-      { setAsDefault: true, skipUnload: true }
-    );
 
     info(`Open the result popup with [${input}]`);
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -518,11 +480,92 @@ add_task(async function open_engine_page_directly() {
     await pageLoaded;
     Assert.ok(true, "The popup was hidden and expected page was loaded");
 
-    // Cleanup.
-    await PlacesUtils.history.clear();
-    await searchExtension.unload();
     await BrowserTestUtils.closeWindow(newWin);
   }
+
+  // Cleanup.
+  await PlacesUtils.history.clear();
+  await searchExtension.unload();
+});
+
+add_task(async function open_engine_page_in_tab() {
+  const TEST_DATA = [
+    {
+      action: "click",
+      input: "",
+      expected: "https://example.com/",
+    },
+    {
+      action: "click",
+      input: "a b c",
+      expected: "https://example.com/?q=a+b+c",
+    },
+    {
+      action: "key",
+      input: "",
+      expected: "https://example.com/",
+    },
+    {
+      action: "key",
+      input: "a b c",
+      expected: "https://example.com/?q=a+b+c",
+    },
+  ];
+
+  let searchExtension = await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      search_url: "https://example.com/",
+      favicon_url: "https://example.com/favicon.ico",
+    },
+    { setAsDefault: true, skipUnload: true }
+  );
+
+  for (let { action, input, expected } of TEST_DATA) {
+    info(`Test for ${JSON.stringify({ action, input, expected })}`);
+
+    info("Open a window");
+    let newWin = await BrowserTestUtils.openNewBrowserWindow();
+
+    info(`Open the result popup with [${input}]`);
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window: newWin,
+      value: input,
+    });
+
+    info("Open the mode switcher");
+    let popup = await UrlbarTestUtils.openSearchModeSwitcher(newWin);
+
+    info(`Do action of [${action}] on MozSearch menuitem`);
+    let newTabOpened = BrowserTestUtils.waitForNewTab(
+      newWin.gBrowser,
+      expected,
+      true
+    );
+
+    if (action == "click") {
+      EventUtils.synthesizeMouseAtCenter(
+        popup.querySelector("menuitem[label=MozSearch]"),
+        {
+          accelKey: true,
+        },
+        newWin
+      );
+    } else {
+      await UrlbarTestUtils.selectMenuItem(popup, "menuitem[label=MozSearch]");
+      EventUtils.synthesizeKey("KEY_Enter", { accelKey: true }, newWin);
+    }
+
+    await UrlbarTestUtils.assertSearchMode(newWin, null);
+    await newTabOpened;
+    Assert.ok(true, "Expected page was loaded");
+
+    await BrowserTestUtils.closeWindow(newWin);
+  }
+
+  // Cleanup.
+  await PlacesUtils.history.clear();
+  await searchExtension.unload();
 });
 
 add_task(async function test_enter_searchmode_by_key_if_single_result() {

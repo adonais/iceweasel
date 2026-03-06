@@ -2,9 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+ */
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   OpenSearchManager:
     "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -103,7 +107,7 @@ export class SearchModeSwitcher {
     event.stopPropagation();
 
     this.#input.window.openPreferences("paneSearch");
-    this.#popup.hidePopup();
+    this.closePanel();
 
     if (this.#input.sapName == "urlbar") {
       Glean.urlbarUnifiedsearchbutton.picked.settings.add(1);
@@ -445,6 +449,7 @@ export class SearchModeSwitcher {
       let menuitem = this.#createButton(engine.name, icon);
       menuitem.classList.add("searchmode-switcher-installed");
       menuitem.setAttribute("label", engine.name);
+      menuitem.setAttribute("closemenu", "none");
 
       if (engine.isNew() && engine.isAppProvided) {
         menuitem.setAttribute("badge", await lazy.searchModeNewBadge);
@@ -453,16 +458,36 @@ export class SearchModeSwitcher {
 
       menuitem.addEventListener(
         "command",
-        /** @param {KeyboardEvent} e */ e => {
-          this.search({ engine, openEngineHomePage: e.shiftKey });
+        /** @param {XULCommandEvent} e */ e => {
+          this.search({
+            engine,
+            whereToOpenSerp: this.#whereToOpenSerp(e),
+          });
         }
       );
+
       this.#popup.insertBefore(menuitem, separator);
     }
 
     await this.#buildLocalSearchModeList(separator);
 
     this.#popup.dispatchEvent(new Event("rebuild"));
+  }
+
+  /**
+   * @param {MouseEvent|KeyboardEvent|XULCommandEvent} event
+   * @returns {string|null} Returns where the engine result page should be
+   * opened, or null if it should not be opened.
+   */
+  #whereToOpenSerp(event) {
+    let where = lazy.BrowserUtils.whereToOpenLink(event, false, true);
+    if (where.startsWith("tab")) {
+      return where;
+    }
+    if (event.shiftKey) {
+      return "current";
+    }
+    return null;
   }
 
   /**
@@ -505,7 +530,20 @@ export class SearchModeSwitcher {
     }
   }
 
-  search({ engine = null, restrict = null, openEngineHomePage = false } = {}) {
+  /**
+   *
+   * @param {object} [opts]
+   * @param {SearchEngine} [opts.engine]
+   * @param {?string} [opts.restrict]
+   * @param {?string} [opts.whereToOpenSerp]
+   *   If this is null, start a query in the urlbar.
+   *   Otherwise, open the SERP in that place.
+   */
+  search({ engine = null, restrict = null, whereToOpenSerp = null } = {}) {
+    if (!whereToOpenSerp || whereToOpenSerp == "current") {
+      this.closePanel();
+    }
+
     let search = "";
     /** @type {Parameters<UrlbarInput["search"]>[1]} */
     let opts = null;
@@ -520,15 +558,14 @@ export class SearchModeSwitcher {
       opts = { searchModeEntry: "searchbutton" };
     }
 
-    if (openEngineHomePage) {
+    if (whereToOpenSerp) {
       this.#input.openEngineHomePage(search, {
         searchEngine: opts.searchEngine,
+        where: whereToOpenSerp,
       });
     } else {
       this.#input.search(search, opts);
     }
-
-    this.#popup.hidePopup();
 
     if (engine) {
       if (this.#input.sapName == "urlbar") {
@@ -543,7 +580,7 @@ export class SearchModeSwitcher {
       }
     } else {
       console.warn(
-        `Unexpected search: ${JSON.stringify({ engine, restrict, openEngineHomePage })}`
+        `Unexpected search: ${JSON.stringify({ engine, restrict, whereToOpenSerp })}`
       );
     }
   }
@@ -602,7 +639,7 @@ export class SearchModeSwitcher {
       );
       this.search({
         engine: eng,
-        openEngineHomePage: e.shiftKey,
+        whereToOpenSerp: this.#whereToOpenSerp(e),
       });
     };
     Services.obs.addObserver(observer, topic);
