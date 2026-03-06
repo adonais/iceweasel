@@ -672,6 +672,11 @@ skip-if = [
 
 ["browser_switchTab_inputHistory.js"]
 
+["browser_switchTab_noTitle.js"]
+support-files = [
+  "no_title.html"
+]
+
 ["browser_switchTab_notFoundPage.js"]
 
 ["browser_switchTab_override.js"]
