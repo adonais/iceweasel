@@ -312,6 +312,10 @@
   <string name="browser_menu_save_as_pdf_2">പീ.ഡീ.എഫ ആയി കരുതിവയ്ക്കുക</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">താളിന്റെ വിവൎത്തനം ചെയ്യുക</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">താൾ വിവരം ചുരുക്കിപ്പറയുക</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">പുതിയതു്</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">പൊട്ടിയ സൈറ്റിന്റെ വിവരം അറിയിക്കുക…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1491,6 +1495,18 @@
   <string name="pwa_site_controls_title_private">%1$s (സ്വകാര്യ രീതി)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">ടാബുതിരയൽ തുറക്കുക</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">ടാബുകൂട്ടം ഉണ്ടാക്കുക</string>
+  <string name="create_tab_group_save_button">കരുതിവയ്ക്കുക</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">\"ടാബുകൂട്ടം തിരുത്തുക\" എന്നതു് അടയ്ക്കുക</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name">കൂട്ടം</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label">പേരു്</string>
   <!--
     History
 
@@ -3416,6 +3432,11 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">ഉറപ്പാക്കിയതു്: %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">%s-ന് നല്കിയിരിക്കുന്നു</string>
   <!--
     Debug drawer
 
