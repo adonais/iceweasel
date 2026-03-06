@@ -9,17 +9,30 @@
 #include "mozilla/dom/cache/ActorUtils.h"
 #include "mozilla/dom/cache/PCacheStorageParent.h"
 #include "mozilla/dom/quota/PrincipalUtils.h"
+#include "mozilla/ipc/PBackgroundParent.h"
 
 namespace mozilla::dom::cache {
 
 using mozilla::ipc::PBackgroundParent;
 using mozilla::ipc::PrincipalInfo;
 
+BoundStorageKeyParent::BoundStorageKeyParent(
+    PBackgroundParent* aBackgroundParent)
+    : mBackgroundParent(aBackgroundParent) {
+  MOZ_COUNT_CTOR(BoundStorageKeyParent);
+}
+
+BoundStorageKeyParent::~BoundStorageKeyParent() {
+  MOZ_COUNT_DTOR(BoundStorageKeyParent);
+}
+
 // declared in ActorUtils.h
 already_AddRefed<dom::cache::PCacheStorageParent>
 BoundStorageKeyParent::AllocPCacheStorageParent(
     const Namespace& aNamespace, const PrincipalInfo& aPrincipalInfo) {
-  MOZ_ASSERT(mBackgroundParent);
+  if (!mBackgroundParent || !mBackgroundParent->CanSend()) {
+    return nullptr;
+  }
   return dom::cache::AllocPCacheStorageParent(mBackgroundParent, this,
                                               aNamespace, aPrincipalInfo);
 }
