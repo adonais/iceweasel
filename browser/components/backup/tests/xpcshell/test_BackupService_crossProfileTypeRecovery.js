@@ -58,9 +58,13 @@ async function createBackupAndRecover(
     .stub(lazy.SelectableProfileService, "groupToolkitProfile")
     .get(() => fakeToolkitProfile);
 
+  let currentProfileValue = backupIsLegacy
+    ? null
+    : { name: "test-selectable-profile" };
+
   sandbox
     .stub(lazy.SelectableProfileService, "currentProfile")
-    .get(() => !backupIsLegacy);
+    .get(() => currentProfileValue);
 
   // Set the initial pref value based on backup type (selectable = !legacy)
   Services.prefs.setBoolPref("browser.profiles.created", !backupIsLegacy);
@@ -109,11 +113,12 @@ async function createBackupAndRecover(
 
   let { archivePath } = await bs.createBackup({ profilePath: fakeProfilePath });
 
-  // Set recovery environment state
-  Services.prefs.setBoolPref("browser.profiles.created", !recoveryIsLegacy);
-  sandbox
-    .stub(lazy.SelectableProfileService, "currentProfile")
-    .get(() => !recoveryIsLegacy);
+  let currentSelectableProfile = {
+    name: "current-profile",
+    avatar: "current-avatar",
+    theme: { themeBg: "#ffffff" },
+    hasCustomAvatar: false,
+  };
 
   // Stub maybeSetupDataStore for conversion (selectable backup into legacy env)
   let maybeSetupDataStoreStub = sandbox
@@ -122,9 +127,7 @@ async function createBackupAndRecover(
       // initProfilesData() changes storeID and sets pref to true before it can fail
       fakeToolkitProfile.storeID = "new-store-id-after-conversion";
       Services.prefs.setBoolPref("browser.profiles.created", true);
-      sandbox
-        .stub(lazy.SelectableProfileService, "currentProfile")
-        .get(() => true);
+      currentProfileValue = currentSelectableProfile;
 
       if (options.conversionShouldFail) {
         throw new Error("Conversion failed");
@@ -162,20 +165,17 @@ async function createBackupAndRecover(
     .stub(bs, "deleteAndQuitCurrentSelectableProfile")
     .resolves(null);
 
-  let currentSelectableProfile = {
-    name: "current-profile",
-    avatar: "current-avatar",
-    theme: { themeBg: "#ffffff" },
-    hasCustomAvatar: false,
-  };
-
   // currentProfile is null only when staying in legacy mode:
   // legacy backup + legacy recovery + replaceCurrentProfile
   let staysLegacy =
     backupIsLegacy && recoveryIsLegacy && options.replaceCurrentProfile;
-  sandbox
-    .stub(lazy.SelectableProfileService, "currentProfile")
-    .get(() => (staysLegacy ? null : currentSelectableProfile));
+  currentProfileValue = staysLegacy ? null : currentSelectableProfile;
+
+  // Setting browser.profiles.enabled triggers updateEnabledState() via the
+  // pref observer, which must happen before setting browser.profiles.created
+  // because migrateToProfilesCreatedPref() can overwrite it.
+  Services.prefs.setBoolPref("browser.profiles.enabled", !staysLegacy);
+  Services.prefs.setBoolPref("browser.profiles.created", !recoveryIsLegacy);
 
   await bs.getBackupFileInfo(archivePath);
   const restoreID = bs.state.restoreID;
