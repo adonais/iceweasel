@@ -110,7 +110,6 @@ private const val CUSTOM_BUTTON_CLICK_RETURN_CODE = 0
  * @param closeTabDelegate Callback for when the current custom tab needs to be closed.
  * @param settings [Settings] for accessing user preferences.
  * @param scope [CoroutineScope] used for running long running operations in background.
- * @param isSandboxCustomTab Whether the custom tab is sandboxed.
  */
 @Suppress("LongParameterList")
 class CustomTabBrowserToolbarMiddleware(
@@ -128,7 +127,6 @@ class CustomTabBrowserToolbarMiddleware(
     private val closeTabDelegate: () -> Unit,
     private val settings: Settings,
     private val scope: CoroutineScope,
-    private val isSandboxCustomTab: Boolean = false,
 ) : Middleware<BrowserToolbarState, BrowserToolbarAction> {
     private val customTab
         get() = browserStore.state.findCustomTab(customTabId)
@@ -267,7 +265,6 @@ class CustomTabBrowserToolbarMiddleware(
                     BrowserFragmentDirections.actionGlobalMenuDialogFragment(
                         accesspoint = MenuAccessPoint.External,
                         customTabSessionId = customTabId,
-                        isSandboxCustomTab = isSandboxCustomTab,
                     ),
                 )
             }

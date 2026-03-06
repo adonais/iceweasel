@@ -55,7 +55,6 @@ object BrowserToolbarStoreBuilder {
      * @param readerModeController [ReaderModeController] for managing the reader mode.
      * @param settings [Settings] object to get the toolbar position and other settings.
      * @param customTabSession [CustomTabSessionState] if the toolbar is shown in a custom tab.
-     * @param isSandboxCustomTab Whether the custom tab is sandboxed.
      */
     @Suppress("LongParameterList", "LongMethod")
     fun build(
@@ -72,7 +71,6 @@ object BrowserToolbarStoreBuilder {
         readerModeController: ReaderModeController,
         settings: Settings,
         customTabSession: CustomTabSessionState? = null,
-        isSandboxCustomTab: Boolean = false,
     ) = fragment.fragmentStore(
         BrowserToolbarState(
             displayState = DisplayState(
@@ -148,7 +146,6 @@ object BrowserToolbarStoreBuilder {
                         closeTabDelegate = { activity.finishAndRemoveTask() },
                         settings = settings,
                         scope = lifecycleScope,
-                        isSandboxCustomTab = isSandboxCustomTab,
                     ),
                 )
             },

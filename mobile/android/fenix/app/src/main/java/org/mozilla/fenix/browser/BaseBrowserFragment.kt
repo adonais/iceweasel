@@ -374,8 +374,6 @@ abstract class BaseBrowserFragment :
 
     private var lastSavedGeneratedPassword: String? = null
 
-    protected open val isSandboxCustomTab: Boolean = false
-
     // Registers a photo picker activity launcher in single-select mode.
     private val singleMediaPicker =
         AndroidPhotoPicker.singleMediaPicker(
@@ -1562,7 +1560,6 @@ abstract class BaseBrowserFragment :
         readerModeController = readerModeController,
         settings = activity.settings(),
         customTabSession = customTabSessionId?.let { activity.components.core.store.state.findCustomTab(it) },
-        isSandboxCustomTab = isSandboxCustomTab,
     )
 
     private fun showUndoSnackbar(message: String) {
