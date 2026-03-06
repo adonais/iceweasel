@@ -375,6 +375,9 @@ BROWSER_PROCESS += [
 
     # Print Guard by MWStory (bug 2011909)
     DllBlocklistEntry("printguard64.dll", (25, 11, 21, 1)),
+
+    # Esafenet (bug 2019298)
+    DllBlocklistEntry("dynamicdll64.dll", ALL_VERSIONS),
 ]
 
 CHILD_PROCESSES += [
