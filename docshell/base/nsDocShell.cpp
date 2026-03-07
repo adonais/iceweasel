@@ -11478,6 +11478,8 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
 
   OnStopRequest(aboutBlankChannel, NS_OK);
 
+  // Mechanisms in Document will force a load from EndLoad()
+  // even if there are still blockers.
   doc->EndLoad();
   // Can't assert any postcondition, because the load event
   // handler may have started loading something new in this

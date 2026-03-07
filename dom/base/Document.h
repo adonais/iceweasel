@@ -1094,6 +1094,17 @@ class Document : public nsINode,
     mInitialAboutBlankLoadCompleting = false;
   }
 
+  // Returns true if the load event should be forced right now, despite
+  // possible blockers due to the initial sync load of about:blank.
+  bool ShouldForceInitialSyncLoad() {
+    // Force load if
+    // - we are currently in the synchronous load path of the docshell, i.e. we
+    //   are completing the initial about:blank load
+    // - and Document::EndLoad was already called, so the method is almost done
+    //   (we're likely called from there right now).
+    return InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad();
+  }
+
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
 
   TimeStamp GetLoadingOrRestoredFromBFCacheTimeStamp() const {

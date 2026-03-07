@@ -12354,7 +12354,7 @@ void Document::UnblockOnload(bool aFireSync) {
 
   --mOnloadBlockCount;
 
-  if (mOnloadBlockCount != 0) {
+  if (mOnloadBlockCount != 0 && !ShouldForceInitialSyncLoad()) {
     return;
   }
   if (mScriptGlobalObject) {
@@ -12414,7 +12414,7 @@ void Document::DoUnblockOnload() {
 
   --mOnloadBlockCount;
 
-  if (mOnloadBlockCount != 0) {
+  if (mOnloadBlockCount != 0 && !ShouldForceInitialSyncLoad()) {
     // We blocked again after the last unblock.  Nothing to do here.  We'll
     // post a new event when we unblock again.
     return;
