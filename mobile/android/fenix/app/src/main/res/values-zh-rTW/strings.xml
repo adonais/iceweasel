@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">分享</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">新增至收藏集</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">新增至群組</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">分享選擇的分頁</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">建立分頁群組</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">編輯群組</string>
   <string name="create_tab_group_save_button">儲存</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">關閉編輯分頁群組</string>
   <!-- Default tab group name when creating a tab group -->
-  <string name="create_tab_group_default_name">群組</string>
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">群組</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">群組 %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label">名稱</string>
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">名稱</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">名稱</string>
   <!--
     History
 
@@ -1978,7 +1989,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">編輯</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">複製</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">複製</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">分享</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -3726,6 +3737,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">新增至隱私瀏覽分頁</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3764,6 +3777,10 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">我不使用 Firefox 的搜尋功能</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">我沒有使用 Sync</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">很難找到功能，或缺少某些功能</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">還可以，但沒有比其他瀏覽器好</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">幫助讓 Firefox 的列印功能變得更棒，只需幾秒鐘</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->

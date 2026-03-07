@@ -1641,9 +1641,9 @@
   <string name="create_tab_group_save_button">Save</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Close Edit Tab Group</string>
   <!-- Default tab group name when creating a tab group -->
-  <string name="create_tab_group_default_name">Group</string>
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Group</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label">Name</string>
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Name</string>
   <!--
     History
 
@@ -1978,7 +1978,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Edit</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Copy</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Copy</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Share</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -3726,6 +3726,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Add to private tabs</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 

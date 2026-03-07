@@ -367,7 +367,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">ಸಂಪಾದನೆ</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">ಪ್ರತಿ ಮಾಡು</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">ಪ್ರತಿ ಮಾಡು</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">ಹಂಚು</string>
   <!-- Bookmark overflow menu open in new tab button -->

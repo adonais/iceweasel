@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Partilhar</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Adicionar à coleção</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Adicionar ao grupo</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Partilhar os separadores selecionados</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Criar grupo de separadores</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Guardar</string>
-  <string name="edit_tab_group_bottom_sheet_close_content_description">Fechar editar grupo de separadores</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Fechar edição de grupo de separadores</string>
   <!-- Default tab group name when creating a tab group -->
-  <string name="create_tab_group_default_name">Grupo</string>
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grupo %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label">Nome</string>
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nome do grupo de separadores</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Nome</string>
   <!--
     History
 
@@ -1978,7 +1989,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Editar</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Copiar</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Copiar</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Partilhar</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -3675,7 +3686,7 @@
   -->
   <string name="connection_security_panel_issued_to">Emitido para %s</string>
   <!-- Text for the connection security panel when the site uses a QWAC. -->
-  <string name="connection_security_panel_qualified_certificate">Qualificado conforme especificado na Legislação (EU) 2024/1183.</string>
+  <string name="connection_security_panel_qualified_certificate">Qualificado de acordo com o estabelecido no Regulamento (UE) 2024/1183.</string>
   <!--
     Debug drawer
 
@@ -3726,6 +3737,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Adicionar aos separadores privados</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3764,6 +3777,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Eu não utilizo a pesquisa no Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Eu não utilizo a sincronização</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">É lento ou tem erros</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">As funcionalidades são difíceis de encontrar ou estão em falta</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">É confuso ou difícil de utilizar</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Não está mal, mas não supera outros navegadores</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Pretendo continuar a utilizar o Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Ajude a melhorar a impressão no Firefox. Isto demora apenas um segundo</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3778,6 +3801,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Qual o seu grau de satisfação com a experiência de pesquisa no Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Qual o seu grau de satisfação com a experiência de sincronização no Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Ajude-nos a melhorar o Firefox. Como descreveria a sua experiência até agora?</string>
   <!--
     Accessibility
 

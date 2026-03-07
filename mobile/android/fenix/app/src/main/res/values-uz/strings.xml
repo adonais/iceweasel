@@ -727,7 +727,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Tahrirlash</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Nusxa olish</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Nusxa olish</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Ulashish</string>
   <!-- Bookmark overflow menu open in new tab button -->

@@ -593,7 +593,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">संपादन</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">कॉपी करें</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">कॉपी करें</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">साझा करें</string>
   <!-- Bookmark overflow menu open in new tab button -->

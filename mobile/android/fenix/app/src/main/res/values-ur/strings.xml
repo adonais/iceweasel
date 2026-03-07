@@ -600,7 +600,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">تدوین کریں</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">کاپی کریں</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">کاپی کریں</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">شیئر کریں</string>
   <!-- Bookmark overflow menu open in new tab button -->

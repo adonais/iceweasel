@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">공유</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">모음집에 추가</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">그룹에 추가</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">선택한 탭 공유</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">탭 그룹 만들기</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">그룹 편집</string>
   <string name="create_tab_group_save_button">저장</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">탭 그룹 편집 닫기</string>
   <!-- Default tab group name when creating a tab group -->
-  <string name="create_tab_group_default_name">그룹</string>
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">그룹</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">%d 그룹</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label">이름</string>
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">이름</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">이름</string>
   <!--
     History
 
@@ -1978,7 +1989,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">편집</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">복사</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">복사</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">공유</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -3726,6 +3737,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">사생활 보호 탭에 추가</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3764,6 +3777,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Firefox에서 검색을 사용하지 않음</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">동기화를 사용하지 않음</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">느리거나 버그가 있음</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">기능을 찾기 어렵거나 누락되어 있음</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">혼란스럽거나 사용하기 어려움</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">괜찮음, 하지만 다른 브라우저보다 좋지 않음</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Firefox를 계속 사용할 계획임</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Firefox의 인쇄를 개선할 수 있도록 도와주세요. 잠깐이면 됩니다.</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3778,6 +3801,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Firefox의 검색 경험에 얼마나 만족하시나요?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Firefox의 동기화 경험에 얼마나 만족하시나요?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Firefox를 개선할 수 있도록 도와주세요. 지금까지의 경험을 가장 잘 설명한 항목은 무엇입니까?</string>
   <!--
     Accessibility
 

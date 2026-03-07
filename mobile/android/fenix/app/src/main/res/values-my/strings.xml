@@ -586,7 +586,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">ပြင်ဆင်ပါ</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">ကူးပါ</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">ကူးပါ</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">မျှဝေ</string>
   <!-- Bookmark overflow menu open in new tab button -->

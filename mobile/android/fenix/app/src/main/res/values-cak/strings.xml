@@ -979,7 +979,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Tinuk\'</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Tiwachib\'ëx</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Tiwachib\'ëx</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Tikomonïx</string>
   <!-- Bookmark overflow menu open in new tab button -->

@@ -659,7 +659,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Redaguoti</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Kopijuoti</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopijuoti</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Dalintis</string>
   <!-- Bookmark overflow menu open in new tab button -->

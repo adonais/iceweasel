@@ -1957,7 +1957,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Edytuj</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Kopiuj</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopiuj</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Udostępnij</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -3684,6 +3684,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Dodaj do prywatnych kart</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 

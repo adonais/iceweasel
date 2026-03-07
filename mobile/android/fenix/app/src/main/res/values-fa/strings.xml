@@ -1595,7 +1595,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">ویرایش</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">رونوشت</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">رونوشت</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">هم‌رسانی</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -3152,6 +3152,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">افزودن به زبانه‌های خصوصی</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 

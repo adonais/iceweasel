@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">שיתוף</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">הוספה לאוסף</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">הוספה לקבוצה</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">שיתוף לשוניות נבחרות</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">יצירת קבוצת לשוניות</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">עריכת קבוצה</string>
   <string name="create_tab_group_save_button">שמירה</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">סגירת החלונית של עריכת קבוצת הלשוניות</string>
   <!-- Default tab group name when creating a tab group -->
-  <string name="create_tab_group_default_name">קבוצה</string>
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">קבוצה</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">קבוצה %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label">שם</string>
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">שם</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">שם</string>
   <!--
     History
 
@@ -1978,7 +1989,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">עריכה</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">העתקה</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">העתקה</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">שיתוף</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -3724,6 +3735,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">הוספה ללשוניות פרטיות</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3762,6 +3775,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">אין לי שימוש בחיפוש ב־Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">אין לי שימוש בסנכרון</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">זה איטי או שיש לו תקלות</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">קשה למצוא תכונות, או שהן חסרות</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">זה מבלבל או קשה לשימוש</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">זה בסדר, אבל לא יותר טוב מדפדפנים אחרים</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">בכווונתי להמשיך להשתמש ב־Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">עזרו לשפר את יכולות ההדפסה ב־Firefox. זה ייקח רק שנייה</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3776,6 +3799,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">עד כמה הינך מרוצה מחווית החיפוש ב־Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">עד כמה הינך מרוצה מחווית הסנכרון ב־Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">נשמח לקבל ממך עזרה לשפר את Firefox. מה מתאר בצורה הטובה ביותר את החוויה שלך עד כה?</string>
   <!--
     Accessibility
 
