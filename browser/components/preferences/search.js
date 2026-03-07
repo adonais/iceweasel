@@ -509,15 +509,39 @@ Preferences.addSetting({
   },
 });
 
+function determineSuggestionSettingsVisibility() {
+  if (!lazy.UrlbarPrefs.get("quickSuggestEnabled")) {
+    return false;
+  } else if (
+    lazy.UrlbarPrefs.get("quickSuggestSettingsUi") ==
+    lazy.QuickSuggest.SETTINGS_UI.NONE
+  ) {
+    return false;
+  }
+  return true;
+}
+
 Preferences.addSetting({
   id: "firefoxSuggestAll",
   pref: "browser.urlbar.suggest.quicksuggest.all",
+  deps: [
+    "quickSuggestEnabledPref",
+    "quickSuggestSettingsUiPref",
+    "nimbusListener",
+  ],
+  visible: determineSuggestionSettingsVisibility,
 });
 
 Preferences.addSetting({
   id: "firefoxSuggestSponsored",
   pref: "browser.urlbar.suggest.quicksuggest.sponsored",
-  deps: ["firefoxSuggestAll"],
+  deps: [
+    "firefoxSuggestAll",
+    "quickSuggestEnabledPref",
+    "quickSuggestSettingsUiPref",
+    "nimbusListener",
+  ],
+  visible: determineSuggestionSettingsVisibility,
   disabled: deps => {
     return !deps.firefoxSuggestAll.value;
   },
@@ -533,6 +557,14 @@ Preferences.addSetting({
     "nimbusListener",
   ],
   visible: () => {
+    if (!lazy.UrlbarPrefs.get("quickSuggestEnabled")) {
+      return false;
+    } else if (
+      lazy.UrlbarPrefs.get("quickSuggestSettingsUi") ==
+      lazy.QuickSuggest.SETTINGS_UI.NONE
+    ) {
+      return false;
+    }
     return (
       lazy.UrlbarPrefs.get("quickSuggestSettingsUi") ==
       lazy.QuickSuggest.SETTINGS_UI.FULL
@@ -569,6 +601,13 @@ Preferences.addSetting(
 
 Preferences.addSetting({
   id: "dismissedSuggestionsDescription",
+  deps: [
+    "firefoxSuggestAll",
+    "quickSuggestEnabledPref",
+    "quickSuggestSettingsUiPref",
+    "nimbusListener",
+  ],
+  visible: determineSuggestionSettingsVisibility,
 });
 
 /**
