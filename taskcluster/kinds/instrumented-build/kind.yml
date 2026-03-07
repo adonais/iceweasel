@@ -399,6 +399,7 @@ tasks:
         run-on-projects: ['release']
         fetches:
             toolchain:
+                - linux64-7zz
                 - linux64-clang
                 - linux64-rust-cross
                 - linux64-rust-size
@@ -440,6 +441,7 @@ tasks:
         run-on-projects: [trunk-only]
         fetches:
             toolchain:
+                - linux64-7zz
                 - linux64-clang
                 - linux64-rust-cross
                 - linux64-rust-size
@@ -480,6 +482,7 @@ tasks:
         run-on-projects: ['release']
         fetches:
             toolchain:
+                - linux64-7zz
                 - linux64-clang
                 - linux64-rust-cross
                 - linux64-rust-size
@@ -520,6 +523,7 @@ tasks:
         run-on-projects: ['release']
         fetches:
             toolchain:
+                - linux64-7zz
                 - linux64-clang
                 - linux64-rust-cross
                 - linux64-rust-size
