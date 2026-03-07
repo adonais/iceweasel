@@ -672,7 +672,7 @@ IncrementalProgress GCRuntime::markWeakReferences(
     }
   }
 
-  markIncomingSymbolEdgesFromUncollectedZones();
+  markIncomingGraySymbolEdgesFromUncollectedZones();
 
   bool markedAny = true;
   while (markedAny) {
@@ -698,19 +698,24 @@ IncrementalProgress GCRuntime::markWeakReferences(
   return Finished;
 }
 
-void GCRuntime::markIncomingSymbolEdgesFromUncollectedZones() {
-  // We need to mark ephemeron edges where the source is a live symbol that is
-  // referenced from an uncollected zone and which may not have been marked in
-  // this GC. At the same time we want to avoid unnecessarily holding on to
-  // symbols in zones GCs (by marking them as referenced in the atom marking
-  // bitmap), which is why we don't just mark all such symbols at the start of
-  // GC.
+void GCRuntime::markIncomingGraySymbolEdgesFromUncollectedZones() {
+  // We need to mark through ephemeron edges where the source is a live symbol
+  // that is referenced from an uncollected zone and which may not have been
+  // marked in this GC. At the same time we want to avoid unnecessarily holding
+  // on to symbols in zone GCs (by marking them as referenced in the atom
+  // marking bitmap), which is why we don't just mark all such symbols at the
+  // start of GC.
+  //
+  // This situation arises because WeakMap::markEntry may find an unmarked
+  // symbol key that is marked gray by uncollected zones while it is currently
+  // marking black. It can't mark it at that time so it leaves it alone; we mark
+  // it here instead when we are gray weak marking.
   //
   // Atoms referenced by uncollected zones will be marked later in
   // updateAtomsBitmap() which prevents them dying, but since this is after
   // we've done ephemeron marking it won't mark through the ephemeron edges.
 
-  if (!atomsZone()->isGCMarking()) {
+  if (marker().markColor() != MarkColor::Gray || !atomsZone()->isGCMarking()) {
     return;
   }
 
