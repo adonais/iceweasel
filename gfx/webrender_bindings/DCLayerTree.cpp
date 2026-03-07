@@ -2335,7 +2335,8 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
   // could be done by VideoProcessor
   bool scaleVideoAtVideoProcessor = false;
   if (StaticPrefs::gfx_webrender_dcomp_video_vp_scaling_win_AtStartup() &&
-      aTransform.IsTranslation()) {
+      aTransform.PreservesAxisAlignedRectangles() &&
+      !aTransform.HasNegativeScaling()) {
     gfx::Size scaledSize = gfx::Size(mVideoSize) * aTransform.ScaleFactors();
     gfx::IntSize size(int32_t(std::round(scaledSize.width)),
                       int32_t(std::round(scaledSize.height)));
