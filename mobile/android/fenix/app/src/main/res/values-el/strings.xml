@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Κοινή χρήση</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Προσθήκη σε συλλογή</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Προσθήκη σε ομάδα</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κοινή χρήση επιλεγμένων καρτελών</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Δημιουργία ομάδας καρτελών</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Επεξεργασία ομάδας</string>
   <string name="create_tab_group_save_button">Αποθήκευση</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Κλείσιμο επεξεργασίας ομάδας καρτελών</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Ομάδα</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Ομάδα %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Όνομα</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Όνομα</string>
   <!--
     History
 
@@ -3766,6 +3777,8 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Δεν χρησιμοποιώ την αναζήτηση στο Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Δεν χρησιμοποιώ τον συγχρονισμό</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Είναι αργό ή προβληματικό</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Συμβάλλετε στη βελτίωση της εκτύπωσης στο Firefox. Θα χρειαστεί μόνο ένα δευτερόλεπτο</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->

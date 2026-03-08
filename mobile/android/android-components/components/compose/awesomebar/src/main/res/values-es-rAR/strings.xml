@@ -20,7 +20,7 @@
     The description for the stock suggestion card when the stock is increasing.
     %s is a placeholder that will be replaced by the change percent value
   -->
-  <string name="mozac_browser_awesomebar_stock_suggestion_increase">Gané un %s por ciento</string>
+  <string name="mozac_browser_awesomebar_stock_suggestion_increase">Ganó un %s por ciento</string>
   <!-- Description for the stock suggestion card when the stock is the same. -->
   <string name="mozac_browser_awesomebar_stock_suggestion_no_change">Sin cambios</string>
 </resources>

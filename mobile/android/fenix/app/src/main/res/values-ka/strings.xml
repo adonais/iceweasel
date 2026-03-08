@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">გაზიარება</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">კრებულში დამატება</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">ჯგუფში დამატება</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">არჩეული ჩანართების გაზიარება</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">ჩანართების ჯგუფის შექმნა</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">ჯგუფის ჩასწორება</string>
   <string name="create_tab_group_save_button">შენახვა</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">ჩანართების ჯგუფის ჩასწორების დახურვა</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">ჯგუფი</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">ჯგუფი %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">სახელი</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">სახელი</string>
   <!--
     History
 
@@ -3766,6 +3777,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">ძიებას არ ვიყენებ Firefox-ზე</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">სინქრონიზაციას არ ვიყენებ</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">ნელი ან ხარვეზიანია</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">შესაძლებლობები აკლია ან ძნელი საპოვნელია</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">გაუგებარია ან ძნელი გამოსაყენებელია</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">არა უშავს, მაგრამ ვერ სჯობია სხვა ბრაუზერებისას</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">ვაპირებ კვლავ გამოვიყენო Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">დაგვეხმარეთ, რომ ამობეჭდვის შესაძლებლობით გავაუმჯობესოთ Firefox. მხოლოდ რამდენიმე წამს წაგართმევთ</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3780,6 +3801,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">რამდენად კმაყოფილი ხართ Firefox-ში ძიების შესაძლებლობით?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">რამდენად კმაყოფილი ხართ Firefox-ში სინქრონიზაციის შესაძლებლობით?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">დაგვეხმარეთ, გავაუმჯობესოთ Firefox. როგორ აღწერდით თქვენს დამოკიდებულებას?</string>
   <!--
     Accessibility
 
