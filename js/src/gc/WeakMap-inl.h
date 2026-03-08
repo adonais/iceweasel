@@ -187,8 +187,21 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
   bool marked = false;
   CellColor markColor = AsCellColor(marker->markColor());
   CellColor keyColor = gc::detail::GetEffectiveColor(marker, key.get());
-  JSObject* delegate = gc::detail::GetDelegate(key.get());
 
+  bool keyIsSymbol = gc::detail::IsSymbol(key.get());
+  MOZ_ASSERT(keyIsSymbol == (keyCell->getTraceKind() == JS::TraceKind::Symbol));
+  if (keyIsSymbol && keyColor < markColor) {
+    // For symbols, also check whether it it is referenced by an uncollected
+    // zone, and if so mark it now. There's no need to set |marked| as this
+    // would have been marked later anyway.
+    auto* sym = static_cast<JS::Symbol*>(keyCell);
+    gc::GCRuntime* gc = &marker->runtime()->gc;
+    if (gc->isSymbolReferencedByUncollectedZone(sym, marker->markColor())) {
+      TraceEdge(trc, &key, "WeakMap symbol key");
+    }
+  }
+
+  JSObject* delegate = gc::detail::GetDelegate(key.get());
   if (delegate) {
     CellColor delegateColor = gc::detail::GetEffectiveColor(marker, delegate);
     // The key needs to stay alive while both the delegate and map are live.
