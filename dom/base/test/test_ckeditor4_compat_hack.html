@@ -48,6 +48,10 @@ add_task(async function test_jeditor() {
   await base_test({ name: "JEDITOR" });
 });
 
+add_task(async function test_missing_build_step() {
+  await base_test({ version: "%VERSION%" });
+});
+
   </script>
 </head>
 <body>
