@@ -7,9 +7,6 @@ trojan-source:
         - intl/lwbrk/rulebrk.c
         - testing/web-platform/tests/conformance-checkers/tools/ins-del-datetime.py
         - modules/freetype2/src/autofit/afblue.c
-        - modules/freetype2/builds/amiga/include/config/ftconfig.h
-        - modules/freetype2/builds/amiga/include/config/ftmodule.h
-        - modules/freetype2/builds/amiga/src/base/ftsystem.c
         - third_party/aom/test/dr_prediction_test.cc
         # TODO: Remove this when https://github.com/jaraco/zipp/pull/125 lands
         # to setuptools
