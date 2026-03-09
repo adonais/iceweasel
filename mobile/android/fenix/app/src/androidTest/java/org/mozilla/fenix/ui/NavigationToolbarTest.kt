@@ -239,6 +239,7 @@ class NavigationToolbarTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135106
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=2021581")
     @SmokeTest
     @Test
     fun verifyShowSearchSuggestionsToggleTest() {

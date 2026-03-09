@@ -10,6 +10,7 @@ import androidx.test.filters.SdkSuppress
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SkipLeaks
@@ -464,6 +465,7 @@ class SettingsSearchTest : TestSetup() {
     // Test running on beta/release builds in CI:
     // caution when making changes to it, so they don't block the builds
     // Goes through the settings and changes the search suggestion toggle, then verifies it changes.
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=2021581")
     @SmokeTest
     @Test
     fun verifyShowSearchSuggestionsToggleTest() {
