@@ -731,7 +731,8 @@ static GtkWindow* GetGtkWindow(dom::Document* aDocument) {
     return nullptr;
   }
 
-  GtkWidget* gtkWidget = static_cast<nsWindow*>(widget.get())->GetGtkWidget();
+  GtkWidget* gtkWidget =
+      GTK_WIDGET(widget->GetNativeData(NS_NATIVE_SHELLWIDGET));
   if (!gtkWidget) return nullptr;
 
   GtkWidget* toplevel = nullptr;

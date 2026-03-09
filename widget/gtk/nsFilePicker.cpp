@@ -467,17 +467,15 @@ void nsFilePicker::FinishOpeningPortal() {
   MOZ_DIAGNOSTIC_ASSERT(!mExportedParent);
   nsAutoCString parentWindow;
   if (mParentWidget) {
-    static_cast<nsWindow*>(mParentWidget.get())
-        ->ExportHandle()
-        ->Then(
-            GetCurrentSerialEventTarget(), __func__,
-            [self = RefPtr{this}](nsCString&& aResult) {
-              self->mExportedParent = true;
-              self->FinishOpeningPortalWithParent(aResult);
-            },
-            [self = RefPtr{this}](bool) {
-              self->FinishOpeningPortalWithParent(""_ns);
-            });
+    mParentWidget->ExportHandle()->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [self = RefPtr{this}](nsCString&& aResult) {
+          self->mExportedParent = true;
+          self->FinishOpeningPortalWithParent(aResult);
+        },
+        [self = RefPtr{this}](bool) {
+          self->FinishOpeningPortalWithParent(""_ns);
+        });
   } else {
     FinishOpeningPortalWithParent(""_ns);
   }

@@ -86,11 +86,10 @@ TaskbarProgress::SetPrimaryWindow(mozIDOMWindowProxy* aWindow) {
 
   // Only nsWindows have a native window, HeadlessWidgets do not.  Stop here if
   // the window does not have one.
-  if (!widget->GetNativeData(NS_NATIVE_WINDOW)) {
+  mPrimaryWindow = nsWindow::FromWidget(widget);
+  if (!mPrimaryWindow) {
     return NS_OK;
   }
-
-  mPrimaryWindow = static_cast<nsWindow*>(widget.get());
 
   // Clear our current progress.  We get a forced update from the
   // DownloadsTaskbar after returning from this function - zeroing out our

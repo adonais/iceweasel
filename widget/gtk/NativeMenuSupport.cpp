@@ -21,8 +21,9 @@ void NativeMenuSupport::CreateNativeMenuBar(nsIWidget* aParent,
 #ifdef MOZ_ENABLE_DBUS
   if (aMenuBarElement && StaticPrefs::widget_gtk_global_menu_enabled() &&
       DBusMenuFunctions::Init()) {
-    static_cast<nsWindow*>(aParent)->SetDBusMenuBar(
-        DBusMenuBar::Create(aMenuBarElement));
+    if (auto window = nsWindow::FromWidget(aParent)) {
+      window->SetDBusMenuBar(DBusMenuBar::Create(aMenuBarElement));
+    }
   }
 #endif
 }
