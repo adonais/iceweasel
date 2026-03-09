@@ -1748,7 +1748,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   void traceChildrenConcurrently(JSTracer* trc, bool* skippedJitScript);
   void finalize(JS::GCContext* gcx);
 
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
+  size_t sizeOfExcludingThis();
 
   inline JSScript* asJSScript();
 

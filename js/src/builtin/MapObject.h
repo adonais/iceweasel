@@ -175,7 +175,8 @@ class MapObject : public OrderedHashMapObject {
   // it, or nullptr.
   static MapObject* sweepAfterMinorGC(JS::GCContext* gcx, MapObject* mapobj);
 
-  size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf);
+  size_t sizeOfBufferData();
+  size_t sizeOfMallocData(mozilla::MallocSizeOf mallocSizeOf);
 
   [[nodiscard]] static bool get(JSContext* cx, unsigned argc, Value* vp);
   [[nodiscard]] static bool set(JSContext* cx, unsigned argc, Value* vp);
@@ -305,7 +306,8 @@ class SetObject : public OrderedHashSetObject {
   // it, or nullptr.
   static SetObject* sweepAfterMinorGC(JS::GCContext* gcx, SetObject* setobj);
 
-  size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf);
+  size_t sizeOfBufferData();
+  size_t sizeOfMallocData(mozilla::MallocSizeOf mallocSizeOf);
 
  private:
   static const ClassSpec classSpec_;

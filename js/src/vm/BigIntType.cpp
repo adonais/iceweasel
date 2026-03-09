@@ -182,12 +182,11 @@ js::HashNumber BigInt::hash() const {
   return mozilla::AddToHash(h, isNegative());
 }
 
-size_t BigInt::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+size_t BigInt::sizeOfExcludingThis() const {
   return hasInlineDigits() ? 0 : gc::GetAllocSize(zone(), heapDigits_);
 }
 
-size_t BigInt::sizeOfExcludingThisInNursery(
-    mozilla::MallocSizeOf mallocSizeOf) const {
+size_t BigInt::sizeOfExcludingThisInNursery() const {
   MOZ_ASSERT(!isTenured());
 
   if (hasInlineDigits()) {
@@ -3995,9 +3994,9 @@ JS::ubi::Node::Size JS::ubi::Concrete<BigInt>::size(
   size_t size = sizeof(JS::BigInt);
   if (IsInsideNursery(&bi)) {
     size += Nursery::nurseryCellHeaderSize();
-    size += bi.sizeOfExcludingThisInNursery(mallocSizeOf);
+    size += bi.sizeOfExcludingThisInNursery();
   } else {
-    size += bi.sizeOfExcludingThis(mallocSizeOf);
+    size += bi.sizeOfExcludingThis();
   }
   return size;
 }

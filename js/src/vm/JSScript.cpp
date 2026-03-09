@@ -2789,7 +2789,7 @@ void JSScript::assertValidJumpTargets() const {
 }
 #endif
 
-size_t BaseScript::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+size_t BaseScript::sizeOfExcludingThis() {
   return gc::GetAllocSize(zone(), data_);
 }
 
@@ -3941,7 +3941,7 @@ JS::ubi::Base::Size JS::ubi::Concrete<BaseScript>::size(
   BaseScript* base = &get();
 
   Size size = gc::Arena::thingSize(base->getAllocKind());
-  size += base->sizeOfExcludingThis(mallocSizeOf);
+  size += base->sizeOfExcludingThis();
 
   // Include any JIT data if it exists.
   if (base->hasJitScript()) {

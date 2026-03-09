@@ -3219,7 +3219,7 @@ void ArrayBufferObject::addSizeOfExcludingThis(
         info->objectsMallocHeapElementsAsmJS +=
             mallocSizeOf(buffer.dataPointer());
       } else {
-        info->objectsMallocHeapElementsNormal +=
+        info->objectsMallocHeapElementsArrayBuffer +=
             mallocSizeOf(buffer.dataPointer());
       }
       break;

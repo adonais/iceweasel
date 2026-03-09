@@ -3176,15 +3176,14 @@ js::gc::AllocKind JSObject::allocKindForTenure(
 void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                       JS::ClassInfo* info,
                                       JS::RuntimeSizes* runtimeSizes) {
-  // TODO: These will eventually count as GC heap memory.
   if (is<NativeObject>() && as<NativeObject>().hasDynamicSlots()) {
-    info->objectsMallocHeapSlots +=
+    info->objectsGCBufferSlots +=
         gc::GetAllocSize(zone(), as<NativeObject>().getSlotsHeader());
   }
 
   if (is<NativeObject>() && as<NativeObject>().hasDynamicElements()) {
     void* allocatedElements = as<NativeObject>().getUnshiftedElementsHeader();
-    info->objectsMallocHeapElementsNormal +=
+    info->objectsGCBufferElementsNormal +=
         gc::GetAllocSize(zone(), allocatedElements);
   }
 
@@ -3208,12 +3207,15 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
     // size of the new object (which Debugger code does) before private
     // slots are initialized.
   } else if (is<ArgumentsObject>()) {
-    info->objectsMallocHeapMisc +=
-        as<ArgumentsObject>().sizeOfMisc(mallocSizeOf);
+    info->objectsGCBufferMisc += as<ArgumentsObject>().sizeOfMisc();
   } else if (is<MapObject>()) {
-    info->objectsMallocHeapMisc += as<MapObject>().sizeOfData(mallocSizeOf);
+    info->objectsGCBufferMisc += as<MapObject>().sizeOfBufferData();
+    info->objectsMallocHeapMisc +=
+        as<MapObject>().sizeOfMallocData(mallocSizeOf);
   } else if (is<SetObject>()) {
-    info->objectsMallocHeapMisc += as<SetObject>().sizeOfData(mallocSizeOf);
+    info->objectsGCBufferMisc += as<SetObject>().sizeOfBufferData();
+    info->objectsMallocHeapMisc +=
+        as<SetObject>().sizeOfMallocData(mallocSizeOf);
   } else if (is<PropertyIteratorObject>()) {
     info->objectsMallocHeapMisc +=
         as<PropertyIteratorObject>().sizeOfMisc(mallocSizeOf);
@@ -3226,14 +3228,14 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
   } else if (is<GlobalObject>()) {
     as<GlobalObject>().addSizeOfData(mallocSizeOf, info);
   } else if (is<WeakCollectionObject>()) {
-    info->objectsMallocHeapMisc +=
+    info->objectsGCBufferMisc +=
         as<WeakCollectionObject>().sizeOfExcludingThis(mallocSizeOf);
   } else if (is<WasmStructObject>()) {
     const WasmStructObject& s = as<WasmStructObject>();
-    info->objectsMallocHeapSlots += s.sizeOfExcludingThis();
+    info->objectsGCBufferSlots += s.sizeOfExcludingThis();
   } else if (is<WasmArrayObject>()) {
     const WasmArrayObject& a = as<WasmArrayObject>();
-    info->objectsMallocHeapElementsNormal += a.sizeOfExcludingThis();
+    info->objectsGCBufferElementsNormal += a.sizeOfExcludingThis();
   }
 #ifdef JS_HAS_CTYPES
   else {
