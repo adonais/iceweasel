@@ -361,6 +361,9 @@ function makeAiControlSetting({
         deps.aiControlsShowUnavailable.value
       );
     },
+    onUserChange(selection) {
+      Glean.browser.aiControlChanged.record({ feature, selection });
+    },
     getControlConfig,
   });
 }
@@ -459,6 +462,15 @@ Preferences.addSetting(
         OnDeviceModelManager.isAllowed(this.feature) ||
         deps.aiControlsShowUnavailable.value
       );
+    },
+    onUserChange(selection) {
+      Glean.browser.aiControlChanged.record({
+        feature: OnDeviceModelManager.features.SidebarChatbot,
+        selection:
+          String(selection) in AiControlStates
+            ? selection
+            : AiControlStates.enabled,
+      });
     },
     getControlConfig(config, _, setting) {
       let providerUrl = setting.value;

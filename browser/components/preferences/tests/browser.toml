@@ -33,6 +33,8 @@ run-if = [
 
 ["browser_aiFeatures_model_settings.js"]
 
+["browser_aiFeatures_telemetry.js"]
+
 ["browser_aiFeatures_visibility.js"]
 
 ["browser_application_xml_handle_internally.js"]
