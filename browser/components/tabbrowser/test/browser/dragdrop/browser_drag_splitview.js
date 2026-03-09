@@ -314,3 +314,67 @@ add_task(async function test_drag_link_onto_splitview_tabs_rtl() {
     await BrowserTestUtils.disableRtlLocale();
   }
 });
+
+add_task(
+  async function test_drag_group_label_with_splitview_to_second_window_pinned_area() {
+    let win2 = await BrowserTestUtils.openNewBrowserWindow();
+    // Two pinned tabs guarantee the drop index lands within the pinned area
+    // regardless of whether synthesizeDrop places the cursor before or after
+    // the midpoint of the target tab.
+    let win2PinnedTab1 = BrowserTestUtils.addTab(win2.gBrowser, "about:blank", {
+      pinned: true,
+    });
+    BrowserTestUtils.addTab(win2.gBrowser, "about:blank", { pinned: true });
+    is(win2.gBrowser.pinnedTabCount, 2, "Two pinned tabs in win2");
+
+    let normalTab = await addTab();
+    let splitTab1 = await addTab();
+    let splitTab2 = await addTab();
+    let splitview = gBrowser.addTabSplitView([splitTab1, splitTab2]);
+    let group = gBrowser.addTabGroup([normalTab, splitview]);
+
+    is(group.tabs.length, 3, "Group has 3 tabs (1 normal + 2 split view)");
+
+    let tabsClosePromise = Promise.all([
+      BrowserTestUtils.waitForEvent(normalTab, "TabClose"),
+      BrowserTestUtils.waitForEvent(splitTab1, "TabClose"),
+      BrowserTestUtils.waitForEvent(splitTab2, "TabClose"),
+    ]);
+
+    let groupLabel = group.labelElement;
+    EventUtils.synthesizeDrop(
+      groupLabel,
+      win2PinnedTab1,
+      [[{ type: TAB_DROP_TYPE, data: groupLabel }]],
+      null,
+      window,
+      win2
+    );
+
+    await tabsClosePromise;
+
+    is(
+      win2.gBrowser.pinnedTabCount,
+      2,
+      "Pinned tab count is unchanged after adopting group containing a split view"
+    );
+    let adoptedSplitTabs = win2.gBrowser.tabs.filter(
+      t => !t.pinned && t.splitview
+    );
+    is(
+      adoptedSplitTabs.length,
+      2,
+      "Two unpinned split view tabs adopted into win2"
+    );
+    let unpinnedNonSplitTabs = win2.gBrowser.tabs.filter(
+      t => !t.pinned && !t.splitview
+    );
+    +is(
+      unpinnedNonSplitTabs.length,
+      2,
+      "Default tab + adopted normal tab, both unpinned in win2"
+    );
+
+    await BrowserTestUtils.closeWindow(win2);
+  }
+);

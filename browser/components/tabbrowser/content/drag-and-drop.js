@@ -202,7 +202,7 @@
       } else {
         let newIndex = this._getDropIndex(event);
         if (
-          isSplitViewWrapper(draggedTab) &&
+          (isSplitViewWrapper(draggedTab) || isTabGroupLabel(draggedTab)) &&
           newIndex < gBrowser.pinnedTabCount
         ) {
           newIndex = gBrowser.pinnedTabCount;
@@ -515,8 +515,12 @@
           }
         }
       } else if (isTabGroupLabel(draggedTab)) {
+        const dropIndex = this._getDropIndex(event);
+        const droppedIntoPinnedArea = dropIndex < gBrowser.pinnedTabCount;
         gBrowser.adoptTabGroup(draggedTab.group, {
-          elementIndex: this._getDropIndex(event),
+          elementIndex: droppedIntoPinnedArea
+            ? gBrowser.pinnedTabCount
+            : dropIndex,
         });
       } else if (draggedTab) {
         // Move the tabs into this window. To avoid multiple tab-switches in
