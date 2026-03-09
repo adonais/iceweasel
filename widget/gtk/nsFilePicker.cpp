@@ -226,12 +226,11 @@ void nsFilePicker::ReadValuesFromNonPortalFileChooser(
 }
 
 void nsFilePicker::InitNative(nsIWidget* aParent, const nsAString& aTitle) {
-  mParentWidget = aParent;
+  mParentWidget = nsWindow::FromWidget(aParent);
   mTitle.Assign(aTitle);
 
   if (mParentWidget) {
-    auto window = static_cast<nsWindow*>(mParentWidget.get());
-    if (GtkWidget* widget = window->GetGtkWidget()) {
+    if (GtkWidget* widget = mParentWidget->GetGtkWidget()) {
       if (auto* title = gtk_window_get_title(GTK_WINDOW(widget))) {
         mTitle.AppendLiteral(" - ");
         mTitle.Append(NS_ConvertUTF8toUTF16(title));
@@ -617,8 +616,8 @@ void nsFilePicker::ReadPortalUriList(GVariant* aUriList) {
 }
 
 void nsFilePicker::ClearPortalState() {
-  if (mExportedParent) {
-    static_cast<nsWindow*>(mParentWidget.get())->UnexportHandle();
+  if (mExportedParent && mParentWidget) {
+    mParentWidget->UnexportHandle();
     mExportedParent = false;
   }
   mPortalProxy = nullptr;
@@ -676,7 +675,9 @@ void nsFilePicker::OpenNonPortal() {
   NS_ConvertUTF16toUTF8 title(mTitle);
 
   GtkWindow* parent_widget =
-      GTK_WINDOW(mParentWidget->GetNativeData(NS_NATIVE_SHELLWIDGET));
+      mParentWidget
+          ? GTK_WINDOW(mParentWidget->GetNativeData(NS_NATIVE_SHELLWIDGET))
+          : nullptr;
 
   GtkFileChooserAction action = GetGtkFileChooserAction(mMode);
 
