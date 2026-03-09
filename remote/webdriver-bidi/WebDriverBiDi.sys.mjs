@@ -146,11 +146,11 @@ export class WebDriverBiDi {
       this.#sessionlessConnections.delete(sessionlessConnection);
     }
 
-    this.#userPromptHandlerManager = new lazy.UserPromptHandlerManager(
-      this.#session.userPromptHandler
-    );
-
     if (this.#session.bidi) {
+      this.#userPromptHandlerManager = new lazy.UserPromptHandlerManager(
+        this.#session.userPromptHandler
+      );
+
       // Creating a WebDriver BiDi session too early can cause issues with
       // clients in not being able to find any available browsing context.
       // Also when closing the application while it's still starting up can
@@ -184,7 +184,9 @@ export class WebDriverBiDi {
     // For multiple session check first if the last session was closed.
     lazy.cleanupCacheBypassState();
 
-    this.#userPromptHandlerManager.destroy();
+    if (this.#userPromptHandlerManager) {
+      this.#userPromptHandlerManager.destroy();
+    }
 
     this.#session.destroy();
     this.#session = null;
