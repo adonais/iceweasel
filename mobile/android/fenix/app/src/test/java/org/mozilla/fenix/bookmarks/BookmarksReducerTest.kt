@@ -857,7 +857,7 @@ class BookmarksReducerTest {
     }
 
     @Test
-    fun `WHEN the title of a bookmark is changed on the edit bookmark screen THEN it is filtered`() {
+    fun `WHEN the title of a bookmark is changed on the edit bookmark screen THEN newlines are replaced`() {
         val state = BookmarksState.default.copy(
             bookmarksEditBookmarkState = BookmarksEditBookmarkState(
                 bookmark = generateBookmark(title = "old title"),
@@ -869,7 +869,7 @@ class BookmarksReducerTest {
 
         val result = bookmarksReducer(state, EditBookmarkAction.TitleChanged(titleChange))
 
-        assertEquals("New Title", result.bookmarksEditBookmarkState?.bookmark?.title)
+        assertEquals("  New Title   ", result.bookmarksEditBookmarkState?.bookmark?.title)
         assertEquals(true, result.bookmarksEditBookmarkState?.edited)
     }
 

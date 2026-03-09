@@ -199,7 +199,7 @@ private fun BookmarksState.handleEditBookmarkAction(action: EditBookmarkAction):
         is EditBookmarkAction.TitleChanged -> this.copy(
             bookmarksEditBookmarkState = bookmarksEditBookmarkState?.let {
                 it.copy(
-                    bookmark = it.bookmark.copy(title = action.title.replace("\n", " ").trim()),
+                    bookmark = it.bookmark.copy(title = action.title.replace("\n", " ")),
                     edited = true,
                 )
             },
@@ -234,7 +234,7 @@ private fun BookmarksState.handleAddFolderAction(action: AddFolderAction): Bookm
         )
         is AddFolderAction.TitleChanged -> this.copy(
             bookmarksAddFolderState = bookmarksAddFolderState?.copy(
-                folderBeingAddedTitle = action.updatedText.replace("\n", " ").trim(),
+                folderBeingAddedTitle = action.updatedText.replace("\n", " "),
             ),
         )
     }
@@ -245,7 +245,7 @@ private fun BookmarksState.handleEditFolderAction(action: EditFolderAction): Boo
         is EditFolderAction.TitleChanged -> this.copy(
             bookmarksEditFolderState = bookmarksEditFolderState?.let {
                 it.copy(
-                    folder = it.folder.copy(title = action.updatedText.replace("\n", " ").trim()),
+                    folder = it.folder.copy(title = action.updatedText.replace("\n", " ")),
                 )
             },
         )
