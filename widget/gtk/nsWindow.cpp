@@ -1728,10 +1728,6 @@ void nsWindow::LogPopupHierarchy() {
 }
 #endif
 
-nsWindow* nsWindow::GetTopmostWindow() {
-  return static_cast<nsWindow*>(GetTopLevelWidget());
-}
-
 // Configure Wayland popup. If true is returned we need to track popup
 // in popup hierarchy. Otherwise we just show it as is.
 bool nsWindow::WaylandPopupConfigure() {
@@ -1826,8 +1822,10 @@ void nsWindow::AddWindowToPopupHierarchy() {
 
   // Check if we're already in the hierarchy
   if (!IsInPopupHierarchy()) {
-    mWaylandToplevel = GetTopmostWindow();
-    AppendPopupToHierarchyList(mWaylandToplevel);
+    mWaylandToplevel = nsWindow::FromWidget(GetTopLevelWidget());
+    if (mWaylandToplevel) {
+      AppendPopupToHierarchyList(mWaylandToplevel);
+    }
   }
 }
 
@@ -3666,7 +3664,7 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
     }
 
     case NS_NATIVE_SHELLWIDGET:
-      return GetToplevelWidget();
+      return GetGtkWidget();
 
     case NS_NATIVE_WINDOW_WEBRTC_DEVICE_ID:
       if (!mGdkWindow) {
@@ -3896,9 +3894,9 @@ void nsWindow::CaptureRollupEvents(bool aDoCapture) {
 nsresult nsWindow::GetAttention(int32_t aCycleCount) {
   LOG("nsWindow::GetAttention");
 
-  GtkWidget* top_window = GetToplevelWidget();
+  GtkWidget* top_window = GetGtkWidget();
   GtkWidget* top_focused_window =
-      gFocusWindow ? gFocusWindow->GetToplevelWidget() : nullptr;
+      gFocusWindow ? gFocusWindow->GetGtkWidget() : nullptr;
 
   // Don't get attention if the window is focused anyway.
   if (top_window && (gtk_widget_get_visible(top_window)) &&
@@ -5021,7 +5019,7 @@ void nsWindow::OnContainerFocusInEvent(GdkEventFocus* aEvent) {
   LOG("OnContainerFocusInEvent");
 
   // Unset the urgency hint, if possible
-  GtkWidget* top_window = GetToplevelWidget();
+  GtkWidget* top_window = GetGtkWidget();
   if (top_window && (gtk_widget_get_visible(top_window))) {
     SetUrgencyHint(top_window, false);
   }
@@ -7141,8 +7139,6 @@ bool nsWindow::DoDrawTilebarCorners() {
          !mIsTiled;
 }
 
-GtkWidget* nsWindow::GetToplevelWidget() const { return mShell; }
-
 GdkWindow* nsWindow::GetToplevelGdkWindow() const {
   return gtk_widget_get_window(mShell);
 }
@@ -9077,7 +9073,7 @@ gint nsWindow::GdkCeiledScaleFactor() {
   }
 
   // We're missing scale for window (is hidden?), read parent scale
-  if (nsWindow* topmost = GetTopmostWindow()) {
+  if (nsWindow* topmost = nsWindow::FromWidget(GetTopLevelWidget())) {
     LOGVERBOSE("nsWindow::GdkCeiledScaleFactor(): toplevel [%p] scale %d",
                topmost, (int)topmost->mCeiledScaleFactor);
     return topmost->mCeiledScaleFactor;

@@ -583,7 +583,6 @@ class nsWindow final : public nsIWidget {
                         GdkEventButton* aButtonEvent);
 
   void DestroyChildWindows();
-  GtkWidget* GetToplevelWidget() const;
   nsWindow* GetContainerWindow() const;
   Window GetX11Window();
   void SetUrgencyHint(GtkWidget* top_window, bool state);
@@ -932,7 +931,6 @@ class nsWindow final : public nsIWidget {
                                      GdkPoint* aOffset);
   bool WaylandPopupAnchorAdjustForParentPopup(GdkRectangle* aPopupAnchor,
                                               GdkPoint* aOffset);
-  nsWindow* GetTopmostWindow();
   bool IsPopupInLayoutPopupChain(nsTArray<nsIWidget*>* aLayoutWidgetHierarchy,
                                  bool aMustMatchParent);
   void WaylandPopupMarkAsClosed();
