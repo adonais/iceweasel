@@ -3,6 +3,7 @@ package org.mozilla.fenix.ui
 import android.os.Build
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.filters.SdkSuppress
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -26,6 +27,7 @@ class OnboardingTest : TestSetup() {
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2122321
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021112")
     @Test
     fun verifyFirstOnboardingCardItemsTest() {
         // Run UI test only on devices with Android version lower than 10
@@ -40,6 +42,7 @@ class OnboardingTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2122334
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021112")
     @Test
     fun verifyFirstOnboardingCardItemsFunctionalityTest() {
         // Run UI test only on devices with Android version lower than 10
@@ -60,6 +63,7 @@ class OnboardingTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2122343
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021112")
     @Test
     fun verifySecondOnboardingCardItemsTest() {
         runWithLauncherIntent(composeTestRule) {
@@ -76,6 +80,7 @@ class OnboardingTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2122344
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021112")
     @SmokeTest
     @Test
     fun verifyThirdOnboardingCardSignInFunctionalityTest() {
@@ -98,6 +103,7 @@ class OnboardingTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2609732
     @SdkSuppress(minSdkVersion = 29)
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021112")
     @SmokeTest
     @Test
     fun verifySetAsDefaultBrowserDialogWhileFirefoxIsNotSetAsDefaultBrowserTest() {

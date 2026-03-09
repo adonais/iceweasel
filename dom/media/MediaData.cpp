@@ -17,6 +17,7 @@
 #include "VideoUtils.h"
 #include "YCbCrUtils.h"
 #include "libyuv.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/KnowsCompositor.h"
@@ -582,8 +583,16 @@ void VideoData::QuantizableBuffer::AllocateRecyclableData(size_t aLength) {
   MOZ_ASSERT(!m8bpcPlanes, "Should not allocate more than once.");
   MOZ_ASSERT(aLength > 0, "Zero-length allocation!");
 
-  m8bpcPlanes = mRecycleBin->GetBuffer(aLength);
-  mAllocatedLength = aLength;
+  CheckedInt<uint32_t> checkedLength(aLength);
+  if (!checkedLength.isValid()) {
+    NS_WARNING("Fail to allocate 8-bit conversion buffer: size too large!");
+    return;
+  }
+
+  m8bpcPlanes = mRecycleBin->GetBuffer(checkedLength.value());
+  if (m8bpcPlanes) {
+    mAllocatedLength = aLength;
+  }
 }
 
 VideoData::QuantizableBuffer::~QuantizableBuffer() {

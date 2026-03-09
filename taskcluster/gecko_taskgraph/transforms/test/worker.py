@@ -218,3 +218,16 @@ def set_wayland_env(config, tasks):
         env["WAYLAND_DISPLAY"] = "wayland-0"
         env["NEED_GNOME_KEYRING"] = "true"
         yield task
+
+
+@transforms.add
+def hide_cmd_exe_window_on_windows(config, tasks):
+    for task in tasks:
+        if task["test-platform"].startswith("win") and task["suite"] in (
+            "raptor",
+            "talos",
+            "awsy",
+        ):
+            worker = task.setdefault("worker", {})
+            worker["hide-cmd-window"] = True
+        yield task

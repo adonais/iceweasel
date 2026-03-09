@@ -10,6 +10,7 @@ import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,9 +50,11 @@ class BaselineProfilesOnboardingBenchmark {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
 
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021112")
     @Test
     fun onboardingNone() = onboardingBenchmark(CompilationMode.None())
 
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021112")
     @Test
     fun onboarding() =
         onboardingBenchmark(CompilationMode.Partial(baselineProfileMode = BaselineProfileMode.Require))
