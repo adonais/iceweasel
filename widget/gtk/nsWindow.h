@@ -547,6 +547,14 @@ class nsWindow final : public nsIWidget {
   void SetDragPopupSurface(RefPtr<gfxImageSurface> aDragPopupSurface,
                            const LayoutDeviceIntRegion& aInvalidRegion);
 
+  static nsWindow* FromWidget(nsIWidget* aWidget) {
+    if (aWidget && aWidget->IsNativeWidget()) {
+      return static_cast<nsWindow*>(aWidget);
+    }
+    return nullptr;
+  }
+  static nsWindow* FromWidget(nsWindow*) = delete;
+
  protected:
   virtual ~nsWindow();
 
