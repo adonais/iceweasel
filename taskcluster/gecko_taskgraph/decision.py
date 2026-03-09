@@ -78,6 +78,7 @@ PER_PROJECT_PARAMETERS = {
         "release_type": "nightly",
     },
     "mozilla-beta": {
+        "optimize_strategies": "gecko_taskgraph.optimize:project.beta",
         "target_tasks_method": "mozilla_beta_tasks",
         "release_type": "beta",
     },
