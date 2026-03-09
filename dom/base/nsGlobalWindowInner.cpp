@@ -2201,7 +2201,13 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4EmptyFrame(Element& aEmbedder) {
     }
     return nullptr;
   }();
-  if (!version || !StringBeginsWith(version->mVersion, u"4."_ns)) {
+  if (!version) {
+    return false;
+  }
+  // The CKEditor source code has "%VERSION%", which may be left in place
+  // in deployment if a proper build step is missing.
+  if (!(StringBeginsWith(version->mVersion, u"4."_ns) ||
+        version->mVersion.EqualsLiteral(u"%VERSION%"))) {
     return false;
   }
   aEmbedder.OwnerDoc()->WarnOnceAbout(
