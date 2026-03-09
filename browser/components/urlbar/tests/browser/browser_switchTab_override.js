@@ -417,6 +417,116 @@ add_task(async function test_move_tab_to_split_view_with_collapsed_group() {
   gBrowser.removeTab(targetTab);
 });
 
+add_task(async function test_move_tab_from_split_view_to_another_split_view() {
+  info(
+    "Test that moving a tab from one split view to another via the urlbar " +
+      "correctly shows both panels in the destination split view"
+  );
+
+  info("Create source split view tabs (tab1 will be moved, tab2 will be left)");
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+  info("Create destination split view");
+  let aboutOpenTabsTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:opentabs"
+  );
+  let destTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+  let tabbrowserTabs = gBrowser.tabContainer;
+
+  let splitViewCreated1 = BrowserTestUtils.waitForEvent(
+    tabbrowserTabs,
+    "SplitViewCreated"
+  );
+  let sourceSplitView = gBrowser.addTabSplitView([tab1, tab2]);
+  await splitViewCreated1;
+
+  let splitViewCreated2 = BrowserTestUtils.waitForEvent(
+    tabbrowserTabs,
+    "SplitViewCreated"
+  );
+  let destSplitView = gBrowser.addTabSplitView([aboutOpenTabsTab, destTab]);
+  await splitViewCreated2;
+
+  info("Select destTab so destSplitView is active");
+  gBrowser.selectedTab = destTab;
+
+  info("Wait for autocomplete");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "dummy_page",
+  });
+
+  info("Select autocomplete entry for tab1 (in the source split view)");
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(
+    window,
+    UrlbarTestUtils.getSelectedRowIndex(window)
+  );
+  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TAB_SWITCH);
+
+  info("Check that action shows 'Move tab to Split View'");
+  let actionLabel = result.element.row.querySelector(".urlbarView-action");
+  Assert.ok(BrowserTestUtils.isVisible(actionLabel));
+  Assert.equal(
+    document.l10n.getAttributes(actionLabel).id,
+    "urlbar-result-action-move-tab-to-split-view"
+  );
+
+  info(
+    "Press Enter to move tab1 from source split view to destination split view"
+  );
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  info("Wait for tab1 to be moved to destSplitView");
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      destSplitView.tabs.some(
+        tab => tab.linkedBrowser.currentURI.spec === TEST_URL
+      ),
+    "Wait for tab1 to be in destSplitView"
+  );
+
+  info("Wait for source split view to be unsplit (had only tab2 remaining)");
+  await BrowserTestUtils.waitForCondition(
+    () => !sourceSplitView.isConnected,
+    "Source split view should be removed after tab1 was moved out"
+  );
+
+  let movedTab = destSplitView.tabs.find(
+    tab => tab.linkedBrowser.currentURI.spec === TEST_URL
+  );
+  Assert.ok(movedTab, "tab1 should be in the destination split view");
+
+  info("Verify both panels in destSplitView have split-view-panel class");
+  const [firstTab, secondTab] = destSplitView.tabs;
+  const firstPanel = document.getElementById(firstTab.linkedPanel);
+  const secondPanel = document.getElementById(secondTab.linkedPanel);
+
+  Assert.ok(
+    firstPanel.classList.contains("split-view-panel"),
+    "First panel in destSplitView should have split-view-panel class"
+  );
+  Assert.ok(
+    secondPanel.classList.contains("split-view-panel"),
+    "Second panel in destSplitView should have split-view-panel class"
+  );
+  Assert.ok(
+    firstPanel.classList.contains("split-view-panel-active") ||
+      secondPanel.classList.contains("split-view-panel-active"),
+    "At least one panel in destSplitView should have split-view-panel-active class"
+  );
+
+  info("Cleanup");
+  await destSplitView.close();
+  if (gBrowser.tabs.includes(tab2)) {
+    gBrowser.removeTab(tab2);
+  }
+  await UrlbarTestUtils.promisePopupClose(window);
+});
+
 add_task(async function test_move_tab_to_split_view_same_window_selection() {
   info("Test that moving a tab from the same window properly selects it");
 
