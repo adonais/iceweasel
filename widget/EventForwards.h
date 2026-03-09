@@ -54,7 +54,7 @@ enum class SystemGroupOnly { eYes, eNo };
  * Event messages
  */
 
-typedef uint16_t EventMessageType;
+using EventMessageType = uint16_t;
 
 enum EventMessage : EventMessageType {
 
@@ -102,19 +102,20 @@ const char* ToChar(EventMessage aEventMessage);
  * Event class IDs
  */
 
-typedef uint8_t EventClassIDType;
+using EventClassIDType = uint8_t;
 
 enum EventClassID : EventClassIDType {
 // The event class name will be:
 //   eBasicEventClass for WidgetEvent
 //   eFooEventClass for WidgetFooEvent or InternalFooEvent
-#define NS_ROOT_EVENT_CLASS(aPrefix, aName) eBasic##aName##Class
-#define NS_EVENT_CLASS(aPrefix, aName) , e##aName##Class
+#define NS_ROOT_EVENT_CLASS(aPrefix, aName) eBasic##aName##Class,
+#define NS_EVENT_CLASS(aPrefix, aName) e##aName##Class,
 
 #include "mozilla/EventClassList.inc"
 
 #undef NS_EVENT_CLASS
 #undef NS_ROOT_EVENT_CLASS
+  eEventClassID_MaxValue
 };
 
 const char* ToChar(EventClassID aEventClassID);
