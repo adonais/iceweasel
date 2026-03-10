@@ -22,8 +22,7 @@ import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
-import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.onboarding.ReEngagementNotificationWorker
 import org.mozilla.fenix.utils.Settings
@@ -35,13 +34,16 @@ class ReEngagementIntentProcessorTest {
     @get:Rule
     val gleanTestRule = FenixGleanTestRule(testContext)
 
+    private val settings: Settings = mockk {
+        every { shouldUseComposableToolbar } returns false
+    }
+
     @Test
     fun `do not process blank intents`() {
         val navController: NavController = mockk()
         val out: Intent = mockk()
         val settings: Settings = mockk()
-        val appStore = AppStore(AppState())
-        val result = ReEngagementIntentProcessor(appStore, mockk())
+        val result = ReEngagementIntentProcessor(mockk())
             .process(Intent(), navController, out, settings)
 
         assertFalse(result)
@@ -54,18 +56,19 @@ class ReEngagementIntentProcessorTest {
         val navController: NavController = mockk(relaxed = true)
         val out: Intent = mockk()
         val activity: HomeActivity = mockk(relaxed = true)
-        val appStore = AppStore(AppState())
+        val browsingModeManager: BrowsingModeManager = mockk(relaxed = true)
         val settings: Settings = mockk(relaxed = true)
 
         val intent = Intent().apply {
             putExtra("org.mozilla.fenix.re-engagement.intent", true)
         }
         every { activity.applicationContext } returns testContext
+        every { activity.browsingModeManager } returns browsingModeManager
         every { settings.reEngagementNotificationType } returns ReEngagementNotificationWorker.NOTIFICATION_TYPE_A
 
         assertNull(Events.reEngagementNotifTapped.testGetValue())
 
-        val result = ReEngagementIntentProcessor(appStore, activity)
+        val result = ReEngagementIntentProcessor(activity)
             .process(intent, navController, out, settings)
 
         assert(result)
@@ -92,18 +95,19 @@ class ReEngagementIntentProcessorTest {
         val navController: NavController = mockk(relaxed = true)
         val out: Intent = mockk()
         val activity: HomeActivity = mockk(relaxed = true)
-        val appStore = AppStore(AppState())
+        val browsingModeManager: BrowsingModeManager = mockk(relaxed = true)
         val settings: Settings = mockk(relaxed = true)
 
         val intent = Intent().apply {
             putExtra("org.mozilla.fenix.re-engagement.intent", true)
         }
         every { activity.applicationContext } returns testContext
+        every { activity.browsingModeManager } returns browsingModeManager
         every { settings.reEngagementNotificationType } returns ReEngagementNotificationWorker.NOTIFICATION_TYPE_B
 
         assertNull(Events.reEngagementNotifTapped.testGetValue())
 
-        val result = ReEngagementIntentProcessor(appStore, activity)
+        val result = ReEngagementIntentProcessor(activity)
             .process(intent, navController, out, settings)
 
         assert(result)
