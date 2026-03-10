@@ -13,7 +13,8 @@ const mockLocation = {
   code: "us",
 };
 
-async function setupBandwidthPrecisionTest() {
+async function setupBandwidthPrecisionTest(maxBytes, remaining) {
+  let usage = makeUsage(maxBytes, remaining);
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -22,8 +23,9 @@ async function setupBandwidthPrecisionTest() {
       status: 200,
       error: undefined,
       pass: makePass(),
-      usage: makeUsage(),
+      usage,
     },
+    usageInfo: usage,
   });
   await IPPEnrollAndEntitleManager.refetchEntitlement();
 
@@ -62,18 +64,15 @@ add_task(async function test_bandwidth_percent_bucketing() {
     { usagePercent: 90, expectedBucket: 90 },
     { usagePercent: 91, expectedBucket: 90 },
     { usagePercent: 95, expectedBucket: 90 },
-    { usagePercent: 100, expectedBucket: 90 },
   ];
 
   for (const testCase of testCases) {
-    await setupBandwidthPrecisionTest();
-
-    const remaining = maxBytes * (1 - testCase.usagePercent / 100);
+    const remaining = Math.floor(maxBytes * (1 - testCase.usagePercent / 100));
+    await setupBandwidthPrecisionTest(String(maxBytes), String(remaining));
 
     let content = await openPanel({
       location: mockLocation,
       isProtectionEnabled: true,
-      bandwidthUsage: { remaining, max: maxBytes },
     });
 
     const bandwidthEl = await getBandwidthEl(content);
@@ -114,12 +113,14 @@ add_task(async function test_bandwidth_decimal_precision_at_75_percent() {
   ];
 
   for (const testCase of testCases) {
-    await setupBandwidthPrecisionTest();
+    await setupBandwidthPrecisionTest(
+      String(maxBytes),
+      String(testCase.remaining)
+    );
 
     let content = await openPanel({
       location: mockLocation,
       isProtectionEnabled: true,
-      bandwidthUsage: { remaining: testCase.remaining, max: maxBytes },
     });
 
     const bandwidthEl = await getBandwidthEl(content);
@@ -160,12 +161,14 @@ add_task(async function test_bandwidth_no_decimal_outside_75_percent() {
   ];
 
   for (const testCase of testCases) {
-    await setupBandwidthPrecisionTest();
+    await setupBandwidthPrecisionTest(
+      String(maxBytes),
+      String(testCase.remaining)
+    );
 
     let content = await openPanel({
       location: mockLocation,
       isProtectionEnabled: true,
-      bandwidthUsage: { remaining: testCase.remaining, max: maxBytes },
     });
 
     const bandwidthEl = await getBandwidthEl(content);
@@ -190,14 +193,12 @@ add_task(async function test_bandwidth_no_decimal_outside_75_percent() {
 add_task(async function test_bandwidth_mb_display_below_1gb() {
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
 
-  await setupBandwidthPrecisionTest();
-
   const remaining = Math.floor(0.9 * BANDWIDTH.BYTES_IN_GB);
+  await setupBandwidthPrecisionTest(String(maxBytes), String(remaining));
 
   let content = await openPanel({
     location: mockLocation,
     isProtectionEnabled: true,
-    bandwidthUsage: { remaining, max: maxBytes },
   });
 
   const bandwidthEl = await getBandwidthEl(content);

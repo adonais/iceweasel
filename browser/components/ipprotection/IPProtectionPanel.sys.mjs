@@ -211,7 +211,7 @@ export class IPProtectionPanel {
       hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
       onboardingMessage: "",
       bandwidthWarning: false,
-      paused: false,
+      paused: lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED,
       isSiteExceptionsEnabled: this.isExceptionsFeatureEnabled,
       siteData: this.#getSiteData(),
       bandwidthUsage: this.#getBandwidthUsage(),
@@ -346,6 +346,10 @@ export class IPProtectionPanel {
     if (this.initiatedUpgrade) {
       lazy.IPPEnrollAndEntitleManager.refetchEntitlement();
       this.initiatedUpgrade = false;
+    }
+
+    if (!this.state.unauthenticated) {
+      lazy.IPPProxyManager.refreshUsage();
     }
 
     this.#updateSiteData();
@@ -787,6 +791,7 @@ export class IPProtectionPanel {
           lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
             ? this.state.bandwidthWarning
             : false,
+        paused: lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED,
       });
     } else if (event.type == "IPPExceptionsManager:ExclusionChanged") {
       this.#updateSiteData();

@@ -740,8 +740,8 @@ add_task(
     await IPPProxyManager.stop();
     Assert.equal(
       IPPProxyManager.state,
-      IPPProxyStates.NOT_READY,
-      "Proxy should be in NOT_READY state when stopping from PAUSED state"
+      IPPProxyStates.PAUSED,
+      "Proxy should remain in the PAUSED state when stopping from PAUSED state"
     );
 
     IPProtectionService.uninit();
@@ -839,7 +839,10 @@ add_task(async function test_IPPProxyManager_restores_cached_usage() {
     "Cached reset loaded correctly"
   );
 
+  Services.prefs.setBoolPref("browser.ipProtection.cacheDisabled", true);
   Services.prefs.clearUserPref("browser.ipProtection.usageCache");
+  Services.prefs.clearUserPref("browser.ipProtection.stateCache");
+  IPPProxyManager.uninit();
 });
 
 const refreshUsageTestCases = [
@@ -852,8 +855,8 @@ const refreshUsageTestCases = [
     expectedRemaining: BigInt("0"),
   },
   {
-    name: "NOT_READY -> ready",
-    initialState: IPPProxyStates.NOT_READY,
+    name: "paused -> ready",
+    initialState: IPPProxyStates.PAUSED,
     initialUsage: new ProxyUsage("1000000", "0", "3026-02-05T00:00:00.000Z"),
     refreshedUsage: new ProxyUsage(
       "1000000",
@@ -897,10 +900,7 @@ refreshUsageTestCases.forEach(testCase => {
       IPProtectionService.init();
       await readyEvent;
 
-      if (
-        testCase.initialState === IPPProxyStates.ACTIVE ||
-        testCase.initialState === IPPProxyStates.PAUSED
-      ) {
+      if (testCase.initialState === IPPProxyStates.ACTIVE) {
         const pausedEventPromise = waitForEvent(
           IPPProxyManager,
           "IPPProxyManager:StateChanged",

@@ -276,7 +276,6 @@ export class GuardianClient {
     using tokenHandle = await this.getToken(abortSignal);
     const response = await fetch(this.#tokenURL, {
       method: "HEAD",
-      cache: "no-cache",
       signal: abortSignal,
       headers: {
         Authorization: `Bearer ${tokenHandle.token}`,
