@@ -14,6 +14,7 @@ add_setup(() => {
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("browser.tabs.splitview.hasUsed");
+  Services.prefs.clearUserPref("sidebar.verticalTabs.dragToPinPromo.dismissed");
 });
 
 add_task(async function test_drag_splitview_tab() {
@@ -378,3 +379,77 @@ add_task(
     await BrowserTestUtils.closeWindow(win2);
   }
 );
+
+add_task(async function test_drag_tab_group_label_with_splitview() {
+  // [(startingTab, tab1), tab2, [Group: (tab3 | tab4)], tab5]
+  const tabpanels = document.getElementById("tabbrowser-tabpanels");
+  const startingTab = gBrowser.tabs[0];
+  let [tab1, tab2, tab3, tab4] = await Promise.all(
+    Array.from({ length: 4 }).map((_, index) =>
+      addTab(`data:text/plain,tab${index + 1}`)
+    )
+  );
+
+  let splitView = gBrowser.addTabSplitView([startingTab, tab1]);
+  let splitView2 = gBrowser.addTabSplitView([tab3, tab4]);
+  let group = gBrowser.addTabGroup([splitView2]);
+
+  // Select a tab in a splitview before checking for the blue outline that should be visible
+  gBrowser.selectedTab = tab1;
+  Assert.equal(
+    gBrowser.selectedTab,
+    tab1,
+    "Tab 1 in a splitview is the selected tab"
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    tabpanels,
+    { attributes: true },
+    () => tabpanels.hasAttribute("splitview")
+  );
+  Assert.ok(tabpanels.hasAttribute("splitview"), "Tab panel has blue outline");
+
+  let tab5 = await addTab("data:text/plain,tab5");
+  gBrowser.selectedTab = tab5;
+  Assert.equal(gBrowser.selectedTab, tab5, "Tab 5 is the selected tab");
+
+  Assert.deepEqual(
+    gBrowser.tabs,
+    [tab2, startingTab, tab1, tab3, tab4, tab5],
+    "confirm tabs' starting order"
+  );
+
+  info("Drag and drop tab group containing splitview tabs");
+  let dragend = BrowserTestUtils.waitForEvent(group.labelElement, "dragend");
+  EventUtils.synthesizePlainDragAndDrop({
+    srcElement: group.labelElement,
+    destElement: tab2,
+  });
+  await dragend;
+
+  Assert.deepEqual(
+    gBrowser.tabs,
+    [tab2, tab3, tab4, startingTab, tab1, tab5],
+    "Group with split view moved after tab2"
+  );
+
+  // Select a non-splitview tab before checking for the blue outline that shouldn't be
+  // visible (only in the content area for tabs in a splitview).
+  gBrowser.selectedTab = tab5;
+  Assert.equal(gBrowser.selectedTab, tab5, "Tab 5 is the selected tab");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabpanels,
+    { attributes: true },
+    () => !tabpanels.hasAttribute("splitview")
+  );
+  Assert.ok(
+    !tabpanels.hasAttribute("splitview"),
+    "Tab panel does not have blue outline"
+  );
+
+  // cleanup
+  splitView.close();
+  splitView2.close();
+  await removeTabGroup(group);
+  BrowserTestUtils.removeTab(tab5);
+});
