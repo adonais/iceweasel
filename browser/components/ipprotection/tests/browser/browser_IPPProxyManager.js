@@ -265,3 +265,56 @@ add_task(async function test_IPPProxyManager_unpause_on_available() {
   sandbox.restore();
   cleanupService();
 });
+
+/**
+ * Tests that re-opening the panel when the IPPProxyManager state is ACTIVE does not reset the state (Bug 2021236).
+ */
+add_task(async function test_IPPProxyManager_active_shown() {
+  const sandbox = sinon.createSandbox();
+  IPPProxyManager.reset();
+
+  const usage = makeUsage();
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+    usageInfo: usage,
+  });
+  IPProtectionService.updateState();
+
+  let content = await openPanel();
+
+  let statusCard = content.statusCardEl;
+  let actionButton = statusCard.actionButtonEl;
+
+  Assert.ok(actionButton, "Turn on button should be shown");
+
+  actionButton.click();
+
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+
+  await closePanel(window, false);
+
+  content = await openPanel();
+  statusCard = content.statusCardEl;
+  actionButton = statusCard.actionButtonEl;
+
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ACTIVE,
+    "IPPProxyManager state should be active when re-opened"
+  );
+
+  actionButton.click();
+
+  await waitForProxyState(IPPProxyStates.READY);
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.READY,
+    "IPPProxyManager state should be ready after turning off"
+  );
+
+  await closePanel();
+  sandbox.restore();
+  cleanupService();
+});

@@ -878,6 +878,22 @@ const refreshUsageTestCases = [
     expectedState: IPPProxyStates.PAUSED,
     expectedRemaining: BigInt("0"),
   },
+  {
+    name: "Active -> active (connection still active)",
+    initialState: IPPProxyStates.ACTIVE,
+    initialUsage: new ProxyUsage(
+      "1000000",
+      "500000",
+      "3026-02-05T00:00:00.000Z"
+    ),
+    refreshedUsage: new ProxyUsage(
+      "1000000",
+      "400000",
+      "3026-02-06T00:00:00.000Z"
+    ),
+    expectedState: IPPProxyStates.ACTIVE,
+    expectedRemaining: BigInt("400000"),
+  },
 ];
 
 refreshUsageTestCases.forEach(testCase => {

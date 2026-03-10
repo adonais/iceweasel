@@ -322,9 +322,9 @@ class IPPProxyManagerSingleton extends EventTarget {
           return { started: true };
         },
         error => {
-          this.#setErrorState(error);
           this.#activationAbortController = null;
           this.cancelChannelFilter();
+          this.#setErrorState(error);
           return { started: false, error };
         }
       )
@@ -654,6 +654,7 @@ class IPPProxyManagerSingleton extends EventTarget {
   updateState() {
     // State must remain as error until the connection is stopped.
     if (this.#state === IPPProxyStates.ERROR && this.#connection?.active) {
+      this.#setState(IPPProxyStates.ERROR);
       return;
     }
 
@@ -664,6 +665,12 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     if (this.#usage && this.#usage.remaining <= 0) {
       this.#setState(IPPProxyStates.PAUSED);
+      return;
+    }
+
+    // State must remain active if the connection is active.
+    if (this.#connection?.active) {
+      this.#setState(IPPProxyStates.ACTIVE);
       return;
     }
 
