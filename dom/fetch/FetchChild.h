@@ -39,7 +39,8 @@ class FetchChild final : public PFetchChild, public AbortFollower {
   mozilla::ipc::IPCResult RecvOnFlushConsoleReport(
       nsTArray<net::ConsoleReportCollected>&& aReports);
 
-  mozilla::ipc::IPCResult RecvOnCSPViolationEvent(const nsAString& aJSon);
+  mozilla::ipc::IPCResult RecvOnCSPViolationEvent(
+      const nsAString& aJSon, const nsAString& aReportGroupName);
 
   mozilla::ipc::IPCResult RecvOnReportPerformanceTiming(
       ResponseTiming&& aTiming);

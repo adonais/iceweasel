@@ -6,12 +6,11 @@
 
 #include "mozilla/dom/ReportingUtils.h"
 
+#include "mozilla/dom/CSPViolationReportBody.h"
 #include "mozilla/dom/Report.h"
 #include "mozilla/dom/ReportBody.h"
 #include "mozilla/dom/ReportDeliver.h"
-#include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/ipc/PBackgroundChild.h"
+#include "mozilla/dom/SecurityPolicyViolationEvent.h"
 #include "nsAtom.h"
 #include "nsIGlobalObject.h"
 #include "nsIURIMutator.h"
@@ -55,7 +54,36 @@ void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
       new mozilla::dom::Report(aGlobal, type, aURL, aBody);
   aGlobal->BroadcastReport(report);
 
+  // No endpoint to send them to.
+  if (aGroupName.IsEmpty() || aGroupName.IsVoid()) {
+    return;
+  }
+
   ReportDeliver::AttemptDelivery(aGlobal, type, aGroupName, aURL, aBody);
+}
+
+/* static */
+void ReportingUtils::DeserializeSecurityViolationEventAndReport(
+    mozilla::dom::EventTarget* aTarget, nsIGlobalObject* aGlobal,
+    const nsAString& aSecurityPolicyViolationInitJSON,
+    const nsAString& aReportGroupName) {
+  SecurityPolicyViolationEventInit violationEventInit;
+
+  if (NS_WARN_IF(!violationEventInit.Init(aSecurityPolicyViolationInitJSON))) {
+    return;
+  }
+
+  RefPtr<mozilla::dom::Event> event =
+      mozilla::dom::SecurityPolicyViolationEvent::Constructor(
+          aTarget, u"securitypolicyviolation"_ns, violationEventInit);
+  event->SetTrusted(true);
+
+  aTarget->DispatchEvent(*event, IgnoreErrors());
+
+  RefPtr<CSPViolationReportBody> body =
+      new CSPViolationReportBody(aGlobal, violationEventInit);
+  ReportingUtils::Report(aGlobal, nsGkAtoms::cspViolation, aReportGroupName,
+                         violationEventInit.mDocumentURI, body);
 }
 
 }  // namespace mozilla::dom

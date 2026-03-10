@@ -15,6 +15,7 @@ class nsIURI;
 
 namespace mozilla::dom {
 
+class EventTarget;
 class ReportBody;
 
 class ReportingUtils final {
@@ -24,6 +25,16 @@ class ReportingUtils final {
   static void Report(nsIGlobalObject* aGlobal, nsAtom* aType,
                      const nsAString& aGroupName, const nsAString& aURL,
                      ReportBody* aBody);
+
+  /**
+   * Deserializes `aSecurityPolicyViolationInitJSON` into a
+   * `SecurityPolicyViolationEventInit` which is then used to generate an event
+   * and report, dispatch them, and attempt delivery to any configured endpoint.
+   */
+  static void DeserializeSecurityViolationEventAndReport(
+      mozilla::dom::EventTarget* aTarget, nsIGlobalObject* aGlobal,
+      const nsAString& aSecurityPolicyViolationInitJSON,
+      const nsAString& aReportGroupName);
 };
 
 }  // namespace mozilla::dom

@@ -116,8 +116,8 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   nsresult FireViolationEvent(
       mozilla::dom::Element* aTriggeringElement,
       nsICSPEventListener* aCSPEventListener,
-      const mozilla::dom::SecurityPolicyViolationEventInit&
-          aViolationEventInit);
+      const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit,
+      const nsAString& aReportGroupName);
 
   /**
    * Asynchronously notifies any nsIObservers listening to the CSP violation
@@ -159,6 +159,9 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   void AddIPCPolicy(const mozilla::ipc::ContentSecurityPolicy& aPolicy);
   void SerializePolicies(
       nsTArray<mozilla::ipc::ContentSecurityPolicy>& aPolicies);
+
+  // Returns an empty string if aPolicyIndex > num of policies.
+  nsString GetReportGroupFor(uint64_t aPolicyIndex) const;
 
   static nsCSPContext* Cast(nsIContentSecurityPolicy* aCSP) {
     return static_cast<nsCSPContext*>(aCSP);

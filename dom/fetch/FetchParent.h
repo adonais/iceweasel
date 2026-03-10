@@ -68,7 +68,8 @@ class FetchParent final : public PFetchParent {
 
   nsICSPEventListener* GetCSPEventListener();
 
-  void OnCSPViolationEvent(const nsAString& aJSON);
+  void OnCSPViolationEvent(const nsAString& aJSON,
+                           const nsAString& aReportGroupName);
 
   void OnReportPerformanceTiming(const ResponseTiming&& aTiming);
 

@@ -84,7 +84,8 @@ child:
   async DrawSnapshot(IntRect? aRect, float aScale, nscolor aBackgroundColor,
                      uint32_t aFlags) returns (PaintFragment retval);
 
-  async DispatchSecurityPolicyViolation(nsString aViolationEventJSON);
+  async DispatchSecurityPolicyViolation(nsString aViolationEventJSON,
+                                        nsString aReportGroupName);
 
   async SaveStorageAccessPermissionGranted();
 

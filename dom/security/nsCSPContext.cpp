@@ -1537,11 +1537,12 @@ void nsCSPContext::HandleInternalPageViolation(
 
 nsresult nsCSPContext::FireViolationEvent(
     Element* aTriggeringElement, nsICSPEventListener* aCSPEventListener,
-    const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit) {
+    const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit,
+    const nsAString& aReportGroupName) {
   if (aCSPEventListener) {
     nsAutoString json;
     if (aViolationEventInit.ToJSON(json)) {
-      aCSPEventListener->OnCSPViolationEvent(json);
+      aCSPEventListener->OnCSPViolationEvent(json, aReportGroupName);
     }
 
     return NS_OK;
@@ -1568,7 +1569,8 @@ nsresult nsCSPContext::FireViolationEvent(
             WindowGlobalParent::GetByInnerWindowId(mInnerWindowID)) {
       nsAutoString json;
       if (aViolationEventInit.ToJSON(json)) {
-        (void)parent->SendDispatchSecurityPolicyViolation(json);
+        (void)parent->SendDispatchSecurityPolicyViolation(json,
+                                                          aReportGroupName);
       }
     }
     return NS_OK;
@@ -1676,8 +1678,10 @@ class CSPReportSenderRunnable final : public Runnable {
     // A frame-ancestors violation has occurred, but we should not dispatch
     // the violation event to a potentially cross-origin ancestor.
     if (!mViolatedDirectiveName.EqualsLiteral("frame-ancestors")) {
-      mCSPContext->FireViolationEvent(mCSPViolationData.mElement,
-                                      mCSPEventListener, init);
+      mCSPContext->FireViolationEvent(
+          mCSPViolationData.mElement, mCSPEventListener, init,
+          mCSPContext->GetReportGroupFor(
+              mCSPViolationData.mViolatedPolicyIndex));
     }
 
     return NS_OK;
@@ -2406,4 +2410,14 @@ void nsCSPContext::SerializePolicies(
   }
 
   aPolicies.AppendElements(mIPCPolicies);
+}
+
+nsString nsCSPContext::GetReportGroupFor(uint64_t aPolicyIndex) const {
+  nsString result;
+  if (aPolicyIndex >= mPolicies.Length()) {
+    return EmptyString();
+  }
+
+  mPolicies[aPolicyIndex]->getReportGroup(result);
+  return result;
 }

@@ -25,6 +25,8 @@
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/JSWindowActorChild.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
+#include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/SecurityPolicyViolationEvent.h"
 #include "mozilla/dom/SessionStoreRestoreData.h"
 #include "mozilla/dom/WindowContext.h"
@@ -514,7 +516,7 @@ WindowGlobalChild::RecvSaveStorageAccessPermissionGranted() {
 }
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvDispatchSecurityPolicyViolation(
-    const nsString& aViolationEventJSON) {
+    const nsString& aViolationEventJSON, const nsString& aReportGroupName) {
   nsGlobalWindowInner* window = GetWindowGlobal();
   if (!window) {
     return IPC_OK();
@@ -525,15 +527,10 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvDispatchSecurityPolicyViolation(
     return IPC_OK();
   }
 
-  SecurityPolicyViolationEventInit violationEvent;
-  if (!violationEvent.Init(aViolationEventJSON)) {
-    return IPC_OK();
-  }
+  ReportingUtils::DeserializeSecurityViolationEventAndReport(
+      doc->GetTargetForDOMEvent(), window, aViolationEventJSON,
+      aReportGroupName);
 
-  RefPtr<Event> event = SecurityPolicyViolationEvent::Constructor(
-      doc, u"securitypolicyviolation"_ns, violationEvent);
-  event->SetTrusted(true);
-  doc->DispatchEvent(*event, IgnoreErrors());
   return IPC_OK();
 }
 

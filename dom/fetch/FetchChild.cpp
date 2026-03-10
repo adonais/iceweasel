@@ -279,7 +279,7 @@ RefPtr<FetchChild> FetchChild::CreateForMainThread(
 }
 
 mozilla::ipc::IPCResult FetchChild::RecvOnCSPViolationEvent(
-    const nsAString& aJSON) {
+    const nsAString& aJSON, const nsAString& aReportGroupName) {
   FETCH_LOG(("FetchChild::RecvOnCSPViolationEvent [%p] aJSON: %s\n", this,
              NS_ConvertUTF16toUTF8(aJSON).BeginReading()));
 
@@ -313,7 +313,8 @@ mozilla::ipc::IPCResult FetchChild::RecvOnCSPViolationEvent(
   MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
 
   if (mCSPEventListener) {
-    (void)NS_WARN_IF(NS_FAILED(mCSPEventListener->OnCSPViolationEvent(aJSON)));
+    (void)NS_WARN_IF(NS_FAILED(
+        mCSPEventListener->OnCSPViolationEvent(aJSON, aReportGroupName)));
   }
   return IPC_OK();
 }

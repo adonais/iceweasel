@@ -30,18 +30,19 @@ FetchParent::FetchParentCSPEventListener::FetchParentCSPEventListener(
 }
 
 NS_IMETHODIMP FetchParent::FetchParentCSPEventListener::OnCSPViolationEvent(
-    const nsAString& aJSON) {
+    const nsAString& aJSON, const nsAString& aReportGroupName) {
   AssertIsOnMainThread();
   FETCH_LOG(("FetchParentCSPEventListener::OnCSPViolationEvent [%p]", this));
 
   nsAutoString json(aJSON);
-  nsCOMPtr<nsIRunnable> r =
-      NS_NewRunnableFunction(__func__, [actorID = mActorID, json]() mutable {
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      __func__, [actorID = mActorID, json,
+                 reportGroup = nsString{aReportGroupName}]() mutable {
         FETCH_LOG(
             ("FetchParentCSPEventListener::OnCSPViolationEvent, Runnale"));
         RefPtr<FetchParent> actor = FetchParent::GetActorByID(actorID);
         if (actor) {
-          actor->OnCSPViolationEvent(json);
+          actor->OnCSPViolationEvent(json, reportGroup);
         }
       });
 
@@ -395,13 +396,14 @@ nsICSPEventListener* FetchParent::GetCSPEventListener() {
   return mCSPEventListener;
 }
 
-void FetchParent::OnCSPViolationEvent(const nsAString& aJSON) {
+void FetchParent::OnCSPViolationEvent(const nsAString& aJSON,
+                                      const nsAString& aReportGroupName) {
   FETCH_LOG(("FetchParent::OnCSPViolationEvent [%p]", this));
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(mHasCSPEventListener);
   MOZ_ASSERT(!mActorDestroyed);
 
-  (void)SendOnCSPViolationEvent(aJSON);
+  (void)SendOnCSPViolationEvent(aJSON, aReportGroupName);
 }
 
 }  // namespace mozilla::dom
