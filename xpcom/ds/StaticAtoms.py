@@ -516,6 +516,7 @@ STATIC_ATOMS = [
     Atom("groupingSeparator", "grouping-separator"),
     Atom("groupingSize", "grouping-size"),
     Atom("grow", "grow"),
+    Atom("gwt_RichTextArea", "gwt-RichTextArea"),
     Atom("h1", "h1"),
     Atom("h2", "h2"),
     Atom("h3", "h3"),

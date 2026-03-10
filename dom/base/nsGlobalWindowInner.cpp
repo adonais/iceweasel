@@ -2150,33 +2150,51 @@ void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 // iframe. This patch makes it work by delaying the sync-about:blank's load
 // event on such frames. See bug 2002481 and:
 // https://github.com/ckeditor/ckeditor4/blob/c7e59ec199298b6b23f4aa7a7668f18572385bac/plugins/wysiwygarea/plugin.js#L43
-MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4EmptyFrame(Element& aEmbedder) {
-  if (!StaticPrefs::dom_about_blank_ckeditor_hack_enabled()) {
+//
+// GWT RichTextArea also uses UA sniffing and expects an async `load` event
+// for its editor iframe. See bug
+MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
+  const nsAttrValue* classes = aEmbedder.GetClasses();
+  if (!classes) {
     return false;
   }
-  const nsAttrValue* classes = aEmbedder.GetClasses();
-  // We're looking for an <iframe> with a cke_wysiwyg_frame class. That's the
-  // most likely check to fail so do it first.
-  if (!classes ||
-      !classes->Contains(nsGkAtoms::cke_wysiwyg_frame, eCaseMatters)) {
+  // We're looking for an <iframe> with a cke_wysiwyg_frame or gwt-RichTextArea
+  // class. That's the most likely check to fail so do it first.
+  bool gwt = false;
+  bool ckeditor = classes->Contains(nsGkAtoms::cke_wysiwyg_frame, eCaseMatters);
+  if (!ckeditor) {
+    gwt = classes->Contains(nsGkAtoms::gwt_RichTextArea, eCaseMatters);
+  }
+  if (!(ckeditor || gwt)) {
+    return false;
+  }
+  MOZ_ASSERT(ckeditor != gwt);
+  if (ckeditor && !StaticPrefs::dom_about_blank_ckeditor_hack_enabled()) {
+    return false;
+  }
+  if (gwt && !StaticPrefs::dom_about_blank_gwt_hack_enabled()) {
     return false;
   }
   if (!aEmbedder.IsHTMLElement(nsGkAtoms::iframe)) {
     return false;
   }
-  // Additionally, we expect it to have an empty src attribute.
-  if (const auto* src = aEmbedder.GetParsedAttr(nsGkAtoms::src);
-      !src || !src->IsEmptyString()) {
+  const auto* src = aEmbedder.GetParsedAttr(nsGkAtoms::src);
+  // Require empty src for CKEditor 4 and no src for GWT.
+  if (ckeditor && (!src || !src->IsEmptyString())) {
     return false;
   }
-  // Deal with the blocklist here before checking for the ckeditor version
+  if (gwt && src) {
+    return false;
+  }
+  // Deal with the blocklist here before properties on the global
   // (which is potentially observable via JS getters).
   if (aEmbedder.NodePrincipal()->IsURIInPrefList(
-          "dom.about-blank-ckeditor-hack.disabled-domains")) {
+          ckeditor ? "dom.about-blank-ckeditor-hack.disabled-domains"
+                   : "dom.about-blank-gwt-hack.disabled-domains")) {
     return false;
   }
-  // Finally, we also get the version string off the embedder's global to be
-  // extra sure.
+  // Finally, we also look for an identifying property on the embedder's global
+  // to be extra sure.
   RefPtr global = aEmbedder.GetOwnerGlobal();
   if (!global || !global->GetGlobalJSObject()) {
     return false;
@@ -2192,6 +2210,10 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4EmptyFrame(Element& aEmbedder) {
     JS_ClearPendingException(jsapi.cx());
     return false;
   }
+  if (gwt) {
+    return property.mGwtPotentialElementShim.WasPassed();
+  }
+  MOZ_ASSERT(ckeditor);
   const auto* version = [&]() -> const CkEditorVersion* {
     if (property.mCKEDITOR.WasPassed()) {
       return &property.mCKEDITOR.Value();
@@ -2201,7 +2223,13 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4EmptyFrame(Element& aEmbedder) {
     }
     return nullptr;
   }();
-  if (!version || !StringBeginsWith(version->mVersion, u"4."_ns)) {
+  if (!version) {
+    return false;
+  }
+  // The CKEditor source code has "%VERSION%", which may be left in place
+  // in deployment if a proper build step is missing.
+  if (!(StringBeginsWith(version->mVersion, u"4."_ns) ||
+        version->mVersion.EqualsLiteral(u"%VERSION%"))) {
     return false;
   }
   aEmbedder.OwnerDoc()->WarnOnceAbout(
@@ -2214,7 +2242,7 @@ MOZ_CAN_RUN_SCRIPT static bool NeedsAsyncLoadEventForInitialDocument(
   if (auto* doc = aInner.GetExtantDoc(); !doc || !doc->IsInitialDocument()) {
     return false;
   }
-  return IsCkEditor4EmptyFrame(aEmbedder);
+  return IsCkEditor4OrGwtEmptyFrame(aEmbedder);
 }
 
 void nsGlobalWindowInner::FireFrameLoadEvent() {

@@ -5983,6 +5983,18 @@
   value: ""
   mirror: never
 
+# Whether to enable about:blank async-load workaround for GWT's RichTextArea.
+- name: dom.about-blank-gwt-hack.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Per-domain blocklist for the previous hack.
+- name: dom.about-blank-gwt-hack.disabled-domains
+  type: String
+  value: ""
+  mirror: never
+
 # Whether to include common ancestor when serializing HTML data for clipboard copy.
 - name: dom.serializer.includeCommonAncestor.enabled
   type: bool

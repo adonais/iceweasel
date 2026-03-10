@@ -13,13 +13,20 @@ async function base_test(options = {}) {
     src = "",
     name = "CKEDITOR",
     version = "4.15.0",
-    asyncLoad = true
+    asyncLoad = true,
+    gwtFunction = false
   } = options;
 
   window[name] = { version };
 
+  if (gwtFunction) {
+    window.GwtPotentialElementShim = function() {};
+  }
+
   const iframe = document.createElement("iframe");
-  iframe.src = src;
+  if (src !== null) {
+    iframe.src = src;
+  }
   iframe.classList.add(cls);
   let loadCnt = 0;
   iframe.addEventListener("load", () => ++loadCnt );
@@ -34,6 +41,7 @@ async function base_test(options = {}) {
 
   iframe.remove();
   window[name] = undefined;
+  window.GwtPotentialElementShim = undefined;
 }
 
 add_task(async function test_sanity_sync_load() {
@@ -46,6 +54,22 @@ add_task(async function test_ckeditor() {
 
 add_task(async function test_jeditor() {
   await base_test({ name: "JEDITOR" });
+});
+
+add_task(async function test_missing_build_step() {
+  await base_test({ version: "%VERSION%" });
+});
+
+add_task(async function test_gwt() {
+  await base_test({ name: "IGNORE", cls: "gwt-RichTextArea", src: null, gwtFunction: true });
+});
+
+add_task(async function test_gwt_function_missing() {
+  await base_test({ name: "IGNORE", cls: "gwt-RichTextArea", src: null, gwtFunction: false, asyncLoad: false });
+});
+
+add_task(async function test_gwt_src_present() {
+  await base_test({ name: "IGNORE", cls: "gwt-RichTextArea", src: "", gwtFunction: true, asyncLoad: false });
 });
 
   </script>
