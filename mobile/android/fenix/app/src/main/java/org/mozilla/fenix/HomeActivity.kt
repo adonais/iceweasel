@@ -92,7 +92,6 @@ import org.mozilla.fenix.addons.ExtensionsProcessDisabledBackgroundController
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
 import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
 import org.mozilla.fenix.components.appstate.AppAction
@@ -1152,7 +1151,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     private fun setupTheme() {
         themeManager = createThemeManager()
         // ExternalAppBrowserActivity exclusively handles it's own theming unless in private mode.
-        if (this !is ExternalAppBrowserActivity || settings().openLinksInAPrivateTab) {
+        if (this !is ExternalAppBrowserActivity || components.appStore.state.mode.isPrivate) {
             themeManager.setActivityTheme(this)
             themeManager.applyStatusBarTheme(this)
         }
@@ -1324,12 +1323,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     }
 
     private fun createThemeManager(): ThemeManager {
-        val mode = if (this is ExternalAppBrowserActivity && !settings().openLinksInAPrivateTab) {
-            BrowsingMode.Normal
-        } else {
-            components.appStore.state.mode
-        }
-        return DefaultThemeManager(mode, this)
+        return DefaultThemeManager(components.appStore.state.mode, this)
     }
 
     private fun openPopup(webExtensionState: WebExtensionState) {
