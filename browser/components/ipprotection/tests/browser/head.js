@@ -171,10 +171,12 @@ async function closePanel(win = window, resetState = true) {
  * Does not proxy anything really.
  * Given it refuses the proxy connection, it will be removed from as proxy-info of the channel.
  *
- * @param {*} testFn
- * @param {Function<Promise<void>>} handler - A custom path handler for "/" requests.
+ * Use with `await using` for automatic cleanup:
+ *   await using proxyInfo = withProxyServer();
+ *
+ * @param {Function} [handler] - A custom path handler for "/" and "CONNECT" requests.
  */
-async function withProxyServer(testFn, handler) {
+function withProxyServer(handler) {
   const server = new HttpServer();
   let { promise, resolve } = Promise.withResolvers();
 
@@ -220,7 +222,7 @@ async function withProxyServer(testFn, handler) {
   server.identity.add("http", "example.com", "443");
 
   server.start(-1);
-  await testFn({
+  return {
     server: new Server({
       hostname: "localhost",
       port: server.identity.primaryPort,
@@ -236,8 +238,10 @@ async function withProxyServer(testFn, handler) {
     }),
     type: "http",
     gotConnection: promise,
-  });
-  return server;
+    async [Symbol.asyncDispose]() {
+      await new Promise(r => server.stop(r));
+    },
+  };
 }
 /* exported withProxyServer */
 

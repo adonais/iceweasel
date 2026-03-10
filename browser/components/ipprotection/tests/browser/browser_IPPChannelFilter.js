@@ -11,23 +11,22 @@ const { IPPExceptionsManager } = ChromeUtils.importESModule(
 );
 
 add_task(async function test_createConnection_and_proxy() {
-  await withProxyServer(async proxyInfo => {
-    // Create the IPP connection filter
-    const filter = IPPChannelFilter.create();
-    filter.initialize("", proxyInfo.server);
-    filter.start();
+  await using proxyInfo = withProxyServer();
+  // Create the IPP connection filter
+  const filter = IPPChannelFilter.create();
+  filter.initialize("", proxyInfo.server);
+  filter.start();
 
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      // Note: this will not be loaded as the proxy will refuse the connection
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      "http://example.com/"
-    );
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    // Note: this will not be loaded as the proxy will refuse the connection
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://example.com/"
+  );
 
-    await proxyInfo.gotConnection;
-    await BrowserTestUtils.removeTab(tab);
-    filter.stop();
-  });
+  await proxyInfo.gotConnection;
+  await BrowserTestUtils.removeTab(tab);
+  filter.stop();
 });
 
 add_task(async function test_exclusion_and_proxy() {
@@ -39,25 +38,24 @@ add_task(async function test_exclusion_and_proxy() {
   });
   server.start(-1);
 
-  await withProxyServer(async proxyInfo => {
-    // Create the IPP connection filter
-    const filter = IPPChannelFilter.create([
-      "http://localhost:" + server.identity.primaryPort,
-    ]);
-    filter.initialize("", proxyInfo.server);
-    proxyInfo.gotConnection.then(() => {
-      Assert.ok(false, "Proxy connection should not be made for excluded URL");
-    });
-    filter.start();
-
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      "http://localhost:" + server.identity.primaryPort
-    );
-    await BrowserTestUtils.removeTab(tab);
-    filter.stop();
+  await using proxyInfo = withProxyServer();
+  // Create the IPP connection filter
+  const filter = IPPChannelFilter.create([
+    "http://localhost:" + server.identity.primaryPort,
+  ]);
+  filter.initialize("", proxyInfo.server);
+  proxyInfo.gotConnection.then(() => {
+    Assert.ok(false, "Proxy connection should not be made for excluded URL");
   });
+  filter.start();
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://localhost:" + server.identity.primaryPort
+  );
+  await BrowserTestUtils.removeTab(tab);
+  filter.stop();
 });
 
 add_task(async function test_essential_exclusion() {
@@ -69,24 +67,23 @@ add_task(async function test_essential_exclusion() {
   });
   server.start(-1);
 
-  await withProxyServer(async proxyInfo => {
-    // Create the IPP connection filter
-    const filter = IPPChannelFilter.create();
+  await using proxyInfo = withProxyServer();
+  // Create the IPP connection filter
+  const filter = IPPChannelFilter.create();
 
-    filter.initialize("", proxyInfo.server);
-    proxyInfo.gotConnection.then(() => {
-      Assert.ok(false, "Proxy connection should not be made for excluded URL");
-    });
-    filter.start();
-
-    let response = await fetch(
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      "http://localhost:" + server.identity.primaryPort
-    );
-    Assert.equal(response.status, 200, "Should successfully load the URL");
-
-    filter.stop();
+  filter.initialize("", proxyInfo.server);
+  proxyInfo.gotConnection.then(() => {
+    Assert.ok(false, "Proxy connection should not be made for excluded URL");
   });
+  filter.start();
+
+  let response = await fetch(
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://localhost:" + server.identity.primaryPort
+  );
+  Assert.equal(response.status, 200, "Should successfully load the URL");
+
+  filter.stop();
 });
 
 add_task(async function test_exclusion_manager() {
@@ -98,74 +95,72 @@ add_task(async function test_exclusion_manager() {
   });
   server.start(-1);
 
-  await withProxyServer(async proxyInfo => {
-    // Create the IPP connection filter
-    const filter = IPPChannelFilter.create();
-    // Add a site exclusion using IPPExceptionsManager
-    let principal =
-      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        "http://localhost:" + server.identity.primaryPort
-      );
-    IPPExceptionsManager.addExclusion(principal);
-
-    filter.initialize("", proxyInfo.server);
-    proxyInfo.gotConnection.then(() => {
-      Assert.ok(false, "Proxy connection should not be made for excluded URL");
-    });
-    filter.start();
-
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  await using proxyInfo = withProxyServer();
+  // Create the IPP connection filter
+  const filter = IPPChannelFilter.create();
+  // Add a site exclusion using IPPExceptionsManager
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       "http://localhost:" + server.identity.primaryPort
     );
-    await BrowserTestUtils.removeTab(tab);
-    filter.stop();
+  IPPExceptionsManager.addExclusion(principal);
 
-    IPPExceptionsManager.removeExclusion(principal);
+  filter.initialize("", proxyInfo.server);
+  proxyInfo.gotConnection.then(() => {
+    Assert.ok(false, "Proxy connection should not be made for excluded URL");
   });
+  filter.start();
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://localhost:" + server.identity.primaryPort
+  );
+  await BrowserTestUtils.removeTab(tab);
+  filter.stop();
+
+  IPPExceptionsManager.removeExclusion(principal);
 });
 
 add_task(async function test_channel_suspend_resume() {
-  await withProxyServer(async proxyInfo => {
-    // Create the IPP connection filter
-    const filter = IPPChannelFilter.create();
-    filter.start();
+  await using proxyInfo = withProxyServer();
+  // Create the IPP connection filter
+  const filter = IPPChannelFilter.create();
+  filter.start();
 
-    let tab = BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      // Note: this will not be loaded as the proxy will refuse the connection
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      "http://example.com/"
-    );
+  let tab = BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    // Note: this will not be loaded as the proxy will refuse the connection
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://example.com/"
+  );
 
-    const pendingChannels = new Promise(resolve => {
-      const id = setInterval(() => {
-        if (filter.hasPendingChannels) {
-          clearInterval(id);
-          resolve(true);
-        }
-      }, 500);
-
-      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-      setTimeout(() => {
+  const pendingChannels = new Promise(resolve => {
+    const id = setInterval(() => {
+      if (filter.hasPendingChannels) {
         clearInterval(id);
-        resolve(false);
-      }, 5000);
-    });
+        resolve(true);
+      }
+    }, 500);
 
-    Assert.ok(
-      await pendingChannels,
-      "Proxy connection qeues channels when not initialized"
-    );
-
-    filter.initialize("", proxyInfo.server);
-
-    Assert.ok(!filter.hasPendingChannels, "All the pending channels are gone.");
-
-    await BrowserTestUtils.removeTab(await tab);
-    filter.stop();
+    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+    setTimeout(() => {
+      clearInterval(id);
+      resolve(false);
+    }, 5000);
   });
+
+  Assert.ok(
+    await pendingChannels,
+    "Proxy connection qeues channels when not initialized"
+  );
+
+  filter.initialize("", proxyInfo.server);
+
+  Assert.ok(!filter.hasPendingChannels, "All the pending channels are gone.");
+
+  await BrowserTestUtils.removeTab(await tab);
+  filter.stop();
 });
 
 // Second test: check observer and proxy info on channel
@@ -176,37 +171,32 @@ add_task(async function channelfilter_proxiedChannels() {
     set: [["network.trr.mode", 0]], // Disable DNS-over-HTTPS for this test
   });
 
-  await withProxyServer(async proxyInfo => {
-    const filter = IPPChannelFilter.create();
-    filter.initialize("", proxyInfo.server);
-    filter.start();
-    const channelIter = filter.proxiedChannels();
-    let nextChannel = channelIter.next();
+  await using proxyInfo = withProxyServer();
+  const filter = IPPChannelFilter.create();
+  filter.initialize("", proxyInfo.server);
+  filter.start();
+  const channelIter = filter.proxiedChannels();
+  let nextChannel = channelIter.next();
 
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      // Note: this will not be loaded as the proxy will refuse the connection
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      "http://example.com/"
-    );
-    let { value, done } = await nextChannel;
-    Assert.equal(done, false, "Iterator should not be done yet");
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    // Note: this will not be loaded as the proxy will refuse the connection
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://example.com/"
+  );
+  let { value, done } = await nextChannel;
+  Assert.equal(done, false, "Iterator should not be done yet");
 
-    Assert.notEqual(value, null, "Channel should not be null");
-    // Assert that the channel loaded example.com
-    Assert.ok(
-      value.URI.host === "example.com" ||
-        value.URI.host === "mozilla.cloudflare-dns.com",
-      "Channel should load example.com or mozilla.cloudflare-dns.com"
-    );
-    await BrowserTestUtils.removeTab(tab);
-    filter.stop();
+  Assert.notEqual(value, null, "Channel should not be null");
+  // Assert that the channel loaded example.com
+  Assert.ok(
+    value.URI.host === "example.com" ||
+      value.URI.host === "mozilla.cloudflare-dns.com",
+    "Channel should load example.com or mozilla.cloudflare-dns.com"
+  );
+  await BrowserTestUtils.removeTab(tab);
+  filter.stop();
 
-    ({ value, done } = await channelIter.next());
-    Assert.equal(
-      done,
-      true,
-      "Iterator should be done after stopping the filter"
-    );
-  });
+  ({ value, done } = await channelIter.next());
+  Assert.equal(done, true, "Iterator should be done after stopping the filter");
 });

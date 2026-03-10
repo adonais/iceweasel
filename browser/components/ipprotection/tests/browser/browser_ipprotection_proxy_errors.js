@@ -18,31 +18,30 @@ add_task(async function test_createConnection_and_proxy() {
     response.write("Error");
   };
 
-  await withProxyServer(async proxyInfo => {
-    // Create the IPP connection filter
-    const filter = IPPChannelFilter.create();
-    filter.initialize("", proxyInfo.server);
-    filter.start();
+  await using proxyInfo = withProxyServer(failConnect);
+  // Create the IPP connection filter
+  const filter = IPPChannelFilter.create();
+  filter.initialize("", proxyInfo.server);
+  filter.start();
 
-    const observer = new IPPNetworkErrorObserver();
-    const eventFired = new Promise(r => {
-      observer.addEventListener("proxy-http-error", e => {
-        r(e);
-      });
+  const observer = new IPPNetworkErrorObserver();
+  const eventFired = new Promise(r => {
+    observer.addEventListener("proxy-http-error", e => {
+      r(e);
     });
-    observer.addIsolationKey(filter.isolationKey);
-    observer.start();
+  });
+  observer.addIsolationKey(filter.isolationKey);
+  observer.start();
 
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      `https://example.com/`,
-      false // waitForLoad
-    );
-    const { detail } = await eventFired;
-    await BrowserTestUtils.removeTab(tab);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    `https://example.com/`,
+    false // waitForLoad
+  );
+  const { detail } = await eventFired;
+  await BrowserTestUtils.removeTab(tab);
 
-    Assert.equal(detail.httpStatus, 500);
-    Assert.equal(detail.isolationKey, filter.isolationKey);
-    Assert.equal(detail.level, "error");
-  }, failConnect);
+  Assert.equal(detail.httpStatus, 500);
+  Assert.equal(detail.isolationKey, filter.isolationKey);
+  Assert.equal(detail.level, "error");
 });
