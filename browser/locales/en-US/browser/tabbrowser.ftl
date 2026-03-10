@@ -449,10 +449,6 @@ tab-context-open-in-split-view =
 tab-context-separate-split-view =
     .label = Separate Split View
     .accesskey = t
-# Reverse the order of the two tabs in the split view
-tab-context-reverse-split-view =
-    .label = Reverse Tabs
-    .accesskey = r
 tab-context-badge-new = New
 
 ## Manage Split View (icon in the address bar & three-dot menu in the footer)
