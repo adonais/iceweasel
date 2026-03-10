@@ -891,8 +891,8 @@ void nsAccessibilityService::ComboboxValueChanged(nsIContent* aSelect) {
   if (!document) {
     return;
   }
-  if (LocalAccessible* accessible = document->GetAccessible(aSelect)) {
-    MOZ_ASSERT(accessible->IsCombobox());
+  if (LocalAccessible* accessible = document->GetAccessible(aSelect);
+      accessible && accessible->IsCombobox()) {
     document->FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE,
                                accessible);
   }
