@@ -464,3 +464,69 @@ add_task(async function test_exclusion_added() {
   lazy.IPPExceptionsManager.uninit();
   Services.perms.removeByType(PERM_NAME);
 });
+
+/**
+ * Tests that the get_started event is recorded when the "Get Started" button is clicked
+ */
+add_task(async function test_get_started() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  IPProtectionService.updateState();
+  await openPanel();
+
+  Services.fog.testResetFOG();
+  await Services.fog.testFlushAllChildren();
+
+  document.dispatchEvent(
+    new CustomEvent("IPProtection:OptIn", { bubbles: true })
+  );
+
+  let getStartedEvents = Glean.ipprotection.getStarted.testGetValue();
+  Assert.equal(
+    getStartedEvents.length,
+    1,
+    "should have recorded a get_started event"
+  );
+  Assert.equal(getStartedEvents[0].category, "ipprotection");
+  Assert.equal(getStartedEvents[0].name, "get_started");
+
+  await closePanel();
+  Services.fog.testResetFOG();
+  cleanupService();
+});
+
+/**
+ * Tests that the enrollment event is recorded after completing the enroll flow
+ */
+add_task(async function test_enrollment() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: false,
+  });
+  IPProtectionService.updateState();
+
+  Services.fog.testResetFOG();
+  await Services.fog.testFlushAllChildren();
+
+  await IPProtection.getPanel(window).enroll();
+
+  let enrollmentEvents = Glean.ipprotection.enrollment.testGetValue();
+  Assert.equal(
+    enrollmentEvents.length,
+    1,
+    "should have recorded an enrollment event"
+  );
+  Assert.equal(enrollmentEvents[0].category, "ipprotection");
+  Assert.equal(enrollmentEvents[0].name, "enrollment");
+  Assert.equal(
+    enrollmentEvents[0].extra.enrolled,
+    "true",
+    "enrolled should be true when sign-in succeeds"
+  );
+
+  await closePanel();
+  Services.fog.testResetFOG();
+  cleanupService();
+});

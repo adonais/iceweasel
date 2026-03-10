@@ -202,3 +202,38 @@ ipprotection:
         type: boolean
         description: >
           True if the previous state was the active state, otherwise false.
+
+  get_started:
+    type: event
+    description: >
+      Recorded when the user clicks the get started button in the panel or settings.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017484
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017484
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - fchasen@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+
+  enrollment:
+    type: event
+    description: >
+      Recorded when an account has been enrolled after completing the sign up flow.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017484
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2017484
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - fchasen@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      enrolled:
+        type: boolean
+        description: >
+          True if the enrollment finished successfully.

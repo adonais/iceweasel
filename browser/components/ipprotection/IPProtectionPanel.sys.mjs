@@ -501,6 +501,7 @@ export class IPProtectionPanel {
    * Ensure there is a signed in account and then open the panel after enrolling.
    */
   async enroll() {
+    Glean.ipprotection.getStarted.record();
     const signedIn = await this.startLoginFlow();
     if (!signedIn) {
       return;
@@ -513,10 +514,14 @@ export class IPProtectionPanel {
 
     // Asynchronously enroll and entitle the user.
     // It will only need to finish before the proxy can start.
-    lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+    const enrolling = lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
     if (!this.active) {
       await this.open();
     }
+    const result = await enrolling;
+    Glean.ipprotection.enrollment.record({
+      enrolled: result?.isEnrolledAndEntitled,
+    });
   }
 
   /**
