@@ -75,6 +75,19 @@ nsresult NrIceStunAddr::Deserialize(const char* buffer, size_t buffer_size) {
   nr_local_addr* from_addr =
       const_cast<nr_local_addr*>((const nr_local_addr*)buffer);
 
+  // Just in case
+  constexpr size_t ifname_size =
+      sizeof(from_addr->addr.ifname) / sizeof(from_addr->addr.ifname[0]);
+  constexpr size_t as_string_size =
+      sizeof(from_addr->addr.as_string) / sizeof(from_addr->addr.as_string[0]);
+  constexpr size_t fqdn_size =
+      sizeof(from_addr->addr.fqdn) / sizeof(from_addr->addr.fqdn[0]);
+  from_addr->addr.ifname[ifname_size - 1] = '\0';
+  from_addr->addr.as_string[as_string_size - 1] = '\0';
+  from_addr->addr.fqdn[fqdn_size - 1] = '\0';
+  from_addr->addr.is_proxied = !!from_addr->addr.is_proxied;
+  from_addr->addr.tls = !!from_addr->addr.tls;
+
   // At this point, from_addr->addr.addr is invalid (null), but will
   // be fixed by nr_local_addr_copy.
   if (nr_local_addr_copy(localAddr_, from_addr)) {
