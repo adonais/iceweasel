@@ -237,14 +237,14 @@ export class IPPChannelFilter {
    * (or list of proxy objects).
    *
    * @param {nsIChannel} channel The channel for which these proxy settings apply.
-   * @param {nsIProxyInfo} _defaultProxyInfo The proxy (or list of proxies) that
+   * @param {nsIProxyInfo|null} defaultProxyInfo The proxy (or list of proxies) that
    *     would be used by default for the given URI. This may be null.
    * @param {nsIProxyProtocolFilterResult} proxyFilter
    */
-  applyFilter(channel, _defaultProxyInfo, proxyFilter) {
+  applyFilter(channel, defaultProxyInfo, proxyFilter) {
     if (!this.shouldProxy(channel)) {
       // Calling this with "null" will enforce a non-proxy connection
-      proxyFilter.onProxyFilterResult(null);
+      proxyFilter.onProxyFilterResult(defaultProxyInfo);
       return;
     }
 

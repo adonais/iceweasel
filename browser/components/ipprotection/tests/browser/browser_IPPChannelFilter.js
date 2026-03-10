@@ -163,6 +163,39 @@ add_task(async function test_channel_suspend_resume() {
   filter.stop();
 });
 
+// Verify that when a URL is excluded from IPP, the global (system) HTTP proxy
+// is used as the fallback instead of the IPP proxy.
+add_task(async function test_excluded_url_falls_back_to_global_proxy() {
+  await using globalProxy = withProxyServer();
+  await using localProxy = withProxyServer();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.proxy.type", 1],
+      ["network.proxy.http", "localhost"],
+      ["network.proxy.http_port", globalProxy.server.port],
+    ],
+  });
+
+  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  const filter = IPPChannelFilter.create(["http://example.com"]);
+  filter.initialize("", localProxy.server);
+  localProxy.gotConnection.then(() => {
+    Assert.ok(false, "IPP (local) proxy should not receive excluded URL");
+  });
+  filter.start();
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://example.com/"
+  );
+  // The Global proxy should have gotten a connection.
+  await globalProxy.gotConnection;
+  await BrowserTestUtils.removeTab(tab);
+  filter.stop();
+});
+
 // Second test: check observer and proxy info on channel
 add_task(async function channelfilter_proxiedChannels() {
   // Disable DOH, as otherwise the iterator will have
