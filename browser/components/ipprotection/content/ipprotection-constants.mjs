@@ -14,7 +14,7 @@ export const LINKS = Object.freeze({
     );
   },
 
-  SUPPORT_URL: "https://support.mozilla.org/kb/use-ip-concealment-in-firefox",
+  SUPPORT_SLUG: "built-in-vpn",
 });
 
 export const ERRORS = Object.freeze({

@@ -132,7 +132,7 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
           <a
             is="moz-support-link"
             part="support-link"
-            support-page=${LINKS.SUPPORT_URL}
+            support-page=${LINKS.SUPPORT_SLUG}
           ></a>
         </div>
         <div id="progress-container">

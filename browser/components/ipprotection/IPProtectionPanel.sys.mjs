@@ -323,7 +323,11 @@ export class IPProtectionPanel {
   static showHelpPage(e) {
     let win = e.target?.ownerGlobal;
     if (win) {
-      win.openWebLinkIn(LINKS.SUPPORT_URL, "tab");
+      win.openWebLinkIn(
+        Services.urlFormatter.formatURLPref("app.support.baseURL") +
+          LINKS.SUPPORT_SLUG,
+        "tab"
+      );
     }
 
     let panelParent = e.target?.closest("panel");
