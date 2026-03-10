@@ -4,8 +4,12 @@
 
 "use strict";
 
-const { IPPChannelFilter } = ChromeUtils.importESModule(
+const { IPPChannelFilter, IPPMode } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs"
+);
+
+const { NetUtil } = ChromeUtils.importESModule(
+  "resource://gre/modules/NetUtil.sys.mjs"
 );
 
 const { MasqueProtocol, ConnectProtocol, Server } = ChromeUtils.importESModule(
@@ -443,4 +447,98 @@ add_task(async function test_local_connections() {
       uri
     );
   }
+});
+
+add_task(async function test_shouldInclude() {
+  const INCLUSION_PREF = "browser.ipProtection.inclusion.match_patterns";
+
+  Services.prefs.setStringPref(
+    INCLUSION_PREF,
+    JSON.stringify(["*://example.com/*"])
+  );
+
+  const filter = IPPChannelFilter.create();
+
+  const makeChannel = uri =>
+    NetUtil.newChannel({ uri, loadUsingSystemPrincipal: true });
+
+  Assert.ok(
+    filter.shouldInclude(makeChannel("http://example.com/some/path")),
+    "URL matching the inclusion pattern should be included"
+  );
+
+  Assert.ok(
+    filter.shouldInclude(makeChannel("http://example.com/other/path")),
+    "Different path on the same host should also match (ignorePath: true)"
+  );
+
+  Assert.ok(
+    !filter.shouldInclude(makeChannel("http://other.com/")),
+    "URL not matching the pattern should not be included"
+  );
+
+  Services.prefs.clearUserPref(INCLUSION_PREF);
+
+  const emptyFilter = IPPChannelFilter.create();
+  Assert.ok(
+    !emptyFilter.shouldInclude(makeChannel("http://example.com/")),
+    "Empty inclusion list should not include any URL"
+  );
+});
+
+add_task(async function test_shouldProxy() {
+  const INCLUSION_PREF = "browser.ipProtection.inclusion.match_patterns";
+  const MODE_PREF = "browser.ipProtection.mode";
+
+  const makeChannel = uri =>
+    NetUtil.newChannel({ uri, loadUsingSystemPrincipal: true });
+
+  // For cases 1-4 we want to test mode/inclusion/exclusion logic, not the
+  // pre-init bypass, so give every filter a truthy proxyInfo.
+  const makeFilter = (excludedPages = []) => {
+    const f = IPPChannelFilter.create(excludedPages);
+    f.proxyInfo = {};
+    return f;
+  };
+
+  // 1. MODE_FULL (default): regular URL is proxied
+  Assert.ok(
+    makeFilter().shouldProxy(makeChannel("http://example.com/")),
+    "MODE_FULL: regular URL should be proxied"
+  );
+
+  // 2. MODE_FULL: excluded origin is not proxied
+  Assert.ok(
+    !makeFilter(["http://excluded.com"]).shouldProxy(
+      makeChannel("http://excluded.com/path")
+    ),
+    "MODE_FULL: excluded origin should not be proxied"
+  );
+
+  // 3. Inclusion rule overrides exclusion
+  Services.prefs.setStringPref(
+    INCLUSION_PREF,
+    JSON.stringify(["*://excluded.com/*"])
+  );
+  Assert.ok(
+    makeFilter(["http://excluded.com"]).shouldProxy(
+      makeChannel("http://excluded.com/")
+    ),
+    "Inclusion rule should override exclusion rule"
+  );
+  Services.prefs.clearUserPref(INCLUSION_PREF);
+
+  // 4. MODE_INCLUSION: non-included URL is not proxied
+  Services.prefs.setIntPref(MODE_PREF, IPPMode.MODE_INCLUSION);
+  Assert.ok(
+    !makeFilter().shouldProxy(makeChannel("http://example.com/")),
+    "MODE_INCLUSION: non-included URL should not be proxied"
+  );
+  Services.prefs.clearUserPref(MODE_PREF);
+
+  // 5. Uninitialized filter + system-principal channel → not proxied
+  Assert.ok(
+    !IPPChannelFilter.create().shouldProxy(makeChannel("http://example.com/")),
+    "System-principal channel should not be proxied before the proxy is initialized"
+  );
 });

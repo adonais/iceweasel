@@ -18,12 +18,35 @@ const failOverTimeout = 10; // seconds
 
 const MODE_PREF = "browser.ipProtection.mode";
 
+const INCLUSION_PREF = "browser.ipProtection.inclusion.match_patterns";
+
 const isXpcshell = Services.env.exists("XPCSHELL_TEST_PROFILE_DIR");
 
+const MATCH_PATTERN_OPTIONS = {
+  ignorePath: true,
+  restrictSchemes: false,
+};
+
+/**
+ * The IPP Mode the default behavior of Channels
+ */
 export const IPPMode = Object.freeze({
+  /**
+   * Tunnel Everything by default
+   */
   MODE_FULL: 0,
+  /**
+   * Tunnel if it is Private Browsing mode by default
+   */
   MODE_PB: 1,
+  /**
+   * Tunnel if it is a tracker
+   */
   MODE_TRACKER: 2,
+  /**
+   * Tunnel No requests by default.
+   */
+  MODE_INCLUSION: 3,
 });
 
 const TRACKING_FLAGS =
@@ -43,9 +66,15 @@ const DEFAULT_EXCLUDED_URL_PREFS = [
 
 /**
  * IPPChannelFilter is a class that implements the nsIProtocolProxyChannelFilter
- * when active it will funnel all requests to its provided proxy.
  *
- * the connection can be stopped
+ * While active it will review every request the browser makes.
+ * Depending on IPPMode - it will proxy the request unless a rule is attached to the Destination.
+ *
+ * -> Exclusions can be made by putting the page into excludedPages OR by attaching the IPP-Deny permission to the Principal.
+ *    See also IPPExceptionsManager.sys.mjs
+ * -> Inclusions can be made by putting pages into the INCLUSION_PREF matchset
+ *
+ * If a Channel Matches both Exclusion and Inclusion Rule, the Inclusion Rule is taken.
  *
  */
 export class IPPChannelFilter {
@@ -185,6 +214,7 @@ export class IPPChannelFilter {
     excludedPages.forEach(url => {
       this.addPageExclusion(url);
     });
+    this.#inclusionSet = IPPChannelFilter.getInclusionList();
 
     DEFAULT_EXCLUDED_URL_PREFS.forEach(pref => {
       const prefValue = Services.prefs.getStringPref(pref, "");
@@ -212,8 +242,7 @@ export class IPPChannelFilter {
    * @param {nsIProxyProtocolFilterResult} proxyFilter
    */
   applyFilter(channel, _defaultProxyInfo, proxyFilter) {
-    // If this channel should be excluded (origin match), do nothing
-    if (!this.#matchMode(channel) || this.shouldExclude(channel)) {
+    if (!this.shouldProxy(channel)) {
       // Calling this with "null" will enforce a non-proxy connection
       proxyFilter.onProxyFilterResult(null);
       return;
@@ -233,20 +262,61 @@ export class IPPChannelFilter {
     });
   }
 
+  /**
+   * Returns true when this channel should take a proxy.
+   *
+   * @param {*} channel - The Channel to observe
+   * @returns {boolean} -
+   *    True: The Channel should be Proxied by this ChannelFilter
+   *    False: The Channel should NOT be proxied.
+   */
+  shouldProxy(channel) {
+    // Exclude system channels essential to starting the proxy until the proxy is ready.
+    if (
+      !this.proxyInfo &&
+      !channel.isDocument &&
+      channel.loadInfo?.triggeringPrincipal?.isSystemPrincipal
+    ) {
+      return false;
+    }
+    if (this.shouldInclude(channel)) {
+      return true;
+    }
+    if (this.shouldExclude(channel)) {
+      return false;
+    }
+    return this.#matchMode(channel);
+  }
+
   #matchMode(channel) {
     switch (this.mode) {
       case IPPMode.MODE_PB:
         return !!channel.loadInfo.originAttributes.privateBrowsingId;
 
       case IPPMode.MODE_TRACKER:
-        return (
+        return !!(
           TRACKING_FLAGS &
           channel.loadInfo.triggeringThirdPartyClassificationFlags
         );
-
+      case IPPMode.MODE_INCLUSION:
+        return false;
       case IPPMode.MODE_FULL:
       default:
         return true;
+    }
+  }
+
+  /**
+   * Decides whether a channel *should* take the proxy
+   *
+   * @param {nsIChannel} channel
+   * @returns {boolean} - True: The channel *should* take the proxy.
+   */
+  shouldInclude(channel) {
+    try {
+      return this.#inclusionSet.matches(channel.URI);
+    } catch (_) {
+      return false;
     }
   }
 
@@ -273,15 +343,6 @@ export class IPPChannelFilter {
 
       const origin = uri.prePath; // scheme://host[:port]
 
-      // Exclude system channels essential to starting the proxy until the proxy is ready.
-      if (
-        !this.proxyInfo &&
-        !channel.isDocument &&
-        channel.loadInfo?.triggeringPrincipal?.isSystemPrincipal
-      ) {
-        return true;
-      }
-
       let principal =
         channel.loadInfo?.loadingPrincipal ||
         Services.scriptSecurityManager.getChannelURIPrincipal(channel);
@@ -296,6 +357,16 @@ export class IPPChannelFilter {
     } catch (_) {
       return true;
     }
+  }
+
+  static getInclusionList() {
+    let raw = Services.prefs.getStringPref(INCLUSION_PREF, "[]");
+    let arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) {
+      throw new TypeError(`${INCLUSION_PREF} does not contain a JSON array`);
+    }
+    let patterns = arr.filter(s => typeof s === "string" && s.length);
+    return new MatchPatternSet(patterns, MATCH_PATTERN_OPTIONS);
   }
 
   static isLocal(uri) {
@@ -466,6 +537,7 @@ export class IPPChannelFilter {
   #active = false;
   #excludedOrigins = new Set();
   #pendingChannels = [];
+  #inclusionSet = new MatchPatternSet([], MATCH_PATTERN_OPTIONS);
 
   static makeIsolationKey() {
     return Math.random().toString(36).slice(2, 18).padEnd(16, "0");
