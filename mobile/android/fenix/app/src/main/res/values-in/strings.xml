@@ -316,6 +316,10 @@
   <string name="browser_menu_save_as_pdf_2">Simpan sebagai PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Terjemahkan laman</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Ringkas laman</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Baru</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Laporkan situs rusak…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -639,6 +643,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Kelola pengaturan</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Ucapkan selamat tinggal pada pelacak menyeramkan</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Buka semua tautan Anda dengan privasi bawaan</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Kami melindungi data Anda dan secara otomatis memblokir perusahaan dari memata-matai klik Anda.</string>
   <!-- "Set to default" onboarding button. -->
@@ -1586,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Bagikan</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Tambahkan ke koleksi</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Tambahkan ke grup</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Bagikan tab terpilih</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1626,6 +1634,27 @@
   <string name="pwa_site_controls_title_private">%1$s (Mode Privat)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Buka pencarian tab</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Buat grup tab</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Edit grup</string>
+  <string name="create_tab_group_save_button">Simpan</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Tutup Edit Grup Tab</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grup</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grup %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nama grup tab</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Nama</string>
   <!--
     History
 
@@ -1727,6 +1756,8 @@
   <string name="download_share_url">Bagikan URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Bagikan berkas</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Ganti nama berkas</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Yakin ingin menghapus item yang dipilih?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1739,6 +1770,26 @@
   <string name="download_rename_dialog_label">Nama</string>
   <string name="download_rename_dialog_confirm_button">Simpan</string>
   <string name="download_rename_dialog_cancel_button">Batal</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Berkas bernama “%s” sudah ada di lokasi ini</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Nama berkas tidak boleh menggunakan “/”</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Tidak dapat mengganti nama berkas</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Berkas ini tidak dapat diganti namanya karena pembatasan sistem atau penyimpanan.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Ubah jenis berkas menjadi %s?</string>
+  <string name="change_file_extension_description">Ini mungkin membuka berkas di aplikasi yang berbeda dan berrisiko untuk perangkat Anda.</string>
+  <string name="change_file_extension_cancel_button">Batal</string>
+  <string name="change_file_extension_confirm_button">Ya, ubah</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Sedang berlangsung</string>
   <!--
@@ -2856,6 +2907,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Pelajari lebih lanjut</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Kelola topeng surel</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Anda telah menggunakan 5 topeng surel gratis, jadi kami memilih satu untuk Anda gunakan kembali.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Topeng surel tidak tersedia saat ini. Coba lagi dalam beberapa menit.</string>
   <!--
     Autofill
 
@@ -3626,6 +3681,13 @@
   -->
   <string name="connection_security_panel_verified_by">Diverifikasi oleh %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Diterbitkan untuk %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Memenuhi syarat sebagaimana ditentukan dalam Regulasi (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3715,6 +3777,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Saya tidak melakukan pencarian di Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Saya tidak menggunakan sinkronisasi</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Lambat atau bermasalah</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Fitur sulit ditemukan atau hilang</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Membingungkan atau sulit digunakan</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Oke, tetapi tidak lebih baik dari peramban lain</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Saya berrencana untuk tetap menggunakan Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Bantu membuat pencetakan di Firefox menjadi lebih baik. Hanya butuh beberapa detik</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3729,6 +3801,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Seberapa puaskah Anda dengan pengalaman pencarian di Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Seberapa puaskah Anda dengan pengalaman sinkronisasi di Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Bantu kami meningkatkan Firefox. Mana yang paling menggambarkan pengalaman Anda sejauh ini?</string>
   <!--
     Accessibility
 

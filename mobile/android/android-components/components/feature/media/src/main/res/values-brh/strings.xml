@@ -7,6 +7,8 @@
 -->
 
 <resources>
+  <!-- Name of the "notification channel" used for displaying media notification. See https://developer.android.com/training/notify-user/channels -->
+  <string name="mozac_feature_media_notification_channel">میڈیا</string>
   <!-- Title of notification shown when the device's camera is shared with a website (WebRTC) -->
   <string name="mozac_feature_media_sharing_camera">کیمره ملوک اے</string>
   <!-- Title of notification shown when the device's microphone is shared with a website (WebRTC) -->

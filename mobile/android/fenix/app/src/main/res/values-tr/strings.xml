@@ -3780,6 +3780,8 @@
   <!-- Option for likert scale -->
   <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Yavaş veya sorunlu</string>
   <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Özellikleri bulmak zor veya aradığım özellikler yok</string>
+  <!-- Option for likert scale -->
   <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Kafa karıştırıcı veya kullanımı zor</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Fena değil ama diğer tarayıcılardan daha iyi değil</string>

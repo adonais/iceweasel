@@ -37,6 +37,8 @@
   <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Hilpekînên te yên veşartî ew ê li vir bên nîşandan.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d hilpekîn hatin bijartin</string>
+  <!-- Tab tray multi select title in app bar when no tabs are selected -->
+  <string name="tab_tray_multi_select_title_empty">Hilpekînan hilbijêre</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">Koleksiyona nû tevlî bike</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
@@ -61,6 +63,8 @@
   <string name="about_content">%1$s berhemeke Mozillayê ye.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Efsaneyên berbelav ên têkildarî gerîna veşartî</string>
+  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <string name="private_browsing_a11y_session_announcement">Rûniştina gerîna veşartî</string>
   <!--
     True Private Browsing Mode
 
@@ -175,6 +179,8 @@
   <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Te pêvekên sazkirî hene, lê ne çalakkirî ne</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Pêvekan bi rê ve bibe</string>
+  <!-- Browser menu group that contains additional settings in collapsed state -->
+  <string name="browser_menu_more_settings">Zêdetir</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -249,6 +255,8 @@
   <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Serrûpelê taybet bike</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Têkeve</string>
+  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
+  <string name="browser_menu_sign_in_caption_3">Şîfreyan, favoriyan û tiştên zêdetir senkronîze bike</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">Dîsa têke senkronîzekirina xwe</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
@@ -265,6 +273,8 @@
   <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Menuya amûran bigire</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Menuya hilpekîna taybet bigire</string>
+  <!-- Browser menu label that bookmarks the currently visited page -->
+  <string name="browser_menu_bookmark_this_page_2">Têxe nav favoriyan</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">Favoriyan serast bike</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -274,6 +284,8 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_delete_browsing_data_on_quit">Ji %1$s`ê derkeve</string>
+  <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
+  <string name="browser_menu_recommended_extensions_content_description">Agahiyên zêdetir</string>
   <!--
     Menu "contextual feature recommendation" (CFR)
 
@@ -430,10 +442,19 @@
   <string name="onboarding_term_of_service_line_one_2">Bi berdewamkirinê, tu %1$s qebûl dikî.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Mercên Bikaranînê Firefoxê</string>
+  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+  <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox girîngiyê dide nepeniya we. Di %1$s-ên me de bêtir fêr bibin.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
   <string name="onboarding_term_of_service_line_two_link_text">Danezana Nihêniyê</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Birêvebirin</string>
+  <!--
+    Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
+  -->
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox girîngiyê dide nepeniya te. Di %1$s-ên me de bêtir fêr bibe.</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Parastina şopandina otomatîk bi awayê standard bistîne</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Alîkariya pêşxistina Firefoxê bike</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -646,6 +667,10 @@
   <string name="preferences_open_links_in_apps_ask">Beriya vekirinê bipirse</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Ti caran</string>
+  <!-- Preference title for choosing an app to handle downloads -->
+  <string name="preferences_choose_app_for_downloads">Jêbarkirinan bi sepaneke din bi rê ve bibe</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads">Jêbarkirinên te</string>
   <!-- Preference for extensions -->
   <string name="preferences_extensions">Pêvek</string>
   <!-- Preference for notifications -->
@@ -654,6 +679,8 @@
   <string name="notifications_allowed_summary">Destûr hat dayîn</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Destûr nehat dayîn</string>
+  <!-- The title of the optional permissions section from addon's permissions screen. -->
+  <string name="addons_permissions_heading_optional_permissions">Destûrên vebijarkî:</string>
   <!-- Button caption to confirm the add-on collection configuration -->
   <string name="customize_addon_collection_ok">Baş e</string>
   <!-- Button caption to abort the add-on collection configuration -->
@@ -753,6 +780,8 @@
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo_subtitle">Ji hêla @heyheymomodraws ve hatiye afirandin</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">Betal</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1554,10 +1583,18 @@
   <!-- Subtitle for the tabs item in Delete browsing data, %d is the number of open tabs -->
   <string name="preferences_delete_browsing_data_tabs_subtitle">%d hilpekîn</string>
   <!--
+    Title for the data and history items in Delete browsing data
+
+    Title for the history item in Delete browsing data
+  -->
+  <string name="preferences_delete_browsing_data_browsing_history_title">Raboriya gerê</string>
+  <!--
     Subtitle for the data and history items in delete browsing data, %d is the
     number of history items the user has
   -->
   <string name="preferences_delete_browsing_data_browsing_data_subtitle">%d navnîşan</string>
+  <!-- Title for the cookies and site data items in Delete browsing data -->
+  <string name="preferences_delete_browsing_data_cookies_and_site_data">Kûkî û daneyên malperê</string>
   <!-- Subtitle for the cookies item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_cookies_subtitle">Têketinên te yên li ser gelek malperan dê bên girtin</string>
   <!-- Title for the cached images and files item in Delete browsing data -->
@@ -1748,6 +1785,16 @@
     Enhanced tracking protection exception preference icon for ETP settings.
   -->
   <string name="preference_etp_exceptions_icon_description">Nîşaneya tercîha îstîsnayî ya parastina ji şopandinê ya pêşketî</string>
+  <!--
+    DNS over HTTPS (DoH)
+
+    Preference title for DNS over HTTPS settings
+  -->
+  <string name="preference_doh_title">DNS li ser HTTPS</string>
+  <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_summary">Sîstema Navê Domainê (DNS) li ser HTTPS daxwaza te ya ji bo navekî domainê bi rêya girêdaneke şîfrekirî dişîne, DNS-ek ewle peyda dike û ji bo yên din zehmettir dike ku bibînin tu yê têkevî kîjan malperê. %1$s</string>
+  <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection">Parastina Standard</string>
   <!-- About page link text to open support link -->
   <string name="about_support">Piştgirî</string>
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
@@ -2387,6 +2434,11 @@
   <string name="download_language_file_dialog_positive_button_text_all_languages">Jêbar bike û wergerîne</string>
   <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
   <string name="download_language_file_dialog_negative_button_text">Betal bike</string>
+  <!--
+    Description text for a dialog confirming whether the user wants to delete all data for current site.
+    %s is a placeholder for the base domain of website.
+  -->
+  <string name="clear_site_data_dialog_description"><![CDATA[Rakirina çerez û daneyên malperê ji bo <b>%s</b> dibe ku te ji malperan derxe û sepetên kirînê vala bike.]]></string>
   <!--
     Debug drawer
 

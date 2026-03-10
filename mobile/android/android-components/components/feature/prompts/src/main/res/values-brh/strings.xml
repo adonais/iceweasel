@@ -7,6 +7,8 @@
 -->
 
 <resources>
+  <!-- Text for confirmation for a negative action in dialog. -->
+  <string name="mozac_feature_prompts_cancel">کینسل</string>
   <!-- When a page shows many dialogs, this checkbox will appear for letting the user choose to prevent showing more dialogs. -->
   <string name="mozac_feature_prompts_no_more_dialogs">دا صفحہ اے پین پیغام تیان تور</string>
   <!-- Text for username field in an authentication dialog. -->
@@ -33,6 +35,12 @@
   <string name="mozac_feature_prompt_login_update_headline_2">کلیت لوز پوسکن مرے؟</string>
   <!-- Prompt message displayed when app detects a user has entered a username for an existing login without a username and user decides if app should update the login. -->
   <string name="mozac_feature_prompt_login_add_username_headline_2">باسک پن پوسکن مرے؟</string>
+  <!-- Title of a color picker dialog, this text is shown above a color picker. -->
+  <string name="mozac_feature_prompts_choose_a_color">رنگ اس ارف</string>
+  <!-- Text of a confirm button in dialog requesting to open a new window. -->
+  <string name="mozac_feature_prompts_allow">اجازت ایت</string>
+  <!-- Text of a negative button in dialog requesting to open a new window. -->
+  <string name="mozac_feature_prompts_deny">پنہ کر</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">تو اس ارف</string>
   <!-- January (short description), used on the month chooser dialog. -->
