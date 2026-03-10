@@ -196,8 +196,9 @@ static void UTF16ToNewUTF8(const char16_t* aUTF16, uint32_t aUTF16Len,
   *aUTF8 = ToNewUTF8String(utf16, aUTF8Len);
 }
 
-static nsString UTF8ToNewString(const char* aUTF8, uint32_t aUTF8Len = 0) {
-  nsDependentCSubstring utf8(aUTF8, aUTF8Len ? aUTF8Len : strlen(aUTF8));
+static nsString UTF8ToNewString(const char* aUTF8, uint32_t aUTF8DataLen = 0) {
+  nsDependentCSubstring utf8(aUTF8,
+                             aUTF8DataLen ? aUTF8DataLen : strlen(aUTF8));
   nsString ret;
   uint32_t convertedTextLen = 0;
   char16_t* convertedText = UTF8ToNewUnicode(utf8, &convertedTextLen);
@@ -1583,7 +1584,7 @@ void nsDragSession::TargetDataReceived(GtkWidget* aWidget,
     gint len = -1;
     if (IsTextFlavor(target)) {
       data = gtk_selection_data_get_text(aSelectionData);
-      len = data ? g_utf8_strlen(reinterpret_cast<const gchar*>(data), -1) : -1;
+      len = data ? gtk_selection_data_get_length(aSelectionData) : -1;
     } else {
       data = gtk_selection_data_get_data(aSelectionData);
       len = gtk_selection_data_get_length(aSelectionData);
