@@ -114,7 +114,7 @@ add_task(async function test_ipprotectionPrompts() {
       .getElementById("commonDialog")
       .shadowRoot.querySelector("button[dlgtype='cancel']").label,
     localizationMessages.closeTabsButton,
-    "Dialog has continue button label"
+    "Dialog has cancel button label"
   );
 
   await IPPProxyManager.stop();
@@ -178,7 +178,7 @@ add_task(async function test_ipprotectionPrompts() {
       .getElementById("commonDialog")
       .shadowRoot.querySelector("button[dlgtype='cancel']").label,
     localizationMessages.closeTabsButton,
-    "Dialog has continue button label"
+    "Dialog has cancel button label"
   );
 
   await IPPProxyManager.stop();
@@ -362,6 +362,144 @@ add_task(async function test_closeAllTabs() {
   await cleanupExperiment();
   cleanupService();
 });
+
+add_task(
+  async function test_telemetry_alert_button_clicked_error_closeAllTabs() {
+    Services.fog.testResetFOG();
+    await Services.fog.testFlushAllChildren();
+
+    IPProtectionAlertManager.init();
+    setupService({
+      isSignedIn: true,
+      isEnrolledAndEntitled: true,
+      canEnroll: true,
+    });
+
+    IPProtectionService.updateState();
+
+    await IPPProxyManager.start();
+    await TestUtils.waitForCondition(
+      () => IPPProxyManager.state === IPPProxyStates.ACTIVE,
+      "Wait for the proxy state to be active"
+    );
+
+    setState(IPPProxyStates.ERROR);
+
+    await TestUtils.waitForCondition(
+      () => window.gDialogBox.isOpen,
+      "Wait for the dialog to exist"
+    );
+
+    await TestUtils.waitForCondition(
+      () =>
+        window.gDialogBox.dialog._frame.contentDocument.getElementById(
+          "titleContainer"
+        ),
+      "Wait for the dialog to load"
+    );
+
+    let dialogDoc = window.gDialogBox.dialog._frame.contentDocument;
+
+    dialogDoc
+      .getElementById("commonDialog")
+      .shadowRoot.querySelector("button[dlgtype='cancel']")
+      .click();
+
+    await TestUtils.waitForCondition(
+      () => !window.gDialogBox.isOpen,
+      "Wait for the dialog to close"
+    );
+
+    await Services.fog.testFlushAllChildren();
+
+    let alertEvents = Glean.ipprotection.alertButtonClicked.testGetValue();
+    Assert.equal(
+      alertEvents.length,
+      1,
+      "Should have recorded one alertButtonClicked event"
+    );
+    Assert.equal(alertEvents[0].category, "ipprotection");
+    Assert.equal(alertEvents[0].name, "alert_button_clicked");
+    Assert.equal(alertEvents[0].extra.reason, "error");
+    Assert.equal(alertEvents[0].extra.buttonType, "1");
+
+    await TestUtils.waitForCondition(
+      () => gBrowser.tabs.length === 1,
+      "Wait for only 1 tab open"
+    );
+
+    cleanupService();
+    IPProtectionAlertManager.uninit();
+    Services.fog.testResetFOG();
+  }
+);
+
+add_task(
+  async function test_telemetry_alert_button_clicked_paused_continueWithoutVPN() {
+    Services.fog.testResetFOG();
+    await Services.fog.testFlushAllChildren();
+
+    IPProtectionAlertManager.init();
+    setupService({
+      isSignedIn: true,
+      isEnrolledAndEntitled: true,
+      canEnroll: true,
+    });
+
+    IPProtectionService.updateState();
+
+    await IPPProxyManager.start();
+
+    await TestUtils.waitForCondition(
+      () => IPPProxyManager.state === IPPProxyStates.ACTIVE,
+      "Wait for the proxy state to be active"
+    );
+
+    setState(IPPProxyStates.PAUSED);
+
+    await TestUtils.waitForCondition(
+      () => window.gDialogBox.isOpen,
+      "Wait for the dialog to exist"
+    );
+
+    await TestUtils.waitForCondition(
+      () =>
+        window.gDialogBox.dialog._frame.contentDocument.getElementById(
+          "titleContainer"
+        ),
+      "Wait for the dialog to load"
+    );
+
+    let dialogDoc = window.gDialogBox.dialog._frame.contentDocument;
+
+    dialogDoc
+      .getElementById("commonDialog")
+      .shadowRoot.querySelector("button[dlgtype='accept']")
+      .click();
+
+    await TestUtils.waitForCondition(
+      () => !window.gDialogBox.isOpen,
+      "Wait for the dialog to close"
+    );
+
+    await Services.fog.testFlushAllChildren();
+
+    let alertEvents = Glean.ipprotection.alertButtonClicked.testGetValue();
+    Assert.equal(
+      alertEvents.length,
+      1,
+      "Should have recorded one alertButtonClicked event"
+    );
+    Assert.equal(alertEvents[0].category, "ipprotection");
+    Assert.equal(alertEvents[0].name, "alert_button_clicked");
+    Assert.equal(alertEvents[0].extra.reason, "paused");
+    Assert.equal(alertEvents[0].extra.buttonType, "0");
+
+    cleanupService();
+    IPProtectionAlertManager.uninit();
+    Services.fog.testResetFOG();
+  }
+);
 
 add_task(async function test_onlyWhenProxyActive() {
   IPProtectionAlertManager.init();

@@ -219,7 +219,7 @@ class IPProtectionAlertManagerClass {
     let result = await Promise.any(promises);
     let buttonClicked = result.getProperty("buttonNumClicked");
 
-    this.#handlePromptAction(buttonClicked);
+    this.#handlePromptAction(buttonClicked, "paused");
   }
 
   /**
@@ -252,7 +252,7 @@ class IPProtectionAlertManagerClass {
     let result = await Promise.any(promises);
     let buttonClicked = result.getProperty("buttonNumClicked");
 
-    this.#handlePromptAction(buttonClicked);
+    this.#handlePromptAction(buttonClicked, "error");
   }
 
   /**
@@ -261,8 +261,9 @@ class IPProtectionAlertManagerClass {
    * @param {number} buttonClicked Either 0 or 1.
    *  0 means continue without vpn
    *  1 means close all tabs
+   * @param {"paused"|"error"} reason Reason why the alert was triggered.
    */
-  #handlePromptAction(buttonClicked) {
+  #handlePromptAction(buttonClicked, reason) {
     this.#closeAllPrompts();
 
     if (buttonClicked === 0) {
@@ -270,6 +271,11 @@ class IPProtectionAlertManagerClass {
     } else if (buttonClicked === 1) {
       this.#closeAllTabs();
     }
+
+    Glean.ipprotection.alertButtonClicked.record({
+      buttonType: buttonClicked,
+      reason,
+    });
   }
 
   async #closeAllTabs() {

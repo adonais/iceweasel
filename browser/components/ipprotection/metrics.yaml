@@ -8,6 +8,31 @@ $tags:
   - 'Firefox :: IP Protection'
 
 ipprotection:
+  alert_button_clicked:
+    type: event
+    description: >
+      Recorded when a user clicks "Continue without VPN" or "Close all tabs" in the VPN alert.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2020503
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2020503
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      buttonType:
+        type: quantity
+        description: >
+          Action taken by the user, represented as an integer.
+          0 = continue without VPN
+          1 = close all tabs
+      reason:
+        type: string
+        description: >
+          Reason why the alert was triggered: "paused" or "error".
   started:
     type: event
     description: >
