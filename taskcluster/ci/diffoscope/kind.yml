@@ -64,6 +64,7 @@ jobs:
             --exclude b/firefox/uninstall/helper.exe
         # This is necessary to avoid building `build-win64-aarch64` on every push on autoland
         # A more robust fix for this is https://bugzilla.mozilla.org/show_bug.cgi?id=1643346
+        run-on-projects: []  # Bug 1935522 - permafailing on ESR115
         optimization:
             skip-unless-expanded: null
 
