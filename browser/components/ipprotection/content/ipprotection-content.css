@@ -90,7 +90,6 @@ hr {
 }
 
 ipprotection-message-bar.vpn-top-content {
-  margin-inline: var(--space-small);
   margin-block-start: 0;
   margin-block-end: var(--space-small);
 }
