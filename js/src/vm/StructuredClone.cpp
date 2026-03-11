@@ -3011,6 +3011,11 @@ bool JSStructuredCloneReader::readSharedWasmMemory(uint32_t nbytes,
     return false;
   }
 
+  uint32_t placeholderIndex = allObjs.length();
+  if (!allObjs.append(UndefinedValue())) {
+    return false;
+  }
+
   // Read the isHuge flag
   RootedValue isHuge(cx);
   if (!startRead(&isHuge)) {
@@ -3048,6 +3053,7 @@ bool JSStructuredCloneReader::readSharedWasmMemory(uint32_t nbytes,
   }
 
   vp.setObject(*memory);
+  allObjs[placeholderIndex].set(vp);
   return true;
 }
 
@@ -3295,12 +3301,14 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
       if (!readSharedArrayBuffer(StructuredDataType(tag), vp)) {
         return false;
       }
+      alreadAppended = true;
       break;
 
     case SCTAG_SHARED_WASM_MEMORY_OBJECT:
       if (!readSharedWasmMemory(data, vp)) {
         return false;
       }
+      alreadAppended = true;
       break;
 
     case SCTAG_TYPED_ARRAY_OBJECT_V2: {
