@@ -1415,7 +1415,7 @@ export class UserCharacteristicsPageService {
           "MAX_COLOR_ATTACHMENTS_WEBGL",
           "MAX_DRAW_BUFFERS_WEBGL",
         ],
-        EXT_disjoint_timer_query: ["TIMESTAMP_EXT"],
+        EXT_disjoint_timer_query: ["QUERY_COUNTER_BITS_EXT", "TIMESTAMP_EXT"],
         OVR_multiview2: ["MAX_VIEWS_OVR"],
       },
     };
