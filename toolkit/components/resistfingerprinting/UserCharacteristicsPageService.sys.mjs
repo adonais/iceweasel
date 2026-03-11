@@ -1553,6 +1553,8 @@ export class UserCharacteristicsPageService {
       };
     }
 
+    const contextAttrs = gl.getContextAttributes();
+
     const map = {
       // Debug Params
       Extensions: results.debugParams.extensions,
@@ -1575,6 +1577,9 @@ export class UserCharacteristicsPageService {
         results.shaderPrecision.FRAGMENT_SHADER
       ),
       PrecisionVertex: JSON.stringify(results.shaderPrecision.VERTEX_SHADER),
+      // Context Attributes
+      Antialias: String(contextAttrs.antialias),
+      Alpha: String(contextAttrs.alpha),
     };
 
     this.collectGleanMetricsFromMap(map, {

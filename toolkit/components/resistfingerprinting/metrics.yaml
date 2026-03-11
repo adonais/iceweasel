@@ -3693,6 +3693,42 @@ characteristics:
     data_sensitivity:
       - technical
 
+  gl_antialias:
+    type: string
+    description: >
+      Whether antialias was granted for the default WebGL context.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    expires: never
+    data_sensitivity:
+      - technical
+
+  gl_alpha:
+    type: string
+    description: >
+      Whether alpha was granted for the default WebGL context.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    expires: never
+    data_sensitivity:
+      - technical
+
   gl_extensions_software:
     type: text
     description: >
@@ -3958,6 +3994,42 @@ characteristics:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922506
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922506#c17
+    expires: never
+    data_sensitivity:
+      - technical
+
+  gl_antialias_software:
+    type: string
+    description: >
+      Whether antialias was granted for the default WebGL context (software rendering).
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    expires: never
+    data_sensitivity:
+      - technical
+
+  gl_alpha_software:
+    type: string
+    description: >
+      Whether alpha was granted for the default WebGL context (software rendering).
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
     expires: never
     data_sensitivity:
       - technical
@@ -4231,6 +4303,42 @@ characteristics:
     data_sensitivity:
       - technical
 
+  gl2_antialias:
+    type: string
+    description: >
+      Whether antialias was granted for the default WebGL2 context.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    expires: never
+    data_sensitivity:
+      - technical
+
+  gl2_alpha:
+    type: string
+    description: >
+      Whether alpha was granted for the default WebGL2 context.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    expires: never
+    data_sensitivity:
+      - technical
+
   gl2_extensions_software:
     type: text
     description: >
@@ -4496,6 +4604,42 @@ characteristics:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1943627
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1943627#c1
+    expires: never
+    data_sensitivity:
+      - technical
+
+  gl2_antialias_software:
+    type: string
+    description: >
+      Whether antialias was granted for the default WebGL2 context (software rendering).
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    expires: never
+    data_sensitivity:
+      - technical
+
+  gl2_alpha_software:
+    type: string
+    description: >
+      Whether alpha was granted for the default WebGL2 context (software rendering).
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1879151
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019364
     expires: never
     data_sensitivity:
       - technical
