@@ -2308,23 +2308,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox نى كۆڭۈلدىكى توركۆرگۈ قىلىڭ</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">شەخسىي زىيارەتنى سىناڭ</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">شەخسىي زىيارەتنى سىناڭ</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s زىيارەت داۋامىدا cookies ۋە تارىخ خاتىرىسىنى ساقلىمايدۇ</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s زىيارەت داۋامىدا cookies ۋە تارىخ خاتىرىسىنى ساقلىمايدۇ</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">ئىزسىز زىيارەت</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">ئىزسىز زىيارەت</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">شەخسىي زىيارەتتە %1$s ئۇچۇرلىرىڭىزنى ساقلىمايدۇ.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">شەخسىي زىيارەتتە %1$s ئۇچۇرلىرىڭىزنى ساقلىمايدۇ.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">تۇنجى ئىزدەشنى باشلاڭ</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">تۇنجى ئىزدەشنى باشلاڭ</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">ئەتراپتىكى نەرسىلەرنى ئىزدەڭ. ياكى قىزىقارلىق ئىشلارنى بايقاڭ.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">ئەتراپتىكى نەرسىلەرنى ئىزدەڭ. ياكى قىزىقارلىق ئىشلارنى بايقاڭ.</string>
   <!--
     Survey
 

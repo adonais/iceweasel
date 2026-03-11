@@ -2307,23 +2307,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Nastavte si Firefox ako predvolený prehliadač</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Vyskúšajte súkromné prehliadanie</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Vyskúšajte súkromné prehliadanie</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Prehliadajte bez uložených súborov cookie alebo histórie v prehliadači %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Prehliadajte bez uložených súborov cookie alebo histórie v prehliadači %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Prehliadajte bez stopy</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Prehliadajte bez stopy</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Súkromné prehliadanie v prehliadači %1$s neukladá vaše informácie.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Súkromné prehliadanie v prehliadači %1$s neukladá vaše informácie.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Začnite prvé vyhľadávanie</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Začnite prvé vyhľadávanie</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Nájdite niečo v okolí. Alebo objavte niečo zábavné.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Nájdite niečo v okolí. Alebo objavte niečo zábavné.</string>
   <!--
     Survey
 

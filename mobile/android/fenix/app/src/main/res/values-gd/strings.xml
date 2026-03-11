@@ -2319,23 +2319,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Cleachd Firefox mar am brabhsair bunaiteach agad</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Feuch am brabhsadh prìobhaideach</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Feuch am brabhsadh prìobhaideach</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Dèan brabhsadh gun bhriosgaid no eachdraidh sam bith a shàbhaladh ann am %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Dèan brabhsadh gun bhriosgaid no eachdraidh sam bith a shàbhaladh ann am %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Dèan brabhsadh gun lorg fhàgail</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Dèan brabhsadh gun lorg fhàgail</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Ma nì thu brabhsadh prìobhaideach, cha sàbhail %1$s am fiosrachadh agad.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Ma nì thu brabhsadh prìobhaideach, cha sàbhail %1$s am fiosrachadh agad.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Tòisich air rudan a lorg</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Tòisich air rudan a lorg</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Lorg rud-eigin am fagas. No faigh lorg air rud-eigin spòrsail.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Lorg rud-eigin am fagas. No faigh lorg air rud-eigin spòrsail.</string>
   <!--
     Survey
 

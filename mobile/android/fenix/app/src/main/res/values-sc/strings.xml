@@ -2028,21 +2028,21 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Imprea Firefox comente navigadore predefinidu</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Prova sa navigatzione privada</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Prova sa navigatzione privada</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Nàviga sena cronologia nen testimòngios sarvados in %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Nàviga sena cronologia nen testimòngios sarvados in %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Nàviga chene sighiduras</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Nàviga chene sighiduras</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Sa navigatzione privada in %1$s non sarvat s’informatzione tua.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Sa navigatzione privada in %1$s non sarvat s’informatzione tua.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Faghe sa prima chirca</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Faghe sa prima chirca</string>
   <!-- Preference for taking the short survey. -->
   <string name="preferences_take_survey">Piga parte a su sondàgiu</string>
   <!-- Preference for not taking the short survey. -->

@@ -2169,23 +2169,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">ຕັ້ງ Firefox ໃຫ້ເປັນຕົວທ່ອງເວັບເລີ່ມຕົ້ນຂອງທ່ານ</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">ລອງຊອກຫາແບບສ່ວນຕົວ</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">ລອງຊອກຫາແບບສ່ວນຕົວ</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">ຊອກຫາດ້ວຍບໍ່ມີຄຸກກີ້ ຫຼືປະຫວັດທີ່ບັນທຶກໄວ້ໃນ %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">ຊອກຫາດ້ວຍບໍ່ມີຄຸກກີ້ ຫຼືປະຫວັດທີ່ບັນທຶກໄວ້ໃນ %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">ທ່ອງເວັບໂດຍບໍ່ມີການຕິດຕາມ</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">ທ່ອງເວັບໂດຍບໍ່ມີການຕິດຕາມ</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">ການທ່ອງເວັບສ່ວນຕົວໃນ %1$s ບໍ່ໄດ້ບັນທຶກຂໍ້ມູນຂອງທ່ານ.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">ການທ່ອງເວັບສ່ວນຕົວໃນ %1$s ບໍ່ໄດ້ບັນທຶກຂໍ້ມູນຂອງທ່ານ.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">ເລີ່ມການຄົ້ນຫາທໍາອິດຂອງທ່ານ</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">ເລີ່ມການຄົ້ນຫາທໍາອິດຂອງທ່ານ</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">ຊອກຫາສິ່ງທີ່ຢູ່ໃກ້ໆ. ຫຼືຄົ້ນຫາສິ່ງທີ່ມ່ວນ.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">ຊອກຫາສິ່ງທີ່ຢູ່ໃກ້ໆ. ຫຼືຄົ້ນຫາສິ່ງທີ່ມ່ວນ.</string>
   <!--
     Survey
 

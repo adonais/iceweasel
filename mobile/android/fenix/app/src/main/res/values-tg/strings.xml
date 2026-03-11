@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Мубодила кардан</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Илова кардан ба маҷмуа</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Илова кардан ба гурӯҳ</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Мубодила кардани варақаҳои интихобшуда</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Эҷод кардани гурӯҳи варақаҳо</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Таҳрир кардани гурӯҳ</string>
   <string name="create_tab_group_save_button">Нигоҳ доштан</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Пӯшидани реҷаи таҳрири гурӯҳи варақаҳо</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Гурӯҳ</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Гурӯҳи %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Ном</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Ном</string>
   <!--
     History
 
@@ -2308,23 +2319,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Гузоштани «Firefox» ҳамчун браузери пешфарз</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Тамошобинии хусусиро озмоед</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Тамошобинии хусусиро озмоед</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Сомонаҳоро бе ягон куки ё таърихи нигоҳдошташуда дар «%1$s» тамошо кунед</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Сомонаҳоро бе ягон куки ё таърихи нигоҳдошташуда дар «%1$s» тамошо кунед</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Тамошобинӣ дар Интернет бе пайгирӣ</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Тамошобинӣ дар Интернет бе пайгирӣ</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Тамошобинии хусусӣ дар «%1$s» маълумоти шуморо нигоҳ намедорад.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Тамошобинии хусусӣ дар «%1$s» маълумоти шуморо нигоҳ намедорад.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Ҷустуҷӯи аввалини худро оғоз кунед</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Ҷустуҷӯи аввалини худро оғоз кунед</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Чизе муҳимро дар атрофи худ пайдо кунед. Ё чизе шавқоварро пайдо кунед.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Чизе муҳимро дар атрофи худ пайдо кунед. Ё чизе шавқоварро пайдо кунед.</string>
   <!--
     Survey
 
@@ -3766,6 +3777,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Ман дар «Firefox» аз имкони ҷустуҷӯ истифода намебарам</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Ман ҳамоҳангсозиро истифода намебарам</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Суст ё дорои хато мебошад</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Хусусиятҳое, ки душворёб ё нопайдо мебошанд</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Барои истифода душворфаҳм ё мушкил аст</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Хуб аст, аммо нисбат ба браузерҳои дигар беҳтар нест</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Ман истифодаи браузери «Firefox»-ро ба нақша гирифтам</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Ба беҳтар кардани чоп дар «Firefox» кумак кунед. Ин танҳо як сония мегирад</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3780,6 +3801,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Шумо аз таҷрибаи ҷустуҷӯ дар «Firefox» то чӣ андоза қаноатмандед?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Шумо аз таҷрибаи ҳамоҳангсозӣ дар «Firefox» то чӣ андоза қаноатмандед?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Ба мо барои беҳтар кардани браузери «Firefox» кумак расонед. Кадом банд таҷрибаи беҳтарини шуморо тавсиф мекунад?</string>
   <!--
     Accessibility
 

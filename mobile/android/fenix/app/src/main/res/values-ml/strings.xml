@@ -1505,8 +1505,15 @@
   <string name="edit_tab_group_bottom_sheet_close_content_description">\"ടാബുകൂട്ടം തിരുത്തുക\" എന്നതു് അടയ്ക്കുക</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">കൂട്ടം</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">%d കൂട്ടം</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">പേരു്</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">പേരു്</string>
   <!--
     History
 
@@ -2150,23 +2157,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">ഫയർഫോക്സിനെ താങ്ങളുടെ സ്ഥിര അന്വേഷിയന്ത്രം ആക്കുക</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">സ്വകാര്യ തിരയൽ ഉപയോഗിച്ചു് നോക്കു</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">സ്വകാര്യ തിരയൽ ഉപയോഗിച്ചു് നോക്കു</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s-ൽ കരുതിവച്ച കുക്കികളോ നാൾവഴിയോ ഇല്ലാതെ തിരയുക.</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s-ൽ കരുതിവച്ച കുക്കികളോ നാൾവഴിയോ ഇല്ലാതെ തിരയുക.</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">യാതൊന്നും അവശേഷിപ്പിക്കാതെ തിരയുക</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">യാതൊന്നും അവശേഷിപ്പിക്കാതെ തിരയുക</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s-ൽ സ്വകാര്യ തിരച്ചിൽ താങ്ങളുടെ വിവരങ്ങൾ കരുതിവയ്ക്കാരില്ല.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s-ൽ സ്വകാര്യ തിരച്ചിൽ താങ്ങളുടെ വിവരങ്ങൾ കരുതിവയ്ക്കാരില്ല.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">താങ്ങളുടെ ആദ്യ തിരയൽ ആരംഭിക്കുക</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">താങ്ങളുടെ ആദ്യ തിരയൽ ആരംഭിക്കുക</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">അടുത്തെന്തെങ്കിലും കണ്ടുപിടിക്കുക അല്ലെങ്കിൽ രസകരമായ എന്തെങ്കിലും ആരായുക.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">അടുത്തെന്തെങ്കിലും കണ്ടുപിടിക്കുക അല്ലെങ്കിൽ രസകരമായ എന്തെങ്കിലും ആരായുക.</string>
   <!--
     Survey
 

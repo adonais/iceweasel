@@ -1374,23 +1374,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox браузерс иҟашәҵа</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Иԥышәшәа хатә ԥшаара</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Иԥышәшәа хатә ԥшаара</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Аԥшаара еиқәырхоу акукиқәеи аҭоурыхи рыда %1$s аҟны</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Аԥшаара еиқәырхоу акукиқәеи аҭоурыхи рыда %1$s аҟны</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Ашьҭа нмыжькәа ауеб аԥшаара</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Ашьҭа нмыжькәа ауеб аԥшаара</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Хаҭалатәи аԥшаара %1$s аҟны уусура еиқәнархаӡом.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Хаҭалатәи аԥшаара %1$s аҟны уусура еиқәнархаӡом.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Раԥхьатәи аԥшаара алагара</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Раԥхьатәи аԥшаара алагара</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Ааигәа акы ԥшаа. Мамзаргьы иччархәу акы аԥшаара.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Ааигәа акы ԥшаа. Мамзаргьы иччархәу акы аԥшаара.</string>
   <!--
     Survey
 

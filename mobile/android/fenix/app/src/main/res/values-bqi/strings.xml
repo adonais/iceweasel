@@ -2308,23 +2308,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">‏Firefox ن گشت گر پؽش فرزتووݩ بۊکۊنین</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">گشت سیخومی ن ویر بگیرین</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">گشت سیخومی ن ویر بگیرین</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">من %1$s بؽ هیچ کۊکی یا ویرگار زفت وابیڌه ای بگردین</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">من %1$s بؽ هیچ کۊکی یا ویرگار زفت وابیڌه ای بگردین</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">بؽ رڌجۊری کردن گشت بزنین</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">بؽ رڌجۊری کردن گشت بزنین</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">گشت سیخومی من %1$s دووسمندیا ایسا ن زفت نؽکونه.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">گشت سیخومی من %1$s دووسمندیا ایسا ن زفت نؽکونه.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">بنه پا پیتینیڌن ٱولیت</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">بنه پا پیتینیڌن ٱولیت</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">ی چی و هیم نهنگا ن بپیتینین. یا ی چی جالو ن بجۊرین.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">ی چی و هیم نهنگا ن بپیتینین. یا ی چی جالو ن بجۊرین.</string>
   <!--
     Survey
 

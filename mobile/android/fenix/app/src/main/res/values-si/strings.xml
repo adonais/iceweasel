@@ -1391,23 +1391,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">ෆයර්ෆොක්ස් පෙරනිමි අතිරික්සුව කරන්න</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">පෞද්. පිරික්සුම බලන්න</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">පෞද්. පිරික්සුම බලන්න</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s හි සුරැකෙන දත්තකඩ හෝ ඉතිහාසයකින් තොරව පිරික්සන්න</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s හි සුරැකෙන දත්තකඩ හෝ ඉතිහාසයකින් තොරව පිරික්සන්න</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">හෝඩුවාවකින් තොරව පිරික්සන්න</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">හෝඩුවාවකින් තොරව පිරික්සන්න</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s පෞද්. පිරික්සුමේ ඔබගේ තොරතුරු සුරැකෙන්නේ නැත.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s පෞද්. පිරික්සුමේ ඔබගේ තොරතුරු සුරැකෙන්නේ නැත.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">ප්‍රථම සෙවීම අරඹන්න</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">ප්‍රථම සෙවීම අරඹන්න</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">අවට යමක් හෝ විනෝදාත්මක දෙයක් සොයා ගන්න.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">අවට යමක් හෝ විනෝදාත්මක දෙයක් සොයා ගන්න.</string>
   <!--
     Survey
 

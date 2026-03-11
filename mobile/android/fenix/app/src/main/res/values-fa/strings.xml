@@ -1903,23 +1903,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">‏Firefox را مروگر پیش‌فرض‌تان بکنید</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">مرور خصوصی را بیازمایید</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">مرور خصوصی را بیازمایید</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">در %1$s بدون هیچ کلوچک یا تاریخچهٔ ذخیره شده‌ای مرور کنید</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">در %1$s بدون هیچ کلوچک یا تاریخچهٔ ذخیره شده‌ای مرور کنید</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">بدون ردیابی شدن مرور کنید</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">بدون ردیابی شدن مرور کنید</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">مرور خصوصی در %1$s اطلاعات شما را ذخیره نمی‌کند.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">مرور خصوصی در %1$s اطلاعات شما را ذخیره نمی‌کند.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">نخستین جست‌وجویتان را شروع کنید</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">نخستین جست‌وجویتان را شروع کنید</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">چیزی نزدیک را بیابید. یا چیزی جالب کشف کنید.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">چیزی نزدیک را بیابید. یا چیزی جالب کشف کنید.</string>
   <!--
     Survey
 

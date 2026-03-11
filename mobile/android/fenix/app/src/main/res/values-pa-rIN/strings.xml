@@ -2279,23 +2279,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox ਨੂੰ ਆਪਣਾ ਡਿਫਾਲਟ ਬਰਾਊਜ਼ਰ ਬਣਾਓ</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">ਪ੍ਰਾਈਵੇਟ ਬਰਾਊਜ਼ ਕਰਨ ਨੂੰ ਅਜ਼ਮਾਓ</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">ਪ੍ਰਾਈਵੇਟ ਬਰਾਊਜ਼ ਕਰਨ ਨੂੰ ਅਜ਼ਮਾਓ</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s ਵਿੱਚ ਬਿਨਾਂ ਕਿਸੇ ਸੰਭਾਲੇ ਕੂਕੀ ਜਾਂ ਅਤੀਤ ਦੇ ਬਰਾਊਜ਼ ਕਰੋ</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s ਵਿੱਚ ਬਿਨਾਂ ਕਿਸੇ ਸੰਭਾਲੇ ਕੂਕੀ ਜਾਂ ਅਤੀਤ ਦੇ ਬਰਾਊਜ਼ ਕਰੋ</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">ਬਿਨਾਂ ਪੈੜਾਂ ਛੱਡੇ ਬਰਾਊਜ਼ ਕਰੋ</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">ਬਿਨਾਂ ਪੈੜਾਂ ਛੱਡੇ ਬਰਾਊਜ਼ ਕਰੋ</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s ਨਾਲ ਪ੍ਰਾਈਵੇਟ ਬਰਾਊਜ਼ ਕਰਨ ਸਮੇੰ ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ ਸੰਭਾਲਦਾ ਨਹੀਂ ਹੈ।</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s ਨਾਲ ਪ੍ਰਾਈਵੇਟ ਬਰਾਊਜ਼ ਕਰਨ ਸਮੇੰ ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ ਸੰਭਾਲਦਾ ਨਹੀਂ ਹੈ।</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">ਆਪਣੀ ਪਹਿਲੀ ਖੋਜ ਕਰੋ</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">ਆਪਣੀ ਪਹਿਲੀ ਖੋਜ ਕਰੋ</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">ਨੇੜੇ ਤੇੜੇ ਕੁਝ ਲੱਭੋ। ਜਾਂ ਕੁਝ ਮੌਜ ਮਸਤੀ ਲਈ ਲੱਭੋ।</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">ਨੇੜੇ ਤੇੜੇ ਕੁਝ ਲੱਭੋ। ਜਾਂ ਕੁਝ ਮੌਜ ਮਸਤੀ ਲਈ ਲੱਭੋ।</string>
   <!--
     Survey
 

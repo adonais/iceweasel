@@ -1592,6 +1592,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Compartir</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Engadir á colección</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Engadir ao grupo</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Compartir as lapelas seleccionadas</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,12 +1640,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Crear grupo de pestanas</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Gardar</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Pecha Editar grupo de pestanas</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grupo %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nome</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Nome</string>
   <!--
     History
 
@@ -2308,23 +2319,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Faga de Firefox o seu navegador predeterminado</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Probe a navegación privada</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Probe a navegación privada</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Navegar sen rastros nin historial gardados en %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Navegar sen rastros nin historial gardados en %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Navegar sen deixar rastro</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Navegar sen deixar rastro</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">A navegación privada en %1$s non garda a súa información.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">A navegación privada en %1$s non garda a súa información.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Comece a súa primeira busca</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Comece a súa primeira busca</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Busque algo preto. Ou descubra algo divertido.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Busque algo preto. Ou descubra algo divertido.</string>
   <!--
     Survey
 
@@ -3766,6 +3777,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Non uso a busca en Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Non uso a sincronización</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">É lento ou con erros</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">As funcións son difíciles de atopar ou faltan</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">É confuso ou difícil de usar</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Está ben, pero non mellor que outros navegadores</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Penso seguir usando Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Axude a mellorar a impresión en Firefox. Só leva un segundo</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3780,6 +3801,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Que tan satisfeito está coa experiencia de busca en Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Como estás de satisfeito coa experiencia de sincronización en Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Axúdanos a mellorar Firefox. Cal describe mellor a túa experiencia ata agora?</string>
   <!--
     Accessibility
 

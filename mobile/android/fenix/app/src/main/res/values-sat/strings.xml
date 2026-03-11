@@ -2223,23 +2223,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox ᱟᱢᱟᱜ ᱢᱩᱞ ᱵᱽᱨᱟᱣᱡᱚᱨ ᱞᱮᱠᱷᱟ ᱫᱚᱦᱚᱭ ᱢᱮ</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">ᱱᱤᱡᱚᱨᱟᱜ ᱵᱽᱨᱟᱣᱡᱤᱝ ᱠᱩᱨᱩᱢᱩᱴᱩ ᱞᱮᱢ</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">ᱱᱤᱡᱚᱨᱟᱜ ᱵᱽᱨᱟᱣᱡᱤᱝ ᱠᱩᱨᱩᱢᱩᱴᱩ ᱞᱮᱢ</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s ᱨᱮ ᱵᱟᱝ ᱥᱟᱧᱪᱟᱣ ᱠᱟᱱ ᱠᱩᱠᱤ ᱟᱨᱵᱟᱝ ᱦᱤᱛᱟᱹᱞ ᱠᱚ ᱵᱽᱨᱟᱣᱩᱡᱽ ᱢᱮ</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s ᱨᱮ ᱵᱟᱝ ᱥᱟᱧᱪᱟᱣ ᱠᱟᱱ ᱠᱩᱠᱤ ᱟᱨᱵᱟᱝ ᱦᱤᱛᱟᱹᱞ ᱠᱚ ᱵᱽᱨᱟᱣᱩᱡᱽ ᱢᱮ</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">ᱵᱤᱱᱟᱹ ᱯᱟᱧᱡᱟ ᱛᱮ ᱵᱽᱨᱟᱣᱡᱽ ᱢᱮ</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">ᱵᱤᱱᱟᱹ ᱯᱟᱧᱡᱟ ᱛᱮ ᱵᱽᱨᱟᱣᱡᱽ ᱢᱮ</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s ᱨᱮ ᱱᱤᱡᱮᱨᱟᱜ ᱞᱮᱠᱷᱟ ᱛᱮ ᱵᱽᱨᱟᱣᱡᱽ ᱠᱚᱨᱟᱣ ᱛᱮ ᱫᱚ ᱟᱢᱟᱜ ᱡᱤᱱᱤᱥ ᱵᱟᱝ ᱪᱤᱠᱟᱹᱜᱼᱟ ᱾</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s ᱨᱮ ᱱᱤᱡᱮᱨᱟᱜ ᱞᱮᱠᱷᱟ ᱛᱮ ᱵᱽᱨᱟᱣᱡᱽ ᱠᱚᱨᱟᱣ ᱛᱮ ᱫᱚ ᱟᱢᱟᱜ ᱡᱤᱱᱤᱥ ᱵᱟᱝ ᱪᱤᱠᱟᱹᱜᱼᱟ ᱾</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">ᱟᱢᱟᱜ ᱯᱩᱭᱞᱤ ᱥᱮᱸᱫᱽᱨᱟ ᱮᱛᱦᱚᱵ ᱢᱮ</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">ᱟᱢᱟᱜ ᱯᱩᱭᱞᱤ ᱥᱮᱸᱫᱽᱨᱟ ᱮᱛᱦᱚᱵ ᱢᱮ</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">ᱥᱩᱨ ᱠᱚᱨᱮ ᱡᱟᱦᱱᱟᱜ ᱯᱟᱱᱛᱮ ᱢᱮ ᱾ ᱟᱨ ᱵᱟᱝ ᱡᱟᱦᱱᱟᱜ ᱢᱚᱡᱽ ᱯᱟᱱᱛᱮ ᱢᱮ ᱾</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">ᱥᱩᱨ ᱠᱚᱨᱮ ᱡᱟᱦᱱᱟᱜ ᱯᱟᱱᱛᱮ ᱢᱮ ᱾ ᱟᱨ ᱵᱟᱝ ᱡᱟᱦᱱᱟᱜ ᱢᱚᱡᱽ ᱯᱟᱱᱛᱮ ᱢᱮ ᱾</string>
   <!--
     Survey
 

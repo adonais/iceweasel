@@ -2308,23 +2308,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Gera Firefox að sjálfgefnum vafra</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Prófaðu huliðsvafur</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Prófaðu huliðsvafur</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Vafraðu án þess að vista vefkökur eða aðgerðaferil í %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Vafraðu án þess að vista vefkökur eða aðgerðaferil í %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Vafraðu án ummerkja</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Vafraðu án ummerkja</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Huliðsvafur í %1$s vistar ekki upplýsingar um ferðir þínar.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Huliðsvafur í %1$s vistar ekki upplýsingar um ferðir þínar.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Byrjaðu fyrstu leitina þína</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Byrjaðu fyrstu leitina þína</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Finndu eitthvað í nágrenninu. Eða uppgötvaðu eitthvað skemmtilegt.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Finndu eitthvað í nágrenninu. Eða uppgötvaðu eitthvað skemmtilegt.</string>
   <!--
     Survey
 

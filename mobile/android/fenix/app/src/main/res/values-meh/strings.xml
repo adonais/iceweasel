@@ -1206,23 +1206,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Sá´á Firefox ka̱a̱ nánuku xinañu´u</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Ni\'i nánuku yu\'u</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Ni\'i nánuku yu\'u</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Kaka nchuva\'anu cookies jíí daa nnánukunu jíí %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Kaka nchuva\'anu cookies jíí daa nnánukunu jíí %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Kaka jee nxinonu huellas</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Kaka jee nxinonu huellas</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Sa nànuku yu\'unu nu %1$s ntu nkino a nnánukunu.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Sa nànuku yu\'unu nu %1$s ntu nkino a nnánukunu.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Kaji\'e nánuku</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Kaji\'e nánuku</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Nani\'i iin a kuvi yati. A xiin nuku iin a sɨɨ.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Nani\'i iin a kuvi yati. A xiin nuku iin a sɨɨ.</string>
   <!--
     Survey
 

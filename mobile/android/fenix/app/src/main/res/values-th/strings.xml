@@ -2302,23 +2302,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">ทำให้ Firefox เป็นเบราว์เซอร์เริ่มต้นของคุณ</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">ลองการท่องเว็บแบบส่วนตัว</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">ลองการท่องเว็บแบบส่วนตัว</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">เรียกดูโดยไม่มีคุกกี้หรือประวัติที่บันทึกไว้ใน %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">เรียกดูโดยไม่มีคุกกี้หรือประวัติที่บันทึกไว้ใน %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">ท่องเว็บโดยไร้ร่องรอย</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">ท่องเว็บโดยไร้ร่องรอย</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">การเรียกดูแบบส่วนตัวใน %1$s จะไม่บันทึกข้อมูลของคุณ</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">การเรียกดูแบบส่วนตัวใน %1$s จะไม่บันทึกข้อมูลของคุณ</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">เริ่มการค้นหาครั้งแรกของคุณ</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">เริ่มการค้นหาครั้งแรกของคุณ</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">ค้นหาสิ่งที่อยู่ใกล้ๆ หรือค้นพบอะไรสนุกๆ</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">ค้นหาสิ่งที่อยู่ใกล้ๆ หรือค้นพบอะไรสนุกๆ</string>
   <!--
     Survey
 

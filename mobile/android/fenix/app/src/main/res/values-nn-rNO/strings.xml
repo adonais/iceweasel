@@ -1652,7 +1652,7 @@
   -->
   <string name="create_tab_group_form_default_name">Gruppe %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Namn</string>
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Namn på fanegruppe</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="tab_group_name_label">Namn</string>
   <!--
@@ -2319,23 +2319,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Bruk Firefox som din standardnettlesar</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Prøv privat nettlesing</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Prøv privat nettlesing</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Surf utan lagra infokapslar eller historikk med %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Surf utan lagra infokapslar eller historikk med %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Surf sporlaust</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Surf sporlaust</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Privat nettlesing i %1$s lagrar ikkje informasjonen din.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Privat nettlesing i %1$s lagrar ikkje informasjonen din.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Start det første søket ditt</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Start det første søket ditt</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Finn noko nær deg. Eller oppdag noko artig.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Finn noko nær deg. Eller oppdag noko artig.</string>
   <!--
     Survey
 
@@ -3777,6 +3777,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Eg brukar ikkje søk på Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Eg brukar ikkje sync</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Det er tregt eller fullt av feil</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Funksjonar er vanskelege å finne eller manglar</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Det er forvirrande eller vanskeleg å bruke</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Det er greitt men ikkje betre enn andre nettlesarar</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Eg reknar med at eg held fram med å bruke Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Bidra til å gjere utskrifter i Firefox betre. Det tek berre eit sekund</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->

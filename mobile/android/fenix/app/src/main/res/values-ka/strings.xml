@@ -2319,23 +2319,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">გახადეთ Firefox ნაგულისხმევი ბრაუზერი</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">გამოცადეთ პირადი რეჟიმი</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">გამოცადეთ პირადი რეჟიმი</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">გვერდების მონახულებისას %1$s არ შეინახავს ისტორიასა და ფუნთუშებს</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">გვერდების მონახულებისას %1$s არ შეინახავს ისტორიასა და ფუნთუშებს</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">ათვალიერეთ კვალის დატოვების გარეშე</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">ათვალიერეთ კვალის დატოვების გარეშე</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">პირადი თვალიერებისას %1$s არაფერს არ შეინახავს.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">პირადი თვალიერებისას %1$s არაფერს არ შეინახავს.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">დაიწყეთ გვერდების მოძიება</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">დაიწყეთ გვერდების მოძიება</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">მონახეთ რამე ახლომახლო. ანდაც აღმოაჩინეთ რამე სახალისო.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">მონახეთ რამე ახლომახლო. ანდაც აღმოაჩინეთ რამე სახალისო.</string>
   <!--
     Survey
 

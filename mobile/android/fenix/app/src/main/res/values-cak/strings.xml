@@ -1226,21 +1226,21 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Tab\'ana\' chi ri Firefox nok ri nab\'ey awokik\'amaya\'l</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Titojtob\'ëx ichinan okem</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Titojtob\'ëx ichinan okem</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Katok pa k\'amaya\'l akuchi\' majun kuki o taq natab\'äl eyakon pa %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Katok pa k\'amaya\'l akuchi\' majun kuki o taq natab\'äl eyakon pa %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Majun etal taya\' kan toq yatok pa k\'amaya\'l</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Majun etal taya\' kan toq yatok pa k\'amaya\'l</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Ri ichinan okem pa ruk\'amaya\'l %1$s majun nuyäk ri awetamab\'al.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Ri ichinan okem pa ruk\'amaya\'l %1$s majun nuyäk ri awetamab\'al.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Tatikirisaj ri nab\'ey akanoxik</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Tatikirisaj ri nab\'ey akanoxik</string>
   <!--
     Survey
 

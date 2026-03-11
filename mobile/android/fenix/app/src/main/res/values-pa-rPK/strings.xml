@@ -1294,23 +1294,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">فائرفاکس نوں آپݨا ڈفالٹ براؤزر بݨاؤ</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">نجی براؤز کرن نوں ازماؤ</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">نجی براؤز کرن نوں ازماؤ</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s وچ بناں کسے سنبھالے کوکی جاں تاریخ دے براؤز کرو</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s وچ بناں کسے سنبھالے کوکی جاں تاریخ دے براؤز کرو</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">بناں پیڑاں چھڈے براؤز کرو</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">بناں پیڑاں چھڈے براؤز کرو</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s نال نجی براؤز کرن سمیں تہاڈی جاݨکاری سنبھالدا نہیں اے۔</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s نال نجی براؤز کرن سمیں تہاڈی جاݨکاری سنبھالدا نہیں اے۔</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">آپݨی پہلی کھوج کرو</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">آپݨی پہلی کھوج کرو</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">نیڑے تیڑے کجھ لبھو۔ جاں کجھ موج مستی لئی لبھو۔</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">نیڑے تیڑے کجھ لبھو۔ جاں کجھ موج مستی لئی لبھو۔</string>
   <!--
     Survey
 

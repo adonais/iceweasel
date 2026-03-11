@@ -2287,23 +2287,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Ustaw Firefoksa jako domyślną przeglądarkę</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Wypróbuj tryb prywatny</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Wypróbuj tryb prywatny</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Używaj przeglądarki %1$s bez zachowywania ciasteczek ani historii</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Używaj przeglądarki %1$s bez zachowywania ciasteczek ani historii</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Przeglądaj Internet bez śladu</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Przeglądaj Internet bez śladu</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Tryb prywatny w\u00a0przeglądarce %1$s nie zachowuje Twoich danych.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Tryb prywatny w\u00a0przeglądarce %1$s nie zachowuje Twoich danych.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Wyszukaj po raz pierwszy</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Wyszukaj po raz pierwszy</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Znajdź coś w\u00a0pobliżu. Albo odkryj coś fajnego.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Znajdź coś w\u00a0pobliżu. Albo odkryj coś fajnego.</string>
   <!--
     Survey
 

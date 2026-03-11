@@ -2022,23 +2022,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Err Firefox d iminig-ik amezwer</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Ɛreḍ tunigin tusligt</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Ɛreḍ tunigin tusligt</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Inig s war asekles n yinagan n tuqqnad uzray deg %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Inig s war asekles n yinagan n tuqqnad uzray deg %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Inig war ma teǧǧiḍ lǧeṛṛa</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Inig war ma teǧǧiḍ lǧeṛṛa</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Tunigin tusligt deg %1$s ur tesseklas ara talɣut-ik.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Tunigin tusligt deg %1$s ur tesseklas ara talɣut-ik.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Bdu anadi-ik·im amezwaru</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Bdu anadi-ik·im amezwaru</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Af kra iqerben. Neɣ snirem kra yessedhayen.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Af kra iqerben. Neɣ snirem kra yessedhayen.</string>
   <!--
     Survey
 

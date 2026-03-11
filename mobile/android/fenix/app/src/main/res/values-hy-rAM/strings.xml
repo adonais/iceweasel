@@ -2319,23 +2319,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Դարձրեք Firefox-ը սկզբնադիր դիտարկիչը</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Փորձեք գաղտնի դիտարկումը</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Փորձեք գաղտնի դիտարկումը</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Զննեք առանց պահված թխուկների կամ պատմության %1$s-ում</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Զննեք առանց պահված թխուկների կամ պատմության %1$s-ում</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Դիտարկեք առանց հետք թողնելու</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Դիտարկեք առանց հետք թողնելու</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Գաղտնի դիտարկումը %1$s-ում չի պահպանում ձեր տվյալները:</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Գաղտնի դիտարկումը %1$s-ում չի պահպանում ձեր տվյալները:</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Սկսեք ձեր առաջին որոնումը</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Սկսեք ձեր առաջին որոնումը</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Գտեք մոտակայքում ինչ-որ բան: Կամ բացահայտել ինչ-որ զվարճալի բան:</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Գտեք մոտակայքում ինչ-որ բան: Կամ բացահայտել ինչ-որ զվարճալի բան:</string>
   <!--
     Survey
 

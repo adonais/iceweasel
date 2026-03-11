@@ -420,6 +420,17 @@
   <string name="search_settings_menu_item">Nādunā dàj gā riña sa nānà’huì’t</string>
   <!-- Header text for the search selector menu -->
   <string name="search_header_menu_item_2">Hìaj nī nānà’huì’ riña:</string>
+  <!--
+    Content description (not visible, for screen readers etc.): Search engine icon.
+    %s is the search engine name (for example: DuckDuckGo).
+  -->
+  <string name="search_engine_icon_content_description_1">Nej sa rugûñu’ūnj nana’huî’: %s</string>
+  <!--
+    Content description (not visible, for screen readers etc.) of the search engine selector from the search toolbar.
+    %s is the search engine name (for example: DuckDuckGo).
+    The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
+  -->
+  <string name="search_engine_selector_content_description">%s: sa nagui nej sa rugûñu’ūnj nana’hui’</string>
   <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
   <string name="search_suggestions_delete_history_item_snackbar">Nādure’ %1$s riña ‘na’ sa gini’hiājt</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
@@ -430,6 +441,14 @@
     Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
   <string name="onboarding_home_content_description_close_button">Nārán</string>
+  <!--
+    Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
+
+    Description for learning more about our privacy notice.
+  -->
+  <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Nuguan’ huì nikāj Firefox</string>
+  <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
+  <string name="juno_onboarding_default_browser_title_nimbus_2">Nīhià’ ruhuâ ñûnj dūgumîn ñûnj sò’</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Dūnâj gāhuin man riña sa nānà\'uì\' yītïnjt</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -446,6 +465,8 @@
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Gāhuin chrūn doj</string>
+  <!-- Title for the startup crash page. %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_title">%s da’huît dūnayì’ìt</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Gāhuin chrūn doj</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Gà\' huaj</string>
@@ -1358,23 +1379,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Nā’nïnj Firefox da’ gāhuin man riña aché nana’hui’ yītïnjt</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Ni’hiāj dàj ‘hiaj sun riña sa aché nu yītï̀njt</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Ni’hiāj dàj ‘hiaj sun riña sa aché nu yītï̀njt</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Si ga’na’ nej kôki nī nej dukuán nej sa gini’hiājt riña %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Si ga’na’ nej kôki nī nej dukuán nej sa gini’hiājt riña %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Gachē nu nī gà’ si ‘ngō da’nga’a sī dunâjt</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Gachē nu nī gà’ si ‘ngō da’nga’a sī dunâjt</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Riña aché nun huìt riña %1$s nitāj si na’nḯn sà’aj nej nuguan’ huā rayi’ît.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Riña aché nun huìt riña %1$s nitāj si na’nḯn sà’aj nej nuguan’ huā rayi’ît.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Gāyi’ì nānà’huì’t</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Gāyi’ì nānà’huì’t</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Narì’ ‘ngō sa huin nīchrù’un. Asi nārì’ ‘ngō sa gī’hiaj nāhuin nīhià’ ruhuât.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Narì’ ‘ngō sa huin nīchrù’un. Asi nārì’ ‘ngō sa gī’hiaj nāhuin nīhià’ ruhuât.</string>
   <!--
     Survey
 

@@ -2319,23 +2319,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Đặt Firefox thành trình duyệt mặc định của bạn</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Thử duyệt web riêng tư</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Thử duyệt web riêng tư</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Duyệt mà không để lại lịch sử hoặc cookie trong %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Duyệt mà không để lại lịch sử hoặc cookie trong %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Duyệt web không để lại dấu vết</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Duyệt web không để lại dấu vết</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Duyệt web riêng tư trong %1$s không lưu thông tin của bạn.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Duyệt web riêng tư trong %1$s không lưu thông tin của bạn.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Bắt đầu tìm kiếm đầu tiên của bạn</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Bắt đầu tìm kiếm đầu tiên của bạn</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Tìm một cái gì đó gần đây. Hoặc khám phá một cái gì đó thú vị.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Tìm một cái gì đó gần đây. Hoặc khám phá một cái gì đó thú vị.</string>
   <!--
     Survey
 

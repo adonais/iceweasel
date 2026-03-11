@@ -1327,11 +1327,11 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox-ны төп браузерыгыз итү</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Хосусый гизүне сынап карагыз</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Хосусый гизүне сынап карагыз</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Эзләр калдырмыйча гизегез</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Эзләр калдырмыйча гизегез</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Беренче эзләвегезне башлагыз</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Беренче эзләвегезне башлагыз</string>
   <!-- Preference for taking the short survey. -->
   <string name="preferences_take_survey">Анкетада катнашу</string>
   <!-- Preference for not taking the short survey. -->

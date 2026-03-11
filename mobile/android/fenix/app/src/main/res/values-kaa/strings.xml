@@ -1019,12 +1019,12 @@
   -->
   <string name="nimbus_notification_default_browser_title" tools:ignore="BrandUsage,UnusedResources">Firefox — tez hám jeke</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Jeke kóriwdi sınap kóriń</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Jeke kóriwdi sınap kóriń</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$sda saqlanǵan cookielarsız yamasa tariyxsız kóriw</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$sda saqlanǵan cookielarsız yamasa tariyxsız kóriw</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">Yaq, raxmet</string>
   <!--

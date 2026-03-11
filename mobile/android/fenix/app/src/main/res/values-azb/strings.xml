@@ -1296,23 +1296,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">فایرفاکسیْ وارساییلان مورورچو ائله‌یین</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">گیزلی مورورو ایمتیحان ائله</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">گیزلی مورورو ایمتیحان ائله</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s ساخلانیلمیش کوکی‌لر و گئچمیشه اوْلمادان مرور باشلایین.</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s ساخلانیلمیش کوکی‌لر و گئچمیشه اوْلمادان مرور باشلایین.</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">ایز بوراخمادان مرور باشلایین.</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">ایز بوراخمادان مرور باشلایین.</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">گیزلی مرور %1$s-دا سیزین بیلگیلرینیزی ساخلاماز.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">گیزلی مرور %1$s-دا سیزین بیلگیلرینیزی ساخلاماز.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">ایلک آختارماغیزا باشلایین</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">ایلک آختارماغیزا باشلایین</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">یاخیندا بیر شئی تاپین. یا جالب بیر شئی کشف ائدین</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">یاخیندا بیر شئی تاپین. یا جالب بیر شئی کشف ائدین</string>
   <!--
     Survey
 

@@ -1180,12 +1180,12 @@
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">sina lukin e lipu lon ilo %1$s la ilo ante li ken ala alasa e sina</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">sina lukin e lipu lon ilo %1$s la ilo ante li ken ala alasa e sina</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">ilo %1$s la sona sina li awen ala lon nasin len</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">ilo %1$s la sona sina li awen ala lon nasin len</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">mi wile ala</string>
   <!--

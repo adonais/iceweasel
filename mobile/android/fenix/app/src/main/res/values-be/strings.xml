@@ -1889,23 +1889,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Зрабіце Firefox вашым прадвызначаным браўзерам</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Паспрабуйце Прыватнае агляданне</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Паспрабуйце Прыватнае агляданне</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Праглядайце без захаваных файлаў кукі або гісторыі ў %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Праглядайце без захаваных файлаў кукі або гісторыі ў %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Аглядайце без слядоў</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Аглядайце без слядоў</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Прыватнае агляданне ў %1$s не захоўвае вашу інфармацыю.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Прыватнае агляданне ў %1$s не захоўвае вашу інфармацыю.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Пачніце свой першы пошук</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Пачніце свой першы пошук</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Знайдзіце што-небудзь побач. Або адкрыйце для сябе што-небудзь цікавае.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Знайдзіце што-небудзь побач. Або адкрыйце для сябе што-небудзь цікавае.</string>
   <!--
     Survey
 
