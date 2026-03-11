@@ -6,29 +6,16 @@
       {
         "name": "showMessage",
         "type": "function",
-        "description": "Show a message using the browser notification box. Accepts a string or an array of parts to render (with optional strong modifier). Optionally target a specific tab by id.",
+        "description": "Show a localized message using the browser notification box. Optionally target a specific tab by id.",
         "async": true,
         "parameters": [
           {
             "name": "message",
-            "description": "String label or array of {text, modifier} parts.",
-            "choices": [
-              { "type": "string" },
-              {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "text": { "type": "string" },
-                    "modifier": {
-                      "type": "array",
-                      "optional": true,
-                      "items": { "type": "string", "enum": ["strong"] }
-                    }
-                  }
-                }
-              }
-            ]
+            "description": "Object with a Fluent l10n ID.",
+            "type": "object",
+            "properties": {
+              "l10nId": { "type": "string" }
+            }
           },
           {
             "name": "tabId",

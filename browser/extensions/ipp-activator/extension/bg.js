@@ -362,7 +362,7 @@ class IPPAddonActivator {
     // This function returns when the notification is dismissed. We don't want
     // to wait for that to happen.
     browser.ippActivator
-      .showMessage(breakage.message, tab.id)
+      .showMessage({ l10nId: breakage.l10nId }, tab.id)
       .then(async dismissed => {
         if (!dismissed) {
           return;
