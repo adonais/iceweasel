@@ -359,7 +359,7 @@ private fun OnboardingContent(
                         .align(Alignment.CenterHorizontally)
                         .padding(bottom = 16.dp),
                     activeColor = MaterialTheme.colorScheme.onPrimary,
-                    inactiveColor = MaterialTheme.colorScheme.surfaceVariant,
+                    inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     leaveTrail = true,
                 )
             }
