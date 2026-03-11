@@ -1761,15 +1761,6 @@ class Settings(
     )
 
     /**
-     * Used in [SearchWidgetProvider] to update when the search widget
-     * exists on home screen or if it has been removed completely.
-     */
-    fun setSearchWidgetInstalled(installed: Boolean) {
-        val key = appContext.getPreferenceKey(R.string.pref_key_search_widget_installed_2)
-        preferences.edit { putBoolean(key, installed) }
-    }
-
-    /**
      * In Bug 1853113, we changed the type of [searchWidgetInstalled] from int to boolean without
      * changing the pref key, now we have to migrate users that were using the previous type int
      * to the new one boolean. The migration will only happens if pref_key_search_widget_installed
@@ -1784,12 +1775,12 @@ class Settings(
         }
 
         if (installedCount > 0) {
-            setSearchWidgetInstalled(true)
+            searchWidgetInstalled = true
             preferences.edit { remove(oldKey) }
         }
     }
 
-    val searchWidgetInstalled by booleanPreference(
+    var searchWidgetInstalled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_search_widget_installed_2),
         default = false,
     )
