@@ -75,11 +75,25 @@
 }
 
 .tab-preview-add-note {
-  --box-border-color: transparent;
-  --box-padding: var(--space-medium);
+  margin: 0 !important;
 
   &[hidden] {
     display: none;
+  }
+
+  &::after {
+    /* The badge is a flex child of the toolbarbutton, so without this the
+     * arrow would appear immediately after the badge rather than at the end. */
+    margin-inline-start: auto;
+  }
+
+  > .toolbarbutton-text {
+    max-width: max-content;
+  }
+
+  > moz-badge {
+    margin-inline-start: 8px;
+    align-self: center;
   }
 }
 

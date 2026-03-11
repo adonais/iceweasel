@@ -580,11 +580,14 @@
     images on startup (see browser_startup_images.js).
     -->
   <html:template id="tabPreviewPanelTemplate">
-    <html:moz-box-button
-      class="tab-preview-add-note"
+    <toolbarbutton
+      badged="true"
+      image="chrome://global/skin/icons/tab-notes.svg"
       data-l10n-id="tab-context-add-note"
-      iconsrc="chrome://global/skin/icons/tab-notes.svg"
-    />
+      class="tab-preview-add-note subviewbutton subviewbutton-nav"
+    >
+      <html:moz-badge type="new" data-l10n-id="tab-note-panel-add-note-new-badge" move-after-stack="true" />
+    </toolbarbutton>
   </html:template>
 
   <panel id="tab-note-preview-panel"

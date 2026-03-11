@@ -569,6 +569,7 @@ class TabPanel extends HoverPanel {
    * panel.
    */
   #openTabNotePanel() {
+    Services.prefs.setBoolPref("browser.tabs.notes.newBadge.enabled", false);
     this.win.gBrowser.tabNoteMenu.openPanel(this.#tab, {
       telemetrySource: lazy.TabNotes.TELEMETRY_SOURCE.TAB_HOVER_PREVIEW_PANEL,
     });
@@ -603,6 +604,14 @@ class TabPanel extends HoverPanel {
         this.#addNoteButton.remove();
       } else {
         this.#interactiveArea.append(this.#addNoteButton);
+
+        let showNewBadge = Services.prefs.getBoolPref(
+          "browser.tabs.notes.newBadge.enabled",
+          true
+        );
+        this.#addNoteButton
+          .querySelector("moz-badge")
+          .toggleAttribute("hidden", !showNewBadge);
       }
     } else {
       this.#addNoteButton.remove();

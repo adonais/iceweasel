@@ -682,6 +682,101 @@ add_task(async function tabNotesTests() {
   await TabNotes.reset();
 });
 
+/**
+ * Test that the "New" badge in the hover preview panel is displayed when
+ * browser.tabs.notes.newBadge.enabled is true.
+ */
+add_task(async function tabNotesNewBadgeVisibilityTests() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.notes.enabled", true]],
+  });
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.notes.newBadge.enabled", true]],
+  });
+
+  const previewPanel = document.getElementById(TAB_PREVIEW_PANEL_ID);
+  const tab = await addTabTo(gBrowser, "https://example.com/");
+
+  await openTabPreview(tab);
+  const badge = previewPanel.querySelector(".tab-preview-add-note moz-badge");
+  Assert.ok(
+    !badge.hasAttribute("hidden"),
+    "badge is visible when newBadge pref is true"
+  );
+  await closeTabPreviews();
+  await SpecialPowers.popPrefEnv();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.notes.newBadge.enabled", false]],
+  });
+  await openTabPreview(tab);
+  Assert.ok(
+    badge.hasAttribute("hidden"),
+    "badge is hidden when newBadge pref is false"
+  );
+  await closeTabPreviews();
+
+  await SpecialPowers.popPrefEnv();
+  await SpecialPowers.popPrefEnv();
+  BrowserTestUtils.removeTab(tab);
+  await resetState();
+});
+
+/**
+ * Test that clicking "Add Note" in the hover preview panel sets the
+ * browser.tabs.notes.newBadge.enabled pref to false, and that the badge
+ * is hidden on the next hover
+ */
+add_task(async function tabNotesNewBadgeDismissedByPreviewPanelTests() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.tabs.notes.enabled", true],
+      ["browser.tabs.notes.newBadge.enabled", true],
+    ],
+  });
+
+  const previewPanel = document.getElementById(TAB_PREVIEW_PANEL_ID);
+
+  const tab = await addTabTo(gBrowser, "https://example.com/");
+
+  await openTabPreview(tab);
+
+  const addNoteButton = previewPanel.querySelector(".tab-preview-add-note");
+  const tabNotePanel = document.getElementById("tabNotePanel");
+  const panelShown = BrowserTestUtils.waitForPopupEvent(tabNotePanel, "shown");
+  const previewHidden = BrowserTestUtils.waitForPopupEvent(
+    previewPanel,
+    "hidden"
+  );
+  addNoteButton.click();
+  await Promise.all([panelShown, previewHidden]);
+
+  Assert.ok(
+    !Services.prefs.getBoolPref("browser.tabs.notes.newBadge.enabled"),
+    "pref is set to false after clicking Add Note in the preview panel"
+  );
+
+  const panelHidden = BrowserTestUtils.waitForPopupEvent(
+    tabNotePanel,
+    "hidden"
+  );
+  tabNotePanel.hidePopup();
+  await panelHidden;
+  await closeTabPreviews();
+
+  await openTabPreview(tab);
+  const badge = previewPanel.querySelector(".tab-preview-add-note moz-badge");
+  Assert.ok(
+    badge.hasAttribute("hidden"),
+    "badge is hidden on subsequent hover after dismissal"
+  );
+  await closeTabPreviews();
+
+  BrowserTestUtils.removeTab(tab);
+  await resetState();
+  await SpecialPowers.popPrefEnv();
+});
+
 /*
  * Tab group hover preview tests
  * -----------------------------
