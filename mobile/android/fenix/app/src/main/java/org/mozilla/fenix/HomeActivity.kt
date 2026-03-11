@@ -24,7 +24,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import android.view.WindowManager.LayoutParams.FLAG_SECURE
 import androidx.activity.BackEventCompat
 import androidx.annotation.CallSuper
 import androidx.annotation.IdRes
@@ -90,6 +89,7 @@ import org.mozilla.fenix.GleanMetrics.SplashScreen
 import org.mozilla.fenix.GleanMetrics.StartOnHome
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledBackgroundController
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
+import org.mozilla.fenix.bindings.BrowsingModeBinding
 import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -250,6 +250,16 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             context = this,
             store = components.appStore,
             onReporting = ::showCrashReporter,
+        )
+    }
+
+    private val browsingModeBinding by lazy {
+        BrowsingModeBinding(
+            window = window,
+            settings = settings(),
+            store = components.appStore,
+            themeManagerProvider = { if (::themeManager.isInitialized) themeManager else null },
+            browsingModeManager = browsingModeManager,
         )
     }
 
@@ -537,6 +547,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             serviceWorkerSupport,
             aboutHomeBinding,
             crashReporterBinding,
+            browsingModeBinding,
             defaultTopSitesBinding,
             TopSitesRefresher(
                 settings = settings(),
@@ -1304,23 +1315,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             intent = intent,
             settings = components.settings,
             onModeChange = { newMode ->
-                updateSecureWindowFlags(newMode)
-
-                if (::themeManager.isInitialized) {
-                    themeManager.currentTheme = newMode
-                }
-
                 components.appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = newMode))
             },
         )
-    }
-
-    private fun updateSecureWindowFlags(mode: BrowsingMode = browsingModeManager.mode) {
-        if (mode == BrowsingMode.Private && !settings().shouldSecureModeBeOverridden) {
-            window.addFlags(FLAG_SECURE)
-        } else {
-            window.clearFlags(FLAG_SECURE)
-        }
     }
 
     private fun createThemeManager(): ThemeManager {
