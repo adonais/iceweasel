@@ -101,7 +101,10 @@ import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataCo
 import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataController.DeleteDataUseCases
 import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataController.Stores
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataController
+import org.mozilla.fenix.theme.DefaultThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.getThemeProvider
 import org.mozilla.fenix.utils.DELAY_MS_MAIN_MENU
 import org.mozilla.fenix.utils.DELAY_MS_SUB_MENU
 import org.mozilla.fenix.utils.DURATION_MS_MAIN_MENU
@@ -172,7 +175,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
             setOnShowListener {
                 val safeActivity = activity ?: return@setOnShowListener
                 val appStore = safeActivity.components.appStore
-
                 isPrivate = appStore.state.mode.isPrivate
 
                 if (isPrivate && args.accesspoint == MenuAccessPoint.Home) {
@@ -242,7 +244,16 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
         setContent {
-            FirefoxTheme {
+            val theme = if (args.accesspoint == MenuAccessPoint.External) {
+                if (components.settings.openLinksInAPrivateTab) {
+                    Theme.Private
+                } else {
+                    DefaultThemeProvider.provideTheme()
+                }
+            } else {
+                getThemeProvider().provideTheme()
+            }
+            FirefoxTheme(theme = theme) {
                 val context = LocalContext.current
 
                 val components = components
