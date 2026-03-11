@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ExtensionTelemetry: "resource://gre/modules/ExtensionTelemetry.sys.mjs",
   PageActions: "resource:///modules/PageActions.sys.mjs",
   PanelPopup: "resource:///modules/ExtensionPopups.sys.mjs",
+  isGloballyBlockingOpenPopup: "resource:///modules/ExtensionPopups.sys.mjs",
 });
 
 var { DefaultWeakMap } = ExtensionUtils;
@@ -49,6 +50,9 @@ class PageAction extends PageActionBase {
 
   isPanelShownBlockingOpenPopup(window) {
     const panel = this.buttonDelegate.popupNode?.panel;
+    if (isGloballyBlockingOpenPopup(window)) {
+      return true;
+    }
     return panel && panel.ownerGlobal === window && panel.state !== "closed";
   }
 }

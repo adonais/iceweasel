@@ -53,6 +53,8 @@ support-files = [
 
 ["browser_browserSetting_vertical_tabs.js"]
 
+["browser_ext_action_openPopup.js"]
+
 ["browser_ext_action_popup_allowed_urls.js"]
 
 ["browser_ext_activeScript.js"]
