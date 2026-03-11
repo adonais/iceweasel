@@ -2721,14 +2721,19 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
     return false;
   }
 
-  nsCOMPtr<nsIPrincipal> resultPrincipal;
-  nsresult rv = sSecurityManager->GetChannelResultPrincipal(
-      aChannel, getter_AddRefs(resultPrincipal));
-  if (NS_SUCCEEDED(rv) && IsPDFJS(resultPrincipal)) {
-    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
-            ("Inside ShouldResistFingerprinting(nsIChannel*)"
-             " PDF.js document exempted"));
-    return false;
+  auto contentType = loadInfo->GetExternalContentPolicyType();
+
+  if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
+      contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    nsCOMPtr<nsIPrincipal> resultPrincipal;
+    nsresult rv = sSecurityManager->GetChannelResultPrincipal(
+        aChannel, getter_AddRefs(resultPrincipal));
+    if (NS_SUCCEEDED(rv) && IsPDFJS(resultPrincipal)) {
+      MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
+              ("Inside ShouldResistFingerprinting(nsIChannel*)"
+               " PDF.js document exempted"));
+      return false;
+    }
   }
 
   if (ETPSaysShouldNotResistFingerprinting(aChannel, loadInfo)) {
@@ -2748,7 +2753,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
   // Document types have no loading principal.  Subdocument types do have a
   // loading principal, but it is the loading principal of the parent
   // document; not the subdocument.
-  auto contentType = loadInfo->GetExternalContentPolicyType();
   // Case 1: Document or Subdocument load
   if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
       contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
