@@ -7,6 +7,7 @@ package org.mozilla.fenix.browser.browsingmode
 import android.content.Intent
 import mozilla.components.support.utils.toSafeIntent
 import org.mozilla.fenix.HomeActivity.Companion.PRIVATE_BROWSING_MODE
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -42,11 +43,11 @@ interface BrowsingModeManager {
 }
 
 /**
- * Default implementation of [BrowsingModeManager] that tracks the current [BrowsingMode]
- * and synchronizes it with [AppStore].
+ * Default implementation of [BrowsingModeManager] that tracks the current [BrowsingMode],
+ * persists it to [Settings], and synchronizes it with [AppStore].
  *
  * @param intent The [Intent] that started the activity.
- * @param settings [Settings] used to read the initial browsing mode from storage.
+ * @param settings [Settings] used to persist the current browsing mode in storage.
  * @param onModeChange Callback invoked when the browsing mode changes.
  */
 class DefaultBrowsingModeManager(
@@ -54,15 +55,11 @@ class DefaultBrowsingModeManager(
     private val settings: Settings,
     private val onModeChange: (BrowsingMode) -> Unit,
 ) : BrowsingModeManager {
-    private var currentMode: BrowsingMode = BrowsingMode.Normal
-
-    override var mode: BrowsingMode
-        get() = currentMode
+    override var mode: BrowsingMode = BrowsingMode.Normal
         set(value) {
-            if (currentMode != value) {
-                currentMode = value
-                onModeChange(value)
-            }
+            field = value
+            settings.lastKnownMode = value
+            onModeChange(value)
         }
 
     init {
@@ -71,14 +68,6 @@ class DefaultBrowsingModeManager(
 
     override fun updateMode(intent: Intent?) {
         mode = getModeFromIntentOrLastKnown(intent)
-    }
-
-    /**
-     * Syncs the internal mode state without triggering the [onModeChange] callback.
-     * Used when syncing from AppStore to avoid dispatch loops.
-     */
-    fun syncMode(value: BrowsingMode) {
-        currentMode = value
     }
 
     /**

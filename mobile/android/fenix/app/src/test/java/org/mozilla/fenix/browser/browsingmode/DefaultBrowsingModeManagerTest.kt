@@ -6,8 +6,10 @@ package org.mozilla.fenix.browser.browsingmode
 
 import android.content.Intent
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -34,20 +36,32 @@ class DefaultBrowsingModeManagerTest {
     fun before() {
         MockKAnnotations.init(this)
 
+        every { settings.lastKnownMode = any() } just Runs
         every { settings.lastKnownMode } returns BrowsingMode.Normal
     }
 
     @Test
-    fun `WHEN mode is set to a different value THEN onModeChange callback is invoked`() {
+    fun `WHEN mode is set THEN onModeChange callback is invoked and last known browsing mode setting is set`() {
         val manager = buildBrowsingModeManager()
+
+        verify {
+            onModeChange.invoke(BrowsingMode.Normal)
+            settings.lastKnownMode = BrowsingMode.Normal
+        }
 
         manager.mode = BrowsingMode.Private
 
-        verify { onModeChange(BrowsingMode.Private) }
+        verify {
+            onModeChange(BrowsingMode.Private)
+            settings.lastKnownMode = BrowsingMode.Private
+        }
 
         manager.mode = BrowsingMode.Normal
 
-        verify { onModeChange(BrowsingMode.Normal) }
+        verify {
+            onModeChange(BrowsingMode.Normal)
+            settings.lastKnownMode = BrowsingMode.Normal
+        }
     }
 
     @Test
@@ -59,10 +73,12 @@ class DefaultBrowsingModeManagerTest {
         manager.mode = BrowsingMode.Private
 
         assertEquals(BrowsingMode.Private, manager.mode)
+        verify { settings.lastKnownMode = BrowsingMode.Private }
 
         manager.mode = BrowsingMode.Normal
 
         assertEquals(BrowsingMode.Normal, manager.mode)
+        verify { settings.lastKnownMode = BrowsingMode.Normal }
     }
 
     @Test
@@ -72,17 +88,25 @@ class DefaultBrowsingModeManagerTest {
         val manager = buildBrowsingModeManager()
 
         assertEquals(BrowsingMode.Private, manager.mode)
-        verify { onModeChange.invoke(BrowsingMode.Private) }
+
+        verify {
+            onModeChange.invoke(BrowsingMode.Private)
+            settings.lastKnownMode = BrowsingMode.Private
+        }
     }
 
     @Test
-    fun `GIVEN last known mode is normal mode WHEN browsing mode manager is initialized THEN mode is normal and onModeChange is not called`() {
+    fun `GIVEN last known mode is normal mode WHEN browsing mode manager is initialized THEN set browsing mode to normal`() {
         every { settings.lastKnownMode } returns BrowsingMode.Normal
 
         val manager = buildBrowsingModeManager()
 
         assertEquals(BrowsingMode.Normal, manager.mode)
-        verify(exactly = 0) { onModeChange.invoke(any()) }
+
+        verify {
+            onModeChange.invoke(BrowsingMode.Normal)
+            settings.lastKnownMode = BrowsingMode.Normal
+        }
     }
 
     @Test
@@ -93,7 +117,11 @@ class DefaultBrowsingModeManagerTest {
         val manager = buildBrowsingModeManager(intent = intent)
 
         assertEquals(BrowsingMode.Private, manager.mode)
-        verify { onModeChange.invoke(BrowsingMode.Private) }
+
+        verify {
+            onModeChange.invoke(BrowsingMode.Private)
+            settings.lastKnownMode = BrowsingMode.Private
+        }
     }
 
     @Test
