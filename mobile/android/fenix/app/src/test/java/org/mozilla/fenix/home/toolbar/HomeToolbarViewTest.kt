@@ -19,9 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.home.HomeFragment
@@ -30,7 +28,6 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class HomeToolbarViewTest {
 
-    private lateinit var appStore: AppStore
     private lateinit var binding: FragmentHomeBinding
     private lateinit var toolbarView: HomeToolbarView
 
@@ -39,19 +36,19 @@ class HomeToolbarViewTest {
     @Before
     fun setup() {
         context = spyk(testContext)
-        appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
 
         val homeFragment: HomeFragment = mockk(relaxed = true)
+        val homeActivity: HomeActivity = mockk(relaxed = true)
         binding = FragmentHomeBinding.inflate(LayoutInflater.from(testContext))
         every { homeFragment.requireContext() } returns context
         every { context.components.settings } returns mockk(relaxed = true)
         toolbarView =
             spyk(
                 HomeToolbarView(
-                    appStore = appStore,
                     binding,
                     mockk(relaxed = true),
                     homeFragment,
+                    homeActivity,
                 ),
             )
         every { toolbarView.buildHomeMenu() } returns mockk(relaxed = true)

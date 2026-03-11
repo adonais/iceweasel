@@ -4,7 +4,9 @@
 
 package org.mozilla.fenix.search
 
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.state.BrowserState
@@ -22,8 +24,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.search.SearchFragmentAction.SearchStarted
 import org.mozilla.fenix.search.fixtures.EMPTY_SEARCH_FRAGMENT_STATE
 import org.robolectric.RobolectricTestRunner
@@ -34,7 +35,9 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     val toolbarStore = BrowserToolbarStore()
-    private val appStore = AppStore(AppState(mode = BrowsingMode.Private))
+    private val browsingModeManager: BrowsingModeManager = mockk {
+        every { mode } returns BrowsingMode.Private
+    }
 
     @Test
     fun `WHEN entering in edit mode THEN consider it as search being started`() {
@@ -112,10 +115,11 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
     )
 
     private fun buildMiddleware(
-        appStore: AppStore = this.appStore,
         toolbarStore: BrowserToolbarStore = this.toolbarStore,
+        browsingModeManager: BrowsingModeManager = this.browsingModeManager,
+        scope: CoroutineScope = testScope,
         browserStore: BrowserStore? = null,
-    ) = BrowserToolbarToFenixSearchMapperMiddleware(appStore, toolbarStore, testScope, browserStore)
+    ) = BrowserToolbarToFenixSearchMapperMiddleware(toolbarStore, browsingModeManager, scope, browserStore)
 
     private val emptySearchState = EMPTY_SEARCH_FRAGMENT_STATE.copy(
         searchEngineSource = mockk(),

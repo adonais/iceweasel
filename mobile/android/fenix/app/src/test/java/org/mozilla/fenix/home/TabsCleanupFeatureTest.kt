@@ -25,13 +25,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.Components
-import org.mozilla.fenix.components.appstate.AppAction
-import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
-import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_PRIVATE_TABS
 import org.mozilla.fenix.utils.Settings
@@ -50,6 +45,9 @@ class TabsCleanupFeatureTest {
     private lateinit var browserStore: BrowserStore
 
     @RelaxedMockK
+    private lateinit var browsingModeManager: BrowsingModeManager
+
+    @RelaxedMockK
     private lateinit var navController: NavController
 
     @RelaxedMockK
@@ -64,27 +62,18 @@ class TabsCleanupFeatureTest {
     @RelaxedMockK
     private lateinit var snackBarParentView: View
 
-    @RelaxedMockK
-    private lateinit var components: Components
-
-    private lateinit var appStore: AppStore
     private lateinit var feature: TabsCleanupFeature
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        appStore = AppStore(AppState(mode = BrowsingMode.Normal))
-        every { components.appStore } returns appStore
-
         feature = spyk(
             TabsCleanupFeature(
-                appStore = appStore,
-                context = spyk(testContext) {
-                    every { components } returns this@TabsCleanupFeatureTest.components
-                },
+                context = testContext,
                 viewModel = viewModel,
                 browserStore = browserStore,
+                browsingModeManager = browsingModeManager,
                 navController = navController,
                 settings = settings,
                 tabsUseCases = tabsUseCases,
@@ -144,7 +133,7 @@ class TabsCleanupFeatureTest {
             tabsUseCases.removeNormalTabs()
 
             fenixBrowserUseCases.addNewHomepageTab(
-                private = appStore.state.mode.isPrivate,
+                private = browsingModeManager.mode.isPrivate,
             )
 
             feature.showUndoSnackbar(
@@ -167,7 +156,7 @@ class TabsCleanupFeatureTest {
             tabsUseCases.removePrivateTabs()
 
             fenixBrowserUseCases.addNewHomepageTab(
-                private = appStore.state.mode.isPrivate,
+                private = browsingModeManager.mode.isPrivate,
             )
 
             feature.showUndoSnackbar(
@@ -234,6 +223,7 @@ class TabsCleanupFeatureTest {
         }
 
         every { settings.enableHomepageAsNewTab } returns true
+        every { browsingModeManager.mode.isPrivate } returns private
         every { viewModel.sessionToDelete } returns sessionId
 
         every { browserStore.state.tabs } returns listOf(tab)
@@ -244,7 +234,7 @@ class TabsCleanupFeatureTest {
             tabsUseCases.removeTab(sessionId)
 
             fenixBrowserUseCases.addNewHomepageTab(
-                private = appStore.state.mode.isPrivate,
+                private = private,
             )
 
             feature.showUndoSnackbar(
@@ -272,11 +262,10 @@ class TabsCleanupFeatureTest {
         }
 
         every { settings.enableHomepageAsNewTab } returns true
+        every { browsingModeManager.mode.isPrivate } returns private
         every { viewModel.sessionToDelete } returns sessionId
 
         every { browserStore.state.tabs } returns listOf(tab, secondTab)
-
-        appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = BrowsingMode.Private))
 
         feature.start()
 
@@ -293,7 +282,7 @@ class TabsCleanupFeatureTest {
 
         verify(exactly = 0) {
             fenixBrowserUseCases.addNewHomepageTab(
-                private = appStore.state.mode.isPrivate,
+                private = private,
             )
         }
     }

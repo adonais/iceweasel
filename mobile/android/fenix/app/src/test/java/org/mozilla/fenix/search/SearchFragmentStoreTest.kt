@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.search
 
+import android.content.Intent
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -28,6 +29,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppState
@@ -57,6 +59,10 @@ class SearchFragmentStoreTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
+        every { activity.browsingModeManager } returns object : BrowsingModeManager {
+            override var mode: BrowsingMode = BrowsingMode.Normal
+            override fun updateMode(intent: Intent?) = Unit
+        }
         every { components.settings } returns settings
         every { searchEngine.trendingUrl } returns null
 

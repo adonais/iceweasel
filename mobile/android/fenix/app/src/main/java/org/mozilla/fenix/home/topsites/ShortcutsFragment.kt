@@ -43,7 +43,6 @@ class ShortcutsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         controller = DefaultTopSiteController(
-            appStore = requireComponents.appStore,
             activityRef = WeakReference(requireActivity()),
             store = requireComponents.core.store,
             navControllerRef = WeakReference(findNavController()),

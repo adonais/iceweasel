@@ -15,8 +15,6 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.onboarding.ReEngagementNotificationWorker
 import org.mozilla.fenix.onboarding.ReEngagementNotificationWorker.Companion.isReEngagementNotificationIntent
@@ -26,12 +24,12 @@ import org.mozilla.fenix.utils.Settings
  * Handle when the re-engagement notification is tapped
  *
  * This should only happens once in a user's lifetime notification,
- *
+ * [settings.shouldShowReEngagementNotification] will return false if the user already seen the
  * notification.
  */
 class ReEngagementIntentProcessor(
-    private val appStore: AppStore,
     private val activity: HomeActivity,
+    private val settings: Settings,
 ) : HomeIntentProcessor {
 
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
@@ -48,7 +46,7 @@ class ReEngagementIntentProcessor(
                         navController.nav(null, directions, options)
                     }
                     else -> {
-                        appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = BrowsingMode.Private))
+                        activity.browsingModeManager.mode = BrowsingMode.Private
                         activity.openToBrowserAndLoad(
                             ReEngagementNotificationWorker.NOTIFICATION_TARGET_URL,
                             newTab = true,

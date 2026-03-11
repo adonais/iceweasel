@@ -1625,6 +1625,7 @@ abstract class BaseBrowserFragment :
         browserStore = activity.components.core.store,
         browserScreenStore = browserScreenStore,
         components = activity.components,
+        browsingModeManager = activity.browsingModeManager,
         browserAnimator = browserAnimator,
         thumbnailsFeature = { thumbnailsFeature.get() },
         readerModeController = readerModeController,
@@ -2264,7 +2265,7 @@ abstract class BaseBrowserFragment :
     @VisibleForTesting
     internal fun updateThemeForSession(session: SessionState) {
         val sessionMode = BrowsingMode.fromBoolean(session.content.private)
-        requireComponents.appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = sessionMode))
+        (activity as HomeActivity).browsingModeManager.mode = sessionMode
     }
 
     /**
@@ -2427,7 +2428,7 @@ abstract class BaseBrowserFragment :
             (view as? SwipeGestureLayout)?.isSwipeEnabled = true
             (activity as? HomeActivity)?.let { homeActivity ->
                 // ExternalAppBrowserActivity exclusively handles it's own theming unless in private mode.
-                if (homeActivity !is ExternalAppBrowserActivity || requireComponents.appStore.state.mode.isPrivate) {
+                if (homeActivity !is ExternalAppBrowserActivity || homeActivity.browsingModeManager.mode.isPrivate) {
                     homeActivity.themeManager.applyStatusBarTheme(
                         homeActivity,
                         requireContext().settings().isTabStripEnabled,

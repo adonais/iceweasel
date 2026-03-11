@@ -62,6 +62,8 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
+import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
@@ -88,6 +90,9 @@ class DefaultTabManagerControllerTest {
 
     @MockK(relaxed = true)
     private lateinit var browserStore: BrowserStore
+
+    @MockK(relaxed = true)
+    private lateinit var browsingModeManager: BrowsingModeManager
 
     @MockK(relaxed = true)
     private lateinit var navController: NavController
@@ -1102,22 +1107,31 @@ class DefaultTabManagerControllerTest {
                 tabs = listOf(normalTab, privateTab),
             ),
         )
-        val appStore = AppStore(AppState(mode = BrowsingMode.Normal))
+        var appStateModeUpdate: BrowsingMode? = null
+        browsingModeManager = DefaultBrowsingModeManager(
+            intent = null,
+            settings = settings,
+            onModeChange = { updatedMode ->
+                appStateModeUpdate = updatedMode
+            },
+        )
 
-        val controller = createController(appStore = appStore)
+        val controller = createController()
 
         browserStore.dispatch(TabListAction.SelectTabAction(privateTab.id))
         controller.handleTabSelected(privateTab, null)
 
         assertEquals(privateTab.id, browserStore.state.selectedTabId)
-        assertEquals(true, appStore.state.mode.isPrivate)
+        assertEquals(true, browsingModeManager.mode.isPrivate)
+        assertEquals(BrowsingMode.Private, appStateModeUpdate)
 
         controller.handleTabDeletion("privateTab")
         browserStore.dispatch(TabListAction.SelectTabAction(normalTab.id))
         controller.handleTabSelected(normalTab, null)
 
         assertEquals(normalTab.id, browserStore.state.selectedTabId)
-        assertEquals(false, appStore.state.mode.isPrivate)
+        assertEquals(false, browsingModeManager.mode.isPrivate)
+        assertEquals(BrowsingMode.Normal, appStateModeUpdate)
     }
 
     @Test
@@ -1582,7 +1596,6 @@ class DefaultTabManagerControllerTest {
     )
 
     private fun createController(
-        appStore: AppStore = this.appStore,
         navigateToHomeAndDeleteSession: (String) -> Unit = { },
         showUndoSnackbarForTab: (Boolean) -> Unit = { _ -> },
         showUndoSnackbarForInactiveTab: (Int) -> Unit = { _ -> },
@@ -1598,6 +1611,7 @@ class DefaultTabManagerControllerTest {
             tabsTrayStore = trayStore,
             browserStore = browserStore,
             settings = settings,
+            browsingModeManager = browsingModeManager,
             navController = navController,
             navigateToHomeAndDeleteSession = navigateToHomeAndDeleteSession,
             profiler = profiler,

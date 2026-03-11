@@ -12,6 +12,7 @@ import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.feature.tab.collections.TabCollection
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.wallpapers.WallpaperState
 
@@ -56,6 +57,7 @@ sealed class CollectionsState {
         internal fun build(
             appState: AppState,
             browserState: BrowserState,
+            browsingModeManager: BrowsingModeManager,
         ): CollectionsState =
             with(appState) {
                 when {
@@ -66,7 +68,7 @@ sealed class CollectionsState {
                     )
 
                     showCollectionPlaceholder -> {
-                        val tabCount = if (appState.mode.isPrivate) {
+                        val tabCount = if (browsingModeManager.mode.isPrivate) {
                             browserState.privateTabs.size
                         } else {
                             browserState.normalTabs.size

@@ -37,6 +37,7 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.collections.CollectionsDialog
 import org.mozilla.fenix.collections.show
 import org.mozilla.fenix.components.AppStore
@@ -221,6 +222,7 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
  * @param tabsTrayStore [TabsTrayStore] used to read/update the [TabsTrayState].
  * @param browserStore [BrowserStore] used to read/update the current [BrowserState].
  * @param settings [Settings] used to update any user preferences.
+ * @param browsingModeManager [BrowsingModeManager] used to read/update the current [BrowsingMode].
  * @param navController [NavController] used to navigate away from the tab manager.
  * @param navigateToHomeAndDeleteSession Lambda used to return to the Homescreen and delete the current session.
  * @param profiler [Profiler] used to add profiler markers.
@@ -247,6 +249,7 @@ class DefaultTabManagerController(
     private val tabsTrayStore: TabsTrayStore,
     private val browserStore: BrowserStore,
     private val settings: Settings,
+    private val browsingModeManager: BrowsingModeManager,
     private val navController: NavController,
     private val navigateToHomeAndDeleteSession: (String) -> Unit,
     private val profiler: Profiler?,
@@ -289,7 +292,7 @@ class DefaultTabManagerController(
      */
     private fun openNewTab(isPrivate: Boolean) {
         val startTime = profiler?.getProfilerTime()
-        appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = BrowsingMode.fromBoolean(isPrivate)))
+        browsingModeManager.mode = BrowsingMode.fromBoolean(isPrivate)
 
         if (settings.enableHomepageAsNewTab) {
             fenixBrowserUseCases.addNewHomepageTab(
@@ -578,13 +581,8 @@ class DefaultTabManagerController(
             selected.isEmpty() && tabsTrayStore.state.mode.isSelect().not() -> {
                 TabsTray.openedExistingTab.record(TabsTray.OpenedExistingTabExtra(source ?: "unknown"))
                 tabsUseCases.selectTab(tab.id)
-                appStore.dispatch(
-                    AppAction.BrowsingModeManagerModeChanged(
-                        mode = BrowsingMode.fromBoolean(
-                            tab.content.private,
-                        ),
-                    ),
-                )
+                val mode = BrowsingMode.fromBoolean(tab.content.private)
+                browsingModeManager.mode = mode
 
                 if (!settings.tabManagerOpeningAnimationEnabled) {
                     handleNavigationRequested()

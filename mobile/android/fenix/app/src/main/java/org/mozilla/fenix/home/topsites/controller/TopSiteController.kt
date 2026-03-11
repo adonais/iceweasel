@@ -39,7 +39,6 @@ import org.mozilla.fenix.GleanMetrics.ShortcutsLibrary
 import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
@@ -114,7 +113,6 @@ interface TopSiteController {
  */
 @Suppress("LongParameterList")
 class DefaultTopSiteController(
-    private val appStore: AppStore,
     private val activityRef: WeakReference<Activity>,
     private val navControllerRef: WeakReference<NavController>,
     private val store: BrowserStore,
@@ -141,7 +139,9 @@ class DefaultTopSiteController(
             TopSites.openInPrivateTab.record(NoExtras())
         }
 
-        appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = BrowsingMode.Private))
+        activity.components.appStore.dispatch(
+            AppAction.BrowsingModeManagerModeChanged(BrowsingMode.Private),
+        )
 
         if (navController.currentDestination?.id == R.id.shortcutsFragment) {
             navController.navigate(ShortcutsFragmentDirections.actionShortcutsFragmentToBrowserFragment())

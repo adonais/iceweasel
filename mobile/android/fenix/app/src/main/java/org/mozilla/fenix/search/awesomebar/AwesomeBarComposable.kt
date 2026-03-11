@@ -270,8 +270,8 @@ class AwesomeBarComposable(
             initialState = it,
             middleware = listOf(
                 BrowserToolbarToFenixSearchMapperMiddleware(
-                    appStore = appStore,
                     toolbarStore = toolbarStore,
+                    browsingModeManager = activity.browsingModeManager,
                     scope = lifecycleScope,
                     browserStore = browserStore,
                 ),
@@ -289,6 +289,7 @@ class AwesomeBarComposable(
                     browserStore = browserStore,
                     toolbarStore = toolbarStore,
                     navController = navController,
+                    browsingModeManager = activity.browsingModeManager,
                 ),
             ),
         )

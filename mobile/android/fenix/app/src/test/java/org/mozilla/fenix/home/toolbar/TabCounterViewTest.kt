@@ -25,10 +25,12 @@ import org.mozilla.fenix.GleanMetrics.StartOnHome
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
+import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
 import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppAction
-import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import mozilla.components.ui.tabcounter.TabCounterView as MozacTabCounter
 
@@ -39,15 +41,27 @@ class TabCounterViewTest {
     val gleanTestRule = FenixGleanTestRule(testContext)
 
     private lateinit var navController: NavController
+    private lateinit var browsingModeManager: BrowsingModeManager
+    private lateinit var settings: Settings
     private lateinit var appStore: AppStore
+    private lateinit var onModeChange: (BrowsingMode) -> Unit
     private lateinit var tabCounterView: TabCounterView
     private lateinit var tabCounter: MozacTabCounter
 
     @Before
     fun setup() {
         navController = mockk(relaxed = true)
-        appStore = AppStore(AppState(mode = BrowsingMode.Normal))
+        settings = mockk(relaxed = true)
+        appStore = mockk(relaxed = true)
+        onModeChange = mockk(relaxed = true)
+
         tabCounter = spyk(MozacTabCounter(testContext))
+
+        browsingModeManager = DefaultBrowsingModeManager(
+            intent = null,
+            settings = settings,
+            onModeChange = onModeChange,
+        )
     }
 
     @Test
@@ -74,7 +88,7 @@ class TabCounterViewTest {
         setupToolbarView()
         tabCounterView.onItemTapped(TabCounterMenu.Item.NewTab)
 
-        assertEquals(BrowsingMode.Normal, appStore.state.mode)
+        assertEquals(BrowsingMode.Normal, browsingModeManager.mode)
     }
 
     @Test
@@ -82,12 +96,13 @@ class TabCounterViewTest {
         setupToolbarView()
         tabCounterView.onItemTapped(TabCounterMenu.Item.NewPrivateTab)
 
-        assertEquals(BrowsingMode.Private, appStore.state.mode)
+        assertEquals(BrowsingMode.Private, browsingModeManager.mode)
     }
 
     @Test
     fun `WHEN tab counter is updated THEN set the tab counter to the correct number of tabs`() {
         setupToolbarView()
+        every { testContext.settings() } returns settings
 
         val browserState = BrowserState(
             tabs = listOf(
@@ -104,7 +119,7 @@ class TabCounterViewTest {
             tabCounter.setCountWithAnimation(2)
         }
 
-        appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = BrowsingMode.Private))
+        browsingModeManager.mode = BrowsingMode.Private
 
         tabCounterView.update(browserState)
 
@@ -115,9 +130,8 @@ class TabCounterViewTest {
 
     @Test
     fun `WHEN state updated while in private mode THEN call toggleCounterMask(true)`() {
-        appStore = AppStore(AppState(mode = BrowsingMode.Private))
         setupToolbarView()
-
+        every { testContext.settings() } returns settings
         val browserState = BrowserState(
             tabs = listOf(
                 createTab(url = "https://www.mozilla.org", id = "mozilla"),
@@ -127,6 +141,7 @@ class TabCounterViewTest {
             selectedTabId = "mozilla",
         )
 
+        browsingModeManager.mode = BrowsingMode.Private
         tabCounterView.update(browserState)
 
         verifyOrder {
@@ -137,7 +152,7 @@ class TabCounterViewTest {
     @Test
     fun `WHEN state updated while in normal mode THEN call toggleCounterMask(false)`() {
         setupToolbarView()
-
+        every { testContext.settings() } returns settings
         val browserState = BrowserState(
             tabs = listOf(
                 createTab(url = "https://www.mozilla.org", id = "mozilla"),
@@ -172,8 +187,8 @@ class TabCounterViewTest {
         showLongPressMenu: Boolean = true,
     ) {
         tabCounterView = TabCounterView(
-            appStore = appStore,
             context = testContext,
+            browsingModeManager = browsingModeManager,
             navController = navController,
             tabCounter = tabCounter,
             showLongPressMenu = showLongPressMenu,

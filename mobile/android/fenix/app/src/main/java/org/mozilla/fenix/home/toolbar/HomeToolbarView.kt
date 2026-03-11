@@ -19,8 +19,8 @@ import androidx.core.view.updateLayoutParams
 import androidx.navigation.fragment.findNavController
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.support.ktx.android.content.res.resolveAttribute
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.databinding.FragmentHomeToolbarViewLayoutBinding
@@ -38,10 +38,10 @@ import java.lang.ref.WeakReference
  * View class for setting up the home screen toolbar.
  */
 internal class HomeToolbarView(
-    private val appStore: AppStore,
     private val homeBinding: FragmentHomeBinding,
     private val interactor: ToolbarInteractor,
     private val homeFragment: HomeFragment,
+    private val homeActivity: HomeActivity,
 ) : FenixHomeToolbar {
     private var context = homeFragment.requireContext()
 
@@ -156,8 +156,8 @@ internal class HomeToolbarView(
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun buildTabCounter() = TabCounterView(
-        appStore = appStore,
         context = context,
+        browsingModeManager = homeActivity.browsingModeManager,
         navController = homeFragment.findNavController(),
         tabCounter = toolbarBinding.tabButton,
         showLongPressMenu = !context.isLargeWindow(),

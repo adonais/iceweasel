@@ -13,6 +13,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isTallWindow
@@ -35,6 +36,7 @@ object HomeToolbarStoreBuilder {
      * @param navController [NavController] to use for navigating to other in-app destinations.
      * @param appStore [AppStore] to sync from.
      * @param browserStore [BrowserStore] to sync from.
+     * @param browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
      */
     fun build(
         context: Context,
@@ -42,6 +44,7 @@ object HomeToolbarStoreBuilder {
         navController: NavController,
         appStore: AppStore,
         browserStore: BrowserStore,
+        browsingModeManager: BrowsingModeManager,
     ) = fragment.fragmentStore(BrowserToolbarState()) {
         val lifecycleScope = fragment.viewLifecycleOwner.lifecycle.coroutineScope
 
@@ -50,6 +53,7 @@ object HomeToolbarStoreBuilder {
             middleware = listOf(
                 BrowserToolbarSearchStatusSyncMiddleware(
                     appStore = appStore,
+                    browsingModeManager = browsingModeManager,
                     scope = lifecycleScope,
                 ),
                 BrowserToolbarMiddleware(
@@ -59,6 +63,7 @@ object HomeToolbarStoreBuilder {
                     clipboard = context.components.clipboardHandler,
                     useCases = context.components.useCases,
                     navController = navController,
+                    browsingModeManager = browsingModeManager,
                     settings = context.settings(),
                     isWideScreen = { fragment.isWideWindow() },
                     isTallScreen = { fragment.isTallWindow() },
@@ -70,6 +75,7 @@ object HomeToolbarStoreBuilder {
                     browserStore = browserStore,
                     components = context.components,
                     navController = navController,
+                    browsingModeManager = browsingModeManager,
                     settings = context.components.settings,
                     scope = lifecycleScope,
                 ),

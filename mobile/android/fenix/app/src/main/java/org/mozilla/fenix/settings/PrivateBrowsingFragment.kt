@@ -15,12 +15,12 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.DefaultPendingIntentFactory
 import org.mozilla.fenix.components.DefaultShortcutManagerCompatWrapper
 import org.mozilla.fenix.components.PrivateShortcutCreateManager
 import org.mozilla.fenix.ext.registerForActivityResult
-import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
@@ -78,7 +78,9 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
             isEnabled = !(context.settings().privateBrowsingModeLocked && biometricManager.isAuthenticatorAvailable())
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-                    if (requireComponents.appStore.state.mode.isPrivate && newValue == false) {
+                    if ((activity as? HomeActivity)?.browsingModeManager?.mode?.isPrivate == true &&
+                        newValue == false
+                    ) {
                         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     } else {
                         activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -181,7 +183,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
                 if (pbmLockEnabled) {
                     requireContext().settings().allowScreenshotsInPrivateMode = false
                     isChecked = false
-                    if (requireComponents.appStore.state.mode.isPrivate) {
+                    if ((activity as? HomeActivity)?.browsingModeManager?.mode?.isPrivate == true) {
                         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     }
                 }

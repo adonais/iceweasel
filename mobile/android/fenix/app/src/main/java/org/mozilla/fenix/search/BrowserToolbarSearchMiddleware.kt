@@ -67,6 +67,7 @@ import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppAction
@@ -138,6 +139,7 @@ internal sealed class EditPageEndActionsInteractions : BrowserToolbarEvent {
  * @param browserStore [BrowserStore] used for querying and updating browser state.
  * @param components [Components] for accessing other functionalities of the application.
  * @param navController [NavController] to use for navigating to other in-app destinations.
+ * @param browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
  * @param settings [Settings] for accessing application settings.
  * @param scope [CoroutineScope] used for running long running operations in background.
  * @param autocompleteDispatcher [CoroutineContext] used for querying autocomplete suggestions.
@@ -149,6 +151,7 @@ class BrowserToolbarSearchMiddleware(
     private val browserStore: BrowserStore,
     private val components: Components,
     private val navController: NavController,
+    private val browsingModeManager: BrowsingModeManager,
     private val settings: Settings,
     private val scope: CoroutineScope,
     private val autocompleteDispatcher: CoroutineContext = defaultAutocompleteDispatcher,
@@ -314,7 +317,7 @@ class BrowserToolbarSearchMiddleware(
             searchTermOrURL = text,
             newTab = newTab,
             forceSearch = !isDefaultEngine,
-            private = appStore.state.mode.isPrivate,
+            private = browsingModeManager.mode.isPrivate,
             searchEngine = searchEngine,
         )
 
@@ -543,7 +546,7 @@ class BrowserToolbarSearchMiddleware(
                             searchTermOrURL = it.qrScannerState.lastScanData,
                             newTab = appStore.state.searchState.sourceTabId == null,
                             flags = EngineSession.LoadUrlFlags.external(),
-                            private = appStore.state.mode.isPrivate,
+                            private = browsingModeManager.mode.isPrivate,
                         )
                         navController.navigate(R.id.action_global_browser)
                     }

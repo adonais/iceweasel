@@ -26,6 +26,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.QrScanFenixFeature
@@ -80,119 +81,116 @@ class BookmarkFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            val toolbarStore = buildToolbarStore()
-            val searchStore = buildSearchStore(toolbarStore)
-            val buildStore = { composeNavController: NavHostController ->
-                val appStore = requireComponents.appStore
-                val navController = this@BookmarkFragment.findNavController()
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                val toolbarStore = buildToolbarStore()
+                val searchStore = buildSearchStore(toolbarStore)
+                val buildStore = { composeNavController: NavHostController ->
+                    val appStore = requireComponents.appStore
+                    val navController = this@BookmarkFragment.findNavController()
 
-                val store by fragmentStore(
-                    BookmarksState.default.copy(
-                        sortOrder = BookmarksListSortOrder.fromString(
-                            value = requireContext().settings().bookmarkListSortOrder,
-                            default = BookmarksListSortOrder.Alphabetical(true),
+                    val store by fragmentStore(
+                        BookmarksState.default.copy(
+                            sortOrder = BookmarksListSortOrder.fromString(
+                                value = requireContext().settings().bookmarkListSortOrder,
+                                default = BookmarksListSortOrder.Alphabetical(true),
+                            ),
                         ),
-                    ),
-                ) {
-                    BookmarksStore(
-                        initialState = it,
-                        middleware = listOf(
-                            // NB: Order matters — this middleware must be first to intercept actions
-                            // related to private mode and trigger verification before any other middleware runs.
-                            PrivateBrowsingLockMiddleware(
-                                appStore = requireComponents.appStore,
-                                requireAuth = {
-                                    verifyUser(fallbackVerification = verificationResultLauncher)
-                                },
-                            ),
-                            BookmarksTelemetryMiddleware(),
-                            BookmarksSyncMiddleware(
-                                requireComponents.backgroundServices.syncStore,
-                                lifecycleScope,
-                            ),
-                            BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, lifecycleScope),
-                            BookmarksMiddleware(
-                                lifecycleScope = lifecycleScope,
-                                bookmarksStorage = requireContext().bookmarkStorage,
-                                clipboardManager = requireActivity().getSystemService(),
-                                addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
-                                fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-                                useNewSearchUX = settings().shouldUseComposableToolbar,
-                                openBookmarksInNewTab = if (settings().enableHomepageAsNewTab) {
-                                    false
-                                } else {
-                                    navController
-                                        .previousBackStackEntry?.destination?.id == R.id.homeFragment
-                                },
-                                getNavController = { composeNavController },
-                                exitBookmarks = { navController.popBackStack() },
-                                navigateToBrowser = {
-                                    navController.navigate(R.id.browserFragment)
-                                },
-                                navigateToSearch = {
-                                    navController.navigate(
-                                        NavGraphDirections.actionGlobalSearchDialog(sessionId = null),
-                                    )
-                                },
-                                navigateToSignIntoSync = {
-                                    navController
-                                        .navigate(
-                                            BookmarkFragmentDirections.actionGlobalTurnOnSync(
-                                                entrypoint = FenixFxAEntryPoint.BookmarkView,
+                    ) {
+                        BookmarksStore(
+                            initialState = it,
+                            middleware = listOf(
+                                // NB: Order matters — this middleware must be first to intercept actions
+                                // related to private mode and trigger verification before any other middleware runs.
+                                PrivateBrowsingLockMiddleware(
+                                    appStore = requireComponents.appStore,
+                                    requireAuth = {
+                                        verifyUser(fallbackVerification = verificationResultLauncher)
+                                    },
+                                ),
+                                BookmarksTelemetryMiddleware(),
+                                BookmarksSyncMiddleware(requireComponents.backgroundServices.syncStore, lifecycleScope),
+                                BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, lifecycleScope),
+                                BookmarksMiddleware(
+                                    lifecycleScope = lifecycleScope,
+                                    bookmarksStorage = requireContext().bookmarkStorage,
+                                    clipboardManager = requireActivity().getSystemService(),
+                                    addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
+                                    fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
+                                    useNewSearchUX = settings().shouldUseComposableToolbar,
+                                    openBookmarksInNewTab = if (settings().enableHomepageAsNewTab) {
+                                        false
+                                    } else {
+                                            navController
+                                                .previousBackStackEntry?.destination?.id == R.id.homeFragment
+                                    },
+                                    getNavController = { composeNavController },
+                                    exitBookmarks = { navController.popBackStack() },
+                                    navigateToBrowser = {
+                                        navController.navigate(R.id.browserFragment)
+                                    },
+                                    navigateToSearch = {
+                                        navController.navigate(
+                                            NavGraphDirections.actionGlobalSearchDialog(sessionId = null),
+                                        )
+                                    },
+                                    navigateToSignIntoSync = {
+                                        navController
+                                            .navigate(
+                                                BookmarkFragmentDirections.actionGlobalTurnOnSync(
+                                                    entrypoint = FenixFxAEntryPoint.BookmarkView,
+                                                ),
+                                            )
+                                    },
+                                    shareBookmarks = { bookmarks ->
+                                        navController.nav(
+                                            R.id.bookmarkFragment,
+                                            BookmarkFragmentDirections.actionGlobalShareFragment(
+                                                data = bookmarks.asShareDataArray(),
                                             ),
                                         )
-                                },
-                                shareBookmarks = { bookmarks ->
-                                    navController.nav(
-                                        R.id.bookmarkFragment,
-                                        BookmarkFragmentDirections.actionGlobalShareFragment(
-                                            data = bookmarks.asShareDataArray(),
-                                        ),
-                                    )
-                                },
-                                showTabsTray = ::showTabTray,
-                                resolveFolderTitle = {
-                                    friendlyRootTitle(
-                                        context = requireContext(),
-                                        node = it,
-                                        rootTitles = composeRootTitles(requireContext()),
-                                    ) ?: ""
-                                },
-                                getBrowsingMode = {
-                                    appStore.state.mode
-                                },
-                                saveBookmarkSortOrder = {
-                                    requireContext().settings().bookmarkListSortOrder =
-                                        it.asString
-                                },
-                                lastSavedFolderCache = requireContext().settings().lastSavedFolderCache,
-                                reportResultGlobally = {
-                                    requireComponents.appStore.dispatch(
-                                        AppAction.BookmarkAction.BookmarkOperationResultReported(it),
-                                    )
-                                },
+                                    },
+                                    showTabsTray = ::showTabTray,
+                                    resolveFolderTitle = {
+                                        friendlyRootTitle(
+                                            context = requireContext(),
+                                            node = it,
+                                            rootTitles = composeRootTitles(requireContext()),
+                                        ) ?: ""
+                                    },
+                                    getBrowsingMode = {
+                                        appStore.state.mode
+                                    },
+                                    saveBookmarkSortOrder = {
+                                        requireContext().settings().bookmarkListSortOrder =
+                                            it.asString
+                                    },
+                                    lastSavedFolderCache = requireContext().settings().lastSavedFolderCache,
+                                    reportResultGlobally = {
+                                        requireComponents.appStore.dispatch(
+                                            AppAction.BookmarkAction.BookmarkOperationResultReported(it),
+                                        )
+                                    },
+                                ),
                             ),
-                        ),
-                    )
-                }
+                        )
+                    }
 
-                store
-            }
-            setContent {
-                FirefoxTheme {
-                    BookmarksScreen(
-                        buildStore = buildStore,
-                        appStore = requireComponents.appStore,
-                        toolbarStore = toolbarStore,
-                        searchStore = searchStore,
-                        bookmarksSearchEngine = requireComponents.core.store.state.search.searchEngines
-                            .firstOrNull { it.id == BOOKMARKS_SEARCH_ENGINE_ID },
-                        useNewSearchUX = settings().shouldUseComposableToolbar,
-                    )
+                    store
+                }
+                setContent {
+                    FirefoxTheme {
+                        BookmarksScreen(
+                            buildStore = buildStore,
+                            appStore = requireComponents.appStore,
+                            toolbarStore = toolbarStore,
+                            searchStore = searchStore,
+                            bookmarksSearchEngine = requireComponents.core.store.state.search.searchEngines
+                                .firstOrNull { it.id == BOOKMARKS_SEARCH_ENGINE_ID },
+                            useNewSearchUX = settings().shouldUseComposableToolbar,
+                        )
+                    }
                 }
             }
-        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -208,7 +206,6 @@ class BookmarkFragment : Fragment() {
             // Default empty store. This is not used without the composable toolbar.
             BrowserToolbarStore(BrowserToolbarState(mode = Mode.EDIT))
         }
-
         else -> fragmentStore(BrowserToolbarState(mode = Mode.EDIT)) {
             val lifecycleScope = viewLifecycleOwner.lifecycle.coroutineScope
 
@@ -217,6 +214,7 @@ class BookmarkFragment : Fragment() {
                 middleware = listOf(
                     BrowserToolbarSearchStatusSyncMiddleware(
                         appStore = requireComponents.appStore,
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         scope = lifecycleScope,
                     ),
                     BrowserToolbarSearchMiddleware(
@@ -225,6 +223,7 @@ class BookmarkFragment : Fragment() {
                         browserStore = requireComponents.core.store,
                         components = requireComponents,
                         navController = findNavController(),
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         settings = requireComponents.settings,
                         scope = lifecycleScope,
                     ),
@@ -240,7 +239,6 @@ class BookmarkFragment : Fragment() {
             // Default empty store. This is not used without the composable toolbar.
             SearchFragmentStore(SearchFragmentState.EMPTY)
         }
-
         else -> fragmentStore(
             createInitialSearchFragmentState(
                 context = requireContext(),
@@ -256,8 +254,8 @@ class BookmarkFragment : Fragment() {
                 initialState = it,
                 middleware = listOf(
                     BrowserToolbarToFenixSearchMapperMiddleware(
-                        appStore = requireComponents.appStore,
                         toolbarStore = toolbarStore,
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         scope = lifecycleScope,
                     ),
                     BrowserStoreToFenixSearchMapperMiddleware(
@@ -274,6 +272,7 @@ class BookmarkFragment : Fragment() {
                         browserStore = requireComponents.core.store,
                         toolbarStore = toolbarStore,
                         navController = this@BookmarkFragment.findNavController(),
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                     ),
                 ),
             )

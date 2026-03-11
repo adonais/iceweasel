@@ -53,10 +53,10 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserAnimator
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.SimpleBrowsingModeManager
 import org.mozilla.fenix.browser.readermode.ReaderModeController
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
-import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.components
@@ -330,27 +330,29 @@ class DefaultBrowserToolbarControllerTest {
 
     @Test
     fun handleToolbarNewTabPress() {
-        appStore = AppStore(AppState(mode = BrowsingMode.Private))
+        val browsingModeManager = SimpleBrowsingModeManager(BrowsingMode.Private)
         val item = TabCounterMenu.Item.NewTab
 
+        every { activity.browsingModeManager } returns browsingModeManager
         every { navController.navigate(BrowserFragmentDirections.actionGlobalHome(focusOnAddressBar = true)) } just Runs
 
         val controller = createController()
         controller.handleTabCounterItemInteraction(item)
-        assertEquals(BrowsingMode.Normal, appStore.state.mode)
+        assertEquals(BrowsingMode.Normal, browsingModeManager.mode)
         verify { navController.navigate(BrowserFragmentDirections.actionGlobalHome(focusOnAddressBar = true)) }
     }
 
     @Test
     fun handleToolbarNewPrivateTabPress() {
-        appStore = AppStore(AppState(mode = BrowsingMode.Normal))
+        val browsingModeManager = SimpleBrowsingModeManager(BrowsingMode.Normal)
         val item = TabCounterMenu.Item.NewPrivateTab
 
+        every { activity.browsingModeManager } returns browsingModeManager
         every { navController.navigate(BrowserFragmentDirections.actionGlobalHome(focusOnAddressBar = true)) } just Runs
 
         val controller = createController()
         controller.handleTabCounterItemInteraction(item)
-        assertEquals(BrowsingMode.Private, appStore.state.mode)
+        assertEquals(BrowsingMode.Private, browsingModeManager.mode)
         verify { navController.navigate(BrowserFragmentDirections.actionGlobalHome(focusOnAddressBar = true)) }
     }
 

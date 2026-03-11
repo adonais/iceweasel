@@ -17,20 +17,21 @@ import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
-import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.search.SearchFragmentAction.Init
 import org.mozilla.fenix.search.SearchFragmentAction.SearchStarted
 
 /**
  * [SearchFragmentStore] [Middleware] to synchronize search related details from [BrowserToolbarStore].
- * @param appStore [AppStore] used for querying and updating application state.
+ *
  * @param toolbarStore The [BrowserToolbarStore] to sync from.
+ * @param browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
  * @param scope [CoroutineScope] used for running long running operations in background.
  * @param browserStore The [BrowserStore] to sync from.
  */
 class BrowserToolbarToFenixSearchMapperMiddleware(
-    private val appStore: AppStore,
     private val toolbarStore: BrowserToolbarStore,
+    private val browsingModeManager: BrowsingModeManager,
     private val scope: CoroutineScope,
     private val browserStore: BrowserStore? = null,
 ) : Middleware<SearchFragmentState, SearchFragmentAction> {
@@ -64,7 +65,7 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
                             SearchStarted(
                                 selectedSearchEngine = null,
                                 isUserSelected = true,
-                                inPrivateMode = appStore.state.mode.isPrivate,
+                                inPrivateMode = browsingModeManager.mode.isPrivate,
                                 searchStartedForCurrentUrl = editState.isQueryPrefilled &&
                                     browserStore?.state?.selectedTab?.content?.url == editState.query.current,
                             ),

@@ -10,8 +10,7 @@ import org.mozilla.fenix.GleanMetrics.Homepage
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.home.privatebrowsing.interactor.PrivateBrowsingInteractor
 import org.mozilla.fenix.settings.SupportUtils
@@ -36,8 +35,8 @@ interface PrivateBrowsingController {
  * The default implementation of [PrivateBrowsingController].
  */
 class DefaultPrivateBrowsingController(
-    private val appStore: AppStore,
     private val navController: NavController,
+    private val browsingModeManager: BrowsingModeManager,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val settings: Settings,
 ) : PrivateBrowsingController {
@@ -62,7 +61,7 @@ class DefaultPrivateBrowsingController(
             fenixBrowserUseCases.addNewHomepageTab(private = newMode.isPrivate)
         }
 
-        appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = newMode))
+        browsingModeManager.mode = newMode
 
         if (newMode == BrowsingMode.Private) {
             settings.incrementNumTimesPrivateModeOpened()
