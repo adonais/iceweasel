@@ -3552,7 +3552,7 @@ SettingGroupManager.registerGroups({
     items: [
       {
         id: "ipProtectionNotOptedInSection",
-        l10nId: "ip-protection-not-opted-in",
+        l10nId: "ip-protection-not-opted-in-2",
         l10nArgs: {
           maxUsage: "50",
         },

@@ -43,7 +43,7 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
           data-l10n-id="unauthenticated-vpn-title"
         ></h2>
         <ul id="unauthenticated-vpn-message" class="vpn-description">
-          <li data-l10n-id="unauthenticated-hide-location-message"></li>
+          <li data-l10n-id="unauthenticated-hide-location-message-2"></li>
           <li
             data-l10n-id="unauthenticated-bandwidth-limit-message"
             data-l10n-args=${JSON.stringify({ maxUsage: BANDWIDTH.MAX_IN_GB })}
