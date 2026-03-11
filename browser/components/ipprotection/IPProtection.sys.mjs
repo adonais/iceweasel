@@ -12,8 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
   IPProtectionService:
     "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
-  IPProtectionStates:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionToolbarButton:
     "moz-src:///browser/components/ipprotection/IPProtectionToolbarButton.sys.mjs",
   IPPProxyManager:
@@ -48,7 +46,6 @@ class IPProtectionWidget {
 
   constructor() {
     this.sendReadyTrigger = this.#sendReadyTrigger.bind(this);
-    this.handleEvent = this.#handleEvent.bind(this);
   }
 
   /**
@@ -330,19 +327,6 @@ class IPProtectionWidget {
       browser,
       id: "ipProtectionReady",
     });
-  }
-
-  #handleEvent(event) {
-    if (
-      event.type == "IPProtectionService:StateChanged" ||
-      event.type == "IPPProxyManager:StateChanged"
-    ) {
-      if (
-        lazy.IPProtectionService.state === lazy.IPProtectionStates.OPTED_OUT
-      ) {
-        lazy.CustomizableUI.removeWidgetFromArea(IPProtectionWidget.WIDGET_ID);
-      }
-    }
   }
 }
 
