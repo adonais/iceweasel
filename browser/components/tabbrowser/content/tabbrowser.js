@@ -10897,18 +10897,14 @@ var TabContextMenu = {
     });
   },
 
-  ungroupTabs() {
-    for (let i = this.contextTabs.length - 1; i >= 0; i--) {
-      gBrowser.ungroupTab(this.contextTabs[i]);
-    }
-  },
-
-  ungroupSplitViews() {
+  ungroupTabsAndSplitViews() {
     let splitViews = new Set();
     for (const tab of this.contextTabs) {
-      if (!splitViews.has(tab.splitview)) {
+      if (tab.splitview && !splitViews.has(tab.splitview)) {
         splitViews.add(tab.splitview);
         gBrowser.ungroupSplitView(tab.splitview);
+      } else if (!tab.splitview) {
+        gBrowser.ungroupTab(tab);
       }
     }
   },
