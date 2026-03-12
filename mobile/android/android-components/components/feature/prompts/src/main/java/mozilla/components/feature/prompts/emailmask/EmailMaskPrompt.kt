@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.prompts.emailmask
 
+import android.view.ViewTreeObserver
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -11,9 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,11 +32,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.layout.AcornWindowSize.Companion.isLargeWindow
 import mozilla.components.compose.cfr.CFRPopup
@@ -204,7 +206,22 @@ private fun EmailMaskPromptBarPreview() {
 
 @Composable
 private fun rememberImeIsVisible(): Boolean {
-    val density = LocalDensity.current
-    val imeBottom = WindowInsets.ime.getBottom(density)
-    return imeBottom > 0
+    val view = LocalView.current
+    var isImeVisible by remember {
+        val insets = ViewCompat.getRootWindowInsets(view)
+        mutableStateOf(insets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false)
+    }
+
+    DisposableEffect(isImeVisible) {
+        val listener = ViewTreeObserver.OnGlobalLayoutListener {
+            val insets = ViewCompat.getRootWindowInsets(view)
+            isImeVisible = insets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
+        }
+        view.viewTreeObserver.addOnGlobalLayoutListener(listener)
+        onDispose {
+            view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+        }
+    }
+
+    return isImeVisible
 }
