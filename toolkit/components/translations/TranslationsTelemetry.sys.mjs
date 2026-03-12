@@ -1105,4 +1105,18 @@ class AboutTranslationsPageTelemetry {
       );
     });
   }
+
+  /**
+   * Records when the try-again button is invoked in about:translations.
+   */
+  static onTryAgainButton() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.tryAgainButton.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onTryAgainButton
+      );
+    });
+  }
 }

@@ -771,6 +771,7 @@ class AboutTranslations {
    * Handles retry clicks from the translation error message.
    */
   #onTranslationErrorRetry = () => {
+    AT_telemetry("onTryAgainButton");
     this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 

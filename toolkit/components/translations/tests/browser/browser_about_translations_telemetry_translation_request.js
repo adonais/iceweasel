@@ -524,6 +524,12 @@ add_task(
     await TestTranslationsTelemetry.assertEvent(Glean.translations.error, {
       expectedEventCount: 0,
     });
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translationsAboutTranslationsPage.tryAgainButton,
+      {
+        expectedEventCount: 0,
+      }
+    );
 
     const firstRequestText = "This should fail.";
     await aboutTranslationsTestUtils.assertEvents(
@@ -615,6 +621,12 @@ add_task(
         reason: "Error: Intentionally rejecting downloads.",
       },
     });
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translationsAboutTranslationsPage.tryAgainButton,
+      {
+        expectedEventCount: 1,
+      }
+    );
 
     const secondRetryErrorMessageHidden =
       aboutTranslationsTestUtils.waitForTranslationErrorMessage({
@@ -658,6 +670,12 @@ add_task(
     await TestTranslationsTelemetry.assertEvent(Glean.translations.error, {
       expectedEventCount: 2,
     });
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translationsAboutTranslationsPage.tryAgainButton,
+      {
+        expectedEventCount: 2,
+      }
+    );
 
     await cleanup();
   }
