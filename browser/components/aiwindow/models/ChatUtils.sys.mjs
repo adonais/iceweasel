@@ -4,6 +4,42 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+// Important! Changing or removing this value requires a security review.
+//
+// Limit the page titles to 100 characters to relax the use of the untrusted content flag
+// from page metadata. This number was specifically chosen as it fit 95% of all page titles
+// in the places database for a single places database used as an example.
+const MAX_METADATA_LENGTH = 100;
+
+/**
+ * Truncate untrusted metadata text to guard against prompt injection.
+ *
+ * Important! Changing this function requires a security review.
+ *
+ * Metadata such as page titles and page descriptions are untrusted content from the web and
+ * could contain prompt injections to try and change the behavior of language model
+ * conversations. Typically untrusted content gets flagged in a conversation, and
+ * subsequent tool calls can be restricted if they have access to private information as
+ * well.
+ *
+ * By truncating the length of this text, we limit (but do not remove) the ability for these
+ * pieces of text to be used as prompt injections. In this case we have chosen to relax
+ * the security flags to NOT mark these as untrusted when the text is truncated.
+ * This is useful since page titles are used very frequently in chat conversations.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function truncateUntrustedMetadata(text) {
+  if (!text) {
+    return "";
+  }
+  if (text.length <= MAX_METADATA_LENGTH) {
+    return text;
+  }
+  return text.slice(0, MAX_METADATA_LENGTH) + "\u2026";
+}
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
@@ -53,7 +89,9 @@ export async function getCurrentTabMetadata(depsOverride) {
   }
 
   const url = browser.currentURI?.spec || "";
-  const title = browser.contentTitle || browser.documentTitle || "";
+  const title = truncateUntrustedMetadata(
+    browser.contentTitle || browser.documentTitle || ""
+  );
 
   let description = "";
   /**

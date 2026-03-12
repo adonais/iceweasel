@@ -4,6 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+import { truncateUntrustedMetadata } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
@@ -101,7 +103,7 @@ async function buildHistoryRow(row, fromNode = false) {
   }
 
   return {
-    title: title || url,
+    title: truncateUntrustedMetadata(title || url),
     url,
     visitDate: visitDateIso, // ISO timestamp format
     visitCount: visitCount || 0,

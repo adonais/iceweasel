@@ -9,6 +9,7 @@
 import { PlacesUtils } from "resource://gre/modules/PlacesUtils.sys.mjs";
 import { BlockListManager } from "chrome://global/content/ml/Utils.sys.mjs";
 import { SensitiveInfoDetector } from "moz-src:///browser/components/aiwindow/models/memories/SensitiveInfoDetector.sys.mjs";
+import { truncateUntrustedMetadata } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
 const MS_PER_DAY = 86_400_000;
 const MICROS_PER_MS = 1_000;
@@ -236,7 +237,7 @@ export async function getRecentHistory(opts = {}) {
           out.push({
             url,
             domain: host,
-            title,
+            title: truncateUntrustedMetadata(title),
             visitDateMicros,
             frequencyPct,
             domainFrequencyPct,

@@ -14,6 +14,7 @@ import {
   ChatStore,
   MESSAGE_ROLE,
 } from "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs";
+import { truncateUntrustedMetadata } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -226,7 +227,7 @@ export async function getOpenTabs(_params, _secProps) {
         if (url && !url.startsWith("about:")) {
           tabs.push({
             url,
-            title,
+            title: truncateUntrustedMetadata(title),
             lastAccessed: tab.lastAccessed,
           });
         }
@@ -715,7 +716,7 @@ export class GetPageContent {
         targetTab.linkedBrowser.browsingContext?.currentWindowContext;
 
       if (!currentWindowContext) {
-        return `Cannot access content from "${targetTab.label}" at ${url}.`;
+        return `Cannot access content from "${truncateUntrustedMetadata(targetTab.label)}" at ${url}.`;
         // Stripped message "The tab may still be loading or is not accessible." to not confuse the LLM
       }
 
@@ -726,7 +727,7 @@ export class GetPageContent {
       return GetPageContent.#runExtraction(
         pageExtractor,
         GetPageContent.DEFAULT_MODE,
-        `"${targetTab.label}" (${url})`
+        `"${truncateUntrustedMetadata(targetTab.label)}" (${url})`
       );
     } catch (error) {
       // Bug 2006425 - Decide on the strategy for error handling in tool calls
