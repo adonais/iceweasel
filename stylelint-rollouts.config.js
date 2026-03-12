@@ -314,7 +314,6 @@ module.exports = [
       "toolkit/content/widgets/moz-box-item/moz-box-item.css",
       "toolkit/content/widgets/moz-button/moz-button.css",
       "toolkit/content/widgets/moz-fieldset/moz-fieldset.css",
-      "toolkit/content/widgets/moz-message-bar/moz-message-bar.css",
       "toolkit/content/widgets/moz-page-nav/moz-page-nav-button.css",
       "toolkit/content/widgets/moz-page-nav/moz-page-nav.css",
       "toolkit/content/widgets/moz-promo/moz-promo.css",

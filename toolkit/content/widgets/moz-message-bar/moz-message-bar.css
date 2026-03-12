@@ -5,7 +5,7 @@
 :host {
   /* Icon */
   --message-bar-icon-color: var(--icon-color-information);
-  --message-bar-icon-size: var(--size-item-small);
+  --message-bar-icon-size: var(--icon-size);
   --message-bar-icon-close-url: url("chrome://global/skin/icons/close.svg");
 
   /* Container */
@@ -56,12 +56,16 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-small) var(--space-medium);
+  /* Spacing is based on the icon size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: var(--message-bar-icon-size);
 }
 
 .text-container {
   display: flex;
   gap: var(--space-xsmall) var(--space-small);
+  /* Using line-height to inform the padding is useful in this context. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-block: calc((var(--message-bar-container-min-height) - 1lh) / 2);
 }
 
@@ -75,10 +79,14 @@
 /* MozMessageBar icon style */
 
 .icon-container {
+  /* Using line-height as basis for height is useful in this context. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   height: 1lh;
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Spacing is based on the icon size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: calc(-1 * var(--message-bar-icon-size));
 }
 
