@@ -83,6 +83,7 @@ path:config/milestone.txt
 path:gradle/
 path:mobile/android/config/
 glob:**/*.gradle
+glob:**/*.gradle.kts
 glob:**/gradle.properties
 
 # for action-task building

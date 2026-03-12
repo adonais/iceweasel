@@ -2,24 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.tooling.nimbus
+package org.mozilla.appservices.tooling.nimbus
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
 import org.gradle.process.ExecSpec
-
 import javax.inject.Inject
 
 /**
@@ -33,25 +30,23 @@ import javax.inject.Inject
  * the task will run `nimbus-fml` from the Application Services repo;
  * otherwise, it'll fall back to a prebuilt `fmlBinary`.
  */
-abstract class NimbusFmlCommandTask extends DefaultTask {
-    public static final String APPSERVICES_FML_HOME = 'components/support/nimbus-fml'
+abstract class NimbusFmlCommandTask : DefaultTask() {
+    @get:Inject
+    abstract val execOperations: ExecOperations
 
-    @Inject
-    abstract ExecOperations getExecOperations()
+    @get:Inject
+    abstract val projectLayout: ProjectLayout
 
-    @Inject
-    abstract ProjectLayout getProjectLayout()
-
-    @Input
-    @Optional
-    abstract Property<String> getApplicationServicesDir()
+    @get:Input
+    @get:Optional
+    abstract val applicationServicesDir: Property<String>
 
     // `@InputFiles` instead of `@InputFile` because we don't want
     // the task to fail if the `fmlBinary` file doesn't exist
     // (https://github.com/gradle/gradle/issues/2016).
-    @InputFiles
-    @PathSensitive(PathSensitivity.NONE)
-    abstract RegularFileProperty getFmlBinary()
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val fmlBinary: RegularFileProperty
 
     /**
      * Configures the `nimbus-fml` command for this task.
@@ -61,30 +56,38 @@ abstract class NimbusFmlCommandTask extends DefaultTask {
      *
      * @param spec The specification for the `nimbus-fml` command.
      */
-    abstract void configureFmlCommand(ExecSpec spec)
+    abstract fun configureFmlCommand(spec: ExecSpec)
 
     @TaskAction
-    void execute() {
+    fun execute() {
         execOperations.exec { spec ->
-            spec.with {
-                def projDir = projectLayout.projectDirectory
-                def localAppServices = applicationServicesDir.getOrNull()
+            spec.apply {
+                val projDir = projectLayout.projectDirectory
+                val localAppServices = applicationServicesDir.orNull
                 if (localAppServices == null) {
                     if (!fmlBinary.get().asFile.exists()) {
-                        throw new GradleException("`nimbus-fml` wasn't downloaded and `nimbus.applicationServicesDir` isn't set")
+                        throw GradleException(
+                            "`nimbus-fml` binary not found at ${fmlBinary.get().asFile} and " +
+                            "`nimbus.applicationServicesDir` is not set. Either build the project " +
+                            "with `./mach build` or set `autoPublish.application-services.dir` in local.properties."
+                        )
                     }
-                    workingDir projDir
-                    commandLine fmlBinary.get().asFile
+                    workingDir(projDir)
+                    commandLine(fmlBinary.get().asFile)
                 } else {
-                    def cargoManifest = projDir.file("$localAppServices/$APPSERVICES_FML_HOME/Cargo.toml").asFile
+                    val cargoManifest = projDir.file("$localAppServices/$APPSERVICES_FML_HOME/Cargo.toml").asFile
 
-                    commandLine 'cargo'
-                    args 'run'
-                    args '--manifest-path', cargoManifest
-                    args '--'
+                    commandLine("cargo")
+                    args("run")
+                    args("--manifest-path", cargoManifest)
+                    args("--")
                 }
             }
             configureFmlCommand(spec)
         }
+    }
+
+    companion object {
+        const val APPSERVICES_FML_HOME = "components/support/nimbus-fml"
     }
 }
