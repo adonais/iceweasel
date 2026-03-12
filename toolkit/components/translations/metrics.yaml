@@ -992,6 +992,22 @@ translations.about_translations_page:
       - translations-telemetry-alerts@mozilla.com
     expires: never
 
+  swap_button:
+    type: event
+    description: >
+      Triggers when the swap button is invoked in the about:translations page.
+    extra_keys:
+      flow_id: *flow_id
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - translations-telemetry-alerts@mozilla.com
+    expires: never
+
 translations.feature:
   enable:
     type: event

@@ -1147,4 +1147,18 @@ class AboutTranslationsPageTelemetry {
       );
     });
   }
+
+  /**
+   * Records when the swap button is invoked in about:translations.
+   */
+  static onSwapButton() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.swapButton.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onSwapButton
+      );
+    });
+  }
 }

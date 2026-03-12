@@ -697,6 +697,7 @@ class AboutTranslations {
    * Handles clicks on the swap-languages button.
    */
   #onSwapLanguagesButton = () => {
+    AT_telemetry("onSwapButton");
     this.#clearTranslationRequestTelemetryThrottle();
     this.#disableSwapLanguagesButton();
     this.#maybeSwapLanguages();
