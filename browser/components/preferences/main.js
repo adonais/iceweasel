@@ -4032,12 +4032,12 @@ SettingGroupManager.registerGroups({
         ],
       },
       {
-        id: "popupPolicy",
+        id: "popupAndRedirectPolicy",
         l10nId: "permissions-block-popups2",
         subcategory: "permissions-block-popups",
         items: [
           {
-            id: "popupPolicyButton",
+            id: "popupAndRedirectPolicyButton",
             l10nId: "permissions-block-popups-exceptions-button3",
             control: "moz-box-button",
             controlAttrs: {
