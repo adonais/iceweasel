@@ -3999,6 +3999,9 @@ class TestTranslationsTelemetry {
         true,
         `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
+      if (eventCount === 0) {
+        return;
+      }
       for (const [key, expected] of Object.entries(assertForAllEvents)) {
         for (const event of events) {
           if (typeof expected === "function") {
@@ -4023,6 +4026,9 @@ class TestTranslationsTelemetry {
         true,
         `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
+      if (eventCount === 0) {
+        return;
+      }
       for (const [key, expected] of Object.entries(assertForMostRecentEvent)) {
         if (typeof expected === "function") {
           ok(

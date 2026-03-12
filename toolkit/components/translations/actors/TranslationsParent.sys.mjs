@@ -3733,17 +3733,10 @@ export class TranslationsParent extends JSWindowActorParent {
 
     this.languageState.requestedLanguagePair = languagePair;
 
-    const preferredLanguages = TranslationsParent.getPreferredLanguages();
-    const topPreferredLanguage =
-      preferredLanguages && preferredLanguages.length
-        ? preferredLanguages[0]
-        : null;
-
     TranslationsParent.telemetry().onTranslate({
       docLangTag,
       sourceLanguage,
       targetLanguage,
-      topPreferredLanguage,
       autoTranslate: reportAsAutoTranslate,
       requestTarget: "full_page",
     });

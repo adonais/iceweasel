@@ -338,7 +338,6 @@ export class TranslationsTelemetry {
    * @param {string} data.docLangTag
    * @param {string} data.sourceLanguage
    * @param {string} data.targetLanguage
-   * @param {string} data.topPreferredLanguage
    * @param {string} data.requestTarget
    * @param {number} data.sourceTextCodeUnits
    * @param {number} data.sourceTextWordCount
@@ -350,7 +349,6 @@ export class TranslationsTelemetry {
       sourceLanguage,
       requestTarget,
       targetLanguage,
-      topPreferredLanguage,
       sourceTextCodeUnits,
       sourceTextWordCount,
     } = data;
@@ -361,7 +359,6 @@ export class TranslationsTelemetry {
       to_language: targetLanguage,
       auto_translate: autoTranslate,
       document_language: docLangTag,
-      top_preferred_language: topPreferredLanguage,
       request_target: requestTarget ?? "full_page",
       source_text_code_units: sourceTextCodeUnits,
       source_text_word_count: sourceTextWordCount,
@@ -810,7 +807,6 @@ class SelectTranslationsPanelTelemetry {
    * @param {boolean} data.maintainFlow
    * @param {string} data.sourceLanguage
    * @param {string} data.targetLanguage
-   * @param {string} data.topPreferredLanguage
    * @param {string} data.textSource
    */
   static onOpen(data) {
@@ -826,7 +822,6 @@ class SelectTranslationsPanelTelemetry {
         document_language: data.docLangTag,
         from_language: data.sourceLanguage,
         to_language: data.targetLanguage,
-        top_preferred_language: data.topPreferredLanguage,
         text_source: data.textSource,
       });
       TranslationsTelemetry.logEventToConsole(
