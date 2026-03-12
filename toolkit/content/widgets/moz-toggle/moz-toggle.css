@@ -24,6 +24,7 @@
   --toggle-dot-height: calc(var(--toggle-height) - 2 * var(--toggle-dot-margin) - 2 * var(--toggle-border-width));
   --toggle-dot-width: var(--toggle-dot-height);
   --toggle-dot-transform-x: calc(var(--toggle-width) - 2 * var(--toggle-dot-margin) - 2px - var(--toggle-dot-width));
+  --toggle-inset: calc(var(--dimension-2) * -1);
   --input-width: var(--toggle-width);
 }
 
@@ -140,14 +141,14 @@
   }
 
   .toggle-button[aria-pressed="true"]:enabled::after {
-    border: 1px solid var(--button-background-color);
+    border: var(--border-width) solid var(--toggle-background-color);
     content: "";
     position: absolute;
     height: var(--toggle-height);
     width: var(--toggle-width);
     display: block;
     border-radius: var(--toggle-border-radius);
-    inset: -2px;
+    inset: var(--toggle-inset);
   }
 
   .toggle-button[aria-pressed="true"]:enabled:hover:active::after {

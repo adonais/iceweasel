@@ -145,6 +145,14 @@ export class PropertyValidator {
   }
 
   isAllowedWord(word, isAlias = false) {
+    const lowerWord = word.toLowerCase();
+    const hasAllowedWord = Array.from(this.allowedWords).some(
+      allowed => allowed.toLowerCase() === lowerWord
+    );
+    if (hasAllowedWord) {
+      return true;
+    }
+
     if (this.allowUnits && this.isUnit(word)) {
       if (this.allowedUnits.size) {
         const parsed = valueParser.unit(word);
@@ -152,7 +160,6 @@ export class PropertyValidator {
       }
       return true;
     }
-    const lowerWord = word.toLowerCase();
 
     if (isAlias) {
       return Array.from(this.allowedAliasWords).some(
@@ -160,9 +167,7 @@ export class PropertyValidator {
       );
     }
 
-    return Array.from(this.allowedWords).some(
-      allowed => allowed.toLowerCase() === lowerWord
-    );
+    return false;
   }
 
   isUnit(word) {
@@ -182,17 +187,17 @@ export class PropertyValidator {
     return false;
   }
 
-  isValidCalcFunction(node) {
+  isValidCalcFunction(node, isAlias = false) {
     const calcNodes = node.nodes.filter(
       n => !PropertyValidator.isCalcOperand(n)
     );
     const hasDesignToken = calcNodes.some(n => {
       if (n.type === "function" && n.value === "var") {
-        return this.isValidVarFunction(n);
+        return this.isValidVarFunction(n, isAlias);
       }
       return false;
     });
-    return hasDesignToken || calcNodes.every(n => this.isValidNode(n));
+    return hasDesignToken || calcNodes.every(n => this.isValidNode(n, isAlias));
   }
 
   isValidColorMixFunction(node, isAlias = false) {
@@ -229,7 +234,7 @@ export class PropertyValidator {
       case "var":
         return this.isValidVarFunction(node, isAlias);
       case "calc":
-        return this.isValidCalcFunction(node);
+        return this.isValidCalcFunction(node, isAlias);
       case "light-dark":
         return this.isValidLightDarkFunction(node, isAlias);
       case "color-mix":

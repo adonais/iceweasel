@@ -348,6 +348,10 @@ testRule({
       description: "Using a keyword for spacing is valid.",
     },
     {
+      code: ".a { padding: 1px; }",
+      description: "Using 1px to define spacing is valid.",
+    },
+    {
       code: `
         :root { --local-padding: var(--space-small); }
         .a { padding: var(--local-padding); }

@@ -386,7 +386,7 @@ const TextColor = {
 
 /** @type {PropertyTypeConfig} */
 const Space = {
-  allow: ["0", "auto"],
+  allow: ["0", "1px", "auto"],
   tokenTypes: ["space"],
   aliasTokenTypes: ["dimension"],
   customFixes: {
@@ -404,6 +404,7 @@ const Space = {
 const Size = {
   allow: [
     "0",
+    "1px",
     "auto",
     "none",
     "fit-content",
