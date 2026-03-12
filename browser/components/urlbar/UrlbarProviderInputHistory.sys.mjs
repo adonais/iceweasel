@@ -128,7 +128,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
       let lastVisit = lastVisitPRTime
         ? lazy.PlacesUtils.toDate(lastVisitPRTime).getTime()
         : undefined;
-      let resultTitle = historyTitle || UrlbarUtils.prepareUrlForDisplay(url);
+      let resultTitle = historyTitle;
 
       if (openPageCount > 0 && lazy.UrlbarPrefs.get("suggest.openpage")) {
         if (url == queryContext.currentPage) {

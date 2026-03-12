@@ -15,11 +15,9 @@ add_task(async function test_receive_punycode_result() {
         suggestedIndex: 0,
         payload: {
           url,
-          title: "www.اختبار.اختبار.org:5000",
         },
         highlights: {
           url: UrlbarUtils.HIGHLIGHT.TYPED,
-          title: UrlbarUtils.HIGHLIGHT.TYPED,
         },
       });
       addCallback(this, result);

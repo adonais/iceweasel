@@ -330,12 +330,34 @@ export class UrlbarResult {
       }
     }
 
+    let highlightType;
+    let { isURL } = options;
+
     let value = this.payload[payloadName];
     if (!value) {
-      return {};
+      if (payloadName != "title" || !this.payload.url) {
+        return {};
+      }
+
+      // The payload doesn't have a title but it does have a URL. A title should
+      // always be shown because otherwise the result's row in the view will
+      // look a little strange, so show the URL's domain as the title. Not all
+      // valid URLs have a domain, so fall back to the full URL.
+      highlightType = lazy.UrlbarUtils.HIGHLIGHT.TYPED;
+      try {
+        // This will throw if `this.payload.url` isn't a valid URL. If the URL
+        // is valid but doesn't have a domain, it won't throw and
+        // `displayHostPort` will be an empty string.
+        value = new URL(this.payload.url).URI.displayHostPort;
+        isURL = !value;
+      } catch (e) {
+        isURL = false;
+      }
+
+      value ||= this.payload.url;
     }
 
-    if (options.isURL) {
+    if (isURL) {
       value = lazy.UrlbarUtils.prepareUrlForDisplay(value);
     }
 
@@ -347,7 +369,7 @@ export class UrlbarResult {
       return { value, highlights: this.#highlights[payloadName] };
     }
 
-    let highlightType = this.#highlights?.[payloadName];
+    highlightType ??= this.#highlights?.[payloadName];
 
     if (!options.tokens?.length || !highlightType) {
       let cached = { value, options };
