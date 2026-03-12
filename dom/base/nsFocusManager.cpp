@@ -3930,7 +3930,7 @@ void ScopedContentTraversal::Next() {
   }
 
   nsIContent* current = mCurrent;
-  while (1) {
+  while (true) {
     // Create parent's iterator and move to current
     nsIContent* parent = current->GetFlattenedTreeParent();
     StyleChildrenIterator parentIter(parent);
@@ -3990,7 +3990,7 @@ void ScopedContentTraversal::Prev() {
 }
 
 static bool IsOpenPopoverWithInvoker(const nsIContent* aContent) {
-  if (auto* popover = Element::FromNode(aContent)) {
+  if (const auto* popover = Element::FromNode(aContent)) {
     return popover && popover->IsPopoverOpen() &&
            popover->GetPopoverData()->GetInvoker();
   }
@@ -4007,13 +4007,6 @@ static nsGenericHTMLElement* GetAssociatedPopoverFromInvoker(
   if (popover && popover->IsPopoverOpen()) {
     MOZ_ASSERT(popover->GetPopoverData()->GetInvoker() == invoker);
     return popover;
-  }
-  return nullptr;
-}
-
-static nsIContent* InvokerForPopoverShowingState(nsIContent* aContent) {
-  if (aContent && GetAssociatedPopoverFromInvoker(aContent)) {
-    return aContent;
   }
   return nullptr;
 }
@@ -4339,19 +4332,15 @@ nsresult nsFocusManager::GetNextTabbableContent(
   }
 
   // If startContent is a popover invoker, search the popover scope.
-  if (!aSkipPopover) {
-    if (InvokerForPopoverShowingState(startContent)) {
-      if (aForward) {
-        RefPtr<nsIContent> popover =
-            GetAssociatedPopoverFromInvoker(startContent);
-        nsIContent* contentToFocus = GetNextTabbableContentInScope(
-            popover, popover, aOriginalStartContent, aForward, 1,
-            aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
-            true /* aSkipOwner */, aReachedToEndForDocumentNavigation);
-        if (contentToFocus) {
-          NS_ADDREF(*aResultContent = contentToFocus);
-          return NS_OK;
-        }
+  if (!aSkipPopover && aForward) {
+    if (RefPtr popover = GetAssociatedPopoverFromInvoker(startContent)) {
+      nsIContent* contentToFocus = GetNextTabbableContentInScope(
+          popover, popover, aOriginalStartContent, aForward, 1, aIgnoreTabIndex,
+          aForDocumentNavigation, aNavigateByKey, true /* aSkipOwner */,
+          aReachedToEndForDocumentNavigation);
+      if (contentToFocus) {
+        NS_ADDREF(*aResultContent = contentToFocus);
+        return NS_OK;
       }
     }
   }
@@ -4366,15 +4355,15 @@ nsresult nsFocusManager::GetNextTabbableContent(
     if (contentToFocus) {
       // If contentToFocus is itself a popover invoker then a backwards move
       // should cycle through the open popovers' content
-      if (!aForward && InvokerForPopoverShowingState(contentToFocus)) {
-        RefPtr<nsIContent> popover =
-            GetAssociatedPopoverFromInvoker(contentToFocus);
-        nsIContent* popoverContent = GetNextTabbableContentInScope(
-            popover, popover, aOriginalStartContent, aForward, 0,
-            aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
-            true /* aSkipOwner */, aReachedToEndForDocumentNavigation);
-        if (popoverContent) {
-          contentToFocus = popoverContent;
+      if (!aForward) {
+        if (RefPtr popover = GetAssociatedPopoverFromInvoker(contentToFocus)) {
+          nsIContent* popoverContent = GetNextTabbableContentInScope(
+              popover, popover, aOriginalStartContent, aForward, 0,
+              aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
+              true /* aSkipOwner */, aReachedToEndForDocumentNavigation);
+          if (popoverContent) {
+            contentToFocus = popoverContent;
+          }
         }
       }
       NS_ADDREF(*aResultContent = contentToFocus);
@@ -4395,7 +4384,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
   nsCOMPtr<nsIContent> iterStartContent = startContent;
   nsIContent* topLevelScopeStartContent = startContent;
   // Iterate tab index to find corresponding contents
-  while (1) {
+  while (true) {
     nsIFrame* frame = iterStartContent->GetPrimaryFrame();
     // if there is no frame, look for another content node that has a frame
     while (!frame) {
@@ -4537,20 +4526,20 @@ nsresult nsFocusManager::GetNextTabbableContent(
         }
       }
 
-      if (!aForward && InvokerForPopoverShowingState(currentContent)) {
-        int32_t tabIndex = frame->IsFocusable().mTabIndex;
-        if (tabIndex >= 0 &&
-            (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
-          RefPtr<nsIContent> popover =
-              GetAssociatedPopoverFromInvoker(currentContent);
-          nsIContent* contentToFocus = GetNextTabbableContentInScope(
-              popover, popover, aOriginalStartContent, aForward, 0,
-              aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
-              true /* aSkipOwner */, aReachedToEndForDocumentNavigation);
+      if (!aForward) {
+        if (RefPtr popover = GetAssociatedPopoverFromInvoker(currentContent)) {
+          int32_t tabIndex = frame->IsFocusable().mTabIndex;
+          if (tabIndex >= 0 &&
+              (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
+            nsIContent* contentToFocus = GetNextTabbableContentInScope(
+                popover, popover, aOriginalStartContent, aForward, 0,
+                aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
+                true /* aSkipOwner */, aReachedToEndForDocumentNavigation);
 
-          if (contentToFocus) {
-            NS_ADDREF(*aResultContent = contentToFocus);
-            return NS_OK;
+            if (contentToFocus) {
+              NS_ADDREF(*aResultContent = contentToFocus);
+              return NS_OK;
+            }
           }
         }
       }
