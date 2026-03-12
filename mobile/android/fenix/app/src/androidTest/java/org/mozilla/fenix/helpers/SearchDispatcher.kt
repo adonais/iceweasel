@@ -9,7 +9,6 @@ import android.os.Looper
 import androidx.test.platform.app.InstrumentationRegistry
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
-import mockwebserver3.MockWebServer
 import mockwebserver3.RecordedRequest
 import okio.Buffer
 import okio.source
@@ -33,13 +32,13 @@ class SearchDispatcher : Dispatcher() {
     override fun dispatch(request: RecordedRequest): MockResponse {
         val assetManager = InstrumentationRegistry.getInstrumentation().context.assets
         try {
-            // When we perform a search with the custom search engine, returns the generic4.html test page as search results
             if (request.target.contains("searchResults.html?search=")) {
                 val path = "pages/generic4.html"
                 assetManager.open(path).use { inputStream ->
                     return MockResponse.Builder()
                         .code(HTTP_OK)
                         .body(Buffer().apply { writeAll(inputStream.source()) })
+                        .addHeader("content-type: text/html; charset=utf-8")
                         .build()
                 }
             }
@@ -47,7 +46,9 @@ class SearchDispatcher : Dispatcher() {
         } catch (e: IOException) {
             // e.g. file not found.
             // We're on a background thread so we need to forward the exception to the main thread.
-            mainThreadHandler.postAtFrontOfQueue { throw e }
+            mainThreadHandler.postAtFrontOfQueue {
+                throw IllegalStateException("Could not load asset for: ${request.target}", e)
+            }
             return MockResponse(code = HTTP_NOT_FOUND)
         }
     }

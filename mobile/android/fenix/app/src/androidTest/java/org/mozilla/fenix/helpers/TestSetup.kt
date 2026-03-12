@@ -113,6 +113,7 @@ open class TestSetup {
     @After
     open fun tearDown() {
         Log.i(TAG, "TestSetup: Starting the @After tearDown methods.")
+        mockWebServer.close()
         runBlocking {
             // Clear the downloads folder after each test even if the test fails.
             AppAndSystemHelper.clearDownloadsFolder()
