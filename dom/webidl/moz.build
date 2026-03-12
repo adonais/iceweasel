@@ -1137,6 +1137,7 @@ if CONFIG["MOZ_WEBRTC"]:
         "RTCDTMFSender.webidl",
         "RTCEncodedAudioFrame.webidl",
         "RTCEncodedVideoFrame.webidl",
+        "RTCError.webidl",
         "RTCIceCandidate.webidl",
         "RTCIceTransport.webidl",
         "RTCIdentityAssertion.webidl",
@@ -1278,6 +1279,7 @@ if CONFIG["MOZ_WEBRTC"]:
     GENERATED_EVENTS_WEBIDL_FILES += [
         "RTCDataChannelEvent.webidl",
         "RTCDTMFToneChangeEvent.webidl",
+        "RTCErrorEvent.webidl",
         "RTCPeerConnectionIceErrorEvent.webidl",
         "RTCPeerConnectionIceEvent.webidl",
         "RTCTrackEvent.webidl",

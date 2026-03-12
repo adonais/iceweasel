@@ -318,6 +318,9 @@ const kEventConstructors = {
                                                          return new RTCDTMFToneChangeEvent(aName, aProps);
                                                        },
                                              },
+  RTCErrorEvent:                             {
+                                               // Difficult to test required arguments.
+                                             },
   RTCPeerConnectionIceErrorEvent:            { create (aName, aProps) {
                                                          return new RTCPeerConnectionIceErrorEvent(aName, Object.assign({errorCode: 701}, aProps));
                                                        },
