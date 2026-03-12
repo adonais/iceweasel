@@ -320,3 +320,82 @@ add_task(async function test_IPPProxyManager_active_shown() {
   sandbox.restore();
   cleanupService();
 });
+
+/**
+ * Tests that calling rotateProxyPass when quota is exceeded moves to PAUSED state,
+ * not ERROR state (Bug 2022865).
+ */
+add_task(async function test_IPPProxyManager_rotateProxyPass_when_paused() {
+  IPPProxyManager.reset();
+
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  IPProtectionService.updateState();
+
+  let content = await openPanel();
+
+  let statusCard = content.statusCardEl;
+  let actionButton = statusCard.actionButtonEl;
+
+  Assert.ok(actionButton, "Turn on button should be shown");
+
+  actionButton.click();
+
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ACTIVE,
+    "IPPProxyManager state should be active after clicking turn on"
+  );
+
+  // Simulate quota exceeded response from fetchProxyPass
+  const quotaExceededUsage = makeUsage("5368709120", "0");
+  setupService({
+    proxyPass: {
+      status: 429,
+      error: "quota_exceeded",
+      pass: null,
+      usage: quotaExceededUsage,
+    },
+  });
+
+  await IPPProxyManager.rotateProxyPass();
+
+  await waitForProxyState(IPPProxyStates.PAUSED);
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.PAUSED,
+    "rotateProxyPass with exceeded quota should move to PAUSED, not ERROR"
+  );
+
+  // Check that the paused dialog is shown
+  await TestUtils.waitForCondition(
+    () => window.gDialogBox.isOpen,
+    "Wait for the dialog to exist"
+  );
+  Assert.ok(window.gDialogBox.isOpen, "Dialog exists and is open");
+
+  // Close the dialog
+  await TestUtils.waitForCondition(
+    () =>
+      window.gDialogBox.dialog._frame.contentDocument.getElementById(
+        "titleContainer"
+      ),
+    "Wait for the dialog to load"
+  );
+  let dialogDoc = window.gDialogBox.dialog._frame.contentDocument;
+  dialogDoc
+    .getElementById("commonDialog")
+    .shadowRoot.querySelector("button[dlgtype='accept']")
+    .click();
+  await TestUtils.waitForCondition(
+    () => !window.gDialogBox.isOpen,
+    "Wait for the dialog to not exist"
+  );
+
+  await closePanel();
+  cleanupService();
+});
