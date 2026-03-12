@@ -1961,6 +1961,9 @@ bool wasm::ValidateOps(ValidatingOpIter& iter, T& dumper,
           }
           case uint32_t(MiscOp::I64Add128):
           case uint32_t(MiscOp::I64Sub128): {
+            if (!codeMeta.wideArithmeticEnabled()) {
+              return iter.unrecognizedOpcode(&op);
+            }
             if (!iter.readBinaryI128(&nothing, &nothing, &nothing, &nothing)) {
               return false;
             }
@@ -1968,6 +1971,9 @@ bool wasm::ValidateOps(ValidatingOpIter& iter, T& dumper,
           }
           case uint32_t(MiscOp::I64MulWideS):
           case uint32_t(MiscOp::I64MulWideU): {
+            if (!codeMeta.wideArithmeticEnabled()) {
+              return iter.unrecognizedOpcode(&op);
+            }
             if (!iter.readBinaryI64Wide(&nothing, &nothing)) {
               return false;
             }

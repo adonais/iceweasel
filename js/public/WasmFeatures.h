@@ -146,7 +146,16 @@
     /* flag predicate     */ true,                                      \
     /* flag force enable  */ false,                                     \
     /* flag fuzz enable   */ true,                                      \
-    /* preference name    */ compact_imports)
+    /* preference name    */ compact_imports)                           \
+  FEATURE(                                                              \
+    /* capitalized name   */ WideArithmetic,                            \
+    /* lower case name    */ wideArithmetic,                            \
+    /* compile predicate  */ 1,                                         \
+    /* compiler predicate */ AnyCompilerAvailable(cx),                  \
+    /* flag predicate     */ true,                                      \
+    /* flag force enable  */ false,                                     \
+    /* flag fuzz enable   */ true,                                      \
+    /* preference name    */ wide_arithmetic)
 
 // clang-format on
 

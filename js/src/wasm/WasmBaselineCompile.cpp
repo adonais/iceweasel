@@ -12090,12 +12090,24 @@ bool BaseCompiler::emitBody() {
           case uint32_t(MiscOp::TableSize):
             CHECK_NEXT(emitTableSize());
           case uint32_t(MiscOp::I64Add128):
+            if (!codeMeta_.wideArithmeticEnabled()) {
+              return iter_.unrecognizedOpcode(&op);
+            }
             CHECK_NEXT(emitI64AddSub128(/*isAdd=*/true));
           case uint32_t(MiscOp::I64Sub128):
+            if (!codeMeta_.wideArithmeticEnabled()) {
+              return iter_.unrecognizedOpcode(&op);
+            }
             CHECK_NEXT(emitI64AddSub128(/*isAdd=*/false));
           case uint32_t(MiscOp::I64MulWideS):
+            if (!codeMeta_.wideArithmeticEnabled()) {
+              return iter_.unrecognizedOpcode(&op);
+            }
             CHECK_NEXT(emitI64MulWide(/*isSigned=*/true));
           case uint32_t(MiscOp::I64MulWideU):
+            if (!codeMeta_.wideArithmeticEnabled()) {
+              return iter_.unrecognizedOpcode(&op);
+            }
             CHECK_NEXT(emitI64MulWide(/*isSigned=*/false));
           default:
             break;

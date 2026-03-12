@@ -1,3 +1,4 @@
+// |jit-test| --setpref=wasm_wide_arithmetic=true
 
 let t = `
 (module
