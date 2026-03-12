@@ -91,7 +91,7 @@ use style::properties::LonghandIdSet;
 use style::properties::{
     animated_properties::{AnimationValue, AnimationValueMap},
     parse_one_declaration_into, parse_style_attribute, ComputedValues, CountedUnknownProperty,
-    Importance, LonghandId, NonCustomPropertyId, OwnedPropertyDeclarationId,
+    CSSWideKeyword, Importance, LonghandId, NonCustomPropertyId, OwnedPropertyDeclarationId,
     PropertyDeclarationBlock, PropertyDeclarationId, PropertyDeclarationIdSet, PropertyId,
     ShorthandId, SourcePropertyDeclaration, StyleBuilder,
 };
@@ -155,7 +155,7 @@ use style::values::specified::svg_path::PathCommand;
 use style::values::specified::{AbsoluteLength, NoCalcLength};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
 use style_traits::{
-    CssWriter, NumericValue, ParseError, ParsingMode, ToCss, ToTyped, TypedValue, UnitValue,
+    CssWriter, NumericValue, ParseError, ParsingMode, SpecifiedValueInfo, ToCss, ToTyped, TypedValue, UnitValue,
 };
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
@@ -1426,6 +1426,14 @@ pub unsafe extern "C" fn Servo_Property_GetCSSValuesForProperty(
     for value in values {
         result.push(value.into());
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_Property_GetCSSWideKeywords(
+    result: &mut nsTArray<nsString>,
+) {
+    CSSWideKeyword::collect_completion_keywords(
+        &mut |list| result.extend(list.iter().map(|k| nsString::from(&**k))));
 }
 
 #[no_mangle]

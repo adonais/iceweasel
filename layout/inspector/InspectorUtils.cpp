@@ -768,6 +768,12 @@ void InspectorUtils::GetCSSValuesForProperty(GlobalObject& aGlobalObject,
 }
 
 /* static */
+void InspectorUtils::GetCSSWideKeywords(GlobalObject& aGlobalObject,
+                                        nsTArray<nsString>& aResult) {
+  Servo_Property_GetCSSWideKeywords(&aResult);
+}
+
+/* static */
 void InspectorUtils::RgbToColorName(GlobalObject&, uint8_t aR, uint8_t aG,
                                     uint8_t aB, nsACString& aColorName) {
   Servo_SlowRgbToColorName(aR, aG, aB, &aColorName);

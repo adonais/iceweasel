@@ -45,6 +45,8 @@ support-files = [
 
 ["test_getCSSPseudoElementNames.html"]
 
+["test_getCSSWideKeywords.html"]
+
 ["test_getGridContainerType.html"]
 
 ["test_getMatchingCSSRules.html"]
