@@ -1589,39 +1589,6 @@ bool BaselineCodeGen<Handler>::emitInterruptCheck() {
   return true;
 }
 
-template <typename Handler>
-bool BaselineCodeGen<Handler>::emitTrialInliningCheck(Register count,
-                                                      Register icScript,
-                                                      Register scratch) {
-  if (JitOptions.disableInlining) {
-    return true;
-  }
-
-  // Consider trial inlining.
-  // Note: unlike other warmup thresholds, where we try to enter a
-  // higher tier whenever we are higher than a given warmup count,
-  // trial inlining triggers once when reaching the threshold.
-  Label noTrialInlining;
-  masm.branch32(Assembler::NotEqual, count,
-                Imm32(JitOptions.trialInliningWarmUpThreshold),
-                &noTrialInlining);
-  prepareVMCall();
-
-  masm.PushBaselineFramePtr(FramePointer, scratch);
-
-  using Fn = bool (*)(JSContext*, BaselineFrame*);
-  if (!callVMNonOp<Fn, DoTrialInlining>()) {
-    return false;
-  }
-  // Reload registers potentially clobbered by the call.
-  Address warmUpCounterAddr(icScript, ICScript::offsetOfWarmUpCount());
-  masm.loadPtr(frame.addressOfICScript(), icScript);
-  masm.load32(warmUpCounterAddr, count);
-  masm.bind(&noTrialInlining);
-
-  return true;
-}
-
 template <>
 bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   frame.assertSyncedStack();
@@ -1658,8 +1625,27 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
 
-  if (!emitTrialInliningCheck(countReg, scriptReg, R1.scratchReg())) {
-    return false;
+  if (!JitOptions.disableInlining) {
+    // Consider trial inlining.
+    // Note: unlike other warmup thresholds, where we try to enter a
+    // higher tier whenever we are higher than a given warmup count,
+    // trial inlining triggers once when reaching the threshold.
+    Label noTrialInlining;
+    masm.branch32(Assembler::NotEqual, countReg,
+                  Imm32(JitOptions.trialInliningWarmUpThreshold),
+                  &noTrialInlining);
+    prepareVMCall();
+
+    masm.PushBaselineFramePtr(FramePointer, R1.scratchReg());
+
+    using Fn = bool (*)(JSContext*, BaselineFrame*);
+    if (!callVMNonOp<Fn, DoTrialInlining>()) {
+      return false;
+    }
+    // Reload registers potentially clobbered by the call.
+    masm.loadPtr(frame.addressOfICScript(), scriptReg);
+    masm.load32(warmUpCounterAddr, countReg);
+    masm.bind(&noTrialInlining);
   }
 
   if (JSOp(*pc) == JSOp::LoopHead) {
@@ -1805,8 +1791,28 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
 
-  if (!emitTrialInliningCheck(countReg, scriptReg, R1.scratchReg())) {
-    return false;
+  if (!JitOptions.disableInlining) {
+    // Consider trial inlining.
+    // Note: unlike other warmup thresholds, where we try to enter a
+    // higher tier whenever we are higher than a given warmup count,
+    // trial inlining triggers once when reaching the threshold.
+    Label noTrialInlining;
+    masm.branch32(Assembler::NotEqual, countReg,
+                  Imm32(JitOptions.trialInliningWarmUpThreshold),
+                  &noTrialInlining);
+    prepareVMCall();
+
+    masm.PushBaselineFramePtr(FramePointer, R1.scratchReg());
+
+    using Fn = bool (*)(JSContext*, BaselineFrame*);
+    if (!callVMNonOp<Fn, DoTrialInlining>()) {
+      return false;
+    }
+    // Reload registers potentially clobbered by the call.
+    loadScript(scriptReg);
+    masm.loadJitScript(scriptReg, scriptReg);
+    masm.load32(warmUpCounterAddr, countReg);
+    masm.bind(&noTrialInlining);
   }
 
   if (JitOptions.baselineBatching) {

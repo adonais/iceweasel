@@ -204,9 +204,6 @@ class BaselineCodeGen {
   [[nodiscard]] bool emitInterruptCheck();
   [[nodiscard]] bool emitWarmUpCounterIncrement();
 
-  [[nodiscard]] bool emitTrialInliningCheck(Register count, Register icScript,
-                                            Register scratch);
-
 #define EMIT_OP(op, ...) bool emit_##op();
   FOR_EACH_OPCODE(EMIT_OP)
 #undef EMIT_OP
