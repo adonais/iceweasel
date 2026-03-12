@@ -15,7 +15,7 @@ import androidx.core.net.toUri
 import androidx.test.espresso.Espresso
 import androidx.test.filters.SdkSuppress
 import androidx.test.rule.ActivityTestRule
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
@@ -135,7 +135,7 @@ class NavigationToolbarTest : TestSetup() {
     @After
     override fun tearDown() {
         super.tearDown()
-        searchMockServer.shutdown()
+        searchMockServer.close()
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135074

@@ -16,7 +16,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.hamcrest.Matchers.allOf
 import org.junit.After
 import org.junit.Before
@@ -51,7 +51,7 @@ class SyncIntegrationTest {
 
     @After
     fun tearDown() {
-        mockWebServer.shutdown()
+        mockWebServer.close()
     }
 
     // TestRail link: https://testrail.stage.mozaws.net/index.php?/cases/view/352905

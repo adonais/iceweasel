@@ -8,6 +8,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.fetch.Client
@@ -20,8 +22,6 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -61,8 +61,8 @@ class NonBlockingHttpIconLoaderTest {
             val server = MockWebServer()
 
             server.enqueue(
-                MockResponse().setBody(
-                    javaClass.getResourceAsStream("/misc/test.txt")!!
+                MockResponse(
+                    body = javaClass.getResourceAsStream("/misc/test.txt")!!
                         .bufferedReader()
                         .use { it.readText() },
                 ),
@@ -100,7 +100,7 @@ class NonBlockingHttpIconLoaderTest {
                 assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource.type)
                 assertSame(iconRequest, callbackIconRequest)
             } finally {
-                server.shutdown()
+                server.close()
             }
         }
     }

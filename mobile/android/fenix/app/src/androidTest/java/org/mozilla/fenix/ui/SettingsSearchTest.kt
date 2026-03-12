@@ -7,7 +7,7 @@ package org.mozilla.fenix.ui
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.filters.SdkSuppress
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -65,7 +65,7 @@ class SettingsSearchTest : TestSetup() {
     @After
     override fun tearDown() {
         super.tearDown()
-        searchMockServer.shutdown()
+        searchMockServer.close()
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203333

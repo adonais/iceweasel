@@ -4,7 +4,7 @@
 package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -48,7 +48,7 @@ class AddToHomescreenTest : TestSetup() {
 
     @After
     fun tearDown() {
-        webServer.shutdown()
+        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 

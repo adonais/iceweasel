@@ -7,10 +7,10 @@ package org.mozilla.fenix.helpers
 import android.os.Handler
 import android.os.Looper
 import androidx.test.platform.app.InstrumentationRegistry
-import okhttp3.mockwebserver.Dispatcher
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
+import mockwebserver3.Dispatcher
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
 import okio.Buffer
 import okio.source
 import java.io.IOException
@@ -32,28 +32,28 @@ class SearchDispatcher : Dispatcher() {
         val assetManager = InstrumentationRegistry.getInstrumentation().context.assets
         try {
             // When we perform a search with the custom search engine, returns the generic4.html test page as search results
-            if (request.path!!.contains("searchResults.html?search=")) {
-                MockResponse().setResponseCode(HTTP_OK)
+            if (request.target.contains("searchResults.html?search=")) {
                 val path = "pages/generic4.html"
                 assetManager.open(path).use { inputStream ->
                     return fileToResponse(inputStream)
                 }
             }
-            return MockResponse().setResponseCode(HTTP_NOT_FOUND)
+            return MockResponse(code = HTTP_NOT_FOUND)
         } catch (e: IOException) {
             // e.g. file not found.
             // We're on a background thread so we need to forward the exception to the main thread.
             mainThreadHandler.postAtFrontOfQueue { throw e }
-            return MockResponse().setResponseCode(HTTP_NOT_FOUND)
+            return MockResponse(code = HTTP_NOT_FOUND)
         }
     }
 }
 
 @Throws(IOException::class)
 private fun fileToResponse(file: InputStream): MockResponse {
-    return MockResponse()
-        .setResponseCode(HTTP_OK)
-        .setBody(fileToBytes(file))
+    return MockResponse.Builder()
+        .code(HTTP_OK)
+        .body(fileToBytes(file))
+        .build()
 }
 
 @Throws(IOException::class)

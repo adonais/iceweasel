@@ -4,7 +4,7 @@
 
 package org.mozilla.focus.activity
 
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -34,7 +34,7 @@ class AboutURITest : TestSetup() {
 
     @After
     fun tearDown() {
-        webServer.shutdown()
+        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 

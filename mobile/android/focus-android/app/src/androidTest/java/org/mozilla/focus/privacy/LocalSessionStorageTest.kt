@@ -4,7 +4,7 @@
 package org.mozilla.focus.privacy
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -50,7 +50,7 @@ class LocalSessionStorageTest : TestSetup() {
     @After
     fun tearDown() {
         try {
-            webServer.shutdown()
+            webServer.close()
         } catch (e: IOException) {
             throw AssertionError("Could not stop web server", e)
         }

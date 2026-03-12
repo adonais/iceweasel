@@ -7,10 +7,10 @@ package mozilla.components.support.android.test.rules
 import android.os.Handler
 import android.os.Looper
 import androidx.test.platform.app.InstrumentationRegistry
-import okhttp3.mockwebserver.Dispatcher
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
+import mockwebserver3.Dispatcher
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import java.io.IOException
@@ -32,7 +32,7 @@ class WebserverRule : TestWatcher() {
     }
 
     override fun finished(description: Description?) {
-        webserver.shutdown()
+        webserver.close()
     }
 }
 
@@ -43,7 +43,7 @@ private class AndroidAssetDispatcher : Dispatcher() {
     private val mainThreadHandler = Handler(Looper.getMainLooper())
 
     override fun dispatch(request: RecordedRequest): MockResponse {
-        var path = request.path!!.drop(1)
+        var path = request.target.drop(1)
         if (path.isEmpty() || path.endsWith("/")) {
             path += "index.html"
         }
@@ -59,8 +59,8 @@ private class AndroidAssetDispatcher : Dispatcher() {
             mainThreadHandler.postAtFrontOfQueue {
                 throw IllegalStateException("Could not load resource from path: $path", e)
             }
-            return MockResponse().setResponseCode(HTTP_NOT_FOUND)
+            return MockResponse(code = HTTP_NOT_FOUND)
         }
-        return MockResponse().setResponseCode(HTTP_OK).setBody(assetContents)
+        return MockResponse(code = HTTP_OK, body = assetContents)
     }
 }

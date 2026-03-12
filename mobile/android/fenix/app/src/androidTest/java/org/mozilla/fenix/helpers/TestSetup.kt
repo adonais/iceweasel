@@ -8,8 +8,8 @@ import android.os.Build
 import android.util.Log
 import androidx.test.rule.GrantPermissionRule
 import kotlinx.coroutines.runBlocking
+import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.store.BrowserStore
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -104,7 +104,7 @@ open class TestSetup {
             mockWebServer.start()
         } catch (e: Exception) {
             Log.i(TAG, "Exception caught. Re-starting mockWebServer")
-            mockWebServer.shutdown()
+            mockWebServer.close()
             mockWebServer.start()
         }
     }

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.focus.activity
 
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -45,7 +45,7 @@ class ThreeDotMainMenuTest : TestSetup() {
 
     @After
     fun tearDown() {
-        webServer.shutdown()
+        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 

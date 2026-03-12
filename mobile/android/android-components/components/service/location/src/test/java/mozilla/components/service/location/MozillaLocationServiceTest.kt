@@ -8,6 +8,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
@@ -18,8 +20,6 @@ import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.fakes.FakeClock
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -49,7 +49,7 @@ class MozillaLocationServiceTest {
     @Test
     fun `WHEN calling fetchRegion AND the service returns a region THEN a Region object is returned`() = runTest {
         val server = MockWebServer()
-        server.enqueue(MockResponse().setBody("{\"country_name\": \"Germany\", \"country_code\": \"DE\"}"))
+        server.enqueue(MockResponse(body = "{\"country_name\": \"Germany\", \"country_code\": \"DE\"}"))
 
         try {
             server.start()
@@ -70,9 +70,9 @@ class MozillaLocationServiceTest {
 
             val request = server.takeRequest()
 
-            assertEquals(server.url("/country?key=test"), request.requestUrl)
+            assertEquals("/country?key=test", request.target)
         } finally {
-            server.shutdown()
+            server.close()
         }
     }
 

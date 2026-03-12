@@ -17,6 +17,7 @@ import mozilla.telemetry.glean.testing.GleanTestLocalServer
 import org.hamcrest.CoreMatchers.anyOf
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -46,6 +47,11 @@ class ApplicationExitInfoMetricsTest {
 
     private lateinit var appContext: Context
     private lateinit var activityManager: ActivityManager
+
+    @After
+    fun tearDown() {
+        server.close()
+    }
 
     @Before
     fun setup() {

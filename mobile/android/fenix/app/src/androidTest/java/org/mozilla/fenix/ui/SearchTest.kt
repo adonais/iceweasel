@@ -11,8 +11,8 @@ import androidx.core.net.toUri
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
 import androidx.test.filters.SdkSuppress
+import mockwebserver3.MockWebServer
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
@@ -103,7 +103,7 @@ class SearchTest : TestSetup() {
     @After
     override fun tearDown() {
         super.tearDown()
-        searchMockServer.shutdown()
+        searchMockServer.close()
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2154189

@@ -10,8 +10,8 @@ import android.hardware.camera2.CameraManager
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import kotlinx.coroutines.runBlocking
+import mockwebserver3.MockWebServer
 import mozilla.components.support.ktx.util.PromptAbuserDetector
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
@@ -68,7 +68,7 @@ class SitePermissionsTest : TestSetup() {
 
     @After
     fun tearDown() {
-        webServer.shutdown()
+        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
         PromptAbuserDetector.validationsEnabled = true
     }

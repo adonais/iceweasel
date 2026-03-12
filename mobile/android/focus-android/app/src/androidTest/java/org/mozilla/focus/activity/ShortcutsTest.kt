@@ -6,7 +6,7 @@
 
 package org.mozilla.focus.activity
 
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -44,7 +44,7 @@ class ShortcutsTest : TestSetup() {
     @After
     fun tearDown() {
         try {
-            webServer.shutdown()
+            webServer.close()
         } catch (e: IOException) {
             throw AssertionError("Could not stop web server", e)
         }

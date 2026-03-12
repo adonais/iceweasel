@@ -10,7 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.rule.ActivityTestRule
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -59,7 +59,7 @@ class CustomTabTest : TestSetup() {
     @After
     fun tearDown() {
         try {
-            webServer.shutdown()
+            webServer.close()
         } catch (e: IOException) {
             throw AssertionError("Could not stop web server", e)
         }

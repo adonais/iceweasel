@@ -8,7 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assert.assertTrue
@@ -56,7 +56,7 @@ class SwitchContextTest : TestSetup() {
     @After
     fun tearDown() {
         try {
-            webServer.shutdown()
+            webServer.close()
         } catch (e: IOException) {
             throw AssertionError("Could not stop web server", e)
         }

@@ -4,8 +4,8 @@
 package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import mockwebserver3.MockWebServer
 import mozilla.components.concept.engine.utils.EngineReleaseChannel
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -52,7 +52,7 @@ class SettingsPrivacyTest : TestSetup() {
     @After
     fun tearDown() {
         featureSettingsHelper.resetAllFeatureFlags()
-        webServer.shutdown()
+        webServer.close()
     }
 
     @SmokeTest

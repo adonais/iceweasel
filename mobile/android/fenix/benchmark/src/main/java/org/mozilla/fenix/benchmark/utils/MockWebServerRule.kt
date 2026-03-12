@@ -6,10 +6,10 @@ package org.mozilla.fenix.benchmark.utils
 
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
-import okhttp3.mockwebserver.Dispatcher
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
+import mockwebserver3.Dispatcher
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
 import okio.Buffer
 import okio.source
 import org.junit.rules.ExternalResource
@@ -41,7 +41,7 @@ class MockWebServerRule(
     }
 
     override fun after() {
-        server.shutdown()
+        server.close()
     }
 
     /**
@@ -54,27 +54,26 @@ class MockWebServerRule(
         override fun dispatch(request: RecordedRequest): MockResponse {
             val assetManager = InstrumentationRegistry.getInstrumentation().context.assets
             try {
-                request.path?.drop(1)?.toUri()?.path?.let { path ->
-                    assetManager.open(path).use { inputStream ->
-                        return inputStream.toResponse(contentType(path))
-                    }
+                val path = request.target.drop(1).toUri().path ?: return MockResponse(code = HTTP_NOT_FOUND)
+                assetManager.open(path).use { inputStream ->
+                    return inputStream.toResponse(contentType(path))
                 }
             } catch (_: IOException) {
                 /* Ignored */
             }
-            return MockResponse().setResponseCode(HTTP_NOT_FOUND)
+            return MockResponse(code = HTTP_NOT_FOUND)
         }
 
         @Throws(IOException::class)
-        private fun InputStream.toResponse(contentType: String) = MockResponse()
-            .setResponseCode(HTTP_OK)
-            .setBody(
+        private fun InputStream.toResponse(contentType: String) = MockResponse.Builder()
+            .code(HTTP_OK)
+            .body(
                 Buffer().apply {
                     writeAll(source())
                 },
             )
             .addHeader("content-type: $contentType")
-
+            .build()
 
         private fun contentType(path: String): String {
             return when {

@@ -110,7 +110,7 @@ class BrowsingErrorPagesTest : TestSetup() {
             waitForPageToLoad()
             verifyPageContent(testUrl.content)
             // Disconnecting the server
-            mockWebServer.shutdown()
+            mockWebServer.close()
         }.openThreeDotMenu {
         }.clickRefreshButton {
             waitForPageToLoad()

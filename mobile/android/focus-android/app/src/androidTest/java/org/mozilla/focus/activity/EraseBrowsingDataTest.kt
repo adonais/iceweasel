@@ -8,7 +8,7 @@ import android.content.Intent
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -58,7 +58,7 @@ class EraseBrowsingDataTest : TestSetup() {
 
     @After
     fun tearDown() {
-        webServer.shutdown()
+        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 

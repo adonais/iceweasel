@@ -9,10 +9,10 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
-import okhttp3.mockwebserver.Dispatcher
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
+import mockwebserver3.Dispatcher
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
 import okio.Buffer
 import okio.source
 import java.io.IOException
@@ -25,7 +25,7 @@ object MockWebServerHelper {
         var uniquePath = 0
         val uris = mutableListOf<Uri>()
         messages.forEach { message ->
-            val response = MockResponse().setBody("<html><body>$message</body></html>")
+            val response = MockResponse(body = "<html><body>$message</body></html>")
             mockServer.enqueue(response)
             val endpoint = mockServer.url(uniquePath++.toString()).toString().toUri()
             uris += endpoint
@@ -42,10 +42,11 @@ object MockWebServerHelper {
             val dispatcher = object : Dispatcher() {
                 @Throws(InterruptedException::class)
                 override fun dispatch(request: RecordedRequest): MockResponse {
-                    return MockResponse().setBody("OK")
+                    return MockResponse(body = "OK")
                 }
             }
             this.dispatcher = dispatcher
+            start()
         }
     }
 }
@@ -66,7 +67,7 @@ class AndroidAssetDispatcher : Dispatcher() {
     override fun dispatch(request: RecordedRequest): MockResponse {
         val assetManager = InstrumentationRegistry.getInstrumentation().context.assets
         try {
-            val pathWithoutQueryParams = request.path!!.drop(1).toUri().path
+            val pathWithoutQueryParams = request.target.drop(1).toUri().path
             assetManager.open(pathWithoutQueryParams!!).use { inputStream ->
                 return fileToResponse(pathWithoutQueryParams, inputStream)
             }
@@ -74,17 +75,18 @@ class AndroidAssetDispatcher : Dispatcher() {
         } catch (e: IOException) {
             // We're on a background thread so we need to forward the exception to the main thread.
             mainThreadHandler.postAtFrontOfQueue { throw e }
-            return MockResponse().setResponseCode(HTTP_NOT_FOUND)
+            return MockResponse(code = HTTP_NOT_FOUND)
         }
     }
 }
 
 @Throws(IOException::class)
 private fun fileToResponse(path: String, file: InputStream): MockResponse {
-    return MockResponse()
-        .setResponseCode(HTTP_OK)
-        .setBody(fileToBytes(file)!!)
+    return MockResponse.Builder()
+        .code(HTTP_OK)
+        .body(fileToBytes(file)!!)
         .addHeader("content-type: " + contentType(path))
+        .build()
 }
 
 @Throws(IOException::class)

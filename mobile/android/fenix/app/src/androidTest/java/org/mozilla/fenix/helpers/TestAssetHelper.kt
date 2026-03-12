@@ -6,7 +6,7 @@ package org.mozilla.fenix.helpers
 
 import android.net.Uri
 import androidx.core.net.toUri
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockWebServer
 import java.util.concurrent.TimeUnit
 
 /**

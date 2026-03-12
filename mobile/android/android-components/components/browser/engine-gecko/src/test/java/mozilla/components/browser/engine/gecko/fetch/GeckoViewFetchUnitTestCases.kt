@@ -5,6 +5,8 @@
 package mozilla.components.browser.engine.gecko.fetch
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
@@ -15,8 +17,7 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
 import mozilla.components.tooling.fetch.tests.FetchTestCases
 import okhttp3.Headers.Companion.toHeaders
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
+import okio.ByteString.Companion.encodeUtf8
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -314,13 +315,10 @@ class GeckoViewFetchUnitTestCases : FetchTestCases() {
 
         headerMap?.let {
             whenever(request.headers).thenReturn(headerMap.toHeaders())
-            whenever(request.getHeader(any())).thenAnswer { inv -> it[inv.getArgument(0)] }
         }
 
         body?.let {
-            val buffer = okio.Buffer()
-            buffer.write(body.toByteArray())
-            whenever(request.body).thenReturn(buffer)
+            whenever(request.body).thenReturn(body.encodeUtf8())
         }
 
         whenever(server.takeRequest()).thenReturn(request)

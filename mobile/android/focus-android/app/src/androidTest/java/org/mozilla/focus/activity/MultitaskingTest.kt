@@ -5,8 +5,8 @@ package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.platform.app.InstrumentationRegistry
+import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.selector.privateTabs
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -64,7 +64,7 @@ class MultitaskingTest : TestSetup() {
     @After
     @Throws(Exception::class)
     fun tearDown() {
-        webServer.shutdown()
+        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
