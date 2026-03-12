@@ -406,6 +406,21 @@ netwerk/test/unit
 -----------------
 Performance tests from the 'netwerk/test/unit' folder.
 
+test_trr_bench.js
+=================
+
+:owner: Network Team
+:name: TRR Benchmark
+:Default options:
+
+::
+
+ --perfherder
+
+**Benchmark for TRR (Trusted Recursive Resolver) DNS lookup performance under various load conditions.**
+
+This test measures TRR DNS lookup performance by comparing baseline DNS resolution times with low contention against performance under high contention with many concurrent requests. It validates that TRR requests maintain acceptable performance even when the network is busy with other requests.
+
 test_http3_perf.js
 ==================
 

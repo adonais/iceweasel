@@ -205,6 +205,30 @@ http3:
             --xpcshell-cycles 13
             --xpcshell-xre-path ${MOZ_FETCHES_DIR}/firefox
 
+busy-trr:
+    description: Run TRR speed test
+    treeherder:
+        symbol: perftest(busy-trr)
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [autoland, mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            xpcshell/tests/netwerk/test/unit/test_trr_bench.js
+            --flavor xpcshell
+            --perfherder
+            --perfherder-metrics name:average,unit:ms
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --xpcshell-binary ${MOZ_FETCHES_DIR}/bin/xpcshell
+            --xpcshell-mozinfo ${MOZ_FETCHES_DIR}/target.mozinfo.json
+            --xpcshell-nodejs ${MOZ_FETCHES_DIR}/node/bin/node
+            --xpcshell-cycles 13
+            --xpcshell-xre-path ${MOZ_FETCHES_DIR}/firefox
+
 livesites:
     description: Live site performance testing
     variants: [http3]

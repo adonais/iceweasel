@@ -21,6 +21,7 @@ suites:
         description: "Performance tests from the 'netwerk/test/unit' folder."
         tests:
             http3 raw: ""
+            TRR Benchmark: ""
     testing/performance:
         description: "Performance tests from the 'testing/performance' folder."
         tests:
