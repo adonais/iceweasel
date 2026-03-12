@@ -455,8 +455,6 @@ const char* ChildListName(FrameChildListID aListID) {
   switch (aListID) {
     case FrameChildListID::Principal:
       return "";
-    case FrameChildListID::ColGroup:
-      return "ColGroupList";
     case FrameChildListID::Absolute:
       return "AbsoluteList";
     case FrameChildListID::PushedAbsolute:

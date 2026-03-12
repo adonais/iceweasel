@@ -86,9 +86,7 @@ void nsTableColFrame::Reflow(nsPresContext* aPresContext,
   DO_GLOBAL_REFLOW_COUNT("nsTableColFrame");
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   aDesiredSize.ClearSize();
-  const nsStyleVisibility* colVis = StyleVisibility();
-  bool collapseCol = StyleVisibility::Collapse == colVis->mVisible;
-  if (collapseCol) {
+  if (StyleVisibility()->mVisible == StyleVisibility::Collapse) {
     GetTableFrame()->SetNeedToCollapse(true);
   }
 }
