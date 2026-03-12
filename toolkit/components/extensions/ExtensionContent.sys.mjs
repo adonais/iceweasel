@@ -951,7 +951,17 @@ class UserScript extends Script {
       sandboxPrototype: contentWindow,
       sameZoneAs: contentWindow,
       wantXrays: true,
-      wantGlobalProperties: ["XMLHttpRequest", "fetch", "WebSocket"],
+      wantGlobalProperties: [
+        "XMLHttpRequest",
+        "fetch",
+        "WebSocket",
+        // The 'structuredClone' method in user scripts should clone within the
+        // user script global by default, rather than cloning into the target
+        // contentWindow.
+        //
+        // TODO(Bug 2022941): add explicit test coverage.
+        "structuredClone",
+      ],
       originAttributes: contentPrincipal.originAttributes,
       metadata: {
         "browser-id": context.browserId,
