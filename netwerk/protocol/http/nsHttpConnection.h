@@ -96,6 +96,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   // Returns time in seconds for how long connection can be reused.
   uint32_t TimeToLive();
 
+  bool IsAlive();
+
   bool NeedSpdyTunnel() {
     return mConnInfo->UsingHttpsProxy() && !mHasTLSTransportLayer &&
            mConnInfo->UsingConnect();
@@ -221,7 +223,6 @@ class nsHttpConnection final : public HttpConnectionBase,
   [[nodiscard]] nsresult OnSocketReadable();
 
   PRIntervalTime IdleTime();
-  bool IsAlive();
 
   // Start the Spdy transaction handler when NPN indicates spdy/*
   void StartSpdy(nsITLSSocketControl* ssl, SpdyVersion spdyVersion);

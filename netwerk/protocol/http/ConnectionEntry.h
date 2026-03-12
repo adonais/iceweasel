@@ -56,6 +56,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   nsresult RemoveIdleConnection(nsHttpConnection* conn);
   bool IsInIdleConnections(HttpConnectionBase* conn);
   size_t IdleConnectionsLength() const { return mIdleConns.Length(); }
+  bool HasAliveIdleConnection();
   void InsertIntoIdleConnections(nsHttpConnection* conn);
   already_AddRefed<nsHttpConnection> GetIdleConnection(bool respectUrgency,
                                                        bool urgentTrans,
