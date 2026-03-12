@@ -1133,4 +1133,18 @@ class AboutTranslationsPageTelemetry {
       );
     });
   }
+
+  /**
+   * Records when the clear source text button is invoked in about:translations.
+   */
+  static onClearSourceTextButton() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.clearSourceTextButton.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onClearSourceTextButton
+      );
+    });
+  }
 }

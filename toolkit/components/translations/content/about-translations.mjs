@@ -689,6 +689,8 @@ class AboutTranslations {
     this.#setSourceText("");
     this.#maybeUpdateDetectedSourceLanguage();
     this.elements.sourceSectionTextArea.focus();
+
+    AT_telemetry("onClearSourceTextButton");
   };
 
   /**
