@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.feature.summarize.settings.SettingsAppBar
 import mozilla.components.feature.summarize.settings.SummarizeSettingsContent
 import mozilla.components.feature.summarize.settings.SummarizeSettingsState
@@ -207,10 +208,11 @@ private val previewSummarizedText = """
 """.trimIndent()
 
 private class SummarizationStatePreviewProvider : PreviewParameterProvider<SummarizationState> {
+    val info = LlmProvider.Info(R.string.mozac_summarize_fake_llm_name)
     override val values: Sequence<SummarizationState> = sequenceOf(
-        SummarizationState.Summarizing(),
-        SummarizationState.Summarized(text = previewSummarizedText),
-        SummarizationState.Settings(summarizedText = previewSummarizedText),
+        SummarizationState.Summarizing(info = info),
+        SummarizationState.Summarized(info = info, text = previewSummarizedText),
+        SummarizationState.Settings(info = info, summarizedText = previewSummarizedText),
         SummarizationState.Error(SummarizationError.ContentTooLong),
         SummarizationState.ShakeConsentRequired,
         SummarizationState.ShakeConsentWithDownloadRequired,

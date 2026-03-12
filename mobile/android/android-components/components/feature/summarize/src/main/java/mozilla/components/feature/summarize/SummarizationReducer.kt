@@ -17,14 +17,14 @@ fun summarizationReducer(state: SummarizationState, action: SummarizationAction)
     is ShakeConsentRequested -> SummarizationState.ShakeConsentRequired
     OffDeviceSummarizationShakeConsentAction.CancelClicked -> SummarizationState.Finished.Cancelled
     OffDeviceSummarizationShakeConsentAction.LearnMoreClicked -> SummarizationState.Finished.LearnMoreAboutShakeConsent
-    is LlmAction.SummarizationRequested -> SummarizationState.Summarizing()
+    is LlmAction.SummarizationRequested -> SummarizationState.Summarizing(info = action.info)
     is LlmAction.ReceivedResponse -> state.applyResponse(action.response)
     is SettingsClicked -> when (state) {
-        is SummarizationState.Summarized -> SummarizationState.Settings(summarizedText = state.text)
+        is SummarizationState.Summarized -> SummarizationState.Settings(info = state.info, summarizedText = state.text)
         else -> state
     }
     is SettingsBackClicked -> when (state) {
-        is SummarizationState.Settings -> SummarizationState.Summarized(text = state.summarizedText)
+        is SummarizationState.Settings -> SummarizationState.Summarized(info = state.info, text = state.summarizedText)
         else -> state
     }
     is SummarizationFailed -> SummarizationState.Error(SummarizationError.SummarizationFailed(action.throwable))
@@ -34,8 +34,8 @@ fun summarizationReducer(state: SummarizationState, action: SummarizationAction)
 internal fun SummarizationState.applyResponse(response: Llm.Response): SummarizationState {
     return if (this is SummarizationState.Summarizing) {
         when (response) {
-            is Llm.Response.Failure -> SummarizationState.Summarized(response.reason)
-            Llm.Response.Success.ReplyFinished -> SummarizationState.Summarized(text = parts.joinToString(""))
+            is Llm.Response.Failure -> SummarizationState.Summarized(info = info, response.reason)
+            Llm.Response.Success.ReplyFinished -> SummarizationState.Summarized(info = info, parts.joinToString(""))
             is Llm.Response.Success.ReplyPart -> copy(parts = parts + response.value)
         }
     } else {

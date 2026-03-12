@@ -5,6 +5,7 @@
 package mozilla.components.feature.summarize
 
 import mozilla.components.concept.llm.Llm
+import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.lib.state.Action
 
 /**
@@ -37,7 +38,7 @@ data class SummarizationFailed(val throwable: Throwable) : SummarizationAction
 
 /** Initialize the Llm */
 internal sealed interface LlmAction : SummarizationAction {
-    data object SummarizationRequested : SummarizationAction
+    data class SummarizationRequested(val info: LlmProvider.Info) : SummarizationAction
     data class ReceivedResponse(val response: Llm.Response) : LlmAction
 }
 

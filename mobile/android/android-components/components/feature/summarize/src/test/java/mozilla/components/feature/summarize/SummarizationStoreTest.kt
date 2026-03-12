@@ -25,6 +25,7 @@ class SummarizationStoreTest {
     @Test
     fun `test that we can consent to shake`() = runTest {
         val settings = SummarizationSettings.inMemory()
+        val provider = FakeCloudProvider(llm = FakeLlm.successful)
 
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -32,7 +33,7 @@ class SummarizationStoreTest {
             middleware = listOf(
                 SummarizationMiddleware(
                     settings = settings,
-                    llmProvider = FakeCloudProvider(llm = FakeLlm.successful),
+                    llmProvider = provider,
                     pageContentExtractor = { Result.success("") },
                     scope = backgroundScope,
                 ),
@@ -52,11 +53,11 @@ class SummarizationStoreTest {
         val expected = listOf<SummarizationState>(
             Inert(true),
             ShakeConsentRequired,
-            Summarizing(),
-            Summarizing(listOf("# This is the article\n")),
-            Summarizing(listOf("# This is the article\n", "This is some content...\n")),
-            Summarizing(listOf("# This is the article\n", "This is some content...\n", "This is some *bold* content.\n")),
-            Summarized("# This is the article\nThis is some content...\nThis is some *bold* content.\n"),
+            Summarizing(provider.info),
+            Summarizing(provider.info, listOf("# This is the article\n")),
+            Summarizing(provider.info, listOf("# This is the article\n", "This is some content...\n")),
+            Summarizing(provider.info, listOf("# This is the article\n", "This is some content...\n", "This is some *bold* content.\n")),
+            Summarized(provider.info, "# This is the article\nThis is some content...\nThis is some *bold* content.\n"),
         )
 
         assertEquals(expected, states)
@@ -105,6 +106,7 @@ class SummarizationStoreTest {
     @Test
     fun `If a user has already consented to shake, test that we can prompt an llm`() = runTest {
         val llm = FakeLlm.successful
+        val provider = FakeCloudProvider(llm = llm)
         val content = "this is expected content."
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -112,7 +114,7 @@ class SummarizationStoreTest {
             middleware = listOf(
                 SummarizationMiddleware(
                     settings = SummarizationSettings.inMemory(hasConsentedToShakeInitial = true),
-                    llmProvider = FakeCloudProvider(llm = llm),
+                    llmProvider = provider,
                     pageContentExtractor = { Result.success(content) },
                     scope = backgroundScope,
                 ),
@@ -130,11 +132,11 @@ class SummarizationStoreTest {
 
         val expected = listOf<SummarizationState>(
             Inert(true),
-            Summarizing(),
-            Summarizing(listOf("# This is the article\n")),
-            Summarizing(listOf("# This is the article\n", "This is some content...\n")),
-            Summarizing(listOf("# This is the article\n", "This is some content...\n", "This is some *bold* content.\n")),
-            Summarized("# This is the article\nThis is some content...\nThis is some *bold* content.\n"),
+            Summarizing(provider.info),
+            Summarizing(provider.info, listOf("# This is the article\n")),
+            Summarizing(provider.info, listOf("# This is the article\n", "This is some content...\n")),
+            Summarizing(provider.info, listOf("# This is the article\n", "This is some content...\n", "This is some *bold* content.\n")),
+            Summarized(provider.info, "# This is the article\nThis is some content...\nThis is some *bold* content.\n"),
         )
 
         assertEquals(expected, states)
@@ -144,13 +146,14 @@ class SummarizationStoreTest {
     @Test
     fun `if the page extractor fails, the failure is forwarded as a summarization failure`() = runTest {
         val failureThrowable = NullPointerException()
+        val provider = FakeCloudProvider(llm = FakeLlm.successful)
         val store = SummarizationStore(
             initialState = Inert(true),
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
                     settings = SummarizationSettings.inMemory(hasConsentedToShakeInitial = true),
-                    llmProvider = FakeCloudProvider(llm = FakeLlm.successful),
+                    llmProvider = provider,
                     pageContentExtractor = { Result.failure(failureThrowable) },
                     scope = backgroundScope,
                 ),
@@ -168,7 +171,7 @@ class SummarizationStoreTest {
 
         val expected = listOf<SummarizationState>(
             Inert(true),
-            Summarizing(),
+            Summarizing(provider.info),
             SummarizationState.Error(SummarizationError.SummarizationFailed(failureThrowable)),
         )
 

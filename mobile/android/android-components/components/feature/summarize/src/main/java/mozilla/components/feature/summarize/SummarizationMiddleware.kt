@@ -67,7 +67,7 @@ class SummarizationMiddleware(
         store: SummarizationStore,
         llmProvider: CloudLlmProvider,
     ) {
-        store.dispatch(LlmAction.SummarizationRequested)
+        store.dispatch(LlmAction.SummarizationRequested(llmProvider.info))
         llmProvider.state.map { state ->
             when (state) {
                 CloudLlmProvider.State.Available -> LlmProviderAction.ProviderUnavailable
