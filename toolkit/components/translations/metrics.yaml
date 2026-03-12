@@ -1008,6 +1008,31 @@ translations.about_translations_page:
       - translations-telemetry-alerts@mozilla.com
     expires: never
 
+  unsupported_language_message:
+    type: event
+    description: >
+      Triggers when the unsupported-language message is shown in the about:translations page.
+    extra_keys:
+      flow_id: *flow_id
+      detected_language:
+        type: string
+        description: The detected language tag of the source text.
+      source_text_code_units:
+        type: quantity
+        description: The length of the source text in UTF-16 code units.
+      source_text_word_count:
+        type: quantity
+        description: The number of words in the source text.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - translations-telemetry-alerts@mozilla.com
+    expires: never
+
 translations.feature:
   enable:
     type: event

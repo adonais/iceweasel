@@ -340,7 +340,7 @@ export class TranslationsTelemetry {
    * @param {string} data.targetLanguage
    * @param {string} data.requestTarget
    * @param {number} data.sourceTextCodeUnits
-   * @param {number} data.sourceTextWordCount
+   * @param {number} [data.sourceTextWordCount]
    */
   static onTranslate(data) {
     const {
@@ -1072,7 +1072,7 @@ class AboutTranslationsPageTelemetry {
    * @param {string} data.sourceLanguage
    * @param {string} data.targetLanguage
    * @param {number} data.sourceTextCodeUnits
-   * @param {number} data.sourceTextWordCount
+   * @param {number} [data.sourceTextWordCount]
    */
   static onTranslate(data) {
     // Translation requests are explicitly excluded from rate limiting.
@@ -1158,6 +1158,31 @@ class AboutTranslationsPageTelemetry {
       });
       TranslationsTelemetry.logEventToConsole(
         AboutTranslationsPageTelemetry.onSwapButton
+      );
+    });
+  }
+
+  /**
+   * Records when the unsupported-language message is shown in about:translations.
+   *
+   * @param {object} data
+   * @param {string} data.detectedLanguage
+   * @param {number} data.sourceTextCodeUnits
+   * @param {number | null} [data.sourceTextWordCount]
+   */
+  static onUnsupportedLanguageMessage(data) {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.unsupportedLanguageMessage.record(
+        {
+          flow_id: flowId,
+          detected_language: data.detectedLanguage,
+          source_text_code_units: data.sourceTextCodeUnits,
+          source_text_word_count: data.sourceTextWordCount,
+        }
+      );
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onUnsupportedLanguageMessage,
+        data
       );
     });
   }

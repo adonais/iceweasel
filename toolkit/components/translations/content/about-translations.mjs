@@ -1109,6 +1109,7 @@ class AboutTranslations {
       detectedLanguageUnsupportedHeading,
       detectedLanguageUnsupportedMessage,
     } = this.elements;
+    const wasHidden = detectedLanguageUnsupportedMessage.hidden;
 
     const languageLabel =
       this.#detectedLanguageDisplayName || this.#detectedLanguage;
@@ -1126,6 +1127,9 @@ class AboutTranslations {
     }
 
     detectedLanguageUnsupportedMessage.hidden = false;
+    if (wasHidden) {
+      this.#recordUnsupportedLanguageMessageTelemetry();
+    }
     this.#requestSectionHeightsUpdate({ scheduleCallback: false });
     document.l10n
       .translateFragment(detectedLanguageUnsupportedMessage)
@@ -1714,12 +1718,16 @@ class AboutTranslations {
   /**
    * Counts the words in the text for the given language tag.
    *
-   * @param {string} languageTag - A BCP-47 language tag.
    * @param {string} text - The text for which to count words.
+   * @param {string | null} [languageTag=null] - An optional BCP-47 language tag.
    *
-   * @returns {number} The count of words in the text.
+   * @returns {number | null} The count of words in the text, or null when no language tag is available.
    */
-  #countWords(languageTag, text) {
+  #countWords(text, languageTag = null) {
+    if (!languageTag) {
+      return null;
+    }
+
     let segmenter = this.#wordCountSegmenter;
 
     if (
@@ -1756,7 +1764,7 @@ class AboutTranslations {
 
     let sourceTextWordCount;
     try {
-      sourceTextWordCount = this.#countWords(sourceLanguage, sourceText);
+      sourceTextWordCount = this.#countWords(sourceText, sourceLanguage);
     } catch (error) {
       AT_logError(error);
     }
@@ -1766,6 +1774,31 @@ class AboutTranslations {
         autoTranslate: false,
         sourceLanguage,
         targetLanguage,
+        sourceTextCodeUnits: sourceText.length,
+        sourceTextWordCount,
+      });
+    } catch (error) {
+      AT_logError(error);
+    }
+  }
+
+  /**
+   * Records an unsupported-language-message telemetry event.
+   */
+  #recordUnsupportedLanguageMessageTelemetry() {
+    const sourceText = this.#getSourceText();
+    const detectedLanguage = this.#detectedLanguage;
+
+    let sourceTextWordCount;
+    try {
+      sourceTextWordCount = this.#countWords(sourceText, detectedLanguage);
+    } catch (error) {
+      AT_logError(error);
+    }
+
+    try {
+      AT_telemetry("onUnsupportedLanguageMessage", {
+        detectedLanguage,
         sourceTextCodeUnits: sourceText.length,
         sourceTextWordCount,
       });
