@@ -4738,7 +4738,9 @@ const AdBanner = ({
 
 
 
+const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
+const CardGrid_PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
@@ -5024,7 +5026,16 @@ class _CardGrid extends (external_React_default()).PureComponent {
 
     // Handle the case where a user has dismissed all recommendations
     const isEmpty = data.recommendations.length === 0;
-    return /*#__PURE__*/external_React_default().createElement("div", null, this.props.title && /*#__PURE__*/external_React_default().createElement("div", {
+    const prefs = this.props.Prefs.values;
+    const novaEnabled = prefs[PREF_NOVA_ENABLED];
+    const sectionsEnabled = prefs[CardGrid_PREF_SECTIONS_ENABLED];
+    const showNovaHeader = novaEnabled && !sectionsEnabled;
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      className: "ds-card-grid-container"
+    }, showNovaHeader && /*#__PURE__*/external_React_default().createElement("h2", {
+      className: "ds-header",
+      "data-l10n-id": "newtab-section-header-stories"
+    }), !showNovaHeader && this.props.title && /*#__PURE__*/external_React_default().createElement("div", {
       className: "ds-header"
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "title"
@@ -5153,7 +5164,7 @@ ErrorBoundary.defaultProps = {
  * See bug 1727365 for follow-up work to simplify this component.
  */
 // @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
-const PREF_NOVA_ENABLED = "nova.enabled";
+const CollapsibleSection_PREF_NOVA_ENABLED = "nova.enabled";
 class _CollapsibleSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -5239,7 +5250,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     const selectedTopics = this.props.Prefs.values["discoverystream.topicSelection.selectedTopics"];
     const topicsHaveBeenPreviouslySet = hasBeenUpdatedPreviously || selectedTopics;
     // @nova-cleanup(remove-conditional): Remove conditional class "collapsible-section"
-    const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
+    const novaEnabled = this.props.Prefs.values[CollapsibleSection_PREF_NOVA_ENABLED];
     return /*#__PURE__*/external_React_default().createElement("section", {
       className: `
           ${novaEnabled ? "" : "collapsible-section"}
@@ -5248,7 +5259,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       // Note: data-section-id is used for web extension api tests in mozilla central
       ,
       "data-section-id": id
-    }, !sectionsEnabled && /*#__PURE__*/external_React_default().createElement("div", {
+    }, !sectionsEnabled && !novaEnabled && /*#__PURE__*/external_React_default().createElement("div", {
       className: "section-top-bar"
     }, /*#__PURE__*/external_React_default().createElement("h2", {
       className: `section-title-container ${hasSubtitleClassName}`,

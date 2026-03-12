@@ -115,7 +115,9 @@ export class _CollapsibleSection extends React.PureComponent {
         // Note: data-section-id is used for web extension api tests in mozilla central
         data-section-id={id}
       >
-        {!sectionsEnabled && (
+        {/* eslint-disable-next-line jsdoc/no-bad-blocks */}
+        {/* @nova-cleanup(remove-conditional): Remove !novaEnabled check, title moves to CardGrid */}
+        {!sectionsEnabled && !novaEnabled && (
           <div className="section-top-bar">
             <h2
               className={`section-title-container ${hasSubtitleClassName}`}

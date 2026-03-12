@@ -64,6 +64,11 @@
     }
   }
 
+  // @nova-cleanup(remove-conditional): Remove .nova-enabled wrapper, make default
+  .nova-enabled .content & {
+    grid-column: 1 / -1;
+  }
+
   &.ds-navigation-new-topics {
     display: block;
     padding-block-start: var(--space-xxlarge);

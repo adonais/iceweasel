@@ -25,14 +25,18 @@
   // Side Columns (.sidebar-inline-start/end) are 2 columns wide each side
   --side-col-width: calc(2 * var(--col-width));
 
-  // Content area (.content): minimum 4 columns wide, grows to fill remaining space
-  --content-col-width: minmax(calc((4 * var(--col-width)) + 34px), 1fr);
+  // Content area (.content): minimum 4 columns wide, grows up to 16 columns max
+  --content-col-width: minmax(calc((4 * var(--col-width)) + 34px), var(--content-max-width));
+
+  // Maximum width of .content: 16 columns + 15 gaps
+  --content-max-width: calc(16 * var(--col-width) + 15 * var(--space-medium));
 }
 
 .container {
   display: grid;
   grid-template-columns: var(--side-col-width) var(--content-col-width) var(--side-col-width);
   gap: var(--space-medium);
+  justify-content: center;
   margin-inline: auto;
 }
 
@@ -86,20 +90,3 @@
   grid-column: span 26;
 }
 
-// Bug 2020945 - CSS custom properties cannot be used in container queries, so these values
-// are stored as SCSS variables to be interpolated into calc() expressions.
-$col-width-px: 75px;
-$col-gap-px: 0.75rem;
-
-// Use this mixin instead of static media query breakpoints. It applies styles
-// when the content grid has room for at least $cols columns, making layouts
-// adapt to the available column count rather than fixed viewport widths.
-// Usage: @include at-content-cols(6) { grid-column: span 6; }
-
-@mixin at-content-cols($cols) {
-  $min-width: calc(#{$cols} * #{$col-width-px} + #{$cols - 1} * #{$col-gap-px});
-
-  @container content-grid (inline-size >= #{$min-width}) {
-    @content;
-  }
-}

@@ -9,7 +9,9 @@ import { AdBanner } from "../AdBanner/AdBanner.jsx";
 import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
 import React, { useEffect, useRef } from "react";
 import { connect } from "react-redux";
+const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
+const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
@@ -354,9 +356,20 @@ export class _CardGrid extends React.PureComponent {
     // Handle the case where a user has dismissed all recommendations
     const isEmpty = data.recommendations.length === 0;
 
+    const prefs = this.props.Prefs.values;
+    const novaEnabled = prefs[PREF_NOVA_ENABLED];
+    const sectionsEnabled = prefs[PREF_SECTIONS_ENABLED];
+    const showNovaHeader = novaEnabled && !sectionsEnabled;
+
     return (
-      <div>
-        {this.props.title && (
+      <div className="ds-card-grid-container">
+        {showNovaHeader && (
+          <h2
+            className="ds-header"
+            data-l10n-id="newtab-section-header-stories"
+          />
+        )}
+        {!showNovaHeader && this.props.title && (
           <div className="ds-header">
             <div className="title">{this.props.title}</div>
             {this.props.context && (

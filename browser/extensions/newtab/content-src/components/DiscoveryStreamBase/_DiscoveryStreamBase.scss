@@ -82,23 +82,19 @@ $ds-width: 936px;
 }
 
 // Nova Grid Overrides
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector and display: contents wrappers
+.nova-enabled .content .ds-layout:not(.discovery-stream) {
+  display: contents;
+
+  > div {
+    display: contents;
+  }
+}
+
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior
 .nova-enabled .content .discovery-stream.ds-layout {
   display: contents;
   grid-column: 1 / -1;
-}
-
-// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior
-.nova-enabled .content .ds-section-wrapper {
-  display: contents;
-}
-
-// Make widgets section use Nova grid instead of old DS grid
-// Use display: contents to make wrappers transparent to the grid
-// @nova-cleanup(remove-conditional): Remove .nova-enabled selector and display: contents wrappers
-.nova-enabled .ds-layout-widgets {
-  grid-column: 1 / -1;
-  display: contents;
 
   .ds-column {
     display: contents;
@@ -112,5 +108,42 @@ $ds-width: 936px;
   .ds-column-grid > div {
     display: contents;
   }
+}
 
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector and display: contents wrapper
+.nova-enabled .content .ds-top-sites {
+  display: contents;
+}
+
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior
+.nova-enabled .content .top-sites {
+  grid-column: 1 / -1;
+}
+
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior.
+// ds-section-wrapper is the centering grid: auto-fill with 4-column tracks
+// so that section headings and card grids share the same width and alignment.
+.nova-enabled .content .ds-section-wrapper {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    calc(4 * var(--col-width) + 3 * var(--space-medium))
+  );
+  gap: var(--space-medium);
+  justify-content: center;
+  grid-column: 1 / -1;
+}
+
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior.
+// ds-card-grid-container is the centering grid: auto-fill with 4-column tracks
+// so that ds-header and ds-card-grid share the same width and alignment.
+.nova-enabled .content .ds-card-grid-container {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    calc(4 * var(--col-width) + 3 * var(--space-medium))
+  );
+  gap: var(--space-medium);
+  justify-content: center;
+  grid-column: 1 / -1;
 }

@@ -146,6 +146,11 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   .top-sites-list {
     padding-block-start: 0;
   }
+
+  // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior
+  .nova-enabled & {
+    display: contents;
+  }
 }
 
 // container for drop zone

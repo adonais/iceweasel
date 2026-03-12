@@ -75,6 +75,43 @@
   }
 }
 
+// Bug 2020945 - CSS custom properties cannot be used in container queries, so these values
+// are stored as SCSS variables to be interpolated into calc() expressions.
+$col-width-px: 75px;
+$col-gap-px: 0.75rem;
+
+// Use this mixin instead of static media query breakpoints. It applies styles
+// when the content grid has room for at least $cols columns, making layouts
+// adapt to the available column count rather than fixed viewport widths.
+// Usage: @include at-content-cols(6) { grid-column: span 6; }
+@mixin at-content-cols($cols) {
+  $min-width: calc(#{$cols} * #{$col-width-px} + #{$cols - 1} * #{$col-gap-px});
+
+  @container content-grid (inline-size >= #{$min-width}) {
+    @content;
+  }
+}
+
+// Like at-content-cols but applies only within an exclusive column-count range.
+// $min-cols: lower bound (inclusive); use 0 to match from the smallest size.
+// $max-cols: upper bound (exclusive).
+// Usage: @include at-content-cols-range(8, 12) { … }
+@mixin at-content-cols-range($min-cols, $max-cols) {
+  $max-width: calc(#{$max-cols} * #{$col-width-px} + #{$max-cols - 1} * #{$col-gap-px});
+
+  @if $min-cols == 0 {
+    @container content-grid (inline-size < #{$max-width}) {
+      @content;
+    }
+  } @else {
+    $min-width: calc(#{$min-cols} * #{$col-width-px} + #{$min-cols - 1} * #{$col-gap-px});
+
+    @container content-grid ((inline-size >= #{$min-width}) and (inline-size < #{$max-width})) {
+      @content;
+    }
+  }
+}
+
 // Adds transparency and a hover effect to card background.
 @mixin newtab-card-style {
   background: var(--newtab-background-card);
