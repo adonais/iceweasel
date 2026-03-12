@@ -30,8 +30,6 @@ add_setup(() => {
     idleService
   );
 
-  setupProfile();
-
   Services.prefs.setBoolPref(SCHEDULED_BACKUPS_ENABLED_PREF_NAME, true);
 
   // We'll pretend that our threshold between backups is 20 seconds.

@@ -1,9 +1,6 @@
 [DEFAULT]
 subsuite = "integration"
 
-["test_xdg_config_legacy_dir_only.py"]
-run-if = ["os == 'linux'"]
-
 ["test_xdg_config_legacy_existing.py"]
 run-if = [
   "os == 'linux'"

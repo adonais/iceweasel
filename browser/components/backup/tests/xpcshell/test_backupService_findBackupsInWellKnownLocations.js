@@ -3,10 +3,6 @@
 
 "use strict";
 
-add_setup(async () => {
-  setupProfile();
-});
-
 add_task(
   async function test_findBackupsInWellKnownLocations_and_multipleFiles() {
     // make an isolated temp folder to act as the “default backup dir”

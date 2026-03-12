@@ -247,7 +247,6 @@ async function expectNoRegeneration(taskFn, msg) {
 }
 
 add_setup(() => {
-  setupProfile();
   CookieXPCShellUtils.createServer({ hosts: ["example.com"] });
   Services.prefs.setBoolPref("dom.security.https_first", false);
 

@@ -19,7 +19,6 @@ const { JsonSchema } = ChromeUtils.importESModule(
  * recoverFromSnapshotFolderIntoSelectableProfile should throw an exception.
  */
 add_task(async function test_different_appName() {
-  setupProfile();
   let testRecoveryPath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "testDifferentAppName"
