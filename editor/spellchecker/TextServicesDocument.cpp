@@ -15,6 +15,7 @@
 #include "mozilla/IntegerRange.h"  // for IntegerRange
 #include "mozilla/mozalloc.h"      // for operator new, etc
 #include "mozilla/OwningNonNull.h"
+#include "mozilla/RangeBoundary.h"
 #include "mozilla/UniquePtr.h"          // for UniquePtr
 #include "mozilla/dom/AbstractRange.h"  // for AbstractRange
 #include "mozilla/dom/Element.h"
@@ -106,6 +107,15 @@ class OffsetEntry final {
       uint32_t aOffsetInTextInBlock) const {
     return aOffsetInTextInBlock >= mOffsetInTextInBlock &&
            aOffsetInTextInBlock <= EndOffsetInTextInBlock();
+  }
+
+  RawRangeBoundary StartRef() const {
+    return RawRangeBoundary(mTextNode, mOffsetInTextNode,
+                            RangeBoundarySetBy::Offset, TreeKind::DOM);
+  }
+  RawRangeBoundary EndRef() const {
+    return RawRangeBoundary(mTextNode, EndOffsetInTextNode(),
+                            RangeBoundarySetBy::Offset, TreeKind::DOM);
   }
 
   OwningNonNull<Text> mTextNode;
@@ -1821,23 +1831,15 @@ nsresult TextServicesDocument::GetCollapsedSelection(
       tableCount > 1 ? mOffsetTable[tableCount - 1] : eStart;
   LockOffsetEntryArrayLengthInDebugBuild(observer, mOffsetTable);
 
-  const uint32_t eStartOffset = eStart->mOffsetInTextNode;
-  const uint32_t eEndOffset = eEnd->EndOffsetInTextNode();
-
-  RefPtr<const nsRange> range = selection->GetRangeAt(0);
-  NS_ENSURE_STATE(range);
-
-  nsCOMPtr<nsINode> parent = range->GetStartContainer();
-  MOZ_ASSERT(parent);
-
-  uint32_t offset = range->StartOffset();
+  const nsRange* const selectionRange = selection->GetRangeAt(0);
+  NS_ENSURE_STATE(selectionRange);
 
   const Maybe<int32_t> e1s1 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eStart->mTextNode, eStartOffset, parent, offset);
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          eStart->StartRef(), selectionRange->StartRef());
   const Maybe<int32_t> e2s1 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eEnd->mTextNode, eEndOffset, parent, offset);
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          eEnd->EndRef(), selectionRange->StartRef());
 
   if (MOZ_UNLIKELY(NS_WARN_IF(!e1s1) || NS_WARN_IF(!e2s1))) {
     return NS_ERROR_FAILURE;
@@ -1848,6 +1850,9 @@ nsresult TextServicesDocument::GetCollapsedSelection(
     return NS_OK;
   }
 
+  nsINode* const parent = selectionRange->GetStartContainer();
+  MOZ_ASSERT(parent);
+  uint32_t offset = selectionRange->StartOffset();
   if (parent->IsText()) {
     // Good news, the caret is in a text node. Look
     // through the offset table for the entry that
@@ -1878,8 +1883,8 @@ nsresult TextServicesDocument::GetCollapsedSelection(
   // child of this non-text node. Then look for the closest text
   // node.
 
-  range = nsRange::Create(eStart->mTextNode, eStartOffset, eEnd->mTextNode,
-                          eEndOffset, IgnoreErrors());
+  const RefPtr<const nsRange> range =
+      nsRange::Create(eStart->StartRef(), eEnd->EndRef(), IgnoreErrors());
   if (NS_WARN_IF(!range)) {
     return NS_ERROR_FAILURE;
   }
@@ -1911,7 +1916,7 @@ nsresult TextServicesDocument::GetCollapsedSelection(
     // The parent has no children, so position the iterator
     // on the parent.
     NS_ENSURE_TRUE(parent->IsContent(), NS_ERROR_FAILURE);
-    nsCOMPtr<nsIContent> content = parent->AsContent();
+    nsIContent* const content = parent->AsContent();
 
     nsresult rv = filteredIter->PositionAt(content);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1986,7 +1991,6 @@ nsresult TextServicesDocument::GetCollapsedSelection(
 nsresult TextServicesDocument::GetUncollapsedSelection(
     BlockSelectionStatus* aSelStatus, uint32_t* aSelOffset,
     uint32_t* aSelLength) {
-  RefPtr<const nsRange> range;
   RefPtr<Selection> selection =
       mSelCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
   NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
@@ -1994,8 +1998,6 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
   // It is assumed that the calling function has made sure that the
   // selection is not collapsed, and that the input params to this
   // method are initialized to some defaults.
-
-  nsCOMPtr<nsINode> startContainer, endContainer;
 
   const size_t tableCount = mOffsetTable.Length();
 
@@ -2007,8 +2009,8 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
       tableCount > 1 ? mOffsetTable[tableCount - 1] : eStart;
   LockOffsetEntryArrayLengthInDebugBuild(observer, mOffsetTable);
 
-  const uint32_t eStartOffset = eStart->mOffsetInTextNode;
-  const uint32_t eEndOffset = eEnd->EndOffsetInTextNode();
+  const RawRangeBoundary startRef = eStart->StartRef();
+  const RawRangeBoundary endRef = eEnd->EndRef();
 
   const uint32_t rangeCount = selection->RangeCount();
   MOZ_ASSERT(rangeCount);
@@ -2017,30 +2019,22 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
   // the current text block.
   Maybe<int32_t> e1s2;
   Maybe<int32_t> e2s1;
-  uint32_t startOffset, endOffset;
+  const nsRange* selectionRange = nullptr;
   for (const uint32_t i : IntegerRange(rangeCount)) {
     MOZ_ASSERT(selection->RangeCount() == rangeCount);
-    range = selection->GetRangeAt(i);
-    if (MOZ_UNLIKELY(NS_WARN_IF(!range))) {
+    selectionRange = selection->GetRangeAt(i);
+    if (NS_WARN_IF(!selectionRange)) {
       return NS_ERROR_FAILURE;
     }
 
-    nsresult rv =
-        GetRangeEndPoints(range, getter_AddRefs(startContainer), &startOffset,
-                          getter_AddRefs(endContainer), &endOffset);
-
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    e1s2 =
-        nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-            eStart->mTextNode, eStartOffset, endContainer, endOffset);
+    e1s2 = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+        startRef, selectionRange->EndRef());
     if (NS_WARN_IF(!e1s2)) {
       return NS_ERROR_FAILURE;
     }
 
-    e2s1 =
-        nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-            eEnd->mTextNode, eEndOffset, startContainer, startOffset);
+    e2s1 = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+        endRef, selectionRange->StartRef());
     if (NS_WARN_IF(!e2s1)) {
       return NS_ERROR_FAILURE;
     }
@@ -2062,15 +2056,15 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
 
   // Now that we have an intersecting range, find out more info:
   const Maybe<int32_t> e1s1 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eStart->mTextNode, eStartOffset, startContainer, startOffset);
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          startRef, selectionRange->StartRef());
   if (NS_WARN_IF(!e1s1)) {
     return NS_ERROR_FAILURE;
   }
 
   const Maybe<int32_t> e2s2 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eEnd->mTextNode, eEndOffset, endContainer, endOffset);
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          endRef, selectionRange->EndRef());
   if (NS_WARN_IF(!e2s2)) {
     return NS_ERROR_FAILURE;
   }
@@ -2104,10 +2098,10 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
 
   if (*e1s1 >= 0) {
     p1 = eStart->mTextNode;
-    o1 = eStartOffset;
+    o1 = eStart->mOffsetInTextNode;
   } else {
-    p1 = startContainer;
-    o1 = startOffset;
+    p1 = selectionRange->GetStartContainer();
+    o1 = selectionRange->StartOffset();
   }
 
   // The end of the range will be the leftmost
@@ -2115,13 +2109,14 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
 
   if (*e2s2 <= 0) {
     p2 = eEnd->mTextNode;
-    o2 = eEndOffset;
+    o2 = eEnd->EndOffsetInTextNode();
   } else {
-    p2 = endContainer;
-    o2 = endOffset;
+    p2 = selectionRange->GetEndContainer();
+    o2 = selectionRange->EndOffset();
   }
 
-  range = nsRange::Create(p1, o1, p2, o2, IgnoreErrors());
+  const RefPtr<const nsRange> range =
+      nsRange::Create(p1, o1, p2, o2, IgnoreErrors());
   if (NS_WARN_IF(!range)) {
     return NS_ERROR_FAILURE;
   }
