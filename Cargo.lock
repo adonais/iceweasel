@@ -3018,8 +3018,8 @@ dependencies = [
 
 [[package]]
 name = "happy-eyeballs"
-version = "0.1.0"
-source = "git+https://github.com/mozilla/happy-eyeballs?tag=v0.1.0#68741fb9b59b48ba995808bbbe32d6c8bf6933e8"
+version = "0.2.0"
+source = "git+https://github.com/mozilla/happy-eyeballs?tag=v0.2.0#f4f9c5b7b3002103f4aef4335a80b840ad02624b"
 dependencies = [
  "log",
  "thiserror 2.0.12",
