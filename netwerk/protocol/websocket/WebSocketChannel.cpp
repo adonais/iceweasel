@@ -4307,7 +4307,13 @@ void WebSocketChannel::OnError(nsresult aStatus) { AbortSession(aStatus); }
 void WebSocketChannel::OnTCPClosed() { mTCPClosed = true; }
 
 nsresult WebSocketChannel::OnDataReceived(uint8_t* aData, uint32_t aCount) {
-  return ProcessInput(aData, aCount);
+  nsresult rv = ProcessInput(aData, aCount);
+  if (NS_FAILED(rv)) {
+    mFragmentAccumulator = 0;
+    mFragmentOpcode = nsIWebSocketFrame::OPCODE_CONTINUATION;
+    mBuffered = 0;
+  }
+  return rv;
 }
 
 }  // namespace mozilla::net
