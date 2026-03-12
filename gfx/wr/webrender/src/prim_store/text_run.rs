@@ -19,10 +19,9 @@ use crate::util::MatrixHelpers;
 use crate::prim_store::{InternablePrimitive, PrimitiveInstanceKind, LayoutPointAu};
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::space::SpaceSnapper;
-
 use std::ops;
 
-use super::{storage, VectorKey};
+use super::storage;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -42,7 +41,6 @@ pub struct TextRunKey {
     pub glyphs: Vec<GlyphInstanceAu>,
     pub shadow: bool,
     pub requested_raster_space: RasterSpace,
-    pub reference_frame_offset: VectorKey,
 }
 
 impl TextRunKey {
@@ -67,7 +65,6 @@ impl TextRunKey {
             glyphs,
             shadow: text_run.shadow,
             requested_raster_space: text_run.requested_raster_space,
-            reference_frame_offset: text_run.reference_frame_offset.into(),
         }
     }
 }
@@ -174,7 +171,6 @@ pub struct TextRun {
     pub glyphs: Vec<GlyphInstance>,
     pub shadow: bool,
     pub requested_raster_space: RasterSpace,
-    pub reference_frame_offset: LayoutVector2D,
 }
 
 impl intern::Internable for TextRun {
@@ -200,13 +196,10 @@ impl InternablePrimitive for TextRun {
         data_handle: TextRunDataHandle,
         prim_store: &mut PrimitiveStore,
     ) -> PrimitiveInstanceKind {
-        let reference_frame_offset = key.reference_frame_offset.into();
-
         let run_index = prim_store.text_runs.push(TextRunPrimitive {
             used_font: key.font.clone(),
             glyph_keys_range: storage::Range::empty(),
-            reference_frame_relative_offset: reference_frame_offset,
-            snapped_reference_frame_relative_offset: reference_frame_offset,
+            snapped_reference_frame_relative_offset: LayoutVector2D::zero(),
             shadow: key.shadow,
             raster_scale: 1.0,
             requested_raster_space: key.requested_raster_space,
@@ -242,7 +235,6 @@ impl CreateShadow for TextRun {
             glyphs: self.glyphs.clone(),
             shadow: true,
             requested_raster_space,
-            reference_frame_offset: self.reference_frame_offset,
         }
     }
 }
@@ -258,7 +250,6 @@ impl IsVisible for TextRun {
 pub struct TextRunPrimitive {
     pub used_font: FontInstance,
     pub glyph_keys_range: storage::Range<GlyphKey>,
-    pub reference_frame_relative_offset: LayoutVector2D,
     pub snapped_reference_frame_relative_offset: LayoutVector2D,
     pub shadow: bool,
     pub raster_scale: f32,
@@ -345,9 +336,7 @@ impl TextRunPrimitive {
         // to begin with and do not appear to be causing significant issues at
         // this time.
         self.snapped_reference_frame_relative_offset = if transform_glyphs {
-            // Don't touch the reference frame relative offset. We'll let the
-            // shader do the snapping in device pixels.
-            self.reference_frame_relative_offset
+            LayoutVector2D::zero()
         } else {
             // TODO(dp): The SurfaceInfo struct needs to be updated to use RasterPixelScale
             //           rather than DevicePixelScale, however this is a large chunk of
@@ -362,7 +351,7 @@ impl TextRunPrimitive {
                 raster_pixel_scale,
                 spatial_tree,
             );
-            snap_to_device.snap_point(&self.reference_frame_relative_offset.to_point()).to_vector()
+            snap_to_device.snap_point(&LayoutPoint::zero()).to_vector()
         };
 
         let mut flags = specified_font.flags;
@@ -522,8 +511,8 @@ fn test_struct_sizes() {
     //     test expectations and move on.
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
-    assert_eq!(mem::size_of::<TextRun>(), 88, "TextRun size changed");
+    assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
     assert_eq!(mem::size_of::<TextRunTemplate>(), 96, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 104, "TextRunKey size changed");
-    assert_eq!(mem::size_of::<TextRunPrimitive>(), 80, "TextRunPrimitive size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 96, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRunPrimitive>(), 72, "TextRunPrimitive size changed");
 }

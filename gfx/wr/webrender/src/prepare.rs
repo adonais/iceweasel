@@ -442,7 +442,7 @@ fn prepare_interned_prim_for_render(
                     pic_context.raster_spatial_node_index,
                 )
                 .into_fast_transform();
-            let prim_offset = prim_data.common.prim_rect.min.to_vector() - run.reference_frame_relative_offset;
+            let prim_offset = prim_data.common.prim_rect.min.to_vector();
 
             let surface = &frame_state.surfaces[pic_context.surface_index.0];
 

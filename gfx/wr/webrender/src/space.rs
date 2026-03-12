@@ -263,7 +263,7 @@ impl SpaceSnapper {
         debug_assert!(self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
         match self.snapping_transform {
             Some(ref scale_offset) => {
-                let snapped_device_vector : DevicePoint = scale_offset.map_point(point).snap();
+                let snapped_device_vector: DevicePoint = scale_offset.map_point(point).snap();
                 scale_offset.unmap_point(&snapped_device_vector)
             }
             None => *point,

@@ -1813,7 +1813,7 @@ impl BatchBuilder {
                 let glyph_keys = &ctx.scratch.glyph_keys[run.glyph_keys_range];
                 let prim_header = PrimitiveHeader {
                     local_rect: LayoutRect {
-                        min: prim_rect.min - run.reference_frame_relative_offset,
+                        min: prim_rect.min,
                         max: run.snapped_reference_frame_relative_offset.to_point(),
                     },
                     specific_prim_address: prim_cache_address.as_int(),

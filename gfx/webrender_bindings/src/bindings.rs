@@ -3140,8 +3140,6 @@ pub extern "C" fn wr_dp_push_stacking_context(
     let mut wr_spatial_id = spatial_id.to_webrender(state.pipeline_id);
     let wr_clip_id = params.clip.to_webrender(state.pipeline_id);
 
-    let origin = bounds.min;
-
     // Note: 0 has special meaning in WR land, standing for ROOT_REFERENCE_FRAME.
     // However, it is never returned by `push_reference_frame`, and we need to return
     // an option here across FFI, so we take that 0 value for the None semantics.
@@ -3165,7 +3163,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
             WrReferenceFrameKind::Perspective => ReferenceFrameKind::Perspective { scrolling_relative_to },
         };
         wr_spatial_id = state.frame_builder.dl_builder.push_reference_frame(
-            origin,
+            bounds.min,
             wr_spatial_id,
             params.transform_style,
             transform_binding.0,
@@ -3183,7 +3181,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
             WrRotation::Degree270 => Rotation::Degree270,
         };
         wr_spatial_id = state.frame_builder.dl_builder.push_computed_frame(
-            origin,
+            bounds.min,
             wr_spatial_id,
             Some(data.scale_from),
             data.vertical_flip,
@@ -3193,11 +3191,11 @@ pub extern "C" fn wr_dp_push_stacking_context(
 
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);
-    } else if origin != LayoutPoint::zero() {
+    } else if bounds.min != LayoutPoint::zero() {
         assert!(sc_origin_key != SpatialTreeItemKey::default(),
             "sc_origin_key must be set when stacking context has non-zero origin");
         wr_spatial_id = state.frame_builder.dl_builder.push_reference_frame(
-            origin,
+            bounds.min,
             wr_spatial_id,
             TransformStyle::Flat,
             PropertyBinding::Value(LayoutTransform::identity()),

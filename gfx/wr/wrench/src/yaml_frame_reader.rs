@@ -2038,16 +2038,13 @@ impl YamlFrameReader {
         let default_bounds = || LayoutRect::from_size(wrench.window_size_f32());
         let mut bounds = yaml["bounds"].as_rect().unwrap_or_else(default_bounds);
 
-        let pushed_reference_frame =
-            if !yaml["transform"].is_badvalue() || !yaml["perspective"].is_badvalue() {
-                let reference_frame_id = self.push_reference_frame(dl, default_bounds, yaml);
-                self.spatial_id_stack.push(reference_frame_id);
-                bounds.max -= bounds.min.to_vector();
-                bounds.min = LayoutPoint::zero();
-                true
-            } else if bounds.min != LayoutPoint::zero() {
+        let has_transform = !yaml["transform"].is_badvalue() || !yaml["perspective"].is_badvalue();
+        let pushed_reference_frame = if has_transform || bounds.min != LayoutPoint::zero() {
+            let reference_frame_id = if has_transform {
+                self.push_reference_frame(dl, default_bounds, yaml)
+            } else {
                 let parent_spatial_id = *self.spatial_id_stack.last().unwrap();
-                let reference_frame_id = dl.push_reference_frame(
+                dl.push_reference_frame(
                     bounds.min,
                     parent_spatial_id,
                     TransformStyle::Flat,
@@ -2058,14 +2055,15 @@ impl YamlFrameReader {
                         paired_with_perspective: false,
                     },
                     self.next_spatial_key(),
-                );
-                self.spatial_id_stack.push(reference_frame_id);
-                bounds.max -= bounds.min.to_vector();
-                bounds.min = LayoutPoint::zero();
-                true
-            } else {
-                false
+                )
             };
+            self.spatial_id_stack.push(reference_frame_id);
+            bounds.max -= bounds.min.to_vector();
+            bounds.min = LayoutPoint::zero();
+            true
+        } else {
+            false
+        };
 
         let clip_chain_id = self.to_clip_chain_id(&yaml["clip-chain"], dl);
 
