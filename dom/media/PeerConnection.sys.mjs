@@ -1838,7 +1838,13 @@ export class PeerConnectionObserver {
     this._dompc = dompc._innerObject;
   }
 
-  newError({ message, name }) {
+  newError({ message, name, errorDetail, sdpLineNumber }) {
+    if (errorDetail !== undefined) {
+      return new this._dompc._win.RTCError(
+        { errorDetail, sdpLineNumber },
+        message
+      );
+    }
     return new this._dompc._win.DOMException(message, name);
   }
 

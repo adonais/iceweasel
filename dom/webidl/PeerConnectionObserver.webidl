@@ -10,7 +10,8 @@ dictionary PCErrorData
 {
   required PCError name;
   required DOMString message;
-  // Will need to add more stuff (optional) for RTCError
+  DOMString errorDetail;
+  long sdpLineNumber;
 };
 
 [ChromeOnly,

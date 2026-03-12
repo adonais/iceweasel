@@ -180,8 +180,14 @@ class JsepSession {
    public:
     Result() = default;
     MOZ_IMPLICIT Result(dom::PCError aError) : mError(Some(aError)) {}
-    // TODO(bug 1527916): Need c'tor and members for handling RTCError.
+    Result(dom::PCError aError, const std::string& aErrorDetail,
+           Maybe<size_t> aSdpLineNumber = Nothing())
+        : mError(Some(aError)),
+          mErrorDetail(Some(aErrorDetail)),
+          mSdpLineNumber(aSdpLineNumber) {}
     Maybe<dom::PCError> mError;
+    Maybe<std::string> mErrorDetail;
+    Maybe<size_t> mSdpLineNumber;
   };
 
   // Basic JSEP operations.

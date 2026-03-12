@@ -1448,6 +1448,14 @@ static std::unique_ptr<dom::PCErrorData> buildJSErrorData(
   std::unique_ptr<dom::PCErrorData> result(new dom::PCErrorData);
   result->mName = *aResult.mError;
   result->mMessage = NS_ConvertASCIItoUTF16(aMessage.c_str());
+  // Populate RTCError-specific fields when the error has an errorDetail.
+  if (aResult.mErrorDetail.isSome()) {
+    result->mErrorDetail.Construct(
+        NS_ConvertASCIItoUTF16(aResult.mErrorDetail->c_str()));
+    if (aResult.mSdpLineNumber.isSome()) {
+      result->mSdpLineNumber.Construct((int32_t)aResult.mSdpLineNumber.value());
+    }
+  }
   return result;
 }
 
