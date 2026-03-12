@@ -383,6 +383,8 @@ class NetworkModule extends RootBiDiModule {
   #collectedNetworkData;
   #decodedBodySizeMap;
   #extraHeaders;
+  #hasExtraHeaders;
+  #hasNetworkConditionsOffline;
   #interceptMap;
   #networkCollectors;
   #networkListener;
@@ -418,6 +420,11 @@ class NetworkModule extends RootBiDiModule {
       // Map between user context ids and arrays of Header objects.
       userContextHeaders: new Map(),
     };
+
+    // Flags used to check if the internal listener should remain enabled even
+    // when no public events are subscribed.
+    this.#hasExtraHeaders = false;
+    this.#hasNetworkConditionsOffline = false;
 
     // Map of intercept id to InterceptProperties
     this.#interceptMap = new Map();
@@ -1752,7 +1759,10 @@ class NetworkModule extends RootBiDiModule {
       this.#extraHeaders.defaultHeaders = deserializedHeaders;
     }
 
-    this.#networkListener.startListening();
+    if (!this.#hasExtraHeaders && headers.length) {
+      this.#hasExtraHeaders = true;
+      this.#networkListener.startListening();
+    }
   }
 
   /**
@@ -2645,45 +2655,53 @@ class NetworkModule extends RootBiDiModule {
     const isListening = this._hasListener(protocolEventName, {
       contextId: browsingContext.id,
     });
-    if (!isListening) {
-      // If there are no listeners subscribed to this event and this context,
-      // bail out.
-      return;
-    }
 
-    this.#maybeCollectNetworkRequestBody(request);
+    if (isListening) {
+      this.#maybeCollectNetworkRequestBody(request);
 
-    const baseParameters = this.#processNetworkEvent(
-      protocolEventName,
-      request
-    );
-
-    // Bug 1805479: Handle the initiator, including stacktrace details.
-    const initiator = {
-      type: InitiatorType.Other,
-    };
-
-    const beforeRequestSentEvent = {
-      ...baseParameters,
-      initiator,
-    };
-
-    this._emitEventForBrowsingContext(
-      browsingContext.id,
-      protocolEventName,
-      beforeRequestSentEvent
-    );
-    if (beforeRequestSentEvent.isBlocked) {
-      request.wrappedChannel.suspend(
-        this.#getSuspendMarkerText(request, "beforeRequestSent")
+      const baseParameters = this.#processNetworkEvent(
+        protocolEventName,
+        request
       );
 
-      this.#addBlockedRequest(
-        beforeRequestSentEvent.request.request,
-        InterceptPhase.BeforeRequestSent,
-        {
-          request,
-        }
+      // Bug 1805479: Handle the initiator, including stacktrace details.
+      const initiator = {
+        type: InitiatorType.Other,
+      };
+
+      const beforeRequestSentEvent = {
+        ...baseParameters,
+        initiator,
+      };
+
+      this._emitEventForBrowsingContext(
+        browsingContext.id,
+        protocolEventName,
+        beforeRequestSentEvent
+      );
+      if (beforeRequestSentEvent.isBlocked) {
+        request.wrappedChannel.suspend(
+          this.#getSuspendMarkerText(request, "beforeRequestSent")
+        );
+
+        this.#addBlockedRequest(
+          beforeRequestSentEvent.request.request,
+          InterceptPhase.BeforeRequestSent,
+          {
+            request,
+          }
+        );
+      }
+    }
+
+    // If network conditions are set to "offline", most requests should be
+    // prevented, but some are still sent (e.g. keep-alive).
+    // Per https://w3c.github.io/webdriver-bidi/#webdriver-bidi-before-request-sent
+    // this should be handled after emitting the beforeRequestSent event.
+    if (browsingContext.top?.forceOffline) {
+      request.wrappedChannel.cancel(
+        Cr.NS_ERROR_OFFLINE,
+        Ci.nsILoadInfo.BLOCKING_REASON_WEBDRIVER_BIDI
       );
     }
   };
@@ -2916,15 +2934,23 @@ class NetworkModule extends RootBiDiModule {
   }
 
   #startListening(event) {
-    if (this.#subscribedEvents.size == 0) {
+    if (!this.#subscribedEvents.size) {
       this.#networkListener.startListening();
     }
+
     this.#subscribedEvents.add(event);
   }
 
   #stopListening(event) {
     this.#subscribedEvents.delete(event);
-    if (this.#subscribedEvents.size == 0) {
+
+    if (this.#hasNetworkConditionsOffline || this.#hasExtraHeaders) {
+      // If networkConditions or extraHeaders are set, the listener should
+      // remain enabled even if no public events are emitted.
+      return;
+    }
+
+    if (!this.#subscribedEvents.size) {
       this.#networkListener.stopListening();
     }
   }
@@ -3014,6 +3040,13 @@ class NetworkModule extends RootBiDiModule {
   _setDecodedBodySize(params) {
     const { channelId, decodedBodySize } = params;
     this.#decodedBodySizeMap.setDecodedBodySize(channelId, decodedBodySize);
+  }
+
+  _startListeningForNetworkConditionsOffline() {
+    if (!this.#hasNetworkConditionsOffline) {
+      this.#hasNetworkConditionsOffline = true;
+      this.#networkListener.startListening();
+    }
   }
 
   static get supportedEvents() {

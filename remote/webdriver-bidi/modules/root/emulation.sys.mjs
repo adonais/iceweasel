@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
+  RootMessageHandler:
+    "chrome://remote/content/shared/messagehandler/RootMessageHandler.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   UserContextManager:
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
@@ -342,6 +344,18 @@ class EmulationModule extends RootBiDiModule {
         conditions => conditions.type === NetworkConditionsType.Offline,
         lazy.pprint`Expected "networkConditions.type" to be "offline", got ${networkConditions.type}`
       )(networkConditions);
+
+      if (networkConditions.type === NetworkConditionsType.Offline) {
+        // For offline network conditions, some requests need to be blocked from
+        // the beforeRequestSent handler.
+        await this.messageHandler.handleCommand({
+          moduleName: "network",
+          commandName: "_startListeningForNetworkConditionsOffline",
+          destination: {
+            type: lazy.RootMessageHandler.type,
+          },
+        });
+      }
     }
 
     await this.#applyEmulationParameters({
