@@ -256,6 +256,8 @@ skip-if = [
 
 ["browser_test_file_channel_observer.js"]
 
+["browser_test_lna_insecure_context.js"]
+
 ["browser_test_local_network_access_basic.js"]
 support-files = [
   "head_local_network_access.js",

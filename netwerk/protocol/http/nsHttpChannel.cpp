@@ -2144,6 +2144,21 @@ LNAPermission nsHttpChannel::UpdateLocalNetworkAccessPermissions(
     return userPerms;
   }
 
+  // Check if we should block LNA requests from insecure contexts
+  if (StaticPrefs::network_lna_block_insecure_contexts()) {
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+        mLoadInfo->TriggeringPrincipal();
+    if (triggeringPrincipal &&
+        !triggeringPrincipal->GetIsOriginPotentiallyTrustworthy()) {
+      LOG(
+          ("nsHttpChannel::UpdateLocalNetworkAccessPermissions [this=%p] "
+           "blocking LNA request from insecure context\n",
+           this));
+      userPerms = LNAPermission::Denied;
+      return userPerms;
+    }
+  }
+
   // Step 3
   // could not determine the permission, lets prompt user
   // for permission if lna blocking is enabled
@@ -9076,6 +9091,7 @@ nsresult nsHttpChannel::ProcessLNAActions() {
     // the transaction in ReadFromCache
     return NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
   }
+
   // Suspend to block any notification to the channel.
   // This will get resumed in
   // nsHttpChannel::OnPermissionPromptResult

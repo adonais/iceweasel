@@ -14862,6 +14862,14 @@
   value: false
   mirror: always
 
+# When true, block LNA requests from insecure contexts (http:// origins that
+# are not localhost or .local). Uses IsPotentiallyTrustworthyOrigin to
+# determine if the origin is trustworthy.
+- name: network.lna.block_insecure_contexts
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 
 # The proxy type. See nsIProtocolProxyService.idl
 #     PROXYCONFIG_DIRECT   = 0
