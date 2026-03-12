@@ -136,7 +136,7 @@ export class ChatMessage {
 
       switch (key) {
         case "existing_memory":
-          this.memoriesApplied.push(value);
+          (this._pendingMemoryIds ??= []).push(value);
           break;
         case "search":
           this.webSearchQueries.push(value);
