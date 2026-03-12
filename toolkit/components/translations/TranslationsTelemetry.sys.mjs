@@ -331,11 +331,11 @@ export class TranslationsTelemetry {
   }
 
   /**
-   * Records a telemetry event when a full-page translation request is sent.
+   * Records a telemetry event when a translation request is sent.
    *
    * @param {object} data
    * @param {boolean} data.autoTranslate
-   * @param {string} data.docLangTag
+   * @param {string} [data.docLangTag]
    * @param {string} data.sourceLanguage
    * @param {string} data.targetLanguage
    * @param {string} data.requestTarget
@@ -1062,6 +1062,24 @@ class AboutTranslationsPageTelemetry {
       AboutTranslationsPageTelemetry.#ABOUT_TRANSLATIONS_RATE_LIMITS,
       callback
     );
+  }
+
+  /**
+   * Records when a translation request is sent from about:translations.
+   *
+   * @param {object} data
+   * @param {boolean} data.autoTranslate
+   * @param {string} data.sourceLanguage
+   * @param {string} data.targetLanguage
+   * @param {number} data.sourceTextCodeUnits
+   * @param {number} data.sourceTextWordCount
+   */
+  static onTranslate(data) {
+    // Translation requests are explicitly excluded from rate limiting.
+    TranslationsTelemetry.onTranslate({
+      ...data,
+      requestTarget: "about_translations",
+    });
   }
 
   /**

@@ -16,12 +16,15 @@ translations:
     labels:
       - full_page
       - select
+      - about_translations
     description: >
       The count of translation requests, along with their type.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1900432
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1900432
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
     data_sensitivity:
       - technical
     notification_emails:
@@ -101,7 +104,7 @@ translations:
   translation_request:
     type: event
     description: >
-      Triggers when a full-page translation request is sent.
+      Triggers when a translation request is sent.
     extra_keys:
       flow_id: *flow_id
       from_language: &from_language
@@ -117,13 +120,13 @@ translations:
         type: string
         description: >
           The target of the translation request, whether it is
-          "full_page" or "select".
+          "full_page", "select", or "about_translations".
       source_text_code_units:
         type: quantity
-        description: The length of the source text to be translated in code units.
+        description: The length of the source text to be translated in UTF-16 code units.
       source_text_word_count:
         type: quantity
-        description: The length of the source text to be translated in words.
+        description: The number of words in the source-language text to be translated.
       auto_translate:
         type: boolean
         description: >
@@ -137,6 +140,7 @@ translations:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1847150
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1861319
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1870367
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836381#c4
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1841366#c11
@@ -144,6 +148,7 @@ translations:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1847150#c4
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1861319#c6
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1870367
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
     data_sensitivity:
       - interaction
     notification_emails:

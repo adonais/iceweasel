@@ -63,6 +63,8 @@ skip-if = [
 
 ["browser_about_translations_telemetry_open.js"]
 
+["browser_about_translations_telemetry_translation_request.js"]
+
 ["browser_about_translations_translate_error.js"]
 
 ["browser_about_translations_url_load.js"]

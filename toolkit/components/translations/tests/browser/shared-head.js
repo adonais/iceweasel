@@ -4558,6 +4558,20 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Retrieves the count of words in the given text for the given language.
+   *
+   * @param {string} language
+   * @param {string} text
+   * @returns {number}
+   */
+  static getWordCount(language, text) {
+    const segmenter = new Intl.Segmenter(language, { granularity: "word" });
+    return Array.from(segmenter.segment(text)).filter(
+      segment => segment.isWordLike
+    ).length;
+  }
+
+  /**
    * Waits for the about:translations page to fully initialize.
    *
    * @returns {Promise<void>}
@@ -4724,6 +4738,49 @@ class AboutTranslationsTestUtils {
         },
         { ms }
       );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
+   * Sets a new delay timer for translation-request telemetry throttling.
+   *
+   * @param {number} ms - The delay milliseconds.
+   * @returns {Promise<void>}
+   */
+  async setTranslationRequestTelemetryThrottleDelay(ms) {
+    logAction(ms);
+    try {
+      await this.#runInPage(
+        (_, { ms }) => {
+          const { window } = content;
+          Cu.waiveXrays(window).TRANSLATION_REQUEST_TELEMETRY_THROTTLE_DELAY =
+            ms;
+        },
+        { ms }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
+   * Clears translation-request telemetry throttling in the about:translations UI.
+   *
+   * @returns {Promise<void>}
+   */
+  async clearTranslationRequestTelemetryThrottle() {
+    logAction();
+    try {
+      await this.#runInPage(() => {
+        const { window } = content;
+        const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
+        if (!aboutTranslations) {
+          throw new Error("aboutTranslations instance is unavailable.");
+        }
+        aboutTranslations.testClearTranslationRequestTelemetryThrottle();
+      });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }

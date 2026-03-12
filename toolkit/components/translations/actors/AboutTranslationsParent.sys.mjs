@@ -162,7 +162,7 @@ export class AboutTranslationsParent extends JSWindowActorParent {
           );
         }
 
-        aboutTranslationsTelemetry[telemetryFunctionName](telemetryData);
+        telemetryFunction(telemetryData);
 
         return undefined;
       }
