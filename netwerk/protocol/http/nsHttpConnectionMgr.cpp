@@ -3665,7 +3665,7 @@ void nsHttpConnectionMgr::DoSpeculativeConnectionInternal(
   if (mNumDnsAndConnectSockets < parallelSpeculativeConnectLimit &&
       ((ignoreIdle &&
         (aEnt->IdleConnectionsLength() < parallelSpeculativeConnectLimit)) ||
-       !aEnt->HasAliveIdleConnection()) &&
+       !aEnt->IdleConnectionsLength()) &&
       !(keepAlive && aEnt->RestrictConnections()) &&
       !AtActiveConnectionLimit(aEnt, aTrans->Caps())) {
     nsresult rv = aEnt->CreateDnsAndConnectSocket(aTrans, aTrans->Caps(), true,

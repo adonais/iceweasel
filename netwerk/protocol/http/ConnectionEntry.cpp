@@ -372,20 +372,6 @@ bool ConnectionEntry::IsInIdleConnections(HttpConnectionBase* conn) {
   return connTCP && mIdleConns.Contains(connTCP);
 }
 
-bool ConnectionEntry::HasAliveIdleConnection() {
-  size_t index = 0;
-  while (index < mIdleConns.Length()) {
-    RefPtr<nsHttpConnection> conn = mIdleConns[index];
-    if (conn->CanReuse() && conn->IsAlive()) {
-      return true;
-    }
-    RemoveFromIdleConnectionsIndex(index);
-    LOG(("   dropping stale connection: [conn=%p]\n", conn.get()));
-    conn->Close(NS_ERROR_ABORT);
-  }
-  return false;
-}
-
 already_AddRefed<nsHttpConnection> ConnectionEntry::GetIdleConnection(
     bool respectUrgency, bool urgentTrans, bool* onlyUrgent) {
   RefPtr<nsHttpConnection> conn;

@@ -871,17 +871,7 @@ bool nsHttpConnection::CanReuse() {
     canReuse = IsKeepAlive();
   }
 
-  // IsAlive() is non-trivial: it may run the SSL state machine and performs a
-  // MSG_PEEK syscall. Skip it for connections idle less than kRecentThreshold,
-  // which are overwhelmingly likely to still be alive. Connections idle longer
-  // still call IsAlive() as long as they are within mIdleTimeout. If the
-  // connection is stale despite the short idle time, the error is handled by
-  // the retry path.
-  static const PRIntervalTime kRecentThreshold = PR_SecondsToInterval(2);
-  auto idleTime = IdleTime();
-  canReuse = canReuse && mSocketTransport && mConnectedTransport &&
-             (idleTime < std::min(mIdleTimeout, kRecentThreshold) ||
-              (idleTime < mIdleTimeout && IsAlive()));
+  canReuse = canReuse && (IdleTime() < mIdleTimeout) && IsAlive();
 
   // An idle persistent connection should not have data waiting to be read
   // before a request is sent. Data here is likely a 408 timeout response
