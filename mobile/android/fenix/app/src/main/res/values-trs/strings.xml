@@ -449,6 +449,8 @@
   <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">Nuguan’ huì nikāj Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">Nīhià’ ruhuâ ñûnj dūgumîn ñûnj sò’</string>
+  <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
+  <string name="juno_onboarding_default_browser_description_nimbus_3">Guendâ rugûñu’ūnj nej yi’nïn sà’ rûhua riña si nābegador ñûnj nī nitāj gà’ si ‘ngō yi’nïn’ yī’ìi gā’hue nāga’nāj sò’ si gāchē nunt.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Dūnâj gāhuin man riña sa nānà\'uì\' yītïnjt</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -467,6 +469,14 @@
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Gāhuin chrūn doj</string>
   <!-- Title for the startup crash page. %s is the name of the app (for example "Firefox") -->
   <string name="startup_crash_title">%s da’huît dūnayì’ìt</string>
+  <!-- Body text for the startup crash page. %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_body">Huā ‘ngō sa gire’ ngà huāj nā’nïn porsentâje %s. Gā’nïnj ‘ngō nuguan’an gā’naj da’ gīni’in ñûnj nùhuin dan nī nāgi’hiaj sà’ ñûnj riña achénunt. Sī giriñu ruhuât dadin’ gā’hue gā’nïnjt nuguan’ a’min rayi’ît gā’naj.</string>
+  <!-- Button text to submit a startup crash report -->
+  <string name="startup_crash_positive">Gā’nïnj ‘ngō nuguan’an nātà’t nùhuin saj gire’ man</string>
+  <!-- Button text to continue and not send a startup crash report -->
+  <string name="startup_crash_negative">Guruhuât nānj ân</string>
+  <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_restart">Nā’nïn ñû %s</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Gāhuin chrūn doj</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Gà\' huaj</string>

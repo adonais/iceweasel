@@ -106,12 +106,16 @@
     %1$s is the name of the extension (for example: ClearURLs).
   -->
   <string name="browser_menu_extension_plus_icon_content_description_2">%1$s اے شاغ</string>
+  <!-- Browser menu button that opens account settings -->
+  <string name="browser_menu_account_settings">اکاونٹ ناباروٹ</string>
   <!-- Browser menu button that sends a user to help articles -->
   <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">کمک</string>
   <!-- Browser menu button that sends a to a the what's new article -->
   <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">انت اس پوسکنے</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">سیٹنگاک</string>
+  <!-- Browser menu button that opens a user's library -->
+  <string name="browser_menu_library">لائبریری</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">ڈیسک ٹاپ سائٹ</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
@@ -545,8 +549,18 @@
   <string name="delete_history_prompt_button_today_and_yesterday">درو و اینو</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">کلیت لوزاک</string>
+  <!-- Hint for search box in passwords list -->
+  <string name="preferences_passwords_saved_logins_search_2">کلیت لوزاتئیٹ پٹ</string>
+  <!-- The header for the password for a login -->
+  <string name="preferences_passwords_saved_logins_password">کلیت لوز</string>
+  <!-- Shown in snackbar to tell user that the password has been copied -->
+  <string name="logins_password_copied">کلیت لوز کلیپبورڈ اٹ کاپی مس</string>
   <!-- Content description, used by tools like screenreaders, to press on the save new login button. -->
   <string name="add_login_save_new_login_button_content_description">پوسکن سائن ان اے خوندی کبو</string>
+  <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
+  <string name="saved_login_reveal_password">کلیت لوز اے نشان ایت</string>
+  <!-- Content Description (for screenreaders etc) read for the button to hide a password in logins -->
+  <string name="saved_login_hide_password">کلیت لوز اے ڈک</string>
   <!-- Title for recent search suggestions. -->
   <string name="recent_searches_header">زاتیاٹ پٹنگاک</string>
   <!-- Translations feature -->
