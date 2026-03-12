@@ -70,6 +70,8 @@ def get_archs(filename, platform=sys.platform):
             architectures.add("arm64e")
         elif cleaned == "x86_64_haswell":
             architectures.add("x86_64h")
+        elif cleaned == "x86_64h":
+            architectures.add("x86_64h")
         elif cleaned == "x86_64":
             architectures.add("x86_64")
         elif cleaned == "i386":
