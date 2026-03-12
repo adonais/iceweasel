@@ -1072,6 +1072,22 @@ translations.about_translations_page:
       - translations-telemetry-alerts@mozilla.com
     expires: never
 
+  unblock_feature:
+    type: event
+    description: >
+      Triggers when unblock-feature is invoked in the about:translations page.
+    extra_keys:
+      flow_id: *flow_id
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - translations-telemetry-alerts@mozilla.com
+    expires: never
+
   unsupported_language_message:
     type: event
     description: >

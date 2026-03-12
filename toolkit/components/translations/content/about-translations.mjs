@@ -658,6 +658,7 @@ class AboutTranslations {
   #onUnblockFeatureButton = async () => {
     const { unblockFeatureButton } = this.elements;
     unblockFeatureButton.setAttribute("disabled", "true");
+    AT_telemetry("onUnblockFeature");
 
     try {
       await AT_enableTranslationsFeature();

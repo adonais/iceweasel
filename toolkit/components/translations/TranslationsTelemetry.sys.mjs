@@ -1219,6 +1219,20 @@ class AboutTranslationsPageTelemetry {
   }
 
   /**
+   * Records when unblock-feature is invoked in about:translations.
+   */
+  static onUnblockFeature() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.unblockFeature.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onUnblockFeature
+      );
+    });
+  }
+
+  /**
    * Records when the unsupported-language message is shown in about:translations.
    *
    * @param {object} data
