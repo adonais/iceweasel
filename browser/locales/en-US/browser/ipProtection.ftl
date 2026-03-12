@@ -47,10 +47,11 @@ unauthenticated-hide-location-message-2 = Hide your location while browsing in {
 unauthenticated-bandwidth-limit-message = Get { $maxUsage } GB of free VPN data every month.
 unauthenticated-get-started = Get started
 
-site-exclusion-toggle-label = Use VPN for this site
-site-exclusion-toggle-enabled =
+site-exclusion-toggle-enabled-1 =
+  .label = Use VPN for this site
   .aria-label = VPN is on for this site
-site-exclusion-toggle-disabled =
+site-exclusion-toggle-disabled-1 =
+  .label = Use VPN for this site
   .aria-label = VPN is off for this site
 
 ipprotection-settings-link =

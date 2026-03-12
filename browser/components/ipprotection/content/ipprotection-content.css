@@ -102,7 +102,6 @@ ipprotection-message-bar.vpn-top-content {
 
 #site-exclusion-control {
   display: flex;
-  justify-content: space-between;
 
   padding-inline: var(--space-medium);
   padding-block: var(--space-medium);
@@ -112,13 +111,6 @@ ipprotection-message-bar.vpn-top-content {
   }
 }
 
-#site-exclusion-icon {
-  -moz-context-properties: fill;
-  fill: var(--icon-color);
-}
-
-#site-exclusion-label-container {
-  display: flex;
-  flex-grow: 1;
-  gap: var(--space-small);
+#site-exclusion-toggle {
+  flex: 1;
 }
