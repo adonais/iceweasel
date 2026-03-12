@@ -74,10 +74,9 @@ async function triggerFramebustingIntervention(
   );
 
   if (verify.notification) {
-    await TestUtils.waitForTick();
-    ok(
-      gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"),
-      `Framebusting notification should show up (${frameSrc})`
+    await BrowserTestUtils.waitForCondition(() =>
+      gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
     );
+    ok(true, `Framebusting notification should show up (${frameSrc})`);
   }
 }
