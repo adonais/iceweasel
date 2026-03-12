@@ -4,22 +4,46 @@
 
 package org.mozilla.apilint
 
-open class ApiLintPluginExtension {
-    var packageFilter: String = "." // By default all packages are part of the api
-    var apiOutputFileName: String = "api.txt"
-    var currentApiRelativeFilePath: String = "api.txt"
-    var jsonResultFileName: String = "apilint-result.json"
-    var skipClassesRegex: List<String> = emptyList()
+import groovy.lang.Closure
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import javax.inject.Inject
 
-    var changelogFileName: String? = null
-    var lintFilters: List<String>? = null
-    var allowedPackages: List<String>? = null
-    var deprecationAnnotation: String? = null
-    var libraryVersion: Int? = null
+abstract class ApiLintPluginExtension @Inject constructor(objects: ObjectFactory) {
+    abstract val packageFilter: Property<String>
+    abstract val apiOutputFileName: Property<String>
+    abstract val currentApiRelativeFilePath: Property<String>
+    abstract val jsonResultFileName: Property<String>
+    abstract val skipClassesRegex: ListProperty<String>
+
+    abstract val changelogFileName: Property<String>
+    abstract val lintFilters: ListProperty<String>
+    abstract val allowedPackages: ListProperty<String>
+    abstract val deprecationAnnotation: Property<String>
+    abstract val libraryVersion: Property<Int>
 
     // When API differences exist, print this command.  Takes a single
     // `variantName` argument.  Running this command manually should invoke the
     // `apiUpdateFile...` command to update the API file so that the API
     // differences are incorporated into the expected API.
-    var helpCommand: (String) -> String = { variantName -> "\$ ./gradlew apiUpdateFile${variantName}" }
+    @Suppress("UNCHECKED_CAST")
+    val helpCommand: Property<(String) -> String> = objects.property(Function1::class.java as Class<(String) -> String>)
+
+    init {
+        packageFilter.convention(".") // By default all packages are part of the api
+        apiOutputFileName.convention("api.txt")
+        currentApiRelativeFilePath.convention("api.txt")
+        jsonResultFileName.convention("apilint-result.json")
+        skipClassesRegex.convention(emptyList())
+        helpCommand.convention { variantName ->
+            "\$ ./gradlew apiUpdateFile${variantName}"
+        }
+    }
+
+    fun setHelpCommand(closure: Closure<*>) {
+        helpCommand.set { variantName ->
+            closure.call(variantName).toString()
+        }
+    }
 }

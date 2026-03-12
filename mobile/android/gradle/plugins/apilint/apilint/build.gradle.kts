@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import org.gradle.api.tasks.testing.Test
+
 plugins {
     id("com.gradle.plugin-publish") version "1.3.1"
     `java-gradle-plugin`
@@ -15,7 +17,7 @@ sourceSets {
             srcDir("../buildSrc")
         }
         resources {
-            output.dir(layout.buildDirectory.dir("docletJar"), "builtBy" to "copyDocletJar")
+            output.dir(mapOf("builtBy" to "copyDocletJar"), layout.buildDirectory.dir("docletJar"))
         }
     }
 }
@@ -57,7 +59,7 @@ tasks.register<Exec>("integrationTestApiLint") {
          "../apidoc-plugin/src/test/resources/expected-doclet-output.txt")
 }
 
-tasks.named("test") {
+tasks.named<Test>("test") {
     dependsOn("unittestApiLint")
     dependsOn("testApiLint")
     dependsOn("testChangelogCheck")
