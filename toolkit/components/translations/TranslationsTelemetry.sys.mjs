@@ -1163,6 +1163,62 @@ class AboutTranslationsPageTelemetry {
   }
 
   /**
+   * Records when the language-load-error message is shown in about:translations.
+   */
+  static onLanguageLoadErrorMessage() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.languageLoadErrorMessage.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onLanguageLoadErrorMessage
+      );
+    });
+  }
+
+  /**
+   * Records when the unsupported-info message is shown in about:translations.
+   */
+  static onUnsupportedInfoMessage() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.unsupportedInfoMessage.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onUnsupportedInfoMessage
+      );
+    });
+  }
+
+  /**
+   * Records when the policy-disabled-info message is shown in about:translations.
+   */
+  static onPolicyDisabledInfoMessage() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.policyDisabledInfoMessage.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onPolicyDisabledInfoMessage
+      );
+    });
+  }
+
+  /**
+   * Records when the feature-blocked-info message is shown in about:translations.
+   */
+  static onFeatureBlockedInfoMessage() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.featureBlockedInfoMessage.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onFeatureBlockedInfoMessage
+      );
+    });
+  }
+
+  /**
    * Records when the unsupported-language message is shown in about:translations.
    *
    * @param {object} data

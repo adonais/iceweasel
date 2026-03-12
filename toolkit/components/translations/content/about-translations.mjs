@@ -1001,6 +1001,10 @@ class AboutTranslations {
     }
 
     messageBar.hidden = !visible;
+    if (visible) {
+      this.#recordTopLevelMessageBarTelemetry(messageBar);
+    }
+
     const eventNames =
       this.#getTopLevelMessageBarVisibilityEventNames(messageBar);
     if (!eventNames) {
@@ -1008,6 +1012,44 @@ class AboutTranslations {
     }
 
     dispatchTestEvent(visible ? eventNames.shown : eventNames.hidden);
+  }
+
+  /**
+   * Records telemetry when a top-level message bar is shown.
+   *
+   * @param {HTMLElement} messageBar
+   */
+  #recordTopLevelMessageBarTelemetry(messageBar) {
+    const {
+      unsupportedInfoMessage,
+      policyDisabledInfoMessage,
+      languageLoadErrorMessage,
+      featureBlockedInfoMessage,
+    } = this.elements;
+
+    switch (messageBar) {
+      case unsupportedInfoMessage: {
+        AT_telemetry("onUnsupportedInfoMessage");
+        return;
+      }
+      case policyDisabledInfoMessage: {
+        AT_telemetry("onPolicyDisabledInfoMessage");
+        return;
+      }
+      case languageLoadErrorMessage: {
+        AT_telemetry("onLanguageLoadErrorMessage");
+        return;
+      }
+      case featureBlockedInfoMessage: {
+        AT_telemetry("onFeatureBlockedInfoMessage");
+        return;
+      }
+      default: {
+        AT_logError(
+          `Unexpected top-level message bar for telemetry: ${messageBar.id || "<no-id>"}`
+        );
+      }
+    }
   }
 
   /**

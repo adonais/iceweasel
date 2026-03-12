@@ -1008,6 +1008,70 @@ translations.about_translations_page:
       - translations-telemetry-alerts@mozilla.com
     expires: never
 
+  language_load_error_message:
+    type: event
+    description: >
+      Triggers when the language-load-error message is shown in the about:translations page.
+    extra_keys:
+      flow_id: *flow_id
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - translations-telemetry-alerts@mozilla.com
+    expires: never
+
+  unsupported_info_message:
+    type: event
+    description: >
+      Triggers when the unsupported-info message is shown in the about:translations page.
+    extra_keys:
+      flow_id: *flow_id
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - translations-telemetry-alerts@mozilla.com
+    expires: never
+
+  policy_disabled_info_message:
+    type: event
+    description: >
+      Triggers when the policy-disabled-info message is shown in the about:translations page.
+    extra_keys:
+      flow_id: *flow_id
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - translations-telemetry-alerts@mozilla.com
+    expires: never
+
+  feature_blocked_info_message:
+    type: event
+    description: >
+      Triggers when the feature-blocked-info message is shown in the about:translations page.
+    extra_keys:
+      flow_id: *flow_id
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - translations-telemetry-alerts@mozilla.com
+    expires: never
+
   unsupported_language_message:
     type: event
     description: >

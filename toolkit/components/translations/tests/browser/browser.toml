@@ -65,7 +65,11 @@ skip-if = [
 
 ["browser_about_translations_telemetry_copy_button.js"]
 
+["browser_about_translations_telemetry_feature_blocked_info_message.js"]
+
 ["browser_about_translations_telemetry_open.js"]
+
+["browser_about_translations_telemetry_standalone_messages.js"]
 
 ["browser_about_translations_telemetry_swap_button.js"]
 
