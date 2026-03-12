@@ -88,6 +88,7 @@ Object.assign(Chat, {
 
     const allAllowedUrls = new Set();
     let fullResponseText = "";
+    const searchExecuted = conversation._searchExecutedTurn === currentTurn;
 
     const streamModelResponse = () =>
       engineInstance.runWithGenerator({
@@ -116,6 +117,35 @@ Object.assign(Chat, {
       if (!pendingToolCalls || pendingToolCalls.length === 0) {
         this._validateCitations(fullResponseText, allAllowedUrls);
         return;
+      }
+
+      // Guard: if the first pending tool call is a duplicate run_search,
+      // return an error tool result so the model continues without
+      // executing the search or navigating the browser.
+      // @todo Bug 2006159 - Check all pending tool calls, not just the first
+      const firstPending = pendingToolCalls[0]?.function;
+      if (firstPending?.name === "run_search" && searchExecuted) {
+        const blockedCalls = pendingToolCalls.slice(0, 1).map(tc => ({
+          id: tc.id,
+          type: "function",
+          function: {
+            name: tc.function.name,
+            arguments: tc.function.arguments || "{}",
+          },
+        }));
+        conversation.addAssistantMessage("function", {
+          tool_calls: blockedCalls,
+        });
+
+        for (const tc of pendingToolCalls.slice(0, 1)) {
+          const content = {
+            tool_call_id: tc.id,
+            body: "ERROR: run_search tool call error: only one allowed per user message. Try run_search tool call again only after the next user message if prompted. Do not hallucinate search results.",
+            name: tc.function.name,
+          };
+          conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+        }
+        continue;
       }
 
       // @todo Bug 2006159 - Implement parallel tool calling
@@ -178,6 +208,7 @@ Object.assign(Chat, {
             }
             searchHandoffBrowser = context.browsingContext.embedderElement;
             result = await toolFunc(params ?? {}, context, secProps);
+            conversation._searchExecutedTurn = currentTurn;
           } else if (toolName === "get_page_content") {
             result = await toolFunc(params, undefined, secProps);
           } else {

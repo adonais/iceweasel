@@ -687,3 +687,140 @@ add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
     Services.prefs.clearUserPref(PREF_MODEL);
   }
 });
+
+add_task(
+  async function test_Chat_fetchWithHistory_run_search_executes_only_once() {
+    const sb = sinon.createSandbox();
+    try {
+      let callCount = 0;
+      const fakeEngine = {
+        runWithGenerator(_options) {
+          callCount++;
+          async function* gen() {
+            if (callCount === 1) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_search_001",
+                    function: {
+                      name: "run_search",
+                      arguments: JSON.stringify({ query: "test query" }),
+                    },
+                  },
+                ],
+              };
+            } else if (callCount === 2) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_search_002",
+                    function: {
+                      name: "run_search",
+                      arguments: JSON.stringify({
+                        query: "second search query",
+                      }),
+                    },
+                  },
+                ],
+              };
+            } else {
+              yield { text: "Final answer." };
+            }
+          }
+          return gen();
+        },
+        getConfig() {
+          return {};
+        },
+      };
+
+      const runSearchStub = sb
+        .stub(Chat.toolMap, "run_search")
+        .resolves("search result");
+      sb.stub(openAIEngine, "build").resolves(fakeEngine);
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+
+      const mockBrowser = {
+        ownerGlobal: {
+          closed: false,
+          gBrowser: {
+            getTabForBrowser: () => ({ selected: true }),
+            selectedTab: null,
+          },
+        },
+      };
+      const openSidebarStub = sb.stub().callsFake(() => {});
+      const origLazy = ChromeUtils.importESModule(
+        "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
+      );
+      const origOpenSidebar = origLazy.AIWindow.openSidebarAndContinue;
+      origLazy.AIWindow.openSidebarAndContinue = openSidebarStub;
+
+      const conversation = new ChatConversation({
+        title: "search guard test",
+        description: "desc",
+        pageUrl: new URL("https://www.firefox.com"),
+        pageMeta: {},
+      });
+      conversation.addUserMessage(
+        "Search for something",
+        "https://www.firefox.com",
+        0
+      );
+      conversation.addAssistantMessage("text", "");
+
+      const context = {
+        browsingContext: { embedderElement: mockBrowser },
+      };
+
+      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+      await Chat.fetchWithHistory(conversation, engineInstance, context);
+
+      Assert.ok(
+        runSearchStub.calledOnce,
+        "run_search should be called exactly once"
+      );
+
+      // Simulate openSidebarAndContinue calling fetchWithHistory again
+      // on the same conversation (same turn). The guard should block
+      // execution and the model continues generating text.
+      callCount = 1;
+      conversation.addAssistantMessage("text", "");
+      await Chat.fetchWithHistory(conversation, engineInstance, context);
+
+      Assert.ok(
+        runSearchStub.calledOnce,
+        "run_search should still be called exactly once after second fetchWithHistory"
+      );
+      Assert.equal(
+        getLastAssistantResponse(conversation).content.body,
+        "Final answer.",
+        "Model should continue generating text after blocked search"
+      );
+
+      // Verify guard message is in conversation with correct text
+      const toolMessages = conversation.messages.filter(
+        msg => msg.role === MESSAGE_ROLE.TOOL
+      );
+      const guardMessage = toolMessages.find(msg =>
+        String(msg.content?.body).includes("only one allowed per user message")
+      );
+      Assert.ok(guardMessage, "Guard tool result should be in conversation");
+
+      // Simulate user sending "Go ahead" (new turn). Guard should allow.
+      conversation.addUserMessage("Go ahead", "https://www.firefox.com", 0);
+      conversation.addAssistantMessage("text", "");
+      callCount = 0;
+      await Chat.fetchWithHistory(conversation, engineInstance, context);
+
+      Assert.ok(
+        runSearchStub.calledTwice,
+        "run_search should be called twice total (once per turn)"
+      );
+
+      origLazy.AIWindow.openSidebarAndContinue = origOpenSidebar;
+    } finally {
+      sb.restore();
+    }
+  }
+);
