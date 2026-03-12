@@ -243,7 +243,7 @@ ContentAreaDropListener.prototype = {
     let dataTransfer = aEvent.dataTransfer;
     let types = dataTransfer.types;
     if (
-      !types.includes("application/x-moz-file") &&
+      !dataTransfer.files.length &&
       !types.includes("text/x-moz-url") &&
       !types.includes("text/uri-list") &&
       !types.includes("text/x-moz-text-internal") &&

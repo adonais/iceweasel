@@ -450,13 +450,9 @@ void DataTransferItemList::GetTypes(nsTArray<nsString>& aTypes,
       continue;
     }
 
-    // NOTE: The reason why we get the internal type here is because we want
-    // kFileMime to appear in the types list for backwards compatibility
-    // reasons.
-    nsAutoString type;
-    item->GetInternalType(type);
-    if (item->Kind() != DataTransferItem::KIND_FILE ||
-        type.EqualsASCII(kFileMime)) {
+    if (item->Kind() != DataTransferItem::KIND_FILE) {
+      nsAutoString type;
+      item->GetType(type);
       aTypes.AppendElement(type);
     }
   }
