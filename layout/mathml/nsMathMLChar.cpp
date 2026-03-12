@@ -1156,6 +1156,19 @@ static void InsertMathFallbacks(StyleFontFamilyList& aFamilyList,
   aFamilyList = StyleFontFamilyList::WithNames(std::move(mergedList));
 }
 
+// Characters that are mirrorable with RTLM but shouldn't be mirrored with a
+// scale fallback as that would change semantics.
+//
+// 0x2231: Clockwise Integral.
+// 0x2232: Clockwise Contour Integral.
+// 0x2233: Anticlockwise Contour Integral.
+// 0x2A11: Anticlockwise Integration.
+// 0x2A17: Integral with Leftwards Arrow with Hook.
+bool CanBeMirroredWithScaleFallback(uint32_t ch) {
+  return ch != 0x2231 && ch != 0x2232 && ch != 0x2233 && ch != 0x2A11 &&
+         ch != 0x2A17;
+}
+
 nsresult nsMathMLChar::StretchInternal(
     nsIFrame* aForFrame, DrawTarget* aDrawTarget, float aFontSizeInflation,
     StretchDirection& aStretchDirection,
@@ -1197,6 +1210,12 @@ nsresult nsMathMLChar::StretchInternal(
       mMirroringMethod = MirroringMethod::ScaleFallback;
     }
   }
+
+  if (mMirroringMethod == MirroringMethod::ScaleFallback &&
+      !CanBeMirroredWithScaleFallback(mData.First())) {
+    mMirroringMethod = MirroringMethod::None;
+  }
+
   if (mMirroringMethod == MirroringMethod::Glyph ||
       mMirroringMethod == MirroringMethod::Character) {
     flags |= gfx::ShapedTextFlags::TEXT_IS_RTL;
