@@ -69,7 +69,7 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
     LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
     nsTArray<happy_eyeballs::AltSvc> altSvcArray;
     happy_eyeballs::AltSvc altsvc{};
-    altsvc.http_version = happy_eyeballs::HttpVersion::H3;
+    altsvc.protocol = happy_eyeballs::HttpVersion::H3;
     altSvcArray.AppendElement(altsvc);
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->RoutedPort()),
@@ -174,7 +174,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         LOG(("HappyEyeballsEvent::Tag::AttemptConnection id=%" PRIu64
              " protocol=%d port=%d ",
              event.attempt_connection.id,
-             static_cast<uint32_t>(event.attempt_connection.http_version),
+             static_cast<uint32_t>(event.attempt_connection.protocol),
              event.attempt_connection.port));
 
         if (mFirstConnectionStart.IsNull()) {
@@ -192,7 +192,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
         LOG(("connect to:[%s] ech_config_len=%zu",
              res.unwrap().ToString().get(), echConfig.Length()));
-        if (event.attempt_connection.http_version ==
+        if (event.attempt_connection.protocol ==
             happy_eyeballs::ConnectionAttemptHttpVersions::H3) {
           EstablishUDPConnection(res.unwrap(), event.attempt_connection.port,
                                  std::move(echConfig),
@@ -949,7 +949,7 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
     for (const auto& alpnStr : alpn) {
       auto protocol = AlpnStringToProtocol(alpnStr);
       if (protocol) {
-        svcInfo.alpn_http_versions.AppendElement(protocol.ref());
+        svcInfo.alpn_protocols.AppendElement(protocol.ref());
       }
     }
 

@@ -61,7 +61,7 @@ pub extern "C" fn create(
         .map(|a| happy_eyeballs::AltSvc {
             host: None,
             port: None,
-            http_version: a.http_version.into(),
+            protocol: a.protocol.into(),
         })
         .collect();
 
@@ -264,8 +264,8 @@ impl HappyEyeballs {
             };
 
             let mut alpn_set = std::collections::HashSet::new();
-            for http_version in &svc_info.alpn_http_versions {
-                alpn_set.insert((*http_version).into());
+            for protocol in &svc_info.alpn_protocols {
+                alpn_set.insert((*protocol).into());
             }
 
             let ech = if svc_info.ech_config.is_empty() {
@@ -312,7 +312,7 @@ impl HappyEyeballs {
             infos.push(happy_eyeballs::ServiceInfo {
                 priority: svc_info.priority,
                 target_name: target,
-                alpn_http_versions: alpn_set,
+                alpn_protocols: alpn_set,
                 ech_config: ech,
                 ipv4_hints: ipv4_vec,
                 ipv6_hints: ipv6_vec,
@@ -377,7 +377,7 @@ impl HappyEyeballs {
                 }
                 *ret_event = Output::AttemptConnection {
                     id: id.into(),
-                    http_version: endpoint.http_version.into(),
+                    protocol: endpoint.protocol.into(),
                     addr: endpoint.address.ip().into(),
                     port: endpoint.address.port(),
                 };
@@ -403,7 +403,7 @@ impl HappyEyeballs {
 // TODO: Expose ip and port.
 #[repr(C)]
 pub struct AltSvc {
-    pub http_version: HttpVersion,
+    pub protocol: HttpVersion,
 }
 
 #[repr(C)]
@@ -496,7 +496,7 @@ pub struct ServiceInfo {
     pub priority: u16,
     pub port: u16,
     pub target_name: nsCString,
-    pub alpn_http_versions: ThinVec<HttpVersion>,
+    pub alpn_protocols: ThinVec<HttpVersion>,
     pub ech_config: ThinVec<u8>,
     pub ipv4_hints: ThinVec<NetAddr>,
     pub ipv6_hints: ThinVec<NetAddr>,
@@ -528,7 +528,7 @@ pub enum Output {
     },
     AttemptConnection {
         id: u64,
-        http_version: ConnectionAttemptHttpVersions,
+        protocol: ConnectionAttemptHttpVersions,
         addr: IpAddr,
         port: u16,
     },
