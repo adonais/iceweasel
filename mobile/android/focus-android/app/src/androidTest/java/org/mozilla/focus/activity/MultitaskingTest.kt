@@ -5,9 +5,7 @@ package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.platform.app.InstrumentationRegistry
-import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.selector.privateTabs
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -20,6 +18,7 @@ import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
@@ -35,13 +34,15 @@ import org.mozilla.focus.testAnnotations.SmokeTest
  */
 @RunWith(AndroidJUnit4ClassRunner::class)
 class MultitaskingTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val store = InstrumentationRegistry.getInstrumentation()
         .targetContext
         .applicationContext
         .components
         .store
     private val featureSettingsHelper = FeatureSettingsHelper()
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -55,27 +56,22 @@ class MultitaskingTest : TestSetup() {
     override fun setUp() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     @Throws(Exception::class)
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
     @SmokeTest
     @Test
     fun testVisitingMultipleSites() {
-        val tab1 = webServer.getGenericTabAsset(1)
-        val tab2 = webServer.getGenericTabAsset(2)
-        val tab3 = webServer.getGenericTabAsset(3)
+        val tab1 = webServerRule.server.getGenericTabAsset(1)
+        val tab2 = webServerRule.server.getGenericTabAsset(2)
+        val tab3 = webServerRule.server.getGenericTabAsset(3)
         val eraseBrowsingSnackBarText = getStringResource(R.string.feedback_erase2)
-        val customTabPage = webServer.genericAsset
+        val customTabPage = webServerRule.server.genericAsset
 
         // Load website: Erase button visible, Tabs button not
         searchScreen {
@@ -107,9 +103,9 @@ class MultitaskingTest : TestSetup() {
     @SmokeTest
     @Test
     fun closeTabButtonTest() {
-        val tab1 = webServer.getGenericTabAsset(1)
-        val tab2 = webServer.getGenericTabAsset(2)
-        val tab3 = webServer.getGenericTabAsset(3)
+        val tab1 = webServerRule.server.getGenericTabAsset(1)
+        val tab2 = webServerRule.server.getGenericTabAsset(2)
+        val tab3 = webServerRule.server.getGenericTabAsset(3)
 
         searchScreen {
         }.loadPage(tab1.url) {
@@ -135,8 +131,8 @@ class MultitaskingTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTabsTrayListTest() {
-        val tab1 = webServer.getGenericTabAsset(1)
-        val tab2 = webServer.getGenericTabAsset(2)
+        val tab1 = webServerRule.server.getGenericTabAsset(1)
+        val tab2 = webServerRule.server.getGenericTabAsset(2)
 
         searchScreen {
         }.loadPage(tab1.url) {
@@ -153,9 +149,9 @@ class MultitaskingTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheTabsTrayAddNewTabButtonTest() {
-        val tab1 = webServer.getGenericTabAsset(1)
-        val tab2 = webServer.getGenericTabAsset(2)
-        val tab3 = webServer.getGenericTabAsset(3)
+        val tab1 = webServerRule.server.getGenericTabAsset(1)
+        val tab2 = webServerRule.server.getGenericTabAsset(2)
+        val tab3 = webServerRule.server.getGenericTabAsset(3)
 
         searchScreen {
         }.loadPage(tab1.url) {

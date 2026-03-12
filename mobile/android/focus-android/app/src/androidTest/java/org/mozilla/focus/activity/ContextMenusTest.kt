@@ -4,8 +4,6 @@
 package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -16,6 +14,7 @@ import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.DeleteFilesHelper.deleteFileUsingDisplayName
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityIntentsTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.StringsHelper
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
@@ -30,8 +29,10 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 // These tests check the interaction with various context menu options
 @RunWith(AndroidJUnit4ClassRunner::class)
 class ContextMenusTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
@@ -43,24 +44,18 @@ class ContextMenusTest : TestSetup() {
     override fun setUp() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
-
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
     @SmokeTest
     @Test
     fun linkedImageContextMenuItemsTest() {
-        val imagesTestPage = webServer.imageTestAsset
-        val imageAssetUrl = webServer.url("download.jpg").toString()
+        val imagesTestPage = webServerRule.server.imageTestAsset
+        val imageAssetUrl = webServerRule.server.url("download.jpg").toString()
 
         searchScreen {
         }.loadPage(imagesTestPage.url) {
@@ -72,8 +67,8 @@ class ContextMenusTest : TestSetup() {
     @SmokeTest
     @Test
     fun simpleImageContextMenuItemsTest() {
-        val imagesTestPage = webServer.imageTestAsset
-        val imageAssetUrl = webServer.url("rabbit.jpg").toString()
+        val imagesTestPage = webServerRule.server.imageTestAsset
+        val imageAssetUrl = webServerRule.server.url("rabbit.jpg").toString()
 
         searchScreen {
         }.loadPage(imagesTestPage.url) {
@@ -85,8 +80,8 @@ class ContextMenusTest : TestSetup() {
     @SmokeTest
     @Test
     fun linkContextMenuItemsTest() {
-        val tab1Page = webServer.getGenericTabAsset(1)
-        val tab2Page = webServer.getGenericTabAsset(2)
+        val tab1Page = webServerRule.server.getGenericTabAsset(1)
+        val tab2Page = webServerRule.server.getGenericTabAsset(2)
 
         searchScreen {
         }.loadPage(tab1Page.url) {
@@ -100,8 +95,8 @@ class ContextMenusTest : TestSetup() {
     @SmokeTest
     @Test
     fun copyLinkAddressTest() {
-        val tab1Page = webServer.getGenericTabAsset(1)
-        val tab2Page = webServer.getGenericTabAsset(2)
+        val tab1Page = webServerRule.server.getGenericTabAsset(1)
+        val tab2Page = webServerRule.server.getGenericTabAsset(2)
 
         searchScreen {
         }.loadPage(tab1Page.url) {
@@ -120,8 +115,8 @@ class ContextMenusTest : TestSetup() {
     @SmokeTest
     @Test
     fun shareLinkTest() {
-        val tab1Page = webServer.getGenericTabAsset(1)
-        val tab2Page = webServer.getGenericTabAsset(2)
+        val tab1Page = webServerRule.server.getGenericTabAsset(1)
+        val tab2Page = webServerRule.server.getGenericTabAsset(2)
 
         searchScreen {
         }.loadPage(tab1Page.url) {
@@ -134,8 +129,8 @@ class ContextMenusTest : TestSetup() {
 
     @Test
     fun copyImageLocationTest() {
-        val imagesTestPage = webServer.imageTestAsset
-        val imageAssetUrl = webServer.url("rabbit.jpg").toString()
+        val imagesTestPage = webServerRule.server.imageTestAsset
+        val imageAssetUrl = webServerRule.server.url("rabbit.jpg").toString()
 
         searchScreen {
         }.loadPage(imagesTestPage.url) {
@@ -154,7 +149,7 @@ class ContextMenusTest : TestSetup() {
     @SmokeTest
     @Test
     fun saveImageTest() {
-        val imagesTestPage = webServer.imageTestAsset
+        val imagesTestPage = webServerRule.server.imageTestAsset
         val fileName = "rabbit.jpg"
 
         searchScreen {
@@ -177,7 +172,7 @@ class ContextMenusTest : TestSetup() {
 
     @Test
     fun shareImageTest() {
-        val imagesTestPage = webServer.imageTestAsset
+        val imagesTestPage = webServerRule.server.imageTestAsset
 
         searchScreen {
         }.loadPage(imagesTestPage.url) {

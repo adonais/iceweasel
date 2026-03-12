@@ -4,9 +4,7 @@
 package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import mockwebserver3.MockWebServer
 import mozilla.components.concept.engine.utils.EngineReleaseChannel
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -18,6 +16,7 @@ import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.getStorageTestAsset
 import org.mozilla.focus.helpers.TestHelper.exitToTop
@@ -29,7 +28,9 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
 class SettingsPrivacyTest : TestSetup() {
     private val featureSettingsHelper = FeatureSettingsHelper()
-    private lateinit var webServer: MockWebServer
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -43,16 +44,11 @@ class SettingsPrivacyTest : TestSetup() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
         featureSettingsHelper.setSearchWidgetDialogEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     fun tearDown() {
         featureSettingsHelper.resetAllFeatureFlags()
-        webServer.close()
     }
 
     @SmokeTest
@@ -72,8 +68,8 @@ class SettingsPrivacyTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyAllCookiesBlockedTest() {
-        val sameSiteCookiesUrl = webServer.getStorageTestAsset("same-site-cookies.html").url
-        val thirdPartyCookiesUrl = webServer.getStorageTestAsset("cross-site-cookies.html").url
+        val sameSiteCookiesUrl = webServerRule.server.getStorageTestAsset("same-site-cookies.html").url
+        val thirdPartyCookiesUrl = webServerRule.server.getStorageTestAsset("cross-site-cookies.html").url
 
         homeScreen {
         }.openMainMenu {
@@ -98,8 +94,8 @@ class SettingsPrivacyTest : TestSetup() {
     @SmokeTest
     @Test
     fun verify3rdPartyCookiesBlockedTest() {
-        val sameSiteCookiesUrl = webServer.getStorageTestAsset("same-site-cookies.html").url
-        val thirdPartyCookiesURL = webServer.getStorageTestAsset("cross-site-cookies.html").url
+        val sameSiteCookiesUrl = webServerRule.server.getStorageTestAsset("same-site-cookies.html").url
+        val thirdPartyCookiesURL = webServerRule.server.getStorageTestAsset("cross-site-cookies.html").url
 
         homeScreen {
         }.openMainMenu {
@@ -123,8 +119,8 @@ class SettingsPrivacyTest : TestSetup() {
     @Ignore("Failing on Beta, see https://bugzilla.mozilla.org/show_bug.cgi?id=1906806")
     @Test
     fun verifyCrossSiteCookiesBlockedTest() {
-        val sameSiteCookiesUrl = webServer.getStorageTestAsset("same-site-cookies.html").url
-        val crossSiteCookiesURL = webServer.getStorageTestAsset("cross-site-cookies.html").url
+        val sameSiteCookiesUrl = webServerRule.server.getStorageTestAsset("same-site-cookies.html").url
+        val crossSiteCookiesURL = webServerRule.server.getStorageTestAsset("cross-site-cookies.html").url
 
         searchScreen {
         }.loadPage(crossSiteCookiesURL) {

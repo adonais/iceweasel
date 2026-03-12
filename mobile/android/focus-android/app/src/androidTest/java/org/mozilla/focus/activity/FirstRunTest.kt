@@ -4,8 +4,6 @@
 package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -21,7 +19,6 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 // Tests the First run onboarding screens
 @RunWith(AndroidJUnit4ClassRunner::class)
 class FirstRunTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
 
     @get:Rule
@@ -30,16 +27,11 @@ class FirstRunTest : TestSetup() {
     @Before
     override fun setUp() {
         super.setUp()
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
     }
 
     @After
     fun stopWebServer() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 

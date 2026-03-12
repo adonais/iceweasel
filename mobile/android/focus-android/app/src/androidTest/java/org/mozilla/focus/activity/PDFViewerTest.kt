@@ -1,7 +1,5 @@
 package org.mozilla.focus.activity
 
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -10,6 +8,7 @@ import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.DeleteFilesHelper.deleteFileUsingDisplayName
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityIntentsTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.pdfTestAsset
 import org.mozilla.focus.helpers.TestHelper.getTargetContext
@@ -20,9 +19,11 @@ import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
 
 class PDFViewerTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
     private val pdfLink = "PDF file"
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
@@ -31,15 +32,10 @@ class PDFViewerTest : TestSetup() {
     override fun setUp() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
         deleteFileUsingDisplayName(getTargetContext.applicationContext, "pdfFile.pdf")
     }
@@ -47,8 +43,8 @@ class PDFViewerTest : TestSetup() {
     @SmokeTest
     @Test
     fun openPdfFileTest() {
-        val genericPageUrl = webServer.genericAsset.url
-        val pdfDoc = webServer.pdfTestAsset
+        val genericPageUrl = webServerRule.server.genericAsset.url
+        val pdfDoc = webServerRule.server.pdfTestAsset
 
         searchScreen {
         }.loadPage(genericPageUrl) {
@@ -62,7 +58,7 @@ class PDFViewerTest : TestSetup() {
     @SmokeTest
     @Test
     fun downloadPdfTest() {
-        val pdfDoc = webServer.pdfTestAsset
+        val pdfDoc = webServerRule.server.pdfTestAsset
 
         searchScreen {
         }.loadPage(pdfDoc.url) {

@@ -3,8 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.focus.activity
 
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -13,6 +11,7 @@ import org.mozilla.focus.activity.robots.homeScreen
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
 import org.mozilla.focus.helpers.TestHelper
@@ -23,8 +22,10 @@ import org.mozilla.focus.testAnnotations.SmokeTest
  * Verifies main menu items on the homescreen and on a browser page.
  */
 class ThreeDotMainMenuTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -36,16 +37,11 @@ class ThreeDotMainMenuTest : TestSetup() {
     @Before
     override fun setUp() {
         super.setUp()
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
     }
 
     @After
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
@@ -62,7 +58,7 @@ class ThreeDotMainMenuTest : TestSetup() {
     @SmokeTest
     @Test
     fun browserMenuItemsTest() {
-        val pageUrl = webServer.getGenericTabAsset(1).url
+        val pageUrl = webServerRule.server.getGenericTabAsset(1).url
 
         searchScreen {
         }.loadPage(pageUrl) {
@@ -81,7 +77,7 @@ class ThreeDotMainMenuTest : TestSetup() {
     @SmokeTest
     @Test
     fun shareTabTest() {
-        val pageUrl = webServer.getGenericTabAsset(1).url
+        val pageUrl = webServerRule.server.getGenericTabAsset(1).url
 
         searchScreen {
         }.loadPage(pageUrl) {
@@ -96,7 +92,7 @@ class ThreeDotMainMenuTest : TestSetup() {
     @SmokeTest
     @Test
     fun findInPageTest() {
-        val pageUrl = webServer.getGenericTabAsset(1).url
+        val pageUrl = webServerRule.server.getGenericTabAsset(1).url
 
         searchScreen {
         }.loadPage(pageUrl) {
@@ -120,7 +116,7 @@ class ThreeDotMainMenuTest : TestSetup() {
     @SmokeTest
     @Test
     fun switchDesktopModeTest() {
-        val pageUrl = webServer.getGenericTabAsset(1).url
+        val pageUrl = webServerRule.server.getGenericTabAsset(1).url
 
         searchScreen {
         }.loadPage(pageUrl) {

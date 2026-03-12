@@ -4,8 +4,6 @@
 
 package org.mozilla.focus.activity
 
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -16,7 +14,6 @@ import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
 import org.mozilla.focus.helpers.TestSetup
 
 class AboutURITest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
 
     @get:Rule
@@ -26,15 +23,10 @@ class AboutURITest : TestSetup() {
     override fun setUp() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 

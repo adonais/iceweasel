@@ -8,8 +8,6 @@ import android.content.Intent
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -22,6 +20,7 @@ import org.mozilla.focus.activity.robots.notificationTray
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
 import org.mozilla.focus.helpers.TestHelper.getStringResource
@@ -35,8 +34,10 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 // These tests verify interaction with the browsing notification and erasing browsing data
 @RunWith(AndroidJUnit4ClassRunner::class)
 class EraseBrowsingDataTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -48,24 +49,19 @@ class EraseBrowsingDataTest : TestSetup() {
     @Before
     override fun setUp() {
         super.setUp()
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
         featureSettingsHelper.setSearchWidgetDialogEnabled(false)
     }
 
     @After
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
     @SmokeTest
     @Test
     fun trashButtonTest() {
-        val testPage = webServer.getGenericTabAsset(1)
+        val testPage = webServerRule.server.getGenericTabAsset(1)
 
         searchScreen {
         }.loadPage(testPage.url) {
@@ -80,7 +76,7 @@ class EraseBrowsingDataTest : TestSetup() {
     @SmokeTest
     @Test
     fun notificationEraseAndOpenButtonTest() {
-        val testPage = webServer.getGenericTabAsset(1)
+        val testPage = webServerRule.server.getGenericTabAsset(1)
 
         notificationTray {
             mDevice.openNotification()
@@ -106,7 +102,7 @@ class EraseBrowsingDataTest : TestSetup() {
     @SmokeTest
     @Test
     fun deleteHistoryOnRestartTest() {
-        val testPage = webServer.getGenericTabAsset(1)
+        val testPage = webServerRule.server.getGenericTabAsset(1)
 
         searchScreen {
         }.loadPage(testPage.url) {}
@@ -119,7 +115,7 @@ class EraseBrowsingDataTest : TestSetup() {
     @SmokeTest
     @Test
     fun systemBarHomeViewTest() {
-        val testPage = webServer.getGenericTabAsset(1)
+        val testPage = webServerRule.server.getGenericTabAsset(1)
         val launcherLoadTimeoutMillis = 5000
         val launcherPackage = mDevice.launcherPackageName
 

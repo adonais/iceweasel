@@ -10,8 +10,6 @@ import android.hardware.camera2.CameraManager
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import kotlinx.coroutines.runBlocking
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.After
 import org.junit.Assume
@@ -24,6 +22,7 @@ import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
 import org.mozilla.focus.helpers.MockLocationUpdatesRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getMediaTestAsset
 import org.mozilla.focus.helpers.TestHelper.exitToTop
@@ -35,13 +34,15 @@ import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
 
 class SitePermissionsTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
 
     // Test page created and handled by the Mozilla mobile test-eng team
     private val permissionsPage = "https://mozilla-mobile.github.io/testapp/permissions"
     private val permissionsPageHost = "mozilla-mobile.github.io"
     private val cameraManager = (InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager)
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -59,16 +60,11 @@ class SitePermissionsTest : TestSetup() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
         featureSettingsHelper.setSearchWidgetDialogEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
         PromptAbuserDetector.validationsEnabled = false
     }
 
     @After
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
         PromptAbuserDetector.validationsEnabled = true
     }
@@ -101,7 +97,7 @@ class SitePermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun blockAudioAutoplayPermissionTest() {
-        val videoPage = webServer.getMediaTestAsset("videoPage")
+        val videoPage = webServerRule.server.getMediaTestAsset("videoPage")
 
         searchScreen {
         }.loadPage(videoPage.url) {
@@ -116,7 +112,7 @@ class SitePermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun blockAudioAutoplayPermissionOnMutedVideoTest() {
-        val mutedVideoPage = webServer.getMediaTestAsset("mutedVideoPage")
+        val mutedVideoPage = webServerRule.server.getMediaTestAsset("mutedVideoPage")
 
         searchScreen {
         }.loadPage(mutedVideoPage.url) {
@@ -130,7 +126,7 @@ class SitePermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun allowAudioVideoAutoplayPermissionTest() {
-        val videoPage = webServer.getMediaTestAsset("videoPage")
+        val videoPage = webServerRule.server.getMediaTestAsset("videoPage")
 
         homeScreen {
         }.openMainMenu {
@@ -151,8 +147,8 @@ class SitePermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun allowAudioVideoAutoplayPermissionOnMutedVideoTest() {
-        val genericPage = webServer.genericAsset
-        val mutedVideoPage = webServer.getMediaTestAsset("mutedVideoPage")
+        val genericPage = webServerRule.server.genericAsset
+        val mutedVideoPage = webServerRule.server.getMediaTestAsset("mutedVideoPage")
 
         homeScreen {
         }.openMainMenu {
@@ -176,7 +172,7 @@ class SitePermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun blockAudioVideoAutoplayPermissionTest() {
-        val videoPage = webServer.getMediaTestAsset("videoPage")
+        val videoPage = webServerRule.server.getMediaTestAsset("videoPage")
 
         homeScreen {
         }.openMainMenu {

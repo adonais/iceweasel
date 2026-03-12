@@ -4,8 +4,6 @@
 package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -17,6 +15,7 @@ import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.DeleteFilesHelper.deleteFileUsingDisplayName
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityIntentsTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.StringsHelper.GOOGLE_PHOTOS
 import org.mozilla.focus.helpers.TestAssetHelper.imageTestAsset
@@ -29,14 +28,15 @@ import org.mozilla.focus.helpers.TestHelper.verifySnackBarText
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
-import java.io.IOException
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class DownloadFileTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
     private val downloadTestPage = "https://storage.googleapis.com/mobile_test_assets/test_app/downloads.html"
     private var downloadFileName: String = ""
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
@@ -49,19 +49,10 @@ class DownloadFileTest : TestSetup() {
     override fun setUp() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     fun tearDown() {
-        try {
-            webServer.close()
-        } catch (e: IOException) {
-            throw AssertionError("Could not stop web server", e)
-        }
         deleteFileUsingDisplayName(getTargetContext.applicationContext, downloadFileName)
         featureSettingsHelper.resetAllFeatureFlags()
     }
@@ -69,7 +60,7 @@ class DownloadFileTest : TestSetup() {
     @SmokeTest
     @Test
     fun downloadNotificationTest() {
-        val downloadPageUrl = webServer.imageTestAsset.url
+        val downloadPageUrl = webServerRule.server.imageTestAsset.url
         downloadFileName = "download.jpg"
 
         notificationTray {
@@ -100,7 +91,7 @@ class DownloadFileTest : TestSetup() {
     @SmokeTest
     @Test
     fun cancelDownloadTest() {
-        val downloadPageUrl = webServer.imageTestAsset.url
+        val downloadPageUrl = webServerRule.server.imageTestAsset.url
 
         searchScreen {
         }.loadPage(downloadPageUrl) { }
@@ -119,7 +110,7 @@ class DownloadFileTest : TestSetup() {
     @SmokeTest
     @Test
     fun downloadAndOpenJpgFileTest() {
-        val downloadPageUrl = webServer.imageTestAsset.url
+        val downloadPageUrl = webServerRule.server.imageTestAsset.url
         downloadFileName = "download.jpg"
 
         // Load website with service worker

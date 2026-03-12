@@ -8,8 +8,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assert.assertTrue
@@ -21,19 +19,21 @@ import org.mozilla.focus.activity.robots.notificationTray
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.pressHomeKey
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
-import java.io.IOException
 
 // This test switches out of Focus and opens it from the private browsing notification
 @RunWith(AndroidJUnit4ClassRunner::class)
 class SwitchContextTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -42,11 +42,6 @@ class SwitchContextTest : TestSetup() {
     override fun setUp() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
-
         notificationTray {
             mDevice.openNotification()
             clearNotifications()
@@ -55,18 +50,13 @@ class SwitchContextTest : TestSetup() {
 
     @After
     fun tearDown() {
-        try {
-            webServer.close()
-        } catch (e: IOException) {
-            throw AssertionError("Could not stop web server", e)
-        }
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
     @SmokeTest
     @Test
     fun notificationOpenButtonTest() {
-        val testPage = webServer.genericAsset
+        val testPage = webServerRule.server.genericAsset
 
         searchScreen {
         }.loadPage(testPage.url) {
@@ -99,7 +89,7 @@ class SwitchContextTest : TestSetup() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
         val intent = context.packageManager
             .getLaunchIntentForPackage(settingsPackage)
-        val testPage = webServer.genericAsset
+        val testPage = webServerRule.server.genericAsset
 
         // Open a webpage
         searchScreen {

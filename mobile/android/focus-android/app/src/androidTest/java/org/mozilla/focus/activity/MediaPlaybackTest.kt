@@ -3,8 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.focus.activity
 
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -14,14 +12,17 @@ import org.mozilla.focus.activity.robots.notificationTray
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.TestAssetHelper.getMediaTestAsset
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
 
 class MediaPlaybackTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -30,22 +31,17 @@ class MediaPlaybackTest : TestSetup() {
     override fun setUp() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     fun tearDown() {
-        webServer.close()
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
     @SmokeTest
     @Test
     fun testVideoPlayback() {
-        val videoPageUrl = webServer.getMediaTestAsset("videoPage").url
+        val videoPageUrl = webServerRule.server.getMediaTestAsset("videoPage").url
 
         searchScreen {
         }.loadPage(videoPageUrl) {
@@ -61,7 +57,7 @@ class MediaPlaybackTest : TestSetup() {
     @SmokeTest
     @Test
     fun testAudioPlayback() {
-        val audioPageUrl = webServer.getMediaTestAsset("audioPage").url
+        val audioPageUrl = webServerRule.server.getMediaTestAsset("audioPage").url
 
         searchScreen {
         }.loadPage(audioPageUrl) {
@@ -77,7 +73,7 @@ class MediaPlaybackTest : TestSetup() {
     @SmokeTest
     @Test
     fun testMediaContentNotification() {
-        val audioPageUrl = webServer.getMediaTestAsset("audioPage").url
+        val audioPageUrl = webServerRule.server.getMediaTestAsset("audioPage").url
         val notificationMessage = "A site is playing media"
 
         searchScreen {

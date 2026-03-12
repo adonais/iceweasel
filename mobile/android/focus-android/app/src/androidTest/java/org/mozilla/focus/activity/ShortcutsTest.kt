@@ -6,8 +6,6 @@
 
 package org.mozilla.focus.activity
 
-import mockwebserver3.MockWebServer
-import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -17,15 +15,17 @@ import org.mozilla.focus.activity.robots.homeScreen
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
 import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
-import java.io.IOException
 
 class ShortcutsTest : TestSetup() {
-    private lateinit var webServer: MockWebServer
     private val featureSettingsHelper = FeatureSettingsHelper()
+
+    @get:Rule
+    val webServerRule = MockWebServerRule()
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -35,19 +35,10 @@ class ShortcutsTest : TestSetup() {
         super.setUp()
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
         featureSettingsHelper.setSearchWidgetDialogEnabled(false)
-        webServer = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-            start()
-        }
     }
 
     @After
     fun tearDown() {
-        try {
-            webServer.close()
-        } catch (e: IOException) {
-            throw AssertionError("Could not stop web server", e)
-        }
         featureSettingsHelper.resetAllFeatureFlags()
     }
 
@@ -55,9 +46,9 @@ class ShortcutsTest : TestSetup() {
     @Test
     fun renameShortcutTest() {
         val webPage = object {
-            val url = webServer.genericAsset.url
-            val title = webServer.genericAsset.title
-            val content = webServer.genericAsset.content
+            val url = webServerRule.server.genericAsset.url
+            val title = webServerRule.server.genericAsset.title
+            val content = webServerRule.server.genericAsset.content
             val newTitle = "TestShortcut"
         }
 
@@ -80,8 +71,8 @@ class ShortcutsTest : TestSetup() {
     @SmokeTest
     @Test
     fun shortcutsDoNotOpenInNewTabTest() {
-        val tab1 = webServer.getGenericTabAsset(1)
-        val tab2 = webServer.getGenericTabAsset(2)
+        val tab1 = webServerRule.server.getGenericTabAsset(1)
+        val tab2 = webServerRule.server.getGenericTabAsset(2)
 
         searchScreen {
         }.loadPage(tab1.url) {
@@ -110,7 +101,7 @@ class ShortcutsTest : TestSetup() {
     @SmokeTest
     @Test
     fun searchBarShowsPageShortcutsTest() {
-        val webPage = webServer.genericAsset
+        val webPage = webServerRule.server.genericAsset
 
         searchScreen {
         }.loadPage(webPage.url) {
