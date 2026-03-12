@@ -347,6 +347,21 @@ class JujutsuRepository(Repository):
 
         args = ["git", "push"]
         if remote:
+            if remote.startswith("git@"):
+                if remote.endswith(".git"):
+                    remote = remote[:-4]
+
+                for line in self._run("git", "remote", "list").strip().splitlines():
+                    name, url = line.split(" ", 1)
+                    if url.endswith(".git"):
+                        url = url[:-4]
+
+                    if url == remote:
+                        remote = name
+                        break
+                else:
+                    raise ValueError(f"No remote configured for '{remote}'")
+
             args.extend(["--remote", remote])
         if ref:
             args.extend(["-r", ref])

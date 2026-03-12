@@ -124,5 +124,32 @@ def test_push_ref_without_remote_raises(repo):
         vcs.push(ref="some-ref")
 
 
+def test_jj_push_url_to_name_translation(repo):
+    """Test that jj translates git URLs to remote names"""
+    if repo.vcs != "jj":
+        pytest.skip("Only relevant for jj repos")
+
+    vcs = get_repository_object(repo.dir)
+    repo.execute_next_step()
+
+    # Get the actual remote URL
+    result = subprocess.run(
+        ["jj", "git", "remote", "list"],
+        cwd=str(repo.dir),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    # Extract the upstream URL from output
+    for line in result.stdout.strip().splitlines():
+        if line.startswith("upstream "):
+            upstream_url = line.split(" ", 1)[1]
+            break
+
+    # Push using URL should work (it gets translated to "upstream")
+    vcs.push(remote=upstream_url, ref="test-bookmark")
+
+
 if __name__ == "__main__":
     mozunit.main()
