@@ -5,6 +5,24 @@ var cwd = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
 var _tmpd = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
 _tmpd.initWithPath(Services.env.get("XPCSHELL_TEST_TEMP_DIR"));
 
+// initialize XDG base directories for crash reporting
+var _profd = Services.env.get("XPCSHELL_TEST_PROFILE_DIR");
+let gProfD = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+gProfD.initWithPath(_profd);
+
+let gDataHome = gProfD.clone();
+gDataHome.append("data");
+gDataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+let gDataHomeLocal = gProfD.clone();
+gDataHomeLocal.append("local");
+gDataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+
+let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
+  Ci.nsIXREDirProvider
+);
+xreDirProvider.setUserDataDirectory(gDataHome, /* aLocal */ false);
+xreDirProvider.setUserDataDirectory(gDataHomeLocal, /* aLocal */ true);
+
 // Allow `crashReporter` to be used as an alias in the tests.
 var crashReporter = Services.appinfo;
 
