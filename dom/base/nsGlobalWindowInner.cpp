@@ -2235,20 +2235,26 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
   if (!jsapi.Init(global)) {
     return false;
   }
+  if (gwt) {
+    JS::Rooted<JSObject*> globalObj(jsapi.cx(), global->GetGlobalJSObject());
+    JS::Rooted<JS::Value> val(jsapi.cx());
+    if (!JS_GetProperty(jsapi.cx(), globalObj, "__gwt_stylesLoaded", &val)) {
+      JS_ClearPendingException(jsapi.cx());
+      return false;
+    }
+    if (!val.isObject()) {
+      return false;
+    }
+    aEmbedder.OwnerDoc()->WarnOnceAbout(
+        DeprecatedOperations::eGWTRichTextAreaCompatHack);
+    return true;
+  }
   CkEditorProperty property;
   JS::Rooted<JS::Value> v(jsapi.cx(),
                           JS::ObjectValue(*global->GetGlobalJSObject()));
   if (!property.Init(jsapi.cx(), v)) {
     JS_ClearPendingException(jsapi.cx());
     return false;
-  }
-  if (gwt) {
-    if (!property.mGwtPotentialElementShim.WasPassed()) {
-      return false;
-    }
-    aEmbedder.OwnerDoc()->WarnOnceAbout(
-        DeprecatedOperations::eGWTRichTextAreaCompatHack);
-    return true;
   }
   MOZ_ASSERT(ckeditor);
   const auto* version = [&]() -> const CkEditorVersion* {
