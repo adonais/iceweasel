@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -47,8 +45,8 @@ import mozilla.components.feature.summarize.ui.DownloadError
 import mozilla.components.feature.summarize.ui.InfoError
 import mozilla.components.feature.summarize.ui.OffDeviceSummarizationConsent
 import mozilla.components.feature.summarize.ui.OnDeviceSummarizationConsent
-import mozilla.components.feature.summarize.ui.SummarizedContent
 import mozilla.components.feature.summarize.ui.SummarizingContent
+import mozilla.components.feature.summarize.ui.SummaryContentLoaded
 import mozilla.components.feature.summarize.ui.gradient.summaryLoadingGradient
 
 /**
@@ -122,10 +120,9 @@ private fun SummarizationScreen(
             is SummarizationState.Summarizing -> SummarizingContent(
                 modifier = Modifier.height(252.dp),
             )
-            is SummarizationState.Summarized -> SummarizedContent(
+            is SummarizationState.Summarized -> SummaryContentLoaded(
+                info = state.info,
                 text = state.text,
-                modifier = Modifier.verticalScroll(rememberScrollState())
-                    .padding(bottom = 16.dp),
                 onSettingsClicked = { store.dispatch(SettingsClicked) },
             )
             is SummarizationState.Settings -> {

@@ -108,6 +108,12 @@
     <!-- Description for the shake to summarize toggle in settings -->
     <string name="mozac_summarize_settings_shake_to_summarize_description">Shake your device side to side to summarize a page.</string>
 
+    <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
+    <string name="mozac_feature_summarize_summary_model">Summary by %1$s</string>
+
+    <!-- Disclaimer message -->
+    <string name="mozac_feature_summarize_disclaimer_message">AI can make mistakes</string>
+
     <!-- Keep these strings in static_strings.xml -->
 
     <!-- Name for the Fake LLM to use in place for testing. -->
