@@ -58,7 +58,7 @@ from mozgeckoprofiler import (
     symbolicate_profile_json,
     view_gecko_profile,
 )
-from mozserve import DoHServer, Http2Server, Http3Server
+from mozserve import DoHServer, Http2Server, Http3Server, MozHttp2Server
 
 try:
     from marionette_driver.addons import Addons
@@ -1393,13 +1393,16 @@ class MochitestDesktop:
             raise RuntimeError("Error: Unable to start Http/3 server")
 
     def findNodeBin(self):
-        # We try to find the node executable in the path given to us by the user in
-        # the MOZ_NODE_PATH environment variable
         nodeBin = os.getenv("MOZ_NODE_PATH", None)
-        self.log.info(f"Use MOZ_NODE_PATH at {nodeBin}")
-        if not nodeBin and build:
-            nodeBin = build.substs.get("NODEJS")
-            self.log.info(f"Use build node at {nodeBin}")
+        if nodeBin:
+            self.log.info(f"Use MOZ_NODE_PATH at {nodeBin}")
+        elif build:
+            try:
+                nodeBin = build.substs.get("NODEJS")
+            except Exception:
+                nodeBin = None
+            if nodeBin:
+                self.log.info(f"Use build node at {nodeBin}")
         return nodeBin
 
     def startHttp2Server(self, options):
@@ -1420,6 +1423,35 @@ class MochitestDesktop:
         port = self.http2Server.port()
         if port != options.http2ServerPort:
             raise RuntimeError("Error: Unable to start Http2 server")
+
+    def startMozHttp2Server(self, options):
+        """
+        Start a moz-http2 test server.
+        """
+        nodeBin = self.findNodeBin()
+        if not nodeBin:
+            self.log.warning("Node not found. moz-http2 server will not start.")
+            return
+
+        if not os.path.exists(nodeBin) or not os.path.isfile(nodeBin):
+            self.log.warning(
+                f"Node binary not found at {nodeBin}. moz-http2 server will not start."
+            )
+            return
+
+        serverPath = os.path.join(SCRIPT_DIR, "xpcshell", "moz-http2", "moz-http2.js")
+        if not os.path.exists(serverPath):
+            self.log.warning(f"moz-http2.js not found at {serverPath}")
+            return
+
+        serverOptions = {}
+        serverOptions["nodeBin"] = nodeBin
+        serverOptions["serverPath"] = serverPath
+        serverOptions["isWin"] = mozinfo.isWin
+
+        env = test_environment(xrePath=options.xrePath, log=self.log)
+        self.mozHttp2Server = MozHttp2Server(serverOptions, env, self.log)
+        self.mozHttp2Server.start()
 
     def startDoHServer(self, options, dstServerPort, alpn):
         serverOptions = {}
@@ -1490,6 +1522,7 @@ class MochitestDesktop:
         self.log.info(f"use http3 server: {options.useHttp3Server}")
         self.http3Server = None
         self.http2Server = None
+        self.mozHttp2Server = None
         self.dohServer = None
         if options.useHttp3Server:
             self.startHttp3Server(options)
@@ -1497,6 +1530,8 @@ class MochitestDesktop:
         elif options.useHttp2Server:
             self.startHttp2Server(options)
             self.startDoHServer(options, options.http2ServerPort, "h2")
+
+        self.startMozHttp2Server(options)
 
     def stopServers(self):
         """Servers are no longer needed, and perhaps more importantly, anything they
@@ -1544,6 +1579,11 @@ class MochitestDesktop:
                 self.dohServer.stop()
             except Exception:
                 self.log.critical("Exception stopping doh server")
+        if self.mozHttp2Server is not None:
+            try:
+                self.mozHttp2Server.stop()
+            except Exception:
+                self.log.critical("Exception stopping moz-http2 server")
 
         if hasattr(self, "gstForV4l2loopbackProcess"):
             try:
@@ -3804,6 +3844,10 @@ toolbar#nav-bar {
         try:
             if self.startServers(options, debuggerInfo) is False:
                 return 1
+
+            if self.mozHttp2Server is not None:
+                for key, value in self.mozHttp2Server.ports().items():
+                    self.browserEnv[key] = value
 
             if options.jsconsole:
                 options.browserArgs.extend(["--jsconsole"])

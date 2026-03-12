@@ -135,6 +135,50 @@ TEST_HARNESS_FILES.testing.mochitest.Http2Server += [
     "Http2Server/mochitest-cert.pem",
 ]
 
+TEST_HARNESS_FILES.testing.mochitest.xpcshell["moz-http2"] += [
+    "../xpcshell/moz-http2/http2-cert.key",
+    "../xpcshell/moz-http2/http2-cert.key.keyspec",
+    "../xpcshell/moz-http2/http2-cert.pem",
+    "../xpcshell/moz-http2/http2-cert.pem.certspec",
+    "../xpcshell/moz-http2/moz-http2-child.js",
+    "../xpcshell/moz-http2/moz-http2.js",
+    "../xpcshell/moz-http2/package-lock.json",
+    "../xpcshell/moz-http2/package.json",
+    "../xpcshell/moz-http2/proxy-cert.key",
+    "../xpcshell/moz-http2/proxy-cert.key.keyspec",
+    "../xpcshell/moz-http2/proxy-cert.pem",
+    "../xpcshell/moz-http2/proxy-cert.pem.certspec",
+    "../xpcshell/moz-http2/README.md",
+]
+
+TEST_HARNESS_FILES.testing.mochitest.xpcshell["node-http2"] += [
+    "../xpcshell/node-http2/package.json",
+    "../xpcshell/node-http2/README.md",
+]
+
+TEST_HARNESS_FILES.testing.mochitest.xpcshell["node-http2"].lib += [
+    "../xpcshell/node-http2/lib/http.js",
+    "../xpcshell/node-http2/lib/index.js",
+]
+
+TEST_HARNESS_FILES.testing.mochitest.xpcshell["node-http2"].lib.protocol += [
+    "../xpcshell/node-http2/lib/protocol/compressor.js",
+    "../xpcshell/node-http2/lib/protocol/connection.js",
+    "../xpcshell/node-http2/lib/protocol/endpoint.js",
+    "../xpcshell/node-http2/lib/protocol/flow.js",
+    "../xpcshell/node-http2/lib/protocol/framer.js",
+    "../xpcshell/node-http2/lib/protocol/index.js",
+    "../xpcshell/node-http2/lib/protocol/stream.js",
+]
+
+TEST_HARNESS_FILES.testing.mochitest.xpcshell.node_ip += [
+    "../xpcshell/node_ip/package.json",
+]
+
+TEST_HARNESS_FILES.testing.mochitest.xpcshell.node_ip.lib += [
+    "../xpcshell/node_ip/lib/ip.js",
+]
+
 TEST_HARNESS_FILES.testing.mochitest.embed += [
     "embed/Xm5i5kbIXzc",
     "embed/Xm5i5kbIXzc^headers^",
