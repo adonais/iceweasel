@@ -27,7 +27,9 @@ add_task(async function engagement() {
       },
     ],
     trigger: doClick,
-    expectedEvents: [{ results: "adm_sponsored", terminal: "true" }],
+    expectedEvents: [
+      { results: "adm_sponsored", terminal: "true", sap: "urlbar_newtab" },
+    ],
   });
 });
 
@@ -44,7 +46,29 @@ add_task(async function abandonment() {
       },
     ],
     trigger: doBlur,
-    expectedEvents: [{ results: "adm_sponsored", terminal: "true" }],
+    expectedEvents: [
+      { results: "adm_sponsored", terminal: "true", sap: "urlbar_newtab" },
+    ],
+  });
+});
+
+add_task(async function sapUrlbarHandoff() {
+  // Simulate handoff session.
+  gURLBar._isHandoffSession = true;
+  await doExposureTest({
+    prefs: [
+      ["exposureResults", suggestResultType("adm_sponsored")],
+      ["showExposureResults", true],
+    ],
+    queries: [
+      {
+        query: "amp",
+        expectedVisible: ["adm_sponsored"],
+      },
+    ],
+    expectedEvents: [
+      { results: "adm_sponsored", terminal: "true", sap: "handoff" },
+    ],
   });
 });
 

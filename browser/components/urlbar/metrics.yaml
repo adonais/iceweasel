@@ -745,6 +745,12 @@ urlbar:
           and the search suggestion was not present, then `terminal` will be
           "false,true,false".
         type: string
+      sap:
+        type: string
+        description: >
+          The search access point. It records where the exposure happened.
+          The possible values are: `urlbar`, `handoff`, `urlbar_newtab`,
+          `urlbar_addonpage`, and `searchbar`.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1819766
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1918299
@@ -781,6 +787,12 @@ urlbar:
           urlbar session. If true, the session ended with them. If false, the
           result and keyword were matched at some point during the session but
           the session did not end with them.
+      sap:
+        type: string
+        description: >
+          The search access point. It records where the exposure happened.
+          The possible values are: `urlbar`, `handoff`, `urlbar_newtab`,
+          `urlbar_addonpage`, and `searchbar`.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1881875
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1915507

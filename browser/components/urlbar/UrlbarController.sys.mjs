@@ -5,6 +5,7 @@
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 /**
+ * @import {BrowserSearchTelemetry} from "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"
  * @import {ProvidersManager} from "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs"
  * @import {UrlbarView} from "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs"
  */
@@ -780,6 +781,10 @@ export class UrlbarController {
  * @see Events.yaml
  */
 class TelemetryEvent {
+  /**
+   * @param {UrlbarController} controller
+   *  The associated UrlbarController.
+   */
   constructor(controller) {
     this._controller = controller;
     lazy.UrlbarPrefs.addObserver(this);
@@ -1054,6 +1059,45 @@ class TelemetryEvent {
   }
 
   /**
+   * Converts a search source string to a sap string.
+   * Both are the same concept but they have slightly different values.
+   * The sap string is used in urlbar.* telemetry.
+   *
+   * @see {BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} For an overview
+   * of the available values of search source and which telemetry uses it.
+   *
+   * @param {string} searchSource
+   *   The search source string to convert.
+   * @returns {null|"urlbar"|"searchbar"|"handoff"|"urlbar_newtab"|"urlbar_addonpage"}
+   *   The sap value for urlbar.* telemetry or null if the browser window
+   *   already started closing. In that case, no telemetry should be recorded.
+   */
+  #searchSourceToSap(searchSource) {
+    let browserWindow = this._controller.browserWindow;
+    if (searchSource === "urlbar_handoff") {
+      return "handoff";
+    }
+    if (searchSource === "searchbar") {
+      return "searchbar";
+    }
+    if (browserWindow.closed) {
+      // If the browser window has already started closing, then we bail-out.
+      // We would rather return no telemetry than have telemetry with an
+      // incorrect SAP. Generally, this should only happen in tests, since
+      // the timing would need to be very close for the code not to have got
+      // here before the user started closing the window.
+      return null;
+    }
+    if (browserWindow.isBlankPageURL(browserWindow.gBrowser.currentURI.spec)) {
+      return "urlbar_newtab";
+    }
+    if (lazy.ExtensionUtils.isExtensionUrl(browserWindow.gBrowser.currentURI)) {
+      return "urlbar_addonpage";
+    }
+    return "urlbar";
+  }
+
+  /**
    * Records the relevant telemetry information for the given parameters.
    *
    * @param {"abandonment" | "engagement" | "disable" | "bounce"} method
@@ -1100,29 +1144,10 @@ class TelemetryEvent {
       viewTime = 0,
     }
   ) {
-    const browserWindow = this._controller.browserWindow;
-    let sap = "urlbar";
-    if (searchSource === "urlbar_handoff") {
-      sap = "handoff";
-    } else if (searchSource === "searchbar") {
-      sap = "searchbar";
-    } else if (browserWindow.closed) {
-      // If the browser window has already started closing, then we bail-out.
-      // We would rather return no telemetry than have telemetry with an
-      // incorrect SAP. Generally, this should only happen in tests, since
-      // the timing would need to be very close for the code not to have got
-      // here before the user started closing the window.
+    let sap = this.#searchSourceToSap(searchSource);
+    if (!sap) {
       return;
-    } else if (
-      browserWindow.isBlankPageURL(browserWindow.gBrowser.currentURI.spec)
-    ) {
-      sap = "urlbar_newtab";
-    } else if (
-      lazy.ExtensionUtils.isExtensionUrl(browserWindow.gBrowser.currentURI)
-    ) {
-      sap = "urlbar_addonpage";
     }
-
     searchMode = searchMode ?? this._controller.input.searchMode;
 
     // Distinguish user typed search strings from persisted search terms.
@@ -1180,7 +1205,7 @@ class TelemetryEvent {
           search_mode,
           n_chars: numChars.toString(),
           n_words: numWords.toString(),
-          n_results: numResults,
+          n_results: numResults.toString(),
           selected_position: (selIndex + 1).toString(),
           selected_result,
           provider,
@@ -1210,7 +1235,7 @@ class TelemetryEvent {
           search_mode,
           n_chars: numChars.toString(),
           n_words: numWords.toString(),
-          n_results: numResults,
+          n_results: numResults.toString(),
           search_engine_default_id,
           groups,
           results,
@@ -1240,7 +1265,7 @@ class TelemetryEvent {
           search_engine_default_id,
           n_chars: numChars.toString(),
           n_words: numWords.toString(),
-          n_results: numResults,
+          n_results: numResults.toString(),
           selected_result,
           results,
           feature: "suggest",
@@ -1261,7 +1286,7 @@ class TelemetryEvent {
           search_engine_default_id,
           n_chars: numChars.toString(),
           n_words: numWords.toString(),
-          n_results: numResults,
+          n_results: numResults.toString(),
           selected_result,
           selected_position: (selIndex + 1).toString(),
           provider,
@@ -1309,11 +1334,19 @@ class TelemetryEvent {
     return sources;
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   */
   #recordExposures(queryContext) {
     let exposures = this.#exposures;
     this.#exposures = [];
     this.#tentativeExposures = [];
     if (!exposures.length) {
+      return;
+    }
+    let sap = this.#searchSourceToSap(this._controller.input.getSearchSource());
+    if (!sap) {
+      // Window started closing.
       return;
     }
 
@@ -1339,6 +1372,7 @@ class TelemetryEvent {
           keyword,
           terminal: terminal.toString(),
           result: resultType,
+          sap,
         };
         lazy.logger.debug("Recording keyword_exposure event", data);
         Glean.urlbar.keywordExposure.record(data);
@@ -1351,6 +1385,7 @@ class TelemetryEvent {
     let exposure = {
       results: tuples.map(t => t[0]).join(","),
       terminal: tuples.map(t => t[1]).join(","),
+      sap,
     };
     lazy.logger.debug("Recording exposure event", exposure);
     Glean.urlbar.exposure.record(exposure);

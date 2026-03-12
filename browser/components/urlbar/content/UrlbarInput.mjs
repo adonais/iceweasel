@@ -2877,10 +2877,12 @@ export class UrlbarInput extends HTMLElement {
   }
 
   /**
-   * Get search source.
+   * Get search source for telemetry.
    *
-   * @param {Event} event
+   * @param {Event} [event]
    *   The event that triggered this query.
+   *   This is not needed for urlbar.* telemetry and will be obsolete for
+   *   all types of telemetry once the pre-scotch bonnet code is removed.
    * @returns {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES}
    *   The source name.
    */
