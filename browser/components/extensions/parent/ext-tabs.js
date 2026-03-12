@@ -653,6 +653,14 @@ this.tabs = class extends ExtensionAPIPersistent {
       });
     }
 
+    function updateNativeTabAfterAdopt(nativeTabs, oldTab, newTab) {
+      for (let i = 0; i < nativeTabs.length; ++i) {
+        if (nativeTabs[i] === oldTab) {
+          nativeTabs[i] = newTab;
+        }
+      }
+    }
+
     async function promiseTabWhenReady(tabId) {
       let tab;
       if (tabId !== null) {
@@ -1228,41 +1236,54 @@ this.tabs = class extends ExtensionAPIPersistent {
             }
 
             let splitview = nativeTab.splitview;
-            if (splitview) {
-              // When a tab of a split view is moved, the whole split view is
-              // moved instead. Drop all tabs in the split view that are
-              // requested to be moved, since we will handle them now.
-              for (const tab of splitview.tabs) {
-                let i;
-                while ((i = tabsToMove.indexOf(tab)) !== -1) {
-                  tabsToMove.splice(i, 1);
-                }
-              }
-            }
+            let splitviewTabs = splitview?.tabs;
             if (isSameWindow) {
               // If the window we are moving is the same, just move the tab.
               // moveTabTo handles regular tabs and split views.
               gBrowser.moveTabTo(nativeTab, { tabIndex: insertionPoint });
             } else if (splitview) {
               // Split view for different window.
-              let tabIndexInSplitview = splitview.tabs.indexOf(nativeTab);
+              let tabIndexInSplitview = splitviewTabs.indexOf(nativeTab);
               splitview = gBrowser.adoptSplitView(splitview, {
                 tabIndex: insertionPoint,
               });
-              nativeTab = splitview.tabs[tabIndexInSplitview];
+              const oldTabs = splitviewTabs;
+              splitviewTabs = splitview.tabs;
+              nativeTab = splitviewTabs[tabIndexInSplitview];
+              for (const [o, n] of Iterator.zip([oldTabs, splitviewTabs])) {
+                updateNativeTabAfterAdopt(tabsToMove, o, n);
+              }
             } else {
               // If the window we are moving the tab in is different, then move the tab
               // to the new window.
               // TODO bug 1762800: handle adoptTab failure.
+              const oldNativeTab = nativeTab;
               nativeTab = gBrowser.adoptTab(nativeTab, {
                 tabIndex: insertionPoint,
               });
+              updateNativeTabAfterAdopt(tabsToMove, oldNativeTab, nativeTab);
             }
             lastInsertionMap.set(
               window,
-              splitview ? splitview.lastElementChild._tPos : nativeTab._tPos
+              splitview ? splitviewTabs.at(-1)._tPos : nativeTab._tPos
             );
-            tabsMoved.push(nativeTab);
+            if (splitview) {
+              for (const tab of splitviewTabs) {
+                let tabIsInTabsToMove = tab === nativeTab;
+                let i = 0;
+                while ((i = tabsToMove.indexOf(tab, i)) !== -1) {
+                  // When a tab of a split view is moved, the whole split view
+                  // is moved instead. We do not need to move these tabs again.
+                  tabsToMove.splice(i, 1);
+                  tabIsInTabsToMove = true;
+                }
+                if (tabIsInTabsToMove) {
+                  tabsMoved.push(tab);
+                }
+              }
+            } else {
+              tabsMoved.push(nativeTab);
+            }
           }
 
           return tabsMoved.map(nativeTab => tabManager.convert(nativeTab));

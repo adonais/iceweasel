@@ -172,3 +172,52 @@ add_task(async function test_move_all_except_one_tabs_of_window() {
   await extension.awaitFinish("tabs.move.all_except_one_tabs_in_window");
   await extension.unload();
 });
+
+// tabs.move() with the same tab listed is not super meaningful, but the
+// outcome should make sense: no errors or wrong indexes.
+add_task(async function test_move_same_tab_multiple_times() {
+  let extension = ExtensionTestUtils.loadExtension({
+    async background() {
+      const destWin = await browser.windows.create({
+        url: "https://example.com/?0",
+      });
+      const tabId0 = destWin.tabs[0].id;
+
+      const win = await browser.windows.create({
+        url: ["https://example.com/?1", "https://example.com/?2"],
+      });
+      const tabId1 = win.tabs[0].id;
+      const tabId2 = win.tabs[1].id;
+      const moved = await browser.tabs.move([tabId1, tabId1, tabId1, tabId2], {
+        windowId: destWin.id,
+        index: 0,
+      });
+      browser.test.assertDeepEq(
+        [
+          { tabId: tabId1, index: 0 },
+          // Notably index should remain 0, not continue to 1.
+          { tabId: tabId1, index: 0 },
+          { tabId: tabId1, index: 0 },
+          { tabId: tabId2, index: 1 },
+        ],
+        moved.map(t => ({ tabId: t.id, index: t.index })),
+        "Return value of tabs.move() to new window with duplicate tabs"
+      );
+      let destWinTabs = await browser.tabs.query({ windowId: destWin.id });
+      browser.test.assertDeepEq(
+        [
+          { tabId: tabId1, index: 0 },
+          { tabId: tabId2, index: 1 },
+          { tabId: tabId0, index: 2 },
+        ],
+        destWinTabs.map(t => ({ tabId: t.id, index: t.index })),
+        "Final position of tabs in window after tabs.move()"
+      );
+      await browser.windows.remove(destWin.id);
+      browser.test.notifyPass("tabs.move.same_tab_multiple_times");
+    },
+  });
+  await extension.startup();
+  await extension.awaitFinish("tabs.move.same_tab_multiple_times");
+  await extension.unload();
+});
