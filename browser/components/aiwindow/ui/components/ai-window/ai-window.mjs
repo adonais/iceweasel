@@ -757,6 +757,36 @@ export class AIWindow extends MozLitElement {
 
     const { value, action, contextMentions, contextPageUrl } = event.detail;
     if (action === "chat") {
+      // Seed @mentioned URLs into security ledger at submission time.
+      // URLs come from two sources:
+      // 1. contextMentions: "+" button mentions + implicit current tab (sidebar)
+      // 2. Inline "@" mentions from the editor's mentions plugin
+      const mentionUrls = new Set();
+
+      if (contextMentions?.length) {
+        for (const mention of contextMentions) {
+          if (mention.url) {
+            mentionUrls.add(mention.url);
+          }
+        }
+      }
+
+      const inlineMentions = this.#getInlineMentions();
+      for (const mention of inlineMentions) {
+        if (mention.id) {
+          mentionUrls.add(mention.id);
+        }
+      }
+
+      if (mentionUrls.size) {
+        const actor = this.#getAIChatContentActor();
+        if (actor && this.#conversation?.id) {
+          for (const url of mentionUrls) {
+            actor.seedMentionedUrl(this.#conversation.id, url);
+          }
+        }
+      }
+
       // Disable suggestions after the first chat message.
       // We only want to show suggestions for the initial query,
       // but not for follow-up messages in a conversation.
@@ -778,6 +808,28 @@ export class AIWindow extends MozLitElement {
       );
     }
   };
+
+  /**
+   * Returns inline @mention data from the editor's mentions plugin.
+   *
+   * Inline "@" mentions are not included in the smartbar-commit
+   * contextMentions, so we read them directly from the editor.
+   *
+   * @returns {Array<object>} Mention nodes from the editor
+   */
+  #getInlineMentions() {
+    const editor = this.#smartbar?.inputField;
+    if (!editor?.plugins) {
+      return [];
+    }
+
+    const mentionsPlugin = editor.plugins.find(p => p.mentions);
+    if (!mentionsPlugin) {
+      return [];
+    }
+
+    return mentionsPlugin.mentions.getAll();
+  }
 
   /**
    * @param {string} text
@@ -1119,11 +1171,8 @@ export class AIWindow extends MozLitElement {
    * parent actor receives AIChatContent:Ready event from the child process.
    */
   onContentReady() {
-    if (!this.#pendingMessageDelivery) {
-      return;
-    }
-
     const actor = this.#getAIChatContentActor();
+
     if (actor) {
       this.#deliverConversationMessages(actor);
     }
@@ -1135,6 +1184,15 @@ export class AIWindow extends MozLitElement {
    * @param {JSActor} actor
    */
   #deliverConversationMessages(actor) {
+    // Notify actor of current conversation for security ledger access.
+    if (this.#conversation?.id) {
+      actor.setConversation(this.#conversation.id);
+    }
+
+    if (!this.#pendingMessageDelivery) {
+      return;
+    }
+
     this.#pendingMessageDelivery = false;
 
     if (!this.#conversation || !this.#conversation.messages.length) {
@@ -1224,10 +1282,11 @@ export class AIWindow extends MozLitElement {
       this.showDisclaimer = true;
       this.showStarters = false;
       const actor = this.#getAIChatContentActor();
+
+      this.#pendingMessageDelivery = true;
+
       if (this.#browser && actor) {
         this.#deliverConversationMessages(actor);
-      } else {
-        this.#pendingMessageDelivery = true;
       }
     } else {
       this.onCreateNewChatClick();

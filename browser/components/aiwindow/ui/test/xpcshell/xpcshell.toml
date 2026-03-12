@@ -13,6 +13,6 @@ run-if = [
 
 ["test_chat-utils.js"]
 
-["theme_aiwindow.js"]
-
 ["test_ui_modules_AIWindow_placesEvents.js"]
+
+["theme_aiwindow.js"]

@@ -6,12 +6,41 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  getSecurityOrchestrator:
+    "chrome://global/content/ml/security/SecurityOrchestrator.sys.mjs",
 });
 
 /**
  * JSWindowActor to pass data between AIChatContent singleton and content pages.
+ *
+ * Handles:
+ * - Message routing between ai-window and ai-chat-content
+ * - Conversation ID tracking for security ledger access
+ * - Push-based trusted URL updates to child
  */
 export class AIChatContentParent extends JSWindowActorParent {
+  /**
+   * The session ledger for the current conversation.
+   * Stored for EventTarget listener management and direct access.
+   *
+   * @type {SessionLedger|null}
+   */
+  #sessionLedger = null;
+
+  /**
+   * Counter to detect superseded #setConversation calls.
+   * Prevents stale async calls from attaching listeners to wrong ledgers.
+   *
+   * @type {number}
+   */
+  #setConversationGeneration = 0;
+
+  /**
+   * Bound handler for ledger "change" events.
+   * Stable reference needed for addEventListener/removeEventListener.
+   */
+  #onLedgerChange = () => this.#pushTrustedUrlsToChild();
+
   dispatchMessageToChatContent(message) {
     // Ideally we should allowlist or use a schema to validate what we send to
     // the child process, that is bug 2022057.
@@ -30,6 +59,32 @@ export class AIChatContentParent extends JSWindowActorParent {
 
   dispatchRemoveAppliedMemoryToChatContent(payload) {
     this.sendAsyncMessage("AIChatContent:RemoveAppliedMemory", payload);
+  }
+
+  /**
+   * Sets the current conversation for security ledger tracking.
+   *
+   * Called directly by ai-window when a conversation is opened or changed.
+   * Subscribes to ledger changes and pushes initial trusted URLs to child.
+   *
+   * @param {string|null} conversationId - The conversation identifier
+   */
+  setConversation(conversationId) {
+    this.#setConversation(conversationId);
+  }
+
+  /**
+   * Seeds a mentioned URL into the security ledger.
+   *
+   * Called by ai-window at submission time when the user's message
+   * includes @mentioned tabs. This represents explicit user consent
+   * to trust the URL.
+   *
+   * @param {string} conversationId - Conversation to seed into
+   * @param {string} url - URL to seed as trusted
+   */
+  seedMentionedUrl(conversationId, url) {
+    this.#handleSeedMentionedUrl({ conversationId, url });
   }
 
   receiveMessage({ data, name }) {
@@ -69,9 +124,33 @@ export class AIChatContentParent extends JSWindowActorParent {
     return undefined;
   }
 
+  /**
+   * Cleans up ledger subscription and state on actor destruction.
+   */
+  didDestroy() {
+    this.#unsubscribeLedger();
+  }
+
+  /**
+   * Removes the ledger change listener and clears the ledger reference.
+   * Called when conversation changes or actor is destroyed.
+   */
+  #unsubscribeLedger() {
+    if (this.#sessionLedger) {
+      this.#sessionLedger.removeEventListener("change", this.#onLedgerChange);
+      this.#sessionLedger = null;
+    }
+  }
+
   #notifyContentReady() {
     const aiWindow = this.#getAIWindowElement();
     aiWindow.onContentReady();
+
+    // If the ledger is already bound (setConversation completed before child
+    // was ready), push trusted URLs now that the child can receive messages.
+    if (this.#sessionLedger) {
+      this.#pushTrustedUrlsToChild();
+    }
   }
 
   #handleSearchFromChild(data) {
@@ -160,6 +239,97 @@ export class AIChatContentParent extends JSWindowActorParent {
       aiWindow.submitChatMessage(data.text);
     } catch (e) {
       console.warn("Could not submit follow-up from AI Window chat", e);
+    }
+  }
+
+  /**
+   * Sets the current conversation and subscribes to ledger changes.
+   *
+   * Unsubscribes from previous ledger before subscribing to new one.
+   * Uses a generation counter to discard stale calls after await.
+   * Pushes initial trusted URL state after subscribing to cover any
+   * change events missed during the async gap.
+   *
+   * @param {string|null} conversationId - The conversation identifier
+   */
+  async #setConversation(conversationId) {
+    this.#unsubscribeLedger();
+    const generation = ++this.#setConversationGeneration;
+
+    if (!conversationId) {
+      return;
+    }
+
+    try {
+      const orchestrator = await lazy.getSecurityOrchestrator();
+
+      if (generation !== this.#setConversationGeneration) {
+        return;
+      }
+
+      this.#sessionLedger = orchestrator.registerSession(conversationId);
+      this.#sessionLedger.addEventListener("change", this.#onLedgerChange);
+      this.#pushTrustedUrlsToChild();
+    } catch (e) {
+      console.warn("Failed to set conversation for security ledger:", e);
+    }
+  }
+
+  /**
+   * Handles seeding a mentioned URL into the conversation ledger.
+   *
+   * Called at submission time when the user's message includes @mentions.
+   * The "change" event triggers a push automatically if subscribed.
+   * If not yet subscribed, URLs will be pushed once setConversation binds the ledger.
+   *
+   * @param {object} data - Seed request data
+   * @param {string} data.conversationId - Conversation to seed into
+   * @param {string} data.url - URL to seed
+   */
+  async #handleSeedMentionedUrl({ conversationId, url }) {
+    if (!conversationId || !url) {
+      return;
+    }
+
+    try {
+      const orchestrator = await lazy.getSecurityOrchestrator();
+      const sessionLedger = orchestrator.registerSession(conversationId);
+      sessionLedger.seedConversation([url]);
+    } catch (e) {
+      console.warn("Failed to seed mentioned URL:", e);
+    }
+  }
+
+  /**
+   * Pushes the current trusted URL list to the child process.
+   *
+   * Uses the locally-held session ledger to build the trusted URL set.
+   * Returns early if no ledger is bound (e.g., before setConversation).
+   */
+  #pushTrustedUrlsToChild() {
+    if (!this.#sessionLedger) {
+      return;
+    }
+
+    // Security validation is gated behind this pref. When disabled,
+    // skip pushing trusted URLs so links render without validation.
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.smartwindow.checkSecurityFlags",
+        true
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const merged = this.#sessionLedger.mergeAll();
+      const trustedUrls = merged.getAllUrls();
+      this.sendAsyncMessage("AIChatContent:TrustedUrlsUpdated", {
+        trustedUrls,
+      });
+    } catch (e) {
+      console.warn("Failed to push trusted URLs to child:", e);
     }
   }
 }

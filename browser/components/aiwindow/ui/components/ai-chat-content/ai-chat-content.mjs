@@ -24,6 +24,12 @@ export class AIChatContent extends MozLitElement {
     errorObj: { type: Object },
     isSearching: { type: Boolean },
     tokens: { type: Object },
+    /**
+     * Trusted URLs for link validation, pushed from parent via child actor.
+     * Passed down to ai-chat-message for synchronous validation during render.
+     * Array type for Xray wrapper compatibility.
+     */
+    trustedUrls: { type: Array, attribute: false },
   };
 
   constructor() {
@@ -33,6 +39,7 @@ export class AIChatContent extends MozLitElement {
     this.followUpSuggestions = [];
     this.errorObj = null;
     this.isSearching = false;
+    this.trustedUrls = null;
   }
 
   connectedCallback() {
@@ -76,6 +83,11 @@ export class AIChatContent extends MozLitElement {
     this.addEventListener(
       "aiChatContentActor:remove-applied-memory",
       this.removeAppliedMemoryEvent.bind(this)
+    );
+
+    this.addEventListener(
+      "aiChatContentActor:trustedUrlsUpdated",
+      this.#handleTrustedUrlsUpdated.bind(this)
     );
 
     this.addEventListener(
@@ -145,6 +157,11 @@ export class AIChatContent extends MozLitElement {
         bubbles: true,
       })
     );
+  }
+
+  #handleTrustedUrlsUpdated(event) {
+    const { trustedUrls } = event.detail;
+    this.trustedUrls = Array.isArray(trustedUrls) ? [...trustedUrls] : [];
   }
 
   messageEvent(event) {
@@ -398,7 +415,9 @@ export class AIChatContent extends MozLitElement {
         <ai-chat-message
           .message=${msg.body}
           .role=${msg.role}
+          .messageId=${msg.messageId}
           .searchTokens=${msg.searchTokens || []}
+          .trustedUrls=${this.trustedUrls}
         ></ai-chat-message>
         ${msg.role === "assistant"
           ? html`

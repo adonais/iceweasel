@@ -37,6 +37,7 @@ async function clickRenderedLink(browser, url) {
     const elJS = el.wrappedJSObject || el;
     elJS.role = "assistant";
     el.setAttribute("role", "assistant");
+    elJS.trustedUrls = Cu.cloneInto([linkUrl], content);
     const md = `Click [here](${linkUrl}) for more`;
     elJS.message = md;
     el.setAttribute("message", md);

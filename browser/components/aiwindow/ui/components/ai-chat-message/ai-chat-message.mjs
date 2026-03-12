@@ -20,16 +20,32 @@ import "chrome://browser/content/aiwindow/components/ai-chat-search-button.mjs";
 export class AIChatMessage extends MozLitElement {
   #lastMessage = null;
   #lastMessageElement = "";
+  #lastTrustedUrlsRef = null;
+
+  /**
+   * Built from trustedUrls array in willUpdate().
+   *
+   * @type {Set<string>}
+   */
+  #trustedUrlSet = new Set();
 
   static properties = {
     role: { type: String }, // "user" | "assistant"
     message: { type: String },
+    messageId: { type: String, reflect: true, attribute: "data-message-id" },
     searchTokens: { type: Array },
+    /**
+     * Trusted URLs for link validation, pushed from parent via ai-chat-content.
+     * Array type for Xray wrapper compatibility.
+     * Converted to internal Set in willUpdate().
+     */
+    trustedUrls: { type: Array, attribute: false },
   };
 
   constructor() {
     super();
     this.searchTokens = [];
+    this.trustedUrls = null;
   }
 
   connectedCallback() {
@@ -62,6 +78,25 @@ export class AIChatMessage extends MozLitElement {
   }
 
   /**
+   * Lit lifecycle hook called before each render.
+   * Converts trustedUrls array to internal Set.
+   *
+   * @param {Map} changed - Map of changed properties with previous values
+   */
+  willUpdate(changed) {
+    super.willUpdate?.(changed);
+    // Rebuild Set if trustedUrls changed, OR if Set is empty but array has values
+    // (handles case where trustedUrls was set before Lit started tracking)
+    if (
+      changed.has("trustedUrls") ||
+      (this.#trustedUrlSet.size === 0 && this.trustedUrls?.length > 0)
+    ) {
+      const list = Array.isArray(this.trustedUrls) ? this.trustedUrls : [];
+      this.#trustedUrlSet = new Set(list);
+    }
+  }
+
+  /**
    * Handle search handoff events
    *
    * @param {CustomEvent} event - The custom event containing the search query.
@@ -84,7 +119,23 @@ export class AIChatMessage extends MozLitElement {
   };
 
   /**
-   * Replaces “website mention” markdown links rendered as anchors with an
+   * Checks if a URL is trusted for enabling as a clickable link.
+   *
+   * Fail-closed: returns false for invalid URLs or if trustedUrls
+   * is not available.
+   *
+   * @param {URL} url - The parsed/normalized URL to check
+   * @returns {boolean} True if the URL is trusted, false otherwise
+   */
+  #isTrustedUrl(url) {
+    if (!url) {
+      return false;
+    }
+    return this.#trustedUrlSet.has(url.href);
+  }
+
+  /**
+   * Replaces "website mention" markdown links rendered as anchors with an
    * <ai-website-chip> custom element.
    *
    * Example markdown that produces such an anchor:
@@ -147,6 +198,52 @@ export class AIChatMessage extends MozLitElement {
   }
 
   /**
+   * Processes http/https links for security validation.
+   *
+   * For each anchor:
+   * - If trusted: strips fragment and enables href (clickable)
+   * - If not trusted: removes href (not clickable)
+   * - Non-http(s) schemes: removes href entirely
+   *
+   * Fragments are stripped from enabled links to prevent fragment-based
+   * data exfiltration via prompt injection. Links are normalized
+   * without fragments so "example.com/page#section" matches trusted
+   * "example.com/page".
+   *
+   * This is fail-closed: links are only clickable if explicitly trusted.
+   *
+   * @param {Element} root - The element containing rendered markdown
+   */
+  #processLinks(root) {
+    // Security validation is not active if null
+    // i.e., browser.smartwindow.checkSecurityFlags is disabled
+    if (this.trustedUrls === null) {
+      return;
+    }
+
+    const anchors = root.querySelectorAll("a[href]");
+    for (const anchor of anchors) {
+      const parsed = URL.parse(anchor.href);
+
+      const isHttpUrl =
+        parsed?.protocol === "http:" || parsed?.protocol === "https:";
+
+      if (isHttpUrl) {
+        parsed.hash = "";
+      }
+      const isAllowed = isHttpUrl && this.#isTrustedUrl(parsed);
+
+      if (!isAllowed) {
+        anchor.removeAttribute("href");
+      } else {
+        // Apply fragment-free URL to prevent data exfiltration.
+        // TODO Bug 2022066: Allow fragments when full URL+fragment matches ledger.
+        anchor.href = parsed.href;
+      }
+    }
+  }
+
+  /**
    * Parse markdown content to HTML using ProseMirror
    *
    * @param {string} markdown the Markdown to parse
@@ -177,24 +274,35 @@ export class AIChatMessage extends MozLitElement {
 
   /**
    * Ensure our message element is up to date. This gets called from
-   * render and memoizes based on `this.message` to avoid re-renders.
+   * render and memoizes based on `this.message` and `this.trustedUrls`
+   * to avoid unnecessary re-renders while still updating when trust changes.
    *
    * @returns {Element} HTML element containing the parsed markdown
    */
   getAssistantMessage() {
-    if (this.message == this.#lastMessage) {
+    // Re-render if message changed OR trustedUrls reference changed
+    if (
+      this.message == this.#lastMessage &&
+      this.trustedUrls === this.#lastTrustedUrlsRef
+    ) {
       return this.#lastMessageElement;
     }
+
     let messageElement = this.ownerDocument.createElement("div");
     messageElement.className = "message-" + this.role;
     if (!this.message) {
+      this.#lastMessage = this.message;
+      this.#lastMessageElement = messageElement;
+      this.#lastTrustedUrlsRef = this.trustedUrls;
       return messageElement;
     }
 
     this.parseMarkdown(this.message, messageElement);
+    this.#processLinks(messageElement);
 
     this.#lastMessage = this.message;
     this.#lastMessageElement = messageElement;
+    this.#lastTrustedUrlsRef = this.trustedUrls;
 
     return messageElement;
   }
