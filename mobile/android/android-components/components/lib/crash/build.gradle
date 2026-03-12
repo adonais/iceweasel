@@ -90,6 +90,8 @@ dependencies {
     testImplementation libs.mockwebserver
     testImplementation libs.mozilla.glean
     testImplementation libs.mozilla.glean.forUnitTests
+    testImplementation libs.okhttp
+    testImplementation libs.okio
     testImplementation libs.robolectric
 
     androidTestImplementation project(':components:support-android-test')

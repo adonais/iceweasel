@@ -55,7 +55,11 @@ dependencies {
     androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.uiautomator
     androidTestImplementation libs.leakcanary.instrumentation
-    androidTestImplementation libs.mockwebserver
+    androidTestImplementation libs.okhttp
+    constraints {
+        // Various AndroidX dependencies pull in 1.1.1 transitively; OkHttp 5 requires 1.2.0.
+        implementation(libs.androidx.startup.runtime)
+    }
 }
 
 apply from: '../../../common-config.gradle'

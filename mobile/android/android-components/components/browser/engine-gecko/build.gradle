@@ -75,6 +75,8 @@ dependencies {
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mockwebserver
     testImplementation libs.mozilla.glean
+    testImplementation libs.okhttp
+    testImplementation libs.okio
     testImplementation libs.robolectric
 
     androidTestImplementation project(':components:tooling-fetch-tests')

@@ -19,6 +19,7 @@ dependencies {
     implementation libs.androidx.test.espresso.core
     implementation libs.leakcanary.instrumentation
     implementation libs.mockwebserver
+    implementation libs.okhttp
 }
 
 apply from: '../../../common-config.gradle'

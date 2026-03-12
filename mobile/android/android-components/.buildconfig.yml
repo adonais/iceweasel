@@ -691,7 +691,6 @@ projects:
     - components:concept-fetch
     - components:concept-storage
     - components:concept-toolbar
-    - components:lib-fetch-okhttp
     - components:lib-publicsuffixlist
     - components:service-digitalassetlinks
     - components:support-base

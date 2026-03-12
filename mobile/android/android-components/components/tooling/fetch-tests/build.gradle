@@ -22,9 +22,12 @@ android {
 dependencies {
     implementation project(':components:concept-fetch')
 
+    api libs.mockwebserver
+
     implementation libs.junit4
     implementation libs.kotlinx.coroutines
-    implementation libs.mockwebserver
+    implementation libs.okhttp
+    implementation libs.okio
 }
 
 apply from: '../../../common-config.gradle'

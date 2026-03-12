@@ -67,10 +67,10 @@ dependencies {
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
     testImplementation libs.kotlinx.coroutines.test
-    testImplementation libs.mockwebserver
     testImplementation libs.mozilla.glean
     testImplementation libs.mozilla.glean.forUnitTests
     testImplementation libs.robolectric
+    testRuntimeOnly libs.okhttp
 }
 
 apply from: '../../../common-config.gradle'

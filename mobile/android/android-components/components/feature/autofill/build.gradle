@@ -35,14 +35,13 @@ dependencies {
     implementation libs.kotlinx.coroutines
     implementation libs.google.material
 
-    testImplementation project(':components:lib-fetch-okhttp')
     testImplementation project(':components:support-test')
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
     testImplementation libs.kotlinx.coroutines.test
-    testImplementation libs.mockwebserver
     testImplementation libs.robolectric
+    testRuntimeOnly libs.okhttp
 }
 
 apply from: '../../../common-config.gradle'

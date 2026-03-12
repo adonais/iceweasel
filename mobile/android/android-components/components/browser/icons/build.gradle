@@ -62,6 +62,8 @@ dependencies {
     testImplementation libs.kotlin.reflect
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mockwebserver
+    testImplementation libs.okhttp
+    testImplementation libs.okio
     testImplementation libs.robolectric
 
     androidTestImplementation libs.androidx.test.core
