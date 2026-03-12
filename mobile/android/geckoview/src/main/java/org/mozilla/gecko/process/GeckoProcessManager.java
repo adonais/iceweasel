@@ -14,6 +14,7 @@ import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.collection.SimpleArrayMap;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -452,7 +453,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
     // Set of initialized content process connections
     private final ArraySet<ContentConnection> mContentConnections;
     // Set of bound but uninitialized content connections
-    private final ArraySet<ContentConnection> mNonStartedContentConnections;
+    private final ArrayDeque<ContentConnection> mNonStartedContentConnections;
     // Allocator for service IDs
     private final ServiceAllocator mServiceAllocator;
     private boolean mIsObservingNetwork = false;
@@ -461,7 +462,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
       mNonContentConnections = new ArrayMap<GeckoProcessType, NonContentConnection>();
       mContentPids = new SimpleArrayMap<Integer, ContentConnection>();
       mContentConnections = new ArraySet<ContentConnection>();
-      mNonStartedContentConnections = new ArraySet<ContentConnection>();
+      mNonStartedContentConnections = new ArrayDeque<ContentConnection>();
       mServiceAllocator = new ServiceAllocator();
 
       // Attach to native once JNI is ready.
@@ -640,8 +641,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
         return getNewContentConnection(PriorityLevel.FOREGROUND);
       }
 
-      final ChildConnection conn =
-          mNonStartedContentConnections.removeAt(mNonStartedContentConnections.size() - 1);
+      final ChildConnection conn = mNonStartedContentConnections.removeFirst();
       conn.setPriorityLevel(PriorityLevel.FOREGROUND);
       return conn;
     }
@@ -682,7 +682,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
     public ChildConnection getConnectionForPreload(@NonNull final GeckoProcessType type) {
       if (isContent(type)) {
         final ContentConnection conn = getNewContentConnection(PriorityLevel.BACKGROUND);
-        mNonStartedContentConnections.add(conn);
+        mNonStartedContentConnections.addLast(conn);
         return conn;
       }
 
@@ -691,6 +691,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
   }
 
   private final ConnectionManager mConnections;
+  private final ArrayDeque<ChildConnection> mPreloadQueue = new ArrayDeque<>();
 
   private GeckoProcessManager() {
     mConnections = new ConnectionManager();
@@ -703,9 +704,21 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
             () -> {
               for (final GeckoProcessType type : types) {
                 final ChildConnection connection = mConnections.getConnectionForPreload(type);
-                connection.bind();
+                mPreloadQueue.addLast(connection);
+                if (mPreloadQueue.size() == 1) {
+                  connection.bind().finally_(this::onPreloadComplete);
+                }
               }
             });
+  }
+
+  private void onPreloadComplete() {
+    XPCOMEventTarget.assertOnLauncherThread();
+    mPreloadQueue.removeFirst();
+    final ChildConnection connection = mPreloadQueue.peekFirst();
+    if (connection != null) {
+      connection.bind().finally_(this::onPreloadComplete);
+    }
   }
 
   /** Sets whether the content service runs on isolated process. */
