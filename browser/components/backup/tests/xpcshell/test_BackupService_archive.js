@@ -35,6 +35,7 @@ async function assertExtractionsMatch(extractionPath) {
 }
 
 add_setup(async () => {
+  setupProfile();
   testProfilePath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "testCreateArchive"

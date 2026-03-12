@@ -15,6 +15,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const STORE_ID_PREF = "toolkit.profiles.storeID";
 
+add_setup(async () => {
+  setupProfile();
+});
+
 add_task(async function test_recover_regular_profile_no_storeID_in_prefs() {
   let sandbox = sinon.createSandbox();
   let preferencesBackupResource = new PreferencesBackupResource();

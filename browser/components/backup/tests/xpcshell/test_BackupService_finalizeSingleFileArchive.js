@@ -8,6 +8,7 @@ let gTestDestPath;
 let gMatchingRegex;
 
 add_setup(async () => {
+  setupProfile();
   gMatchingRegex = new RegExp(
     `^${BackupService.BACKUP_FILE_NAME}_[a-z0-9-]+_[0-9_-]+.html$`
   );

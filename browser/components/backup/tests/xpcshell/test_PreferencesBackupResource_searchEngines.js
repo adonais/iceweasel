@@ -31,6 +31,7 @@ const FAKE_PRIVATE_SEARCH_EXTENSION_NAME =
   "Some Private WebExtension Search Engine";
 
 add_setup(async function () {
+  setupProfile();
   Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
   Services.prefs.setBoolPref(
     "browser.search.separatePrivateDefault.ui.enabled",

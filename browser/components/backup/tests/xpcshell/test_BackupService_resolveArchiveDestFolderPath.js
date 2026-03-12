@@ -9,6 +9,7 @@ let gFakeHomePath;
 let gFakeHomeFile;
 
 add_setup(async () => {
+  setupProfile();
   gTestRoot = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "testResolveArchiveDestFolderPath"

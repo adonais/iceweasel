@@ -42,6 +42,7 @@ add_setup(() => {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("security.allow_parent_unrestricted_js_loads");
   });
+  setupProfile();
 });
 
 /**

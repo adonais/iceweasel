@@ -8,6 +8,10 @@ ChromeUtils.defineESModuleGetters(this, {
   BackupError: "resource:///modules/backup/BackupError.mjs",
 });
 
+add_setup(async () => {
+  setupProfile();
+});
+
 add_task(function test_empty() {
   let bs = new BackupService();
   Assert.throws(

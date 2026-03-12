@@ -10,6 +10,10 @@ const { SearchUtils } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
 );
 
+add_setup(async () => {
+  setupProfile();
+});
+
 /**
  * Test that the measure method correctly collects the disk-sizes of things that
  * the PreferencesBackupResource is meant to back up.

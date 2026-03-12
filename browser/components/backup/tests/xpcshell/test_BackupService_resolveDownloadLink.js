@@ -3,6 +3,10 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
+add_setup(async () => {
+  setupProfile();
+});
+
 /**
  * Tests that valid links are produced for each update channel.
  */
