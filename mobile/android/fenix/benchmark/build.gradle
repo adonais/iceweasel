@@ -31,7 +31,7 @@ android {
         }
     }
 
-    targetProjectPath = ":app"
+    targetProjectPath = project.findProject(":app") != null ? ":app" : ":fenix"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 
     testOptions {
