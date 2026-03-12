@@ -26,7 +26,6 @@ import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
-import org.mozilla.fenix.ui.robots.settingsScreen
 
 /**
  *  Tests for verifying the Settings for:
@@ -117,9 +116,6 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
             verifyDeleteBrowsingDataDialog()
             confirmDeletionAndAssertSnackbar()
         }
-        settingsScreen {
-            verifyGeneralHeading()
-        }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/353531
@@ -143,10 +139,6 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
             clickDeleteBrowsingDataButton()
             verifyDeleteBrowsingDataDialog()
             confirmDeletionAndAssertSnackbar()
-        }
-        settingsScreen {
-            verifyGeneralHeading()
-        }.openSettingsSubMenuDeleteBrowsingData {
             verifyOpenTabsDetails("0")
         }.goBack {
         }.goBack(composeTestRule) {

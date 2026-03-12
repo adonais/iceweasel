@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -202,7 +201,6 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
     private fun finishDeletion() {
         updateDeleteButton(deleteInProgress = false)
         updateCheckboxes(deleteInProgress = false)
-        val popAfter = binding.openTabsItem.isChecked
         binding.progressBar.visibility = View.GONE
         binding.deleteBrowsingDataWrapper.isEnabled = true
         binding.deleteBrowsingDataWrapper.isClickable = true
@@ -216,17 +214,6 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
                 message = getString(R.string.preferences_delete_browsing_data_snackbar),
             ),
         ).show()
-
-        if (popAfter) {
-            viewLifecycleOwner.lifecycleScope.launch(Main) {
-                findNavController().apply {
-                    // If the user deletes all open tabs we need to make sure we remove
-                    // the BrowserFragment from the backstack.
-                    popBackStack(R.id.homeFragment, false)
-                    navigate(DeleteBrowsingDataFragmentDirections.actionGlobalSettingsFragment())
-                }
-            }
-        }
     }
 
     override fun onPause() {
