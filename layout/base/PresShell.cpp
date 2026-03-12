@@ -3921,10 +3921,6 @@ bool PresShell::ScrollFrameIntoView(
       return *aKnownRectRelativeToTarget;
     }
     MaybeSkipPaddingSides(aTargetFrame);
-    const nsPoint stickyOffset =
-        aTargetFrame->IsStickyPositioned()
-            ? aTargetFrame->GetNormalPosition() - aTargetFrame->GetPosition()
-            : nsPoint();
     while (nsIFrame* parent = container->GetParent()) {
       if (isPositionFixed(container)) {
         positionFixedFrame = container;
@@ -3964,7 +3960,7 @@ bool PresShell::ScrollFrameIntoView(
       } while ((frame = frame->GetNextContinuation()));
     }
 
-    return targetFrameBounds + stickyOffset;
+    return targetFrameBounds;
   }();
   bool didScroll = false;
   const nsIFrame* target = aTargetFrame;
@@ -4026,8 +4022,7 @@ bool PresShell::ScrollFrameIntoView(
       rect =
           nsLayoutUtils::TransformFrameRectToAncestor(container, rect, parent);
     } else {
-      rect += container->IsStickyPositioned() ? container->GetNormalPosition()
-                                              : container->GetPosition();
+      rect += container->GetPosition();
     }
     if (!parent && !(aScrollFlags & ScrollFlags::ScrollNoParentFrames)) {
       nsPoint extraOffset(0, 0);

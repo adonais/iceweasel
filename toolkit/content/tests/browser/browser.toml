@@ -169,9 +169,6 @@ skip-if = [
 
 ["browser_findbar_marks.js"]
 
-["browser_findbar_sticky_table.js"]
-support-files = ["file_findbar_sticky_table.html"]
-
 ["browser_isSynthetic.js"]
 
 ["browser_keyevents_during_autoscrolling.js"]
