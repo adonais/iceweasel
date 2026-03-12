@@ -2177,9 +2177,17 @@ export var Policies = {
           blockValue = false;
         }
         setAndLockPref("dom.disable_open_during_load", blockValue);
+        setAndLockPref(
+          "dom.security.framebusting_intervention.enabled",
+          blockValue
+        );
       } else if (param.Default !== undefined) {
         PoliciesUtils.setDefaultPref(
           "dom.disable_open_during_load",
+          !!param.Default
+        );
+        PoliciesUtils.setDefaultPref(
+          "dom.security.framebusting_intervention.enabled",
           !!param.Default
         );
       }

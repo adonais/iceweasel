@@ -4,6 +4,9 @@
 
 function restore_prefs() {
   Services.prefs.clearUserPref("dom.disable_open_during_load");
+  Services.prefs.clearUserPref(
+    "dom.security.framebusting_intervention.enabled"
+  );
 }
 
 let ORIGINAL_PREF_VALUE = undefined;
@@ -26,6 +29,9 @@ registerCleanupFunction(async function cleanup_prefs() {
       ORIGINAL_PREF_VALUE
     );
   }
+  Services.prefs.clearUserPref(
+    "dom.security.framebusting_intervention.enabled"
+  );
 });
 
 async function test_popup_blocker_disabled({ disabled, locked }) {
@@ -38,7 +44,7 @@ async function test_popup_blocker_disabled({ disabled, locked }) {
     [{ disabled, locked }],
     // eslint-disable-next-line no-shadow
     async function ({ disabled, locked }) {
-      let checkbox = content.document.getElementById("popupPolicy");
+      let checkbox = content.document.getElementById("popupAndRedirectPolicy");
       is(
         checkbox.checked,
         !disabled,
@@ -56,7 +62,14 @@ async function test_popup_blocker_disabled({ disabled, locked }) {
   is(
     Services.prefs.prefIsLocked("dom.disable_open_during_load"),
     locked,
-    "Flash pref lock state should match policy lock state"
+    "Pop-up flash pref lock state should match policy lock state"
+  );
+  is(
+    Services.prefs.prefIsLocked(
+      "dom.security.framebusting_intervention.enabled"
+    ),
+    locked,
+    "Framebusting pref lock state should match policy lock state"
   );
 }
 
