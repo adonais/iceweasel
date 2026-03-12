@@ -64,7 +64,7 @@ Benchmark tests
 
 ::
 
-  ./mach raptor -t speedometer
+  ./mach raptor -t speedometer3
 
 Running on Android
 ------------------

@@ -402,26 +402,19 @@ browsertime-video-playback-latency-mobile:
             fenix: 1
             default: 3
 
-browsertime-benchmark-speedometer-mobile:
-    description: Browsertime Speedometer on Android
+browsertime-benchmark-speedometer2-mobile:
+    description: Browsertime Speedometer 2 on Android
     raptor:
         apps: [geckoview, fenix, chrome-m, cstm-car-m]
     tier:
         by-app:
             fenix: 1
             default: 3
-    run-on-projects:
-        by-app:
-            fenix:
-                by-test-platform:
-                    android-hw-a55.*shippable.*: [trunk]
-                    default: []
-            geckoview: []
-            default: []
-    treeherder-symbol: Btime(sp)
+    run-on-projects: []
+    treeherder-symbol: Btime(sp2)
     mozharness:
         extra-options:
-            - --test=speedometer
+            - --test=speedometer2
 
 browsertime-benchmark-speedometer3-mobile:
     description: Browsertime Speedometer 3 on Android
@@ -545,7 +538,7 @@ browsertime-power:
         subtests:
             - idle
             - idle-bg
-            - [speedometer, sp]
+            - [speedometer2, sp2]
     tier:
         by-app:
             fenix: 1

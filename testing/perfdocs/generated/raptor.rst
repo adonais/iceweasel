@@ -3996,14 +3996,14 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
 
 
 
-.. dropdown:: speedometer
-   :class-container: anchor-id-speedometer-b
+.. dropdown:: speedometer2
+   :class-container: anchor-id-speedometer2-b
 
    * Command to Run Locally
 
    .. code-block::
 
-      ./mach raptor -t speedometer
+      ./mach raptor -t speedometer2
 
    **Owner**: SpiderMonkey Team
 
@@ -4035,32 +4035,32 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-chrome-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-chrome-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-cstm-car-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-cstm-car-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4076,22 +4076,22 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4107,32 +4107,32 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-chrome-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-chrome-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-cstm-car-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-cstm-car-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4148,32 +4148,32 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-chrome-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-chrome-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-cstm-car-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-cstm-car-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4189,7 +4189,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4205,9 +4205,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4221,7 +4221,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4237,19 +4237,19 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
+        - ❌
+        - ❌
         - ❌
         - ❌
 
@@ -4263,7 +4263,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4279,9 +4279,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4295,19 +4295,19 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
+        - ❌
+        - ❌
         - ❌
         - ❌
 
@@ -4321,7 +4321,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4337,9 +4337,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4353,22 +4353,22 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
-      * - **browsertime-benchmark-safari-speedometer**
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-safari-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4384,7 +4384,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4400,22 +4400,22 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
-      * - **browsertime-benchmark-safari-speedometer**
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-safari-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4431,9 +4431,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4447,19 +4447,19 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
+        - ❌
+        - ❌
         - ❌
         - ❌
 
@@ -4473,7 +4473,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4510,32 +4510,32 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-chrome-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-chrome-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-cstm-car-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-cstm-car-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
-        - ✅
-        - ✅
-        - ❌
-        - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4551,22 +4551,22 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4582,32 +4582,32 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-chrome-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-chrome-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-cstm-car-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-cstm-car-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4623,32 +4623,32 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-speedometer-mobile-chrome-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-chrome-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-cstm-car-m-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-cstm-car-m-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-fenix-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-fenix-nofis**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-speedometer-mobile-geckoview-nofis**
+      * - **browsertime-benchmark-speedometer2-mobile-geckoview-nofis**
         - ❌
         - ❌
         - ❌
@@ -4664,7 +4664,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4680,9 +4680,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4696,7 +4696,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4712,19 +4712,19 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
+        - ❌
+        - ❌
         - ❌
         - ❌
 
@@ -4738,7 +4738,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4754,9 +4754,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4770,19 +4770,19 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
+        - ❌
+        - ❌
         - ❌
         - ❌
 
@@ -4796,7 +4796,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4812,9 +4812,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4828,22 +4828,22 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
-      * - **browsertime-benchmark-safari-speedometer**
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-safari-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4859,7 +4859,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4875,22 +4875,22 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
-      * - **browsertime-benchmark-safari-speedometer**
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-safari-speedometer2**
         - ❌
         - ❌
         - ❌
@@ -4906,9 +4906,9 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
-        - ✅
+        - ❌
         - ❌
         - ❌
 
@@ -4922,19 +4922,19 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-chrome-speedometer**
+      * - **browsertime-benchmark-chrome-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-custom-car-speedometer**
+      * - **browsertime-benchmark-custom-car-speedometer2**
         - ❌
         - ❌
         - ❌
         - ❌
-      * - **browsertime-benchmark-firefox-speedometer**
-        - ✅
-        - ✅
+      * - **browsertime-benchmark-firefox-speedometer2**
+        - ❌
+        - ❌
         - ❌
         - ❌
 
@@ -4948,7 +4948,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - autoland
         - mozilla-release
         - mozilla-beta
-      * - **browsertime-benchmark-firefox-speedometer**
+      * - **browsertime-benchmark-firefox-speedometer2**
         - ❌
         - ❌
         - ❌

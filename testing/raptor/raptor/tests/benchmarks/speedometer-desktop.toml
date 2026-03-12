@@ -16,7 +16,7 @@ test_url = "http://<host>:<port>/Speedometer/index.html?raptor"
 type = "benchmark"
 unit = "score"
 
-[speedometer]
+[speedometer2]
 
 [speedometer3]
 browser_cycles = 5

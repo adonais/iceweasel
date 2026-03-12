@@ -20,8 +20,8 @@ motionmark-animometer, motionmark-htmlsuite
     * subtest: FPS from the subtest, each subtest is run for 15 seconds, repeat this 5 times and report the median value
     * suite: we take a geometric mean of all the subtests (9 for animometer, 11 for html suite)
 
-speedometer
-===========
+speedometer2
+============
 
 * measuring: responsiveness of web applications
 * data: there are 16 subtests in Speedometer; each of these are made up of 9 internal benchmarks.

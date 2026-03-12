@@ -320,7 +320,7 @@ Once your Android device is ready, and attached to local USB, from within your l
 
 ::
 
-  $ ./mach raptor --test raptor-speedometer --app=geckoview --binary="org.mozilla.geckoview_example"
+  $ ./mach raptor --test speedometer3 --app=geckoview --binary="org.mozilla.geckoview_example"
 
 Note: Speedometer on Android GeckoView is currently running on two devices in production - the Google Pixel 6 and the Samsung A51 - therefore it is not guaranteed that it will run successfully on all/other untested android devices.
 
@@ -351,11 +351,11 @@ To run Raptor locally on Google Chrome, make sure you already have a local versi
 
   $ ./mach raptor --test <raptor-test-name> --app=chrome --binary="<path to google chrome binary>"
 
-For example, to run the raptor-speedometer benchmark on Google Chrome use:
+For example, to run the speedometer3 benchmark on Google Chrome use:
 
 ::
 
-  $ ./mach raptor --test raptor-speedometer --app=chrome --binary="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+  $ ./mach raptor --test speedometer3 --app=chrome --binary="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 
 Raptor test results will be found locally in <your-repo>/testing/mozharness/build/raptor.json.
 
@@ -374,7 +374,7 @@ If an iteration of a benchmark test is not finishing within the allocated time, 
 
 ::
 
-  ./mach raptor --test raptor-speedometer --page-timeout 600000
+  ./mach raptor --test speedometer3 --page-timeout 600000
 
 Page-Cycles
 ===========

@@ -101,7 +101,7 @@ def create_parser(mach_interface=False):
         required=True,
         dest="test",
         help="Name of Raptor test to run (can be a top-level suite name i.e. "
-        "'--test raptor-speedometer','--test raptor-tp6-1', or for page-load "
+        "'--test speedometer3','--test raptor-tp6-1', or for page-load "
         "tests a suite sub-test i.e. '--test raptor-tp6-google-firefox')",
     )
     add_arg(
