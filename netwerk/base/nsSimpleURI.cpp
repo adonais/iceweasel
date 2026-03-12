@@ -461,8 +461,11 @@ nsresult nsSimpleURI::SetRef(const nsACString& aRef) {
     return NS_ERROR_MALFORMED_URI;
   }
 
+  nsAutoCString filteredRef(aRef);
+  filteredRef.StripTaggedASCII(ASCIIMask::MaskCRLFTab());
+
   nsAutoCString ref;
-  nsresult rv = NS_EscapeURL(aRef, esc_Ref, ref, fallible);
+  nsresult rv = NS_EscapeURL(filteredRef, esc_Ref, ref, fallible);
   if (NS_FAILED(rv)) {
     return rv;
   }
