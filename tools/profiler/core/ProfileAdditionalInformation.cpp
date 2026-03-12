@@ -16,31 +16,73 @@
 
 #ifdef MOZ_GECKO_PROFILER
 #  include "platform.h"
+#  include "nsDirectoryServiceDefs.h"
+#  include "nsIFile.h"
+#  include "nsIFileURL.h"
 
 JSString* mozilla::ProfileGenerationAdditionalInformation::
     MaybeCreateJSStringFromSourceData(
         JSContext* aCx, const ProfilerJSSourceData& aSourceData) const {
-  return aSourceData.data().match(
-      [&](const ProfilerJSSourceData::SourceTextUTF16& srcText) -> JSString* {
-        return JS_NewUCStringCopyN(aCx, srcText.chars().get(),
-                                   srcText.length());
+  JS::Rooted<JSString*> result(aCx);
+  aSourceData.data().match(
+      [&](const ProfilerJSSourceData::SourceTextUTF16& srcText) {
+        result =
+            JS_NewUCStringCopyN(aCx, srcText.chars().get(), srcText.length());
       },
-      [&](const ProfilerJSSourceData::SourceTextUTF8& srcText) -> JSString* {
-        return JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
+      [&](const ProfilerJSSourceData::SourceTextUTF8& srcText) {
+        result =
+            JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
       },
-      [&](const ProfilerJSSourceData::RetrievableFile&) -> JSString* {
+      [&](const ProfilerJSSourceData::RetrievableFile&) {
+        const char* filename = aSourceData.filePath();
+        // Keep it in sync with what ReadSourceFromFilename does.
+        const char* arrow;
+        while ((arrow = strstr(filename, " -> "))) {
+          filename = arrow + strlen(" -> ");
+        }
+
+        nsCOMPtr<nsIURI> uri;
+        if (NS_FAILED(
+                NS_NewURI(getter_AddRefs(uri), nsDependentCString(filename)))) {
+          return;
+        }
+        nsCString scheme;
+        if (NS_FAILED(uri->GetScheme(scheme))) {
+          return;
+        }
+        if (scheme.EqualsLiteral("file")) {
+          nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(uri);
+          if (!fileURL) {
+            return;
+          }
+          nsCOMPtr<nsIFile> scriptFile;
+          if (NS_FAILED(fileURL->GetFile(getter_AddRefs(scriptFile)))) {
+            return;
+          }
+          nsCOMPtr<nsIFile> greDir;
+          if (NS_FAILED(
+                  NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir)))) {
+            return;
+          }
+          bool contains = false;
+          if (NS_FAILED(greDir->Contains(scriptFile, &contains)) || !contains) {
+            return;
+          }
+        }
+
         ProfilerJSSourceData retrievedData =
             js::RetrieveProfilerSourceContent(aCx, aSourceData.filePath());
         const auto& data = retrievedData.data();
-        MOZ_RELEASE_ASSERT(data.is<ProfilerJSSourceData::SourceTextUTF8>(),
-                           "Retrieved JS source has to be utf-8");
+        if (!data.is<ProfilerJSSourceData::SourceTextUTF8>()) {
+          return;
+        }
 
         const auto& srcText = data.as<ProfilerJSSourceData::SourceTextUTF8>();
-        return JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
+        result =
+            JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
       },
-      [&](const ProfilerJSSourceData::Unavailable&) -> JSString* {
-        return nullptr;
-      });
+      [&](const ProfilerJSSourceData::Unavailable&) {});
+  return result;
 }
 
 void mozilla::ProfileGenerationAdditionalInformation::ToJSValue(
