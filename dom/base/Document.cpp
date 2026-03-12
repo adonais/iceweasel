@@ -2193,6 +2193,21 @@ void Document::RecordPageLoadEventTelemetry() {
   }
 }
 
+#ifndef ANDROID
+static void AccumulatePriorityFcpGleanPref(
+    const nsCString& http3WithPriorityKey, const TimeDuration& duration) {
+  if (http3WithPriorityKey == "with_priority"_ns) {
+    glean::performance_pageload::h3p_fcp_with_priority.AccumulateRawDuration(
+        duration);
+  } else if (http3WithPriorityKey == "without_priority"_ns) {
+    glean::performance_pageload::http3_fcp_without_priority
+        .AccumulateRawDuration(duration);
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unknown value for http3WithPriorityKey");
+  }
+}
+#endif
+
 void Document::AccumulatePageLoadTelemetry() {
   // Interested only in top level documents for real websites that are in the
   // foreground.
@@ -2284,6 +2299,8 @@ void Document::AccumulatePageLoadTelemetry() {
   }
 
   nsAutoCString dnsKey("Native");
+  nsAutoCString http3Key;
+  nsAutoCString http3WithPriorityKey;
   nsAutoCString earlyHintKey;
   nsCOMPtr<nsIHttpChannelInternal> httpChannel =
       do_QueryInterface(GetChannel());
@@ -2304,7 +2321,28 @@ void Document::AccumulatePageLoadTelemetry() {
     uint32_t major;
     uint32_t minor;
     if (NS_SUCCEEDED(httpChannel->GetResponseVersion(&major, &minor))) {
-      (void)minor;
+      if (major == 3) {
+        http3Key = "http3"_ns;
+        nsCOMPtr<nsIHttpChannel> httpChannel2 = do_QueryInterface(GetChannel());
+        nsCString header;
+        if (httpChannel2 &&
+            NS_SUCCEEDED(
+                httpChannel2->GetResponseHeader("priority"_ns, header)) &&
+            !header.IsEmpty()) {
+          http3WithPriorityKey = "with_priority"_ns;
+        } else {
+          http3WithPriorityKey = "without_priority"_ns;
+        }
+      } else if (major == 2) {
+        bool supportHttp3 = false;
+        if (NS_FAILED(httpChannel->GetSupportsHTTP3(&supportHttp3))) {
+          supportHttp3 = false;
+        }
+        if (supportHttp3) {
+          http3Key = "supports_http3"_ns;
+        }
+      }
+
       // Don't record http version for cache hits since the version stored in
       // the cache entry reflects the original request, not this navigation.
       if (!isCacheHit) {
@@ -2336,6 +2374,15 @@ void Document::AccumulatePageLoadTelemetry() {
     glean::performance_pageload::fcp.AccumulateRawDuration(
         firstContentfulComposite - navigationStart);
 
+    if (!http3WithPriorityKey.IsEmpty()) {
+      glean::perf::h3p_first_contentful_paint.Get(http3WithPriorityKey)
+          .AccumulateRawDuration(firstContentfulComposite - navigationStart);
+#ifndef ANDROID
+      AccumulatePriorityFcpGleanPref(
+          http3WithPriorityKey, firstContentfulComposite - navigationStart);
+#endif
+    }
+
     glean::performance_pageload::fcp_responsestart.AccumulateRawDuration(
         firstContentfulComposite - responseStart);
 
@@ -2359,6 +2406,11 @@ void Document::AccumulatePageLoadTelemetry() {
           GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
     glean::performance_pageload::load_time.AccumulateRawDuration(
         loadEventStart - navigationStart);
+
+    if (!http3WithPriorityKey.IsEmpty()) {
+      glean::perf::h3p_page_load_time.Get(http3WithPriorityKey)
+          .AccumulateRawDuration(loadEventStart - navigationStart);
+    }
 
     glean::performance_pageload::load_time_responsestart.AccumulateRawDuration(
         loadEventStart - responseStart);
