@@ -167,22 +167,12 @@ add_task(async function test_getOpenTabs_pagination() {
     sb.stub(BrowserWindowTracker, "orderedWindows").get(() => [fakeWindow]);
     setupPageDataServiceMock(sb);
 
-    // Test default limit
     const defaultResult = await getOpenTabs();
-    Assert.equal(defaultResult.length, 15, "Should default to 15 tabs");
+    Assert.equal(defaultResult.length, 15, "Should return at most 15 tabs");
     Assert.equal(
       defaultResult[0].url,
       "https://example19.com",
       "First tab should be most recent"
-    );
-
-    // Test custom limit
-    const customResult = await getOpenTabs(10);
-    Assert.equal(customResult.length, 10, "Should return at most 10 tabs");
-    Assert.equal(
-      customResult[9].url,
-      "https://example10.com",
-      "Last tab should be 10th most recent"
     );
   } finally {
     sb.restore();

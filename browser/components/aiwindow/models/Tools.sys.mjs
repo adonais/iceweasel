@@ -31,6 +31,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 // Important! Changing or removing this value requires a security review.
 //
+// Hard code a reasonable working limit for how many tabs that a language model can retrieve.
+// The metadata from each tab contains untrusted text content that we limit (for instance
+// with truncation) in order to treat this information as trusted.
+//
+// We also make this limited in a non-configurable way so that it reduces the risk
+// of exfiltration for private data. While most users only have a few tabs open at a time,
+// some users can have thousands of tabs open at once.
+const MAX_TABS = 15;
+
+// Important! Changing or removing this value requires a security review.
+//
 // Hard code a reasonable working limit for how many history results that a language model
 // can retrieve. The metadata from each of these history items contains untrusted text
 // content that we limit (for instance with truncation) in order to treat this information
@@ -102,9 +113,8 @@ export const toolsConfig = [
     function: {
       name: GET_OPEN_TABS,
       description:
-        "Access the user's browser and return a list of most recently browsed tabs. " +
-        "Each tab is represented by a JSON with the page's url, title and description " +
-        "if available. Default to return maximum 15 tabs.",
+        `Access the user's browser and return up to ${MAX_TABS} currently open tabs, ` +
+        "ordered by most recently viewed.",
       parameters: {
         type: "object",
         properties: {},
@@ -189,8 +199,7 @@ export const toolsConfig = [
  * Ignores config pages (about:xxx).
  * TODO: Ignores chat-only pages (FE to implement isSidebarMode flag).
  *
- * @param {number} n
- *  Maximum number of tabs to return. Defaults to 15.
+ * @param {object} _params
  * @param {object} _secProps
  * @returns {Promise<Array<object>>}
  *  A promise resolving to an array of tab metadata objects, each containing:
@@ -198,9 +207,9 @@ export const toolsConfig = [
  *  - title {string}: The tab's title
  *  - description {string}: Optional description (empty string if not available)
  *  - lastAccessed {number}: Last accessed timestamp in milliseconds
- *  Tabs are sorted by most recently accessed and limited to the first n results.
+ *  Tabs are sorted by most recently accessed and limited to MAX_TABS results.
  */
-export async function getOpenTabs(n = 15, _secProps) {
+export async function getOpenTabs(_params, _secProps) {
   const tabs = [];
 
   for (const win of lazy.BrowserWindowTracker.orderedWindows) {
@@ -227,7 +236,7 @@ export async function getOpenTabs(n = 15, _secProps) {
 
   tabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
 
-  const topTabs = tabs.slice(0, n);
+  const topTabs = tabs.slice(0, MAX_TABS);
 
   return Promise.all(
     topTabs.map(async ({ url, title, lastAccessed }) => {
