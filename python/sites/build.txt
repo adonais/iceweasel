@@ -1,6 +1,6 @@
 requires-python:>=3.9
 pth:third_party/python/vsdownload
-pypi-optional:taskcluster-taskgraph==19.0.0:toolchain artifacts will not be bootstrapped
+pypi-optional:taskcluster-taskgraph==19.2.1:toolchain artifacts will not be bootstrapped
 vendored:testing/web-platform/tests/tools/third_party/h2/src
 vendored:testing/web-platform/tests/tools/third_party/hpack/src
 vendored:testing/web-platform/tests/tools/third_party/html5lib
