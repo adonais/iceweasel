@@ -34,9 +34,7 @@ function testValues(values, expected) {
   return true;
 }
 
-const CSS_WIDE_KEYWORDS = [
-  "initial", "inherit", "unset", "revert", "revert-layer", "revert-rule"
-];
+const CSS_WIDE_KEYWORDS = InspectorUtils.getCSSWideKeywords();
 
 function do_test() {
   var allColors = [
