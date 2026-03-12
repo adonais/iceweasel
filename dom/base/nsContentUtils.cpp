@@ -3009,8 +3009,8 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
 
   auto contentType = loadInfo->GetExternalContentPolicyType();
 
-  if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
-      contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+  if (sSecurityManager && (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
+                           contentType == ExtContentPolicy::TYPE_SUBDOCUMENT)) {
     nsCOMPtr<nsIPrincipal> resultPrincipal;
     nsresult rv = sSecurityManager->GetChannelResultPrincipal(
         aChannel, getter_AddRefs(resultPrincipal));
