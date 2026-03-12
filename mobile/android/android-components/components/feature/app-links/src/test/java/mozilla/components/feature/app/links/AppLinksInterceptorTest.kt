@@ -10,7 +10,9 @@ import android.content.Intent
 import androidx.fragment.app.FragmentManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.state.action.TabListAction
+import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContentState
+import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.ExternalPackage
 import mozilla.components.browser.state.state.PackageCategory
 import mozilla.components.browser.state.state.SessionState
@@ -38,6 +40,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 
@@ -898,5 +901,82 @@ class AppLinksInterceptorTest {
         )
 
         assertTrue(response is RequestInterceptor.InterceptionResponse.Deny)
+    }
+
+    @Test
+    fun `GIVEN request is possible authentication WHEN redirect is on the same domain THEN request is intercepted`() {
+        val mockEngineSession: EngineSession = mock()
+        val mockEngineState: EngineState = mock()
+        whenever(mockEngineState.engineSession).thenReturn(mockEngineSession)
+
+        store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    TabSessionState(
+                        id = "tab1",
+                        content = ContentState(
+                            url = "https://mozilla.org",
+                            private = false,
+                        ),
+                        engineState = mockEngineState,
+                        source = SessionState.Source.External.CustomTab(ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY)),
+                    ),
+                ),
+                selectedTabId = "tab1",
+            ),
+        )
+
+        appLinksInterceptor = spy(
+            AppLinksInterceptor(
+                context = mockContext,
+                store = store,
+                launchInApp = { true },
+                useCases = mockUseCases,
+            ),
+        )
+
+        val response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, webUrlWithAppLink, true, true, true, false, false)
+        assert(response is RequestInterceptor.InterceptionResponse.AppIntent)
+    }
+
+    @Test
+    fun `GIVEN request is not possible authentication WHEN redirect is on the same domain THEN request is not intercepted`() {
+        val mockEngineSession: EngineSession = mock()
+        val mockEngineState: EngineState = mock()
+        whenever(mockEngineState.engineSession).thenReturn(mockEngineSession)
+
+        store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    TabSessionState(
+                        id = "tab1",
+                        content = ContentState(
+                            url = "https://mozilla.org",
+                            private = false,
+                        ),
+                        engineState = mockEngineState,
+                        source = SessionState.Source.External.ActionSend(
+                            ExternalPackage(
+                                "com.zxing.app",
+                                PackageCategory.PRODUCTIVITY,
+                            ),
+                        ),
+                    ),
+                ),
+                selectedTabId = "tab1",
+            ),
+        )
+
+        appLinksInterceptor = spy(
+            AppLinksInterceptor(
+                context = mockContext,
+                store = store,
+                launchInApp = { true },
+                useCases = mockUseCases,
+            ),
+        )
+
+        val response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, webUrlWithAppLink, true, true, true, false, false)
+        assertEquals(null, response)
     }
 }
