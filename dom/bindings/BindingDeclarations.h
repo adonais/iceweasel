@@ -59,11 +59,13 @@ struct DictionaryBase {
   // it here so that all the dictionaries will have access to it, but outside
   // code will not.
   struct FastDictionaryInitializer {};
+};
 
-  bool mIsAnyMemberPresent = false;
-
- public:
+struct MaybeEmptyDictionaryBase : DictionaryBase {
   bool IsAnyMemberPresent() const { return mIsAnyMemberPresent; }
+
+ protected:
+  bool mIsAnyMemberPresent = false;
 };
 
 template <class T>

@@ -14253,20 +14253,27 @@ class ClassMember(ClassItem):
         visibility="private",
         static=False,
         body=None,
+        defaultValue=None,
         hasIgnoreInitCheckFlag=False,
     ):
         self.type = type
         self.static = static
         self.body = body
         self.hasIgnoreInitCheckFlag = hasIgnoreInitCheckFlag
+        self.defaultValue = defaultValue
         ClassItem.__init__(self, name, visibility)
 
     def declare(self, cgClass):
-        return "%s%s%s %s;\n" % (
+        if self.defaultValue:
+            default = " = %s" % (self.defaultValue)
+        else:
+            default = ""
+        return "%s%s%s %s%s;\n" % (
             "static " if self.static else "",
             "MOZ_INIT_OUTSIDE_CTOR " if self.hasIgnoreInitCheckFlag else "",
             self.type,
             self.name,
+            default,
         )
 
     def define(self, cgClass):
@@ -17675,7 +17682,10 @@ class CGDictionary(CGThing):
     def base(self):
         if self.dictionary.parent:
             return self.makeClassName(self.dictionary.parent)
-        return "DictionaryBase"
+        elif self.dictionary.needsConversionFromJS:
+            return "MaybeEmptyDictionaryBase"
+        else:
+            return "DictionaryBase"
 
     def initMethod(self):
         """
@@ -17791,6 +17801,19 @@ class CGDictionary(CGThing):
             body=body,
         )
 
+    def hasConstexprDefaultConstructor(self):
+        """
+        Checks if the default constructor can be made constexpr
+        """
+        return (
+            not self.dictionary.needsConversionFromJS
+            and not self.dictionary.parent
+            and all(
+                m[0].type.isPrimitive() and m[0].optional and m[0].defaultValue
+                for m in self.memberInfo
+            )
+        )
+
     def simpleInitMethod(self):
         """
         This function outputs the body of the Init() method for the dictionary,
@@ -17864,6 +17887,22 @@ class CGDictionary(CGThing):
                 Argument("bool", "passedToJSImpl", default="false"),
             ],
             body=body,
+        )
+
+    def emptyInitMethod(self):
+        """
+        This function outputs an empty body of the Init() when all elements are
+        already default constructed.
+
+        """
+        return ClassMethod(
+            "Init",
+            "bool",
+            [
+                Argument("const char*", "sourceDescription", default='"Value"'),
+                Argument("bool", "passedToJSImpl", default="false"),
+            ],
+            body="return true;\n",
         )
 
     def initFromJSONMethod(self, string):
@@ -18163,9 +18202,12 @@ class CGDictionary(CGThing):
                 self.getMemberType(m),
                 visibility="public",
                 body=self.getMemberInitializer(m),
-                hasIgnoreInitCheckFlag=True,
+                hasIgnoreInitCheckFlag=memberDefault is None,
+                defaultValue=memberDefault,
             )
-            for m in self.memberInfo
+            for m, memberDefault in [
+                (m, self.getMemberDefaultValue(m)) for m in self.memberInfo
+            ]
         ]
         if d.parent:
             # We always want to init our parent with our non-initializing
@@ -18182,16 +18224,31 @@ class CGDictionary(CGThing):
             initArgs = "nullptr, JS::NullHandleValue"
         else:
             initArgs = ""
-        ctors = [
-            ClassConstructor(
-                [],
-                visibility="public",
-                baseConstructors=baseConstructors,
-                body=(
-                    "// Safe to pass a null context if we pass a null value\n"
-                    "Init(%s);\n" % initArgs
-                ),
-            ),
+        ctors = []
+        if self.hasConstexprDefaultConstructor():
+            ctors.append(
+                ClassConstructor(
+                    [],
+                    visibility="public",
+                    baseConstructors=baseConstructors,
+                    default=True,
+                    constexpr=True,
+                )
+            )
+        else:
+            ctors.append(
+                ClassConstructor(
+                    [],
+                    visibility="public",
+                    baseConstructors=baseConstructors,
+                    body=(
+                        "// Safe to pass a null context if we pass a null value\n"
+                        "Init(%s);\n" % initArgs
+                    ),
+                )
+            )
+
+        ctors.append(
             ClassConstructor(
                 [Argument("const FastDictionaryInitializer&", "")],
                 visibility="public",
@@ -18199,8 +18256,8 @@ class CGDictionary(CGThing):
                 explicit=True,
                 bodyInHeader=True,
                 body='// Do nothing here; this is used by our "Fast" subclass\n',
-            ),
-        ]
+            )
+        )
         methods = []
 
         if self.needToInitIds:
@@ -18209,6 +18266,8 @@ class CGDictionary(CGThing):
         if d.needsConversionFromJS:
             methods.append(self.initMethod())
             methods.append(self.initWithoutCallContextMethod())
+        elif self.hasConstexprDefaultConstructor():
+            methods.append(self.emptyInitMethod())
         else:
             methods.append(self.simpleInitMethod())
 
@@ -18322,6 +18381,21 @@ class CGDictionary(CGThing):
     def makeMemberName(name):
         return "m" + name[0].upper() + IDLToCIdentifier(name[1:])
 
+    def getMemberDefaultValue(self, memberInfo):
+        member, _ = memberInfo
+        if (
+            member.defaultValue
+            and member.type.isPrimitive()
+            and not member.type.nullable()
+        ):
+            tag = member.type.tag()
+            if tag == IDLType.Tags.bool:
+                return toStringBool(member.defaultValue.value)
+            else:
+                return numericValue(member.type.tag(), member.defaultValue.value)
+        else:
+            return None
+
     def getMemberType(self, memberInfo):
         member, conversionInfo = memberInfo
         # We can't handle having a holderType here
@@ -18399,7 +18473,8 @@ class CGDictionary(CGThing):
         # The conversion code will only run where a default value or a value passed
         # by the author needs to get converted, so we can remember if we have any
         # members present here.
-        conversionReplacements["convert"] += "mIsAnyMemberPresent = true;\n"
+        if self.dictionary.needsConversionFromJS:
+            conversionReplacements["convert"] += "mIsAnyMemberPresent = true;\n"
         if isKnownMissing:
             conversion = ""
         else:
