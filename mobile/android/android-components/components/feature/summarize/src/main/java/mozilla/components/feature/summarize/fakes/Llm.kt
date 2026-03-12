@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import mozilla.components.concept.llm.CloudLlmProvider
 import mozilla.components.concept.llm.Llm
+import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.concept.llm.LocalLlmProvider
 import mozilla.components.concept.llm.Prompt
+import mozilla.components.feature.summarize.R
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -25,6 +27,8 @@ data class FakeCloudProvider(
     override val state: MutableStateFlow<CloudLlmProvider.State> = MutableStateFlow(CloudLlmProvider.State.Available),
     val llm: Llm,
 ) : CloudLlmProvider {
+    override val info = LlmProvider.Info(nameRes = R.string.mozac_summarize_fake_llm_name)
+
     override suspend fun prepare() {
         state.value = CloudLlmProvider.State.Ready(llm)
     }
@@ -71,6 +75,8 @@ internal data class FakeLocalProvider(
     ),
     val llm: Llm,
 ) : LocalLlmProvider {
+    override val info = LlmProvider.Info(nameRes = R.string.mozac_summarize_fake_llm_name)
+
     override suspend fun downloadIfNeeded() {
         state.value = LocalLlmProvider.State.Downloading(TOTAL_SIZE, INITIAL_SIZE)
         delay(0.5.seconds)

@@ -107,4 +107,9 @@
 
     <!-- Description for the shake to summarize toggle in settings -->
     <string name="mozac_summarize_settings_shake_to_summarize_description">Shake your device side to side to summarize a page.</string>
+
+    <!-- Keep these strings in static_strings.xml -->
+
+    <!-- Name for the Fake LLM to use in place for testing. -->
+    <string name="mozac_summarize_fake_llm_name">Fake LLM</string>
 </resources>

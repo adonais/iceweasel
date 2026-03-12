@@ -10,6 +10,7 @@ import mozilla.components.concept.llm.CloudLlmProvider
 import mozilla.components.concept.llm.CloudLlmProvider.State
 import mozilla.components.concept.llm.CloudLlmProvider.State.Ready
 import mozilla.components.concept.llm.CloudLlmProvider.State.Unavailable
+import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.lib.llm.mlpa.service.MlpaService
 
 /**
@@ -32,6 +33,7 @@ class MlpaLlmProvider(
     val tokenProvider: MlpaTokenProvider,
     val mlpaService: MlpaService,
 ) : CloudLlmProvider {
+    override val info = LlmProvider.Info(nameRes = R.string.mlpa_llm_provider_name, iconRes = R.drawable.firefox_icon)
     private val _state = MutableStateFlow<State>(State.Available)
 
     /**
