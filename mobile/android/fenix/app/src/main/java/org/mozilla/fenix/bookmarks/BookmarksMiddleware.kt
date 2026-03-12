@@ -292,19 +292,7 @@ internal class BookmarksMiddleware(
                 getNavController().navigate(BookmarksDestinations.SELECT_FOLDER)
             }
 
-            EditBookmarkAction.DeleteClicked -> {
-                // 💡When we're in the browser -> edit flow, we back out to the browser bypassing our
-                // snackbar logic. So we have to also do the delete here.
-                if (!getNavController().popBackStack()) {
-                    lifecycleScope.launch {
-                        preReductionState.bookmarksEditBookmarkState?.also {
-                            bookmarksStorage.deleteNode(it.bookmark.guid)
-                        }
-
-                        exitBookmarks()
-                    }
-                }
-            }
+            EditBookmarkAction.DeleteClicked -> { handleEditDeleteClicked(preReductionState) }
             EditFolderAction.ParentFolderClicked,
             AddFolderAction.ParentFolderClicked,
             -> {
@@ -321,21 +309,7 @@ internal class BookmarksMiddleware(
                 }
             }
             is BookmarksListMenuAction -> action.handleSideEffects(store, preReductionState)
-            SnackbarAction.Dismissed -> when (preReductionState.bookmarksSnackbarState) {
-                is BookmarksSnackbarState.UndoDeletion -> lifecycleScope.launch {
-                    if (preReductionState.bookmarksDeletionSnackbarQueueCount <= 1) {
-                        preReductionState.bookmarksSnackbarState.guidsToDelete.forEach {
-                            bookmarksStorage.deleteNode(it)
-                        }
-                        lastSavedFolderCache.getGuid()?.let {
-                            if (bookmarksStorage.getBookmark(it).getOrNull() == null) {
-                                lastSavedFolderCache.setGuid(null)
-                            }
-                        }
-                    }
-                }
-                else -> {}
-            }
+
             is DeletionDialogAction.DeleteTapped -> {
                 lifecycleScope.launch {
                     preReductionState.bookmarksDeletionDialogState.guidsToDelete.forEach {
@@ -371,22 +345,6 @@ internal class BookmarksMiddleware(
             is FirstSyncCompleted -> {
                 store.tryDispatchLoadFor(preReductionState.currentFolder.guid)
             }
-            ViewDisposed -> {
-                preReductionState.bookmarksSnackbarState.let { snackState ->
-                    if (snackState is BookmarksSnackbarState.UndoDeletion) {
-                        lifecycleScope.launch {
-                            snackState.guidsToDelete.forEach {
-                                bookmarksStorage.deleteNode(it)
-                            }
-                            lastSavedFolderCache.getGuid()?.let {
-                                if (bookmarksStorage.getBookmark(it).getOrNull() == null) {
-                                    lastSavedFolderCache.setGuid(null)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
             is SelectFolderAction.SortMenu -> lifecycleScope.launch {
                 store.tryDispatchLoadSelectableFolders()
                 saveBookmarkSortOrder(store.state.sortOrder)
@@ -410,7 +368,6 @@ internal class BookmarksMiddleware(
             SelectFolderAction.SearchDismissed,
             is InitEditLoaded,
             SnackbarAction.SelectFolderFailed,
-            SnackbarAction.Undo,
             is OpenTabsConfirmationDialogAction.Present,
             OpenTabsConfirmationDialogAction.CancelTapped,
             DeletionDialogAction.CancelTapped,
@@ -430,6 +387,7 @@ internal class BookmarksMiddleware(
             EditFolderAction.DeleteClicked,
             is ReceivedSyncSignInUpdate,
             PrivateBrowsingAuthorized,
+            SnackbarAction.Dismissed,
             -> Unit
         }
     }
@@ -674,32 +632,12 @@ internal class BookmarksMiddleware(
                 getNavController().navigate(BookmarksDestinations.EDIT_FOLDER)
             }
 
-            is BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked -> lifecycleScope.launch {
-                bookmarksStorage.getTree(folder.guid).getOrNull()?.also {
-                    val count = it.children?.count() ?: 0
-                    if (count >= WARN_OPEN_ALL_SIZE) {
-                        store.dispatch(OpenTabsConfirmationDialogAction.Present(folder.guid, count, false))
-                        return@also
-                    }
-                    it.children
-                        ?.mapNotNull { it.url }
-                        ?.forEach { url -> addNewTabUseCase(url = url, private = false) }
-                    showTabsTray(false)
-                }
+            is BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked -> {
+                handleOpenAllInTabs(folder = folder, isPrivate = false, store = store)
             }
 
-            is BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked -> lifecycleScope.launch {
-                bookmarksStorage.getTree(folder.guid).getOrNull()?.also {
-                    val count = it.children?.count() ?: 0
-                    if (count >= WARN_OPEN_ALL_SIZE) {
-                        store.dispatch(OpenTabsConfirmationDialogAction.Present(folder.guid, count, true))
-                        return@also
-                    }
-                    it.children
-                        ?.mapNotNull { it.url }
-                        ?.forEach { url -> addNewTabUseCase(url = url, private = true) }
-                    showTabsTray(true)
-                }
+            is BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked -> {
+                handleOpenAllInTabs(folder = folder, isPrivate = true, store = store)
             }
 
             // top bar menu actions
@@ -732,12 +670,64 @@ internal class BookmarksMiddleware(
                 saveBookmarkSortOrder(store.state.sortOrder)
             }
             is BookmarksListMenuAction.SelectAll -> store.tryDispatchReceivedRecursiveCountUpdate()
+            is BookmarksListMenuAction.Bookmark.DeleteClicked -> { handleDeleteBookmark(bookmark) }
             is BookmarksListMenuAction.MultiSelect.DeleteClicked,
             is BookmarksListMenuAction.Folder.DeleteClicked,
-            is BookmarksListMenuAction.Bookmark.DeleteClicked,
             is BookmarksListMenuAction.Folder.SelectClicked,
             is BookmarksListMenuAction.Bookmark.SelectClicked,
-            -> { }
+            -> Unit
+        }
+    }
+
+    private fun handleDeleteBookmark(bookmark: BookmarkItem.Bookmark) {
+        lifecycleScope.launch {
+            bookmarksStorage.deleteNode(bookmark.guid)
+            lastSavedFolderCache.getGuid()?.let { cachedGuid ->
+                if (bookmarksStorage.getBookmark(cachedGuid).getOrNull() == null) {
+                    lastSavedFolderCache.setGuid(null)
+                }
+            }
+        }
+    }
+
+    private fun handleOpenAllInTabs(
+        folder: BookmarkItem.Folder,
+        isPrivate: Boolean,
+        store: Store<BookmarksState, BookmarksAction>,
+    ) {
+        lifecycleScope.launch {
+            bookmarksStorage.getTree(folder.guid).getOrNull()?.also { tree ->
+                val count = tree.children?.count() ?: 0
+                if (count >= WARN_OPEN_ALL_SIZE) {
+                    store.dispatch(OpenTabsConfirmationDialogAction.Present(folder.guid, count, isPrivate))
+                    return@launch
+                }
+                tree.children?.mapNotNull { it.url }?.forEach { url ->
+                    addNewTabUseCase(url = url, private = isPrivate)
+                }
+                showTabsTray(isPrivate)
+            }
+        }
+    }
+
+    private fun handleEditDeleteClicked(preReductionState: BookmarksState) {
+        val guidToDelete = preReductionState.bookmarksEditBookmarkState?.bookmark?.guid
+
+        lifecycleScope.launch {
+            guidToDelete?.let { guid ->
+                bookmarksStorage.deleteNode(guid)
+
+                // Reset the folder cache if the folder being deleted was the last used for saving.
+                lastSavedFolderCache.getGuid()?.let { cachedGuid ->
+                    if (bookmarksStorage.getBookmark(cachedGuid).getOrNull() == null) {
+                        lastSavedFolderCache.setGuid(null)
+                    }
+                }
+            }
+
+            if (!getNavController().popBackStack()) {
+                exitBookmarks()
+            }
         }
     }
 }

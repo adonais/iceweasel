@@ -2039,51 +2039,6 @@ class BookmarksMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN a state with an undo snackbar WHEN snackbar is dismissed THEN delete all of the guids`() =
-        runTest {
-            val tree = generateBookmarkTree()
-            val firstGuid = tree.children!!.first().guid
-            coEvery {
-                bookmarksStorage.countBookmarksInTrees(
-                    listOf(
-                        BookmarkRoot.Menu.id,
-                        BookmarkRoot.Toolbar.id,
-                        BookmarkRoot.Unfiled.id,
-                    ),
-                )
-            } returns 0u
-            coEvery { bookmarksStorage.getTree(BookmarkRoot.Mobile.id) } returns Result.success(tree)
-            val bookmarkItem = BookmarkItem.Bookmark(
-                url = "url",
-                title = "title",
-                previewImageUrl = "url",
-                guid = firstGuid,
-                position = 0u,
-            )
-            val middleware = buildMiddleware(this)
-            coEvery { bookmarksStorage.countBookmarksInTrees(any()) } returns 0u
-            val store = middleware.makeStore()
-            testScheduler.advanceUntilIdle()
-
-            store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkItem))
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(
-                BookmarksSnackbarState.UndoDeletion(listOf(firstGuid)),
-                store.state.bookmarksSnackbarState,
-            )
-
-            val initialCount = store.state.bookmarkItems.size
-            store.dispatch(SnackbarAction.Dismissed)
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(BookmarksSnackbarState.None, store.state.bookmarksSnackbarState)
-            assertEquals(initialCount - 1, store.state.bookmarkItems.size)
-
-            coVerify(exactly = 1) { bookmarksStorage.deleteNode(firstGuid) }
-        }
-
-    @Test
     fun `GIVEN we are in the select folder screen and we are moving multiple bookmarks and bookmark items is empty WHEN the folder is selected and back button is clicked THEN we show a snackbar describing the error`() =
         runTest {
             val tree = generateBookmarkTree()
@@ -2514,106 +2469,6 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a single item selected WHEN multi-select delete clicked THEN show snackbar`() =
-        runTest {
-            val tree = generateBookmarkTree()
-            coEvery {
-                bookmarksStorage.countBookmarksInTrees(
-                    listOf(
-                        BookmarkRoot.Menu.id,
-                        BookmarkRoot.Toolbar.id,
-                        BookmarkRoot.Unfiled.id,
-                    ),
-                )
-            } returns 0u
-            coEvery { bookmarksStorage.getTree(BookmarkRoot.Mobile.id) } returns Result.success(tree)
-            val bookmarkItem = tree.children!!.first { it.type == BookmarkNodeType.ITEM }.let {
-                BookmarkItem.Bookmark(
-                    guid = it.guid,
-                    title = it.title!!,
-                    url = it.url!!,
-                    previewImageUrl = it.url!!,
-                    position = it.position!!,
-                )
-            }
-
-            val middleware = buildMiddleware(this)
-            val store = middleware.makeStore(
-                initialState = BookmarksState.default.copy(selectedItems = listOf(bookmarkItem)),
-            )
-
-            store.dispatch(BookmarksListMenuAction.MultiSelect.DeleteClicked)
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(
-                BookmarksSnackbarState.UndoDeletion(listOf(bookmarkItem.guid)),
-                store.state.bookmarksSnackbarState,
-            )
-
-            val initialCount = store.state.bookmarkItems.size
-            store.dispatch(SnackbarAction.Dismissed)
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(BookmarksSnackbarState.None, store.state.bookmarksSnackbarState)
-            assertEquals(initialCount - 1, store.state.bookmarkItems.size)
-
-            coVerify(exactly = 1) { bookmarksStorage.deleteNode(bookmarkItem.guid) }
-        }
-
-    @Test
-    fun `GIVEN two bookmarks WHEN each is deleted before a snackbar dismiss and undo is clicked after the first dismiss THEN the bookmarks are restored`() =
-        runTest {
-            val tree = generateBookmarkTree()
-            coEvery {
-                bookmarksStorage.countBookmarksInTrees(
-                    listOf(
-                        BookmarkRoot.Menu.id,
-                        BookmarkRoot.Toolbar.id,
-                        BookmarkRoot.Unfiled.id,
-                    ),
-                )
-            } returns 0u
-            coEvery { bookmarksStorage.getTree(BookmarkRoot.Mobile.id) } returns Result.success(tree)
-            val items = tree.children!!.filter { it.type == BookmarkNodeType.ITEM }
-
-            val bookmarkItemOne = items[0].let {
-                BookmarkItem.Bookmark(it.guid, it.title!!, it.url!!, it.url!!, it.position!!)
-            }
-
-            val bookmarkItemTwo = items[1].let {
-                BookmarkItem.Bookmark(it.guid, it.title!!, it.url!!, it.url!!, it.position!!)
-            }
-
-            val middleware = buildMiddleware(this)
-            val store = middleware.makeStore()
-            testScheduler.advanceUntilIdle()
-
-            store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkItemOne))
-            assertEquals(store.state.bookmarksDeletionSnackbarQueueCount, 1)
-            store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkItemTwo))
-            assertEquals(store.state.bookmarksDeletionSnackbarQueueCount, 2)
-            store.dispatch(SnackbarAction.Dismissed)
-            assertEquals(store.state.bookmarksDeletionSnackbarQueueCount, 1)
-            assertEquals(
-                BookmarksSnackbarState.UndoDeletion(
-                    listOf(
-                        bookmarkItemOne.guid,
-                        bookmarkItemTwo.guid,
-                    ),
-                ),
-                store.state.bookmarksSnackbarState,
-            )
-
-            store.dispatch(SnackbarAction.Undo)
-
-            val initialCount = store.state.bookmarkItems.size
-            assertEquals(BookmarksSnackbarState.None, store.state.bookmarksSnackbarState)
-            assertEquals(initialCount, store.state.bookmarkItems.size)
-
-            coVerify(exactly = 0) { bookmarksStorage.deleteNode(bookmarkItemOne.guid) }
-        }
-
-    @Test
     fun `GIVEN multiple selected items WHEN multi-select delete clicked THEN show the confirmation dialog`() =
         runTest {
             val tree = generateBookmarkTree()
@@ -2803,38 +2658,6 @@ class BookmarksMiddlewareTest {
 
         assertTrue(store.state.bookmarkItems.any { it.guid == syncedGuid })
     }
-
-    @Test
-    fun `GIVEN a bookmark has been deleted WHEN the view is disposed before the snackbar is dismissed THEN commit the deletion`() =
-        runTest {
-            val tree = generateBookmarkTree()
-            coEvery {
-                bookmarksStorage.countBookmarksInTrees(
-                    listOf(
-                        BookmarkRoot.Menu.id,
-                        BookmarkRoot.Toolbar.id,
-                        BookmarkRoot.Unfiled.id,
-                    ),
-                )
-            } returns 0u
-            coEvery { bookmarksStorage.getTree(BookmarkRoot.Mobile.id) } returns Result.success(tree)
-
-            val middleware = buildMiddleware(this)
-            val store = middleware.makeStore()
-            testScheduler.advanceUntilIdle()
-            val bookmarkToDelete =
-                store.state.bookmarkItems.first { it is BookmarkItem.Bookmark } as BookmarkItem.Bookmark
-
-            store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkToDelete))
-            testScheduler.advanceUntilIdle()
-
-            val snackState = store.state.bookmarksSnackbarState
-            assertTrue(snackState is BookmarksSnackbarState.UndoDeletion && snackState.guidsToDelete.first() == bookmarkToDelete.guid)
-            store.dispatch(ViewDisposed)
-            testScheduler.advanceUntilIdle()
-
-            coVerify(exactly = 1) { bookmarksStorage.deleteNode(bookmarkToDelete.guid) }
-        }
 
     @Test
     fun `GIVEN adding a folder WHEN selecting a new parent THEN folder is updated`() = runTest {
@@ -3399,6 +3222,81 @@ class BookmarksMiddlewareTest {
             }
             verify(exactly = 1) { navController.popBackStack(BookmarksDestinations.LIST, false) }
         }
+
+    @Test
+    fun `GIVEN a bookmark WHEN DeleteClicked is dispatched THEN delete from storage and clear cache if needed`() =
+        runTest {
+            val bookmarkGuid = "test-guid-123"
+            val folderGuid = "cached-folder-guid"
+
+            val bookmarkItem = BookmarkItem.Bookmark(
+                title = "Test Bookmark",
+                guid = bookmarkGuid,
+                url = "https://test.com",
+                previewImageUrl = "",
+                position = 0u,
+            )
+
+            coEvery { lastSavedFolderCache.getGuid() } returns folderGuid
+            coEvery { bookmarksStorage.getBookmark(folderGuid) } returns Result.success(null)
+            coEvery { bookmarksStorage.deleteNode(bookmarkGuid) } returns Result.success(true)
+
+            val middleware = buildMiddleware(this)
+            val store = middleware.makeStore()
+            testScheduler.advanceUntilIdle()
+
+            store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkItem))
+            testScheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { bookmarksStorage.deleteNode(bookmarkGuid) }
+
+            coVerify(exactly = 1) { bookmarksStorage.getBookmark(folderGuid) }
+
+            coVerify(exactly = 1) { lastSavedFolderCache.setGuid(null) }
+
+            val isStillInList = store.state.bookmarkItems.any { it.guid == bookmarkGuid }
+            assertFalse(isStillInList)
+        }
+
+    @Test
+    fun `GIVEN Edit screen is open WHEN DeleteClicked is dispatched THEN delete bookmark and navigate back`() = runTest {
+        val bookmarkGuid = "target-guid-123"
+        val cachedFolderGuid = "folder-in-cache"
+
+        val bookmark = BookmarkItem.Bookmark(
+            title = "Bookmark to Delete",
+            guid = bookmarkGuid,
+            url = "https://example.com",
+            previewImageUrl = "",
+            position = 0u,
+        )
+
+        val initialState = BookmarksState.default.copy(
+            bookmarksEditBookmarkState = BookmarksEditBookmarkState(
+                bookmark = bookmark,
+                folder = BookmarkItem.Folder("title", "guid", position = 0u),
+            ),
+        )
+
+        coEvery { lastSavedFolderCache.getGuid() } returns cachedFolderGuid
+        coEvery { bookmarksStorage.getBookmark(cachedFolderGuid) } returns Result.success(null)
+        coEvery { bookmarksStorage.deleteNode(bookmarkGuid) } returns Result.success(true)
+        coEvery { lastSavedFolderCache.setGuid(null) } returns Unit
+        coEvery { navController.popBackStack() } returns true
+
+        val store = buildMiddleware(this).makeStore(initialState)
+        testScheduler.advanceUntilIdle()
+
+        store.dispatch(EditBookmarkAction.DeleteClicked)
+        testScheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { bookmarksStorage.deleteNode(bookmarkGuid) }
+        coVerify(exactly = 1) { bookmarksStorage.getBookmark(cachedFolderGuid) }
+        coVerify(exactly = 1) { lastSavedFolderCache.setGuid(null) }
+        verify(exactly = 1) { navController.popBackStack() }
+
+        assertNull(store.state.bookmarksEditBookmarkState)
+    }
 
     private fun buildMiddleware(
         scope: CoroutineScope,

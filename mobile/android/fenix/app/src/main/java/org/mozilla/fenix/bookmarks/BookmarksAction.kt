@@ -20,7 +20,6 @@ internal data class InitEditLoaded(
     val bookmark: BookmarkItem.Bookmark,
     val folder: BookmarkItem.Folder,
 ) : BookmarksAction
-internal data object ViewDisposed : BookmarksAction
 
 /**
  * Bookmarks have been loaded from the storage layer.
@@ -156,7 +155,6 @@ internal sealed class DeletionDialogAction : BookmarksAction {
 }
 
 internal sealed class SnackbarAction : BookmarksAction {
-    data object Undo : SnackbarAction()
     data object Dismissed : SnackbarAction()
     data object SelectFolderFailed : SnackbarAction()
 }

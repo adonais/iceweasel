@@ -414,11 +414,6 @@ class BookmarksTest : TestSetup() {
             verifyBookmarkTitle(defaultWebPage.title)
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickDelete {
-            clickSnackbarButton(composeTestRule, "UNDO")
-            waitForBookmarksSnackBarToBeGone("Deleted ${defaultWebPage.title}")
-            verifyBookmarkedURL(defaultWebPage.url.toString())
-        }.openThreeDotMenu(defaultWebPage.title) {
-        }.clickDelete {
             verifyBookmarkIsDeleted(defaultWebPage.title)
         }
     }

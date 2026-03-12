@@ -67,7 +67,6 @@ internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = 
     }
     CloseClicked,
     FirstSyncCompleted,
-    ViewDisposed,
     SelectFolderAction.ViewAppeared,
     SignIntoSyncClicked,
     is InitEdit,
@@ -189,12 +188,14 @@ private fun BookmarksState.handleEditBookmarkAction(action: EditBookmarkAction):
             ),
         )
 
-        EditBookmarkAction.DeleteClicked -> this.copy(
-            bookmarksSnackbarState = bookmarksEditBookmarkState?.let {
-                bookmarksSnackbarState.addGuidToDelete(it.bookmark.guid)
-            } ?: BookmarksSnackbarState.None,
-            bookmarksEditBookmarkState = null,
-        )
+        EditBookmarkAction.DeleteClicked -> {
+            val guidToRemove = bookmarksEditBookmarkState?.bookmark?.guid
+            this.copy(
+                bookmarksEditBookmarkState = null,
+                bookmarkItems = this.bookmarkItems.filterNot { it.guid == guidToRemove },
+                bookmarksSnackbarState = BookmarksSnackbarState.None,
+            )
+        }
 
         is EditBookmarkAction.TitleChanged -> this.copy(
             bookmarksEditBookmarkState = bookmarksEditBookmarkState?.let {
@@ -270,23 +271,8 @@ private fun BookmarksState.handleEditFolderAction(action: EditFolderAction): Boo
 
 private fun BookmarksState.handleSnackbarAction(action: SnackbarAction): BookmarksState {
     return when (action) {
-        SnackbarAction.Undo -> {
-            this.copy(
-                bookmarksSnackbarState = BookmarksSnackbarState.None,
-                bookmarksDeletionSnackbarQueueCount = 0,
-            )
-        }
-
         SnackbarAction.Dismissed -> {
-            if (bookmarksDeletionSnackbarQueueCount > 1) {
-                this.copy(bookmarksDeletionSnackbarQueueCount = bookmarksDeletionSnackbarQueueCount - 1)
-            } else {
-                withDeletedItemsRemoved()
-                    .copy(
-                        bookmarksSnackbarState = BookmarksSnackbarState.None,
-                        bookmarksDeletionSnackbarQueueCount = 0,
-                    )
-            }
+            copy(bookmarksSnackbarState = BookmarksSnackbarState.None)
         }
 
         SnackbarAction.SelectFolderFailed -> {
@@ -314,9 +300,6 @@ private fun BookmarksState.handleDeletionDialogAction(action: DeletionDialogActi
 private fun BookmarksState.withDeletedItemsRemoved(): BookmarksState = when {
     bookmarksDeletionDialogState is DeletionDialogState.Presenting -> copy(
         bookmarkItems = bookmarkItems.filterNot { bookmarksDeletionDialogState.guidsToDelete.contains(it.guid) },
-    )
-    bookmarksSnackbarState is BookmarksSnackbarState.UndoDeletion -> copy(
-        bookmarkItems = bookmarkItems.filterNot { bookmarksSnackbarState.guidsToDelete.contains(it.guid) },
     )
     else -> this
 }
@@ -474,10 +457,11 @@ private fun BookmarksState.handleListMenuAction(action: BookmarksListMenuAction)
                     bookmarksDeletionDialogState = DeletionDialogState.LoadingCount(this.selectedItems.map { it.guid }),
                 )
             } else {
+                val guidToRemove = this.selectedItems.firstOrNull()?.guid
                 copy(
-                    bookmarksSnackbarState = bookmarksSnackbarState.addGuidsToDelete(
-                        guids = this.selectedItems.map { it.guid },
-                    ),
+                    bookmarkItems = this.bookmarkItems.filterNot { it.guid == guidToRemove },
+                    selectedItems = emptyList(),
+                    bookmarksSnackbarState = BookmarksSnackbarState.None,
                 )
             }
         }
@@ -495,8 +479,7 @@ private fun BookmarksState.handleListMenuAction(action: BookmarksListMenuAction)
                 }
             } ?: this
         is BookmarksListMenuAction.Bookmark.DeleteClicked -> copy(
-            bookmarksSnackbarState = bookmarksSnackbarState.addGuidToDelete(action.bookmark.guid),
-            bookmarksDeletionSnackbarQueueCount = bookmarksDeletionSnackbarQueueCount + 1,
+            bookmarkItems = this.bookmarkItems.filterNot { it.guid == action.bookmark.guid },
         )
         is BookmarksListMenuAction.Folder.DeleteClicked -> copy(
             bookmarksDeletionDialogState = DeletionDialogState.LoadingCount(listOf(action.folder.guid)),
