@@ -39,7 +39,7 @@ ComPtr<TypeToCreate> CreateFromActivationFactory(const wchar_t* aNamespace) {
   return newObject;
 }
 
-RefPtr<IAppCapability> GetWifiControlAppCapability() {
+RefPtr<IAppCapability> GetLocationAppCapability() {
   ComPtr<IAppCapabilityStatics> appCapabilityStatics =
       CreateFromActivationFactory<IAppCapabilityStatics>(kAppCapabilityGuid);
   NS_ENSURE_TRUE(appCapabilityStatics, nullptr);
@@ -52,26 +52,26 @@ RefPtr<IAppCapability> GetWifiControlAppCapability() {
   return appCapability;
 }
 
-Maybe<AppCapabilityAccessStatus> GetWifiControlAccess(
-    IAppCapability* aWifiControlAppCapability) {
-  NS_ENSURE_TRUE(aWifiControlAppCapability, Nothing());
+Maybe<AppCapabilityAccessStatus> GetLocationAccess(
+    IAppCapability* aLocationAppCapability) {
+  NS_ENSURE_TRUE(aLocationAppCapability, Nothing());
   AppCapabilityAccessStatus status;
-  HRESULT hr = aWifiControlAppCapability->CheckAccess(&status);
+  HRESULT hr = aLocationAppCapability->CheckAccess(&status);
   NS_ENSURE_TRUE(SUCCEEDED(hr), Nothing());
   return Some(status);
 }
 
-Maybe<AppCapabilityAccessStatus> GetWifiControlAccess() {
-  RefPtr wifiControlAppCapability = GetWifiControlAppCapability();
+Maybe<AppCapabilityAccessStatus> GetLocationAccess() {
+  RefPtr locationAppCapability = GetLocationAppCapability();
   // Hold on to the RefPtr through the lifetime of the callee
-  return GetWifiControlAccess(wifiControlAppCapability.get());
+  return GetLocationAccess(locationAppCapability.get());
 }
 
-// Takes in wifiAccess instead of calculating here so we can avoid calling
-// GetWifiControlAccess() multiple times, which can be slow (bug 1972405).
+// Takes in locationAccess instead of calculating here so we can avoid calling
+// GetLocationAccess() multiple times, which can be slow (bug 1972405).
 bool SystemWillPromptForPermissionHint(
-    Maybe<AppCapabilityAccessStatus> aWifiAccess) {
-  if (aWifiAccess !=
+    Maybe<AppCapabilityAccessStatus> aLocationAccess) {
+  if (aLocationAccess !=
       mozilla::Some(AppCapabilityAccessStatus::
                         AppCapabilityAccessStatus_UserPromptRequired)) {
     return false;
@@ -79,19 +79,22 @@ bool SystemWillPromptForPermissionHint(
 
   // If wifi is not available (e.g. because there is no wifi device present)
   // then the API may report that Windows will request geolocation permission
-  // but it can't without the wifi scanner.  Check for that case.
+  // but it can't without the wifi scanner or other location establishing
+  // device (like GPS).  Since this is just a hint, and false negatives are
+  // undesirable but false positives are terrible, only expect the prompt in
+  // the wifi (common) case.
   nsCOMPtr<nsIWifiMonitor> wifiMonitor = components::WifiMonitor::Service();
   NS_ENSURE_TRUE(wifiMonitor, false);
   return wifiMonitor->GetHasWifiAdapter();
 }
 
-// Takes in wifiAccess instead of calculating here so we can avoid calling
-// GetWifiControlAccess() multiple times, which can be slow (bug 1972405).
-bool LocationIsPermittedHint(Maybe<AppCapabilityAccessStatus> aWifiAccess) {
+// Takes in locationAccess instead of calculating here so we can avoid calling
+// GetLocationAccess() multiple times, which can be slow (bug 1972405).
+bool LocationIsPermittedHint(Maybe<AppCapabilityAccessStatus> aLocationAccess) {
   // This API wasn't available on earlier versions of Windows, so a failure to
   // get the result means that we will assume that location access is permitted.
-  return aWifiAccess.isNothing() ||
-         *aWifiAccess ==
+  return aLocationAccess.isNothing() ||
+         *aLocationAccess ==
              AppCapabilityAccessStatus::AppCapabilityAccessStatus_Allowed;
 }
 
@@ -120,7 +123,7 @@ class WindowsGeolocationPermissionRequest final
       }
     });
 
-    mAppCapability = GetWifiControlAppCapability();
+    mAppCapability = GetLocationAppCapability();
     if (!mAppCapability) {
       return;
     }
@@ -175,14 +178,14 @@ class WindowsGeolocationPermissionRequest final
   }
 
  protected:
-  void Stop(Maybe<AppCapabilityAccessStatus> aWifiAccess) {
+  void Stop(Maybe<AppCapabilityAccessStatus> aLocationAccess) {
     MOZ_ASSERT(NS_IsMainThread());
     if (!mIsRunning) {
       return;
     }
     mIsRunning = false;
 
-    if (LocationIsPermittedHint(aWifiAccess)) {
+    if (LocationIsPermittedHint(aLocationAccess)) {
       mResolver(GeolocationPermissionStatus::Granted);
     } else {
       mResolver(GeolocationPermissionStatus::Canceled);
@@ -205,7 +208,7 @@ class WindowsGeolocationPermissionRequest final
     if (!mIsRunning) {
       return;
     }
-    Stop(GetWifiControlAccess(mAppCapability));
+    Stop(GetLocationAccess(mAppCapability));
   }
 
   bool IsStopped() { return !mIsRunning; }
@@ -222,9 +225,9 @@ class WindowsGeolocationPermissionRequest final
   }
 
   void StopIfLocationIsPermitted() {
-    auto wifiAccess = GetWifiControlAccess(mAppCapability);
-    if (LocationIsPermittedHint(wifiAccess)) {
-      Stop(wifiAccess);
+    auto locationAccess = GetLocationAccess(mAppCapability);
+    if (LocationIsPermittedHint(locationAccess)) {
+      Stop(locationAccess);
     }
   }
 
@@ -332,11 +335,11 @@ NS_IMPL_ISUPPORTS(LocationPermissionWifiScanListener, nsIWifiListener)
 //-----------------------------------------------------------------------------
 
 SystemGeolocationPermissionBehavior GetGeolocationPermissionBehavior() {
-  auto wifiAccess = GetWifiControlAccess();
-  if (SystemWillPromptForPermissionHint(wifiAccess)) {
+  auto locationAccess = GetLocationAccess();
+  if (SystemWillPromptForPermissionHint(locationAccess)) {
     return SystemGeolocationPermissionBehavior::SystemWillPromptUser;
   }
-  if (!LocationIsPermittedHint(wifiAccess)) {
+  if (!LocationIsPermittedHint(locationAccess)) {
     return SystemGeolocationPermissionBehavior::GeckoWillPromptUser;
   }
   return SystemGeolocationPermissionBehavior::NoPrompt;
@@ -352,7 +355,7 @@ RequestLocationPermissionFromUser(BrowsingContext* aBrowsingContext,
   if (permissionRequest->IsStopped()) {
     return nullptr;
   }
-  if (SystemWillPromptForPermissionHint(GetWifiControlAccess())) {
+  if (SystemWillPromptForPermissionHint(GetLocationAccess())) {
     // To tell the system to prompt for permission, run one wifi scan (no need
     // to poll). We won't use the result -- either the user will grant
     // geolocation permission, meaning we will not need wifi scanning, or the
