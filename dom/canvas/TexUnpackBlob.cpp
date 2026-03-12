@@ -1173,7 +1173,8 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
   ////
 
   const auto surfSize = surf->GetSize();
-  if (uint32_t(surfSize.width) < size.x || uint32_t(surfSize.height) < size.y) {
+  if (uint32_t(surfSize.width) < size.x || uint32_t(surfSize.height) < size.y ||
+      size.z > 1) {
     gfxCriticalError() << "Source surface size too small for upload.";
     return false;
   }
