@@ -2285,6 +2285,117 @@ int32_t Instance::stringCompare(Instance* instance, void* firstStringArg,
   return result;
 }
 
+void Instance::addSubI128(Instance* instance, uint32_t isAdd) {
+#ifndef JS_64BIT
+  static_assert(sizeof(instance->baselineScratchWords_[0]) == sizeof(uint32_t));
+  static_assert(N_BASELINE_SCRATCH_WORDS >= 8);
+  // Compute
+  //
+  //   baselineScratchWords_[3:0] += baselineScratchWords_[7:4] (isAdd[0] == 1)
+  // or
+  //   baselineScratchWords_[3:0] -= baselineScratchWords_[7:4] (isAdd[0] == 0)
+  //
+  // where entries [3:0] contain a 128-bit integer stored as 32-bit chunks,
+  // with [0] holding the least significant chunk and [3] holding the most
+  // significant, and the same for [7:4].  That is to say, from a 32-bit chunk
+  // perspective, they are stored in baselineScratchWords_ little-endianly.
+  // (Each chunk is itself stored in the endianness of the host; that does not
+  // concern us here.)
+  if (isAdd & 1) {
+    uint32_t carryIn = 0;
+    for (int i = 0; i < 4; i++) {
+      uint32_t argL = instance->baselineScratchWords_[i + 0];
+      uint32_t argR = instance->baselineScratchWords_[i + 4];
+      uint32_t sum = argL + argR + carryIn;
+      instance->baselineScratchWords_[i + 0] = sum;
+      uint32_t carryOut = carryIn ? (sum <= argL) : (sum < argL);
+      carryIn = carryOut;
+    }
+  } else {
+    uint32_t borrowIn = 0;
+    for (int i = 0; i < 4; i++) {
+      uint32_t argL = instance->baselineScratchWords_[i + 0];
+      uint32_t argR = instance->baselineScratchWords_[i + 4];
+      uint32_t diff = argL - argR - borrowIn;
+      instance->baselineScratchWords_[i + 0] = diff;
+      uint32_t borrowOut = borrowIn ? (argL <= argR) : (argL < argR);
+      borrowIn = borrowOut;
+    }
+  }
+#else
+  // This helper should only be called on 32-bit targets.
+  MOZ_CRASH();
+#endif  // JS_64BIT
+}
+
+void Instance::mulI64Wide(Instance* instance, uint32_t isSigned) {
+#ifndef JS_64BIT
+  static_assert(sizeof(instance->baselineScratchWords_[0]) == sizeof(uint32_t));
+  static_assert(N_BASELINE_SCRATCH_WORDS >= 4);
+  // Compute
+  //
+  //   baselineScratchWords_[3:0]
+  //     = baselineScratchWords_[1:0] *widen baselineScratchWords_[3:2]
+  //
+  // using the same storage conventions as add128/sub128 above.
+  // If `isSigned[0]` is 1, the operands are (conceptually) signedly-widened
+  // before multiplication, otherwise they are unsignedly widened.  This scheme
+  // is feasible on 32-bit targets because gcc and clang both support 64-bit
+  // arithmetic even on 32-bit targets.
+  uint64_t x = (uint64_t(instance->baselineScratchWords_[1]) << 32) |
+               uint64_t(instance->baselineScratchWords_[0]);
+  uint64_t y = (uint64_t(instance->baselineScratchWords_[3]) << 32) |
+               uint64_t(instance->baselineScratchWords_[2]);
+
+  // Compute zHi:zLo = x *widen y.  First, calculate and store zLo.
+  uint64_t zLo = x * y;
+  instance->baselineScratchWords_[0] = uint32_t(zLo >> 0);
+  instance->baselineScratchWords_[1] = uint32_t(zLo >> 32);
+
+  // Now compute and store zHi, which is much more complex.
+  uint64_t temp1 = x & 0xFFFFFFFFULL;
+  uint64_t temp2 = y & 0xFFFFFFFFULL;
+  uint64_t temp3 = temp1 * temp2;
+
+  // See Henry S. Warren, Jr's "Hackers Delight", Chapter 8 (Multiplication).
+  if (isSigned & 1) {
+    x = int64_t(x) >> 32;
+    y = int64_t(y) >> 32;
+    temp2 *= x;
+    temp1 *= y;
+    temp3 = uint64_t(temp3) >> 32;  // yes, really an unsigned shift
+    x *= y;
+    temp3 += temp2;
+    temp2 = temp3 & 0xFFFFFFFFULL;
+    temp3 = int64_t(temp3) >> 32;
+    temp1 += temp2;
+    temp3 += x;
+    temp1 = int64_t(temp1) >> 32;
+  } else {
+    // Exactly the same thing, except with unsigned instead of signed shifts.
+    x = uint64_t(x) >> 32;
+    y = uint64_t(y) >> 32;
+    temp2 *= x;
+    temp1 *= y;
+    temp3 = uint64_t(temp3) >> 32;
+    x *= y;
+    temp3 += temp2;
+    temp2 = temp3 & 0xFFFFFFFFULL;
+    temp3 = uint64_t(temp3) >> 32;
+    temp1 += temp2;
+    temp3 += x;
+    temp1 = uint64_t(temp1) >> 32;
+  }
+
+  temp3 += temp1;  // temp3 now holds zHi
+  instance->baselineScratchWords_[2] = uint32_t(temp3 >> 0);
+  instance->baselineScratchWords_[3] = uint32_t(temp3 >> 32);
+#else
+  // This helper should only be called on 32-bit targets.
+  MOZ_CRASH();
+#endif  // JS_64BIT
+}
+
 // [SMDOC] Wasm Function.prototype.call.bind optimization
 //
 // Check if our import is of the form `Function.prototype.call.bind(targetFunc)`

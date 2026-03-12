@@ -6989,6 +6989,19 @@ void LIRGenerator::visitWasmLoadInstanceDataField(
   }
 }
 
+void LIRGenerator::visitWasmLoadInstanceScratch2xI32(
+    MWasmLoadInstanceScratch2xI32* ins) {
+#ifndef JS_64BIT
+  LWasmLoadInstanceScratch2xI32* lir =
+      new (alloc()) LWasmLoadInstanceScratch2xI32(useRegister(ins->instance()),
+                                                  ins->byteOffset());
+  defineInt64(lir, ins);
+#else
+  // On 64-bit targets, we never create MWasmLoadInstanceScratch2xI32 nodes.
+  MOZ_CRASH();
+#endif
+}
+
 void LIRGenerator::visitWasmLoadGlobalCell(MWasmLoadGlobalCell* ins) {
   if (ins->type() == MIRType::Int64) {
 #ifdef JS_PUNBOX64
@@ -7038,6 +7051,20 @@ void LIRGenerator::visitWasmStoreInstanceDataField(
                                      MNarrowingOp::None, mozilla::Nothing()),
         ins);
   }
+}
+
+void LIRGenerator::visitWasmStoreInstanceScratch2xI32(
+    MWasmStoreInstanceScratch2xI32* ins) {
+#ifndef JS_64BIT
+  LWasmStoreInstanceScratch2xI32* lir = new (alloc())
+      LWasmStoreInstanceScratch2xI32(useInt64Register(ins->value()),
+                                     useRegister(ins->instance()),
+                                     ins->byteOffset());
+  add(lir, ins);
+#else
+  // On 64-bit targets, we never create MWasmStoreInstanceScratch2xI32 nodes.
+  MOZ_CRASH();
+#endif
 }
 
 void LIRGenerator::visitWasmStoreGlobalCell(MWasmStoreGlobalCell* ins) {
@@ -8897,6 +8924,38 @@ void LIRGenerator::visitWasmNewArrayObject(MWasmNewArrayObject* ins) {
                           useRegister(ins->allocSite()), temp(), temp());
   define(lir, ins);
   assignWasmSafepoint(lir);
+}
+
+void LIRGenerator::visitWasmAddSubI128HI64(MWasmAddSubI128HI64* ins) {
+#ifdef JS_64BIT
+  // Don't change any of the operands to the `useRegisterAtStart` variant,
+  // since some of the operands are used multiple times within the LIR.
+  LWasmAddSubI128HI64* lir = new (alloc()) LWasmAddSubI128HI64(
+      useRegister(ins->lhsLo()), useRegister(ins->lhsHi()),
+      useRegister(ins->rhsLo()), useRegister(ins->rhsHi()), ins->isAdd());
+  define(lir, ins);
+#else
+  // On 32-bit targets, we never create MWasmAddSubI128HI64 nodes.
+  MOZ_CRASH();
+#endif
+}
+
+void LIRGenerator::visitWasmMulI64WideHI64(MWasmMulI64WideHI64* ins) {
+#if defined(JS_CODEGEN_X64)
+  // X86_64 only
+  LWasmMulI64WideHI64* lir = new (alloc())
+      LWasmMulI64WideHI64(useFixed(ins->lhs(), rax), useFixed(ins->rhs(), rdx),
+                          temp(), temp(), ins->isSigned());
+  define(lir, ins);
+#elif defined(JS_64BIT)
+  // All other 64-bit targets
+  LWasmMulI64WideHI64* lir = new (alloc()) LWasmMulI64WideHI64(
+      useRegister(ins->lhs()), useRegister(ins->rhs()), ins->isSigned());
+  define(lir, ins);
+#else
+  // On 32-bit targets, we never create MWasmMulI64WideHI64 nodes.
+  MOZ_CRASH();
+#endif
 }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT

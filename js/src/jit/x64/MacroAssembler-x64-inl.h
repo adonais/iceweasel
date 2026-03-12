@@ -300,6 +300,10 @@ void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   imulq(rhs, srcDest);
 }
 
+void MacroAssembler::mul64(const Register64& rhs, const Register64& srcDest) {
+  imulq(rhs.reg, srcDest.reg);
+}
+
 void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
   mul64(Imm64(rhs.value), Register64(srcDest));
 }
@@ -1102,6 +1106,87 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
   if (JitOptions.spectreIndexMasking) {
     cmovCCq(Assembler::AboveOrEqual, scratch, index);
   }
+}
+
+// ===============================================================
+// 128-bit arithmetic
+
+void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
+                                        Register rhsLo, Register rhsHi,
+                                        Register output, bool isAdd) {
+  // Require (all targets): the output is not the same as any of the inputs.
+  MOZ_ASSERT(output != lhsLo && output != lhsHi && output != rhsLo &&
+             output != rhsHi);
+  // Set the carry flag (indicating carry or borrow, respectively) from the
+  // low-half operation, but ignore the actual result.
+  movq(lhsLo, output);
+  if (isAdd) {
+    addq(rhsLo, output);
+  } else {
+    subq(rhsLo, output);
+  }
+  // Then compute the high half result and roll the carry flag into it.
+  movq(lhsHi, output);
+  if (isAdd) {
+    adcq(rhsHi, output);
+  } else {
+    sbbq(rhsHi, output);
+  }
+}
+
+void MacroAssembler::wasmMulI64WideHI64(Register lhs, Register rhs,
+                                        Register temp0, Register temp1,
+                                        Register output, bool isSigned) {
+  // Require: lhs, rhs, temp0, temp1 and output are distinct
+  const Register regs[5] = {lhs, rhs, temp0, temp1, output};
+  for (uint32_t i = 0; i < 5; i++) {
+    for (uint32_t j = 0; j < i; j++) {
+      MOZ_RELEASE_ASSERT(regs[i] != regs[j]);
+    }
+  }
+  // Require: lhs is in RAX and rhs is in RDX.  Or the other way round -- it
+  // doesn't matter since the operation is commutative.
+  MOZ_RELEASE_ASSERT(lhs == rax);
+  MOZ_RELEASE_ASSERT(rhs == rdx);
+  // Hence we are also assured that output != RDX and output != RAX.
+
+  // Generate absurd hoop-jumping as required by x86_64:
+  //   movq rax, temp0
+  //       temp0   holds  original RAX
+  //   movq rdx, temp1
+  //       temp0   holds  original RAX
+  //       temp1   holds  original RDX
+  //   {i}mulq rdx
+  //       temp0   holds  original RAX
+  //       temp1   holds  original RDX
+  //       rdx     holds  resultHI
+  //       rax     holds  resultLO
+  //   xchgq rdx, temp1
+  //       temp0   holds  original RAX
+  //       temp1   holds  resultHI
+  //       rdx     holds  original RDX
+  //       rax     holds  resultLO
+  //   movq temp0, rax
+  //       temp0   holds  original RAX
+  //       temp1   holds  resultHI
+  //       rdx     holds  original RDX
+  //       rax     holds  original RAX
+  //   movq temp1, output
+  //       temp0   holds  original RAX
+  //       temp1   holds  resultHI
+  //       rdx     holds  original RDX (because output != RDX)
+  //       rax     holds  original RAX (because output != RAX)
+  //       output  holds  resultHI
+  movq(rax, temp0);
+  movq(rdx, temp1);
+  if (isSigned) {
+    imulq(rdx);
+  } else {
+    umulq(rdx);
+  }
+  xchgq(rdx, temp1);
+  movq(temp0, rax);
+  movq(temp1, output);
 }
 
 // ========================================================================

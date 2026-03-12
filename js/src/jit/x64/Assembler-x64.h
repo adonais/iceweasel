@@ -683,6 +683,13 @@ class Assembler : public AssemblerX86Shared {
     }
   }
 
+  void adcq(Register src, Register dest) {
+    masm.adcq_rr(src.encoding(), dest.encoding());
+  }
+  void sbbq(Register src, Register dest) {
+    masm.sbbq_rr(src.encoding(), dest.encoding());
+  }
+
   void andq(Register src, Register dest) {
     masm.andq_rr(src.encoding(), dest.encoding());
   }

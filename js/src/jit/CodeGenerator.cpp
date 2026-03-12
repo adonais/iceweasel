@@ -23286,6 +23286,42 @@ void CodeGenerator::visitWasmI31RefGet(LWasmI31RefGet* lir) {
   }
 }
 
+#ifdef JS_64BIT
+void CodeGenerator::visitWasmAddSubI128HI64(LWasmAddSubI128HI64* lir) {
+  Register lhsLo = ToRegister(lir->lhsLo());
+  Register lhsHi = ToRegister(lir->lhsHi());
+  Register rhsLo = ToRegister(lir->rhsLo());
+  Register rhsHi = ToRegister(lir->rhsHi());
+  Register output = ToRegister(lir->output());
+  // This holds because all 4 operands are non-AtStart variants.
+  MOZ_ASSERT(output != lhsLo && output != lhsHi && output != rhsLo &&
+             output != rhsHi);
+  masm.wasmAddSubI128HI64(lhsLo, lhsHi, rhsLo, rhsHi, output, lir->isAdd());
+}
+#endif
+
+#ifndef JS_64BIT
+void CodeGenerator::visitWasmLoadInstanceScratch2xI32(
+    LWasmLoadInstanceScratch2xI32* lir) {
+  Register64 output = ToOutRegister64(lir);
+  Register instance = ToRegister(lir->instance());
+  uint32_t offset =
+      wasm::Instance::offsetofBaselineScratchWords() + lir->byteOffset();
+  masm.loadPtr(Address(instance, offset + 0), output.low);
+  masm.loadPtr(Address(instance, offset + 4), output.high);
+}
+
+void CodeGenerator::visitWasmStoreInstanceScratch2xI32(
+    LWasmStoreInstanceScratch2xI32* lir) {
+  Register64 value = ToRegister64(lir->value());
+  Register instance = ToRegister(lir->instance());
+  uint32_t offset =
+      wasm::Instance::offsetofBaselineScratchWords() + lir->byteOffset();
+  masm.storePtr(value.low, Address(instance, offset + 0));
+  masm.storePtr(value.high, Address(instance, offset + 4));
+}
+#endif
+
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 void CodeGenerator::visitAddDisposableResource(LAddDisposableResource* lir) {
   Register environment = ToRegister(lir->environment());

@@ -660,6 +660,12 @@ OpKind wasm::Classify(OpBytes op) {
           return OpKind::TableGrow;
         case MiscOp::TableSize:
           return OpKind::TableSize;
+        case MiscOp::I64Add128:
+        case MiscOp::I64Sub128:
+          return OpKind::BinaryI128;
+        case MiscOp::I64MulWideS:
+        case MiscOp::I64MulWideU:
+          return OpKind::BinaryI64Wide;
       }
       break;
     }

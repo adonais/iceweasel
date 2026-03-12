@@ -1176,6 +1176,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void mulPtr(Register rhs, Register srcDest) PER_ARCH;
   inline void mulPtr(ImmWord rhs, Register srcDest) PER_ARCH;
 
+  inline void mul64(const Register64& rhs, const Register64& srcDest)
+      DEFINED_ON(x64, arm64, riscv64);
   inline void mul64(const Operand& src, const Register64& dest) DEFINED_ON(x64);
   inline void mul64(const Operand& src, const Register64& dest,
                     const Register temp) DEFINED_ON(x64);
@@ -2235,6 +2237,28 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void spectreBoundsCheckPtr(Register index, const Address& length,
                                     Register maybeScratch,
                                     Label* failure) PER_ARCH;
+
+  // ========================================================================
+  // Support for 128-bit arithmetic.
+
+  // Produces the top 64 bits of the 128-bit value `lhsHi:lhsLo +/-
+  // rhsHi:rhsLo`.  Only used on 64-bit targets.  `output` must be different
+  // from all the other registers, on all supported targets.
+  inline void wasmAddSubI128HI64(Register lhsLo, Register lhsHi, Register rhsLo,
+                                 Register rhsHi, Register output, bool isAdd)
+      DEFINED_ON(x64, arm64, riscv64);
+
+  // Produces the top 64 bits of the 128-bit value `lhs *widen rhs`.  Only used
+  // on 64-bit targets.  On x64, `lhs` must be RAX, `rhs` must be RDX, and all
+  // 5 registers must be distinct.
+  inline void wasmMulI64WideHI64(Register lhs, Register rhs, Register temp0,
+                                 Register temp1, Register output, bool isSigned)
+      DEFINED_ON(x64);
+
+  // The same, but for all other 64-bit targets.  There are no restrictions on
+  // what the registers may be.
+  inline void wasmMulI64WideHI64(Register lhs, Register rhs, Register output,
+                                 bool isSigned) DEFINED_ON(arm64, riscv64);
 
   // ========================================================================
   // Canonicalization primitives.

@@ -1752,6 +1752,8 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitTableGrow();
   [[nodiscard]] bool emitTableSet();
   [[nodiscard]] bool emitTableSize();
+  [[nodiscard]] bool emitI64AddSub128(bool isAdd);
+  [[nodiscard]] bool emitI64MulWide(bool isSigned);
 
   void emitTableBoundsCheck(uint32_t tableIndex, RegI32 address,
                             RegPtr instance);

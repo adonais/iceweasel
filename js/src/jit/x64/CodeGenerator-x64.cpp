@@ -1512,3 +1512,15 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
     masm.imulq(ToOperand(rhs), lhs);
   }
 }
+
+void CodeGenerator::visitWasmMulI64WideHI64(LWasmMulI64WideHI64* lir) {
+  Register lhs = ToRegister(lir->lhs());
+  Register rhs = ToRegister(lir->rhs());
+  Register temp0 = ToRegister(lir->temp0());
+  Register temp1 = ToRegister(lir->temp1());
+  Register output = ToRegister(lir->output());
+  // This holds because both operands are non-AtStart variants.
+  MOZ_ASSERT(output != lhs && output != rhs);
+  MOZ_ASSERT(output != temp0 && output != temp1);
+  masm.wasmMulI64WideHI64(lhs, rhs, temp0, temp1, output, lir->isSigned());
+}

@@ -2130,6 +2130,10 @@ static const char* ThunkedNativeToDescription(SymbolicAddress func) {
       return "call to asm.js native f64 Math.pow";
     case SymbolicAddress::ATan2D:
       return "call to asm.js native f64 Math.atan2";
+    case SymbolicAddress::AddSubI128:
+      return "call to native 128-bit add/sub function";
+    case SymbolicAddress::MulI64Wide:
+      return "call to native 64x64-to-128-bit multiply function";
     case SymbolicAddress::ArrayMemMove:
       return "call to native array.copy (data)";
     case SymbolicAddress::ArrayRefsMove:

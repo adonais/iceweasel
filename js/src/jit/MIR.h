@@ -422,16 +422,19 @@ class AliasSet {
     // The malloc'd block that WasmArrayObject::data_ points at
     WasmArrayDataArea = 1 << 25,
 
+    // The wasm::Instance::baselineScratchWords_ array
+    WasmInstanceScratchWords = 1 << 26,
+
     // The generation counter associated with the global object
-    GlobalGenerationCounter = 1 << 26,
+    GlobalGenerationCounter = 1 << 27,
 
     // The SharedArrayRawBuffer::length field.
-    SharedArrayRawBufferLength = 1 << 27,
+    SharedArrayRawBufferLength = 1 << 28,
 
     Last = SharedArrayRawBufferLength,
 
     Any = Last | (Last - 1),
-    NumCategories = 28,
+    NumCategories = 29,
 
     // Indicates load or store.
     Store_ = 1 << 31

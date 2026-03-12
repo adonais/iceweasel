@@ -1959,6 +1959,20 @@ bool wasm::ValidateOps(ValidatingOpIter& iter, T& dumper,
             dumper.dumpTableIndex(tableIndex);
             break;
           }
+          case uint32_t(MiscOp::I64Add128):
+          case uint32_t(MiscOp::I64Sub128): {
+            if (!iter.readBinaryI128(&nothing, &nothing, &nothing, &nothing)) {
+              return false;
+            }
+            break;
+          }
+          case uint32_t(MiscOp::I64MulWideS):
+          case uint32_t(MiscOp::I64MulWideU): {
+            if (!iter.readBinaryI64Wide(&nothing, &nothing)) {
+              return false;
+            }
+            break;
+          }
           default:
             return iter.unrecognizedOpcode(&op);
         }

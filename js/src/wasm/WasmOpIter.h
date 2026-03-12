@@ -146,6 +146,8 @@ enum class OpKind {
   Nop,
   Unary,
   Binary,
+  BinaryI128,
+  BinaryI64Wide,
   Ternary,
   Comparison,
   Conversion,
@@ -682,6 +684,11 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                     Value* rhs);
   [[nodiscard]] bool readTernary(ValType operandType, Value* v0, Value* v1,
                                  Value* v2);
+
+  [[nodiscard]] bool readBinaryI128(Value* lhsLo, Value* lhsHi, Value* rhsLo,
+                                    Value* rhsHi);
+  [[nodiscard]] bool readBinaryI64Wide(Value* lhs, Value* rhs);
+
   [[nodiscard]] bool readLoad(ValType resultType, uint32_t byteSize,
                               LinearMemoryAddress<Value>* addr);
   [[nodiscard]] bool readStore(ValType resultType, uint32_t byteSize,
@@ -1964,6 +1971,49 @@ inline bool OpIter<Policy>::readTernary(ValType operandType, Value* v0,
   }
 
   infalliblePush(operandType);
+
+  return true;
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readBinaryI128(Value* lhsLo, Value* lhsHi,
+                                           Value* rhsLo, Value* rhsHi) {
+  MOZ_ASSERT(Classify(op_) == OpKind::BinaryI128);
+
+  if (!popWithType(ValType::I64, rhsHi)) {
+    return false;
+  }
+  if (!popWithType(ValType::I64, rhsLo)) {
+    return false;
+  }
+
+  if (!popWithType(ValType::I64, lhsHi)) {
+    return false;
+  }
+  if (!popWithType(ValType::I64, lhsLo)) {
+    return false;
+  }
+
+  infalliblePush(ValType::I64);
+  infalliblePush(ValType::I64);
+
+  return true;
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::readBinaryI64Wide(Value* lhs, Value* rhs) {
+  MOZ_ASSERT(Classify(op_) == OpKind::BinaryI64Wide);
+
+  if (!popWithType(ValType::I64, rhs)) {
+    return false;
+  }
+
+  if (!popWithType(ValType::I64, lhs)) {
+    return false;
+  }
+
+  infalliblePush(ValType::I64);
+  infalliblePush(ValType::I64);
 
   return true;
 }

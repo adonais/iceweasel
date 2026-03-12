@@ -4575,6 +4575,49 @@
   mir_op: WasmAtomicExchangeHeap
 #endif
 
+#ifdef JS_64BIT
+- name: WasmAddSubI128HI64
+  result_type: WordSized
+  operands:
+    lhsLo: WordSized
+    lhsHi: WordSized
+    rhsLo: WordSized
+    rhsHi: WordSized
+  arguments:
+    isAdd: bool
+  mir_op: WasmAddSubI128HI64
+
+- name: WasmMulI64WideHI64
+  result_type: WordSized
+  operands:
+    lhs: WordSized
+    rhs: WordSized
+  arguments:
+    isSigned: bool
+#ifdef JS_CODEGEN_X64
+  num_temps: 2
+#endif
+  mir_op: WasmMulI64WideHI64
+#endif
+
+#ifndef JS_64BIT
+- name: WasmLoadInstanceScratch2xI32
+  result_type: Int64
+  operands:
+    instance: WordSized
+  arguments:
+    byteOffset: uint32_t
+  mir_op: WasmLoadInstanceScratch2xI32
+
+- name: WasmStoreInstanceScratch2xI32
+  operands:
+    value: Int64
+    instance: WordSized
+  arguments:
+    byteOffset: uint32_t
+  mir_op: WasmStoreInstanceScratch2xI32
+#endif
+
 #ifdef FUZZING_JS_FUZZILLI
 - name: FuzzilliHashT
   result_type: WordSized

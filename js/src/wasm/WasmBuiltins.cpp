@@ -136,6 +136,14 @@ constexpr SymbolicAddressSignature SASigPowD = {
     SymbolicAddress::PowD, _F64, _Infallible, _NoTrap, 2, {_F64, _F64, _END}};
 constexpr SymbolicAddressSignature SASigATan2D = {
     SymbolicAddress::ATan2D, _F64, _Infallible, _NoTrap, 2, {_F64, _F64, _END}};
+
+constexpr SymbolicAddressSignature SASigAddSubI128 = {
+    SymbolicAddress::AddSubI128, _VOID, _Infallible, _NoTrap, 2,
+    {_PTR, _I32, _END}};
+constexpr SymbolicAddressSignature SASigMulI64Wide = {
+    SymbolicAddress::MulI64Wide, _VOID, _Infallible, _NoTrap, 2,
+    {_PTR, _I32, _END}};
+
 constexpr SymbolicAddressSignature SASigArrayMemMove = {
     SymbolicAddress::ArrayMemMove,
     _VOID,
@@ -1511,6 +1519,12 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
     case SymbolicAddress::ATan2D:
       *abiType = Args_Double_DoubleDouble;
       return FuncCast(ecmaAtan2, *abiType);
+    case SymbolicAddress::AddSubI128:
+      *abiType = Args_Void_GeneralInt32;
+      return FuncCast(Instance::addSubI128, *abiType);
+    case SymbolicAddress::MulI64Wide:
+      *abiType = Args_Void_GeneralInt32;
+      return FuncCast(Instance::mulI64Wide, *abiType);
     case SymbolicAddress::ArrayMemMove:
       *abiType = Args_Void_GeneralInt32GeneralInt32Int32Int32;
       return FuncCast(WasmArrayMemMove, *abiType);
@@ -1864,6 +1878,8 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
     case SymbolicAddress::LogD:
     case SymbolicAddress::PowD:
     case SymbolicAddress::ATan2D:
+    case SymbolicAddress::AddSubI128:
+    case SymbolicAddress::MulI64Wide:
     case SymbolicAddress::ArrayMemMove:
     case SymbolicAddress::ArrayRefsMove:
     case SymbolicAddress::MemoryGrowM32:

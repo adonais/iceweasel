@@ -4297,6 +4297,9 @@
 - name: WasmLoadInstanceDataField
   gen_boilerplate: false
 
+- name: WasmLoadInstanceScratch2xI32
+  gen_boilerplate: false
+
 - name: WasmLoadGlobalCell
   gen_boilerplate: false
 
@@ -4304,6 +4307,9 @@
   gen_boilerplate: false
 
 - name: WasmStoreInstanceDataField
+  gen_boilerplate: false
+
+- name: WasmStoreInstanceScratch2xI32
   gen_boilerplate: false
 
 - name: WasmStoreGlobalCell
@@ -4536,6 +4542,12 @@
   gen_boilerplate: false
 
 - name: WasmNewArrayObject
+  gen_boilerplate: false
+
+- name: WasmAddSubI128HI64
+  gen_boilerplate: false
+
+- name: WasmMulI64WideHI64
   gen_boilerplate: false
 
 #ifdef FUZZING_JS_FUZZILLI

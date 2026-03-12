@@ -1830,6 +1830,9 @@ void MacroAssembler::mulDoublePtr(ImmPtr imm, Register temp,
 void MacroAssembler::mulFloat32(FloatRegister src, FloatRegister dest) {
   fmul_s(dest, dest, src);
 }
+void MacroAssembler::mul64(const Register64& rhs, const Register64& srcDest) {
+  mul(srcDest.reg, srcDest.reg, rhs.reg);
+}
 void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   mul(srcDest, srcDest, rhs);
 }
@@ -2274,6 +2277,38 @@ void MacroAssembler::xorPtr(Imm32 imm, Register dest) {
 void MacroAssembler::xorPtr(Imm32 imm, Register src, Register dest) {
   ma_xor(dest, src, imm);
 }
+
+// ===============================================================
+// 128-bit arithmetic
+
+void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
+                                        Register rhsLo, Register rhsHi,
+                                        Register output, bool isAdd) {
+  // Require: the output is not the same as any of the inputs.
+  MOZ_RELEASE_ASSERT(output != lhsLo && output != lhsHi && output != rhsLo &&
+                     output != rhsHi);
+  // We use `output` as a temp to hold the carry or borrow.
+  if (isAdd) {
+    add(output, lhsLo, rhsLo);    // output = lhsLo + rhsLo
+    sltu(output, output, lhsLo);  // output = carry from `lhsLo + rhsLo`
+    add(output, output, lhsHi);   // output = carry + lhsHi
+    add(output, output, rhsHi);   // output = carry + lhsHi + rhsHi
+  } else {
+    sltu(output, lhsLo, rhsLo);  // output = borrow from `lhsLo - rhsLo`
+    sub(output, lhsHi, output);  // output = lhsHi - borrow
+    sub(output, output, rhsHi);  // output = lhsHi - borrow - rhsHi
+  }
+}
+
+void MacroAssembler::wasmMulI64WideHI64(Register lhs, Register rhs,
+                                        Register output, bool isSigned) {
+  if (isSigned) {
+    mulh(output, lhs, rhs);
+  } else {
+    mulhu(output, lhs, rhs);
+  }
+}
+
 //}}} check_macroassembler_style
 
 void MacroAssemblerRiscv64Compat::incrementInt32Value(const Address& addr) {

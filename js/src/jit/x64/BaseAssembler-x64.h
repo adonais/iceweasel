@@ -18,6 +18,15 @@ class BaseAssemblerX64 : public BaseAssembler {
  public:
   // Arithmetic operations:
 
+  void adcq_rr(RegisterID src, RegisterID dst) {
+    spew("adcq       %s, %s", GPReg64Name(src), GPReg64Name(dst));
+    m_formatter.oneByteOp64(OP_ADC_GvEv, src, dst);
+  }
+  void sbbq_rr(RegisterID src, RegisterID dst) {
+    spew("sbbq       %s, %s", GPReg64Name(src), GPReg64Name(dst));
+    m_formatter.oneByteOp64(OP_SBB_GvEv, src, dst);
+  }
+
   void addq_rr(RegisterID src, RegisterID dst) {
     spew("addq       %s, %s", GPReg64Name(src), GPReg64Name(dst));
     m_formatter.oneByteOp64(OP_ADD_GvEv, src, dst);

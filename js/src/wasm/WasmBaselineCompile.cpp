@@ -7185,6 +7185,185 @@ bool BaseCompiler::emitTableSetAnyRef(uint32_t tableIndex) {
 
 //////////////////////////////////////////////////////////////////////////////
 //
+// Wide Arithmetic support
+
+bool BaseCompiler::emitI64AddSub128(bool isAdd) {
+  Nothing nothing;
+  if (!iter_.readBinaryI128(&nothing, &nothing, &nothing, &nothing)) {
+    return false;
+  }
+  if (deadCode_) {
+    return true;
+  }
+
+#ifdef JS_64BIT
+  // All 64-bit targets.  Produce inline code.
+  RegI64 temp = needI64();
+  RegI64 xHi, xLo, yHi, yLo;
+  pop2xI64(&yLo, &yHi);
+  pop2xI64(&xLo, &xHi);
+
+  // Compute zHi:zLo = xHi:xLo +/- yHi:yLo.
+  masm.move64(xLo, temp);
+  if (isAdd) {
+    masm.add64(yLo, temp);
+  } else {
+    masm.sub64(yLo, temp);
+  }
+  pushI64(temp);  // zLo
+
+  temp = needI64();
+  masm.wasmAddSubI128HI64(xLo.reg, xHi.reg, yLo.reg, yHi.reg, temp.reg, isAdd);
+  pushI64(temp);  // zHi
+  freeI64(xHi);
+  freeI64(yHi);
+  freeI64(xLo);
+  freeI64(yLo);
+
+#else
+  // All 32-bit targets.  Call a helper function; doing it inline is too
+  // difficult, given x86_32's lack of registers.  The arguments and return
+  // value are passed in Instance::baselineScratchWords_[0..7]; see
+  // Instance::addSubI128 for details.
+  RegPtr instance = needPtr();
+  fr.loadInstancePtr(instance);
+
+  // Pop 4 args, in the sequence yHi, yLo, xHi, xLo, and put them into
+  // Instance::baselineScratchWords_ slots as specified by `wordOffsets`.
+  const int wordOffsets[4] = {6, 4, 2, 0};
+  for (int i = 0; i < 4; i++) {
+    RegI64 reg64 = popI64();
+    stashWord(instance, wordOffsets[i] + 0, RegPtr(reg64.low));
+    stashWord(instance, wordOffsets[i] + 1, RegPtr(reg64.high));
+    freeI64(reg64);
+  }
+
+  freePtr(instance);
+
+  // Compute zHi:zLo = xHi:xLo +/- yHi:yLo.
+  pushI32(isAdd ? 1 : 0);
+  if (!emitInstanceCall(SASigAddSubI128)) {
+    return false;
+  }
+
+  instance = needPtr();
+  fr.loadInstancePtr(instance);
+
+  RegI64 reg64 = needI64();
+  unstashWord(instance, 0, RegPtr(reg64.low));
+  unstashWord(instance, 1, RegPtr(reg64.high));
+  pushI64(reg64);  // zLo
+
+  reg64 = needI64();
+  unstashWord(instance, 2, RegPtr(reg64.low));
+  unstashWord(instance, 3, RegPtr(reg64.high));
+  pushI64(reg64);  // zHi
+
+  freePtr(instance);
+#endif  // JS_64BIT
+
+  return true;
+}
+
+bool BaseCompiler::emitI64MulWide(bool isSigned) {
+  Nothing nothing;
+  if (!iter_.readBinaryI64Wide(&nothing, &nothing)) {
+    return false;
+  }
+  if (deadCode_) {
+    return true;
+  }
+
+#ifdef JS_CODEGEN_X64
+  // 64-bit Intel implementation.  Produce inline code.  The inputs need to be
+  // in rax/rdx, and we also need three temporaries.
+  need2xI64(specific_.rax, specific_.rdx);
+  RegI64 y = popI64ToSpecific(specific_.rdx);
+  RegI64 x = popI64ToSpecific(specific_.rax);
+  RegI64 temp0 = needI64();
+  RegI64 temp1 = needI64();
+  RegI64 temp2 = needI64();
+
+  // Compute zHi:zLo = x *widen y.
+  masm.move64(x, temp0);
+  masm.mul64(y, temp0);
+  pushI64(temp0);  // zLo
+
+  temp0 = needI64();
+  masm.wasmMulI64WideHI64(x.reg, y.reg, temp1.reg, temp2.reg, temp0.reg,
+                          isSigned);
+  pushI64(temp0);  // zHi
+
+  free(temp1);
+  free(temp2);
+  free(x);
+  free(y);
+
+#elif JS_64BIT
+  // All other 64-bit targets.  Produce inline code.  We need just one
+  // temporary.
+  RegI64 y = popI64();
+  RegI64 x = popI64();
+  RegI64 temp0 = needI64();
+
+  // Compute zHi:zLo = x *widen y.
+  masm.move64(x, temp0);
+  masm.mul64(y, temp0);
+  pushI64(temp0);  // zLo
+
+  temp0 = needI64();
+  masm.wasmMulI64WideHI64(x.reg, y.reg, temp0.reg, isSigned);
+  pushI64(temp0);  // zHi
+
+  free(x);
+  free(y);
+
+#else
+  // All 32-bit targets.  Call a helper function.  The arguments and return
+  // value are passed in Instance::baselineScratchWords_[0..4]; see
+  // Instance::mulI64Wide for details.
+  RegPtr instance = needPtr();
+  fr.loadInstancePtr(instance);
+
+  RegI64 reg64 = popI64();  // y
+  stashWord(instance, 2, RegPtr(reg64.low));
+  stashWord(instance, 3, RegPtr(reg64.high));
+  freeI64(reg64);
+
+  reg64 = popI64();  // x
+  stashWord(instance, 0, RegPtr(reg64.low));
+  stashWord(instance, 1, RegPtr(reg64.high));
+  freeI64(reg64);
+
+  freePtr(instance);
+
+  // Compute zHi:zLo = x *widen y.
+  pushI32(isSigned ? 1 : 0);
+  if (!emitInstanceCall(SASigMulI64Wide)) {
+    return false;
+  }
+
+  instance = needPtr();
+  fr.loadInstancePtr(instance);
+
+  reg64 = needI64();
+  unstashWord(instance, 0, RegPtr(reg64.low));
+  unstashWord(instance, 1, RegPtr(reg64.high));
+  pushI64(reg64);  // zLo
+
+  reg64 = needI64();
+  unstashWord(instance, 2, RegPtr(reg64.low));
+  unstashWord(instance, 3, RegPtr(reg64.high));
+  pushI64(reg64);  // zHi
+
+  freePtr(instance);
+#endif  // JS_64BIT
+
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
 // Data and element segment management.
 
 bool BaseCompiler::emitDataOrElemDrop(bool isData) {
@@ -11910,6 +12089,14 @@ bool BaseCompiler::emitBody() {
             CHECK_NEXT(emitTableGrow());
           case uint32_t(MiscOp::TableSize):
             CHECK_NEXT(emitTableSize());
+          case uint32_t(MiscOp::I64Add128):
+            CHECK_NEXT(emitI64AddSub128(/*isAdd=*/true));
+          case uint32_t(MiscOp::I64Sub128):
+            CHECK_NEXT(emitI64AddSub128(/*isAdd=*/false));
+          case uint32_t(MiscOp::I64MulWideS):
+            CHECK_NEXT(emitI64MulWide(/*isSigned=*/true));
+          case uint32_t(MiscOp::I64MulWideU):
+            CHECK_NEXT(emitI64MulWide(/*isSigned=*/false));
           default:
             break;
         }  // switch (op.b1)

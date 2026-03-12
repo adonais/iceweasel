@@ -143,14 +143,22 @@ class alignas(16) Instance {
   }
 
   // The number of baseline scratch storage words available.
-  static constexpr size_t N_BASELINE_SCRATCH_WORDS = 4;
+  static constexpr size_t N_BASELINE_SCRATCH_WORDS = 8;
+
+  // The size and offset of baselineScratchWords_.
+  static constexpr size_t sizeofBaselineScratchWords() {
+    return sizeof(baselineScratchWords_);
+  }
+  static constexpr size_t offsetofBaselineScratchWords() {
+    return offsetof(Instance, baselineScratchWords_);
+  }
 
  private:
   // When compiling with tiering, the jumpTable has one entry for each
   // baseline-compiled function.
   void** jumpTable_;
 
-  // 4 words of scratch storage for the baseline compiler, which can't always
+  // 8 words of scratch storage for the baseline compiler, which can't always
   // use the stack for this.
   uintptr_t baselineScratchWords_[N_BASELINE_SCRATCH_WORDS];
 
@@ -644,6 +652,8 @@ class alignas(16) Instance {
                               void* secondStringArg);
   static int32_t stringCompare(Instance* instance, void* firstStringArg,
                                void* secondStringArg);
+  static void addSubI128(Instance* instance, uint32_t isAdd);
+  static void mulI64Wide(Instance* instance, uint32_t isSigned);
 };
 
 bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,
