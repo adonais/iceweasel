@@ -2621,7 +2621,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
   MWideningOp wideningOp_;
   AliasSet aliases_;
   wasm::MaybeTrapSiteDesc maybeTrap_;
-  mozilla::Maybe<wasm::RefTypeHierarchy> hierarchy_;
+  wasm::MaybeRefType maybeRefType_;
 
   MWasmLoadField(MDefinition* base, MDefinition* keepAlive, size_t offset,
                  mozilla::Maybe<uint32_t> structFieldIndex, MIRType type,
@@ -2634,7 +2634,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
         wideningOp_(wideningOp),
         aliases_(aliases),
         maybeTrap_(std::move(maybeTrap)),
-        hierarchy_(maybeRefType.hierarchy()) {
+        maybeRefType_(maybeRefType) {
     MOZ_ASSERT(offset <= INT32_MAX);
     // "if you want to widen the value when it is loaded, the destination type
     // must be Int32".
@@ -2684,9 +2684,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
   MWideningOp wideningOp() const { return wideningOp_; }
   AliasSet getAliasSet() const override { return aliases_; }
   wasm::MaybeTrapSiteDesc maybeTrap() const { return maybeTrap_; }
-  mozilla::Maybe<wasm::RefTypeHierarchy> hierarchy() const {
-    return hierarchy_;
-  }
+  wasm::MaybeRefType maybeRefType() const { return maybeRefType_; }
 
   bool congruentTo(const MDefinition* ins) const override {
     if (!ins->isWasmLoadField()) {
@@ -2697,7 +2695,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
            structFieldIndex() == other->structFieldIndex() &&
            wideningOp() == other->wideningOp() &&
            getAliasSet().flags() == other->getAliasSet().flags() &&
-           hierarchy() == other->hierarchy();
+           maybeRefType() == other->maybeRefType();
   }
 
   virtual AliasType mightAlias(const MDefinition* ins) const override;
