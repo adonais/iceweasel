@@ -481,6 +481,15 @@
           textDirective: "text=Nuclear%20weapons,debate",
         },
         {
+          name: "Test for Bug 2022547: Long selection ending with punctuation",
+          startContainer: rangeBasedWihSpaceInTheMiddle.firstChild,
+          startOffset: 0,
+          endContainer: rangeBasedWihSpaceInTheMiddle.firstChild,
+          endOffset: rangeBasedWihSpaceInTheMiddle.textContent.indexOf(" These "),
+          content: "Nuclear weapons have only twice been used in warfare, both times by the United States against Japan at the end of World War II. On August 6, 1945, the United States Army Air Forces (USAAF) detonated a uranium gun-type fission bomb nicknamed \"Little Boy\" over the Japanese city of Hiroshima; three days later, on August 9, the USAAF[4] detonated a plutonium implosion-type fission bomb nicknamed \"Fat Man\" over the Japanese city of Nagasaki.",
+          textDirective: "text=Nuclear%20weapons,Nagasaki%2E",
+        },
+        {
           name: "Test for Bug 1987845: Punctuation after first word of range",
           startContainer: rangeBasedWithPunctuationAfterFirstWordStart.firstChild,
           startOffset: 0,

@@ -133,14 +133,14 @@ TextDirectiveCreator::ExtendRangeToWordBoundaries(AbstractRange* aRange) {
   }
   RangeBoundary startPoint = TextDirectiveUtil::FindNextNonWhitespacePosition<
       TextScanDirection::Right>(aRange->StartRef());
-  startPoint =
-      TextDirectiveUtil::FindWordBoundary<TextScanDirection::Left>(startPoint);
+  startPoint = TextDirectiveUtil::FindWordBoundary<TextScanDirection::Left>(
+      startPoint, TextDirectiveUtil::BreakOnPunctuation::Yes);
 
   RangeBoundary endPoint =
       TextDirectiveUtil::FindNextNonWhitespacePosition<TextScanDirection::Left>(
           aRange->EndRef());
-  endPoint =
-      TextDirectiveUtil::FindWordBoundary<TextScanDirection::Right>(endPoint);
+  endPoint = TextDirectiveUtil::FindWordBoundary<TextScanDirection::Right>(
+      endPoint, TextDirectiveUtil::BreakOnPunctuation::Yes);
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
       startPoint, endPoint);
@@ -563,8 +563,8 @@ RangeBasedTextDirectiveCreator::FindAllMatchingCandidates() {
   auto searchEnd =
       TextDirectiveUtil::FindNextNonWhitespacePosition<TextScanDirection::Left>(
           mRange->EndRef());
-  searchEnd =
-      TextDirectiveUtil::FindWordBoundary<TextScanDirection::Left>(searchEnd);
+  searchEnd = TextDirectiveUtil::FindWordBoundary<TextScanDirection::Left>(
+      searchEnd, TextDirectiveUtil::BreakOnPunctuation::No);
 
   const nsTArray<RefPtr<AbstractRange>> endContentRanges =
       MOZ_TRY(FindAllMatchingRanges(mLastWordOfEndContent, mRange->StartRef(),

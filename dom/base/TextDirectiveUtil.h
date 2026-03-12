@@ -170,6 +170,7 @@ class TextDirectiveUtil final {
   static RangeBoundary FindNextNonWhitespacePosition(
       const RangeBoundary& aPoint);
 
+  enum class BreakOnPunctuation : bool { No, Yes };
   /**
    * @brief Creates a new RangeBoundary at the nearest word boundary.
    *
@@ -177,13 +178,15 @@ class TextDirectiveUtil final {
    * This algorithm can find word boundaries across node boundaries and stops at
    * a block boundary.
    *
-   * @param aRangeBoundary[in] The range boundary that should be moved.
-   *                           Must be set and valid.
-   * @param direction[in]     The direction into which to move.
+   * @param aRangeBoundary[in]  The range boundary that should be moved.
+   *                            Must be set and valid.
+   * @param direction[in]       The direction into which to move.
+   * @param aBreakOnPunctuation Whether to count punctuation as separate words.
    * @return A new `RangeBoundary` which is moved to the nearest word boundary.
    */
   template <TextScanDirection direction>
-  static RangeBoundary FindWordBoundary(const RangeBoundary& aRangeBoundary);
+  static RangeBoundary FindWordBoundary(const RangeBoundary& aRangeBoundary,
+                                        BreakOnPunctuation aBreakOnPunctuation);
 
   /**
    * @brief Compares the common substring between a reference string and a text
@@ -433,7 +436,8 @@ template <TextScanDirection direction>
 
 template <TextScanDirection direction>
 /*static*/ RangeBoundary TextDirectiveUtil::FindWordBoundary(
-    const RangeBoundary& aRangeBoundary) {
+    const RangeBoundary& aRangeBoundary,
+    BreakOnPunctuation aBreakOnPunctuation) {
   MOZ_ASSERT(aRangeBoundary.IsSetAndValid());
   nsINode* node = aRangeBoundary.GetContainer();
   uint32_t offset = *aRangeBoundary.Offset(
@@ -482,15 +486,34 @@ template <TextScanDirection direction>
         --offset;
       }
     }
-    const uint32_t pos =
+    uint32_t pos =
         direction == TextScanDirection::Left ? offset : bufferLength + offset;
-    const auto [wordStart, wordEnd] =
-        intl::WordBreaker::FindWord(textBuffer, pos);
-    offset = direction == TextScanDirection::Left ? wordStart
-                                                  : wordEnd - bufferLength;
-    node = textNode;
-    if (offset && offset < textNode->Length()) {
-      break;
+    while (true) {
+      const auto [wordStart, wordEnd] =
+          intl::WordBreaker::FindWord(textBuffer, pos);
+      offset = direction == TextScanDirection::Left ? wordStart
+                                                    : wordEnd - bufferLength;
+      node = textNode;
+      if (offset == 0 || offset >= textNode->Length()) {
+        // need to include more text nodes to be sure of word boundary
+        break;
+      }
+      if (aBreakOnPunctuation == BreakOnPunctuation::Yes ||
+          !WordIsJustWhitespaceOrPunctuation(textBuffer, wordStart, wordEnd)) {
+        return {node, offset};
+      }
+      // Word is just punctuation - continue to next word break
+      if constexpr (direction == TextScanDirection::Left) {
+        if (wordStart == 0) {
+          break;
+        }
+        pos = wordStart - 1;
+      } else {
+        if (wordEnd == textBuffer.Length()) {
+          break;
+        }
+        pos = wordEnd;
+      }
     }
   }
   return {node, offset};
