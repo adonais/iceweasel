@@ -29,6 +29,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   //   "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
 });
 
+// Important! Changing or removing this value requires a security review.
+//
+// Hard code a reasonable working limit for how many history results that a language model
+// can retrieve. The metadata from each of these history items contains untrusted text
+// content that we limit (for instance with truncation) in order to treat this information
+// as trusted.
+//
+// We also make this limited in a non-configurable way so that it reduces the risk
+// of exfiltration for private data. A language model that can make arbitrary requests
+// through prompt injection could leak the contents of a user's entire history.
+const MAX_HISTORY_RESULTS = 15;
+
 const GET_OPEN_TABS = "get_open_tabs";
 const SEARCH_BROWSING_HISTORY = "search_browsing_history";
 const GET_PAGE_CONTENT = "get_page_content";
@@ -246,8 +258,6 @@ export async function getOpenTabs(n = 15, _secProps) {
  * - searchTerm: ""        - string used for search
  * - startTs: null         - local ISO timestamp lower bound, or null
  * - endTs: null           - local ISO timestamp upper bound, or null
- * - historyLimit: 15      - max number of results
- *
  * Detailed behavior and implementation are in SearchBrowsingHistory.sys.mjs.
  *
  * @param {object} toolParams
@@ -259,8 +269,6 @@ export async function getOpenTabs(n = 15, _secProps) {
  *  Optional local ISO-8601 start timestamp (e.g. "2025-11-07T09:00:00").
  * @param {string|null} toolParams.endTs
  *  Optional local ISO-8601 end timestamp (e.g. "2025-11-07T09:00:00").
- * @param {number} toolParams.historyLimit
- *  Maximum number of history results to return.
  * @param {object} _secProps
  * @returns {Promise<object>}
  *  A promise resolving to an object with the search term and history results.
@@ -270,18 +278,13 @@ export async function getOpenTabs(n = 15, _secProps) {
 export async function searchBrowsingHistory(toolParams, _secProps) {
   const params = toolParams && typeof toolParams === "object" ? toolParams : {};
 
-  const {
-    searchTerm = "",
-    startTs = null,
-    endTs = null,
-    historyLimit = 15,
-  } = params;
+  const { searchTerm = "", startTs = null, endTs = null } = params;
 
   return implSearchBrowsingHistory({
     searchTerm,
     startTs,
     endTs,
-    historyLimit,
+    historyLimit: MAX_HISTORY_RESULTS,
   });
 }
 
