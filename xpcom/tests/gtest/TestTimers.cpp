@@ -219,64 +219,62 @@ const unsigned kSlowdownFactor = 5;
 const unsigned kSlowdownFactor = 1;
 #endif
 
+// ComputeAcceptableFiringDelay can delay timer firings by up to
+// timerDuration / 8 for coalescing. As of bug 1783405, coalescing can only
+// move timers later, so only upper bounds need widening.
+constexpr unsigned AddCoalescingSlack(unsigned aMs) {
+  return aMs + (aMs + 7) / 8;
+}
+
+constexpr unsigned kUpperToleranceMs = 10;
+constexpr unsigned kLowerToleranceMs = 5;
+constexpr unsigned kTightLowerToleranceMs = 1;
+
+void WaitAssertFired(TimerHelper* timer, unsigned expectedMs,
+                     unsigned upperTolMs, unsigned lowerTolMs,
+                     unsigned blockMs) {
+  auto delay = timer->WaitAndBlockCallback(
+      AddCoalescingSlack(expectedMs * kSlowdownFactor) +
+          upperTolMs * kSlowdownFactor,
+      blockMs * kSlowdownFactor);
+  ASSERT_TRUE(delay.isSome());
+  EXPECT_LT(*delay, AddCoalescingSlack(expectedMs * kSlowdownFactor) +
+                        upperTolMs * kSlowdownFactor);
+  EXPECT_GT(*delay, (expectedMs - lowerTolMs) * kSlowdownFactor);
+}
+
 TEST_F(SimpleTimerTest, OneShot) {
   auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_ONE_SHOT);
-  auto res = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(res.isSome());
-  ASSERT_LT(*res, 110U * kSlowdownFactor);
-  ASSERT_GT(*res, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
 }
 
 TEST_F(SimpleTimerTest, TimerWithStoppedTarget) {
   mThread->Shutdown();
   auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_ONE_SHOT);
-  auto res = timer->Wait(110 * kSlowdownFactor);
+  auto res = timer->Wait((100 + kUpperToleranceMs) * kSlowdownFactor);
   ASSERT_FALSE(res.isSome());
 }
 
 TEST_F(SimpleTimerTest, SlackRepeating) {
   auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_REPEATING_SLACK);
-  auto delay =
-      timer->WaitAndBlockCallback(110 * kSlowdownFactor, 50 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 50);
   // REPEATING_SLACK timers re-schedule with the full duration when the timer
   // callback completes
-
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 160U * kSlowdownFactor);
-  ASSERT_GT(*delay, 145U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 150, kUpperToleranceMs, kLowerToleranceMs, 0);
 }
 
 TEST_F(SimpleTimerTest, RepeatingPrecise) {
   auto timer = MakeTimer(100 * kSlowdownFactor,
                          nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP);
-  auto delay =
-      timer->WaitAndBlockCallback(110 * kSlowdownFactor, 50 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 50);
 
   // Delays smaller than the timer's period do not effect the period.
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
 
   // Delays larger than the timer's period should result in the skipping of
   // firings, but the cadence should remain the same.
-  delay =
-      timer->WaitAndBlockCallback(110 * kSlowdownFactor, 150 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
-
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 210U * kSlowdownFactor);
-  ASSERT_GT(*delay, 195U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 150);
+  WaitAssertFired(timer.get(), 200, kUpperToleranceMs, kLowerToleranceMs, 0);
 }
 
 // gtest on 32bit Win7 debug build is unstable and somehow this test
@@ -555,15 +553,9 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingSlack) {
 
   // Timer thread slept for ~200ms, longer than the duration of the timer, so
   // it should fire pretty much immediately.
-  delay = timer->Wait(10 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 210 * kSlowdownFactor);
-  ASSERT_GT(*delay, 199 * kSlowdownFactor);
-
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 200, kUpperToleranceMs, kTightLowerToleranceMs,
+                  0);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
 
   PauseTimerThread();
   delay = timer->Wait(50 * kSlowdownFactor);
@@ -572,10 +564,7 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingSlack) {
 
   // Timer thread only slept for ~50 ms, shorter than the duration of the
   // timer, so there should be no effect on the timing.
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
 }
 
 TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
@@ -591,21 +580,12 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
 
   // Timer thread slept longer than the duration of the timer, so it should
   // fire pretty much immediately.
-  delay = timer->Wait(10 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 360U * kSlowdownFactor);
-  ASSERT_GT(*delay, 349U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 350, kUpperToleranceMs, kTightLowerToleranceMs,
+                  0);
 
   // After that, we should get back on our original cadence
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 60U * kSlowdownFactor);
-  ASSERT_GT(*delay, 45U * kSlowdownFactor);
-
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 50, kUpperToleranceMs, kLowerToleranceMs, 0);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
 
   PauseTimerThread();
   delay = timer->Wait(50 * kSlowdownFactor);
@@ -614,10 +594,7 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
 
   // Timer thread only slept for ~50 ms, shorter than the duration of the
   // timer, so there should be no effect on the timing.
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
 }
 
 #define FUZZ_MAX_TIMEOUT 9
