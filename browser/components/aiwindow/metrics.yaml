@@ -15,48 +15,355 @@ smart_window:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2015626
     data_reviews:
-      - https://phabricator.services.mozilla.com/D282482
+      - https://phabricator.services.mozilla.com/D282873
     data_sensitivity:
       - interaction
     notification_emails:
       - npodgurski@mozilla.com
+    expires: never
     extra_keys:
       chat_id: &chat_id
         type: string
         description: >
           UUID for this smart window session. Unique identifier for each chat conversation
-    expires: never
-  memories_toggle:
+
+  # Chat Assistant
+  chat_previous_session:
     type: event
     description: |
-      Recorded when the user clicks the toggle to turn memories on or off for that chat
+      User clicks on previous session button
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2015626
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      tabs:
+        type: quantity
+        unit: count
+        description: >
+          Number of tabs restored
+  history_displayed:
+    type: event
+    description: |
+      Results from Ask History are displayed to the user
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: &location
+        type: string
+        description: >
+          Which input was used to request history: home, urlbar, or sidebar
+      chat_id: *chat_id
+      message_seq: &message_seq
+        type: quantity
+        unit: count
+        description: >
+          Number of messages in that chat
+      total: &total
+        type: quantity
+        unit: count
+        description: >
+          Number of history entries displayed
+      reason: &history_reason
+        type: string
+        description: >
+          What triggered the history display: ask or restore
+
+  history_click:
+    type: event
+    description: |
+      User clicks on a history result
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      total: *total
+      position: &position
+        type: quantity
+        unit: count
+        description: >
+          Position of the entry that was clicked
+
+  chat_retrieved:
+    type: event
+    description: |
+      User retrieves a chat from history
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      num_messages: &num_messages
+        type: quantity
+        unit: count
+        description: >
+          Number of messages in that chat.
+      time_delta:
+        type: quantity
+        unit: minutes
+        description: >
+          Elapsed time in minutes between chat session completion and retrieval
+
+  quick_prompt_displayed:
+    type: event
+    description: |
+      User is presented with one or more quick prompts
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
     data_reviews:
       - https://phabricator.services.mozilla.com/D282482
     data_sensitivity:
       - interaction
     notification_emails:
       - npodgurski@mozilla.com
-    extra_keys:
-      chat_id: *chat_id
-      toggle:
-        type: boolean
-        description: >
-          Whether the memories feature is enabled or not. True for turning on and false for turning off
     expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      prompts:
+        type: quantity
+        unit: count
+        description: >
+          Number of prompts displayed
+
   quick_prompt_clicked:
     type: event
     description: |
       Recorded when the user selects a prompt suggestion in smart window mode
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2015626
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
     data_reviews:
       - https://phabricator.services.mozilla.com/D282482
     data_sensitivity:
       - interaction
     notification_emails:
       - npodgurski@mozilla.com
-    extra_keys:
-      chat_id: *chat_id
     expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      starter: &starter
+        type: boolean
+        description: >
+          Boolean indicating if the prompt is a conversation starter, as opposed to a follow-up
+
+  get_page_content:
+    type: event
+    description: |
+      Browser reads the contents of a tab to include in chat result
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      length:
+        type: quantity
+        unit: count
+        description: >
+          Number of characters read from the page
+      time:
+        type: quantity
+        unit: ms
+        description: >
+          Time to process the request
+
+  link_click:
+    type: event
+    description: |
+      User clicks a link within the response
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      link_type:
+        type: string
+        description: >
+          Type of link clicked
+
+  memory_removed_panel:
+    type: event
+    description: |
+      User removes a single memory from the memories panel
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      memories:
+        type: quantity
+        unit: count
+        description: >
+          Total number of memories still present after the removal
+
+  memory_applied:
+    type: event
+    description: |
+      Triggered when a memory is used as part of query to provide response/results to user
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  memory_applied_click:
+    type: event
+    description: |
+      User clicks on memories applied tooltip
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  memories_view:
+    type: event
+    description: |
+      User views applied memories via hover, click, or inline display
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      display:
+        type: string
+        description: >
+          hover, click, inline
+
+  memories_applied_impression:
+    type: event
+    description: |
+      Impression of memories applied tooltip
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  retry_no_memories:
+    type: event
+    description: |
+      User selects retry without memories
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+
+  memories_toggle:
+    type: event
+    description: |
+      Recorded when the user clicks the toggle to turn memories on or off for that chat
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287197
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npodgurski@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      memories:
+        type: quantity
+        unit: count
+        description: >
+          Total number of memories available
+      toggle: &toggle
+        type: boolean
+        description: >
+          Whether the memories feature is enabled or not. True for turning on and false for turning off
