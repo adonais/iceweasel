@@ -41,8 +41,7 @@ export const QRCodeGenerator = {
       // Use worker thread to avoid blocking main thread
       const qrData = await worker.generateQRCode(url, "H");
 
-      // Use a higher resolution for better quality (scale up 4x)
-      const scale = 4;
+      const scale = 10;
       const canvas = document.createElementNS(
         "http://www.w3.org/1999/xhtml",
         "canvas"
