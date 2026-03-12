@@ -209,13 +209,8 @@ static MediaResult ValidateBufferAndPicture(
   } else {
     MOZ_ASSERT(aBuffer.mPlanes[1].mHeight == aBuffer.mPlanes[0].mHeight);
   }
-  // The following situation should never happen unless there is a bug
-  // in the decoder
-  if (aBuffer.mPlanes[1].mWidth != aBuffer.mPlanes[2].mWidth ||
-      aBuffer.mPlanes[1].mHeight != aBuffer.mPlanes[2].mHeight) {
-    return MediaResult(NS_ERROR_INVALID_ARG,
-                       "Chroma planes with different sizes");
-  }
+  MOZ_ASSERT(aBuffer.mPlanes[1].mWidth == aBuffer.mPlanes[2].mWidth);
+  MOZ_ASSERT(aBuffer.mPlanes[1].mHeight == aBuffer.mPlanes[2].mHeight);
   // The following situations could be triggered by invalid input
   if (aPicture.width <= 0 || aPicture.height <= 0) {
     return MediaResult(NS_ERROR_INVALID_ARG, "Empty picture rect");
