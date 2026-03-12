@@ -432,10 +432,12 @@ bool DCLayerTree::InitializeVideoOverlaySupport() {
 
     if (FlagsSupportsOverlays(info->mRgb10a2OverlaySupportFlags)) {
       info->mSupportsHDR = true;
+      info->mSupportsHardwareOverlayRGB10A2 = true;
     }
 
     if (FlagsSupportsOverlays(info->mRgba16fOverlaySupportFlags)) {
       info->mSupportsHDR = true;
+      info->mSupportsHardwareOverlayRGBA16F = true;
     }
 
     if (!info->mSupportsHardwareOverlays &&
@@ -1308,6 +1310,14 @@ bool DCLayerTree::EnsureVideoProcessor(const gfx::IntSize& aInputSize,
 
 bool DCLayerTree::SupportsHardwareOverlays() {
   return sGpuOverlayInfo->mSupportsHardwareOverlays;
+}
+
+bool DCLayerTree::SupportsHardwareOverlayRGB10A2() {
+  return sGpuOverlayInfo->mSupportsHardwareOverlayRGB10A2;
+}
+
+bool DCLayerTree::SupportsHardwareOverlayRGBA16F() {
+  return sGpuOverlayInfo->mSupportsHardwareOverlayRGBA16F;
 }
 
 bool DCLayerTree::SupportsSwapChainTearing() {
@@ -2382,6 +2392,8 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
 
   bool useHDR =
       gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR && monitorIsHDR;
+  bool useHDRRGB10A2 = useHDR && mDCLayerTree->SupportsHardwareOverlayRGB10A2();
+  bool useHDRRGBA16F = useHDR && mDCLayerTree->SupportsHardwareOverlayRGBA16F();
 
   if (profiler_thread_is_being_profiled_for_markers()) {
     nsPrintfCString str(
@@ -2400,7 +2412,8 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
     mSwapChainSize = swapChainSize;
     mIsDRM = isDRM;
 
-    auto swapChainFormat = GetSwapChainFormat(useVpAutoHDR, useHDR);
+    auto swapChainFormat =
+        GetSwapChainFormat(useVpAutoHDR, useHDRRGB10A2, useHDRRGBA16F);
     bool useYUVSwapChain = IsYUVSwapChainFormat(swapChainFormat);
     if (useYUVSwapChain) {
       // Tries to create YUV SwapChain
@@ -2428,7 +2441,8 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
 
       // Disable VpAutoHDR
       useVpAutoHDR = false;
-      swapChainFormat = GetSwapChainFormat(useVpAutoHDR, useHDR);
+      swapChainFormat =
+          GetSwapChainFormat(useVpAutoHDR, useHDRRGB10A2, useHDRRGBA16F);
       nsPrintfCString str(
           "Creating video swapchain for RGB as DXGI format %d after fallback "
           "from VpAutoHDR",
@@ -2571,11 +2585,15 @@ void DCSurfaceVideo::OnCompositorEndFrame(int aFrameId, uint32_t aDurationMs) {
 }
 
 DXGI_FORMAT DCSurfaceVideo::GetSwapChainFormat(bool aUseVpAutoHDR,
-                                               bool aUseHDR) {
+                                               bool aUseRGB10A2,
+                                               bool aUseRGBA16F) {
   if (aUseVpAutoHDR) {
     return DXGI_FORMAT_R16G16B16A16_FLOAT;
   }
-  if (aUseHDR) {
+  if (aUseRGB10A2) {
+    return DXGI_FORMAT_R10G10B10A2_UNORM;
+  }
+  if (aUseRGBA16F) {
     return DXGI_FORMAT_R16G16B16A16_FLOAT;
   }
   if (mFailedYuvSwapChain || !mDCLayerTree->SupportsHardwareOverlays()) {

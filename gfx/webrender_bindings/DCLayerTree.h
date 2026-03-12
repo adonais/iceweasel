@@ -77,6 +77,8 @@ class RenderDcompSurfaceTextureHost;
 struct GpuOverlayInfo {
   bool mSupportsOverlays = false;
   bool mSupportsHardwareOverlays = false;
+  bool mSupportsHardwareOverlayRGB10A2 = false;
+  bool mSupportsHardwareOverlayRGBA16F = false;
   DXGI_FORMAT mOverlayFormatUsed = DXGI_FORMAT_B8G8R8A8_UNORM;
   DXGI_FORMAT mOverlayFormatUsedHdr = DXGI_FORMAT_R16G16B16A16_FLOAT;
   UINT mNv12OverlaySupportFlags = 0;
@@ -200,6 +202,8 @@ class DCLayerTree {
   GLuint GetOrCreateFbo(int aWidth, int aHeight);
 
   bool SupportsHardwareOverlays();
+  bool SupportsHardwareOverlayRGB10A2();
+  bool SupportsHardwareOverlayRGBA16F();
   DXGI_FORMAT GetOverlayFormatForSDR();
 
   bool SupportsSwapChainTearing();
@@ -614,7 +618,8 @@ class DCSurfaceVideo : public DCSurface {
  protected:
   virtual ~DCSurfaceVideo();
 
-  DXGI_FORMAT GetSwapChainFormat(bool aUseVpAutoHDR, bool aUseHDR);
+  DXGI_FORMAT GetSwapChainFormat(bool aUseVpAutoHDR, bool aUseRGB10A2,
+                                 bool aUseRGBA16F);
   bool CreateVideoSwapChain(DXGI_FORMAT aFormat);
   bool CallVideoProcessorBlt();
   void ReleaseDecodeSwapChainResources();
