@@ -42,7 +42,9 @@ pub fn repeated_pattern(
         ),
         texture_input: PatternTextureInput::new(repeat.src_task_id),
         base_color: ColorF::WHITE,
-        is_opaque: repeat.src_is_opaque && repeat.spacing.is_empty(),
+        is_opaque: repeat.src_is_opaque
+            && repeat.spacing.width <= 0.0
+            && repeat.spacing.height <= 0.0,
     }
 }
 
