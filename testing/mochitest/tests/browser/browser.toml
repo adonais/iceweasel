@@ -104,6 +104,8 @@ support-files = [
 
 ["browser_head.js"]
 
+["browser_nodeserver_simple.js"]
+
 ["browser_parameters.js"]
 
 ["browser_pass.js"]
