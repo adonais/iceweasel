@@ -45,8 +45,8 @@ RefPtr<IAppCapability> GetWifiControlAppCapability() {
   NS_ENSURE_TRUE(appCapabilityStatics, nullptr);
 
   RefPtr<IAppCapability> appCapability;
-  HRESULT hr = appCapabilityStatics->Create(
-      HStringReference(L"wifiControl").Get(), getter_AddRefs(appCapability));
+  HRESULT hr = appCapabilityStatics->Create(HStringReference(L"location").Get(),
+                                            getter_AddRefs(appCapability));
   NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
   NS_ENSURE_TRUE(appCapability, nullptr);
   return appCapability;
