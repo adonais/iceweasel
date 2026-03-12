@@ -1074,10 +1074,27 @@ Preferences.addSetting({
   pref: "browser.ipProtection.bandwidth.enabled",
 });
 Preferences.addSetting({
+  id: "ipProtectionBandwidthSection",
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionBandwidthVisible",
+    "ipProtectionNotOptedIn",
+  ],
+  visible: ({
+    ipProtectionVisible,
+    ipProtectionBandwidthVisible,
+    ipProtectionNotOptedIn,
+  }) =>
+    ipProtectionVisible.value &&
+    ipProtectionBandwidthVisible.value &&
+    !ipProtectionNotOptedIn.value,
+});
+Preferences.addSetting({
   id: "ipProtectionBandwidth",
   deps: [
     "ipProtectionVisible",
     "ipProtectionBandwidthVisible",
+    "ipProtectionBandwidthSection",
     "ipProtectionNotOptedIn",
   ],
   visible: ({

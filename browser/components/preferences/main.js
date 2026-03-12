@@ -3576,7 +3576,6 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "ipProtectionExceptions",
-        l10nId: "ip-protection-site-exceptions",
         control: "moz-fieldset",
         controlAttrs: {
           ".headingLevel": 3,
@@ -3606,6 +3605,11 @@ SettingGroupManager.registerGroups({
         ],
       },
       {
+        id: "ipProtectionBandwidthSection",
+        control: "moz-box-item",
+        items: [{ id: "ipProtectionBandwidth", control: "bandwidth-usage" }],
+      },
+      {
         id: "ipProtectionLinks",
         control: "moz-box-link",
         l10nId: "ip-protection-vpn-upgrade-link",
@@ -3613,7 +3617,6 @@ SettingGroupManager.registerGroups({
           href: "https://www.mozilla.org/products/vpn/",
         },
       },
-      { id: "ipProtectionBandwidth", control: "bandwidth-usage" },
     ],
   },
   cookiesAndSiteData: {
