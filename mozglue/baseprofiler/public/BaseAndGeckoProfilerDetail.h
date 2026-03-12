@@ -24,6 +24,13 @@ namespace mozilla {
 class ProfileBufferChunkManagerWithLocalLimit;
 
 // Centrally defines the version of the gecko profiler JSON format.
+// NOTE: when this value is updated, the revision of the Firefox Profiler
+// toolchain in-tree
+// (https://github.com/mozilla-firefox/firefox/blob/main/taskcluster/kinds/fetch/toolchains.yml#L817)
+// should also be updated to ensure symbolication is kept up to date. It should
+// be updated with a stable commit from Firefox Profiler's production branch
+// (https://github.com/firefox-devtools/profiler/tree/production) that contains
+// the version bump.
 const int GECKO_PROFILER_FORMAT_VERSION = 33;
 
 namespace baseprofiler::detail {
