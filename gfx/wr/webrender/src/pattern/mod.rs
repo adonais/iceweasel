@@ -5,7 +5,6 @@
 pub mod gradient;
 pub mod box_shadow;
 pub mod repeat;
-pub mod image;
 
 use api::units::LayoutVector2D;
 use api::{ColorF, units::DeviceRect};
@@ -133,14 +132,6 @@ impl Pattern {
             base_color: ColorF::WHITE,
             is_opaque,
         }
-    }
-
-    pub fn as_render_task(&self) -> Option<RenderTaskId> {
-        if self.kind != PatternKind::ColorOrTexture || self.texture_input.task_id == RenderTaskId::INVALID {
-            return None;
-        }
-
-        Some(self.texture_input.task_id)
     }
 }
 

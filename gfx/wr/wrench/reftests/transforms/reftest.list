@@ -1,4 +1,4 @@
-fuzzy(1,50) platform(linux,mac) == local-clip.yaml local-clip.png
+platform(linux,mac) == local-clip.yaml local-clip.png
 platform(linux,mac) == rotated-clip.yaml rotated-clip.png
 platform(linux,mac) == rotated-clip-large.yaml rotated-clip-large.png
 platform(linux,mac) == image-rotated-clip.yaml image-rotated-clip.png

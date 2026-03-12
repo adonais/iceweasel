@@ -70,7 +70,7 @@ platform(linux,mac) == backdrop-filter-perspective.yaml backdrop-filter-perspect
 platform(linux,mac) == backdrop-filter-across-tiles.yaml backdrop-filter-across-tiles.png
 platform(linux,mac) == backdrop-filter-chain.yaml backdrop-filter-chain.png
 platform(linux,mac) == backdrop-filter-overlap.yaml backdrop-filter-overlap.png
-fuzzy(1,100) platform(linux,mac) == backdrop-filter-blur-across-tiles.yaml backdrop-filter-blur-across-tiles.png
+platform(linux,mac) == backdrop-filter-blur-across-tiles.yaml backdrop-filter-blur-across-tiles.png
 == fuzzy(1,4900) backdrop-filter-isolation.yaml backdrop-filter-isolation-ref.yaml
 #platform(linux,mac) == backdrop-filter-drop-shadow.yaml backdrop-filter-drop-shadow.png
 == backdrop-filter-blur-edge-mode.yaml backdrop-filter-blur-edge-mode-ref.yaml
