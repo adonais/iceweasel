@@ -1151,6 +1151,7 @@ class AboutTranslations {
       return;
     }
 
+    this.#clearTranslationRequestTelemetryThrottle();
     targetSection.classList.add("has-translation-error");
     translationErrorMessage.hidden = false;
     this.#disableSwapLanguagesButton();

@@ -498,3 +498,167 @@ add_task(
     await cleanup();
   }
 );
+
+/**
+ * Tests that about:translations records translations.error telemetry and
+ * resets translation-request telemetry throttling when the error message is shown.
+ */
+add_task(
+  async function test_about_translations_error_telemetry_resets_request_throttle() {
+    const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
+      {
+        languagePairs: [
+          { fromLang: "en", toLang: "fr" },
+          { fromLang: "fr", toLang: "en" },
+        ],
+        autoDownloadFromRemoteSettings: false,
+      }
+    );
+
+    await aboutTranslationsTestUtils.setTranslationRequestTelemetryThrottleDelay(
+      10_000
+    );
+    await aboutTranslationsTestUtils.setSourceLanguageSelectorValue("en");
+    await aboutTranslationsTestUtils.setTargetLanguageSelectorValue("fr");
+
+    await TestTranslationsTelemetry.assertEvent(Glean.translations.error, {
+      expectedEventCount: 0,
+    });
+
+    const firstRequestText = "This should fail.";
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+            { sourceText: firstRequestText },
+          ],
+          [
+            AboutTranslationsTestUtils.Events.TranslationRequested,
+            { translationId: 1 },
+          ],
+        ],
+      },
+      async () => {
+        await aboutTranslationsTestUtils.setSourceTextAreaValue(
+          firstRequestText
+        );
+        await aboutTranslationsTestUtils.rejectDownloads(1);
+        await aboutTranslationsTestUtils.waitForTranslationErrorMessage({
+          visible: true,
+        });
+      }
+    );
+
+    await TestTranslationsTelemetry.assertLabeledCounter(
+      Glean.translations.requestCount,
+      [
+        ["full_page", 0],
+        ["select", 0],
+        ["about_translations", 1],
+      ]
+    );
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translations.translationRequest,
+      {
+        expectedEventCount: 1,
+      }
+    );
+    await TestTranslationsTelemetry.assertEvent(Glean.translations.error, {
+      expectedEventCount: 1,
+      assertForMostRecentEvent: {
+        reason: "Error: Intentionally rejecting downloads.",
+      },
+    });
+
+    const firstRetryErrorMessageHidden =
+      aboutTranslationsTestUtils.waitForTranslationErrorMessage({
+        visible: false,
+      });
+
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.TranslationRequested,
+            { translationId: 2 },
+          ],
+        ],
+      },
+      async () => {
+        await aboutTranslationsTestUtils.clickTranslationErrorButton();
+        await firstRetryErrorMessageHidden;
+        await aboutTranslationsTestUtils.rejectDownloads(1);
+        await aboutTranslationsTestUtils.waitForTranslationErrorMessage({
+          visible: true,
+        });
+      }
+    );
+
+    await TestTranslationsTelemetry.assertLabeledCounter(
+      Glean.translations.requestCount,
+      [
+        ["full_page", 0],
+        ["select", 0],
+        ["about_translations", 2],
+      ]
+    );
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translations.translationRequest,
+      {
+        expectedEventCount: 2,
+      }
+    );
+    await TestTranslationsTelemetry.assertEvent(Glean.translations.error, {
+      expectedEventCount: 2,
+      assertForMostRecentEvent: {
+        reason: "Error: Intentionally rejecting downloads.",
+      },
+    });
+
+    const secondRetryErrorMessageHidden =
+      aboutTranslationsTestUtils.waitForTranslationErrorMessage({
+        visible: false,
+      });
+
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.TranslationRequested,
+            { translationId: 3 },
+          ],
+          [
+            AboutTranslationsTestUtils.Events.TranslationComplete,
+            { translationId: 3 },
+          ],
+        ],
+      },
+      async () => {
+        await aboutTranslationsTestUtils.clickTranslationErrorButton();
+        await secondRetryErrorMessageHidden;
+        await aboutTranslationsTestUtils.resolveDownloads(1);
+      }
+    );
+
+    await TestTranslationsTelemetry.assertLabeledCounter(
+      Glean.translations.requestCount,
+      [
+        ["full_page", 0],
+        ["select", 0],
+        ["about_translations", 3],
+      ]
+    );
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translations.translationRequest,
+      {
+        expectedEventCount: 3,
+      }
+    );
+    await TestTranslationsTelemetry.assertEvent(Glean.translations.error, {
+      expectedEventCount: 2,
+    });
+
+    await cleanup();
+  }
+);
