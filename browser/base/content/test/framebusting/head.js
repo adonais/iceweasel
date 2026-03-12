@@ -18,7 +18,11 @@ const FRAMEBUSTING_PARENT_URL =
 const FRAMEBUSTING_FRAME_URL =
   EXAMPLE_FRAME_ROOT + "framebusting_intervention_frame.html";
 
-async function triggerFramebustingIntervention(tab) {
+async function triggerFramebustingIntervention(
+  tab,
+  query = "",
+  verify = { exception: undefined, notification: undefined }
+) {
   info("Loading framebusting parent page...");
   BrowserTestUtils.startLoadingURIString(
     tab.linkedBrowser,
@@ -30,15 +34,50 @@ async function triggerFramebustingIntervention(tab) {
     FRAMEBUSTING_PARENT_URL
   );
 
+  const frameSrc = FRAMEBUSTING_FRAME_URL + query;
+
   info("Loading framebusting frame page...");
   await SpecialPowers.spawn(
     tab.linkedBrowser,
-    [FRAMEBUSTING_FRAME_URL],
-    src => {
+    [frameSrc, verify.exception],
+    async (src, verifyException) => {
+      function waitForVerifyExceptionMessage() {
+        return new Promise(resolve => {
+          content.window.addEventListener(
+            "message",
+            event => {
+              is(event.origin, "https://example.org");
+              is(
+                event.data,
+                verifyException ? "exception" : "no-exception",
+                `Should ${verifyException ? "" : "not "}receive an exception when trying to framebust (${src})`
+              );
+              resolve();
+            },
+            { once: true }
+          );
+        });
+      }
+
+      const verifyExceptionPromise =
+        verifyException !== undefined
+          ? waitForVerifyExceptionMessage()
+          : Promise.resolve();
+
       const iframe = content.document.createElement("iframe");
       iframe.id = "framebustingframe";
       iframe.src = src;
       content.document.body.appendChild(iframe);
+
+      await verifyExceptionPromise;
     }
   );
+
+  if (verify.notification) {
+    await TestUtils.waitForTick();
+    ok(
+      gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"),
+      `Framebusting notification should show up (${frameSrc})`
+    );
+  }
 }

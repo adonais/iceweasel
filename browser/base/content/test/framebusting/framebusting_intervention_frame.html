@@ -1,14 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Framebusting Intervention - Frame</title>
+    <form method="post" target="_top"></form>
+    <a target="_top"></a>
   </head>
   <body>
     <script>
-    if (self != top) {
-      window.top.location = window.location;
-    }
+      const form = document.querySelector("form");
+      const link = document.querySelector("a");
+      const params = new URLSearchParams(location.search);
+
+      if (self != top) {
+        try {
+          switch (params.get("initiator")) {
+            case "":
+            case null:
+              window.top.location = window.location;
+              break;
+            case "open":
+              window.top.open(window.location);
+              break;
+            case "form":
+              form.action = window.location;
+              form.submit();
+              break;
+            case "link":
+              link.href = window.location;
+              link.click();
+              break;
+            case "mailto":
+              window.top.location = "mailto:example@example.com";
+              break;
+            default:
+              throw Error("Bad query")
+          }
+
+          window.top.postMessage("no-exception", "https://example.net");
+        } catch (e) {
+          if (!(e instanceof DOMException)) throw e;
+          window.top.postMessage("exception", "https://example.net");
+        }
+      }
     </script>
   </body>
 </html>

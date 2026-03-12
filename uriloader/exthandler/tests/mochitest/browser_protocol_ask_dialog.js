@@ -358,57 +358,6 @@ add_task(async function test_oop_iframe() {
 });
 
 /**
- * Check that a cross-origin iframe can navigate the top frame
- * to an external protocol.
- */
-add_task(async function xorigin_iframe_can_navigate_top() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "https://example.com/"
-  );
-
-  // Ensure we notice the dialog opening:
-  let dialogWindowPromise = waitForProtocolAppChooserDialog(
-    tab.linkedBrowser,
-    true
-  );
-  let innerLoaded = BrowserTestUtils.browserLoaded(
-    tab.linkedBrowser,
-    true,
-    "https://example.org/"
-  );
-  info("Constructing frame");
-  await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
-    let frame = content.document.createElement("iframe");
-    frame.src = "https://example.org/"; // cross-origin frame.
-    content.document.body.prepend(frame);
-  });
-  await innerLoaded;
-
-  info("Navigating top bc from frame");
-  let parentBC = tab.linkedBrowser.browsingContext;
-  await SpecialPowers.spawn(parentBC.children[0], [], async function () {
-    content.eval("window.top.location.href = 'mailto:example@example.com';");
-  });
-
-  let dialog = await dialogWindowPromise;
-
-  is(
-    dialog._frame.contentDocument.location.href,
-    CONTENT_HANDLING_URL,
-    "Dialog opens as expected for navigating the top frame from an x-origin frame."
-  );
-  // Close the dialog:
-  let dialogClosedPromise = waitForProtocolAppChooserDialog(
-    tab.linkedBrowser,
-    false
-  );
-  dialog.close();
-  await dialogClosedPromise;
-  gBrowser.removeTab(tab);
-});
-
-/**
  * Check that when navigating to an external protocol from an iframe in a
  * background tab, we show the dialog in the correct tab.
  */

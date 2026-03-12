@@ -17,6 +17,7 @@
   <script type="application/javascript" src="docshell_helpers.js" />
   <script type="application/javascript"><![CDATA[
     Services.prefs.setBoolPref("browser.navigation.requireUserInteraction", false);
+    Services.prefs.setBoolPref("dom.security.framebusting_intervention.enabled", false);
 
     var gBrowser;
 
@@ -245,6 +246,7 @@
          "Navigation is blocked when clicking link");
 
       Services.prefs.clearUserPref("browser.navigation.requireUserInteraction");
+      Services.prefs.clearUserPref("dom.security.framebusting_intervention.enabled");
       finish();
     }
   ]]></script>

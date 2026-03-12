@@ -9,19 +9,24 @@ add_task(async function urlFieldVisibleForPopupPermissions() {
   });
   let win = gBrowser.selectedBrowser.contentWindow;
   let doc = win.document;
-  let popupPolicyCheckbox = doc.getElementById("popupPolicy");
-  ok(
-    !popupPolicyCheckbox.checked,
-    "popupPolicyCheckbox should be unchecked by default"
+  let popupAndRedirectPolicyCheckbox = doc.getElementById(
+    "popupAndRedirectPolicy"
   );
-  let popupPolicyButton = doc.getElementById("popupPolicyButton");
-  ok(popupPolicyButton, "popupPolicyButton found");
-  let popupPolicyButtonAvailable =
-    waitForSettingControlChange(popupPolicyButton);
-  popupPolicyCheckbox.click();
-  await popupPolicyButtonAvailable;
+  ok(
+    !popupAndRedirectPolicyCheckbox.checked,
+    "popupAndRedirectPolicyCheckbox should be unchecked by default"
+  );
+  let popupAndRedirectPolicyButton = doc.getElementById(
+    "popupAndRedirectPolicyButton"
+  );
+  ok(popupAndRedirectPolicyButton, "popupAndRedirectPolicyButton found");
+  let popupAndRedirectPolicyButtonAvailable = waitForSettingControlChange(
+    popupAndRedirectPolicyButton
+  );
+  popupAndRedirectPolicyCheckbox.click();
+  await popupAndRedirectPolicyButtonAvailable;
   let dialogPromise = promiseLoadSubDialog(PERMISSIONS_URL);
-  popupPolicyButton.click();
+  popupAndRedirectPolicyButton.click();
   let dialog = await dialogPromise;
   ok(dialog, "dialog loaded");
 
@@ -36,6 +41,8 @@ add_task(async function urlFieldVisibleForPopupPermissions() {
     "url should be visible when one of block/session/allow visible"
   );
 
-  popupPolicyCheckbox.click();
+  // Disable pop-up blocking again without disabling third-party redirect
+  // blocking (special configuration only used while testing)
+  SpecialPowers.setBoolPref("dom.disable_open_during_load", false);
   gBrowser.removeCurrentTab();
 });
