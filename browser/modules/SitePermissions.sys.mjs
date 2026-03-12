@@ -1246,13 +1246,38 @@ let gPermissions = {
     },
 
     popup: {
-      getDefault() {
-        return Services.prefs.getBoolPref("dom.disable_open_during_load")
-          ? SitePermissions.BLOCK
-          : SitePermissions.ALLOW;
+      // Contrary to the name, this permission controls exceptions for both the
+      // pop-up blocking and the framebusting intervention (also called
+      // "third-party redirects" in the UI).
+      // This permission is checked in WindowContext::CanShowPopup and
+      // WindowContext::CanFramebust.
+      get labelID() {
+        // Use a different label if one of the two prefs is disabled. The
+        // permission will only control the other pref in that case.
+        if (
+          SitePermissions.popupBlockerEnabled &&
+          !SitePermissions.framebustingInterventionEnabled
+        ) {
+          return "popup-only";
+        }
+        if (
+          !SitePermissions.popupBlockerEnabled &&
+          SitePermissions.framebustingInterventionEnabled
+        ) {
+          return "framebusting-only";
+        }
+        return "popup-and-framebusting";
       },
-      labelID: "popup2",
       states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
+      get disabled() {
+        return (
+          !SitePermissions.popupBlockerEnabled &&
+          !SitePermissions.framebustingInterventionEnabled
+        );
+      },
+      getDefault() {
+        return SitePermissions.BLOCK;
+      },
     },
 
     install: {
@@ -1351,5 +1376,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "localNetworkAccessPermissionsEnabled",
   "network.lna.blocking",
   false,
+  SitePermissions.invalidatePermissionList.bind(SitePermissions)
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  SitePermissions,
+  "popupBlockerEnabled",
+  "dom.disable_open_during_load",
+  true,
+  SitePermissions.invalidatePermissionList.bind(SitePermissions)
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SitePermissions,
+  "framebustingInterventionEnabled",
+  "dom.security.framebusting_intervention.enabled",
+  true,
   SitePermissions.invalidatePermissionList.bind(SitePermissions)
 );
