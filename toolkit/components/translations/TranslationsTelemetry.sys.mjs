@@ -1119,4 +1119,18 @@ class AboutTranslationsPageTelemetry {
       );
     });
   }
+
+  /**
+   * Records when the copy button is invoked in about:translations.
+   */
+  static onCopyButton() {
+    AboutTranslationsPageTelemetry.#withRateLimits(({ flowId }) => {
+      Glean.translationsAboutTranslationsPage.copyButton.record({
+        flow_id: flowId,
+      });
+      TranslationsTelemetry.logEventToConsole(
+        AboutTranslationsPageTelemetry.onCopyButton
+      );
+    });
+  }
 }

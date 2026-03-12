@@ -799,6 +799,7 @@ class AboutTranslations {
       return;
     }
 
+    AT_telemetry("onCopyButton");
     this.#showCopyButtonCopiedState();
   };
 
