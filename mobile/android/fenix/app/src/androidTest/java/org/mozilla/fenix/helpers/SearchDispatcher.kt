@@ -14,7 +14,9 @@ import mockwebserver3.RecordedRequest
 import okio.Buffer
 import okio.source
 import java.io.IOException
-import java.io.InputStream
+
+private const val HTTP_OK = 200
+private const val HTTP_NOT_FOUND = 404
 
 /**
  * A [MockWebServer] [Dispatcher] that will return a generic search results page in the body of
@@ -35,7 +37,10 @@ class SearchDispatcher : Dispatcher() {
             if (request.target.contains("searchResults.html?search=")) {
                 val path = "pages/generic4.html"
                 assetManager.open(path).use { inputStream ->
-                    return fileToResponse(inputStream)
+                    return MockResponse.Builder()
+                        .code(HTTP_OK)
+                        .body(Buffer().apply { writeAll(inputStream.source()) })
+                        .build()
                 }
             }
             return MockResponse(code = HTTP_NOT_FOUND)
@@ -46,19 +51,4 @@ class SearchDispatcher : Dispatcher() {
             return MockResponse(code = HTTP_NOT_FOUND)
         }
     }
-}
-
-@Throws(IOException::class)
-private fun fileToResponse(file: InputStream): MockResponse {
-    return MockResponse.Builder()
-        .code(HTTP_OK)
-        .body(fileToBytes(file))
-        .build()
-}
-
-@Throws(IOException::class)
-private fun fileToBytes(file: InputStream): Buffer {
-    val result = Buffer()
-    result.writeAll(file.source())
-    return result
 }

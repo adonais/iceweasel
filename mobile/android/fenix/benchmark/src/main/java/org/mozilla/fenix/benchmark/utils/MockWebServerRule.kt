@@ -4,22 +4,14 @@
 
 package org.mozilla.fenix.benchmark.utils
 
-import androidx.core.net.toUri
-import androidx.test.platform.app.InstrumentationRegistry
-import mockwebserver3.Dispatcher
-import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
-import mockwebserver3.RecordedRequest
-import okio.Buffer
-import okio.source
+import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.rules.ExternalResource
-import java.io.IOException
-import java.io.InputStream
 
 /**
  * A JUnit [ExternalResource] that manages the lifecycle of a [MockWebServer] instance.
  *
- * The server will be started before each test and shutdown after each test.
+ * The server will be started before each test and closed after each test.
  *
  * The server is configured with a [Dispatcher] that will return Android assets in the body of
  * requests. If the dispatcher is unable to read a requested asset, it will return a 404 response.
@@ -35,63 +27,12 @@ class MockWebServerRule(
 
     override fun before() {
         server = MockWebServer().apply {
-            start(this@MockWebServerRule.port)
             dispatcher = AndroidAssetDispatcher()
+            start(this@MockWebServerRule.port)
         }
     }
 
     override fun after() {
         server.close()
     }
-
-    /**
-     * A [MockWebServer] [Dispatcher] that will return Android assets in the body of requests.
-     *
-     * If the dispatcher is unable to read a requested asset, it will return a 404 response.
-     *
-     */
-    private class AndroidAssetDispatcher : Dispatcher() {
-        override fun dispatch(request: RecordedRequest): MockResponse {
-            val assetManager = InstrumentationRegistry.getInstrumentation().context.assets
-            try {
-                val path = request.target.drop(1).toUri().path ?: return MockResponse(code = HTTP_NOT_FOUND)
-                assetManager.open(path).use { inputStream ->
-                    return inputStream.toResponse(contentType(path))
-                }
-            } catch (_: IOException) {
-                /* Ignored */
-            }
-            return MockResponse(code = HTTP_NOT_FOUND)
-        }
-
-        @Throws(IOException::class)
-        private fun InputStream.toResponse(contentType: String) = MockResponse.Builder()
-            .code(HTTP_OK)
-            .body(
-                Buffer().apply {
-                    writeAll(source())
-                },
-            )
-            .addHeader("content-type: $contentType")
-            .build()
-
-        private fun contentType(path: String): String {
-            return when {
-                path.endsWith(".png") -> "image/png"
-                path.endsWith(".jpg") -> "image/jpeg"
-                path.endsWith(".jpeg") -> "image/jpeg"
-                path.endsWith(".gif") -> "image/gif"
-                path.endsWith(".svg") -> "image/svg+xml"
-                path.endsWith(".html") -> "text/html; charset=utf-8"
-                path.endsWith(".txt") -> "text/plain; charset=utf-8"
-                else -> "application/octet-stream"
-            }
-        }
-
-        companion object {
-            const val HTTP_OK = 200
-            const val HTTP_NOT_FOUND = 404
-        }
-    }
-
 }

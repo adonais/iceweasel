@@ -86,6 +86,7 @@ projects:
     - components:service-pocket
     - components:service-sync-autofill
     - components:service-sync-logins
+    - components:support-android-test
     - components:support-appservices
     - components:support-base
     - components:support-images

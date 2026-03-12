@@ -364,6 +364,7 @@ dependencies {
     constraints {
         implementation(libs.androidx.concurrent)
     }
+    androidTestImplementation project(':components:support-android-test')
     androidTestImplementation libs.androidx.concurrent
     androidTestImplementation libs.androidx.test.core
     androidTestImplementation libs.androidx.test.espresso.core

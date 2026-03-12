@@ -5,6 +5,7 @@ package org.mozilla.focus.activity
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import mockwebserver3.MockWebServer
+import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -14,7 +15,6 @@ import org.junit.runner.RunWith
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityIntentsTestRule
-import org.mozilla.focus.helpers.MockWebServerHelper
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.StringsHelper.GMAIL_APP
 import org.mozilla.focus.helpers.StringsHelper.PHONE_APP
@@ -43,7 +43,7 @@ class WebControlsTest : TestSetup() {
     override fun setUp() {
         super.setUp()
         webServer = MockWebServer().apply {
-            dispatcher = MockWebServerHelper.AndroidAssetDispatcher()
+            dispatcher = AndroidAssetDispatcher()
             start()
         }
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)

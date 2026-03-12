@@ -11,6 +11,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockWebServer
+import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.After
 import org.junit.Assume
@@ -23,7 +24,6 @@ import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
 import org.mozilla.focus.helpers.MockLocationUpdatesRule
-import org.mozilla.focus.helpers.MockWebServerHelper
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getMediaTestAsset
 import org.mozilla.focus.helpers.TestHelper.exitToTop
@@ -60,7 +60,7 @@ class SitePermissionsTest : TestSetup() {
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
         featureSettingsHelper.setSearchWidgetDialogEnabled(false)
         webServer = MockWebServer().apply {
-            dispatcher = MockWebServerHelper.AndroidAssetDispatcher()
+            dispatcher = AndroidAssetDispatcher()
             start()
         }
         PromptAbuserDetector.validationsEnabled = false

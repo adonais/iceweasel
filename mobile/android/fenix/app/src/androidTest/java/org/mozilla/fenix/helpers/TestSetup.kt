@@ -10,6 +10,7 @@ import androidx.test.rule.GrantPermissionRule
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule

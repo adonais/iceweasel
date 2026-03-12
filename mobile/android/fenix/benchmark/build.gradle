@@ -69,6 +69,7 @@ dependencies {
     implementation libs.androidx.test.junit
     implementation libs.androidx.test.uiautomator
     implementation libs.mockwebserver
+    implementation project(':components:support-android-test')
 }
 
 androidComponents {

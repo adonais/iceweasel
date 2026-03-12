@@ -714,6 +714,7 @@ dependencies {
     testImplementation libs.mozilla.glean.forUnitTests
     testImplementation libs.robolectric
 
+    androidTestImplementation project(':components:support-android-test')
     androidTestImplementation libs.androidx.benchmark.junit4
     // We need a version constraint due to AGP silently trying to downgrade the version otherwise.
     // https://issuetracker.google.com/issues/349628366

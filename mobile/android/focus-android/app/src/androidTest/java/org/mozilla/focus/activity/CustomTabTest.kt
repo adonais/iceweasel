@@ -11,6 +11,7 @@ import androidx.test.core.app.launchActivity
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.rule.ActivityTestRule
 import mockwebserver3.MockWebServer
+import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -20,7 +21,6 @@ import org.junit.runner.RunWith
 import org.mozilla.focus.activity.robots.browserScreen
 import org.mozilla.focus.activity.robots.customTab
 import org.mozilla.focus.helpers.FeatureSettingsHelper
-import org.mozilla.focus.helpers.MockWebServerHelper
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
 import org.mozilla.focus.helpers.TestHelper.createCustomTabIntent
@@ -51,7 +51,7 @@ class CustomTabTest : TestSetup() {
         featureSettingsHelper.setShowStartBrowsingCfrEnabled(false)
         featureSettingsHelper.setCookieBannerReductionEnabled(false)
         webServer = MockWebServer().apply {
-            dispatcher = MockWebServerHelper.AndroidAssetDispatcher()
+            dispatcher = AndroidAssetDispatcher()
             start()
         }
     }
