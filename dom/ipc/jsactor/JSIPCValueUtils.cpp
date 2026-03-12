@@ -20,6 +20,7 @@
 #include "js/Value.h"
 #include "js/friend/DumpFunctions.h"
 #include "js/friend/StackLimits.h"  // js::AutoCheckRecursionLimit
+#include "jsapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSRuntime.h"  // OOMReported
 #include "mozilla/Logging.h"
@@ -650,7 +651,7 @@ void JSIPCValueUtils::ToJSVal(JSContext* aCx, JSIPCValue&& aIn,
       return;
 
     case JSIPCValue::Tdouble:
-      aOut.setDouble(aIn.get_double());
+      aOut.set(JS_NumberValue(aIn.get_double()));
       return;
 
     case JSIPCValue::Tint32_t:
