@@ -57,6 +57,8 @@ project(':android-components').projectDir = new File("${gradle.mozconfig.topsrcd
 if (!gradle.mozconfig.substs.MOZ_ANDROID_SUBPROJECT || gradle.mozconfig.substs.MOZ_ANDROID_SUBPROJECT == "fenix") {
     include ':fenix'
     project(':fenix').projectDir = new File("${gradle.mozconfig.topsrcdir}/mobile/android/fenix/app")
+    include ':fenix:longfox'
+    project(':fenix:longfox').projectDir = new File("${gradle.mozconfig.topsrcdir}/mobile/android/fenix/app/longfox")
 }
 if (!gradle.mozconfig.substs.MOZ_ANDROID_SUBPROJECT || gradle.mozconfig.substs.MOZ_ANDROID_SUBPROJECT == "focus") {
     include ':focus-android'

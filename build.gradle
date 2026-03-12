@@ -31,6 +31,7 @@ plugins {
     id 'ApkSizePlugin'
     id "mozac.ConfigPlugin"
     id 'org.mozilla.conventions.mach-tasks'
+    alias(libs.plugins.android.library) apply false
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.android) apply false

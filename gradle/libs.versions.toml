@@ -292,6 +292,7 @@ sentry = { module = "io.sentry:sentry-android-core", version.ref = "sentry" }
 zxing = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 [plugins]
+android-library = { id = "com.android.library", version.ref = "android-gradle-plugin" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependency-analysis" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
