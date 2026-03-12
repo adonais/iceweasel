@@ -7247,19 +7247,10 @@ bool nsTextFrame::PaintTextWithSelectionColors(
       }
     }
 
-    // Draw text segment. -webkit-text-stroke-* are not applicable to highlight
-    // pseudo-elements per
-    // https://drafts.csswg.org/css-pseudo-4/#highlight-styling. Suppress stroke
-    // for highlighted segments; non-highlighted segments (eNone) still use the
-    // originating element's stroke.
-    const bool isUnselected = selectionTypes.Length() == 1 &&
-                              selectionTypes[0] == SelectionType::eNone;
+    // Draw text segment
     params.textColor = foreground;
-    params.textStrokeColor =
-        isUnselected ? aParams.textPaintStyle->GetWebkitTextStrokeColor() : 0;
-    params.textStrokeWidth =
-        isUnselected ? aParams.textPaintStyle->GetWebkitTextStrokeWidth()
-                     : 0.0f;
+    params.textStrokeColor = aParams.textPaintStyle->GetWebkitTextStrokeColor();
+    params.textStrokeWidth = aParams.textPaintStyle->GetWebkitTextStrokeWidth();
     params.drawSoftHyphen = hyphenWidth > 0;
     DrawText(range, textBaselinePt, params);
     advance += hyphenWidth;
