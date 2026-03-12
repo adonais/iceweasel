@@ -101,6 +101,10 @@ class IntentReceiverActivity : Activity() {
         val processor = getIntentProcessors(private).firstOrNull { it.process(intent) }
         val intentProcessorType = components.intentProcessors.getType(processor)
 
+        if (intentProcessorType.shouldOpenToBrowser(intent)) {
+            components.core.engine.speculativeCreateSession(private = private)
+        }
+
         launch(intent, intentProcessorType)
     }
 

@@ -971,6 +971,7 @@ package org.mozilla.geckoview {
     method @UiThread public void setServiceWorkerDelegate(@Nullable GeckoRuntime.ServiceWorkerDelegate);
     method @UiThread public void setWebNotificationDelegate(@Nullable WebNotificationDelegate);
     method @AnyThread public void shutdown();
+    method @UiThread public void warmUp();
     field public static final String ACTION_CRASHED = "org.mozilla.gecko.ACTION_CRASHED";
     field public static final String CRASHED_PROCESS_VISIBILITY_BACKGROUND_CHILD = "BACKGROUND_CHILD";
     field public static final String CRASHED_PROCESS_VISIBILITY_FOREGROUND_CHILD = "FOREGROUND_CHILD";

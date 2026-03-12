@@ -293,7 +293,9 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // Ensure the Engine instance is initialized such that it can receive commands. Note
         // that full initialization is typically running off-thread and it may be a while
         // before pages can begin to render.
-        components.core.engine.warmUp()
+        // Here we access the engine property, which will cause the lazy property getter to
+        // construct the instance.
+        components.core.engine
 
         // Kick off initialization of Glean backend off-thread. Glean will continue to queue
         // metric samples until the backend is ready. If we don't have data-upload consent then
@@ -420,6 +422,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // startup path, before the UI finishes drawing (i.e. visual completeness).
         queueInitStorageAndServices(queue)
         queueMetrics(queue)
+        queueEngineWarmup(queue)
         queueIncrementNumberOfAppLaunches(queue)
         queueRestoreLocale(queue)
         queueStorageMaintenance(queue)
@@ -516,6 +519,15 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // create a WorkManager task for this metric, however, I ran out of
         // implementation time and WorkManager is harder to test.
         StorageStatsMetrics.report(this.applicationContext)
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun queueEngineWarmup(queue: RunWhenReadyQueue) = {
+        runOnVisualCompleteness(queue) {
+            GlobalScope.launch(Dispatchers.Main) {
+                components.core.engine.warmUp()
+            }
+        }
     }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
