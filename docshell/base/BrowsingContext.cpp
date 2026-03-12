@@ -2233,7 +2233,14 @@ bool BrowsingContext::IsFramebustingAllowed(BrowsingContext* aTarget) {
   MOZ_ASSERT(aTarget->IsTop());
 
   if (aTarget->BrowserId() == BrowserId()) {
-    return IsFramebustingAllowedInner() || IsPopupAllowed();
+    for (auto* context = GetCurrentWindowContext(); context;
+         context = context->GetParentWindowContext()) {
+      if (context->CanFramebust()) {
+        return true;
+      }
+    }
+
+    return IsFramebustingAllowedInner();
   }
 
   // We should be able to safely assume that the SOP has our back here

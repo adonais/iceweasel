@@ -246,6 +246,7 @@ class WindowContext : public nsISupports, public nsWrapperCache {
       UserActivation::Modifiers* aModifiers);
 
   bool CanShowPopup();
+  bool CanFramebust();
 
   bool AllowJavascript() const { return GetAllowJavascript(); }
   bool CanExecuteScripts() const { return mCanExecuteScripts; }

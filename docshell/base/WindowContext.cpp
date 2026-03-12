@@ -743,6 +743,18 @@ bool WindowContext::CanShowPopup() {
   return !StaticPrefs::dom_disable_open_during_load();
 }
 
+bool WindowContext::CanFramebust() {
+  uint32_t permit = GetPopupPermission();
+  if (permit == nsIPermissionManager::ALLOW_ACTION) {
+    return true;
+  }
+  if (permit == nsIPermissionManager::DENY_ACTION) {
+    return false;
+  }
+
+  return !StaticPrefs::dom_security_framebusting_intervention_enabled();
+}
+
 void WindowContext::TransientSetHasActivePeerConnections() {
   if (!IsTop()) {
     return;
