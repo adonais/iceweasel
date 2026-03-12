@@ -94,12 +94,14 @@ import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
 import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
 import org.mozilla.fenix.bindings.SummarizeToolbarHighlightBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
+import org.mozilla.fenix.browser.BrowserFragment
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.OrientationMode
+import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.metrics.BreadcrumbsRecorder
 import org.mozilla.fenix.components.metrics.GrowthDataWorker
 import org.mozilla.fenix.components.metrics.MarketingAttributionService
@@ -1058,6 +1060,35 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ProfilerMarkers.addForDispatchTouchEvent(components.core.engine.profiler, ev)
         return super.dispatchTouchEvent(ev)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // The KEYCODE_MENU event is handled here instead of onKeyDown or onKeyUp because
+        // after navigating to another fragment like Settings or Bookmarks, and then back this
+        // key event is somehow getting consumed before it reaches onKeyDown or onKeyUp.
+        if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_MENU) {
+            val navHostFragment =
+                supportFragmentManager.findFragmentById(R.id.container) as? NavHostFragment
+            val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
+            when (currentFragment) {
+                is HomeFragment -> {
+                    val action = NavGraphDirections.actionGlobalMenuDialogFragment(
+                        MenuAccessPoint.Home,
+                    )
+                    navHost.navController.navigate(action)
+                    return true
+                }
+
+                is BrowserFragment -> {
+                    val action = NavGraphDirections.actionGlobalMenuDialogFragment(
+                        MenuAccessPoint.Browser,
+                    )
+                    navHost.navController.navigate(action)
+                    return true
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     final override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
