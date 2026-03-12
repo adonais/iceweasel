@@ -2062,6 +2062,20 @@ pub fn add_to_batch<F>(
         All = 5,
     }
 
+    let texture = match src_task_id {
+        RenderTaskId::INVALID => TextureSource::Invalid,
+        _ =>  match render_tasks.resolve_texture(src_task_id) {
+            Some(texture) => texture,
+            None => {
+                // If a valid render task does not yield a texture source, render
+                // nothing. This can happen, for example when a stacking context
+                // could not be snapshotted.
+                return;
+            },
+        }
+    };
+
+
     // See QuadHeader in ps_quad.glsl
     let mut writer = gpu_buffer_builder.i32.write_blocks(QuadHeader::NUM_BLOCKS);
     writer.push(&QuadHeader {
@@ -2070,17 +2084,6 @@ pub fn add_to_batch<F>(
         pattern_input,
     });
     let prim_address_i = writer.finish();
-
-    let texture = match src_task_id {
-        RenderTaskId::INVALID => TextureSource::Invalid,
-        _ => {
-            let texture = render_tasks
-                .resolve_texture(src_task_id)
-                .expect("bug: valid task id must be resolvable");
-
-            texture
-        }
-    };
 
     let textures = BatchTextures::prim_textured(
         texture,
