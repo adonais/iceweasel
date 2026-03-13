@@ -270,7 +270,7 @@ FFmpegAudioEncoder<LIBAV_VER>::EncodeOnePacket(Span<float> aSamples,
   // Set presentation timestamp and duration of the AVFrame.
 #  if LIBAVCODEC_VERSION_MAJOR >= 59
   mFrame->time_base =
-      AVRational{.num = 1, .den = static_cast<int>(mConfig.mSampleRate)};
+      AVRational{.num = 1, .den = AssertedCast<int>(mConfig.mSampleRate)};
 #  endif
   mFrame->pts = aPts.ToTicksAtRate(mConfig.mSampleRate);
 #  if LIBAVCODEC_VERSION_MAJOR >= 60
@@ -351,7 +351,7 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegAudioEncoder<
   if (mResampler) {
     // Ensure that all input frames are consumed each time by oversizing the
     // output buffer.
-    int bufferLengthGuess = std::ceil(2. * static_cast<float>(audio.size()) *
+    int bufferLengthGuess = std::ceil(2. * AssertedCast<float>(audio.size()) *
                                       mConfig.mSampleRate / mInputSampleRate);
     mTempBuffer.SetLength(bufferLengthGuess);
     uint32_t inputFrames = audio.size() / mConfig.mNumberOfChannels;

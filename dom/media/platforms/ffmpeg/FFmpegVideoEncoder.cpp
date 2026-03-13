@@ -422,9 +422,9 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
   mCodecContext->height = static_cast<int>(mConfig.mSize.height);
   // Reasonnable default for the quantization range.
   mCodecContext->qmin =
-      static_cast<int>(StaticPrefs::media_ffmpeg_encoder_quantizer_min());
+      AssertedCast<int>(StaticPrefs::media_ffmpeg_encoder_quantizer_min());
   mCodecContext->qmax =
-      static_cast<int>(StaticPrefs::media_ffmpeg_encoder_quantizer_max());
+      AssertedCast<int>(StaticPrefs::media_ffmpeg_encoder_quantizer_max());
   if (mConfig.mUsage == Usage::Realtime) {
     mCodecContext->thread_count = 1;
   } else {
@@ -447,11 +447,11 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
   // TODO(bug 1869560): The recommended time_base is the reciprocal of the frame
   // rate, but we set it to microsecond for now.
   mCodecContext->time_base =
-      AVRational{.num = 1, .den = static_cast<int>(USECS_PER_S)};
+      AVRational{.num = 1, .den = AssertedCast<int>(USECS_PER_S)};
 #if LIBAVCODEC_VERSION_MAJOR >= 57
   // Note that sometimes framerate can be zero (from webcodecs).
   mCodecContext->framerate =
-      AVRational{.num = static_cast<int>(mConfig.mFramerate), .den = 1};
+      AVRational{.num = AssertedCast<int>(mConfig.mFramerate), .den = 1};
 #endif
 
 #if LIBAVCODEC_VERSION_MAJOR >= 60
@@ -460,7 +460,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
 
   // Setting 0 here disable inter-frames: all frames are keyframes
   mCodecContext->gop_size = mConfig.mKeyframeInterval
-                                ? static_cast<int>(mConfig.mKeyframeInterval)
+                                ? AssertedCast<int>(mConfig.mKeyframeInterval)
                                 : 10000;
   mCodecContext->keyint_min = 0;
 
@@ -510,7 +510,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
     if (mConfig.mCodec == CodecType::AV1) {
       mLib->av_opt_set_int(
           mCodecContext->priv_data, "cpu-used",
-          static_cast<int>(StaticPrefs::media_ffmpeg_encoder_cpu_used()), 0);
+          AssertedCast<int>(StaticPrefs::media_ffmpeg_encoder_cpu_used()), 0);
     }
   }
 
@@ -697,7 +697,7 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegVideoEncoder<
   // rate, but we set it to microsecond for now.
 #  if LIBAVCODEC_VERSION_MAJOR >= 59
   mFrame->time_base =
-      AVRational{.num = 1, .den = static_cast<int>(USECS_PER_S)};
+      AVRational{.num = 1, .den = AssertedCast<int>(USECS_PER_S)};
 #  endif
   // Provide fake pts, see header file.
   if (mConfig.mCodec == CodecType::AV1) {
@@ -850,7 +850,7 @@ FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
                         H264BitStreamFormat::AVC;
 
   Span<const uint8_t> packetBuf(aPacket->data,
-                                static_cast<size_t>(aPacket->size));
+                                AssertedCast<size_t>(aPacket->size));
   if (!mCodecName.Equals("libx264"_ns) && AnnexB::IsAnnexB(packetBuf)) {
     auto extraData = wantAVCC ? AnnexB::ExtractExtraDataForAVCC(packetBuf)
                               : AnnexB::ExtractExtraData(packetBuf);
@@ -888,9 +888,9 @@ FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
 
   Span<const uint8_t> buf;
   if (useGlobalHeader) {
-    buf =
-        Span<const uint8_t>(mCodecContext->extradata,
-                            static_cast<size_t>(mCodecContext->extradata_size));
+    buf = Span<const uint8_t>(
+        mCodecContext->extradata,
+        AssertedCast<size_t>(mCodecContext->extradata_size));
   } else {
     buf = packetBuf;
   }
