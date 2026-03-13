@@ -223,6 +223,7 @@ skip-if = [
 ["browser_tab_switch_warning.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # platform migration
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
 ]
 
 ["browser_webrtc_hooks.js"]

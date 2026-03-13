@@ -498,6 +498,7 @@ skip-if = [
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && opt", # Bug 1802904
   "os == 'android' && os_version == '14' && arch == 'x86_64' && opt", # Bug 1802904
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1802904
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
 ]
 
 ["test_draggableprop.html"]

@@ -230,6 +230,9 @@ support-files = [
   "file_test_report_missing_child_module_parent_02.mjs",
   "page_test_report_missing_child_module.html",
 ]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
+]
 
 ["browser_test_toolbars_visibility.js"]
 https_first_disabled = true

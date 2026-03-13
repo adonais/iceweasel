@@ -668,6 +668,9 @@ skip-if = [
 ["browser_suggestedIndex.js"]
 
 ["browser_suppressFocusBorder.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
+]
 
 ["browser_switchTab_closesUrlbarPopup.js"]
 

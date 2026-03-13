@@ -604,6 +604,7 @@ skip-if = [
   "os == 'android'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # TIMED_OUT # form control not selected/checked with synthesizeMouse, osx(bug 1275664)
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929434
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
 ]
 
 ["test_bug618948.html"]

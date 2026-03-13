@@ -42,6 +42,9 @@ skip-if = [
 ]
 
 ["browser_contextmenu_bookmark_link_text.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
+]
 
 ["browser_contextmenu_chrome_images.js"]
 

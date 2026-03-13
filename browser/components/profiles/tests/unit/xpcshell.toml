@@ -18,6 +18,7 @@ run-sequentially = ["os == 'mac'"] # frequent fail in parallel on Mac
 ["test_copy_profile.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 2002468
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2016042
 ]
 
 ["test_create_profile.js"]
