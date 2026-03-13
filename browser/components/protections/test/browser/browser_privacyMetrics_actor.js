@@ -84,8 +84,8 @@ add_task(async function test_fetchPrivacyMetrics_returns_stats() {
   await TrackingDBService.clearAll();
 });
 
-add_task(async function test_fetchPrivacyMetrics_returns_null_in_pbm() {
-  info("Test that FetchPrivacyMetrics returns null in private browsing");
+add_task(async function test_fetchPrivacyMetrics_returns_isPrivate_in_pbm() {
+  info("Test that FetchPrivacyMetrics returns isPrivate in private browsing");
 
   const db = await Sqlite.openConnection({ path: DB_PATH });
   const now = new Date().toISOString();
@@ -108,7 +108,10 @@ add_task(async function test_fetchPrivacyMetrics_returns_null_in_pbm() {
 
   const result = await sendFetchPrivacyMetrics(tab.linkedBrowser);
 
-  Assert.equal(result, null, "Should return null in private browsing");
+  Assert.ok(
+    result?.isPrivate,
+    "Should return isPrivate flag in private browsing"
+  );
 
   await BrowserTestUtils.closeWindow(privateWin);
   await TrackingDBService.clearAll();

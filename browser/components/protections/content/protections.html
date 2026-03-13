@@ -23,6 +23,10 @@
       type="module"
       src="chrome://browser/content/protections.mjs"
     ></script>
+    <script
+      type="module"
+      src="chrome://browser/content/privacy-metrics-card.mjs"
+    ></script>
     <title data-l10n-id="protection-report-webpage-title"></title>
   </head>
 
@@ -62,6 +66,7 @@
         role="link"
         tabindex="0"
       ></p>
+      <privacy-metrics-card></privacy-metrics-card>
       <div class="card card-no-hover etp-card">
         <div class="card-header">
           <img
