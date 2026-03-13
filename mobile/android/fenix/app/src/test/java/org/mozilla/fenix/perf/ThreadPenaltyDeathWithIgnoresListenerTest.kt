@@ -21,7 +21,7 @@ class ThreadPenaltyDeathWithIgnoresListenerTest {
     @RelaxedMockK private lateinit var logger: Logger
     private lateinit var listener: ThreadPenaltyDeathWithIgnoresListener
 
-    @MockK private lateinit var mockManufacturerChecker: ManufacturerChecker
+    @RelaxedMockK private lateinit var mockManufacturerChecker: ManufacturerChecker
 
     @MockK private lateinit var violation: Violation
     private lateinit var stackTrace: Array<StackTraceElement>
@@ -30,7 +30,7 @@ class ThreadPenaltyDeathWithIgnoresListenerTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        listener = ThreadPenaltyDeathWithIgnoresListener(logger)
+        listener = ThreadPenaltyDeathWithIgnoresListener(logger, mockManufacturerChecker)
 
         stackTrace = emptyArray()
         every { violation.stackTrace } answers { stackTrace }
@@ -63,6 +63,16 @@ class ThreadPenaltyDeathWithIgnoresListenerTest {
     @Test
     fun `GIVEN we're on a Samsung WHEN provided the EdmStorageProvider violation THEN it will be ignored and logged`() {
         every { mockManufacturerChecker.isSamsung() } returns true
+
+        every { violation.stackTrace } returns getEdmStorageProviderStackTrace()
+        listener.onThreadViolation(violation)
+
+        verify { logger.debug("Ignoring StrictMode ThreadPolicy violation", violation) }
+    }
+
+    @Test
+    fun `GIVEN we're on an LG WHEN provided the EdmStorageProvider violation THEN it will be ignored and logged`() {
+        every { mockManufacturerChecker.isLG() } returns true
 
         every { violation.stackTrace } returns getEdmStorageProviderStackTrace()
         listener.onThreadViolation(violation)
