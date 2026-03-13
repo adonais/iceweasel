@@ -29,6 +29,7 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
 #include <limits>
 
 namespace mozilla {
@@ -54,8 +55,7 @@ inline uint_fast8_t CountLeadingZeroes(uint32_t aValue) {
   return detail::CountLeadingZeroes32(aValue);
 }
 inline uint_fast8_t CountLeadingZeroes(uint64_t aValue) {
-  MOZ_ASSERT(aValue != 0);
-  return detail::CountLeadingZeroes64(aValue);
+  return uint_fast8_t(std::countl_zero(aValue));
 }
 // Refuse anything else.
 template <typename T>
