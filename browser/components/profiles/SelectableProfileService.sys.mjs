@@ -239,10 +239,10 @@ class SelectableProfileServiceClass extends EventEmitter {
 
   async #attemptFlushProfileService() {
     try {
-      await this.#profileService.asyncFlush();
+      await this.#profileService.asyncFlushCurrentProfile();
     } catch (e) {
       try {
-        await this.#profileService.asyncFlushCurrentProfile();
+        await this.#profileService.asyncFlush();
       } catch (ex) {
         console.error(
           `Failed to flush changes to the profiles database: ${ex}`

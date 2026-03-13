@@ -7,6 +7,10 @@ const { SelectableProfile } = ChromeUtils.importESModule(
   "resource:///modules/profiles/SelectableProfile.sys.mjs"
 );
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 add_task(async function test_updateDefaultProfileOnWindowSwitch() {
   await initGroupDatabase();
   let currentProfile = SelectableProfileService.currentProfile;
@@ -36,27 +40,44 @@ add_task(async function test_updateDefaultProfileOnWindowSwitch() {
   let w = await BrowserTestUtils.openNewBrowserWindow();
   await SimpleTest.promiseFocus(w);
 
+  let asyncFlushCurrentProfile = sinon
+    .stub(gProfileService, "asyncFlushCurrentProfile")
+    .resolves();
+  let asyncFlush = sinon.stub(gProfileService, "asyncFlush").resolves();
+
   // Focus the original window so we get an "activate" event and update the toolkitProfile rootDir
-  let asyncFlushResolver = Promise.withResolvers();
-  gProfileService.asyncFlush = () => asyncFlushResolver.resolve();
+  let currentProfileResolvers = Promise.withResolvers();
+  asyncFlushCurrentProfile.callsFake(() => {
+    currentProfileResolvers.resolve();
+    return Promise.resolve();
+  });
   await SimpleTest.promiseFocus(window);
-  await asyncFlushResolver.promise;
+  await currentProfileResolvers.promise;
 
-  asyncFlushResolver = Promise.withResolvers();
+  currentProfileResolvers = Promise.withResolvers();
+  asyncFlushCurrentProfile.callsFake(() => {
+    currentProfileResolvers.resolve();
+    return Promise.resolve();
+  });
   await SimpleTest.promiseFocus(w);
-  await asyncFlushResolver.promise;
+  await currentProfileResolvers.promise;
 
-  gProfileService.asyncFlush = () => {
-    throw new Error("Failed");
-  };
+  currentProfileResolvers = Promise.withResolvers();
+  asyncFlushCurrentProfile.callsFake(() => {
+    currentProfileResolvers.resolve();
+    return Promise.reject();
+  });
 
-  let asyncFlushCurrentProfileResolver = Promise.withResolvers();
-  gProfileService.asyncFlushCurrentProfile = () =>
-    asyncFlushCurrentProfileResolver.resolve();
+  let flushResolvers = Promise.withResolvers();
+  asyncFlush.callsFake(() => {
+    flushResolvers.resolve();
+    return Promise.resolve();
+  });
 
   await SimpleTest.promiseFocus(window);
 
-  await asyncFlushCurrentProfileResolver.promise;
+  await currentProfileResolvers.promise;
+  await flushResolvers.promise;
 
   is(
     gProfileService.currentProfile.rootDir.path,
@@ -84,4 +105,6 @@ add_task(async function test_updateDefaultProfileOnWindowSwitch() {
 
   await BrowserTestUtils.closeWindow(w);
   await SelectableProfileService.uninit();
+  asyncFlushCurrentProfile.restore();
+  asyncFlush.restore();
 });
