@@ -30,4 +30,8 @@ LOCAL_INCLUDES += [
     "/ipc/chromium/src",
 ]
 
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser/browser.toml",
+]
+
 FINAL_LIBRARY = "xul"
