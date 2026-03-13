@@ -59,6 +59,7 @@ pub(crate) struct BackgroundTaskAttempts {
 }
 
 impl BackgroundTaskAttempts {
+    #[cfg_attr(all(mock, not(test)), allow(unused))]
     pub const fn new(count: usize) -> Self {
         BackgroundTaskAttempts {
             remaining: AtomicUsize::new(count),
