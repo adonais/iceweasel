@@ -3774,6 +3774,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Vyhledávání ve Firefoxu nepoužívám</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Nepoužívám synchronizaci</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Je pomalý nebo zabugovaný</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Funkce se těžko hledají nebo chybí</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Je matoucí nebo obtížně použitelný</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Je v pořádku, ale ne lepší než ostatní prohlížeče</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Hodlám pokračovat v používání Firefoxu</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Pomozte nám vylepšit tisk z Firefoxu. Zabere to jenom chvilku</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3788,6 +3798,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Jak jste spokojen(a) s vyhledáváním ve Firefoxu?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Jak jste spokojeni se synchronizací ve Firefoxu?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Pomozte nám vylepšit Firefox. Co nejlépe vystihuje vaše dosavadní zkušenosti?</string>
   <!--
     Accessibility
 

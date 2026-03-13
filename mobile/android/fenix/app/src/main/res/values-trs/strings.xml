@@ -455,14 +455,46 @@
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Dūnâj gāhuin man riña sa nānà\'uì\' yītïnjt</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_default_browser_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
+  <!-- Title for sign in to sync screen. -->
+  <string name="juno_onboarding_sign_in_title_2">Dūgumîn mān’ânt si gāchēnunt ngà nādūnāt riña aga’ gāchēt</string>
+  <!--
+    Description for sign in to sync screen. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_sign_in_description_3" tools:ignore="BrandUsage">Nagi’hiaj chì’ Firefox nej da’nga’ huì huā ‘hiát, nej markadô nī a’ngô rasuun huāa ngà aché nunt riña ga’ì nej aga’a.</string>
   <!-- Text for the button to sign in to sync on the device -->
   <string name="juno_onboarding_sign_in_positive_button" tools:ignore="UnusedResources">Gāyi\'ì sēsiûn</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_sign_in_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
+  <!--
+    Title for enable notification permission screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_enable_notifications_title_nimbus_2" tools:ignore="BrandUsage">Rugûñu’ūnj nej nuguan’ atāj a riñat da’ gāchē nu sà’ riña Firefox</string>
+  <!--
+    Description for enable notification permission screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_enable_notifications_description_nimbus_2" tools:ignore="BrandUsage">Dūguachîn sà’ nej rakïj ñanj riña nej si āgâ’t nī gīni’înt a’ngô nej sa huā ‘hiaj Firefox da’ duguminj sò’.</string>
   <!-- Text for the button to request notification permission on the device -->
   <string name="juno_onboarding_enable_notifications_positive_button" tools:ignore="UnusedResources">Nāchrūn nej nuguan’ atāj na’ānj an</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_enable_notifications_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
+  <!--
+    Title for add search widget screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_add_search_widget_title" tools:ignore="BrandUsage,UnusedResources">Gārāhuè dàj ‘hiaj sun sa nana’hui’ gū’nàj widget nīkāj Firefox</string>
+  <!--
+    Description for add search widget screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_add_search_widget_description" tools:ignore="BrandUsage,UnusedResources">Gā’nïnj Firefox gīnunj riña raga’ ayi’ìt, nī ndà nanèt chre gāchē nunt ngà ‘ngō sa dugumîn sò’ nī naran riña nej sa naga’nāj nu riña nej sitio.</string>
+  <!--
+    Text for the button to add search widget on the device used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Nā’nïnj si widget Firefox</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -484,12 +516,31 @@
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Guruhuât gunumânt riña Firefox</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Guij ne\' ñāan</string>
+  <!-- Terms of use (ToU) onboarding redesign title. -->
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Giri yītïn sa nana’hui’ ‘hiaj sun ngà Android</string>
+  <!-- Terms of use (ToU) first subheader. -->
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Ûta hìo nayi’nïnj riña nej sîtio</string>
+  <!-- Terms of use (ToU) second subheader. -->
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Nanûn mān’an sa dugumîn sò’</string>
+  <!-- Terms of use (ToU) third subheader. -->
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">Ûta nika sa gā’hue nādunāt riñanj</string>
+  <!--
+    Terms of use (ToU) first body text. %1$s is replaced by an active link,
+    using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Si gān’ānjt ne’ ñāa, nī arâjyinat %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Chrēj da’huît gānikò’t sisī gārāsunt Firefox</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Gūij ne\' ñāan</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Danè’ ginùn riña gāchrūnt sa nānà’huì’t ruhuât nānj</string>
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Guij ne\' ñāan</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Gī\'hiaj hīa</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Gīrì’ sa dugumîn mān’an sò’ ngà aché nunt</string>
   <!-- Sync onboarding redesign negative button text. -->
   <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
