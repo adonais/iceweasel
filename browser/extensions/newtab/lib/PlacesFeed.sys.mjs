@@ -77,7 +77,7 @@ class PlacesObserver {
             source === lazy.PlacesUtils.bookmarks.SOURCES.SYNC ||
             (!url.startsWith("http://") && !url.startsWith("https://"))
           ) {
-            return;
+            continue;
           }
 
           this.dispatch({ type: at.PLACES_LINKS_CHANGED });

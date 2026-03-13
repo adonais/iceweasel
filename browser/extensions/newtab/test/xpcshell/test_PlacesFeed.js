@@ -1077,6 +1077,84 @@ add_task(async function test_PlacesObserver_ignores() {
   }
 });
 
+add_task(
+  async function test_PlacesObserver_skipped_bookmark_added_does_not_drop_subsequent_events() {
+    info(
+      "PlacesObserver should continue processing events after skipping a " +
+        "bookmark-added event (e.g. from IMPORT source)"
+    );
+    let sandbox = sinon.createSandbox();
+    let dispatch = sandbox.spy();
+    let observer = new PlacesFeed.PlacesObserver(dispatch);
+
+    await observer.handlePlacesEvent([
+      {
+        itemType: TYPE_BOOKMARK,
+        source: SOURCES.IMPORT,
+        dateAdded: FAKE_BOOKMARK.dateAdded,
+        guid: FAKE_BOOKMARK.bookmarkGuid,
+        title: FAKE_BOOKMARK.bookmarkTitle,
+        url: "https://www.imported.com",
+        isTagging: false,
+        type: "bookmark-added",
+      },
+      {
+        type: "page-removed",
+        url: "https://www.removed-page.com",
+        isRemovedFromStore: true,
+      },
+    ]);
+
+    Assert.ok(
+      dispatch.calledWith({
+        type: actionTypes.PLACES_LINKS_DELETED,
+        data: { urls: ["https://www.removed-page.com"] },
+      }),
+      "page-removed event after skipped bookmark-added should still be dispatched"
+    );
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_PlacesObserver_skipped_bookmark_added_does_not_drop_accumulated_removals() {
+    info(
+      "PlacesObserver should dispatch accumulated removedPages even when a " +
+        "skippable bookmark-added event follows"
+    );
+    let sandbox = sinon.createSandbox();
+    let dispatch = sandbox.spy();
+    let observer = new PlacesFeed.PlacesObserver(dispatch);
+
+    await observer.handlePlacesEvent([
+      {
+        type: "page-removed",
+        url: "https://www.already-removed.com",
+        isRemovedFromStore: true,
+      },
+      {
+        itemType: TYPE_BOOKMARK,
+        source: SOURCES.IMPORT,
+        dateAdded: FAKE_BOOKMARK.dateAdded,
+        guid: FAKE_BOOKMARK.bookmarkGuid,
+        title: FAKE_BOOKMARK.bookmarkTitle,
+        url: "https://www.imported.com",
+        isTagging: false,
+        type: "bookmark-added",
+      },
+    ]);
+
+    Assert.ok(
+      dispatch.calledWith({
+        type: actionTypes.PLACES_LINKS_DELETED,
+        data: { urls: ["https://www.already-removed.com"] },
+      }),
+      "page-removed accumulated before skipped bookmark-added should still be dispatched"
+    );
+    sandbox.restore();
+  }
+);
+
 add_task(async function test_PlacesObserver_bookmark_removed() {
   info(
     "PlacesObserver should dispatch a PLACES_BOOKMARKS_REMOVED " +
