@@ -517,7 +517,7 @@ else
 	    ASFLAGS += -march=opteron -m64 -fPIC
 	    MPI_SRCS += mp_comba.c
 	    # comment the next four lines to turn off Intel HW acceleration
-	    ASFILES += intel-gcm.s
+	    ASFILES += intel-gcm.S
 	    EXTRA_SRCS += intel-gcm-wrap.c
 	    DEFINES += -DHAVE_PLATFORM_GCM
 	    INTEL_GCM = 1

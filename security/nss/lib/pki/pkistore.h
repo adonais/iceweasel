@@ -56,7 +56,7 @@ nssCertificateStore_RemoveCertLOCKED(
 
 struct nssCertificateStoreTraceStr {
     nssCertificateStore *store;
-    PRLock *lock;
+    PZLock *lock;
     PRBool locked;
     PRBool unlocked;
 };

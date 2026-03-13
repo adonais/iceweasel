@@ -14,6 +14,7 @@
 
 #include "secasn1.h"
 #include "secerr.h"
+#include "nssilock.h"
 #include "prmon.h"
 #include "base64.h"
 #include "sechash.h"

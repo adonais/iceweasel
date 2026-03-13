@@ -114,7 +114,9 @@ cert_init()
   #cert_add_algorithm "RSA-PSS" "-rsa-pss" "-k rsa -pss -Z sha256" "true"
   #cert_add_algorithm "RSA-PSS-SHA1" "-rsa-pss-sha1" "-k rsa -pss -Z sha1" "true"
 
-  ROOTCERTSFILE=`native_path "${ROOTCERTSFILE}"`
+  if [ "${OS_ARCH}" = "WINNT" -a "$OS_NAME" = "CYGWIN_NT" ]; then
+	ROOTCERTSFILE=`cygpath -m ${ROOTCERTSFILE}`
+  fi
 }
 
 cert_log() ######################    write the cert_status file
@@ -256,7 +258,10 @@ cert_init_cert()
     cd "${CERTDIR}"
     CERTDIR="."
 
-    PROFILEDIR=`(cd "${CERTDIR}" && native_path)`
+    PROFILEDIR=`cd ${CERTDIR}; pwd`
+    if [ "${OS_ARCH}" = "WINNT" -a "$OS_NAME" = "CYGWIN_NT" ]; then
+        PROFILEDIR=`cygpath -m ${PROFILEDIR}`
+    fi
     if [ -n "${MULTIACCESS_DBM}" ]; then
 	PROFILEDIR="multiaccess:${DOMAIN}"
     fi
@@ -553,7 +558,10 @@ cert_rsa_CA()
   cd ${CUR_CADIR}
   pwd
 
-  LPROFILE=`native_path`
+  LPROFILE=`pwd`
+  if [ "${OS_ARCH}" = "WINNT" -a "$OS_NAME" = "CYGWIN_NT" ]; then
+     LPROFILE=`cygpath -m ${LPROFILE}`
+  fi
   if [ -n "${MULTIACCESS_DBM}" ]; then
 	LPROFILE="multiaccess:${DOMAIN}"
   fi
@@ -1168,7 +1176,10 @@ cert_stresscerts()
   CERTDIR="$CLIENTDIR"
   cd "${CERTDIR}"
 
-  PROFILEDIR=`(cd "${CERTDIR}" && native_path)`
+  PROFILEDIR=`cd ${CERTDIR}; pwd`
+  if [ "${OS_ARCH}" = "WINNT" -a "$OS_NAME" = "CYGWIN_NT" ]; then
+     PROFILEDIR=`cygpath -m ${PROFILEDIR}`
+  fi
   if [ -n "${MULTIACCESS_DBM}" ]; then
      PROFILEDIR="multiaccess:${D_CLIENT}"
   fi
@@ -1626,7 +1637,10 @@ cert_crl_ssl()
 
   cd $CADIR
 
-  PROFILEDIR=`(cd "${CLIENTDIR}" && native_path)`
+  PROFILEDIR=`cd ${CLIENTDIR}; pwd`
+  if [ "${OS_ARCH}" = "WINNT" -a "$OS_NAME" = "CYGWIN_NT" ]; then
+     PROFILEDIR=`cygpath -m ${PROFILEDIR}`
+  fi
   CRL_GRPS_END=`expr ${CRL_GRP_1_BEGIN} + ${TOTAL_CRL_RANGE} - 1`
   echo "$SCRIPTNAME: Creating Client CA Issued Certificates Range $CRL_GRP_1_BEGIN - $CRL_GRPS_END ==="
   CU_ACTION="Creating client test certs"

@@ -14,6 +14,7 @@
 #include "prtypes.h"
 #include "prinit.h"
 #include "blapi.h"
+#include "nssilock.h"
 #include "secitem.h"
 #include "blapit.h"
 #include "mpi.h"

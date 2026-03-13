@@ -135,7 +135,7 @@ FILE *ssl_trace_iob;
 
 #ifdef NSS_ALLOW_SSLKEYLOGFILE
 FILE *ssl_keylog_iob;
-PRLock *ssl_keylog_lock;
+PZLock *ssl_keylog_lock;
 #endif
 
 /* SRTP_NULL_HMAC_SHA1_80 and SRTP_NULL_HMAC_SHA1_32 are not implemented. */
@@ -438,11 +438,11 @@ ssl_DestroyLocks(sslSocket *ss)
 {
     /* Destroy locks. */
     if (ss->firstHandshakeLock) {
-        PR_DestroyMonitor(ss->firstHandshakeLock);
+        PZ_DestroyMonitor(ss->firstHandshakeLock);
         ss->firstHandshakeLock = NULL;
     }
     if (ss->ssl3HandshakeLock) {
-        PR_DestroyMonitor(ss->ssl3HandshakeLock);
+        PZ_DestroyMonitor(ss->ssl3HandshakeLock);
         ss->ssl3HandshakeLock = NULL;
     }
     if (ss->specLock) {
@@ -451,19 +451,19 @@ ssl_DestroyLocks(sslSocket *ss)
     }
 
     if (ss->recvLock) {
-        PR_DestroyLock(ss->recvLock);
+        PZ_DestroyLock(ss->recvLock);
         ss->recvLock = NULL;
     }
     if (ss->sendLock) {
-        PR_DestroyLock(ss->sendLock);
+        PZ_DestroyLock(ss->sendLock);
         ss->sendLock = NULL;
     }
     if (ss->xmitBufLock) {
-        PR_DestroyMonitor(ss->xmitBufLock);
+        PZ_DestroyMonitor(ss->xmitBufLock);
         ss->xmitBufLock = NULL;
     }
     if (ss->recvBufLock) {
-        PR_DestroyMonitor(ss->recvBufLock);
+        PZ_DestroyMonitor(ss->recvBufLock);
         ss->recvBufLock = NULL;
     }
 }
@@ -797,8 +797,8 @@ SSL_OptionSet(PRFileDesc *fd, PRInt32 which, PRIntn val)
 
             if (val && holdingLocks) {
                 /* If we're disabling locks and locks were previously enabled. */
-                PR_ExitMonitor((ss)->ssl3HandshakeLock);
-                PR_ExitMonitor((ss)->firstHandshakeLock);
+                PZ_ExitMonitor((ss)->ssl3HandshakeLock);
+                PZ_ExitMonitor((ss)->firstHandshakeLock);
                 ssl_DestroyLocks(ss);
                 holdingLocks = PR_FALSE;
             } else if (!val && !holdingLocks) {
@@ -938,8 +938,8 @@ SSL_OptionSet(PRFileDesc *fd, PRInt32 which, PRIntn val)
      * regardless of the current value of ss->opt.noLocks.
      */
     if (holdingLocks) {
-        PR_ExitMonitor((ss)->ssl3HandshakeLock);
-        PR_ExitMonitor((ss)->firstHandshakeLock);
+        PZ_ExitMonitor((ss)->ssl3HandshakeLock);
+        PZ_ExitMonitor((ss)->firstHandshakeLock);
     }
 
     return rv;
@@ -3924,12 +3924,12 @@ static SECStatus
 ssl_MakeLocks(sslSocket *ss)
 {
     PR_ASSERT(!ss->firstHandshakeLock);
-    ss->firstHandshakeLock = PR_NewMonitor();
+    ss->firstHandshakeLock = PZ_NewMonitor(nssILockSSL);
     if (!ss->firstHandshakeLock)
         goto loser;
 
     PR_ASSERT(!ss->ssl3HandshakeLock);
-    ss->ssl3HandshakeLock = PR_NewMonitor();
+    ss->ssl3HandshakeLock = PZ_NewMonitor(nssILockSSL);
     if (!ss->ssl3HandshakeLock)
         goto loser;
 
@@ -3939,23 +3939,23 @@ ssl_MakeLocks(sslSocket *ss)
         goto loser;
 
     PR_ASSERT(!ss->recvBufLock);
-    ss->recvBufLock = PR_NewMonitor();
+    ss->recvBufLock = PZ_NewMonitor(nssILockSSL);
     if (!ss->recvBufLock)
         goto loser;
 
     PR_ASSERT(!ss->xmitBufLock);
-    ss->xmitBufLock = PR_NewMonitor();
+    ss->xmitBufLock = PZ_NewMonitor(nssILockSSL);
     if (!ss->xmitBufLock)
         goto loser;
     ss->writerThread = NULL;
     if (ssl_lock_readers) {
         PR_ASSERT(!ss->recvLock);
-        ss->recvLock = PR_NewLock();
+        ss->recvLock = PZ_NewLock(nssILockSSL);
         if (!ss->recvLock)
             goto loser;
 
         PR_ASSERT(!ss->sendLock);
-        ss->sendLock = PR_NewLock();
+        ss->sendLock = PZ_NewLock(nssILockSSL);
         if (!ss->sendLock)
             goto loser;
     }

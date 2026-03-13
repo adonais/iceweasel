@@ -59,7 +59,6 @@ sftkdb_isULONGAttribute(CK_ATTRIBUTE_TYPE type)
         case CKA_SUBPRIME_BITS:
         case CKA_VALUE_BITS:
         case CKA_VALUE_LEN:
-        case CKA_PARAMETER_SET:
 
         case CKA_PKCS_TRUST_SERVER_AUTH:
         case CKA_PKCS_TRUST_CLIENT_AUTH:
@@ -418,15 +417,7 @@ sftkdb_fixupTemplateOut(CK_ATTRIBUTE *template, CK_OBJECT_HANDLE objectID,
                         crv = CKR_BUFFER_TOO_SMALL;
                         continue;
                     }
-                    /* handle the case where the CKA_PARAMETER_SET was
-                     * incorrectly encoded */
-                    if ((value > 0xff) &&
-                        (template[i].type == CKA_PARAMETER_SET)) {
-                        PORT_Memcpy(template[i].pValue, ntemplate[i].pValue,
-                                    ntemplate[i].ulValueLen);
-                    } else {
-                        PORT_Memcpy(template[i].pValue, &value, sizeof(CK_ULONG));
-                    }
+                    PORT_Memcpy(template[i].pValue, &value, sizeof(CK_ULONG));
                 }
                 template[i].ulValueLen = sizeof(CK_ULONG);
             }
@@ -449,9 +440,9 @@ sftkdb_fixupTemplateOut(CK_ATTRIBUTE *template, CK_OBJECT_HANDLE objectID,
 
             cipherText.data = ntemplate[i].pValue;
             cipherText.len = ntemplate[i].ulValueLen;
-            PR_Lock(handle->passwordLock);
+            PZ_Lock(handle->passwordLock);
             if (handle->passwordKey.data == NULL) {
-                PR_Unlock(handle->passwordLock);
+                PZ_Unlock(handle->passwordLock);
                 template[i].ulValueLen = -1;
                 crv = CKR_USER_NOT_LOGGED_IN;
                 continue;
@@ -461,7 +452,7 @@ sftkdb_fixupTemplateOut(CK_ATTRIBUTE *template, CK_OBJECT_HANDLE objectID,
                                          objectID,
                                          ntemplate[i].type,
                                          &cipherText, &plainText);
-            PR_Unlock(handle->passwordLock);
+            PZ_Unlock(handle->passwordLock);
             if (rv != SECSuccess) {
                 PORT_Memset(template[i].pValue, 0, template[i].ulValueLen);
                 template[i].ulValueLen = -1;
@@ -514,12 +505,12 @@ sftkdb_fixupTemplateOut(CK_ATTRIBUTE *template, CK_OBJECT_HANDLE objectID,
              * we do a second check holding the lock just in case the user
              * loggout while we were trying to get the signature.
              */
-            PR_Lock(keyHandle->passwordLock);
+            PZ_Lock(keyHandle->passwordLock);
             if (keyHandle->passwordKey.data == NULL) {
                 /* if we are no longer logged in, no use checking the other
                  * Signatures either. */
                 checkSig = PR_FALSE;
-                PR_Unlock(keyHandle->passwordLock);
+                PZ_Unlock(keyHandle->passwordLock);
                 continue;
             }
 
@@ -527,7 +518,7 @@ sftkdb_fixupTemplateOut(CK_ATTRIBUTE *template, CK_OBJECT_HANDLE objectID,
                                         &keyHandle->passwordKey,
                                         objectID, ntemplate[i].type,
                                         &plainText, &signText);
-            PR_Unlock(keyHandle->passwordLock);
+            PZ_Unlock(keyHandle->passwordLock);
             if (rv != SECSuccess) {
                 PORT_Memset(template[i].pValue, 0, template[i].ulValueLen);
                 template[i].ulValueLen = -1;
@@ -626,9 +617,9 @@ sftk_signTemplate(PLArenaPool *arena, SFTKDBHandle *handle,
 
             plainText.data = template[i].pValue;
             plainText.len = template[i].ulValueLen;
-            PR_Lock(keyHandle->passwordLock);
+            PZ_Lock(keyHandle->passwordLock);
             if (keyHandle->passwordKey.data == NULL) {
-                PR_Unlock(keyHandle->passwordLock);
+                PZ_Unlock(keyHandle->passwordLock);
                 crv = CKR_USER_NOT_LOGGED_IN;
                 goto loser;
             }
@@ -637,7 +628,7 @@ sftk_signTemplate(PLArenaPool *arena, SFTKDBHandle *handle,
                                       keyHandle->defaultIterationCount,
                                       objectID, template[i].type,
                                       &plainText, &signText);
-            PR_Unlock(keyHandle->passwordLock);
+            PZ_Unlock(keyHandle->passwordLock);
             if (rv != SECSuccess) {
                 crv = CKR_GENERAL_ERROR; /* better error code here? */
                 goto loser;
@@ -759,7 +750,7 @@ sftk_ExtractTemplate(PLArenaPool *arena, SFTKObject *object,
         doEnc = PR_FALSE;
     }
 
-    PR_Lock(sessObject->attributeLock);
+    PZ_Lock(sessObject->attributeLock);
     count = 0;
     for (i = 0; i < sessObject->hashSize; i++) {
         SFTKAttribute *attr;
@@ -769,7 +760,7 @@ sftk_ExtractTemplate(PLArenaPool *arena, SFTKObject *object,
     }
     template = PORT_ArenaNewArray(arena, CK_ATTRIBUTE, count);
     if (template == NULL) {
-        PR_Unlock(sessObject->attributeLock);
+        PZ_Unlock(sessObject->attributeLock);
         *crv = CKR_HOST_MEMORY;
         return NULL;
     }
@@ -806,9 +797,9 @@ sftk_ExtractTemplate(PLArenaPool *arena, SFTKObject *object,
 
                 plainText.data = tp->pValue;
                 plainText.len = tp->ulValueLen;
-                PR_Lock(handle->passwordLock);
+                PZ_Lock(handle->passwordLock);
                 if (handle->passwordKey.data == NULL) {
-                    PR_Unlock(handle->passwordLock);
+                    PZ_Unlock(handle->passwordLock);
                     *crv = CKR_USER_NOT_LOGGED_IN;
                     break;
                 }
@@ -818,7 +809,7 @@ sftk_ExtractTemplate(PLArenaPool *arena, SFTKObject *object,
                                              objectID,
                                              tp->type,
                                              &plainText, &cipherText);
-                PR_Unlock(handle->passwordLock);
+                PZ_Unlock(handle->passwordLock);
                 if (rv == SECSuccess) {
                     tp->pValue = cipherText->data;
                     tp->ulValueLen = cipherText->len;
@@ -831,7 +822,7 @@ sftk_ExtractTemplate(PLArenaPool *arena, SFTKObject *object,
         }
     }
     PORT_Assert(templateIndex <= count);
-    PR_Unlock(sessObject->attributeLock);
+    PZ_Unlock(sessObject->attributeLock);
 
     if (*crv != CKR_OK) {
         return NULL;
@@ -1627,8 +1618,6 @@ sftkdb_DestroyObject(SFTKDBHandle *handle, CK_OBJECT_HANDLE objectID,
                                                    CKA_EXPONENT_2);
             (void)sftkdb_DestroyAttributeSignature(handle, keydb, objectID,
                                                    CKA_COEFFICIENT);
-            (void)sftkdb_DestroyAttributeSignature(handle, keydb, objectID,
-                                                   CKA_SEED);
         } else {
             keydb = SFTK_GET_SDB(handle->peerDB);
         }
@@ -1696,14 +1685,14 @@ sftkdb_CloseDB(SFTKDBHandle *handle)
         (*handle->db->sdb_Close)(handle->db);
     }
     if (handle->passwordLock) {
-        PR_Lock(handle->passwordLock);
+        PZ_Lock(handle->passwordLock);
     }
     if (handle->passwordKey.data) {
         SECITEM_ZfreeItem(&handle->passwordKey, PR_FALSE);
     }
     if (handle->passwordLock) {
-        PR_Unlock(handle->passwordLock);
-        SKIP_AFTER_FORK(PR_DestroyLock(handle->passwordLock));
+        PZ_Unlock(handle->passwordLock);
+        SKIP_AFTER_FORK(PZ_DestroyLock(handle->passwordLock));
     }
     if (handle->updatePasswordKey) {
         SECITEM_ZfreeItem(handle->updatePasswordKey, PR_TRUE);
@@ -2840,12 +2829,12 @@ sftk_getCertDB(SFTKSlot *slot)
 {
     SFTKDBHandle *dbHandle;
 
-    PR_Lock(slot->slotLock);
+    PZ_Lock(slot->slotLock);
     dbHandle = slot->certDB;
     if (dbHandle) {
         (void)PR_ATOMIC_INCREMENT(&dbHandle->ref);
     }
-    PR_Unlock(slot->slotLock);
+    PZ_Unlock(slot->slotLock);
     return dbHandle;
 }
 
@@ -2858,12 +2847,12 @@ sftk_getKeyDB(SFTKSlot *slot)
 {
     SFTKDBHandle *dbHandle;
 
-    SKIP_AFTER_FORK(PR_Lock(slot->slotLock));
+    SKIP_AFTER_FORK(PZ_Lock(slot->slotLock));
     dbHandle = slot->keyDB;
     if (dbHandle) {
         (void)PR_ATOMIC_INCREMENT(&dbHandle->ref);
     }
-    SKIP_AFTER_FORK(PR_Unlock(slot->slotLock));
+    SKIP_AFTER_FORK(PZ_Unlock(slot->slotLock));
     return dbHandle;
 }
 
@@ -2876,12 +2865,12 @@ sftk_getDBForTokenObject(SFTKSlot *slot, CK_OBJECT_HANDLE objectID)
 {
     SFTKDBHandle *dbHandle;
 
-    PR_Lock(slot->slotLock);
+    PZ_Lock(slot->slotLock);
     dbHandle = objectID & SFTK_KEYDB_TYPE ? slot->keyDB : slot->certDB;
     if (dbHandle) {
         (void)PR_ATOMIC_INCREMENT(&dbHandle->ref);
     }
-    PR_Unlock(slot->slotLock);
+    PZ_Unlock(slot->slotLock);
     return dbHandle;
 }
 
@@ -2906,7 +2895,7 @@ sftk_NewDBHandle(SDB *sdb, int type, PRBool legacy)
     handle->passwordKey.len = 0;
     handle->passwordLock = NULL;
     if (type == SFTK_KEYDB_TYPE) {
-        handle->passwordLock = PR_NewLock();
+        handle->passwordLock = PZ_NewLock(nssILockAttribute);
     }
     sdb->app_private = handle;
     return handle;
@@ -2930,12 +2919,12 @@ sftkdb_ResetKeyDB(SFTKDBHandle *handle)
         /* set error */
         return SECFailure;
     }
-    PR_Lock(handle->passwordLock);
+    PZ_Lock(handle->passwordLock);
     if (handle->passwordKey.data) {
         SECITEM_ZfreeItem(&handle->passwordKey, PR_FALSE);
         handle->passwordKey.data = NULL;
     }
-    PR_Unlock(handle->passwordLock);
+    PZ_Unlock(handle->passwordLock);
     return SECSuccess;
 }
 

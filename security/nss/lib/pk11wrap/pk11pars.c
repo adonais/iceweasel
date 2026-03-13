@@ -67,7 +67,7 @@ secmod_NewModule(void)
     newMod->trustOrder = 0;
     newMod->cipherOrder = 0;
     newMod->evControlMask = 0;
-    newMod->refLock = PR_NewLock();
+    newMod->refLock = PZ_NewLock(nssILockRefLock);
     if (newMod->refLock == NULL) {
         PORT_FreeArena(arena, PR_FALSE);
         return NULL;

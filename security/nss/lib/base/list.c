@@ -21,7 +21,7 @@ typedef struct nssListElementStr nssListElement;
 
 struct nssListStr {
     NSSArena *arena;
-    PRLock *lock;
+    PZLock *lock;
     nssListElement *head;
     PRUint32 count;
     nssListCompareFunc compareFunc;
@@ -30,18 +30,18 @@ struct nssListStr {
 };
 
 struct nssListIteratorStr {
-    PRLock *lock;
+    PZLock *lock;
     nssList *list;
     nssListElement *current;
 };
 
 #define NSSLIST_LOCK_IF(list) \
     if ((list)->lock)         \
-    PR_Lock((list)->lock)
+    PZ_Lock((list)->lock)
 
 #define NSSLIST_UNLOCK_IF(list) \
     if ((list)->lock)           \
-    PR_Unlock((list)->lock)
+    PZ_Unlock((list)->lock)
 
 static PRBool
 pointer_compare(void *a, void *b)
@@ -95,7 +95,7 @@ nssList_Create(NSSArena *arenaOpt, PRBool threadSafe)
         return (nssList *)NULL;
     }
     if (threadSafe) {
-        list->lock = PR_NewLock();
+        list->lock = PZ_NewLock(nssILockOther);
         if (!list->lock) {
             if (arenaOpt) {
                 nss_ZFreeIf(list);
@@ -121,7 +121,7 @@ nssList_Destroy(nssList *list)
         nssList_Clear(list, NULL);
     }
     if (list->lock) {
-        (void)PR_DestroyLock(list->lock);
+        (void)PZ_DestroyLock(list->lock);
     }
     if (list->i_alloced_arena) {
         NSSArena_Destroy(list->arena);
@@ -342,7 +342,7 @@ nssList_CreateIterator(nssList *list)
     }
     rvIterator->current = rvIterator->list->head;
     if (list->lock) {
-        rvIterator->lock = PR_NewLock();
+        rvIterator->lock = PZ_NewLock(nssILockOther);
         if (!rvIterator->lock) {
             nssList_Destroy(rvIterator->list);
             nss_ZFreeIf(rvIterator);
@@ -356,7 +356,7 @@ NSS_IMPLEMENT void
 nssListIterator_Destroy(nssListIterator *iter)
 {
     if (iter->lock) {
-        (void)PR_DestroyLock(iter->lock);
+        (void)PZ_DestroyLock(iter->lock);
     }
     if (iter->list) {
         nssList_Destroy(iter->list);
@@ -401,5 +401,5 @@ NSS_IMPLEMENT PRStatus
 nssListIterator_Finish(nssListIterator *iter)
 {
     iter->current = iter->list->head;
-    return (iter->lock) ? PR_Unlock(iter->lock) : PR_SUCCESS;
+    return (iter->lock) ? PZ_Unlock(iter->lock) : PR_SUCCESS;
 }

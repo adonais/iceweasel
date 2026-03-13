@@ -843,7 +843,7 @@ NSSRWLock_HaveWriteLock(NSSRWLock *rwlock)
 }
 
 SECStatus
-__nss_InitLock(PRLock **ppLock)
+__nss_InitLock(PZLock **ppLock, nssILockType ltype)
 {
     PORT_SetError(PR_NOT_IMPLEMENTED_ERROR);
     return SECFailure;

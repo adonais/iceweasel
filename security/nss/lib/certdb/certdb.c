@@ -6,6 +6,7 @@
  * Certificate handling code
  */
 
+#include "nssilock.h"
 #include "prmon.h"
 #include "prtime.h"
 #include "cert.h"
@@ -2951,7 +2952,7 @@ CERT_FilterCertListByNickname(CERTCertList *certList, char *nickname,
     return rv;
 }
 
-static PRLock *certRefCountLock = NULL;
+static PZLock *certRefCountLock = NULL;
 
 /*
  * Acquire the cert reference count lock
@@ -2963,7 +2964,7 @@ void
 CERT_LockCertRefCount(CERTCertificate *cert)
 {
     PORT_Assert(certRefCountLock != NULL);
-    PR_Lock(certRefCountLock);
+    PZ_Lock(certRefCountLock);
     return;
 }
 
@@ -2974,11 +2975,11 @@ void
 CERT_UnlockCertRefCount(CERTCertificate *cert)
 {
     PORT_Assert(certRefCountLock != NULL);
-    PRStatus prstat = PR_Unlock(certRefCountLock);
+    PRStatus prstat = PZ_Unlock(certRefCountLock);
     PORT_AssertArg(prstat == PR_SUCCESS);
 }
 
-static PRLock *certTrustLock = NULL;
+static PZLock *certTrustLock = NULL;
 
 /*
  * Acquire the cert trust lock
@@ -2990,10 +2991,10 @@ void
 CERT_LockCertTrust(const CERTCertificate *cert)
 {
     PORT_Assert(certTrustLock != NULL);
-    PR_Lock(certTrustLock);
+    PZ_Lock(certTrustLock);
 }
 
-static PRLock *certTempPermCertLock = NULL;
+static PZLock *certTempPermCertLock = NULL;
 
 /*
  * Acquire the cert temp/perm/nssCert lock
@@ -3002,7 +3003,7 @@ void
 CERT_LockCertTempPerm(const CERTCertificate *cert)
 {
     PORT_Assert(certTempPermCertLock != NULL);
-    PR_Lock(certTempPermCertLock);
+    PZ_Lock(certTempPermCertLock);
 }
 
 /* Maybe[Lock, Unlock] variants are only to be used by
@@ -3012,7 +3013,7 @@ void
 CERT_MaybeLockCertTempPerm(const CERTCertificate *cert)
 {
     if (certTempPermCertLock) {
-        PR_Lock(certTempPermCertLock);
+        PZ_Lock(certTempPermCertLock);
     }
 }
 
@@ -3020,7 +3021,7 @@ SECStatus
 cert_InitLocks(void)
 {
     if (certRefCountLock == NULL) {
-        certRefCountLock = PR_NewLock();
+        certRefCountLock = PZ_NewLock(nssILockRefLock);
         PORT_Assert(certRefCountLock != NULL);
         if (!certRefCountLock) {
             return SECFailure;
@@ -3028,21 +3029,21 @@ cert_InitLocks(void)
     }
 
     if (certTrustLock == NULL) {
-        certTrustLock = PR_NewLock();
+        certTrustLock = PZ_NewLock(nssILockCertDB);
         PORT_Assert(certTrustLock != NULL);
         if (!certTrustLock) {
-            PR_DestroyLock(certRefCountLock);
+            PZ_DestroyLock(certRefCountLock);
             certRefCountLock = NULL;
             return SECFailure;
         }
     }
 
     if (certTempPermCertLock == NULL) {
-        certTempPermCertLock = PR_NewLock();
+        certTempPermCertLock = PZ_NewLock(nssILockCertDB);
         PORT_Assert(certTempPermCertLock != NULL);
         if (!certTempPermCertLock) {
-            PR_DestroyLock(certTrustLock);
-            PR_DestroyLock(certRefCountLock);
+            PZ_DestroyLock(certTrustLock);
+            PZ_DestroyLock(certRefCountLock);
             certRefCountLock = NULL;
             certTrustLock = NULL;
             return SECFailure;
@@ -3059,7 +3060,7 @@ cert_DestroyLocks(void)
 
     PORT_Assert(certRefCountLock != NULL);
     if (certRefCountLock) {
-        PR_DestroyLock(certRefCountLock);
+        PZ_DestroyLock(certRefCountLock);
         certRefCountLock = NULL;
     } else {
         rv = SECFailure;
@@ -3067,7 +3068,7 @@ cert_DestroyLocks(void)
 
     PORT_Assert(certTrustLock != NULL);
     if (certTrustLock) {
-        PR_DestroyLock(certTrustLock);
+        PZ_DestroyLock(certTrustLock);
         certTrustLock = NULL;
     } else {
         rv = SECFailure;
@@ -3075,7 +3076,7 @@ cert_DestroyLocks(void)
 
     PORT_Assert(certTempPermCertLock != NULL);
     if (certTempPermCertLock) {
-        PR_DestroyLock(certTempPermCertLock);
+        PZ_DestroyLock(certTempPermCertLock);
         certTempPermCertLock = NULL;
     } else {
         rv = SECFailure;
@@ -3090,7 +3091,7 @@ void
 CERT_UnlockCertTrust(const CERTCertificate *cert)
 {
     PORT_Assert(certTrustLock != NULL);
-    PRStatus prstat = PR_Unlock(certTrustLock);
+    PRStatus prstat = PZ_Unlock(certTrustLock);
     PORT_AssertArg(prstat == PR_SUCCESS);
 }
 
@@ -3101,7 +3102,7 @@ void
 CERT_UnlockCertTempPerm(const CERTCertificate *cert)
 {
     PORT_Assert(certTempPermCertLock != NULL);
-    PRStatus prstat = PR_Unlock(certTempPermCertLock);
+    PRStatus prstat = PZ_Unlock(certTempPermCertLock);
     PORT_AssertArg(prstat == PR_SUCCESS);
 }
 
@@ -3109,7 +3110,7 @@ void
 CERT_MaybeUnlockCertTempPerm(const CERTCertificate *cert)
 {
     if (certTempPermCertLock) {
-        PR_Unlock(certTempPermCertLock);
+        PZ_Unlock(certTempPermCertLock);
     }
 }
 

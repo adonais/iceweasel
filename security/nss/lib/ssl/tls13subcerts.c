@@ -305,7 +305,7 @@ tls13_HashCredentialAndSignOrVerifyMessage(SECKEYPrivateKey *privKey,
         goto loser;
     }
 
-    const PRUint8 kCtxStrPadding[64] = {
+    static const PRUint8 kCtxStrPadding[64] = {
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -316,15 +316,14 @@ tls13_HashCredentialAndSignOrVerifyMessage(SECKEYPrivateKey *privKey,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20
     };
 
-    const PRUint8 kCtxStr[] = "TLS, server delegated credentials";
+    static const PRUint8 kCtxStr[] = "TLS, server delegated credentials";
 
     /* Hash the message signed by the peer. */
     rv = tls_SignOrVerifyUpdate(ctx, kCtxStrPadding, sizeof kCtxStrPadding);
     if (rv != SECSuccess)
         goto loser;
-    /* sizeof kCtxStr includes the null terminator, which serves as the 0x00
-     * separator specified in RFC 9345 section 4. */
-    rv = tls_SignOrVerifyUpdate(ctx, kCtxStr, sizeof kCtxStr);
+    rv = tls_SignOrVerifyUpdate(ctx, kCtxStr,
+                                strlen((const char *)kCtxStr + 1 /* 0-byte */));
     if (rv != SECSuccess)
         goto loser;
     rv = tls_SignOrVerifyUpdate(ctx, cert->derCert.data, cert->derCert.len);

@@ -89,7 +89,7 @@ typedef void(PR_CALLBACK *nssHashIterator)(const void *key, void *value,
 #ifdef DEBUG
 struct nssPointerTrackerStr {
     PRCallOnceType once;
-    PRLock *lock;
+    PZLock *lock;
     PLHashTable *table;
 };
 typedef struct nssPointerTrackerStr nssPointerTracker;

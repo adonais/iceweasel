@@ -126,7 +126,7 @@ ssl_init()
   # in fips mode, turn off curve25519 until it's NIST approved
   ALL_GROUPS="P256,P384,P521,x25519,FF2048,FF3072,FF4096,FF6144,FF8192,xyber768d00,x25519mlkem768,secp256r1mlkem768,secp384r1mlkem1024"
   NON_PQ_GROUPS="P256,P384,P521,x25519,FF2048,FF3072,FF4096,FF6144,FF8192"
-  FIPS_GROUPS="P256,P384,P521,FF2048,FF3072,FF4096,FF6144,FF8192,x25519mlkem768,secp256r1mlkem768,secp384r1mlkem1024"
+  FIPS_GROUPS="P256,P384,P521,FF2048,FF3072,FF4096,FF6144,FF8192,mx25519mlkem768,secp256r1mlkem768,secp384r1mlkem1024"
   FIPS_NON_PQ_GROUPS="P256,P384,P521,FF2048,FF3072,FF4096,FF6144,FF8192"
 
 
@@ -158,7 +158,7 @@ is_selfserv_alive()
   fi
 
   if [ "${OS_ARCH}" = "WINNT" ] && \
-     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" -o "$OS_NAME" = "MSYS_NT" ]; then
+     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" ]; then
       PID=${SHELL_SERVERPID}
   else
       PID=`cat ${SERVERPID}`
@@ -200,11 +200,23 @@ wait_for_selfserv()
 ########################################################################
 kill_selfserv()
 {
-  PID=`cat ${SERVERPID}`
+  if [ "${OS_ARCH}" = "WINNT" ] && \
+     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" ]; then
+      PID=${SHELL_SERVERPID}
+  else
+      PID=`cat ${SERVERPID}`
+  fi
 
   echo "trying to kill selfserv with PID ${PID} at `date`"
 
-  safe_kill ${PID} ${SHELL_SERVERPID}
+  if [ "${OS_ARCH}" = "WINNT" ]; then
+      echo "${KILL} ${PID}"
+      ${KILL} ${PID}
+  else
+      echo "${KILL} -USR1 ${PID}"
+      ${KILL} -USR1 ${PID}
+  fi
+  wait ${PID}
   if [ ${fileout} -eq 1 ]; then
       cat ${SERVEROUTFILE}
   fi
@@ -283,7 +295,14 @@ start_selfserv()
   SHELL_SERVERPID=$!
   wait_for_selfserv
 
-  echo "selfserv with PID `cat ${SERVERPID}` started at `date`"
+  if [ "${OS_ARCH}" = "WINNT" ] && \
+     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" ]; then
+      PID=${SHELL_SERVERPID}
+  else
+      PID=`cat ${SERVERPID}`
+  fi
+
+  echo "selfserv with PID ${PID} started at `date`"
 }
 
 ############################## ssl_cov #################################

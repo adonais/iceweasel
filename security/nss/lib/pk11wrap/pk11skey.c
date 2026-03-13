@@ -11,6 +11,7 @@
 
 #include "seccomon.h"
 #include "secmod.h"
+#include "nssilock.h"
 #include "secmodi.h"
 #include "secmodti.h"
 #include "pkcs11.h"
@@ -46,7 +47,7 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
 {
     PK11SymKey *symKey = NULL;
 
-    PR_Lock(slot->freeListLock);
+    PZ_Lock(slot->freeListLock);
     /* own session list are symkeys with sessions that the symkey owns.
      * 'most' symkeys will own their own session. */
     if (needSession) {
@@ -65,7 +66,7 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
             slot->keyCount--;
         }
     }
-    PR_Unlock(slot->freeListLock);
+    PZ_Unlock(slot->freeListLock);
     if (symKey) {
         symKey->next = NULL;
         if (!needSession) {
@@ -206,7 +207,7 @@ PK11_FreeSymKey(PK11SymKey *symKey)
             (*symKey->freeFunc)(symKey->userData);
         }
         slot = symKey->slot;
-        PR_Lock(slot->freeListLock);
+        PZ_Lock(slot->freeListLock);
         if (slot->keyCount < slot->maxKeyCount) {
             /*
              * freeSymkeysWithSessionHead contain a list of reusable
@@ -232,7 +233,7 @@ PK11_FreeSymKey(PK11SymKey *symKey)
             symKey->slot = NULL;
             freeit = PR_FALSE;
         }
-        PR_Unlock(slot->freeListLock);
+        PZ_Unlock(slot->freeListLock);
         if (freeit) {
             pk11_CloseSession(symKey->slot, symKey->session,
                               symKey->sessionOwner);

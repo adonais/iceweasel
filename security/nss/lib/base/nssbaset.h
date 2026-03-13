@@ -12,6 +12,7 @@
  */
 
 #include "nspr.h"
+#include "nssilock.h"
 
 /*
  * NSS_EXTERN, NSS_IMPLEMENT, NSS_EXTERN_DATA, NSS_IMPLEMENT_DATA

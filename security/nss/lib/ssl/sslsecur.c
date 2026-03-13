@@ -180,10 +180,8 @@ SSL_ResetHandshake(PRFileDesc *s, PRBool asServer)
     ssl_GetRecvBufLock(ss);
     status = ssl3_InitGather(&ss->gs);
     ssl_ReleaseRecvBufLock(ss);
-    if (status != SECSuccess) {
-        ssl_Release1stHandshakeLock(ss);
+    if (status != SECSuccess)
         goto loser;
-    }
 
     ssl_GetSSL3HandshakeLock(ss);
     ss->ssl3.hs.canFalseStart = PR_FALSE;

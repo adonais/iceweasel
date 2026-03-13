@@ -42,8 +42,8 @@ trackerOnceFunc(void *arg)
 {
     nssPointerTracker *tracker = (nssPointerTracker *)arg;
 
-    tracker->lock = PR_NewLock();
-    if ((PRLock *)NULL == tracker->lock) {
+    tracker->lock = PZ_NewLock(nssILockOther);
+    if ((PZLock *)NULL == tracker->lock) {
         return PR_FAILURE;
     }
 
@@ -51,8 +51,8 @@ trackerOnceFunc(void *arg)
         PL_NewHashTable(0, identity_hash, PL_CompareValues, PL_CompareValues,
                         (PLHashAllocOps *)NULL, (void *)NULL);
     if ((PLHashTable *)NULL == tracker->table) {
-        PR_DestroyLock(tracker->lock);
-        tracker->lock = (PRLock *)NULL;
+        PZ_DestroyLock(tracker->lock);
+        tracker->lock = (PZLock *)NULL;
         return PR_FAILURE;
     }
 
@@ -145,23 +145,23 @@ static const PRCallOnceType zero_once;
 NSS_IMPLEMENT PRStatus
 nssPointerTracker_finalize(nssPointerTracker *tracker)
 {
-    PRLock *lock;
+    PZLock *lock;
 
     if ((nssPointerTracker *)NULL == tracker) {
         nss_SetError(NSS_ERROR_INVALID_POINTER);
         return PR_FAILURE;
     }
 
-    if ((PRLock *)NULL == tracker->lock) {
+    if ((PZLock *)NULL == tracker->lock) {
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
 
     lock = tracker->lock;
-    PR_Lock(lock);
+    PZ_Lock(lock);
 
     if ((PLHashTable *)NULL == tracker->table) {
-        PR_Unlock(lock);
+        PZ_Unlock(lock);
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
@@ -175,7 +175,7 @@ nssPointerTracker_finalize(nssPointerTracker *tracker)
                                          (void *)NULL);
 
     if (0 != count) {
-        PR_Unlock(lock);
+        PZ_Unlock(lock);
         nss_SetError(NSS_ERROR_TRACKER_NOT_EMPTY);
         return PR_FAILURE;
     }
@@ -184,11 +184,11 @@ nssPointerTracker_finalize(nssPointerTracker *tracker)
     PL_HashTableDestroy(tracker->table);
     /* memset(tracker, 0, sizeof(nssPointerTracker)); */
     tracker->once = zero_once;
-    tracker->lock = (PRLock *)NULL;
+    tracker->lock = (PZLock *)NULL;
     tracker->table = (PLHashTable *)NULL;
 
-    PR_Unlock(lock);
-    PR_DestroyLock(lock);
+    PZ_Unlock(lock);
+    PZ_DestroyLock(lock);
 
     return PR_SUCCESS;
 }
@@ -227,29 +227,29 @@ nssPointerTracker_add(nssPointerTracker *tracker, const void *pointer)
         return PR_FAILURE;
     }
 
-    if ((PRLock *)NULL == tracker->lock) {
+    if ((PZLock *)NULL == tracker->lock) {
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
 
-    PR_Lock(tracker->lock);
+    PZ_Lock(tracker->lock);
 
     if ((PLHashTable *)NULL == tracker->table) {
-        PR_Unlock(tracker->lock);
+        PZ_Unlock(tracker->lock);
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
 
     check = PL_HashTableLookup(tracker->table, pointer);
     if ((void *)NULL != check) {
-        PR_Unlock(tracker->lock);
+        PZ_Unlock(tracker->lock);
         nss_SetError(NSS_ERROR_DUPLICATE_POINTER);
         return PR_FAILURE;
     }
 
     entry = PL_HashTableAdd(tracker->table, pointer, (void *)pointer);
 
-    PR_Unlock(tracker->lock);
+    PZ_Unlock(tracker->lock);
 
     if ((PLHashEntry *)NULL == entry) {
         nss_SetError(NSS_ERROR_NO_MEMORY);
@@ -292,21 +292,21 @@ nssPointerTracker_remove(nssPointerTracker *tracker, const void *pointer)
         return PR_FAILURE;
     }
 
-    if ((PRLock *)NULL == tracker->lock) {
+    if ((PZLock *)NULL == tracker->lock) {
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
 
-    PR_Lock(tracker->lock);
+    PZ_Lock(tracker->lock);
 
     if ((PLHashTable *)NULL == tracker->table) {
-        PR_Unlock(tracker->lock);
+        PZ_Unlock(tracker->lock);
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
 
     registered = PL_HashTableRemove(tracker->table, pointer);
-    PR_Unlock(tracker->lock);
+    PZ_Unlock(tracker->lock);
 
     if (!registered) {
         nss_SetError(NSS_ERROR_POINTER_NOT_REGISTERED);
@@ -351,21 +351,21 @@ nssPointerTracker_verify(nssPointerTracker *tracker, const void *pointer)
         return PR_FAILURE;
     }
 
-    if ((PRLock *)NULL == tracker->lock) {
+    if ((PZLock *)NULL == tracker->lock) {
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
 
-    PR_Lock(tracker->lock);
+    PZ_Lock(tracker->lock);
 
     if ((PLHashTable *)NULL == tracker->table) {
-        PR_Unlock(tracker->lock);
+        PZ_Unlock(tracker->lock);
         nss_SetError(NSS_ERROR_TRACKER_NOT_INITIALIZED);
         return PR_FAILURE;
     }
 
     check = PL_HashTableLookup(tracker->table, pointer);
-    PR_Unlock(tracker->lock);
+    PZ_Unlock(tracker->lock);
 
     if ((void *)NULL == check) {
         nss_SetError(NSS_ERROR_POINTER_NOT_REGISTERED);

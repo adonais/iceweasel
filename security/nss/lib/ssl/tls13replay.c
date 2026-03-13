@@ -6,7 +6,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nss.h" /* for NSS_RegisterShutdown */
+#include "nss.h"      /* for NSS_RegisterShutdown */
+#include "nssilock.h" /* for PZMonitor */
 #include "pk11pub.h"
 #include "prmon.h"
 #include "prtime.h"
@@ -21,7 +22,7 @@ struct SSLAntiReplayContextStr {
     /* The number of outstanding references to this context. */
     PRInt32 refCount;
     /* Used to serialize access. */
-    PRMonitor *lock;
+    PZMonitor *lock;
     /* The filters, use of which alternates. */
     sslBloomFilter filters[2];
     /* Which of the two filters is active (0 or 1). */
@@ -45,7 +46,7 @@ tls13_ReleaseAntiReplayContext(SSLAntiReplayContext *ctx)
     }
 
     if (ctx->lock) {
-        PR_DestroyMonitor(ctx->lock);
+        PZ_DestroyMonitor(ctx->lock);
         ctx->lock = NULL;
     }
     PK11_FreeSymKey(ctx->key);
@@ -127,7 +128,7 @@ SSLExp_CreateAntiReplayContext(PRTime now, PRTime window, unsigned int k,
     }
 
     ctx->refCount = 1;
-    ctx->lock = PR_NewMonitor();
+    ctx->lock = PZ_NewMonitor(nssILockSSL);
     if (!ctx->lock) {
         goto loser; /* Code already set. */
     }
@@ -266,7 +267,7 @@ tls13_IsReplay(const sslSocket *ss, const sslSessionID *sid)
         return PR_TRUE;
     }
 
-    PR_EnterMonitor(ctx->lock);
+    PZ_EnterMonitor(ctx->lock);
     tls13_AntiReplayUpdate(ctx, ssl_Time(ss));
 
     index = ctx->current;
@@ -279,6 +280,6 @@ tls13_IsReplay(const sslSocket *ss, const sslSessionID *sid)
                      SSL_GETPID(), ss->fd, replay ? "replay" : "ok"));
     }
 
-    PR_ExitMonitor(ctx->lock);
+    PZ_ExitMonitor(ctx->lock);
     return replay;
 }

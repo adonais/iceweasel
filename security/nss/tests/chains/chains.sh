@@ -33,7 +33,7 @@ is_httpserv_alive()
   fi
   
   if [ "${OS_ARCH}" = "WINNT" ] && \
-     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" -o "$OS_NAME" = "MSYS_NT" ]; then
+     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" ]; then
       PID=${SHELL_HTTPPID}
   else
       PID=`cat ${HTTPPID}`
@@ -70,11 +70,23 @@ wait_for_httpserv()
 ########################################################################
 kill_httpserv()
 {
-  PID=`cat ${HTTPPID}`
+  if [ "${OS_ARCH}" = "WINNT" ] && \
+     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" ]; then
+      PID=${SHELL_HTTPPID}
+  else
+      PID=`cat ${HTTPPID}`
+  fi
 
   echo "trying to kill httpserv with PID ${PID} at `date`"
 
-  safe_kill ${PID} ${SHELL_HTTPPID}
+  if [ "${OS_ARCH}" = "WINNT" ]; then
+      echo "${KILL} ${PID}"
+      ${KILL} ${PID}
+  else
+      echo "${KILL} -USR1 ${PID}"
+      ${KILL} -USR1 ${PID}
+  fi
+  wait ${PID}
 
   # On Linux httpserv needs up to 30 seconds to fully die and free
   # the port.  Wait until the port is free. (Bug 129701)
@@ -133,7 +145,14 @@ start_httpserv()
   SHELL_HTTPPID=$!
   wait_for_httpserv
 
-  echo "httpserv with PID `cat ${HTTPPID}` started at `date`"
+  if [ "${OS_ARCH}" = "WINNT" ] && \
+     [ "$OS_NAME" = "CYGWIN_NT" -o "$OS_NAME" = "MINGW32_NT" ]; then
+      PID=${SHELL_HTTPPID}
+  else
+      PID=`cat ${HTTPPID}`
+  fi
+
+  echo "httpserv with PID ${PID} started at `date`"
 }
 
 ############################# chains_init ##############################

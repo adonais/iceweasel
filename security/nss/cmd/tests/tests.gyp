@@ -19,6 +19,17 @@
       ]
     },
     {
+      'target_name': 'conflict',
+      'type': 'executable',
+      'sources': [
+        'conflict.c'
+      ],
+      'dependencies': [
+        '<(DEPTH)/exports.gyp:dbm_exports',
+        '<(DEPTH)/exports.gyp:nss_exports'
+      ]
+    },
+    {
       'target_name': 'dertimetest',
       'type': 'executable',
       'sources': [

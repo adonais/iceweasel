@@ -18,7 +18,7 @@
  */
 struct NSSLOWCERTCertDBHandleStr {
     DB *permCertDB;
-    PRMonitor *dbMon;
+    PZMonitor *dbMon;
     PRBool dbVerify;
     PRInt32 ref; /* reference count */
 };

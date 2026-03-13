@@ -6,6 +6,7 @@
 #define nssrwlkt_h___
 
 #include "utilrename.h"
+#include "nssilock.h"
 /*
  * NSSRWLock --
  *

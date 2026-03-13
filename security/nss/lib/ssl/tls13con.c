@@ -1025,7 +1025,7 @@ tls13_HandleKeyShare(sslSocket *ss,
                     ec_data = entry->key_exchange.len < ec_len
                                   ? NULL
                                   : entry->key_exchange.data;
-                    ecGroup = ssl_LookupNamedGroup(ssl_grp_ec_secp384r1);
+                    ecGroup = ssl_LookupNamedGroup(ssl_grp_ec_secp256r1);
                     break;
                 default:
                     ec_data = NULL;
@@ -5229,7 +5229,6 @@ tls13_HandleEncryptedExtensions(sslSocket *ss, PRUint8 *b, PRUint32 length)
             /* Illegal to accept 0-RTT without also accepting PSK. */
             FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_ENCRYPTED_EXTENSIONS,
                         illegal_parameter);
-            return SECFailure;
         }
         ss->ssl3.hs.zeroRttState = ssl_0rtt_accepted;
 
@@ -5802,7 +5801,7 @@ tls13_VerifyFinished(sslSocket *ss, SSLHandshakeType message,
 
     if (length != finishedLen) {
 #ifndef UNSAFE_FUZZER_MODE
-        FATAL_ERROR(ss, message == ssl_hs_finished ? SSL_ERROR_RX_MALFORMED_FINISHED : SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, decode_error);
+        FATAL_ERROR(ss, message == ssl_hs_finished ? SSL_ERROR_RX_MALFORMED_FINISHED : SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
         return SECFailure;
 #endif
     }

@@ -202,6 +202,7 @@
             'cmd/shlibsign/mangle/mangle.gyp:mangle',
             'cmd/strsclnt/strsclnt.gyp:strsclnt',
             'cmd/tests/tests.gyp:baddbdir',
+            'cmd/tests/tests.gyp:conflict',
             'cmd/tests/tests.gyp:dertimetest',
             'cmd/tests/tests.gyp:encodeinttest',
             'cmd/tests/tests.gyp:nonspr10',

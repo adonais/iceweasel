@@ -17,6 +17,7 @@
 #include "secitem.h"
 #include "blapit.h"
 #include "secport.h"
+#include "nssilock.h"
 #include "secrng.h"
 #include "ml_dsat.h"
 

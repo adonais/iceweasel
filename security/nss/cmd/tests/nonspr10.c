@@ -34,6 +34,8 @@
 #include "nssbase.h"
 #include "nssbaset.h"
 #include "nssckbi.h"
+#include "nssilckt.h"
+#include "nssilock.h"
 #include "nsslocks.h"
 #include "nssrwlk.h"
 #include "nssrwlkt.h"
