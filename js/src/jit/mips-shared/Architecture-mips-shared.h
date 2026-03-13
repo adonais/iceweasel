@@ -7,8 +7,9 @@
 #ifndef jit_mips_shared_Architecture_mips_shared_h
 #define jit_mips_shared_Architecture_mips_shared_h
 
+#include "mozilla/MathAlgorithms.h"
+
 #include <algorithm>
-#include <bit>
 #include <limits.h>
 #include <stdint.h>
 
@@ -174,10 +175,14 @@ class Registers {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return std::popcount(x);
+    return mozilla::CountPopulation32(x);
   }
-  static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
+  static uint32_t FirstBit(SetType x) {
+    return mozilla::CountTrailingZeroes32(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 31 - mozilla::CountLeadingZeroes32(x);
+  }
 };
 
 // Smallest integer type that can hold a register bitmask.
@@ -257,15 +262,15 @@ class FloatRegisterMIPSShared {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return std::popcount(x);
+    return mozilla::CountPopulation64(x);
   }
   static uint32_t FirstBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return std::countr_zero(x);
+    return mozilla::CountTrailingZeroes64(x);
   }
   static uint32_t LastBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return std::bit_width(x) - 1;
+    return 63 - mozilla::CountLeadingZeroes64(x);
   }
 };
 

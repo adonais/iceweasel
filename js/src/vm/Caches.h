@@ -13,8 +13,6 @@
 #include "mozilla/MruCache.h"
 #include "mozilla/UniquePtr.h"
 
-#include <bit>
-
 #include "frontend/ScopeBindingCache.h"
 #include "gc/Tracer.h"
 #include "js/RootingAPI.h"
@@ -190,8 +188,8 @@ class MegamorphicCache {
   static constexpr uint8_t ShapeHashShift2 =
       ShapeHashShift1 + mozilla::FloorLog2(NumEntries);
 
-  static_assert(std::has_single_bit(alignof(Shape)) &&
-                    std::has_single_bit(NumEntries),
+  static_assert(mozilla::IsPowerOfTwo(alignof(Shape)) &&
+                    mozilla::IsPowerOfTwo(NumEntries),
                 "FloorLog2 is exact because alignof(Shape) and NumEntries are "
                 "both powers of two");
 
@@ -203,7 +201,7 @@ class MegamorphicCache {
 
   // NOTE: this logic is mirrored in MacroAssembler::emitMegamorphicCacheLookup
   Entry& getEntry(Shape* shape, PropertyKey key) {
-    static_assert(std::has_single_bit(NumEntries),
+    static_assert(mozilla::IsPowerOfTwo(NumEntries),
                   "NumEntries must be a power-of-two for fast modulo");
     uintptr_t hash = uintptr_t(shape) >> ShapeHashShift1;
     hash ^= uintptr_t(shape) >> ShapeHashShift2;
@@ -334,8 +332,8 @@ class MegamorphicSetPropCache {
   static constexpr uint8_t ShapeHashShift2 =
       ShapeHashShift1 + mozilla::FloorLog2(NumEntries);
 
-  static_assert(std::has_single_bit(alignof(Shape)) &&
-                    std::has_single_bit(NumEntries),
+  static_assert(mozilla::IsPowerOfTwo(alignof(Shape)) &&
+                    mozilla::IsPowerOfTwo(NumEntries),
                 "FloorLog2 is exact because alignof(Shape) and NumEntries are "
                 "both powers of two");
 
@@ -346,7 +344,7 @@ class MegamorphicSetPropCache {
   uint16_t generation_ = 0;
 
   Entry& getEntry(Shape* beforeShape, PropertyKey key) {
-    static_assert(std::has_single_bit(NumEntries),
+    static_assert(mozilla::IsPowerOfTwo(NumEntries),
                   "NumEntries must be a power-of-two for fast modulo");
     uintptr_t hash = uintptr_t(beforeShape) >> ShapeHashShift1;
     hash ^= uintptr_t(beforeShape) >> ShapeHashShift2;

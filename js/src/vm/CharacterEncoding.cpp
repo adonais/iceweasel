@@ -16,7 +16,6 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 
-#include <bit>
 #ifndef XP_LINUX
 // We still support libstd++ versions without codecvt support on Linux.
 //
@@ -311,7 +310,12 @@ static bool InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars& src,
   } while (0)
 
       // Non-ASCII code unit. Determine its length in bytes (n).
-      uint32_t n = std::countl_one(src[i]);
+      //
+      // Avoid undefined behavior from passing in 0
+      // (https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fclz)
+      // by turning on the low bit so that 0xff will set n=31-24=7, which will
+      // be detected as an invalid character.
+      uint32_t n = mozilla::CountLeadingZeroes32(~int8_t(src[i]) | 0x1) - 24;
 
       // Check the leading byte.
       if (n < 2 || n > 4) {

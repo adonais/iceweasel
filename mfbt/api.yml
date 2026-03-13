@@ -497,6 +497,12 @@ MacroForEach.h:
 MathAlgorithms.h:
   functions:
     - Abs
+    - CountLeadingZeroes32
+    - CountTrailingZeroes32
+    - CountPopulation32
+    - CountPopulation64
+    - CountLeadingZeroes64
+    - CountTrailingZeroes64
     - CeilingLog2
     - CeilingLog2Size
     - FindMostSignificantBit
@@ -505,6 +511,8 @@ MathAlgorithms.h:
     - RoundUpPow2
     - RotateLeft
     - RotateRight
+    - IsPowerOfTwo
+    - CountTrailingZeroes
     - GCD
 
 Maybe.h:

@@ -12,7 +12,6 @@
 #include "mozilla/XorShift128PlusRNG.h"
 
 #include <algorithm>
-#include <bit>
 #include <limits>
 #include <utility>
 
@@ -2063,8 +2062,8 @@ void MacroAssembler::loadInt32ToStringWithBase(
   branch32(Assembler::AboveOrEqual, input, Imm32(base * base), fail);
   {
     // Compute |scratch1 = input / base| and |scratch2 = input % base|.
-    if (std::has_single_bit(uint32_t(base))) {
-      uint32_t shift = mozilla::FloorLog2(uint32_t(base));
+    if (mozilla::IsPowerOfTwo(uint32_t(base))) {
+      uint32_t shift = mozilla::FloorLog2(base);
 
       rshift32(Imm32(shift), input, scratch1);
       and32(Imm32((uint32_t(1) << shift) - 1), input, scratch2);
@@ -2645,7 +2644,7 @@ void MacroAssembler::isCallableOrConstructor(bool isCallable, Register obj,
   if (isCallable) {
     move32(Imm32(1), output);
   } else {
-    static_assert(std::has_single_bit(uint32_t(FunctionFlags::CONSTRUCTOR)),
+    static_assert(mozilla::IsPowerOfTwo(uint32_t(FunctionFlags::CONSTRUCTOR)),
                   "FunctionFlags::CONSTRUCTOR has only one bit set");
 
     load32(Address(obj, JSFunction::offsetOfFlagsAndArgCount()), output);
@@ -3075,7 +3074,7 @@ void MacroAssembler::emitMegamorphicCacheLookupByValueCommon(
 
   // outEntryPtr %= MegamorphicCache::NumEntries
   constexpr size_t cacheSize = MegamorphicCache::NumEntries;
-  static_assert(std::has_single_bit(cacheSize));
+  static_assert(mozilla::IsPowerOfTwo(cacheSize));
   size_t cacheMask = cacheSize - 1;
   and32(Imm32(cacheMask), outEntryPtr);
 
@@ -3137,7 +3136,7 @@ void MacroAssembler::emitMegamorphicCacheLookup(
 
   // outEntryPtr %= MegamorphicCache::NumEntries
   constexpr size_t cacheSize = MegamorphicCache::NumEntries;
-  static_assert(std::has_single_bit(cacheSize));
+  static_assert(mozilla::IsPowerOfTwo(cacheSize));
   size_t cacheMask = cacheSize - 1;
   and32(Imm32(cacheMask), outEntryPtr);
 
@@ -3368,7 +3367,7 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
 
   // scratch3 %= MegamorphicSetPropCache::NumEntries
   constexpr size_t cacheSize = MegamorphicSetPropCache::NumEntries;
-  static_assert(std::has_single_bit(cacheSize));
+  static_assert(mozilla::IsPowerOfTwo(cacheSize));
   size_t cacheMask = cacheSize - 1;
   and32(Imm32(cacheMask), scratch3);
 
@@ -8313,7 +8312,7 @@ void MacroAssembler::spectreMaskIndexPtr(Register index, const Address& length,
 
 void MacroAssembler::boundsCheck32PowerOfTwo(Register index, uint32_t length,
                                              Label* failure) {
-  MOZ_ASSERT(std::has_single_bit(length));
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(length));
   branch32(Assembler::AboveOrEqual, index, Imm32(length), failure);
 
   // Note: it's fine to clobber the input register, as this is a no-op: it
@@ -10091,7 +10090,7 @@ void MacroAssembler::prepareHashString(Register str, Register result,
 
   constexpr size_t offsetDiff =
       FatInlineAtom::offsetOfHash() - NormalAtom::offsetOfHash();
-  static_assert(std::has_single_bit(offsetDiff));
+  static_assert(mozilla::IsPowerOfTwo(offsetDiff));
 
   uint8_t shift = mozilla::FloorLog2Size(offsetDiff);
   if (IsShiftInScaleRange(shift)) {
@@ -10170,7 +10169,7 @@ void MacroAssembler::prepareHashBigInt(Register bigInt, Register result,
 
   // Compute |mozilla::AddToHash(h, isNegative())|.
   {
-    static_assert(std::has_single_bit(BigInt::signBitMask()));
+    static_assert(mozilla::IsPowerOfTwo(BigInt::signBitMask()));
 
     load32(Address(bigInt, BigInt::offsetOfFlags()), temp1);
     and32(Imm32(BigInt::signBitMask()), temp1);
@@ -10719,7 +10718,7 @@ void MacroAssembler::checkForMatchMFBT(Register hashTable, Register hashIndex,
 
   // Load entries[hashIndex] into |scratch|
   size_t EntrySize = sizeof(typename Table::Entry);
-  if (std::has_single_bit(EntrySize)) {
+  if (mozilla::IsPowerOfTwo(EntrySize)) {
     uint32_t shift = mozilla::FloorLog2(EntrySize);
     lshiftPtr(Imm32(shift), hashIndex, scratch);
   } else {

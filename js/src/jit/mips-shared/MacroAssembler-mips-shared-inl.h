@@ -484,7 +484,7 @@ void MacroAssembler::ctz32(Register src, Register dest, bool knownNotZero) {
 }
 
 void MacroAssembler::popcnt32(Register input, Register output, Register tmp) {
-  // Equivalent to GCC output of std::popcount()
+  // Equivalent to GCC output of mozilla::CountPopulation32()
   ma_move(output, input);
   ma_sra(tmp, input, Imm32(1));
   ma_and(tmp, Imm32(0x55555555));

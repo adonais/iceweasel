@@ -6,7 +6,6 @@
 #include "WebGLTextureUpload.h"
 
 #include <algorithm>
-#include <bit>
 
 #include "CanvasUtils.h"
 #include "ClientWebGLContext.h"
@@ -390,7 +389,7 @@ bool WebGLTexture::ValidateTexImageSpecification(
     bool requirePOT = (!mContext->IsWebGL2() && level != 0);
 
     if (requirePOT) {
-      if (!std::has_single_bit(size.x) || !std::has_single_bit(size.y)) {
+      if (!IsPowerOfTwo(size.x) || !IsPowerOfTwo(size.y)) {
         mContext->ErrorInvalidValue(
             "For level > 0, width and height must be"
             " powers of two.");
@@ -749,7 +748,7 @@ static bool ValidateCompressedTexImageRestrictions(
       break;
 
     case webgl::CompressionFamily::PVRTC:
-      if (!std::has_single_bit(size.x) || !std::has_single_bit(size.y)) {
+      if (!IsPowerOfTwo(size.x) || !IsPowerOfTwo(size.y)) {
         webgl->ErrorInvalidValue("%s requires power-of-two width and height.",
                                  format->name);
         return false;

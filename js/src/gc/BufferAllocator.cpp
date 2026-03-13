@@ -9,8 +9,6 @@
 #include "mozilla/Likely.h"
 #include "mozilla/ScopeExit.h"
 
-#include <bit>
-
 #ifdef XP_DARWIN
 #  include <mach/mach_init.h>
 #  include <mach/vm_map.h>
@@ -2256,7 +2254,7 @@ void* BufferAllocator::allocFromRegion(FreeRegion* region, size_t bytes,
 void* BufferAllocator::allocMediumAligned(size_t bytes, bool inGC) {
   MOZ_ASSERT(bytes >= MinMediumAllocSize);
   MOZ_ASSERT(bytes <= MaxAlignedAllocSize);
-  MOZ_ASSERT(std::has_single_bit(bytes));
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(bytes));
 
   // Get size class from |bytes|.
   size_t sizeClass = SizeClassForMediumAlloc(bytes);

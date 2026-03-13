@@ -655,7 +655,7 @@ void MacroAssembler::popcnt64(Register64 src64, Register64 dest64,
 
   ScratchRegisterScope scratch(*this);
 
-  // Equivalent to popcnt32, adapted for 64 bits.
+  // Equivalent to mozilla::CountPopulation32, adapted for 64 bits.
   // x -= (x >> 1) & m1;
   movq(src, tmp);
   movq(ImmWord(0x5555555555555555), scratch);

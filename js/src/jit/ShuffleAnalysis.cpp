@@ -4,9 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/ShuffleAnalysis.h"
-
-#include <bit>
-
+#include "mozilla/MathAlgorithms.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "wasm/WasmFeatures.h"
@@ -382,7 +380,7 @@ static Maybe<SimdPermuteOp> TryZeroExtend(SimdConstant* control) {
   for (; i <= 4 && lanes[i] == int8_t(i); i++) {
   }
   // The length of the fragment has to be a power of 2, and next item is zero.
-  if (!std::has_single_bit(i) || lanes[i] < 16) {
+  if (!mozilla::IsPowerOfTwo(i) || lanes[i] < 16) {
     return Nothing();
   }
   MOZ_ASSERT(i > 0 && i <= 4);
@@ -392,7 +390,7 @@ static Maybe<SimdPermuteOp> TryZeroExtend(SimdConstant* control) {
   }
   // The length of the entire fragment of zero and non-zero items
   // needs to be power of 2.
-  if (!std::has_single_bit(i)) {
+  if (!mozilla::IsPowerOfTwo(i)) {
     return Nothing();
   }
   MOZ_ASSERT(i > fromLen && i <= 8);

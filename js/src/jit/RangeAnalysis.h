@@ -251,11 +251,12 @@ class Range : public TempObject {
     MOZ_ASSERT(adjustedExponent >= mozilla::FloorLog2(mozilla::Abs(upper_)));
     MOZ_ASSERT(adjustedExponent >= mozilla::FloorLog2(mozilla::Abs(lower_)));
 
-    static_assert(mozilla::FloorLog2(uint32_t(JSVAL_INT_MIN)) ==
-                  MaxInt32Exponent);
-    static_assert(mozilla::FloorLog2(uint32_t(JSVAL_INT_MAX)) == 30);
-    static_assert(mozilla::FloorLog2(UINT32_MAX) == MaxUInt32Exponent);
-    static_assert(mozilla::FloorLog2(0u) == 0);
+    // The following are essentially static assertions, but FloorLog2 isn't
+    // trivially suitable for constexpr :(.
+    MOZ_ASSERT(mozilla::FloorLog2(JSVAL_INT_MIN) == MaxInt32Exponent);
+    MOZ_ASSERT(mozilla::FloorLog2(JSVAL_INT_MAX) == 30);
+    MOZ_ASSERT(mozilla::FloorLog2(UINT32_MAX) == MaxUInt32Exponent);
+    MOZ_ASSERT(mozilla::FloorLog2(0) == 0);
   }
 
   // Set the lower_ and hasInt32LowerBound_ values.

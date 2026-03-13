@@ -74,7 +74,6 @@
 #ifndef mozilla_HashTable_h
 #define mozilla_HashTable_h
 
-#include <bit>
 #include <utility>
 #include <type_traits>
 
@@ -1896,7 +1895,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
   RebuildStatus changeTableSize(
       uint32_t newCapacity, FailureBehavior aReportFailure = ReportFailure) {
-    MOZ_ASSERT(std::has_single_bit(newCapacity));
+    MOZ_ASSERT(IsPowerOfTwo(newCapacity));
     MOZ_ASSERT(!!mTable == !!capacity());
 
     // Look, but don't touch, until we succeed in getting new entry store.

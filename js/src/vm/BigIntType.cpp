@@ -93,7 +93,6 @@
 #include "mozilla/Try.h"
 #include "mozilla/WrappingOperations.h"
 
-#include <bit>
 #include <charconv>
 #include <functional>
 #include <limits>
@@ -130,6 +129,11 @@ using mozilla::Range;
 using mozilla::RangedPtr;
 using mozilla::Some;
 using mozilla::WrapToSigned;
+
+static inline unsigned DigitLeadingZeroes(BigInt::Digit x) {
+  return sizeof(x) == 4 ? mozilla::CountLeadingZeroes32(x)
+                        : mozilla::CountLeadingZeroes64(x);
+}
 
 #ifdef DEBUG
 static bool HasLeadingZeroes(const BigInt* bi) {
@@ -327,7 +331,7 @@ BigInt::Digit BigInt::digitDiv(Digit high, Digit low, Digit divisor,
 #else
   static constexpr Digit HalfDigitBase = 1ull << HalfDigitBits;
   // Adapted from Warren, Hacker's Delight, p. 152.
-  unsigned s = std::countl_zero(divisor);
+  unsigned s = DigitLeadingZeroes(divisor);
   // If `s` is DigitBits here, it causes an undefined behavior.
   // But `s` is never DigitBits since `divisor` is never zero here.
   MOZ_ASSERT(s != DigitBits);
@@ -864,7 +868,7 @@ bool BigInt::absoluteDivWithBigIntDivisor(
   // overflowing (they take a two digits wide input, and return a one digit
   // result).
   Digit lastDigit = divisor->digit(n - 1);
-  unsigned shift = std::countl_zero(lastDigit);
+  unsigned shift = DigitLeadingZeroes(lastDigit);
 
   RootedField<BigInt*, 2> shiftedDivisor(roots);
   if (shift > 0) {
@@ -1179,7 +1183,7 @@ size_t BigInt::calculateMaximumCharactersRequired(HandleBigInt x,
 
   size_t length = x->digitLength();
   Digit lastDigit = x->digit(length - 1);
-  size_t bitLength = length * DigitBits - std::countl_zero(lastDigit);
+  size_t bitLength = length * DigitBits - DigitLeadingZeroes(lastDigit);
 
   uint8_t maxBitsPerChar = maxBitsPerCharTable[radix];
   uint64_t maximumCharactersRequired =
@@ -1193,20 +1197,20 @@ size_t BigInt::calculateMaximumCharactersRequired(HandleBigInt x,
 template <AllowGC allowGC>
 JSLinearString* BigInt::toStringBasePowerOfTwo(JSContext* cx, HandleBigInt x,
                                                unsigned radix) {
-  MOZ_ASSERT(std::has_single_bit(radix));
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(radix));
   MOZ_ASSERT(radix >= 2 && radix <= 32);
   MOZ_ASSERT(!x->isZero());
   MOZ_ASSERT(x->digitLength() > 1);
 
   const unsigned length = x->digitLength();
   const bool sign = x->isNegative();
-  const unsigned bitsPerChar = std::countr_zero(radix);
+  const unsigned bitsPerChar = mozilla::CountTrailingZeroes32(radix);
   const unsigned charMask = radix - 1;
   // Compute the length of the resulting string: divide the bit length of the
   // BigInt by the number of bits representable per character (rounding up).
   const Digit msd = x->digit(length - 1);
 
-  const size_t bitLength = length * DigitBits - std::countl_zero(msd);
+  const size_t bitLength = length * DigitBits - DigitLeadingZeroes(msd);
   const size_t charsRequired = CeilDiv(bitLength, bitsPerChar) + sign;
 
   static_assert(MaxBitLength + 1 <= JSString::MAX_LENGTH,
@@ -1357,7 +1361,7 @@ JSLinearString* BigInt::toStringGeneric(JSContext* cx, HandleBigInt x,
   MOZ_ASSERT(radix >= 2 && radix <= 36);
   MOZ_ASSERT(!x->isZero());
   MOZ_ASSERT(x->digitLength() > 1);
-  MOZ_ASSERT(!std::has_single_bit(radix));
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(radix));
 
   size_t maximumCharactersRequired =
       calculateMaximumCharactersRequired(x, radix);
@@ -1620,7 +1624,7 @@ BigInt* BigInt::parseLiteralDigits(JSContext* cx, Range<const CharT> chars,
   // Numbers in radix 2, 4, and 16 can be directly stored into the result when
   // parsing from right to left.
   uint8_t log2 = mozilla::FloorLog2(radix);
-  if (std::has_single_bit(log2)) {
+  if (mozilla::IsPowerOfTwo(log2)) {
     size_t chunkChars = BigInt::DigitBits >> mozilla::FloorLog2(log2);
 
     size_t i = 0;
@@ -2196,7 +2200,7 @@ BigInt* BigInt::pow(JSContext* cx, HandleBigInt x, HandleBigInt y) {
   int n = static_cast<int>(exponent);
   bool isOddPower = n & 1;
 
-  if (x->digitLength() == 1 && std::has_single_bit(x->digit(0))) {
+  if (x->digitLength() == 1 && mozilla::IsPowerOfTwo(x->digit(0))) {
     // Fast path for (2^m)^n.
 
     // Result is negative for odd powers.
@@ -2858,7 +2862,7 @@ BigInt* BigInt::asUintN(JSContext* cx, HandleBigInt x, uint64_t bits) {
   }
 
   Digit msd = x->digit(x->digitLength() - 1);
-  size_t msdBits = DigitBits - std::countl_zero(msd);
+  size_t msdBits = DigitBits - DigitLeadingZeroes(msd);
   size_t bitLength = msdBits + (x->digitLength() - 1) * DigitBits;
 
   if (bits >= bitLength) {
@@ -2919,7 +2923,7 @@ BigInt* BigInt::asIntN(JSContext* cx, HandleBigInt x, uint64_t bits) {
   }
 
   Digit msd = x->digit(x->digitLength() - 1);
-  size_t msdBits = DigitBits - std::countl_zero(msd);
+  size_t msdBits = DigitBits - DigitLeadingZeroes(msd);
   size_t bitLength = msdBits + (x->digitLength() - 1) * DigitBits;
 
   if (bits > bitLength) {
@@ -3277,7 +3281,7 @@ double BigInt::numberValue(const BigInt* x) {
 
   size_t length = x->digitLength();
   Digit msd = x->digit(length - 1);
-  uint8_t msdLeadingZeroes = uint8_t(std::countl_zero(msd));
+  uint8_t msdLeadingZeroes = DigitLeadingZeroes(msd);
 
   // `2**ExponentBias` is the largest power of two in a finite IEEE-754
   // double.  If this bigint has a greater power of two, it'll round to
@@ -3552,7 +3556,7 @@ int8_t BigInt::compare(const BigInt* x, double y) {
   MOZ_ASSERT(xLength > 0);
 
   Digit xMSD = x->digit(xLength - 1);
-  const int shift = std::countl_zero(xMSD);
+  const int shift = DigitLeadingZeroes(xMSD);
   int xBitLength = xLength * DigitBits - shift;
 
   // Differing bit-length makes for a simple comparison.
@@ -3743,7 +3747,7 @@ JSLinearString* BigInt::toString(JSContext* cx, HandleBigInt x, uint8_t radix) {
                                         radix);
   }
 
-  if (std::has_single_bit(radix)) {
+  if (mozilla::IsPowerOfTwo(radix)) {
     return toStringBasePowerOfTwo<allowGC>(cx, x, radix);
   }
 

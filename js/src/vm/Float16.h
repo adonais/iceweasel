@@ -8,8 +8,8 @@
 #define vm_Float16_h
 
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/MathAlgorithms.h"
 
-#include <bit>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -155,11 +155,11 @@ inline double half2float_impl(unsigned int value) {
   if (abs) {
     hi |= 0x3F000000 << static_cast<unsigned>(abs >= 0x7C00);
 
-    // Mozilla change: Replace the loop with std::countl_zero.
+    // Mozilla change: Replace the loop with CountLeadingZeroes32.
     // for (; abs < 0x400; abs <<= 1, hi -= 0x100000);
     if (abs < 0x400) {
-      constexpr auto minLeadingZeroes = std::countl_zero(0x400u);
-      uint32 shift = std::countl_zero(uint32_t(abs)) - minLeadingZeroes;
+      // NOTE: CountLeadingZeroes32(0x400) is 21.
+      uint32 shift = mozilla::CountLeadingZeroes32(uint32_t(abs)) - 21;
       abs <<= shift;
       hi -= shift * 0x100000;
     }
@@ -183,11 +183,11 @@ inline float half2float_impl(unsigned int value) {
   if (abs) {
     fbits |= 0x38000000 << static_cast<unsigned>(abs >= 0x7C00);
 
-    // Mozilla change: Replace the loop with std::countl_zero.
+    // Mozilla change: Replace the loop with CountLeadingZeroes32.
     // for (; abs < 0x400; abs <<= 1, fbits -= 0x800000);
     if (abs < 0x400) {
-      constexpr auto minLeadingZeroes = std::countl_zero(0x400u);
-      uint32 shift = std::countl_zero(uint32_t(abs)) - minLeadingZeroes;
+      // NOTE: CountLeadingZeroes32(0x400) is 21.
+      uint32 shift = mozilla::CountLeadingZeroes32(uint32_t(abs)) - 21;
       abs <<= shift;
       fbits -= shift * 0x800000;
     }

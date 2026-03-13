@@ -7,8 +7,9 @@
 #ifndef jit_loong64_Architecture_loong64_h
 #define jit_loong64_Architecture_loong64_h
 
+#include "mozilla/MathAlgorithms.h"
+
 #include <algorithm>
-#include <bit>
 
 #include "jit/shared/Architecture-shared.h"
 
@@ -128,10 +129,14 @@ class Registers {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return std::popcount(x);
+    return mozilla::CountPopulation32(x);
   }
-  static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
+  static uint32_t FirstBit(SetType x) {
+    return mozilla::CountTrailingZeroes32(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 31 - mozilla::CountLeadingZeroes32(x);
+  }
 
   static const char* GetName(uint32_t code) {
     static const char* const Names[] = {
@@ -352,16 +357,16 @@ struct FloatRegister {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
     x |= x >> FloatRegisters::TotalPhys;
     x &= FloatRegisters::AllPhysMask;
-    return std::popcount(x);
+    return mozilla::CountPopulation32(x);
   }
 
   static uint32_t FirstBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType");
-    return std::countr_zero(x);
+    return mozilla::CountTrailingZeroes64(x);
   }
   static uint32_t LastBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType");
-    return std::bit_width(x) - 1;
+    return 63 - mozilla::CountLeadingZeroes64(x);
   }
 
  private:

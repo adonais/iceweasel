@@ -8,8 +8,8 @@
 #define jit_SparseBitSet_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/MathAlgorithms.h"
 
-#include <bit>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -52,7 +52,7 @@ class SparseBitSet {
                         AllocPolicy>;
   Map map_;
 
-  static_assert(std::has_single_bit(BitsPerWord),
+  static_assert(mozilla::IsPowerOfTwo(BitsPerWord),
                 "Must be power-of-two for fast division/modulo");
   static_assert((sizeof(uint32_t) + sizeof(WordType)) * NumEntries ==
                     Map::SizeOfInlineEntries,
@@ -140,7 +140,7 @@ class SparseBitSet<AllocPolicy, Owner>::Iterator {
   void skipZeroBits() {
     MOZ_ASSERT(!done());
     MOZ_ASSERT(currentWord_ != 0);
-    auto numZeroes = std::countr_zero(currentWord_);
+    auto numZeroes = mozilla::CountTrailingZeroes32(currentWord_);
     index_ += numZeroes;
     currentWord_ >>= numZeroes;
   }

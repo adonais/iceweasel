@@ -36,6 +36,10 @@ skip-if = [
 
 ["TestCompactPair"]
 
+["TestCountPopulation"]
+
+["TestCountZeroes"]
+
 ["TestCrossProcessWin"]
 run-if = [
   "os == 'win'",

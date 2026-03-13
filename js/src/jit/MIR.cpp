@@ -13,7 +13,6 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
 #include <utility>
 
 #include "builtin/Math.h"
@@ -49,6 +48,7 @@ using namespace js::jit;
 using JS::ToInt32;
 
 using mozilla::IsFloat32Representable;
+using mozilla::IsPowerOfTwo;
 using mozilla::NumbersAreIdentical;
 
 NON_GC_POINTER_TYPE_ASSERTIONS_GENERATED
@@ -442,7 +442,7 @@ static MMul* EvaluateExactReciprocal(TempAllocator& alloc, MDiv* ins) {
   }
 
   // check if rhs is a power of two or zero
-  if (num != 0 && !std::has_single_bit(mozilla::Abs(num))) {
+  if (num != 0 && !mozilla::IsPowerOfTwo(mozilla::Abs(num))) {
     return nullptr;
   }
 
@@ -4047,7 +4047,7 @@ void MMod::analyzeEdgeCasesForward() {
 
   if (rhs()->isConstant()) {
     int32_t n = rhs()->toConstant()->toInt32();
-    if (n > 0 && !std::has_single_bit(uint32_t(n))) {
+    if (n > 0 && !IsPowerOfTwo(uint32_t(n))) {
       canBePowerOfTwoDivisor_ = false;
     }
   }
@@ -6715,11 +6715,18 @@ MDefinition* MClz::foldsTo(TempAllocator& alloc) {
   if (num()->isConstant()) {
     MConstant* c = num()->toConstant();
     if (type() == MIRType::Int32) {
-      uint32_t n = uint32_t(c->toInt32());
-      return MConstant::NewInt32(alloc, std::countl_zero(n));
+      int32_t n = c->toInt32();
+      if (n == 0) {
+        return MConstant::NewInt32(alloc, 32);
+      }
+      return MConstant::NewInt32(alloc, mozilla::CountLeadingZeroes32(n));
     }
-    uint64_t n = uint64_t(c->toInt64());
-    return MConstant::NewInt64(alloc, int64_t(std::countl_zero(n)));
+    int64_t n = c->toInt64();
+    if (n == 0) {
+      return MConstant::NewInt64(alloc, int64_t(64));
+    }
+    return MConstant::NewInt64(alloc,
+                               int64_t(mozilla::CountLeadingZeroes64(n)));
   }
 
   return this;
@@ -6729,11 +6736,18 @@ MDefinition* MCtz::foldsTo(TempAllocator& alloc) {
   if (num()->isConstant()) {
     MConstant* c = num()->toConstant();
     if (type() == MIRType::Int32) {
-      uint32_t n = uint32_t(num()->toConstant()->toInt32());
-      return MConstant::NewInt32(alloc, std::countr_zero(n));
+      int32_t n = num()->toConstant()->toInt32();
+      if (n == 0) {
+        return MConstant::NewInt32(alloc, 32);
+      }
+      return MConstant::NewInt32(alloc, mozilla::CountTrailingZeroes32(n));
     }
-    uint64_t n = uint64_t(c->toInt64());
-    return MConstant::NewInt64(alloc, std::countr_zero(n));
+    int64_t n = c->toInt64();
+    if (n == 0) {
+      return MConstant::NewInt64(alloc, int64_t(64));
+    }
+    return MConstant::NewInt64(alloc,
+                               int64_t(mozilla::CountTrailingZeroes64(n)));
   }
 
   return this;
@@ -6743,11 +6757,11 @@ MDefinition* MPopcnt::foldsTo(TempAllocator& alloc) {
   if (num()->isConstant()) {
     MConstant* c = num()->toConstant();
     if (type() == MIRType::Int32) {
-      uint32_t n = uint32_t(num()->toConstant()->toInt32());
-      return MConstant::NewInt32(alloc, std::popcount(n));
+      int32_t n = num()->toConstant()->toInt32();
+      return MConstant::NewInt32(alloc, mozilla::CountPopulation32(n));
     }
-    uint64_t n = uint64_t(c->toInt64());
-    return MConstant::NewInt64(alloc, int64_t(std::popcount(n)));
+    int64_t n = c->toInt64();
+    return MConstant::NewInt64(alloc, int64_t(mozilla::CountPopulation64(n)));
   }
 
   return this;

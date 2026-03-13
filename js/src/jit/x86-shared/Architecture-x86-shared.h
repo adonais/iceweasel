@@ -11,8 +11,9 @@
 #  error "Unsupported architecture!"
 #endif
 
+#include "mozilla/MathAlgorithms.h"
+
 #include <algorithm>
-#include <bit>
 #include <string.h>
 
 #include "jit/shared/Architecture-shared.h"
@@ -75,10 +76,14 @@ class Registers {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) <= 4, "SetType must be, at most, 32 bits");
-    return std::popcount(x);
+    return mozilla::CountPopulation32(x);
   }
-  static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
+  static uint32_t FirstBit(SetType x) {
+    return mozilla::CountTrailingZeroes32(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 31 - mozilla::CountLeadingZeroes32(x);
+  }
 
   static Code FromName(const char* name) {
     for (size_t i = 0; i < Total; i++) {
@@ -274,18 +279,28 @@ struct FloatRegister {
     x |= x >> Codes::TotalPhys;
     x &= Codes::AllPhysMask;
     static_assert(Codes::AllPhysMask <= 0xffff,
-                  "Optimizable to 32-bit std::popcount");
-    return std::popcount(x);
+                  "We can safely use CountPopulation32");
+    return mozilla::CountPopulation32(x);
   }
 
 #if defined(JS_CODEGEN_X86)
-  static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-#elif defined(JS_CODEGEN_X64)
-  static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-#endif
+  static uint32_t FirstBit(SetType x) {
+    static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
+    return mozilla::CountTrailingZeroes32(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 31 - mozilla::CountLeadingZeroes32(x);
+  }
 
-  static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
+#elif defined(JS_CODEGEN_X64)
+  static uint32_t FirstBit(SetType x) {
+    static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
+    return mozilla::CountTrailingZeroes64(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 63 - mozilla::CountLeadingZeroes64(x);
+  }
+#endif
 
  private:
   // Note: These fields are using one extra bit to make the invalid enumerated

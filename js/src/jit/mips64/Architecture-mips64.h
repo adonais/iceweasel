@@ -7,7 +7,8 @@
 #ifndef jit_mips64_Architecture_mips64_h
 #define jit_mips64_Architecture_mips64_h
 
-#include <bit>
+#include "mozilla/MathAlgorithms.h"
+
 #include <limits.h>
 #include <stdint.h>
 
@@ -111,8 +112,8 @@ class FloatRegister : public FloatRegisterMIPSShared {
     x |= x >> Codes::TotalPhys;
     x &= Codes::AllPhysMask;
     static_assert(Codes::AllPhysMask <= 0xffffffff,
-                  "Optimizable to 32-bit std::popcount");
-    return std::popcount(x);
+                  "We can safely use CountPopulation32");
+    return mozilla::CountPopulation32(x);
   }
 
   bool operator==(const FloatRegister& other) const {

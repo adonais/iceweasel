@@ -8,8 +8,8 @@
 #define jit_BitSet_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/MathAlgorithms.h"
 
-#include <bit>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -127,7 +127,9 @@ class BitSet::Iterator {
       value_ = bits[word_];
     }
 
-    int numZeros = std::countr_zero(value_);
+    // Be careful: the result of CountTrailingZeroes32 is undefined if the
+    // input is 0.
+    int numZeros = mozilla::CountTrailingZeroes32(value_);
     index_ += numZeros;
     value_ >>= numZeros;
 

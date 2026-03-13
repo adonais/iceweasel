@@ -11,7 +11,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
-#include <bit>
 #include <type_traits>
 
 #include "jit/ABIArgGenerator.h"
@@ -2138,7 +2137,7 @@ void LIRGenerator::visitPow(MPow* ins) {
       // Restrict this optimization to |base <= 256| to avoid generating too
       // many consecutive shift instructions.
       int32_t base = input->toConstant()->toInt32();
-      if (2 <= base && base <= 256 && std::has_single_bit(uint32_t(base))) {
+      if (2 <= base && base <= 256 && mozilla::IsPowerOfTwo(uint32_t(base))) {
         lowerPowOfTwoI(ins);
         return;
       }
@@ -2566,7 +2565,7 @@ void LIRGenerator::visitMod(MMod* ins) {
         double d = ins->rhs()->toConstant()->toDouble();
         int32_t div;
         if (mozilla::NumberIsInt32(d, &div) && div > 0 &&
-            std::has_single_bit(uint32_t(div))) {
+            mozilla::IsPowerOfTwo(uint32_t(div))) {
           auto* lir = new (alloc()) LModPowTwoD(useRegister(ins->lhs()), div);
           define(lir, ins);
           return;
@@ -2744,7 +2743,7 @@ void LIRGenerator::visitBigIntPtrDiv(MBigIntPtrDiv* ins) {
 
   if (ins->rhs()->isConstant()) {
     intptr_t rhs = ins->rhs()->toConstant()->toIntPtr();
-    if (std::has_single_bit(mozilla::Abs(rhs))) {
+    if (mozilla::IsPowerOfTwo(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
       auto* lir = new (alloc())
           LBigIntPtrDivPowTwo(useRegister(ins->lhs()), shift, rhs < 0);
@@ -2765,7 +2764,7 @@ void LIRGenerator::visitBigIntPtrMod(MBigIntPtrMod* ins) {
 
   if (ins->rhs()->isConstant()) {
     intptr_t rhs = ins->rhs()->toConstant()->toIntPtr();
-    if (std::has_single_bit(mozilla::Abs(rhs))) {
+    if (mozilla::IsPowerOfTwo(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
       auto* lir = new (alloc())
           LBigIntPtrModPowTwo(useRegister(ins->lhs()), temp(), shift);

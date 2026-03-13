@@ -20,6 +20,8 @@
 using namespace js;
 using namespace js::jit;
 
+using mozilla::IsPowerOfTwo;
+
 // This struct reflects the contents of the stack entry.
 // Given a `CommonFrameLayout* frame`:
 // - `frame->prevType()` should be `FrameType::CppToJSJit`.

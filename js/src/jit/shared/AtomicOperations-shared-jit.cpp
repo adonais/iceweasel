@@ -6,9 +6,9 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/MathAlgorithms.h"
 
 #include <atomic>
-#include <bit>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -84,7 +84,7 @@ void AtomicCompilerFence() {
 template <size_t Alignment>
 static inline bool CanCopyAligned(const uint8_t* dest, const uint8_t* src,
                                   const uint8_t* lim) {
-  static_assert(std::has_single_bit(Alignment));
+  static_assert(mozilla::IsPowerOfTwo(Alignment));
   return ((uintptr_t(dest) | uintptr_t(src) | uintptr_t(lim)) &
           (Alignment - 1)) == 0;
 }
@@ -95,7 +95,7 @@ static inline bool CanCopyAligned(const uint8_t* dest, const uint8_t* src,
  */
 template <size_t Alignment>
 static inline bool CanAlignTo(const uint8_t* dest, const uint8_t* src) {
-  static_assert(std::has_single_bit(Alignment));
+  static_assert(mozilla::IsPowerOfTwo(Alignment));
   return ((uintptr_t(dest) ^ uintptr_t(src)) & (Alignment - 1)) == 0;
 }
 

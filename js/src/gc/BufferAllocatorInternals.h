@@ -9,7 +9,7 @@
 #ifndef gc_BufferAllocatorInternals_h
 #define gc_BufferAllocatorInternals_h
 
-#include <bit>
+#include "mozilla/MathAlgorithms.h"
 
 #include "NamespaceImports.h"
 
@@ -121,7 +121,7 @@ class js::gc::AtomicBitmap<N>::Iter {
       word = bitmap.getWord(wordIndex);
     }
 
-    bitIndex = std::countr_zero(word);
+    bitIndex = mozilla::CountTrailingZeroes(word);
     bit = wordIndex * bitsPerWord + bitIndex;
   }
 
@@ -205,8 +205,8 @@ class BufferAllocator::ChunkLists::ChunkIter
 template <typename Derived, size_t Size, size_t Granularity>
 struct AllocSpace {
   static_assert(Size > Granularity);
-  static_assert(std::has_single_bit(Size));
-  static_assert(std::has_single_bit(Granularity));
+  static_assert(mozilla::IsPowerOfTwo(Size));
+  static_assert(mozilla::IsPowerOfTwo(Granularity));
   static constexpr size_t SizeBytes = Size;
   static constexpr size_t GranularityBytes = Granularity;
 

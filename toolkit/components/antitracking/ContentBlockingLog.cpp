@@ -7,8 +7,6 @@
 #include "AntiTrackingLog.h"
 #include "ContentBlockingLog.h"
 
-#include <bit>
-
 #include "nsIEffectiveTLDService.h"
 #include "nsITrackingDBService.h"
 #include "nsIWebProgressListener.h"
@@ -272,7 +270,7 @@ void ContentBlockingLog::ReportCanvasFingerprintingLog(
         for (uint32_t b = canvasFingerprintingEvent.knownTextBitmask; b;
              b &= (b - 1)) {
           uint32_t singleSetBit_Text = b & (~b + 1);
-          uint32_t exponent = std::countr_zero(singleSetBit_Text);
+          uint32_t exponent = mozilla::CountTrailingZeroes32(singleSetBit_Text);
 
           nsAutoCString key, category;
           key.AppendInt(exponent);

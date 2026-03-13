@@ -8,8 +8,6 @@
 
 #include "mozilla/MathAlgorithms.h"
 
-#include <bit>
-
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
@@ -841,7 +839,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
     }
 
     if (constant > 0) {
-      uint32_t shift = mozilla::FloorLog2(uint32_t(constant));
+      uint32_t shift = mozilla::FloorLog2(constant);
 
       if (!mul->canOverflow()) {
         // If it cannot overflow, we can do lots of optimizations.
@@ -942,8 +940,8 @@ void CodeGeneratorRiscv64::emitMulI64(Register lhs, int64_t rhs,
   }
 
   if (rhs > 0) {
-    if (std::has_single_bit(static_cast<uint64_t>(rhs + 1))) {
-      int32_t shift = mozilla::FloorLog2(uint64_t(rhs + 1));
+    if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(rhs + 1))) {
+      int32_t shift = mozilla::FloorLog2(rhs + 1);
 
       UseScratchRegisterScope temps(&masm);
       Register savedLhs = lhs;
@@ -956,8 +954,8 @@ void CodeGeneratorRiscv64::emitMulI64(Register lhs, int64_t rhs,
       return;
     }
 
-    if (std::has_single_bit(static_cast<uint64_t>(rhs - 1))) {
-      int32_t shift = mozilla::FloorLog2(uint64_t(rhs - 1));
+    if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(rhs - 1))) {
+      int32_t shift = mozilla::FloorLog2(rhs - 1);
 
       UseScratchRegisterScope temps(&masm);
       Register savedLhs = lhs;
@@ -971,7 +969,7 @@ void CodeGeneratorRiscv64::emitMulI64(Register lhs, int64_t rhs,
     }
 
     // Use shift if constant is power of 2.
-    uint8_t shift = mozilla::FloorLog2(uint64_t(rhs));
+    uint8_t shift = mozilla::FloorLog2(rhs);
     if (int64_t(1) << shift == rhs) {
       masm.slli(dest, lhs, shift);
       return;

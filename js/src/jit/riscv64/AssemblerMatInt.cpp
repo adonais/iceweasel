@@ -11,8 +11,7 @@
 //  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-
-#include <bit>
+#include "mozilla/MathAlgorithms.h"
 
 #include "jit/riscv64/Assembler-riscv64.h"
 
@@ -20,7 +19,7 @@ namespace js {
 namespace jit {
 void Assembler::RecursiveLi(Register rd, int64_t imm) {
   if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
-    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
+    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)imm);
     uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
     int countFillZero = RecursiveLiImplCount(ShiftedVal) + 1;
     if (countFillZero < RecursiveLiImplCount(imm)) {
@@ -34,7 +33,7 @@ void Assembler::RecursiveLi(Register rd, int64_t imm) {
 
 int Assembler::RecursiveLiCount(int64_t imm) {
   if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
-    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
+    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)imm);
     uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
     // Fill in the bits that will be shifted out with 1s. An example where
     // this helps is trailing one masks with 32 or more ones. This will
@@ -103,7 +102,7 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t imm) {
 
   int64_t Lo12 = imm << 52 >> 52;
   int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
-  int ShiftAmount = 12 + std::countr_zero((uint64_t)Hi52);
+  int ShiftAmount = 12 + mozilla::CountTrailingZeroes64((uint64_t)Hi52);
   Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
 
   // If the remaining bits don't fit in 12 bits, we might be able to reduce
@@ -180,7 +179,7 @@ int Assembler::RecursiveLiImplCount(int64_t imm) {
 
   int64_t Lo12 = imm << 52 >> 52;
   int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
-  int ShiftAmount = 12 + std::countr_zero((uint64_t)Hi52);
+  int ShiftAmount = 12 + mozilla::CountTrailingZeroes64((uint64_t)Hi52);
   Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
 
   // If the remaining bits don't fit in 12 bits, we might be able to reduce

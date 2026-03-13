@@ -12,7 +12,6 @@
 #endif
 #include "mozilla/DebugOnly.h"
 
-#include <bit>
 #include <limits.h>
 #include <utility>  // std::pair
 
@@ -569,7 +568,7 @@ class MemoryAccessDesc {
         widenOp_(wasm::SimdOp::Limit),
         loadOp_(Plain),
         hugeMemory_(hugeMemory) {
-    MOZ_ASSERT(std::has_single_bit(align));
+    MOZ_ASSERT(mozilla::IsPowerOfTwo(align));
   }
 
   uint32_t memoryIndex() const {

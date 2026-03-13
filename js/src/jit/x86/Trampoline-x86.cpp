@@ -4,6 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/MathAlgorithms.h"
+
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineJIT.h"
@@ -23,6 +25,8 @@
 
 #include "jit/MacroAssembler-inl.h"
 #include "vm/JSScript-inl.h"
+
+using mozilla::IsPowerOfTwo;
 
 using namespace js;
 using namespace js::jit;

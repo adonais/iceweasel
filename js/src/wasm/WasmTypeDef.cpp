@@ -18,6 +18,8 @@
 
 #include "wasm/WasmTypeDef.h"
 
+#include "mozilla/MathAlgorithms.h"
+
 #include "jit/JitOptions.h"
 #include "js/friend/ErrorMessages.h"  // JSMSG_*
 #include "js/HashTable.h"
@@ -38,6 +40,7 @@ using namespace js::wasm;
 
 using mozilla::CheckedInt32;
 using mozilla::CheckedUint32;
+using mozilla::IsPowerOfTwo;
 using mozilla::MallocSizeOf;
 
 // [SMDOC] Immediate type signature encoding

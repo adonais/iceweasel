@@ -15,7 +15,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/WrappingOperations.h"
 
-#include <bit>
 #include <cmath>
 
 #include "fdlibm.h"
@@ -202,7 +201,12 @@ static bool math_clz32(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  args.rval().setInt32(std::countl_zero(n));
+  if (n == 0) {
+    args.rval().setInt32(32);
+    return true;
+  }
+
+  args.rval().setInt32(mozilla::CountLeadingZeroes32(n));
   return true;
 }
 

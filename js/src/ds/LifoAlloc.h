@@ -13,7 +13,6 @@
 #include "mozilla/MemoryReporting.h"
 
 #include <algorithm>
-#include <bit>
 #include <new>
 #include <stddef.h>  // size_t
 #include <type_traits>
@@ -398,7 +397,7 @@ static const size_t LIFO_ALLOC_ALIGN = 8;
 
 MOZ_ALWAYS_INLINE
 uint8_t* AlignPtr(uint8_t* orig) {
-  static_assert(std::has_single_bit(LIFO_ALLOC_ALIGN),
+  static_assert(mozilla::IsPowerOfTwo(LIFO_ALLOC_ALIGN),
                 "LIFO_ALLOC_ALIGN must be a power of two");
 
   uint8_t* result = (uint8_t*)AlignBytes(uintptr_t(orig), LIFO_ALLOC_ALIGN);

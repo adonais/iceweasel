@@ -20,7 +20,6 @@
 #include "mozilla/SIMD.h"
 
 #include <algorithm>
-#include <bit>
 #include <cmath>
 #include <limits>
 #include <type_traits>
@@ -2546,11 +2545,11 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
 // Both FromBitMask and ToBitMask must have a single bit set.
 template <uint32_t FromBitMask, uint32_t ToBitMask>
 static void ShiftFlag32(MacroAssembler& masm, Register reg) {
-  static_assert(std::has_single_bit(FromBitMask));
-  static_assert(std::has_single_bit(ToBitMask));
+  static_assert(mozilla::IsPowerOfTwo(FromBitMask));
+  static_assert(mozilla::IsPowerOfTwo(ToBitMask));
   static_assert(FromBitMask != ToBitMask);
-  constexpr uint32_t fromShift = std::countr_zero(FromBitMask);
-  constexpr uint32_t toShift = std::countr_zero(ToBitMask);
+  constexpr uint32_t fromShift = mozilla::CountTrailingZeroes32(FromBitMask);
+  constexpr uint32_t toShift = mozilla::CountTrailingZeroes32(ToBitMask);
   if (fromShift < toShift) {
     masm.lshift32(Imm32(toShift - fromShift), reg);
   } else {
@@ -9186,7 +9185,7 @@ static bool ShouldInitFixedSlots(MIRGenerator* gen, LNewPlainObject* lir,
 
         if (numInitialized == nfixed) {
           // All fixed slots will be initialized.
-          MOZ_ASSERT(uint32_t(std::popcount(initializedSlots)) == nfixed);
+          MOZ_ASSERT(mozilla::CountPopulation32(initializedSlots) == nfixed);
           return false;
         }
       }
@@ -11979,7 +11978,7 @@ void CodeGenerator::visitPowOfTwoI(LPowOfTwoI* ins) {
   Register output = ToRegister(ins->output());
 
   uint32_t base = ins->base();
-  MOZ_ASSERT(std::has_single_bit(base));
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(base));
 
   uint32_t n = mozilla::FloorLog2(base);
   MOZ_ASSERT(n != 0);
@@ -12115,7 +12114,7 @@ void CodeGenerator::visitModD(LModD* ins) {
 void CodeGenerator::visitModPowTwoD(LModPowTwoD* ins) {
   FloatRegister lhs = ToFloatRegister(ins->lhs());
   uint32_t divisor = ins->divisor();
-  MOZ_ASSERT(std::has_single_bit(divisor));
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(divisor));
 
   FloatRegister output = ToFloatRegister(ins->output());
 

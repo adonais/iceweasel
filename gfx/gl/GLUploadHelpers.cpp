@@ -5,8 +5,6 @@
 
 #include "GLUploadHelpers.h"
 
-#include <bit>
-
 #include "GLContext.h"
 #include "mozilla/gfx/2D.h"
 #include "gfxUtils.h"
@@ -256,8 +254,8 @@ static void TexImage2DHelper(GLContext* gl, GLenum target, GLint level,
 
     MOZ_ASSERT(width >= 0 && height >= 0);
     if (!CanUploadNonPowerOfTwo(gl) &&
-        (stride != width * pixelsize || !std::has_single_bit((uint32_t)width) ||
-         !std::has_single_bit((uint32_t)height))) {
+        (stride != width * pixelsize || !IsPowerOfTwo((uint32_t)width) ||
+         !IsPowerOfTwo((uint32_t)height))) {
       // Pad out texture width and height to the next power of two
       // as we don't support/want non power of two texture uploads
       GLsizei paddedWidth = RoundUpPow2((uint32_t)width);

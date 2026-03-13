@@ -10,8 +10,7 @@
 #include "jit/MacroAssembler.h"
 
 #include "mozilla/FloatingPoint.h"
-
-#include <bit>
+#include "mozilla/MathAlgorithms.h"
 
 #include "gc/Zone.h"
 #include "jit/CalleeToken.h"
@@ -1106,7 +1105,7 @@ void MacroAssembler::assertStackAlignment(uint32_t alignment,
                                           int32_t offset /* = 0 */) {
 #ifdef DEBUG
   Label ok, bad;
-  MOZ_ASSERT(std::has_single_bit(alignment));
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(alignment));
 
   // Wrap around the offset to be a non-negative number.
   offset %= alignment;
@@ -1117,7 +1116,7 @@ void MacroAssembler::assertStackAlignment(uint32_t alignment,
   // Test if each bit from offset is set.
   uint32_t off = offset;
   while (off) {
-    uint32_t lowestBit = 1 << std::countr_zero(off);
+    uint32_t lowestBit = 1 << mozilla::CountTrailingZeroes32(off);
     branchTestStackPtr(Assembler::Zero, Imm32(lowestBit), &bad);
     off ^= lowestBit;
   }

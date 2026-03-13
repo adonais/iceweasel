@@ -10,13 +10,13 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "mozilla/WindowsMapRemoteView.h"
 #include "mozilla/WindowsUnwindInfo.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
-#include <bit>
 #include <windows.h>
 
 #if (NTDDI_VERSION < NTDDI_WIN10_RS4) || defined(__MINGW32__)
@@ -101,14 +101,14 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
  protected:
   static uintptr_t AlignDown(const uintptr_t aUnaligned,
                              const uintptr_t aAlignTo) {
-    MOZ_ASSERT(std::has_single_bit(aAlignTo));
+    MOZ_ASSERT(IsPowerOfTwo(aAlignTo));
 #pragma warning(suppress : 4146)
     return aUnaligned & (-aAlignTo);
   }
 
   static uintptr_t AlignUp(const uintptr_t aUnaligned,
                            const uintptr_t aAlignTo) {
-    MOZ_ASSERT(std::has_single_bit(aAlignTo));
+    MOZ_ASSERT(IsPowerOfTwo(aAlignTo));
 #pragma warning(suppress : 4146)
     return aUnaligned + ((-aUnaligned) & (aAlignTo - 1));
   }

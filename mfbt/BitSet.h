@@ -11,7 +11,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Span.h"
 
-#include <bit>
 #include <climits>
 #include <cstddef>
 #include <cstdint>
@@ -181,7 +180,11 @@ class BitSet {
     size_t count = 0;
 
     for (const Word word : mStorage) {
-      count += std::popcount(word);
+      if constexpr (kBitsPerWord > 32) {
+        count += CountPopulation64(word);
+      } else {
+        count += CountPopulation32(word);
+      }
     }
 
     return count;
@@ -231,7 +234,7 @@ class BitSet {
       word = mStorage[wordIndex];
     }
 
-    size_t pos = std::countr_zero(word);
+    uint_fast8_t pos = CountTrailingZeroes(word);
     return wordIndex * kBitsPerWord + pos;
   }
 

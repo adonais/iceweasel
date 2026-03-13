@@ -8,8 +8,7 @@
 #define CONSTANTS_H
 
 #include "mozilla/Literals.h"
-
-#include <bit>
+#include "mozilla/MathAlgorithms.h"
 
 #include "Utils.h"
 
@@ -86,8 +85,9 @@ static constexpr size_t kMaxQuantumClass = kMinQuantumWideClass - kQuantum;
 static constexpr size_t kMaxQuantumWideClass = kMinLargeClass - kQuantumWide;
 
 // We can optimise some divisions to shifts if these are powers of two.
-static_assert(std::has_single_bit(kQuantum), "kQuantum is not a power of two");
-static_assert(std::has_single_bit(kQuantumWide),
+static_assert(mozilla::IsPowerOfTwo(kQuantum),
+              "kQuantum is not a power of two");
+static_assert(mozilla::IsPowerOfTwo(kQuantumWide),
               "kQuantumWide is not a power of two");
 
 static_assert(kMaxQuantumClass % kQuantum == 0,

@@ -8,9 +8,9 @@
 #define jit_arm64_Architecture_arm64_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
-#include <bit>
 
 #include "jit/arm64/vixl/Cpu-Features-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
@@ -145,10 +145,14 @@ class Registers {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return std::popcount(x);
+    return mozilla::CountPopulation32(x);
   }
-  static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
+  static uint32_t FirstBit(SetType x) {
+    return mozilla::CountTrailingZeroes32(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 31 - mozilla::CountLeadingZeroes32(x);
+  }
 
   static const char* GetName(uint32_t code) {
     static const char* const Names[] = {
@@ -299,20 +303,22 @@ class Bitset128 {
     return *this;
   }
 
-  uint32_t size() const { return std::popcount(hi) + std::popcount(lo); }
+  uint32_t size() const {
+    return mozilla::CountPopulation64(hi) + mozilla::CountPopulation64(lo);
+  }
 
   uint32_t countTrailingZeroes() const {
     if (lo) {
-      return std::countr_zero(lo);
+      return mozilla::CountTrailingZeroes64(lo);
     }
-    return std::countr_zero(hi) + 64;
+    return mozilla::CountTrailingZeroes64(hi) + 64;
   }
 
   uint32_t countLeadingZeroes() const {
     if (hi) {
-      return std::countl_zero(hi);
+      return mozilla::CountLeadingZeroes64(hi);
     }
-    return std::countl_zero(lo) + 64;
+    return mozilla::CountLeadingZeroes64(lo) + 64;
   }
 };
 
@@ -567,7 +573,7 @@ struct FloatRegister {
     x &= FloatRegisters::AllPhysMask;
     MOZ_ASSERT(x.high() == 0);
     MOZ_ASSERT((x.low() >> 32) == 0);
-    return std::popcount(x.low());
+    return mozilla::CountPopulation32(x.low());
   }
 
   static uint32_t FirstBit(SetType x) {

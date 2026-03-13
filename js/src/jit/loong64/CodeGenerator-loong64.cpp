@@ -8,8 +8,6 @@
 
 #include "mozilla/MathAlgorithms.h"
 
-#include <bit>
-
 #include "builtin/Number.h"
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
@@ -797,7 +795,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
     }
 
     if (constant > 0) {
-      uint32_t shift = mozilla::FloorLog2(uint32_t(constant));
+      uint32_t shift = mozilla::FloorLog2(constant);
 
       if (!mul->canOverflow()) {
         // If it cannot overflow, we can do lots of optimizations.
@@ -898,8 +896,8 @@ void CodeGeneratorLOONG64::emitMulI64(Register lhs, int64_t rhs,
   }
 
   if (rhs > 0) {
-    if (std::has_single_bit(static_cast<uint64_t>(rhs + 1))) {
-      int32_t shift = mozilla::FloorLog2(uint64_t(rhs + 1));
+    if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(rhs + 1))) {
+      int32_t shift = mozilla::FloorLog2(rhs + 1);
 
       UseScratchRegisterScope temps(masm);
       Register savedLhs = lhs;
@@ -912,8 +910,8 @@ void CodeGeneratorLOONG64::emitMulI64(Register lhs, int64_t rhs,
       return;
     }
 
-    if (std::has_single_bit(static_cast<uint64_t>(rhs - 1))) {
-      int32_t shift = mozilla::FloorLog2(uint64_t(rhs - 1));
+    if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(rhs - 1))) {
+      int32_t shift = mozilla::FloorLog2(rhs - 1);
       if (shift < 5) {
         masm.as_alsl_d(dest, lhs, lhs, shift - 1);
       } else {
@@ -930,7 +928,7 @@ void CodeGeneratorLOONG64::emitMulI64(Register lhs, int64_t rhs,
     }
 
     // Use shift if constant is power of 2.
-    int32_t shift = mozilla::FloorLog2(uint64_t(rhs));
+    int32_t shift = mozilla::FloorLog2(rhs);
     if (int64_t(1) << shift == rhs) {
       masm.as_slli_d(dest, lhs, shift);
       return;

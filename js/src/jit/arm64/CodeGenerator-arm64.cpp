@@ -9,8 +9,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
 
-#include <bit>
-
 #include "builtin/Number.h"
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
@@ -265,7 +263,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       default:
         // Use shift if cannot overflow and constant is a power of 2
         if (!mul->canOverflow() && constant > 0) {
-          int32_t shift = FloorLog2(uint32_t(constant));
+          int32_t shift = FloorLog2(constant);
           if ((1 << shift) == constant) {
             masm.Lsl(destreg32, lhsreg32, shift);
             return;
@@ -574,7 +572,7 @@ static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   ARMRegister const32 = temps.AcquireW();
 
   // The absolute value of the denominator isn't a power of 2.
-  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
 
   auto* mir = ins->mir();
 
@@ -685,7 +683,7 @@ static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins) {
   ARMRegister const32 = temps.AcquireW();
 
   // The denominator isn't a power of 2 (see LDivPowTwoI).
-  MOZ_ASSERT(!std::has_single_bit(d));
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
 
   auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
@@ -765,7 +763,7 @@ static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   ARMRegister const64 = temps.AcquireX();
 
   // The absolute value of the denominator isn't a power of 2.
-  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
 
   auto* mir = ins->mir();
 
@@ -826,7 +824,7 @@ static void UnsignedDivide64WithConstant(MacroAssembler& masm,
   ARMRegister const64 = temps.AcquireX();
 
   // The denominator isn't a power of 2 (see LDivPowTwoI).
-  MOZ_ASSERT(!std::has_single_bit(d));
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
 
   auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
@@ -2299,7 +2297,7 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
       default:
         // Use shift if constant is nonnegative power of 2.
         if (constant > 0) {
-          int32_t shift = mozilla::FloorLog2(uint64_t(constant));
+          int32_t shift = mozilla::FloorLog2(constant);
           if (int64_t(1) << shift == constant) {
             masm.Lsl(ARMRegister(output.reg, 64),
                      ARMRegister(ToRegister64(lhs).reg, 64), shift);
@@ -2426,8 +2424,8 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
     }
 
     // Use shift if constant is a power of 2.
-    if (constant > 0 && std::has_single_bit(uintptr_t(constant))) {
-      uint32_t shift = mozilla::FloorLog2(uintptr_t(constant));
+    if (constant > 0 && mozilla::IsPowerOfTwo(uintptr_t(constant))) {
+      uint32_t shift = mozilla::FloorLog2(constant);
       masm.Lsl(dest, lhs, shift);
       return;
     }
