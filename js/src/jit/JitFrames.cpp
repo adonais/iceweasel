@@ -281,9 +281,10 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
     *hitBailoutException = true;
   }
 
-  RootedScript script(cx, frame.script());
-  RootedValue exception(cx);
-  RootedValue exceptionStack(cx);
+  RootedTuple<JSScript*, Value, Value> ionRoots(cx);
+  RootedField<JSScript*> script(ionRoots, frame.script());
+  RootedField<Value, 1> exception(ionRoots);
+  RootedField<Value, 2> exceptionStack(ionRoots);
 
   for (TryNoteIterIon tni(cx, frame); !tni.done(); ++tni) {
     const TryNote* tn = *tni;
@@ -475,11 +476,12 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
   MOZ_ASSERT(frame.baselineFrame()->runningInInterpreter(),
              "Caller must ensure frame is an interpreter frame");
 
-  RootedScript script(cx, frame.baselineFrame()->script());
-  RootedValue exception(cx);
-  RootedValue exceptionStack(cx);
-  RootedValue doneValue(cx);
-  RootedObject iterObject(cx);
+  RootedTuple<JSScript*, Value, Value, Value, JSObject*> baselineRoots(cx);
+  RootedField<JSScript*> script(baselineRoots, frame.baselineFrame()->script());
+  RootedField<Value, 1> exception(baselineRoots);
+  RootedField<Value, 2> exceptionStack(baselineRoots);
+  RootedField<Value, 3> doneValue(baselineRoots);
+  RootedField<JSObject*> iterObject(baselineRoots);
 
   for (TryNoteIterBaseline tni(cx, frame, *pc); !tni.done(); ++tni) {
     const TryNote* tn = *tni;
