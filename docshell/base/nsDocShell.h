@@ -1232,10 +1232,10 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::NavigationAPIMethodTracker* aNavigationAPIMethodTracker =
           nullptr);
 
- private:
   MOZ_CAN_RUN_SCRIPT
   void InformNavigationAPIAboutAbortingNavigation();
 
+ private:
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void InformNavigationAPIAboutChildNavigableDestruction();
