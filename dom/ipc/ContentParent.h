@@ -1158,22 +1158,6 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvGetHyphDict(
       nsIURI* aURIParams, mozilla::ipc::ReadOnlySharedMemoryHandle* aOutHandle);
 
-  mozilla::ipc::IPCResult RecvNotifyPushObservers(const nsACString& aScope,
-                                                  nsIPrincipal* aPrincipal,
-                                                  const nsAString& aMessageId);
-
-  mozilla::ipc::IPCResult RecvNotifyPushObserversWithData(
-      const nsACString& aScope, nsIPrincipal* aPrincipal,
-      const nsAString& aMessageId, nsTArray<uint8_t>&& aData);
-
-  mozilla::ipc::IPCResult RecvPushError(const nsACString& aScope,
-                                        nsIPrincipal* aPrincipal,
-                                        const nsAString& aMessage,
-                                        const uint32_t& aFlags);
-
-  mozilla::ipc::IPCResult RecvNotifyPushSubscriptionModifiedObservers(
-      const nsACString& aScope, nsIPrincipal* aPrincipal);
-
   mozilla::ipc::IPCResult RecvGetFilesRequest(
       const nsID& aID, nsTArray<nsString>&& aDirectoryPaths,
       const bool& aRecursiveFlag);

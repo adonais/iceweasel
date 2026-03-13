@@ -415,23 +415,6 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvShutdown();
 
-  mozilla::ipc::IPCResult RecvPush(const nsCString& aScope,
-                                   nsIPrincipal* aPrincipal,
-                                   const nsString& aMessageId);
-
-  mozilla::ipc::IPCResult RecvPushWithData(const nsCString& aScope,
-                                           nsIPrincipal* aPrincipal,
-                                           const nsString& aMessageId,
-                                           nsTArray<uint8_t>&& aData);
-
-  mozilla::ipc::IPCResult RecvPushError(const nsCString& aScope,
-                                        nsIPrincipal* aPrincipal,
-                                        const nsString& aMessage,
-                                        const uint32_t& aFlags);
-
-  mozilla::ipc::IPCResult RecvNotifyPushSubscriptionModifiedObservers(
-      const nsCString& aScope, nsIPrincipal* aPrincipal);
-
   mozilla::ipc::IPCResult RecvRefreshScreens(
       nsTArray<ScreenDetails>&& aScreens);
 

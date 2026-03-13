@@ -883,17 +883,6 @@ child:
      */
     async NotifyEmptyHTTPCache();
 
-    /**
-     * Send a `push` event without data to a service worker in the child.
-     */
-    async Push(nsCString scope, nullable nsIPrincipal principal, nsString messageId);
-
-    /**
-     * Send a `push` event with data to a service worker in the child.
-     */
-    async PushWithData(nsCString scope, nullable nsIPrincipal principal,
-                       nsString messageId, uint8_t[] data);
-
     async GetFilesResponse(nsID aID, GetFilesResponseResult aResult);
 
     async BlobURLRegistration(nsCString aURI, IPCBlob aBlob,
@@ -1589,18 +1578,6 @@ parent:
       bool aUserActivation,
       bool aTextDirectiveUserActivation);
 
-    /**
-     * Notify `push-message` observers without data in the parent.
-     */
-    async NotifyPushObservers(nsCString scope, nullable nsIPrincipal principal,
-                              nsString messageId);
-
-    /**
-     * Notify `push-message` observers with data in the parent.
-     */
-    async NotifyPushObserversWithData(nsCString scope, nullable nsIPrincipal principal,
-                                      nsString messageId, uint8_t[] data);
-
      async GetFilesRequest(nsID aID, nsString[] aDirectories, bool aRecursiveFlag);
      async DeleteGetFilesRequest(nsID aID);
 
@@ -1856,19 +1833,6 @@ both:
     async AsyncMessage(nsString aMessage, StructuredCloneData aData);
 
     /**
-     * Notify `push-subscription-modified` observers in the parent and child.
-     */
-    async NotifyPushSubscriptionModifiedObservers(nsCString scope,
-                                                  nullable nsIPrincipal principal);
-
-    /**
-     * Send a Push error message to all service worker clients in the parent or
-     * child.
-     */
-    async PushError(nsCString scope, nullable nsIPrincipal principal, nsString message,
-                    uint32_t flags);
-
-    /**
      * Creates a new BrowsingContext, initialized with the values provided in
      * `BrowsingContextInitializer`.
      *
@@ -1974,7 +1938,7 @@ parent:
                                     MaybeFeaturePolicyInfo aContainerFeaturePolicyInfo);
 
     // Notify parent process that aContext must update its ancestor origins list
-    // This is only used for about:blank, because for normal navigations 
+    // This is only used for about:blank, because for normal navigations
     // the internal ancestor origins list will be created during load.
     async UpdateAncestorOriginsList(MaybeDiscardedBrowsingContext aContext);
 
