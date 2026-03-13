@@ -17,12 +17,16 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
 
 /**
- * When the search widget is tapped, Fenix should open directly to search.
+ * When the search widget is tapped and the user has been onboarded, Fenix should open directly to search.
  * Tapping the private browsing mode launcher icon should also open to search.
  */
-class StartSearchIntentProcessor : HomeIntentProcessor {
+class StartSearchIntentProcessor(private val userHasBeenOnboarded: () -> Boolean) : HomeIntentProcessor {
 
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
+        if (!userHasBeenOnboarded()) {
+            return false
+        }
+
         val event = intent.extras?.getString(HomeActivity.OPEN_TO_SEARCH)
         return if (event != null) {
             val source = when (event) {
