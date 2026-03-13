@@ -48,6 +48,8 @@ support-files = [
   "html_post-raw-test-page.html",
   "html_header-test-page.html",
   "html_post-raw-with-headers-test-page.html",
+  "html_reporting_api-test-page.html",
+  "html_reporting_api-test-page.html^headers^",
   "html_simple-test-page.html",
   "html_single-get-page.html",
   "html_single_get_page_favicon.html",
@@ -395,6 +397,8 @@ skip-if = [
 ["browser_net_raw_response.js"]
 
 ["browser_net_reload-button.js"]
+
+["browser_net_reporting_api.js"]
 
 ["browser_net_req-resp-bodies.js"]
 
