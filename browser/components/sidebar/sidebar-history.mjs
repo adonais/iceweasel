@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const NEVER_REMEMBER_HISTORY_PREF = "browser.privatebrowsing.autostart";
+const SORT_OPTION_PREF = "sidebar.history.sortOption";
 const DAYS_EXPANDED_INITIALLY = 2;
 
 export class SidebarHistory extends SidebarPage {
@@ -41,6 +42,7 @@ export class SidebarHistory extends SidebarPage {
     this.handlePopupEvent = this.handlePopupEvent.bind(this);
     this.controller = new lazy.HistoryController(this, {
       component: "sidebar",
+      sortOption: Services.prefs.getStringPref(SORT_OPTION_PREF, "date"),
     });
     this.treeView = new lazy.SidebarTreeView(this);
   }
@@ -120,16 +122,16 @@ export class SidebarHistory extends SidebarPage {
   handleCommandEvent(e) {
     switch (e.target.id) {
       case "sidebar-history-sort-by-date":
-        this.controller.onChangeSortOption(e, "date");
+        this.#changeSortOption(e, "date");
         break;
       case "sidebar-history-sort-by-site":
-        this.controller.onChangeSortOption(e, "site");
+        this.#changeSortOption(e, "site");
         break;
       case "sidebar-history-sort-by-date-and-site":
-        this.controller.onChangeSortOption(e, "datesite");
+        this.#changeSortOption(e, "datesite");
         break;
       case "sidebar-history-sort-by-last-visited":
-        this.controller.onChangeSortOption(e, "lastvisited");
+        this.#changeSortOption(e, "lastvisited");
         break;
       case "sidebar-history-clear":
         lazy.Sanitizer.showUI(this.topWindow);
@@ -144,6 +146,11 @@ export class SidebarHistory extends SidebarPage {
         super.handleCommandEvent(e);
         break;
     }
+  }
+
+  #changeSortOption(e, sortOption) {
+    Services.prefs.setStringPref(SORT_OPTION_PREF, sortOption);
+    this.controller.onChangeSortOption(e, sortOption);
   }
 
   #deleteMultipleFromHistory() {

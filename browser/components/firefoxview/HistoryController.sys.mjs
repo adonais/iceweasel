@@ -67,13 +67,30 @@ export class HistoryController {
   #todaysDate;
   #yesterdaysDate;
 
-  constructor(host, options) {
+  /**
+   * Construct a new HistoryController.
+   *
+   * @param {ReactiveControllerHost} host
+   *   The component that this controller is connected to.
+   * @param {object} [options]
+   * @param {string} [options.sortOption]
+   * @param {number} [options.searchResultsLimit]
+   * @param {string} [options.component]
+   */
+  constructor(
+    host,
+    {
+      sortOption = "date",
+      searchResultsLimit = 300,
+      component = "firefoxview",
+    } = {}
+  ) {
     this.placesQuery = new lazy.PlacesQuery();
     this.searchQuery = "";
-    this.sortOption = "date";
-    this.searchResultsLimit = options?.searchResultsLimit || 300;
-    this.component = HISTORY_MAP_L10N_IDS?.[options?.component]
-      ? options?.component
+    this.sortOption = sortOption;
+    this.searchResultsLimit = searchResultsLimit;
+    this.component = HISTORY_MAP_L10N_IDS[component]
+      ? component
       : "firefoxview";
     this.historyCache = {
       entries: null,

@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(1);
+
 const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
@@ -27,6 +29,7 @@ add_setup(async () => {
 
 registerCleanupFunction(async () => {
   await PlacesUtils.history.clear();
+  Services.prefs.clearUserPref("sidebar.history.sortOption");
 });
 
 // TO DO - move below helper into universal helper with Places Bug 1954843
@@ -345,6 +348,41 @@ add_task(async function test_history_sort() {
   );
 
   SidebarController.hide();
+  Services.prefs.clearUserPref("sidebar.history.sortOption");
+});
+
+add_task(async function test_history_sort_persists() {
+  let { component, contentWindow } = await showHistorySidebar();
+  let {
+    _menu: sortMenu,
+    menuButton: sortMenuButton,
+    _menuSortByDateSite: sortByDateSiteOption,
+  } = component;
+
+  info("Sort history by date and site.");
+  const promiseMenuShown = BrowserTestUtils.waitForEvent(
+    sortMenu,
+    "popupshown"
+  );
+  EventUtils.synthesizeMouseAtCenter(sortMenuButton, {}, contentWindow);
+  await promiseMenuShown;
+  sortMenu.activateItem(sortByDateSiteOption);
+  await TestUtils.waitForTick();
+
+  info("Close the sidebar.");
+  SidebarController.hide();
+
+  info("Reopen the sidebar and verify that sort order has not changed.");
+  component = (await showHistorySidebar()).component;
+  sortByDateSiteOption = component._menuSortByDateSite;
+  await BrowserTestUtils.waitForMutationCondition(
+    sortByDateSiteOption,
+    { attributes: true, attributeFilter: ["checked"] },
+    () => sortByDateSiteOption.hasAttribute("checked")
+  );
+
+  SidebarController.hide();
+  Services.prefs.clearUserPref("sidebar.history.sortOption");
 });
 
 add_task(async function test_history_auxclick() {
