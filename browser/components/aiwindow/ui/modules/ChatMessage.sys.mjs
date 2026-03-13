@@ -3,6 +3,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+const TOKEN_LABELS = {
+  EXISTING_MEMORY: "existing_memory",
+  SEARCH: "search",
+  FOLLOWUP: "followup",
+};
+
 /**
  * A message in a conversation.
  */
@@ -25,6 +31,7 @@ export class ChatMessage {
   memoriesFlagSource;
   memoriesApplied;
   webSearchQueries;
+  followUpSuggestions; // transient value
   pageHistoryDeleted;
   tokens;
 
@@ -56,6 +63,8 @@ export class ChatMessage {
    * that were applied to a response if memoriesEnabled == true
    * @param {?Array<string>} param.webSearchQueries - List of strings of web
    * search queries that were applied to a response if role == assistant
+   * @param {?Array<string>} param.followUpSuggestions - List of strings of follow up
+   * questions that were generated from a response if role == assistant
    * @param {object} [param.params = null] - Model params used if role == assistant|tool
    * @param {object} [param.usage = null] - Token usage data for the current
    * response if role == assistant
@@ -88,6 +97,7 @@ export class ChatMessage {
     memoriesFlagSource = null,
     memoriesApplied = [],
     webSearchQueries = [],
+    followUpSuggestions = null,
     params = null,
     usage = null,
     modelId = null,
@@ -113,6 +123,7 @@ export class ChatMessage {
     this.memoriesFlagSource = memoriesFlagSource;
     this.memoriesApplied = memoriesApplied;
     this.webSearchQueries = webSearchQueries;
+    this.followUpSuggestions = followUpSuggestions;
     this.pageHistoryDeleted = pageHistoryDeleted;
     this.tokens = {
       search: [],
@@ -135,12 +146,14 @@ export class ChatMessage {
       }
 
       switch (key) {
-        case "existing_memory":
+        case TOKEN_LABELS.EXISTING_MEMORY:
           (this._pendingMemoryIds ??= []).push(value);
           break;
-        case "search":
+        case TOKEN_LABELS.SEARCH:
           this.webSearchQueries.push(value);
           break;
+        case TOKEN_LABELS.FOLLOWUP:
+          this.followUpSuggestions.push(value);
       }
     });
   }
@@ -171,6 +184,8 @@ export class AssistantRoleOpts {
    * that were applied to a response
    * @param {?Array<string>} [webSearchQueries=[]] - List of strings of web search
    * queries that were applied to a response
+   * @param {?Array<string>} [followUpSuggestions=[]] - List of strings of follow up
+   * questions that were generated from a response
    */
   constructor(
     modelId = null,
@@ -179,12 +194,14 @@ export class AssistantRoleOpts {
     memoriesEnabled = false,
     memoriesFlagSource = null,
     memoriesApplied = [],
-    webSearchQueries = []
+    webSearchQueries = [],
+    followUpSuggestions = []
   ) {
     this.memoriesEnabled = memoriesEnabled;
     this.memoriesFlagSource = memoriesFlagSource;
     this.memoriesApplied = memoriesApplied;
     this.webSearchQueries = webSearchQueries;
+    this.followUpSuggestions = followUpSuggestions;
     this.params = params;
     this.usage = usage;
     this.modelId = modelId;

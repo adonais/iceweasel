@@ -965,32 +965,6 @@ export class AIWindow extends MozLitElement {
     link.href = TAB_FAVICON_CHAT;
   }
 
-  /**
-   * Processes tokens from the AI response stream and updates the message.
-   * Adds all tokens to their respective arrays in the tokens object and
-   * builds the _pendingMemoryIds array for existing_memory tokens.
-   * IDs are resolved to full memory objects after streaming ends.
-   *
-   * @param {Array<{key: string, value: string}>} tokens - Array of parsed tokens from the stream
-   * @param {ChatMessage} currentMessage - The message object being updated
-   */
-  handleTokens = (tokens, currentMessage) => {
-    tokens.forEach(({ key, value }) => {
-      currentMessage.tokens[key].push(value);
-
-      if (key === "existing_memory") {
-        currentMessage._pendingMemoryIds ??= [];
-        currentMessage._pendingMemoryIds.push(value);
-      }
-
-      // Build web search queries
-      if (key === "search") {
-        currentMessage.webSearchQueries ??= [];
-        currentMessage.webSearchQueries.push(value);
-      }
-    });
-  };
-
   #resetConversationState() {
     this.classList.remove("chat-active");
     this.#hostBrowser?.setAttribute(

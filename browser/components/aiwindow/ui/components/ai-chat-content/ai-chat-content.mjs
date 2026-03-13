@@ -13,6 +13,8 @@ import "chrome://browser/content/aiwindow/components/chat-assistant-loader.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/website-chip-container.mjs";
 
+const FOLLOW_UP_QTY = 2;
+
 /**
  * A custom element for managing AI Chat Content
  */
@@ -290,22 +292,18 @@ export class AIChatContent extends MozLitElement {
       id: messageId,
       content,
       memoriesApplied,
-      tokens,
       webSearchQueries,
+      followUpSuggestions,
     } = event.detail;
 
     if (typeof content.body !== "string" || !content.body) {
       return;
     }
 
-    // The "webSearchQueries" are coming from a conversation that is being initialized
-    // and "tokens" are streaming in from a live conversation.
-    const searchTokens = webSearchQueries ?? tokens?.search ?? [];
-
-    // Prefer showing web search handoff over followup suggestions.
-    this.followUpSuggestions = searchTokens.length
+    // favor web search display over follow ups.
+    this.followUpSuggestions = webSearchQueries.length
       ? []
-      : (tokens?.followup ?? []).slice(0, 2);
+      : followUpSuggestions.slice(0, FOLLOW_UP_QTY);
 
     this.conversationState[ordinal] = {
       role: "assistant",
@@ -313,7 +311,7 @@ export class AIChatContent extends MozLitElement {
       messageId,
       body: content.body,
       appliedMemories: memoriesApplied ?? [],
-      searchTokens,
+      searchTokens: webSearchQueries ?? [],
     };
 
     this.requestUpdate();
