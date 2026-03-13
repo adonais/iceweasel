@@ -19,6 +19,7 @@ async function getSelectionStart(browser) {
 add_task(async function test_smartbar_keyboard_horizontal_arrows() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   await typeInSmartbar(browser, "abc");
 
@@ -47,6 +48,7 @@ add_task(async function test_smartbar_keyboard_horizontal_arrows() {
 add_task(async function test_smartbar_keyboard_vertical_arrows() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
