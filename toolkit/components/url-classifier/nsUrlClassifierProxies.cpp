@@ -149,6 +149,11 @@ UrlClassifierDBServiceWorkerProxy::CleanRealTimeSimulatorCache() {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+NS_IMETHODIMP
+UrlClassifierDBServiceWorkerProxy::ExpireRealTimeSimulatorCache() {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 nsresult UrlClassifierDBServiceWorkerProxy::OpenDb() const {
   nsCOMPtr<nsIRunnable> r =
       NewRunnableMethod("nsUrlClassifierDBServiceWorker::OpenDb", mTarget,

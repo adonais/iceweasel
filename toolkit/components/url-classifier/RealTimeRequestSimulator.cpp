@@ -356,5 +356,22 @@ void RealTimeRequestSimulator::CleanCache() {
   mNegativeCache.Clear();
 }
 
+void RealTimeRequestSimulator::ExpireCache() {
+  MOZ_ASSERT(nsUrlClassifierDBService::BackgroundThread() ==
+             NS_GetCurrentThread());
+
+  for (auto& entry : mSimulatedCache) {
+    CachedFullHashResponse* response = entry.GetWeak();
+    response->negativeCacheExpirySec = 0;
+    for (auto iter = response->fullHashes.Iter(); !iter.Done(); iter.Next()) {
+      iter.Data() = 0;
+    }
+  }
+
+  for (auto& entry : mNegativeCache) {
+    entry.GetWeak()->negativeCacheExpirySec = 0;
+  }
+}
+
 }  // namespace safebrowsing
 }  // namespace mozilla

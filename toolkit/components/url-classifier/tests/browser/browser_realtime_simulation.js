@@ -289,10 +289,8 @@ add_task(async function test_simulation_cache() {
 
   await BrowserTestUtils.removeTab(tab);
 
-  // Wait for cache to expire.
-  info("Waiting for cache to expire");
-  /* eslint-disable mozilla/no-arbitrary-setTimeout */
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Force-expire all cache entries.
+  UrlClassifierTestUtils.expireRealTimeSimulatorCache();
 
   // Third request should be sent again after cache expiry.
   resultPromise = waitForSimulationResult();
@@ -362,10 +360,8 @@ add_task(async function test_negative_cache() {
 
   await BrowserTestUtils.removeTab(tab);
 
-  // Wait for negative cache to expire.
-  info("Waiting for negative cache to expire");
-  /* eslint-disable mozilla/no-arbitrary-setTimeout */
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Force-expire all cache entries.
+  UrlClassifierTestUtils.expireRealTimeSimulatorCache();
 
   // Third request should be sent again after negative cache expiry.
   resultPromise = waitForSimulationResult();
