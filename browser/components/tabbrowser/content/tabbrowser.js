@@ -777,7 +777,7 @@
       }
 
       for (const tab of unchangedRemoteness) {
-        reloadBrowser(tab, reloadFlags);
+        reloadBrowser(tab);
       }
 
       function reloadBrowser(tab) {
