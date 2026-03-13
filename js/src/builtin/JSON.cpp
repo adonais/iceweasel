@@ -1821,6 +1821,8 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
       /* Step 2c(ii). */
       RootedId id(cx);
       RootedValue newElement(cx);
+      Rooted<Value> value(cx);
+      Rooted<PropertyDescriptor> desc(cx);
       for (size_t i = 0, len = keys.length(); i < len; i++) {
         if (!CheckForInterrupt(cx)) {
           return false;
@@ -1830,7 +1832,6 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
         id = keys[i];
         Rooted<ParseRecordObject*> entryRecord(cx);
         if (entries) {
-          Rooted<Value> value(cx);
           if (!JS_GetPropertyById(cx, entries, id, &value)) {
             return false;
           }
@@ -1851,11 +1852,10 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
           }
         } else {
           /* Step 2c(ii)(3). The spec deliberately ignores strict failure. */
-          Rooted<PropertyDescriptor> desc(
-              cx, PropertyDescriptor::Data(newElement,
-                                           {JS::PropertyAttribute::Configurable,
-                                            JS::PropertyAttribute::Enumerable,
-                                            JS::PropertyAttribute::Writable}));
+          desc = PropertyDescriptor::Data(newElement,
+                                          {JS::PropertyAttribute::Configurable,
+                                           JS::PropertyAttribute::Enumerable,
+                                           JS::PropertyAttribute::Writable});
           if (!DefineProperty(cx, obj, id, desc, ignored)) {
             return false;
           }
