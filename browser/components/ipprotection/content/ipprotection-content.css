@@ -30,7 +30,7 @@ hr {
     --button-font-weight: var(--font-weight);
     --button-icon-fill: var(--icon-color);
     --button-padding: var(--space-small) var(--space-medium);
-
+    --focus-outline-offset: calc(-1 * var(--focus-outline-width));
     width: 100%;
   }
 }
