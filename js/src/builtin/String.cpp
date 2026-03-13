@@ -1475,6 +1475,23 @@ static bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 #endif
 }
 
+static JSString* NormalizeString(JSContext* cx, NormalizationForm form,
+                                 Handle<JSString*> str) {
+  // Empty strings are already normalized. Latin-1 strings are already in
+  // Normalization Form C.
+  if (str->empty() ||
+      (form == NormalizationForm::NFC && str->hasLatin1Chars())) {
+    return str;
+  }
+
+  JSLinearString* linear = str->ensureLinear(cx);
+  if (!linear) {
+    return nullptr;
+  }
+
+  return js_normalize(cx, form, linear, linear->hasLatin1Chars());
+}
+
 /**
  * String.prototype.localeCompare ( that [ , reserved1 [ , reserved2 ] ] )
  *
@@ -1529,8 +1546,26 @@ static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
     return true;
   }
 
+  // Normalize to NFD, as required in String.prototype.localeCompare:
+  //
+  // This method is also required to recognize and honour canonical equivalence
+  // according to the Unicode Standard, including returning +0𝔽 when comparing
+  // distinguishable Strings that are canonically equivalent.
+
+  Rooted<JSString*> normalizedStr(
+      cx, NormalizeString(cx, NormalizationForm::NFD, str));
+  if (!normalizedStr) {
+    return false;
+  }
+
+  Rooted<JSString*> normalizedThatStr(
+      cx, NormalizeString(cx, NormalizationForm::NFD, thatStr));
+  if (!normalizedThatStr) {
+    return false;
+  }
+
   int32_t result;
-  if (!CompareStrings(cx, str, thatStr, &result)) {
+  if (!CompareStrings(cx, normalizedStr, normalizedThatStr, &result)) {
     return false;
   }
 
@@ -1627,21 +1662,7 @@ static bool str_normalize(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  // Empty strings are already normalized. Latin-1 strings are already in
-  // Normalization Form C.
-  if (str->empty() ||
-      (form == NormalizationForm::NFC && str->hasLatin1Chars())) {
-    // Step 7.
-    args.rval().setString(str);
-    return true;
-  }
-
-  JSLinearString* linear = str->ensureLinear(cx);
-  if (!linear) {
-    return false;
-  }
-
-  JSString* ret = js_normalize(cx, form, linear, linear->hasLatin1Chars());
+  JSString* ret = NormalizeString(cx, form, str);
   if (!ret) {
     return false;
   }
