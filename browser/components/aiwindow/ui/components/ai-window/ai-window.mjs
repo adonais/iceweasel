@@ -786,13 +786,6 @@ export class AIWindow extends MozLitElement {
           }
         }
       }
-
-      // Disable suggestions after the first chat message.
-      // We only want to show suggestions for the initial query,
-      // but not for follow-up messages in a conversation.
-      if (this.#conversation.messages.length === 0) {
-        this.#smartbar.suppressStartQuery({ permanent: true });
-      }
       this.submitChatMessage(value, contextMentions, contextPageUrl);
       this.#dispatchChromeEvent(
         "ai-window:smartbar-input",
@@ -1003,10 +996,13 @@ export class AIWindow extends MozLitElement {
   #setBrowserContainerActiveState(isActive) {
     if (isActive) {
       this.classList.add("chat-active");
+      this.#smartbar?.suppressStartQuery({ permanent: true });
+      this.#smartbar?.view.close();
       return;
     }
 
     this.classList.remove("chat-active");
+    this.#smartbar?.unsuppressStartQuery();
   }
 
   /**

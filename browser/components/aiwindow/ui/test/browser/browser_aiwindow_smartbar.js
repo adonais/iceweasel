@@ -766,3 +766,84 @@ add_task(async function test_smartbar_max_length_is_set() {
 
   await BrowserTestUtils.closeWindow(win);
 });
+
+add_task(
+  async function test_smartbar_suggestions_suppressed_on_typing_when_chat_active() {
+    const sb = this.sinon.createSandbox();
+
+    try {
+      sb.stub(this.Chat, "fetchWithHistory");
+      sb.stub(this.openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
+
+      const win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+      await dispatchSmartbarCommit(browser, "initial prompt", "chat");
+      await TestUtils.waitForTick();
+
+      await typeInSmartbar(browser, "follow up");
+
+      const viewIsOpen = await SpecialPowers.spawn(browser, [], async () => {
+        const aiWindowElement = content.document.querySelector("ai-window");
+        const smartbar = aiWindowElement.shadowRoot.querySelector(
+          "#ai-window-smartbar"
+        );
+        return smartbar.view.isOpen;
+      });
+
+      Assert.ok(
+        !viewIsOpen,
+        "Suggestions view should not open when chat is active"
+      );
+
+      await BrowserTestUtils.closeWindow(win);
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_smartbar_suggestions_suppressed_on_focus_when_chat_active() {
+    const sb = this.sinon.createSandbox();
+
+    try {
+      sb.stub(this.Chat, "fetchWithHistory");
+      sb.stub(this.openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
+
+      const win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+      await dispatchSmartbarCommit(browser, "initial prompt", "chat");
+      await TestUtils.waitForTick();
+
+      const viewIsOpen = await SpecialPowers.spawn(browser, [], async () => {
+        const aiWindowElement = content.document.querySelector("ai-window");
+        const smartbar = aiWindowElement.shadowRoot.querySelector(
+          "#ai-window-smartbar"
+        );
+        smartbar.inputField.blur();
+        smartbar.dispatchEvent(
+          new content.MouseEvent("mousedown", { bubbles: true })
+        );
+        smartbar.inputField.focus();
+        return smartbar.view.isOpen;
+      });
+
+      Assert.ok(
+        !viewIsOpen,
+        "Suggestions view should not open on focus when chat is active"
+      );
+
+      await BrowserTestUtils.closeWindow(win);
+    } finally {
+      sb.restore();
+    }
+  }
+);

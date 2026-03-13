@@ -5346,7 +5346,7 @@ export class SmartbarInput extends HTMLElement {
       }
     }
 
-    if (this.focusedViaMousedown) {
+    if (this.focusedViaMousedown && !this._permanentlySuppressStartQuery) {
       this.view.autoOpen({ event });
     } else {
       if (this._untrimOnFocusAfterKeydown) {
