@@ -2371,7 +2371,22 @@ impl<'a> SceneBuilder<'a> {
         // to an off-screen surface.
         if let Some(clip_chain_id) = clip_chain_id {
             if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners) {
-                blit_reason |= BlitReason::CLIP;
+                // At the root level, if all complex clips are fixed-position
+                // rounded rectangles, we can skip the intermediate surface.
+                // The clips will be promoted to compositor clips on the tile
+                // cache slices, which applies them once to the composited
+                // surface — equivalent to the intermediate surface approach.
+                // This allows tile cache barriers to fire normally, enabling
+                // proper picture caching with multiple slices.
+                if !self.sc_stack.is_empty() ||
+                   !self.clip_tree_builder.clip_chain_complex_clips_are_promotable(
+                       clip_chain_id,
+                       &self.interners,
+                       &self.spatial_tree,
+                   )
+                {
+                    blit_reason |= BlitReason::CLIP;
+                }
             }
         }
 

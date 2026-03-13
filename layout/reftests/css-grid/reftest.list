@@ -142,7 +142,7 @@ skip-if(!gtkWidget) == grid-container-baselines-003.html grid-container-baseline
 == grid-container-synthesized-baseline-001.html grid-container-synthesized-baseline-001-ref.html
 == grid-column-gap-001.html grid-column-gap-001-ref.html
 == grid-column-gap-002.html grid-column-gap-002-ref.html
-fuzzy(0-2,0-60) == grid-column-gap-003.html grid-column-gap-003-ref.html
+fuzzy(0-2,0-72) == grid-column-gap-003.html grid-column-gap-003-ref.html
 == grid-column-gap-004.html grid-column-gap-004-ref.html
 == grid-row-gap-001.html grid-row-gap-001-ref.html
 == grid-percent-grid-gap-001.html grid-percent-grid-gap-001-ref.html

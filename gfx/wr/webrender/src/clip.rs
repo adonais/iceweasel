@@ -99,7 +99,7 @@ use crate::image_tiling::{self, Repetition};
 use crate::border::{ensure_no_corner_overlap, BorderRadiusAu};
 use crate::box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowClipSource, BoxShadowCacheKey};
 use crate::renderer::GpuBufferBuilderF;
-use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
+use crate::spatial_tree::{SceneSpatialTree, SpatialTree, SpatialNodeIndex};
 use crate::ellipse::Ellipse;
 use crate::gpu_types::{BoxShadowStretchMode};
 use crate::intern;
@@ -745,6 +745,52 @@ impl ClipTreeBuilder {
     ) -> bool {
         let clip_chain_index = self.clip_chain_map[&clip_chain_id];
         self.has_complex_clips_impl(clip_chain_index, interners)
+    }
+
+    /// Check if all complex clips in a clip chain are fixed-position rounded
+    /// rectangles (in Clip mode). When true, the intermediate surface for a
+    /// root-level stacking context can be skipped because the clips will be
+    /// promoted to compositor clips on the tile cache slices.
+    pub fn clip_chain_complex_clips_are_promotable(
+        &self,
+        clip_chain_id: ClipChainId,
+        interners: &Interners,
+        spatial_tree: &SceneSpatialTree,
+    ) -> bool {
+        let clip_chain_index = self.clip_chain_map[&clip_chain_id];
+        self.complex_clips_are_promotable_impl(clip_chain_index, interners, spatial_tree)
+    }
+
+    fn complex_clips_are_promotable_impl(
+        &self,
+        clip_chain_index: usize,
+        interners: &Interners,
+        spatial_tree: &SceneSpatialTree,
+    ) -> bool {
+        let mut index = clip_chain_index;
+
+        loop {
+            let clip_chain = &self.clip_chains[index];
+
+            for clip_entry in &clip_chain.clips {
+                let clip_info = &interners.clip[clip_entry.handle];
+
+                match clip_info.key.kind {
+                    ClipItemKeyKind::Rectangle(_, ClipMode::Clip) => {}
+                    ClipItemKeyKind::RoundedRectangle(_, _, ClipMode::Clip) => {
+                        if !spatial_tree.is_root_coord_system(clip_entry.spatial_node_index) {
+                            return false;
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+
+            match clip_chain.parent {
+                Some(parent) => index = parent,
+                None => return true,
+            }
+        }
     }
 
     /// Check if a clip-node has complex (non-rectangular) clips
