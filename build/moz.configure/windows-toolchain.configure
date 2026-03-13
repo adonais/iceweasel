@@ -234,9 +234,11 @@ with only_when(target_is_windows):
         return os.path.join(bootstrap, "dxcompiler.dll")
 
 
-@depends(vc_toolchain_search_path)
+@depends(target.abi, host.abi, vc_toolchain_search_path)
 @imports("os")
-def vc_path(vc_toolchain_search_path):
+def vc_path(target_windows_abi, host_windows_abi, vc_toolchain_search_path):
+    if target_windows_abi != "msvc" and host_windows_abi != "msvc":
+        return
     # In clang-cl builds, we need the headers and libraries from an MSVC installation.
     vc_program = find_program("cl.exe", paths=vc_toolchain_search_path)
     if not vc_program:
@@ -256,7 +258,7 @@ def vc_path(vc_toolchain_search_path):
     return os.path.normpath(result)
 
 
-@depends(vc_path)
+@depends_if(vc_path)
 @imports("os")
 def windows_toolchain_flags(vc_path):
     return [f"-I{os.path.join(vc_path, 'include')}"]
