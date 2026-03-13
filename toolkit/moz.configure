@@ -3486,6 +3486,7 @@ def crashreporter_default(target, developer_options, artifacts):
         # The crash reporter prevents crash stacktraces to be logged in the
         # logs on Android, so we leave it out by default in developer builds.
         return target.os != "Android" or not developer_options or artifacts
+    return False
 
 
 option(
