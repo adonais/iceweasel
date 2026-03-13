@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html class=reftest-wait>
+<head><title>Bug 2014888</title></head>
+<body>
+<script>
+const V1 = '/media/2x2-green.webm';
+
+function go(src, p) {
+  const v = document.createElement('video');
+  v.muted = true; v.autoplay = true; v.loop = true; v.src = src;
+  p.appendChild(v);
+  v.play().catch(()=>{});
+  let alt = 0;
+  const seek = () => {
+    try {
+      if (v.readyState >= 2 && v.duration > 0) {
+        alt ^= 1;
+        v.currentTime = alt ? v.duration * 0.99 : 0;
+      }
+    } catch(e) {}
+  };
+  v.onseeked = seek;
+  v.ontimeupdate = seek;
+  setInterval(seek, 0);
+  setInterval(() => {
+    try { if (v.readyState>=2) v.currentTime = Math.random() * v.duration; } catch(e) {}
+  }, 1);
+  return v;
+}
+
+for (let i = 0; i < 25; i++) go(V1, document.body);
+
+function ifr() {
+  const f = document.createElement('iframe');
+  f.srcdoc = `<script>
+    for(let i=0;i<8;i++){
+      const v=document.createElement("video");
+      v.muted=v.autoplay=v.loop=true;
+      v.src="${V1}";
+      document.body.appendChild(v);
+      v.play().catch(()=>{});
+      const s=()=>{try{if(v.readyState>=2&&v.duration>0)v.currentTime=Math.random()*v.duration}catch(e){}};
+      v.onseeked=s;
+      v.ontimeupdate=s;
+      setInterval(s,0);
+    }
+  <\/script>`;
+  document.body.appendChild(f);
+  setTimeout(() => {
+    try { f.remove(); } catch(e) {}
+    ifr();
+  }, 3 + Math.random() * 15);
+}
+for (let i = 0; i < 5; i++) setTimeout(ifr, i * 4);
+
+setTimeout(() => document.documentElement.removeAttribute("class"), 3000);
+
+setInterval(() => {
+  try {
+    const vs = document.querySelectorAll('body > video');
+    if (vs.length > 25) {
+      vs[0].remove();
+      go(V1, document.body);
+    }
+  } catch(e) {}
+}, 2);
+</script>
+</body>
+</html>

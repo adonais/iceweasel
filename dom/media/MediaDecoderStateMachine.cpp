@@ -1885,14 +1885,18 @@ class MediaDecoderStateMachine::AccurateSeekingState
   void HandleAudioWaited(MediaData::Type aType) override {
     MOZ_ASSERT(!mDoneAudioSeeking || !mDoneVideoSeeking,
                "Seek shouldn't be finished");
-
+    if (mSeekRequest.Exists()) {
+      return;
+    }
     RequestAudioData();
   }
 
   void HandleVideoWaited(MediaData::Type aType) override {
     MOZ_ASSERT(!mDoneAudioSeeking || !mDoneVideoSeeking,
                "Seek shouldn't be finished");
-
+    if (mSeekRequest.Exists()) {
+      return;
+    }
     RequestVideoData();
   }
 
