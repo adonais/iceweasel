@@ -2,6 +2,12 @@
 /* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
+// TODO bug 1938594: test_move_tabs_of_splitview_to_other_window may trigger
+// this error. See https://bugzilla.mozilla.org/show_bug.cgi?id=2023037#c4
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Unexpected undefined tabState for onMoveToNewWindow/
+);
+
 function getRealTabByExtensionTabId(tabId) {
   const {
     Management: {
