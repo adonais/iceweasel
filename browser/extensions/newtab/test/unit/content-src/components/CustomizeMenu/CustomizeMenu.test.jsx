@@ -136,32 +136,6 @@ describe("<CustomizeMenu>", () => {
     });
   });
 
-  it("focuses the close button when onEntered is called", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <CustomizeMenu {...DEFAULT_PROPS} showing={true} />
-      </WrapWithProvider>
-    );
-    const instance = wrapper.find("_CustomizeMenu").instance();
-    const mockFocus = sandbox.stub();
-    instance.closeButtonRef.current = { focus: mockFocus };
-    instance.onEntered();
-    assert.calledOnce(mockFocus);
-  });
-
-  it("focuses the personalize button when onExited is called", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <CustomizeMenu {...DEFAULT_PROPS} showing={false} />
-      </WrapWithProvider>
-    );
-    const instance = wrapper.find("_CustomizeMenu").instance();
-    const mockFocus = sandbox.stub();
-    instance.personalizeButtonRef.current = { focus: mockFocus };
-    instance.onExited();
-    assert.calledOnce(mockFocus);
-  });
-
   it("adds subpanel-open class when onSubpanelToggle is called", () => {
     wrapper = mount(
       <WrapWithProvider>

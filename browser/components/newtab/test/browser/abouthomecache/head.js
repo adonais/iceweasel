@@ -283,9 +283,10 @@ async function ensureCachedAboutHome(browser) {
       content.document.querySelectorAll("script:not([type='module'])")
     );
     Assert.ok(!!syncScripts.length, "There should be page scripts.");
-    let jscacheScript = syncScripts.find(s => s.src === "about:home?jscache");
-    Assert.ok(
-      !!jscacheScript,
+    let [lastSyncScript] = syncScripts.reverse();
+    Assert.equal(
+      lastSyncScript.src,
+      "about:home?jscache",
       "Found about:home?jscache script tag, indicating the cached doc"
     );
     Assert.ok(
@@ -313,7 +314,9 @@ async function ensureCachedAboutHome(browser) {
  * We test for this by looking for some tell-tale signs of the dynamically
  * generated document:
  *
- *   1. No about:home?jscache <script> element (the cache indicator)
+ *   1. No <script> elements (the scripts are loaded from the ScriptPreloader
+ *      via AboutNewTabChild when the "privileged about content process" is
+ *      enabled)
  *   2. No __FROM_STARTUP_CACHE__ expando on the window
  *   3. The "activity-stream" class on the document body
  *   4. The top sites section
@@ -329,13 +332,10 @@ async function ensureCachedAboutHome(browser) {
  */
 async function ensureDynamicAboutHome(browser, expectedResultScalar) {
   await SpecialPowers.spawn(browser, [], async () => {
-    let jsCacheScript = content.document.querySelector(
-      "script[src='about:home?jscache']"
+    let syncScripts = Array.from(
+      content.document.querySelectorAll("script:not([type='module'])")
     );
-    Assert.ok(
-      !jsCacheScript,
-      "Should not have found about:home?jscache script."
-    );
+    Assert.equal(syncScripts.length, 0, "There should be no page scripts.");
 
     Assert.equal(
       Cu.waiveXrays(content).__FROM_STARTUP_CACHE__,

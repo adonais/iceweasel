@@ -266,11 +266,6 @@ async function openAndTest({
         const list = link.closest("li");
         const contextMenu = list.querySelector(".context-menu-button");
         contextMenu.click();
-        await ContentTaskUtils.waitForCondition(
-          () =>
-            list.querySelector("[data-l10n-id=newtab-menu-open-new-window]"),
-          "Should find open-new-window menu item after clicking button"
-        );
         const target = list.querySelector(
           "[data-l10n-id=newtab-menu-open-new-window]"
         );

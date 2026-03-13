@@ -2,53 +2,54 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 
-export function TopSiteFormInput({
-  shouldFocus,
-  validationError: validationErrorProp = false,
-  value = "",
-  onClear,
-  onChange,
-  loading,
-  typeUrl,
-  titleId,
-  placeholderId,
-  errorMessageId,
-  autoFocusOnOpen,
-}) {
-  const [validationError, setValidationError] = useState(validationErrorProp);
-  const inputRef = useRef(null);
-  const prevShouldFocusRef = useRef(false);
+export class TopSiteFormInput extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = { validationError: this.props.validationError };
+    this.onChange = this.onChange.bind(this);
+    this.onMount = this.onMount.bind(this);
+    this.onClearIconPress = this.onClearIconPress.bind(this);
+  }
 
-  useEffect(() => {
-    if (shouldFocus && !prevShouldFocusRef.current && inputRef.current) {
-      inputRef.current.focus();
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.shouldFocus && !this.props.shouldFocus) {
+      this.input.focus();
     }
-    prevShouldFocusRef.current = shouldFocus;
-  }, [shouldFocus]);
+    if (nextProps.validationError && !this.props.validationError) {
+      this.setState({ validationError: true });
+    }
+    // If the component is in an error state but the value was cleared by the parent
+    if (this.state.validationError && !nextProps.value) {
+      this.setState({ validationError: false });
+    }
+  }
 
-  useEffect(() => {
-    setValidationError(validationErrorProp);
-  }, [validationErrorProp]);
-
-  const onClearIconPress = event => {
+  onClearIconPress(event) {
+    // If there is input in the URL or custom image URL fields,
+    // and we hit 'enter' while tabbed over the clear icon,
+    // we should execute the function to clear the field.
     if (event.key === "Enter") {
-      onClear();
+      this.props.onClear();
     }
-  };
+  }
 
-  const handleChange = ev => {
-    if (validationError) {
-      setValidationError(false);
+  onChange(ev) {
+    if (this.state.validationError) {
+      this.setState({ validationError: false });
     }
-    onChange(ev);
-  };
+    this.props.onChange(ev);
+  }
 
-  const renderLoadingOrCloseButton = () => {
-    const showClearButton = value && onClear;
+  onMount(input) {
+    this.input = input;
+  }
 
-    if (loading) {
+  renderLoadingOrCloseButton() {
+    const showClearButton = this.props.value && this.props.onClear;
+
+    if (this.props.loading) {
       return (
         <div className="loading-container">
           <div className="loading-animation" />
@@ -59,39 +60,53 @@ export function TopSiteFormInput({
         <button
           type="button"
           className="icon icon-clear-input icon-button-style"
-          onClick={onClear}
-          onKeyDown={onClearIconPress}
+          onClick={this.props.onClear}
+          onKeyPress={this.onClearIconPress}
           data-l10n-id="newtab-topsites-clear-input"
         />
       );
     }
     return null;
-  };
+  }
 
-  return (
-    <label>
-      <span data-l10n-id={titleId} />
-      <div
-        className={`field ${typeUrl ? "url" : ""}${
-          validationError ? " invalid" : ""
-        }`}
-      >
-        <input
-          type="text"
-          value={value}
-          ref={inputRef}
-          onChange={handleChange}
-          data-l10n-id={placeholderId}
-          // Set focus on error if the url field is valid or when the input is first rendered and is empty
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus={autoFocusOnOpen}
-          disabled={loading}
-        />
-        {renderLoadingOrCloseButton()}
-        {validationError && (
-          <aside className="error-tooltip" data-l10n-id={errorMessageId} />
-        )}
-      </div>
-    </label>
-  );
+  render() {
+    const { typeUrl } = this.props;
+    const { validationError } = this.state;
+
+    return (
+      <label>
+        <span data-l10n-id={this.props.titleId} />
+        <div
+          className={`field ${typeUrl ? "url" : ""}${
+            validationError ? " invalid" : ""
+          }`}
+        >
+          <input
+            type="text"
+            value={this.props.value}
+            ref={this.onMount}
+            onChange={this.onChange}
+            data-l10n-id={this.props.placeholderId}
+            // Set focus on error if the url field is valid or when the input is first rendered and is empty
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={this.props.autoFocusOnOpen}
+            disabled={this.props.loading}
+          />
+          {this.renderLoadingOrCloseButton()}
+          {validationError && (
+            <aside
+              className="error-tooltip"
+              data-l10n-id={this.props.errorMessageId}
+            />
+          )}
+        </div>
+      </label>
+    );
+  }
 }
+
+TopSiteFormInput.defaultProps = {
+  showClearButton: false,
+  value: "",
+  validationError: false,
+};

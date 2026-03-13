@@ -90,15 +90,17 @@ export class Section extends React.PureComponent {
     }
   }
 
-  componentDidMount() {
+  componentWillMount() {
     this.sendNewTabRehydrated(this.props.initialized);
+  }
+
+  componentDidMount() {
     if (this.props.rows.length && !this.props.pref.collapsed) {
       this.sendImpressionStatsOrAddListener();
     }
   }
 
   componentDidUpdate(prevProps) {
-    this.sendNewTabRehydrated(this.props.initialized);
     const { props } = this;
     const isCollapsed = props.pref.collapsed;
     const wasCollapsed = prevProps.pref.collapsed;
@@ -113,6 +115,10 @@ export class Section extends React.PureComponent {
     ) {
       this.sendImpressionStatsOrAddListener();
     }
+  }
+
+  componentWillUpdate(nextProps) {
+    this.sendNewTabRehydrated(nextProps.initialized);
   }
 
   componentWillUnmount() {

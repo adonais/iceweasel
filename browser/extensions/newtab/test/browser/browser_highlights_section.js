@@ -59,14 +59,12 @@ test_highlights(
 
 test_highlights(
   1, // Number of highlights cards
-  async function check_highlights_context_menu() {
+  function check_highlights_context_menu() {
     const menuButton = content.document.querySelector(
       "[data-section-id='highlights'] .card-outer .context-menu-button"
     );
     // Open the menu.
     menuButton.click();
-    // Wait for React to re-render the context menu.
-    await new Promise(r => content.requestAnimationFrame(r));
     const found = content.document.querySelector(
       "[data-section-id='highlights'] .card-outer .context-menu"
     );
@@ -82,8 +80,6 @@ test_highlights(
     );
     // Open the menu.
     menuButton.click();
-    // Wait for React to re-render the context menu.
-    await new Promise(r => content.requestAnimationFrame(r));
     const contextMenu = content.document.querySelector(
       "[data-section-id='highlights'] .card-outer .context-menu"
     );

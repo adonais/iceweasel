@@ -28,6 +28,7 @@ console.error = function (msg, ...args) {
 };
 
 const req = require.context(".", true, /\.test\.jsx?$/);
+const files = req.keys();
 
 // This exposes sinon assertions to chai.assert
 sinon.assert.expose(assert, { prefix: "" });
@@ -749,5 +750,5 @@ overrider.set(TEST_GLOBAL);
 
 describe("activity-stream", () => {
   after(() => overrider.restore());
-  req.keys().forEach(file => req(file));
+  files.forEach(file => req(file));
 });

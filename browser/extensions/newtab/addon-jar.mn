@@ -14,7 +14,6 @@ browser.jar:
 * builtin-addons/newtab/data/content/abouthomecache/page.html.template (./data/content/abouthomecache/page.html.template)
 * builtin-addons/newtab/data/content/abouthomecache/script.js.template (./data/content/abouthomecache/script.js.template)
   builtin-addons/newtab/data/data/content/assets/  (./data/content/assets/*)
-  builtin-addons/newtab/data/content/vendor.bundle.js (./data/content/vendor.bundle.js)
   builtin-addons/newtab/data/content/activity-stream.bundle.js (./data/content/activity-stream.bundle.js)
   builtin-addons/newtab/data/content/newtab-render.js (./data/content/newtab-render.js)
   builtin-addons/newtab/data/css/activity-stream.css (./css/activity-stream.css)

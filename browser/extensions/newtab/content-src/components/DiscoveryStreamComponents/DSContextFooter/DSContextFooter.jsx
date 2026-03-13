@@ -11,23 +11,6 @@ import React from "react";
 // Animation time is mirrored in DSContextFooter.scss
 const ANIMATION_DURATION = 3000;
 
-const TransitionWrapper = ({ icon, fluentID, ...transitionProps }) => {
-  const nodeRef = React.useRef(null);
-
-  return (
-    <CSSTransition
-      nodeRef={nodeRef}
-      timeout={ANIMATION_DURATION}
-      classNames="story-animate"
-      {...transitionProps}
-    >
-      <div ref={nodeRef}>
-        <StatusMessage icon={icon} fluentID={fluentID} />
-      </div>
-    </CSSTransition>
-  );
-};
-
 export const DSMessageLabel = props => {
   const { context, context_type, mayHaveSectionsCards } = props;
   const { icon, fluentID } = cardContextTypes[context_type] || {};
@@ -35,7 +18,13 @@ export const DSMessageLabel = props => {
   if (!context && context_type && !mayHaveSectionsCards) {
     return (
       <TransitionGroup component={null}>
-        <TransitionWrapper key={fluentID} icon={icon} fluentID={fluentID} />
+        <CSSTransition
+          key={fluentID}
+          timeout={ANIMATION_DURATION}
+          classNames="story-animate"
+        >
+          <StatusMessage icon={icon} fluentID={fluentID} />
+        </CSSTransition>
       </TransitionGroup>
     );
   }
