@@ -11,8 +11,6 @@
 #  error "Unsupported architecture!"
 #endif
 
-#include "mozilla/MathAlgorithms.h"
-
 #include <algorithm>
 #include <bit>
 #include <string.h>
@@ -80,9 +78,7 @@ class Registers {
     return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) {
-    return 31 - mozilla::CountLeadingZeroes32(x);
-  }
+  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
 
   static Code FromName(const char* name) {
     for (size_t i = 0; i < Total; i++) {
@@ -287,9 +283,7 @@ struct FloatRegister {
     static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
     return std::countr_zero(x);
   }
-  static uint32_t LastBit(SetType x) {
-    return 31 - mozilla::CountLeadingZeroes32(x);
-  }
+  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
 
 #elif defined(JS_CODEGEN_X64)
   static uint32_t FirstBit(SetType x) {

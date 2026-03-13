@@ -590,7 +590,7 @@ static double FractionToDoubleSlow(const T& numerator, const T& denominator) {
     // and `extraBits` has to be checked if the result has to be rounded up.
 
     // Number of ignored/extra bits in the significand.
-    uint32_t extraBitsCount = 32 - mozilla::CountLeadingZeroes32(ignoredBits);
+    uint32_t extraBitsCount = 32 - std::countl_zero(ignoredBits);
     MOZ_ASSERT(extraBitsCount > 0);
 
     // Extra bits in the significand.

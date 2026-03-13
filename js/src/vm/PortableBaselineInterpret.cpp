@@ -17,6 +17,7 @@
 #include "mozilla/Maybe.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 
 #include "fdlibm.h"
@@ -3642,9 +3643,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 
       CACHEOP_CASE(MathClz32Result) {
         Int32OperandId inputId = cacheIRReader.int32OperandId();
-        int32_t input = int32_t(READ_REG(inputId.id()));
-        int32_t result =
-            (input == 0) ? 32 : mozilla::CountLeadingZeroes32(input);
+        uint32_t input = uint32_t(READ_REG(inputId.id()));
+        int32_t result = std::countl_zero(input);
         retValue = Int32Value(result).asRawBits();
         PREDICT_RETURN();
         DISPATCH_CACHEOP();

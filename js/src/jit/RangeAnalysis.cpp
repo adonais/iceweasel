@@ -10,6 +10,7 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
+#include <bit>
 
 #include "builtin/Math.h"
 #include "jit/CompileInfo.h"
@@ -35,7 +36,6 @@ using namespace js::jit;
 using JS::GenericNaN;
 using JS::ToInt32;
 using mozilla::Abs;
-using mozilla::CountLeadingZeroes32;
 using mozilla::ExponentComponent;
 using mozilla::FloorLog2;
 using mozilla::IsNegativeZero;
@@ -884,9 +884,8 @@ Range* Range::or_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
   MOZ_ASSERT(lhs->isInt32());
   MOZ_ASSERT(rhs->isInt32());
   // When one operand is always 0 or always -1, it's a special case where we
-  // can compute a fully precise result. Handling these up front also
-  // protects the code below from calling CountLeadingZeroes32 with a zero
-  // operand or from shifting an int32_t by 32.
+  // can compute a fully precise result. Handling these up front also protects
+  // the code below from shifting an int32_t by 32.
   if (lhs->lower() == lhs->upper()) {
     if (lhs->lower() == 0) {
       return new (alloc) Range(*rhs);
@@ -904,8 +903,8 @@ Range* Range::or_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     }
   }
 
-  // The code below uses CountLeadingZeroes32, which has undefined behavior
-  // if its operand is 0. We rely on the code above to protect it.
+  // The code below uses std::countl_zero, which returns 32 if its operand is 0.
+  // We rely on the code above to protect it.
   MOZ_ASSERT_IF(lhs->lower() >= 0, lhs->upper() != 0);
   MOZ_ASSERT_IF(rhs->lower() >= 0, rhs->upper() != 0);
   MOZ_ASSERT_IF(lhs->upper() < 0, lhs->lower() != -1);
@@ -918,19 +917,20 @@ Range* Range::or_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     // Both operands are non-negative, so the result won't be less than either.
     lower = std::max(lhs->lower(), rhs->lower());
     // The result will have leading zeros where both operands have leading
-    // zeros. CountLeadingZeroes32 of a non-negative int32 will at least be 1 to
+    // zeros. std::countl_zero of a non-negative int32 will at least be 1 to
     // account for the bit of sign.
-    upper = int32_t(UINT32_MAX >> std::min(CountLeadingZeroes32(lhs->upper()),
-                                           CountLeadingZeroes32(rhs->upper())));
+    upper = int32_t(UINT32_MAX >>
+                    std::min(std::countl_zero(uint32_t(lhs->upper())),
+                             std::countl_zero(uint32_t(rhs->upper()))));
   } else {
     // The result will have leading ones where either operand has leading ones.
     if (lhs->upper() < 0) {
-      unsigned leadingOnes = CountLeadingZeroes32(~lhs->lower());
+      unsigned leadingOnes = std::countl_one(uint32_t(lhs->lower()));
       lower = std::max(lower, ~int32_t(UINT32_MAX >> leadingOnes));
       upper = -1;
     }
     if (rhs->upper() < 0) {
-      unsigned leadingOnes = CountLeadingZeroes32(~rhs->lower());
+      unsigned leadingOnes = std::countl_one(uint32_t(rhs->lower()));
       lower = std::max(lower, ~int32_t(UINT32_MAX >> leadingOnes));
       upper = -1;
     }
@@ -967,8 +967,8 @@ Range* Range::xor_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
 
   // Handle cases where lhs or rhs is always zero specially, because they're
   // easy cases where we can be perfectly precise, and because it protects the
-  // CountLeadingZeroes32 calls below from seeing 0 operands, which would be
-  // undefined behavior.
+  // std::countl_zero calls below from returning 32, which would be undefined
+  // behavior when used as the shift amount.
   int32_t lower = INT32_MIN;
   int32_t upper = INT32_MAX;
   if (lhsLower == 0 && lhsUpper == 0) {
@@ -984,8 +984,8 @@ Range* Range::xor_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     // set all bits that don't correspond to leading zero bits in the
     // other to one. For each one, this gives an upper bound for the
     // result, so we can take the minimum between the two.
-    unsigned lhsLeadingZeros = CountLeadingZeroes32(lhsUpper);
-    unsigned rhsLeadingZeros = CountLeadingZeroes32(rhsUpper);
+    unsigned lhsLeadingZeros = std::countl_zero(uint32_t(lhsUpper));
+    unsigned rhsLeadingZeros = std::countl_zero(uint32_t(rhsUpper));
     upper = std::min(rhsUpper | int32_t(UINT32_MAX >> lhsLeadingZeros),
                      lhsUpper | int32_t(UINT32_MAX >> rhsLeadingZeros));
   }

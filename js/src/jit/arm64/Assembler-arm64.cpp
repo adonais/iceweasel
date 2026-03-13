@@ -7,7 +7,6 @@
 #include "jit/arm64/Assembler-arm64.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 
 #include "gc/Marking.h"
@@ -24,7 +23,6 @@
 using namespace js;
 using namespace js::jit;
 
-using mozilla::CountLeadingZeroes32;
 using mozilla::DebugOnly;
 
 ABIArg ABIArgGenerator::next(MIRType type) {

@@ -6716,11 +6716,8 @@ MDefinition* MClz::foldsTo(TempAllocator& alloc) {
   if (num()->isConstant()) {
     MConstant* c = num()->toConstant();
     if (type() == MIRType::Int32) {
-      int32_t n = c->toInt32();
-      if (n == 0) {
-        return MConstant::NewInt32(alloc, 32);
-      }
-      return MConstant::NewInt32(alloc, mozilla::CountLeadingZeroes32(n));
+      uint32_t n = uint32_t(c->toInt32());
+      return MConstant::NewInt32(alloc, std::countl_zero(n));
     }
     uint64_t n = uint64_t(c->toInt64());
     return MConstant::NewInt64(alloc, int64_t(std::countl_zero(n)));

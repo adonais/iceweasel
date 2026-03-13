@@ -51,8 +51,7 @@ T FriendlyRoundUpPow2(T aInput) {
 namespace detail {
 // Same function name `CountLeadingZeroes` with uint32_t and uint64_t overloads.
 inline uint_fast8_t CountLeadingZeroes(uint32_t aValue) {
-  MOZ_ASSERT(aValue != 0);
-  return detail::CountLeadingZeroes32(aValue);
+  return uint_fast8_t(std::countl_zero(aValue));
 }
 inline uint_fast8_t CountLeadingZeroes(uint64_t aValue) {
   return uint_fast8_t(std::countl_zero(aValue));

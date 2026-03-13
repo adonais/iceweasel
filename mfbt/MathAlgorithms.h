@@ -59,51 +59,6 @@ inline long double Abs<long double>(const long double aLongDouble) {
   return std::fabs(aLongDouble);
 }
 
-}  // namespace mozilla
-
-namespace mozilla {
-
-namespace detail {
-
-// FIXME: use std::count[lr]_zero once we move to C++20
-
-#if defined(__clang__) || defined(__GNUC__)
-
-#  if defined(__clang__)
-#    if !__has_builtin(__builtin_ctz) || !__has_builtin(__builtin_clz)
-#      error "A clang providing __builtin_c[lt]z is required to build"
-#    endif
-#  else
-// gcc has had __builtin_clz and friends since 3.4: no need to check.
-#  endif
-
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
-  return static_cast<uint_fast8_t>(__builtin_clz(aValue));
-}
-
-#else
-#  error "Implement these!"
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
-#endif
-
-}  // namespace detail
-
-/**
- * Compute the number of high-order zero bits in the NON-ZERO number |aValue|.
- * That is, looking at the bitwise representation of the number, with the
- * highest- valued bits at the start, return the number of zeroes before the
- * first one is observed.
- *
- * CountLeadingZeroes32(0xF0FF1000) is 0;
- * CountLeadingZeroes32(0x7F8F0001) is 1;
- * CountLeadingZeroes32(0x3FFF0100) is 2;
- * CountLeadingZeroes32(0x1FF50010) is 3; and so on.
- */
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
-  MOZ_ASSERT(aValue != 0);
-  return detail::CountLeadingZeroes32(aValue);
-}
-
 namespace detail {
 
 template <typename T, size_t Size = sizeof(T)>
@@ -113,8 +68,7 @@ template <typename T>
 class CeilingLog2<T, 4> {
  public:
   static constexpr uint_fast8_t compute(const T aValue) {
-    // Check for <= 1 to avoid the == 0 undefined case.
-    return aValue <= 1 ? 0u : 32u - CountLeadingZeroes32(aValue - 1);
+    return aValue == 0 ? 0u : 32u - uint_fast8_t(std::countl_zero(aValue - 1));
   }
 };
 
@@ -158,7 +112,7 @@ constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
   MOZ_ASSERT(aValue != 0);
   // This casts to 32-bits
   if constexpr (sizeof(T) <= 4) {
-    return 31u - CountLeadingZeroes32(aValue);
+    return 31u - uint_fast8_t(std::countl_zero(static_cast<uint32_t>(aValue)));
   }
   // This doesn't
   if constexpr (sizeof(T) == 8) {
