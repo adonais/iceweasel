@@ -1119,7 +1119,12 @@ nsresult JsepSessionImpl::HandleNegotiatedSession(
   bool remoteIceLite =
       remote->GetAttributeList().HasAttribute(SdpAttribute::kIceLiteAttribute);
 
-  mIceControlling = remoteIceLite || *mIsPendingOfferer;
+  // RFC 8445 Section 9: roles persist for the session lifetime. Only set on
+  // first negotiation, or force controlling if remote switched to ICE-lite.
+  mIceControlling |= remoteIceLite;
+  if (!mNegotiations) {
+    mIceControlling |= *mIsPendingOfferer;
+  }
 
   const Sdp& answer = *mIsPendingOfferer ? *remote : *local;
 
