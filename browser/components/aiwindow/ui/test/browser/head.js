@@ -52,17 +52,24 @@ async function openAIWindow() {
  */
 async function openAIWindowWithSidebar() {
   const win = await openAIWindow();
+  const loaded = BrowserTestUtils.browserLoaded(
+    win.gBrowser.selectedBrowser,
+    false,
+    "about:blank"
+  );
   BrowserTestUtils.startLoadingURIString(
     win.gBrowser.selectedBrowser,
     "about:blank"
   );
-  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
+  await loaded;
   AIWindowUI.toggleSidebar(win);
   const sidebarBrowser = win.document.getElementById("ai-window-browser");
   await BrowserTestUtils.waitForCondition(
     () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
     "Sidebar ai-window should be loaded"
   );
+  sidebarBrowser.focus();
+  await SimpleTest.promiseFocus(sidebarBrowser.contentWindow);
   return { win, sidebarBrowser };
 }
 
