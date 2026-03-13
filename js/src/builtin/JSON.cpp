@@ -493,9 +493,10 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
 
   /* Steps 8-10, 13. */
   bool wroteMember = false;
-  RootedId id(cx);
-  RootedValue outputValue(cx);
-  RootedValue objValue(cx);
+  RootedTuple<jsid, Value, Value> roots(cx);
+  RootedField<jsid> id(roots);
+  RootedField<Value, 1> outputValue(roots);
+  RootedField<Value, 2> objValue(roots);
   for (size_t i = 0, len = propertyList.length(); i < len; i++) {
     if (!CheckForInterrupt(cx)) {
       return false;
