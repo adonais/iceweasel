@@ -19,7 +19,6 @@ import org.mozilla.fenix.components.appstate.AppAction.ReaderViewAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewState
 
-@RunWith(AndroidJUnit4::class)
 class ReaderViewBindingTest {
 
     private val testDispatcher = StandardTestDispatcher()

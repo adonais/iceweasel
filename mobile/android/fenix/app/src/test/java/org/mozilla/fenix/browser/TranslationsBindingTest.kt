@@ -39,7 +39,6 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.None
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.TranslationInProgress
 
-@RunWith(AndroidJUnit4::class)
 class TranslationsBindingTest {
     private val testDispatcher = StandardTestDispatcher()
 

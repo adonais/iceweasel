@@ -5,12 +5,10 @@
 package org.mozilla.fenix
 
 import android.content.Intent
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import junit.framework.TestCase.assertFalse
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.session.SessionFeature
@@ -18,12 +16,9 @@ import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 
-@OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(AndroidJUnit4::class)
 class OpenInFirefoxBindingTest {
 
     private val testDispatcher = StandardTestDispatcher()

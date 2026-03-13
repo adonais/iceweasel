@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.components.menu
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
@@ -16,17 +15,13 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.webextension.WebExtensionBrowserAction
 import mozilla.components.concept.engine.webextension.WebExtensionPageAction
-import mozilla.components.support.ktx.android.util.dpToPx
-import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 
-@RunWith(AndroidJUnit4::class)
 class WebExtensionsMenuBindingTest {
     private val testDispatcher = StandardTestDispatcher()
 
@@ -80,7 +75,7 @@ class WebExtensionsMenuBindingTest {
                 browserStore = browserStore,
                 customTabId = null,
                 menuStore = menuStore,
-                iconSize = 24.dpToPx(testContext.resources.displayMetrics),
+                iconSize = 24,
                 onDismiss = {},
                 mainDispatcher = testDispatcher,
             )
@@ -145,7 +140,7 @@ class WebExtensionsMenuBindingTest {
                 browserStore = browserStore,
                 customTabId = null,
                 menuStore = menuStore,
-                iconSize = 24.dpToPx(testContext.resources.displayMetrics),
+                iconSize = 24,
                 onDismiss = {},
                 mainDispatcher = testDispatcher,
             )
@@ -200,7 +195,7 @@ class WebExtensionsMenuBindingTest {
                 browserStore = browserStore,
                 customTabId = null,
                 menuStore = menuStore,
-                iconSize = 24.dpToPx(testContext.resources.displayMetrics),
+                iconSize = 24,
                 onDismiss = {},
                 mainDispatcher = testDispatcher,
             )

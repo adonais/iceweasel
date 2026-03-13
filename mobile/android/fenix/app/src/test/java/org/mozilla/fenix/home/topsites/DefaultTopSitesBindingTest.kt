@@ -26,7 +26,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.utils.Settings
 import java.io.ByteArrayInputStream
 
-@RunWith(AndroidJUnit4::class)
 class DefaultTopSitesBindingTest {
 
     private lateinit var browserStore: BrowserStore
