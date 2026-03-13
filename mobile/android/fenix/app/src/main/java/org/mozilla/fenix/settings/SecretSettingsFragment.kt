@@ -253,11 +253,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_browser_mode_toggle).apply {
-            isChecked = context.settings().enableBrowserModeToggle
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_enable_merino_client).apply {
             isChecked = context.settings().enableMerinoClient
             onPreferenceChangeListener = SharedPreferenceUpdater()

@@ -1007,14 +1007,6 @@ features:
         type: Boolean
         default: false
 
-  browser-mode-toggle:
-    description: Feature to enable the Browser Mode Toggle for users on Firefox on Android.
-    variables:
-      enabled:
-        description: If true, Browser Mode Toggle is enabled.
-        type: Boolean
-        default: false
-
   merino-client:
     description: Feature to enable the Merino Client for users on Firefox on Android.
     variables:
