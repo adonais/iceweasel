@@ -7,7 +7,6 @@
 #include "nsTreeUtils.h"
 
 #include "ChildIterator.h"
-#include "mozilla/dom/Element.h"
 #include "nsAtom.h"
 #include "nsCRT.h"
 #include "nsGkAtoms.h"

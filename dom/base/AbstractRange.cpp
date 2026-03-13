@@ -413,7 +413,7 @@ nsresult AbstractRange::SetStartAndEndInternal(
       aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
       StaticPrefs::dom_shadowdom_selection_across_boundary_enabled();
   const Maybe<int32_t> pointOrder =
-      useFlatTree ? nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+      useFlatTree ? nsContentUtils::ComparePoints<TreeKind::Flat>(
                         aStartBoundary, aEndBoundary)
                   : nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
                         aStartBoundary, aEndBoundary);
@@ -923,7 +923,7 @@ static void CollectClientRectsForSubtree(
     return;
   }
 
-  FlattenedChildIteratorForSelection childIter(content);
+  FlattenedChildIterator childIter(content);
   for (nsIContent* child = childIter.GetNextChild(); child;
        child = childIter.GetNextChild()) {
     CollectClientRectsForSubtree(child, aCollector, aTextList, aStartContainer,

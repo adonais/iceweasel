@@ -99,7 +99,7 @@ class RangeUtils final {
    */
   template <TreeKind aKind = TreeKind::ShadowIncludingDOM,
             typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                        aKind == TreeKind::FlatForSelection>>
+                                        aKind == TreeKind::Flat>>
   static Maybe<bool> IsNodeContainedInRange(
       const nsINode& aNode, const AbstractRange* aAbstractRange);
 
@@ -110,7 +110,7 @@ class RangeUtils final {
    */
   template <TreeKind aKind = TreeKind::ShadowIncludingDOM,
             typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                        aKind == TreeKind::FlatForSelection>>
+                                        aKind == TreeKind::Flat>>
   static nsresult CompareNodeToRange(const nsINode* aNode,
                                      const AbstractRange* aAbstractRange,
                                      bool* aNodeIsBeforeRange,
@@ -119,7 +119,7 @@ class RangeUtils final {
   template <TreeKind aKind, typename SPT, typename SRT, typename EPT,
             typename ERT,
             typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                        aKind == TreeKind::FlatForSelection>>
+                                        aKind == TreeKind::Flat>>
   static nsresult CompareNodeToRangeBoundaries(
       const nsINode* aNode, const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       const RangeBoundaryBase<EPT, ERT>& aEndBoundary, bool* aNodeIsBeforeRange,

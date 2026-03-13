@@ -846,10 +846,8 @@ RawRangeBoundary TextComposition::FirstIMESelectionStartRef() const {
       }
       // Unfortunately, really slow path.
       // The ranges should always have a common ancestor, hence, be comparable.
-      // XXX Should use TreeKind::DOM? Editable state won't cross shadow DOM
-      // boundaries.
-      if (*nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-              range->StartRef(), firstRange->StartRef()) == -1) {
+      if (*nsContentUtils::ComparePoints(range->StartRef(),
+                                         firstRange->StartRef()) == -1) {
         firstRange = range;
       }
     }
@@ -909,10 +907,8 @@ RawRangeBoundary TextComposition::LastIMESelectionEndRef() const {
       }
       // Unfortunately, really slow path.
       // The ranges should always have a common ancestor, hence, be comparable.
-      // XXX Should use TreeKind::DOM? Editable state won't cross shadow DOM
-      // boundaries.
-      if (*nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-              lastRange->EndRef(), range->EndRef()) == -1) {
+      if (*nsContentUtils::ComparePoints(lastRange->EndRef(),
+                                         range->EndRef()) == -1) {
         lastRange = range;
       }
     }

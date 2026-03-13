@@ -305,30 +305,9 @@ class nsIContent : public nsINode {
    *
    * @return The assigned slot element or null.
    */
-  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAssignedSlot() const {
+  mozilla::dom::HTMLSlotElement* GetAssignedSlot() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mAssignedSlot.get() : nullptr;
-  }
-
-  /**
-   * Gets the assigned slot associated with this content if and only if the
-   * shadow tree should be handled for selection.
-   */
-  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAssignedSlotForSelection()
-      const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAssignedSlot() const {
-    if constexpr (aKind == TreeKind::DOM ||
-                  aKind == TreeKind::ShadowIncludingDOM) {
-      return nullptr;  // nodes won't be assigned in the non-flat tree.
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetAssignedSlotForSelection();
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return GetAssignedSlot();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
   }
 
   /**

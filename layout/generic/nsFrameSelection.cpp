@@ -1136,9 +1136,8 @@ void nsFrameSelection::MaintainedRange::AdjustNormalSelection(
 
   NS_ASSERTION(aOffset >= 0, "aOffset should not be negative");
   const Maybe<int32_t> relToStart =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets<
-          TreeKind::ShadowIncludingDOM>(rangeStartNode, rangeStartOffset,
-                                        aContent, aOffset);
+      nsContentUtils::ComparePoints_AllowNegativeOffsets(
+          rangeStartNode, rangeStartOffset, aContent, aOffset);
   if (NS_WARN_IF(!relToStart)) {
     // Potentially handle this properly when Selection across Shadow DOM
     // boundary is implemented
@@ -1147,9 +1146,8 @@ void nsFrameSelection::MaintainedRange::AdjustNormalSelection(
   }
 
   const Maybe<int32_t> relToEnd =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets<
-          TreeKind::ShadowIncludingDOM>(rangeEndNode, rangeEndOffset, aContent,
-                                        aOffset);
+      nsContentUtils::ComparePoints_AllowNegativeOffsets(
+          rangeEndNode, rangeEndOffset, aContent, aOffset);
   if (NS_WARN_IF(!relToEnd)) {
     // Potentially handle this properly when Selection across Shadow DOM
     // boundary is implemented
@@ -1175,11 +1173,9 @@ void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
     nsIFrame::ContentOffsets& aOffsets, StopAtScroller aStopAtScroller) const {
   // Adjust offsets according to maintained amount
   if (mRange && mAmount != eSelectNoAmount) {
-    const Maybe<int32_t> relativePosition =
-        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-            mRange->StartRef(),
-            RawRangeBoundary(aOffsets.content, aOffsets.offset,
-                             RangeBoundarySetBy::Offset));
+    const Maybe<int32_t> relativePosition = nsContentUtils::ComparePoints(
+        mRange->StartRef(), RawRangeBoundary(aOffsets.content, aOffsets.offset,
+                                             RangeBoundarySetBy::Offset));
     if (NS_WARN_IF(!relativePosition)) {
       // Potentially handle this properly when Selection across Shadow DOM
       // boundary is implemented

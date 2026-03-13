@@ -26,7 +26,6 @@
 #include "RootAccessible.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/Document.h"
 #include "OuterDocAccessible.h"
 #include "nsIAccessibleAnnouncementEvent.h"
 #include "nsChildView.h"

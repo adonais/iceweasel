@@ -7,8 +7,6 @@
 #ifndef nsINode_h_
 #define nsINode_h_
 
-#include <fmt/format.h>
-
 #include <iosfwd>
 
 #include "js/TypeDecls.h"  // for Handle, Value, JSObject, JSContext
@@ -16,7 +14,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/ToString.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMString.h"
@@ -101,7 +98,6 @@ class EventHandlerNonNull;
 template <typename T>
 class FlatTreeAncestorsOfTypeIterator;
 class HTMLDialogElement;
-class HTMLSlotElement;
 template <typename T>
 class InclusiveAncestorsOfTypeIterator;
 template <typename T>
@@ -326,65 +322,6 @@ class nsNodeWeakReference final : public nsIWeakReference {
  private:
   ~nsNodeWeakReference();
 };
-
-enum class TreeKind : uint8_t {
-  // The simplest DOM, won't get ShadowRoot from the parent.
-  // FYI: This is a good TreeKind for the cases which won't cross Shadow DOM
-  // boundaries. E.g., for the editor.
-  DOM,
-  // Treat attached ShadowRoot as a child before its first child. However,
-  // non-content shadow is ignored because they must have <slot>s to use the
-  // direct child of the host, but in this mode, <slot> is treated as not having
-  // assigned nodes.
-  // FYI: This is a good TreeKind for comparing the range boundaries of
-  // TreeKind::DOM.
-  // NOTE: When comparing 2 points with nsContentUtils::ComparePoints or its
-  // relatives in the shadow including DOM, the points may be treated as in the
-  // simple DOM tree because a point is in a shadow host is a valid point for
-  // RangeBoundaryBase.  Therefore, they can compare points across shadow DOM
-  // boundaries but they also may compare children of a shadow host which are
-  // replaced with the shadow root in the shadow including DOM.
-  ShadowIncludingDOM,
-  // Handle the flattened tree which assigned nodes of <slot> are treated as
-  // children of the <slot>. However, the non-content shadows are ignored and
-  // treat the host as not a shadow host.
-  // Treat a shadow DOM host as having the shadow root children as its
-  // children. However, non-content shadow is ignored because they must have
-  // <slot>s to use the direct child of the host, but in this mode, <slot> is
-  // treated as not having assigned nodes.
-  // FYI: This is a good TreeKind for DOM Selection it that may cross the shadow
-  // DOM boundaries.
-  FlatForSelection,
-  // Similar to FlatForSelection, treat non-content shadow trees too. E.g., the
-  // shadow of <details>, <video>, and SVG <use>.
-  // FYI: This is a good TreeKind for the cases which need to work with the
-  // visual order and/or any visible nodes. E.g., for the layout module.
-  Flat,
-};
-
-template <TreeKind aKind>
-[[nodiscard]] constexpr static inline bool ShouldIgnoreNonContentShadow() {
-  return aKind != TreeKind::Flat;
-}
-
-template <TreeKind aKind>
-[[nodiscard]] constexpr static inline bool ShouldHandleAssignedNodesOnSlot() {
-  return aKind == TreeKind::Flat || aKind == TreeKind::FlatForSelection;
-}
-
-inline std::ostream& operator<<(std::ostream& aStream, TreeKind aTreeKind) {
-  constexpr static const char* sNames[] = {
-      "DOM",
-      "ShadowIncludingDOM",
-      "FlatForSelection",
-      "Flat",
-  };
-  return aStream << sNames[static_cast<uint8_t>(aTreeKind)];
-}
-
-inline auto format_as(const TreeKind& aKind) {
-  return mozilla::ToString(aKind);
-}
 
 // This should be used for any nsINode sub-class that has fields of its own
 // that it needs to measure; any sub-class that doesn't use it will inherit
@@ -728,55 +665,6 @@ class nsINode : public mozilla::dom::EventTarget {
     return nullptr;
   }
 
-  /**
-   * Return this node as HTMLSlotElement if this an HTMLSlotElement which has
-   * some assigned nodes.
-   */
-  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAsHTMLSlotElementIfFilled();
-
-  /**
-   * Return this node as HTMLSlotElement if this an HTMLSlotElement which has
-   * some assigned nodes.
-   */
-  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
-  GetAsHTMLSlotElementIfFilled() const;
-
-  /**
-   * Return this node as HTMLSlotElement if this an HTMLSlotElement which has
-   * some assigned nodes.  However, if its containing shadow root is anonymous
-   * one, this returns nullptr.
-   */
-  [[nodiscard]] mozilla::dom::HTMLSlotElement*
-  GetAsHTMLSlotElementIfFilledForSelection();
-
-  /**
-   * Return this node as HTMLSlotElement if this an HTMLSlotElement which  has
-   * some assigned nodes.  However, if its containing shadow root is anonymous
-   * one, this returns nullptr.
-   */
-  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
-  GetAsHTMLSlotElementIfFilledForSelection() const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAsHTMLSlotElementIfFilled() {
-    if constexpr (aKind == TreeKind::DOM ||
-                  aKind == TreeKind::ShadowIncludingDOM) {
-      return nullptr;
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return GetAsHTMLSlotElementIfFilled();
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetAsHTMLSlotElementIfFilledForSelection();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
-
-  template <TreeKind aKind>
-  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
-  GetAsHTMLSlotElementIfFilled() const {
-    return const_cast<nsINode*>(this)->GetAsHTMLSlotElementIfFilled();
-  }
-
   /*
    * Return whether the node is a ProcessingInstruction node.
    */
@@ -813,30 +701,10 @@ class nsINode : public mozilla::dom::EventTarget {
    * Get the number of children
    * @return the number of children
    */
-  [[nodiscard]] uint32_t GetChildCount() const { return mChildCount; }
+  uint32_t GetChildCount() const { return mChildCount; }
 
   /** Get the number of flat tree children */
-  [[nodiscard]] uint32_t GetFlatTreeChildCount() const;
-
-  /** Get the number of flat tree children for selection */
-  [[nodiscard]] uint32_t GetFlatTreeForSelectionChildCount() const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] uint32_t GetChildCount() const {
-    static_assert(
-        aKind != TreeKind::ShadowIncludingDOM,
-        "It's unclear what this should return if this is a shadow host so that "
-        "this does not support TreeKind::ShadowIncludingDOM");
-    if constexpr (aKind == TreeKind::DOM) {
-      return GetChildCount();
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return GetFlatTreeChildCount();
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetFlatTreeForSelectionChildCount();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
+  uint32_t GetFlatTreeChildCount() const;
 
   /**
    * NOTE: this function is going to be removed soon (hopefully!) Don't use it
@@ -846,41 +714,10 @@ class nsINode : public mozilla::dom::EventTarget {
    * @param aIndex the index of the child to get
    * @return the child, or null if index out of bounds
    */
-  [[nodiscard]] nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
+  nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
 
-  /**
-   * Return a child of the shadow root if there is, an assigned node if this is
-   * a non-empty <slot> or a child of this node.
-   */
-  [[nodiscard]] nsIContent* GetChildAtInFlatTree(uint32_t aIndex) const;
-
-  /**
-   * Similar to GetChildAtInFlatTree().  However, this does not treat a
-   * non-content shadow tree's host element like <detail>, <video> or SVG <use>
-   * as a shadow host.  I.e., if the element has a non-content shadow, this
-   * returns a child of this node instead.  Similary, this is a <slot> element
-   * of a non-content shadow like in <details>, this does not return an assigned
-   * node to the <slot>.
-   */
-  [[nodiscard]] nsIContent* GetChildAtInFlatTreeForSelection(
-      uint32_t aIndex) const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const {
-    static_assert(
-        aKind != TreeKind::ShadowIncludingDOM,
-        "It's unclear what this should return if this is a shadow host so that "
-        "this does not support TreeKind::ShadowIncludingDOM");
-    if constexpr (aKind == TreeKind::DOM) {
-      return GetChildAt_Deprecated(aIndex);
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return GetChildAtInFlatTree(aIndex);
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetChildAtInFlatTreeForSelection(aIndex);
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
+  /** Get the child at aIndex in flat tree **/
+  nsINode* GetChildAtInFlatTree(uint32_t aIndex) const;
 
   /**
    * Get the index of a child within this content.
@@ -893,8 +730,7 @@ class nsINode : public mozilla::dom::EventTarget {
    * If the return value is Some, then calling GetChildAt_Deprecated() with
    * that value will return aPossibleChild.
    */
-  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeIndexOf(
-      const nsINode* aPossibleChild) const;
+  mozilla::Maybe<uint32_t> ComputeIndexOf(const nsINode* aPossibleChild) const;
 
   /**
    * Return true if ComputeIndexOf() may cache the computed index for further
@@ -910,41 +746,8 @@ class nsINode : public mozilla::dom::EventTarget {
    *         anonymous children (e.g. a <div> child of an <input> element) will
    *         result in Nothing.
    */
-  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
+  mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
       const nsINode* aPossibleChild) const;
-
-  /**
-   * Get the index of a child within this content's flat tree children for
-   * selection.
-   *
-   * @param aPossibleChild the child to get the index of.
-   * @return the index of the child, or Nothing if not a child.  Note that if
-   *         the child is in a shadow tree but it should be ignored for
-   *         selection, this returns the simple DOM index of aPossibleChild.
-   *         Be aware that anonymous children (e.g. a <div> child of an <input>
-   *         element) will result in Nothing.
-   */
-  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeFlatTreeForSelectionIndexOf(
-      const nsINode* aPossibleChild) const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeIndexOf(
-      const nsINode* aPossibleChild) const {
-    static_assert(
-        aKind != TreeKind::ShadowIncludingDOM,
-        "It's unclear what this should return if this is a shadow host and "
-        "aPossibleChild is either a child of the ShadowRoot or a child of the "
-        "host so that this does not support TreeKind::ShadowIncludingDOM");
-    if constexpr (aKind == TreeKind::DOM) {
-      return ComputeIndexOf(aPossibleChild);
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return ComputeFlatTreeIndexOf(aPossibleChild);
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return ComputeFlatTreeForSelectionIndexOf(aPossibleChild);
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
 
   /**
    * Get the index of this within parent node (ComputeIndexInParentNode) or
@@ -1378,13 +1181,13 @@ class nsINode : public mozilla::dom::EventTarget {
    * Document or an Attr.
    * @return the parent node
    */
-  [[nodiscard]] nsINode* GetParentNode() const { return mParent; }
+  nsINode* GetParentNode() const { return mParent; }
 
  private:
   nsIContent* DoGetShadowHost() const;
 
  public:
-  [[nodiscard]] nsINode* GetParentOrShadowHostNode() const {
+  nsINode* GetParentOrShadowHostNode() const {
     if (MOZ_LIKELY(mParent)) {
       return mParent;
     }
@@ -1402,14 +1205,11 @@ class nsINode : public mozilla::dom::EventTarget {
    * into an insertion point, or if the node is a direct child of a
    * shadow root.
    *
-   * Be aware, this returns the host element if this node is a child of a
-   * shadow root. This behavior is different from GetParentOrShadowHostNode().
-   *
    * @return the flattened tree parent
    */
-  [[nodiscard]] inline nsINode* GetFlattenedTreeParentNode() const;
+  inline nsINode* GetFlattenedTreeParentNode() const;
 
-  [[nodiscard]] nsINode* GetFlattenedTreeParentNodeNonInline() const;
+  nsINode* GetFlattenedTreeParentNodeNonInline() const;
 
   /**
    * Like GetFlattenedTreeParentNode, but returns the document for any native
@@ -1418,46 +1218,15 @@ class nsINode : public mozilla::dom::EventTarget {
    * scroll frame.
    */
   inline nsINode* GetFlattenedTreeParentNodeForStyle() const;
-  inline nsIContent* GetFlattenedTreeParentForStyle() const;
 
   /**
    * Similar to GetFlattenedTreeParentNode, it does two things differently
    *   1. For contents that are not in the flattened tree, use its
    *   parent rather than nullptr.
-   *   2. For contents that are slotted into a non-content shadow tree, use its
+   *   2. For contents that are slotted into a UA shadow tree, use its
    *   parent rather than the slot element.
-   *
-   *
-   * Be aware, this returns the host element if this node is a child of a
-   * shadow root. This behavior is different from
-   * GetFlattenedTreeParentOrShadowHostNodeForSelection().
    */
-  [[nodiscard]] inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
-
-  /**
-   * Return a parent node of this if this is connected to a node. However, if
-   * this is a child of a `ShadowRoot` and TreeKind is not `DOM`, return the
-   * host. I.e., this skips `ShadowRoot`. Additionally, if this is assigned to
-   * a <slot> and TreeKind is FlatForSelection or Flat, return the <slot>.
-   *
-   * NOTE: This returns ShadowRoot if and only if TreeKind::DOM.
-   */
-  template <TreeKind aKind>
-  [[nodiscard]] nsINode* GetParentNode() const {
-    static_assert(aKind != TreeKind::ShadowIncludingDOM,
-                  "It's unclear what this should return if this is a child of "
-                  "a ShadowRoot so that this does not support "
-                  "TreeKind::ShadowIncludingDOM");
-    if constexpr (aKind == TreeKind::DOM) {
-      return GetParentNode();
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetFlattenedTreeParentNodeForSelection();
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return GetFlattenedTreeParentNode();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
+  inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
 
   inline mozilla::dom::Element* GetFlattenedTreeParentElement() const;
   inline mozilla::dom::Element* GetFlattenedTreeParentElementForStyle() const;
@@ -1895,22 +1664,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
   /**
    * Gets the root of the node tree for this content if it is in a shadow tree.
-   *
-   * NOTE: Return the shadow root if this is in any kind of shadow tree.
-   * Therefore, the result may be non-content shadow root.
    */
   mozilla::dom::ShadowRoot* GetContainingShadow() const {
     return IsInShadowTree()
                ? reinterpret_cast<mozilla::dom::ShadowRoot*>(mSubtreeRoot)
                : nullptr;
   }
-
-  /**
-   * Gets the root of the node tree for this content if it is in a shadow tree
-   * for selection.
-   */
-  [[nodiscard]] mozilla::dom::ShadowRoot* GetContainingShadowForSelection()
-      const;
 
   /**
    * Gets the shadow host if this content is in a shadow tree. That is, the host
@@ -2084,95 +1843,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsINodeList* ChildNodes();
 
-  /**
-   * Return the first child of this.
-   */
-  [[nodiscard]] nsIContent* GetFirstChild() const { return mFirstChild; }
+  nsIContent* GetFirstChild() const { return mFirstChild; }
 
-  /**
-   * Return the last child of this.
-   */
-  [[nodiscard]] nsIContent* GetLastChild() const;
-
-  /**
-   * Return the first child in the flattened tree.
-   * - If this is a <slot> whose assigned nodes list is not empty, this returns
-   * the first item in the list.
-   * - If this is a <slot> whose assigned nodes list is empty, this returns
-   * the first child.
-   * - If this is a shadow host element, this returns the first child of the
-   * attached `ShadowRoot`.
-   */
-  [[nodiscard]] nsIContent* GetFlattenedTreeFirstChild() const;
-
-  /**
-   * Return the last child in the flattened tree.
-   * - If this is a <slot> whose assigned nodes list is not empty, this returns
-   * the last item in the list.
-   * - If this is a <slot> whose assigned nodes list is empty, this returns
-   * the last child.
-   * - If this is a shadow host element, this returns the last child of the
-   * attached `ShadowRoot`.
-   */
-  [[nodiscard]] nsIContent* GetFlattenedTreeLastChild() const;
-
-  /**
-   * Return the first child in the flattened tree for selection, i.e., this
-   * does not handle assigned slot for non-content shadow root.
-   * - If this is a <slot> whose assigned nodes list is not empty, this returns
-   * the first item in the list.
-   * - If this is a <slot> whose assigned nodes list is empty, this returns
-   * the first child.
-   * - If this is a shadow host element, this returns the first child of the
-   * attached `ShadowRoot`.
-   */
-  [[nodiscard]] nsIContent* GetFlattenedTreeFirstChildForSelection() const;
-
-  /**
-   * Return the last child in the flattened tree for selection, i.e., this
-   * does not handle assigned slot for non-content shadow root.
-   * - If this is a <slot> whose assigned nodes list is not empty, this returns
-   * the last item in the list.
-   * - If this is a <slot> whose assigned nodes list is empty, this returns
-   * the last child.
-   * - If this is a shadow host element, this returns the last child of the
-   * attached `ShadowRoot`.
-   */
-  [[nodiscard]] nsIContent* GetFlattenedTreeLastChildForSelection() const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] nsIContent* GetFirstChild() const {
-    static_assert(
-        aKind != TreeKind::ShadowIncludingDOM,
-        "It's unclear what this should return if this is a shadow host so that "
-        "this does not support TreeKind::ShadowIncludingDOM");
-    if constexpr (aKind == TreeKind::DOM) {
-      return GetFirstChild();
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return GetFlattenedTreeFirstChild();
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetFlattenedTreeFirstChildForSelection();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
-
-  template <TreeKind aKind>
-  [[nodiscard]] nsIContent* GetLastChild() const {
-    static_assert(
-        aKind != TreeKind::ShadowIncludingDOM,
-        "It's unclear what this should return if this is a shadow host so that "
-        "this does not support TreeKind::ShadowIncludingDOM");
-    if constexpr (aKind == TreeKind::DOM) {
-      return GetLastChild();
-    } else if constexpr (aKind == TreeKind::Flat) {
-      return GetFlattenedTreeLastChild();
-    } else if constexpr (aKind == TreeKind::FlatForSelection) {
-      return GetFlattenedTreeLastChildForSelection();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
+  nsIContent* GetLastChild() const;
 
   /**
    * Implementation is in Document.h, because it needs to cast from
@@ -2252,39 +1925,8 @@ class nsINode : public mozilla::dom::EventTarget {
   void LookupNamespaceURI(const nsAString& aNamespacePrefix,
                           nsAString& aNamespaceURI);
 
-  /**
-   * Return the next sibling of this in the child list.
-   */
   nsIContent* GetNextSibling() const { return mNextSibling; }
-
-  /**
-   * Return the previous sibling of this in the child list.
-   * FYI: This is a bit slower than GetNextSibling() so that you should use
-   * GetNextSibling() if you want to walk all children in a node.
-   */
   nsIContent* GetPreviousSibling() const;
-
-  /**
-   * Return the next/previous sibling in the flattened tree (for selection).
-   *
-   * These methods need to compute the index of this if this is assigned to a
-   * <slot>. Therefore, they may work slow. Therefore, these shorthands are
-   * deleted to realize the cost. You should use FlattenedChildIterator instead.
-   * For example:
-   *
-   * FlattenedChildIterator iter(
-   *   FlattenedChildIterator::GetParentNodeOf(node));
-   * iter.Seek(node);
-   * auto* nextSibling = iter.GetNextChild();
-   *
-   * or if you want only the next sibling, you can do:
-   *
-   * auto* nextSibling = FlattenedChildIterator::GetNextChild(child);
-   */
-  nsIContent* GetFlattenedTreeNextSibling() const = delete;
-  nsIContent* GetFlattenedTreePreviousSibling() const = delete;
-  nsIContent* GetFlattenedTreeNextSiblingForSelection() const = delete;
-  nsIContent* GetFlattenedTreePreviousSiblingForSelection() const = delete;
 
   /**
    * Return true if the node is being removed from the parent, it means that
@@ -2663,29 +2305,13 @@ class nsINode : public mozilla::dom::EventTarget {
     ClearBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
   }
 
-  [[nodiscard]] inline mozilla::dom::ShadowRoot* GetShadowRoot() const;
+  inline mozilla::dom::ShadowRoot* GetShadowRoot() const;
 
   // Return the shadow root of the node if it is a shadow host and
   // it meets the requirements for being a shadow host of a selection.
   // For example, <details>, <video> and <use> elements are not valid
   // shadow host for selection.
-  [[nodiscard]] mozilla::dom::ShadowRoot* GetShadowRootForSelection() const;
-
-  template <TreeKind aKind>
-  [[nodiscard]] mozilla::dom::ShadowRoot* GetShadowRoot() const {
-    if constexpr (aKind == TreeKind::DOM) {
-      return nullptr;
-    } else if constexpr (aKind == TreeKind::ShadowIncludingDOM ||
-                         aKind == TreeKind::FlatForSelection) {
-      MOZ_ASSERT(ShouldIgnoreNonContentShadow<aKind>());
-      return GetShadowRootForSelection();
-    } else if constexpr (aKind == TreeKind::Flat) {
-      MOZ_ASSERT(!ShouldIgnoreNonContentShadow<aKind>());
-      return GetShadowRoot();
-    } else {
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
-    }
-  }
+  mozilla::dom::ShadowRoot* GetShadowRootForSelection() const;
 
  protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }

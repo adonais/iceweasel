@@ -19,7 +19,6 @@
 #include "nsContainerFrame.h"
 #include "nsDisplayList.h"
 #include "nsIContent.h"
-#include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsINode.h"

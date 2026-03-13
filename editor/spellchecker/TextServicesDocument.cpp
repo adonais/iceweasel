@@ -1832,12 +1832,10 @@ nsresult TextServicesDocument::GetCollapsedSelection(
 
   uint32_t offset = range->StartOffset();
 
-  const Maybe<int32_t> e1s1 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eStart->mTextNode, eStartOffset, parent, offset);
-  const Maybe<int32_t> e2s1 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eEnd->mTextNode, eEndOffset, parent, offset);
+  const Maybe<int32_t> e1s1 = nsContentUtils::ComparePointsWithIndices(
+      eStart->mTextNode, eStartOffset, parent, offset);
+  const Maybe<int32_t> e2s1 = nsContentUtils::ComparePointsWithIndices(
+      eEnd->mTextNode, eEndOffset, parent, offset);
 
   if (MOZ_UNLIKELY(NS_WARN_IF(!e1s1) || NS_WARN_IF(!e2s1))) {
     return NS_ERROR_FAILURE;
@@ -2031,16 +2029,14 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
 
     NS_ENSURE_SUCCESS(rv, rv);
 
-    e1s2 =
-        nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-            eStart->mTextNode, eStartOffset, endContainer, endOffset);
+    e1s2 = nsContentUtils::ComparePointsWithIndices(
+        eStart->mTextNode, eStartOffset, endContainer, endOffset);
     if (NS_WARN_IF(!e1s2)) {
       return NS_ERROR_FAILURE;
     }
 
-    e2s1 =
-        nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-            eEnd->mTextNode, eEndOffset, startContainer, startOffset);
+    e2s1 = nsContentUtils::ComparePointsWithIndices(
+        eEnd->mTextNode, eEndOffset, startContainer, startOffset);
     if (NS_WARN_IF(!e2s1)) {
       return NS_ERROR_FAILURE;
     }
@@ -2061,16 +2057,14 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
   }
 
   // Now that we have an intersecting range, find out more info:
-  const Maybe<int32_t> e1s1 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eStart->mTextNode, eStartOffset, startContainer, startOffset);
+  const Maybe<int32_t> e1s1 = nsContentUtils::ComparePointsWithIndices(
+      eStart->mTextNode, eStartOffset, startContainer, startOffset);
   if (NS_WARN_IF(!e1s1)) {
     return NS_ERROR_FAILURE;
   }
 
-  const Maybe<int32_t> e2s2 =
-      nsContentUtils::ComparePointsWithIndices<TreeKind::ShadowIncludingDOM>(
-          eEnd->mTextNode, eEndOffset, endContainer, endOffset);
+  const Maybe<int32_t> e2s2 = nsContentUtils::ComparePointsWithIndices(
+      eEnd->mTextNode, eEndOffset, endContainer, endOffset);
   if (NS_WARN_IF(!e2s2)) {
     return NS_ERROR_FAILURE;
   }
