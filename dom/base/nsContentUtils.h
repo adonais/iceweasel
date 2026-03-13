@@ -714,6 +714,22 @@ class nsContentUtils {
   using NodeIndexCache = ResizableNodeIndexCache<100>;
 
   /**
+   *  Utility routine to compare two "points", where a point is a node/offset
+   *  pair.
+   *  Pass a cache object as aIndexCache if you expect to repeatedly
+   *  call this function with the same value as aParent1 or aParent2.
+   *
+   *  @return -1 if point1 < point2,
+   *          1 if point1 > point2,
+   *          0 if point1 == point2.
+   *          `Nothing` if the two nodes aren't in the same connected subtree.
+   */
+  template <TreeKind aKind>
+  static mozilla::Maybe<int32_t> ComparePointsWithIndices(
+      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
+      uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
+
+  /**
    *  Utility routine to compare two "points", where a point is a RangeBoundary.
    *  Pass a cache object as aIndexCache if you expect to repeatedly call this
    * function with the same value as aBoundary1 or aBoundary2.
@@ -3710,15 +3726,6 @@ class nsContentUtils {
   static mozilla::Maybe<int32_t> CompareChildNodeAndChildOffset(
       const nsINode& aParent, const nsIContent& aChild1, uint32_t aOffset2,
       NodeIndexCache* aIndexCache = nullptr);
-
-  /**
-   * Helper method for ComparePoints() if and only if the boundaries know the
-   * offset.
-   */
-  template <TreeKind aKind>
-  static mozilla::Maybe<int32_t> ComparePointsWithIndices(
-      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
-      uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
 
   /**
    * Helper method for ComparePoints() and ComparePointsWithIndices(). This
