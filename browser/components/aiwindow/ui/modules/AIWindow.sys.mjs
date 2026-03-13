@@ -185,7 +185,13 @@ export const AIWindow = {
     const newTabPrefURI = Services.io.newURI(newTabPref);
     const homePagePrefURIs = lazy.HomePage.parseCustomHomepageURLs(
       homePagePref
-    ).map(url => Services.io.newURI(url));
+    ).flatMap(url => {
+      try {
+        return [Services.io.newURI(url)];
+      } catch {
+        return [];
+      }
+    });
 
     const triggeringPrincipal =
       Services.scriptSecurityManager.getSystemPrincipal();

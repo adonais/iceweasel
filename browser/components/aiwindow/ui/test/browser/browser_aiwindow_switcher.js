@@ -532,7 +532,10 @@ add_task(async function test_reconcile_custom_homepage_on_toggle() {
     set: [
       ["browser.smartwindow.enabled", true],
       ["browser.smartwindow.firstrun.hasCompleted", true],
-      ["browser.startup.homepage", "https://example.com|https://example.org"],
+      [
+        "browser.startup.homepage",
+        "https://example.com|www.example.com|https://example.org",
+      ],
     ],
   });
 
@@ -551,7 +554,8 @@ add_task(async function test_reconcile_custom_homepage_on_toggle() {
     "https://example.org/"
   );
 
-  // Toggle to AI Window - custom homepage tabs should be reconciled
+  // Toggle to AI Window - custom homepage tabs should be reconciled.
+  // The schemeless "www.example.com" entry is gracefully skipped.
   AIWindow.toggleAIWindow(win, true);
 
   await TestUtils.waitForCondition(
