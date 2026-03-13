@@ -36,6 +36,7 @@
 #include "nsTArray.h"
 
 class nsIConsoleReportCollector;
+class nsIServiceWorkerUnregisterCallback;
 
 namespace mozilla {
 
@@ -444,7 +445,8 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   // Used by remove() and removeAll() when clearing history.
   // MUST ONLY BE CALLED FROM UnregisterIfMatchesHost!
   void ForceUnregister(RegistrationDataPerPrincipal* aRegistrationData,
-                       ServiceWorkerRegistrationInfo* aRegistration);
+                       ServiceWorkerRegistrationInfo* aRegistration,
+                       nsIServiceWorkerUnregisterCallback* aCallback = nullptr);
 
   // An "orphaned" registration is one that is unregistered and not controlling
   // clients. The ServiceWorkerManager must know about all orphaned

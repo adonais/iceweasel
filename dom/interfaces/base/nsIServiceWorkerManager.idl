@@ -289,7 +289,9 @@ interface nsIServiceWorkerManager : nsISupports
   nsIArray getAllRegistrations();
 
   // For clear-origin-attributes-data
-  void removeRegistrationsByOriginAttributes(in AString aOriginAttributes);
+  void removeRegistrationsByOriginAttributes(
+      in AString aOriginAttributes,
+      [optional] in nsIServiceWorkerUnregisterCallback aCallback);
 
   // It calls unregister() in each child process. The callback is used to
   // inform when unregister() is completed on the current process.
