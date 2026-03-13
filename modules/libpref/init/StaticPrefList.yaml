@@ -16301,6 +16301,27 @@
   value: true
   mirror: always
 
+# Enable expiration of permissions that haven't been used recently.
+- name: permissions.expireUnused.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
+# Duration in seconds after which unused permissions expire.
+# Default: 13 months (13 * 30 * 24 * 60 * 60 = 33696000)
+- name: permissions.expireUnusedThresholdSec
+  type: uint32_t
+  value: 33696000
+  mirror: always
+
+# Comma-separated list of permission types that can expire due to inactivity.
+# Derived from SitePermissions.sys.mjs gPermissions._permissions
+# Double-keyed permissions must include the ^ delimiter (e.g., "open-protocol-handler^")
+- name: permissions.expireUnusedTypes
+  type: String
+  value: "autoplay-media,cookie,desktop-notification,camera,localhost,local-network,microphone,screen,speaker,popup,install,geo,open-protocol-handler^,xr,focus-tab-by-prompt,shortcuts,canvas,midi,midi-sysex,storage-access,3rdPartyStorage^,3rdPartyFrameStorage^"
+  mirror: never
+
 #---------------------------------------------------------------------------
 # Prefs starting with "places."
 #---------------------------------------------------------------------------

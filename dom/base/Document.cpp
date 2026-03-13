@@ -18946,6 +18946,8 @@ void Document::MaybeStoreUserInteractionAsPermission() {
     // First interaction, let's store this info now.
     (void)BounceTrackingProtection::RecordUserActivation(GetWindowContext());
 
+    (void)PermissionManager::RecordSiteInteraction(GetWindowContext());
+
     // For ContentBlockingUserInteraction we care about user-interaction stored
     // only for top-level documents and documents with access to the Storage
     // Access API

@@ -286,6 +286,36 @@ interface nsIPermissionManager : nsISupports
    * @param typeExceptions   Types to skip in search.
    */
   void removePermissionsWithAttributes(in AString patternAsJSON, in Array<ACString> typeInclusions, in Array<ACString> typeExceptions);
+
+  /**
+   * Update the last interaction time for a given principal's origin.
+   * Used to track site activity for permission expiration.
+   *
+   * @param principal The principal representing the site the user interacted with.
+   */
+  void updateLastInteractionForPrincipal(in nsIPrincipal principal);
+
+  /**
+   * Remove interaction records from the moz_origin_interactions table
+   * that no longer have corresponding permissions.
+   *
+   * Orphaned interaction records are automatically cleaned up on
+   * idle-daily, so this method only needs to be called when cleanup
+   * must happen immediately (e.g. data clearing via nsIClearDataService)
+   * to ensure tracking data is removed before returning to the caller.
+   *
+   * Not needed after bulk removal methods (removeAll, removeByType, etc.)
+   * which handle cleanup internally.
+   */
+  [implicit_jscontext]
+  Promise removeOrphanedInteractionRecords();
+
+  /**
+   * Test-only method. Flush all pending background-thread writes and resolve
+   * the returned promise once complete. This does not modify any data.
+   */
+  [implicit_jscontext]
+  Promise testFlushPendingWrites();
 };
 
 %{ C++

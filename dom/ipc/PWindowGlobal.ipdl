@@ -233,6 +233,9 @@ parent:
   // User activation notifications for BounceTrackingProtection.
   async RecordUserActivationForBTP();
 
+  // User interaction notification for permission expiry tracking.
+  async RecordUserInteractionForPermissions();
+
   async PDigitalCredential();
   async PWebAuthnTransaction();
   async PWebIdentity();

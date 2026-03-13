@@ -45,6 +45,7 @@ class OriginAttributesPattern;
 
 namespace dom {
 class ContentChild;
+class WindowContext;
 }  // namespace dom
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -177,6 +178,10 @@ class PermissionManager final : public nsIPermissionManager,
   PermissionManager();
   static already_AddRefed<nsIPermissionManager> GetXPCOMSingleton();
   static already_AddRefed<PermissionManager> GetInstance();
+
+  // Record a user interaction for permission expiry tracking.
+  // Handles content/parent process IPC branching internally.
+  static nsresult RecordSiteInteraction(dom::WindowContext* aWindowContext);
 
   // enums for AddInternal()
   enum OperationType {
@@ -723,8 +728,17 @@ class PermissionManager final : public nsIPermissionManager,
     nsCOMPtr<mozIStorageStatement> mStmtInsert;
     nsCOMPtr<mozIStorageStatement> mStmtDelete;
     nsCOMPtr<mozIStorageStatement> mStmtUpdate;
+    nsCOMPtr<mozIStorageStatement> mStmtInsertInteraction;
   };
   ThreadBound<ThreadBoundData> mThreadBoundData;
+
+  void UpdateLastInteractionInternal(const nsACString& aOrigin)
+      MOZ_REQUIRES(mMonitor);
+  void ExpireUnusedPermissions();
+  bool ShouldExpirePermission(const PermissionEntry& aEntry,
+                              const nsTArray<nsCString>& aExpirableTypes) const
+      MOZ_REQUIRES(mMonitor);
+  RefPtr<GenericPromise> CleanupOrphanedInteractionRecords();
 };
 
 // {4F6B5E00-0C36-11d5-A535-0010A401EB10}

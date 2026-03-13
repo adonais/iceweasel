@@ -1855,6 +1855,25 @@ IPCResult WindowGlobalParent::RecvRecordUserActivationForBTP() {
   return IPC_OK();
 }
 
+IPCResult WindowGlobalParent::RecvRecordUserInteractionForPermissions() {
+  WindowGlobalParent* top = TopWindowContext();
+  if (!top) {
+    return IPC_OK();
+  }
+  nsIPrincipal* principal = top->DocumentPrincipal();
+  if (!principal) {
+    return IPC_OK();
+  }
+
+  nsCOMPtr<nsIPermissionManager> permMgr =
+      do_GetService(NS_PERMISSIONMANAGER_CONTRACTID);
+  if (permMgr) {
+    (void)permMgr->UpdateLastInteractionForPrincipal(principal);
+  }
+
+  return IPC_OK();
+}
+
 already_AddRefed<PWebAuthnTransactionParent>
 WindowGlobalParent::AllocPWebAuthnTransactionParent() {
   return MakeAndAddRef<WebAuthnTransactionParent>();

@@ -350,6 +350,8 @@ class WindowGlobalParent final : public WindowContext,
 
   mozilla::ipc::IPCResult RecvRecordUserActivationForBTP();
 
+  mozilla::ipc::IPCResult RecvRecordUserInteractionForPermissions();
+
   already_AddRefed<dom::PWebAuthnTransactionParent>
   AllocPWebAuthnTransactionParent();
 

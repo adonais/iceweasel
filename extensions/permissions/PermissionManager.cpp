@@ -4,6 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "ErrorList.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AppShutdown.h"
 #ifdef MOZ_BACKGROUNDTASKS
@@ -14,9 +15,12 @@
 #include "mozilla/Components.h"
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/WindowContext.h"
+#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/ExpandedPrincipal.h"
 #include "mozilla/net/NeckoMessageUtils.h"
@@ -25,6 +29,9 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_permissions.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/SyncRunnable.h"
+#include "xpcpublic.h"
 #include "mozilla/glean/ExtensionsPermissionsMetrics.h"
 
 #include "mozIStorageService.h"
@@ -57,7 +64,7 @@ using namespace mozilla::dom;
 namespace mozilla {
 
 #define PERMISSIONS_FILE_NAME "permissions.sqlite"
-#define HOSTS_SCHEMA_VERSION 12
+#define HOSTS_SCHEMA_VERSION 13
 
 // Default permissions are read from a URL - this is the preference we read
 // to find that URL. If not set, don't use any default permissions.
@@ -212,6 +219,56 @@ bool GetSecondaryKey(const nsACString& aType, nsACString& aSecondaryKey) {
     }
   }
   return false;
+}
+
+void GetExpirablePermissionTypes(nsTArray<nsCString>& aExpirableTypes) {
+  nsAutoCString prefValue;
+  nsresult rv =
+      Preferences::GetCString("permissions.expireUnusedTypes", prefValue);
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  for (const nsACString& token : prefValue.Split(',')) {
+    aExpirableTypes.AppendElement(token);
+  }
+}
+
+bool IsExpirablePermission(const nsACString& aType,
+                           const nsTArray<nsCString>& aExpirableTypes) {
+  // For double-keyed permissions like "open-protocol-handler^irc",
+  // extract the base type including delimiter ("open-protocol-handler^")
+  // for lookup. The expirable types list should contain entries with the
+  // delimiter to distinguish "perm" from "perm^".
+  nsAutoCString lookupType;
+  int32_t delimiterPos = aType.FindChar('^');
+  if (delimiterPos != -1) {
+    lookupType = Substring(aType, 0, delimiterPos + 1);
+  } else {
+    lookupType = aType;
+  }
+
+  for (const nsCString& token : aExpirableTypes) {
+    if (token.Equals(lookupType)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Apply MaybeStripOriginAttributes to a raw origin string (parse OA suffix,
+// strip fields, rebuild).
+static bool StripOriginString(const nsACString& aOrigin, bool aForceStripOA,
+                              nsACString& aStripped) {
+  nsAutoCString originNoSuffix;
+  OriginAttributes attrs;
+  if (!attrs.PopulateFromOrigin(aOrigin, originNoSuffix)) {
+    return false;
+  }
+  PermissionManager::MaybeStripOriginAttributes(aForceStripOA, attrs);
+  aStripped = originNoSuffix;
+  nsAutoCString oaSuffix;
+  attrs.CreateSuffix(oaSuffix);
+  aStripped.Append(oaSuffix);
+  return true;
 }
 
 void OriginAppendOASuffix(OriginAttributes aOriginAttributes,
@@ -1517,6 +1574,33 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
         rv = data->mDBConn->CommitTransaction();
         NS_ENSURE_SUCCESS(rv, rv);
 
+        rv = data->mDBConn->SetSchemaVersion(12);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+        // fall through to the next upgrade
+        [[fallthrough]];
+
+      case 12: {
+        rv = data->mDBConn->ExecuteSimpleSQL(nsLiteralCString(
+            "CREATE TABLE IF NOT EXISTS moz_origin_interactions ("
+            " origin TEXT PRIMARY KEY"
+            ",lastInteractionTime INTEGER"
+            ")"));
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        // Seed interaction records for all existing permissions so the
+        // expiry clock starts from this migration, not "never".
+        int64_t now = PR_Now() / PR_USEC_PER_MSEC;
+        nsAutoCString seedSql;
+        seedSql.AppendPrintf(
+            "INSERT OR IGNORE INTO moz_origin_interactions "
+            "(origin, lastInteractionTime) "
+            "SELECT DISTINCT origin, %" PRId64 " FROM moz_perms",
+            now);
+        rv = data->mDBConn->ExecuteSimpleSQL(seedSql);
+        NS_ENSURE_SUCCESS(rv, rv);
+
         rv = data->mDBConn->SetSchemaVersion(HOSTS_SCHEMA_VERSION);
         NS_ENSURE_SUCCESS(rv, rv);
       }
@@ -1574,6 +1658,12 @@ nsresult PermissionManager::TryInitDB(bool aRemoveFile,
                        "SET permission = ?2, expireType= ?3, expireTime = "
                        "?4, modificationTime = ?5 WHERE id = ?1"),
       getter_AddRefs(data->mStmtUpdate));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = data->mDBConn->CreateStatement(
+      nsLiteralCString("INSERT OR REPLACE INTO moz_origin_interactions "
+                       "(origin, lastInteractionTime) VALUES (?1, ?2)"),
+      getter_AddRefs(data->mStmtInsertInteraction));
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Always import default permissions.
@@ -1640,6 +1730,13 @@ void PermissionManager::PerformIdleDailyMaintenance() {
 
         rv = stmtDeleteExpired->Execute();
         NS_ENSURE_SUCCESS_VOID(rv);
+
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "PermissionManager::PerformIdleDailyMaintenance::ExpireUnused",
+            [self] {
+              self->ExpireUnusedPermissions();
+              self->CleanupOrphanedInteractionRecords();
+            }));
       }));
 }
 
@@ -1669,7 +1766,7 @@ nsresult PermissionManager::CreateTable() {
 
   // We also create a legacy V4 table, for backwards compatability,
   // and to ensure that downgrades don't trigger a schema version change.
-  return data->mDBConn->ExecuteSimpleSQL(
+  rv = data->mDBConn->ExecuteSimpleSQL(
       nsLiteralCString("CREATE TABLE moz_hosts ("
                        " id INTEGER PRIMARY KEY"
                        ",host TEXT"
@@ -1679,6 +1776,15 @@ nsresult PermissionManager::CreateTable() {
                        ",expireTime INTEGER"
                        ",modificationTime INTEGER"
                        ",isInBrowserElement INTEGER"
+                       ")"));
+  if (NS_FAILED(rv)) return rv;
+
+  // Create table for tracking last interaction times per origin (for permission
+  // expiration based on site inactivity).
+  return data->mDBConn->ExecuteSimpleSQL(
+      nsLiteralCString("CREATE TABLE moz_origin_interactions ("
+                       " origin TEXT PRIMARY KEY"
+                       ",lastInteractionTime INTEGER"
                        ")"));
 }
 
@@ -2208,6 +2314,27 @@ nsresult PermissionManager::AddInternal(
     } break;
   }
 
+  // Record a site interaction when any permission is added or changed. This
+  // ensures the expiry clock starts from when the permission was granted,
+  // covering the case where a user grants a permission (e.g. via a prompt on
+  // page load) without ever interacting with the page itself. We record for
+  // all permission types (not just currently expirable ones) so that if the
+  // expirable types list is expanded later, existing permissions already have
+  // correct interaction timestamps. Only do this when actually writing to the
+  // DB, not during startup load.
+  if (!IsChildProcess() && aDBOperation == eWriteToDB &&
+      StaticPrefs::permissions_expireUnused_enabled() &&
+      !aPrincipal->GetIsInPrivateBrowsing() &&
+      (op == eOperationAdding || op == eOperationChanging ||
+       op == eOperationReplacingDefault)) {
+    nsAutoCString interactionOrigin;
+    nsresult rv2 = GetOriginFromPrincipal(
+        aPrincipal, IsOAForceStripPermission(aType), interactionOrigin);
+    if (NS_SUCCEEDED(rv2)) {
+      UpdateLastInteractionInternal(interactionOrigin);
+    }
+  }
+
   return NS_OK;
 }
 
@@ -2272,8 +2399,13 @@ PermissionManager::RemoveAll() {
 NS_IMETHODIMP
 PermissionManager::RemoveAllSince(int64_t aSince) {
   ENSURE_NOT_CHILD_PROCESS;
-  MonitorAutoLock lock{mMonitor};
-  return RemoveAllModifiedSince(aSince);
+  nsresult rv;
+  {
+    MonitorAutoLock lock{mMonitor};
+    rv = RemoveAllModifiedSince(aSince);
+  }
+  CleanupOrphanedInteractionRecords();
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -2281,19 +2413,25 @@ PermissionManager::RemoveAllExceptTypes(
     const nsTArray<nsCString>& aTypeExceptions) {
   ENSURE_NOT_CHILD_PROCESS;
 
-  MonitorAutoLock lock{mMonitor};
-  // Need to make sure read is done before we get the type index. Type indexes
-  // are populated from DB.
-  EnsureReadCompleted();
+  nsresult rv;
+  {
+    MonitorAutoLock lock{mMonitor};
+    // Need to make sure read is done before we get the type index. Type indexes
+    // are populated from DB.
+    EnsureReadCompleted();
 
-  if (aTypeExceptions.IsEmpty()) {
-    return RemoveAllInternal(true);
+    if (aTypeExceptions.IsEmpty()) {
+      return RemoveAllInternal(true);
+    }
+
+    rv = RemovePermissionEntries(
+        [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
+          return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]);
+        });
   }
 
-  return RemovePermissionEntries(
-      [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
-        return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]);
-      });
+  CleanupOrphanedInteractionRecords();
+  return rv;
 }
 
 nsresult PermissionManager::RemovePermissionEntries(
@@ -2358,23 +2496,29 @@ NS_IMETHODIMP
 PermissionManager::RemoveByType(const nsACString& aType) {
   ENSURE_NOT_CHILD_PROCESS;
 
-  MonitorAutoLock lock{mMonitor};
+  nsresult rv;
+  {
+    MonitorAutoLock lock{mMonitor};
 
-  // Need to make sure read is done before we get the type index. Type indexes
-  // are populated from DB.
-  EnsureReadCompleted();
+    // Need to make sure read is done before we get the type index. Type indexes
+    // are populated from DB.
+    EnsureReadCompleted();
 
-  int32_t typeIndex = GetTypeIndex(aType, false);
-  // If type == -1, the type isn't known,
-  // so just return NS_OK
-  if (typeIndex == -1) {
-    return NS_OK;
+    int32_t typeIndex = GetTypeIndex(aType, false);
+    // If type == -1, the type isn't known,
+    // so just return NS_OK
+    if (typeIndex == -1) {
+      return NS_OK;
+    }
+
+    rv =
+        RemovePermissionEntries([typeIndex](const PermissionEntry& aPermEntry) {
+          return static_cast<uint32_t>(typeIndex) == aPermEntry.mType;
+        });
   }
 
-  return RemovePermissionEntries(
-      [typeIndex](const PermissionEntry& aPermEntry) {
-        return static_cast<uint32_t>(typeIndex) == aPermEntry.mType;
-      });
+  CleanupOrphanedInteractionRecords();
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -2382,24 +2526,30 @@ PermissionManager::RemoveByTypeSince(const nsACString& aType,
                                      int64_t aModificationTime) {
   ENSURE_NOT_CHILD_PROCESS;
 
-  MonitorAutoLock lock{mMonitor};
+  nsresult rv;
+  {
+    MonitorAutoLock lock{mMonitor};
 
-  // Need to make sure read is done before we get the type index. Type indexes
-  // are populated from DB.
-  EnsureReadCompleted();
+    // Need to make sure read is done before we get the type index. Type indexes
+    // are populated from DB.
+    EnsureReadCompleted();
 
-  int32_t typeIndex = GetTypeIndex(aType, false);
-  // If type == -1, the type isn't known,
-  // so just return NS_OK
-  if (typeIndex == -1) {
-    return NS_OK;
+    int32_t typeIndex = GetTypeIndex(aType, false);
+    // If type == -1, the type isn't known,
+    // so just return NS_OK
+    if (typeIndex == -1) {
+      return NS_OK;
+    }
+
+    rv = RemovePermissionEntries(
+        [typeIndex, aModificationTime](const PermissionEntry& aPermEntry) {
+          return uint32_t(typeIndex) == aPermEntry.mType &&
+                 aModificationTime <= aPermEntry.mModificationTime;
+        });
   }
 
-  return RemovePermissionEntries(
-      [typeIndex, aModificationTime](const PermissionEntry& aPermEntry) {
-        return uint32_t(typeIndex) == aPermEntry.mType &&
-               aModificationTime <= aPermEntry.mModificationTime;
-      });
+  CleanupOrphanedInteractionRecords();
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -2407,17 +2557,23 @@ PermissionManager::RemoveAllSinceWithTypeExceptions(
     int64_t aModificationTime, const nsTArray<nsCString>& aTypeExceptions) {
   ENSURE_NOT_CHILD_PROCESS;
 
-  MonitorAutoLock lock{mMonitor};
+  nsresult rv;
+  {
+    MonitorAutoLock lock{mMonitor};
 
-  // Need to make sure read is done before we get the type index. Type indexes
-  // are populated from DB.
-  EnsureReadCompleted();
+    // Need to make sure read is done before we get the type index. Type indexes
+    // are populated from DB.
+    EnsureReadCompleted();
 
-  return RemovePermissionEntries(
-      [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
-        return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]) &&
-               aModificationTime <= aPermEntry.mModificationTime;
-      });
+    rv = RemovePermissionEntries(
+        [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
+          return !aTypeExceptions.Contains(mTypeArray[aPermEntry.mType]) &&
+                 aModificationTime <= aPermEntry.mModificationTime;
+        });
+  }
+
+  CleanupOrphanedInteractionRecords();
+  return rv;
 }
 
 void PermissionManager::CloseDB(CloseDBNextOp aNextOp) {
@@ -2438,6 +2594,7 @@ void PermissionManager::CloseDB(CloseDBNextOp aNextOp) {
         data->mStmtInsert = nullptr;
         data->mStmtDelete = nullptr;
         data->mStmtUpdate = nullptr;
+        data->mStmtInsertInteraction = nullptr;
         if (data->mDBConn) {
           DebugOnly<nsresult> rv = data->mDBConn->Close();
           MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -2512,7 +2669,12 @@ nsresult PermissionManager::RemoveAllInternal(bool aNotifyObservers) {
                 MonitorAutoLock lock{self->mMonitor};
                 self->CloseDB(eRebuldOnSuccess);
               }));
+          return;
         }
+        rv = data->mDBConn->ExecuteSimpleSQL(
+            "DELETE FROM moz_origin_interactions"_ns);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "Failed to clear moz_origin_interactions");
       }));
 
   return NS_OK;
@@ -2940,9 +3102,15 @@ PermissionManager::RemovePermissionsWithAttributes(
     return NS_ERROR_INVALID_ARG;
   }
 
-  MonitorAutoLock lock{mMonitor};
-  return RemovePermissionsWithAttributes(pattern, aTypeInclusions,
+  nsresult rv;
+  {
+    MonitorAutoLock lock{mMonitor};
+    rv = RemovePermissionsWithAttributes(pattern, aTypeInclusions,
                                          aTypeExceptions);
+  }
+
+  CleanupOrphanedInteractionRecords();
+  return rv;
 }
 
 nsresult PermissionManager::RemovePermissionsWithAttributes(
@@ -4247,6 +4415,366 @@ void PermissionManager::MaybeStripOriginAttributes(
   if (flags != 0) {
     aOriginAttributes.StripAttributes(flags);
   }
+}
+
+// static
+nsresult PermissionManager::RecordSiteInteraction(
+    dom::WindowContext* aWindowContext) {
+  NS_ENSURE_ARG_POINTER(aWindowContext);
+
+  if (XRE_IsContentProcess()) {
+    dom::WindowGlobalChild* wgc = aWindowContext->GetWindowGlobalChild();
+    NS_ENSURE_TRUE(wgc, NS_ERROR_FAILURE);
+    NS_ENSURE_TRUE(wgc->SendRecordUserInteractionForPermissions(),
+                   NS_ERROR_FAILURE);
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(XRE_IsParentProcess());
+  dom::WindowGlobalParent* wgp = aWindowContext->Canonical();
+  MOZ_ASSERT(wgp);
+  wgp->RecvRecordUserInteractionForPermissions();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+PermissionManager::UpdateLastInteractionForPrincipal(nsIPrincipal* aPrincipal) {
+  ENSURE_NOT_CHILD_PROCESS;
+  NS_ENSURE_ARG_POINTER(aPrincipal);
+
+  if (!StaticPrefs::permissions_expireUnused_enabled()) {
+    return NS_OK;
+  }
+
+  if (aPrincipal->IsSystemPrincipal()) {
+    return NS_OK;
+  }
+
+  if (aPrincipal->GetIsInPrivateBrowsing()) {
+    return NS_OK;
+  }
+
+  nsAutoCString origin;
+  nsresult rv = GetOriginFromPrincipal(aPrincipal, false, origin);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  MonitorAutoLock lock(mMonitor);
+  UpdateLastInteractionInternal(origin);
+  return NS_OK;
+}
+
+void PermissionManager::UpdateLastInteractionInternal(
+    const nsACString& aOrigin) {
+  RefPtr<PermissionManager> self = this;
+  nsCString origin(aOrigin);
+
+  mThread->Dispatch(NS_NewRunnableFunction(
+      "PermissionManager::UpdateLastInteractionInternal", [self, origin] {
+        auto data = self->mThreadBoundData.Access();
+
+        if (self->mState == eClosed || !data->mDBConn ||
+            !data->mStmtInsertInteraction) {
+          return;
+        }
+
+        mozIStorageStatement* stmt = data->mStmtInsertInteraction;
+        nsresult rv = stmt->BindUTF8StringByIndex(0, origin);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
+
+        rv = stmt->BindInt64ByIndex(1, PR_Now() / PR_USEC_PER_MSEC);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
+
+        rv = stmt->Execute();
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert interaction");
+      }));
+}
+
+bool PermissionManager::ShouldExpirePermission(
+    const PermissionEntry& aEntry,
+    const nsTArray<nsCString>& aExpirableTypes) const {
+  if (aEntry.mID == cIDPermissionIsDefault) {
+    return false;
+  }
+  // Only expire persistent unused permissions.
+  if (aEntry.mExpireType != EXPIRE_NEVER) {
+    return false;
+  }
+  return IsExpirablePermission(mTypeArray[aEntry.mType], aExpirableTypes);
+}
+
+void PermissionManager::ExpireUnusedPermissions() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!StaticPrefs::permissions_expireUnused_enabled()) {
+    return;
+  }
+
+  MonitorAutoLock lock(mMonitor);
+  EnsureReadCompleted();
+
+  int64_t thresholdMs =
+      static_cast<int64_t>(
+          StaticPrefs::permissions_expireUnusedThresholdSec()) *
+      PR_MSEC_PER_SEC;
+  int64_t now = PR_Now() / PR_USEC_PER_MSEC;
+  int64_t cutoff = now - thresholdMs;
+
+  nsTHashMap<nsCStringHashKey, int64_t> interactionTimes;
+  {
+    RefPtr<PermissionManager> self = this;
+    nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+        "PermissionManager::ExpireUnusedPermissions::ReadInteractions",
+        [self, &interactionTimes] {
+          auto data = self->mThreadBoundData.Access();
+          if (self->mState == eClosed || !data->mDBConn) {
+            return;
+          }
+
+          nsCOMPtr<mozIStorageStatement> stmt;
+          nsresult rv = data->mDBConn->CreateStatement(
+              nsLiteralCString("SELECT origin, lastInteractionTime "
+                               "FROM moz_origin_interactions"),
+              getter_AddRefs(stmt));
+          if (NS_FAILED(rv)) {
+            return;
+          }
+
+          bool hasResult;
+          while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
+            nsCString origin;
+            rv = stmt->GetUTF8String(0, origin);
+            if (NS_FAILED(rv)) {
+              continue;
+            }
+            int64_t lastInteractionTime;
+            rv = stmt->GetInt64(1, &lastInteractionTime);
+            if (NS_FAILED(rv)) {
+              continue;
+            }
+            interactionTimes.InsertOrUpdate(origin, lastInteractionTime);
+          }
+        });
+
+    SyncRunnable::DispatchToThread(mThread, runnable);
+  }
+
+  // Build force-stripped interaction times index for permissions that use
+  // IsOAForceStripPermission. This applies the same OA stripping as the
+  // permission manager uses when storing such permissions, and maps the
+  // resulting origin to the most recent interaction time.
+  nsTHashMap<nsCStringHashKey, int64_t> interactionTimesOAStripped;
+  for (const auto& interactionEntry : interactionTimes) {
+    const nsACString& interactionOrigin = interactionEntry.GetKey();
+    int64_t interactionTime = interactionEntry.GetData();
+
+    nsAutoCString strippedOrigin;
+    if (!StripOriginString(interactionOrigin, true, strippedOrigin)) {
+      continue;
+    }
+
+    auto lookup = interactionTimesOAStripped.Lookup(strippedOrigin);
+    if (!lookup || lookup.Data() < interactionTime) {
+      interactionTimesOAStripped.InsertOrUpdate(strippedOrigin,
+                                                interactionTime);
+    }
+  }
+
+  struct ExpireEntry {
+    nsCOMPtr<nsIPrincipal> mPrincipal;
+    nsCString mType;
+    nsCString mOrigin;
+    int64_t mModificationTime = 0;
+  };
+  nsTArray<ExpireEntry> toExpire;
+
+  // Parse the expirable types once for this expiration run
+  nsTArray<nsCString> expirableTypes;
+  GetExpirablePermissionTypes(expirableTypes);
+  if (expirableTypes.IsEmpty()) {
+    return;
+  }
+
+  for (const PermissionHashKey& entry : mPermissionTable) {
+    const nsCString& origin = entry.GetKey()->mOrigin;
+
+    for (const PermissionEntry& perm : entry.GetPermissions()) {
+      if (!ShouldExpirePermission(perm, expirableTypes)) {
+        continue;
+      }
+
+      const nsCString& permType = mTypeArray[perm.mType];
+
+      nsCOMPtr<nsIPrincipal> principal;
+      nsresult rv =
+          GetPrincipalFromOrigin(origin, IsOAForceStripPermission(permType),
+                                 getter_AddRefs(principal));
+      if (NS_FAILED(rv) || !principal) {
+        continue;
+      }
+
+      if (principal->GetIsInPrivateBrowsing()) {
+        continue;
+      }
+
+      // Look up interaction using the appropriate index based on whether this
+      // permission type forces OA stripping.
+      int64_t* lastInteraction;
+      if (IsOAForceStripPermission(permType)) {
+        lastInteraction =
+            interactionTimesOAStripped.Lookup(origin).DataPtrOrNull();
+      } else {
+        lastInteraction = interactionTimes.Lookup(origin).DataPtrOrNull();
+      }
+
+      if (!lastInteraction || *lastInteraction >= cutoff) {
+        continue;
+      }
+
+      ExpireEntry expireEntry;
+      expireEntry.mPrincipal = principal;
+      expireEntry.mType = nsCString(permType);
+      expireEntry.mOrigin = origin;
+      expireEntry.mModificationTime = perm.mModificationTime;
+      toExpire.AppendElement(std::move(expireEntry));
+    }
+  }
+
+  for (const auto& entry : toExpire) {
+    // Use the appropriate index based on permission type
+    int64_t* lastInteraction;
+    if (IsOAForceStripPermission(entry.mType)) {
+      lastInteraction =
+          interactionTimesOAStripped.Lookup(entry.mOrigin).DataPtrOrNull();
+    } else {
+      lastInteraction = interactionTimes.Lookup(entry.mOrigin).DataPtrOrNull();
+    }
+    if (lastInteraction) {
+      int64_t ageMs = now - *lastInteraction;
+      int64_t ageDays = ageMs / (1000 * 60 * 60 * 24);
+      glean::permissions::unused_permission_age_at_expiry
+          .AccumulateSingleSample(ageDays);
+    }
+
+    int64_t modAgeMs = now - entry.mModificationTime;
+    int64_t modAgeDays = modAgeMs / (1000 * 60 * 60 * 24);
+    glean::permissions::unused_permission_modified_age_at_expiry
+        .AccumulateSingleSample(modAgeDays);
+
+    glean::permissions::unused_permissions_expired_by_type.Get(entry.mType)
+        .Add();
+  }
+
+  for (const auto& entry : toExpire) {
+    RemoveFromPrincipalInternal(entry.mPrincipal, entry.mType);
+  }
+}
+
+NS_IMETHODIMP
+PermissionManager::RemoveOrphanedInteractionRecords(JSContext* aCx,
+                                                    Promise** aPromise) {
+  ENSURE_NOT_CHILD_PROCESS;
+
+  nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
+  if (NS_WARN_IF(!global)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult erv;
+  RefPtr<Promise> promise = Promise::Create(global, erv);
+  if (NS_WARN_IF(erv.Failed())) {
+    return erv.StealNSResult();
+  }
+
+  CleanupOrphanedInteractionRecords()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [promise](const GenericPromise::ResolveOrRejectValue&) {
+        promise->MaybeResolveWithUndefined();
+      });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+PermissionManager::TestFlushPendingWrites(JSContext* aCx, Promise** aPromise) {
+  ENSURE_NOT_CHILD_PROCESS;
+
+  nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
+  if (NS_WARN_IF(!global)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult erv;
+  RefPtr<Promise> promise = Promise::Create(global, erv);
+  if (NS_WARN_IF(erv.Failed())) {
+    return erv.StealNSResult();
+  }
+
+  nsCOMPtr<nsIThread> thread;
+  {
+    MonitorAutoLock lock(mMonitor);
+    thread = mThread;
+  }
+  if (!thread) {
+    promise->MaybeResolveWithUndefined();
+    promise.forget(aPromise);
+    return NS_OK;
+  }
+
+  InvokeAsync(thread, "PermissionManager::TestFlushPendingWrites",
+              []() { return GenericPromise::CreateAndResolve(true, __func__); })
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [promise](const GenericPromise::ResolveOrRejectValue&) {
+               promise->MaybeResolveWithUndefined();
+             });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+RefPtr<GenericPromise> PermissionManager::CleanupOrphanedInteractionRecords() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIThread> thread;
+  {
+    MonitorAutoLock lock(mMonitor);
+    thread = mThread;
+  }
+  if (!thread) {
+    return GenericPromise::CreateAndResolve(true, __func__);
+  }
+
+  RefPtr<PermissionManager> self = this;
+  return InvokeAsync(
+      thread, "PermissionManager::CleanupOrphanedInteractionRecords", [self]() {
+        auto data = self->mThreadBoundData.Access();
+
+        if (self->mState != eClosed && data->mDBConn) {
+          // Delete interaction records whose base origin (scheme+host+port,
+          // without OA suffix) has no corresponding permission in moz_perms.
+          // Both sides are stripped to base origin so that interaction records
+          // with full OA (e.g. from IPC) match OA-stripped permission keys.
+          DebugOnly<nsresult> rv = data->mDBConn->ExecuteSimpleSQL(
+              nsLiteralCString("DELETE FROM moz_origin_interactions WHERE "
+                               "CASE WHEN instr(origin, '^') > 0 "
+                               "THEN substr(origin, 1, instr(origin, '^') - 1) "
+                               "ELSE origin END "
+                               "NOT IN ("
+                               "SELECT DISTINCT "
+                               "CASE WHEN instr(origin, '^') > 0 "
+                               "THEN substr(origin, 1, instr(origin, '^') - 1) "
+                               "ELSE origin END "
+                               "FROM moz_perms)"));
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                               "Failed to delete orphaned interactions");
+        }
+
+        return GenericPromise::CreateAndResolve(true, __func__);
+      });
 }
 
 }  // namespace mozilla
