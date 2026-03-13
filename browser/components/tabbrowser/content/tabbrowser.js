@@ -780,7 +780,7 @@
         reloadBrowser(tab, reloadFlags);
       }
 
-      function reloadBrowser(tab, reloadFlags) {
+      function reloadBrowser(tab) {
         if (tab.linkedPanel) {
           const { browsingContext } = tab.linkedBrowser;
           const { sessionHistory } = browsingContext;
