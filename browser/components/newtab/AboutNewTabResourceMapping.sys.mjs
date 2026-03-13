@@ -838,6 +838,13 @@ export var AboutNewTabResourceMapping = {
 
     await lazy.AddonManager.readyPromise;
     await this.updateTrainhopAddonState(true /* forceRestartlessInstall */);
+
+    // Tell Experimenter to re-evaluate experiment recipe targeting in case we
+    // just installed an XPI.
+    await lazy.ExperimentAPI._rsLoader.finishedUpdating();
+    await lazy.ExperimentAPI._rsLoader.updateRecipes("newtab-trainhop", {
+      onlyFeatureIds: new Set(["newtabTrainhop"]),
+    });
     this.logger.debug("First startup - new profile done");
   },
 };

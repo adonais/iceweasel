@@ -80,6 +80,8 @@ add_task(
 
     // Track whether firstStartupNewProfile was called
     let sandbox = sinon.createSandbox();
+    sandbox.stub(ExperimentAPI._rsLoader, "updateRecipes");
+
     let firstStartupNewProfileSpy = sandbox.spy(
       AboutNewTabResourceMapping,
       "firstStartupNewProfile"
@@ -95,6 +97,11 @@ add_task(
         resolve();
       });
     });
+
+    Assert.ok(
+      ExperimentAPI._rsLoader.updateRecipes.notCalled,
+      "Have not yet called updateRecipes"
+    );
 
     // Run FirstStartup which should trigger our category hook
     FirstStartup.init(true /* newProfile */);
@@ -123,6 +130,19 @@ add_task(
       await AddonManager.getAllInstalls(),
       [],
       "Expect no pending install for restartless install"
+    );
+
+    Assert.ok(
+      ExperimentAPI._rsLoader.updateRecipes.calledWith(
+        "newtab-trainhop",
+        sinon.match({
+          onlyFeatureIds: sinon.match(
+            s => s.size === 1 && s.has("newtabTrainhop"),
+            'Set {"newtabTrainhop"}'
+          ),
+        })
+      ),
+      "Re-computed Experiment recipes"
     );
 
     sandbox.restore();
