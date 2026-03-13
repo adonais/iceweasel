@@ -15,9 +15,3 @@ run-if = [
 ]
 
 ["browser_windowless_troubleshoot_crash.js"]
-
-["browser_webrender_layer_compositor_overlay.js"]
-run-if = [
-  "os == 'mac'",
-  "os == 'win'",
-]
