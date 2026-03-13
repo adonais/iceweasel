@@ -31,11 +31,11 @@ We automatically run code coverage builds and tests on all
 mozilla-central runs, for Linux and Windows. C/C++, Rust and JavaScript
 are supported.
 
-The generated reports can be found at https://coverage.moz.tools/. The
+The generated reports can be found on Searchfox. The
 reports can be filtered by platform and/or test suite.
 
 We also generate a report of all totally uncovered files, which can be
-found at https://coverage.moz.tools/#view=zero. You can use this to find
+found at https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/project.relman.code-coverage.production.cron.latest/artifacts/public/zero_coverage_report.json. You can use this to find
 areas of code that should be tested, or code that is no longer used
 (dead code, which could be removed).
 
