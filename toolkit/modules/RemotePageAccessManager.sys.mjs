@@ -212,6 +212,7 @@ export let RemotePageAccessManager = {
         "FetchEntryPoint",
         "FetchVPNSubStatus",
         "FetchShowVPNCard",
+        "FetchPrivacyMetrics",
       ],
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
