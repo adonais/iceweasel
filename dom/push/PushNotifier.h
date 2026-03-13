@@ -15,9 +15,6 @@
 
 namespace mozilla::dom {
 
-class ContentChild;
-class ContentParent;
-
 /**
  * `PushDispatcher` is a base class used to forward observer notifications and
  * service worker events to the correct process.
@@ -34,20 +31,6 @@ class MOZ_STACK_CLASS PushDispatcher {
 
   // A convenience method that calls `NotifyObservers` and `NotifyWorkers`.
   nsresult NotifyObserversAndWorkers();
-
-  // Sends an IPDL message to fire an observer notification in the parent
-  // process. This method is only called from the content process, and only
-  // if e10s is enabled.
-  virtual bool SendToParent(ContentChild* aParentActor) = 0;
-
-  // Sends an IPDL message to fire an observer notification and a service worker
-  // event in the content process. This method is only called from the parent,
-  // and only if e10s is enabled.
-  virtual bool SendToChild(ContentParent* aContentActor) = 0;
-
-  // An optional method, called from the parent if e10s is enabled and there
-  // are no active content processes. The default behavior is a no-op.
-  virtual nsresult HandleNoChildProcesses();
 
   nsIPrincipal* GetPrincipal() { return mPrincipal; }
 
@@ -136,8 +119,6 @@ class PushMessageDispatcher final : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 
  private:
   const nsString mMessageId;
@@ -153,8 +134,6 @@ class PushSubscriptionChangeDispatcher final : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 
  private:
   nsCOMPtr<nsIPushSubscription> mOldSubscription;
@@ -168,8 +147,6 @@ class PushSubscriptionModifiedDispatcher : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 };
 
 class PushErrorDispatcher final : public PushDispatcher {
@@ -180,12 +157,8 @@ class PushErrorDispatcher final : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 
  private:
-  nsresult HandleNoChildProcesses() override;
-
   const nsString mMessage;
   uint32_t mFlags;
 };
