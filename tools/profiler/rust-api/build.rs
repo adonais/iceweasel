@@ -90,6 +90,8 @@ fn generate_bindings() {
         // successfully. Otherwise, it fails to build because MarkerSchema has
         // some std::strings as its fields.
         .opaque_type("std::string")
+        .opaque_type("std::basic_string")
+        .opaque_type("std::pair")
         .opaque_type("std::unique_ptr")
         .opaque_type("mozilla::Maybe")
         .opaque_type("mozilla::MallocAllocPolicy")

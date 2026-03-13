@@ -296,6 +296,35 @@ void empty_va(va_list* va, ...) {
   va_start(*va, va);
   va_end(*va);
 }
+
+struct LogMarker : public BaseMarkerType<LogMarker> {
+  static constexpr const char* Name = "Log";
+  static constexpr const char* TableLabel =
+      "[{marker.data.level}] {marker.name}: {marker.data.name}";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"level", MS::InputType::Uint32, "Level", MS::Format::Integer},
+      {"name", MS::InputType::CString, "Message", MS::Format::String},
+  };
+  static MarkerSchema MarkerTypeDisplay() {
+    MS schema = BaseMarkerType<LogMarker>::MarkerTypeDisplay();
+    schema.AddEnumMapping("level", {{0, "Disabled", "grey"},
+                                    {1, "Error", "red"},
+                                    {2, "Warning", "orange"},
+                                    {3, "Info", "green"},
+                                    {4, "Debug", "blue"},
+                                    {5, "Verbose", "grey"}});
+    return schema;
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   uint32_t aLevel,
+                                   const ProfilerString8View& aText) {
+    aWriter.IntProperty("level", aLevel);
+    aWriter.StringProperty("name", aText);
+  }
+};
 }  // namespace
 
 class LogModuleManager {
@@ -656,38 +685,13 @@ class LogModuleManager {
                    size_t aLogMessageSize) {
     long pid = static_cast<long>(base::GetCurrentProcId());
     if (profiler_thread_is_being_profiled_for_markers()) {
-      struct LogMarker {
-        static constexpr Span<const char> MarkerTypeName() {
-          return MakeStringSpan("Log");
-        }
-        static void StreamJSONMarkerData(
-            baseprofiler::SpliceableJSONWriter& aWriter,
-            const ProfilerString8View& aModule,
-            const ProfilerString8View& aText) {
-          aWriter.StringProperty("module", aModule);
-          aWriter.StringProperty("name", aText);
-        }
-        static MarkerSchema MarkerTypeDisplay() {
-          using MS = MarkerSchema;
-          MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          schema.SetTableLabel("({marker.data.module}) {marker.data.name}");
-          schema.AddKeyLabelFormat("module", "Module", MS::Format::String);
-          schema.AddKeyLabelFormat("name", "Name", MS::Format::String);
-          return schema;
-        }
-      };
-
-      nsAutoCString levelAndName;
-      levelAndName.AppendASCII(ToLogStr(aLevel));
-      levelAndName.AppendLiteral("/");
-      levelAndName.AppendASCII(aName);
       profiler_add_marker(
-          "LogMessages", geckoprofiler::category::OTHER,
+          ProfilerString8View::WrapNullTerminatedString(aName),
+          geckoprofiler::category::LOGS,
           {aStart ? MarkerTiming::IntervalUntilNowFrom(*aStart)
                   : MarkerTiming::InstantNow(),
            MarkerStack::MaybeCapture(mCaptureProfilerStack)},
-          LogMarker{},
-          ProfilerString8View::WrapNullTerminatedString(levelAndName.get()),
+          LogMarker{}, static_cast<uint32_t>(aLevel),
           ProfilerString8View::WrapNullTerminatedString(aLogMessage));
     }
 
