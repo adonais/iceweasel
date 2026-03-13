@@ -18,6 +18,9 @@ ResourceStream::~ResourceStream() { MOZ_ASSERT(mPinCount == 0); }
 
 nsresult ResourceStream::ReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
                                 size_t* aBytesRead) {
+  if (aOffset < 0) {
+    return NS_ERROR_DOM_MEDIA_RANGE_ERR;
+  }
   uint32_t sum = 0;
   uint32_t bytesRead = 0;
   do {

@@ -7,6 +7,7 @@
 #include "MP4Metadata.h"
 #include "MediaData.h"
 #include "MoofParser.h"
+#include "SampleIterator.h"
 #include "TelemetryFixture.h"
 #include "TelemetryTestHelpers.h"
 #include "gtest/gtest.h"
@@ -1121,4 +1122,72 @@ TEST_F(MP4MetadataTelemetryFixture, Telemetry) {
                       uint32_t>(0, 4, 2, 0, 0, 0),
       "test_case_1714125-2-sample-description-entires-with-identical-crypto."
       "mp4");
+}
+
+TEST(MP4Metadata, BadCo64Offset)
+{
+  nsTArray<uint8_t> buffer = ReadTestFile("test_case_bad_co64_offset.mp4");
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  MP4Metadata metadata(stream);
+  EXPECT_EQ(metadata.Parse(), NS_OK);
+  EXPECT_EQ(1u, metadata.GetNumberTracks(TrackInfo::kVideoTrack).Ref());
+
+  MP4Metadata::ResultAndTrackInfo track =
+      metadata.GetTrackInfo(TrackInfo::kVideoTrack, 0);
+  ASSERT_TRUE(!!track.Ref());
+  const VideoInfo* videoInfo = track.Ref()->GetAsVideoInfo();
+  ASSERT_TRUE(!!videoInfo);
+
+  MP4Metadata::ResultAndIndice indices =
+      metadata.GetTrackIndice(videoInfo->mTrackId);
+  ASSERT_TRUE(!!indices.Ref());
+  ASSERT_EQ(1u, indices.Ref()->Length());
+
+  MP4SampleIndex::Indice data;
+  EXPECT_TRUE(indices.Ref()->GetIndice(0, data));
+  EXPECT_GT(data.start_offset, uint64_t(INT64_MAX));
+
+  RefPtr<MP4SampleIndex> sampleIndex = new MP4SampleIndex(
+      *indices.Ref(), stream, videoInfo->mTrackId, false, 1000);
+  SampleIterator iter(sampleIndex);
+  EXPECT_FALSE(iter.HasNext());
+}
+
+TEST(MoofParser, BadFragmentedTrunOffset)
+{
+  nsTArray<uint8_t> buffer =
+      ReadTestFile("test_case_bad_fragmented_trun_offset.mp4");
+
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  const uint32_t videoTrackId = 0;
+  MoofParser parser(stream, AsVariant(videoTrackId), false);
+  const MediaByteRangeSet byteRanges(
+      MediaByteRange(0, int64_t(buffer.Length())));
+  EXPECT_FALSE(parser.RebuildFragmentedIndex(byteRanges));
+}
+
+TEST(MoofParser, BadFragmentedSaioOffset)
+{
+  nsTArray<uint8_t> buffer =
+      ReadTestFile("test_case_bad_fragmented_saio_offset.mp4");
+
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  const uint32_t videoTrackId = 1;
+  MoofParser parser(stream, AsVariant(videoTrackId), false);
+  const MediaByteRangeSet byteRanges(
+      MediaByteRange(0, int64_t(buffer.Length())));
+  ASSERT_TRUE(parser.RebuildFragmentedIndex(byteRanges));
+  ASSERT_FALSE(parser.Moofs().IsEmpty());
+  EXPECT_FALSE(parser.Moofs()[0].SencIsValid());
+  ASSERT_FALSE(parser.Moofs()[0].mIndex.IsEmpty());
+  EXPECT_TRUE(parser.Moofs()[0].mIndex[0].mCencRange.IsEmpty());
 }

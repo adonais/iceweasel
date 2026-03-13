@@ -51,6 +51,9 @@ TEST_HARNESS_FILES.gtest += [
     "test_case_1519617-video-has-track_id-0.mp4",
     "test_case_1714125-2-sample-description-entires-with-identical-crypto.mp4",
     "test_case_2004835-overflow-tfdt.mp4",
+    "test_case_bad_co64_offset.mp4",
+    "test_case_bad_fragmented_saio_offset.mp4",
+    "test_case_bad_fragmented_trun_offset.mp4",
 ]
 
 UNIFIED_SOURCES += [

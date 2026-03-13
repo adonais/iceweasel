@@ -34,6 +34,22 @@ using TimeUnit = media::TimeUnit;
 
 const uint32_t kKeyIdSize = 16;
 
+namespace {
+
+Result<MediaByteRange, nsresult> MakeMediaByteRangeChecked(
+    const CheckedUint64& aStart, uint64_t aLength) {
+  CheckedUint64 end = aStart + aLength;
+  if (!aStart.isValid() || !end.isValid() ||
+      aStart.value() > uint64_t(INT64_MAX) ||
+      end.value() > uint64_t(INT64_MAX)) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return MediaByteRange(static_cast<int64_t>(aStart.value()),
+                        static_cast<int64_t>(end.value()));
+}
+
+}  // namespace
+
 bool MoofParser::RebuildFragmentedIndex(const MediaByteRangeSet& aByteRanges) {
   BoxContext context(mSource, aByteRanges);
   return RebuildFragmentedIndex(context);
@@ -600,11 +616,15 @@ bool Moof::GetAuxInfo(AtomType aType,
       LOG_ERROR(Moof, "OOM");
       return false;
     }
-    uint64_t offset = mTfhd.mBaseDataOffset + saio->mOffsets[0];
+    CheckedUint64 offset =
+        CheckedUint64(mTfhd.mBaseDataOffset) + CheckedUint64(saio->mOffsets[0]);
     for (size_t i = 0; i < saiz->mSampleInfoSize.Length(); i++) {
-      if (!aByteRanges->AppendElement(
-              MediaByteRange(offset, offset + saiz->mSampleInfoSize[i]),
-              mozilla::fallible)) {
+      auto range = MakeMediaByteRangeChecked(offset, saiz->mSampleInfoSize[i]);
+      if (range.isErr()) {
+        LOG_WARN(Moof, "Invalid aux info offset");
+        return false;
+      }
+      if (!aByteRanges->AppendElement(range.unwrap(), mozilla::fallible)) {
         LOG_ERROR(Moof, "OOM");
         return false;
       }
@@ -623,10 +643,14 @@ bool Moof::GetAuxInfo(AtomType aType,
       return false;
     }
     for (size_t i = 0; i < saio->mOffsets.Length(); i++) {
-      uint64_t offset = mRange.mStart + saio->mOffsets[i];
-      if (!aByteRanges->AppendElement(
-              MediaByteRange(offset, offset + saiz->mSampleInfoSize[i]),
-              mozilla::fallible)) {
+      CheckedUint64 offset =
+          CheckedUint64(mRange.mStart) + CheckedUint64(saio->mOffsets[i]);
+      auto range = MakeMediaByteRangeChecked(offset, saiz->mSampleInfoSize[i]);
+      if (range.isErr()) {
+        LOG_WARN(Moof, "Invalid aux info offset");
+        return false;
+      }
+      if (!aByteRanges->AppendElement(range.unwrap(), mozilla::fallible)) {
         LOG_ERROR(Moof, "OOM");
         return false;
       }
@@ -940,7 +964,7 @@ Result<Ok, nsresult> Moof::ParseTrun(const Box& aBox, const Mvhd& aMvhd,
     return Ok();
   }
 
-  uint64_t offset = mTfhd.mBaseDataOffset;
+  CheckedUint64 offset = mTfhd.mBaseDataOffset;
   if (flags & 0x01) {
     offset += MOZ_TRY(reader->ReadU32());
   }
@@ -982,7 +1006,12 @@ Result<Ok, nsresult> Moof::ParseTrun(const Box& aBox, const Mvhd& aMvhd,
 
     if (sampleSize) {
       Sample sample;
-      sample.mByteRange = MediaByteRange(offset, offset + sampleSize);
+      auto byteRange = MakeMediaByteRangeChecked(offset, sampleSize);
+      if (byteRange.isErr()) {
+        LOG_WARN(Moof, "Invalid sample offset");
+        return Err(NS_ERROR_FAILURE);
+      }
+      sample.mByteRange = byteRange.unwrap();
       offset += sampleSize;
 
       TimeUnit decodeOffset =
