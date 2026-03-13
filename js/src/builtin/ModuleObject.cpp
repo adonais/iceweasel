@@ -242,9 +242,14 @@ static bool GetModuleType(JSContext* cx,
         moduleType = JS::ModuleType::JSON;
       } else if (js::EqualStrings(typeStr, cx->names().css)) {
         moduleType = JS::ModuleType::CSS;
-      } else if (js::EqualStrings(typeStr, cx->names().bytes)) {
+      }
+#ifdef NIGHTLY_BUILD
+      else if (JS::Prefs::experimental_import_bytes() &&
+               js::EqualStrings(typeStr, cx->names().bytes)) {
         moduleType = JS::ModuleType::Bytes;
-      } else {
+      }
+#endif
+      else {
         moduleType = JS::ModuleType::Unknown;
       }
 
