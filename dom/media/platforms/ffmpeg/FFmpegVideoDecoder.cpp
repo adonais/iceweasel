@@ -1076,10 +1076,10 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWCodecContext(ContextType aType) {
 
   if (mCodecID == AV_CODEC_ID_H264) {
     mCodecContext->extra_hw_frames =
-        H264::ComputeMaxRefFrames(mInfo.mExtraData);
+        AssertedCast<int>(H264::ComputeMaxRefFrames(mInfo.mExtraData));
   } else if (mCodecID == AV_CODEC_ID_HEVC) {
     mCodecContext->extra_hw_frames =
-        H265::ComputeMaxRefFrames(mInfo.mExtraData);
+        AssertedCast<int>(H265::ComputeMaxRefFrames(mInfo.mExtraData));
   } else {
     mCodecContext->extra_hw_frames = EXTRA_HW_FRAMES;
   }
@@ -1117,10 +1117,10 @@ bool FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::IsDecodingSlow() const {
 void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::UpdateDecodeTimes(
     int64_t aDuration) {
   TimeStamp now = TimeStamp::Now();
-  float decodeTime = (now - mDecodeStart).ToMilliseconds();
+  float decodeTime = AssertedCast<float>((now - mDecodeStart).ToMilliseconds());
   mDecodeStart = now;
 
-  const float frameDuration = aDuration / 1000.0f;
+  const float frameDuration = AssertedCast<float>(aDuration) / 1000.0f;
   if (frameDuration <= 0.0f) {
     FFMPEGV_LOG("Incorrect frame duration, skipping decode stats.");
     return;
@@ -1128,11 +1128,13 @@ void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::UpdateDecodeTimes(
 
   mDecodedFrames++;
   mAverageFrameDuration =
-      (mAverageFrameDuration * (mDecodedFrames - 1) + frameDuration) /
-      mDecodedFrames;
+      (mAverageFrameDuration * AssertedCast<float>(mDecodedFrames - 1) +
+       frameDuration) /
+      AssertedCast<float>(mDecodedFrames);
   mAverageFrameDecodeTime =
-      (mAverageFrameDecodeTime * (mDecodedFrames - 1) + decodeTime) /
-      mDecodedFrames;
+      (mAverageFrameDecodeTime * AssertedCast<float>(mDecodedFrames - 1) +
+       decodeTime) /
+      AssertedCast<float>(mDecodedFrames);
 
   FFMPEGV_LOG(
       "Frame decode takes %.2f ms average decode time %.2f ms frame duration "
@@ -1158,8 +1160,9 @@ void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::UpdateDecodeTimes(
     // Reset mDecodedFramesLate in case of correct decode during
     // mDelayedFrameReset period.
     float correctPlaybackTime =
-        (mDecodedFrames - mLastDelayedFrameNum) * mAverageFrameDuration;
-    if (correctPlaybackTime > mDelayedFrameReset) {
+        AssertedCast<float>(mDecodedFrames - mLastDelayedFrameNum) *
+        mAverageFrameDuration;
+    if (correctPlaybackTime > AssertedCast<float>(mDelayedFrameReset)) {
       FFMPEGV_LOG("  mLastFramePts reset due to seamless decode period");
       mDecodedFramesLate = 0;
       mLastDelayedFrameNum = 0;
