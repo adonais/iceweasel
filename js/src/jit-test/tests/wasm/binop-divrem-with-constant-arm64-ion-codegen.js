@@ -302,6 +302,18 @@ const i64_div_s = [
                sbfx    x0, x0, #0, #64
                sub     x0, x0, x1, asr #63`,
   },
+  {
+    divisor: 0x3_0000_0000,
+    expected: `mov     x2, x0
+               mov     x1, x2
+               mov     x16, #0xaaab
+               movk    x16, #0xaaaa, lsl #16
+               movk    x16, #0xaaaa, lsl #32
+               movk    x16, #0x2aaa, lsl #48
+               smulh   x0, x1, x16
+               asr     x0, x0, #31
+               sub     x0, x0, x1, asr #63`,
+  },
 ];
 
 for (let {divisor, expected} of i64_div_s) {
@@ -404,6 +416,17 @@ const i64_div_u = [
                movk    x16, #0xe38e, lsl #48
                umulh   x0, x1, x16
                lsr     x0, x0, #3`,
+  },
+  {
+    divisor: 0x3_0000_0000,
+    expected: `mov     x2, x0
+               mov     x1, x2
+               mov     x16, #0xaaab
+               movk    x16, #0xaaaa, lsl #16
+               movk    x16, #0xaaaa, lsl #32
+               movk    x16, #0xaaaa, lsl #48
+               umulh   x0, x1, x16
+               lsr     x0, x0, #33`,
   },
 
   // Special case: Zero shift amount.
@@ -685,9 +708,38 @@ const i64_rem_s = [
                and     x0, x0, #0x7fffffffffffffff
                neg     x0, x0`,
   },
+
+  // Other divisors.
+  {
+    divisor: 0x3_0000_0000,
+    expected: `mov     x2, x0
+               mov     x1, x2
+               mov     x16, #0xaaab
+               movk    x16, #0xaaaa, lsl #16
+               movk    x16, #0xaaaa, lsl #32
+               movk    x16, #0x2aaa, lsl #48
+               smulh   x0, x1, x16
+               asr     x0, x0, #31
+               sub     x0, x0, x1, asr #63
+               mov     x16, #0x300000000
+               msub    x0, x0, x16, x1`,
+    negative: `mov     x2, x0
+               mov     x1, x2
+               mov     x16, #0xaaab
+               movk    x16, #0xaaaa, lsl #16
+               movk    x16, #0xaaaa, lsl #32
+               movk    x16, #0x2aaa, lsl #48
+               smulh   x0, x1, x16
+               asr     x0, x0, #31
+               sub     x0, x0, x1, asr #63
+               neg     x0, x0
+               mov     x16, #0xfffd00000000
+               movk    x16, #0xffff, lsl #48
+               msub    x0, x0, x16, x1`,
+  },
 ];
 
-for (let {divisor, expected} of i64_rem_s) {
+for (let {divisor, expected, negative = expected} of i64_rem_s) {
   let rems64 =
     `(module
        (func (export "f") (param i64) (result i64)
@@ -700,7 +752,7 @@ for (let {divisor, expected} of i64_rem_s) {
       `(module
          (func (export "f") (param i64) (result i64)
            (i64.rem_s (local.get 0) (i64.const -${divisor}))))`
-    codegenTestARM64_adhoc(rems64, 'f', expected);
+    codegenTestARM64_adhoc(rems64, 'f', negative);
   }
 }
 
@@ -762,6 +814,21 @@ const i64_rem_u = [
     expected: `mov     x2, x0
                mov     x1, x2
                and     x0, x1, #0x7fffffffffffffff`,
+  },
+
+  // Other divisors.
+  {
+    divisor: 0x3_0000_0000,
+    expected: `mov     x2, x0
+               mov     x1, x2
+               mov     x16, #0xaaab
+               movk    x16, #0xaaaa, lsl #16
+               movk    x16, #0xaaaa, lsl #32
+               movk    x16, #0xaaaa, lsl #48
+               umulh   x0, x1, x16
+               lsr     x0, x0, #33
+               mov     x16, #0x300000000
+               msub    x0, x0, x16, x1`,
   },
 ];
 

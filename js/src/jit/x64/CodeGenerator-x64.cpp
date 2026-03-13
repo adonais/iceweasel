@@ -486,7 +486,7 @@ static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
 }
 
 void CodeGenerator::visitDivConstantI64(LDivConstantI64* ins) {
-  int32_t d = ins->denominator();
+  int64_t d = ins->denominator();
 
   // This emits the division answer into rdx.
   MOZ_ASSERT(ToRegister(ins->output()) == rdx);
