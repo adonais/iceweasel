@@ -9,6 +9,7 @@ use core::sync::atomic::AtomicBool;
 use icu_collator::options::CaseLevel;
 use icu_collator::options::CollatorOptions;
 use icu_collator::options::Strength;
+use icu_collator::preferences::CollationNumericOrdering;
 use icu_collator::CollatorBorrowed;
 use icu_collator::CollatorPreferences;
 use icu_locale_core::locale;
@@ -39,6 +40,12 @@ static mut ACCENT: Option<CollatorBorrowed> = None;
 /// ECMA-402 "variant", i.e. tertiary
 static mut VARIANT: Option<CollatorBorrowed> = None;
 
+/// ECMA-402 "base", i.e. primary, with numeric mode enabled.
+static mut BASE_NUMERIC: Option<CollatorBorrowed> = None;
+
+/// ECMA-402 "variant", i.e. tertiary, with numeric mode enabled.
+static mut VARIANT_NUMERIC: Option<CollatorBorrowed> = None;
+
 /// Initialization
 ///
 /// Must be called exactly once before any of the other public
@@ -67,7 +74,7 @@ pub unsafe extern "C" fn mozilla_app_collator_glue_initialize(locale: *const nsA
             "Double initialization of the app collator"
         );
     }
-    let prefs: CollatorPreferences = if let Ok(locale) = Locale::try_from_utf8(&*locale) {
+    let mut prefs: CollatorPreferences = if let Ok(locale) = Locale::try_from_utf8(&*locale) {
         locale.into()
     } else {
         debug_assert!(
@@ -88,6 +95,11 @@ pub unsafe extern "C" fn mozilla_app_collator_glue_initialize(locale: *const nsA
     // SAFETY: See function doc about assigment to `static mut`.
     VARIANT = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
 
+    prefs.numeric_ordering = Some(CollationNumericOrdering::True);
+    // SAFETY: See function doc about assigment to `static mut`.
+    VARIANT_NUMERIC = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
+    prefs.numeric_ordering = None;
+
     options.strength = Some(Strength::Secondary);
     // SAFETY: See function doc about assigment to `static mut`.
     ACCENT = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
@@ -95,6 +107,11 @@ pub unsafe extern "C" fn mozilla_app_collator_glue_initialize(locale: *const nsA
     options.strength = Some(Strength::Primary);
     // SAFETY: See function doc about assigment to `static mut`.
     BASE = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
+
+    prefs.numeric_ordering = Some(CollationNumericOrdering::True);
+    // SAFETY: See function doc about assigment to `static mut`.
+    BASE_NUMERIC = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
+    prefs.numeric_ordering = None;
 
     options.case_level = Some(CaseLevel::On);
     // SAFETY: See function doc about assigment to `static mut`.
@@ -253,12 +270,51 @@ unsafe extern "C" fn callback_compare_utf16(
     (*(collator as *const CollatorBorrowed)).compare_utf16(left, right) as c_int
 }
 
+/// Compare known-well-formed UTF-8 on the variant sensitivity /
+/// tertiary level that gives a consistent order to strings that have
+/// user-visible differences (if base characters are equal,
+/// accents and case break ties). The numeric mode is enabled
+/// so that "10" compares greater than "2".
+///
+/// This corresponds to the defaults of the `Intl.Collator` API
+/// plus the numeric mode enabled.
+///
+/// # Safety
+///
+/// Reads a `static mut` item, which is safe on the assumption that
+/// `mozilla_app_collator_glue_initialize` has been called previously and
+/// will not be called subsequently.
+///
+/// Note that we're relying on mozilla::Span to provide a non-null
+/// pointer for empty spans, which works for now, but probably should
+/// be changed on the mozilla::Span side eventually.
+#[allow(static_mut_refs)]
+pub fn compare(left: &str, right: &str) -> core::cmp::Ordering {
+    // SAFETY: See the comment on the function.
+    unsafe {
+        // Yes, this outer cfg is really needed for this to compile without debug assertions!
+        #[cfg(debug_assertions)]
+        {
+            debug_assert!(
+                INITIALIZED.load(core::sync::atomic::Ordering::Relaxed),
+                "App collator used before initialization"
+            );
+        }
+        VARIANT_NUMERIC
+            .as_ref()
+            .unwrap_unchecked()
+            .compare(left, right)
+    }
+}
+
 /// Compare UTF-8 on the variant sensitivity / tertiary level
 /// that gives a consistent order to strings that have
 /// user-visible differences (if base characters are equal,
-/// accents and case break ties).
+/// accents and case break ties). The numeric mode is enabled
+/// so that "10" compares greater than "2".
 ///
-/// This corresponds to the defaults of the `Intl.Collator` API.
+/// This corresponds to the defaults of the `Intl.Collator` API
+/// plus the numeric mode enabled.
 ///
 /// UTF-8 errors are handled according to the Encoding Standard.
 ///
@@ -287,7 +343,7 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_utf8(
             "App collator used before initialization"
         );
     }
-    VARIANT.as_ref().unwrap_unchecked().compare_utf8(
+    VARIANT_NUMERIC.as_ref().unwrap_unchecked().compare_utf8(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
@@ -296,9 +352,11 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_utf8(
 /// Compare UTF-16 on the variant sensitivity / tertiary level
 /// that gives a consistent order to strings that have
 /// user-visible differences (if base characters are equal,
-/// accents and case break ties).
+/// accents and case break ties). The numeric mode is enabled
+/// so that "10" compares greater than "2".
 ///
-/// This corresponds to the defaults of the `Intl.Collator` API.
+/// This corresponds to the defaults of the `Intl.Collator` API
+/// plus the numeric mode enabled.
 ///
 /// Unpaired surrogates are treated as the REPLACEMENT CHARACTER.
 ///
@@ -327,13 +385,14 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_utf16(
             "App collator used before initialization"
         );
     }
-    VARIANT.as_ref().unwrap_unchecked().compare_utf16(
+    VARIANT_NUMERIC.as_ref().unwrap_unchecked().compare_utf16(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
 }
 
 /// Compares UTF-8 strings on the base sensitivity / primary strength, which ignores accents and case.
+/// The numeric mode is enabled so that "10" compares greater than "2".
 ///
 /// Provided only for compat with existing code; you should probably use the variant / tertiary
 /// function instead.
@@ -365,13 +424,14 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_base_utf8(
             "App collator used before initialization"
         );
     }
-    BASE.as_ref().unwrap_unchecked().compare_utf8(
+    BASE_NUMERIC.as_ref().unwrap_unchecked().compare_utf8(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
 }
 
 /// Compares UTF-16 strings on the base sensitivity / primary strength, which ignores accents and case.
+/// The numeric mode is enabled so that "10" compares greater than "2".
 ///
 /// Provided only for compat with existing code; you should probably use the variant / tertiary
 /// function instead.
@@ -403,7 +463,7 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_base_utf16(
             "App collator used before initialization"
         );
     }
-    BASE.as_ref().unwrap_unchecked().compare_utf16(
+    BASE_NUMERIC.as_ref().unwrap_unchecked().compare_utf16(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
