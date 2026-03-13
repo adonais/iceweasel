@@ -74,8 +74,11 @@ def original_path():
 @imports("os")
 @imports("traceback")
 @imports(_from="mozbuild.toolchains", _import="toolchain_task_definitions")
+@imports(_from="mozbuild.util", _import="TASKCLUSTER_ROOT_URL")
 @imports(_from="__builtin__", _import="Exception")
 def bootstrap_toolchain_tasks(host):
+    if "TASKCLUSTER_ROOT_URL" not in os.environ:
+        os.environ["TASKCLUSTER_ROOT_URL"] = TASKCLUSTER_ROOT_URL
     prefix = {
         ("x86_64", "GNU", "Linux"): "linux64",
         ("aarch64", "GNU", "Linux"): "linux64-aarch64",

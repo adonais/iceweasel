@@ -2,22 +2,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import functools
 import json
 import os
 import subprocess
 import tempfile
 
+from mach.func_cache import mach_func_cache
 
-@functools.cache
+
+def _extract_resources(tasks_data):
+    resources = set()
+    for t in tasks_data.values():
+        resources.update(t.get("attributes", {}).get("toolchain-resources", []))
+    return sorted(resources)
+
+
+@mach_func_cache(
+    inputs=["taskcluster"],
+    dynamic_inputs=_extract_resources,
+    env_vars=["TASKCLUSTER_ROOT_URL"],
+)
 def toolchain_task_definitions():
     root_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..")
     mach = os.path.join(root_dir, "mach")
-
-    from mozbuild.util import TASKCLUSTER_ROOT_URL
-
-    if "TASKCLUSTER_ROOT_URL" not in os.environ:
-        os.environ["TASKCLUSTER_ROOT_URL"] = TASKCLUSTER_ROOT_URL
 
     env = os.environ.copy()
     env.pop("MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE", None)
