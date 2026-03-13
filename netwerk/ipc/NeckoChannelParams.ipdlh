@@ -148,6 +148,7 @@ struct LoadInfoArgs
   bool                        forceInheritPrincipalDropped;
   uint64_t                    innerWindowID;
   uint64_t                    browsingContextID;
+  uint64_t                    associatedBrowsingContextID;
   uint64_t                    frameBrowsingContextID;
   bool                        initialSecurityCheckDone;
   bool                        isInThirdPartyContext;

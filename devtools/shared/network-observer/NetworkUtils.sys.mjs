@@ -169,8 +169,8 @@ function getChannelBrowsingContextID(channel) {
     return channel.loadInfo.browsingContextID;
   }
 
-  if (channel.loadInfo.workerAssociatedBrowsingContextID) {
-    return channel.loadInfo.workerAssociatedBrowsingContextID;
+  if (channel.loadInfo.associatedBrowsingContextID) {
+    return channel.loadInfo.associatedBrowsingContextID;
   }
 
   // At least WebSocket channel aren't having a browsingContextID set on their loadInfo

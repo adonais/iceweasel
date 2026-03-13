@@ -10,12 +10,12 @@
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
+#include "nsContentUtils.h"
 #include "nsIInterceptionInfo.h"
 #include "nsILoadInfo.h"
 #include "nsIPrincipal.h"
-#include "nsIWeakReferenceUtils.h"  // for nsWeakPtr
 #include "nsIURI.h"
-#include "nsContentUtils.h"
+#include "nsIWeakReferenceUtils.h"  // for nsWeakPtr
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -114,6 +114,10 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   GETTER(uint64_t, InnerWindowID, innerWindowID, 0)                            \
                                                                                \
   GETTER(uint64_t, BrowsingContextID, browsingContextID, 0)                    \
+                                                                               \
+  GETTER(uint64_t, AssociatedBrowsingContextID, associatedBrowsingContextID,   \
+         0)                                                                    \
+  SETTER(uint64_t, AssociatedBrowsingContextID)                                \
                                                                                \
   GETTER(uint64_t, FrameBrowsingContextID, frameBrowsingContextID, 0)          \
                                                                                \
@@ -515,7 +519,6 @@ class LoadInfo final : public nsILoadInfo {
   LOADINFO_FOR_EACH_FIELD(DEFINE_FIELD, LOADINFO_DUMMY_SETTER)
 #undef DEFINE_FIELD
 
-  uint64_t mWorkerAssociatedBrowsingContextID = 0;
   bool mInitialSecurityCheckDone = false;
   // NB: TYPE_DOCUMENT implies !third-party.
   bool mIsThirdPartyContext = false;

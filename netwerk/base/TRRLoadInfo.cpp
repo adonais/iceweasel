@@ -241,16 +241,6 @@ LOADINFO_FOR_EACH_FIELD(DEFINE_GETTER, DEFINE_SETTER);
 #undef DEFINE_SETTER
 
 NS_IMETHODIMP
-TRRLoadInfo::GetWorkerAssociatedBrowsingContextID(uint64_t* aResult) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-TRRLoadInfo::SetWorkerAssociatedBrowsingContextID(uint64_t aResult) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 TRRLoadInfo::GetTargetBrowsingContextID(uint64_t* aResult) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -261,8 +251,7 @@ TRRLoadInfo::GetBrowsingContext(dom::BrowsingContext** aResult) {
 }
 
 NS_IMETHODIMP
-TRRLoadInfo::GetWorkerAssociatedBrowsingContext(
-    dom::BrowsingContext** aResult) {
+TRRLoadInfo::GetAssociatedBrowsingContext(dom::BrowsingContext** aResult) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

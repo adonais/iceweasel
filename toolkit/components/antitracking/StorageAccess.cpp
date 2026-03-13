@@ -825,7 +825,7 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
   // get the target browsing context from the worker associated browsing
   // context instead.
   if (!targetBC) {
-    rv = loadInfo->GetWorkerAssociatedBrowsingContext(getter_AddRefs(targetBC));
+    rv = loadInfo->GetAssociatedBrowsingContext(getter_AddRefs(targetBC));
   }
 
   // We could have no target BC for the channel if it's for loading the script

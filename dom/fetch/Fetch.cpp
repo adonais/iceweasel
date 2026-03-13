@@ -602,11 +602,18 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 
     RefPtr<MainThreadFetchResolver> resolver = new MainThreadFetchResolver(
         p, observer, signalImpl, request->MozErrors());
+    uint64_t associatedBc = 0;
+    if (internalRequest) {
+      associatedBc = internalRequest->AssociatedBrowsingContextID();
+    }
     RefPtr<FetchDriver> fetch =
         new FetchDriver(std::move(internalRequest), principal, loadGroup,
                         aGlobal->SerialEventTarget(), cookieJarSettings,
                         nullptr,  // PerformanceStorage
                         trackingFlags);
+    if (associatedBc > 0) {
+      fetch->SetAssociatedBrowsingContextID(associatedBc);
+    }
     fetch->SetDocument(doc);
     resolver->SetLoadGroup(loadGroup);
     aRv = fetch->Fetch(signalImpl, resolver);

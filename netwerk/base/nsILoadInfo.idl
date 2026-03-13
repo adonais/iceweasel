@@ -967,14 +967,20 @@ interface nsILoadInfo : nsISupports
   /**
    * The BrowsingContext which the worker is associated.
    *
+   * When used with workers:
    * Note that this could be 0 if the load is not triggered in a WorkerScope.
    * This value is only set and used in the parent process for some sitautions
    * the channel is created in the parent process for Workers. Such as fetch().
    * In content process, it is always 0.
    * This value would not be propagated through IPC.
+   *
+   * When used for Reporting API:
+   * Fetch is used send reports to endpoints. The associated bc ID is
+   * used so that a web developer can track the sending of reports in devtools,
+   * by ultimately setting the browsing context ID on a LoadInfo object.
    */
-  [infallible] attribute unsigned long long workerAssociatedBrowsingContextID;
-  [infallible] readonly attribute BrowsingContext workerAssociatedBrowsingContext;
+  [infallible] attribute unsigned long long associatedBrowsingContextID;
+  [infallible] readonly attribute BrowsingContext associatedBrowsingContext;
 
   /**
    * Only when the element being loaded is <frame src="foo.html">

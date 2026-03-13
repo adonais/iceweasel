@@ -992,7 +992,7 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
   RefPtr<BrowsingContext> bc;
   loadInfo->GetBrowsingContext(getter_AddRefs(bc));
   if (!bc) {
-    bc = loadInfo->GetWorkerAssociatedBrowsingContext();
+    bc = loadInfo->GetAssociatedBrowsingContext();
   }
 
   nsCOMPtr<nsIURI> uri;

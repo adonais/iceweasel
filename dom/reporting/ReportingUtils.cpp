@@ -11,6 +11,7 @@
 #include "mozilla/dom/ReportBody.h"
 #include "mozilla/dom/ReportDeliver.h"
 #include "mozilla/dom/SecurityPolicyViolationEvent.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "nsAtom.h"
 #include "nsIGlobalObject.h"
 #include "nsIURIMutator.h"
@@ -59,7 +60,20 @@ void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
     return;
   }
 
-  ReportDeliver::AttemptDelivery(aGlobal, type, aGroupName, aURL, aBody);
+  uint64_t associatedBrowsingContextId = 0;
+
+  // Try to get browsing context from window (for main thread)
+  if (nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow()) {
+    if (BrowsingContext* bc = window->GetBrowsingContext()) {
+      associatedBrowsingContextId = bc->Id();
+    }
+  } else if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
+    // For workers, get the associated browsing context
+    associatedBrowsingContextId = workerPrivate->AssociatedBrowsingContextID();
+  }
+
+  ReportDeliver::AttemptDelivery(aGlobal, type, aGroupName, aURL, aBody,
+                                 associatedBrowsingContextId);
 }
 
 /* static */

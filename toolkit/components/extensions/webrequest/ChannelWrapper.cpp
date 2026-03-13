@@ -458,7 +458,7 @@ already_AddRefed<nsILoadContext> ChannelWrapper::GetLoadContext() const {
     // NS_QueryNotificationCallbacks to get LoadContext of the channel.
     RefPtr<BrowsingContext> bc;
     nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
-    loadInfo->GetWorkerAssociatedBrowsingContext(getter_AddRefs(bc));
+    loadInfo->GetAssociatedBrowsingContext(getter_AddRefs(bc));
     if (bc) {
       ctxt = bc.forget();
       return ctxt.forget();
@@ -685,7 +685,7 @@ bool ChannelWrapper::Matches(
 }
 
 int64_t NormalizeFrameID(nsILoadInfo* aLoadInfo, uint64_t bcID) {
-  RefPtr<BrowsingContext> bc = aLoadInfo->GetWorkerAssociatedBrowsingContext();
+  RefPtr<BrowsingContext> bc = aLoadInfo->GetAssociatedBrowsingContext();
   if (!bc) {
     bc = aLoadInfo->GetBrowsingContext();
   }
@@ -699,7 +699,7 @@ int64_t NormalizeFrameID(nsILoadInfo* aLoadInfo, uint64_t bcID) {
 uint64_t ChannelWrapper::BrowsingContextId(nsILoadInfo* aLoadInfo) const {
   auto frameID = aLoadInfo->GetFrameBrowsingContextID();
   if (!frameID) {
-    frameID = aLoadInfo->GetWorkerAssociatedBrowsingContextID();
+    frameID = aLoadInfo->GetAssociatedBrowsingContextID();
   }
   if (!frameID) {
     frameID = aLoadInfo->GetBrowsingContextID();
@@ -716,7 +716,7 @@ int64_t ChannelWrapper::FrameId() const {
 
 int64_t ChannelWrapper::ParentFrameId() const {
   if (nsCOMPtr<nsILoadInfo> loadInfo = GetLoadInfo()) {
-    RefPtr<BrowsingContext> bc = loadInfo->GetWorkerAssociatedBrowsingContext();
+    RefPtr<BrowsingContext> bc = loadInfo->GetAssociatedBrowsingContext();
     if (!bc) {
       bc = loadInfo->GetBrowsingContext();
     }

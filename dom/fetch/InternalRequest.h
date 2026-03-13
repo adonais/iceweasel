@@ -198,6 +198,14 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
     mReferrerPolicy = aReferrerPolicy;
   }
 
+  void SetAssociatedBrowsingContextID(uint64_t aAssociatedBrowsingContextID) {
+    mAssociatedBrowsingContextID = aAssociatedBrowsingContextID;
+  }
+
+  uint64_t AssociatedBrowsingContextID() const {
+    return mAssociatedBrowsingContextID;
+  }
+
   ReferrerPolicy GetEnvironmentReferrerPolicy() const {
     return mEnvironmentReferrerPolicy;
   }
@@ -478,6 +486,11 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   // URL: an URL
   nsCString mReferrer;
   ReferrerPolicy mReferrerPolicy;
+
+  // Used to track this fetch request in scenarions where determining load
+  // context is tricky like for Reporting API. There we provide this explicitly
+  // so devtools can track us accordingly.
+  uint64_t mAssociatedBrowsingContextID{0};
 
   // This will be used for request created from Window or Worker contexts
   // In case there's no Referrer Policy in Request, this will be passed to

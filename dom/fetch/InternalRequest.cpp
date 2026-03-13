@@ -59,6 +59,7 @@ SafeRefPtr<InternalRequest> InternalRequest::GetRequestConstructorCopy(
   copy->mPreferredAlternativeDataType = mPreferredAlternativeDataType;
   copy->mSkipWasmCaching = mSkipWasmCaching;
   copy->mEmbedderPolicy = mEmbedderPolicy;
+  copy->mAssociatedBrowsingContextID = mAssociatedBrowsingContextID;
   return copy;
 }
 
@@ -114,6 +115,7 @@ InternalRequest::InternalRequest(const InternalRequest& aOther,
       mInternalPriority(aOther.mInternalPriority),
       mReferrer(aOther.mReferrer),
       mReferrerPolicy(aOther.mReferrerPolicy),
+      mAssociatedBrowsingContextID(aOther.mAssociatedBrowsingContextID),
       mEnvironmentReferrerPolicy(aOther.mEnvironmentReferrerPolicy),
       mMode(aOther.mMode),
       mCredentialsMode(aOther.mCredentialsMode),

@@ -725,10 +725,7 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
 #define DEFINE_INIT(_t, name, _n, _d) m##name(rhs.m##name),
       LOADINFO_FOR_EACH_FIELD(DEFINE_INIT, LOADINFO_DUMMY_SETTER)
 #undef DEFINE_INIT
-
-          mWorkerAssociatedBrowsingContextID(
-              rhs.mWorkerAssociatedBrowsingContextID),
-      mInitialSecurityCheckDone(rhs.mInitialSecurityCheckDone),
+          mInitialSecurityCheckDone(rhs.mInitialSecurityCheckDone),
       mIsThirdPartyContext(rhs.mIsThirdPartyContext),
       mIsThirdPartyContextToTopWindow(rhs.mIsThirdPartyContextToTopWindow),
       mOriginAttributes(rhs.mOriginAttributes),
@@ -1286,18 +1283,6 @@ LOADINFO_FOR_EACH_FIELD(DEFINE_GETTER, DEFINE_SETTER);
 #undef DEFINE_SETTER
 
 NS_IMETHODIMP
-LoadInfo::GetWorkerAssociatedBrowsingContextID(uint64_t* aResult) {
-  *aResult = mWorkerAssociatedBrowsingContextID;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-LoadInfo::SetWorkerAssociatedBrowsingContextID(uint64_t aID) {
-  mWorkerAssociatedBrowsingContextID = aID;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 LoadInfo::GetTargetBrowsingContextID(uint64_t* aResult) {
   return (nsILoadInfo::GetExternalContentPolicyType() ==
           ExtContentPolicy::TYPE_SUBDOCUMENT)
@@ -1312,8 +1297,8 @@ LoadInfo::GetBrowsingContext(dom::BrowsingContext** aResult) {
 }
 
 NS_IMETHODIMP
-LoadInfo::GetWorkerAssociatedBrowsingContext(dom::BrowsingContext** aResult) {
-  *aResult = BrowsingContext::Get(mWorkerAssociatedBrowsingContextID).take();
+LoadInfo::GetAssociatedBrowsingContext(dom::BrowsingContext** aResult) {
+  *aResult = BrowsingContext::Get(mAssociatedBrowsingContextID).take();
   return NS_OK;
 }
 

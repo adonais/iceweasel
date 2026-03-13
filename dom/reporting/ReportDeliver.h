@@ -51,11 +51,14 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
     nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
     uint32_t mFailures;
     uintptr_t mGlobalKey;
+    // Used to track in devtools only
+    uint64_t mAssociatedBrowsingContext;
   };
 
   static void AttemptDelivery(nsIGlobalObject* aGlobal, const nsAString& aType,
                               const nsAString& aGroupName,
-                              const nsAString& aURL, ReportBody* aBody);
+                              const nsAString& aURL, ReportBody* aBody,
+                              uint64_t aAssociatedBrowsingContextId);
 
   static void Fetch(const ReportData& aReportData);
 
