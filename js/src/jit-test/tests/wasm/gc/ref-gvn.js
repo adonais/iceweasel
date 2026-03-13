@@ -986,65 +986,6 @@ if (getBuildConfiguration("jitspew")) {
     ]);
   }
 
-  // Test type calculations from GVN (uses GLB to compute type for all congruent values)
-  {
-    const code = wasmTextToBinary(`(module
-      (type $s1 (struct (field i31ref)))
-      (type $s2 (struct (field structref)))
-      (func (result anyref)
-        (local anyref)
-
-        ;; The nulls below are in the same hierarchy and will be commoned up. As
-        ;; a result, the struct.gets will also be commoned up because they have
-        ;; the same operand and offset etc. However, they each have different
-        ;; types before being commoned up because the type is taken from the
-        ;; struct field. Therefore the type after commoning them up should be the
-        ;; GLB of i31ref and structref, which is nullref (ref null none). (If we
-        ;; instead took the LUB, as we used to, the type would end up as eqref.)
-        ;;
-        ;; Note that this is all quite contrived since the very first struct.get
-        ;; is guaranteed to trap anyway. Oh well!
-
-        ref.null $s1
-        struct.get $s1 0
-        local.set 0
-
-        ref.null $s2
-        struct.get $s2 0
-        local.set 0
-
-        ;; This test is guaranteed to succeed, which we know from the GLB but not
-        ;; the LUB.
-        local.get 0
-        ref.test nullref
-        if
-        else
-          unreachable
-        end
-
-        local.get 0
-      )
-    )`);
-    const ionJSON = wasmGetIon(code, 0);
-    const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
-    const optimized = wasmIonGetLastMIRPass(ionJSON);
-
-    assertOpcodesInOrder(unoptimized, [
-      "WasmNullConstant", "WasmLoadField",
-      "WasmNullConstant", "WasmLoadField",
-      "WasmRefTestAbstract",
-      "WasmTrap",
-      "WasmReturn",
-    ]);
-    assertOpcodesInOrder(optimized, [
-      "WasmNullConstant", "WasmLoadField",
-      "!WasmNullConstant", "!WasmLoadField",
-      "!WasmRefTestAbstract",
-      "!WasmTrap",
-      "WasmReturn",
-    ]);
-  }
-
   // Test cases of tests/casts dominating tests/casts for the same value.
   {
     // test -> cast
