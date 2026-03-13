@@ -763,8 +763,9 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
 
   // Use the callback to find remote proxies in all compartments that match
   // whatever criteria callback uses.
+  RootedObject remoteProxy(cx);
   for (CompartmentsIter c(cx->runtime()); !c.done(); c.next()) {
-    RootedObject remoteProxy(cx, callback->getObjectToTransplant(c));
+    remoteProxy = callback->getObjectToTransplant(c);
     if (!remoteProxy) {
       continue;
     }
@@ -796,8 +797,9 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
     target.set(targetCompartmentProxy);
   }
 
+  RootedObject deadWrapper(cx);
   for (JSObject*& obj : otherProxies) {
-    RootedObject deadWrapper(cx, obj);
+    deadWrapper = obj;
     js::RemapDeadWrapper(cx, deadWrapper, target);
   }
 }
