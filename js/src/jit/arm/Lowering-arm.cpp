@@ -203,7 +203,7 @@ void LIRGeneratorARM::lowerForMulInt64(LMulI64* ins, MMul* mir,
 
   if (rhs->isConstant()) {
     int64_t constant = rhs->toConstant()->toInt64();
-    int32_t shift = mozilla::FloorLog2(constant);
+    int32_t shift = mozilla::FloorLog2(uint64_t(constant));
     // See special cases in CodeGeneratorARM::visitMulI64
     if (constant >= -1 && constant <= 2) {
       needsTemp = false;
@@ -318,7 +318,7 @@ void LIRGeneratorARM::lowerDivI(MDiv* div) {
     // possible; division by negative powers of two can be optimized in a
     // similar manner as positive powers of two, and division by other
     // constants can be optimized by a reciprocal multiplication technique.
-    int32_t shift = FloorLog2(rhs);
+    int32_t shift = FloorLog2(uint32_t(rhs));
     if (rhs > 0 && 1 << shift == rhs) {
       LDivPowTwoI* lir =
           new (alloc()) LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);
@@ -371,7 +371,7 @@ void LIRGeneratorARM::lowerMulI(MMul* mul, MDefinition* lhs, MDefinition* rhs) {
 void LIRGeneratorARM::lowerModI(MMod* mod) {
   if (mod->rhs()->isConstant()) {
     int32_t rhs = mod->rhs()->toConstant()->toInt32();
-    int32_t shift = FloorLog2(rhs);
+    int32_t shift = FloorLog2(uint32_t(rhs));
     if (rhs > 0 && 1 << shift == rhs) {
       LModPowTwoI* lir =
           new (alloc()) LModPowTwoI(useRegister(mod->lhs()), shift);

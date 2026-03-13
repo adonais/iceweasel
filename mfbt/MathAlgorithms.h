@@ -70,13 +70,11 @@ inline long double Abs<long double>(const long double aLongDouble) {
  */
 template <typename T>
 constexpr uint_fast8_t CeilingLog2(const T aValue) {
-  static_assert(std::is_integral_v<T>);
-
-  using UnsignedT = std::make_unsigned_t<T>;
+  static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>);
 
   return aValue <= 1 ? 0u
                      : static_cast<uint_fast8_t>(
-                           std::bit_width(static_cast<UnsignedT>(aValue - 1)));
+                           std::bit_width(static_cast<T>(aValue - 1)));
 }
 
 /** A CeilingLog2 variant that accepts only size_t. */
@@ -90,13 +88,10 @@ constexpr uint_fast8_t CeilingLog2Size(size_t aValue) {
  */
 template <typename T>
 constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
-  static_assert(std::is_integral_v<T>);
-
-  using UnsignedT = std::make_unsigned_t<T>;
+  static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>);
 
   MOZ_ASSERT(aValue != 0);
-  return static_cast<uint_fast8_t>(
-      std::bit_width(static_cast<UnsignedT>(aValue)) - 1);
+  return static_cast<uint_fast8_t>(std::bit_width(aValue) - 1);
 }
 
 /**
@@ -109,7 +104,7 @@ constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
  */
 template <typename T>
 constexpr uint_fast8_t FloorLog2(const T aValue) {
-  return FindMostSignificantBit(aValue | 1);
+  return FindMostSignificantBit(static_cast<T>(aValue | 1));
 }
 
 /** A FloorLog2 variant that accepts only size_t. */

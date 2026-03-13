@@ -179,7 +179,7 @@ void LIRGeneratorLOONG64::lowerDivI(MDiv* div) {
     // possible; division by negative powers of two can be optimized in a
     // similar manner as positive powers of two, and division by other
     // constants can be optimized by a reciprocal multiplication technique.
-    int32_t shift = FloorLog2(rhs);
+    int32_t shift = FloorLog2(uint32_t(rhs));
     if (rhs > 0 && 1 << shift == rhs) {
       LDivPowTwoI* lir =
           new (alloc()) LDivPowTwoI(useRegister(div->lhs()), temp(), shift);
@@ -208,7 +208,7 @@ void LIRGeneratorLOONG64::lowerDivI64(MDiv* div) {
 void LIRGeneratorLOONG64::lowerModI(MMod* mod) {
   if (mod->rhs()->isConstant()) {
     int32_t rhs = mod->rhs()->toConstant()->toInt32();
-    int32_t shift = FloorLog2(rhs);
+    int32_t shift = FloorLog2(uint32_t(rhs));
     if (rhs > 0 && 1 << shift == rhs) {
       LModPowTwoI* lir =
           new (alloc()) LModPowTwoI(useRegister(mod->lhs()), shift);
