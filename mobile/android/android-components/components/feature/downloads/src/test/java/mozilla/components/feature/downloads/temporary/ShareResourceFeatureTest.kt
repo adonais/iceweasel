@@ -110,15 +110,25 @@ class ShareResourceFeatureTest {
 
     @Test
     fun `cleanupCache should delete all files from the cache directory`() = runTest(testDispatcher) {
-        val shareFeature = ShareResourceFeature(context, BrowserStore(), null, mock(), testDispatcher)
+        val shareFeature = ShareResourceFeature(context, BrowserStore(), null, mock(), testDispatcher, testDispatcher)
+
+        // Clear the 'init' block's coroutine from the queue
+        testDispatcher.scheduler.runCurrent()
+
         val testDir = temporaryFolder.newFolder(cacheDirName)
         File(testDir, "testFile").createNewFile()
 
-        assertTrue(testDir.listFiles()?.isNotEmpty() == true)
+        assertTrue(
+            "File should exist before cleanup",
+            testDir.listFiles()?.isNotEmpty() == true,
+            )
 
         shareFeature.cleanupCache()
 
-        assertTrue(testDir.listFiles()?.isEmpty() == true)
+        assertTrue(
+            "Directory should be empty after manual cleanup",
+            testDir.listFiles()?.isEmpty() == true,
+        )
     }
 
     @Test
