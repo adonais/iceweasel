@@ -24,9 +24,6 @@ struct ScrollSnapTargetIds {
   CopyableTArray<ScrollSnapTargetId> mIdsOnX;
   CopyableTArray<ScrollSnapTargetId> mIdsOnY;
   bool operator==(const ScrollSnapTargetIds&) const = default;
-  bool Contains(ScrollSnapTargetId aId) const {
-    return mIdsOnX.Contains(aId) || mIdsOnY.Contains(aId);
-  }
 };
 
 struct SnapDestination {

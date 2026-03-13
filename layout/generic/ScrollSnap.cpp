@@ -596,65 +596,67 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
   Maybe<nscoord> x, y;
   aSnapInfo.ForEachValidTargetFor(
       aCurrentPosition, [&](const auto& aTarget) -> bool {
-        // Iterate only the last snap targets.
-        if (!aLastSnapTargetIds->Contains(aTarget.mTargetId)) {
-          return true;
-        }
         if (aTarget.mSnapPoint.mX && aSnapInfo.mScrollSnapStrictnessX !=
                                          StyleScrollSnapStrictness::None) {
-          if (targetIdForFocusedContent == aTarget.mTargetId) {
-            // If we've already found the candidate on Y axis, but if snapping
-            // to the point results this target is scrolled out, we can't use
-            // it.
-            if ((y && !aTarget.mSnapArea.Intersects(
-                          nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
-                                 aSnapInfo.mSnapportSize)))) {
-              y.reset();
+          if (aLastSnapTargetIds->mIdsOnX.Contains(aTarget.mTargetId)) {
+            if (targetIdForFocusedContent == aTarget.mTargetId) {
+              // If we've already found the candidate on Y axis, but if snapping
+              // to the point results this target is scrolled out, we can't use
+              // it.
+              if ((y && !aTarget.mSnapArea.Intersects(
+                            nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
+                                   aSnapInfo.mSnapportSize)))) {
+                y.reset();
+              }
+
+              focusedTarget = &aTarget;
+              // If the focused one is valid, then it's the candidate.
+              x = aTarget.mSnapPoint.mX;
             }
 
-            focusedTarget = &aTarget;
-            // If the focused one is valid, then it's the candidate.
-            x = aTarget.mSnapPoint.mX;
-          }
-
-          if (!x) {
-            // Update the candidate on X axis only if
-            // 1) we haven't yet found the candidate on Y axis
-            // 2) or if we've found the candiate on Y axis and if snapping to
-            // the
-            //    candidate position result the target element is visible
-            //    inside the snapport.
-            if (!y || (y && aTarget.mSnapArea.Intersects(
-                                nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
-                                       aSnapInfo.mSnapportSize)))) {
-              x = aTarget.mSnapPoint.mX;
+            if (!x) {
+              // Update the candidate on X axis only if
+              // 1) we haven't yet found the candidate on Y axis
+              // 2) or if we've found the candiate on Y axis and if snapping to
+              // the
+              //    candidate position result the target element is visible
+              //    inside the snapport.
+              if (!y || (y && aTarget.mSnapArea.Intersects(
+                                  nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
+                                         aSnapInfo.mSnapportSize)))) {
+                x = aTarget.mSnapPoint.mX;
+              }
             }
           }
         }
         if (aTarget.mSnapPoint.mY && aSnapInfo.mScrollSnapStrictnessY !=
                                          StyleScrollSnapStrictness::None) {
-          if (targetIdForFocusedContent == aTarget.mTargetId) {
-            NS_ASSERTION(!focusedTarget || focusedTarget == &aTarget,
-                         "If the focused target has been found on X axis, the "
-                         "target should be same");
-            // If we've already found the candidate on X axis other than the
-            // focused one, but if snapping to the point results this target
-            // is scrolled out, we can't use it.
-            if (!focusedTarget && (x && !aTarget.mSnapArea.Intersects(nsRect(
-                                            nsPoint(*x, *aTarget.mSnapPoint.mY),
-                                            aSnapInfo.mSnapportSize)))) {
-              x.reset();
+          if (aLastSnapTargetIds->mIdsOnY.Contains(aTarget.mTargetId)) {
+            if (targetIdForFocusedContent == aTarget.mTargetId) {
+              NS_ASSERTION(
+                  !focusedTarget || focusedTarget == &aTarget,
+                  "If the focused target has been found on X axis, the "
+                  "target should be same");
+              // If we've already found the candidate on X axis other than the
+              // focused one, but if snapping to the point results this target
+              // is scrolled out, we can't use it.
+              if (!focusedTarget &&
+                  (x && !aTarget.mSnapArea.Intersects(
+                            nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
+                                   aSnapInfo.mSnapportSize)))) {
+                x.reset();
+              }
+
+              focusedTarget = &aTarget;
+              y = aTarget.mSnapPoint.mY;
             }
 
-            focusedTarget = &aTarget;
-            y = aTarget.mSnapPoint.mY;
-          }
-
-          if (!y) {
-            if (!x || (x && aTarget.mSnapArea.Intersects(
-                                nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
-                                       aSnapInfo.mSnapportSize)))) {
-              y = aTarget.mSnapPoint.mY;
+            if (!y) {
+              if (!x || (x && aTarget.mSnapArea.Intersects(
+                                  nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
+                                         aSnapInfo.mSnapportSize)))) {
+                y = aTarget.mSnapPoint.mY;
+              }
             }
           }
         }
