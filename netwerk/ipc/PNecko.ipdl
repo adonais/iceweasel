@@ -46,6 +46,13 @@ using nsIDNSService::DNSFlags from "nsIDNSService.h";
 namespace mozilla {
 namespace net {
 
+struct HTMLDNSPrefetchArgs {
+  nsString hostname;
+  bool isHttps;
+  OriginAttributes originAttributes;
+  DNSFlags flags;
+};
+
 //-------------------------------------------------------------------
 [NestedUpTo=inside_cpow] sync protocol PNecko
 {
@@ -101,6 +108,7 @@ parent:
                            bool anonymous);
   async HTMLDNSPrefetch(nsString hostname, bool isHttps,
                         OriginAttributes originAttributes, DNSFlags flags);
+  async HTMLDNSPrefetchBatch(HTMLDNSPrefetchArgs[] prefetches);
   async CancelHTMLDNSPrefetch(nsString hostname, bool isHttps,
                               OriginAttributes originAttributes,
                               DNSFlags flags, nsresult reason);

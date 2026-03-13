@@ -515,6 +515,32 @@ nsresult DeferredDNSPrefetches::Add(nsIDNSService::DNSFlags flags,
   return NS_OK;
 }
 
+static bool BuildPrefetchArgs(SupportsDNSPrefetch& aSupports, Element& aElement,
+                              nsIDNSService::DNSFlags aFlags,
+                              HTMLDNSPrefetchArgs& aOut) {
+  nsIURI* uri = aSupports.GetURIForDNSPrefetch(aElement);
+  if (!uri) {
+    return false;
+  }
+  nsAutoCString hostName;
+  uri->GetAsciiHost(hostName);
+  if (hostName.IsEmpty()) {
+    return false;
+  }
+  bool isLocalResource = false;
+  nsresult rv = NS_URIChainHasFlags(
+      uri, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE, &isLocalResource);
+  if (NS_FAILED(rv) || isLocalResource) {
+    return false;
+  }
+  OriginAttributes oa;
+  StoragePrincipalHelper::GetOriginAttributesForNetworkState(
+      aElement.OwnerDoc(), oa);
+  aOut = HTMLDNSPrefetchArgs(NS_ConvertUTF8toUTF16(hostName),
+                             uri->SchemeIs("https"), oa, aFlags);
+  return true;
+}
+
 void DeferredDNSPrefetches::SubmitQueue() {
   NS_ASSERTION(NS_IsMainThread(),
                "DeferredDNSPrefetches::SubmitQueue must be on main thread");
@@ -522,13 +548,38 @@ void DeferredDNSPrefetches::SubmitQueue() {
     return;
   }
 
-  for (; mHead != mTail; mTail = (mTail + 1) & sMaxDeferredMask) {
-    Element* element = mEntries[mTail].mElement;
-    if (!element) {
-      continue;
+  if (IsNeckoChild()) {
+    nsTArray<HTMLDNSPrefetchArgs> batch;
+    for (; mHead != mTail; mTail = (mTail + 1) & sMaxDeferredMask) {
+      Element* element = mEntries[mTail].mElement;
+      nsIDNSService::DNSFlags flags = mEntries[mTail].mFlags;
+      mEntries[mTail].mElement = nullptr;
+      if (!element) {
+        continue;
+      }
+      auto& supports = ToSupportsDNSPrefetch(*element);
+      supports.ClearIsInDNSPrefetch();
+      if (!supports.IsDNSPrefetchRequestDeferred()) {
+        continue;
+      }
+      HTMLDNSPrefetchArgs args;
+      if (BuildPrefetchArgs(supports, *element, flags, args)) {
+        supports.DNSPrefetchRequestStarted();
+        batch.AppendElement(std::move(args));
+      }
     }
-    SubmitQueueEntry(*element, mEntries[mTail].mFlags);
-    mEntries[mTail].mElement = nullptr;
+    if (!batch.IsEmpty() && gNeckoChild) {
+      gNeckoChild->SendHTMLDNSPrefetchBatch(std::move(batch));
+    }
+  } else {
+    for (; mHead != mTail; mTail = (mTail + 1) & sMaxDeferredMask) {
+      Element* element = mEntries[mTail].mElement;
+      if (!element) {
+        continue;
+      }
+      SubmitQueueEntry(*element, mEntries[mTail].mFlags);
+      mEntries[mTail].mElement = nullptr;
+    }
   }
 
   if (mTimerArmed) {

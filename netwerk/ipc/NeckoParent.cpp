@@ -595,6 +595,15 @@ mozilla::ipc::IPCResult NeckoParent::RecvHTMLDNSPrefetch(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult NeckoParent::RecvHTMLDNSPrefetchBatch(
+    nsTArray<HTMLDNSPrefetchArgs>&& aPrefetches) {
+  for (const auto& entry : aPrefetches) {
+    dom::HTMLDNSPrefetch::Prefetch(entry.hostname(), entry.isHttps(),
+                                   entry.originAttributes(), entry.flags());
+  }
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult NeckoParent::RecvCancelHTMLDNSPrefetch(
     const nsAString& hostname, const bool& isHttps,
     const OriginAttributes& aOriginAttributes,

@@ -150,6 +150,8 @@ class NeckoParent : public PNeckoParent {
       const nsAString& hostname, const bool& isHttps,
       const OriginAttributes& aOriginAttributes,
       const nsIDNSService::DNSFlags& flags);
+  mozilla::ipc::IPCResult RecvHTMLDNSPrefetchBatch(
+      nsTArray<HTMLDNSPrefetchArgs>&& aPrefetches);
   mozilla::ipc::IPCResult RecvCancelHTMLDNSPrefetch(
       const nsAString& hostname, const bool& isHttps,
       const OriginAttributes& aOriginAttributes,
