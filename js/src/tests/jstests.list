@@ -42,6 +42,26 @@ skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/
 skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/toLocaleLowerCase/Final_Sigma_U180E.js
 skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/toLocaleLowerCase/special_casing_conditional.js
 
+# Unicode RegExps require ICU support.
+skip-if(!this.hasOwnProperty("Intl")) include test262/built-ins/RegExp/property-escapes/jstests.list
+skip-if(!this.hasOwnProperty("Intl")) include test262/built-ins/RegExp/unicodeSets/jstests.list
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/unicode_full_case_folding.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/prototype/exec/regexp-builtin-exec-v-u-flag.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/add-ignoreCase-affects-slash-lower-b.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/add-ignoreCase-affects-slash-lower-p.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/add-ignoreCase-affects-slash-lower-w.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/add-ignoreCase-affects-slash-upper-b.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/add-ignoreCase-affects-slash-upper-p.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/add-ignoreCase-affects-slash-upper-w.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/remove-ignoreCase-affects-slash-lower-p.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/RegExp/regexp-modifiers/remove-ignoreCase-affects-slash-upper-p.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/match/regexp-prototype-match-v-u-flag.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/matchAll/regexp-prototype-matchAll-v-u-flag.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/replace/regexp-prototype-replace-v-u-flag.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/search/regexp-prototype-search-v-flag.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/built-ins/String/prototype/search/regexp-prototype-search-v-u-flag.js
+skip-if(!this.hasOwnProperty("Intl")) script test262/language/literals/regexp/u-case-mapping.js
+
 # Skip intl402 tests when Intl isn't available.
 skip-if(!this.hasOwnProperty("Intl")) include test262/intl402/jstests.list
 skip-if(!this.hasOwnProperty("Intl")) include non262/Intl/jstests.list
@@ -49,6 +69,7 @@ skip-if(!this.hasOwnProperty("Intl")) include non262/Intl/jstests.list
 # https://bugzilla.mozilla.org/show_bug.cgi?id=1415303
 skip-if(!this.hasOwnProperty("Atomics")) include test262/built-ins/Atomics/jstests.list
 skip-if(!this.hasOwnProperty("SharedArrayBuffer")) include test262/built-ins/SharedArrayBuffer/jstests.list
+
 
 #####################################
 # Test262 tests disabled on browser #
