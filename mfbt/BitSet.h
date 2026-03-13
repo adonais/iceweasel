@@ -231,7 +231,7 @@ class BitSet {
       word = mStorage[wordIndex];
     }
 
-    uint_fast8_t pos = CountTrailingZeroes(word);
+    size_t pos = std::countr_zero(word);
     return wordIndex * kBitsPerWord + pos;
   }
 

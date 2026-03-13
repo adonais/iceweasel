@@ -7,7 +7,6 @@
 #ifndef vm_ObjectFuse_h
 #define vm_ObjectFuse_h
 
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 
 #include <bit>
@@ -213,7 +212,7 @@ class ObjectFuse {
                                                uint32_t propMask) {
     MOZ_ASSERT(std::has_single_bit(propMask));
     uint32_t slot = propIndex * NumPropsPerWord;
-    slot += mozilla::CountTrailingZeroes(propMask) / NumBitsPerProp;
+    slot += std::countr_zero(propMask) / NumBitsPerProp;
     return slot;
   }
 

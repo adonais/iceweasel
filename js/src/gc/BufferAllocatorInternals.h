@@ -11,6 +11,8 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "NamespaceImports.h"
 
 #include "ds/SlimLinkedList.h"
@@ -121,7 +123,7 @@ class js::gc::AtomicBitmap<N>::Iter {
       word = bitmap.getWord(wordIndex);
     }
 
-    bitIndex = mozilla::CountTrailingZeroes(word);
+    bitIndex = std::countr_zero(word);
     bit = wordIndex * bitsPerWord + bitIndex;
   }
 
