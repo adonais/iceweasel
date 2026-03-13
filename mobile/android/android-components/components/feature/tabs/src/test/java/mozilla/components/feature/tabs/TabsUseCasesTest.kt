@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.tabs
 
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.session.storage.RecoverableBrowserState
 import mozilla.components.browser.session.storage.SessionStorage
@@ -31,7 +33,6 @@ import mozilla.components.feature.tabs.ext.tabGroupsPartition
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -42,7 +43,6 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyString
@@ -59,9 +59,8 @@ class TabsUseCasesTest {
     private lateinit var engine: Engine
     private lateinit var engineSession: EngineSession
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-    private val dispatcher = coroutinesTestRule.testDispatcher
+    private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     @Before
     fun setup() {
@@ -72,9 +71,10 @@ class TabsUseCasesTest {
         store = BrowserStore(
             middleware = EngineMiddleware.create(
                 engine = engine,
+                scope = testScope,
             ),
         )
-        tabsUseCases = TabsUseCases(store)
+        tabsUseCases = TabsUseCases(store, testDispatcher, testDispatcher)
     }
 
     @Test
@@ -163,10 +163,10 @@ class TabsUseCasesTest {
         tabsUseCases.addTab("https://www.mozilla.org", startLoading = true)
 
         // Wait for CreateEngineSessionAction and middleware
-        dispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // Wait for LinkEngineSessionAction and middleware
-        dispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, store.state.tabs.size)
         assertEquals("https://www.mozilla.org", store.state.tabs[0].content.url)
@@ -183,10 +183,10 @@ class TabsUseCasesTest {
         )
 
         // Wait for CreateEngineSessionAction and middleware
-        dispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // Wait for LinkEngineSessionAction and middleware
-        dispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, store.state.tabs.size)
         assertEquals("https://www.mozilla.org", store.state.tabs[0].content.url)
@@ -282,6 +282,7 @@ class TabsUseCasesTest {
             isSearch = true,
             additionalHeaders = additionalHeaders,
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, store.state.tabs.size)
         assertTrue(store.state.tabs.single().content.isSearch)
@@ -301,7 +302,7 @@ class TabsUseCasesTest {
     @Test
     fun `GIVEN a tab is added with a parent loadURL will include the parent`() {
         val parentTabId = tabsUseCases.addTab(url = "https://www.firefox.com", selectTab = true)
-        dispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify(engineSession, times(1)).loadUrl(
             url = "https://www.firefox.com",
@@ -314,7 +315,7 @@ class TabsUseCasesTest {
 
         tabsUseCases.addTab(url = "https://www.mozilla.org", parentId = parentTabId)
 
-        dispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, store.state.tabs.size)
         verify(engineSession, times(1)).loadUrl(
@@ -383,7 +384,7 @@ class TabsUseCasesTest {
     }
 
     @Test
-    fun `GIVEN the previous browser session has not yet been restored WHEN the user opens a new tab THEN the restored tabs should be placed before the newly opened tab`() = runTest {
+    fun `GIVEN the previous browser session has not yet been restored WHEN the user opens a new tab THEN the restored tabs should be placed before the newly opened tab`() = runTest(testDispatcher) {
         val newTab = createTab("https://www.example.org")
         val restoredTabs = listOf(
             createTab("https://mozilla.org"),
@@ -411,7 +412,7 @@ class TabsUseCasesTest {
     }
 
     @Test
-    fun `GIVEN a recoverable browser state with tabs and partitions in storage WHEN browsing session is restored THEN restore the tabs and partition from storage`() = runTest {
+    fun `GIVEN a recoverable browser state with tabs and partitions in storage WHEN browsing session is restored THEN restore the tabs and partition from storage`() = runTest(testDispatcher) {
         val restoredTabs = listOf(
             createTab(id = "tab1", url = "https://mozilla.org"),
             createTab(id = "tab2", url = "https://firefox.com"),

@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.tabs
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.session.storage.RecoverableBrowserState
@@ -38,6 +39,8 @@ import mozilla.components.feature.session.SessionUseCases.LoadUrlUseCase
  */
 class TabsUseCases(
     store: BrowserStore,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     /**
      * Contract for use cases that select a tab.
@@ -303,6 +306,8 @@ class TabsUseCases(
     class RestoreUseCase(
         val store: BrowserStore,
         private val selectTab: SelectTabUseCase,
+        private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+        private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     ) {
         /**
          * Restores the given list of [RecoverableTab]s.
@@ -358,14 +363,14 @@ class TabsUseCases(
         suspend operator fun invoke(
             storage: SessionStorage,
             tabTimeoutInMs: Long = Long.MAX_VALUE,
-        ) = withContext(Dispatchers.IO) {
+        ) = withContext(ioDispatcher) {
             val now = System.currentTimeMillis()
             val state = storage.restore {
                 val lastActiveTime = maxOf(it.state.lastAccess, it.state.createdAt)
                 now - lastActiveTime <= tabTimeoutInMs
             }
             if (state != null) {
-                withContext(Dispatchers.Main) {
+                withContext(mainDispatcher) {
                     invoke(
                         state = state,
                         restoreLocation = RestoreLocation.BEGINNING,
@@ -383,7 +388,7 @@ class TabsUseCases(
             tab: TabState,
             engineStateReader: EngineSessionStateStorage,
             updateSelection: Boolean = true,
-        ) = withContext(Dispatchers.IO) {
+        ) = withContext(ioDispatcher) {
             val recoverableTab = RecoverableTab(
                 state = tab,
                 engineSessionState = engineStateReader.read(tab.id),
@@ -757,7 +762,7 @@ class TabsUseCases(
     val removeNormalTabs: RemoveNormalTabsUseCase by lazy { RemoveNormalTabsUseCase(store) }
     val removePrivateTabs: RemovePrivateTabsUseCase by lazy { RemovePrivateTabsUseCase(store) }
     val undo by lazy { UndoTabRemovalUseCase(store) }
-    val restore: RestoreUseCase by lazy { RestoreUseCase(store, selectTab) }
+    val restore: RestoreUseCase by lazy { RestoreUseCase(store, selectTab, mainDispatcher, ioDispatcher) }
     val selectOrAddTab: SelectOrAddUseCase by lazy { SelectOrAddUseCase(store) }
     val duplicateTab: DuplicateTabUseCase by lazy { DuplicateTabUseCase(store) }
     val moveTabs: MoveTabsUseCase by lazy { MoveTabsUseCase(store) }

@@ -38,9 +38,6 @@ class TabsUseCasesKtTest {
     private lateinit var tab: Tab
     private lateinit var filesDir: File
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-
     @Before
     fun setup() {
         engineSession = mock()
