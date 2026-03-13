@@ -21,6 +21,30 @@ const WEATHER_ENABLED = "browser.newtabpage.activity-stream.showWeather";
 const SYS_WEATHER_ENABLED =
   "browser.newtabpage.activity-stream.system.showWeather";
 
+add_task(async function test_MerinoClient_wrapper_passes_correct_args() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+  let client = feed.MerinoClient("TEST_CLIENT");
+
+  Assert.equal(
+    typeof client.name,
+    "string",
+    "MerinoClient name should be a string, not an object"
+  );
+  Assert.equal(
+    client.name,
+    "TEST_CLIENT",
+    "MerinoClient name should match the passed argument"
+  );
+
+  sandbox.restore();
+});
+
 add_task(async function test_construction() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({

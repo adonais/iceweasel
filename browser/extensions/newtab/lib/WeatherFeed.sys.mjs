@@ -584,11 +584,8 @@ export class WeatherFeed {
  * Creating a thin wrapper around external tools.
  * This makes it easier for us to write automated tests that simulate responses.
  */
-WeatherFeed.prototype.MerinoClient = (...args) => {
-  return new lazy.MerinoClient({
-    allowOhttp: true,
-    ...args,
-  });
+WeatherFeed.prototype.MerinoClient = name => {
+  return new lazy.MerinoClient(name, { allowOhttp: true });
 };
 WeatherFeed.prototype.PersistentCache = (...args) => {
   return new lazy.PersistentCache(...args);
