@@ -649,7 +649,7 @@ class DefaultAddonUpdater(
 /**
  * A implementation which uses WorkManager APIs to perform addon updates.
  */
-internal class AddonUpdaterWorker(
+internal class AddonUpdaterWorker @JvmOverloads constructor(
     context: Context,
     private val params: WorkerParameters,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
