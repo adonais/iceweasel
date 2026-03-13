@@ -31,6 +31,10 @@ gradlePlugin {
         id = "org.mozilla.conventions.mach-tasks"
         implementationClass = "org.mozilla.conventions.MachTasksPlugin"
     }
+    plugins.register("org.mozilla.conventions.zip-test-reports") {
+        id = "org.mozilla.conventions.zip-test-reports"
+        implementationClass = "org.mozilla.conventions.ZipTestReportsPlugin"
+    }
 }
 
 dependencies {
