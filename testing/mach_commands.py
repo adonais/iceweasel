@@ -110,6 +110,13 @@ def get_test_parser():
         "'quick' (fewer tests with highest confidence to be related). "
         "Default: quick",
     )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=None,
+        help="Number of times to repeat the test(s). Passed through to the "
+        "underlying test harness.",
+    )
     add_logging_group(parser)
     return parser
 
@@ -479,6 +486,10 @@ def test(command_context, what, extra_args, **log_args):
             extra_args.append(extra_args_debugger_notation)
         else:
             extra_args = [extra_args_debugger_notation]
+
+    if repeat := log_args.get("repeat"):
+        extra_args = extra_args or []
+        extra_args.append(f"--repeat={repeat}")
 
     # Create shared logger
     format_args = {"level": command_context._mach_context.settings["test"]["level"]}
