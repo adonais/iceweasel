@@ -667,7 +667,7 @@ msix-packaging:
     fetch:
         type: git
         repo: https://github.com/mozilla/msix-packaging
-        revision: 8164b7ac5a67688e18fa2497fb31ba13ce9bfb15
+        revision: 1d068315fc1cff43c04837816c28a4a66cba22c1
 
 pkgconf:
     description: pkgconf 2.5.1
