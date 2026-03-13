@@ -1126,12 +1126,15 @@ static Result<Ok, nsCString> InitializeVisibleRectAndDisplaySize(
                     aDefaultVisibleRect.Width();
     double hScale = static_cast<double>(aDefaultDisplaySize.Height()) /
                     aDefaultVisibleRect.Height();
-    uint32_t w = static_cast<uint32_t>(round(wScale * aVisibleRect->Width()));
-    uint32_t h = static_cast<uint32_t>(round(hScale * aVisibleRect->Height()));
-    if (w == 0 || h == 0) {
-      return Err("Computed display size is zero in at least one dimension"_ns);
+    double wd = round(wScale * aVisibleRect->Width());
+    double hd = round(hScale * aVisibleRect->Height());
+    constexpr double kMax =
+        static_cast<double>(std::numeric_limits<int32_t>::max());
+    if (wd <= 0 || hd <= 0 || wd > kMax || hd > kMax) {
+      return Err("Computed display size is invalid"_ns);
     }
-    aDisplaySize.emplace(gfx::IntSize(w, h));
+    aDisplaySize.emplace(
+        gfx::IntSize(static_cast<int32_t>(wd), static_cast<int32_t>(hd)));
   }
   return Ok();
 }
