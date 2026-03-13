@@ -494,6 +494,8 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
   /* Steps 8-10, 13. */
   bool wroteMember = false;
   RootedId id(cx);
+  RootedValue outputValue(cx);
+  RootedValue objValue(cx);
   for (size_t i = 0, len = propertyList.length(); i < len; i++) {
     if (!CheckForInterrupt(cx)) {
       return false;
@@ -507,7 +509,6 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
      * which pass the filter.
      */
     id = propertyList[i];
-    RootedValue outputValue(cx);
 #ifdef DEBUG
     if (scx->maybeSafely) {
       PropertyResult prop;
@@ -519,7 +520,7 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
                  prop.propertyInfo().isDataDescriptor());
     }
 #endif  // DEBUG
-    RootedValue objValue(cx, ObjectValue(*obj));
+    objValue = ObjectValue(*obj);
     if (!GetProperty(cx, obj, objValue, id, &outputValue)) {
       return false;
     }
