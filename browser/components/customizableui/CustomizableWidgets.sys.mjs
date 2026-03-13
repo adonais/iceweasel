@@ -507,8 +507,7 @@ if (
         popup.setAttribute("id", "share-tab-popup");
         popup.addEventListener("popupshowing", () => {
           let browser = aDocument.defaultView.gBrowser.selectedBrowser;
-          node.contextBrowserToShare = Cu.getWeakReference(browser);
-          node.browsersToShare = null;
+          node.browserToShare = Cu.getWeakReference(browser);
 
           lazy.SharingUtils.populateShareMenu(popup);
         });
@@ -517,8 +516,7 @@ if (
       } else {
         node.addEventListener("command", () => {
           let browser = aDocument.defaultView.gBrowser.selectedBrowser;
-          node.contextBrowserToShare = Cu.getWeakReference(browser);
-          node.browsersToShare = null;
+          node.browserToShare = Cu.getWeakReference(browser);
 
           if (AppConstants.platform == "win") {
             lazy.SharingUtils.shareOnWindows(node);

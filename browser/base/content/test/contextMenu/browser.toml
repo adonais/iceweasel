@@ -1,6 +1,5 @@
 [DEFAULT]
 support-files = [
-  "head.js",
   "subtst_contextmenu_webext.html",
   "test_contextmenu_links.html",
   "subtst_contextmenu.html",
@@ -97,7 +96,6 @@ skip-if = [
 ]
 
 ["browser_contextmenu_share_linux.js"]
-support-files = ["browser_contextmenu_shareurl.html"]
 run-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",

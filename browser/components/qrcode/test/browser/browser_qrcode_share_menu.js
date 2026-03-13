@@ -14,7 +14,6 @@ async function openShareMenuAndGetQRItem(window, { expectQRCode = true } = {}) {
   let testBrowser = window.gBrowser.selectedBrowser;
   window.SharingUtils.updateShareURLMenuItem(
     testBrowser,
-    null,
     fileMenuPopup.querySelector("#menu_savePage")
   );
 

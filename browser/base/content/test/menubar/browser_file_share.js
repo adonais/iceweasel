@@ -130,8 +130,8 @@ add_task(async function test_file_menu_share() {
       `There should be ${expectedItemCount} menu items.`
     );
     info("Click on the Copy Link item");
-    let copyLinkItem = items.find(item =>
-      item.classList.contains("share-copy-link")
+    let copyLinkItem = items.find(
+      item => item.dataset.l10nId == "menu-share-copy-link"
     );
     await SimpleTest.promiseClipboardChange(TEST_URL, () =>
       copyLinkItem.doCommand()
