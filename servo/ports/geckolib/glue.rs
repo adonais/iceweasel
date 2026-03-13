@@ -5304,7 +5304,7 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
     let property_id = get_property_id_from_property!(property, false);
 
     *result = read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
-        let typed_value = decls.property_value_to_typed(&property_id);
+        let typed_value = decls.property_value_to_typed_value(&property_id);
 
         match typed_value {
             Err(()) => PropertyTypedValue::None,
@@ -5598,7 +5598,7 @@ pub unsafe extern "C" fn Servo_NumericDeclaration_GetValue(
     declaration: &NumericDeclaration,
     result: *mut NumericValueResult,
 ) {
-    *result = match declaration.to_typed() {
+    *result = match declaration.to_typed_value() {
         Some(TypedValue::Numeric(numeric)) => NumericValueResult::Numeric(numeric),
         _ => NumericValueResult::Unsupported,
     };
