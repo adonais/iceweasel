@@ -21,6 +21,7 @@ Release Notes
    nss_3_114_1.rst
    nss_3_114.rst
    nss_3_113.rst
+   nss_3_112_3.rst
    nss_3_112_2.rst
    nss_3_112_1.rst
    nss_3_112.rst
