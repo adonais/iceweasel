@@ -230,6 +230,16 @@ export const FeatureManifest: {
                 type: string;
                 description: string;
             };
+            autoFillAdaptiveHistoryBackspaceBlockDurationMs: {
+                type: string;
+                fallbackPref: string;
+                description: string;
+            };
+            autoFillAdaptiveHistoryDismissalBlockDurationMs: {
+                type: string;
+                fallbackPref: string;
+                description: string;
+            };
             deduplicationEnabled: {
                 type: string;
                 setPref: {
@@ -4636,6 +4646,14 @@ export const FeatureManifest: {
                     pref: string;
                 };
             };
+            delazification_strategy: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
             delazification_max_size: {
                 description: string;
                 type: string;
@@ -6076,6 +6094,22 @@ export const FeatureManifest: {
                 };
             };
             frame_rate_throttled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            min_background_timeout_value_without_budget_throttling: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            timeout_throttling_delay: {
                 description: string;
                 type: string;
                 setPref: {

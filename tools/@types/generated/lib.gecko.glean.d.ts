@@ -241,9 +241,22 @@ interface GleanImpl {
   }
 
   smartWindow: {
+    chatPreviousSession: GleanEventWithExtras<{ tabs?: string }>;
+    chatRetrieved: GleanEventWithExtras<{ chat_id?: string, location?: string, num_messages?: string, time_delta?: string }>;
     chatSubmit: GleanEventWithExtras<{ chat_id?: string }>;
-    memoriesToggle: GleanEventWithExtras<{ chat_id?: string, toggle?: string }>;
-    quickPromptClicked: GleanEventWithExtras<{ chat_id?: string }>;
+    getPageContent: GleanEventWithExtras<{ chat_id?: string, length?: string, location?: string, message_seq?: string, time?: string }>;
+    historyClick: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string, position?: string, total?: string }>;
+    historyDisplayed: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string, reason?: string, total?: string }>;
+    linkClick: GleanEventWithExtras<{ chat_id?: string, link_type?: string, location?: string, message_seq?: string }>;
+    memoriesAppliedImpression: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string }>;
+    memoriesToggle: GleanEventWithExtras<{ chat_id?: string, location?: string, memories?: string, message_seq?: string, toggle?: string }>;
+    memoriesView: GleanEventWithExtras<{ chat_id?: string, display?: string, location?: string, message_seq?: string }>;
+    memoryApplied: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string }>;
+    memoryAppliedClick: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string }>;
+    memoryRemovedPanel: GleanEventWithExtras<{ memories?: string }>;
+    quickPromptClicked: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string, starter?: string }>;
+    quickPromptDisplayed: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string, prompts?: string }>;
+    retryNoMemories: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string }>;
   }
 
   messagingSystem: {
@@ -7135,13 +7148,23 @@ interface GleanImpl {
     enginePerformance: GleanEventWithExtras<{ average_words_per_request?: string, average_words_per_second?: string, from_language?: string, to_language?: string, total_completed_requests?: string, total_inference_seconds?: string, total_translated_words?: string }>;
     error: GleanEventWithExtras<{ flow_id?: string, reason?: string }>;
     identifyPageLanguage: GleanEventWithExtras<{ confident?: string, extracted_code_units?: string, extraction_time?: string, html_lang_attribute?: string, identification_time?: string, identified_language?: string, is_lang_attribute_valid?: string, lang_tags_match?: string, total_time?: string }>;
-    requestCount: Record<"full_page"|"select", GleanCounter>;
+    requestCount: Record<"about_translations"|"full_page"|"select", GleanCounter>;
     restorePage: GleanEventWithExtras<{ flow_id?: string }>;
-    translationRequest: GleanEventWithExtras<{ auto_translate?: string, document_language?: string, flow_id?: string, from_language?: string, request_target?: string, source_text_code_units?: string, source_text_word_count?: string, to_language?: string, top_preferred_language?: string }>;
+    translationRequest: GleanEventWithExtras<{ auto_translate?: string, document_language?: string, flow_id?: string, from_language?: string, request_target?: string, source_text_code_units?: string, source_text_word_count?: string, to_language?: string }>;
   }
 
   translationsAboutTranslationsPage: {
+    clearSourceTextButton: GleanEventWithExtras<{ flow_id?: string }>;
+    copyButton: GleanEventWithExtras<{ flow_id?: string }>;
+    featureBlockedInfoMessage: GleanEventWithExtras<{ flow_id?: string }>;
+    languageLoadErrorMessage: GleanEventWithExtras<{ flow_id?: string }>;
     open: GleanEventWithExtras<{ flow_id?: string }>;
+    policyDisabledInfoMessage: GleanEventWithExtras<{ flow_id?: string }>;
+    swapButton: GleanEventWithExtras<{ flow_id?: string }>;
+    tryAgainButton: GleanEventWithExtras<{ flow_id?: string }>;
+    unblockFeature: GleanEventWithExtras<{ flow_id?: string }>;
+    unsupportedInfoMessage: GleanEventWithExtras<{ flow_id?: string }>;
+    unsupportedLanguageMessage: GleanEventWithExtras<{ detected_language?: string, flow_id?: string, source_text_code_units?: string, source_text_word_count?: string }>;
   }
 
   translationsFeature: {
@@ -7184,7 +7207,7 @@ interface GleanImpl {
     copyButton: GleanEventWithExtras<{ flow_id?: string }>;
     doneButton: GleanEventWithExtras<{ flow_id?: string }>;
     initializationFailureMessage: GleanEventWithExtras<{ flow_id?: string }>;
-    open: GleanEventWithExtras<{ document_language?: string, flow_id?: string, from_language?: string, text_source?: string, to_language?: string, top_preferred_language?: string }>;
+    open: GleanEventWithExtras<{ document_language?: string, flow_id?: string, from_language?: string, text_source?: string, to_language?: string }>;
     openSettingsMenu: GleanEventWithExtras<{ flow_id?: string }>;
     translateButton: GleanEventWithExtras<{ detected_language?: string, flow_id?: string, from_language?: string, to_language?: string }>;
     translateFullPageButton: GleanEventWithExtras<{ flow_id?: string }>;

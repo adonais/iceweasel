@@ -1124,6 +1124,9 @@
       "resource:///modules/BuiltInThemes.sys.mjs": [
         "browser/themes/BuiltInThemes.sys.mjs"
       ],
+      "resource:///modules/ChangePasswordURLs.sys.mjs": [
+        "browser/components/aboutlogins/ChangePasswordURLs.sys.mjs"
+      ],
       "resource:///modules/ChatsController.sys.mjs": [
         "browser/components/firefoxview/ChatsController.sys.mjs"
       ],
@@ -6194,6 +6197,9 @@
       "resource://gre/modules/SignUpFormRuleset.sys.mjs": [
         "toolkit/components/satchel/SignUpFormRuleset.sys.mjs"
       ],
+      "resource://gre/modules/SitePolicyUtils.sys.mjs": [
+        "toolkit/components/enterprisepolicies/SitePolicyUtils.sys.mjs"
+      ],
       "resource://gre/modules/Sqlite.sys.mjs": [
         "toolkit/modules/Sqlite.sys.mjs"
       ],
@@ -6896,9 +6902,6 @@
       "resource://normandy/lib/TelemetryEvents.sys.mjs": [
         "toolkit/components/normandy/lib/TelemetryEvents.sys.mjs"
       ],
-      "resource://normandy/lib/Uptake.sys.mjs": [
-        "toolkit/components/normandy/lib/Uptake.sys.mjs"
-      ],
       "resource://pdf.js/PdfJs.sys.mjs": [
         "toolkit/components/pdfjs/content/PdfJs.sys.mjs"
       ],
@@ -6916,6 +6919,9 @@
       ],
       "resource://pdf.js/PdfStreamConverter.sys.mjs": [
         "toolkit/components/pdfjs/content/PdfStreamConverter.sys.mjs"
+      ],
+      "resource://pdf.js/PdfjsContextMenu.sys.mjs": [
+        "toolkit/components/pdfjs/content/PdfjsContextMenu.sys.mjs"
       ],
       "resource://pdf.js/build/pdf.sandbox.external.sys.mjs": [
         "toolkit/components/pdfjs/content/build/pdf.sandbox.external.sys.mjs"
@@ -7255,9 +7261,6 @@
       ],
       "resource://testing-common/CookieXPCShellUtils.sys.mjs": [
         "netwerk/cookie/CookieXPCShellUtils.sys.mjs"
-      ],
-      "resource://testing-common/CoverageUtils.sys.mjs": [
-        "testing/modules/CoverageUtils.sys.mjs"
       ],
       "resource://testing-common/CrashManagerTest.sys.mjs": [
         "toolkit/components/crashes/CrashManagerTest.sys.mjs"
