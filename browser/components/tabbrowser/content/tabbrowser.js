@@ -1493,7 +1493,6 @@
 
       let profileIdentifier =
         SelectableProfileService?.isEnabled &&
-        SelectableProfileService.getCachedProfileCount() > 1 &&
         SelectableProfileService.currentProfile?.name.replace(/\0/g, "");
       // Note that empty/falsy bits get filtered below.
 

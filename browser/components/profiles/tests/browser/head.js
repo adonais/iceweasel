@@ -48,8 +48,6 @@ class MockProfileService {
   async asyncFlush() {}
 
   async asyncFlushCurrentProfile() {}
-
-  async removeProfileFilesByPath() {}
 }
 
 const gProfileService = new MockProfileService();

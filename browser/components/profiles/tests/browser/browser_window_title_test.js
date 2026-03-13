@@ -6,7 +6,7 @@
 add_task(async function test_windowTitle() {
   // The currentProfile is null, because there are 0 profiles in the db, when
   // updateTitlebar is called in the EveryWindow init function.
-  // So we uninit and init again so we have a current profile when
+  // So we uninit and inti again so we have a current profile when
   // updateTitlebar is called.
   await initGroupDatabase();
   await SelectableProfileService.uninit();
@@ -14,24 +14,9 @@ add_task(async function test_windowTitle() {
 
   const profileName = SelectableProfileService.currentProfile.name;
 
-  // If there is only one profile we shouldn't add it to the title.
-  Assert.ok(
-    !document.title.includes(profileName),
-    "The profile name is not in the window title"
-  );
-
-  let newProfile = await SelectableProfileService.createNewProfile(false);
-
   Assert.ok(
     document.title.includes(profileName),
     "The profile name is in the window title"
-  );
-
-  await SelectableProfileService.deleteProfile(newProfile);
-
-  Assert.ok(
-    !document.title.includes(profileName),
-    "The profile name is not in the window title"
   );
 
   await SelectableProfileService.uninit();
