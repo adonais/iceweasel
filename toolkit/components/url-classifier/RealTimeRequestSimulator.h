@@ -57,6 +57,9 @@ class RealTimeRequestSimulator final {
   // Only accessed from the URL Classifier background thread.
   FullHashResponseMap mSimulatedCache;
 
+  // Caches prefixes that had no hits in the simulated response.
+  FullHashResponseMap mNegativeCache;
+
   static StaticRefPtr<RealTimeRequestSimulator> sInstance;
 };
 

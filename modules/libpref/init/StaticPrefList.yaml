@@ -1897,6 +1897,20 @@
   value: 300
   mirror: always
 
+# Whether to enable the negative cache for the simulation.
+# When enabled, full hashes that don't trigger a simulated hit are cached
+# to skip sending real-time requests for subsequent lookups.
+- name: browser.safebrowsing.realTime.simulation.negativeCacheEnabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+# TTL for negative cache entries in the simulation cache (seconds).
+- name: browser.safebrowsing.realTime.simulation.negativeCacheTTLSec
+  type: RelaxedAtomicUint32
+  value: 300
+  mirror: always
+
 # Number of noise entries to include in simulated requests.
 # These are random hash prefixes added to mask the true URL being checked.
 - name: browser.safebrowsing.realTime.simulation.noiseEntryCount

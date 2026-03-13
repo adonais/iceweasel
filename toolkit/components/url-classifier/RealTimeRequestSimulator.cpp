@@ -200,12 +200,26 @@ void RealTimeRequestSimulator::SimulateRealTimeRequest(const nsACString& aURL,
 
   int64_t now = PR_Now() / PR_USEC_PER_SEC;
 
+  bool negativeCacheEnabled = StaticPrefs::
+      browser_safebrowsing_realTime_simulation_negativeCacheEnabled();
+
   // Filter out cached hashes and check for cache hits.
   nsTArray<Completion> hashesToSend;
   for (const auto& fullHash : fullHashes) {
     uint32_t prefix = fullHash.ToUint32();
     nsCString fullHashString(reinterpret_cast<const char*>(fullHash.buf),
                              COMPLETE_SIZE);
+
+    // Check the negative cache first if enabled.
+    if (negativeCacheEnabled) {
+      CachedFullHashResponse* negResponse = mNegativeCache.Get(prefix);
+      if (negResponse) {
+        if (negResponse->negativeCacheExpirySec >= now) {
+          continue;
+        }
+        mNegativeCache.Remove(prefix);
+      }
+    }
 
     CachedFullHashResponse* cachedResponse = mSimulatedCache.Get(prefix);
     if (!cachedResponse) {
@@ -247,9 +261,18 @@ void RealTimeRequestSimulator::SimulateRealTimeRequest(const nsACString& aURL,
 
   uint32_t numHits = 0;
 
+  uint32_t negativeCacheTTL = StaticPrefs::
+      browser_safebrowsing_realTime_simulation_negativeCacheTTLSec();
+  int64_t negativeCacheExpiry = now + negativeCacheTTL;
+
   for (const auto& fullHash : hashesToSend) {
     // If the server doesn't hit the given full hash, we will continue.
     if (!ShouldSimulateHit()) {
+      if (negativeCacheEnabled) {
+        CachedFullHashResponse* negResponse =
+            mNegativeCache.GetOrInsertNew(fullHash.ToUint32());
+        negResponse->negativeCacheExpirySec = negativeCacheExpiry;
+      }
       continue;
     }
 
@@ -325,6 +348,7 @@ void RealTimeRequestSimulator::CleanCache() {
              NS_GetCurrentThread());
 
   mSimulatedCache.Clear();
+  mNegativeCache.Clear();
 }
 
 }  // namespace safebrowsing
