@@ -737,6 +737,21 @@ bool SdpHelper::SdpMatch(const Sdp& sdp1, const Sdp& sdp2) {
   return true;
 }
 
+// ICE credential length bounds per RFC 8839 section 5.4.
+static constexpr size_t kMinIceUfragLength = 4;
+static constexpr size_t kMaxIceUfragLength = 256;
+static constexpr size_t kMinIcePwdLength = 22;
+static constexpr size_t kMaxIcePwdLength = 256;
+
+static bool IsValidIceToken(const std::string& aToken) {
+  for (unsigned char c : aToken) {
+    if (!isalnum(c) && c != '+' && c != '/') {
+      return false;
+    }
+  }
+  return true;
+}
+
 nsresult SdpHelper::ValidateTransportAttributes(const Sdp& aSdp,
                                                 sdp::SdpType aType) {
   BundledMids bundledMids;
@@ -753,9 +768,49 @@ nsresult SdpHelper::ValidateTransportAttributes(const Sdp& aSdp,
         return NS_ERROR_INVALID_ARG;
       }
 
+      if (mediaAttrs.GetIceUfrag().size() < kMinIceUfragLength) {
+        SDP_SET_ERROR("Invalid description, ice-ufrag is too short at level "
+                      << level);
+        return NS_ERROR_INVALID_ARG;
+      }
+
+      if (mediaAttrs.GetIceUfrag().size() > kMaxIceUfragLength) {
+        SDP_SET_ERROR("Invalid description, ice-ufrag is too long at level "
+                      << level);
+        return NS_ERROR_INVALID_ARG;
+      }
+
+      if (!IsValidIceToken(mediaAttrs.GetIceUfrag())) {
+        SDP_SET_ERROR(
+            "Invalid description, ice-ufrag contains invalid characters at "
+            "level "
+            << level);
+        return NS_ERROR_INVALID_ARG;
+      }
+
       if (mediaAttrs.GetIcePwd().empty()) {
         SDP_SET_ERROR("Invalid description, no ice-pwd attribute at level "
                       << level);
+        return NS_ERROR_INVALID_ARG;
+      }
+
+      if (mediaAttrs.GetIcePwd().size() < kMinIcePwdLength) {
+        SDP_SET_ERROR("Invalid description, ice-pwd is too short at level "
+                      << level);
+        return NS_ERROR_INVALID_ARG;
+      }
+
+      if (mediaAttrs.GetIcePwd().size() > kMaxIcePwdLength) {
+        SDP_SET_ERROR("Invalid description, ice-pwd is too long at level "
+                      << level);
+        return NS_ERROR_INVALID_ARG;
+      }
+
+      if (!IsValidIceToken(mediaAttrs.GetIcePwd())) {
+        SDP_SET_ERROR(
+            "Invalid description, ice-pwd contains invalid characters at "
+            "level "
+            << level);
         return NS_ERROR_INVALID_ARG;
       }
 

@@ -4448,8 +4448,8 @@ TEST_F(JsepSessionTest, TestAnswererIndicatingIceRestart) {
   std::string reanswer = CreateAnswer();
 
   // change the ice pwd and ufrag
-  ReplaceInSdp(&reanswer, "a=ice-ufrag:", "a=ice-ufrag:bad-");
-  ReplaceInSdp(&reanswer, "a=ice-pwd:", "a=ice-pwd:bad-");
+  ReplaceInSdp(&reanswer, "a=ice-ufrag:", "a=ice-ufrag:XXXX");
+  ReplaceInSdp(&reanswer, "a=ice-pwd:", "a=ice-pwd:XXXX");
   SetLocalAnswer(reanswer, CHECK_SUCCESS);
   JsepSession::Result result =
       mSessionOff->SetRemoteDescription(kJsepSdpAnswer, reanswer);
@@ -4656,8 +4656,8 @@ TEST_F(JsepSessionTest, TestExtmapZeroId) {
       "v=0\r\n"
       "o=- 6 2 IN IP4 1r\r\n"
       "t=0 0a\r\n"
-      "a=ice-ufrag:Xp\r\n"
-      "a=ice-pwd:he\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
       "a=setup:actpass\r\n"
       "a=fingerprint:sha-256 "
       "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
@@ -4682,8 +4682,8 @@ TEST_F(JsepSessionTest, TestExtmapInvalidId) {
       "v=0\r\n"
       "o=- 6 2 IN IP4 1r\r\n"
       "t=0 0a\r\n"
-      "a=ice-ufrag:Xp\r\n"
-      "a=ice-pwd:he\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
       "a=setup:actpass\r\n"
       "a=fingerprint:sha-256 "
       "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
@@ -4708,8 +4708,8 @@ TEST_F(JsepSessionTest, TestExtmapDuplicateId) {
       "v=0\r\n"
       "o=- 6 2 IN IP4 1r\r\n"
       "t=0 0a\r\n"
-      "a=ice-ufrag:Xp\r\n"
-      "a=ice-pwd:he\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
       "a=setup:actpass\r\n"
       "a=fingerprint:sha-256 "
       "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
@@ -4733,8 +4733,8 @@ TEST_F(JsepSessionTest, TestNegotiatedExtmapStability) {
       "v=0\r\n"
       "o=- 6 2 IN IP4 1r\r\n"
       "t=0 0a\r\n"
-      "a=ice-ufrag:Xp\r\n"
-      "a=ice-pwd:he\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
       "a=setup:actpass\r\n"
       "a=fingerprint:sha-256 "
       "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
@@ -4819,8 +4819,8 @@ TEST_F(JsepSessionTest, TestNegotiatedExtmapCollision) {
       "v=0\r\n"
       "o=- 6 2 IN IP4 1r\r\n"
       "t=0 0a\r\n"
-      "a=ice-ufrag:Xp\r\n"
-      "a=ice-pwd:he\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
       "a=setup:actpass\r\n"
       "a=fingerprint:sha-256 "
       "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
@@ -7724,8 +7724,8 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
       "a=group:BUNDLE audio video\r\n"
       "m=audio 9 UDP/TLS/RTP/SAVPF 111\r\n"
       "c=IN IP4 51.81.107.13\r\n"
-      "a=ice-ufrag:Xp\r\n"
-      "a=ice-pwd:he\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
       "a=setup:actpass\r\n"
       "a=fingerprint:sha-256 "
       "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
@@ -7742,8 +7742,8 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
       "a=rtpmap:100 VP8/90000\r\n"
       "a=extmap:1 urn:ietf:params:rtp-hdrext:toffset\r\n"
       "a=mid:video\r\n"
-      "a=ice-ufrag:Xp\r\n"
-      "a=ice-pwd:he\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
       "a=setup:actpass\r\n"
       "a=fingerprint:sha-256 "
       "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
@@ -7997,9 +7997,9 @@ TEST_F(JsepSessionTest, NoExtmapAllowMixedInDatachannel) {
   mSessionAns->CreateAnswer(JsepAnswerOptions(), &answer);
 
   ASSERT_EQ(std::string::npos, offer.find("a=extmap-allow-mixed"))
-    << "Data channel msection should not contain a=extmap-allow-mixed";
+      << "Data channel msection should not contain a=extmap-allow-mixed";
   ASSERT_EQ(std::string::npos, answer.find("a=extmap-allow-mixed"))
-    << "Data channel msection should not contain a=extmap-allow-mixed";
+      << "Data channel msection should not contain a=extmap-allow-mixed";
 }
 
 }  // namespace mozilla
