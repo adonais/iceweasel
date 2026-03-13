@@ -484,9 +484,6 @@ with Files("tests/eventsource/**"):
 with Files("tests/event-timing/**"):
     BUG_COMPONENT = ("Core", "DOM: Performance APIs")
 
-with Files("tests/feature-policy/**"):
-    BUG_COMPONENT = ("Core", "DOM: Security")
-
 with Files("tests/fenced-frame/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
@@ -962,9 +959,6 @@ with Files("tests/webtransport/**"):
 
 with Files("tests/webusb/**"):
     BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
-
-with Files("tests/webvr/**"):
-    BUG_COMPONENT = ("Core", "WebVR")
 
 with Files("tests/webxr/**"):
     BUG_COMPONENT = ("Core", "WebVR")
