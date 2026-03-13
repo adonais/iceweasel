@@ -11,12 +11,16 @@ add_task(async function testDoorhangerUserReject() {
   setPassingHeuristics();
   let promise = waitForDoorhanger();
   let prefPromise = TestUtils.waitForPrefChange(prefs.BREADCRUMB_PREF);
-  Preferences.set(prefs.ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await prefPromise;
-  is(Preferences.get(prefs.BREADCRUMB_PREF), true, "Breadcrumb saved.");
   is(
-    Preferences.get(prefs.TRR_SELECT_URI_PREF),
+    Services.prefs.getBoolPref(prefs.BREADCRUMB_PREF),
+    true,
+    "Breadcrumb saved."
+  );
+  is(
+    Services.prefs.getStringPref(prefs.TRR_SELECT_URI_PREF),
     "https://example.com/dns-query",
     "TRR selection complete."
   );
@@ -49,7 +53,7 @@ add_task(async function testDoorhangerUserReject() {
   await prefPromise;
 
   is(
-    Preferences.get(prefs.DOORHANGER_USER_DECISION_PREF),
+    Services.prefs.getStringPref(prefs.DOORHANGER_USER_DECISION_PREF),
     "UIDisabled",
     "Doorhanger decision saved."
   );
@@ -58,7 +62,10 @@ add_task(async function testDoorhangerUserReject() {
 
   await ensureTRRMode(undefined);
   ensureNoHeuristicsTelemetry();
-  is(Preferences.get(prefs.BREADCRUMB_PREF), undefined, "Breadcrumb cleared.");
+  ok(
+    !Services.prefs.prefHasUserValue(prefs.BREADCRUMB_PREF),
+    "Breadcrumb cleared."
+  );
 
   checkScalars([
     ["networking.doh_heuristics_attempts", { value: 1 }],

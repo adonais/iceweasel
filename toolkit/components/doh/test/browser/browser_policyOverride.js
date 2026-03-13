@@ -26,20 +26,18 @@ add_task(async function testPolicyOverride() {
     "Policy engine is active."
   );
 
-  Preferences.set(prefs.ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
   await waitForStateTelemetry(["shutdown", "policyDisabled"]);
-  is(
-    Preferences.get(prefs.BREADCRUMB_PREF),
-    undefined,
+  ok(
+    !Services.prefs.prefHasUserValue(prefs.BREADCRUMB_PREF),
     "Breadcrumb not saved."
   );
-  is(
-    Preferences.get(prefs.TRR_SELECT_URI_PREF),
-    undefined,
+  ok(
+    !Services.prefs.prefHasUserValue(prefs.TRR_SELECT_URI_PREF),
     "TRR selection not performed."
   );
   is(
-    Preferences.get(prefs.SKIP_HEURISTICS_PREF),
+    Services.prefs.getBoolPref(prefs.SKIP_HEURISTICS_PREF),
     true,
     "Pref set to suppress CFR."
   );

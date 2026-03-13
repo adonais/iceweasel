@@ -13,12 +13,16 @@ add_task(async function testRollback() {
   setPassingHeuristics();
   let promise = waitForDoorhanger();
   let prefPromise = TestUtils.waitForPrefChange(prefs.BREADCRUMB_PREF);
-  Preferences.set(prefs.ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await prefPromise;
-  is(Preferences.get(prefs.BREADCRUMB_PREF), true, "Breadcrumb saved.");
   is(
-    Preferences.get(prefs.TRR_SELECT_URI_PREF),
+    Services.prefs.getBoolPref(prefs.BREADCRUMB_PREF),
+    true,
+    "Breadcrumb saved."
+  );
+  is(
+    Services.prefs.getStringPref(prefs.TRR_SELECT_URI_PREF),
     "https://example.com/dns-query",
     "TRR selection complete."
   );
@@ -42,11 +46,15 @@ add_task(async function testRollback() {
 
   await prefPromise;
   is(
-    Preferences.get(prefs.DOORHANGER_USER_DECISION_PREF),
+    Services.prefs.getStringPref(prefs.DOORHANGER_USER_DECISION_PREF),
     "UIOk",
     "Doorhanger decision saved."
   );
-  is(Preferences.get(prefs.BREADCRUMB_PREF), true, "Breadcrumb not cleared.");
+  is(
+    Services.prefs.getBoolPref(prefs.BREADCRUMB_PREF),
+    true,
+    "Breadcrumb not cleared."
+  );
 
   BrowserTestUtils.removeTab(tab);
 
@@ -63,7 +71,7 @@ add_task(async function testRollback() {
 
   // Rollback!
   setPassingHeuristics();
-  Preferences.reset(prefs.ENABLED_PREF);
+  Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await waitForStateTelemetry(["shutdown", "rollback"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
@@ -73,7 +81,7 @@ add_task(async function testRollback() {
   await ensureNoHeuristicsTelemetry();
 
   // Re-enable.
-  Preferences.set(prefs.ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await ensureTRRMode(2);
   ensureNoTRRSelectionTelemetry();
@@ -86,7 +94,7 @@ add_task(async function testRollback() {
   await checkHeuristicsTelemetry("disable_doh", "netchange");
 
   // Rollback again for good measure! This time with failing heuristics.
-  Preferences.reset(prefs.ENABLED_PREF);
+  Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await waitForStateTelemetry(["shutdown", "rollback"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
@@ -96,7 +104,7 @@ add_task(async function testRollback() {
   await ensureNoHeuristicsTelemetry();
 
   // Re-enable.
-  Preferences.set(prefs.ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await ensureTRRMode(0);
   ensureNoTRRSelectionTelemetry();
@@ -109,7 +117,7 @@ add_task(async function testRollback() {
   await checkHeuristicsTelemetry("enable_doh", "netchange");
 
   // Rollback again, this time with TRR mode set to 2 prior to doing so.
-  Preferences.reset(prefs.ENABLED_PREF);
+  Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await waitForStateTelemetry(["shutdown", "rollback"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
@@ -119,7 +127,7 @@ add_task(async function testRollback() {
   await ensureNoHeuristicsTelemetry();
 
   // Re-enable.
-  Preferences.set(prefs.ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await ensureTRRMode(2);
   ensureNoTRRSelectionTelemetry();
@@ -132,7 +140,7 @@ add_task(async function testRollback() {
   // correctly at startup.
   await DoHController._uninit();
   await waitForStateTelemetry(["shutdown"]);
-  Preferences.reset(prefs.ENABLED_PREF);
+  Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await DoHController.init();
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();

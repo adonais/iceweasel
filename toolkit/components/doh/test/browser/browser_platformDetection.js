@@ -39,9 +39,13 @@ add_task(async function testPlatformIndications() {
 
   setPassingHeuristics();
   let prefPromise = TestUtils.waitForPrefChange(prefs.BREADCRUMB_PREF);
-  Preferences.set(prefs.ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
   await prefPromise;
-  is(Preferences.get(prefs.BREADCRUMB_PREF), true, "Breadcrumb saved.");
+  is(
+    Services.prefs.getBoolPref(prefs.BREADCRUMB_PREF),
+    true,
+    "Breadcrumb saved."
+  );
   await checkHeuristicsTelemetry("enable_doh", "startup");
 
   checkScalars([
