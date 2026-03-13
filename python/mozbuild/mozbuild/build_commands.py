@@ -146,6 +146,12 @@ def _set_priority(command_context, priority, verbose):
     action="store_true",
     help="Show all warnings including third-party and suppressed warnings.",
 )
+@CommandArgument(
+    "--allow-subdirectory-build",
+    default=False,
+    action="store_true",
+    help="Allow building subdirectories (not recommended, can result in bad tree state).",
+)
 def build(
     command_context,
     what=None,
@@ -157,6 +163,7 @@ def build(
     keep_going=False,
     priority="idle",
     show_all_warnings=None,
+    allow_subdirectory_build=False,
 ):
     """Build the source tree.
 
@@ -184,7 +191,6 @@ def build(
 
     original_log_level = command_context.log_manager.terminal_handler.level
     try:
-        # For coding agents, automatically enable quiet mode
         if is_running_under_coding_agent():
             command_context.log(
                 logging.WARNING,
@@ -306,6 +312,7 @@ def build(
                 keep_going=keep_going,
                 mach_context=command_context._mach_context,
                 append_env=append_env,
+                allow_subdirectory_build=allow_subdirectory_build,
             )
             if status != 0:
                 return status
@@ -351,6 +358,7 @@ def build(
             keep_going=keep_going,
             mach_context=command_context._mach_context,
             append_env=append_env,
+            allow_subdirectory_build=allow_subdirectory_build,
         )
     finally:
         command_context.log_manager.terminal_handler.setLevel(original_log_level)
