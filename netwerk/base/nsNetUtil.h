@@ -1162,7 +1162,8 @@ bool IsScriptLikeOrInvalid(const nsAString& aAs);
 bool CheckPreloadAttrs(const nsAttrValue& aAs, const nsAString& aType,
                        const nsAString& aMedia,
                        mozilla::dom::Document* aDocument);
-void WarnIgnoredPreload(const mozilla::dom::Document&, nsIURI&);
+void WarnIgnoredPreload(const mozilla::dom::Document& aDoc, nsIURI* aURI,
+                        const nsAString& aSrcset = nsString());
 
 // Implements parsing of Use-As-Dictionary headers for Compression Dictionary
 // support.

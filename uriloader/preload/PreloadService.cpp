@@ -186,7 +186,8 @@ PreloadService::PreloadOrCoalesceResult PreloadService::PreloadOrCoalesce(
     const nsAString& aIntegrity, const nsAString& aCORS,
     const nsAString& aReferrerPolicy, const nsAString& aFetchPriority,
     bool aFromHeader, uint64_t aEarlyHintPreloaderId) {
-  if (!aURI) {
+  if (!aURI &&
+      !(aPolicyType == nsIContentPolicy::TYPE_IMAGE && !aSrcset.IsEmpty())) {
     MOZ_ASSERT_UNREACHABLE("Should not pass null nsIURI");
     return {nullptr, false};
   }

@@ -4049,11 +4049,14 @@ bool CheckPreloadAttrs(const nsAttrValue& aAs, const nsAString& aType,
   return false;
 }
 
-void WarnIgnoredPreload(const mozilla::dom::Document& aDoc, nsIURI& aURI) {
+void WarnIgnoredPreload(const mozilla::dom::Document& aDoc, nsIURI* aURI,
+                        const nsAString& aSrcset) {
   AutoTArray<nsString, 1> params;
-  {
-    nsCString uri = nsContentUtils::TruncatedURLForDisplay(&aURI);
+  if (aURI) {
+    nsCString uri = nsContentUtils::TruncatedURLForDisplay(aURI);
     AppendUTF8toUTF16(uri, *params.AppendElement());
+  } else {
+    params.AppendElement(aSrcset);
   }
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns, &aDoc,
                                   nsContentUtils::eDOM_PROPERTIES,

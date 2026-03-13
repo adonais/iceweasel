@@ -399,9 +399,16 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
             } else if (rel.LowerCaseEqualsASCII("preload")) {
               nsHtml5String url =
                   aAttributes->getValue(nsHtml5AttributeName::ATTR_HREF);
-              if (url) {
-                nsHtml5String as =
-                    aAttributes->getValue(nsHtml5AttributeName::ATTR_AS);
+              nsHtml5String as =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_AS);
+              bool isImage = as.LowerCaseEqualsASCII("image");
+              nsHtml5String srcset;
+              if (isImage) {
+                srcset = aAttributes->getValue(
+                    nsHtml5AttributeName::ATTR_IMAGESRCSET);
+              }
+
+              if (url || (isImage && srcset)) {
                 nsHtml5String charset =
                     aAttributes->getValue(nsHtml5AttributeName::ATTR_CHARSET);
                 nsHtml5String crossOrigin = aAttributes->getValue(
@@ -437,15 +444,14 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                       url, charset, crossOrigin, media, referrerPolicy, nonce,
                       integrity, true, fetchPriority);
                 } else if (as.LowerCaseEqualsASCII("image")) {
-                  nsHtml5String srcset = aAttributes->getValue(
-                      nsHtml5AttributeName::ATTR_IMAGESRCSET);
                   nsHtml5String sizes = aAttributes->getValue(
                       nsHtml5AttributeName::ATTR_IMAGESIZES);
                   nsHtml5String type =
                       aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
                   mSpeculativeLoadQueue.AppendElement()->InitImage(
-                      url, crossOrigin, media, referrerPolicy, srcset, sizes,
-                      true, fetchPriority, type);
+                      url ? url : nsHtml5String::EmptyString(), crossOrigin,
+                      media, referrerPolicy, srcset, sizes, true, fetchPriority,
+                      type);
                 } else if (as.LowerCaseEqualsASCII("font")) {
                   mSpeculativeLoadQueue.AppendElement()->InitFont(
                       url, crossOrigin, media, referrerPolicy, fetchPriority);
