@@ -69,7 +69,7 @@ FFmpegDataDecoder<LIBAV_VER>::~FFmpegDataDecoder() {
 
 MediaResult FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData() {
   if (mExtraData) {
-    mCodecContext->extradata_size = mExtraData->Length();
+    mCodecContext->extradata_size = AssertedCast<int>(mExtraData->Length());
     // FFmpeg may use SIMD instructions to access the data which reads the
     // data in 32 bytes block. Must ensure we have enough data to read.
     uint32_t padding_size =
@@ -298,7 +298,7 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::DoDecode(
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
 
   uint8_t* inputData = const_cast<uint8_t*>(aSample->Data());
-  size_t inputSize = aSample->Size();
+  int inputSize = AssertedCast<int>(aSample->Size());
 
   mLastInputDts = aSample->mTimecode;
 
@@ -313,7 +313,7 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::DoDecode(
           mCodecParser, mCodecContext, &data, &size, inputData, inputSize,
           aSample->mTime.ToMicroseconds(), aSample->mTimecode.ToMicroseconds(),
           aSample->mOffset);
-      if (size_t(len) > inputSize) {
+      if (len > inputSize) {
         return NS_ERROR_DOM_MEDIA_DECODE_ERR;
       }
       if (size) {
