@@ -283,7 +283,7 @@ FFmpegDataEncoder<LIBAV_VER>::ProcessReconfigure(
 
   FFMPEG_LOG("ProcessReconfigure");
 
-  bool ok = false;
+  bool ok = true;
   for (const auto& confChange : aConfigurationChanges->mChanges) {
     // A reconfiguration on the fly succeeds if all changes can be applied
     // successfuly. In case of failure, the encoder will be drained and
@@ -296,6 +296,9 @@ FFmpegDataEncoder<LIBAV_VER>::ProcessReconfigure(
         [&](const BitrateChange& aChange) -> bool {
           // Verified on x264
           if (!strcmp(mCodecContext->codec->name, "libx264")) {
+            if (aChange.get().isNothing()) {
+              return false;
+            }
             MOZ_ASSERT(aChange.get().ref() != 0);
             mConfig.mBitrate = aChange.get().ref();
             mCodecContext->bit_rate =

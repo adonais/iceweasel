@@ -962,7 +962,7 @@ AppleVTEncoder::ProcessReconfigure(
   AssertOnTaskQueue();
   MOZ_ASSERT(mSession);
 
-  bool ok = false;
+  bool ok = true;
   for (const auto& confChange : aConfigurationChanges->mChanges) {
     // A reconfiguration on the fly succeeds if all changes can be applied
     // successfuly. In case of failure, the encoder will be drained and
