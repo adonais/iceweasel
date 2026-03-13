@@ -209,7 +209,7 @@ impl Profiler {
             id,
             ConnInfo {
                 start: ProfilerTime::now(),
-                protocol: format!("{:?}", endpoint.protocol),
+                protocol: format!("{:?}", endpoint.http_version),
                 has_ech: endpoint.ech_config.is_some(),
                 address: endpoint.address.to_string(),
             },
