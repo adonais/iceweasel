@@ -94,7 +94,6 @@
     "lint:stylelint": "(cd $npm_package_config_mc_root && ./mach lint -l stylelint $npm_package_config_newtab_path)",
     "test": "npm run testmc",
     "tdd": "npm run tddmc",
-    "vendor": "node ./bin/vendor.js",
     "try": "node ./bin/try-runner.js",
     "fix": "npm-run-all fix:*",
     "fix:eslint": "npm run lint:eslint -- --fix",
