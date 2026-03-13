@@ -2741,7 +2741,7 @@ html {
   display: flex;
   background-color: var(--background-color-information);
   border-radius: var(--border-radius-small);
-  border: 1px solid var(--border-color-card);
+  border: 1px solid var(--card-border-color);
   padding: 10px 12px;
 }
 .onboardingContainer .welcome-text .cta-paragraph a {

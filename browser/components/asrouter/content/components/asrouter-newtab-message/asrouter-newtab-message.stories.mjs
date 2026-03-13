@@ -19,7 +19,7 @@ const Template = ({ messageData }) => html`
   <style>
     .asrouter-newtab-message-wrapper {
       background-color: var(--background-color-canvas);
-      border: 2px solid var(--border-color-card);
+      border: 2px solid var(--card-border-color);
       color: var(--text-color);
       padding: var(--space-large);
       border-radius: var(--border-radius-medium);

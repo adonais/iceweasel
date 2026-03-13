@@ -437,7 +437,7 @@ panel-item::part(button) {
   --image-size-medium: 90px;
   --image-size-large: 120px;
   background-color: var(--background-color-canvas);
-  border: 2px solid var(--border-color-card);
+  border: 2px solid var(--card-border-color);
   color: var(--text-color);
   padding: var(--space-large);
   border-radius: var(--border-radius-medium);
@@ -739,7 +739,7 @@ main section {
 
 .asrouter-newtab-message-wrapper {
   background-color: var(--background-color-canvas);
-  border: 2px solid var(--border-color-card);
+  border: 2px solid var(--card-border-color);
   color: var(--text-color);
   padding: var(--space-large);
   border-radius: var(--border-radius-medium);
@@ -1820,7 +1820,7 @@ main section {
   border-radius: var(--border-radius-small);
   padding: 0;
   width: 400px;
-  box-shadow: var(--box-shadow-popup);
+  box-shadow: var(--popup-box-shadow);
   background: var(--newtab-background-color-secondary);
 }
 .confirmation-dialog::backdrop {
@@ -2798,7 +2798,7 @@ main section {
   visibility: hidden;
 }
 .weatherCard:hover {
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
 }
 .weatherCard a {
   color: var(--text-color);
@@ -2828,9 +2828,9 @@ main section {
 }
 .weatherOptIn dialog {
   background: var(--newtab-background-color-secondary);
-  border: 1px solid var(--border-color-card);
+  border: 1px solid var(--card-border-color);
   border-radius: var(--border-radius-medium);
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   display: flex;
   width: 332px;
 }
@@ -2882,13 +2882,13 @@ dialog::after {
   height: 16px;
   width: 16px;
   background: var(--newtab-background-color-secondary);
-  box-shadow: 4px 4px 6px -2px var(--box-shadow-card);
-  border-inline-end: 1px solid var(--border-color-card);
-  border-block-end: 1px solid var(--border-color-card);
+  box-shadow: 4px 4px 6px -2px var(--card-box-shadow);
+  border-inline-end: 1px solid var(--card-border-color);
+  border-block-end: 1px solid var(--card-border-color);
 }
 dialog:dir(rtl)::after {
-  border-inline-start: 1px solid var(--border-color-card);
-  border-block-end: 1px solid var(--border-color-card);
+  border-inline-start: 1px solid var(--card-border-color);
+  border-block-end: 1px solid var(--card-border-color);
   border-inline-end: none;
   inset-inline-end: 10%;
 }
@@ -4262,7 +4262,7 @@ dialog:dir(rtl)::after {
 
 .modalOverlayOuter {
   border: none;
-  box-shadow: var(--box-shadow-popup);
+  box-shadow: var(--popup-box-shadow);
   padding: 0;
   border-radius: var(--border-radius-medium);
 }
@@ -4459,7 +4459,7 @@ dialog:dir(rtl)::after {
   transition: opacity 0.2s ease;
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-medium);
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -4693,7 +4693,7 @@ dialog:dir(rtl)::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
 }
 .focus-timer:hover {
   background: var(--newtab-background-color-secondary);
@@ -4866,7 +4866,7 @@ dialog:dir(rtl)::after {
   text-decoration: none;
   border-radius: var(--border-radius-large);
   padding: var(--space-medium);
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   display: flex;
   flex-direction: column;
   --weather-sunny-background-color: light-dark(var(--color-yellow-0), var(--color-yellow-90));
@@ -5680,10 +5680,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -5762,10 +5762,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-medium .img-wrapper {
     width: 100%;
@@ -5843,7 +5843,7 @@ hr {
     grid-column: span 2;
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-large.ds-card.sections-card-ui {
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
 }
 @media (max-width: 724px) and (724px <= width < 1122px), (max-width: 724px) and (min-width: 1390px) {
@@ -5874,7 +5874,7 @@ hr {
 }
 @media (max-width: 724px) {
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-1-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
 }
 @media (max-width: 724px) and (min-width: 724px) {
@@ -6001,10 +6001,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -6083,10 +6083,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-medium .img-wrapper {
     width: 100%;
@@ -6164,7 +6164,7 @@ hr {
     grid-column: span 2;
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-large.ds-card.sections-card-ui {
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
 }
 @media (724px <= width < 1122px) and (724px <= width < 1122px), (724px <= width < 1122px) and (min-width: 1390px) {
@@ -6195,7 +6195,7 @@ hr {
 }
 @media (724px <= width < 1122px) {
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-2-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
 }
 @media (724px <= width < 1122px) and (min-width: 724px) {
@@ -6340,10 +6340,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -6422,10 +6422,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-medium .img-wrapper {
     width: 100%;
@@ -6503,7 +6503,7 @@ hr {
     grid-column: span 2;
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-large.ds-card.sections-card-ui {
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
 }
 @media (1122px <= width < 1390px) and (724px <= width < 1122px), (1122px <= width < 1390px) and (min-width: 1390px) {
@@ -6534,7 +6534,7 @@ hr {
 }
 @media (1122px <= width < 1390px) {
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-3-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
 }
 @media (1122px <= width < 1390px) and (min-width: 724px) {
@@ -6677,10 +6677,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -6759,10 +6759,10 @@ hr {
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-medium .img-wrapper {
     width: 100%;
@@ -6840,7 +6840,7 @@ hr {
     grid-column: span 2;
   }
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-large.ds-card.sections-card-ui {
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
 }
 @media (min-width: 1390px) and (724px <= width < 1122px), (min-width: 1390px) and (min-width: 1390px) {
@@ -6871,7 +6871,7 @@ hr {
 }
 @media (min-width: 1390px) {
   .ds-section-grid.ds-card-grid:not(.nova-enabled *) .col-4-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
 }
 @media (min-width: 1390px) and (min-width: 724px) {
@@ -6967,10 +6967,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -7049,10 +7049,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-medium .img-wrapper {
     width: 100%;
@@ -7135,10 +7135,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-large.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-1-large .img-wrapper {
     width: 100%;
@@ -7225,10 +7225,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -7307,10 +7307,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-medium .img-wrapper {
     width: 100%;
@@ -7388,7 +7388,7 @@ hr {
     grid-column: span 2;
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-large.ds-card.sections-card-ui {
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   @media (724px <= width < 1122px), (min-width: 1390px) {
     .nova-enabled .ds-section-grid.ds-card-grid .col-2-large.ds-card.sections-card-ui .ds-card-link {
@@ -7417,7 +7417,7 @@ hr {
     }
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-2-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   @media (min-width: 724px) {
     .nova-enabled .ds-section-grid.ds-card-grid .col-2-large.ds-card.sections-card-ui {
@@ -7487,10 +7487,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -7569,10 +7569,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-medium .img-wrapper {
     width: 100%;
@@ -7650,7 +7650,7 @@ hr {
     grid-column: span 2;
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-large.ds-card.sections-card-ui {
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   @media (724px <= width < 1122px), (min-width: 1390px) {
     .nova-enabled .ds-section-grid.ds-card-grid .col-3-large.ds-card.sections-card-ui .ds-card-link {
@@ -7679,7 +7679,7 @@ hr {
     }
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-3-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   @media (min-width: 724px) {
     .nova-enabled .ds-section-grid.ds-card-grid .col-3-large.ds-card.sections-card-ui {
@@ -7749,10 +7749,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-small.ds-card.sections-card-ui {
     padding: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-small.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-small.ds-card.sections-card-ui:not(.placeholder) .img-wrapper > .ds-image.img > img {
     border-radius: var(--border-radius-medium);
@@ -7831,10 +7831,10 @@ hr {
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-medium.ds-card.sections-card-ui {
     height: unset;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-medium.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-medium .img-wrapper {
     width: 100%;
@@ -7912,7 +7912,7 @@ hr {
     grid-column: span 2;
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-large.ds-card.sections-card-ui {
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
   }
   @media (724px <= width < 1122px), (min-width: 1390px) {
     .nova-enabled .ds-section-grid.ds-card-grid .col-4-large.ds-card.sections-card-ui .ds-card-link {
@@ -7941,7 +7941,7 @@ hr {
     }
   }
   .nova-enabled .ds-section-grid.ds-card-grid .col-4-large.ds-card.sections-card-ui:hover {
-    box-shadow: var(--box-shadow-card-hover);
+    box-shadow: var(--card-box-shadow-hover);
   }
   @media (min-width: 724px) {
     .nova-enabled .ds-section-grid.ds-card-grid .col-4-large.ds-card.sections-card-ui {
@@ -8716,7 +8716,7 @@ hr {
 }
 @media (forced-colors: active) {
   .ds-card-grid .sections-card-ui:not(.placeholder) {
-    border: var(--border-width) solid var(--border-color-card);
+    border: var(--border-width) solid var(--card-border-color);
   }
   .ds-card-grid .sections-card-ui:not(.placeholder):hover {
     --newtab-background-color-secondary: SelectedItemText;
@@ -9784,14 +9784,14 @@ hr {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;
   position: relative;
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   border-radius: var(--border-radius-large);
 }
 .ad-banner-wrapper .ad-banner-inner:hover {
   background: var(--newtab-background-color-secondary);
 }
 .ad-banner-wrapper .ad-banner-inner:hover {
-  box-shadow: var(--box-shadow-card-hover);
+  box-shadow: var(--card-box-shadow-hover);
 }
 .ad-banner-wrapper .ad-banner-inner .ad-banner-link {
   text-decoration: none;
@@ -9906,7 +9906,7 @@ hr {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;
   display: none;
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   border-radius: var(--border-radius-large);
   height: 298px;
   width: 228px;
@@ -9969,7 +9969,7 @@ hr {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;
   border-radius: var(--border-radius-medium);
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   padding: var(--space-large);
   display: flex;
   flex-direction: column;
@@ -10200,7 +10200,7 @@ hr {
 
 .personalized-card-wrapper {
   background-color: var(--background-color-canvas);
-  border: 2px solid var(--border-color-card);
+  border: 2px solid var(--card-border-color);
   color: var(--text-color);
   padding: var(--space-xxlarge);
   border-radius: var(--border-radius-large);

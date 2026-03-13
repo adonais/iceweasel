@@ -2,7 +2,7 @@
   @include newtab-card-style;
 
   border-radius: var(--border-radius-medium);
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   padding: var(--space-large);
   display: flex;
   flex-direction: column;

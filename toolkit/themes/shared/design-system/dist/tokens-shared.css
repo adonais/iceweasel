@@ -27,7 +27,6 @@
     --badge-text-color-filled: light-dark(var(--color-white), var(--color-gray-100));
 
     /** border **/
-    --border-color-card: color-mix(in srgb, currentColor 10%, transparent);
     --border-color-interactive-hover: var(--border-color-interactive);
     --border-color-interactive-active: var(--border-color-interactive);
     --border-color-interactive-disabled: var(--border-color-interactive);
@@ -41,8 +40,6 @@
     --border-width: 1px;
 
     /** box-shadow **/
-    --box-shadow-card: var(--box-shadow-level-2);
-    --box-shadow-card-hover: var(--box-shadow-level-4);
     --box-shadow-color-darker-layer-1: light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.2));
     --box-shadow-color-darker-layer-2: light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4));
     --box-shadow-color-lighter-layer-1: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2));
@@ -51,8 +48,6 @@
     --box-shadow-level-2: 0 0.25px 0.75px var(--box-shadow-color-lighter-layer-1), 0 2px 6px var(--box-shadow-color-lighter-layer-2);
     --box-shadow-level-3: 0 0.375px 1.5px var(--box-shadow-color-lighter-layer-1), 0 3px 12px var(--box-shadow-color-lighter-layer-2);
     --box-shadow-level-4: 0 0.5px 2px var(--box-shadow-color-lighter-layer-1), 0 4px 16px var(--box-shadow-color-lighter-layer-2);
-    --box-shadow-popup: var(--box-shadow-level-3);
-    --box-shadow-tab: var(--box-shadow-level-1);
 
     /** button **/
     --button-background-color-disabled: var(--button-background-color);
@@ -132,6 +127,11 @@
     --button-text-color-primary-disabled: var(--button-text-color-primary);
     --button-text-color-primary-selected: var(--button-text-color-primary-active);
     --button-text-color-selected: var(--button-text-color-active);
+
+    /** card **/
+    --card-border-color: color-mix(in srgb, currentColor 10%, transparent);
+    --card-box-shadow: var(--box-shadow-level-2);
+    --card-box-shadow-hover: var(--box-shadow-level-4);
 
     /** checkbox **/
     --checkbox-margin-inline: var(--space-small);
@@ -356,6 +356,9 @@
     /** outline **/
     --outline-color-error: light-dark(var(--color-red-70), var(--color-red-20));
 
+    /** popup **/
+    --popup-box-shadow: var(--box-shadow-level-3);
+
     /** size **/
     --size-image-xsmall: var(--dimension-40);
     --size-image-small: var(--dimension-48);
@@ -384,6 +387,9 @@
     --space-large: var(--dimension-relative-100); /* 1rem */
     --space-xlarge: var(--dimension-relative-150); /* 1.5rem */
     --space-xxlarge: var(--dimension-relative-200); /* 2rem */
+
+    /** tab **/
+    --tab-box-shadow: var(--box-shadow-level-1);
 
     /** table **/
     --table-background-color: light-dark(#f8f8fa, rgb(35, 34, 43));
@@ -420,7 +426,6 @@
 
       /** border **/
       --border-color: CanvasText;
-      --border-color-card: color-mix(in srgb, currentColor 41%, transparent);
       --border-color-deemphasized: currentColor;
       --border-color-interactive: var(--text-color);
       --border-color-transparent: CanvasText;
@@ -429,6 +434,9 @@
       --button-border-color: var(--button-text-color);
       --button-text-color-ghost-hover: var(--button-text-color-hover);
       --button-text-color-ghost-active: var(--button-text-color-active);
+
+      /** card **/
+      --card-border-color: color-mix(in srgb, currentColor 41%, transparent);
 
       /** icon **/
       --icon-color: var(--text-color);
@@ -463,7 +471,6 @@
       --badge-text-color-filled: AccentColorText;
 
       /** border **/
-      --border-color-card: CanvasText;
       --border-color-deemphasized: ButtonText;
       --border-color-interactive: ButtonText;
       --border-color-interactive-hover: SelectedItem;
@@ -509,6 +516,9 @@
       --button-text-color-menu-active: var(--button-text-color-primary);
       --button-text-color-primary: ButtonFace;
       --button-text-color-primary-hover: SelectedItemText;
+
+      /** card **/
+      --card-border-color: CanvasText;
 
       /** color **/
       --color-accent-primary: ButtonText;

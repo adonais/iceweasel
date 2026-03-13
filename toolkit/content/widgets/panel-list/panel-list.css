@@ -22,7 +22,7 @@
   --panel-list-background-color: var(--background-color-box);
   --panel-list-color: var(--text-color);
   --panel-list-border-radius: var(--border-radius-small);
-  --panel-list-box-shadow: var(--box-shadow-popup);
+  --panel-list-box-shadow: var(--popup-box-shadow);
   --panel-list-border-color: var(--border-color-deemphasized);
 
   /* display: block ensures dimensions are available during setAlign()

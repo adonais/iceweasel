@@ -12,18 +12,6 @@
     "level-4": {
       "value": "0 0.5px 2px {box.shadow.color.lighter.layer-1}, 0 4px 16px {box.shadow.color.lighter.layer-2}"
     },
-    "tab": {
-      "value": "{box.shadow.level-1}"
-    },
-    "card": {
-      "value": "{box.shadow.level-2}"
-    },
-    "card-hover": {
-      "value": "{box.shadow.level-4}"
-    },
-    "popup": {
-      "value": "{box.shadow.level-3}"
-    },
     "color": {
       "darker": {
         "layer-1": {

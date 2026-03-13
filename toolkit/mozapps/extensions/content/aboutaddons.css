@@ -238,11 +238,11 @@ addon-list:not([type="theme"]) addon-card:not([expanded]):not([panelopen]) > .ad
 }
 
 .addon.card:hover {
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
 }
 
 addon-card:not([expanded]) > .addon.card:hover {
-  box-shadow: var(--box-shadow-card-hover);
+  box-shadow: var(--card-box-shadow-hover);
   cursor: pointer;
 
   & .addon-name-link {

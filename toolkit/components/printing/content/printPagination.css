@@ -25,7 +25,7 @@
   align-items: center;
   display: flex;
   justify-content: center;
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   color: var(--toolbar-color);
   background-color: var(--toolbar-bgcolor);
   border-radius: 6px;

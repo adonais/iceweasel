@@ -557,7 +557,7 @@ html|dialog,
 .dialogBox {
   border: 1px solid transparent;
   border-radius: var(--border-radius-medium);
-  box-shadow: var(--box-shadow-popup);
+  box-shadow: var(--popup-box-shadow);
 }
 
 .dialogBox {
@@ -1367,7 +1367,7 @@ richlistitem .text-link:hover {
 
   &::part(image) {
     width: 54px;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
     margin-block-start: var(--space-medium);
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius-small);

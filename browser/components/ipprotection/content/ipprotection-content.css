@@ -107,7 +107,7 @@ ipprotection-message-bar.vpn-top-content {
   padding-block: var(--space-medium);
 
   &:has(+ .vpn-bottom-content) {
-    border-bottom: var(--border-width) solid var(--border-color-card);
+    border-bottom: var(--border-width) solid var(--card-border-color);
   }
 }
 

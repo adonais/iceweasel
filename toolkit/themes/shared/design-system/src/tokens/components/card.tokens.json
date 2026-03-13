@@ -1,0 +1,21 @@
+{
+  "border": {
+    "color": {
+      "value": {
+        "default": "color-mix(in srgb, currentColor 10%, transparent)",
+        "prefersContrast": "color-mix(in srgb, currentColor 41%, transparent)",
+        "forcedColors": "CanvasText"
+      }
+    }
+  },
+  "box": {
+    "shadow": {
+      "@base": {
+        "value": "{box.shadow.level-2}"
+      },
+      "hover": {
+        "value": "{box.shadow.level-4}"
+      }
+    }
+  }
+}

@@ -48,11 +48,11 @@
     @include newtab-card-style;
 
     position: relative;
-    box-shadow: var(--box-shadow-card);
+    box-shadow: var(--card-box-shadow);
     border-radius: var(--border-radius-large);
 
     &:hover {
-      box-shadow: var(--box-shadow-card-hover);
+      box-shadow: var(--card-box-shadow-hover);
     }
 
     .ad-banner-link {

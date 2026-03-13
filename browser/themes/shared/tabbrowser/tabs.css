@@ -49,7 +49,7 @@
   &[lwt-tab-selected="dark"] {
     --tab-selected-color-scheme: dark;
   }
-  --tab-selected-shadow: var(--box-shadow-tab);
+  --tab-selected-shadow: var(--tab-box-shadow);
   --tab-outline: 1px solid var(--tab-outline-color);
   --tab-outline-color: transparent;
   --tab-outline-offset: -1px;

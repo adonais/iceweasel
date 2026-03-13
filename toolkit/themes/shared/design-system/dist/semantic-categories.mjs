@@ -316,14 +316,6 @@ export const tokensTable = {
     },
     {
       value: {
-        default: "color-mix(in srgb, currentColor 10%, transparent)",
-        prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
-        forcedColors: "CanvasText",
-      },
-      name: "--border-color-card",
-    },
-    {
-      value: {
         brand: {
           light: "var(--color-gray-30)",
           dark: "var(--color-gray-70)",
@@ -503,6 +495,14 @@ export const tokensTable = {
     },
     {
       value: {
+        default: "color-mix(in srgb, currentColor 10%, transparent)",
+        prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
+        forcedColors: "CanvasText",
+      },
+      name: "--card-border-color",
+    },
+    {
+      value: {
         default: "color-mix(in srgb, currentColor 41%, transparent)",
         forcedColors: "CanvasText",
       },
@@ -539,10 +539,6 @@ export const tokensTable = {
         "0 0.5px 2px var(--box-shadow-color-lighter-layer-1), 0 4px 16px var(--box-shadow-color-lighter-layer-2)",
       name: "--box-shadow-level-4",
     },
-    { value: "var(--box-shadow-level-1)", name: "--box-shadow-tab" },
-    { value: "var(--box-shadow-level-2)", name: "--box-shadow-card" },
-    { value: "var(--box-shadow-level-4)", name: "--box-shadow-card-hover" },
-    { value: "var(--box-shadow-level-3)", name: "--box-shadow-popup" },
     {
       value: {
         light: "rgba(0, 0, 0, 0.15)",
@@ -575,6 +571,10 @@ export const tokensTable = {
       },
       name: "--box-shadow-color-lighter-layer-2",
     },
+    { value: "var(--box-shadow-level-2)", name: "--card-box-shadow" },
+    { value: "var(--box-shadow-level-4)", name: "--card-box-shadow-hover" },
+    { value: "var(--box-shadow-level-3)", name: "--popup-box-shadow" },
+    { value: "var(--box-shadow-level-1)", name: "--tab-box-shadow" },
   ],
   color: [
     { value: "#f0f0f4", name: "--color-gray-20" },
@@ -1379,11 +1379,6 @@ export const variableLookupTable = {
     default: "transparent",
     prefersContrast: "CanvasText",
   },
-  "border-color-card": {
-    default: "color-mix(in srgb, currentColor 10%, transparent)",
-    prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
-    forcedColors: "CanvasText",
-  },
   "border-color-deemphasized": {
     brand: {
       light: "var(--color-gray-30)",
@@ -1436,10 +1431,6 @@ export const variableLookupTable = {
     "0 0.375px 1.5px var(--box-shadow-color-lighter-layer-1), 0 3px 12px var(--box-shadow-color-lighter-layer-2)",
   "box-shadow-level-4":
     "0 0.5px 2px var(--box-shadow-color-lighter-layer-1), 0 4px 16px var(--box-shadow-color-lighter-layer-2)",
-  "box-shadow-tab": "var(--box-shadow-level-1)",
-  "box-shadow-card": "var(--box-shadow-level-2)",
-  "box-shadow-card-hover": "var(--box-shadow-level-4)",
-  "box-shadow-popup": "var(--box-shadow-level-3)",
   "box-shadow-color-darker-layer-1": {
     light: "rgba(0, 0, 0, 0.15)",
     dark: "rgba(0, 0, 0, 0.2)",
@@ -2067,6 +2058,13 @@ export const variableLookupTable = {
   "button-text-color-primary-selected":
     "var(--button-text-color-primary-active)",
   "button-text-color-selected": "var(--button-text-color-active)",
+  "card-border-color": {
+    default: "color-mix(in srgb, currentColor 10%, transparent)",
+    prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
+    forcedColors: "CanvasText",
+  },
+  "card-box-shadow": "var(--box-shadow-level-2)",
+  "card-box-shadow-hover": "var(--box-shadow-level-4)",
   "checkbox-margin-inline": "var(--space-small)",
   "checkbox-size": "var(--size-item-small)",
   "icon-color": {
@@ -2128,6 +2126,8 @@ export const variableLookupTable = {
   },
   "link-focus-outline-offset": "1px",
   "page-main-content-width": { brand: { default: "664px" } },
+  "popup-box-shadow": "var(--box-shadow-level-3)",
+  "tab-box-shadow": "var(--box-shadow-level-1)",
   "table-background-color": {
     light: "#f8f8fa",
     dark: "rgb(35, 34, 43)",

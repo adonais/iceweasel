@@ -18,13 +18,6 @@
         "prefersContrast": "CanvasText"
       }
     },
-    "card": {
-      "value": {
-        "default": "color-mix(in srgb, currentColor 10%, transparent)",
-        "prefersContrast": "color-mix(in srgb, currentColor 41%, transparent)",
-        "forcedColors": "CanvasText"
-      }
-    },
     "deemphasized": {
       "@base": {
         "value": {

@@ -96,7 +96,7 @@ body {
 #metrics-table-settings .box {
   margin-bottom: 5px;
   padding: 10px;
-  border: 1px solid var(--border-color-card);
+  border: 1px solid var(--card-border-color);
   border-radius: var(--border-radius-small);
   background-color: var(--background-color-box);
 }
@@ -129,7 +129,7 @@ td[data-d3-cell="value"] > pre,
 td[data-d3-cell="value"] > svg,
 .chart-display > svg {
   color: var(--text-color);
-  border: 1px solid var(--border-color-card);
+  border: 1px solid var(--card-border-color);
   border-radius: var(--border-radius-small);
   background-color: var(--background-color-box);
 }

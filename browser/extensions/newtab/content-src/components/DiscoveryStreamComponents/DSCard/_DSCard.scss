@@ -431,7 +431,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
     @media (forced-colors: active) {
       &:not(.placeholder) {
-        border: var(--border-width) solid var(--border-color-card);
+        border: var(--border-width) solid var(--card-border-color);
       }
 
       &:not(.placeholder):hover {

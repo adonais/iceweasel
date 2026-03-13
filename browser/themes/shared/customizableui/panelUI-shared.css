@@ -2149,7 +2149,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    border: var(--border-width) solid var(--border-color-card);
+    border: var(--border-width) solid var(--card-border-color);
     border-radius: var(--border-radius-medium);
     background-color: var(--background-color-box);
     box-sizing: border-box;
@@ -2181,7 +2181,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
       }
 
       &:not(:first-of-type) > summary {
-        border-top: 1px solid var(--border-color-card);
+        border-top: 1px solid var(--card-border-color);
       }
 
       > summary {
@@ -2386,7 +2386,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   z-index: -1;
   position: absolute;
   top: 0;
-  border-block-end: 1px solid var(--border-color-card);
+  border-block-end: 1px solid var(--card-border-color);
 }
 
 #PanelUI-profiles > .panel-subview-body {

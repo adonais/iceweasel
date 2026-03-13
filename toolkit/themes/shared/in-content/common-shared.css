@@ -968,9 +968,9 @@ input[type="text"][warning]:enabled:not(:focus) {
 .card {
   background: var(--background-color-box);
   /* Needed for high-contrast where the border will appear. */
-  border: 1px solid var(--border-color-card);
+  border: 1px solid var(--card-border-color);
   border-radius: var(--border-radius-small);
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   margin: 0 0 8px;
   /* Remove the border from the overall padding. */
   padding: calc(var(--card-padding) - 1px);
@@ -978,7 +978,7 @@ input[type="text"][warning]:enabled:not(:focus) {
 }
 
 .card:not(.card-no-hover):hover {
-  box-shadow: var(--box-shadow-card-hover);
+  box-shadow: var(--card-box-shadow-hover);
 }
 
 .card-heading-image {

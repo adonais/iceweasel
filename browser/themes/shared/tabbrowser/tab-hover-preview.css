@@ -108,7 +108,7 @@
   --tab-note-text-border-color: transparent;
   @media (prefers-contrast) {
     --tab-note-text-background: transparent;
-    --tab-note-text-border-color: var(--border-color-card);
+    --tab-note-text-border-color: var(--card-border-color);
   }
 }
 

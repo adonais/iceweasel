@@ -173,7 +173,7 @@
     }
 
     > hr {
-      border-color: var(--border-color-card);
+      border-color: var(--card-border-color);
       margin-block: var(--space-xlarge);
     }
 

@@ -2,7 +2,7 @@
   @include newtab-card-style;
 
   display: none; // hidden by default
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
   border-radius: var(--border-radius-large);
   height: 298px;
   width: 228px;

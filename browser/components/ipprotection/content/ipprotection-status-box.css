@@ -5,7 +5,7 @@
 @import "chrome://global/skin/global.css";
 
 :host {
-  --border-color: var(--border-color-card);
+  --border-color: var(--card-border-color);
 }
 
 .disconnected,

@@ -7,7 +7,7 @@
 
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-medium);
-  box-shadow: var(--box-shadow-card);
+  box-shadow: var(--card-box-shadow);
 
   // Classic layout (when Nova is disabled)
   // @nova-cleanup(remove-conditional): Remove classic fixed-width/height styles after Nova ships

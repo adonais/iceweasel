@@ -32,11 +32,11 @@
   --urlbar-icon-fill-opacity: 0.9;
   @media (prefers-contrast) {
     --urlbar-icon-fill-opacity: 1;
-    --sidebar-border-color: var(--border-color-card);
+    --sidebar-border-color: var(--card-border-color);
   }
 
-  --content-area-shadow: var(--box-shadow-card);
-  --chrome-content-separator-color: var(--border-color-card);
+  --content-area-shadow: var(--card-box-shadow);
+  --chrome-content-separator-color: var(--card-border-color);
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
@@ -120,6 +120,6 @@
 
     --sidebar-background-color: light-dark(white, rgb(28, 27, 34));
     --sidebar-text-color: light-dark(rgb(21, 20, 26), rgb(249, 249, 250));
-    --sidebar-border-color: var(--border-color-card);
+    --sidebar-border-color: var(--card-border-color);
   }
 }
