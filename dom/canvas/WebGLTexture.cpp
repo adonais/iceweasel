@@ -6,6 +6,7 @@
 #include "WebGLTexture.h"
 
 #include <algorithm>
+#include <bit>
 
 #include "GLContext.h"
 #include "ScopedGLHelpers.h"
@@ -223,10 +224,10 @@ Maybe<const WebGLTexture::CompletenessInfo> WebGLTexture::CalcCompletenessInfo(
   ret->usage = baseImageInfo.mFormat;
   RefreshSwizzle();
 
-  ret->powerOfTwo = mozilla::IsPowerOfTwo(baseImageInfo.mWidth) &&
-                    mozilla::IsPowerOfTwo(baseImageInfo.mHeight);
+  ret->powerOfTwo = std::has_single_bit(baseImageInfo.mWidth) &&
+                    std::has_single_bit(baseImageInfo.mHeight);
   if (mTarget == LOCAL_GL_TEXTURE_3D) {
-    ret->powerOfTwo &= mozilla::IsPowerOfTwo(baseImageInfo.mDepth);
+    ret->powerOfTwo &= std::has_single_bit(baseImageInfo.mDepth);
   }
 
   // -

@@ -6,9 +6,10 @@
 
 #include "MediaResource.h"
 
+#include <bit>
+
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/SchedulerGroup.h"
 
 using mozilla::media::TimeUnit;
@@ -24,7 +25,7 @@ mozilla::LazyLogModule gMediaResourceIndexLog("MediaResourceIndex");
 namespace mozilla {
 
 static const uint32_t kMediaResourceIndexCacheSize = 8192;
-static_assert(IsPowerOfTwo(kMediaResourceIndexCacheSize),
+static_assert(std::has_single_bit(kMediaResourceIndexCacheSize),
               "kMediaResourceIndexCacheSize cache size must be a power of 2");
 
 MediaResourceIndex::MediaResourceIndex(MediaResource* aResource)

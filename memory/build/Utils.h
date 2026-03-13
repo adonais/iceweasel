@@ -15,6 +15,7 @@
 #endif
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/MathAlgorithms.h"
 
 // Helper for log2 of powers of 2 at compile time.
 constexpr size_t LOG2(size_t N) { return mozilla::CeilingLog2(N); }
