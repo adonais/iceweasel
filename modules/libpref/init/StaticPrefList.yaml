@@ -6093,6 +6093,26 @@
   value: ""
   mirror: never
 
+# Whether to enable about:blank async-load workaround for ZE.
+# Intentionally defaults to false for now unlike the CKEditor 4 and GWT
+# prefs.
+- name: dom.about-blank-ze-hack.enabled
+  type: bool
+  value: false
+  mirror: always
+
+# Per-domain blocklist for the previous hack.
+- name: dom.about-blank-ze-hack.disabled-domains
+  type: String
+  value: ""
+  mirror: never
+
+# Whether to require ZComponents in the global scope for the previous hack.
+- name: dom.about-blank-ze-hack.require-zcomponents
+  type: bool
+  value: true
+  mirror: always
+
 # Whether to include common ancestor when serializing HTML data for clipboard copy.
 - name: dom.serializer.includeCommonAncestor.enabled
   type: bool
