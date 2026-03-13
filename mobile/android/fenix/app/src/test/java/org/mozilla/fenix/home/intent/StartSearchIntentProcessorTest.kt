@@ -39,17 +39,6 @@ class StartSearchIntentProcessorTest {
     }
 
     @Test
-    fun `do not process when user has not been onboarded`() {
-        val intent = Intent().apply {
-            putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
-        }
-        StartSearchIntentProcessor { false }.process(intent, navController, out, settings)
-
-        verify { navController wasNot Called }
-        verify { out wasNot Called }
-    }
-
-    @Test
     fun `do not process blank intents`() {
         verify { navController wasNot Called }
         verify { out wasNot Called }
@@ -60,7 +49,7 @@ class StartSearchIntentProcessorTest {
         val intent = Intent().apply {
             removeExtra(HomeActivity.OPEN_TO_SEARCH)
         }
-        StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
+        StartSearchIntentProcessor().process(intent, navController, out, settings)
 
         verify { navController wasNot Called }
         verify { out wasNot Called }
@@ -71,7 +60,7 @@ class StartSearchIntentProcessorTest {
         val intent = Intent().apply {
             putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
         }
-        StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
+        StartSearchIntentProcessor().process(intent, navController, out, settings)
         val options = navOptions {
             popUpTo(R.id.homeFragment)
         }
@@ -99,7 +88,7 @@ class StartSearchIntentProcessorTest {
         val intent = Intent().apply {
             putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
         }
-        StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
+        StartSearchIntentProcessor().process(intent, navController, out, settings)
 
         assertNotNull(SearchWidget.newTabButton.testGetValue())
         val recordedEvents = SearchWidget.newTabButton.testGetValue()!!

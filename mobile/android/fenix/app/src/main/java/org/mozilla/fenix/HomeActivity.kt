@@ -311,7 +311,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             HomeDeepLinkIntentProcessor(this),
             SpeechProcessingIntentProcessor(this, components.core.store),
             AssistIntentProcessor(),
-            StartSearchIntentProcessor { components.fenixOnboarding.userHasBeenOnboarded() },
+            StartSearchIntentProcessor(),
             OpenBrowserIntentProcessor(this, ::getIntentSessionId),
             OpenSpecificTabIntentProcessor(this),
             OpenPasswordManagerIntentProcessor(),
