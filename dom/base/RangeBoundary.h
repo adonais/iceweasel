@@ -96,17 +96,6 @@ enum class RangeBoundaryFor {
   Collapsed,
 };
 
-inline std::ostream& operator<<(std::ostream& aStream, RangeBoundaryFor aFor) {
-  constexpr static const char* sNames[] = {
-      "Start",
-      "End",
-      "Collapsed",
-  };
-  return aStream << sNames[static_cast<size_t>(aFor)];
-}
-
-inline auto format_as(RangeBoundaryFor aFor) { return ToString(aFor); }
-
 // This class has two types of specializations, one using reference counting
 // pointers and one using raw pointers (both non-const and const versions). The
 // latter help us avoid unnecessary AddRef/Release calls.
@@ -401,8 +390,7 @@ class RangeBoundaryBase {
       }
     }
     // Otherwise, return the point in the empty parent.
-    NS_ASSERTION(!mParent->HasChildNodes(),
-                 fmt::format("Called with invalid offset?", *this).c_str());
+    MOZ_ASSERT(!mParent->HasChildNodes());
     return EndOfParent(*mParent, mSetBy, TreeKind::FlatForSelection);
   }
 

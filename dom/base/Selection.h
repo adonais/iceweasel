@@ -1049,9 +1049,9 @@ class Selection final : public nsSupportsWeakReference,
     template <typename PT, typename RT, typename ArrayType>
     static size_t FindInsertionPoint(
         const ArrayType& aElementArray,
-        const RangeBoundaryBase<PT, RT>& aBoundary, RangeBoundaryFor aFor,
+        const RangeBoundaryBase<PT, RT>& aBoundary,
         int32_t (*aComparator)(const RangeBoundaryBase<PT, RT>&,
-                               RangeBoundaryFor aFor, const AbstractRange&));
+                               const AbstractRange&));
 
     /**
      * Works on the same principle as GetRangesForIntervalArray, however
