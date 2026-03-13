@@ -3625,17 +3625,6 @@
     }
 
     /**
-     * Hide the list of tabs <browsers> that are part of a split view.
-     *
-     * @param {MozTabbrowserTab[]} tabs
-     */
-    hideSplitViewPanels(tabs) {
-      for (const tab of tabs) {
-        this.tabpanels.removePanelFromSplitView(tab.linkedPanel);
-      }
-    }
-
-    /**
      * Toggle split view active attribute
      *
      * @param {boolean} isActive

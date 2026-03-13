@@ -61,7 +61,7 @@ add_task(async function test_splitViewCreateAndAddTabs() {
   let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let tab4 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-
+  const tabpanels = document.getElementById("tabbrowser-tabpanels");
   // Add tabs to split view
   let splitview = gBrowser.addTabSplitView([tab1, tab2]);
   let splitview2 = gBrowser.addTabSplitView([tab3, tab4]);
@@ -125,8 +125,8 @@ add_task(async function test_splitViewCreateAndAddTabs() {
     "The split view wrapper has the expected attribute when it contains the selected tab"
   );
 
-  // Unsplit tabs
-  splitview.unsplitTabs();
+  // TODO Bug 2022919- fix discrepancy between splitview.unsplitTabs and gBrowser.unsplitTabs()
+  gBrowser.unsplitTabs(splitview);
   await BrowserTestUtils.waitForMutationCondition(
     tabbrowserTabs,
     { childList: true },
@@ -153,6 +153,16 @@ add_task(async function test_splitViewCreateAndAddTabs() {
     !tab3Panel.classList.contains("split-view-panel-active") &&
       !tab4Panel.classList.contains("split-view-panel-active"),
     "Split view active classes have been removed from the tab panels"
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabpanels,
+    { attributes: true },
+    () => !tabpanels.hasAttribute("splitview")
+  );
+  Assert.ok(
+    !tabpanels.hasAttribute("splitview"),
+    "Tab panel does not have blue outline"
   );
 
   // Add tabs back to split view

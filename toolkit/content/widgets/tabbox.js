@@ -532,31 +532,39 @@
     }
 
     /**
-     * Remove split view attributes from a panel, and optionally remove it from
-     * the splitViewPanels array.
+     * Remove split view attributes from tabs and their linked panels.
      *
-     * @param {string} panel
-     * @param {boolean} [updateArray]
+     * @param {MozTabbrowserTab[]} tabs
      */
-    removePanelFromSplitView(panel, updateArray = true) {
-      const panelEl = document.getElementById(panel);
-      panelEl?.classList.remove("split-view-panel");
-      panelEl?.removeAttribute("column");
-      const browser = panelEl?.querySelector("browser");
-      const browserContainer = panelEl?.querySelector(".browserContainer");
-      for (const eventType of MozTabpanels.#SPLIT_VIEW_PANEL_EVENTS) {
-        browserContainer?.removeEventListener(eventType, this);
-      }
-      browser?.removeEventListener("focus", this);
-      if (updateArray) {
+    removeTabsFromSplitview(tabs) {
+      for (const tab of tabs) {
+        let panel = tab.linkedPanel;
+        const panelEl = document.getElementById(panel);
+        panelEl?.classList.remove("split-view-panel");
+        panelEl?.removeAttribute("column");
+        const browser = panelEl?.querySelector("browser");
+        const browserContainer = panelEl?.querySelector(".browserContainer");
+
+        for (const eventType of MozTabpanels.#SPLIT_VIEW_PANEL_EVENTS) {
+          browserContainer?.removeEventListener(eventType, this);
+        }
+        browser?.removeEventListener("focus", this);
         const index = this.#splitViewPanels.indexOf(panel);
+
         if (index !== -1) {
           this.#splitViewPanels.splice(index, 1);
         }
       }
+
       this.setSplitViewActive(!!this.#splitViewPanels.length);
     }
 
+    /**
+     * Updates attributes on panels such as the blue outline for active splitview tabs,
+     * panel ordering and aria attributes.
+     *
+     * @param {boolean} updatedValue
+     */
     setSplitViewActive(updatedValue) {
       let isActive = gBrowser.selectedTab.splitview && updatedValue;
       this.toggleAttribute("splitview", isActive);

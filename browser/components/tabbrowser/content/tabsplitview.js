@@ -231,9 +231,10 @@
      * Remove Split View tabs from the content area.
      */
     #deactivate() {
-      gBrowser.hideSplitViewPanels(
+      gBrowser.tabpanels.removeTabsFromSplitview(
         this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
       );
+
       updateUrlbarButton.arm();
       this.container.dispatchEvent(
         new CustomEvent("TabSplitViewDeactivate", {
