@@ -51,7 +51,7 @@ add_task(async function test_firstrun_immersive_view() {
     ],
   });
 
-  let win = await openAIWindow();
+  const win = await openAIWindow();
   const chromeRoot = win.document.documentElement;
 
   await navigateAndWait(win, FIRSTRUN_URL);
@@ -78,7 +78,6 @@ add_task(async function test_firstrun_immersive_view() {
 
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
-  win = null;
 });
 
 add_task(async function test_open_sidebar_immersive_view() {
@@ -94,7 +93,7 @@ add_task(async function test_open_sidebar_immersive_view() {
     ],
   });
 
-  let win = await openAIWindow();
+  const win = await openAIWindow();
   const chromeRoot = win.document.documentElement;
   await navigateAndWait(win, FIRSTRUN_URL);
 
@@ -129,5 +128,4 @@ add_task(async function test_open_sidebar_immersive_view() {
   AIWindowUI.closeSidebar(win);
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
-  win = null;
 });
