@@ -128,16 +128,9 @@ constexpr size_t RoundUpPow2(size_t aValue) {
 template <typename T>
 MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateLeft(const T aValue,
                                                          uint_fast8_t aShift) {
-  static_assert(std::is_unsigned_v<T>, "Rotates require unsigned values");
-
   MOZ_ASSERT(aShift < sizeof(T) * CHAR_BIT, "Shift value is too large!");
-  MOZ_ASSERT(aShift > 0,
-             "Rotation by value length is undefined behavior, but compilers "
-             "do not currently fold a test into the rotate instruction. "
-             "Please remove this restriction when compilers optimize the "
-             "zero case (http://blog.regehr.org/archives/1063).");
 
-  return (aValue << aShift) | (aValue >> (sizeof(T) * CHAR_BIT - aShift));
+  return std::rotl(aValue, aShift);
 }
 
 /**
@@ -146,16 +139,9 @@ MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateLeft(const T aValue,
 template <typename T>
 MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateRight(const T aValue,
                                                           uint_fast8_t aShift) {
-  static_assert(std::is_unsigned_v<T>, "Rotates require unsigned values");
-
   MOZ_ASSERT(aShift < sizeof(T) * CHAR_BIT, "Shift value is too large!");
-  MOZ_ASSERT(aShift > 0,
-             "Rotation by value length is undefined behavior, but compilers "
-             "do not currently fold a test into the rotate instruction. "
-             "Please remove this restriction when compilers optimize the "
-             "zero case (http://blog.regehr.org/archives/1063).");
 
-  return (aValue >> aShift) | (aValue << (sizeof(T) * CHAR_BIT - aShift));
+  return std::rotr(aValue, aShift);
 }
 
 // Greatest Common Divisor, from
