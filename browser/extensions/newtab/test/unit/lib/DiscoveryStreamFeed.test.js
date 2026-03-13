@@ -2840,6 +2840,36 @@ describe("DiscoveryStreamFeed", () => {
     });
   });
 
+  describe("#topicSelectionMaybeLaterEvent", () => {
+    it("should use 3-day timeout for new profiles (age <= 1 day)", async () => {
+      sandbox.stub(feed, "retreiveProfileAge").resolves(0.5);
+      sandbox.spy(feed.store, "dispatch");
+      await feed.topicSelectionMaybeLaterEvent();
+      const day = 24 * 60 * 60 * 1000;
+      assert.calledWith(
+        feed.store.dispatch,
+        ac.SetPref(
+          "discoverystream.topicSelection.onboarding.displayTimeout",
+          3 * day
+        )
+      );
+    });
+
+    it("should use 7-day timeout for older profiles (age > 1 day)", async () => {
+      sandbox.stub(feed, "retreiveProfileAge").resolves(5);
+      sandbox.spy(feed.store, "dispatch");
+      await feed.topicSelectionMaybeLaterEvent();
+      const day = 24 * 60 * 60 * 1000;
+      assert.calledWith(
+        feed.store.dispatch,
+        ac.SetPref(
+          "discoverystream.topicSelection.onboarding.displayTimeout",
+          7 * day
+        )
+      );
+    });
+  });
+
   describe("new proxy feed", () => {
     beforeEach(() => {
       sandbox.stub(global.Region, "home").get(() => "DE");

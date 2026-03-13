@@ -2392,8 +2392,8 @@ export class DiscoveryStreamFeed {
     );
   }
 
-  topicSelectionMaybeLaterEvent() {
-    const age = this.retreiveProfileAge();
+  async topicSelectionMaybeLaterEvent() {
+    const age = await this.retreiveProfileAge();
     const newProfile = age <= 1;
     const day = 24 * 60 * 60 * 1000;
     this.store.dispatch(
