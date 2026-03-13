@@ -14,6 +14,9 @@ export class _CustomizeMenu extends React.PureComponent {
     this.onEntered = this.onEntered.bind(this);
     this.onExited = this.onExited.bind(this);
     this.onSubpanelToggle = this.onSubpanelToggle.bind(this);
+    this.personalizeButtonRef = React.createRef();
+    this.customizeMenuRef = React.createRef();
+    this.closeButtonRef = React.createRef();
     this.state = {
       exitEventFired: false,
       subpanelOpen: false,
@@ -26,21 +29,22 @@ export class _CustomizeMenu extends React.PureComponent {
 
   onEntered() {
     this.setState({ exitEventFired: false });
-    if (this.closeButton) {
-      this.closeButton.focus();
+    if (this.closeButtonRef.current) {
+      this.closeButtonRef.current.focus();
     }
   }
 
   onExited() {
     this.setState({ exitEventFired: true });
-    if (this.openButton) {
-      this.openButton.focus();
+    if (this.personalizeButtonRef.current) {
+      this.personalizeButtonRef.current.focus();
     }
   }
 
   render() {
     const activationWindowVariant =
       this.props.Prefs.values["activationWindow.variant"];
+
     const activationWindowClass = activationWindowVariant
       ? `activation-window-variant-${activationWindowVariant}`
       : "";
@@ -48,12 +52,14 @@ export class _CustomizeMenu extends React.PureComponent {
     return (
       <span>
         <CSSTransition
+          nodeRef={this.personalizeButtonRef}
           timeout={300}
           classNames="personalize-animate"
           in={!this.props.showing}
           appear={true}
         >
           <button
+            ref={this.personalizeButtonRef}
             className={`${activationWindowClass} personalize-button`}
             data-l10n-id="newtab-customize-panel-icon-button"
             aria-haspopup="dialog"
@@ -63,7 +69,6 @@ export class _CustomizeMenu extends React.PureComponent {
                 this.props.onOpen();
               }
             }}
-            ref={c => (this.openButton = c)}
           >
             <label data-l10n-id="newtab-customize-panel-icon-button-label" />
             <div>
@@ -75,6 +80,7 @@ export class _CustomizeMenu extends React.PureComponent {
           </button>
         </CSSTransition>
         <CSSTransition
+          nodeRef={this.customizeMenuRef}
           timeout={250}
           classNames="customize-animate"
           in={this.props.showing}
@@ -82,7 +88,10 @@ export class _CustomizeMenu extends React.PureComponent {
           onExited={this.onExited}
           appear={true}
         >
-          <div className="customize-menu-animate-wrapper">
+          <div
+            ref={this.customizeMenuRef}
+            className="customize-menu-animate-wrapper"
+          >
             <div
               className={`customize-menu ${
                 this.state.subpanelOpen ? "subpanel-open" : ""
@@ -97,7 +106,7 @@ export class _CustomizeMenu extends React.PureComponent {
                   type="icon ghost"
                   data-l10n-id="newtab-custom-close-menu-button"
                   iconsrc="chrome://global/skin/icons/close.svg"
-                  ref={c => (this.closeButton = c)}
+                  ref={this.closeButtonRef}
                 ></moz-button>
               </div>
               <ContentSection

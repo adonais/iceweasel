@@ -85,6 +85,16 @@ module.exports = (env = {}) => [
     externals: {
       react: "React",
       "react-dom": "ReactDOM",
+      "react-dom/client": {
+        root: "ReactDOM",
+        commonjs: "react-dom/client",
+        commonjs2: "react-dom/client",
+      },
+      "react-dom/server.browser": {
+        root: "ReactDOMServer",
+        commonjs: "react-dom/server.browser",
+        commonjs2: "react-dom/server.browser",
+      },
       "prop-types": "PropTypes",
       "react-transition-group": "ReactTransitionGroup",
       "react-redux": "ReactRedux",
