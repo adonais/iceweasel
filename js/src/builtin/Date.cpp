@@ -691,9 +691,13 @@ int32_t DateTimeHelper::daylightSavingTA(int64_t t) {
   if (!isRepresentableAsTime32(t)) {
     auto [year, month, day] = ToYearMonthDay(t);
 
+    // Inlined `TimeWithinDay` to avoid triggering an assertion when |t| is
+    // outside the local time-value limits.
+    int32_t timeWithinDay = PositiveModulo(t, msPerDay);
+
     int equivalentYear = equivalentYearForDST(year);
     double equivalentDay = MakeDay(equivalentYear, month, day);
-    double equivalentDate = MakeDate(equivalentDay, TimeWithinDay(t));
+    double equivalentDate = MakeDate(equivalentDay, timeWithinDay);
 
     MOZ_ALWAYS_TRUE(mozilla::NumberEqualsInt64(equivalentDate, &t));
   }
