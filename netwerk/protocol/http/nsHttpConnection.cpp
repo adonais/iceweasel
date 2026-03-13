@@ -855,6 +855,33 @@ bool nsHttpConnection::JoinConnection(const nsACString& hostname,
 }
 
 bool nsHttpConnection::CanReuse() {
+  if (!CanReuseLikely()) {
+    return false;
+  }
+
+  if (!IsAlive()) {
+    return false;
+  }
+
+  // An idle persistent connection should not have data waiting to be read
+  // before a request is sent. Data here is likely a 408 timeout response
+  // which we would deal with later on through the restart logic, but that
+  // path is more expensive than just closing the socket now.
+
+  uint64_t dataSize;
+  if (mSocketIn && (mUsingSpdyVersion == SpdyVersion::NONE) &&
+      mHttp1xTransactionCount &&
+      NS_SUCCEEDED(mSocketIn->Available(&dataSize)) && dataSize) {
+    LOG(
+        ("nsHttpConnection::CanReuse %p %s"
+         "Socket not reusable because read data pending (%" PRIu64 ") on it.\n",
+         this, mConnInfo->Origin(), dataSize));
+    return false;
+  }
+  return true;
+}
+
+bool nsHttpConnection::CanReuseLikely() {
   if (mDontReuse || !mRemainingConnectionUses) {
     return false;
   }
@@ -871,24 +898,7 @@ bool nsHttpConnection::CanReuse() {
     canReuse = IsKeepAlive();
   }
 
-  canReuse = canReuse && (IdleTime() < mIdleTimeout) && IsAlive();
-
-  // An idle persistent connection should not have data waiting to be read
-  // before a request is sent. Data here is likely a 408 timeout response
-  // which we would deal with later on through the restart logic, but that
-  // path is more expensive than just closing the socket now.
-
-  uint64_t dataSize;
-  if (canReuse && mSocketIn && (mUsingSpdyVersion == SpdyVersion::NONE) &&
-      mHttp1xTransactionCount &&
-      NS_SUCCEEDED(mSocketIn->Available(&dataSize)) && dataSize) {
-    LOG(
-        ("nsHttpConnection::CanReuse %p %s"
-         "Socket not reusable because read data pending (%" PRIu64 ") on it.\n",
-         this, mConnInfo->Origin(), dataSize));
-    canReuse = false;
-  }
-  return canReuse;
+  return canReuse && (IdleTime() < mIdleTimeout);
 }
 
 bool nsHttpConnection::CanDirectlyActivate() {

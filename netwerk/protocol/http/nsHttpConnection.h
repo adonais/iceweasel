@@ -93,6 +93,11 @@ class nsHttpConnection final : public HttpConnectionBase,
            (mKeepAliveMask && mKeepAlive);
   }
 
+  // Cheap reuse check without the IsAlive() socket probe. Used by
+  // AvailableForDispatchNow() to avoid a redundant probe before
+  // GetIdleConnection() performs the definitive check.
+  bool CanReuseLikely();
+
   // Returns time in seconds for how long connection can be reused.
   uint32_t TimeToLive();
 

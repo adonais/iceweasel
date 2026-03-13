@@ -58,7 +58,7 @@ bool ConnectionEntry::HasActiveH3Connection() const {
 }
 
 bool ConnectionEntry::AvailableForDispatchNow() {
-  if (mIdleConns.Length() && mIdleConns[0]->CanReuse()) {
+  if (mIdleConns.Length() && mIdleConns[0]->CanReuseLikely()) {
     return true;
   }
 
