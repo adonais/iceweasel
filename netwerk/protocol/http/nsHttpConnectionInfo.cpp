@@ -503,7 +503,8 @@ void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
 already_AddRefed<nsHttpConnectionInfo>
 nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
     const HttpConnectionInfoCloneArgs& aInfoArgs) {
-  nsProxyInfo* pi = nsProxyInfo::DeserializeProxyInfo(aInfoArgs.proxyInfo());
+  RefPtr<nsProxyInfo> pi =
+      nsProxyInfo::DeserializeProxyInfo(aInfoArgs.proxyInfo());
   RefPtr<nsHttpConnectionInfo> cinfo;
   if (aInfoArgs.routedHost().IsEmpty()) {
     cinfo = new nsHttpConnectionInfo(

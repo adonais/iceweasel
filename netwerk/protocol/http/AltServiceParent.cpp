@@ -33,9 +33,9 @@ mozilla::ipc::IPCResult AltServiceParent::RecvProcessHeader(
     const OriginAttributes& aOriginAttributes,
     const HttpConnectionInfoCloneArgs& aArgs) {
   LOG(("AltServiceParent::RecvProcessHeader [this=%p]\n", this));
-  nsProxyInfo* pi = aProxyInfo.IsEmpty()
-                        ? nullptr
-                        : nsProxyInfo::DeserializeProxyInfo(aProxyInfo);
+  RefPtr<nsProxyInfo> pi = aProxyInfo.IsEmpty()
+                               ? nullptr
+                               : nsProxyInfo::DeserializeProxyInfo(aProxyInfo);
   RefPtr<nsHttpConnectionInfo> cinfo =
       nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(aArgs);
   AltSvcMapping::ProcessHeader(aBuf, aOriginScheme, aOriginHost, aOriginPort,

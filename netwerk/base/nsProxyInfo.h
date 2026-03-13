@@ -58,7 +58,7 @@ class nsProxyInfo final : public nsIProxyInfo {
 
   static void SerializeProxyInfo(nsProxyInfo* aProxyInfo,
                                  nsTArray<ProxyInfoCloneArgs>& aResult);
-  static nsProxyInfo* DeserializeProxyInfo(
+  static already_AddRefed<nsProxyInfo> DeserializeProxyInfo(
       const nsTArray<ProxyInfoCloneArgs>& aArgs);
 
   already_AddRefed<nsProxyInfo> CloneProxyInfoWithNewResolveFlags(
