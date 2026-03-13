@@ -79,9 +79,7 @@ class Registers {
     static_assert(sizeof(SetType) <= 4, "SetType must be, at most, 32 bits");
     return std::popcount(x);
   }
-  static uint32_t FirstBit(SetType x) {
-    return mozilla::CountTrailingZeroes32(x);
-  }
+  static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
   static uint32_t LastBit(SetType x) {
     return 31 - mozilla::CountLeadingZeroes32(x);
   }
@@ -287,7 +285,7 @@ struct FloatRegister {
 #if defined(JS_CODEGEN_X86)
   static uint32_t FirstBit(SetType x) {
     static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return mozilla::CountTrailingZeroes32(x);
+    return std::countr_zero(x);
   }
   static uint32_t LastBit(SetType x) {
     return 31 - mozilla::CountLeadingZeroes32(x);

@@ -12,6 +12,8 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "gc/Zone.h"
 #include "jit/CalleeToken.h"
 #include "jit/CompileWrappers.h"
@@ -1116,7 +1118,7 @@ void MacroAssembler::assertStackAlignment(uint32_t alignment,
   // Test if each bit from offset is set.
   uint32_t off = offset;
   while (off) {
-    uint32_t lowestBit = 1 << mozilla::CountTrailingZeroes32(off);
+    uint32_t lowestBit = 1 << std::countr_zero(off);
     branchTestStackPtr(Assembler::Zero, Imm32(lowestBit), &bad);
     off ^= lowestBit;
   }

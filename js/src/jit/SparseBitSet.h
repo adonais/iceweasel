@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -140,7 +141,7 @@ class SparseBitSet<AllocPolicy, Owner>::Iterator {
   void skipZeroBits() {
     MOZ_ASSERT(!done());
     MOZ_ASSERT(currentWord_ != 0);
-    auto numZeroes = mozilla::CountTrailingZeroes32(currentWord_);
+    auto numZeroes = std::countr_zero(currentWord_);
     index_ += numZeroes;
     currentWord_ >>= numZeroes;
   }

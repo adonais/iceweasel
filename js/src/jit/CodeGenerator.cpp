@@ -2549,8 +2549,8 @@ static void ShiftFlag32(MacroAssembler& masm, Register reg) {
   static_assert(mozilla::IsPowerOfTwo(FromBitMask));
   static_assert(mozilla::IsPowerOfTwo(ToBitMask));
   static_assert(FromBitMask != ToBitMask);
-  constexpr uint32_t fromShift = mozilla::CountTrailingZeroes32(FromBitMask);
-  constexpr uint32_t toShift = mozilla::CountTrailingZeroes32(ToBitMask);
+  constexpr uint32_t fromShift = std::countr_zero(FromBitMask);
+  constexpr uint32_t toShift = std::countr_zero(ToBitMask);
   if (fromShift < toShift) {
     masm.lshift32(Imm32(toShift - fromShift), reg);
   } else {

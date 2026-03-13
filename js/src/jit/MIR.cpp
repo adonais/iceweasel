@@ -6737,11 +6737,8 @@ MDefinition* MCtz::foldsTo(TempAllocator& alloc) {
   if (num()->isConstant()) {
     MConstant* c = num()->toConstant();
     if (type() == MIRType::Int32) {
-      int32_t n = num()->toConstant()->toInt32();
-      if (n == 0) {
-        return MConstant::NewInt32(alloc, 32);
-      }
-      return MConstant::NewInt32(alloc, mozilla::CountTrailingZeroes32(n));
+      uint32_t n = uint32_t(num()->toConstant()->toInt32());
+      return MConstant::NewInt32(alloc, std::countr_zero(n));
     }
     uint64_t n = uint64_t(c->toInt64());
     return MConstant::NewInt64(alloc, std::countr_zero(n));

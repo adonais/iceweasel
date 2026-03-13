@@ -110,6 +110,7 @@
 #include "mozjemalloc_types.h"
 #include "mozjemalloc_profiling.h"
 
+#include <bit>
 #include <cstring>
 #include <cerrno>
 #include <chrono>
@@ -710,10 +711,10 @@ inline uint8_t arena_t::FindFreeBitInMask(uint32_t aMask, uint32_t& aRng) {
     // RotateRight asserts when provided bad input.
     aMask = aRng ? RotateRight(aMask, aRng)
                  : aMask;  // Rotate the mask a random number of slots
-    bitIndex = CountTrailingZeroes32(aMask);
+    bitIndex = static_cast<uint8_t>(std::countr_zero(aMask));
     return (bitIndex + aRng) % 32;
   }
-  return CountTrailingZeroes32(aMask);
+  return static_cast<uint8_t>(std::countr_zero(aMask));
 }
 
 inline void* arena_t::ArenaRunRegAlloc(arena_run_t* aRun, arena_bin_t* aBin) {
