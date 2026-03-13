@@ -211,8 +211,8 @@ class nsMenuX final : public nsMenuParentX,
   already_AddRefed<nsIContent> GetMenuPopupContent();
   void WillInsertChild(const MenuChild& aChild);
   void WillRemoveChild(const MenuChild& aChild);
-  void AddMenuChild(MenuChild&& aChild);
-  void InsertMenuChild(MenuChild&& aChild);
+  void AddMenuChild(const MenuChild& aChild);
+  void InsertMenuChild(const MenuChild& aChild);
   void RemoveMenuChild(const MenuChild& aChild);
   mozilla::Maybe<MenuChild> CreateMenuChild(nsIContent* aContent);
   RefPtr<nsMenuItemX> CreateMenuItem(nsIContent* aMenuItemContent);
