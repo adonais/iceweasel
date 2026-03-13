@@ -9,7 +9,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   HiddenBrowserManager: "resource://gre/modules/HiddenFrame.sys.mjs",
-  Preferences: "resource://gre/modules/Preferences.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   ProcessType: "resource://gre/modules/ProcessType.sys.mjs",
@@ -393,7 +392,7 @@ export class UserCharacteristicsPageService {
   // metrics, so we do this in a wrapper function
   async filterAllCanvasRawData(allCanvasData) {
     // Check if we should skip compression (test mode)
-    const skipCompression = lazy.Preferences.get(
+    const skipCompression = Services.prefs.getBoolPref(
       "toolkit.telemetry.user_characteristics_ping.test_skip_compression",
       false
     );
@@ -465,7 +464,7 @@ export class UserCharacteristicsPageService {
     // and the collect probability.
 
     // Check if we should ignore probability filtering
-    const ignoreProbability = lazy.Preferences.get(
+    const ignoreProbability = Services.prefs.getBoolPref(
       "toolkit.telemetry.user_characteristics_ping.ignore_canvas_probability",
       false
     );
@@ -1619,13 +1618,15 @@ export class UserCharacteristicsPageService {
       "media.mediasource.vp9.enabled",
     ];
 
-    const defaultPrefs = new lazy.Preferences({ defaultBranch: true });
+    const defaultBranch = Services.prefs.getDefaultBranch("");
     const changedPrefs = {};
     for (const pref of PREFS) {
-      const value = lazy.Preferences.get(pref);
-      if (lazy.Preferences.isSet(pref) && defaultPrefs.get(pref) !== value) {
-        const key = pref.substring(6).substring(0, pref.length - 8 - 6);
-        changedPrefs[key] = value;
+      if (Services.prefs.prefHasUserValue(pref)) {
+        const value = Services.prefs.getBoolPref(pref);
+        if (defaultBranch.getBoolPref(pref) !== value) {
+          const key = pref.substring(6).substring(0, pref.length - 8 - 6);
+          changedPrefs[key] = value;
+        }
       }
     }
     Glean.characteristics.changedMediaPrefs.set(JSON.stringify(changedPrefs));
