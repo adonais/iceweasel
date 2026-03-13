@@ -254,6 +254,7 @@ bool BaseProxyHandler::getOwnEnumerablePropertyKeys(
 
   /* Select only the enumerable properties through in-place iteration. */
   RootedId id(cx);
+  Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
   size_t i = 0;
   for (size_t j = 0, len = props.length(); j < len; j++) {
     MOZ_ASSERT(i <= j);
@@ -263,8 +264,8 @@ bool BaseProxyHandler::getOwnEnumerablePropertyKeys(
     }
 
     AutoWaivePolicy policy(cx, proxy, id, BaseProxyHandler::GET);
-    Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
     if (!getOwnPropertyDescriptor(cx, proxy, id, &desc)) {
+      desc.reset();
       return false;
     }
     if (desc.isSome()) {
