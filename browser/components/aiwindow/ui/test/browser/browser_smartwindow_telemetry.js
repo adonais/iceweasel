@@ -92,8 +92,6 @@ add_task(async function test_smartbar_commit_telemetry() {
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     const conversationId = await getConversationId(browser);
     await dispatchSmartbarCommit(browser, "Telemetry prompt", "chat");
     await TestUtils.waitForTick();
@@ -119,8 +117,6 @@ add_task(async function test_memories_toggle_telemetry() {
   const win = await openAIWindow();
   try {
     const browser = win.gBrowser.selectedBrowser;
-
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     const conversationId = await getConversationId(browser);
     await dispatchMemoriesToggle(browser, true);
@@ -158,8 +154,6 @@ add_task(async function test_prompt_selected_telemetry() {
 
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     const conversationId = await getConversationId(browser);
     const firstPromptText = await getFirstPromptTextAndClick(browser);

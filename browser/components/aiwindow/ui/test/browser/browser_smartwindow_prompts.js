@@ -187,8 +187,6 @@ add_task(async function test_prompt_click_triggers_chat() {
   //     const win = await openAIWindow();
   //     const browser = win.gBrowser.selectedBrowser;
 
-  //     await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
   //     const buttons = await getPromptButtons(browser);
   //     const firstPromptText = buttons[0];
 
@@ -236,8 +234,6 @@ add_task(async function test_prompt_click_respects_memories_setting() {
 
   //     const win = await openAIWindow();
   //     const browser = win.gBrowser.selectedBrowser;
-
-  //     await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   //     await getPromptButtons(browser);
   //     await clickPromptButton(browser, 0);

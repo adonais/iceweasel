@@ -123,8 +123,6 @@ add_task(
       const browser = win.gBrowser.selectedBrowser;
       tab = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
       // Simulate a conversation started in fullpage mode
       win.dispatchEvent(
         new win.CustomEvent("ai-window:opened-conversation", {
@@ -137,9 +135,7 @@ add_task(
       );
 
       // Navigate to a URL
-      const loaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-      await loaded;
+      await promiseNavigateAndLoad(browser, "https://example.com/");
 
       await BrowserTestUtils.waitForMutationCondition(
         win.document.getElementById(AIWindowUI.BOX_ID),
@@ -170,8 +166,6 @@ add_task(
       const browser = win.gBrowser.selectedBrowser;
       originalTab = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
       // Set up conversation state for the original tab
       win.dispatchEvent(
         new win.CustomEvent("ai-window:opened-conversation", {
@@ -184,9 +178,7 @@ add_task(
       );
 
       // Navigate away from AIWINDOW_URL (simulates user browsing after starting a chat)
-      const loaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-      await loaded;
+      await promiseNavigateAndLoad(browser, "https://example.com/");
 
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
@@ -248,8 +240,6 @@ add_task(
       const browserA = win.gBrowser.selectedBrowser;
       tabA = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browserA, false, AIWINDOW_URL);
-
       // Set up conversation A for tab A
       win.dispatchEvent(
         new win.CustomEvent("ai-window:opened-conversation", {
@@ -262,9 +252,7 @@ add_task(
       );
 
       // Navigate tab A away from AIWINDOW_URL (simulates user browsing after starting a chat)
-      let loaded = BrowserTestUtils.browserLoaded(browserA);
-      BrowserTestUtils.startLoadingURIString(browserA, "https://example.com/");
-      await loaded;
+      await promiseNavigateAndLoad(browserA, "https://example.com/");
 
       // Open tab B with a different conversation
       tabB = await BrowserTestUtils.openNewForegroundTab(
@@ -328,8 +316,6 @@ add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
     const browser = win.gBrowser.selectedBrowser;
     const tab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     // Set up conversation state
     win.dispatchEvent(
       new win.CustomEvent("ai-window:opened-conversation", {
@@ -342,9 +328,7 @@ add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
     );
 
     // Navigate away to external URL
-    let loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
 
     // Give time for sidebar to open
     await new Promise(resolve => win.setTimeout(resolve, 100));
@@ -354,9 +338,7 @@ add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
     );
 
     // Navigate back to Smart Window URL
-    loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, AIWINDOW_URL);
-    await loaded;
+    await promiseNavigateAndLoad(browser, AIWINDOW_URL);
 
     // Give time for sidebar to close
     await new Promise(resolve => win.setTimeout(resolve, 100));
@@ -384,8 +366,6 @@ add_task(async function test_navigate_with_empty_conversation_opens_sidebar() {
     const browser = win.gBrowser.selectedBrowser;
     tab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     // Simulate a conversation started in fullpage mode with no messages
     win.dispatchEvent(
       new win.CustomEvent("ai-window:opened-conversation", {
@@ -398,9 +378,7 @@ add_task(async function test_navigate_with_empty_conversation_opens_sidebar() {
     );
 
     // Navigate to a URL
-    const loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
 
     await BrowserTestUtils.waitForMutationCondition(
       win.document.getElementById(AIWindowUI.BOX_ID),
@@ -439,8 +417,6 @@ add_task(async function test_switch_between_empty_and_nonempty_conversations() {
     const browserA = win.gBrowser.selectedBrowser;
     tabA = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browserA, false, AIWINDOW_URL);
-
     // Set up conversation A (with messages) for tab A
     win.dispatchEvent(
       new win.CustomEvent("ai-window:opened-conversation", {
@@ -453,9 +429,7 @@ add_task(async function test_switch_between_empty_and_nonempty_conversations() {
     );
 
     // Navigate tab A away from AIWINDOW_URL
-    let loaded = BrowserTestUtils.browserLoaded(browserA);
-    BrowserTestUtils.startLoadingURIString(browserA, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browserA, "https://example.com/");
 
     Assert.ok(
       AIWindowUI.isSidebarOpen(win),
@@ -527,8 +501,6 @@ add_task(
       const browserA = win.gBrowser.selectedBrowser;
       tabA = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browserA, false, AIWINDOW_URL);
-
       // Set up conversation A (with messages) for tab A
       win.dispatchEvent(
         new win.CustomEvent("ai-window:opened-conversation", {
@@ -542,9 +514,7 @@ add_task(
       );
 
       // Navigate tab A away from AIWINDOW_URL to open sidebar
-      let loaded = BrowserTestUtils.browserLoaded(browserA);
-      BrowserTestUtils.startLoadingURIString(browserA, "https://example.com/");
-      await loaded;
+      await promiseNavigateAndLoad(browserA, "https://example.com/");
 
       await BrowserTestUtils.waitForMutationCondition(
         win.document.getElementById(AIWindowUI.BOX_ID),
@@ -669,8 +639,6 @@ add_task(
       const browser = win.gBrowser.selectedBrowser;
       originalTab = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
       // Set up conversation state for the original tab
       win.dispatchEvent(
         new win.CustomEvent("ai-window:opened-conversation", {
@@ -683,9 +651,7 @@ add_task(
       );
 
       // Navigate away from AIWINDOW_URL (simulates user browsing after starting a chat)
-      const loaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-      await loaded;
+      await promiseNavigateAndLoad(browser, "https://example.com/");
 
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
@@ -749,10 +715,7 @@ add_task(async function test_close_tab_with_active_sidebar() {
     sb.stub(ChatStore, "findConversationById").resolves(mockConversation);
 
     win = await openAIWindow();
-    const browser = win.gBrowser.selectedBrowser;
     const originalTab = win.gBrowser.selectedTab;
-
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     // Set up conversation state
     win.dispatchEvent(
@@ -819,8 +782,6 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
     const browser = win.gBrowser.selectedBrowser;
     tab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     // Simulate a conversation started in fullpage mode with messages
     win.dispatchEvent(
       new win.CustomEvent("ai-window:opened-conversation", {
@@ -838,9 +799,7 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
     );
 
     // Navigate away - sidebar should open because conversation has messages
-    let loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
     await new Promise(resolve => win.setTimeout(resolve, 100));
     Assert.ok(
       AIWindowUI.isSidebarOpen(win),
@@ -848,9 +807,7 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
     );
 
     // Navigate back to Smart Window URL - sidebar should close
-    loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, AIWINDOW_URL);
-    await loaded;
+    await promiseNavigateAndLoad(browser, AIWINDOW_URL);
     await new Promise(resolve => win.setTimeout(resolve, 100));
     Assert.ok(
       !AIWindowUI.isSidebarOpen(win),
@@ -858,9 +815,7 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
     );
 
     // Navigate away again - sidebar should open again
-    loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.org/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.org/");
     await new Promise(resolve => win.setTimeout(resolve, 100));
     Assert.ok(
       AIWindowUI.isSidebarOpen(win),
@@ -886,8 +841,6 @@ add_task(async function test_classic_mode_disables_tab_state_events() {
     const browser = win.gBrowser.selectedBrowser;
     const originalTab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     win.dispatchEvent(
       new win.CustomEvent("ai-window:opened-conversation", {
         detail: {
@@ -898,9 +851,7 @@ add_task(async function test_classic_mode_disables_tab_state_events() {
       })
     );
 
-    const loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
 
     await BrowserTestUtils.waitForMutationCondition(
       win.document.getElementById(AIWindowUI.BOX_ID),
@@ -953,8 +904,6 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
     const browser = win.gBrowser.selectedBrowser;
     const originalTab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     win.dispatchEvent(
       new win.CustomEvent("ai-window:opened-conversation", {
         detail: {
@@ -965,9 +914,7 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
       })
     );
 
-    const loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
 
     await BrowserTestUtils.waitForMutationCondition(
       win.document.getElementById(AIWindowUI.BOX_ID),
@@ -1013,8 +960,6 @@ add_task(async function test_ask_button_close_persists_across_navigation() {
     const browser = win.gBrowser.selectedBrowser;
     const tab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     win.dispatchEvent(
       new win.CustomEvent("ai-window:opened-conversation", {
         detail: {
@@ -1025,9 +970,7 @@ add_task(async function test_ask_button_close_persists_across_navigation() {
       })
     );
 
-    let loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
 
     await BrowserTestUtils.waitForMutationCondition(
       win.document.getElementById(AIWindowUI.BOX_ID),
@@ -1041,9 +984,7 @@ add_task(async function test_ask_button_close_persists_across_navigation() {
 
     AIWindowUI.toggleSidebar(win);
 
-    loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.org/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.org/");
     await new Promise(resolve => win.setTimeout(resolve, 100));
 
     Assert.ok(

@@ -61,8 +61,6 @@ add_task(async function test_interaction_count_increments() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     assertInteractionCount(PREF_NAME, 0, "Initial count should be 0");
 
     await dispatchSmartbarCommitAndWait(browser, "test message", "chat");
@@ -94,8 +92,6 @@ add_task(async function test_interaction_count_max_limit() {
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     assertInteractionCount(
       PREF_NAME,

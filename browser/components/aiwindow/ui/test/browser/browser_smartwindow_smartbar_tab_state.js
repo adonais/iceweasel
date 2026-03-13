@@ -170,7 +170,6 @@ describe("Smartbar tab state input tracking", () => {
       browser = win.gBrowser.selectedBrowser;
       tab = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
       await navigateFromFullpage(win, browser, mockConversation);
 
       sidebarBrowser = await waitForSidebarAIWindow(win);
@@ -268,7 +267,6 @@ describe("Smartbar tab state input tracking", () => {
       browserA = win.gBrowser.selectedBrowser;
       tabA = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browserA, false, AIWINDOW_URL);
       await navigateFromFullpage(win, browserA, conversationA);
 
       sidebarBrowser = await waitForSidebarAIWindow(win);

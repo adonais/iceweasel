@@ -120,7 +120,6 @@ add_task(async function test_smartbar_submit_chat() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
     await dispatchSmartbarCommit(browser, "Test prompt", "chat");
     await TestUtils.waitForTick();
 
@@ -152,8 +151,6 @@ add_task(async function test_smartbar_action_navigate() {
     const fetchWithHistoryStub = sb.stub(this.Chat, "fetchWithHistory");
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     const loaded = BrowserTestUtils.browserLoaded(
       browser,
@@ -194,8 +191,6 @@ add_task(async function test_smartbar_explicit_navigate_action() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
   const testURL = "https://example.org/";
   const loaded = BrowserTestUtils.browserLoaded(browser, false, testURL);
   await SpecialPowers.spawn(browser, [testURL], async url => {
@@ -223,8 +218,6 @@ add_task(async function test_smartbar_explicit_navigate_action() {
 add_task(async function test_smartbar_explicit_search_action() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const searchQuery = "Test";
   const searchResult = await SpecialPowers.spawn(
@@ -279,7 +272,6 @@ add_task(async function test_smartbar_empty_submit() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
     await dispatchSmartbarCommit(browser, "", "chat");
 
     Assert.ok(
@@ -296,8 +288,6 @@ add_task(async function test_smartbar_empty_submit() {
 add_task(async function test_smartbar_cta_default_search_engine_label() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const defaultSearchEngineInfo = await SpecialPowers.spawn(
     browser,
@@ -347,8 +337,6 @@ add_task(async function test_smartbar_cta_intent() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
   await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
@@ -390,7 +378,6 @@ add_task(
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
     await promiseSmartbarSuggestionsOpen(browser, () =>
       typeInSmartbar(browser, "test")
     );
@@ -473,7 +460,6 @@ add_task(async function test_smartbar_runs_search_for_initial_prompt() {
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
     const aiWindowElement =
       browser.contentWindow.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
@@ -505,7 +491,6 @@ add_task(async function test_smartbar_suppresses_search_for_followup_prompts() {
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     const prompt = "Follow-up prompt";
     await typeInSmartbar(browser, prompt);
@@ -734,8 +719,6 @@ add_task(async function test_smartbar_click_on_suggestion_navigates() {
 add_task(async function test_smartbar_max_length_is_set() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const maxLength = await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");

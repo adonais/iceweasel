@@ -141,7 +141,6 @@ async function waitForMentionInserted(browser) {
 add_task(async function test_mentions_trigger_zero_prefix() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const mentionsOpen = waitForMentionsOpen(browser);
   await typeInSmartbar(browser, "@");
@@ -158,7 +157,6 @@ add_task(async function test_mentions_trigger_zero_prefix() {
 add_task(async function test_mentions_trigger_after_text() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const mentionsOpen = waitForMentionsOpen(browser);
   await typeInSmartbar(browser, "test @");
@@ -175,7 +173,6 @@ add_task(async function test_mentions_trigger_after_text() {
 add_task(async function test_mentions_suggestions_panel_shows() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const panelVisible = waitForPanelOpen(browser);
   await typeInSmartbar(browser, "@");
@@ -192,7 +189,6 @@ add_task(async function test_mentions_suggestions_panel_shows() {
 add_task(async function test_mentions_insert_on_click() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const waitMention = waitForMentionInserted(browser);
   await typeInSmartbar(browser, "@");
@@ -222,7 +218,6 @@ add_task(async function test_mentions_insert_on_click() {
 add_task(async function test_mentions_insert_on_enter() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   await typeInSmartbar(browser, "@");
   await waitForMentionsOpen(browser);
@@ -239,7 +234,6 @@ add_task(async function test_mentions_insert_from_context_button() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
   await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
@@ -302,7 +296,6 @@ add_task(async function test_panel_shows_unified_group() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
   await typeInSmartbar(browser, "@");
   await waitForPanelOpen(browser);
 
@@ -372,7 +365,6 @@ add_task(async function test_deduplication_by_url() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
   await typeInSmartbar(browser, "@");
   await waitForPanelOpen(browser);
 
@@ -442,7 +434,6 @@ add_task(async function test_maxResults_total_limit() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
   await typeInSmartbar(browser, "@");
   await waitForPanelOpen(browser);
 
@@ -477,8 +468,6 @@ add_task(async function test_maxResults_total_limit() {
 add_task(async function test_default_context_chip_sidebar_mode() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
@@ -515,8 +504,6 @@ add_task(async function test_no_default_context_chip_fullpage_mode() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
   await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
@@ -539,8 +526,6 @@ add_task(async function test_no_default_context_chip_fullpage_mode() {
 add_task(async function test_context_mentions_added_smartbar_header_fullpage() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
@@ -578,12 +563,9 @@ add_task(async function test_context_mentions_added_smartbar_header_fullpage() {
 });
 
 add_task(async function test_context_mentions_added_smartbar_header_sidebar() {
-  const win = await openAIWindow();
-  AIWindowUI.toggleSidebar(win);
-  const browser = win.document.getElementById("ai-window-browser");
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+  const { win, sidebarBrowser } = await openAIWindowWithSidebar();
 
-  await SpecialPowers.spawn(browser, [], async () => {
+  await SpecialPowers.spawn(sidebarBrowser, [], async () => {
     const smartbar = await ContentTaskUtils.waitForCondition(() => {
       const aiWindowElement = content.document.querySelector("ai-window");
       return aiWindowElement?.shadowRoot?.querySelector("#ai-window-smartbar");
@@ -628,8 +610,6 @@ add_task(
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     await SpecialPowers.spawn(browser, [], async () => {
       const aiWindowElement = content.document.querySelector("ai-window");
       const smartbar = aiWindowElement.shadowRoot.querySelector(
@@ -665,8 +645,6 @@ add_task(
   async function test_context_mentions_can_be_removed_from_smartbar_header() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     await SpecialPowers.spawn(browser, [], async () => {
       const aiWindowElement = content.document.querySelector("ai-window");
@@ -713,8 +691,6 @@ add_task(async function test_suggestions_closes_when_mentions_panel_opens() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
   await promiseSmartbarSuggestionsOpen(browser, () =>
     typeInSmartbar(browser, "test")
   );
@@ -732,8 +708,6 @@ add_task(
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     await typeInSmartbar(browser, "test @");
     await waitForMentionsOpen(browser);
 
@@ -750,8 +724,6 @@ add_task(
 add_task(async function test_suggestions_hidden_when_inline_mentions_exists() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   await typeInSmartbar(browser, "@");
   await waitForPanelOpen(browser);
@@ -780,8 +752,6 @@ add_task(async function test_suggestions_hidden_when_inline_mentions_exists() {
 add_task(async function test_suggestions_show_after_inline_mentions_removed() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const mentionsOpen = waitForMentionsOpen(browser);
   await typeInSmartbar(browser, "test @");

@@ -80,8 +80,6 @@ add_setup(async function () {
 
 add_task(async function test_chat_intent_in_aiwindow() {
   const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   // Open new tab - regular page
   const url = "https://example.com/";

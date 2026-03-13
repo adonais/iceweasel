@@ -13,7 +13,6 @@
 add_task(async function test_smartbar_autofocus_suppresses_outline() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const suppressFocusBorder = await SpecialPowers.spawn(
     browser,
@@ -43,7 +42,6 @@ add_task(async function test_smartbar_autofocus_suppresses_outline() {
 add_task(async function test_smartbar_click_suppresses_outline() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const suppressFocusBorder = await SpecialPowers.spawn(
     browser,
@@ -82,7 +80,6 @@ add_task(async function test_smartbar_click_suppresses_outline() {
 add_task(async function test_smartbar_keyboard_focus_shows_outline() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   const suppressFocusBorder = await SpecialPowers.spawn(
     browser,

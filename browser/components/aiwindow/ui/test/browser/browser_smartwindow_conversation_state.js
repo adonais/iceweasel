@@ -50,7 +50,6 @@ add_task(async function test_data_conversation_id_stamped_on_initial_load() {
   try {
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     await BrowserTestUtils.waitForMutationCondition(
       browser,
@@ -81,8 +80,6 @@ add_task(
       const browser = win.gBrowser.selectedBrowser;
       tab = win.gBrowser.selectedTab;
 
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
       await BrowserTestUtils.waitForMutationCondition(
         browser,
         { attributes: true, attributeFilter: ["data-conversation-id"] },
@@ -95,9 +92,7 @@ add_task(
 
       const convId = browser.getAttribute("data-conversation-id");
 
-      const loaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-      await loaded;
+      await promiseNavigateAndLoad(browser, "https://example.com/");
 
       Assert.equal(
         browser.getAttribute("data-conversation-id"),
@@ -128,8 +123,6 @@ add_task(async function test_back_navigation_restores_conversation() {
     const browser = win.gBrowser.selectedBrowser;
     tab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     // Stamp the mock ID to simulate a saved conversation in this tab.
     browser.setAttribute("data-conversation-id", mockConversation.id);
 
@@ -143,11 +136,11 @@ add_task(async function test_back_navigation_restores_conversation() {
       })
     );
 
-    let loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
 
-    loaded = BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+    let loaded = BrowserTestUtils.browserLoaded(browser, {
+      wantLoad: AIWINDOW_URL,
+    });
     win.gBrowser.goBack();
     await loaded;
 
@@ -176,7 +169,6 @@ add_task(async function test_chat_active_not_applied_on_fresh_load() {
   try {
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     // Wait for #loadPendingConversation to stamp a fresh ID — this is the
     // signal that the no-existing-conversation path has completed.
@@ -213,7 +205,6 @@ add_task(async function test_chat_active_removed_for_stale_conversation_id() {
   try {
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     // Stamp a fake ID to simulate the attribute being present from a previous
     // load (e.g. a refresh on a new tab, or a classic→smart mode switch).
@@ -222,9 +213,7 @@ add_task(async function test_chat_active_removed_for_stale_conversation_id() {
     const staleId = "stale-conversation-id-not-in-store";
     browser.setAttribute("data-conversation-id", staleId);
 
-    const loaded = BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-    BrowserTestUtils.startLoadingURIString(browser, AIWINDOW_URL);
-    await loaded;
+    await promiseNavigateAndLoad(browser, AIWINDOW_URL);
 
     // The stale ID gets replaced with a fresh one once the store lookup fails —
     // wait for that replacement as the signal that cleanup has completed.
@@ -269,15 +258,13 @@ add_task(async function test_chat_active_applied_on_back_navigation() {
     const browser = win.gBrowser.selectedBrowser;
     tab = win.gBrowser.selectedTab;
 
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
     browser.setAttribute("data-conversation-id", mockConversation.id);
 
-    let loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-    await loaded;
+    await promiseNavigateAndLoad(browser, "https://example.com/");
 
-    loaded = BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+    let loaded = BrowserTestUtils.browserLoaded(browser, {
+      wantLoad: AIWINDOW_URL,
+    });
     win.gBrowser.goBack();
     await loaded;
 

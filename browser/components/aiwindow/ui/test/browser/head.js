@@ -31,15 +31,23 @@ add_setup(async function () {
 /**
  * Opens a new AI Window
  *
+ * @param {object} options
+ * @param {string|boolean} options.waitForTabURL - URL to wait for or false to skip waiting
  * @returns {Promise<Window>}
  */
-async function openAIWindow() {
-  const win = await BrowserTestUtils.openNewBrowserWindow({ aiWindow: true });
+async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
+  info("Opening new AI Window");
+  const win = await BrowserTestUtils.openNewBrowserWindow({
+    aiWindow: true,
+    waitForTabURL,
+  });
+  info("Waiting for AI window attr");
   await BrowserTestUtils.waitForMutationCondition(
     win.document.documentElement,
     { attributes: true },
     () => win.document.documentElement.hasAttribute("ai-window")
   );
+  info("Promising focus");
   await SimpleTest.promiseFocus(win);
   return win;
 }
@@ -64,6 +72,14 @@ async function openAIWindowWithSidebar() {
     "Sidebar ai-window should be loaded"
   );
   return { win, sidebarBrowser };
+}
+
+function promiseNavigateAndLoad(browser, url) {
+  let loaded = BrowserTestUtils.browserLoaded(browser, {
+    wantLoad: url,
+  });
+  BrowserTestUtils.startLoadingURIString(browser, url);
+  return loaded;
 }
 
 /**
