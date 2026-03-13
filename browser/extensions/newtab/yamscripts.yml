@@ -24,6 +24,7 @@ scripts:
   testmc:
     lint: =>lint
     build: =>bundle:webpack
+    jest: jest
     unit: karma start karma.mc.config.js
 
   tddmc: karma start karma.mc.config.js --tdd
