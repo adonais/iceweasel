@@ -1852,6 +1852,7 @@ let gFileMenu = {
       if (AppConstants.platform == "macosx") {
         SharingUtils.updateShareURLMenuItem(
           gBrowser.selectedBrowser,
+          null,
           document.getElementById("menu_savePage")
         );
       }

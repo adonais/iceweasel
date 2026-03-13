@@ -168,8 +168,8 @@ add_task(async function test_copy_link() {
     let { popupElement } = await openShareTabPopup();
 
     let items = Array.from(popupElement.querySelectorAll("menuitem"));
-    let copyLinkItem = items.find(
-      item => item.getAttribute("data-l10n-id") == "menu-share-copy-link"
+    let copyLinkItem = items.find(item =>
+      item.classList.contains("share-copy-link")
     );
     ok(copyLinkItem, "Copy link item exists");
 
