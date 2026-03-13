@@ -571,6 +571,7 @@ impl NeqoHttp3Conn {
         use firefox_on_glean::metrics::networking as glean;
         use neqo_common::Ecn;
         use neqo_transport::{ecn, CongestionEvent};
+        use std::cmp::Ordering;
 
         // Metric values must be recorded as integers. Glean does not support
         // floating point distributions. In order to represent values <1, they
@@ -695,15 +696,46 @@ impl NeqoHttp3Conn {
                 debug_assert!(false, "{msg}");
             }
 
-            // Count whether the connection exited slow start.
-            if let Some(cwnd) = stats.cc.slow_start_exit_cwnd {
+            // Record Slow Start Exit metrics
+            if let Some(exit_cwnd) = stats.cc.slow_start_exit_cwnd {
                 glean::http_3_slow_start_exited.get("exited").add(1);
-                glean::http_3_slow_start_exit_cwnd.accumulate(cwnd as u64);
+                glean::http_3_slow_start_exit_cwnd.accumulate(exit_cwnd as u64);
+
+                // http_3_slow_start_exit_direction_loss
+                match exit_cwnd.cmp(&stats.cc.cwnd) {
+                    Ordering::Greater => glean::http_3_slow_start_exit_direction_loss
+                        .get("overshoot")
+                        .add(1),
+                    Ordering::Less => glean::http_3_slow_start_exit_direction_loss
+                        .get("undershoot")
+                        .add(1),
+                    Ordering::Equal => glean::http_3_slow_start_exit_direction_loss
+                        .get("exact")
+                        .add(1),
+                }
+
+                // http_3_slow_start_exit_accuracy: Have to cast to f64 and back to i64 here to avoid truncating the ratio in the percentage calculation before multiplying with 100
+                debug_assert!(
+                    stats.cc.cwnd > 0,
+                    "If `slow_start_exit_cwnd.is_some()` then `cwnd > 0` should also be true"
+                );
+                let accuracy =
+                    ((exit_cwnd.abs_diff(stats.cc.cwnd) as f64) / stats.cc.cwnd as f64) * 100.0;
+                glean::http_3_slow_start_exit_accuracy
+                    .get("ce_exit")
+                    .accumulate_single_sample_signed(accuracy as i64);
             } else {
                 glean::http_3_slow_start_exited.get("not_exited").add(1);
             }
 
             glean::http_3_final_cwnd.accumulate(stats.cc.cwnd as u64);
+
+            glean::http_3_congestion_event_count.accumulate_single_sample_signed(
+                (stats.cc.congestion_events[CongestionEvent::Ecn]
+                    + stats.cc.congestion_events[CongestionEvent::Loss])
+                    .saturating_sub(stats.cc.congestion_events[CongestionEvent::Spurious])
+                    as i64,
+            );
 
             if let Some(peer_max) = stats.pmtud_peer_max_udp_payload {
                 if let Ok(v) = i64::try_from(peer_max) {

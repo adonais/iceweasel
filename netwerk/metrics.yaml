@@ -1148,6 +1148,48 @@ networking:
       - minden@mozilla.com
     expires: never
 
+  http_3_slow_start_exit_accuracy:
+    type: labeled_custom_distribution
+    range_min: 0
+    range_max: 150
+    bucket_count: 100
+    histogram_type: linear
+    description: >
+      HTTP3: Absolute congestion window size difference between exiting slow start and closing the connection, as a percentage of the window size when closing the connection.
+      Only recorded for connections that exited slow start. Is used to approximate accuracy of slow start exit per connection. The labels separate slow start exit reasons, because congestion event and heuristic based exits are fundamentally different cases that would obscure each other if mixed. For now only records for congestion event exits while heuristics for exiting slow start are still being implemented.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021867
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021867
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+    labels:
+      - ce_exit
+      - heuristic_exit
+
+  http_3_slow_start_exit_direction_loss:
+    type: labeled_counter
+    description: >
+      HTTP3: Records if a loss-based slow start exit undershot, overshot or exactly matches the congestion window size when closing the connection. This mostly exists to confirm the expected assumption that loss-based exit almost always overshoots.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021867
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021867
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+    labels:
+      - overshoot
+      - undershoot
+      - exact
+
   http_3_final_cwnd:
     type: memory_distribution
     memory_unit: byte
@@ -1163,6 +1205,25 @@ networking:
       - necko@mozilla.com
       - minden@mozilla.com
     expires: never
+
+  http_3_congestion_event_count:
+    type: custom_distribution
+    range_min: 0
+    range_max: 180
+    bucket_count: 30
+    histogram_type: exponential
+    description: >
+      HTTP3: Records how many congestion events a connection has, with spurious congestion events filtered out. A max range of 180 still gives high granularity in the lower buckets while letting us confirm if we ever actually see connections having very high congestion event counts.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021867
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021867
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
 
   http_3_congestion_event_reason:
     type: labeled_counter
