@@ -5,10 +5,6 @@ support-files = [
   "!/browser/base/content/test/protectionsUI/trackingPage.html",
 ]
 
-["browser_privacyMetrics_actor.js"]
-
-["browser_privacy_metrics_card.js"]
-
 ["browser_protections_lockwise.js"]
 
 ["browser_protections_monitor.js"]
