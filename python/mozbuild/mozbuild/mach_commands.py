@@ -477,7 +477,7 @@ def doctor(command_context, fix=False, verbose=False):
     )
 
 
-CLOBBER_CHOICES = {"objdir", "python", "gradle", "artifacts"}
+CLOBBER_CHOICES = {"objdir", "python", "gradle", "artifacts", "mach_func_cache"}
 
 
 @Command(
@@ -517,6 +517,9 @@ def clobber(command_context, what, full=False):
     The `artifacts` target will remove cached artifact files from
     ~/.mozbuild/package-frontend or $MOZBUILD_STATE_PATH/package-frontend.
 
+    The `mach_func_cache` target will remove cached results from mach's
+    function cache (used to speed up configure and other operations).
+
     By default, the command clobbers the `objdir` and `python` targets.
     """
     what = set(what)
@@ -554,6 +557,15 @@ def clobber(command_context, what, full=False):
                     )
                     return 1
             raise
+
+        if full:
+            what.add("mach_func_cache")
+
+    if "mach_func_cache" in what:
+        from mach.func_cache import _cache_dir
+
+        if _cache_dir.exists():
+            shutil.rmtree(_cache_dir, ignore_errors=True)
 
     if "python" in what:
         topsrcdir = Path(command_context.topsrcdir)
