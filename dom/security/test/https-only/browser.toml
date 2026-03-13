@@ -18,6 +18,9 @@ support-files = ["file_console_logging.html"]
 ["browser_cors_mixedcontent.js"]
 support-files = ["file_cors_mixedcontent.html"]
 
+["browser_extension_exemption.js"]
+support-files = ["file_cors.sjs"]
+
 ["browser_hsts_host.js"]
 support-files = [
   "hsts_headers.sjs",
