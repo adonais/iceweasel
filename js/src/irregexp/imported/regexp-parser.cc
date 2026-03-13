@@ -8,9 +8,8 @@
 #include "irregexp/imported/regexp-macro-assembler.h"
 #include "irregexp/imported/regexp.h"
 
-#include "js/properties_glue.h"
-
 #ifdef V8_INTL_SUPPORT
+#include "js/properties_glue.h"
 #include "unicode/uniset.h"
 #include "unicode/unistr.h"
 #include "unicode/usetiter.h"

@@ -1,17 +1,30 @@
 diff --git a/js/src/irregexp/imported/regexp-parser.cc b/js/src/irregexp/imported/regexp-parser.cc
-index 8899a36b00fc..ef9b71292279 100644
 --- a/js/src/irregexp/imported/regexp-parser.cc
 +++ b/js/src/irregexp/imported/regexp-parser.cc
-@@ -8,6 +8,8 @@
+@@ -4,16 +4,17 @@
+ 
+ #include "irregexp/imported/regexp-parser.h"
+ 
+ #include "irregexp/imported/regexp-ast.h"
  #include "irregexp/imported/regexp-macro-assembler.h"
  #include "irregexp/imported/regexp.h"
  
-+#include "js/properties_glue.h"
-+
  #ifdef V8_INTL_SUPPORT
++#include "js/properties_glue.h"
  #include "unicode/uniset.h"
  #include "unicode/unistr.h"
-@@ -2063,7 +2065,7 @@ bool LookupSpecialPropertyValueName(const char* name,
+ #include "unicode/usetiter.h"
+ #include "unicode/utf16.h"  // For U16_NEXT
+ #endif                      // V8_INTL_SUPPORT
+ 
+ namespace v8 {
+ namespace internal {
+@@ -2058,17 +2059,17 @@ bool LookupSpecialPropertyValueName(cons
+   } else if (NameEquals(name, "ASCII")) {
+     result->Add(negate ? CharacterRange::Range(0x80, String::kMaxCodePoint)
+                        : CharacterRange::Range(0x0, 0x7F),
+                 zone);
+   } else if (NameEquals(name, "Assigned")) {
      return LookupPropertyValueName(UCHAR_GENERAL_CATEGORY, "Unassigned",
                                     !negate, result, nullptr, flags, zone);
    } else {
@@ -20,3 +33,8 @@ index 8899a36b00fc..ef9b71292279 100644
    }
    return true;
  }
+ 
+ // Explicitly allowlist supported binary properties. The spec forbids supporting
+ // properties outside of this set to ensure interoperability.
+ bool IsSupportedBinaryProperty(UProperty property, bool unicode_sets) {
+   switch (property) {
