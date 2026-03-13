@@ -3495,3 +3495,96 @@ add_task(async function test_remoteSettingsSyncError_nullLastModified() {
 
   await cleanup();
 });
+
+add_task(async function testUpdateRecipesOnlyFeatureIds() {
+  const recipeA = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "previous-recipe",
+    { featureId: "no-feature-firefox-desktop" }
+  );
+
+  const recipeB = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "new-recipe",
+    { featureId: "testFeature" }
+  );
+
+  const { cleanup, loader, manager } = await setupTest({
+    experiments: [recipeA],
+  });
+
+  Assert.ok(
+    manager.store.get(recipeA.slug)?.active,
+    "Enrolled in previous-recipe"
+  );
+
+  // recipeB becomes published.
+  loader.remoteSettingsClients.experiments.get.resolves([recipeA, recipeB]);
+
+  // We look only for testFeature recipes. recipeA should stay enrolled and
+  // recipeB should be newly enrolled.
+  await loader.updateRecipes("test", {
+    onlyFeatureIds: new Set(["testFeature"]),
+  });
+
+  Assert.ok(
+    manager.store.get(recipeA.slug).active,
+    "Still enrolled in recipeA"
+  );
+  Assert.ok(manager.store.get(recipeB.slug)?.active, "Enrolled in recipeB");
+
+  // We update only feature "unknown", which does not find any nor does it
+  // affect current enrollments.
+  await loader.updateRecipes("test", { onlyFeatureIds: new Set("unknown") });
+
+  Assert.ok(
+    manager.store.get(recipeA.slug).active,
+    "Still enrolled in recipeA"
+  );
+  Assert.ok(
+    manager.store.get(recipeB.slug).active,
+    "Still enrolled in recipeB"
+  );
+
+  // recipeA becomes unpublished.
+  loader.remoteSettingsClients.experiments.get.resolves([recipeB]);
+
+  // We update only testFeature and so recipeA does not unenroll.
+  await loader.updateRecipes("test", {
+    onlyFeatureIds: new Set(["testFeature"]),
+  });
+
+  Assert.ok(
+    manager.store.get(recipeA.slug).active,
+    "Still enrolled in recipeA"
+  );
+  Assert.ok(
+    manager.store.get(recipeB.slug).active,
+    "Still enrolled in recipeB"
+  );
+
+  // recipeB becomes unpublished.
+  loader.remoteSettingsClients.experiments.get.resolves([]);
+
+  // We update only no-feature-firefox-desktop. recipeA unenrolls but recipeB stays enrolled.
+  await loader.updateRecipes("test", {
+    onlyFeatureIds: new Set(["no-feature-firefox-desktop"]),
+  });
+  {
+    const enrollment = manager.store.get(recipeA.slug);
+    Assert.ok(!enrollment.active, "No longer enrolled in recipeA");
+    Assert.equal(enrollment.unenrollReason, "recipe-not-seen");
+
+    Assert.ok(
+      manager.store.get(recipeB.slug).active,
+      "Still enrolled in recipeB"
+    );
+  }
+
+  // Finally a regular update unenrolls recipeB.
+  await loader.updateRecipes("test");
+  Assert.ok(
+    !manager.store.get(recipeB.slug).active,
+    "No longer enrolled in recipeB"
+  );
+
+  await cleanup();
+});
