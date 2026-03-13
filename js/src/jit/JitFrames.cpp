@@ -282,6 +282,8 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
   }
 
   RootedScript script(cx, frame.script());
+  RootedValue exception(cx);
+  RootedValue exceptionStack(cx);
 
   for (TryNoteIterIon tni(cx, frame); !tni.done(); ++tni) {
     const TryNote* tn = *tni;
@@ -343,8 +345,8 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
         ExceptionBailoutInfo excInfo(cx, frame.frameNo(), finallyPC,
                                      tn->stackDepth);
 
-        RootedValue exception(cx);
-        RootedValue exceptionStack(cx);
+        exception = UndefinedValue();
+        exceptionStack = UndefinedValue();
         if (!cx->getPendingException(&exception) ||
             !cx->getPendingExceptionStack(&exceptionStack)) {
           exception = UndefinedValue();
@@ -474,6 +476,10 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
              "Caller must ensure frame is an interpreter frame");
 
   RootedScript script(cx, frame.baselineFrame()->script());
+  RootedValue exception(cx);
+  RootedValue exceptionStack(cx);
+  RootedValue doneValue(cx);
+  RootedObject iterObject(cx);
 
   for (TryNoteIterBaseline tni(cx, frame, *pc); !tni.done(); ++tni) {
     const TryNote* tn = *tni;
@@ -516,8 +522,8 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         }
 
         // Drop the exception instead of leaking cross compartment data.
-        RootedValue exception(cx);
-        RootedValue exceptionStack(cx);
+        exception = UndefinedValue();
+        exceptionStack = UndefinedValue();
         if (!cx->getPendingException(&exception) ||
             !cx->getPendingExceptionStack(&exceptionStack)) {
           rfe->exception = UndefinedValue();
@@ -548,12 +554,12 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
                                                  &stackPointer);
         // Note: if this ever changes, also update the
         // TryNoteKind::Destructuring code in WarpBuilder.cpp!
-        RootedValue doneValue(cx, *(reinterpret_cast<Value*>(stackPointer)));
+        doneValue = *(reinterpret_cast<Value*>(stackPointer));
         MOZ_RELEASE_ASSERT(!doneValue.isMagic());
         bool done = ToBoolean(doneValue);
         if (!done) {
           Value iterValue(*(reinterpret_cast<Value*>(stackPointer) + 1));
-          RootedObject iterObject(cx, &iterValue.toObject());
+          iterObject = &iterValue.toObject();
           if (!IteratorCloseForException(cx, iterObject)) {
             SettleOnTryNote(cx, tn, frame, ei, rfe, pc);
             return false;
