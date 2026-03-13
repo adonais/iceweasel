@@ -233,28 +233,6 @@ void MarkerSchema::Stream(JSONWriter& aWriter,
       aWriter.BoolProperty("isStackBased", true);
     }
 
-    if (!mColorField.empty()) {
-      aWriter.StringProperty("colorField", mColorField);
-    }
-
-    if (!mEnumMappings.empty()) {
-      aWriter.StartObjectProperty("enumMappings");
-      for (const auto& [field, entries] : mEnumMappings) {
-        aWriter.StartArrayProperty(MakeStringSpan(field.c_str()));
-        for (const auto& entry : entries) {
-          aWriter.StartObjectElement();
-          aWriter.IntProperty("value", entry.mValue);
-          aWriter.StringProperty("label", MakeStringSpan(entry.mLabel));
-          if (entry.mColor) {
-            aWriter.StringProperty("color", MakeStringSpan(entry.mColor));
-          }
-          aWriter.EndObject();
-        }
-        aWriter.EndArray();
-      }
-      aWriter.EndObject();
-    }
-
     aWriter.StartArrayProperty("display");
     {
       for (Location location : mLocations) {
