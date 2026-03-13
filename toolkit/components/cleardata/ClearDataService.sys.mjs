@@ -1526,7 +1526,7 @@ const ShutdownExceptionsCleaner = {
 };
 
 const PermissionsCleaner = {
-  _deleteInternal(filter) {
+  async _deleteInternal(filter) {
     Services.perms.all
       // Skip shutdown exception permission because it is handled by ShutDownExceptionsCleaner
       .filter(({ type }) => type != SHUTDOWN_EXCEPTION_PERMISSION)
@@ -1538,6 +1538,8 @@ const PermissionsCleaner = {
           console.error(ex);
         }
       });
+    // Clean up interaction tracking data for removed permissions.
+    await Services.perms.removeOrphanedInteractionRecords();
   },
 
   _thirdPartyStoragePermissionMatchesHost(permissionType, aHost) {
@@ -1566,7 +1568,7 @@ const PermissionsCleaner = {
   },
 
   async deleteByHost(aHost) {
-    this._deleteInternal(({ principal, type }) => {
+    await this._deleteInternal(({ principal, type }) => {
       let principalHost = this._getPrincipalHost(principal);
       if (!principalHost?.length) {
         return false;
@@ -1580,7 +1582,7 @@ const PermissionsCleaner = {
   },
 
   async deleteByPrincipal(aPrincipal) {
-    this._deleteInternal(({ principal, type }) => {
+    await this._deleteInternal(({ principal, type }) => {
       if (principal.equals(aPrincipal)) {
         return true;
       }
@@ -1604,7 +1606,7 @@ const PermissionsCleaner = {
       delete aOriginAttributesPattern.userContextId;
     }
 
-    this._deleteInternal(
+    await this._deleteInternal(
       ({ principal, type }) =>
         hasSite({ principal }, aSchemelessSite, aOriginAttributesPattern) ||
         this._thirdPartyStoragePermissionMatchesHost(type, aSchemelessSite)
@@ -2187,6 +2189,8 @@ const StoragePermissionsCleaner = {
       }
       Services.perms.removePermission(perm);
     });
+    // Clean up interaction tracking data for removed permissions.
+    await Services.perms.removeOrphanedInteractionRecords();
   },
 
   async deleteByPrincipal(aPrincipal) {
@@ -2205,6 +2209,8 @@ const StoragePermissionsCleaner = {
         Services.perms.removePermission(perm);
       }
     }
+    // Clean up interaction tracking data for removed permissions.
+    await Services.perms.removeOrphanedInteractionRecords();
   },
 
   async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
@@ -2226,6 +2232,8 @@ const StoragePermissionsCleaner = {
         Services.perms.removePermission(perm);
       }
     }
+    // Clean up interaction tracking data for removed permissions.
+    await Services.perms.removeOrphanedInteractionRecords();
   },
 
   async deleteByLocalFiles() {
@@ -2235,6 +2243,8 @@ const StoragePermissionsCleaner = {
         Services.perms.removePermission(perm);
       }
     }
+    // Clean up interaction tracking data for removed permissions.
+    await Services.perms.removeOrphanedInteractionRecords();
   },
 
   async deleteAll() {
@@ -2251,6 +2261,8 @@ const StoragePermissionsCleaner = {
 
       Services.perms.removePermission(perm);
     });
+    // Clean up interaction tracking data for removed permissions.
+    await Services.perms.removeOrphanedInteractionRecords();
   },
 
   _getStoragePermissions() {
