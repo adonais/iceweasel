@@ -1272,7 +1272,12 @@ renaming_overrides_prefixing = true
 
 "CascadeLevel" = """
   inline static StyleCascadeLevel Default() {
-    return AuthorNormal(0);
+    return SAME_TREE_AUTHOR_NORMAL;
+  }
+  inline int8_t ShadowCascadeOrder() const {
+    bool neg(*this & CASCADE_ORDER_SIGN);
+    uint8_t abs = (*this & CASCADE_ORDER_BITS)._0 >> CASCADE_ORDER_SHIFT;
+    return neg ? -abs : abs;
   }
 """
 

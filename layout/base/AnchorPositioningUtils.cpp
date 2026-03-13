@@ -93,22 +93,10 @@ dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
   return containingShadow;
 }
 
-// Helper to extract shadow_cascade_order from a TreeScope
-int8_t GetShadowCascadeOrder(const StyleCascadeLevel& aScope) {
-  if (aScope.IsAuthorNormal()) {
-    return aScope.AsAuthorNormal().shadow_cascade_order;
-  }
-  if (aScope.IsAuthorImportant()) {
-    return aScope.AsAuthorImportant().shadow_cascade_order;
-  }
-  return 0;
-}
-
 // Helper to get shadow root for a property's tree scope
 dom::ShadowRoot* GetShadowRootForTreeScope(
     const nsIContent& aContent, const StyleCascadeLevel& aTreeScope) {
-  const int8_t cascadeOrder = GetShadowCascadeOrder(aTreeScope);
-  return GetTreeForCascadeLevel(aContent, cascadeOrder);
+  return GetTreeForCascadeLevel(aContent, aTreeScope.ShadowCascadeOrder());
 }
 
 bool DoTreeScopedPropertiesOfElementApplyToContent(
@@ -195,7 +183,7 @@ bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
 
       if (anchorScope->value.IsAll()) {
         const dom::ShadowRoot* shadowRoot = GetTreeForCascadeLevel(
-            *cp, GetShadowCascadeOrder(anchorScope->scope));
+            *cp, anchorScope->scope.ShadowCascadeOrder());
         if (shadowRoot == aShadowRoot) {
           return cp;
         }
@@ -206,7 +194,7 @@ bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
       for (const StyleAtom& ident : anchorScope->value.AsIdents().AsSpan()) {
         if (aName == ident.AsAtom()) {
           const dom::ShadowRoot* shadowRoot = GetTreeForCascadeLevel(
-              *cp, GetShadowCascadeOrder(anchorScope->scope));
+              *cp, anchorScope->scope.ShadowCascadeOrder());
           if (shadowRoot == aShadowRoot) {
             return cp;
           }
