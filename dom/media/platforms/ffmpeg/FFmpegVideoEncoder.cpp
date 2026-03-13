@@ -441,8 +441,8 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
     } else if (pixels >= 640 * 480) {
       threads = 2;
     }
-    mCodecContext->thread_count =
-        std::clamp<int>(threads, 1, GetNumberOfProcessors() - 1);
+    mCodecContext->thread_count = std::clamp<int>(
+        threads, 1, AssertedCast<int>(GetNumberOfProcessors()) - 1);
   }
   // TODO(bug 1869560): The recommended time_base is the reciprocal of the frame
   // rate, but we set it to microsecond for now.
