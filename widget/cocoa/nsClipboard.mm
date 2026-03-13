@@ -284,9 +284,9 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
                                      stringFromPboardType:(NSString*)
                                                               kUTTypeFileURL],
                                  [UTIHelper
-                                     stringFromPboardType:NSPasteboardTypeTIFF],
-                                 [UTIHelper
                                      stringFromPboardType:NSPasteboardTypePNG],
+                                 [UTIHelper
+                                     stringFromPboardType:NSPasteboardTypeTIFF],
                                  nil]];
     if (!type) {
       return nsCOMPtr<nsISupports>{};

@@ -473,8 +473,7 @@ nsresult nsCocoaUtils::CreateCGImageFromSurface(SourceSurface* aSurface,
   CGDataProviderRef dataProvider = ::CGDataProviderCreateWithData(
       dataSurface.forget().take(), map.mData, map.mStride * height,
       data_ss_release_callback);
-  CGColorSpaceRef colorSpace =
-      ::CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+  CGColorSpaceRef colorSpace = ::CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
   *aResult = ::CGImageCreate(
       width, height, 8, 32, map.mStride, colorSpace,
       kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst, dataProvider,
@@ -505,31 +504,9 @@ nsresult nsCocoaUtils::CreateNSImageFromCGImage(CGImageRef aInputImage,
 
   int32_t width = ::CGImageGetWidth(aInputImage);
   int32_t height = ::CGImageGetHeight(aInputImage);
-  NSRect imageRect = ::NSMakeRect(0.0, 0.0, width, height);
 
-  NSBitmapImageRep* offscreenRep = [[NSBitmapImageRep alloc]
-      initWithBitmapDataPlanes:NULL
-                    pixelsWide:width
-                    pixelsHigh:height
-                 bitsPerSample:8
-               samplesPerPixel:4
-                      hasAlpha:YES
-                      isPlanar:NO
-                colorSpaceName:NSDeviceRGBColorSpace
-                  bitmapFormat:NSBitmapFormatAlphaFirst
-                   bytesPerRow:0
-                  bitsPerPixel:0];
-
-  NSGraphicsContext* context =
-      [NSGraphicsContext graphicsContextWithBitmapImageRep:offscreenRep];
-  [NSGraphicsContext saveGraphicsState];
-  [NSGraphicsContext setCurrentContext:context];
-
-  // Get the Quartz context and draw.
-  CGContextRef imageContext = [[NSGraphicsContext currentContext] CGContext];
-  ::CGContextDrawImage(imageContext, *(CGRect*)&imageRect, aInputImage);
-
-  [NSGraphicsContext restoreGraphicsState];
+  NSBitmapImageRep* offscreenRep =
+      [[NSBitmapImageRep alloc] initWithCGImage:aInputImage];
 
   *aResult = [[NSImage alloc] initWithSize:NSMakeSize(width, height)];
   [*aResult addRepresentation:offscreenRep];
