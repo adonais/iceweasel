@@ -10,11 +10,11 @@
 #include "mozilla/Assertions.h"         // MOZ_DIAGNOSTIC_ASSERT, MOZ_ASSERT
 #include "mozilla/BaseProfilerUtils.h"  // profiler_current_thread_id
 #include "mozilla/EndianUtils.h"        // NativeEndian
-#include "mozilla/MathAlgorithms.h"     // mozilla::IsPowerOfTwo
 #include "mozilla/Maybe.h"  // mozilla::Maybe, mozilla::Some, mozilla::Nothing
 #include "mozilla/Span.h"
 #include "mozilla/TimeStamp.h"
 
+#include <bit>       // std::has_single_bit
 #include <limits>    // std::numeric_limits
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint8_t, uint16_t
@@ -60,7 +60,7 @@ using TracingScratchBuffer = mozilla::Vector<char, 512>;
 // the next steps for making that prototype a reality.
 template <size_t BUFFER_SIZE>
 class TracingBuffer {
-  static_assert(mozilla::IsPowerOfTwo(BUFFER_SIZE));
+  static_assert(std::has_single_bit(BUFFER_SIZE));
 
   // BUFFER_SIZE is the size of the underlying ring buffer, and BUFFER_MASK
   // masks off indices into it in order to wrap around

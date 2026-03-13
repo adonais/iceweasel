@@ -9,6 +9,8 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
 
+#include <bit>
+
 #include "jit/CodeGenerator.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
@@ -444,7 +446,7 @@ static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
 
   // The absolute value of the denominator isn't a power of 2 (see LDivPowTwoI64
   // and LModPowTwoI64).
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
+  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
 
   auto* mir = ins->mir();
 
@@ -535,7 +537,7 @@ static void UnsignedDivide64WithConstant(MacroAssembler& masm,
   MOZ_ASSERT((output == rax && temp == rdx) || (output == rdx && temp == rax));
 
   // The denominator isn't a power of 2 (see LDivPowTwoI and LModPowTwoI).
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
+  MOZ_ASSERT(!std::has_single_bit(d));
 
   auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
@@ -1501,7 +1503,7 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
     }
 
     // Use shift if constant is a power of 2.
-    if (constant > 0 && mozilla::IsPowerOfTwo(uintptr_t(constant))) {
+    if (constant > 0 && std::has_single_bit(uintptr_t(constant))) {
       uint32_t shift = mozilla::FloorLog2(constant);
       masm.lshiftPtr(Imm32(shift), lhs);
       return;

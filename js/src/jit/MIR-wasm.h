@@ -19,6 +19,7 @@
 #endif
 
 #include <algorithm>
+#include <bit>
 
 #include "jit/MIR.h"
 #include "util/DifferentialTesting.h"
@@ -842,7 +843,7 @@ class MWasmAlignmentCheck : public MUnaryInstruction,
       : MUnaryInstruction(classOpcode, index),
         byteSize_(byteSize),
         trapSiteDesc_(trapSiteDesc) {
-    MOZ_ASSERT(mozilla::IsPowerOfTwo(byteSize));
+    MOZ_ASSERT(std::has_single_bit(byteSize));
     // Alignment check is effectful: it throws for unaligned.
     setGuard();
   }

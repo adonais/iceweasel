@@ -1193,7 +1193,7 @@ size_t BigInt::calculateMaximumCharactersRequired(HandleBigInt x,
 template <AllowGC allowGC>
 JSLinearString* BigInt::toStringBasePowerOfTwo(JSContext* cx, HandleBigInt x,
                                                unsigned radix) {
-  MOZ_ASSERT(mozilla::IsPowerOfTwo(radix));
+  MOZ_ASSERT(std::has_single_bit(radix));
   MOZ_ASSERT(radix >= 2 && radix <= 32);
   MOZ_ASSERT(!x->isZero());
   MOZ_ASSERT(x->digitLength() > 1);
@@ -1357,7 +1357,7 @@ JSLinearString* BigInt::toStringGeneric(JSContext* cx, HandleBigInt x,
   MOZ_ASSERT(radix >= 2 && radix <= 36);
   MOZ_ASSERT(!x->isZero());
   MOZ_ASSERT(x->digitLength() > 1);
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(radix));
+  MOZ_ASSERT(!std::has_single_bit(radix));
 
   size_t maximumCharactersRequired =
       calculateMaximumCharactersRequired(x, radix);
@@ -1620,7 +1620,7 @@ BigInt* BigInt::parseLiteralDigits(JSContext* cx, Range<const CharT> chars,
   // Numbers in radix 2, 4, and 16 can be directly stored into the result when
   // parsing from right to left.
   uint8_t log2 = mozilla::FloorLog2(radix);
-  if (mozilla::IsPowerOfTwo(log2)) {
+  if (std::has_single_bit(log2)) {
     size_t chunkChars = BigInt::DigitBits >> mozilla::FloorLog2(log2);
 
     size_t i = 0;
@@ -2196,7 +2196,7 @@ BigInt* BigInt::pow(JSContext* cx, HandleBigInt x, HandleBigInt y) {
   int n = static_cast<int>(exponent);
   bool isOddPower = n & 1;
 
-  if (x->digitLength() == 1 && mozilla::IsPowerOfTwo(x->digit(0))) {
+  if (x->digitLength() == 1 && std::has_single_bit(x->digit(0))) {
     // Fast path for (2^m)^n.
 
     // Result is negative for odd powers.
@@ -3743,7 +3743,7 @@ JSLinearString* BigInt::toString(JSContext* cx, HandleBigInt x, uint8_t radix) {
                                         radix);
   }
 
-  if (mozilla::IsPowerOfTwo(radix)) {
+  if (std::has_single_bit(radix)) {
     return toStringBasePowerOfTwo<allowGC>(cx, x, radix);
   }
 
