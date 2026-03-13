@@ -3703,21 +3703,29 @@ bool DebugAPI::isObservedByDebuggerTrackingAllocations(
 }
 
 /* static */
-bool Debugger::addAllocationsTracking(JSContext* cx,
+void Debugger::addAllocationsTracking(JSContext* cx,
                                       Handle<GlobalObject*> debuggee) {
   // Precondition: the given global object is being observed by at least one
   // Debugger that is tracking allocations.
   MOZ_ASSERT(DebugAPI::isObservedByDebuggerTrackingAllocations(*debuggee));
 
+  // Precondition: There is no existing callback installed.
+  MOZ_ASSERT(!cannotTrackAllocations(*debuggee));
+
+  debuggee->realm()->setAllocationMetadataBuilder(
+      &SavedStacks::metadataBuilder);
+  debuggee->realm()->chooseAllocationSamplingProbability();
+}
+
+/* static */
+bool Debugger::checkCanAddAllocationsTracking(JSContext* cx,
+                                              Handle<GlobalObject*> debuggee) {
   if (Debugger::cannotTrackAllocations(*debuggee)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_OBJECT_METADATA_CALLBACK_ALREADY_SET);
     return false;
   }
 
-  debuggee->realm()->setAllocationMetadataBuilder(
-      &SavedStacks::metadataBuilder);
-  debuggee->realm()->chooseAllocationSamplingProbability();
   return true;
 }
 
@@ -3747,20 +3755,19 @@ bool Debugger::addAllocationsTrackingForAllDebuggees(JSContext* cx) {
   // others. Before attempting to start tracking allocations in *any* of
   // our debuggees, ensure that we will be able to track allocations for
   // *all* of our debuggees.
+  Rooted<GlobalObject*> g(cx);
   for (auto iter = debuggees.iter(); !iter.done(); iter.next()) {
-    if (Debugger::cannotTrackAllocations(*iter.get().get())) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_OBJECT_METADATA_CALLBACK_ALREADY_SET);
+    g = iter.get().get();
+    if (!checkCanAddAllocationsTracking(cx, g)) {
       return false;
     }
   }
 
-  Rooted<GlobalObject*> g(cx);
   for (auto iter = debuggees.iter(); !iter.done(); iter.next()) {
     // This should always succeed, since we already checked for the
     // error case above.
     g = iter.get().get();
-    MOZ_ALWAYS_TRUE(Debugger::addAllocationsTracking(cx, g));
+    Debugger::addAllocationsTracking(cx, g);
   }
 
   return true;
@@ -5009,6 +5016,11 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
     }
   }
 
+  // Check whether we can add allocations tracking.
+  if (!Debugger::checkCanAddAllocationsTracking(cx, global)) {
+    return false;
+  }
+
   // For global to become this js::Debugger's debuggee:
   //
   // 1. this js::Debugger must be in global->getDebuggers(),
@@ -5028,8 +5040,10 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
     return false;
   }
 
-  // (1)
+  // There can be no GC past this point.
   JS::AutoAssertNoGC nogc;
+
+  // (1)
   auto& globalDebuggers = global->getDebuggers(nogc);
   if (!globalDebuggers.append(Realm::DebuggerVectorEntry(this, debuggeeLink))) {
     ReportOutOfMemory(cx);
@@ -5058,9 +5072,8 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
   });
 
   // (4)
-  if (trackingAllocationSites &&
-      !Debugger::addAllocationsTracking(cx, global)) {
-    return false;
+  if (trackingAllocationSites) {
+    Debugger::addAllocationsTracking(cx, global);
   }
 
   auto allocationsTrackingGuard = MakeScopeExit([&] {
