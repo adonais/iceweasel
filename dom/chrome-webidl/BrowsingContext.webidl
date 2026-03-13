@@ -8,6 +8,7 @@ interface nsIDocShell;
 interface nsIDOMGeoPosition;
 interface nsISecureBrowserUI;
 interface nsISHEntry;
+interface nsIScopedPrefs;
 interface nsIPrintSettings;
 interface nsIWebProgress;
 
@@ -467,6 +468,12 @@ interface CanonicalBrowsingContext : BrowsingContext {
                               unsigned long aPresShellId);
 
   readonly attribute nsISHEntry? mostRecentLoadingSessionHistoryEntry;
+
+  /**
+   * Prefs that are stored in the top-level browsing context which persist for
+   * the lifetime of the tab
+   */
+  readonly attribute nsIScopedPrefs? scopedPrefs;
 
   /**
    * Indicates if the embedder element or an ancestor has hidden

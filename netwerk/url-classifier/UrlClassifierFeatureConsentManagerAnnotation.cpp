@@ -10,6 +10,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ScopedPrefs.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIChannel.h"
 #include "nsIClassifiedChannel.h"
@@ -101,9 +102,8 @@ UrlClassifierFeatureConsentManagerAnnotation::MaybeCreate(
   }
 
   // We also don't need to annotate the channel if we are not blocking trackers
-  if (!StaticPrefs::privacy_trackingprotection_enabled() &&
-      !(NS_UsePrivateBrowsing(aChannel) &&
-        StaticPrefs::privacy_trackingprotection_pbmode_enabled())) {
+  if (!ScopedPrefs::BoolPrefScoped(
+          ScopedPrefs::PRIVACY_TRACKINGPROTECTION_ENABLED, aChannel)) {
     return nullptr;
   }
 
