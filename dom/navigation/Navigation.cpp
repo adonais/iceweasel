@@ -435,8 +435,11 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
     entry->ResetIndexForDisposal();
   }
 
-  // Steps 9-12.
+  RefPtr ongoingNavigateEvent = mOngoingNavigateEvent;
+  RefPtr ongoingAPIMethodTracker = mOngoingAPIMethodTracker;
+
   {
+    // Steps 9-12.
     nsAutoMicroTask mt;
     AutoEntryScript aes(GetOwnerGlobal(),
                         "UpdateEntriesForSameDocumentNavigation");
@@ -451,6 +454,11 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
 
     for (RefPtr<NavigationHistoryEntry>& entry : disposedEntries) {
       MOZ_KnownLive(entry)->FireDisposeEvent();
+    }
+
+    if (ongoingNavigateEvent) {
+      RunNavigateEventHandlerSteps(ongoingNavigateEvent,
+                                   ongoingAPIMethodTracker);
     }
   }
 }
@@ -577,7 +585,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
       return;
     }
     // 2. Let navigable be event's relevant global object's navigable.
-    nsDocShell* docShell = nsDocShell::Cast(document->GetDocShell());
+    RefPtr<nsDocShell> docShell = nsDocShell::Cast(document->GetDocShell());
     Maybe<BrowsingContext&> navigable =
         ToMaybeRef(mNavigation->GetOwnerWindow()).andThen([](auto& aWindow) {
           return ToMaybeRef(aWindow.GetBrowsingContext());
@@ -622,13 +630,15 @@ struct NavigationWaitForAllScope final : public nsISupports,
           // URL, with serializedData set to event's classic history API
           // state and historyHandling set to event's navigationType.
           if (docShell) {
+            nsCOMPtr<nsIURI> destinationURI = mDestination->GetURL();
+            nsCOMPtr<nsIURI> documentURI = document->GetDocumentURI();
+            nsCOMPtr<nsIStructuredCloneContainer> state =
+                mEvent->ClassicHistoryAPIState();
             docShell->UpdateURLAndHistory(
-                document, mDestination->GetURL(),
-                mEvent->ClassicHistoryAPIState(),
+                document, destinationURI, state,
                 *NavigationUtils::NavigationHistoryBehavior(
                     mEvent->NavigationType()),
-                document->GetDocumentURI(),
-                Equals(mDestination->GetURL(), document->GetDocumentURI()));
+                documentURI, Equals(destinationURI, documentURI));
           }
           break;
         case NavigationType::Reload:
@@ -636,7 +646,8 @@ struct NavigationWaitForAllScope final : public nsISupports,
           // given navigation, navigable's active session history entry, and
           // "reload".
           if (docShell) {
-            mNavigation->UpdateEntriesForSameDocumentNavigation(
+            RefPtr navigation = mNavigation;
+            navigation->UpdateEntriesForSameDocumentNavigation(
                 docShell->GetActiveSessionHistoryInfo(),
                 mEvent->NavigationType());
           }
@@ -682,93 +693,10 @@ struct NavigationWaitForAllScope final : public nsISupports,
 
     // 10. If endResultIsSameDocument is true:
     if (endResultIsSameDocument) {
-      // 10.1 Let promisesList be an empty list.
-      AutoTArray<RefPtr<Promise>, 16> promiseList;
+      return;
+    }
 
-      if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-        promiseList.AppendElement(mAPIMethodTracker->CommittedPromise());
-      }
-
-      // 10.2 For each handler of event's navigation handler list:
-      for (auto& handler : mEvent->NavigationHandlerList().Clone()) {
-        // 10.2.1 Append the result of invoking handler with an empty
-        //        arguments list to promisesList.
-        RefPtr promise = MOZ_KnownLive(handler)->Call();
-        if (promise) {
-          promiseList.AppendElement(promise);
-        }
-      }
-      // 10.3 If promisesList's size is 0, then set promisesList to « a promise
-      //      resolved with undefined ».
-      nsCOMPtr globalObject = mNavigation->GetOwnerGlobal();
-      if (promiseList.IsEmpty()) {
-        RefPtr promise = Promise::CreateResolvedWithUndefined(
-            globalObject, IgnoredErrorResult());
-        if (promise) {
-          promiseList.AppendElement(promise);
-        }
-      }
-
-      // 10.4 Wait for all of promisesList, with the following success steps:
-
-      // If the committed promise in the api method tracker hasn't resolved yet,
-      // we can't run neither of the success nor failure steps. To handle that
-      // we set up a callback for when that resolves. This differs from how spec
-      // performs these steps, since spec can perform more of
-      // #apply-the-history-steps in a synchronous way.
-      auto cancelSteps =
-          [weakScope = WeakPtr(this)](JS::Handle<JS::Value> aRejectionReason)
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                // If weakScope is null we've been cycle collected
-                if (weakScope) {
-                  RefPtr scope = weakScope.get();
-                  scope->ProcessNavigateEventHandlerFailure(aRejectionReason);
-                }
-              };
-      auto successSteps =
-          [weakScope = WeakPtr(this)](const Span<JS::Heap<JS::Value>>&)
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                // If weakScope is null we've been cycle collected
-                if (weakScope) {
-                  RefPtr scope = weakScope.get();
-                  scope->CommitNavigateEventSuccessSteps();
-                }
-              };
-      if (mAPIMethodTracker &&
-          !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-        // Promise::WaitForAll marks all promises as handled, but since we're
-        // delaying wait for all one microtask, we need to manually mark them
-        // here.
-        for (auto& promise : promiseList) {
-          (void)promise->SetAnyPromiseIsHandled();
-        }
-
-        LOG_FMTD("Waiting for committed");
-        mAPIMethodTracker->CommittedPromise()
-            ->AddCallbacksWithCycleCollectedArgs(
-                [successSteps, cancelSteps](
-                    JSContext*, JS::Handle<JS::Value>, ErrorResult&,
-                    nsIGlobalObject* aGlobalObject,
-                    const Span<RefPtr<Promise>>& aPromiseList,
-                    NavigationWaitForAllScope* aScope)
-                    MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                      Promise::WaitForAll(aGlobalObject, aPromiseList,
-                                          successSteps, cancelSteps, aScope);
-                    },
-                [](JSContext*, JS::Handle<JS::Value>, ErrorResult&,
-                   nsIGlobalObject*, const Span<RefPtr<Promise>>&,
-                   NavigationWaitForAllScope*) {},
-                nsCOMPtr(globalObject),
-                nsTArray<RefPtr<Promise>>(std::move(promiseList)),
-                RefPtr<NavigationWaitForAllScope>(this));
-      } else {
-        LOG_FMTD("No API method tracker, not waiting for committed");
-        // If we don't have an navigationTracker we can immediately start
-        // waiting for the promise list.
-        Promise::WaitForAll(globalObject, promiseList, successSteps,
-                            cancelSteps, this);
-      }
-    } else if (mAPIMethodTracker && mNavigation->mOngoingAPIMethodTracker) {
+    if (mAPIMethodTracker && mNavigation->mOngoingAPIMethodTracker) {
       // In contrast to spec we add a check that we're still the ongoing
       // tracker. If we're not, then we've already been cleaned up.
       MOZ_DIAGNOSTIC_ASSERT(mAPIMethodTracker ==
@@ -839,6 +767,99 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
+
+void Navigation::RunNavigateEventHandlerSteps(
+    NavigateEvent* aNavigateEvent,
+    NavigationAPIMethodTracker* aAPIMethodTracker) {
+  // 10.1 Let promisesList be an empty list.
+  AutoTArray<RefPtr<Promise>, 16> promiseList;
+
+  RefPtr event = aNavigateEvent;
+  RefPtr tracker = aAPIMethodTracker;
+
+  // 10.2 For each handler of event's navigation handler list:
+  for (auto& handler : event->NavigationHandlerList().Clone()) {
+    // 10.2.1 Append the result of invoking handler with an empty
+    //        arguments list to promisesList.
+    RefPtr promise = MOZ_KnownLive(handler)->Call();
+    if (promise) {
+      promiseList.AppendElement(promise);
+    }
+  }
+
+  // 10.3 If promisesList's size is 0, then set promisesList to « a promise
+  //      resolved with undefined ».
+  //
+  nsCOMPtr globalObject = GetOwnerGlobal();
+  if (promiseList.IsEmpty()) {
+    RefPtr promise = Promise::CreateResolvedWithUndefined(globalObject,
+                                                          IgnoredErrorResult());
+    if (promise) {
+      promiseList.AppendElement(promise);
+    }
+  }
+
+  // 10.4 Wait for all of promisesList, with the following success steps:
+  RefPtr destination = event->Destination();
+  RefPtr scope =
+      MakeRefPtr<NavigationWaitForAllScope>(this, tracker, event, destination);
+
+  // If the committed promise in the api method tracker hasn't resolved yet,
+  // we can't run neither of the success nor failure steps. To handle that
+  // we set up a callback for when that resolves. This differs from how spec
+  // performs these steps, since spec can perform more of
+  // #apply-the-history-steps in a synchronous way.
+  auto cancelSteps =
+      [weakScope = WeakPtr(scope)](JS::Handle<JS::Value> aRejectionReason)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+            // If weakScope is null we've been cycle collected
+            if (weakScope) {
+              RefPtr scope = weakScope.get();
+              scope->ProcessNavigateEventHandlerFailure(aRejectionReason);
+            }
+          };
+  auto successSteps =
+      [weakScope = WeakPtr(scope)](const Span<JS::Heap<JS::Value>>&)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+            // If weakScope is null we've been cycle collected
+            if (weakScope) {
+              RefPtr scope = weakScope.get();
+              scope->CommitNavigateEventSuccessSteps();
+            }
+          };
+
+  if (tracker && !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
+    // Promise::WaitForAll marks all promises as handled, but since we're
+    // delaying wait for all one microtask, we need to manually mark them
+    // here.
+    for (auto& promise : promiseList) {
+      (void)promise->SetAnyPromiseIsHandled();
+    }
+
+    LOG_FMTD("Waiting for committed");
+    tracker->CommittedPromise()->AddCallbacksWithCycleCollectedArgs(
+        [successSteps, cancelSteps](JSContext*, JS::Handle<JS::Value>,
+                                    ErrorResult&,
+                                    nsIGlobalObject* aGlobalObject,
+                                    const Span<RefPtr<Promise>>& aPromiseList,
+                                    NavigationWaitForAllScope* aScope)
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              Promise::WaitForAll(aGlobalObject, aPromiseList, successSteps,
+                                  cancelSteps, aScope);
+            },
+        [](JSContext*, JS::Handle<JS::Value>, ErrorResult&, nsIGlobalObject*,
+           const Span<RefPtr<Promise>>&, NavigationWaitForAllScope*) {},
+        nsCOMPtr(globalObject),
+        nsTArray<RefPtr<Promise>>(std::move(promiseList)),
+        RefPtr<NavigationWaitForAllScope>(scope));
+  } else {
+    LOG_FMTD("No API method tracker, not waiting for committed");
+    // If we don't have an navigationTracker we can immediately start
+    // waiting for the promise list.
+    Promise::WaitForAll(globalObject, promiseList, successSteps, cancelSteps,
+                        scope);
+  }
+}
 
 // https://html.spec.whatwg.org/#update-the-navigation-api-entries-for-reactivation
 void Navigation::UpdateForReactivation(
