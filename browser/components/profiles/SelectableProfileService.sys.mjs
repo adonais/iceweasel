@@ -102,6 +102,8 @@ class SelectableProfileServiceClass extends EventEmitter {
   #badge = null;
   #windowActivated = null;
   #isEnabled = false;
+  // This is a rough number of the current profiles. It is not always correct.
+  #cachedProfileCount = null;
 
   // The preferences that must be permanently stored in the database and kept
   // consistent amongst profiles.
@@ -386,6 +388,8 @@ class SelectableProfileServiceClass extends EventEmitter {
       async () => this.setDefaultProfileForGroup(),
       500
     );
+
+    this.#cachedProfileCount = await this.getProfileCount();
 
     // The 'activate' event listeners use #currentProfile, so this line has
     // to come after #currentProfile has been set.
@@ -1265,7 +1269,13 @@ class SelectableProfileServiceClass extends EventEmitter {
       throw new Error(`Unable to insertProfile with values: ${profileData}`);
     }
 
+    this.#cachedProfileCount = await this.getProfileCount();
+
     ProfilesDatastoreService.notify();
+
+    for (let win of lazy.EveryWindow.readyWindows) {
+      win.gBrowser.updateTitlebar();
+    }
 
     return this.getProfile(profileId);
   }
@@ -1290,6 +1300,12 @@ class SelectableProfileServiceClass extends EventEmitter {
     await this.#connection.execute("DELETE FROM Profiles WHERE id = :id;", {
       id: aProfile.id,
     });
+
+    this.#cachedProfileCount = await this.getProfileCount();
+
+    for (let win of lazy.EveryWindow.readyWindows) {
+      win.gBrowser.updateTitlebar();
+    }
 
     ProfilesDatastoreService.notify();
   }
@@ -1421,6 +1437,18 @@ class SelectableProfileServiceClass extends EventEmitter {
         return new SelectableProfile(row);
       })
       .sort((p1, p2) => p1.name.localeCompare(p2.name));
+  }
+
+  /**
+   * Synchronously gets a cached value for the number of profiles in the group.
+   * This will be incorrect in the event that another instance has added or
+   * removed profiles recently.
+   *
+   * @returns {number}
+   *   The cached number of profiles in the group.
+   */
+  getCachedProfileCount() {
+    return this.#cachedProfileCount;
   }
 
   /**
