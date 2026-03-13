@@ -1177,12 +1177,6 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
                                          &mFromFrameType, &mCarrySpace);
     mX += space * GetThinSpace(mParentFrame->StyleFont());
 
-    if (mAddOperatorSpacing) {
-      nscoord leftSpace, dummy;
-      GetCoreOperatorLeftAndRightSpace(mChildFrame, mRTL, leftSpace, dummy);
-      mX += leftSpace;
-    }
-
     return *this;
   }
 
@@ -1215,6 +1209,12 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
   bool mRTL;
 
   void InitMetricsForChild() {
+    if (mAddOperatorSpacing) {
+      nscoord leftSpace, dummy;
+      GetCoreOperatorLeftAndRightSpace(mChildFrame, mRTL, leftSpace, dummy);
+      mX += leftSpace;
+    }
+
     GetReflowAndBoundingMetricsFor(mChildFrame, mReflowOutput,
                                    mReflowOutput.mBoundingMetrics,
                                    &mChildFrameType);
