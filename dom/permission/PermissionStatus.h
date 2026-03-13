@@ -27,7 +27,13 @@ class PermissionStatus : public DOMEventTargetHelper {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  PermissionState State() const { return mState; }
+  PermissionState State() const {
+    if (mState == PermissionState::Granted &&
+        mSystemState != PermissionState::Granted) {
+      return mSystemState;
+    }
+    return mState;
+  }
   void SetState(PermissionState aState) { mState = aState; }
 
   IMPL_EVENT_HANDLER(change)
@@ -66,7 +72,8 @@ class PermissionStatus : public DOMEventTargetHelper {
   RefPtr<PermissionStatusSink> mSink;
 
  protected:
-  PermissionState mState;
+  PermissionState mState = PermissionState::Denied;
+  PermissionState mSystemState = PermissionState::Denied;
 };
 
 }  // namespace mozilla::dom

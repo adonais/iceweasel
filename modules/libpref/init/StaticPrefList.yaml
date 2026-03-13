@@ -3968,6 +3968,13 @@
   value: true
   mirror: always
 
+# Whether to opt out of system permission check for navigator.permissions.query on testing.
+# This is because we cannot control the system permission state on CI.
+- name: dom.permissions.testing.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Is support for Element.requestPointerLock enabled?
 # This is added for accessibility purpose. When user has no way to exit
 # pointer lock (e.g. no keyboard available), they can use this pref to
