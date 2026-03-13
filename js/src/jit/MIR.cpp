@@ -6743,12 +6743,8 @@ MDefinition* MCtz::foldsTo(TempAllocator& alloc) {
       }
       return MConstant::NewInt32(alloc, mozilla::CountTrailingZeroes32(n));
     }
-    int64_t n = c->toInt64();
-    if (n == 0) {
-      return MConstant::NewInt64(alloc, int64_t(64));
-    }
-    return MConstant::NewInt64(alloc,
-                               int64_t(mozilla::CountTrailingZeroes64(n)));
+    uint64_t n = uint64_t(c->toInt64());
+    return MConstant::NewInt64(alloc, std::countr_zero(n));
   }
 
   return this;

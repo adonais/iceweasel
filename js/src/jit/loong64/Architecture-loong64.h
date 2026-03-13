@@ -363,7 +363,7 @@ struct FloatRegister {
 
   static uint32_t FirstBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType");
-    return mozilla::CountTrailingZeroes64(x);
+    return std::countr_zero(x);
   }
   static uint32_t LastBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType");

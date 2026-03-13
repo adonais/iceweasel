@@ -13,6 +13,8 @@
 //===----------------------------------------------------------------------===//
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "jit/riscv64/Assembler-riscv64.h"
 
 namespace js {
@@ -102,7 +104,7 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t imm) {
 
   int64_t Lo12 = imm << 52 >> 52;
   int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
-  int ShiftAmount = 12 + mozilla::CountTrailingZeroes64((uint64_t)Hi52);
+  int ShiftAmount = 12 + std::countr_zero((uint64_t)Hi52);
   Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
 
   // If the remaining bits don't fit in 12 bits, we might be able to reduce
@@ -179,7 +181,7 @@ int Assembler::RecursiveLiImplCount(int64_t imm) {
 
   int64_t Lo12 = imm << 52 >> 52;
   int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
-  int ShiftAmount = 12 + mozilla::CountTrailingZeroes64((uint64_t)Hi52);
+  int ShiftAmount = 12 + std::countr_zero((uint64_t)Hi52);
   Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
 
   // If the remaining bits don't fit in 12 bits, we might be able to reduce

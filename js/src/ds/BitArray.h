@@ -9,6 +9,7 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
 #include <limits.h>
 #include <string.h>
 
@@ -28,7 +29,7 @@ inline uint_fast8_t CountTrailingZeroes(uint32_t word) {
 
 template <>
 inline uint_fast8_t CountTrailingZeroes(uint64_t word) {
-  return mozilla::CountTrailingZeroes64(word);
+  return uint_fast8_t(std::countr_zero(word));
 }
 
 }  // namespace detail
