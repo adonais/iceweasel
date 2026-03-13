@@ -122,6 +122,8 @@
 #   - attribute not specified (default): no code generated, congruentTo(foo) returns
 #     false
 #   - if_operands_equal: congruentTo(foo) will return congruentIfOperandsEqual(foo)
+#   - if_operands_equal_ignore_arguments: congruentTo(foo) will return congruentIfOperandsEqual(foo), but ignore any arguments
+#   - if_operands_and_arguments_equal: congruentTo(foo) will return congruentIfOperandsEqual(foo) and all arguments are equal
 #   - custom: custom C++ implementation
 #
 # alias_set
@@ -829,7 +831,7 @@
     trap: wasm::Trap
     trapSiteDesc: wasm::TrapSiteDesc
   type_policy: none
-  congruent_to: if_operands_equal
+  congruent_to: if_operands_equal_ignore_arguments
   alias_set: none
   guard: true
   clone: true
@@ -844,7 +846,7 @@
     trapSiteDesc: wasm::TrapSiteDesc
   type_policy: none
   result_type: Int32
-  congruent_to: if_operands_equal
+  congruent_to: if_operands_equal_ignore_arguments
   alias_set: none
   guard: true
   clone: true
@@ -2637,7 +2639,7 @@
   result_type: Object
   guard: true
   movable: true
-  congruent_to: if_operands_equal
+  congruent_to: if_operands_and_arguments_equal
   alias_set: none
   generate_lir: true
   lir_result_type: none
@@ -3702,7 +3704,7 @@
   result_type: Int32
   guard: true
   movable: true
-  congruent_to: if_operands_equal
+  congruent_to: if_operands_and_arguments_equal
   folds_to: custom
   alias_set: none
   generate_lir: true
@@ -4223,7 +4225,7 @@
   arguments:
     trapSiteDesc: wasm::TrapSiteDesc
   result_type: Int32
-  congruent_to: if_operands_equal
+  congruent_to: if_operands_equal_ignore_arguments
   type_policy: none
   generate_lir: true
   lir_result_type: none

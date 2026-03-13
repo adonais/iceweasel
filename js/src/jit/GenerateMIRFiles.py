@@ -281,10 +281,29 @@ def gen_mir_class(
         if congruent_to == "custom":
             code += "  bool congruentTo(const MDefinition* ins) const override;\\\n"
         else:
-            assert congruent_to == "if_operands_equal"
+            assert congruent_to in (
+                "if_operands_equal",
+                "if_operands_equal_ignore_arguments",
+                "if_operands_and_arguments_equal",
+            )
+            assert not arguments or congruent_to in (
+                "if_operands_equal_ignore_arguments",
+                "if_operands_and_arguments_equal",
+            ), (
+                f"can't request congruent_to = 'if_operands_equal' for {name} because the instruction has arguments"
+            )
+
+            operands_and_args = ["congruentIfOperandsEqual(ins)"]
+            if arguments and congruent_to == "if_operands_and_arguments_equal":
+                for arg_name in arguments:
+                    operands_and_args.append(
+                        f"ins->to{name}()->{arg_name}_ == {arg_name}_"
+                    )
+            expr = " && ".join(operands_and_args)
+
             code += (
                 "  bool congruentTo(const MDefinition* ins) const override { "
-                "return congruentIfOperandsEqual(ins); }\\\n"
+                f"return {expr}; }}\\\n"
             )
     if value_hash:
         assert value_hash == "custom"
@@ -382,7 +401,13 @@ def generate_mir_header(c_out, yaml_path):
             assert value_hash in (None, "custom")
 
             congruent_to = op.get("congruent_to", None)
-            assert congruent_to in (None, "if_operands_equal", "custom")
+            assert congruent_to in (
+                None,
+                "if_operands_equal",
+                "if_operands_equal_ignore_arguments",
+                "if_operands_and_arguments_equal",
+                "custom",
+            )
 
             alias_set = op.get("alias_set", None)
             assert alias_set in (None, "none", "custom")
