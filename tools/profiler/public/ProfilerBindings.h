@@ -33,8 +33,6 @@ namespace JS {
 enum class ProfilingCategoryPair : uint32_t;
 }  // namespace JS
 
-// Everything in here is safe to include unconditionally, implementations must
-// take !MOZ_GECKO_PROFILER into account.
 extern "C" {
 
 void gecko_profiler_register_thread(const char* aName);

@@ -19,7 +19,7 @@
 namespace mozilla::profiler {
 
 class PlatformData {
-#if (defined(_MSC_VER) || defined(__MINGW32__)) && defined(MOZ_GECKO_PROFILER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
  public:
   explicit PlatformData(ProfilerThreadId aThreadId);
   ~PlatformData();
@@ -32,7 +32,7 @@ class PlatformData {
 
  private:
   WindowsHandle mProfiledThread;
-#elif defined(__APPLE__) && defined(MOZ_GECKO_PROFILER)
+#elif defined(__APPLE__)
  public:
   explicit PlatformData(ProfilerThreadId aThreadId);
   ~PlatformData();
@@ -43,8 +43,7 @@ class PlatformData {
   // because the latter doesn't provide thread manipulation primitives
   // required. For details, consult "Mac OS X Internals" book, Section 7.3.
   thread_act_t mProfiledThread;
-#elif (defined(__linux__) || defined(__ANDROID__) || defined(__FreeBSD__)) && \
-    defined(MOZ_GECKO_PROFILER)
+#elif defined(__linux__) || defined(__ANDROID__) || defined(__FreeBSD__)
  public:
   explicit PlatformData(ProfilerThreadId aThreadId);
   ~PlatformData();
@@ -65,15 +64,8 @@ class PlatformData {
  *
  * @return true on success.
  */
-#if defined(MOZ_GECKO_PROFILER)
 bool GetCpuTimeSinceThreadStartInNs(uint64_t* aResult,
                                     const PlatformData& aPlatformData);
-#else
-static inline bool GetCpuTimeSinceThreadStartInNs(
-    uint64_t* aResult, const PlatformData& aPlatformData) {
-  return false;
-}
-#endif
 
 }  // namespace mozilla::profiler
 

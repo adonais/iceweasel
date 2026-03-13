@@ -166,8 +166,7 @@ Name, category, options.
         MarkerOptions(MarkerStack::Capture(), ...));
 
 ``PROFILER_MARKER_UNTYPED`` is a macro that simplifies the use of the main
-``profiler_add_marker`` function, by adding the appropriate namespaces, and a surrounding
-``#ifdef MOZ_GECKO_PROFILER`` guard.
+``profiler_add_marker`` function, by adding the appropriate namespaces.
 
 1. Marker name
     The first argument is the name of this marker. This will be displayed in most places

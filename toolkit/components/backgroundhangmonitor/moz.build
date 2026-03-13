@@ -48,16 +48,12 @@ UNIFIED_SOURCES += [
     "BackgroundHangMonitor.cpp",
     "HangAnnotations.cpp",
     "HangDetails.cpp",
+    "ThreadStackHelper.cpp",
 ]
 
 IPDL_SOURCES += [
     "HangTypes.ipdlh",
 ]
-
-if CONFIG["MOZ_GECKO_PROFILER"]:
-    UNIFIED_SOURCES += [
-        "ThreadStackHelper.cpp",
-    ]
 
 LOCAL_INCLUDES += [
     "/caps",  # For nsScriptSecurityManager.h

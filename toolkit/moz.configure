@@ -172,41 +172,20 @@ set_config("MOZ_FOLD_LIBS", fold_libs)
 # Some of the options here imply an option from js/moz.configure,
 # so, need to be declared before the include.
 
-option("--disable-gecko-profiler", help="Disable the Gecko profiler")
-
-
-@depends("--disable-gecko-profiler")
-def gecko_profiler(enable_gecko_profiler):
-    if not enable_gecko_profiler:
-        log.warning("--disable-gecko-profiler is deprecated see https://bugzilla.mozilla.org/show_bug.cgi?id=1635350")
-        return False
-    return True
-
-
-@depends(gecko_profiler)
-def gecko_profiler_define(value):
-    if value:
-        return True
-
-
-set_config("MOZ_GECKO_PROFILER", gecko_profiler_define)
-set_define("MOZ_GECKO_PROFILER", gecko_profiler_define)
-
-
 # Enable perfetto on Android if gecko profiling is enabled and only for
 # nightly builds. Linux support requires at least linux-headers-3.18 for <linux/vm_sockets.h>
 set_config(
-    "MOZ_PERFETTO", gecko_profiler_define, when=target_is_android & milestone.is_nightly
+    "MOZ_PERFETTO", True, when=target_is_android & milestone.is_nightly
 )
 set_define(
-    "MOZ_PERFETTO", gecko_profiler_define, when=target_is_android & milestone.is_nightly
+    "MOZ_PERFETTO", True, when=target_is_android & milestone.is_nightly
 )
 
 
 # Whether code to parse ELF binaries should be compiled for the Gecko profiler
 # (for symbol table dumping).
-@depends(gecko_profiler, target)
-def gecko_profiler_parse_elf(value, target):
+@depends(target)
+def gecko_profiler_parse_elf(target):
     # Currently we only want to build this code on Linux (including Android) and BSD.
     # For Android, this is in order to dump symbols from Android system, where
     # on other platforms there exist alternatives that don't require bloating
@@ -216,7 +195,7 @@ def gecko_profiler_parse_elf(value, target):
     # MozDescribeCodeAddress to call into some Rust crates that parse ELF and
     # DWARF data, but build system issues currently prevent Rust from being
     # used in mozglue.)
-    if value and (target.kernel == "Linux" or target.kernel == "FreeBSD"):
+    if target.kernel == "Linux" or target.kernel == "FreeBSD":
         return True
 
 
@@ -224,8 +203,8 @@ set_config("MOZ_GECKO_PROFILER_PARSE_ELF", gecko_profiler_parse_elf)
 
 # enable this by default if the profiler is enabled
 # Note: also requires jemalloc
-set_config("MOZ_PROFILER_MEMORY", gecko_profiler_define)
-set_define("MOZ_PROFILER_MEMORY", gecko_profiler_define)
+set_config("MOZ_PROFILER_MEMORY", True)
+set_define("MOZ_PROFILER_MEMORY", True)
 
 
 @depends(

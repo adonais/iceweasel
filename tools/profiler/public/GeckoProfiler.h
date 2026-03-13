@@ -16,8 +16,6 @@
 #ifndef GeckoProfiler_h
 #define GeckoProfiler_h
 
-// Everything in here is also safe to include unconditionally, and only defines
-// empty macros if MOZ_GECKO_PROFILER is unset.
 // If your file only uses particular APIs (e.g., only markers), please consider
 // including only the needed headers instead of this one, to reduce compilation
 // dependencies.
@@ -32,92 +30,20 @@
 #include "mozilla/ProfilerUtils.h"
 #include "mozilla/ProgressLogger.h"
 
-#ifndef MOZ_GECKO_PROFILER
+#include "js/ProfilingStack.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/BaseProfilerRAIIMacro.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/PowerOfTwo.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
+#include "nscore.h"
+#include "nsINamed.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
-#  include "mozilla/UniquePtr.h"
-
-// This file can be #included unconditionally. However, everything within this
-// file must be guarded by a #ifdef MOZ_GECKO_PROFILER, *except* for the
-// following macros and functions, which encapsulate the most common operations
-// and thus avoid the need for many #ifdefs.
-
-#  define PROFILER_REGISTER_THREAD(name)
-#  define PROFILER_UNREGISTER_THREAD()
-#  define AUTO_PROFILER_REGISTER_THREAD(name)
-
-#  define PROFILER_JS_INTERRUPT_CALLBACK()
-
-#  define PROFILER_SET_JS_CONTEXT(cx)
-#  define PROFILER_CLEAR_JS_CONTEXT()
-
-namespace mozilla {
-class CycleCollectedJSContext;
-}
-
-// Function stubs for when MOZ_GECKO_PROFILER is not defined.
-
-// This won't be used, it's just there to allow the empty definition of
-// `profiler_get_backtrace`.
-struct ProfilerBacktrace {};
-using UniqueProfilerBacktrace = mozilla::UniquePtr<ProfilerBacktrace>;
-
-// Get/Capture-backtrace functions can return nullptr or false, the result
-// should be fed to another empty macro or stub anyway.
-
-static inline UniqueProfilerBacktrace profiler_get_backtrace() {
-  return nullptr;
-}
-
-// This won't be used, it's just there to allow the empty definitions of
-// `profiler_capture_backtrace_into` and `profiler_capture_backtrace`.
-struct ProfileChunkedBuffer {};
-
-static inline bool profiler_capture_backtrace_into(
-    mozilla::ProfileChunkedBuffer& aChunkedBuffer,
-    mozilla::StackCaptureOptions aCaptureOptions) {
-  return false;
-}
-static inline mozilla::UniquePtr<mozilla::ProfileChunkedBuffer>
-profiler_capture_backtrace() {
-  return nullptr;
-}
-
-static inline void profiler_set_process_name(
-    const nsACString& aProcessName, const nsACString* aETLDplus1 = nullptr) {}
-
-static inline void profiler_received_exit_profile(
-    const nsACString& aExitProfile) {}
-
-static inline void profiler_register_page(uint64_t aTabID,
-                                          uint64_t aInnerWindowID,
-                                          const nsCString& aUrl,
-                                          uint64_t aEmbedderInnerWindowID,
-                                          bool aIsPrivateBrowsing) {}
-static inline void profiler_unregister_page(uint64_t aRegisteredInnerWindowID) {
-}
-
-static inline void GetProfilerEnvVarsForChildProcess(
-    std::function<void(const char* key, const char* value)>&& aSetEnv) {}
-
-static inline void profiler_record_wakeup_count(
-    const nsACString& aProcessType) {}
-
-#else  // !MOZ_GECKO_PROFILER
-
-#  include "js/ProfilingStack.h"
-#  include "mozilla/Attributes.h"
-#  include "mozilla/BaseProfilerRAIIMacro.h"
-#  include "mozilla/Maybe.h"
-#  include "mozilla/PowerOfTwo.h"
-#  include "mozilla/TimeStamp.h"
-#  include "mozilla/UniquePtr.h"
-#  include "nscore.h"
-#  include "nsINamed.h"
-#  include "nsString.h"
-#  include "nsThreadUtils.h"
-
-#  include <functional>
-#  include <stdint.h>
+#include <functional>
+#include <stdint.h>
 
 class ProfilerBacktrace;
 class ProfilerCodeAddressService;
@@ -138,12 +64,12 @@ class nsIURI;
 
 // Register/unregister threads with the profiler. Both functions operate the
 // same whether the profiler is active or inactive.
-#  define PROFILER_REGISTER_THREAD(name)         \
-    do {                                         \
-      char stackTop;                             \
-      profiler_register_thread(name, &stackTop); \
-    } while (0)
-#  define PROFILER_UNREGISTER_THREAD() profiler_unregister_thread()
+#define PROFILER_REGISTER_THREAD(name)         \
+  do {                                         \
+    char stackTop;                             \
+    profiler_register_thread(name, &stackTop); \
+  } while (0)
+#define PROFILER_UNREGISTER_THREAD() profiler_unregister_thread()
 ProfilingStack* profiler_register_thread(const char* name, void* guessStackTop);
 void profiler_unregister_thread();
 
@@ -184,8 +110,8 @@ void profiler_add_sampled_counter(BaseProfilerCount* aCounter);
 void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 
 // Register and unregister a thread within a scope.
-#  define AUTO_PROFILER_REGISTER_THREAD(name) \
-    mozilla::AutoProfilerRegisterThread PROFILER_RAII(name)
+#define AUTO_PROFILER_REGISTER_THREAD(name) \
+  mozilla::AutoProfilerRegisterThread PROFILER_RAII(name)
 
 enum class SamplingState {
   JustStopped,  // Sampling loop has just stopped without sampling, between the
@@ -213,12 +139,12 @@ using PostSamplingCallback = std::function<void(SamplingState)>;
 // Called by the JSRuntime's operation callback. This is used to start profiling
 // on auxiliary threads. Operates the same whether the profiler is active or
 // not.
-#  define PROFILER_JS_INTERRUPT_CALLBACK() profiler_js_interrupt_callback()
+#define PROFILER_JS_INTERRUPT_CALLBACK() profiler_js_interrupt_callback()
 void profiler_js_interrupt_callback();
 
 // Set and clear the current thread's JSContext.
-#  define PROFILER_SET_JS_CONTEXT(cx) profiler_set_js_context(cx)
-#  define PROFILER_CLEAR_JS_CONTEXT() profiler_clear_js_context()
+#define PROFILER_SET_JS_CONTEXT(cx) profiler_set_js_context(cx)
+#define PROFILER_CLEAR_JS_CONTEXT() profiler_clear_js_context()
 void profiler_set_js_context(mozilla::CycleCollectedJSContext* aCx);
 void profiler_clear_js_context();
 
@@ -423,7 +349,5 @@ void GetProfilerEnvVarsForChildProcess(
     std::function<void(const char* key, const char* value)>&& aSetEnv);
 
 }  // namespace mozilla
-
-#endif  // !MOZ_GECKO_PROFILER
 
 #endif  // GeckoProfiler_h

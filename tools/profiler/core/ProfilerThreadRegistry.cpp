@@ -15,27 +15,4 @@ MOZ_RUNINIT ThreadRegistry::RegistryContainer
 /* static */
 MOZ_RUNINIT ThreadRegistry::RegistryMutex ThreadRegistry::sRegistryMutex;
 
-#if !defined(MOZ_GECKO_PROFILER)
-// When MOZ_GECKO_PROFILER is not defined, the function definitions in
-// platform.cpp are not built, causing link errors. So we keep these simple
-// definitions here.
-
-/* static */
-void ThreadRegistry::Register(ThreadRegistration::OnThreadRef aOnThreadRef) {
-  LockedRegistry lock;
-  MOZ_RELEASE_ASSERT(sRegistryContainer.append(OffThreadRef{aOnThreadRef}));
-}
-
-/* static */
-void ThreadRegistry::Unregister(ThreadRegistration::OnThreadRef aOnThreadRef) {
-  LockedRegistry lock;
-  for (OffThreadRef& thread : sRegistryContainer) {
-    if (thread.IsPointingAt(*aOnThreadRef.mThreadRegistration)) {
-      sRegistryContainer.erase(&thread);
-      break;
-    }
-  }
-}
-#endif  // !defined(MOZ_GECKO_PROFILER)
-
 }  // namespace mozilla::profiler

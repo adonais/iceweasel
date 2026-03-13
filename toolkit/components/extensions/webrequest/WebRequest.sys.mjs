@@ -1057,7 +1057,7 @@ HttpObserverManager = {
     // recorded with an empty marker text (and so without url, chan id and
     // the supenders addon ids).
     let markerText = "";
-    if (Services.profiler?.IsActive()) {
+    if (Services.profiler.IsActive()) {
       const suspenders = handlerResults
         .filter(({ result }) => isThenable(result))
         .map(({ opts }) => opts.addonId)

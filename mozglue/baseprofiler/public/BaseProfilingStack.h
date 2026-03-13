@@ -7,10 +7,6 @@
 #ifndef BaseProfilingStack_h
 #define BaseProfilingStack_h
 
-#ifndef MOZ_GECKO_PROFILER
-#  error Do not #include this header when MOZ_GECKO_PROFILER is not #defined.
-#endif
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/BaseProfilingCategory.h"

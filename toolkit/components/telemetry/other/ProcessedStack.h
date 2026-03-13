@@ -76,9 +76,7 @@ class BatchProcessedStackGenerator {
  private:
   ProcessedStack GetStackAndModules(const uintptr_t* aBegin,
                                     const uintptr_t* aEnd);
-#if defined(MOZ_GECKO_PROFILER)
   SharedLibraryInfo mSortedRawModules;
-#endif
 };
 
 }  // namespace Telemetry

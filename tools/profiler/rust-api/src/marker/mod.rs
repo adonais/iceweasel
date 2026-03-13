@@ -247,20 +247,11 @@ impl<'a> Drop for AutoProfilerTextMarker<'a> {
 /// );
 /// ```
 ///
-#[cfg(feature = "enabled")]
 #[macro_export]
 macro_rules! auto_profiler_marker_text {
     ($name:expr, $category:expr,$options:expr, $text:expr) => {
         let _macro_created_rust_text_marker =
             $crate::AutoProfilerTextMarker::new($name, $category, $options, $text);
-    };
-}
-
-#[cfg(not(feature = "enabled"))]
-#[macro_export]
-macro_rules! auto_profiler_marker_text {
-    ($name:expr, $category:expr,$options:expr, $text:expr) => {
-        // Do nothing if the profiler is not enabled
     };
 }
 
@@ -372,7 +363,6 @@ pub fn add_marker<T>(
 /// category but *not* the options is not possible, due to how we're able to
 /// define macros in Rust.
 ///
-#[cfg(feature = "enabled")]
 #[macro_export]
 macro_rules! lazy_add_marker {
     ($name:expr, $category:expr, $options:expr, $payload:expr) => {
@@ -399,20 +389,6 @@ macro_rules! lazy_add_marker {
                 $payload,
             );
         }
-    };
-}
-
-#[cfg(not(feature = "enabled"))]
-#[macro_export]
-macro_rules! lazy_add_marker {
-    ($name:expr, $category:expr, $options:expr, $text:expr) => {
-        // Do nothing if the profiler is not enabled
-    };
-    ($name: expr, $category:expr, $payload:expr) => {
-        // Do nothing if the profiler is not enabled
-    };
-    ($name: expr, $payload:expr) => {
-        // Do nothing if the profiler is not enabled
     };
 }
 
@@ -554,20 +530,11 @@ impl<'a> Drop for AutoProfilerMarker<'a> {
 /// );
 /// ```
 ///
-#[cfg(feature = "enabled")]
 #[macro_export]
 macro_rules! auto_profiler_marker {
     ($name:expr, $category:expr,$options:expr) => {
         let _macro_created_rust_tracing_marker =
             $crate::AutoProfilerMarker::new($name, $category, $options);
-    };
-}
-
-#[cfg(not(feature = "enabled"))]
-#[macro_export]
-macro_rules! auto_profiler_marker {
-    ($name:expr, $category:expr,$options:expr) => {
-        // Do nothing if the profiler is not enabled
     };
 }
 
@@ -686,19 +653,10 @@ impl<'a> Drop for AutoProfilerFlowMarker<'a> {
 /// );
 /// ```
 ///
-#[cfg(feature = "enabled")]
 #[macro_export]
 macro_rules! auto_profiler_flow_marker {
     ($name:expr, $category:expr,$options:expr, $payload:expr) => {
         let _macro_created_rust_tracing_marker =
             $crate::AutoProfilerFlowMarker::new($name, $category, $options, $payload);
-    };
-}
-
-#[cfg(not(feature = "enabled"))]
-#[macro_export]
-macro_rules! auto_profiler_flow_marker {
-    ($name:expr, $category:expr,$options:expr, $payload:expr) => {
-        // Do nothing if the profiler is not enabled
     };
 }

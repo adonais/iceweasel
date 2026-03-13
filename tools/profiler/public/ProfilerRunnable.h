@@ -20,7 +20,7 @@ static inline bool profiler_thread_is_profiling_runnables() {
          profiler_is_perfetto_tracing();
 }
 
-#if !defined(MOZ_GECKO_PROFILER) || !defined(MOZ_COLLECTING_RUNNABLE_TELEMETRY)
+#if !defined(MOZ_COLLECTING_RUNNABLE_TELEMETRY)
 #  define AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable)
 #else
 #  define AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable)                  \

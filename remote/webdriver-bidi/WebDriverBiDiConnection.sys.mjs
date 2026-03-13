@@ -123,7 +123,7 @@ export class WebDriverBiDiConnection extends WebSocketConnection {
   sendEvent(method, params) {
     this.send({ type: "event", method, params });
 
-    if (Services.profiler?.IsActive()) {
+    if (Services.profiler.IsActive()) {
       ChromeUtils.addProfilerMarker(
         "BiDi: Event",
         { category: "Remote-Protocol" },
@@ -259,7 +259,7 @@ export class WebDriverBiDiConnection extends WebSocketConnection {
       this.sendError(id, e);
     }
 
-    if (Services.profiler?.IsActive()) {
+    if (Services.profiler.IsActive()) {
       ChromeUtils.addProfilerMarker(
         "BiDi: Command",
         { startTime, category: "Remote-Protocol" },

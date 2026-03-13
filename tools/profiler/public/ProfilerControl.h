@@ -12,8 +12,6 @@
 
 #include "mozilla/BaseProfilerRAIIMacro.h"
 
-// Everything in here is also safe to include unconditionally, and only defines
-// empty macros if MOZ_GECKO_PROFILER is unset.
 // If your file only uses particular APIs (e.g., only markers), please consider
 // including only the needed headers instead of this one, to reduce compilation
 // dependencies.
@@ -23,33 +21,12 @@ enum class IsFastShutdown {
   Yes,
 };
 
-#ifndef MOZ_GECKO_PROFILER
-
-// This file can be #included unconditionally. However, everything within this
-// file must be guarded by a #ifdef MOZ_GECKO_PROFILER, *except* for the
-// following macros and functions, which encapsulate the most common operations
-// and thus avoid the need for many #ifdefs.
-
-#  define AUTO_PROFILER_INIT ::profiler_init_main_thread_id()
-#  define AUTO_PROFILER_INIT2
-
-// Function stubs for when MOZ_GECKO_PROFILER is not defined.
-
-static inline void profiler_init(void* stackTop) {}
-
-static inline void profiler_shutdown(
-    IsFastShutdown aIsFastShutdown = IsFastShutdown::No) {}
-
-static inline void profiler_lookup_async_signal_dump_directory() {}
-
-#else  // !MOZ_GECKO_PROFILER
-
-#  include "mozilla/Attributes.h"
-#  include "mozilla/BaseProfiler.h"
-#  include "mozilla/Maybe.h"
-#  include "mozilla/MozPromise.h"
-#  include "mozilla/PowerOfTwo.h"
-#  include "mozilla/Vector.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/BaseProfiler.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/PowerOfTwo.h"
+#include "mozilla/Vector.h"
 
 //---------------------------------------------------------------------------
 // Start and stop the profiler
@@ -64,10 +41,10 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_SIGHANDLE_ENTRIES =
     mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  // 64M entries = 512MiB
 
-#  define PROFILER_DEFAULT_INTERVAL BASE_PROFILER_DEFAULT_INTERVAL
-#  define PROFILER_MAX_INTERVAL BASE_PROFILER_MAX_INTERVAL
+#define PROFILER_DEFAULT_INTERVAL BASE_PROFILER_DEFAULT_INTERVAL
+#define PROFILER_MAX_INTERVAL BASE_PROFILER_MAX_INTERVAL
 
-#  define PROFILER_DEFAULT_ACTIVE_TAB_ID 0
+#define PROFILER_DEFAULT_ACTIVE_TAB_ID 0
 
 // Initialize the profiler. If MOZ_PROFILER_STARTUP is set the profiler will
 // also be started. This call must happen before any other profiler calls
@@ -77,9 +54,9 @@ void profiler_init(void* stackTop);
 void profiler_init_threadmanager();
 
 // Call this as early as possible
-#  define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
+#define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
 // Call this after the nsThreadManager is Init()ed
-#  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
+#define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
 
 // Clean up the profiler module, stopping it if required. This function may
 // also save a shutdown profile if requested. No profiler calls should happen
@@ -201,7 +178,5 @@ class MOZ_RAII AutoProfilerInit2 {
 };
 
 }  // namespace mozilla
-
-#endif  // !MOZ_GECKO_PROFILER
 
 #endif  // ProfilerControl_h

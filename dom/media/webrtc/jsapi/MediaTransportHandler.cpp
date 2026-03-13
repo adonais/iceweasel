@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/PublicSSL.h"  // For psm::InitializeCipherSuite
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsDNSService2.h"
@@ -42,18 +43,10 @@
 #include "nss.h"  // For NSS_NoDB_Init
 #include "sdp/SdpAttribute.h"
 #include "transport/runnable_utils.h"
-
-#ifdef MOZ_GECKO_PROFILER
-#  include "mozilla/ProfilerMarkers.h"
-
-#  define MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket) \
-    PROFILER_MARKER_TEXT(                                  \
-        "WebRTC Packet Received", MEDIA_RT, {},            \
-        ProfilerString8View::WrapNullTerminatedString(     \
-            MediaPacket::EnumValueToString((aPacket).type())));
-#else
-#  define MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket)
-#endif
+#define MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket)              \
+  PROFILER_MARKER_TEXT("WebRTC Packet Received", MEDIA_RT, {},        \
+                       ProfilerString8View::WrapNullTerminatedString( \
+                           MediaPacket::EnumValueToString((aPacket).type())));
 
 namespace mozilla {
 

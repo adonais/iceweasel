@@ -167,7 +167,6 @@ static bool SerializeModule(JSContext* aCx,
     }
   }
 
-#if defined(MOZ_GECKO_PROFILER)
   if (aModule->mResolvedDosName) {
     nsAutoString path;
     if (aModule->mResolvedDosName->GetPath(path) == NS_OK) {
@@ -181,7 +180,6 @@ static bool SerializeModule(JSContext* aCx,
       }
     }
   }
-#endif  // MOZ_GECKO_PROFILER
 
   if (aModule->mVendorInfo.isSome()) {
     const char* propName;

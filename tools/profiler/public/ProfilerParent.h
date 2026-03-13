@@ -36,7 +36,6 @@ class ProfilerParent final : public PProfilerParent {
   static mozilla::ipc::Endpoint<PProfilerChild> CreateForProcess(
       base::ProcessId aOtherPid);
 
-#ifdef MOZ_GECKO_PROFILER
   using SingleProcessProfilePromise =
       MozPromise<IPCProfileAndAdditionalInformation, ResponseRejectReason,
                  true>;
@@ -108,7 +107,6 @@ class ProfilerParent final : public PProfilerParent {
   nsTArray<MozPromiseHolder<SingleProcessProfilePromise>>
       mPendingRequestedProfiles;
   bool mDestroyed;
-#endif  // MOZ_GECKO_PROFILER
 
  private:
   virtual ~ProfilerParent();

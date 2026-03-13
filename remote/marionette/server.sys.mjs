@@ -283,7 +283,7 @@ export class TCPConnection {
    */
   async execute(cmd) {
     let resp = this.createResponse(cmd.id);
-    let sendResponse = () => resp.sendConditionally(resp => !resp.sent);
+    let sendResponse = () => resp.sendConditionally(r => !r.sent);
     let sendError = resp.sendError.bind(resp);
 
     await this.dispatch(cmd, resp)
@@ -352,7 +352,7 @@ export class TCPConnection {
       }
     }
 
-    if (Services.profiler?.IsActive()) {
+    if (Services.profiler.IsActive()) {
       ChromeUtils.addProfilerMarker(
         "Marionette: Command",
         { startTime, category: "Remote-Protocol" },

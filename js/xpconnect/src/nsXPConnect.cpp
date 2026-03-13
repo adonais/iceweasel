@@ -123,10 +123,8 @@ static void InitJSEngine() {
     MOZ_CRASH_UNSAFE(jsInitFailureReason);
   }
 
-#ifdef MOZ_GECKO_PROFILER
   JS::SetProfilingThreadCallbacks(profiler_register_thread,
                                   profiler_unregister_thread);
-#endif
 }
 
 // static

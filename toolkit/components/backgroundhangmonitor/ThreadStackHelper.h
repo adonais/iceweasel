@@ -7,38 +7,36 @@
 #ifndef mozilla_ThreadStackHelper_h
 #define mozilla_ThreadStackHelper_h
 
-#ifdef MOZ_GECKO_PROFILER
+#include "js/ProfilingStack.h"
+#include "GeckoProfiler.h"
+#include "HangDetails.h"
+#include "mozilla/Span.h"
+#include "nsThread.h"
 
-#  include "js/ProfilingStack.h"
-#  include "GeckoProfiler.h"
-#  include "HangDetails.h"
-#  include "mozilla/Span.h"
-#  include "nsThread.h"
+#include <stddef.h>
 
-#  include <stddef.h>
-
-#  if defined(XP_LINUX)
-#    include <signal.h>
-#    include <semaphore.h>
-#    include <sys/types.h>
-#  elif defined(XP_WIN)
-#    include <windows.h>
-#  elif defined(XP_MACOSX)
-#    include <mach/mach.h>
-#  endif
+#if defined(XP_LINUX)
+#  include <signal.h>
+#  include <semaphore.h>
+#  include <sys/types.h>
+#elif defined(XP_WIN)
+#  include <windows.h>
+#elif defined(XP_MACOSX)
+#  include <mach/mach.h>
+#endif
 
 // Support profiling stack and native stack on these platforms.
-#  if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
-#    define MOZ_THREADSTACKHELPER_PROFILING_STACK
-#    define MOZ_THREADSTACKHELPER_NATIVE_STACK
-#  endif
+#if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
+#  define MOZ_THREADSTACKHELPER_PROFILING_STACK
+#  define MOZ_THREADSTACKHELPER_NATIVE_STACK
+#endif
 
 // There are frequent crashes on Android 32 bit ARM builds during EHABI
 // stackwalking. See bug 1969481.
-#  if defined(__ANDROID__) && defined(__arm__)
-#    undef MOZ_THREADSTACKHELPER_PROFILING_STACK
-#    undef MOZ_THREADSTACKHELPER_NATIVE_STACK
-#  endif
+#if defined(__ANDROID__) && defined(__arm__)
+#  undef MOZ_THREADSTACKHELPER_PROFILING_STACK
+#  undef MOZ_THREADSTACKHELPER_NATIVE_STACK
+#endif
 
 namespace mozilla {
 
@@ -107,7 +105,5 @@ class ThreadStackHelper : public ProfilerStackCollector {
 };
 
 }  // namespace mozilla
-
-#endif  // MOZ_GECKO_PROFILER
 
 #endif  // mozilla_ThreadStackHelper_h

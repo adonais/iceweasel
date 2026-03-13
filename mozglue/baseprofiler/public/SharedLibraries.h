@@ -101,23 +101,12 @@ static bool CompareAddresses(const SharedLibrary& first,
 
 class SharedLibraryInfo {
  public:
-#ifdef MOZ_GECKO_PROFILER
   MFBT_API static SharedLibraryInfo GetInfoForSelf();
-#  ifdef XP_WIN
+#ifdef XP_WIN
   MFBT_API static SharedLibraryInfo GetInfoFromPath(const wchar_t* aPath);
-#  endif
+#endif
 
   MFBT_API static void Initialize();
-#else
-  static SharedLibraryInfo GetInfoForSelf() { return SharedLibraryInfo(); }
-#  ifdef XP_WIN
-  static SharedLibraryInfo GetInfoFromPath(const wchar_t* aPath) {
-    return SharedLibraryInfo();
-  }
-#  endif
-
-  static void Initialize() {}
-#endif
 
   void AddSharedLibrary(SharedLibrary entry) { mEntries.push_back(entry); }
 

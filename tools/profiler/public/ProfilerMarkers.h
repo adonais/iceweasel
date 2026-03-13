@@ -47,15 +47,8 @@ class nsIDocShell;
 namespace geckoprofiler::markers::detail {
 // Please do not use anything from the detail namespace outside the profiler.
 
-#ifdef MOZ_GECKO_PROFILER
 mozilla::Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
     nsIDocShell* aDocshell);
-#else
-inline mozilla::Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
-    nsIDocShell* aDocshell) {
-  return mozilla::Nothing();
-}
-#endif  // MOZ_GECKO_PROFILER
 
 }  // namespace geckoprofiler::markers::detail
 
@@ -91,7 +84,6 @@ namespace geckoprofiler::category {
 using namespace ::mozilla::baseprofiler::category;
 }
 
-#ifdef MOZ_GECKO_PROFILER
 // Forward-declaration. TODO: Move to more common header, see bug 1681416.
 bool profiler_capture_backtrace_into(
     mozilla::ProfileChunkedBuffer& aChunkedBuffer,
@@ -126,7 +118,6 @@ inline mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
   return AddMarkerToBuffer(aBuffer, aName, aCategory, std::move(aOptions),
                            mozilla::baseprofiler::markers::NoPayload{});
 }
-#endif
 
 // Internally we need to check specifically if gecko is collecting markers.
 [[nodiscard]] inline bool profiler_thread_is_being_gecko_profiled_for_markers(
@@ -166,21 +157,18 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory, mozilla::MarkerOptions&& aOptions,
     MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
-#ifndef MOZ_GECKO_PROFILER
-  return {};
-#else
-#  ifndef RUST_BINDGEN
+#ifndef RUST_BINDGEN
   // Bindgen can't take Windows.h and as such can't parse this.
   ETW::EmitETWMarker(aName, aCategory, aOptions, aMarkerType,
                      aPayloadArguments...);
-#  endif
+#endif
 
-#  ifdef MOZ_PERFETTO
+#ifdef MOZ_PERFETTO
   if (profiler_is_perfetto_tracing()) {
     EmitPerfettoTrackEvent(aName, aCategory, aOptions, aMarkerType,
                            aPayloadArguments...);
   }
-#  endif
+#endif
 
   if (!profiler_thread_is_being_gecko_profiled_for_markers(
           aOptions.ThreadId().ThreadId())) {
@@ -190,7 +178,6 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
   return ::AddMarkerToBuffer(profiler_get_core_buffer(), aName, aCategory,
                              std::move(aOptions), aMarkerType,
                              aPayloadArguments...);
-#endif
 }
 
 // Add a marker (without payload) to the Gecko Profiler buffer.
@@ -220,8 +207,7 @@ inline mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
     }                                          \
   } while (false)
 
-// Same as `profiler_add_marker()` (without payload). This macro is safe to use
-// even if MOZ_GECKO_PROFILER is not #defined.
+// Same as `profiler_add_marker()` (without payload).
 #define PROFILER_MARKER_UNTYPED(markerName, categoryName, ...)               \
   do {                                                                       \
     AUTO_PROFILER_STATS(PROFILER_MARKER_UNTYPED);                            \
@@ -229,8 +215,7 @@ inline mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
                         ##__VA_ARGS__);                                      \
   } while (false)
 
-// Same as `profiler_add_marker()` (with payload). This macro is safe to use
-// even if MOZ_GECKO_PROFILER is not #defined.
+// Same as `profiler_add_marker()` (with payload).
 #define PROFILER_MARKER(markerName, categoryName, options, MarkerType, ...)  \
   do {                                                                       \
     AUTO_PROFILER_STATS(PROFILER_MARKER_with_##MarkerType);                  \
@@ -245,8 +230,7 @@ using TextMarker = ::mozilla::baseprofiler::markers::TextMarker;
 using Tracing = mozilla::baseprofiler::markers::Tracing;
 }  // namespace geckoprofiler::markers
 
-// Add a text marker. This macro is safe to use even if MOZ_GECKO_PROFILER is
-// not #defined.
+// Add a text marker.
 #define PROFILER_MARKER_TEXT(markerName, categoryName, options, text)        \
   do {                                                                       \
     AUTO_PROFILER_STATS(PROFILER_MARKER_TEXT);                               \
@@ -411,8 +395,7 @@ class MOZ_RAII AutoProfilerUntypedMarker {
   mozilla::MarkerOptions mOptions;
 };
 
-// Creates an AutoProfilerUntypedMarker RAII object. This macro is safe to use
-// even if MOZ_GECKO_PROFILER is not #defined.
+// Creates an AutoProfilerUntypedMarker RAII object.
 #define AUTO_PROFILER_MARKER_UNTYPED(markerName, categoryName, options) \
   AutoProfilerUntypedMarker PROFILER_RAII(                              \
       markerName, ::mozilla::baseprofiler::category::categoryName, options)
@@ -467,8 +450,7 @@ class MOZ_RAII AutoProfilerTextMarker {
   nsCString mText;
 };
 
-// Creates an AutoProfilerFmtMarker RAII object. This macro is safe to use
-// even if MOZ_GECKO_PROFILER is not #defined.
+// Creates an AutoProfilerFmtMarker RAII object.
 #define AUTO_PROFILER_MARKER_FMT(markerName, categoryName, options, format, \
                                  ...)                                       \
   AutoProfilerFmtMarker PROFILER_RAII(                                      \
@@ -536,8 +518,7 @@ class AutoProfilerFmtMarker {
   char mFormatted[TextLength]{};
 };
 
-// Creates an AutoProfilerTextMarker RAII object.  This macro is safe to use
-// even if MOZ_GECKO_PROFILER is not #defined.
+// Creates an AutoProfilerTextMarker RAII object.
 #define AUTO_PROFILER_MARKER_TEXT(markerName, categoryName, options, text)  \
   AutoProfilerTextMarker PROFILER_RAII(                                     \
       markerName, ::mozilla::baseprofiler::category::categoryName, options, \
@@ -605,8 +586,6 @@ class MOZ_RAII AutoProfilerTracing {
       geckoprofiler::markers::detail::                                    \
           profiler_get_inner_window_id_from_docshell(docShell))
 
-#ifdef MOZ_GECKO_PROFILER
-
 extern template mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     mozilla::ProfileChunkedBuffer&, const mozilla::ProfilerString8View&,
     const mozilla::MarkerCategory&, mozilla::MarkerOptions&&,
@@ -636,13 +615,6 @@ extern template mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
 // This stores the schema so it can be included in profile output.
 void profiler_register_marker_schema(const nsCString& aSchemaName,
                                      const nsString& aSchemaJSON);
-
-#else
-
-inline void profiler_register_marker_schema(const nsCString& aSchemaName,
-                                            const nsString& aSchemaJSON) {}
-
-#endif  // MOZ_GECKO_PROFILER
 
 namespace mozilla {
 namespace detail {

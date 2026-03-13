@@ -13,19 +13,15 @@
 
 #include "mozilla/ProfilerMarkersPrerequisites.h"
 
-#ifdef MOZ_GECKO_PROFILER
-
 //                        ~~ HERE BE DRAGONS ~~
 //
 // Everything below is internal implementation detail, you shouldn't need to
 // look at it unless working on the profiler code.
 
 // Header that specializes the (de)serializers for xpcom types.
-#  include "mozilla/ProfileBufferEntrySerializationGeckoExtensions.h"
+#include "mozilla/ProfileBufferEntrySerializationGeckoExtensions.h"
 
 // Implemented in platform.cpp
 mozilla::ProfileChunkedBuffer& profiler_get_core_buffer();
-
-#endif  // MOZ_GECKO_PROFILER
 
 #endif  // ProfilerMarkersDetail_h

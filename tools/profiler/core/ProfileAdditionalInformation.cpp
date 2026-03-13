@@ -13,12 +13,10 @@
 #include "js/Value.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/JSONStringWriteFuncs.h"
-
-#ifdef MOZ_GECKO_PROFILER
-#  include "platform.h"
-#  include "nsDirectoryServiceDefs.h"
-#  include "nsIFile.h"
-#  include "nsIFileURL.h"
+#include "platform.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsIFile.h"
+#include "nsIFileURL.h"
 
 JSString* mozilla::ProfileGenerationAdditionalInformation::
     MaybeCreateJSStringFromSourceData(
@@ -122,7 +120,6 @@ void mozilla::ProfileGenerationAdditionalInformation::ToJSValue(
   JS_SetProperty(aCx, additionalInfoObj, "jsSources", jsSourcesVal);
   aRetVal.setObject(*additionalInfoObj);
 }
-#endif  // MOZ_GECKO_PROFILER
 
 namespace IPC {
 

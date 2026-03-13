@@ -57,7 +57,6 @@ support-files = [
 
 ["browser_utility_profiler.js"]
 skip-if = [
-  "!gecko_profiler",
   "tsan",
 ] # from tools/profiler/tests/browser/browser.toml, timing out on profiler tests?
 

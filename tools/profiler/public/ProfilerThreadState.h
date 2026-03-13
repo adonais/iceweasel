@@ -85,16 +85,9 @@
              false);
 }
 
-#ifndef MOZ_GECKO_PROFILER
-
-#  define AUTO_PROFILER_THREAD_WAKE
-
-#else  // !MOZ_GECKO_PROFILER
-
 // Mark a thread as awake within a scope.
 // (See also AUTO_PROFILER_THREAD_SLEEP in mozilla/ProfilerThreadSleep.h)
-#  define AUTO_PROFILER_THREAD_WAKE \
-    mozilla::AutoProfilerThreadWake PROFILER_RAII
+#define AUTO_PROFILER_THREAD_WAKE mozilla::AutoProfilerThreadWake PROFILER_RAII
 
 namespace mozilla {
 
@@ -122,7 +115,5 @@ class MOZ_RAII AutoProfilerThreadWake {
 };
 
 }  // namespace mozilla
-
-#endif  // !MOZ_GECKO_PROFILER
 
 #endif  // ProfilerThreadState_h

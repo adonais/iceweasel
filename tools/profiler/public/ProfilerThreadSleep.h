@@ -10,23 +10,8 @@
 #ifndef ProfilerThreadSleep_h
 #define ProfilerThreadSleep_h
 
-#ifndef MOZ_GECKO_PROFILER
-
-// This file can be #included unconditionally. However, everything within this
-// file must be guarded by a #ifdef MOZ_GECKO_PROFILER, *except* for the
-// following macros and functions, which encapsulate the most common operations
-// and thus avoid the need for many #ifdefs.
-
-#  define AUTO_PROFILER_THREAD_SLEEP
-
-static inline void profiler_thread_sleep() {}
-
-static inline void profiler_thread_wake() {}
-
-#else  // !MOZ_GECKO_PROFILER
-
-#  include "mozilla/Attributes.h"
-#  include "mozilla/BaseProfilerRAIIMacro.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/BaseProfilerRAIIMacro.h"
 
 // These functions tell the profiler that a thread went to sleep so that we can
 // avoid sampling it more than once while it's sleeping. Calling
@@ -38,8 +23,8 @@ void profiler_thread_wake();
 
 // Mark a thread as asleep within a scope.
 // (See also AUTO_PROFILER_THREAD_WAKE in ProfilerThreadState.h)
-#  define AUTO_PROFILER_THREAD_SLEEP \
-    mozilla::AutoProfilerThreadSleep PROFILER_RAII
+#define AUTO_PROFILER_THREAD_SLEEP \
+  mozilla::AutoProfilerThreadSleep PROFILER_RAII
 
 namespace mozilla {
 
@@ -52,7 +37,5 @@ class MOZ_RAII AutoProfilerThreadSleep {
 };
 
 }  // namespace mozilla
-
-#endif  // !MOZ_GECKO_PROFILER
 
 #endif  // ProfilerThreadSleep_h

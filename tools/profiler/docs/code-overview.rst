@@ -251,34 +251,17 @@ To better separate areas of functionality, and to hopefully reduce compilation
 times, parts of it have been split into smaller headers, and this work will
 continue, see `bug 1681416 <https://bugzilla.mozilla.org/show_bug.cgi?id=1681416>`_.
 
-MOZ_GECKO_PROFILER and Macros
-=============================
+Platform support
+================
 
 Mozilla officially supports the Profiler on `tier-1 platforms
 <https://firefox-source-docs.mozilla.org/contributing/build/supported.html>`_:
 Windows, macos, Linux and Android.
-There is also some code running on tier 2-3 platforms (e.g., for FreeBSD), but
+There is also some code (markers recording) running on tier 2-3 platforms (e.g., for FreeBSD), but
 the team at Mozilla is not obligated to maintain it; we do try to keep it
 running, and some external contributors are keeping an eye on it and provide
 patches when things do break.
 
-To reduce the burden on unsupported platforms, a lot of the Profilers code is
-only compiled when ``MOZ_GECKO_PROFILER`` is #defined. This means that some
-public functions may not always be declared or implemented, and should be
-surrounded by guards like ``#ifdef MOZ_GECKO_PROFILER``.
-
-Some commonly-used functions offer an empty definition in the
-non-``MOZ_GECKO_PROFILER`` case, so these functions may be called from anywhere
-without guard.
-
-Other functions have associated macros that can always be used, and resolve to
-nothing on unsupported platforms. E.g.,
-``PROFILER_REGISTER_THREAD`` calls ``profiler_register_thread`` where supported,
-otherwise does nothing.
-
-WIP note: There is an effort to eventually get rid of ``MOZ_GECKO_PROFILER`` and
-its associated macros, see
-`bug 1635350 <https://bugzilla.mozilla.org/show_bug.cgi?id=1635350>`_.
 
 RAII "Auto" macros and classes
 ==============================
@@ -290,7 +273,7 @@ that some action always eventually happens, is called
 `RAII <https://en.cppreference.com/w/cpp/language/raii>`_ in C++, with the
 common prefix "auto".
 
-E.g.: In ``MOZ_GECKO_PROFILER`` builds,
+E.g.:
 `AUTO_PROFILER_INIT <https://searchfox.org/mozilla-central/search?q=AUTO_PROFILER_INIT>`_
 instantiates an
 `AutoProfilerInit <https://searchfox.org/mozilla-central/search?q=symbol:T_mozilla%3A%3AAutoProfilerInit>`_

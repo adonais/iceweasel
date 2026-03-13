@@ -1135,7 +1135,7 @@ class CssRuleView extends EventEmitter {
       return;
     }
 
-    const isProfilerActive = Services.profiler?.IsActive();
+    const isProfilerActive = Services.profiler.IsActive();
     const startTime = isProfilerActive ? ChromeUtils.now() : null;
 
     this.pageStyle = element.inspectorFront.pageStyle;

@@ -16,8 +16,6 @@
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/ProfilerThreadState.h"
 
-#ifdef MOZ_GECKO_PROFILER
-
 namespace geckoprofiler::markers {
 
 // Default marker payload types, with no extra information, not even a marker
@@ -25,7 +23,5 @@ namespace geckoprofiler::markers {
 using NoPayload = ::mozilla::baseprofiler::markers::NoPayload;
 
 }  // namespace geckoprofiler::markers
-
-#endif  // MOZ_GECKO_PROFILER
 
 #endif  // ProfilerMarkersPrerequisites_h

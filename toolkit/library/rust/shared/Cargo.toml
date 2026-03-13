@@ -19,7 +19,7 @@ netwerk_helper = { path = "../../../../netwerk/base/rust-helper" }
 xpcom = { path = "../../../../xpcom/rust/xpcom" }
 prefs_parser = { path = "../../../../modules/libpref/parser" }
 static_prefs = { path = "../../../../modules/libpref/init/static_prefs" }
-profiler_helper = { path = "../../../../tools/profiler/rust-helper", optional = true }
+profiler_helper = { path = "../../../../tools/profiler/rust-helper" }
 mozurl = { path = "../../../../netwerk/base/mozurl" }
 harfbuzz_glue = { path = "../../../../gfx/harfbuzz_glue" }
 webrender_bindings = { path = "../../../../gfx/webrender_bindings" }
@@ -152,7 +152,6 @@ gecko_refcount_logging = ["geckoservo/gecko_refcount_logging", "xpcom/gecko_refc
 simd-accel = ["encoding_glue/simd-accel", "jsrust_shared/simd-accel"]
 moz_places = ["bookmark_sync"]
 spidermonkey_rust = []
-gecko_profiler = ["gecko-profiler/enabled", "profiler_helper"]
 gecko_profiler_parse_elf = ["profiler_helper/parse_elf"]
 libfuzzer = ["authrs_bridge/fuzzing"]
 webrtc = ["mdns_service"]

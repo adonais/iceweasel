@@ -27,7 +27,6 @@ class ChildProfilerController final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChildProfilerController)
 
-#ifdef MOZ_GECKO_PROFILER
   static already_AddRefed<ChildProfilerController> Create(
       mozilla::ipc::Endpoint<PProfilerChild>&& aEndpoint);
 
@@ -49,20 +48,6 @@ class ChildProfilerController final {
 
   RefPtr<ProfilerChild> mProfilerChild;  // only accessed on mThread
   DataMutex<RefPtr<nsIThread>> mThread;
-#else
-  static already_AddRefed<ChildProfilerController> Create(
-      mozilla::ipc::Endpoint<PProfilerChild>&& aEndpoint) {
-    return nullptr;
-  }
-  [[nodiscard]] ProfileAndAdditionalInformation
-  GrabShutdownProfileAndShutdown() {
-    return ProfileAndAdditionalInformation();
-  }
-  void Shutdown() {}
-
- private:
-  ~ChildProfilerController() {}
-#endif  // MOZ_GECKO_PROFILER
 };
 
 }  // namespace mozilla
