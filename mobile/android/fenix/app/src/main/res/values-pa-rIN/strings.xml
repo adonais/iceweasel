@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">ਸਫ਼ੇ ਦਾ ਉਲੱਥਾ ਕਰੋ</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">ਸਫ਼ੇ ਦਾ ਸਾਰ</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">ਨਵਾਂ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">…ਖ਼ਰਾਬ ਸਾਈਟ ਬਾਰੇ ਰਿਪੋਰਟ ਕਰੋ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1027,11 +1029,7 @@
   <string name="customize_addon_collection_user_hint">ਭੰਡਾਰ ਮਾਲਕ (ਵਰਤੋਂਕਾਰ ID)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">ਇਕਸਟੈਨਸ਼ਨ ਭੰਡਾਰ ਨੂੰ ਸੋਧਿਆ ਗਿਆ। ਤਬਦੀਲੀਆਂ ਲਾਗੂ ਕਰਨ ਲਈ ਐਪਲੀਕੇਸ਼ਨ ਨੂੰਬੰਦ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">ਵਾਪਸ ਜਾਓ</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">ਬੁੱਕਮਾਰਕ</string>
@@ -1590,6 +1588,8 @@
   <string name="tab_manager_multiselect_menu_item_share">ਸਾਂਝਾ ਕਰੋ</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">ਭੰਡਾਰ ਵਿੱਚ ਜੋੜੋ</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">ਗਰੁੱਪ ਵਿੱਚ ਜੋੜੋ</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ਚੁਣੀਆਂ ਟੈਬਾਂ ਸਾਂਝੀਆਂ ਕਰੋ</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1630,6 +1630,27 @@
   <string name="pwa_site_controls_title_private">%1$s (ਪ੍ਰਾਈਵੇਟ ਮੋਡ)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">ਟੈਬ ਖੋਜ ਨੂੰ ਖੋਲ੍ਹੋ</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">ਟੈਬ ਗਰੁੱਪ ਬਣਾਓ</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">ਗਰੁੱਪ ਨੂੰ ਸੋਧੋ</string>
+  <string name="create_tab_group_save_button">ਸੰਭਾਲੋ</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">ਟੈਬ ਗਰੁੱਪ ਸੋਧ ਨੂੰ ਬੰਦ ਕਰੋ</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">ਗਰੁੱਪ</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">ਗਰੁੱਪ %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">ਟੈਬ ਗਰੁੱਪ ਦਾ ਨਾਂ</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">ਨਾਂ</string>
   <!--
     History
 
@@ -1745,11 +1766,26 @@
   <string name="download_rename_dialog_label">ਨਾਂ</string>
   <string name="download_rename_dialog_confirm_button">ਸੰਭਾਲੋ</string>
   <string name="download_rename_dialog_cancel_button">ਰੱਦ ਕਰੋ</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">ਇਸ ਟਿਕਾਣੇ ਵਿੱਚ “%s” ਨਾਂ ਦੀ ਫਾਇਲ ਪਹਿਲਾਂ ਹੀ ਮੌਜੂਦ ਹੈ</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">ਫਾਇਲ ਨਾਂ ਵਿੱਚ “/” ਨਹੀਂ ਵਰਤਿਆ ਜਾ ਸਕਦਾ ਹੈ</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">ਫ਼ਾਇਲ ਦਾ ਨਾਂ ਨਹੀਂ ਬਦਲਿਆ ਜਾ ਸਕਦਾ ਹੈ</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">ਸਿਸਟਮ ਜਾਂ ਸਟੋਰੇਜ਼ ਪਾਬੰਦੀਆਂ ਕਰਕੇ ਇਸ ਫ਼ਾਇਲ ਦਾ ਨਾਂ ਨਹੀਂ ਬਦਲਿਆ ਜਾ ਸਕਦਾ ਹੈ।</string>
   <string name="download_rename_error_dismiss_button">ਠੀਕ ਹੈ</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">ਫਾਇਲ ਕਿਸਮ ਨੂੰ %s ਵਿੱਚ ਬਦਲਣਾ ਹੈ?</string>
+  <string name="change_file_extension_description">ਇਹ ਫਾਇਲ ਨੂੰ ਵੱਖਰੀ ਐਪ ਵਿੱਚ ਖੋਲ੍ਹ ਸਕਦਾ ਹੈ ਅਤੇ ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਲਈ ਖ਼ਤਰਾ ਹੋ ਸਕਦਾ ਹੈ।</string>
+  <string name="change_file_extension_cancel_button">ਰੱਦ ਕਰੋ</string>
+  <string name="change_file_extension_confirm_button">ਹਾਂ, ਇਸ ਨੂੰ ਬਦਲੋ</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">ਜਾਰੀ ਹੈ</string>
   <!--
@@ -2867,6 +2903,10 @@
   <string name="preferences_email_masks_suggest_learn_more">ਹੋਰ ਜਾਣੋ</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">ਈਮੇਲ ਮਾਸਕ ਦਾ ਇੰਤਜ਼ਾਮ ਕਰੋ</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">ਤੁਸੀਂ 5 ਮੁਫ਼ਤ ਈਮੇਲ ਮਾਸਕ ਵਰਤੇ ਲਏ ਹਨ ਤਾਂ ਹੀ ਅਸੀਂ ਮੁੜ-ਵਰਤਣ ਵਾਸਤੇ ਇੱਕ ਤੁਹਾਡੇ ਲਈ ਚੁਣਿਆ ਹੈ।</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">ਈਮੇਲ ਮਾਸਕ ਇਸ ਵੇਲੇ ਮੌਜੂਦ ਨਹੀਂ ਹਨ। ਕੁਝ ਕੁ ਮਿੰਟਾਂ ਵਿਚ ਫ਼ੇਰ ਅਜ਼ਮਾ ਕੇ ਵੇਖਿਓ।</string>
   <!--
     Autofill
 
@@ -3637,6 +3677,13 @@
   -->
   <string name="connection_security_panel_verified_by">%s ਵਲੋਂ ਤਸਦੀਕ ਕੀਤਾ</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">%s ਨੂੰ ਜਾਰੀ ਕੀਤਾ</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">ਰੈਗੂਲੇਸ਼ਨ (EU) 2024/1183 ਦੇ ਮੁਤਾਬਕ ਯੋਗ ਹੈ।</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3726,6 +3773,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">ਮੈਂ Firefox ਉੱਤੇ ਖੋਜ ਨੂੰ ਨਹੀਂ ਵਰਤਦਾ/ਵਰਤਦੀ ਹੈ</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">ਮੈ ਸਿੰਕ ਨੂੰ ਨਹੀਂ ਵਰਤਦਾ/ਵਰਤਦੀ ਹਾਂ</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">ਇਹ ਹੌਲੀ ਜਾਂ ਗੜਬੜ ਹੈ</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">ਫ਼ੀਚਰ ਲੱਭਣੇ ਔਖੇ ਹਨ ਜਾਂ ਮੌਜੂਦ ਹੀ ਨਹੀਂ ਹਨ</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">ਇਹ ਵਰਤਣ ਲਈ ਉਲਝਣ ਵਾਲਾ ਜਾਂ ਔਖਾ ਹੈ</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">ਇਹ ਠੀਕ ਹੈ, ਪਰ ਹੋਰ ਬਰਾਊਜ਼ਰ ਦੇ ਮੁਤਾਬਕੇ ਵਧੀਆ ਨਹੀਂ ਹੈ</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">ਮੈ Firefox ਨੂੰ ਵਰਤਣਾ ਜਾਰੀ ਰੱਖਣਾ ਚਾਹੁੰਦਾ/ਚਾਹੁੰਦੀ ਹਾਂ</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">ਮਦਦ Firefox ਵਿੱਚ ਪਰਿੰਟ ਕਰਨ ਨੂੰ ਬੇਤਹਰ ਬਣਾਉਂਦੀ ਹੈ। ਇਸ ਨੂੰ ਸਿਰਫ਼ ਸਕਿੰਟ ਹੀ ਲੱਗੇਗਾ</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3740,6 +3797,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Firefox ਵਿੱਚ ਖੋਜ ਤਜਰਬੇ ਨਾਲ ਤੁਸੀਂ ਕਿੰਨੇ ਸੰਤੁਸ਼ਟ ਹੋ?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Firefox ਵਿੱਚ ਸਿੰਕ ਤਜਰਬੇ ਨਾਲ ਤੁਸੀਂ ਕਿੰਨੇ ਸੰਤੁਸ਼ਟ ਹੋ?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Firefox ਨੂੰ ਵਧੀਆ ਬਣਾਉਣ ਲਈ ਸਾਡੀ ਮਦਦ ਕਰੋ। ਹੁਣ ਤੱਕ ਦੇ ਤੁਹਾਡੇ ਤਜਰਬੇ ਨੂੰ ਕੀ ਵਧੀਆ ਦਰਸਾਉਂਦਾ ਹੈ?</string>
   <!--
     Accessibility
 

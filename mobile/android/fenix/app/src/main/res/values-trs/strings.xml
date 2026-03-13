@@ -497,6 +497,12 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Nā’nïnj si widget Firefox</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
+  <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
+  <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Rūgûñu’ūnj da’ nāhuin sà’ doj Firefox</string>
+  <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="onboarding_preferences_dialog_crash_reporting_title">A’nïn mān’an man nuguan’an nan’anj si huā sa ahui a’nan’</string>
+  <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="onboarding_preferences_dialog_crash_reporting_description">Nej nuguan’ numân nata’ sisī huā sa huā a’anan’an rugûñu’un ñûnj da’ gānātsij ñûnj nī nāgi’hiaj sà’ ñûnj. Huā dā’āj nej nuguan’ dan nī sa nata’ dàj hua rayi’ît huin ne man.</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Gāhuin chrūn doj</string>
   <!-- Title for the startup crash page. %s is the name of the app (for example "Firefox") -->
@@ -509,6 +515,9 @@
   <string name="startup_crash_negative">Guruhuât nānj ân</string>
   <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
   <string name="startup_crash_restart">Nā’nïn ñû %s</string>
+  <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
+  <string name="onboarding_preferences_dialog_usage_data_title">Gā’nïnj nuguan’ nata’ nī dà aché nunt riña Mozilla</string>
+  <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Nej nuguan’ huā rayi’î si āgà’t, dàj nagi’hiát nej sa ‘na’ riñanj nī dàj aràj sunt Firefox rugûñu’ūnj nej man da’ nāgi’hiaj sà’ nej ñûnj dàj ‘hiaj sunj nī dàj hìo man guendâ darna’ nê’.</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Gāhuin chrūn doj</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Gà\' huaj</string>
@@ -531,20 +540,65 @@
   <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">Si gān’ānjt ne’ ñāa, nī arâjyinat %1$s.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
   <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">Chrēj da’huît gānikò’t sisī gārāsunt Firefox</string>
+  <!--
+    Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
+  -->
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Riñun ruhuâ Firefox da’ gā huì gāchēt. Gīnī’in doj dàj hua nuguan’ nan riña %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Notisiâ Huìi</string>
+  <!--
+    Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
+  -->
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Da’ gā’hue nāhuin sà’ doj riña aché nunt nan nī, a’nïn Firefox nuguan’ da’ nàchinj nan’an dàj ‘hiaj sun Mozilla. %1$s</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Gi’nïnj ra’a configuración</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Gūij ne\' ñāan</string>
   <!-- Onboarding header for the toolbar selection card. -->
   <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">Danè’ ginùn riña gāchrūnt sa nānà’huì’t ruhuât nānj</string>
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Guij ne\' ñāan</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Rūgûñu’ūnj da’ gāchīj doj Firefox</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">\u0020Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Dàj arâj sun ñunj nej nuguan’an</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Gī\'hiaj hīa</string>
   <!-- Set to default browser onboarding redesign title. -->
   <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Gīrì’ sa dugumîn mān’an sò’ ngà aché nunt</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">‘Ngō rïn gūru’man ra’ât da’ dūgumînt mān’ânt da’ si naga’nàj nej si sò’.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Nāgi’hiaj nūguan’àn daran’ nej hiūj arâj sunt Firefox</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Girì’ doj markadô, rakïj ñanj nī da’nga’ huìi riña ahuin mān’an nej si āgâ’t. Daran’ nej man hua ārán rayi’î.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Gāyi’ì nāgi’hiaj nūguan’ànt</string>
   <!-- Sync onboarding redesign negative button text. -->
   <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_out_checkbox">Nāga’huì’ nej nuguan’ huāa riña nej duguî’ ‘nïnj ra’a si marhetin Mozilla. Nej nuguan’ naga’huî’t sanī nitāj āmān gārāsun ñûnj man guendâ ‘ngō sa yī’ìi.</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button">Gūij ne’ ñāan</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button">Sī ga\'hue akuan\' nïn</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Gī’hiaj yūgui da’ gūnānj chrêt</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle">Hìo, nitāj āmān gāchrī yì’ij.\nNahuin sà’ doj da’ gāchē nun’.</string>
+  <!--
+    Terms of use (ToU) onboarding body line one.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="nova_onboarding_tou_body_line_1">Si gān’ānjt ne’ ñāa, nī arâjyinat %1$s.</string>
+  <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Chrēj da’huît gānikò’t sisī gārāsunt Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
@@ -720,11 +774,7 @@
   <string name="customize_addon_collection_hint">Si yūgui yi’nïn’ nan</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Sisi’hiaj yi’nïn’ nan (ID si’hija si)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Gūej ñû</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Nej sa râj sun nichrà\'t doj</string>

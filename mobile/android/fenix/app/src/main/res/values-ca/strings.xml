@@ -930,11 +930,7 @@
   <string name="customize_addon_collection_user_hint">Propietari de la col·lecció (identificador d’usuari)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">S’ha modificat la col·lecció d’extensions. L’aplicació es tancarà per aplicar els canvis…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Torneu a la pestanya</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Adreces d’interès</string>

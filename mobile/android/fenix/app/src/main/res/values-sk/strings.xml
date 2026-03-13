@@ -1029,11 +1029,7 @@
   <string name="customize_addon_collection_user_hint">Vlastník kolekcie (ID používateľa)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Kolekcia rozšírení bola upravená. Aplikácia sa ukončuje a zmeny budú použité…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Návrat späť</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Záložky</string>

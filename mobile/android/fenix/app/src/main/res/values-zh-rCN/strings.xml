@@ -1027,11 +1027,7 @@
   <string name="customize_addon_collection_user_hint">收藏集所有者（用户 ID）</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">已更改扩展收藏集设置。正在退出应用程序以应用更改…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">回到先前页面</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">书签</string>

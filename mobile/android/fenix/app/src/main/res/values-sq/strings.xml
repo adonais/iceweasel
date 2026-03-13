@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Faqe e përkthyer nga %1$s në %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Që të bëhet një përmbledhje e faqes brenda sekondash, tundeni pajisjen tuaj. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Sugjerime nga %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Merrni nga interneti sugjerime të lidhura me kërkimin tuaj</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Merrni sugjerime nga Mozilla, teksa shtypni</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Ndarje lidhjesh</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1032,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Raport privatësie</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Hidhu mbrapa</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Faqerojtës</string>
@@ -1590,6 +1596,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Ndajeni me të tjerët</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Shtojeni në koleksion</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Shtojini në grup</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Nda skedat e përzgjedhura</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1636,12 +1644,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Krijoni grup skedash</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Përpunoni grupin</string>
   <string name="create_tab_group_save_button">Ruaje</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Mbylle Përpunimin e Grupit të Skedave</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grup</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grupi %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Emër</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Emër</string>
   <!--
     History
 
@@ -2498,6 +2515,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s ju mbron nga shumë prej gjurmuesve më të rëndomtë që ndjekin ç’bëni në internet.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Mësoni më tepër</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">U bllokua %d Gjurmues</item>
+    <item quantity="other">U bllokuan %d Gjurmues</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Jeni i mbrojtur</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standarde (parazgjedhje)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3760,6 +3788,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">S’përdor kërkim në Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">S’e përdor njëkohësimin</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Është i ngadaltë, ose me të meta</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Është e zorshme të gjesh veçoritë, ose mungojnë</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Është i ngatërruar, ose i vështirë për t’u përdorur</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Është në rregull, por jo më mirë se shfletuesit e tjerë</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Kam në plan të vazhdoj të përdor Firefox-in</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Ndihmoni të përmirësojmë shtypjen në Firefox. Ha vetëm një sekondë</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3774,6 +3812,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Sa të kënaqur jeni me kërkimin në Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Sa të kënaqur jeni nga funksionimi i njëkohësimit në Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Ndihmonani të përmirësojmë Firefox-in. CiIa e përshkruan më mirë rastin tuaj deri tani?</string>
   <!--
     Accessibility
 

@@ -806,11 +806,7 @@
   <string name="customize_addon_collection_user_hint">የስብስብ ባለቤት (የተጠቃሚ መታወቂያ)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">የቅጥያ ስብስብ ተስተካክሏል። ለውጦችን ለመተግበር መተግበሪያውን በማቆም ላይ…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">መልሰው ይዝለሉ</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">እልባቶች</string>

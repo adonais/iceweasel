@@ -287,11 +287,7 @@
   <string name="customize_addon_collection_cancel">रद्द करें</string>
   <!-- Hint displayed on input field for custom collection name -->
   <string name="customize_addon_collection_hint">संग्रह का नाम</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">वापस अंदर जाएँ</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is

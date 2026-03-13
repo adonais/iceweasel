@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Strona je so z rěče %1$s do rěče %2$s přełožiła.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Třasće swój grat, zo byšće tutu stronu za sekundow zjał. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Namjety wot %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Wobstarajće sej namjety z weba nastupajo waše pytanje</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Wotwołajće namjety wot Mozilla, hdyž pisaće</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Dźělenje wotkazow</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1032,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Rozprawa priwatnosće</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Wróćo skočić</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Zapołožki</string>
@@ -2511,6 +2517,19 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s was před wjele z najhusćišich přesćěhowakow škita, kotrež slěduja, štož online činiće.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Dalše informacije</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d přesćěhowak zablokowany</item>
+    <item quantity="two">%d přesćěhowakaj zablokowanej</item>
+    <item quantity="few">%d přesćěhowaki zablokowane</item>
+    <item quantity="other">%d přesćěhowakow zablokowane</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Sće škitany</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
