@@ -178,6 +178,11 @@ add_task(async function test_panel_get_started_entrypoint() {
     "vpn_integration_panel",
     "entrypoint should be vpn_integration_panel when enrolling from the panel"
   );
+  Assert.equal(
+    fxaStub.firstCall.args[0].extraParams.utm_source,
+    "panel",
+    "utm_source should be panel when enrolling from the panel"
+  );
 
   await closePanel();
 

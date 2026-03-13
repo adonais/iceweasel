@@ -942,6 +942,7 @@ Preferences.addSetting({
   onUserClick() {
     IPProtection.getPanel(window.browsingContext.topChromeWindow)?.enroll({
       entrypoint: "vpn_integration_settings",
+      utm_source: "settings",
     });
   },
 });
