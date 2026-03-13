@@ -163,16 +163,6 @@ MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateRight(const T aValue,
   return (aValue >> aShift) | (aValue << (sizeof(T) * CHAR_BIT - aShift));
 }
 
-/**
- * Returns true if |x| is a power of two.
- * Zero is not an integer power of two. (-Inf is not an integer)
- */
-template <typename T>
-constexpr bool IsPowerOfTwo(T x) {
-  static_assert(std::is_unsigned_v<T>, "IsPowerOfTwo requires unsigned values");
-  return x && (x & (x - 1)) == 0;
-}
-
 // Greatest Common Divisor, from
 // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Implementation
 template <typename T>

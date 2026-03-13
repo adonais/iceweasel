@@ -505,7 +505,6 @@ MathAlgorithms.h:
     - RoundUpPow2
     - RotateLeft
     - RotateRight
-    - IsPowerOfTwo
     - GCD
 
 Maybe.h:
