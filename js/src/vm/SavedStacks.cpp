@@ -1067,16 +1067,17 @@ JS_PUBLIC_API bool BuildStackString(JSContext* cx, JSPrincipals* principals,
   // place the output string in the cx's current realm.
   {
     bool skippedAsync;
-    Rooted<js::SavedFrame*> frame(
-        cx, UnwrapSavedFrame(cx, principals, stack,
-                             SavedFrameSelfHosted::Exclude, skippedAsync));
+    RootedTuple<js::SavedFrame*, js::SavedFrame*, js::SavedFrame*> roots(cx);
+    RootedField<js::SavedFrame*, 0> frame(
+        roots, UnwrapSavedFrame(cx, principals, stack,
+                                SavedFrameSelfHosted::Exclude, skippedAsync));
     if (!frame) {
       stringp.set(cx->runtime()->emptyString);
       return true;
     }
 
-    Rooted<js::SavedFrame*> parent(cx);
-    Rooted<js::SavedFrame*> nextFrame(cx);
+    RootedField<js::SavedFrame*, 1> parent(roots);
+    RootedField<js::SavedFrame*, 2> nextFrame(roots);
     do {
       MOZ_ASSERT(SavedFrameSubsumedByPrincipals(cx, principals, frame));
       MOZ_ASSERT(!frame->isSelfHosted(cx));
@@ -1140,10 +1141,12 @@ JS_PUBLIC_API JSObject* ConvertSavedFrameToPlainObject(
     SavedFrameSelfHosted selfHosted) {
   MOZ_ASSERT(savedFrameArg);
 
-  RootedObject savedFrame(cx, savedFrameArg);
-  RootedObject baseConverted(cx), lastConverted(cx);
-  RootedValue v(cx);
-  RootedObject nextConverted(cx);
+  RootedTuple<JSObject*, JSObject*, JSObject*, Value, JSObject*> roots(cx);
+  RootedField<JSObject*, 0> savedFrame(roots, savedFrameArg);
+  RootedField<JSObject*, 1> baseConverted(roots);
+  RootedField<JSObject*, 2> lastConverted(roots);
+  RootedField<Value, 3> v(roots);
+  RootedField<JSObject*, 4> nextConverted(roots);
 
   baseConverted = lastConverted = JS_NewObject(cx, nullptr);
   if (!baseConverted) {
@@ -1470,14 +1473,17 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
   // targets and ensure that we don't stop before they have all been reached.
   Vector<AbstractFramePtr, 4, TempAllocPolicy> unreachedEvalTargets(cx);
 
-  Rooted<JSFunction*> startAt(cx, startAtObj && startAtObj->is<JSFunction>()
-                                      ? &startAtObj->as<JSFunction>()
-                                      : nullptr);
+  RootedTuple<JSFunction*, LocationValue, JSAtom*, JSAtom*, SavedFrame*> roots(
+      cx);
+  RootedField<JSFunction*> startAt(roots,
+                                   startAtObj && startAtObj->is<JSFunction>()
+                                       ? &startAtObj->as<JSFunction>()
+                                       : nullptr);
   bool seenStartAt = !startAt;
-  Rooted<LocationValue> location(cx);
-  Rooted<JSAtom*> displayAtom(cx);
-  Rooted<JSAtom*> causeAtom(cx);
-  Rooted<SavedFrame*> asyncParent(cx);
+  RootedField<LocationValue, 1> location(roots);
+  RootedField<JSAtom*, 2> displayAtom(roots);
+  RootedField<JSAtom*, 3> causeAtom(roots);
+  RootedField<SavedFrame*> asyncParent(roots);
 
   while (!iter.done()) {
     Activation& activation = *iter.activation();
@@ -2086,8 +2092,9 @@ JS_PUBLIC_API bool ConstructSavedFrameStackSlow(
     MutableHandleObject outSavedFrameStack) {
   Rooted<js::GCLookupVector> stackChain(cx, js::GCLookupVector(cx));
   Rooted<JS::ubi::StackFrame> ubiFrame(cx, frame);
-  Rooted<JSAtom*> source(cx);
-  Rooted<JSAtom*> functionDisplayName(cx);
+  RootedTuple<JSAtom*, JSAtom*> atomRoots(cx);
+  RootedField<JSAtom*, 0> source(atomRoots);
+  RootedField<JSAtom*, 1> functionDisplayName(atomRoots);
 
   while (ubiFrame.get()) {
     // Convert the source and functionDisplayName strings to atoms.
