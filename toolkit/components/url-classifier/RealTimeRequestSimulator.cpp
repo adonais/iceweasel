@@ -227,21 +227,27 @@ void RealTimeRequestSimulator::SimulateRealTimeRequest(const nsACString& aURL,
       continue;
     }
 
-    // The cache entry is expired. Remove it and send this hash.
-    if (cachedResponse->negativeCacheExpirySec < now) {
-      mSimulatedCache.Remove(prefix);
+    // Check if this full hash has a cached hit entry.
+    auto fullHashEntry = cachedResponse->fullHashes.Lookup(fullHashString);
+    if (!fullHashEntry) {
       hashesToSend.AppendElement(fullHash);
       continue;
     }
 
-    // We find a match in the cache, so we don't need to send the request.
-    if (cachedResponse->fullHashes.Contains(fullHashString)) {
-      NotifyResult(false, 0, 0, aIsPrivate);
-      return;
+    // The full hash cache entry is expired. Remove it and send this hash.
+    if (fullHashEntry.Data() < now) {
+      fullHashEntry.Remove();
+      if (cachedResponse->fullHashes.IsEmpty()) {
+        mSimulatedCache.Remove(prefix);
+      }
+      hashesToSend.AppendElement(fullHash);
+      continue;
     }
 
-    // The prefix is cached but no full hash match. Still need to send.
-    hashesToSend.AppendElement(fullHash);
+    // We find a valid match in the cache, so we don't need to send the
+    // request.
+    NotifyResult(false, 0, 0, aIsPrivate);
+    return;
   }
 
   if (hashesToSend.IsEmpty()) {
@@ -284,7 +290,6 @@ void RealTimeRequestSimulator::SimulateRealTimeRequest(const nsACString& aURL,
     // There is a hit, so we create a cache entry for it.
     CachedFullHashResponse* response =
         mSimulatedCache.GetOrInsertNew(fullHash.ToUint32());
-    response->negativeCacheExpirySec = expiry;
     response->fullHashes.InsertOrUpdate(fullHashString, expiry);
   }
 
