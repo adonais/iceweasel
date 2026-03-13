@@ -109,8 +109,7 @@ bool StaticRange::IsValid() const {
     return false;
   }
 
-  const Maybe<int32_t> pointOrder =
-      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(mStart, mEnd);
+  const Maybe<int32_t> pointOrder = nsContentUtils::ComparePoints(mStart, mEnd);
   return pointOrder.isSome() && *pointOrder <= 0;
 }
 

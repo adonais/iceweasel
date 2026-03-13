@@ -7,7 +7,6 @@
 #include "nsIWidget.h"
 #include "mozilla/dom/Document.h"
 #include "nsIContent.h"
-#include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"

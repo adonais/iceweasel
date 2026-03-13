@@ -5715,8 +5715,7 @@ nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
     }
   }
 
-  MOZ_ASSERT(aIter.ParentNode()->IsContent());
-  return getFarPseudo(aIter.ParentNode()->AsContent());
+  return getFarPseudo(aIter.Parent());
 }
 
 nsIFrame* nsCSSFrameConstructor::AdjustSiblingFrame(
@@ -5770,7 +5769,7 @@ nsIFrame* nsCSSFrameConstructor::FindSibling(
   // Our siblings (if any) do not have a frame to guide us. The frame for the
   // target content should be inserted whereever a frame for the container would
   // be inserted. This is needed when inserting into display: contents nodes.
-  const nsIContent* current = aIter.ParentNode()->AsContent();
+  const nsIContent* current = aIter.Parent();
   while (IsDisplayContents(current)) {
     const nsIContent* parent = current->GetFlattenedTreeParent();
     MOZ_ASSERT(parent, "No display: contents on the root");
@@ -5803,7 +5802,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
     iter.Seek(aChild);
   } else {
     // Prime the iterator for the call to FindPreviousSibling.
-    (void)iter.GetNextChild();
+    iter.GetNextChild();
     MOZ_ASSERT(aChild->GetProperty(nsGkAtoms::restylableAnonymousNode),
                "Someone passed native anonymous content directly into frame "
                "construction.  Stop doing that!");

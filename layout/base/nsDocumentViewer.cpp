@@ -26,7 +26,6 @@
 #include "nsFrameSelection.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIContent.h"
-#include "nsIContentInlines.h"
 #include "nsIDocumentViewer.h"
 #include "nsIDocumentViewerPrint.h"
 #include "nsIFrame.h"

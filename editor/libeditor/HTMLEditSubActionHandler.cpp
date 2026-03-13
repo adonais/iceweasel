@@ -7484,12 +7484,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
   // if the adjusted locations "cross" the old values: i.e., new end before old
   // start, or new start after old end.  If so then just leave things alone.
 
-  // XXX Should use TreeKind::DOM? Editable state won't cross shadow DOM
-  // boundaries.
-  Maybe<int32_t> comp =
-      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-          startPoint.ToRawRangeBoundary(),
-          newRange.EndRef().ToRawRangeBoundary());
+  Maybe<int32_t> comp = nsContentUtils::ComparePoints(
+      startPoint.ToRawRangeBoundary(), newRange.EndRef().ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
     return Err(NS_ERROR_FAILURE);
@@ -7499,8 +7495,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
     return EditorRawDOMRange();  // New end before old start.
   }
 
-  comp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-      newRange.StartRef().ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
+  comp = nsContentUtils::ComparePoints(newRange.StartRef().ToRawRangeBoundary(),
+                                       endPoint.ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
     return Err(NS_ERROR_FAILURE);

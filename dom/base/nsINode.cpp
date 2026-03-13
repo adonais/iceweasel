@@ -373,64 +373,31 @@ class IsItemInRangeComparator {
         mEndOffset(aEndOffset),
         mCache(aCache) {
     MOZ_ASSERT(aStartOffset <= aEndOffset);
-    MOZ_ASSERT(aStartOffset <= aNode.Length());
-    MOZ_ASSERT(aEndOffset <= aNode.Length());
-  }
-
-  [[nodiscard]] bool Collapsed() const { return mStartOffset == mEndOffset; }
-
-  const ConstRawRangeBoundary& StartRef() const {
-    if (!mStartRef) {
-      const_cast<IsItemInRangeComparator*>(this)->mStartRef.emplace(
-          &mNode, mStartOffset, RangeBoundarySetBy::Offset, TreeKind::DOM);
-      MOZ_ASSERT(mStartRef->IsSetAndValid());
-    }
-    return mStartRef.ref();
-  }
-  const ConstRawRangeBoundary& EndRef() const {
-    if (!mEndRef) {
-      const_cast<IsItemInRangeComparator*>(this)->mEndRef.emplace(
-          &mNode, mEndOffset, RangeBoundarySetBy::Offset, TreeKind::DOM);
-      MOZ_ASSERT(mEndRef->IsSetAndValid());
-    }
-    return mEndRef.ref();
   }
 
   int operator()(const AbstractRange* const aRange) const {
-    auto ComparePoints =
-        [](const ConstRawRangeBoundary& aRef1, RangeBoundaryFor aFor1,
-           const ConstRawRangeBoundary& aRef2, RangeBoundaryFor aFor2,
-           nsContentUtils::NodeIndexCache* aCache) {
-          if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-            return nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
-                aRef1.AsRangeBoundaryInFlatTree(aFor1),
-                aRef2.AsRangeBoundaryInFlatTree(aFor2), aCache);
-          }
-          return nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-              aRef1.AsRangeBoundaryInDOMTree(),
-              aRef2.AsRangeBoundaryInDOMTree(), aCache);
-        };
+    auto ComparePoints = [](const nsINode* aNode1, const uint32_t aOffset1,
+                            const nsINode* aNode2, const uint32_t aOffset2,
+                            nsContentUtils::NodeIndexCache* aCache) {
+      if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
+        return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
+            aNode1, aOffset1, aNode2, aOffset2, aCache);
+      }
+      return nsContentUtils::ComparePointsWithIndices<
+          TreeKind::ShadowIncludingDOM>(aNode1, aOffset1, aNode2, aOffset2,
+                                        aCache);
+    };
 
     Maybe<int32_t> cmp = ComparePoints(
-        EndRef(),
-        Collapsed() ? RangeBoundaryFor::Collapsed : RangeBoundaryFor::End,
-        aRange->MayCrossShadowBoundaryStartRef().AsConstRaw(),
-        aRange->AreNormalRangeAndCrossShadowBoundaryRangeCollapsed()
-            ? RangeBoundaryFor::Collapsed
-            : RangeBoundaryFor::Start,
-        mCache);
+        &mNode, mEndOffset, aRange->GetMayCrossShadowBoundaryStartContainer(),
+        aRange->MayCrossShadowBoundaryStartOffset(), mCache);
     // nsContentUtils::ComparePoints would return Nothing when nodes
     // are disconnected, ComparePoints_Deprecated used to return 1
     // for that case. Hence valueOr(1) to keep the legacy result.
     if (cmp.valueOr(1) == 1) {
-      cmp = ComparePoints(
-          StartRef(),
-          Collapsed() ? RangeBoundaryFor::Collapsed : RangeBoundaryFor::Start,
-          aRange->MayCrossShadowBoundaryEndRef().AsConstRaw(),
-          aRange->AreNormalRangeAndCrossShadowBoundaryRangeCollapsed()
-              ? RangeBoundaryFor::Collapsed
-              : RangeBoundaryFor::End,
-          mCache);
+      cmp = ComparePoints(&mNode, mStartOffset,
+                          aRange->GetMayCrossShadowBoundaryEndContainer(),
+                          aRange->MayCrossShadowBoundaryEndOffset(), mCache);
       // Same reason as above.
       if (cmp.valueOr(1) == -1) {
         return 0;
@@ -445,15 +412,11 @@ class IsItemInRangeComparator {
   const uint32_t mStartOffset;
   const uint32_t mEndOffset;
   nsContentUtils::NodeIndexCache* mCache;
-  Maybe<ConstRawRangeBoundary> mStartRef;
-  Maybe<ConstRawRangeBoundary> mEndRef;
 };
 
 bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
                          SelectionNodeCache* aCache) const {
   MOZ_ASSERT(aStartOffset <= aEndOffset);
-  MOZ_ASSERT(aStartOffset <= Length());
-  MOZ_ASSERT(aEndOffset <= Length());
   const nsINode* ancestorForCache =
       GetClosestCommonInclusiveAncestorForRangeInSelection(this);
   NS_ASSERTION(ancestorForCache || !IsMaybeSelected(),
@@ -499,14 +462,7 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
   }
 
   nsContentUtils::NodeIndexCache cache;
-  const IsItemInRangeComparator comparator{*this, aStartOffset, aEndOffset,
-                                           &cache};
-  const RangeBoundaryFor comparatorStartBoundaryFor =
-      comparator.Collapsed() ? RangeBoundaryFor::Collapsed
-                             : RangeBoundaryFor::Start;
-  const RangeBoundaryFor comparatorEndBoundaryFor =
-      comparator.Collapsed() ? RangeBoundaryFor::Collapsed
-                             : RangeBoundaryFor::End;
+  IsItemInRangeComparator comparator{*this, aStartOffset, aEndOffset, &cache};
   for (Selection* selection : ancestorSelections) {
     // Binary search the sorted ranges in this selection.
     // (Selection::GetRangeAt returns its ranges ordered).
@@ -536,16 +492,11 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         }
 
         auto ComparePoints = [](const ConstRawRangeBoundary& aBoundary1,
-                                RangeBoundaryFor aFor1,
                                 const RangeBoundary& aBoundary2,
-                                RangeBoundaryFor aFor2,
                                 nsContentUtils::NodeIndexCache* aCache) {
-          MOZ_ASSERT(aBoundary1.GetTreeKind() == TreeKind::DOM);
-          MOZ_ASSERT(aBoundary2.GetTreeKind() == TreeKind::DOM);
           if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-            return nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
-                aBoundary1.AsRangeBoundaryInFlatTree(aFor1),
-                aBoundary2.AsRaw().AsRangeBoundaryInFlatTree(aFor2), aCache);
+            return nsContentUtils::ComparePoints<TreeKind::Flat>(
+                aBoundary1, aBoundary2, aCache);
           }
           return nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
               aBoundary1, aBoundary2, aCache);
@@ -556,22 +507,18 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         // if node end > start of middle+1, result = 1
         if (middle + 1 < high &&
             (middlePlus1 = selection->GetAbstractRangeAt(middle + 1)) &&
-            ComparePoints(comparator.EndRef(), comparatorEndBoundaryFor,
-                          middlePlus1->StartRef(),
-                          middlePlus1->Collapsed() ? RangeBoundaryFor::Collapsed
-                                                   : RangeBoundaryFor::Start,
-                          &cache)
+            ComparePoints(ConstRawRangeBoundary(this, aEndOffset,
+                                                RangeBoundarySetBy::Offset),
+                          middlePlus1->StartRef(), &cache)
                     .valueOr(1) > 0) {
           result = 1;
           // if node start < end of middle - 1, result = -1
         } else if (middle >= 1 &&
                    (middleMinus1 = selection->GetAbstractRangeAt(middle - 1)) &&
                    ComparePoints(
-                       comparator.StartRef(), comparatorStartBoundaryFor,
-                       middleMinus1->EndRef(),
-                       middleMinus1->Collapsed() ? RangeBoundaryFor::Collapsed
-                                                 : RangeBoundaryFor::End,
-                       &cache)
+                       ConstRawRangeBoundary(this, aStartOffset,
+                                             RangeBoundarySetBy::Offset),
+                       middleMinus1->EndRef(), &cache)
                            .valueOr(1) < 0) {
           result = -1;
         } else {
@@ -1976,6 +1923,21 @@ nsIContent* nsINode::GetChildAt_Deprecated(uint32_t aIndex) const {
   return child;
 }
 
+nsINode* nsINode::GetChildAtInFlatTree(uint32_t aIndex) const {
+  if (const auto* slot = HTMLSlotElement::FromNode(this)) {
+    const auto& assignedNodes = slot->AssignedNodes();
+    if (!assignedNodes.IsEmpty()) {
+      if (aIndex >= assignedNodes.Length()) {
+        return nullptr;
+      }
+      return assignedNodes[aIndex];
+    }
+  } else if (auto* shadowRoot = GetShadowRoot()) {
+    return shadowRoot->GetChildAtInFlatTree(aIndex);
+  }
+  return GetChildAt_Deprecated(aIndex);
+}
+
 int32_t nsINode::ComputeIndexOf_Deprecated(
     const nsINode* aPossibleChild) const {
   Maybe<uint32_t> maybeIndex = ComputeIndexOf(aPossibleChild);
@@ -2083,6 +2045,15 @@ Maybe<uint32_t> nsINode::ComputeIndexInParentContent() const {
 bool nsINode::MaybeParentCachesComputedIndex() const {
   nsINode* parent = GetParentNode();
   return parent && parent->MaybeCachesComputedIndex();
+}
+
+uint32_t nsINode::GetFlatTreeChildCount() const {
+  return FlattenedChildIterator::GetLength(this);
+}
+
+Maybe<uint32_t> nsINode::ComputeFlatTreeIndexOf(
+    const nsINode* aPossibleChild) const {
+  return FlattenedChildIterator::GetIndexOf(this, aPossibleChild);
 }
 
 static already_AddRefed<nsINode> GetNodeFromNodeOrString(
@@ -4198,33 +4169,21 @@ ShadowRoot* nsINode::GetShadowRootForSelection() const {
   }
 
   ShadowRoot* shadowRoot = GetShadowRoot();
-  return shadowRoot && shadowRoot->IsContentShadowRoot() ? shadowRoot : nullptr;
-}
-
-HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilled() {
-  return const_cast<HTMLSlotElement*>(
-      static_cast<const nsINode*>(this)->GetAsHTMLSlotElementIfFilled());
-}
-
-const HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilled() const {
-  const HTMLSlotElement* slot = HTMLSlotElement::FromNode(this);
-  return !slot || slot->AssignedNodes().IsEmpty() ? nullptr : slot;
-}
-
-HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilledForSelection() {
-  return const_cast<HTMLSlotElement*>(
-      static_cast<const nsINode*>(this)
-          ->GetAsHTMLSlotElementIfFilledForSelection());
-}
-
-const HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilledForSelection()
-    const {
-  const HTMLSlotElement* const slot = GetAsHTMLSlotElementIfFilled();
-  if (!slot || slot->AssignedNodes().IsEmpty()) {
+  if (!shadowRoot) {
     return nullptr;
   }
-  const ShadowRoot* const shadowRoot = slot->GetContainingShadow();
-  return !shadowRoot || shadowRoot->IsContentShadowRoot() ? slot : nullptr;
+
+  // ie. <details> and <video>
+  if (shadowRoot->IsUAWidget()) {
+    return nullptr;
+  }
+
+  // ie. <use> element
+  if (IsElement() && !AsElement()->CanAttachShadowDOM()) {
+    return nullptr;
+  }
+
+  return shadowRoot;
 }
 
 void nsINode::QueueAncestorRevealingAlgorithm() {

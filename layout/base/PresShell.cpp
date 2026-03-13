@@ -161,7 +161,6 @@
 #include "nsHashKeys.h"
 #include "nsIBaseWindow.h"
 #include "nsIContent.h"
-#include "nsIContentInlines.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsIDOMXULMultSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"

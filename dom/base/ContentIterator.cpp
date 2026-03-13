@@ -43,16 +43,14 @@ static bool ComparePostMode(const RawRangeBoundary& aStart,
   RawRangeBoundary afterNode(parent, content);
   const auto isStartLessThanAfterNode = [&]() {
     const Maybe<int32_t> startComparedToAfterNode =
-        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(aStart,
-                                                                    afterNode);
+        nsContentUtils::ComparePoints(aStart, afterNode);
     return !NS_WARN_IF(!startComparedToAfterNode) &&
            (*startComparedToAfterNode < 0);
   };
 
   const auto isAfterNodeLessOrEqualToEnd = [&]() {
     const Maybe<int32_t> afterNodeComparedToEnd =
-        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(afterNode,
-                                                                    aEnd);
+        nsContentUtils::ComparePoints(afterNode, aEnd);
     return !NS_WARN_IF(!afterNodeComparedToEnd) &&
            (*afterNodeComparedToEnd <= 0);
   };
@@ -72,16 +70,14 @@ static bool ComparePreMode(const RawRangeBoundary& aStart,
 
   const auto isStartLessOrEqualToBeforeNode = [&]() {
     const Maybe<int32_t> startComparedToBeforeNode =
-        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(aStart,
-                                                                    beforeNode);
+        nsContentUtils::ComparePoints(aStart, beforeNode);
     return !NS_WARN_IF(!startComparedToBeforeNode) &&
            (*startComparedToBeforeNode <= 0);
   };
 
   const auto isBeforeNodeLessThanEndNode = [&]() {
     const Maybe<int32_t> beforeNodeComparedToEnd =
-        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(beforeNode,
-                                                                    aEnd);
+        nsContentUtils::ComparePoints(beforeNode, aEnd);
     return !NS_WARN_IF(!beforeNodeComparedToEnd) &&
            (*beforeNodeComparedToEnd < 0);
   };
@@ -1103,8 +1099,8 @@ nsIContent* ContentSubtreeIterator::DetermineFirstContent() const {
   // we have a range that does not fully contain any node.
   const Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
-                *firstCandidate, mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*firstCandidate,
+                                                               mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *firstCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
@@ -1222,8 +1218,8 @@ nsIContent* ContentSubtreeIterator::DetermineLastContent() const {
 
   const Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
-                *lastCandidate, mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*lastCandidate,
+                                                               mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *lastCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
@@ -1347,8 +1343,7 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
   // sanity check: aNode is itself in the range
   Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
-                *aNode, mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*aNode, mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *aNode, mRange);
 
@@ -1380,8 +1375,8 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
 
     isNodeContainedInRange =
         IterAllowCrossShadowBoundary()
-            ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
-                  *parent, mRange)
+            ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*parent,
+                                                                 mRange)
             : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                   *parent, mRange);
 
