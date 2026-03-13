@@ -20,6 +20,7 @@
 #include "mozilla/SIMD.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <limits>
 #include <type_traits>
@@ -9185,7 +9186,7 @@ static bool ShouldInitFixedSlots(MIRGenerator* gen, LNewPlainObject* lir,
 
         if (numInitialized == nfixed) {
           // All fixed slots will be initialized.
-          MOZ_ASSERT(mozilla::CountPopulation32(initializedSlots) == nfixed);
+          MOZ_ASSERT(uint32_t(std::popcount(initializedSlots)) == nfixed);
           return false;
         }
       }

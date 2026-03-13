@@ -146,7 +146,7 @@ class Registers {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return mozilla::CountPopulation32(x);
+    return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) {
     return mozilla::CountTrailingZeroes32(x);
@@ -572,7 +572,7 @@ struct FloatRegister {
     x &= FloatRegisters::AllPhysMask;
     MOZ_ASSERT(x.high() == 0);
     MOZ_ASSERT((x.low() >> 32) == 0);
-    return mozilla::CountPopulation32(x.low());
+    return std::popcount(x.low());
   }
 
   static uint32_t FirstBit(SetType x) {

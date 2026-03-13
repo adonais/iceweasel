@@ -6,6 +6,8 @@
 
 #include "jit/mips64/Architecture-mips64.h"
 
+#include <bit>
+
 #include "jit/RegisterSets.h"
 
 namespace js {
@@ -77,7 +79,7 @@ uint32_t FloatRegister::GetPushSizeInBytes(const FloatRegisterSet& s) {
   uint64_t bits = ss.bits();
   // We are only pushing double registers.
   MOZ_ASSERT((bits & 0xffffffff) == 0);
-  uint32_t ret = mozilla::CountPopulation32(bits >> 32) * sizeof(double);
+  uint32_t ret = std::popcount(bits >> 32) * sizeof(double);
   return ret;
 }
 uint32_t FloatRegister::getRegisterDumpOffsetInBytes() {

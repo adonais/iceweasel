@@ -6,13 +6,13 @@
 
 #include "UntrustedModulesData.h"
 
+#include <bit>
 #include <windows.h>
 
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/FileUtilsWin.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinDllServices.h"
 #include "ModuleEvaluator.h"
@@ -192,9 +192,7 @@ bool ModuleRecord::IsTrusted() const {
 
   // The remaining flags, when set, each count for 50 points toward a
   // trustworthiness score.
-  int32_t score = static_cast<int32_t>(
-                      CountPopulation32(static_cast<uint32_t>(mTrustFlags))) *
-                  50;
+  int32_t score = std::popcount(static_cast<uint32_t>(mTrustFlags)) * 50;
   return score >= GetScoreThreshold();
 }
 

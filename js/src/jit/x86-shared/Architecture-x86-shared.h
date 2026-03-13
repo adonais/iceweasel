@@ -14,6 +14,7 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
+#include <bit>
 #include <string.h>
 
 #include "jit/shared/Architecture-shared.h"
@@ -76,7 +77,7 @@ class Registers {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) <= 4, "SetType must be, at most, 32 bits");
-    return mozilla::CountPopulation32(x);
+    return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) {
     return mozilla::CountTrailingZeroes32(x);
@@ -279,8 +280,8 @@ struct FloatRegister {
     x |= x >> Codes::TotalPhys;
     x &= Codes::AllPhysMask;
     static_assert(Codes::AllPhysMask <= 0xffff,
-                  "We can safely use CountPopulation32");
-    return mozilla::CountPopulation32(x);
+                  "Optimizable to 32-bit std::popcount");
+    return std::popcount(x);
   }
 
 #if defined(JS_CODEGEN_X86)

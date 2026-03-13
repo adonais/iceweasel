@@ -11,7 +11,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <bit>
 #include <cstdint>
@@ -200,11 +199,7 @@ class EnumSet {
    */
   size_t size() const {
     if constexpr (std::is_unsigned_v<Serialized>) {
-      if constexpr (kMaxBits > 32) {
-        return std::popcount(mBitField);
-      } else {
-        return CountPopulation32(mBitField);
-      }
+      return std::popcount(mBitField);
     } else {
       return mBitField.Count();
     }

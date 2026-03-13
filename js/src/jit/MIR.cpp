@@ -6758,8 +6758,8 @@ MDefinition* MPopcnt::foldsTo(TempAllocator& alloc) {
   if (num()->isConstant()) {
     MConstant* c = num()->toConstant();
     if (type() == MIRType::Int32) {
-      int32_t n = num()->toConstant()->toInt32();
-      return MConstant::NewInt32(alloc, mozilla::CountPopulation32(n));
+      uint32_t n = uint32_t(num()->toConstant()->toInt32());
+      return MConstant::NewInt32(alloc, std::popcount(n));
     }
     uint64_t n = uint64_t(c->toInt64());
     return MConstant::NewInt64(alloc, int64_t(std::popcount(n)));

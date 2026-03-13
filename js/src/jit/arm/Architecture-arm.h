@@ -11,6 +11,7 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
+#include <bit>
 #include <limits.h>
 #include <stdint.h>
 
@@ -127,7 +128,7 @@ class Registers {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return mozilla::CountPopulation32(x);
+    return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) {
     return mozilla::CountTrailingZeroes32(x);
@@ -531,7 +532,7 @@ class VFPRegister {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return mozilla::CountPopulation32(x);
+    return std::popcount(x);
   }
   static Code FromName(const char* name) {
     return FloatRegisters::FromName(name);

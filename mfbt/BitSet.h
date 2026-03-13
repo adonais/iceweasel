@@ -181,11 +181,7 @@ class BitSet {
     size_t count = 0;
 
     for (const Word word : mStorage) {
-      if constexpr (kBitsPerWord > 32) {
-        count += std::popcount(word);
-      } else {
-        count += CountPopulation32(word);
-      }
+      count += std::popcount(word);
     }
 
     return count;

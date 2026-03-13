@@ -10,6 +10,8 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 
+#include <bit>
+
 #include "gc/Barrier.h"
 #include "jit/InvalidationScriptSet.h"
 #include "jit/JitOptions.h"
@@ -209,7 +211,7 @@ class ObjectFuse {
   // from the index and mask pair stored in an IC stub.
   static uint32_t propertySlotFromIndexAndMask(uint32_t propIndex,
                                                uint32_t propMask) {
-    MOZ_ASSERT(mozilla::CountPopulation32(propMask) == 1);
+    MOZ_ASSERT(std::has_single_bit(propMask));
     uint32_t slot = propIndex * NumPropsPerWord;
     slot += mozilla::CountTrailingZeroes(propMask) / NumBitsPerProp;
     return slot;

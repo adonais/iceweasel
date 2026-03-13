@@ -10,6 +10,7 @@
 #  include <elf.h>
 #endif
 
+#include <bit>
 #include <fcntl.h>
 #include <string_view>
 #ifdef XP_UNIX
@@ -438,8 +439,8 @@ uint32_t VFPRegister::GetPushSizeInBytes(const FloatRegisterSet& s) {
 
   FloatRegisterSet ss = s.reduceSetForPush();
   uint64_t bits = ss.bits();
-  uint32_t ret = mozilla::CountPopulation32(bits & 0xffffffff) * sizeof(float);
-  ret += mozilla::CountPopulation32(bits >> 32) * sizeof(double);
+  uint32_t ret = std::popcount(bits & 0xffffffff) * sizeof(float);
+  ret += std::popcount(bits >> 32) * sizeof(double);
   return ret;
 }
 uint32_t VFPRegister::getRegisterDumpOffsetInBytes() {

@@ -1087,7 +1087,7 @@ void MacroAssembler::popcnt32(Register src_, Register dest_, Register tmp_) {
 
   MOZ_ASSERT(tmp_ != Register::Invalid());
 
-  // Equivalent to mozilla::CountPopulation32().
+  // Equivalent to std::popcount().
 
   ARMRegister tmp(tmp_, 32);
 

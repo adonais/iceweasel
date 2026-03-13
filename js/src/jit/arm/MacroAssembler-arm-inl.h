@@ -1288,7 +1288,7 @@ void MacroAssembler::ctz64(Register64 src, Register64 dest) {
 }
 
 void MacroAssembler::popcnt32(Register input, Register output, Register tmp) {
-  // Equivalent to GCC output of mozilla::CountPopulation32()
+  // Equivalent to GCC output of std::popcount()
 
   ScratchRegisterScope scratch(*this);
 

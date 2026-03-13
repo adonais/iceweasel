@@ -34,6 +34,8 @@
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "jit/arm/Assembler-arm.h"
 #include "jit/arm/disasm/Constants-arm.h"
 #include "jit/AtomicOperations.h"
@@ -2238,7 +2240,7 @@ int32_t Simulator::processPU(SimInstruction* instr, int num_regs, int reg_size,
 // Addressing Mode 4 - Load and Store Multiple
 void Simulator::handleRList(SimInstruction* instr, bool load) {
   int rlist = instr->rlistValue();
-  int num_regs = mozilla::CountPopulation32(rlist);
+  int num_regs = std::popcount(unsigned(rlist));
 
   intptr_t start_address = 0;
   intptr_t end_address = 0;
