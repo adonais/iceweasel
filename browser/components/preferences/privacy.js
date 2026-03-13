@@ -935,7 +935,9 @@ Preferences.addSetting({
   visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
     ipProtectionVisible.value && ipProtectionNotOptedIn.value,
   onUserClick() {
-    IPProtection.getPanel(window.browsingContext.topChromeWindow)?.enroll();
+    IPProtection.getPanel(window.browsingContext.topChromeWindow)?.enroll({
+      entrypoint: "vpn_integration_settings",
+    });
   },
 });
 

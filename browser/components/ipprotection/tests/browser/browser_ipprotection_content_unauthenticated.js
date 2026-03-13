@@ -149,3 +149,37 @@ add_task(async function test_signin_button() {
 
   sandbox.restore();
 });
+
+/**
+ * Tests that clicking "get started" in the panel passes vpn_integration_panel
+ * as the entrypoint to fxaSignInFlow.
+ */
+add_task(async function test_panel_get_started_entrypoint() {
+  let sandbox = sinon.createSandbox();
+  let fxaStub = sandbox
+    .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
+    .resolves(true);
+
+  let content = await openPanel({ unauthenticated: true });
+  let unauthenticatedContent = content.unauthenticatedEl;
+  let getStartedButton = unauthenticatedContent.shadowRoot.querySelector(
+    "#unauthenticated-get-started"
+  );
+
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+  let panelShownAgainPromise = waitForPanelEvent(document, "popupshown");
+  getStartedButton.click();
+  await panelHiddenPromise;
+  await panelShownAgainPromise;
+
+  Assert.ok(fxaStub.calledOnce, "fxaSignInFlow should be called once");
+  Assert.equal(
+    fxaStub.firstCall.args[0].entrypoint,
+    "vpn_integration_panel",
+    "entrypoint should be vpn_integration_panel when enrolling from the panel"
+  );
+
+  await closePanel();
+
+  sandbox.restore();
+});

@@ -632,6 +632,51 @@ add_task(async function test_get_started_button() {
   sandbox.restore();
 });
 
+// Test that clicking "Get started" in settings passes vpn_integration_settings
+// as the entrypoint to fxaSignInFlow.
+add_task(async function test_VPN_get_started_entrypoint() {
+  let sandbox = sinon.createSandbox();
+  let fxaStub = sandbox
+    .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
+    .resolves(true);
+  sandbox
+    .stub(lazy.IPPEnrollAndEntitleManager, "maybeEnrollAndEntitle")
+    .resolves(true);
+
+  await setupVpnPrefs({
+    feature: true,
+    entitlementCache: "",
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences#privacy" },
+    async function (browser) {
+      let settingGroup = testSettingsGroupVisible(browser);
+      let getStartedButton = settingGroup?.querySelector("#getStartedButton");
+
+      const waitForPanelShown = BrowserTestUtils.waitForEvent(
+        browser.ownerGlobal.document,
+        "popupshown",
+        false,
+        event => event.target.getAttribute("viewId") === "PanelUI-ipprotection"
+      );
+
+      getStartedButton.click();
+      await waitForPanelShown;
+
+      Assert.ok(fxaStub.calledOnce, "fxaSignInFlow should be called once");
+      Assert.equal(
+        fxaStub.firstCall.args[0].entrypoint,
+        "vpn_integration_settings",
+        "entrypoint should be vpn_integration_settings when enrolling from settings"
+      );
+    }
+  );
+
+  EventUtils.synthesizeKey("KEY_Escape");
+  sandbox.restore();
+});
+
 // Test that the "not opted in" section is hidden when entitlementCache has a value
 add_task(async function test_not_opted_in_section_hidden_when_opted_in() {
   await setupVpnPrefs({

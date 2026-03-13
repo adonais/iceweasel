@@ -29,10 +29,10 @@ export const ERRORS = Object.freeze({
 
 export const SIGNIN_DATA = Object.freeze({
   where: "tab",
-  entrypoint: "desktop-fx-vpn",
+  entrypoint: "vpn_integration_panel",
   autoClose: false,
   extraParams: {
-    service: "sync",
+    service: "vpn",
     entrypoint_experiment: "fx-vpn-pilot",
     entrypoint_variation: "alpha",
     utm_source: "callout",
