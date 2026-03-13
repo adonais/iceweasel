@@ -104,9 +104,6 @@ class TestTargetWindows(TargetTest):
         self.assertEqual(
             self.get_target(["--host=x86_64-pc-windows-gnu"]), "x86_64-pc-windows-gnu"
         )
-        self.assertEqual(
-            self.get_target(["--host=x86_64-pc-mingw32"]), "x86_64-pc-mingw32"
-        )
 
 
 class TestTargetAndroid(TargetTest):

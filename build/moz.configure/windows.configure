@@ -6,7 +6,7 @@
 
 
 @depends(
-    "WINDOWSSDKDIR", "WINSYSROOT", winsysroot, target_windows_abi, host_windows_abi
+    "WINDOWSSDKDIR", "WINSYSROOT", winsysroot, target.abi, host.abi
 )
 def windows_sdk_dir(
     value, winsysroot_env, winsysroot, target_windows_abi, host_windows_abi
@@ -40,8 +40,8 @@ def valid_windows_sdk_dir_result(value):
 
 
 @depends(
-    target_windows_abi,
-    host_windows_abi,
+    target.abi,
+    host.abi,
     windows_sdk_dir,
     valid_windows_version,
     "WINDOWSSDKDIR",
@@ -124,7 +124,7 @@ def valid_ucrt_sdk_dir_result(value):
         return "%s in %s" % (value.version, quote(value.path))
 
 
-@depends(windows_sdk_dir, "WINDOWSSDKDIR", target_windows_abi, host_windows_abi)
+@depends(windows_sdk_dir, "WINDOWSSDKDIR", target.abi, host.abi)
 @checking("for Universal CRT SDK", valid_ucrt_sdk_dir_result)
 @imports("os")
 @imports(_import="mozpack.path", _as="mozpath")

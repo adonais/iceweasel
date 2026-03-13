@@ -277,8 +277,8 @@ def so_version(value):
 def library_name_info_template(host_or_target):
     assert host_or_target in {host, target}
     windows_abi = {
-        host: host_windows_abi,
-        target: target_windows_abi,
+        host: host.abi,
+        target: target.abi,
     }[host_or_target]
 
     @depends(host_or_target, host_or_target.abi | windows_abi, so_version)
