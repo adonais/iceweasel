@@ -372,6 +372,15 @@ export const tokensTable = {
       },
       name: "--border-color-selected",
     },
+    {
+      value: {
+        light: "var(--color-red-70)",
+        dark: "var(--color-red-20)",
+        prefersContrast: "var(--border-color)",
+        default: "light-dark(var(--color-red-70), var(--color-red-20))",
+      },
+      name: "--border-color-error",
+    },
     { value: "var(--border-color)", name: "--badge-border-color" },
     {
       value: {
@@ -827,15 +836,6 @@ export const tokensTable = {
         forcedColors: "var(--text-color)",
       },
       name: "--focus-outline-color",
-    },
-    {
-      value: {
-        light: "var(--color-red-70)",
-        dark: "var(--color-red-20)",
-        prefersContrast: "var(--border-color)",
-        default: "light-dark(var(--color-red-70), var(--color-red-20))",
-      },
-      name: "--outline-color-error",
     },
   ],
   "outline-offset": [
@@ -1417,6 +1417,12 @@ export const variableLookupTable = {
     default: "var(--color-accent-primary)",
     forcedColors: "SelectedItem",
   },
+  "border-color-error": {
+    light: "var(--color-red-70)",
+    dark: "var(--color-red-20)",
+    prefersContrast: "var(--border-color)",
+    default: "light-dark(var(--color-red-70), var(--color-red-20))",
+  },
   "border-radius-circle": "9999px",
   "border-radius-xsmall": "2px",
   "border-radius-small": "4px",
@@ -1709,12 +1715,6 @@ export const variableLookupTable = {
   "font-weight-semibold": 600,
   "font-weight-bold": 700,
   "font-weight-heading": "var(--font-weight-semibold)",
-  "outline-color-error": {
-    light: "var(--color-red-70)",
-    dark: "var(--color-red-20)",
-    prefersContrast: "var(--border-color)",
-    default: "light-dark(var(--color-red-70), var(--color-red-20))",
-  },
   "size-image-xsmall": "var(--dimension-40)",
   "size-image-small": "var(--dimension-48)",
   "size-image-medium": "var(--dimension-56)",

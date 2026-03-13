@@ -79,6 +79,11 @@
     "dark": "{Theme$color/accent/primary}",
     "forcedColors": "{HCM Theme$SelectedItem}"
   },
+  "border/color/error": {
+    "light": "{Colors$color/red/70}",
+    "dark": "{Colors$color/red/20}",
+    "forcedColors": "{Theme$border/color}"
+  },
   "box/shadow/level-1/shadow-1/color": "{Theme$box/shadow/color/darker/layer-1}",
   "box/shadow/level-1/shadow-2/color": "{Theme$box/shadow/color/darker/layer-2}",
   "box/shadow/level-2/shadow-1/color": "{Theme$box/shadow/color/lighter/layer-1}",
@@ -136,11 +141,6 @@
     "light": "{Theme$color/accent/primary}",
     "dark": "{Theme$color/accent/primary}",
     "forcedColors": "{Theme$text/color}"
-  },
-  "outline/color/error": {
-    "light": "{Colors$color/red/70}",
-    "dark": "{Colors$color/red/20}",
-    "forcedColors": "{Theme$border/color}"
   },
   "text/color": {
     "light": "{Colors$color/gray/100}",

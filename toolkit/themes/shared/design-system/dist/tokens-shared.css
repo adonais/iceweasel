@@ -27,6 +27,7 @@
     --badge-text-color-filled: light-dark(var(--color-white), var(--color-gray-100));
 
     /** border **/
+    --border-color-error: light-dark(var(--color-red-70), var(--color-red-20));
     --border-color-interactive-hover: var(--border-color-interactive);
     --border-color-interactive-active: var(--border-color-interactive);
     --border-color-interactive-disabled: var(--border-color-interactive);
@@ -353,9 +354,6 @@
      */
     --link-focus-outline-offset: 1px;
 
-    /** outline **/
-    --outline-color-error: light-dark(var(--color-red-70), var(--color-red-20));
-
     /** popup **/
     --popup-box-shadow: var(--box-shadow-level-3);
 
@@ -427,6 +425,7 @@
       /** border **/
       --border-color: CanvasText;
       --border-color-deemphasized: currentColor;
+      --border-color-error: var(--border-color);
       --border-color-interactive: var(--text-color);
       --border-color-transparent: CanvasText;
 
@@ -444,9 +443,6 @@
       --icon-color-information: var(--icon-color);
       --icon-color-success: var(--icon-color);
       --icon-color-warning: var(--icon-color);
-
-      /** outline **/
-      --outline-color-error: var(--border-color);
 
       /** text-color **/
       --text-color: CanvasText;

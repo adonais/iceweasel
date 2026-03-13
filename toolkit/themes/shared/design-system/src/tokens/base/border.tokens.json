@@ -71,6 +71,13 @@
         "default": "{color.accent.primary.@base}",
         "forcedColors": "SelectedItem"
       }
+    },
+    "error": {
+      "value": {
+        "light": "{color.red.70}",
+        "dark": "{color.red.20}",
+        "prefersContrast": "{border.color.@base}"
+      }
     }
   },
   "radius": {

@@ -3060,8 +3060,8 @@ html {
   resize: none;
 }
 .onboardingContainer .textarea-container .textarea-input.invalid {
-  border-color: var(--outline-color-error);
-  outline-color: var(--outline-color-error);
+  border-color: var(--border-color-error);
+  outline-color: var(--border-color-error);
 }
 .onboardingContainer .confirmation-checklist-section {
   display: flex;

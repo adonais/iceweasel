@@ -1307,7 +1307,7 @@ main section {
   opacity: 0.4;
 }
 .topsite-form .form-wrapper .invalid input[type=text] {
-  border: 1px solid var(--outline-color-error);
+  border: 1px solid var(--border-color-error);
   box-shadow: 0 0 0 1px var(--newtab-status-error), 0 0 0 4px rgba(var(--newtab-status-error), 0.3);
 }
 .topsite-form .form-wrapper .error-tooltip {

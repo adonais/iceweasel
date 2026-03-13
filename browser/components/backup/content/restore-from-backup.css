@@ -133,7 +133,7 @@
 
   #backup-password-input[aria-invalid="true"],
   #backup-filepicker-input[aria-invalid="true"] {
-    border-color: var(--outline-color-error);
+    border-color: var(--border-color-error);
   }
 
   /* Small, red helper text under the field */

@@ -617,7 +617,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     .invalid {
       input {
         &[type='text'] {
-          border: 1px solid var(--outline-color-error);
+          border: 1px solid var(--border-color-error);
           box-shadow: $input-error-boxshadow;
         }
       }
