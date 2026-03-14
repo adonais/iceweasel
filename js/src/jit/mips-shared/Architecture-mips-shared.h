@@ -177,7 +177,7 @@ class Registers {
     return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
+  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
 };
 
 // Smallest integer type that can hold a register bitmask.
@@ -265,7 +265,7 @@ class FloatRegisterMIPSShared {
   }
   static uint32_t LastBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return 63 - std::countl_zero(x);
+    return std::bit_width(x) - 1;
   }
 };
 

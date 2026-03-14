@@ -128,7 +128,7 @@ class Registers {
     return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
+  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
   static const char* GetName(uint32_t code) {
     static const char* const Names[] = {
         "zero", "ra", "sp", "gp", "tp",  "t0",  "t1", "t2", "fp", "s1", "a0",
@@ -355,7 +355,7 @@ struct FloatRegister {
   }
   static uint32_t LastBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return 63 - std::countl_zero(x);
+    return std::bit_width(x) - 1;
   }
 
   static FloatRegister FromCode(Code code) {

@@ -148,7 +148,7 @@ class Registers {
     return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
+  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
 
   static const char* GetName(uint32_t code) {
     static const char* const Names[] = {

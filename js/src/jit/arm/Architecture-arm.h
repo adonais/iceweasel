@@ -130,7 +130,7 @@ class Registers {
     return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
+  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
 };
 
 // Smallest integer type that can hold a register bitmask.
@@ -537,7 +537,7 @@ class VFPRegister {
   static uint32_t GetPushSizeInBytes(const TypedRegisterSet<VFPRegister>& s);
   uint32_t getRegisterDumpOffsetInBytes();
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) { return 63 - std::countl_zero(x); }
+  static uint32_t LastBit(SetType x) { return std::bit_width(x) - 1; }
 };
 
 template <>
