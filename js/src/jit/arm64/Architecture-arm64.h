@@ -308,9 +308,9 @@ class Bitset128 {
 
   uint32_t countTrailingZeroes() const {
     if (lo) {
-      return mozilla::CountTrailingZeroes64(lo);
+      return std::countr_zero(lo);
     }
-    return mozilla::CountTrailingZeroes64(hi) + 64;
+    return std::countr_zero(hi) + 64;
   }
 
   uint32_t countLeadingZeroes() const {

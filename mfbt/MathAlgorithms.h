@@ -12,6 +12,7 @@
 #include "mozilla/Assertions.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <climits>
 #include <cstdint>
@@ -88,16 +89,11 @@ constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_clzll(aValue));
 }
 
-constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
-  return static_cast<uint_fast8_t>(__builtin_ctzll(aValue));
-}
-
 #else
 #  error "Implement these!"
 constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
 constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) = delete;
 constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) = delete;
-constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) = delete;
 #endif
 
 }  // namespace detail
@@ -138,12 +134,6 @@ constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
 constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
   MOZ_ASSERT(aValue != 0);
   return detail::CountLeadingZeroes64(aValue);
-}
-
-/** Analogous to CountTrailingZeroes32, but for 64-bit numbers. */
-constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
-  MOZ_ASSERT(aValue != 0);
-  return detail::CountTrailingZeroes64(aValue);
 }
 
 namespace detail {
@@ -293,7 +283,7 @@ constexpr uint_fast8_t CountTrailingZeroes(T aValue) {
   }
   // This doesn't
   if constexpr (sizeof(T) == 8) {
-    return CountTrailingZeroes64(aValue);
+    return uint_fast8_t(std::countr_zero(static_cast<uint64_t>(aValue)));
   }
 }
 

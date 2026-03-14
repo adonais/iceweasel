@@ -149,21 +149,12 @@ inline int CountSetBits(V value, int width = (sizeof(V) * 8)) {
 
 template<typename V>
 inline int CountTrailingZeros(V value, int width = (sizeof(V) * 8)) {
-#if COMPILER_HAS_BUILTIN_CTZ
   if (width == 32) {
-    return (value == 0) ? 32 : __builtin_ctz(static_cast<unsigned>(value));
+    return std::countr_zero(static_cast<uint32_t>(value));
   } else if (width == 64) {
-    return (value == 0) ? 64 : __builtin_ctzll(value);
+    return std::countr_zero(static_cast<uint64_t>(value));
   }
   MOZ_CRASH("Unhandled width.");
-#else
-  if (width == 32) {
-    return mozilla::CountTrailingZeroes32(value);
-  } else if (width == 64) {
-    return mozilla::CountTrailingZeroes64(value);
-  }
-  MOZ_CRASH("Unhandled width.");
-#endif
 }
 
 }  // namespace vixl

@@ -500,7 +500,6 @@ MathAlgorithms.h:
     - CountLeadingZeroes32
     - CountTrailingZeroes32
     - CountLeadingZeroes64
-    - CountTrailingZeroes64
     - CeilingLog2
     - CeilingLog2Size
     - FindMostSignificantBit

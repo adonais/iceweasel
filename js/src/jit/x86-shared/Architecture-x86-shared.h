@@ -296,7 +296,7 @@ struct FloatRegister {
 #elif defined(JS_CODEGEN_X64)
   static uint32_t FirstBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return mozilla::CountTrailingZeroes64(x);
+    return std::countr_zero(x);
   }
   static uint32_t LastBit(SetType x) {
     return 63 - mozilla::CountLeadingZeroes64(x);
