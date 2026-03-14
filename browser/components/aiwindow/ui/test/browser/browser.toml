@@ -120,5 +120,3 @@ support-files = [
 ["browser_smartwindow_tab_switching.js"]
 
 ["browser_smartwindow_telemetry.js"]
-
-["browser_smartwindow_recentchats.js"]

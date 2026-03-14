@@ -64,10 +64,7 @@ async function openAIWindowWithSidebar() {
     win.gBrowser.selectedBrowser,
     "about:blank"
   );
-  await BrowserTestUtils.waitForCondition(
-    () => win.gBrowser.selectedBrowser.currentURI?.spec === "about:blank",
-    "Wait for browser to navigate to about:blank"
-  );
+  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
   AIWindowUI.toggleSidebar(win);
   const sidebarBrowser = win.document.getElementById("ai-window-browser");
   await BrowserTestUtils.waitForCondition(
