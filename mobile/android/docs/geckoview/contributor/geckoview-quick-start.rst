@@ -161,7 +161,7 @@ If your patch makes a C++ file change, you should run the C++ linter formatter:
 
 ::
 
-   ./mach clang-format -p <path/to/file.cpp>
+   ./mach format <path/to/file.cpp>
 
 
 If your patch makes a Python file change:

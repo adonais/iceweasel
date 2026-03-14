@@ -18,7 +18,7 @@ platforms:
   - win64
 # Minimum clang-tidy version that is required for all the following checkers
 # to work properly.
-# This is also used by 'mach clang-format'
+# This is also used by 'mach lint -l clang-format'
 package_version: "20.1.8"
 clang_checkers:
   - name: -*

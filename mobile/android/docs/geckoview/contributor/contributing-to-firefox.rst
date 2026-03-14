@@ -76,7 +76,7 @@ formatted.
 
 .. code:: bash
 
-   mach clang-format -p path/to/file.cpp
+   mach format path/to/file.cpp
 
 Note that ``./mach bootstrap`` will offer to set up a commit hook that
 will automatically do this for you.

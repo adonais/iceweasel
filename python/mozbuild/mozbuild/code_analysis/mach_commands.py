@@ -5,16 +5,13 @@ import concurrent.futures
 import functools
 import json
 import logging
-import ntpath
 import os
 import pathlib
 import posixpath
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
-import xml.etree.ElementTree as ET
 from types import SimpleNamespace
 
 import mozpack.path as mozpath
@@ -25,21 +22,6 @@ from mozversioncontrol import get_repository_object
 from mozbuild import build_commands
 from mozbuild.controller.clobber import Clobberer
 from mozbuild.util import cpu_count
-
-
-# FIXME: use itertools.batched when moving to python 3.12
-def batched(iterable, n):
-    for ndx in range(0, len(iterable), n):
-        yield iterable[ndx : ndx + n]
-
-
-# Function used to run clang-format on a batch of files. It is a helper function
-# in order to integrate into the futures ecosystem clang-format.
-def run_one_clang_format_batch(args):
-    try:
-        subprocess.check_output(args)
-    except subprocess.CalledProcessError as e:
-        return e
 
 
 def build_repo_relative_path(abs_path, repo_path):
@@ -359,6 +341,16 @@ def check(
     # Filter source to remove excluded files
     source = _generate_path_list(command_context, sources, verbose=verbose)
 
+    if not sources or not source:
+        command_context.log(
+            logging.WARNING,
+            "static-analysis",
+            {},
+            "There are no files eligible for analysis. Please note that 'header' files "
+            "cannot be used for analysis since they do not consist compilation units.",
+        )
+        return 0
+
     cwd = command_context.topobjdir
 
     monitor = StaticAnalysisMonitor(
@@ -373,16 +365,17 @@ def check(
     with StaticAnalysisOutputManager(
         command_context.log_manager, monitor, footer
     ) as output_manager:
-        nproc = cpu_count()
-        batch_size = max((len(source) + nproc - 1) // nproc, 1)
-        for batch in batched(source, batch_size):
+        import math
+
+        batch_size = int(math.ceil(float(len(source)) / cpu_count()))
+        for i in range(0, len(source), batch_size):
             args = _get_clang_tidy_command(
                 command_context,
                 clang_paths,
                 compilation_commands_path,
                 checks=checks,
                 header_filter=header_filter,
-                sources=batch,
+                sources=source[i : (i + batch_size)],
                 jobs=jobs,
                 fix=fix,
                 verbose=verbose,
@@ -404,16 +397,6 @@ def check(
         # Write output file
         if output is not None:
             output_manager.write(output, format)
-
-    if not sources or not source:
-        command_context.log(
-            logging.WARNING,
-            "static-analysis",
-            {},
-            "There are no files eligible for analysis. Please note that 'header' files "
-            "cannot be used for analysis since they do not consist compilation units.",
-        )
-        return 0
 
     return rc
 
@@ -1058,139 +1041,22 @@ def print_checks(command_context, verbose=False):
     return command_context.run_process(args=args, pass_thru=True)
 
 
+def removed(cls):
+    """Use `mach lint -l clang-format` or `mach format` instead."""
+    return False
+
+
 @Command(
     "clang-format",
     category="misc",
     description="Run clang-format on current changes",
-)
-@CommandArgument(
-    "--show",
-    "-s",
-    action="store_const",
-    const="stdout",
-    dest="output_path",
-    help="Show diff output on stdout instead of applying changes",
-)
-@CommandArgument(
-    "--assume-filename",
-    "-a",
-    nargs=1,
-    default=None,
-    help="This option is usually used in the context of hg-formatsource."
-    "When reading from stdin, clang-format assumes this "
-    "filename to look for a style config file (with "
-    "-style=file) and to determine the language. When "
-    "specifying this option only one file should be used "
-    "as an input and the output will be forwarded to stdin. "
-    "This option also impairs the download of the clang-tools "
-    "and assumes the package is already located in it's default "
-    "location",
+    conditions=[removed],
 )
 @CommandArgument(
     "--path", "-p", nargs="+", default=None, help="Specify the path(s) to reformat"
 )
-@CommandArgument(
-    "--commit",
-    "-c",
-    default=None,
-    help="Specify a commit to reformat from. "
-    "For git you can also pass a range of commits (foo..bar) "
-    "to format all of them at the same time.",
-)
-@CommandArgument(
-    "--output",
-    "-o",
-    default=None,
-    dest="output_path",
-    help="Specify a file handle to write clang-format raw output instead of "
-    "applying changes. This can be stdout or a file path.",
-)
-@CommandArgument(
-    "--format",
-    "-f",
-    choices=("diff", "json"),
-    default="diff",
-    dest="output_format",
-    help="Specify the output format used: diff is the raw patch provided by "
-    "clang-format, json is a list of atomic changes to process.",
-)
-@CommandArgument(
-    "--outgoing",
-    default=False,
-    action="store_true",
-    help="Run clang-format on outgoing files from mercurial repository.",
-)
-def clang_format(
-    command_context,
-    assume_filename,
-    path,
-    commit,
-    output_path=None,
-    output_format="diff",
-    verbose=False,
-    outgoing=False,
-):
-    # Run clang-format or clang-format-diff on the local changes
-    # or files/directories
-    if path is None and outgoing:
-        repo = get_repository_object(command_context.topsrcdir)
-        path = repo.get_outgoing_files()
-
-    if path:
-        # Create the full path list
-        def path_maker(f_name):
-            return os.path.join(command_context.topsrcdir, f_name)
-
-        path = map(path_maker, path)
-
-    os.chdir(command_context.topsrcdir)
-
-    # Load output file handle, either stdout or a file handle in write mode
-    output = None
-    if output_path is not None:
-        output = sys.stdout if output_path == "stdout" else open(output_path, "w")
-
-    # With assume_filename we want to have stdout clean since the result of the
-    # format will be redirected to stdout. Only in case of errror we
-    # write something to stdout.
-    # We don't actually want to get the clang-tools here since we want in some
-    # scenarios to do this in parallel so we relay on the fact that the tools
-    # have already been downloaded via './mach bootstrap' or directly via
-    # './mach static-analysis install'
-    if assume_filename:
-        rc, clang_paths = _set_clang_tools_paths(command_context)
-        if rc != 0:
-            print("clang-format: Unable to set path to clang-format tools.")
-            return rc
-
-        if not _do_clang_tools_exist(clang_paths):
-            print("clang-format: Unable to set locate clang-format tools.")
-            return 1
-
-        if not _is_version_eligible(command_context, clang_paths):
-            return 1
-    else:
-        rc, clang_paths = get_clang_tools(command_context, verbose=verbose)
-        if rc != 0:
-            return rc
-
-    if path is None:
-        return _run_clang_format_diff(
-            command_context,
-            clang_paths._clang_format_diff,
-            clang_paths._clang_format_path,
-            commit,
-            output,
-        )
-
-    if assume_filename:
-        return _run_clang_format_in_console(
-            command_context, clang_paths._clang_format_path, path, assume_filename
-        )
-
-    return _run_clang_format_path(
-        command_context, clang_paths._clang_format_path, path, output, output_format
-    )
+def clang_format(command_context, path, **kwargs):
+    pass
 
 
 def _verify_checker(
@@ -1554,36 +1420,6 @@ def _get_clang_tools_from_source(command_context, clang_paths, filename):
     return 0, clang_paths
 
 
-def _run_clang_format_diff(
-    command_context, clang_format_diff, clang_format, commit, output_file
-):
-    # Run clang-format on the diff
-    # Note that this will potentially miss a lot things
-    from subprocess import CalledProcessError, check_output
-
-    diff_stream = command_context.repository.diff_stream(
-        rev=commit,
-        extensions=_format_include_extensions,
-        exclude_file=_format_ignore_file,
-        context=0,
-    )
-    args = [sys.executable, clang_format_diff, "-p1", "-binary=%s" % clang_format]
-
-    if not output_file:
-        args.append("-i")
-    try:
-        output = check_output(args, stdin=diff_stream)
-        if output_file:
-            # We want to print the diffs
-            print(output, file=output_file)
-
-        return 0
-    except CalledProcessError as e:
-        # Something wrong happend
-        print("clang-format: An error occured while running clang-format-diff.")
-        return e.returncode
-
-
 def _is_ignored_path(command_context, ignored_dir_re, f):
     # path needs to be relative to the src root
     root_dir = command_context.topsrcdir + os.sep
@@ -1632,235 +1468,3 @@ def _generate_path_list(command_context, paths, verbose=True):
             path_list.append(f)
 
     return path_list
-
-
-def _run_clang_format_in_console(command_context, clang_format, paths, assume_filename):
-    path_list = _generate_path_list(command_context, assume_filename, False)
-
-    if path_list == []:
-        return 0
-
-    # We use -assume-filename in order to better determine the path for
-    # the .clang-format when it is ran outside of the repo, for example
-    # by the extension hg-formatsource
-    args = [clang_format, f"-assume-filename={assume_filename[0]}"]
-
-    process = subprocess.Popen(args, stdin=subprocess.PIPE)
-    with open(paths[0]) as fin:
-        process.stdin.write(fin.read())
-        process.stdin.close()
-        process.wait()
-        return process.returncode
-
-
-def _get_clang_format_cfg(command_context, current_dir):
-    clang_format_cfg_path = mozpath.join(current_dir, ".clang-format")
-
-    if os.path.exists(clang_format_cfg_path):
-        # Return found path for .clang-format
-        return clang_format_cfg_path
-
-    if current_dir != command_context.topsrcdir:
-        # Go to parent directory
-        return _get_clang_format_cfg(command_context, os.path.split(current_dir)[0])
-    # We have reached command_context.topsrcdir so return None
-    return None
-
-
-def _copy_clang_format_for_show_diff(
-    command_context, current_dir, cached_clang_format_cfg, tmpdir
-):
-    # Lookup for .clang-format first in cache
-    clang_format_cfg = cached_clang_format_cfg.get(current_dir, None)
-
-    if clang_format_cfg is None:
-        # Go through top directories
-        clang_format_cfg = _get_clang_format_cfg(command_context, current_dir)
-
-        # This is unlikely to happen since we must have .clang-format from
-        # command_context.topsrcdir but in any case we should handle a potential error
-        if clang_format_cfg is None:
-            print("Cannot find corresponding .clang-format.")
-            return 1
-
-        # Cache clang_format_cfg for potential later usage
-        cached_clang_format_cfg[current_dir] = clang_format_cfg
-
-    # Copy .clang-format to the tmp dir where the formatted file is copied
-    shutil.copy(clang_format_cfg, tmpdir)
-    return 0
-
-
-def _run_clang_format_path(
-    command_context, clang_format, paths, output_file, output_format
-):
-    # Run clang-format on files or directories directly
-    from subprocess import CalledProcessError, check_output
-
-    if output_format == "json":
-        # Get replacements in xml, then process to json
-        args = [clang_format, "-output-replacements-xml"]
-    else:
-        args = [clang_format, "-i"]
-
-    if output_file:
-        # We just want to show the diff, we create the directory to copy it
-        tmpdir = os.path.join(command_context.topobjdir, "tmp")
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
-
-    path_list = _generate_path_list(command_context, paths)
-
-    if path_list == []:
-        return
-
-    print("Processing %d file(s)..." % len(path_list))
-
-    if output_file:
-        patches = {}
-        cached_clang_format_cfg = {}
-        for i in range(0, len(path_list)):
-            l = path_list[i : (i + 1)]
-
-            # Copy the files into a temp directory
-            # and run clang-format on the temp directory
-            # and show the diff
-            original_path = l[0]
-            local_path = ntpath.basename(original_path)
-            current_dir = ntpath.dirname(original_path)
-            target_file = os.path.join(tmpdir, local_path)
-            faketmpdir = os.path.dirname(target_file)
-            if not os.path.isdir(faketmpdir):
-                os.makedirs(faketmpdir)
-            shutil.copy(l[0], faketmpdir)
-            l[0] = target_file
-
-            ret = _copy_clang_format_for_show_diff(
-                command_context, current_dir, cached_clang_format_cfg, faketmpdir
-            )
-            if ret != 0:
-                return ret
-
-            # Run clang-format on the list
-            try:
-                output = check_output(args + l)
-                if output and output_format == "json":
-                    # Output a relative path in json patch list
-                    relative_path = os.path.relpath(
-                        original_path, command_context.topsrcdir
-                    )
-                    patches[relative_path] = _parse_xml_output(original_path, output)
-            except CalledProcessError as e:
-                # Something wrong happend
-                print("clang-format: An error occured while running clang-format.")
-                return e.returncode
-
-            # show the diff
-            if output_format == "diff":
-                diff_command = ["diff", "-u", original_path, target_file]
-                try:
-                    output = check_output(diff_command)
-                except CalledProcessError as e:
-                    # diff -u returns 0 when no change
-                    # here, we expect changes. if we are here, this means that
-                    # there is a diff to show
-                    if e.output:
-                        # Replace the temp path by the path relative to the repository to
-                        # display a valid patch
-                        relative_path = os.path.relpath(
-                            original_path, command_context.topsrcdir
-                        )
-                        # We must modify the paths in order to be compatible with the
-                        # `diff` format.
-                        original_path_diff = os.path.join("a", relative_path)
-                        target_path_diff = os.path.join("b", relative_path)
-                        e.output = e.output.decode("utf-8")
-                        patch = e.output.replace(
-                            f"+++ {target_file}",
-                            f"+++ {target_path_diff}",
-                        ).replace(
-                            f"-- {original_path}",
-                            f"-- {original_path_diff}",
-                        )
-                        patches[original_path] = patch
-
-        if output_format == "json":
-            output = json.dumps(patches, indent=4)
-        else:
-            # Display all the patches at once
-            output = "\n".join(patches.values())
-
-        # Output to specified file or stdout
-        print(output, file=output_file)
-
-        shutil.rmtree(tmpdir)
-        return 0
-
-    # Run clang-format in parallel trying to saturate all of the available cores.
-    import math
-
-    max_workers = cpu_count()
-
-    # To maximize CPU usage when there are few items to handle,
-    # underestimate the number of items per batch, then dispatch
-    # outstanding items across workers. Per definition, each worker will
-    # handle at most one outstanding item.
-    batch_size = int(math.floor(float(len(path_list)) / max_workers))
-    outstanding_items = len(path_list) - batch_size * max_workers
-
-    batches = []
-
-    i = 0
-    while i < len(path_list):
-        num_items = batch_size + (1 if outstanding_items > 0 else 0)
-        batches.append(args + path_list[i : (i + num_items)])
-
-        outstanding_items -= 1
-        i += num_items
-
-    error_code = None
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = []
-        for batch in batches:
-            futures.append(executor.submit(run_one_clang_format_batch, batch))
-
-        for future in concurrent.futures.as_completed(futures):
-            # Wait for every task to finish
-            ret_val = future.result()
-            if ret_val is not None:
-                error_code = ret_val
-
-        if error_code is not None:
-            return error_code
-    return 0
-
-
-def _parse_xml_output(path, clang_output):
-    """
-    Parse the clang-format XML output to convert it in a JSON compatible
-    list of patches, and calculates line level informations from the
-    character level provided changes.
-    """
-    content = open(path).read()
-
-    def _nb_of_lines(start, end):
-        return len(content[start:end].splitlines())
-
-    def _build(replacement):
-        offset = int(replacement.attrib["offset"])
-        length = int(replacement.attrib["length"])
-        last_line = content.rfind("\n", 0, offset)
-        return {
-            "replacement": replacement.text,
-            "char_offset": offset,
-            "char_length": length,
-            "line": _nb_of_lines(0, offset),
-            "line_offset": last_line != -1 and (offset - last_line) or 0,
-            "lines_modified": _nb_of_lines(offset, offset + length),
-        }
-
-    return [
-        _build(replacement)
-        for replacement in ET.fromstring(clang_output).findall("replacement")
-    ]
