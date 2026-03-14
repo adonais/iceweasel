@@ -36,6 +36,12 @@ loader.lazyRequireGetter(
   true
 );
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  getAutocompleteDataForColorFunction:
+    "resource://devtools/client/shared/inplace-editor-utils/autocomplete-color-function.mjs",
+});
+
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const CONTENT_TYPES = {
   PLAIN_TEXT: 0,
@@ -76,19 +82,6 @@ const GRID_COL_PROPERTY_NAMES = [
   "grid-column",
   "grid-column-start",
   "grid-column-end",
-];
-
-// TODO: We should get those from an InspectorUtils method. See Bug 2018936.
-const COLOR_SPACES = [
-  "a98-rgb",
-  "display-p3",
-  "prophoto-rgb",
-  "rec2020",
-  "srgb",
-  "srgb-linear",
-  "xyz",
-  "xyz-d50",
-  "xyz-d65",
 ];
 
 /**
@@ -1915,7 +1908,11 @@ class InplaceEditor extends EventEmitter {
     }
 
     if (functionName === "color") {
-      return this.#getAutocompleteDataForColorFunction(functionStackEntry);
+      return lazy.getAutocompleteDataForColorFunction({
+        functionTokens: functionStackEntry.tokens,
+        getCSSValuesForPropertyName:
+          this.#getCSSValuesForPropertyName.bind(this),
+      });
     }
 
     // TODO: Handle other functions, e.g. `anchor()` to display existing anchor names (Bug 1903278)
@@ -1963,61 +1960,6 @@ class InplaceEditor extends EventEmitter {
     // For gradient functions we want to display named colors and color functions,
     // but only if the user didn't already entered a color token after the last comma.
     const list = this.#getCSSValuesForPropertyName("color");
-    return { list };
-  }
-
-  /**
-   * Compute the autocomplete data for the passed color() function.
-   *
-   * @param {object} functionStackEntry
-   * @param {InspectorCSSToken} functionStackEntry.fnToken: The token for the
-   *        function call
-   * @param {Array<InspectorCSSToken>} functionStackEntry.tokens: The tokens representing the
-   *        function parameters (i.e. what's inside the parenthesis)
-   * @returns {object} Returns an object of the following shape:
-   *            - {Array<string>} list: The list of autocomplete items
-   */
-  #getAutocompleteDataForColorFunction(functionStackEntry) {
-    let list;
-    const tokensCount = functionStackEntry.tokens.length;
-    const isLastTokenComplete = !!functionStackEntry.tokens.at(-1)?.complete;
-
-    // the `color()` function can have different syntax:
-    // - absolute: color(<color-space> c1 c2 c3[ / A])
-    // - relative: color(from <color> <color-space> c1 c2 c3[ / A])
-
-    // we don't get comments or whitespace, so if there's no token or only one that is
-    // incomplete, we don't know which `color()` syntax we have yet.
-    // We should provide the list of color spaces + "from"
-    if (!tokensCount || (tokensCount === 1 && !isLastTokenComplete)) {
-      list = COLOR_SPACES.concat("from").sort();
-    } else {
-      const [firstToken] = functionStackEntry.tokens;
-      if (firstToken.tokenType === "Ident" && firstToken.text === "from") {
-        if (tokensCount === 1 || (tokensCount === 2 && !isLastTokenComplete)) {
-          // we have a relative syntax and no token, or an incomplete one after it,
-          // we can show the list of named colors and color functions.
-          // TODO: we should also have `var()` and `attr()` (Bug 1900306)
-          list = this.#getCSSValuesForPropertyName("color");
-        } else if (
-          tokensCount === 2 ||
-          (tokensCount === 3 && !isLastTokenComplete)
-        ) {
-          // we have relative syntax and the base the color, we need to show the list
-          // of color spaces
-          list = Array.from(COLOR_SPACES);
-        } else {
-          // there is more than 2 tokens, we shouldn't autocomplete
-          // TODO: we could display `var()`, `calc()`, `attr()` (Bug 1900306)
-          list = [];
-        }
-      } else {
-        // we have an absolute relative syntax with the color space already, don't autocomplete
-        // TODO: we could display `var()`, `calc()`, `attr()` (Bug 1900306)
-        list = [];
-      }
-    }
-
     return { list };
   }
 
