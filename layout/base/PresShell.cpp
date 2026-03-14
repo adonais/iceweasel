@@ -3133,15 +3133,6 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
   // 3.2. Set the Document's target element to target.
   esm->SetContentState(target, ElementState::URLTARGET);
 
-  // TODO: Spec probably needs a section to account for this.
-  if (ScrollContainerFrame* rootScroll = GetRootScrollContainerFrame()) {
-    if (rootScroll->DidHistoryRestore()) {
-      // Scroll position restored from history trumps scrolling to anchor.
-      aScroll = false;
-      rootScroll->ClearDidHistoryRestore();
-    }
-  }
-
   if (target) {
     // 3.4 Run the ancestor revealing algorithm on target.
     ErrorResult rv;
