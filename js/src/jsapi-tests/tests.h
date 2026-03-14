@@ -35,6 +35,11 @@ class TestBase {
 
   virtual const char* name() = 0;
 
+  // These methods may be overridden by the test to perform additional
+  // initialization after any JSContext and global have been created.
+  virtual bool init() { return true; }
+  virtual void uninit() {}
+
   virtual void maybeAppendException(std::string& message) {}
 
   bool fail(const std::string& msg = std::string(), const char* filename = "-",
@@ -60,8 +65,8 @@ class RuntimeTest : public TestBase {
 
   virtual ~RuntimeTest();
 
-  // Initialize this test, possibly with the cx from a previously run test.
-  bool init(JSContext* maybeReusedContext);
+  // Initialize the context, possibly with one from a previously run test.
+  bool initContext(JSContext* maybeReusedContext);
 
   // If this test is ok with its cx and global being reused, release this
   // test's cx to be reused by another test.
@@ -69,11 +74,7 @@ class RuntimeTest : public TestBase {
 
   static void MaybeFreeContext(JSContext* maybeCx);
 
-  // The real initialization happens in init(JSContext*), above, but this
-  // method may be overridden to perform additional initialization after the
-  // JSContext and global have been created.
-  virtual bool init() { return true; }
-  virtual void uninit();
+  void uninit() override;
 
   virtual bool run(JS::HandleObject global) = 0;
 
@@ -210,9 +211,6 @@ class FrontendTest : public TestBase {
   FrontendTest();
 
   virtual ~FrontendTest() {}
-
-  virtual bool init() { return true; }
-  virtual void uninit() {}
 
   virtual bool run() = 0;
 };

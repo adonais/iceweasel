@@ -98,7 +98,7 @@ RuntimeTest::~RuntimeTest() {
   MOZ_RELEASE_ASSERT(!global);
 }
 
-bool RuntimeTest::init(JSContext* maybeReusableContext) {
+bool RuntimeTest::initContext(JSContext* maybeReusableContext) {
   if (maybeReusableContext && reuseGlobal) {
     cx = maybeReusableContext;
     global.init(cx, JS::CurrentGlobalOrNull(cx));
@@ -623,7 +623,7 @@ int main(int argc, char* argv[]) {
     RunTests(
         total, failures, options, runtimeTests,
         [&maybeReusedContext](RuntimeTest* test) {
-          return test->init(maybeReusedContext);
+          return test->initContext(maybeReusedContext);
         },
         [](RuntimeTest* test) { return test->run(test->global); },
         [&maybeReusedContext](RuntimeTest* test) {
