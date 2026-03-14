@@ -183,7 +183,7 @@ class PowerOfTwoMask {
 // Make a PowerOfTwoMask constant, statically-checked.
 template <typename T, T Mask>
 constexpr PowerOfTwoMask<T> MakePowerOfTwoMask() {
-  static_assert(Mask == T(-1) || IsPowerOfTwo(Mask + 1),
+  static_assert(Mask == T(-1) || std::has_single_bit(Mask + 1),
                 "MakePowerOfTwoMask<T, Mask>: Mask must be 2^N-1");
   using Trusted = typename PowerOfTwoMask<T>::Trusted;
   return PowerOfTwoMask<T>(Trusted{Mask});
@@ -275,7 +275,7 @@ class PowerOfTwo {
 // Make a PowerOfTwo constant, statically-checked.
 template <typename T, T Value>
 constexpr PowerOfTwo<T> MakePowerOfTwo() {
-  static_assert(IsPowerOfTwo(Value),
+  static_assert(std::has_single_bit(Value),
                 "MakePowerOfTwo<T, Value>: Value must be 2^N");
   using Trusted = typename PowerOfTwo<T>::Trusted;
   return PowerOfTwo<T>(Trusted{Value});

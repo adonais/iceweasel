@@ -99,6 +99,7 @@
 #include <time.h>
 
 #include <algorithm>
+#include <bit>
 
 #ifdef XP_WIN
 #  include <process.h>
@@ -336,8 +337,8 @@ class PHCArray {
 // allocations performed (by PHC and mozjemalloc combined). `Time` is 64-bit
 // because we could have more than 2**32 allocations in a long-running session.
 // `Delay` is 32-bit because the delays used within PHC are always much smaller
-// than 2**32.  Delay must be unsigned so that IsPowerOfTwo() can work on some
-// Delay values.
+// than 2**32.  Delay must be unsigned so that std::has_single_bit() can work on
+// some Delay values.
 using Time = uint64_t;   // A moment in time.
 using Delay = uint32_t;  // A time duration.
 static constexpr Delay DELAY_MAX = UINT32_MAX / 2;
@@ -360,7 +361,7 @@ static const size_t kPhcPageSize =
 // attached to a crash report.
 static const size_t kPhcAlign = 1024 * 1024;
 
-static_assert(IsPowerOfTwo(kPhcAlign));
+static_assert(std::has_single_bit(kPhcAlign));
 static_assert((kPhcAlign % kPhcPageSize) == 0);
 
 // PHC will reserve some address space this large, then depending on runtime
@@ -403,7 +404,7 @@ static const Time kMaxTime = ~(Time(0));
 // results in an average value of aAvgDelay + 0.5, which is close enough to
 // aAvgDelay. aAvgDelay must be a power-of-two for speed.
 constexpr Delay Rnd64ToDelay(Delay aAvgDelay, uint64_t aRnd) {
-  MOZ_ASSERT(IsPowerOfTwo(aAvgDelay), "must be a power of two");
+  MOZ_ASSERT(std::has_single_bit(aAvgDelay), "must be a power of two");
 
   return (aRnd & (uint64_t(aAvgDelay) * 2 - 1)) + 1;
 }
@@ -1543,7 +1544,7 @@ void PHC::LogNoAlloc(size_t aReqSize, size_t aAlignment, Delay newAllocDelay)
 
 void* PHC::MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
                           size_t aAlignment, bool aZero) {
-  MOZ_ASSERT(IsPowerOfTwo(aAlignment));
+  MOZ_ASSERT(std::has_single_bit(aAlignment));
   if (!ShouldMakeNewAllocations()) {
     // Reset the allocation delay so that we take the fast path most of the
     // time.  Rather than take the lock and use the RNG which are unnecessary
@@ -1945,7 +1946,7 @@ inline void MozJemallocPHC::free(void* aPtr) { PageFree(Nothing(), aPtr); }
 MOZ_ALWAYS_INLINE static void* PageMemalign(const Maybe<arena_id_t>& aArenaId,
                                             size_t aAlignment,
                                             size_t aReqSize) {
-  MOZ_RELEASE_ASSERT(IsPowerOfTwo(aAlignment));
+  MOZ_RELEASE_ASSERT(std::has_single_bit(aAlignment));
 
   // PHC can't satisfy an alignment greater than a page size, so fall back to
   // mozjemalloc in that case.

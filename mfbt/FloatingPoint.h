@@ -17,6 +17,7 @@
 #include "mozilla/Types.h"
 
 #include <algorithm>
+#include <bit>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -349,7 +350,7 @@ inline bool NumberEqualsSignedInteger(Float aValue, SignedInteger* aInteger) {
   constexpr SignedInteger MinValue =
       std::numeric_limits<SignedInteger>::min();  // e.g. INT32_MIN
 
-  static_assert(IsPowerOfTwo(Abs(MinValue)),
+  static_assert(std::has_single_bit(Abs(MinValue)),
                 "MinValue should be is a small power of two, thus exactly "
                 "representable in float/double both");
 

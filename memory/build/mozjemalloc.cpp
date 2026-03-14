@@ -3359,7 +3359,7 @@ static bool malloc_init_hard() {
   // Get page size and number of CPUs
   const size_t page_size = GetKernelPageSize();
   // We assume that the page size is a power of 2.
-  MOZ_ASSERT(IsPowerOfTwo(page_size));
+  MOZ_ASSERT(std::has_single_bit(page_size));
 #ifdef MALLOC_STATIC_PAGESIZE
   if (gRealPageSize % page_size) {
     _malloc_message(

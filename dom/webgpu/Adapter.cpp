@@ -6,6 +6,7 @@
 #include "Adapter.h"
 
 #include <algorithm>
+#include <bit>
 
 #include "Device.h"
 #include "Instance.h"
@@ -602,7 +603,7 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
             return;
           }
           if (StringEndsWith(keyU8, "Alignment"_ns)) {
-            if (!IsPowerOfTwo(requestedValue)) {
+            if (!std::has_single_bit(requestedValue)) {
               nsPrintfCString msg(
                   "requestDevice: Request for limit '%s' must be a power of "
                   "two, "
