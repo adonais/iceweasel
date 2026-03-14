@@ -26,13 +26,15 @@
 #include "js/SourceText.h"  // JS::Source{Ownership,Text}
 #include "js/Warnings.h"    // JS::SetWarningReporter
 
+using namespace jsapitest;
+
 // A singly linked list of tests which doesn't require runtime intialization.
 //
 // We rely on the runtime initialization of global variables containing test
 // instances to add themselves to these lists, which depends on them already
 // being in a valid state.
 template <typename T>
-class JSAPITestList {
+class TestList {
   T* first = nullptr;
   T* last = nullptr;
 
@@ -54,41 +56,40 @@ class JSAPITestList {
   }
 };
 
-static JSAPITestList<JSAPIRuntimeTest> runtimeTests;
-static JSAPITestList<JSAPIFrontendTest> frontendTests;
+static TestList<RuntimeTest> runtimeTests;
+static TestList<FrontendTest> frontendTests;
 
-JSAPITestString& JSAPITestString::operator+=(const char* s) {
+String& String::operator+=(const char* s) {
   if (!chars.append(s, strlen(s))) {
     abort();
   }
   return *this;
 }
 
-JSAPITestString& JSAPITestString::operator+=(const JSAPITestString& s) {
+String& String::operator+=(const String& s) {
   if (!chars.append(s.begin(), s.length())) {
     abort();
   }
   return *this;
 }
 
-JSAPITestString operator+(const JSAPITestString& a, const char* b) {
-  JSAPITestString result = a;
+String operator+(const String& a, const char* b) {
+  String result = a;
   result += b;
   return result;
 }
 
-JSAPITestString operator+(const JSAPITestString& a, const JSAPITestString& b) {
-  JSAPITestString result = a;
+String operator+(const String& a, const String& b) {
+  String result = a;
   result += b;
   return result;
 }
 
-bool JSAPITest::fail(const JSAPITestString& msg, const char* filename,
-                     int lineno) {
+bool TestBase::fail(const String& msg, const char* filename, int lineno) {
   char location[256];
   SprintfLiteral(location, "%s:%d:", filename, lineno);
 
-  JSAPITestString message(location);
+  String message(location);
   message += msg;
 
   maybeAppendException(message);
@@ -103,16 +104,16 @@ bool JSAPITest::fail(const JSAPITestString& msg, const char* filename,
   return false;
 }
 
-JSAPIRuntimeTest::JSAPIRuntimeTest() : cx(nullptr), reuseGlobal(false) {
+RuntimeTest::RuntimeTest() : cx(nullptr), reuseGlobal(false) {
   runtimeTests.pushBack(this);
 }
 
-JSAPIRuntimeTest::~JSAPIRuntimeTest() {
+RuntimeTest::~RuntimeTest() {
   MOZ_RELEASE_ASSERT(!cx);
   MOZ_RELEASE_ASSERT(!global);
 }
 
-bool JSAPIRuntimeTest::init(JSContext* maybeReusableContext) {
+bool RuntimeTest::init(JSContext* maybeReusableContext) {
   if (maybeReusableContext && reuseGlobal) {
     cx = maybeReusableContext;
     global.init(cx, JS::CurrentGlobalOrNull(cx));
@@ -140,7 +141,7 @@ bool JSAPIRuntimeTest::init(JSContext* maybeReusableContext) {
   return init();
 }
 
-JSContext* JSAPIRuntimeTest::maybeForgetContext() {
+JSContext* RuntimeTest::maybeForgetContext() {
   if (!reuseGlobal) {
     return nullptr;
   }
@@ -152,22 +153,21 @@ JSContext* JSAPIRuntimeTest::maybeForgetContext() {
 }
 
 /* static */
-void JSAPIRuntimeTest::MaybeFreeContext(JSContext* maybeCx) {
+void RuntimeTest::MaybeFreeContext(JSContext* maybeCx) {
   if (maybeCx) {
     JS::LeaveRealm(maybeCx, nullptr);
     JS_DestroyContext(maybeCx);
   }
 }
 
-void JSAPIRuntimeTest::uninit() {
+void RuntimeTest::uninit() {
   global.reset();
   MaybeFreeContext(cx);
   cx = nullptr;
   msgs.clear();
 }
 
-bool JSAPIRuntimeTest::exec(const char* utf8, const char* filename,
-                            int lineno) {
+bool RuntimeTest::exec(const char* utf8, const char* filename, int lineno) {
   JS::CompileOptions opts(cx);
   opts.setFileAndLine(filename, lineno);
 
@@ -175,11 +175,11 @@ bool JSAPIRuntimeTest::exec(const char* utf8, const char* filename,
   JS::RootedValue v(cx);
   return (srcBuf.init(cx, utf8, strlen(utf8), JS::SourceOwnership::Borrowed) &&
           JS::Evaluate(cx, opts, srcBuf, &v)) ||
-         fail(JSAPITestString(utf8), filename, lineno);
+         fail(String(utf8), filename, lineno);
 }
 
-bool JSAPIRuntimeTest::execDontReport(const char* utf8, const char* filename,
-                                      int lineno) {
+bool RuntimeTest::execDontReport(const char* utf8, const char* filename,
+                                 int lineno) {
   JS::CompileOptions opts(cx);
   opts.setFileAndLine(filename, lineno);
 
@@ -189,75 +189,73 @@ bool JSAPIRuntimeTest::execDontReport(const char* utf8, const char* filename,
          JS::Evaluate(cx, opts, srcBuf, &v);
 }
 
-bool JSAPIRuntimeTest::evaluate(const char* utf8, const char* filename,
-                                int lineno, JS::MutableHandleValue vp) {
+bool RuntimeTest::evaluate(const char* utf8, const char* filename, int lineno,
+                           JS::MutableHandleValue vp) {
   JS::CompileOptions opts(cx);
   opts.setFileAndLine(filename, lineno);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
   return (srcBuf.init(cx, utf8, strlen(utf8), JS::SourceOwnership::Borrowed) &&
           JS::Evaluate(cx, opts, srcBuf, vp)) ||
-         fail(JSAPITestString(utf8), filename, lineno);
+         fail(String(utf8), filename, lineno);
 }
 
-JSAPITestString JSAPIRuntimeTest::jsvalToSource(JS::HandleValue v) {
+String RuntimeTest::jsvalToSource(JS::HandleValue v) {
   JS::Rooted<JSString*> str(cx, JS_ValueToSource(cx, v));
   if (str) {
     if (JS::UniqueChars bytes = JS_EncodeStringToUTF8(cx, str)) {
-      return JSAPITestString(bytes.get());
+      return String(bytes.get());
     }
   }
   JS_ClearPendingException(cx);
-  return JSAPITestString("<<error converting value to string>>");
+  return String("<<error converting value to string>>");
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(char c) {
+String RuntimeTest::toSource(char c) {
   char buf[2] = {c, '\0'};
-  return JSAPITestString(buf);
+  return String(buf);
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(long v) {
+String RuntimeTest::toSource(long v) {
   char buf[40];
   SprintfLiteral(buf, "%ld", v);
-  return JSAPITestString(buf);
+  return String(buf);
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(unsigned long v) {
+String RuntimeTest::toSource(unsigned long v) {
   char buf[40];
   SprintfLiteral(buf, "%lu", v);
-  return JSAPITestString(buf);
+  return String(buf);
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(long long v) {
+String RuntimeTest::toSource(long long v) {
   char buf[40];
   SprintfLiteral(buf, "%lld", v);
-  return JSAPITestString(buf);
+  return String(buf);
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(unsigned long long v) {
+String RuntimeTest::toSource(unsigned long long v) {
   char buf[40];
   SprintfLiteral(buf, "%llu", v);
-  return JSAPITestString(buf);
+  return String(buf);
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(double d) {
+String RuntimeTest::toSource(double d) {
   char buf[40];
   SprintfLiteral(buf, "%17lg", d);
-  return JSAPITestString(buf);
+  return String(buf);
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(unsigned int v) {
+String RuntimeTest::toSource(unsigned int v) {
   return toSource((unsigned long)v);
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(int v) { return toSource((long)v); }
+String RuntimeTest::toSource(int v) { return toSource((long)v); }
 
-JSAPITestString JSAPIRuntimeTest::toSource(bool v) {
-  return JSAPITestString(v ? "true" : "false");
-}
+String RuntimeTest::toSource(bool v) { return String(v ? "true" : "false"); }
 
-JSAPITestString JSAPIRuntimeTest::toSource(JS::RegExpFlags flags) {
-  JSAPITestString str;
+String RuntimeTest::toSource(JS::RegExpFlags flags) {
+  String str;
   if (flags.hasIndices()) {
     str += "d";
   }
@@ -285,16 +283,15 @@ JSAPITestString JSAPIRuntimeTest::toSource(JS::RegExpFlags flags) {
   return str;
 }
 
-JSAPITestString JSAPIRuntimeTest::toSource(JSAtom* v) {
+String RuntimeTest::toSource(JSAtom* v) {
   JS::RootedValue val(cx, JS::StringValue((JSString*)v));
   return jsvalToSource(val);
 }
 
-bool JSAPIRuntimeTest::checkSame(const JS::Value& actualArg,
-                                 const JS::Value& expectedArg,
-                                 const char* actualExpr,
-                                 const char* expectedExpr, const char* filename,
-                                 int lineno) {
+bool RuntimeTest::checkSame(const JS::Value& actualArg,
+                            const JS::Value& expectedArg,
+                            const char* actualExpr, const char* expectedExpr,
+                            const char* filename, int lineno) {
   bool same = false;
   JS::RootedValue actual(cx, actualArg);
   JS::RootedValue expected(cx, expectedArg);
@@ -302,14 +299,10 @@ bool JSAPIRuntimeTest::checkSame(const JS::Value& actualArg,
     return true;
   }
 
-  fail(JSAPITestString("CHECK_SAME failed: expected JS::SameValue(cx, ") +
-           actualExpr + ", " + expectedExpr + "), got !JS::SameValue(cx, " +
-           jsvalToSource(actual) + ", " + jsvalToSource(expected) + ")",
-       filename, lineno);
   return false;
 }
 
-void JSAPIRuntimeTest::maybeAppendException(JSAPITestString& message) {
+void RuntimeTest::maybeAppendException(String& message) {
   if (JS_IsExceptionPending(cx)) {
     message += " -- ";
 
@@ -327,7 +320,7 @@ void JSAPIRuntimeTest::maybeAppendException(JSAPITestString& message) {
 }
 
 /* static */
-const JSClass* JSAPIRuntimeTest::basicGlobalClass() {
+const JSClass* RuntimeTest::basicGlobalClass() {
   static const JSClass c = {
       "global",
       JSCLASS_GLOBAL_FLAGS,
@@ -337,7 +330,7 @@ const JSClass* JSAPIRuntimeTest::basicGlobalClass() {
 }
 
 /* static */
-void JSAPIRuntimeTest::reportWarning(JSContext* cx, JSErrorReport* report) {
+void RuntimeTest::reportWarning(JSContext* cx, JSErrorReport* report) {
   MOZ_RELEASE_ASSERT(report->isWarning());
 
   fprintf(stderr, "%s:%u:%s\n",
@@ -346,7 +339,7 @@ void JSAPIRuntimeTest::reportWarning(JSContext* cx, JSErrorReport* report) {
 }
 
 /* static */
-bool JSAPIRuntimeTest::print(JSContext* cx, unsigned argc, JS::Value* vp) {
+bool RuntimeTest::print(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
 
   JS::Rooted<JSString*> str(cx);
@@ -368,11 +361,11 @@ bool JSAPIRuntimeTest::print(JSContext* cx, unsigned argc, JS::Value* vp) {
   return true;
 }
 
-bool JSAPIRuntimeTest::definePrint() {
+bool RuntimeTest::definePrint() {
   return JS_DefineFunction(cx, global, "print", (JSNative)print, 0, 0);
 }
 
-JSContext* JSAPIRuntimeTest::createContext() {
+JSContext* RuntimeTest::createContext() {
   JSContext* cx = JS_NewContext(8L * 1024 * 1024);
   if (!cx) {
     return nullptr;
@@ -381,7 +374,7 @@ JSContext* JSAPIRuntimeTest::createContext() {
   return cx;
 }
 
-JSObject* JSAPIRuntimeTest::createGlobal(JSPrincipals* principals) {
+JSObject* RuntimeTest::createGlobal(JSPrincipals* principals) {
   /* Create the global object. */
   JS::RootedObject newGlobal(cx);
   JS::RealmOptions options;
@@ -396,7 +389,7 @@ JSObject* JSAPIRuntimeTest::createGlobal(JSPrincipals* principals) {
   return newGlobal;
 }
 
-JSAPIFrontendTest::JSAPIFrontendTest() { frontendTests.pushBack(this); }
+FrontendTest::FrontendTest() { frontendTests.pushBack(this); }
 
 TempFile::TempFile() : name(), stream() {}
 
@@ -543,7 +536,7 @@ void parseArgs(int argc, char* argv[], CommandOptions& options) {
 }
 
 template <typename TestT>
-void PrintTests(JSAPITestList<TestT> list) {
+void PrintTests(TestList<TestT> list) {
   for (TestT* test = list.getFirst(); test; test = test->next) {
     printf("%s\n", test->name());
   }
@@ -551,7 +544,7 @@ void PrintTests(JSAPITestList<TestT> list) {
 
 template <typename TestT, typename InitF, typename RunF, typename BeforeUninitF>
 void RunTests(int& total, int& failures, CommandOptions& options,
-              JSAPITestList<TestT> list, InitF init, RunF run,
+              TestList<TestT> list, InitF init, RunF run,
               BeforeUninitF beforeUninit) {
   for (TestT* test = list.getFirst(); test; test = test->next) {
     const char* name = test->name();
@@ -577,7 +570,7 @@ void RunTests(int& total, int& failures, CommandOptions& options,
     if (run(test)) {
       printf("TEST-PASS | %s | ok\n", name);
     } else {
-      JSAPITestString messages = test->messages();
+      String messages = test->messages();
       printf("%s | %s | %.*s\n",
              (test->knownFail ? "TEST-KNOWN-FAIL" : "TEST-UNEXPECTED-FAIL"),
              name, (int)messages.length(), messages.begin());
@@ -640,11 +633,11 @@ int main(int argc, char* argv[]) {
   if (!options.frontendOnly) {
     RunTests(
         total, failures, options, runtimeTests,
-        [&maybeReusedContext](JSAPIRuntimeTest* test) {
+        [&maybeReusedContext](RuntimeTest* test) {
           return test->init(maybeReusedContext);
         },
-        [](JSAPIRuntimeTest* test) { return test->run(test->global); },
-        [&maybeReusedContext](JSAPIRuntimeTest* test) {
+        [](RuntimeTest* test) { return test->run(test->global); },
+        [&maybeReusedContext](RuntimeTest* test) {
           // Return a non-nullptr pointer if the context & global can safely be
           // reused for the next test.
           maybeReusedContext = test->maybeForgetContext();
@@ -652,12 +645,12 @@ int main(int argc, char* argv[]) {
   }
   RunTests(
       total, failures, options, frontendTests,
-      [](JSAPIFrontendTest* test) { return test->init(); },
-      [](JSAPIFrontendTest* test) { return test->run(); },
-      [](JSAPIFrontendTest* test) {});
+      [](FrontendTest* test) { return test->init(); },
+      [](FrontendTest* test) { return test->run(); },
+      [](FrontendTest* test) {});
 
   if (!options.frontendOnly) {
-    JSAPIRuntimeTest::MaybeFreeContext(maybeReusedContext);
+    RuntimeTest::MaybeFreeContext(maybeReusedContext);
 
     MOZ_RELEASE_ASSERT(!JSRuntime::hasLiveRuntimes());
     JS_ShutDown();

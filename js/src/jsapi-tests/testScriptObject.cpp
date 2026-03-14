@@ -12,7 +12,7 @@
 #include "js/SourceText.h"                // JS::Source{Ownership,Text}
 #include "jsapi-tests/tests.h"
 
-struct ScriptObjectFixture : public JSAPIRuntimeTest {
+struct ScriptObjectFixture : public jsapitest::RuntimeTest {
   static const int code_size;
   static const char code[];
   static char16_t uc_code[];
