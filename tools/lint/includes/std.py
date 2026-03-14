@@ -418,6 +418,21 @@ api = {
         "random_access_iterator_tag",
         "contiguous_iterator_tag",
     ],
+    "bit": [
+        "endian",
+        "bit_cast",
+        "has_single_bit",
+        "bit_ceil",
+        "bit_floor",
+        "bit_width",
+        "rotl",
+        "rotr",
+        "countl_zero",
+        "countl_one",
+        "countr_zero",
+        "countr_one",
+        "popcount",
+    ],
 }
 api["type_traits"].extend(
     [f"{k}_v" for k in api["type_traits"]] + [f"{k}_t" for k in api["type_traits"]]
