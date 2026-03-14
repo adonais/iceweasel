@@ -2064,7 +2064,7 @@ void MacroAssembler::loadInt32ToStringWithBase(
   {
     // Compute |scratch1 = input / base| and |scratch2 = input % base|.
     if (std::has_single_bit(uint32_t(base))) {
-      uint32_t shift = mozilla::FloorLog2(base);
+      uint32_t shift = mozilla::FloorLog2(uint32_t(base));
 
       rshift32(Imm32(shift), input, scratch1);
       and32(Imm32((uint32_t(1) << shift) - 1), input, scratch2);

@@ -294,7 +294,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
           if (!mul->canOverflow()) {
             // If it cannot overflow, we can do lots of optimizations.
             Register src = ToRegister(lhs);
-            uint32_t shift = FloorLog2(constant);
+            uint32_t shift = FloorLog2(uint32_t(constant));
             uint32_t rest = constant - (1 << shift);
             // See if the constant has one bit set, meaning it can be
             // encoded as a bitshift.
@@ -320,7 +320,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
             // To stay on the safe side, only optimize things that are a
             // power of 2.
 
-            uint32_t shift = FloorLog2(constant);
+            uint32_t shift = FloorLog2(uint32_t(constant));
             if ((1 << shift) == constant) {
               // dest = lhs * pow(2,shift)
               masm.ma_lsl(Imm32(shift), ToRegister(lhs), ToRegister(dest));
@@ -406,7 +406,7 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
 
     // Use shift if constant is a power of 2.
     if (constant > 0 && std::has_single_bit(uintptr_t(constant))) {
-      uint32_t shift = mozilla::FloorLog2(constant);
+      uint32_t shift = mozilla::FloorLog2(uintptr_t(constant));
       masm.ma_lsl(Imm32(shift), ToRegister(lhs), ToRegister(dest));
       return;
     }
@@ -443,7 +443,7 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
       default:
         if (constant > 0) {
           // Use shift if constant is power of 2.
-          int32_t shift = mozilla::FloorLog2(constant);
+          int32_t shift = mozilla::FloorLog2(uint64_t(constant));
           if (int64_t(1) << shift == constant) {
             masm.lshift64(Imm32(shift), ToRegister64(lhs));
             return;

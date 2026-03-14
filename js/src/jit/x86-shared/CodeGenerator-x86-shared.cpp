@@ -798,7 +798,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
           return;
         default:
           // Use shift if cannot overflow and constant is power of 2
-          int32_t shift = FloorLog2(constant);
+          int32_t shift = FloorLog2(uint32_t(constant));
           if (constant > 0 && (1 << shift) == constant) {
             if (lhs != out) {
               masm.movl(lhs, out);

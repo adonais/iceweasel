@@ -179,7 +179,7 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
     // similar manner as positive powers of two, and division by other
     // constants can be optimized by a reciprocal multiplication technique.
     if (rhs > 0 && std::has_single_bit(mozilla::Abs(rhs))) {
-      int32_t shift = mozilla::FloorLog2(rhs);
+      int32_t shift = mozilla::FloorLog2(uint32_t(rhs));
       auto* lir =
           new (alloc()) LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);
       if (div->fallible()) {
@@ -217,7 +217,7 @@ void LIRGeneratorRiscv64::lowerDivI64(MDiv* div) {
 void LIRGeneratorRiscv64::lowerModI(MMod* mod) {
   if (mod->rhs()->isConstant()) {
     int32_t rhs = mod->rhs()->toConstant()->toInt32();
-    int32_t shift = mozilla::FloorLog2(rhs);
+    int32_t shift = mozilla::FloorLog2(uint32_t(rhs));
     if (rhs > 0 && 1 << shift == rhs) {
       LModPowTwoI* lir =
           new (alloc()) LModPowTwoI(useRegisterAtStart(mod->lhs()), shift);
