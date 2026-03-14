@@ -11,6 +11,8 @@ ChromeUtils.defineESModuleGetters(this, {
   AIWindowAccountAuth:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs",
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
+  ChatConversation:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });

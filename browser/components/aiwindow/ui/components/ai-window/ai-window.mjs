@@ -787,10 +787,6 @@ export class AIWindow extends MozLitElement {
         }
       }
       this.submitChatMessage(value, contextMentions, contextPageUrl);
-      this.#dispatchChromeEvent(
-        "ai-window:smartbar-input",
-        this.#getAIWindowEventOptions("")
-      );
     } else if (
       this.mode === SIDEBAR &&
       (action === "navigate" || action === "search")
@@ -849,6 +845,10 @@ export class AIWindow extends MozLitElement {
       ...this.#createUserRoleOpts(contextMentions),
       pageUrl,
     });
+    this.#dispatchChromeEvent(
+      "ai-window:smartbar-input",
+      this.#getAIWindowEventOptions("")
+    );
   }
 
   #handleMemoriesToggle = event => {
@@ -885,8 +885,7 @@ export class AIWindow extends MozLitElement {
     );
 
     const { text } = event.detail;
-    this.#recordChatInteraction();
-    this.#fetchAIResponse(text, this.#createUserRoleOpts());
+    this.submitChatMessage(text);
   };
 
   /**
