@@ -59,29 +59,6 @@ inline long double Abs<long double>(const long double aLongDouble) {
   return std::fabs(aLongDouble);
 }
 
-namespace detail {
-
-template <typename T, size_t Size = sizeof(T)>
-class CeilingLog2;
-
-template <typename T>
-class CeilingLog2<T, 4> {
- public:
-  static constexpr uint_fast8_t compute(const T aValue) {
-    return aValue == 0 ? 0u : 32u - uint_fast8_t(std::countl_zero(aValue - 1));
-  }
-};
-
-template <typename T>
-class CeilingLog2<T, 8> {
- public:
-  static constexpr uint_fast8_t compute(const T aValue) {
-    return aValue <= 1 ? 0u : 64u - uint_fast8_t(std::countl_zero(aValue - 1));
-  }
-};
-
-}  // namespace detail
-
 /**
  * Compute the log of the least power of 2 greater than or equal to |aValue|.
  *
@@ -93,7 +70,13 @@ class CeilingLog2<T, 8> {
  */
 template <typename T>
 constexpr uint_fast8_t CeilingLog2(const T aValue) {
-  return detail::CeilingLog2<T>::compute(aValue);
+  static_assert(std::is_integral_v<T>);
+
+  using UnsignedT = std::make_unsigned_t<T>;
+
+  return aValue <= 1 ? 0u
+                     : static_cast<uint_fast8_t>(
+                           std::bit_width(static_cast<UnsignedT>(aValue - 1)));
 }
 
 /** A CeilingLog2 variant that accepts only size_t. */
@@ -107,17 +90,13 @@ constexpr uint_fast8_t CeilingLog2Size(size_t aValue) {
  */
 template <typename T>
 constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
-  static_assert(sizeof(T) <= 8);
   static_assert(std::is_integral_v<T>);
+
+  using UnsignedT = std::make_unsigned_t<T>;
+
   MOZ_ASSERT(aValue != 0);
-  // This casts to 32-bits
-  if constexpr (sizeof(T) <= 4) {
-    return 31u - uint_fast8_t(std::countl_zero(static_cast<uint32_t>(aValue)));
-  }
-  // This doesn't
-  if constexpr (sizeof(T) == 8) {
-    return 63u - uint_fast8_t(std::countl_zero(static_cast<uint64_t>(aValue)));
-  }
+  return static_cast<uint_fast8_t>(
+      std::bit_width(static_cast<UnsignedT>(aValue)) - 1);
 }
 
 /**
