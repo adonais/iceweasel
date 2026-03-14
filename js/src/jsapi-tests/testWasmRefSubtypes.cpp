@@ -220,7 +220,7 @@ BEGIN_TEST(testWasmRefType_LUB) {
   do {                                                                     \
     RefType _actual = RefType::leastUpperBound((a), (b));                  \
     if (_actual != (expected)) {                                           \
-      return fail(jsapitest::String("bad LUB of ") +                       \
+      return fail(std::string("bad LUB of ") +                             \
                       wasm::ToString((a), types).get() + " and " +         \
                       wasm::ToString((b), types).get() + ": expected " +   \
                       wasm::ToString((expected), types).get() + ", got " + \
@@ -464,7 +464,7 @@ BEGIN_TEST(testWasmRefType_GLB) {
   do {                                                                     \
     RefType _actual = RefType::greatestLowerBound((a), (b));               \
     if (_actual != (expected)) {                                           \
-      return fail(jsapitest::String("bad GLB of ") +                       \
+      return fail(std::string("bad GLB of ") +                             \
                       wasm::ToString((a), types).get() + " and " +         \
                       wasm::ToString((b), types).get() + ": expected " +   \
                       wasm::ToString((expected), types).get() + ", got " + \

@@ -7,6 +7,7 @@
 #ifndef jsapi_tests_tests_h
 #define jsapi_tests_tests_h
 
+#include <string>
 #include <type_traits>
 
 #include "jsapi.h"
@@ -23,36 +24,10 @@
 
 namespace jsapitest {
 
-/* Note: Aborts on OOM. */
-class String {
-  js::Vector<char, 0, js::SystemAllocPolicy> chars;
-
- public:
-  String() {}
-  explicit String(const char* s) { *this += s; }
-  String(const String& s) { *this += s; }
-
-  const char* begin() const { return chars.begin(); }
-  const char* end() const { return chars.end(); }
-  size_t length() const { return chars.length(); }
-  void clear() { chars.clearAndFree(); }
-
-  String& operator+=(const char* s);
-  String& operator+=(const String& s);
-};
-
-}  // namespace jsapitest
-
-jsapitest::String operator+(const jsapitest::String& a, const char* b);
-jsapitest::String operator+(const jsapitest::String& a,
-                            const jsapitest::String& b);
-
-namespace jsapitest {
-
 class TestBase {
  public:
   bool knownFail;
-  String msgs;
+  std::string msgs;
 
   TestBase() : knownFail(false) {}
 
@@ -60,12 +35,12 @@ class TestBase {
 
   virtual const char* name() = 0;
 
-  virtual void maybeAppendException(String& message) {}
+  virtual void maybeAppendException(std::string& message) {}
 
-  bool fail(const String& msg = String(), const char* filename = "-",
+  bool fail(const std::string& msg = std::string(), const char* filename = "-",
             int lineno = 0);
 
-  String messages() const { return msgs; }
+  std::string messages() const { return msgs; }
 };
 
 class RuntimeTest : public TestBase {
@@ -124,19 +99,19 @@ class RuntimeTest : public TestBase {
   bool evaluate(const char* utf8, const char* filename, int lineno,
                 JS::MutableHandleValue vp);
 
-  String jsvalToSource(JS::HandleValue v);
+  std::string jsvalToSource(JS::HandleValue v);
 
-  String toSource(char c);
-  String toSource(long v);
-  String toSource(unsigned long v);
-  String toSource(long long v);
-  String toSource(unsigned long long v);
-  String toSource(double d);
-  String toSource(unsigned int v);
-  String toSource(int v);
-  String toSource(bool v);
-  String toSource(JS::RegExpFlags flags);
-  String toSource(JSAtom* v);
+  std::string toSource(char c);
+  std::string toSource(long v);
+  std::string toSource(unsigned long v);
+  std::string toSource(long long v);
+  std::string toSource(unsigned long long v);
+  std::string toSource(double d);
+  std::string toSource(unsigned int v);
+  std::string toSource(int v);
+  std::string toSource(bool v);
+  std::string toSource(JS::RegExpFlags flags);
+  std::string toSource(JSAtom* v);
 
   // Note that in some still-supported GCC versions (we think anything before
   // GCC 4.6), this template does not work when the second argument is
@@ -156,7 +131,7 @@ class RuntimeTest : public TestBase {
       return true;
     }
 
-    fail(String("CHECK_EQUAL failed: expected (") + expectedExpr +
+    fail(std::string("CHECK_EQUAL failed: expected (") + expectedExpr +
              ") = " + toSource(expected) + ", got (" + actualExpr +
              ") = " + toSource(actual),
          filename, lineno);
@@ -178,8 +153,8 @@ class RuntimeTest : public TestBase {
       return true;
     }
 
-    fail(String("CHECK_NULL failed: expected nullptr, got (") + actualExpr +
-             ") = " + toSource(actual),
+    fail(std::string("CHECK_NULL failed: expected nullptr, got (") +
+             actualExpr + ") = " + toSource(actual),
          filename, lineno);
     return false;
   }
@@ -203,15 +178,14 @@ class RuntimeTest : public TestBase {
     }                                                              \
   } while (false)
 
-#define CHECK(expr)                                                    \
-  do {                                                                 \
-    if (!(expr)) {                                                     \
-      return fail(jsapitest::String("CHECK failed: " #expr), __FILE__, \
-                  __LINE__);                                           \
-    }                                                                  \
+#define CHECK(expr)                                                         \
+  do {                                                                      \
+    if (!(expr)) {                                                          \
+      return fail(std::string("CHECK failed: " #expr), __FILE__, __LINE__); \
+    }                                                                       \
   } while (false)
 
-  void maybeAppendException(String& message) override;
+  void maybeAppendException(std::string& message) override;
 
   static const JSClass* basicGlobalClass();
 

@@ -59,42 +59,16 @@ class TestList {
 static TestList<RuntimeTest> runtimeTests;
 static TestList<FrontendTest> frontendTests;
 
-String& String::operator+=(const char* s) {
-  if (!chars.append(s, strlen(s))) {
-    abort();
-  }
-  return *this;
-}
-
-String& String::operator+=(const String& s) {
-  if (!chars.append(s.begin(), s.length())) {
-    abort();
-  }
-  return *this;
-}
-
-String operator+(const String& a, const char* b) {
-  String result = a;
-  result += b;
-  return result;
-}
-
-String operator+(const String& a, const String& b) {
-  String result = a;
-  result += b;
-  return result;
-}
-
-bool TestBase::fail(const String& msg, const char* filename, int lineno) {
+bool TestBase::fail(const std::string& msg, const char* filename, int lineno) {
   char location[256];
   SprintfLiteral(location, "%s:%d:", filename, lineno);
 
-  String message(location);
+  std::string message(location);
   message += msg;
 
   maybeAppendException(message);
 
-  fprintf(stderr, "%.*s\n", int(message.length()), message.begin());
+  fprintf(stderr, "%s\n", message.c_str());
 
   if (msgs.length() != 0) {
     msgs += " | ";
@@ -175,7 +149,7 @@ bool RuntimeTest::exec(const char* utf8, const char* filename, int lineno) {
   JS::RootedValue v(cx);
   return (srcBuf.init(cx, utf8, strlen(utf8), JS::SourceOwnership::Borrowed) &&
           JS::Evaluate(cx, opts, srcBuf, &v)) ||
-         fail(String(utf8), filename, lineno);
+         fail(utf8, filename, lineno);
 }
 
 bool RuntimeTest::execDontReport(const char* utf8, const char* filename,
@@ -197,65 +171,65 @@ bool RuntimeTest::evaluate(const char* utf8, const char* filename, int lineno,
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
   return (srcBuf.init(cx, utf8, strlen(utf8), JS::SourceOwnership::Borrowed) &&
           JS::Evaluate(cx, opts, srcBuf, vp)) ||
-         fail(String(utf8), filename, lineno);
+         fail(utf8, filename, lineno);
 }
 
-String RuntimeTest::jsvalToSource(JS::HandleValue v) {
+std::string RuntimeTest::jsvalToSource(JS::HandleValue v) {
   JS::Rooted<JSString*> str(cx, JS_ValueToSource(cx, v));
   if (str) {
     if (JS::UniqueChars bytes = JS_EncodeStringToUTF8(cx, str)) {
-      return String(bytes.get());
+      return bytes.get();
     }
   }
   JS_ClearPendingException(cx);
-  return String("<<error converting value to string>>");
+  return "<<error converting value to string>>";
 }
 
-String RuntimeTest::toSource(char c) {
+std::string RuntimeTest::toSource(char c) {
   char buf[2] = {c, '\0'};
-  return String(buf);
+  return buf;
 }
 
-String RuntimeTest::toSource(long v) {
+std::string RuntimeTest::toSource(long v) {
   char buf[40];
   SprintfLiteral(buf, "%ld", v);
-  return String(buf);
+  return buf;
 }
 
-String RuntimeTest::toSource(unsigned long v) {
+std::string RuntimeTest::toSource(unsigned long v) {
   char buf[40];
   SprintfLiteral(buf, "%lu", v);
-  return String(buf);
+  return buf;
 }
 
-String RuntimeTest::toSource(long long v) {
+std::string RuntimeTest::toSource(long long v) {
   char buf[40];
   SprintfLiteral(buf, "%lld", v);
-  return String(buf);
+  return buf;
 }
 
-String RuntimeTest::toSource(unsigned long long v) {
+std::string RuntimeTest::toSource(unsigned long long v) {
   char buf[40];
   SprintfLiteral(buf, "%llu", v);
-  return String(buf);
+  return buf;
 }
 
-String RuntimeTest::toSource(double d) {
+std::string RuntimeTest::toSource(double d) {
   char buf[40];
   SprintfLiteral(buf, "%17lg", d);
-  return String(buf);
+  return buf;
 }
 
-String RuntimeTest::toSource(unsigned int v) {
+std::string RuntimeTest::toSource(unsigned int v) {
   return toSource((unsigned long)v);
 }
 
-String RuntimeTest::toSource(int v) { return toSource((long)v); }
+std::string RuntimeTest::toSource(int v) { return toSource((long)v); }
 
-String RuntimeTest::toSource(bool v) { return String(v ? "true" : "false"); }
+std::string RuntimeTest::toSource(bool v) { return v ? "true" : "false"; }
 
-String RuntimeTest::toSource(JS::RegExpFlags flags) {
-  String str;
+std::string RuntimeTest::toSource(JS::RegExpFlags flags) {
+  std::string str;
   if (flags.hasIndices()) {
     str += "d";
   }
@@ -283,7 +257,7 @@ String RuntimeTest::toSource(JS::RegExpFlags flags) {
   return str;
 }
 
-String RuntimeTest::toSource(JSAtom* v) {
+std::string RuntimeTest::toSource(JSAtom* v) {
   JS::RootedValue val(cx, JS::StringValue((JSString*)v));
   return jsvalToSource(val);
 }
@@ -302,7 +276,7 @@ bool RuntimeTest::checkSame(const JS::Value& actualArg,
   return false;
 }
 
-void RuntimeTest::maybeAppendException(String& message) {
+void RuntimeTest::maybeAppendException(std::string& message) {
   if (JS_IsExceptionPending(cx)) {
     message += " -- ";
 
@@ -535,6 +509,12 @@ void parseArgs(int argc, char* argv[], CommandOptions& options) {
   }
 }
 
+static void NewHandler() {
+  fprintf(stderr, "TEST-UNEXPECTED-FAIL | jsapi-tests | Out of memory.\n");
+  std::set_new_handler(nullptr);
+  exit(1);
+}
+
 template <typename TestT>
 void PrintTests(TestList<TestT> list) {
   for (TestT* test = list.getFirst(); test; test = test->next) {
@@ -570,10 +550,10 @@ void RunTests(int& total, int& failures, CommandOptions& options,
     if (run(test)) {
       printf("TEST-PASS | %s | ok\n", name);
     } else {
-      String messages = test->messages();
-      printf("%s | %s | %.*s\n",
+      std::string messages = test->messages();
+      printf("%s | %s | %s\n",
              (test->knownFail ? "TEST-KNOWN-FAIL" : "TEST-UNEXPECTED-FAIL"),
-             name, (int)messages.length(), messages.begin());
+             name, messages.c_str());
       if (!test->knownFail) {
         failures++;
       }
@@ -602,6 +582,9 @@ int main(int argc, char* argv[]) {
         "light-weight entry point\n");
     return 0;
   }
+
+  // Ensure allocation failure in std::string gets reported as test failure.
+  std::set_new_handler(NewHandler);
 
   // Override prefs for jsapi-tests.
   JS::Prefs::setAtStartup_experimental_weakrefs_expose_cleanupSome(true);
