@@ -10954,6 +10954,7 @@ function getLayoutData(responsiveLayouts, index) {
   let layoutData = {
     classNames: [],
     imageSizes: {},
+    cardPositions: {},
     allowsWidget: false
   };
   responsiveLayouts.forEach(layout => {
@@ -10962,6 +10963,7 @@ function getLayoutData(responsiveLayouts, index) {
         layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
         layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
         layoutData.imageSizes[layout.columnCount] = tile.size;
+        layoutData.cardPositions[layout.columnCount] = tileIndex;
         if (tile.allowsWidget) {
           layoutData.allowsWidget = true;
         }
@@ -11022,7 +11024,8 @@ function CardSection({
   ctaButtonVariant,
   ctaButtonSponsors,
   anySectionsFollowed,
-  placeholder
+  placeholder,
+  activeColumnLayout
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
@@ -11035,9 +11038,16 @@ function CardSection({
   const {
     isForStartupCache
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.App);
-  const [focusedIndex, setFocusedIndex] = (0,external_React_namespaceObject.useState)(0);
-  const onCardFocus = index => {
-    setFocusedIndex(index);
+  const [focusedPosition, setFocusedPosition] = (0,external_React_namespaceObject.useState)(0);
+  const onCardFocus = position => {
+    if (Number.isInteger(position)) {
+      setFocusedPosition(position);
+    }
+  };
+  const handleCardGridBlur = e => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setFocusedPosition(0);
+    }
   };
   const handleCardKeyDown = e => {
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -11046,7 +11056,6 @@ function CardSection({
       if (!currentCardEl) {
         return;
       }
-      const activeColumn = getActiveColumnLayout(window.innerWidth);
 
       // Arrow direction should match visual navigation direction in RTL
       const isRTL = document.dir === "rtl";
@@ -11054,7 +11063,7 @@ function CardSection({
 
       // Extract current position from classList
       let currentPosition = null;
-      const positionPrefix = `${activeColumn}-position-`;
+      const positionPrefix = `${activeColumnLayout}-position-`;
       for (let className of currentCardEl.classList) {
         if (className.startsWith(positionPrefix)) {
           currentPosition = parseInt(className.substring(positionPrefix.length), 10);
@@ -11069,7 +11078,7 @@ function CardSection({
       // Find card with target position
       const parentEl = currentCardEl.parentElement;
       if (parentEl) {
-        const targetSelector = `article.ds-card.${activeColumn}-position-${targetPosition}`;
+        const targetSelector = `article.ds-card.${activeColumnLayout}-position-${targetPosition}`;
         const targetCardEl = parentEl.querySelector(targetSelector);
         if (targetCardEl) {
           const link = targetCardEl.querySelector("a.ds-card-link");
@@ -11196,11 +11205,14 @@ function CardSection({
   function buildCards() {
     const cards = [];
     let dataIndex = 0;
+    const activeColumnCount = parseInt(activeColumnLayout.replace("col-", ""), 10);
+    const activeFocusPositions = [];
     for (let position = 0; position < maxTile; position++) {
       const layoutData = getLayoutData(responsiveLayouts, position);
       const {
         classNames,
-        imageSizes
+        imageSizes,
+        cardPositions
       } = layoutData;
       const shouldRenderWidget = shouldShowBriefingCard && layoutData.allowsWidget && hasBriefingHeadlines;
       if (shouldRenderWidget) {
@@ -11220,6 +11232,9 @@ function CardSection({
       }
       const rec = displaySections[dataIndex];
       const currentIndex = dataIndex;
+      const mappedFocusPosition = cardPositions[activeColumnCount];
+      // Fall back to card order when this layout does not define a mapped position.
+      const activeFocusPosition = Number.isInteger(mappedFocusPosition) ? mappedFocusPosition : currentIndex;
 
       // Render a placeholder card when:
       // 1. No recommendation is available.
@@ -11231,63 +11246,84 @@ function CardSection({
           key: `dscard-${currentIndex}`
         }));
       } else {
-        cards.push(/*#__PURE__*/external_React_default().createElement(DSCard, {
+        activeFocusPositions.push(activeFocusPosition);
+        cards.push({
+          isDSCard: true,
           key: `dscard-${rec.id}`,
-          pos: rec.pos,
-          flightId: rec.flight_id,
-          image_src: rec.image_src,
-          raw_image_src: rec.raw_image_src,
-          icon_src: rec.icon_src,
-          word_count: rec.word_count,
-          time_to_read: rec.time_to_read,
-          title: rec.title,
-          topic: rec.topic,
-          features: rec.features,
-          excerpt: rec.excerpt,
-          url: rec.url,
-          id: rec.id,
-          shim: rec.shim,
-          fetchTimestamp: rec.fetchTimestamp,
-          type: type,
-          context: rec.context,
-          sponsor: rec.sponsor,
-          sponsored_by_override: rec.sponsored_by_override,
-          dispatch: dispatch,
-          source: rec.domain,
-          publisher: rec.publisher,
-          pocket_id: rec.pocket_id,
-          context_type: rec.context_type,
-          bookmarkGuid: rec.bookmarkGuid,
-          recommendation_id: rec.recommendation_id,
-          firstVisibleTimestamp: firstVisibleTimestamp,
-          corpus_item_id: rec.corpus_item_id,
-          scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
-          recommended_at: rec.recommended_at,
-          received_rank: rec.received_rank,
-          format: rec.format,
-          alt_text: rec.alt_text,
-          mayHaveSectionsCards: mayHaveSectionsCards,
-          showTopics: shouldShowLabels,
-          selectedTopics: selectedTopics,
-          availableTopics: availableTopics,
-          ctaButtonSponsors: ctaButtonSponsors,
-          ctaButtonVariant: ctaButtonVariant,
-          sectionsClassNames: classNames.join(" "),
-          sectionsCardImageSizes: imageSizes,
-          section: sectionKey,
-          sectionPosition: sectionPosition,
-          sectionFollowed: following,
-          sectionLayoutName: layoutName,
-          isTimeSensitive: rec.isTimeSensitive,
-          tabIndex: currentIndex === focusedIndex ? 0 : -1,
-          onFocus: () => onCardFocus(currentIndex),
-          attribution: rec.attribution,
-          isDailyBrief: shouldShowBriefingCard
-        }));
+          rec,
+          classNames,
+          imageSizes,
+          activeFocusPosition
+        });
       }
       dataIndex++;
     }
-    return cards;
+    const uniqueFocusPositions = [...new Set(activeFocusPositions)].sort((a, b) => a - b);
+    const activeRovingIndex = uniqueFocusPositions.includes(focusedPosition) ? focusedPosition : uniqueFocusPositions[0];
+    return cards.map(card => {
+      if (!card.isDSCard) {
+        return card;
+      }
+      const {
+        rec,
+        classNames,
+        imageSizes,
+        activeFocusPosition
+      } = card;
+      return /*#__PURE__*/external_React_default().createElement(DSCard, {
+        key: card.key,
+        pos: rec.pos,
+        flightId: rec.flight_id,
+        image_src: rec.image_src,
+        raw_image_src: rec.raw_image_src,
+        icon_src: rec.icon_src,
+        word_count: rec.word_count,
+        time_to_read: rec.time_to_read,
+        title: rec.title,
+        topic: rec.topic,
+        features: rec.features,
+        excerpt: rec.excerpt,
+        url: rec.url,
+        id: rec.id,
+        shim: rec.shim,
+        fetchTimestamp: rec.fetchTimestamp,
+        type: type,
+        context: rec.context,
+        sponsor: rec.sponsor,
+        sponsored_by_override: rec.sponsored_by_override,
+        dispatch: dispatch,
+        source: rec.domain,
+        publisher: rec.publisher,
+        pocket_id: rec.pocket_id,
+        context_type: rec.context_type,
+        bookmarkGuid: rec.bookmarkGuid,
+        recommendation_id: rec.recommendation_id,
+        firstVisibleTimestamp: firstVisibleTimestamp,
+        corpus_item_id: rec.corpus_item_id,
+        scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
+        recommended_at: rec.recommended_at,
+        received_rank: rec.received_rank,
+        format: rec.format,
+        alt_text: rec.alt_text,
+        mayHaveSectionsCards: mayHaveSectionsCards,
+        showTopics: shouldShowLabels,
+        selectedTopics: selectedTopics,
+        availableTopics: availableTopics,
+        ctaButtonSponsors: ctaButtonSponsors,
+        ctaButtonVariant: ctaButtonVariant,
+        sectionsClassNames: classNames.join(" "),
+        sectionsCardImageSizes: imageSizes,
+        section: sectionKey,
+        sectionPosition: sectionPosition,
+        sectionFollowed: following,
+        sectionLayoutName: layoutName,
+        isTimeSensitive: rec.isTimeSensitive,
+        tabIndex: activeFocusPosition === activeRovingIndex ? 0 : -1,
+        onFocus: () => onCardFocus(activeFocusPosition),
+        attribution: rec.attribution,
+        isDailyBrief: shouldShowBriefingCard
+      });
+    });
   }
   const cards = buildCards();
   const sectionContextWrapper = /*#__PURE__*/external_React_default().createElement("div", {
@@ -11348,6 +11384,7 @@ function CardSection({
     className: "section-subtitle"
   }, subtitle)), mayHaveSectionsPersonalization ? sectionContextWrapper : null), /*#__PURE__*/external_React_default().createElement("div", {
     className: `ds-section-grid ds-card-grid`,
+    onBlur: handleCardGridBlur,
     onKeyDown: handleCardKeyDown
   }, cards));
 }
@@ -11371,6 +11408,15 @@ function CardSections({
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
+  const [activeColumnLayout, setActiveColumnLayout] = (0,external_React_namespaceObject.useState)(() => getActiveColumnLayout(window.innerWidth));
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const onResize = () => {
+      const nextLayout = getActiveColumnLayout(window.innerWidth);
+      setActiveColumnLayout(currLayout => currLayout === nextLayout ? currLayout : nextLayout);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Handle a render before feed has been fetched by displaying nothing
   if (!data) {
@@ -11418,7 +11464,8 @@ function CardSections({
     ctaButtonVariant: ctaButtonVariant,
     ctaButtonSponsors: ctaButtonSponsors,
     anySectionsFollowed: anySectionsFollowed,
-    placeholder: placeholder
+    placeholder: placeholder,
+    activeColumnLayout: activeColumnLayout
   }));
 
   // Add a billboard/leaderboard IAB ad to the sectionsToRender array (if enabled/possible).
