@@ -24,7 +24,6 @@ CppUnitTests([
     "TestCeilingFloor",
     "TestCheckedInt",
     "TestCompactPair",
-    "TestCountPopulation",
     "TestCountZeroes",
     "TestDefineEnum",
     "TestDoublyLinkedList",

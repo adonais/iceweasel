@@ -139,7 +139,7 @@ inline int CountLeadingSignBits(V value, int width = (sizeof(V) * 8)) {
 template<typename V>
 inline int CountSetBits(V value, int width = (sizeof(V) * 8)) {
   if (width == 32) {
-    return mozilla::CountPopulation32(value);
+    return std::popcount(static_cast<uint32_t>(value));
   } else if (width == 64) {
     return std::popcount(static_cast<uint64_t>(value));
   }

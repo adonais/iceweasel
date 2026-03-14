@@ -6,11 +6,11 @@
 #ifndef AudioLayout_h
 #define AudioLayout_h
 
+#include <bit>
 #include <cstdint>
 #include <initializer_list>
 
 #include "cubeb/cubeb.h"
-#include "mozilla/MathAlgorithms.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -93,7 +93,7 @@ class AudioConfig {
     static uint32_t Channels(ChannelMap aMap) {
       static_assert(sizeof(ChannelMap) == sizeof(uint32_t),
                     "Must adjust ChannelMap type");
-      return CountPopulation32(aMap);
+      return std::popcount(aMap);
     }
 
     static ChannelLayout SMPTEDefault(const ChannelLayout& aChannelLayout);

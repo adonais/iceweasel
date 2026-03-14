@@ -84,10 +84,6 @@ constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_ctz(aValue));
 }
 
-constexpr uint_fast8_t CountPopulation32(uint32_t aValue) {
-  return static_cast<uint_fast8_t>(__builtin_popcount(aValue));
-}
-
 constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_clzll(aValue));
 }
@@ -100,7 +96,6 @@ constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
 #  error "Implement these!"
 constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
 constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) = delete;
-constexpr uint_fast8_t CountPopulation32(uint32_t aValue) = delete;
 constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) = delete;
 constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) = delete;
 #endif
@@ -137,13 +132,6 @@ constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
 constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
   MOZ_ASSERT(aValue != 0);
   return detail::CountTrailingZeroes32(aValue);
-}
-
-/**
- * Compute the number of one bits in the number |aValue|,
- */
-constexpr uint_fast8_t CountPopulation32(uint32_t aValue) {
-  return detail::CountPopulation32(aValue);
 }
 
 /** Analogous to CountLeadingZeroes32, but for 64-bit numbers. */
