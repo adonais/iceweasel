@@ -262,7 +262,7 @@ inline size_t RoundUpToPowerOfTwo32(size_t value) {
 
 template <typename T>
 constexpr bool IsPowerOfTwo(T value) {
-  return value > 0 && (value & (value - 1)) == 0;
+  return std::has_single_bit(value);
 }
 
 }  // namespace bits

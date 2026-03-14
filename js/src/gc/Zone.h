@@ -16,6 +16,7 @@
 #include "mozilla/TimeStamp.h"
 
 #include <array>
+#include <bit>
 
 #include "jstypes.h"
 
@@ -345,7 +346,7 @@ class AtomCacheHashTable {
   // This value was picked empirically based on performance testing using SP2
   // and SP3. 2k was better than 1k but 4k was not much better than 2k.
   static constexpr uint32_t sSize = 2 * 1024;
-  static_assert(mozilla::IsPowerOfTwo(sSize));
+  static_assert(std::has_single_bit(sSize));
   std::array<EntrySet, sSize> mEntrySets;
 };
 

@@ -49,7 +49,6 @@ using namespace js::jit;
 using JS::ToInt32;
 
 using mozilla::IsFloat32Representable;
-using mozilla::IsPowerOfTwo;
 using mozilla::NumbersAreIdentical;
 
 NON_GC_POINTER_TYPE_ASSERTIONS_GENERATED
@@ -443,7 +442,7 @@ static MMul* EvaluateExactReciprocal(TempAllocator& alloc, MDiv* ins) {
   }
 
   // check if rhs is a power of two or zero
-  if (num != 0 && !mozilla::IsPowerOfTwo(mozilla::Abs(num))) {
+  if (num != 0 && !std::has_single_bit(mozilla::Abs(num))) {
     return nullptr;
   }
 
@@ -4048,7 +4047,7 @@ void MMod::analyzeEdgeCasesForward() {
 
   if (rhs()->isConstant()) {
     int32_t n = rhs()->toConstant()->toInt32();
-    if (n > 0 && !IsPowerOfTwo(uint32_t(n))) {
+    if (n > 0 && !std::has_single_bit(uint32_t(n))) {
       canBePowerOfTwoDivisor_ = false;
     }
   }

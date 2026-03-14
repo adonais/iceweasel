@@ -8,9 +8,9 @@
 #define jit_shared_IonAssemblerBuffer_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Vector.h"
 
+#include <bit>
 #include <compare>  // std::strong_ordering
 
 #include "jit/ProcessExecutableMemory.h"
@@ -86,7 +86,7 @@ class AssemblerBuffer {
 
  public:
   bool isAligned(size_t alignment) const {
-    MOZ_ASSERT(mozilla::IsPowerOfTwo(alignment));
+    MOZ_ASSERT(std::has_single_bit(alignment));
     return !(size() & (alignment - 1));
   }
 

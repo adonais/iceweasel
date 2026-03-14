@@ -37,8 +37,10 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
+
+#include <bit>
+
 #include "ds/LifoAlloc.h"
 
 namespace js {
@@ -112,7 +114,7 @@ class AvlTreeImpl {
 
     // This is the mask to use to extract the tag from `rightAndTag`.
     static constexpr uintptr_t kTagMask = 3;
-    static_assert(mozilla::IsPowerOfTwo(kTagMask + 1),
+    static_assert(std::has_single_bit(kTagMask + 1),
                   "kTagMask must only have a consecutive sequence of its "
                   "lowest bits set");
     static_assert(

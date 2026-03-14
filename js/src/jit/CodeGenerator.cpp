@@ -2546,8 +2546,8 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
 // Both FromBitMask and ToBitMask must have a single bit set.
 template <uint32_t FromBitMask, uint32_t ToBitMask>
 static void ShiftFlag32(MacroAssembler& masm, Register reg) {
-  static_assert(mozilla::IsPowerOfTwo(FromBitMask));
-  static_assert(mozilla::IsPowerOfTwo(ToBitMask));
+  static_assert(std::has_single_bit(FromBitMask));
+  static_assert(std::has_single_bit(ToBitMask));
   static_assert(FromBitMask != ToBitMask);
   constexpr uint32_t fromShift = std::countr_zero(FromBitMask);
   constexpr uint32_t toShift = std::countr_zero(ToBitMask);
@@ -11979,7 +11979,7 @@ void CodeGenerator::visitPowOfTwoI(LPowOfTwoI* ins) {
   Register output = ToRegister(ins->output());
 
   uint32_t base = ins->base();
-  MOZ_ASSERT(mozilla::IsPowerOfTwo(base));
+  MOZ_ASSERT(std::has_single_bit(base));
 
   uint32_t n = mozilla::FloorLog2(base);
   MOZ_ASSERT(n != 0);
@@ -12115,7 +12115,7 @@ void CodeGenerator::visitModD(LModD* ins) {
 void CodeGenerator::visitModPowTwoD(LModPowTwoD* ins) {
   FloatRegister lhs = ToFloatRegister(ins->lhs());
   uint32_t divisor = ins->divisor();
-  MOZ_ASSERT(mozilla::IsPowerOfTwo(divisor));
+  MOZ_ASSERT(std::has_single_bit(divisor));
 
   FloatRegister output = ToFloatRegister(ins->output());
 

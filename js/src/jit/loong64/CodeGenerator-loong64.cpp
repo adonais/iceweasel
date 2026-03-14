@@ -8,6 +8,8 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "builtin/Number.h"
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
@@ -896,7 +898,7 @@ void CodeGeneratorLOONG64::emitMulI64(Register lhs, int64_t rhs,
   }
 
   if (rhs > 0) {
-    if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(rhs + 1))) {
+    if (std::has_single_bit(static_cast<uint64_t>(rhs + 1))) {
       int32_t shift = mozilla::FloorLog2(rhs + 1);
 
       UseScratchRegisterScope temps(masm);
@@ -910,7 +912,7 @@ void CodeGeneratorLOONG64::emitMulI64(Register lhs, int64_t rhs,
       return;
     }
 
-    if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(rhs - 1))) {
+    if (std::has_single_bit(static_cast<uint64_t>(rhs - 1))) {
       int32_t shift = mozilla::FloorLog2(rhs - 1);
       if (shift < 5) {
         masm.as_alsl_d(dest, lhs, lhs, shift - 1);

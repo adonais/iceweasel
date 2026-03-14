@@ -10,6 +10,8 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 
+#include <bit>
+
 #include "builtin/Number.h"
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
@@ -403,7 +405,7 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
     }
 
     // Use shift if constant is a power of 2.
-    if (constant > 0 && mozilla::IsPowerOfTwo(uintptr_t(constant))) {
+    if (constant > 0 && std::has_single_bit(uintptr_t(constant))) {
       uint32_t shift = mozilla::FloorLog2(constant);
       masm.ma_lsl(Imm32(shift), ToRegister(lhs), ToRegister(dest));
       return;
