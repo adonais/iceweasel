@@ -1912,12 +1912,12 @@ bool JSStructuredCloneWriter::traverseSavedFrame(HandleObject obj) {
     return false;
   }
 
-  val = NumberValue(savedFrame->getLine());
+  val = Int32Value(savedFrame->getLine());
   if (!writePrimitive(val)) {
     return false;
   }
 
-  val = NumberValue(*savedFrame->getColumn().addressOfValueForTranscode());
+  val = Int32Value(*savedFrame->getColumn().addressOfValueForTranscode());
   if (!writePrimitive(val)) {
     return false;
   }
