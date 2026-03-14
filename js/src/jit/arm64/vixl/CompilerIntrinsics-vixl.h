@@ -30,6 +30,8 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "jit/arm64/vixl/Globals-vixl.h"
 
 namespace vixl {
@@ -136,21 +138,12 @@ inline int CountLeadingSignBits(V value, int width = (sizeof(V) * 8)) {
 
 template<typename V>
 inline int CountSetBits(V value, int width = (sizeof(V) * 8)) {
-#if COMPILER_HAS_BUILTIN_POPCOUNT
-  if (width == 32) {
-    return __builtin_popcount(static_cast<unsigned>(value));
-  } else if (width == 64) {
-    return __builtin_popcountll(value);
-  }
-  MOZ_CRASH("Unhandled width.");
-#else
   if (width == 32) {
     return mozilla::CountPopulation32(value);
   } else if (width == 64) {
-    return mozilla::CountPopulation64(value);
+    return std::popcount(static_cast<uint64_t>(value));
   }
   MOZ_CRASH("Unhandled width.");
-#endif
 }
 
 

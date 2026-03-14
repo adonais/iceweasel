@@ -11,6 +11,7 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Span.h"
 
+#include <bit>
 #include <climits>
 #include <cstddef>
 #include <cstdint>
@@ -181,7 +182,7 @@ class BitSet {
 
     for (const Word word : mStorage) {
       if constexpr (kBitsPerWord > 32) {
-        count += CountPopulation64(word);
+        count += std::popcount(word);
       } else {
         count += CountPopulation32(word);
       }

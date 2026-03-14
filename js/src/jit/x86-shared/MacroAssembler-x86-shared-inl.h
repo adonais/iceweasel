@@ -1906,7 +1906,7 @@ void MacroAssembler::mulInt64x2(FloatRegister lhs, const SimdConstant& rhs,
   const int64_t* c = static_cast<const int64_t*>(rhs.bytes());
   const int64_t val = c[0];
   if (val == c[1]) {
-    switch (mozilla::CountPopulation64(val)) {
+    switch (std::popcount(static_cast<uint64_t>(val))) {
       case 0:  // val == 0
         vpxor(Operand(dest), dest, dest);
         return;

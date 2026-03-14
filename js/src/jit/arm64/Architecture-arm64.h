@@ -11,6 +11,7 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
+#include <bit>
 
 #include "jit/arm64/vixl/Cpu-Features-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
@@ -303,9 +304,7 @@ class Bitset128 {
     return *this;
   }
 
-  uint32_t size() const {
-    return mozilla::CountPopulation64(hi) + mozilla::CountPopulation64(lo);
-  }
+  uint32_t size() const { return std::popcount(hi) + std::popcount(lo); }
 
   uint32_t countTrailingZeroes() const {
     if (lo) {

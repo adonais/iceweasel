@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <utility>
 
 #include "builtin/Math.h"
@@ -6760,8 +6761,8 @@ MDefinition* MPopcnt::foldsTo(TempAllocator& alloc) {
       int32_t n = num()->toConstant()->toInt32();
       return MConstant::NewInt32(alloc, mozilla::CountPopulation32(n));
     }
-    int64_t n = c->toInt64();
-    return MConstant::NewInt64(alloc, int64_t(mozilla::CountPopulation64(n)));
+    uint64_t n = uint64_t(c->toInt64());
+    return MConstant::NewInt64(alloc, int64_t(std::popcount(n)));
   }
 
   return this;

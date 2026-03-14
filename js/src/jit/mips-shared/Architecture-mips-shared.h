@@ -10,6 +10,7 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
+#include <bit>
 #include <limits.h>
 #include <stdint.h>
 
@@ -262,7 +263,7 @@ class FloatRegisterMIPSShared {
 
   static uint32_t SetSize(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return mozilla::CountPopulation64(x);
+    return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");

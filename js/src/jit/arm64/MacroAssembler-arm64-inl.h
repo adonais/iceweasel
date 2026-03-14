@@ -1121,7 +1121,7 @@ void MacroAssembler::popcnt64(Register64 src_, Register64 dest_,
 
   MOZ_ASSERT(tmp_ != Register::Invalid());
 
-  // Equivalent to mozilla::CountPopulation64(), though likely more efficient.
+  // Equivalent to std::popcount(), though likely more efficient.
 
   ARMRegister tmp(tmp_, 64);
 
