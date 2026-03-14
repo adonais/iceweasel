@@ -10,6 +10,7 @@
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,16 @@ class TestList {
 
 static TestList<RuntimeTest> runtimeTests;
 static TestList<FrontendTest> frontendTests;
+
+[[noreturn]] static void Die(const char* format, ...) {
+  fprintf(stderr, "TEST-UNEXPECTED-FAIL | jsapi-tests | ");
+  va_list ap;
+  va_start(ap, format);
+  vfprintf(stderr, format, ap);
+  va_end(ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
 
 bool TestBase::fail(const std::string& msg, const char* filename, int lineno) {
   char location[256];
@@ -379,9 +390,7 @@ TempFile::~TempFile() {
 FILE* TempFile::open(const char* fileName) {
   stream = fopen(fileName, "wb+");
   if (!stream) {
-    fprintf(stderr, "error opening temporary file '%s': %s\n", fileName,
-            strerror(errno));
-    exit(1);
+    Die("error opening temporary file '%s': %s", fileName, strerror(errno));
   }
   name = fileName;
   return stream;
@@ -389,18 +398,14 @@ FILE* TempFile::open(const char* fileName) {
 
 void TempFile::close() {
   if (fclose(stream) == EOF) {
-    fprintf(stderr, "error closing temporary file '%s': %s\n", name,
-            strerror(errno));
-    exit(1);
+    Die("error closing temporary file '%s': %s", name, strerror(errno));
   }
   stream = nullptr;
 }
 
 void TempFile::remove() {
   if (::remove(name) != 0) {
-    fprintf(stderr, "error deleting temporary file '%s': %s\n", name,
-            strerror(errno));
-    exit(1);
+    Die("error deleting temporary file '%s': %s", name, strerror(errno));
   }
   name = nullptr;
 }
@@ -482,7 +487,18 @@ struct CommandOptions {
   const char* filter = nullptr;
 };
 
-void parseArgs(int argc, char* argv[], CommandOptions& options) {
+static void PrintUsage() {
+  printf("Usage: jsapi-tests [OPTIONS] [FILTER]\n");
+  printf("\n");
+  printf("Options:\n");
+  printf("    -h, --help          Display this message\n");
+  printf("        --list          List all tests\n");
+  printf(
+      "        --frontend-only Run tests for frontend-only APIs, with "
+      "light-weight entry point\n");
+}
+
+static void ParseArgs(int argc, char* argv[], CommandOptions& options) {
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
       options.help = true;
@@ -510,9 +526,8 @@ void parseArgs(int argc, char* argv[], CommandOptions& options) {
 }
 
 static void NewHandler() {
-  fprintf(stderr, "TEST-UNEXPECTED-FAIL | jsapi-tests | Out of memory.\n");
   std::set_new_handler(nullptr);
-  exit(1);
+  Die("Out of memory.");
 }
 
 template <typename TestT>
@@ -569,17 +584,10 @@ int main(int argc, char* argv[]) {
   int total = 0;
   int failures = 0;
   CommandOptions options;
-  parseArgs(argc, argv, options);
+  ParseArgs(argc, argv, options);
 
   if (options.help) {
-    printf("Usage: jsapi-tests [OPTIONS] [FILTER]\n");
-    printf("\n");
-    printf("Options:\n");
-    printf("    -h, --help          Display this message\n");
-    printf("        --list          List all tests\n");
-    printf(
-        "        --frontend-only Run tests for frontend-only APIs, with "
-        "light-weight entry point\n");
+    PrintUsage();
     return 0;
   }
 
@@ -592,13 +600,11 @@ int main(int argc, char* argv[]) {
 
   if (!options.frontendOnly) {
     if (!JS_Init()) {
-      printf("TEST-UNEXPECTED-FAIL | jsapi-tests | JS_Init() failed.\n");
-      return 1;
+      Die("JS_Init() failed.");
     }
   } else {
     if (!JS_FrontendOnlyInit()) {
-      printf("TEST-UNEXPECTED-FAIL | jsapi-tests | JS_Init() failed.\n");
-      return 1;
+      Die("JS_FrontendOnlyInit() failed.");
     }
   }
 
