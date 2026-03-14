@@ -35,6 +35,8 @@ class TestBase {
 
   virtual const char* name() = 0;
 
+  virtual bool run() = 0;
+
   // These methods may be overridden by the test to perform additional
   // initialization after any JSContext and global have been created.
   virtual bool init() { return true; }
@@ -75,8 +77,6 @@ class RuntimeTest : public TestBase {
   static void MaybeFreeContext(JSContext* maybeCx);
 
   void uninit() override;
-
-  virtual bool run(JS::HandleObject global) = 0;
 
 #define EXEC(s)                         \
   do {                                  \
@@ -211,8 +211,6 @@ class FrontendTest : public TestBase {
   FrontendTest();
 
   virtual ~FrontendTest() {}
-
-  virtual bool run() = 0;
 };
 
 }  // namespace jsapitest
@@ -221,7 +219,7 @@ class FrontendTest : public TestBase {
   class cls_##testname : public jsapitest::RuntimeTest {             \
    public:                                                           \
     virtual const char* name() override { return #testname; }        \
-    extra virtual bool run(JS::HandleObject global) override attrs
+    extra bool run() override attrs
 
 #define BEGIN_TEST_WITH_ATTRIBUTES(testname, attrs) \
   BEGIN_TEST_WITH_ATTRIBUTES_AND_EXTRA(testname, attrs, )
@@ -232,7 +230,7 @@ class FrontendTest : public TestBase {
   class cls_##testname : public jsapitest::FrontendTest {                     \
    public:                                                                    \
     virtual const char* name() override { return #testname; }                 \
-    extra virtual bool run() override attrs
+    extra bool run() override attrs
 
 #define BEGIN_FRONTEND_TEST_WITH_ATTRIBUTES(testname, attrs) \
   BEGIN_FRONTEND_TEST_WITH_ATTRIBUTES_AND_EXTRA(testname, attrs, )
@@ -261,7 +259,7 @@ class FrontendTest : public TestBase {
   class cls_##testname : public fixture {                     \
    public:                                                    \
     virtual const char* name() override { return #testname; } \
-    virtual bool run(JS::HandleObject global) override
+    bool run() override
 
 #define END_FIXTURE_TEST(fixture, testname) \
   }                                         \

@@ -687,7 +687,7 @@ class JitABICall final : public jsapitest::RuntimeTest,
  public:
   explicit JitABICall(const char* name) : name_(name) { reuseGlobal = true; }
   virtual const char* name() override { return name_; }
-  virtual bool run(JS::HandleObject) override {
+  virtual bool run() override {
     bool result = true;
     this->set_instance(this, &result);
 

@@ -537,10 +537,9 @@ void PrintTests(TestList<TestT> list) {
   }
 }
 
-template <typename TestT, typename InitF, typename RunF, typename BeforeUninitF>
+template <typename TestT, typename InitF, typename BeforeUninitF>
 void RunTests(int& total, int& failures, CommandOptions& options,
-              TestList<TestT> list, InitF init, RunF run,
-              BeforeUninitF beforeUninit) {
+              TestList<TestT> list, InitF init, BeforeUninitF beforeUninit) {
   for (TestT* test = list.getFirst(); test; test = test->next) {
     const char* name = test->name();
     if (options.filter && strstr(name, options.filter) == nullptr) {
@@ -562,7 +561,7 @@ void RunTests(int& total, int& failures, CommandOptions& options,
       continue;
     }
 
-    if (run(test)) {
+    if (test->run()) {
       printf("TEST-PASS | %s | ok\n", name);
     } else {
       std::string messages = test->messages();
@@ -625,7 +624,6 @@ int main(int argc, char* argv[]) {
         [&maybeReusedContext](RuntimeTest* test) {
           return test->initContext(maybeReusedContext);
         },
-        [](RuntimeTest* test) { return test->run(test->global); },
         [&maybeReusedContext](RuntimeTest* test) {
           // Return a non-nullptr pointer if the context & global can safely be
           // reused for the next test.
@@ -635,7 +633,6 @@ int main(int argc, char* argv[]) {
   RunTests(
       total, failures, options, frontendTests,
       [](FrontendTest* test) { return test->init(); },
-      [](FrontendTest* test) { return test->run(); },
       [](FrontendTest* test) {});
 
   if (!options.frontendOnly) {
