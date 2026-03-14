@@ -506,7 +506,6 @@ MathAlgorithms.h:
     - RotateLeft
     - RotateRight
     - IsPowerOfTwo
-    - CountTrailingZeroes
     - GCD
 
 Maybe.h:

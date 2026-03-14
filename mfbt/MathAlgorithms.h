@@ -194,20 +194,6 @@ constexpr bool IsPowerOfTwo(T x) {
   return x && (x & (x - 1)) == 0;
 }
 
-template <typename T>
-constexpr uint_fast8_t CountTrailingZeroes(T aValue) {
-  static_assert(sizeof(T) <= 8);
-  static_assert(std::is_integral_v<T>);
-  // This casts to 32-bits
-  if constexpr (sizeof(T) <= 4) {
-    return uint_fast8_t(std::countr_zero(static_cast<uint32_t>(aValue)));
-  }
-  // This doesn't
-  if constexpr (sizeof(T) == 8) {
-    return uint_fast8_t(std::countr_zero(static_cast<uint64_t>(aValue)));
-  }
-}
-
 // Greatest Common Divisor, from
 // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Implementation
 template <typename T>
@@ -224,9 +210,11 @@ MOZ_ALWAYS_INLINE T GCD(T aA, T aB) {
     return aA;
   }
 
-  T az = CountTrailingZeroes(aA);
-  T bz = CountTrailingZeroes(aB);
-  T shift = std::min<T>(az, bz);
+  using UnsignedT = std::make_unsigned_t<T>;
+
+  auto az = std::countr_zero(static_cast<UnsignedT>(aA));
+  auto bz = std::countr_zero(static_cast<UnsignedT>(aB));
+  auto shift = std::min<T>(az, bz);
   aA >>= az;
   aB >>= bz;
 
@@ -246,7 +234,7 @@ MOZ_ALWAYS_INLINE T GCD(T aA, T aB) {
       aA = diff;
     }
     if (aA) {
-      aA >>= CountTrailingZeroes(aA);
+      aA >>= std::countr_zero(static_cast<UnsignedT>(aA));
     }
   }
 
