@@ -119,7 +119,7 @@ constexpr uint_fast8_t FloorLog2Size(size_t aValue) {
 constexpr size_t RoundUpPow2(size_t aValue) {
   MOZ_ASSERT(aValue <= (size_t(1) << (sizeof(size_t) * CHAR_BIT - 1)),
              "can't round up -- will overflow!");
-  return size_t(1) << CeilingLog2(aValue);
+  return std::bit_ceil(aValue);
 }
 
 /**
