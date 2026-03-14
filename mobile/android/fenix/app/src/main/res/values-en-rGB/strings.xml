@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Page translated from %1$s to %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Shake your device to summarise this page in seconds. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Suggestions from %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Get suggestions from the web related to your search</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Retrieve suggestions from Mozilla as you type</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Link sharing</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1029,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Collection owner (User ID)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Extension collection modified. Quitting the application to apply changes…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Privacy report</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Jump back in</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -2507,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s protects you from many of the most common trackers that follow what you do online.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Learn more</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d Tracker blocked</item>
+    <item quantity="other">%d Trackers blocked</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">You’re protected</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard (default)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->

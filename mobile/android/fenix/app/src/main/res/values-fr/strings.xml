@@ -373,7 +373,7 @@
   -->
   <string name="browser_toolbar_translated_successfully">Page traduite en %2$s, l’originale est en %1$s.</string>
   <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
-  <string name="browser_toolbar_summarize_cfr_description">Secouez votre appareil pour résumer cette page en quelques secondes. ️</string>
+  <string name="browser_toolbar_summarize_cfr_description">Secouez votre appareil pour résumer cette page en quelques secondes. ️⚡️</string>
   <!--
     Translation Toolbar
 
@@ -2523,8 +2523,8 @@
 
       Text shown on the trackers blocked card. %d is the number of trackers blocked.
     -->
-    <item quantity="one">%d Traqueur bloqué</item>
-    <item quantity="other">%d Traqueurs bloqués</item>
+    <item quantity="one">%d traqueur bloqué</item>
+    <item quantity="other">%d traqueurs bloqués</item>
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Vous êtes protégé·e</string>

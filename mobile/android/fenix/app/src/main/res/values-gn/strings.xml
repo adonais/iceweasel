@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Kuatiarogue moñe’ẽasapyre %1$s-gui %2$s-pe.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Emongu’e ne mba’e’oka emombyky hag̃ua ko kuatiarogue sapy’aitépe. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">%1$s ñemoñe’ẽ</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Emog̃uahẽ ñemoñe’ẽ ñandutígui jeheka rehegua</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Eguerekokuaa Mozilla oikuave’ẽva ehai aja</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Emoherakuã juajuha</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1029,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Ñembyatyha jára (poruhára ID)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Jepysokue aty moambuepyre. Embotyhína tembiporu’i emoambuekuaa hag̃ua…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Marandu ñemiguáva</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Eho tapykuépe</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -2507,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s nemo’ãta heta tapykuehohágui ohecháva mba’etépa ejapohína ñandutípe.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Kuaave</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d Tapykuehoha jokopyre</item>
+    <item quantity="other">%d Tapykuehohaita jokopyre</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Eime ñemo’ãme</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Ypyguaite (ijypygua)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->

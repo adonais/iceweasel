@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Đã dịch trang từ %1$s sang %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Lắc thiết bị của bạn để tóm tắt trang này trong vài giây. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Đề xuất từ %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Nhận đề xuất từ ​​web liên quan đến tìm kiếm của bạn</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Nhận các đề xuất từ Mozilla khi bạn nhập</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Chia sẻ liên kết</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1029,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Chủ sở hữu bộ sưu tập (ID người dùng)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Đã sửa đổi bộ sưu tập tiện ích mở rộng. Đang thoát ứng dụng để áp dụng các thay đổi…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Báo cáo về quyền riêng tư</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Trang đã xem gần đây</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -2507,6 +2517,16 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s bảo vệ bạn khỏi các trình theo dõi phổ biến nhất đang theo dõi những điều bạn làm trên internet.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Tìm hiểu thêm</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">%d trình theo dõi đã bị chặn</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Bạn đã được bảo vệ</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Tiêu chuẩn (mặc định)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
