@@ -498,7 +498,6 @@ MathAlgorithms.h:
   functions:
     - Abs
     - CountLeadingZeroes32
-    - CountTrailingZeroes32
     - CountLeadingZeroes64
     - CeilingLog2
     - CeilingLog2Size

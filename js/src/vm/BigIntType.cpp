@@ -93,6 +93,7 @@
 #include "mozilla/Try.h"
 #include "mozilla/WrappingOperations.h"
 
+#include <bit>
 #include <charconv>
 #include <functional>
 #include <limits>
@@ -1204,7 +1205,7 @@ JSLinearString* BigInt::toStringBasePowerOfTwo(JSContext* cx, HandleBigInt x,
 
   const unsigned length = x->digitLength();
   const bool sign = x->isNegative();
-  const unsigned bitsPerChar = mozilla::CountTrailingZeroes32(radix);
+  const unsigned bitsPerChar = std::countr_zero(radix);
   const unsigned charMask = radix - 1;
   // Compute the length of the resulting string: divide the bit length of the
   // BigInt by the number of bits representable per character (rounding up).

@@ -8,6 +8,8 @@
 
 #include "mozilla/TimeStamp.h"
 
+#include <bit>
+
 #include "js/ProfilingCategory.h"
 #include "js/ProfilingStack.h"
 #include "threading/Thread.h"
@@ -215,7 +217,7 @@ void InternalThreadPool::dispatchOrQueueTask(HelperThreadTask* task) {
   MOZ_ASSERT(!terminating);
   MOZ_ASSERT(freeThreadSet != 0);
 
-  uint32_t id = mozilla::CountTrailingZeroes32(freeThreadSet);
+  uint32_t id = std::countr_zero(freeThreadSet.ref());
   clearThreadFree(id);
 
   HelperThread* thread = threads_.ref()[id].get();

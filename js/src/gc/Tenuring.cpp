@@ -10,6 +10,8 @@
 
 #include "gc/Tenuring.h"
 
+#include <bit>
+
 #include "gc/Cell.h"
 #include "gc/GCInternals.h"
 #include "gc/GCProbes.h"
@@ -444,8 +446,12 @@ template <typename T>
 bool TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
   for (size_t i = 0; i < MaxArenaCellIndex; i += cells->BitsPerWord) {
     ArenaCellSet::WordT bitset = cells->getWord(i / cells->BitsPerWord);
+    static_assert(std::is_same_v<ArenaCellSet::WordT, uint32_t> ||
+                      std::is_same_v<ArenaCellSet::WordT, uint64_t>,
+                  "unexpected word size");
+
     while (bitset) {
-      size_t bit = i + js::detail::CountTrailingZeroes(bitset);
+      size_t bit = i + std::countr_zero(bitset);
       bitset &= bitset - 1;  // Clear the low bit.
 
       auto cell =
