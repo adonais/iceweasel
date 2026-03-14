@@ -32,7 +32,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <bit>
 
@@ -2846,12 +2845,7 @@ void Simulator::decodeType01(SimInstruction* instr) {
       switch (instr->bits(7, 4)) {
         case 1: {  // CLZ
           uint32_t bits = get_register(rm);
-          int leading_zeros = 0;
-          if (bits == 0) {
-            leading_zeros = 32;
-          } else {
-            leading_zeros = mozilla::CountLeadingZeroes32(bits);
-          }
+          int leading_zeros = std::countl_zero(bits);
           set_register(rd, leading_zeros);
           break;
         }

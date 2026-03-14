@@ -7,8 +7,6 @@
 #ifndef jit_loong64_Architecture_loong64_h
 #define jit_loong64_Architecture_loong64_h
 
-#include "mozilla/MathAlgorithms.h"
-
 #include <algorithm>
 #include <bit>
 
@@ -133,9 +131,7 @@ class Registers {
     return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) {
-    return 31 - mozilla::CountLeadingZeroes32(x);
-  }
+  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
 
   static const char* GetName(uint32_t code) {
     static const char* const Names[] = {

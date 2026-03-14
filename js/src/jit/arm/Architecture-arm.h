@@ -8,7 +8,6 @@
 #define jit_arm_Architecture_arm_h
 
 #include "mozilla/EnumSet.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
 #include <bit>
@@ -131,9 +130,7 @@ class Registers {
     return std::popcount(x);
   }
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) {
-    return 31 - mozilla::CountLeadingZeroes32(x);
-  }
+  static uint32_t LastBit(SetType x) { return 31 - std::countl_zero(x); }
 };
 
 // Smallest integer type that can hold a register bitmask.

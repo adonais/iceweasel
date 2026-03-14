@@ -497,7 +497,6 @@ MacroForEach.h:
 MathAlgorithms.h:
   functions:
     - Abs
-    - CountLeadingZeroes32
     - CeilingLog2
     - CeilingLog2Size
     - FindMostSignificantBit
