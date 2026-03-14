@@ -13,13 +13,14 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
-import mozilla.components.ui.colors.PhotonColors
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabGroupTheme
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -104,8 +105,11 @@ class TabGroupCardTest {
         onLongClick: (String) -> Unit = {},
     ) {
         TabGroupCard(
-            title = "Group 1",
-            color = PhotonColors.Blue50,
+            group = TabsTrayItem.TabGroup(
+                title = "Group 1",
+                theme = TabGroupTheme.default,
+                tabs = hashSetOf(),
+            ),
             thumbnails = listOf(
                 TabThumbnailImageData(
                     tabId = "123",

@@ -43,7 +43,6 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.compose.base.modifier.thenConditional
@@ -181,11 +180,11 @@ class TabManagementFragment : DialogFragment() {
                     TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
                     TabSearchMiddleware(),
                     TabSearchNavigationMiddleware(onSearchResultClicked = ::performTabClick),
-                    TabSearchNavigationMiddleware(onSearchResultClicked = ::performTabClick),
                     TabStorageMiddleware(
                         inactiveTabsEnabled = requireComponents.settings.inactiveTabsAreEnabled,
-                        initialTabData = TabData(browserState = requireComponents.core.store.stateFlow.value),
+                        tabGroupsEnabled = requireComponents.settings.tabGroupsEnabled,
                         tabDataFlow = requireComponents.core.store.stateFlow.map { TabData(browserState = it) },
+                        tabGroupRepository = requireComponents.core.tabGroupRepository,
                         mainScope = lifecycleScope,
                     ),
                 ),

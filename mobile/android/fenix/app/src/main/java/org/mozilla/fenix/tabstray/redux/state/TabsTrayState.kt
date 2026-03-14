@@ -15,11 +15,12 @@ import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
  * @property selectedPage The current page in the tray can be on.
  * @property mode Whether the browser tab list is in multi-select mode or not with the set of
  * currently selected tabs.
- * @property inactiveTabs The list of tabs are considered inactive.
+ * @property inactiveTabs The list of [TabsTrayItem.Tab]s are considered inactive.
  * @property inactiveTabsExpanded A flag to know if the Inactive Tabs section of the Tabs Tray
  * should be expanded when the tray is opened.
- * @property normalTabs The list of normal tabs that do not fall under [inactiveTabs].
- * @property privateTabs The list of tabs that are [mozilla.components.browser.state.state.ContentState.private].
+ * @property normalTabs The list of [TabsTrayItem]s that do not fall under [inactiveTabs].
+ * @property privateTabs The list of [TabsTrayItem]s that are private.
+ * @property tabGroups The list of [TabsTrayItem.TabGroup]s to display.
  * @property syncedTabs The list of synced tabs.
  * @property syncing Whether the Synced Tabs feature should fetch the latest tabs from paired devices.
  * @property selectedTabId The ID of the currently selected (active) tab.
@@ -37,6 +38,7 @@ data class TabsTrayState(
     val inactiveTabsExpanded: Boolean = false,
     val normalTabs: List<TabsTrayItem> = emptyList(),
     val privateTabs: List<TabsTrayItem> = emptyList(),
+    val tabGroups: List<TabsTrayItem.TabGroup> = emptyList(),
     val syncedTabs: List<SyncedTabsListItem> = emptyList(),
     val syncing: Boolean = false,
     val selectedTabId: String? = null,

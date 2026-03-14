@@ -32,6 +32,7 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'jacoco'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
 apply plugin: 'kotlinx-serialization'
+apply plugin: 'com.google.devtools.ksp'
 
 if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {
     apply plugin: 'com.google.android.gms.oss-licenses-plugin'
@@ -692,6 +693,9 @@ dependencies {
     implementation libs.protobuf.javalite
     implementation libs.sentry
     implementation libs.androidx.documentfile
+
+    implementation libs.androidx.room.runtime
+    ksp libs.androidx.room.compiler
 
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.leakcanary

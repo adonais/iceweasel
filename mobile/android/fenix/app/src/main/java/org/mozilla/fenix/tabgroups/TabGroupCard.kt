@@ -54,6 +54,7 @@ import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.TabsTrayTestTag.TAB_GROUP_TITLE
+import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ui.tabitems.MultiSelectTabButton
 import org.mozilla.fenix.tabstray.ui.tabitems.TabContentCardShape
@@ -74,18 +75,17 @@ const val BOTTOM_END_THUMBNAIL_INDEX = 3
 
 /**
  * A Tab Group presented as a clickable item in a grid.
- * @param title: The group's title.  May be empty.
- * @param color: The group's color, controlled by the user.
- * @param selectionState: The tab selection state.
- * @param clickHandler: Handler for all click-handling inputs (long click, click, etc)
- * @param thumbnails: The list of thumbnails.  May be empty, or up to size 4.
- * @param modifier: The Modifier
+ *
+ * @param group The data of the [TabsTrayItem.TabGroup].
+ * @param selectionState The tab selection state.
+ * @param clickHandler Handler for all click-handling inputs (long click, click, etc.)
+ * @param thumbnails The list of thumbnails.  May be empty, or up to size 4.
+ * @param modifier The Modifier
  * @param thumbnailSizePx: The size of each thumbnail in px.
  */
 @Composable
 fun TabGroupCard(
-    title: String,
-    color: Color,
+    group: TabsTrayItem.TabGroup,
     selectionState: TabsTrayItemSelectionState,
     clickHandler: TabsTrayItemClickHandler,
     thumbnails: List<TabThumbnailImageData>,
@@ -103,7 +103,7 @@ fun TabGroupCard(
                 .clip(TabContentCardShape)
                 .tabItemClickable(
                     clickHandler = clickHandler,
-                    clickedItem = TabsTrayItem.TabGroup,
+                    clickedItem = group,
                 ),
             shape = TabContentCardShape,
             border = if (selectionState.isFocused) {
@@ -119,7 +119,7 @@ fun TabGroupCard(
                 // Title Row
                 Row(
                     modifier = Modifier
-                        .background(color = color)
+                        .background(color = group.theme.primary)
                         .fillMaxWidth()
                         .wrapContentHeight(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -130,7 +130,7 @@ fun TabGroupCard(
                     )
 
                     Text(
-                        text = title.take(MAX_URI_LENGTH),
+                        text = group.title.take(MAX_URI_LENGTH),
                         modifier = Modifier
                             .weight(1f)
                             .testTag(TAB_GROUP_TITLE),
@@ -292,6 +292,12 @@ private fun TabGroupThumbnail(
 }
 
 private data class TabGroupCardPreviewState(
+    val group: TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
+        title = "Tab Group Item",
+        theme = TabGroupTheme.default,
+        tabs = hashSetOf(),
+        closed = false,
+    ),
     val title: String = "Group 1",
     val color: Color = PhotonColors.Pink70,
     val selectionState: TabsTrayItemSelectionState =
@@ -443,8 +449,12 @@ private fun TabGroupCardTablet() {
                 onCloseClick = {},
             )
             TabGroupCard(
-                title = "Tab Group Item",
-                color = PhotonColors.Pink70,
+                group = TabsTrayItem.TabGroup(
+                    title = "Tab Group Item",
+                    theme = TabGroupTheme.default,
+                    tabs = hashSetOf(),
+                    closed = false,
+                ),
                 selectionState = TabsTrayItemSelectionState(
                     isSelected = false,
                     isFocused = false,
@@ -496,8 +506,7 @@ private fun TabGroupCardPreview(
             )
 
             TabGroupCard(
-                title = tabGroupCardState.title,
-                color = tabGroupCardState.color,
+                group = tabGroupCardState.group,
                 selectionState = tabGroupCardState.selectionState,
                 thumbnails = tabGroupCardState.thumbnails,
                 thumbnailSizePx = 12,

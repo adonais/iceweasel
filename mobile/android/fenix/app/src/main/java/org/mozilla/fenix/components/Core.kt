@@ -137,6 +137,8 @@ import org.mozilla.fenix.summarization.eligibility.DefaultSummarizationEligibili
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
+import org.mozilla.fenix.tabgroups.storage.redux.middleware.TabGroupMiddleware
+import org.mozilla.fenix.tabgroups.storage.repository.DefaultTabGroupRepository
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
 import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.geckoview.GeckoRuntime
@@ -385,6 +387,7 @@ class Core(
                     homepageTitle = context.getString(R.string.tab_tray_homepage_tab),
                 ),
                 BrowserVisualCompletenessMiddleware(visualCompletenessQueue),
+                TabGroupMiddleware(tabGroupRepository = tabGroupRepository),
             )
 
         BrowserStore(
@@ -668,6 +671,8 @@ class Core(
     val summarizeFeatureSettings: FenixSummarizationFeatureConfiguration by lazyMonitored {
         FenixSummarizationFeatureConfiguration(settings = context.components.settings)
     }
+
+    val tabGroupRepository by lazyMonitored { DefaultTabGroupRepository(context) }
 
     /**
      * Summarization eligibility checker

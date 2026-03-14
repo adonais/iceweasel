@@ -213,7 +213,7 @@ private fun TabSearchResults(
                     shape = itemShape,
                     onSearchResultClicked = onSearchResultClicked,
                 )
-                TabsTrayItem.TabGroup -> {}
+                is TabsTrayItem.TabGroup -> {}
             }
 
             if (index < lastIndex) {

@@ -94,6 +94,7 @@ internal object TabsTrayReducer {
                 normalTabs = action.tabStorageUpdate.normalTabs,
                 inactiveTabs = action.tabStorageUpdate.inactiveTabs,
                 privateTabs = action.tabStorageUpdate.privateTabs,
+                tabGroups = action.tabStorageUpdate.tabGroups,
             )
             is TabGroupAction -> TabGroupActionReducer.reduce(state, action)
         }

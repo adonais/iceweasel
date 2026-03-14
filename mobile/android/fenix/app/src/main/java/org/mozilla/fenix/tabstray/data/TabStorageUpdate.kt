@@ -11,10 +11,12 @@ package org.mozilla.fenix.tabstray.data
  * @property normalTabs The list of normal [TabsTrayItem]s to display in the Tabs Tray.
  * @property inactiveTabs The list of inactive [TabsTrayItem.Tab]s to display in the Tabs Tray.
  * @property privateTabs The list of private [TabsTrayItem]s to display in the Tabs Tray.
+ * @property tabGroups The list of [TabsTrayItem.TabGroup]s to display in the Tabs Tray.
  */
 data class TabStorageUpdate(
     val selectedTabId: String?,
     val normalTabs: List<TabsTrayItem>,
     val inactiveTabs: List<TabsTrayItem.Tab>,
     val privateTabs: List<TabsTrayItem>,
+    val tabGroups: List<TabsTrayItem.TabGroup>,
 )
