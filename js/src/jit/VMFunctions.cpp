@@ -1800,11 +1800,9 @@ static MOZ_ALWAYS_INLINE bool MaybeGetNativePropertyAndWriteToCache(
           return true;
         }
 
-        RootedTuple<Value, Value, Value> roots(cx);
-        RootedField<Value, 0> getter(roots, nobj->getGetterValue(prop));
-        RootedField<Value, 1> receiver(roots, ObjectValue(*obj));
-        RootedField<Value, 2> rootedValue(roots);
-
+        RootedValue getter(cx, nobj->getGetterValue(prop));
+        RootedValue receiver(cx, ObjectValue(*obj));
+        RootedValue rootedValue(cx);
         if (js::CallGetter(cx, receiver, getter, &rootedValue)) {
           *vp = rootedValue;
           return true;

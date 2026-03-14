@@ -745,11 +745,10 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
   // Step 2. Let queue be generator.[[AsyncGeneratorQueue]].
   // Step 3. Repeat, while queue is not empty,
-  Rooted<AsyncGeneratorRequest*> next(cx);
-  RootedValue value(cx);
   while (!generator->isQueueEmpty()) {
     // Step 3.a. Let next be the first element of queue.
-    next = AsyncGeneratorObject::peekRequest(generator);
+    Rooted<AsyncGeneratorRequest*> next(
+        cx, AsyncGeneratorObject::peekRequest(generator));
     if (!next) {
       return false;
     }
@@ -759,7 +758,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     // Step 3.c. If completion is a return completion, then
     if (completionKind == CompletionKind::Return) {
-      value = next->completionValue();
+      RootedValue value(cx, next->completionValue());
 
       // Step 3.c.i. Perform AsyncGeneratorAwaitReturn(generator).
       // Step 3.c.ii. Return unused.
@@ -768,7 +767,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     // Step 3.d. Else,
     if (completionKind == CompletionKind::Throw) {
-      value = next->completionValue();
+      RootedValue value(cx, next->completionValue());
 
       // Step 3.d.ii. Perform AsyncGeneratorCompleteStep(generator, completion,
       //              true).

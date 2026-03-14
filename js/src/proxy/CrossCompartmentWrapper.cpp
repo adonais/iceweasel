@@ -259,12 +259,11 @@ bool CrossCompartmentWrapper::construct(JSContext* cx, HandleObject wrapper,
 bool CrossCompartmentWrapper::nativeCall(JSContext* cx, IsAcceptableThis test,
                                          NativeImpl impl,
                                          const CallArgs& srcArgs) const {
-  RootedTuple<JSObject*, JSObject*, Value, JSObject*> roots(cx);
-  RootedField<JSObject*, 0> wrapper(roots, &srcArgs.thisv().toObject());
+  RootedObject wrapper(cx, &srcArgs.thisv().toObject());
   MOZ_ASSERT(srcArgs.thisv().isMagic(JS_IS_CONSTRUCTING) ||
              !UncheckedUnwrap(wrapper)->is<CrossCompartmentWrapperObject>());
 
-  RootedField<JSObject*, 1> wrapped(roots, wrappedObject(wrapper));
+  RootedObject wrapped(cx, wrappedObject(wrapper));
   {
     AutoRealm call(cx, wrapped);
     InvokeArgs dstArgs(cx);
@@ -276,7 +275,7 @@ bool CrossCompartmentWrapper::nativeCall(JSContext* cx, IsAcceptableThis test,
     Value* srcend = srcArgs.array() + srcArgs.length();
     Value* dst = dstArgs.base();
 
-    RootedField<Value, 2> source(roots);
+    RootedValue source(cx);
     for (; src < srcend; ++src, ++dst) {
       source = *src;
       if (!cx->compartment()->wrap(cx, &source)) {
@@ -289,7 +288,7 @@ bool CrossCompartmentWrapper::nativeCall(JSContext* cx, IsAcceptableThis test,
       // will stymie this whole process. If that happens, unwrap the wrapper.
       // This logic can go away when same-compartment security wrappers go away.
       if ((src == srcArgs.base() + 1) && dst->isObject()) {
-        RootedField<JSObject*, 3> thisObj(roots, &dst->toObject());
+        RootedObject thisObj(cx, &dst->toObject());
         if (thisObj->is<WrapperObject>() &&
             Wrapper::wrapperHandler(thisObj)->hasSecurityPolicy()) {
           MOZ_ASSERT(!thisObj->is<CrossCompartmentWrapperObject>());
