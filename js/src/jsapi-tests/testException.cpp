@@ -7,6 +7,7 @@
 
 #include "js/CallAndConstruct.h"    // JS_CallFunctionValue
 #include "js/ColumnNumber.h"        // JS::ColumnNumberOneOrigin
+#include "js/Conversions.h"         // JS::ToString
 #include "js/PropertyAndElement.h"  // JS_GetProperty
 #include "jsapi-tests/tests.h"
 
