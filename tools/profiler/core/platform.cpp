@@ -360,7 +360,7 @@ class GeckoJavaSampler
     // devtools/client/performance-new/shared/background.sys.mjs
     auto filtersTempPtr =
         mozilla::TransformIntoNewArray(filtersTemp, convertToPtr);
-    profiler_start(PowerOfTwo32(128 * 1024 * 1024), 5.0, features,
+    profiler_start(PowerOfTwo32(128u * 1024 * 1024), 5.0, features,
                    filtersTempPtr.Elements(), filtersTempPtr.Length(), 0,
                    Nothing());
   }
