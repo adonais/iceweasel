@@ -421,11 +421,7 @@
   <string name="customize_addon_collection_hint">Miano kolekcyje</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Posiedziciel kolekcyje (ID ôd używocza)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Idź nazod</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is

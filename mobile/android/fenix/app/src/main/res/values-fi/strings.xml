@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Sivu käännetty kielestä %1$s kielelle %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Ravista laitettasi nähdäksesi tämän sivun yhteenvedon sekunneissa. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Ehdotuksia %1$silta</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Vastaanota ehdotuksia verkosta hakuusi liittyen</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Vastaanota ehdotuksia Mozillasta kirjoittaessasi</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Linkin jakaminen</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1032,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Tietosuojaraportti</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Palaa takaisin</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Kirjanmerkit</string>
@@ -1592,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Jaa</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Lisää kokoelmaan</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Lisää ryhmään</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Jaa valitut välilehdet</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1638,11 +1646,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Luo välilehtiryhmä</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Muokkaa ryhmää</string>
   <string name="create_tab_group_save_button">Tallenna</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Sulje välilehtiryhmän muokkaaminen</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Ryhmä</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Ryhmä %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nimi</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Nimi</string>
   <!--
     History
 
@@ -2499,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s suojaa sinua monilta yleisimmiltä verkossa tekemiäsi asioita jäljittäviltä seuraimilta.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Lue lisää</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d seurain estetty</item>
+    <item quantity="other">%d seurainta estetty</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Olet suojattu</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Tavallinen (oletus)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3765,6 +3794,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">En käytä hakua Firefoxissa</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">En käytä synkronointia</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Se on hidas tai siinä on ongelma</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Ominaisuuksia on vaikea löytää tai ne puuttuvat</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Se on sekava tai vaikea käyttää</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Se on ihan kelvollinen, mutta ei parempi kuin muut selaimet</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Aion jatkaa Firefoxin käyttöä</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Auta parantamaan tulostamista Firefoxissa. Se kestää vain sekunnin</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3779,6 +3818,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Kuinka tyytyväinen olet Firefoxin hakukokemukseen?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Kuinka tyytyväinen olet Firefoxin synkronointikokemukseen?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Auta meitä parantamaan Firefoxia. Mikä näistä kuvailee parhaiten kokemustasi tähän mennessä?</string>
   <!--
     Accessibility
 

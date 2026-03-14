@@ -1032,8 +1032,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Personvernrapport</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Hopp inn igjen</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Bokmerke</string>
@@ -2511,6 +2513,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s vernar deg frå mange av dei vanlegaste sporarane som følgjer det du gjer på nettet.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Les meir</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d sporar blokkert</item>
+    <item quantity="other">%d sporarar blokkerte</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Du er verna</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard (standard)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->

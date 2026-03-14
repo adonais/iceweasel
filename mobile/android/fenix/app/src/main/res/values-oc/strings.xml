@@ -839,11 +839,7 @@
   <string name="customize_addon_collection_user_hint">Proprietari de la colleccion (ID utilizaire)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Colleccion d’extensions modificada. Tampadura de l’aplicacion per aplicar las modificacions…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Tornar a aqueste onglet</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Marcapaginas</string>

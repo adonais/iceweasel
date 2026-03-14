@@ -902,11 +902,7 @@
   <string name="customize_addon_collection_user_hint">Mere de sa colletzione (identificadore de utente)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Sa colletzione de estensiones est istada modificada. S’aplicatzione s’at a serrare pro aplicare is modìficas…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Torra a s’ischeda</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Sinnalibros</string>

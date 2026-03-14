@@ -934,11 +934,7 @@
   <string name="customize_addon_collection_user_hint">Possessur da la collecziun (ID da l\'utilisader)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Modifitgà la collecziun dad extensiuns. L’applicaziun vegn serrada per applitgar las midadas…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Cuntinuar qua</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Segnapaginas</string>

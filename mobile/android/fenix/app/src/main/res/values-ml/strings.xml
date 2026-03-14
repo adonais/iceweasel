@@ -945,11 +945,7 @@
   <string name="customize_addon_collection_user_hint">ശേഖരണ ഉടമ (ഉപയോക്തൃ ഐഡി)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">വിപുലീകരണപ്പിരിവു പുതുച്ചു. മാറ്റങ്ങൾ നടപ്പിലാക്കാൻ പ്രയോഗത്തിൽനിന്നു പുറത്തുകടക്കുന്നു…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">തിരികെ കയറുക</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">അടയാളക്കുറിപ്പുകള്‍</string>
