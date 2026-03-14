@@ -5,18 +5,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-@depends(
-    "WINDOWSSDKDIR", "WINSYSROOT", winsysroot, target.abi, host.abi
-)
-def windows_sdk_dir(
-    value, winsysroot_env, winsysroot, target_windows_abi, host_windows_abi
-):
-    if value:
-        if winsysroot_env:
-            die("WINDOWSSDKDIR and WINSYSROOT cannot be set together.")
-        if winsysroot:
-            die("WINDOWSSDKDIR cannot be set when using the bootstrapped WINSYSROOT")
-        return value
+@depends("WINDOWSSDKDIR", winsysroot, target.abi, host.abi)
+def windows_sdk_dir(windows_sdk_dir, winsysroot, target_windows_abi, host_windows_abi):
+    if windows_sdk_dir:
+        return windows_sdk_dir
+
     if target_windows_abi != "msvc" and host_windows_abi != "msvc":
         return ()
 

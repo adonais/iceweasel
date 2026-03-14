@@ -51,6 +51,12 @@ def valid_windows_version(value):
     die("Invalid value for --with-windows-version (%s)", value[0])
 
 
+option(
+    env="VC_PATH",
+    nargs=1,
+    help="Path to the MSVC build tools, libraries, and headers",
+)
+
 option(env="WINDOWSSDKDIR", nargs=1, help="Directory containing the Windows SDK")
 
 # Calling this a sysroot is a little weird, but it's the terminology clang went
@@ -62,13 +68,18 @@ option(
 )
 
 
-@depends(
-    "WINSYSROOT",
-    bootstrap_path(
-        "vs",
-        when=depends("WINSYSROOT")(lambda x: not x),
-    ),
-)
+@depends("WINSYSROOT", "VC_PATH", "WINDOWSSDKDIR")
+def bootstrap_winsysroot(winsysroot, vc_path, windows_sdk_dir):
+    if not winsysroot:
+        # Don't bootstrap if all paths are provided.
+        return not vc_path or not windows_sdk_dir
+    if vc_path:
+        die("WINSYSROOT and VC_PATH cannot be set together.")
+    if windows_sdk_dir:
+        die("WINDOWSSDKDIR and WINSYSROOT cannot be set together.")
+
+
+@depends("WINSYSROOT", bootstrap_path("vs", when=bootstrap_winsysroot))
 def winsysroot(winsysroot, bootstrapped):
     if bootstrapped:
         return bootstrapped
@@ -117,13 +128,6 @@ def get_vc_paths(host, topsrcdir):
         yield (Version(install["installationVersion"]), tools_path)
 
 
-option(
-    env="VC_PATH",
-    nargs=1,
-    help="Path to the Microsoft Visual C/C++ compiler",
-)
-
-
 @depends(
     host,
     build_environment,
@@ -133,24 +137,22 @@ option(
 @imports("os")
 @imports(_from="operator", _import="itemgetter")
 def vc_compiler_paths_for_version(host, env, vc_path, winsysroot):
-    if winsysroot:
-        if vc_path:
-            die("WINSYSROOT and VC_PATH cannot be set together.")
+    if vc_path:
+        path = vc_path[0]
+    elif winsysroot:
         base_vc_path = os.path.join(winsysroot, "VC", "Tools", "MSVC")
         versions = os.listdir(base_vc_path)
-        vc_path = [os.path.join(base_vc_path, str(max(Version(v) for v in versions)))]
-    if vc_path:
-        # Use an arbitrary version, it doesn't matter.
-        all_versions = [(Version("15"), vc_path[0])]
+        path = os.path.join(base_vc_path, str(max(Version(v) for v in versions)))
     elif host.kernel != "WINNT":
         # Don't try to do anything when VC_PATH is not set on cross-compiles.
         return
     else:
         all_versions = sorted(get_vc_paths(host, env.topsrcdir), key=itemgetter(0))
-    if not all_versions:
-        return
-    # Choose the newest version.
-    path = all_versions[-1][1]
+        if not all_versions:
+            return
+        # Choose the newest version.
+        path = all_versions[-1][1]
+
     host_dir = {
         "x86_64": "Hostx64",
         "x86": "Hostx86",
