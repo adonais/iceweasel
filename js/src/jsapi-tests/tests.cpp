@@ -58,8 +58,9 @@ class TestList {
   }
 };
 
-static TestList<RuntimeTest> runtimeTests;
-static TestList<FrontendTest> frontendTests;
+static TestList<TestBase> testList;
+
+TestBase::TestBase(TestKind kind) : kind(kind) { testList.pushBack(this); }
 
 [[noreturn]] static void Die(const char* format, ...) {
   fprintf(stderr, "TEST-UNEXPECTED-FAIL | jsapi-tests | ");
@@ -96,9 +97,7 @@ RuntimeTest* RuntimeTest::From(TestBase* test) {
   return static_cast<RuntimeTest*>(test);
 }
 
-RuntimeTest::RuntimeTest() : TestBase(TestKind::Runtime), reuseGlobal(false) {
-  runtimeTests.pushBack(this);
-}
+RuntimeTest::RuntimeTest() : TestBase(TestKind::Runtime) {}
 
 RuntimeTest::~RuntimeTest() {
   MOZ_RELEASE_ASSERT(!cx);
@@ -383,9 +382,7 @@ JSObject* RuntimeTest::createGlobal(JSPrincipals* principals) {
   return newGlobal;
 }
 
-FrontendTest::FrontendTest() : TestBase(TestKind::Frontend) {
-  frontendTests.pushBack(this);
-}
+FrontendTest::FrontendTest() : TestBase(TestKind::Frontend) {}
 
 TempFile::TempFile() : name(), stream() {}
 
@@ -493,7 +490,8 @@ AutoLeaveZeal::~AutoLeaveZeal() {}
 
 struct CommandOptions {
   bool list = false;
-  bool frontendOnly = false;
+  bool runRuntimeTests = true;
+  bool runFrontendTests = true;
   bool help = false;
   const char* filter = nullptr;
 };
@@ -522,7 +520,7 @@ static void ParseArgs(int argc, char* argv[], CommandOptions& options) {
     }
 
     if (strcmp(argv[i], "--frontend-only") == 0) {
-      options.frontendOnly = true;
+      options.runRuntimeTests = false;
       continue;
     }
 
@@ -548,9 +546,8 @@ void PrintTests(TestList<TestT> list) {
   }
 }
 
-template <typename TestT>
 void RunTests(int& total, int& failures, CommandOptions& options,
-              TestList<TestT> list) {
+              TestList<TestBase> list) {
   // Reinitializing the global for every test is quite slow, due to having to
   // recompile all self-hosted builtins. Allow tests to opt-in to reusing the
   // context and global.
@@ -558,7 +555,12 @@ void RunTests(int& total, int& failures, CommandOptions& options,
   auto guard = mozilla::MakeScopeExit(
       [&]() { RuntimeTest::MaybeFreeContext(maybeReusedContext); });
 
-  for (TestT* test = list.getFirst(); test; test = test->next) {
+  for (TestBase* test = list.getFirst(); test; test = test->next) {
+    if ((test->isRuntimeTest() && !options.runRuntimeTests) ||
+        (!test->isRuntimeTest() && !options.runFrontendTests)) {
+      continue;
+    }
+
     const char* name = test->name();
     if (options.filter && strstr(name, options.filter) == nullptr) {
       continue;
@@ -626,31 +628,27 @@ int main(int argc, char* argv[]) {
   JS::Prefs::setAtStartup_experimental_weakrefs_expose_cleanupSome(true);
   JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
 
-  if (!options.frontendOnly) {
+  if (options.runRuntimeTests) {
     if (!JS_Init()) {
       Die("JS_Init() failed.");
     }
-  } else {
+  } else if (options.runFrontendTests) {
     if (!JS_FrontendOnlyInit()) {
       Die("JS_FrontendOnlyInit() failed.");
     }
   }
 
   if (options.list) {
-    PrintTests(runtimeTests);
-    PrintTests(frontendTests);
+    PrintTests(testList);
     return 0;
   }
 
-  if (!options.frontendOnly) {
-    RunTests(total, failures, options, runtimeTests);
-  }
-  RunTests(total, failures, options, frontendTests);
+  RunTests(total, failures, options, testList);
 
-  if (!options.frontendOnly) {
-    MOZ_RELEASE_ASSERT(!JSRuntime::hasLiveRuntimes());
+  MOZ_RELEASE_ASSERT(!JSRuntime::hasLiveRuntimes());
+  if (options.runRuntimeTests) {
     JS_ShutDown();
-  } else {
+  } else if (options.runFrontendTests) {
     JS_FrontendOnlyShutDown();
   }
 
