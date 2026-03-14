@@ -264,7 +264,7 @@ DCLayerTree::DCLayerTree(gl::GLContext* aGL, EGLConfig aEGLConfig,
   LOG("DCLayerTree::DCLayerTree()");
 
   if (gfx::gfxVars::UseWebRenderCompositor()) {
-    if (StaticPrefs::gfx_webrender_layer_compositor_AtStartup()) {
+    if (StaticPrefs::gfx_webrender_layer_compositor()) {
       mCompositorKind = Some(WebRenderOsCompositorKind::LayerCompositor);
     } else {
       mCompositorKind = Some(WebRenderOsCompositorKind::NativeCompositor);
