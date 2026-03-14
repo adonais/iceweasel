@@ -24,17 +24,21 @@
 
 namespace jsapitest {
 
+enum class TestKind { Runtime, Frontend };
+
 class TestBase {
  public:
-  bool knownFail;
+  const TestKind kind;
+  bool knownFail = false;
   std::string msgs;
 
-  TestBase() : knownFail(false) {}
+  TestBase(TestKind kind) : kind(kind) {}
 
   virtual ~TestBase() {}
 
-  virtual const char* name() = 0;
+  bool isRuntimeTest() const { return kind == TestKind::Runtime; }
 
+  virtual const char* name() = 0;
   virtual bool run() = 0;
 
   // These methods may be overridden by the test to perform additional
@@ -54,7 +58,7 @@ class RuntimeTest : public TestBase {
  public:
   RuntimeTest* next = nullptr;
 
-  JSContext* cx;
+  JSContext* cx = nullptr;
   JS::PersistentRootedObject global;
 
   // Whether this test is willing to skip its init() and reuse a global (and
@@ -62,6 +66,9 @@ class RuntimeTest : public TestBase {
   // also means this test is willing to skip its uninit() if it is followed by
   // another reuseGlobal test.
   bool reuseGlobal;
+
+  // Downcase TestBase to RuntimeTest.
+  static RuntimeTest* From(TestBase* test);
 
   RuntimeTest();
 

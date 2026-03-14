@@ -6,6 +6,7 @@
 
 #include "jsapi-tests/tests.h"
 
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 
@@ -89,7 +90,13 @@ bool TestBase::fail(const std::string& msg, const char* filename, int lineno) {
   return false;
 }
 
-RuntimeTest::RuntimeTest() : cx(nullptr), reuseGlobal(false) {
+/* static */
+RuntimeTest* RuntimeTest::From(TestBase* test) {
+  MOZ_ASSERT(test->isRuntimeTest());
+  return static_cast<RuntimeTest*>(test);
+}
+
+RuntimeTest::RuntimeTest() : TestBase(TestKind::Runtime), reuseGlobal(false) {
   runtimeTests.pushBack(this);
 }
 
@@ -102,7 +109,7 @@ bool RuntimeTest::initContext(JSContext* maybeReusableContext) {
   if (maybeReusableContext && reuseGlobal) {
     cx = maybeReusableContext;
     global.init(cx, JS::CurrentGlobalOrNull(cx));
-    return init();
+    return true;
   }
 
   MaybeFreeContext(maybeReusableContext);
@@ -117,13 +124,15 @@ bool RuntimeTest::initContext(JSContext* maybeReusableContext) {
   if (!JS::InitSelfHostedCode(cx)) {
     return false;
   }
+
   global.init(cx);
   createGlobal();
   if (!global) {
     return false;
   }
+
   JS::EnterRealm(cx, global);
-  return init();
+  return true;
 }
 
 JSContext* RuntimeTest::maybeForgetContext() {
@@ -374,7 +383,9 @@ JSObject* RuntimeTest::createGlobal(JSPrincipals* principals) {
   return newGlobal;
 }
 
-FrontendTest::FrontendTest() { frontendTests.pushBack(this); }
+FrontendTest::FrontendTest() : TestBase(TestKind::Frontend) {
+  frontendTests.pushBack(this);
+}
 
 TempFile::TempFile() : name(), stream() {}
 
@@ -537,9 +548,16 @@ void PrintTests(TestList<TestT> list) {
   }
 }
 
-template <typename TestT, typename InitF, typename BeforeUninitF>
+template <typename TestT>
 void RunTests(int& total, int& failures, CommandOptions& options,
-              TestList<TestT> list, InitF init, BeforeUninitF beforeUninit) {
+              TestList<TestT> list) {
+  // Reinitializing the global for every test is quite slow, due to having to
+  // recompile all self-hosted builtins. Allow tests to opt-in to reusing the
+  // context and global.
+  JSContext* maybeReusedContext = nullptr;
+  auto guard = mozilla::MakeScopeExit(
+      [&]() { RuntimeTest::MaybeFreeContext(maybeReusedContext); });
+
   for (TestT* test = list.getFirst(); test; test = test->next) {
     const char* name = test->name();
     if (options.filter && strstr(name, options.filter) == nullptr) {
@@ -554,7 +572,14 @@ void RunTests(int& total, int& failures, CommandOptions& options,
     // crash on failure.
     fflush(stdout);
 
-    if (!init(test)) {
+    if (test->isRuntimeTest() &&
+        !RuntimeTest::From(test)->initContext(maybeReusedContext)) {
+      printf("TEST-UNEXPECTED-FAIL | %s | Failed to set context.\n", name);
+      failures++;
+      continue;
+    }
+
+    if (!test->init()) {
       printf("TEST-UNEXPECTED-FAIL | %s | Failed to initialize.\n", name);
       failures++;
       test->uninit();
@@ -573,7 +598,11 @@ void RunTests(int& total, int& failures, CommandOptions& options,
       }
     }
 
-    beforeUninit(test);
+    if (test->isRuntimeTest()) {
+      // Return a non-nullptr pointer if the context & global can safely be
+      // reused for the next test.
+      maybeReusedContext = RuntimeTest::From(test)->maybeForgetContext();
+    }
 
     test->uninit();
   }
@@ -613,31 +642,12 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  // Reinitializing the global for every test is quite slow, due to having to
-  // recompile all self-hosted builtins. Allow tests to opt-in to reusing the
-  // global.
-  JSContext* maybeReusedContext = nullptr;
-
   if (!options.frontendOnly) {
-    RunTests(
-        total, failures, options, runtimeTests,
-        [&maybeReusedContext](RuntimeTest* test) {
-          return test->initContext(maybeReusedContext);
-        },
-        [&maybeReusedContext](RuntimeTest* test) {
-          // Return a non-nullptr pointer if the context & global can safely be
-          // reused for the next test.
-          maybeReusedContext = test->maybeForgetContext();
-        });
+    RunTests(total, failures, options, runtimeTests);
   }
-  RunTests(
-      total, failures, options, frontendTests,
-      [](FrontendTest* test) { return test->init(); },
-      [](FrontendTest* test) {});
+  RunTests(total, failures, options, frontendTests);
 
   if (!options.frontendOnly) {
-    RuntimeTest::MaybeFreeContext(maybeReusedContext);
-
     MOZ_RELEASE_ASSERT(!JSRuntime::hasLiveRuntimes());
     JS_ShutDown();
   } else {
