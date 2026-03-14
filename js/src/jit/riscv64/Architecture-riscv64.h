@@ -361,7 +361,7 @@ struct FloatRegister {
   }
   static uint32_t LastBit(SetType x) {
     static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return 63 - mozilla::CountLeadingZeroes64(x);
+    return 63 - std::countl_zero(x);
   }
 
   static FloatRegister FromCode(Code code) {

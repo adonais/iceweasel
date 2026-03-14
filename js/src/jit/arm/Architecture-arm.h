@@ -540,9 +540,7 @@ class VFPRegister {
   static uint32_t GetPushSizeInBytes(const TypedRegisterSet<VFPRegister>& s);
   uint32_t getRegisterDumpOffsetInBytes();
   static uint32_t FirstBit(SetType x) { return std::countr_zero(x); }
-  static uint32_t LastBit(SetType x) {
-    return 63 - mozilla::CountLeadingZeroes64(x);
-  }
+  static uint32_t LastBit(SetType x) { return 63 - std::countl_zero(x); }
 };
 
 template <>

@@ -9,8 +9,8 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/MathAlgorithms.h"
 
+#include <bit>
 #include <stdint.h>
 
 using namespace js;
@@ -50,7 +50,7 @@ double Uint128::toDouble(const Uint128& x, bool negative) {
       return negative ? -double(msd) : +double(msd);
     }
 
-    const uint8_t msdLeadingZeroes = mozilla::CountLeadingZeroes64(msd);
+    const uint8_t msdLeadingZeroes = uint8_t(std::countl_zero(msd));
     MOZ_ASSERT(msdLeadingZeroes <= 10,
                "leading zeroes is at most 10 when the fast path isn't taken");
 
@@ -84,7 +84,7 @@ double Uint128::toDouble(const Uint128& x, bool negative) {
     uint64_t msd = x.high;
     uint64_t second = x.low;
 
-    uint8_t msdLeadingZeroes = mozilla::CountLeadingZeroes64(msd);
+    uint8_t msdLeadingZeroes = uint8_t(std::countl_zero(msd));
 
     exponent = 2 * 64 - msdLeadingZeroes - 1;
 

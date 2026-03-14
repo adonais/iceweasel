@@ -81,14 +81,9 @@ constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_clz(aValue));
 }
 
-constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
-  return static_cast<uint_fast8_t>(__builtin_clzll(aValue));
-}
-
 #else
 #  error "Implement these!"
 constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
-constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) = delete;
 #endif
 
 }  // namespace detail
@@ -109,12 +104,6 @@ constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
   return detail::CountLeadingZeroes32(aValue);
 }
 
-/** Analogous to CountLeadingZeroes32, but for 64-bit numbers. */
-constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
-  MOZ_ASSERT(aValue != 0);
-  return detail::CountLeadingZeroes64(aValue);
-}
-
 namespace detail {
 
 template <typename T, size_t Size = sizeof(T)>
@@ -133,8 +122,7 @@ template <typename T>
 class CeilingLog2<T, 8> {
  public:
   static constexpr uint_fast8_t compute(const T aValue) {
-    // Check for <= 1 to avoid the == 0 undefined case.
-    return aValue <= 1 ? 0u : 64u - CountLeadingZeroes64(aValue - 1);
+    return aValue <= 1 ? 0u : 64u - uint_fast8_t(std::countl_zero(aValue - 1));
   }
 };
 
@@ -174,7 +162,7 @@ constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
   }
   // This doesn't
   if constexpr (sizeof(T) == 8) {
-    return 63u - CountLeadingZeroes64(aValue);
+    return 63u - uint_fast8_t(std::countl_zero(static_cast<uint64_t>(aValue)));
   }
 }
 

@@ -313,9 +313,9 @@ class Bitset128 {
 
   uint32_t countLeadingZeroes() const {
     if (hi) {
-      return mozilla::CountLeadingZeroes64(hi);
+      return std::countl_zero(hi);
     }
-    return mozilla::CountLeadingZeroes64(lo) + 64;
+    return std::countl_zero(lo) + 64;
   }
 };
 
