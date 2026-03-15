@@ -11,8 +11,6 @@
 #include "mozilla/Permission.h"
 #include "mozilla/PermissionDelegateHandler.h"
 #include "mozilla/PermissionManager.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "nsGlobalWindowInner.h"
@@ -45,7 +43,7 @@ PermissionStatusSink::PermissionStatusSink(PermissionStatus* aPermissionStatus,
 
 PermissionStatusSink::~PermissionStatusSink() = default;
 
-RefPtr<PermissionStatusSink::InternalPermissionStatesPromise>
+RefPtr<PermissionStatusSink::PermissionStatePromise>
 PermissionStatusSink::Init() {
   if (!NS_IsMainThread()) {
     WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
@@ -61,8 +59,9 @@ PermissionStatusSink::Init() {
       // we are on the Worker thread, promise handlers in
       // PermissionStatus::Init()/Permissions::Query() can still be dispatched
       // to the Worker thread for outer promise rejection.
-      return InternalPermissionStatesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                              __func__);
+      return PermissionStatePromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                     __func__);
+      ;
     }
 
     mWorkerRef = new ThreadSafeWorkerRef(workerRef);
@@ -90,29 +89,7 @@ PermissionStatusSink::Init() {
 
                        // Covers the query part (Step 8.2 - 8.4)
                        return self->ComputeStateOnMainThread();
-                     })
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr(this)](uint32_t aBrowserState) {
-            RefPtr<InternalPermissionStatesPromise> promise =
-                self->ComputeSystemState()->Then(
-                    GetCurrentSerialEventTarget(), __func__,
-                    [self, aBrowserState](PermissionState aSystemState) {
-                      return InternalPermissionStatesPromise::CreateAndResolve(
-                          InternalPermissionStates{.mBrowser = aBrowserState,
-                                                   .mSystem = aSystemState},
-                          __func__);
-                    },
-                    [](nsresult aResult) {
-                      return InternalPermissionStatesPromise::CreateAndReject(
-                          aResult, __func__);
-                    });
-            return promise;
-          },
-          [](nsresult aResult) {
-            return InternalPermissionStatesPromise::CreateAndReject(aResult,
-                                                                    __func__);
-          });
+                     });
 }
 
 bool PermissionStatusSink::MaybeUpdatedByOnMainThread(
@@ -276,37 +253,6 @@ PermissionStatusSink::ComputeStateOnMainThreadInternal(
   }
 
   return PermissionStatePromise::CreateAndResolve(action, __func__);
-}
-
-static PermissionState ComputeGeolocationBehavior(
-    geolocation::SystemGeolocationPermissionBehavior aBehavior) {
-  if (aBehavior == geolocation::SystemGeolocationPermissionBehavior::NoPrompt) {
-    return PermissionState::Granted;
-  }
-  return PermissionState::Prompt;
-}
-
-RefPtr<PermissionStatusSink::SystemPermissionStatePromise>
-PermissionStatusSink::ComputeSystemState() {
-  if (mPermissionName != PermissionName::Geolocation ||
-      StaticPrefs::dom_permissions_testing_enabled()) {
-    return SystemPermissionStatePromise::CreateAndResolve(
-        PermissionState::Granted, __func__);
-  }
-  if (auto* contentChild = ContentChild::GetSingleton()) {
-    return contentChild->SendGetSystemGeolocationPermissionBehavior()->Then(
-        GetCurrentSerialEventTarget(), __func__,
-        [](geolocation::SystemGeolocationPermissionBehavior aBehavior) {
-          return SystemPermissionStatePromise::CreateAndResolve(
-              ComputeGeolocationBehavior(aBehavior), __func__);
-        },
-        [](mozilla::ipc::ResponseRejectReason aReason) {
-          return SystemPermissionStatePromise::CreateAndResolve(
-              PermissionState::Granted, __func__);
-        });
-  }
-  return SystemPermissionStatePromise::CreateAndResolve(
-      PermissionState::Granted, __func__);
 }
 
 }  // namespace mozilla::dom

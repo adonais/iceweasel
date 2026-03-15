@@ -18,7 +18,9 @@ namespace mozilla::dom {
 
 PermissionStatus::PermissionStatus(nsIGlobalObject* aGlobal,
                                    PermissionName aName)
-    : DOMEventTargetHelper(aGlobal), mName(aName) {
+    : DOMEventTargetHelper(aGlobal),
+      mName(aName),
+      mState(PermissionState::Denied) {
   KeepAliveIfHasListenersFor(nsGkAtoms::onchange);
 }
 
@@ -30,14 +32,10 @@ RefPtr<PermissionStatus::SimplePromise> PermissionStatus::Init() {
 
   return mSink->Init()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr(this)](
-          const PermissionStatusSink::InternalPermissionStatesPromise::
-              ResolveOrRejectValue& aResult) {
+      [self = RefPtr(this)](const PermissionStatusSink::PermissionStatePromise::
+                                ResolveOrRejectValue& aResult) {
         if (aResult.IsResolve()) {
-          PermissionStatusSink::InternalPermissionStates states =
-              aResult.ResolveValue();
-          self->mState = self->ComputeStateFromAction(states.mBrowser);
-          self->mSystemState = states.mSystem;
+          self->mState = self->ComputeStateFromAction(aResult.ResolveValue());
           return SimplePromise::CreateAndResolve(NS_OK, __func__);
         }
 
