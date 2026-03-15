@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Էջը թարգմանվել է %1$sից %2$s։</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Թափահարեք ձեր սարքը՝ այս էջը վայրկյանների ընթացքում ամփոփելու համար։ ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Առաջարկներ %1$s-ից</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Ստացեք առաջարկներ համացանցից՝ կապված ձեր որոնման հետ</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Ստանալ առաջարկներ Mozilla-ից, երբ մուտքագրում եք</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Հղումների փոխանակում</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1029,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Հավաքածուի սեփականատեր (օգտվողի ID)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Հավելվածների հավաքածուն փոփոխվել է: Հավելվածը փակելիս փոփոխությունները կգործադրվեն…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Գաղտնիության զեկույց</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Վերադառնալ հետ</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -2507,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s-ը պաշտպանում է ամենատարածված հետագծիչներից, որոնք հետևում են այն ամենին, ինչ որ անում եք առցանց:</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Իմանալ ավելին</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d հետագծող արգելափակված են</item>
+    <item quantity="other">%d հետագծողներ արգելափակված են</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Դուք պաշտպանված եք</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Սովորական (սկզբնադիր)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->

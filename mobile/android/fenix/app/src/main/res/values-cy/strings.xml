@@ -373,7 +373,7 @@
   -->
   <string name="browser_toolbar_translated_successfully">Tudalen wedi\'i chyfieithu o\'r %1$s i\'r %2$s.</string>
   <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
-  <string name="browser_toolbar_summarize_cfr_description">Ysgwydwch eich dyfais i grynhoi\'r dudalen hon mewn eiliadau. ⚡️</string>
+  <string name="browser_toolbar_summarize_cfr_description">Ysgwydwch eich dyfais i grynhoi\'r dudalen hon mewn dim o dro. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -2524,14 +2524,14 @@
       Text shown on the trackers blocked card. %d is the number of trackers blocked.
     -->
     <item quantity="one">%d Traciwr wedi\'i rwystro</item>
-    <item quantity="zero">%d Traciwr wedi\'i rwystro</item>
-    <item quantity="two">%d Traciwr wedi\'i rwystro</item>
-    <item quantity="few">%d Traciwr wedi\'i rwystro</item>
-    <item quantity="many">%d Traciwr wedi\'i rwystro</item>
-    <item quantity="other">%d Traciwr wedi\'i rwystro</item>
+    <item quantity="zero">%d Traciwyr wedi\'u rwystro</item>
+    <item quantity="two">%d Draciwr wedi\'u rwystro</item>
+    <item quantity="few">%d Traciwr wedi\'u rwystro</item>
+    <item quantity="many">%d Traciwr wedi\'u rwystro</item>
+    <item quantity="other">%d Traciwr wedi\'u rwystro</item>
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
-  <string name="trackers_blocked_empty">Rydych chi wedi\'ch diogelu</string>
+  <string name="trackers_blocked_empty">Wedi\'ch diogelu</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Safonol (rhagosodedig)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->

@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Side oerset fan it %1$s nei it %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Skodzje jo apparaat om dizze side yn sekonden gear te fetsjen. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Suggestjes fan %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Krij suggestjes fan it web relatearre oan jo sykopdracht</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Suggestjes fan Mozilla ophelje wylst jo type</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Keppelingen diele</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1029,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Eigener kolleksje (brûkers-ID)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Utwreidingskolleksje oanpast. Tapassing wurdt ôfsluten om wizigingen ta te passen…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Privacyrapport</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Tebekspringe</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -2507,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s beskermet jo tsjin in protte fan de meast foarkommende trackers dy\\’t folgje wat jo online dogge.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Mear ynfo</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d tracker blokkearre</item>
+    <item quantity="other">%d trackers blokkearre</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Jo binne beskerme</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standert (standert)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->

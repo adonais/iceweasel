@@ -945,7 +945,7 @@
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Få förslag från webben relaterade till din sökning</string>
   <!-- Preference title for switch preference to show search optimization cards -->
-  <string name="preferences_show_search_optimization_cards">Hämta förslag från Mozilla medan du skriver</string>
+  <string name="preferences_show_search_optimization_cards">Få förslag från Mozilla medan du skriver</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Länkdelning</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->

@@ -4114,7 +4114,7 @@
     %2$s is the string terms_of_use_prompt_link_terms_of_use (Terms of Use) that is a link to the terms of use
     %3$s is the string terms_of_use_prompt_link_privacy_notice (Privacy Notice) that is a link to the privacy notice
   -->
-  <string name="terms_of_use_prompt_message_1">Zavedli jsme pro %1$s dokument %2$s a aktualizovali jsme naše %3$s.</string>
+  <string name="terms_of_use_prompt_message_1">Zavedli jsme %2$s aplikace %1$s a aktualizovali jsme naše %3$s.</string>
   <!--
     Second part of the terms of use pop up prompt
     %1$s is the string terms_of_use_prompt_link_learn_more (Learn more) that is a link to a website with more information about the terms of use
