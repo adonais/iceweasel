@@ -194,6 +194,53 @@ export var AboutNewTabResourceMapping = {
     }
   },
 
+  isXPIInCurrentProfile(rootURI) {
+    try {
+      const { file: xpiFile } = rootURI
+        .QueryInterface(Ci.nsIJARURI)
+        .JARFile.QueryInterface(Ci.nsIFileURL);
+      // NOTE: this logic is expecting the XPI file to be located
+      // in PROFILE_DIR/extensions/newtab@mozilla.org and so for
+      // xpiFile.parent.parent.path to be matching the path
+      // returned by PathUtils.profileDir.
+      const xpiIsInsideProfile =
+        PathUtils.profileDir === xpiFile.parent.parent.path;
+      if (!xpiIsInsideProfile) {
+        this.logger.warn(
+          "Detected newtab XPI as located outside of the current Firefox profile"
+        );
+      }
+      return xpiIsInsideProfile;
+    } catch (err) {
+      this.logger.error(
+        "Unexpected error on verifying newtab XPI path is inside the current Firefox profile",
+        err
+      );
+    }
+    // If we failed to confirm the XPIFile is located inside the current Firefox
+    // profile, then let's fallback to built-in add-on resources.
+    return false;
+  },
+
+  /**
+   * Gather details from the newtab active addon, used by getPreferredMapping
+   * as part of determining if the newtab resource to be mapped should be the
+   * one from the built-in or from the train-hop version (and it is stubbed
+   * in tests that verify fallback to built-in resources under edge cases like
+   * relocated Firefox profiles, see Bug 2007810).
+   *
+   * @returns {{ version: ?string, rootURI: ?nsIURI, isPrivileged: ?boolean}}
+   *   Returns version, rootURI and isPrivileged properties from the newtab
+   *   WebExtensionPolicy instance that is currently active.
+   */
+  getActiveAddonInfo() {
+    const policy = WebExtensionPolicy.getByID(BUILTIN_ADDON_ID);
+    // Retrieve the mapping url (but fallback to the known url for the
+    // newtab resources bundled in the Desktop omni jar if that fails).
+    let { version, rootURI, isPrivileged } = policy?.extension ?? {};
+    return { version, rootURI, isPrivileged };
+  },
+
   /**
    * Gets the preferred mapping for newtab resources. This method tries to retrieve
    * the rootURI from the WebExtensionPolicy instance of the newtab add-on, or falling
@@ -209,10 +256,9 @@ export var AboutNewTabResourceMapping = {
    */
   getPreferredMapping() {
     const { inSafeMode, newTabAsAddonDisabled } = this;
-    const policy = WebExtensionPolicy.getByID(BUILTIN_ADDON_ID);
     // Retrieve the mapping url (but fallback to the known url for the
     // newtab resources bundled in the Desktop omni jar if that fails).
-    let { version, rootURI } = policy?.extension ?? {};
+    let { version, rootURI, isPrivileged } = this.getActiveAddonInfo();
     let isXPI = rootURI?.spec.endsWith(".xpi!/");
 
     // If we failed to retrieve the builtin add-on version, avoid mapping
@@ -220,6 +266,13 @@ export var AboutNewTabResourceMapping = {
     // wouldn't be possible to check if the builtin version is more recent
     // than the train-hop add-on version that may be already installed.
     if (isXPI && this._builtinVersion === null) {
+      rootURI = null;
+      isXPI = false;
+    }
+
+    // If the XPI path is not inside the current Firefox instance profile,
+    // fallback to use the resources bundled with Firefox itself (see Bug 2007810)
+    if (isXPI && !this.isXPIInCurrentProfile(rootURI)) {
       rootURI = null;
       isXPI = false;
     }
@@ -239,7 +292,7 @@ export var AboutNewTabResourceMapping = {
     const shouldUninstallXPI = isXPI
       ? lazy.trainhopAddonXPIVersion === "" ||
         Services.vc.compare(this._builtinVersion, version) >= 0 ||
-        (lazy.AddonSettings.REQUIRE_SIGNING && !policy.isPrivileged)
+        (lazy.AddonSettings.REQUIRE_SIGNING && !isPrivileged)
       : false;
 
     if (!rootURI || inSafeMode || newTabAsAddonDisabled || shouldUninstallXPI) {
