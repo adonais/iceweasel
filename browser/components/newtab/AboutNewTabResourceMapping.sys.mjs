@@ -93,12 +93,29 @@ export var AboutNewTabResourceMapping = {
 
   /**
    * Returns the version string for whichever version of New Tab is currently
-   * being used.
+   * being used. This is exposed to Nimbus / Experimenter for advanced targeting
+   * based on the currently used newtab version.
+   *
+   * The reason that we expose this specially and cannot simply use
+   * addonsInfo.addons["newtab@mozilla.org"] to do this kind of advanced
+   * targeting is documented in bug 1983928 (essentially, the addonsInfo
+   * route doesn't take into account that the addon might be disabled or
+   * bypassed via the `DISABLE_NEWTAB_AS_ADDON_PREF` pref).
    *
    * @type {string}
    */
   get addonVersion() {
     return this._addonVersion;
+  },
+
+  /**
+   * Returns true if an train-hopped XPI is in use, or false if we're using
+   * the built-in instance of newtab.
+   *
+   * @type {string}
+   */
+  get addonIsXPI() {
+    return this._addonIsXPI;
   },
 
   /**
@@ -228,7 +245,7 @@ export var AboutNewTabResourceMapping = {
     if (!rootURI || inSafeMode || newTabAsAddonDisabled || shouldUninstallXPI) {
       const builtinAddonsURI = lazy.resProto.getSubstitution("builtin-addons");
       rootURI = Services.io.newURI("newtab/", null, builtinAddonsURI);
-      version = null;
+      version = this._builtinVersion;
       isXPI = false;
     }
     return { isXPI, version, rootURI };
@@ -247,8 +264,8 @@ export var AboutNewTabResourceMapping = {
       this._addonVersion = version;
       this._addonIsXPI = isXPI;
       this.logger.log(
-        this.newTabAsAddonDisabled || !version
-          ? `Mapping newtab resources from ${rootURI.spec}`
+        this.newTabAsAddonDisabled
+          ? `Train-hopping disabled - mapping newtab resources from ${rootURI.spec}`
           : `Mapping newtab resources from ${isXPI ? "XPI" : "built-in add-on"} version ${version} ` +
               `on application version ${AppConstants.MOZ_APP_VERSION_DISPLAY}`
       );
