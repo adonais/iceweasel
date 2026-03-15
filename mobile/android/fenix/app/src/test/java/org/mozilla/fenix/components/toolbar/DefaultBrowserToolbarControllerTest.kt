@@ -50,7 +50,6 @@ import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.BrowserAnimator
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.SimpleBrowsingModeManager
@@ -97,9 +96,6 @@ class DefaultBrowserToolbarControllerTest {
     private lateinit var fenixBrowserUseCases: FenixBrowserUseCases
 
     @RelaxedMockK
-    private lateinit var browserAnimator: BrowserAnimator
-
-    @RelaxedMockK
     private lateinit var topSitesUseCase: TopSitesUseCases
 
     @RelaxedMockK
@@ -127,12 +123,6 @@ class DefaultBrowserToolbarControllerTest {
         every { activity.components.useCases.topSitesUseCase } returns topSitesUseCase
         every { navController.currentDestination } returns mockk {
             every { id } returns R.id.browserFragment
-        }
-
-        every {
-            browserAnimator.captureEngineViewAndDrawStatically(any(), any())
-        } answers {
-            secondArg<(Boolean) -> Unit>()(true)
         }
 
         tabCounterClicked = false
@@ -562,7 +552,6 @@ class DefaultBrowserToolbarControllerTest {
         homeViewModel = homeViewModel,
         customTabSessionId = customTabSessionId,
         readerModeController = readerModeController,
-        browserAnimator = browserAnimator,
         onTabCounterClicked = {
             tabCounterClicked = true
         },

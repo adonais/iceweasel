@@ -16,7 +16,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
@@ -62,7 +61,6 @@ import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.BrowserAnimator
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.readermode.ReaderModeController
@@ -100,8 +98,6 @@ class DefaultBrowserToolbarMenuControllerTest {
     @RelaxedMockK private lateinit var sessionUseCases: SessionUseCases
 
     @RelaxedMockK private lateinit var customTabUseCases: CustomTabsUseCases
-
-    @RelaxedMockK private lateinit var browserAnimator: BrowserAnimator
 
     @RelaxedMockK private lateinit var snackbar: Snackbar
 
@@ -159,13 +155,6 @@ class DefaultBrowserToolbarMenuControllerTest {
             every { id } returns R.id.browserFragment
         }
         every { settings.topSitesMaxLimit } returns 16
-
-        val onComplete = slot<(Boolean) -> Unit>()
-        every {
-            browserAnimator.captureEngineViewAndDrawStatically(any(), capture(onComplete))
-        } answers {
-            onComplete.captured.invoke(true)
-        }
 
         selectedTab = createTab("https://www.mozilla.org", id = "1")
 
@@ -945,7 +934,6 @@ class DefaultBrowserToolbarMenuControllerTest {
         navController = navController,
         settings = settings,
         findInPageLauncher = findInPageLauncher,
-        browserAnimator = browserAnimator,
         customTabSessionId = customTabSessionId,
         openInFenixIntent = openInFenixIntent,
         scope = scope,

@@ -11,7 +11,6 @@ import mozilla.components.support.ktx.kotlin.isUrl
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.BrowserAnimator
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.NimbusComponents
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
@@ -94,7 +93,7 @@ class DefaultToolbarController(
             navController.nav(
                 navController.currentDestination?.id,
                 directions,
-                BrowserAnimator.getToolbarNavOptions(toolbarPosition = settings.toolbarPosition),
+                ToolbarNavOptionsHelper.getToolbarNavOptions(toolbarPosition = settings.toolbarPosition),
             )
         }
         Events.searchBarTapped.record(Events.SearchBarTappedExtra("HOME"))

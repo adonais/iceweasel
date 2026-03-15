@@ -40,7 +40,6 @@ import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.BrowserAnimator
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.readermode.ReaderModeController
 import org.mozilla.fenix.collections.SaveCollectionStep
@@ -80,7 +79,6 @@ class DefaultBrowserToolbarMenuController(
     private val readerModeController: ReaderModeController,
     private val sessionFeature: ViewBoundFeatureWrapper<SessionFeature>,
     private val findInPageLauncher: () -> Unit,
-    private val browserAnimator: BrowserAnimator,
     private val customTabSessionId: String?,
     private val openInFenixIntent: Intent,
     private val bookmarkTapped: (String, String) -> Unit,
@@ -242,7 +240,7 @@ class DefaultBrowserToolbarMenuController(
                     navController.navigate(directions)
                 }
             }
-            is ToolbarMenu.Item.Settings -> browserAnimator.captureEngineViewAndDrawStatically {
+            is ToolbarMenu.Item.Settings -> {
                 val directions = BrowserFragmentDirections.actionBrowserFragmentToSettingsFragment()
                 navController.nav(R.id.browserFragment, directions)
             }
@@ -311,7 +309,7 @@ class DefaultBrowserToolbarMenuController(
             is ToolbarMenu.Item.FindInPage -> {
                 findInPageLauncher()
             }
-            is ToolbarMenu.Item.AddonsManager -> browserAnimator.captureEngineViewAndDrawStatically {
+            is ToolbarMenu.Item.AddonsManager -> {
                 navController.nav(
                     R.id.browserFragment,
                     BrowserFragmentDirections.actionGlobalAddonsManagementFragment(),
@@ -348,13 +346,13 @@ class DefaultBrowserToolbarMenuController(
                     it.getUrl()?.let { url -> bookmarkTapped(url, it.content.title) }
                 }
             }
-            is ToolbarMenu.Item.Bookmarks -> browserAnimator.captureEngineViewAndDrawStatically {
+            is ToolbarMenu.Item.Bookmarks -> {
                 navController.nav(
                     R.id.browserFragment,
                     BrowserFragmentDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id),
                 )
             }
-            is ToolbarMenu.Item.History -> browserAnimator.captureEngineViewAndDrawStatically {
+            is ToolbarMenu.Item.History -> {
                 navController.nav(
                     R.id.browserFragment,
                     BrowserFragmentDirections.actionGlobalHistoryFragment(),
@@ -366,7 +364,7 @@ class DefaultBrowserToolbarMenuController(
                     BrowserFragmentDirections.actionLoginsListFragment(),
                 )
             }
-            is ToolbarMenu.Item.Downloads -> browserAnimator.captureEngineViewAndDrawStatically {
+            is ToolbarMenu.Item.Downloads -> {
                 navController.nav(
                     R.id.browserFragment,
                     BrowserFragmentDirections.actionGlobalDownloadsFragment(),

@@ -101,7 +101,6 @@ import org.mozilla.fenix.GleanMetrics.ReaderMode
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.BrowserAnimator
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.browser.PageTranslationStatus
 import org.mozilla.fenix.browser.ReaderModeStatus
@@ -182,7 +181,6 @@ class BrowserToolbarMiddlewareTest {
     private val clipboard: ClipboardHandler = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
     private val browsingModeManager = SimpleBrowsingModeManager(Normal)
-    private val browserAnimator: BrowserAnimator = mockk(relaxed = true)
     private val thumbnailsFeature: BrowserThumbnails = mockk(relaxed = true)
     private val readerModeController: ReaderModeController = mockk(relaxed = true)
     private val useCases: UseCases = mockk(relaxed = true)
@@ -468,13 +466,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `WHEN clicking the new tab button THEN navigate to application's home screen`() {
-        val browserAnimatorActionCaptor = slot<(Boolean) -> Unit>()
-        every {
-            browserAnimator.captureEngineViewAndDrawStatically(
-                any<Long>(),
-                capture(browserAnimatorActionCaptor),
-            )
-        } answers { browserAnimatorActionCaptor.captured.invoke(true) }
         val middleware = buildMiddleware()
         val toolbarStore = buildStore(middleware)
         val newTabButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
@@ -485,13 +476,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN homepage as new tab is enabled WHEN clicking the new tab button THEN navigate to home screen without focus`() {
-        val browserAnimatorActionCaptor = slot<(Boolean) -> Unit>()
-        every {
-            browserAnimator.captureEngineViewAndDrawStatically(
-                any<Long>(),
-                capture(browserAnimatorActionCaptor),
-            )
-        } answers { browserAnimatorActionCaptor.captured.invoke(true) }
         every { settings.enableHomepageAsNewTab } returns true
         val middleware = buildMiddleware()
         val toolbarStore = buildStore(middleware)
@@ -503,13 +487,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `WHEN clicking the new tab button with homepage search bar enabled THEN navigate to home screen without focus`() {
-        val browserAnimatorActionCaptor = slot<(Boolean) -> Unit>()
-        every {
-            browserAnimator.captureEngineViewAndDrawStatically(
-                any<Long>(),
-                capture(browserAnimatorActionCaptor),
-            )
-        } answers { browserAnimatorActionCaptor.captured.invoke(true) }
         every { settings.enableHomepageSearchBar } returns true
         val middleware = buildMiddleware()
         val toolbarStore = buildStore(middleware)
@@ -2125,7 +2102,7 @@ class BrowserToolbarMiddlewareTest {
         }
 
         val tabSessionState: TabSessionState = mockk(relaxed = true) {
-           every { content } returns contentState
+            every { content } returns contentState
         }
 
         val browserState = BrowserState(
@@ -2732,13 +2709,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `WHEN clicking the homepage button THEN navigate to application's home screen`() = runTest(testDispatcher) {
-        val browserAnimatorActionCaptor = slot<(Boolean) -> Unit>()
-        every {
-            browserAnimator.captureEngineViewAndDrawStatically(
-                any<Long>(),
-                capture(browserAnimatorActionCaptor),
-            )
-        } answers { browserAnimatorActionCaptor.captured.invoke(true) }
         every { settings.shouldShowToolbarCustomization } returns true
         every { settings.toolbarSimpleShortcut } returns ShortcutType.HOMEPAGE.value
 
@@ -3258,7 +3228,6 @@ class BrowserToolbarMiddlewareTest {
         navController: NavController = this.navController,
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
         readerModeController: ReaderModeController = this.readerModeController,
-        browserAnimator: BrowserAnimator = this.browserAnimator,
         thumbnailsFeature: () -> BrowserThumbnails = { this.thumbnailsFeature },
         isWideScreen: () -> Boolean = { false },
         isTallScreen: () -> Boolean = { true },
@@ -3280,7 +3249,6 @@ class BrowserToolbarMiddlewareTest {
         navController = navController,
         browsingModeManager = browsingModeManager,
         readerModeController = readerModeController,
-        browserAnimator = browserAnimator,
         thumbnailsFeature = thumbnailsFeature,
         isWideScreen = isWideScreen,
         isTallScreen = isTallScreen,

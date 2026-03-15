@@ -282,7 +282,6 @@ abstract class BaseBrowserFragment :
     private var suggestStrongPasswordBar: PasswordPromptView? = null
     private var emailMaskBar: EmailMaskPromptView? = null
 
-    private lateinit var browserAnimator: BrowserAnimator
     private lateinit var startForResult: ActivityResultLauncher<Intent>
 
     private var _browserToolbarInteractor: BrowserToolbarInteractor? = null
@@ -553,15 +552,6 @@ abstract class BaseBrowserFragment :
         val activity = requireActivity() as HomeActivity
         val appStore = context.components.appStore
 
-        browserAnimator = BrowserAnimator(
-            fragment = WeakReference(this),
-            engineView = WeakReference(binding.engineView),
-            swipeRefresh = WeakReference(binding.swipeRefresh),
-            viewLifecycleScope = WeakReference(viewLifecycleOwner.lifecycleScope),
-        ).apply {
-            beginAnimateInIfNecessary()
-        }
-
         val openInFenixIntent = Intent(context, IntentReceiverActivity::class.java).apply {
             action = Intent.ACTION_VIEW
             putExtra(HomeActivity.OPEN_TO_BROWSER, true)
@@ -585,7 +575,6 @@ abstract class BaseBrowserFragment :
             engineView = binding.engineView,
             homeViewModel = homeViewModel,
             customTabSessionId = customTabSessionId,
-            browserAnimator = browserAnimator,
             onTabCounterClicked = {
                 onTabCounterClicked(appStore.state.mode)
             },
@@ -626,7 +615,6 @@ abstract class BaseBrowserFragment :
             readerModeController = readerMenuController,
             sessionFeature = sessionFeature,
             findInPageLauncher = findInPageLauncher,
-            browserAnimator = browserAnimator,
             customTabSessionId = customTabSessionId,
             openInFenixIntent = openInFenixIntent,
             bookmarkTapped = { url: String, title: String ->
@@ -1177,11 +1165,9 @@ abstract class BaseBrowserFragment :
                     override val loginPickerView
                         get() = loginSelectBar
                     override val onManageLogins = {
-                        browserAnimator.captureEngineViewAndDrawStatically {
-                            val directions =
-                                NavGraphDirections.actionGlobalSavedLoginsAuthFragment()
-                            findNavController().navigate(directions)
-                        }
+                        val directions =
+                            NavGraphDirections.actionGlobalSavedLoginsAuthFragment()
+                        findNavController().navigate(directions)
                     }
                 },
                 suggestStrongPasswordDelegate = object : SuggestStrongPasswordDelegate {
@@ -1651,7 +1637,6 @@ abstract class BaseBrowserFragment :
         browserScreenStore = browserScreenStore,
         components = activity.components,
         browsingModeManager = activity.browsingModeManager,
-        browserAnimator = browserAnimator,
         thumbnailsFeature = { thumbnailsFeature.get() },
         readerModeController = readerModeController,
         settings = activity.settings(),
