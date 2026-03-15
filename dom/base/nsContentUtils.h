@@ -1076,8 +1076,8 @@ class nsContentUtils {
    * If aColon is non-null, it's set to the position of the first colon
    * (or null if no colon).
    * If aLocalNameEnd is non-null, it's set to the end of the local name
-   * (the second colon if present, otherwise the end of the string).
-   * Per "strictly split", "f:o:o" gives prefix="f", localName="o".
+   * (always the end of the string).
+   * Splits on the first colon only: "f:o:o" gives prefix="f", localName="o:o".
    * aNodeType indicates whether this is for an element or attribute (to
    * determine the correct local-name validation).
    */

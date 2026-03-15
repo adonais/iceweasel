@@ -4673,26 +4673,17 @@ nsresult nsContentUtils::ParseQualifiedNameRelaxed(
   const char16_t* begin = aQualifiedName.BeginReading();
   const char16_t* end = aQualifiedName.EndReading();
   const char16_t* firstColon = nullptr;
-  const char16_t* secondColon = nullptr;
 
-  // Find the first and second colons per "strictly split" algorithm.
-  // For "f:o:o", firstColon points to first ':', secondColon to second ':'.
   for (const char16_t* ptr = begin; ptr < end; ptr++) {
     if (*ptr == ':') {
-      if (!firstColon) {
-        firstColon = ptr;
-      } else if (!secondColon) {
-        secondColon = ptr;
-        break;  // We only need the first two colons.
-      }
+      firstColon = ptr;
+      break;
     }
   }
 
   if (firstColon) {
-    // Validate prefix (part before first colon).
     nsDependentSubstring prefix(begin, firstColon);
 
-    // Prefix must not be empty when there's a colon.
     if (prefix.IsEmpty()) {
       return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
     }
@@ -4701,10 +4692,8 @@ nsresult nsContentUtils::ParseQualifiedNameRelaxed(
       return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
     }
 
-    // Local name is between first colon and second colon (or end if no second).
-    // Per "strictly split", we only take the second token as the local name.
-    const char16_t* localNameEnd = secondColon ? secondColon : end;
-    nsDependentSubstring localName(firstColon + 1, localNameEnd);
+    // Local name is everything after the first colon.
+    nsDependentSubstring localName(firstColon + 1, end);
 
     // Local name must not be empty.
     if (localName.IsEmpty()) {
@@ -4726,7 +4715,7 @@ nsresult nsContentUtils::ParseQualifiedNameRelaxed(
       *aColon = firstColon;
     }
     if (aLocalNameEnd) {
-      *aLocalNameEnd = localNameEnd;
+      *aLocalNameEnd = end;
     }
   } else {
     // No colon, the whole string is the local name.
@@ -4781,8 +4770,6 @@ nsresult nsContentUtils::GetNodeInfoFromQName(
   const nsString& qName = PromiseFlatString(aQualifiedName);
   const char16_t* colon;
   const char16_t* localNameEnd;
-  // https://infra.spec.whatwg.org/#strictly-split
-  // requires that for "f:o:o", prefix="f" and localName="o"
   nsresult rv = nsContentUtils::ParseQualifiedNameRelaxed(
       qName, aNodeType, &colon, &localNameEnd);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -4792,7 +4779,6 @@ nsresult nsContentUtils::GetNodeInfoFromQName(
   if (colon) {
     RefPtr<nsAtom> prefix = NS_AtomizeMainThread(Substring(qName.get(), colon));
 
-    // Use localNameEnd (second colon or string end) per "strictly split".
     rv = aNodeInfoManager->GetNodeInfo(Substring(colon + 1, localNameEnd),
                                        prefix, nsID, aNodeType, aNodeInfo);
   } else {
