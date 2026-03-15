@@ -56,6 +56,15 @@ static nscoord ComputeStickySideOffset(Side aSide,
                                                 side->AsLengthPercentage());
 }
 
+static nsSize GetScrollContainerSize(
+    const ScrollContainerFrame* aScrollContainer) {
+  if (aScrollContainer->IsRootScrollFrameOfDocument() &&
+      aScrollContainer->PresContext()->IsRootContentDocumentCrossProcess()) {
+    return aScrollContainer->PresShell()->GetFixedViewportSize();
+  }
+  return aScrollContainer->GetScrolledFrameSize();
+}
+
 // static
 void StickyScrollContainer::ComputeStickyOffsets(nsIFrame* aFrame) {
   ScrollContainerFrame* scrollContainerFrame =
@@ -68,9 +77,7 @@ void StickyScrollContainer::ComputeStickyOffsets(nsIFrame* aFrame) {
     return;
   }
 
-  nsSize scrollContainerSize =
-      scrollContainerFrame->GetScrolledFrameSizeAccountingForDynamicToolbar();
-
+  nsSize scrollContainerSize = GetScrollContainerSize(scrollContainerFrame);
   nsMargin computedOffsets;
   const nsStylePosition* position = aFrame->StylePosition();
 
@@ -171,8 +178,7 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
 
   nsMargin sfPadding = scrolledFrame->GetUsedPadding();
   nsPoint sfOffset = aFrame->GetParent()->GetOffsetTo(scrolledFrame);
-  nsSize sfSize =
-      mScrollContainerFrame->GetScrolledFrameSizeAccountingForDynamicToolbar();
+  nsSize sfSize = GetScrollContainerSize(mScrollContainerFrame);
   StyleDirection direction = cbFrame->StyleVisibility()->mDirection;
   nsMargin effectiveOffsets = *computedOffsets;
 
