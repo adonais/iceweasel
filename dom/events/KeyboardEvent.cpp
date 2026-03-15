@@ -294,25 +294,17 @@ already_AddRefed<KeyboardEvent> KeyboardEvent::ConstructorJS(
     const KeyboardEventInit& aParam) {
   nsCOMPtr<EventTarget> target = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<KeyboardEvent> newEvent = new KeyboardEvent(target, nullptr, nullptr);
-  newEvent->InitWithKeyboardEventInit(target, aType, aParam);
+  bool trusted = newEvent->Init(target);
+  newEvent->InitUIEvent(aType, aParam.mBubbles, aParam.mCancelable,
+                        aParam.mView, aParam.mDetail);
+  newEvent->InitModifiers(aParam);
+  newEvent->SetTrusted(trusted);
+  newEvent->mInitializedByJS = true;
+  newEvent->mInitializedByCtor = true;
+  newEvent->mInitializedWhichValue = aParam.mWhich;
 
-  return newEvent.forget();
-}
-
-void KeyboardEvent::InitWithKeyboardEventInit(EventTarget* aOwner,
-                                              const nsAString& aType,
-                                              const KeyboardEventInit& aParam) {
-  bool trusted = Init(aOwner);
-  InitKeyEventJS(aType, aParam.mBubbles, aParam.mCancelable, aParam.mView,
-                 false, false, false, false, aParam.mKeyCode, aParam.mCharCode);
-  InitModifiers(aParam);
-  SetTrusted(trusted);
-  mDetail = aParam.mDetail;
-  mInitializedByJS = true;
-  mInitializedByCtor = true;
-  mInitializedWhichValue = aParam.mWhich;
-
-  WidgetKeyboardEvent* internalEvent = mEvent->AsKeyboardEvent();
+  WidgetKeyboardEvent* internalEvent =
+      newEvent->WidgetEventPtr()->AsKeyboardEvent();
   internalEvent->mLocation = aParam.mLocation;
   internalEvent->mIsRepeat = aParam.mRepeat;
   internalEvent->mIsComposing = aParam.mIsComposing;
@@ -326,32 +318,10 @@ void KeyboardEvent::InitWithKeyboardEventInit(EventTarget* aOwner,
   if (internalEvent->mCodeNameIndex == CODE_NAME_INDEX_USE_STRING) {
     internalEvent->mCodeValue = aParam.mCode;
   }
-}
+  internalEvent->mCharCode = aParam.mCharCode;
+  internalEvent->mKeyCode = aParam.mKeyCode;
 
-// static
-bool KeyboardEvent::IsInitKeyEventAvailable(JSContext* aCx, JSObject*) {
-  if (!StaticPrefs::dom_keyboardevent_init_key_event_enabled_in_addons()) {
-    return false;
-  }
-  nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(aCx);
-  return principal && principal->GetIsAddonOrExpandedAddonPrincipal();
-}
-
-void KeyboardEvent::InitKeyEventJS(const nsAString& aType, bool aCanBubble,
-                                   bool aCancelable, nsGlobalWindowInner* aView,
-                                   bool aCtrlKey, bool aAltKey, bool aShiftKey,
-                                   bool aMetaKey, uint32_t aKeyCode,
-                                   uint32_t aCharCode) {
-  NS_ENSURE_TRUE_VOID(!mEvent->mFlags.mIsBeingDispatched);
-  mInitializedByJS = true;
-  mInitializedByCtor = false;
-
-  UIEvent::InitUIEvent(aType, aCanBubble, aCancelable, aView, 0);
-
-  WidgetKeyboardEvent* keyEvent = mEvent->AsKeyboardEvent();
-  keyEvent->InitBasicModifiers(aCtrlKey, aAltKey, aShiftKey, aMetaKey);
-  keyEvent->mKeyCode = aKeyCode;
-  keyEvent->mCharCode = aCharCode;
+  return newEvent.forget();
 }
 
 void KeyboardEvent::InitKeyboardEventJS(

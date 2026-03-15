@@ -1192,7 +1192,6 @@ export default [
       "dom/encoding/test/test_in_lk_TLD.html",
       "dom/events/test/browser_beforeinput_by_execCommand_in_contentscript.js",
       "dom/events/test/browser_dragimage.js",
-      "dom/events/test/browser_keyboard_event_init_key_event_enabled_in_contentscript.js",
       "dom/events/test/browser_mouse_enterleave_switch_tab.js",
       "dom/events/test/test_DataTransferItemList.html",
       "dom/events/test/test_bug1037990.html",

@@ -64,12 +64,6 @@ class KeyboardEvent : public UIEvent {
   void GetCode(nsAString& aCode, CallerType aCallerType = CallerType::System);
   void GetInitDict(KeyboardEventInit& aParam);
 
-  void InitKeyEventJS(const nsAString& aType, bool aCanBubble, bool aCancelable,
-                      nsGlobalWindowInner* aView, bool aCtrlKey, bool aAltKey,
-                      bool aShiftKey, bool aMetaKey, uint32_t aKeyCode,
-                      uint32_t aCharCode);
-  static bool IsInitKeyEventAvailable(JSContext*, JSObject*);
-
   void InitKeyboardEventJS(const nsAString& aType, bool aCanBubble,
                            bool aCancelable, nsGlobalWindowInner* aView,
                            const nsAString& aKey, uint32_t aLocation,
@@ -78,9 +72,6 @@ class KeyboardEvent : public UIEvent {
 
  protected:
   ~KeyboardEvent() = default;
-
-  void InitWithKeyboardEventInit(EventTarget* aOwner, const nsAString& aType,
-                                 const KeyboardEventInit& aParam);
 
  private:
   // True, if the instance is initialized by JS.
