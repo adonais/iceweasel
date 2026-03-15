@@ -314,8 +314,12 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
   nsRect GetScrollPortRectAccountingForMaxDynamicToolbar() const;
 
-  nsSize GetScrolledFrameSize() const {
-    return mScrolledFrame->GetContentRectRelativeToSelf().Size();
+  nsSize GetScrolledFrameSizeAccountingForDynamicToolbar() const {
+    auto size = mScrolledFrame->GetContentRectRelativeToSelf().Size();
+    if (mIsRoot) {
+      size.height += PresContext()->GetBimodalDynamicToolbarHeightInAppUnits();
+    }
+    return size;
   }
 
   /**
