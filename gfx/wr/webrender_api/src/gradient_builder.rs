@@ -5,7 +5,6 @@
 use crate::display_item as di;
 use crate::units::*;
 
-const MAX_GRADIENT_STOP_OFFSET: f32 = (1 << 30) as f32;
 
 /// Construct a gradient to be used in display lists.
 ///
@@ -129,14 +128,6 @@ impl GradientBuilder {
     fn normalize(&mut self, extend_mode: di::ExtendMode) -> (f32, f32) {
         let stops = &mut self.stops;
         assert!(stops.len() >= 1);
-
-        for stop in stops.iter_mut() {
-            if !stop.offset.is_nan() {
-                stop.offset = stop.offset
-                    .max(-MAX_GRADIENT_STOP_OFFSET)
-                    .min(MAX_GRADIENT_STOP_OFFSET);
-            }
-        }
 
         let first = *stops.first().unwrap();
         let last = *stops.last().unwrap();

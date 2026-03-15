@@ -1745,7 +1745,6 @@ impl<'a> SceneBuilder<'a> {
                     &mut aa_mask,
                     &layout.clip_rect,
                     info.gradient.radius,
-                    info.gradient.start_offset,
                     info.gradient.end_offset,
                     info.gradient.extend_mode,
                     &stops,

@@ -674,9 +674,9 @@ nsCSSGradientRenderer nsCSSGradientRenderer::Create(
 
   // Compute "gradient line" start and end relative to the intrinsic size of
   // the gradient.
-  CSSPoint lineStart(0, 0), lineEnd(0, 0), center(0, 0);
-  CSSCoord radiusX = 0, radiusY = 0;  // for radial gradients only
-  float angle = 0.0;                  // for conic gradients only
+  CSSPoint lineStart, lineEnd, center;  // center is for conic gradients only
+  CSSCoord radiusX = 0, radiusY = 0;    // for radial gradients only
+  float angle = 0.0;                    // for conic gradients only
   if (aGradient.IsLinear()) {
     std::tie(lineStart, lineEnd) =
         ComputeLinearGradientLine(aPresContext, aGradient, srcSize);
@@ -687,6 +687,13 @@ nsCSSGradientRenderer nsCSSGradientRenderer::Create(
     MOZ_ASSERT(aGradient.IsConic());
     std::tie(center, angle) =
         ComputeConicGradientProperties(aGradient, srcSize);
+  }
+  // Avoid sending Infs or Nans to downwind draw targets.
+  if (!lineStart.IsFinite() || !lineEnd.IsFinite()) {
+    lineStart = lineEnd = CSSPoint(0, 0);
+  }
+  if (!center.IsFinite()) {
+    center = CSSPoint(0, 0);
   }
   CSSCoord lineLength =
       NS_hypot(lineEnd.x - lineStart.x, lineEnd.y - lineStart.y);
