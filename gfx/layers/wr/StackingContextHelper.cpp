@@ -213,8 +213,10 @@ StackingContextHelper::StackingContextHelper(
   MOZ_ASSERT(!aParams.clip.IsNone());
   wr::SpatialTreeItemKey scOriginKey{0, 0};
   if (aContainerFrame) {
-    scOriginKey = wr::SpatialKey(uint64_t(aContainerFrame), 0,
-                                 wr::SpatialKeyKind::SCOrigin);
+    scOriginKey =
+        wr::SpatialKey(uint64_t(aContainerFrame),
+                       aContainerItem ? aContainerItem->GetPerFrameKey() : 0,
+                       wr::SpatialKeyKind::SCOrigin);
   }
   mReferenceFrameId = mBuilder->PushStackingContext(
       aParams, wr::ToLayoutRect(aBounds), rasterSpace, scOriginKey);
