@@ -96,7 +96,7 @@ androidx-test-uiautomator = "2.3.0"
 junit4 = "4.13.2"
 junit6 = "6.0.3"
 leakcanary = "2.14"
-mockito = "5.22.0"
+mockito = "5.23.0"
 mockk = "1.14.9"
 robolectric = "4.16"
 
