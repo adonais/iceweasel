@@ -12,50 +12,6 @@
 
 "use strict";
 
-/**
- * Get prompt buttons from the prompts element.
- * Waits for the prompts element to be rendered before returning buttons.
- *
- * @param {MozBrowser} browser - The browser element
- * @returns {Promise<Array>} Array of prompt button text content
- */
-async function getPromptButtons(browser) {
-  return SpecialPowers.spawn(browser, [], async () => {
-    const smartWindowElement = content.document.querySelector("ai-window");
-
-    const promptsElement = await ContentTaskUtils.waitForCondition(
-      () => smartWindowElement.shadowRoot.querySelector("smartwindow-prompts"),
-      "Wait for smartwindow-prompts element"
-    );
-
-    const buttons =
-      promptsElement.shadowRoot.querySelectorAll(".sw-prompt-button");
-    return Array.from(buttons).map(button => button.textContent.trim());
-  });
-}
-
-/**
- * Click a prompt button by index.
- *
- * @param {MozBrowser} browser - The browser element
- * @param {number} index - The index of the button to click
- */
-async function clickPromptButton(browser, index) {
-  await SpecialPowers.spawn(browser, [index], async buttonIndex => {
-    const smartWindowElement = content.document.querySelector("ai-window");
-
-    const promptsElement = await ContentTaskUtils.waitForCondition(
-      () => smartWindowElement.shadowRoot.querySelector("smartwindow-prompts"),
-      "Wait for smartwindow-prompts element"
-    );
-
-    const buttons =
-      promptsElement.shadowRoot.querySelectorAll(".sw-prompt-button");
-
-    buttons[buttonIndex].click();
-  });
-}
-
 function getSidebarPromptButtons(win) {
   const sidebarBrowser = win.document.getElementById("ai-window-browser");
   const aiWindowEl =
@@ -183,8 +139,9 @@ add_task(async function test_starter_prompts_click_triggers_chat_on_new_tab() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    const promptButtons = await getPromptButtons(browser);
-    await clickPromptButton(browser, 0);
+    const buttons = await getPromptButtons(browser);
+    const firstPromptText = buttons[0].textContent.trim();
+    buttons[0].click();
 
     await TestUtils.waitForCondition(
       () => fetchWithHistoryStub.calledOnce,
@@ -197,7 +154,7 @@ add_task(async function test_starter_prompts_click_triggers_chat_on_new_tab() {
 
     Assert.equal(
       userMessage.content,
-      promptButtons[0],
+      firstPromptText,
       "Should submit starter prompt text as user message on New Tab"
     );
 
@@ -219,8 +176,9 @@ add_task(async function test_starter_prompts_click_triggers_chat_in_sidebar() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    const promptButtons = await getPromptButtons(browser);
-    await clickPromptButton(browser, 0);
+    const buttons = await getPromptButtons(browser);
+    const firstPromptText = buttons[0].textContent.trim();
+    buttons[0].click();
 
     await TestUtils.waitForCondition(
       () => fetchWithHistoryStub.calledOnce,
@@ -233,7 +191,7 @@ add_task(async function test_starter_prompts_click_triggers_chat_in_sidebar() {
 
     Assert.equal(
       userMessage.content,
-      promptButtons[0],
+      firstPromptText,
       "Should submit starter prompt text as user message in the sidebar"
     );
 
@@ -266,7 +224,7 @@ add_task(
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
 
-      await clickPromptButton(browser, 0);
+      (await getPromptButtons(browser))[0].click();
 
       await TestUtils.waitForCondition(
         () => memoriesStub.called,
@@ -309,7 +267,7 @@ add_task(
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
 
-      await clickPromptButton(browser, 0);
+      (await getPromptButtons(browser))[0].click();
 
       await TestUtils.waitForCondition(
         () => fetchWithHistoryStub.calledOnce,
@@ -341,7 +299,7 @@ add_task(async function test_starter_prompts_hidden_after_click_on_new_tab() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await clickPromptButton(browser, 0);
+    (await getPromptButtons(browser))[0].click();
 
     await SpecialPowers.spawn(browser, [], async () => {
       const aiWindowElement = content.document.querySelector("ai-window");
@@ -370,7 +328,7 @@ add_task(async function test_starter_prompts_hidden_after_click_in_sidebar() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await clickPromptButton(browser, 0);
+    (await getPromptButtons(browser))[0].click();
 
     await SpecialPowers.spawn(browser, [], async () => {
       const aiWindowElement = content.document.querySelector("ai-window");

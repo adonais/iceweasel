@@ -3,17 +3,6 @@
 
 "use strict";
 
-async function getConversationId(browser) {
-  return SpecialPowers.spawn(browser, [], async () => {
-    await content.customElements.whenDefined("ai-window");
-    const aiWindow = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector("ai-window"),
-      "Wait for ai-window element"
-    );
-    return aiWindow.conversationId.toString();
-  });
-}
-
 async function dispatchSmartbarCommit(browser, value, action) {
   await SpecialPowers.spawn(browser, [value, action], async (val, act) => {
     const aiWindow = await ContentTaskUtils.waitForCondition(
@@ -137,6 +126,85 @@ add_task(async function test_memories_toggle_telemetry() {
   } finally {
     await BrowserTestUtils.closeWindow(win);
   }
+});
+
+add_task(async function test_quick_prompt_displayed_telemetry() {
+  Services.fog.testResetFOG();
+
+  const win = await openAIWindow();
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    const conversationId = await getConversationId(browser);
+    await TestUtils.waitForCondition(
+      async () => !!(await getPromptButtons(browser)).length,
+      "Wait for prompts to render"
+    );
+    await TestUtils.waitForTick();
+
+    const promptCount = (await getPromptButtons(browser)).length;
+    const events = Glean.smartWindow.quickPromptDisplayed.testGetValue();
+    Assert.greater(
+      events?.length,
+      0,
+      "At least one quick prompt displayed event was recorded"
+    );
+    const lastEvent = events.at(-1);
+    Assert.equal(
+      lastEvent.extra.chat_id,
+      conversationId,
+      "quick prompt displayed includes the conversation id"
+    );
+    Assert.equal(
+      lastEvent.extra.prompts,
+      String(promptCount),
+      "quick prompt displayed includes the prompt count"
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+add_task(async function test_followup_displayed_telemetry_sends_count() {
+  await withServer(
+    {
+      streamChunks: [
+        "Here is my response.",
+        "§followup: Follow up question 1§",
+        "§followup: Follow up question 2§",
+      ],
+    },
+    async () => {
+      Services.fog.testResetFOG();
+
+      const win = await openAIWindow();
+      try {
+        const browser = win.gBrowser.selectedBrowser;
+
+        const conversationId = await getConversationId(browser);
+        await dispatchSmartbarCommit(browser, "Hello", "chat");
+
+        const followUpEvent = await TestUtils.waitForCondition(
+          () =>
+            Glean.smartWindow.quickPromptDisplayed
+              .testGetValue()
+              ?.find(
+                e =>
+                  e.extra.chat_id === conversationId && e.extra.message_seq > 0
+              ),
+          "Wait for follow-up displayed event"
+        );
+
+        Assert.equal(
+          followUpEvent.extra.prompts,
+          "2",
+          "Follow-up displayed event includes the final prompt count"
+        );
+      } finally {
+        await BrowserTestUtils.closeWindow(win);
+      }
+    }
+  );
 });
 
 add_task(async function test_prompt_selected_telemetry() {

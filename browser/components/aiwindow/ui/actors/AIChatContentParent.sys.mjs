@@ -236,7 +236,7 @@ export class AIChatContentParent extends JSWindowActorParent {
   #handleFollowUpFromChild(data) {
     try {
       const aiWindow = this.#getAIWindowElement();
-      aiWindow.submitChatMessage(data.text);
+      aiWindow.onQuickPromptClicked(data.text, false);
     } catch (e) {
       console.warn("Could not submit follow-up from AI Window chat", e);
     }

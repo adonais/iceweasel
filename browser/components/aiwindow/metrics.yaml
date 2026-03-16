@@ -64,7 +64,7 @@ smart_window:
       location: &location
         type: string
         description: >
-          Which input was used to request history: home, urlbar, or sidebar
+          Which input was used to request history: fullpage, sidebar, or urlbar
       chat_id: *chat_id
       message_seq: &message_seq
         type: quantity
