@@ -70,8 +70,8 @@ class Opcode {
   }
   MOZ_IMPLICIT Opcode(GcOp op)
       : bits_((uint32_t(op) << 8) | uint32_t(Op::GcPrefix)) {
-    static_assert(size_t(SimdOp::Limit) <= 0xFFFFFF, "fits");
-    MOZ_ASSERT(size_t(op) < size_t(SimdOp::Limit));
+    static_assert(size_t(GcOp::Limit) <= 0xFFFFFF, "fits");
+    MOZ_ASSERT(size_t(op) < size_t(GcOp::Limit));
   }
 
   bool isOp() const { return bits_ < uint32_t(Op::FirstPrefix); }
