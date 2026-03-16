@@ -1326,9 +1326,11 @@ static nsLiteralCString sStyleSrcUnsafeInlineAllowList[] = {
 // img-src moz-remote-image:
 static nsLiteralCString sImgSrcMozRemoteImageAllowList[] = {
     "about:preferences"_ns,
+    "about:processes"_ns,
     "about:settings"_ns,
     "chrome://browser/content/aiwindow/aiWindow.html"_ns,
     "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"_ns,
+    "chrome://global/content/aboutProcesses.html"_ns,
     "chrome://mozapps/content/handling/appChooser.xhtml"_ns,
 };
 // img-src data: blob:
