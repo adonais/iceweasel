@@ -998,6 +998,26 @@ describe("ContentTiles component", () => {
       "did not override genuine Tab focus"
     );
 
+    // Slow tab (>250ms) to action buttons - focus should stay on button
+    header.focus();
+    header.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    await nextFrame();
+
+    // Wait past grace window to simulate slow tabbing
+    await delay(TAB_GRACE_WINDOW_MS + 50);
+
+    dialog.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Tab", bubbles: true })
+    );
+    primary.focus();
+    primary.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+
+    assert.strictEqual(
+      document.activeElement,
+      primary,
+      "did not restore focus when slow tabbing to action buttons"
+    );
+
     // Cleanup
     focusWrapper.unmount();
     mountNode.remove();

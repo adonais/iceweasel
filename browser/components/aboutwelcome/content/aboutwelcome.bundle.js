@@ -2576,9 +2576,13 @@ const ContentTiles = props => {
     let lastTilesEl = null;
     let lastTabAt = 0;
     let restoring = false;
+    let tabFromTiles = false;
     function onKeyDown(e) {
       if (e.key === "Tab") {
         lastTabAt = performance.now();
+        if (tilesEl.contains(document.activeElement)) {
+          tabFromTiles = true;
+        }
       }
     }
     function onFocusIn(event) {
@@ -2589,12 +2593,22 @@ const ContentTiles = props => {
       // Track true DOM focus inside tiles.
       if (tilesEl.contains(target)) {
         lastTilesEl = target;
+        // Reset when focus enters tiles
+        tabFromTiles = false;
         return;
       }
 
       // If focus left tiles without a recent tab, treat as a programmatic snap.
       const tabRecently = performance.now() - lastTabAt < TAB_GRACE_WINDOW_MS;
       if (tabRecently || !lastTilesEl || !document.contains(lastTilesEl) || restoring) {
+        tabFromTiles = false;
+        return;
+      }
+
+      // If tab was pressed while in tiles and focus moved to action buttons, don't restore focus for the intended keyboard navigation
+      const actionButtons = dialog.querySelector(".action-buttons");
+      if (actionButtons?.contains(target) && tabFromTiles) {
+        tabFromTiles = false;
         return;
       }
 
