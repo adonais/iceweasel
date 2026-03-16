@@ -18,6 +18,7 @@
 #include "WavDumper.h"
 #include "mozilla/GenericFactory.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsComponentManager.h"
