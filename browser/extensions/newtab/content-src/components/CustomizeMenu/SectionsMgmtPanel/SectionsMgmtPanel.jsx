@@ -16,6 +16,7 @@ function SectionsMgmtPanel({
   showPanel,
 }) {
   const arrowButtonRef = useRef(null);
+  const panelRef = useRef(null);
   const { sectionPersonalization } = useSelector(
     state => state.DiscoveryStream
   );
@@ -286,13 +287,14 @@ function SectionsMgmtPanel({
         {...(!pocketEnabled ? { disabled: true } : {})}
       ></moz-box-button>
       <CSSTransition
+        nodeRef={panelRef}
         in={showPanel}
         timeout={300}
         classNames="sections-mgmt-panel"
         unmountOnExit={true}
         onEntered={handlePanelEntered}
       >
-        <div className="sections-mgmt-panel">
+        <div ref={panelRef} className="sections-mgmt-panel">
           <button
             ref={arrowButtonRef}
             className="arrow-button"

@@ -508,16 +508,20 @@ export class _DSCard extends React.PureComponent {
     const { sectionsCardImageSizes } = this.props;
 
     const columns = ["1", "2", "3", "4"];
-    const images = [];
 
-    for (const column of columns) {
-      const size = sectionsCardImageSizes[column];
-      const sizes = [this.getSectionImageSize(column, size)];
-      const image = this.renderImage({ sizes, classNames: `image-${column}` });
-      images.push(image);
-    }
-
-    return <>{images}</>;
+    return (
+      <>
+        {columns.map(column => {
+          const size = sectionsCardImageSizes[column];
+          const sizes = [this.getSectionImageSize(column, size)];
+          const image = this.renderImage({
+            sizes,
+            classNames: `image-${column}`,
+          });
+          return React.cloneElement(image, { key: column });
+        })}
+      </>
+    );
   }
 
   render() {

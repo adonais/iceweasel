@@ -802,7 +802,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
                   id="sections-toggle"
                   disabled={!unifiedAdsSpocsEnabled || null}
                   pressed={allizomEnabled || null}
-                  onToggle={this.handleAllizomToggle}
+                  ontoggle={this.handleAllizomToggle}
                   label="Toggle allizom"
                 />
               </td>
@@ -939,7 +939,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           <moz-toggle
             id="sections-toggle"
             pressed={sectionsEnabled || null}
-            onToggle={this.handleSectionsToggle}
+            ontoggle={this.handleSectionsToggle}
             label="Toggle DS Sections"
           />
         </div>
@@ -950,7 +950,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             <moz-toggle
               id="newtab_leaderboard"
               pressed={leaderboardPressed || null}
-              onToggle={this.toggleIABBanners}
+              ontoggle={this.toggleIABBanners}
               label="Enable IAB Leaderboard"
             />
           </div>
@@ -958,7 +958,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             <moz-toggle
               id="newtab_billboard"
               pressed={billboardPressed || null}
-              onToggle={this.toggleIABBanners}
+              ontoggle={this.toggleIABBanners}
               label="Enable IAB Billboard"
             />
           </div>
@@ -966,7 +966,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             <moz-toggle
               id="newtab_rectangle"
               pressed={mediumRectangleEnabledPressed || null}
-              onToggle={this.toggleIABBanners}
+              ontoggle={this.toggleIABBanners}
               label="Enable IAB Medium Rectangle (MREC)"
             />
           </div>

@@ -13,6 +13,7 @@ browser/components/backup/tests/marionette/compat-files/backups
 browser/components/storybook/storybook-static/
 browser/extensions/newtab/data/content/activity-stream.bundle.js
 browser/extensions/newtab/data/content/vendor.bundle.js
+browser/extensions/newtab/test/vendor/react-dom-test-utils.js
 browser/extensions/newtab/logs/
 browser/extensions/newtab/node_modules/
 browser/extensions/newtab/prerendered/
