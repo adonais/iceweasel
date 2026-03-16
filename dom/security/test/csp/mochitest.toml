@@ -156,6 +156,8 @@ support-files = [
   "file_report_for_import_server.sjs",
   "file_service_worker.html",
   "file_service_worker.js",
+  "file_bug2021482_sw.js",
+  "file_bug2021482_check.js",
   "file_child-src_iframe.html",
   "file_child-src_inner_frame.html",
   "file_child-src_worker.html",
@@ -416,6 +418,8 @@ support-files = ["file_bug1777572.html"]
 skip-if = [
   "os == 'android'", # This unusual window.close/open test times out on Android.
 ]
+
+["test_bug2021482.html"]
 
 ["test_child-src_iframe.html"]
 skip-if = [
