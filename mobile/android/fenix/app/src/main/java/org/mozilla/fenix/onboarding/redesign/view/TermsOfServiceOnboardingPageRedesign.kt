@@ -49,7 +49,7 @@ import org.mozilla.fenix.onboarding.view.OnboardingTermsOfService
 import org.mozilla.fenix.onboarding.view.OnboardingTermsOfServiceEventHandler
 import org.mozilla.fenix.theme.FirefoxTheme
 
-private val TOU_IMAGE_HEIGHT = 200.dp
+private val TOU_IMAGE_HEIGHT = 176.dp
 
 private val kitImageResources = listOf(
     R.drawable.nova_onboarding_tou,
@@ -75,16 +75,14 @@ fun TermsOfServiceOnboardingPageRedesign(
     ) {
         Column(
             modifier = Modifier.padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 24.dp,
-                bottom = if (isSmallDevice) 0.dp else 24.dp,
+                horizontal = 16.dp,
+                vertical = if (isSmallDevice) 0.dp else 24.dp,
             ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val scrollState = rememberScrollState()
 
-            if (isSmallDevice) {
+            if (!isSmallDevice) {
                 Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
             }
 
