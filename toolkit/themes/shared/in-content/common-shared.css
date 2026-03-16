@@ -565,7 +565,7 @@ xul|label[disabled] {
   }
 }
 
-html|*#categories:not(moz-page-nav) {
+html|*#categories {
   box-sizing: border-box;
   padding: 1px;
 }

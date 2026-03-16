@@ -9,21 +9,6 @@
   font-size: var(--font-size-small);
 }
 
-:host(#policies-container:not([hidden])) {
-  @media (max-width: 52rem) {
-    display: none;
-  }
-}
-
-:host(#policies-container-content:not([hidden])) {
-  display: none;
-
-  @media (max-width: 52rem) {
-    display: block;
-    margin-bottom: var(--space-small);
-  }
-}
-
 moz-box-item,
 moz-box-link {
   --box-padding: var(--space-xsmall) var(--space-medium);

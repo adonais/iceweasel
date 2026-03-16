@@ -29,7 +29,7 @@ add_task(async function testDefaultUIWithoutTemplatePref() {
   ok(moreFromMozillaCategory, "The category exists");
   ok(!moreFromMozillaCategory.hidden, "The category is not hidden");
 
-  moreFromMozillaCategory.activate();
+  moreFromMozillaCategory.click();
 
   let productCards = doc.querySelectorAll(".mozilla-product-item.simple");
   Assert.ok(productCards, "Default UI uses simple template");
@@ -93,7 +93,7 @@ add_task(async function testDefaulEmailClick() {
   let moreFromMozillaCategory = doc.getElementById(
     "category-more-from-mozilla"
   );
-  moreFromMozillaCategory.activate();
+  moreFromMozillaCategory.click();
 
   const expectedUrl = "https://www.mozilla.org/firefox/mobile/get-app/?v=mfm";
   let sendEmailLink = doc.getElementById("default-qr-code-send-email");
@@ -145,12 +145,12 @@ add_task(async function test_aboutpreferences_event_telemetry() {
     "category-more-from-mozilla"
   );
 
-  let viewChangedPromise = BrowserTestUtils.waitForEvent(
+  let clickedPromise = BrowserTestUtils.waitForEvent(
     moreFromMozillaCategory,
-    "change-view"
+    "click"
   );
-  moreFromMozillaCategory.activate();
-  await viewChangedPromise;
+  moreFromMozillaCategory.click();
+  await clickedPromise;
 
   TelemetryTestUtils.assertEvents(
     [["aboutpreferences", "show", "initial", "paneGeneral"]],
@@ -183,7 +183,7 @@ add_task(async function test_aboutpreferences_simple_template() {
     "category-more-from-mozilla"
   );
 
-  moreFromMozillaCategory.activate();
+  moreFromMozillaCategory.click();
 
   let productCards = doc.querySelectorAll(".mozilla-product-item");
   Assert.ok(productCards, "The product cards from simple template found");

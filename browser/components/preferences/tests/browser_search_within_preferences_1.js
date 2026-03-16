@@ -46,11 +46,9 @@ add_task(async function show_search_results_pane_only_then_revert_to_general() {
   await searchCompletedPromise;
 
   let categoriesList = gBrowser.contentDocument.getElementById("categories");
-  let navButtons = categoriesList.querySelectorAll(
-    "moz-page-nav-button:not(.hidden-category):not([hidden]):not([slot])"
-  );
 
-  for (let child of navButtons) {
+  for (let i = 0; i < categoriesList.childElementCount; i++) {
+    let child = categoriesList.itemChildren[i];
     is(child.selected, false, "No other panel should be selected");
   }
   // Takes search off
@@ -66,7 +64,8 @@ add_task(async function show_search_results_pane_only_then_revert_to_general() {
   await searchCompletedPromise;
 
   // Checks if back to generalPane
-  for (let child of navButtons) {
+  for (let i = 0; i < categoriesList.childElementCount; i++) {
+    let child = categoriesList.itemChildren[i];
     if (child.id == "category-general") {
       is(child.selected, true, "General panel should be selected");
     } else if (child.id) {
@@ -318,14 +317,11 @@ add_task(async function changing_tabs_after_searching() {
 
   let privacyCategory =
     gBrowser.contentDocument.getElementById("category-privacy");
-  privacyCategory.activate();
-  let categoriesList = gBrowser.contentDocument.getElementById("categories");
-  await categoriesList.updateComplete;
+  privacyCategory.click();
   is(searchInput.value, "", "search input should be empty");
-  let navButtons = categoriesList.querySelectorAll(
-    "moz-page-nav-button:not(.hidden-category):not([hidden]):not([slot])"
-  );
-  for (let child of navButtons) {
+  let categoriesList = gBrowser.contentDocument.getElementById("categories");
+  for (let i = 0; i < categoriesList.childElementCount; i++) {
+    let child = categoriesList.itemChildren[i];
     if (child.id == "category-privacy") {
       is(child.selected, true, "Privacy panel should be selected");
     } else if (child.id) {
