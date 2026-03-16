@@ -1,4 +1,4 @@
-// |jit-test| --setpref=experimental.import_bytes=true;
+// |jit-test| skip-if: getBuildConfiguration("release_or_beta"); --setpref=experimental.import_bytes=true; --fuzzing-safe
 
 let buf = new ArrayBuffer(4);
 let view = new Uint8Array(buf);
