@@ -536,16 +536,32 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         }
 
         fun submitQuery(query: String, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "submitQuery: Trying to set toolbar text to: $query and pressing IME action")
-            composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).apply {
-                performTextReplacement(query)
-                performImeAction()
-            }
-            Log.i(TAG, "submitQuery: Toolbar text was set to: $query and IME action performed")
-
-            Log.i(TAG, "submitQuery: Waiting for compose test rule to be idle")
+            Log.i(TAG, "submitQuery: Waiting for compose rule to be idle")
             composeTestRule.waitForIdle()
-            Log.i(TAG, "submitQuery: Waiting for compose test rule to be idle")
+            Log.i(TAG, "submitQuery: Waited for compose rule to be idle")
+
+            Log.i(TAG, "submitQuery: Trying to set toolbar text to: $query")
+            itemWithResId("ADDRESSBAR_SEARCH_BOX").setText(query)
+            Log.i(TAG, "submitQuery: Toolbar text was set to: $query")
+
+            Log.i(TAG, "submitQuery: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "submitQuery: Waited for compose rule to be idle")
+
+            runCatching {
+                Log.i(TAG, "submitQuery: Trying to perform Compose IME action perform on the toolbar")
+                composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performImeAction()
+                Log.i(TAG, "submitQuery: Compose IME action performed on the toolbar")
+            }.onFailure { throwable ->
+                Log.e(TAG, "submitQuery: Compose IME action failed with: ${throwable::class.java.simpleName} - ${throwable.message}")
+                Log.d(TAG, "submitQuery: Falling back to UiDevice pressEnter()")
+                mDevice.pressEnter()
+                Log.d(TAG, "submitQuery: Fallback UiDevice pressEnter() completed")
+            }
+
+            Log.i(TAG, "submitQuery: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "submitQuery: Waited for compose rule to be idle")
 
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)
