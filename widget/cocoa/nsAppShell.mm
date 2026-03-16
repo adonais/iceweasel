@@ -369,7 +369,11 @@ nsresult nsAppShell::Init() {
   mAutoreleasePools = ::CFArrayCreateMutable(nullptr, 0, nullptr);
   NS_ENSURE_STATE(mAutoreleasePools);
 
+  // Don't call -[NSBundle loadNibNamed:owner:options:] for child process types
+  // that don't need graphics. The loadNibNamed call triggers some graphics-
+  // related initialization that is not needed for these process types.
   bool isNSApplicationProcessType =
+      (XRE_GetProcessType() != GeckoProcessType_Content) &&
       (XRE_GetProcessType() != GeckoProcessType_RDD) &&
       (XRE_GetProcessType() != GeckoProcessType_Socket);
 
