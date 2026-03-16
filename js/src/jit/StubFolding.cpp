@@ -703,7 +703,10 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
 
   // Limit the maximum number of shapes we will add before giving up.
   // If we give up, transition the stub.
-  if (numShapes == ShapeListObject::MaxLength) {
+  size_t maxLength = offsetFieldOffset.isSome()
+                         ? ShapeListWithOffsetsObject::MaxLength
+                         : ShapeListObject::MaxLength;
+  if (numShapes == maxLength) {
     MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
     fallback->state().forceTransition();
     fallback->discardStubs(cx->zone(), icEntry);
