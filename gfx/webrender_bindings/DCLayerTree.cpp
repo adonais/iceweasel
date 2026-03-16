@@ -2390,8 +2390,11 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
 
   bool useHDR =
       gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR && monitorIsHDR;
-  bool useHDRRGB10A2 = useHDR && mDCLayerTree->SupportsHardwareOverlayRGB10A2();
-  bool useHDRRGBA16F = useHDR && mDCLayerTree->SupportsHardwareOverlayRGBA16F();
+  // We can't rely on SupportsHardwareOverlayRGB10A2 because DWM may convert for
+  // us, let's hope this works on older GPUs (~2016 GPUs that support HDR for
+  // the whole desktop but may not support MPO overlays that are HDR).
+  bool useHDRRGB10A2 = useHDR;
+  bool useHDRRGBA16F = false;
 
   if (profiler_thread_is_being_profiled_for_markers()) {
     nsPrintfCString str(

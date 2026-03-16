@@ -3784,9 +3784,14 @@ void gfxPlatform::GetOverlayInfo(mozilla::widget::InfoObject& aObj) {
     return "Not Supported";
   };
 
+  // HwOverlayHDR is a somewhat redundant name given that this entire section is
+  // OverlaySupport, but it was being misinterpreted by people as to whether the
+  // desktop mode is HDR (which would be a Screen property), this has no bearing
+  // on whether HDR surfaces are supported by the OS compositor, only whether
+  // they can be promoted to a hardware overlay by the OS compositor.
   nsPrintfCString value(
       "NV12=%s YUV2=%s BGRA8=%s RGB10A2=%s RGBA16F=%s VpSR=%s VpAutoHDR=%s "
-      "HDR=%s",
+      "HwOverlayHDR=%s",
       toString(mOverlayInfo.ref().mNv12Overlay),
       toString(mOverlayInfo.ref().mYuy2Overlay),
       toString(mOverlayInfo.ref().mBgra8Overlay),
