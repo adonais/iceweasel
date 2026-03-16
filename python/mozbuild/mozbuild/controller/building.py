@@ -14,6 +14,7 @@ import sys
 import time
 from collections import Counter, OrderedDict, namedtuple
 from itertools import dropwhile, islice, takewhile
+from pathlib import Path
 from textwrap import TextWrapper
 
 from mach.logging import BUILD_ERROR, SUPPRESSED_WARNING, THIRD_PARTY_WARNING
@@ -1496,7 +1497,11 @@ class BuildDriver(MozbuildObject):
                         make_dir, make_target = resolve_target_to_make(
                             self.topobjdir, path_arg.relpath()
                         )
-                        if make_dir is not None and not allow_subdirectory_build:
+                        if (
+                            make_dir is not None
+                            and not allow_subdirectory_build
+                            and (Path(self.topsrcdir) / target).is_dir()
+                        ):
                             self.log(
                                 logging.WARNING,
                                 "build",
