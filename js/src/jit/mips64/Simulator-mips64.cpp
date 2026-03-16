@@ -2282,7 +2282,7 @@ void Simulator::configureTypeRegister(SimInstruction* instr, int64_t& alu_out,
           u128hilo = U64(U32(I32_CHECK(rs))) * U64(U32(I32_CHECK(rt)));
           break;
         case ff_dmultu:
-          u128hilo = U128(rs) * U128(rt);
+          u128hilo = U128(U64(rs)) * U128(U64(rt));
           break;
         case ff_add:
           alu_out = I32_CHECK(rs) + I32_CHECK(rt);
