@@ -2982,21 +2982,6 @@ who = "Ameer Ghani <inahga@divviup.org>"
 criteria = "safe-to-deploy"
 delta = "0.4.0 -> 0.4.1"
 
-[[audits.isrg.audits.libz-rs-sys]]
-who = "Ameer Ghani <inahga@letsencrypt.org>"
-criteria = "safe-to-deploy"
-delta = "0.4.2 -> 0.5.0"
-
-[[audits.isrg.audits.libz-rs-sys]]
-who = "Ameer Ghani <inahga@letsencrypt.org>"
-criteria = "safe-to-deploy"
-delta = "0.5.0 -> 0.5.1"
-
-[[audits.isrg.audits.libz-rs-sys]]
-who = "Ameer Ghani <inahga@letsencrypt.org>"
-criteria = "safe-to-deploy"
-delta = "0.5.1 -> 0.5.2"
-
 [[audits.isrg.audits.num-iter]]
 who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
@@ -3101,21 +3086,6 @@ delta = "0.4.0 -> 0.4.1"
 who = "Ameer Ghani <inahga@divviup.org>"
 criteria = "safe-to-deploy"
 delta = "0.4.1 -> 0.4.2"
-
-[[audits.isrg.audits.zlib-rs]]
-who = "Ameer Ghani <inahga@letsencrypt.org>"
-criteria = "safe-to-deploy"
-delta = "0.4.2 -> 0.5.0"
-
-[[audits.isrg.audits.zlib-rs]]
-who = "Ameer Ghani <inahga@letsencrypt.org>"
-criteria = "safe-to-deploy"
-delta = "0.5.0 -> 0.5.1"
-
-[[audits.isrg.audits.zlib-rs]]
-who = "Ameer Ghani <inahga@letsencrypt.org>"
-criteria = "safe-to-deploy"
-delta = "0.5.1 -> 0.5.2"
 
 [[audits.mozilla.wildcard-audits.uniffi]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"

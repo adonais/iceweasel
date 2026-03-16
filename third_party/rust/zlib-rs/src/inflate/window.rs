@@ -1,5 +1,6 @@
 use crate::{
     adler32::{adler32, adler32_fold_copy},
+    allocate::Allocator,
     crc32::Crc32Fold,
     weak_slice::WeakSliceMut,
 };
@@ -23,23 +24,8 @@ impl<'a> Window<'a> {
         self.buf.into_raw_parts()
     }
 
-    pub unsafe fn from_raw_parts(ptr: *mut u8, len: usize) -> Self {
-        Self {
-            buf: unsafe { WeakSliceMut::from_raw_parts_mut(ptr, len) },
-            have: 0,
-            next: 0,
-        }
-    }
-
     pub fn is_empty(&self) -> bool {
         self.size() == 0
-    }
-
-    /// The size of the underlying buffer. For inflate, use `size` instead. This function is used
-    /// in `inflateBack` which does not consider the padding.
-    pub fn buffer_size(&self) -> usize {
-        assert!(self.buf.len().is_power_of_two());
-        self.buf.len()
     }
 
     pub fn size(&self) -> usize {
@@ -51,10 +37,6 @@ impl<'a> Window<'a> {
     /// number of bytes in the window. Saturates at `Self::capacity`.
     pub fn have(&self) -> usize {
         self.have
-    }
-
-    pub unsafe fn set_have(&mut self, have: usize) {
-        self.have = have;
     }
 
     /// Position where the next byte will be written
@@ -88,7 +70,7 @@ impl<'a> Window<'a> {
         self.extend(slice, 0, true, checksum, &mut Crc32Fold::new());
     }
 
-    pub(crate) fn extend(
+    pub fn extend(
         &mut self,
         slice: &[u8],
         flags: i32,
@@ -163,10 +145,9 @@ impl<'a> Window<'a> {
         }
     }
 
-    #[cfg(test)]
-    pub fn new_in(alloc: &crate::inflate::Allocator<'a>, window_bits: usize) -> Option<Self> {
+    pub fn new_in(alloc: &Allocator<'a>, window_bits: usize) -> Option<Self> {
         let len = (1 << window_bits) + Self::padding();
-        let ptr = alloc.allocate_zeroed_buffer(len)?;
+        let ptr = alloc.allocate_zeroed(len)?;
 
         Some(Self {
             buf: unsafe { WeakSliceMut::from_raw_parts_mut(ptr.as_ptr(), len) },
@@ -175,16 +156,15 @@ impl<'a> Window<'a> {
         })
     }
 
-    pub unsafe fn clone_to(&self, ptr: *mut u8, len: usize) -> Self {
-        debug_assert_eq!(self.buf.len(), len);
+    pub fn clone_in(&self, alloc: &Allocator<'a>) -> Option<Self> {
+        let len = self.buf.len();
+        let ptr = alloc.allocate_zeroed(len)?;
 
-        unsafe { core::ptr::copy_nonoverlapping(self.buf.as_ptr(), ptr, len) };
-
-        Self {
-            buf: unsafe { WeakSliceMut::from_raw_parts_mut(ptr, len) },
+        Some(Self {
+            buf: unsafe { WeakSliceMut::from_raw_parts_mut(ptr.as_ptr(), len) },
             have: self.have,
             next: self.next,
-        }
+        })
     }
 
     // padding required so that SIMD operations going out-of-bounds are not a problem
@@ -193,28 +173,17 @@ impl<'a> Window<'a> {
     }
 }
 
-#[cfg(all(test, feature = "rust-allocator"))]
+#[cfg(test)]
 mod test {
     use super::*;
 
+    use crate::allocate::Allocator;
+
     fn init_window(window_bits_log2: usize) -> Window<'static> {
-        let mut window = Window::new_in(&crate::allocate::RUST, window_bits_log2).unwrap();
+        let mut window = Window::new_in(&Allocator::RUST, window_bits_log2).unwrap();
         window.have = 0;
         window.next = 0;
         window
-    }
-
-    #[test]
-    fn window_init() {
-        let window = init_window(2);
-        assert_eq!(window.size(), 4);
-        assert_eq!(window.have(), 0);
-        assert!(!window.is_empty());
-        let start = window.as_ptr();
-        let size = window.size();
-        let (ptr, len) = window.into_raw_parts();
-        assert_eq!(ptr.cast_const(), start);
-        assert!(len >= size); // >= because the impl is allowed to add padding to the internal buffer
     }
 
     #[test]
@@ -240,7 +209,7 @@ mod test {
         assert_eq!(checksum, 6946835);
 
         unsafe {
-            crate::allocate::RUST.deallocate(
+            Allocator::RUST.deallocate(
                 window.buf.as_mut_slice().as_mut_ptr(),
                 window.buf.as_slice().len(),
             )
@@ -270,7 +239,7 @@ mod test {
         assert_eq!(checksum, 1769481);
 
         unsafe {
-            crate::allocate::RUST.deallocate(
+            Allocator::RUST.deallocate(
                 window.buf.as_mut_slice().as_mut_ptr(),
                 window.buf.as_slice().len(),
             )
@@ -294,7 +263,7 @@ mod test {
         assert_eq!(checksum, 10813485);
 
         unsafe {
-            crate::allocate::RUST.deallocate(
+            Allocator::RUST.deallocate(
                 window.buf.as_mut_slice().as_mut_ptr(),
                 window.as_slice().len(),
             )

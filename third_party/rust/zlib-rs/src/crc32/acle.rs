@@ -10,8 +10,7 @@ pub unsafe fn crc32_acle_aarch64(crc: u32, buf: &[u8]) -> u32 {
     // SAFETY: [u8; 8] safely transmutes into u64.
     let (before, middle, after) = unsafe { buf.align_to::<u64>() };
 
-    // SAFETY: `remainder` requires the feature "crc" but so does this function
-    c = unsafe { remainder(c, before) };
+    c = remainder(c, before);
 
     if middle.is_empty() && after.is_empty() {
         return !c;
@@ -21,8 +20,7 @@ pub unsafe fn crc32_acle_aarch64(crc: u32, buf: &[u8]) -> u32 {
         c = unsafe { __crc32d(c, *d) };
     }
 
-    // SAFETY: `remainder` requires the feature "crc" but so does this function
-    c = unsafe { remainder(c, after) };
+    c = remainder(c, after);
 
     !c
 }
