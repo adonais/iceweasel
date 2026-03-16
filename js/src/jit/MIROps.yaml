@@ -586,8 +586,18 @@
   possibly_calls: true
   generate_lir: true
 
+# Eager initialization of arguments object.
 - name: CreateArgumentsObject
-  gen_boilerplate: false
+  operands:
+    callObject: Object
+  arguments:
+    templateObject: ArgumentsObject*
+  result_type: Object
+  alias_set: none
+  possibly_calls: true
+  can_recover: true
+  generate_lir: true
+  lir_temps: 3
 
 - name: CreateInlinedArgumentsObject
   gen_boilerplate: false

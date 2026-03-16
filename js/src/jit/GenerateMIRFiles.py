@@ -161,6 +161,7 @@ gc_pointer_types = [
     "RegExpObject*",
     "JSScript*",
     "LexicalScope*",
+    "ArgumentsObject*",
 ]
 
 special_storage_types = {

@@ -333,7 +333,7 @@ void LIRGenerator::visitCreateThis(MCreateThis* ins) {
 }
 
 void LIRGenerator::visitCreateArgumentsObject(MCreateArgumentsObject* ins) {
-  LAllocation callObj = useRegisterAtStart(ins->getCallObject());
+  LAllocation callObj = useRegisterAtStart(ins->callObject());
   LCreateArgumentsObject* lir = new (alloc())
       LCreateArgumentsObject(callObj, tempFixed(CallTempReg0),
                              tempFixed(CallTempReg1), tempFixed(CallTempReg2));

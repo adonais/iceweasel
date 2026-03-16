@@ -419,15 +419,6 @@
     input: BoxedValue
   mir_op: TypeOfIs
 
-# Allocate a new arguments object for the frame.
-- name: CreateArgumentsObject
-  result_type: WordSized
-  operands:
-    callObject: WordSized
-  num_temps: 3
-  call_instruction: true
-  mir_op: true
-
 - name: CreateInlinedArgumentsObject
   gen_boilerplate: false
 
