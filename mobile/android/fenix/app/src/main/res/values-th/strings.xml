@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">แปลหน้า</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">สรุปหน้า</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">ใหม่</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">รายงานไซต์ที่ใช้งานไม่ได้…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -370,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">แปลหน้าจาก%1$sเป็น%2$sแล้ว</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">เขย่าอุปกรณ์ของคุณเพื่อสรุปข้อมูลหน้านี้ในไม่กี่วินาที ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -940,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">คำแนะนำจาก %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">รับคำแนะนำจากเว็บที่เกี่ยวข้องกับการค้นหาของคุณ</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">ดึงคำแนะนำจาก Mozilla ขณะที่คุณพิมพ์</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">การแบ่งปันลิงก์</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1027,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">เจ้าของชุดสะสม (ไอดีผู้ใช้)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">ชุดสะสมส่วนขยายได้ถูกแก้ไขแล้ว ออกจากแอปพลิเคชันเพื่อใช้การเปลี่ยนแปลง…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">รายงานความเป็นส่วนตัว</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">กลับเข้าไป</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1586,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">แบ่งปัน</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">เพิ่มไปยังชุดสะสม</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">เพิ่มไปยังกลุ่ม</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">แบ่งปันแท็บที่เลือก</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1632,8 +1646,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">สร้างกลุ่มแท็บ</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">แก้ไขกลุ่ม</string>
   <string name="create_tab_group_save_button">บันทึก</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">ปิดแก้ไขกลุ่มแท็บ</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">กลุ่ม</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">กลุ่ม %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">ชื่อกลุ่มแท็บ</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">ชื่อ</string>
   <!--
     History
 
@@ -2490,6 +2517,16 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s ปกป้องคุณจากตัวติดตามที่พบบ่อยที่สุดซึ่งติดตามสิ่งที่คุณทำทางออนไลน์</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">เรียนรู้เพิ่มเติม</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">%d ตัวติดตามถูกปิดกั้น</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">คุณได้รับการปกป้อง</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">มาตรฐาน (ค่าเริ่มต้น)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3660,6 +3697,13 @@
   -->
   <string name="connection_security_panel_verified_by">ยืนยันโดย %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">ออกให้ %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">มีคุณสมบัติตรงตามที่ระบุไว้ในระเบียบ (EU) 2024/1183</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3749,6 +3793,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">ฉันไม่ใช้การค้นหาบน Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">ฉันไม่ใช้การซิงค์</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">ช้าหรือมีบั๊ก</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">คุณลักษณะบางอย่างหาได้ยากหรือขาดหายไป</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">ดูงงหรือใช้งานยาก</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">ก็พอใช้ได้ แต่ไม่ได้ดีไปกว่าเบราว์เซอร์อื่น ๆ</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">ฉันวางแผนที่จะใช้ Firefox ต่อไป</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">ช่วยเราทำให้ระบบการพิมพ์ใน Firefox ดีขึ้น โดยสละเวลาเพียงนาทีเดียว</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3763,6 +3817,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">คุณพอใจกับการค้นหาใน Firefox มากแค่ไหน?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">คุณพอใจกับการซิงค์ใน Firefox มากแค่ไหน?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">ช่วยเราปรับปรุง Firefox ให้ดียิ่งขึ้น ประสบการณ์ของคุณกับ Firefox ตรงกับคำอธิบายใดมากที่สุด?</string>
   <!--
     Accessibility
 
