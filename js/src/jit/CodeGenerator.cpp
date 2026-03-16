@@ -20971,7 +20971,7 @@ void CodeGenerator::visitAssertClass(LAssertClass* ins) {
 }
 
 void CodeGenerator::visitAssertShape(LAssertShape* ins) {
-  Register obj = ToRegister(ins->input());
+  Register obj = ToRegister(ins->object());
 
   Label success;
   masm.branchTestObjShapeNoSpectreMitigations(Assembler::Equal, obj,

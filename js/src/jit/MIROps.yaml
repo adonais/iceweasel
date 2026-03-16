@@ -597,6 +597,7 @@
   type_policy: none
   alias_set: none
   guard: true
+  generate_lir: true
 
 # Caller-side allocation of |this| for |new|:
 # Constructs |this| when possible, else MagicValue(JS_IS_CONSTRUCTING).
@@ -848,6 +849,7 @@
   clone: true
   congruent_to: if_operands_and_arguments_equal
   folds_to: custom
+  generate_lir: true
 
 - name: ExtendInt32ToInt64
   operands:
@@ -861,6 +863,7 @@
   clone: true
   congruent_to: if_operands_and_arguments_equal
   folds_to: custom
+  generate_lir: true
 
 - name: WasmBuiltinTruncateToInt64
   gen_boilerplate: false
@@ -968,6 +971,7 @@
   movable: true
   congruent_to: if_operands_equal
   compute_range: custom
+  generate_lir: true
 
 # Converts an IntPtr value to Double.
 - name: IntPtrToDouble
@@ -978,6 +982,7 @@
   alias_set: none
   movable: true
   congruent_to: if_operands_equal
+  generate_lir: true
 
 - name: AdjustDataViewLength
   gen_boilerplate: false
@@ -1024,6 +1029,7 @@
   clone: true
   congruent_to: if_operands_equal
   folds_to: custom
+  generate_lir: true
 
 # Takes an Int64 and returns a fresh BigInt pointer.
 - name: Int64ToBigInt
@@ -1038,6 +1044,8 @@
   clone: true
   can_recover: true
   congruent_to: if_operands_and_arguments_equal
+  generate_lir: true
+  lir_temps64: 1
 
 # Takes an Int64 and returns a IntPtr.
 - name: Int64ToIntPtr
@@ -1051,6 +1059,7 @@
   movable: true
   clone: true
   congruent_to: if_operands_and_arguments_equal
+  generate_lir: true
 
 # Takes a IntPtr and returns an Int64.
 - name: IntPtrToInt64
@@ -1062,6 +1071,7 @@
   movable: true
   clone: true
   congruent_to: if_operands_and_arguments_equal
+  generate_lir: true
 
 - name: ToString
   gen_boilerplate: false
@@ -1716,6 +1726,8 @@
   guard: true
   alias_set:
     store: ExceptionState
+  possibly_calls: true
+  generate_lir: true
 
 # In the prologues of global and eval scripts, check for redeclarations and
 # initialize bindings.
@@ -3441,6 +3453,7 @@
   alias_set:
     load: Element
   congruent_to: if_operands_equal
+  generate_lir: true
 
 - name: NewPrivateName
   arguments:

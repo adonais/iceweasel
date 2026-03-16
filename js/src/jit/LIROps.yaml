@@ -1790,18 +1790,6 @@
     input: WordSized
   mir_op: true
 
-- name: WrapInt64ToInt32
-  result_type: WordSized
-  operands:
-    input: Int64
-  mir_op: true
-
-- name: ExtendInt32ToInt64
-  result_type: Int64
-  operands:
-    input: WordSized
-  mir_op: true
-
 # Convert a boolean value to a string.
 - name: BooleanToString
   result_type: WordSized
@@ -2002,11 +1990,6 @@
     index: WordSized
     initLength: WordSized
   mir_op: true
-
-- name: GuardElementNotHole
-  operands:
-    elements: WordSized
-    index: WordSized
 
 # Load a value from an array's elements vector, loading |undefined| if we hit a
 # hole. Bail out if we get a negative index.
@@ -2717,16 +2700,6 @@
     input: WordSized
   mir_op: true
 
-- name: NonNegativeIntPtrToInt32
-  result_type: WordSized
-  operands:
-    input: WordSized
-
-- name: IntPtrToDouble
-  result_type: WordSized
-  operands:
-    input: WordSized
-
 - name: AdjustDataViewLength
   result_type: WordSized
   operands:
@@ -2755,20 +2728,6 @@
   num_temps: 1
   mir_op: ToInt64
 
-# Truncate a BigInt to an unboxed int64.
-- name: TruncateBigIntToInt64
-  result_type: Int64
-  operands:
-    input: WordSized
-  mir_op: true
-
-# Create a new BigInt* from an unboxed int64.
-- name: Int64ToBigInt
-  result_type: WordSized
-  operands:
-    input: Int64
-  num_temps64: 1
-
 # Create a new BigInt* from an unboxed uint64.
 - name: Uint64ToBigInt
   result_type: WordSized
@@ -2776,19 +2735,6 @@
     input: Int64
   num_temps: 1
   mir_op: Int64ToBigInt
-
-# Return intptr from an unboxed int64. Bails if the input exceeds intptr limits.
-- name: Int64ToIntPtr
-  result_type: WordSized
-  operands:
-    input: Int64
-  mir_op: true
-
-# Return an int64 from an intptr.
-- name: IntPtrToInt64
-  result_type: Int64
-  operands:
-    input: WordSized
 
 # Generational write barrier used when writing an object to another object.
 - name: PostWriteBarrierO
@@ -3476,11 +3422,6 @@
   num_temps: 1
   mir_op: true
 
-- name: AssertShape
-  operands:
-    input: WordSized
-  mir_op: true
-
 - name: GuardValue
   operands:
     input: BoxedValue
@@ -3495,10 +3436,6 @@
 - name: LexicalCheck
   operands:
     input: BoxedValue
-  mir_op: true
-
-- name: ThrowMsg
-  call_instruction: true
   mir_op: true
 
 - name: MemoryBarrier
