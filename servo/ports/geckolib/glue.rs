@@ -97,7 +97,7 @@ use style::properties::{
 };
 use style::properties_and_values::registry::PropertyRegistration;
 use style::rule_cache::RuleCacheConditions;
-use style::rule_tree::StrongRuleNode;
+use style::rule_tree::{RuleCascadeFlags, StrongRuleNode};
 use style::selector_parser::PseudoElementCascadeType;
 use style::shared_lock::{
     Locked, SharedRwLock, SharedRwLockReadGuard, StylesheetGuards, ToCssWithGuard,
@@ -1066,6 +1066,7 @@ fn resolve_rules_for_element_with_context<'a>(
         rules: Some(rules),
         visited_rules: None,
         flags: original_computed_values.flags.for_cascade_inputs(),
+        include_starting_style: Default::default(),
     };
 
     // Actually `PseudoElementResolution` doesn't matter.
@@ -1547,17 +1548,6 @@ pub extern "C" fn Servo_Element_IsPrimaryStyleReusedViaRuleNode(element: &RawGec
         .expect("Invoking Servo_Element_IsPrimaryStyleReusedViaRuleNode on unstyled element");
     data.flags
         .contains(data::ElementDataFlags::PRIMARY_STYLE_REUSED_VIA_RULE_NODE)
-}
-
-#[no_mangle]
-pub extern "C" fn Servo_Element_MayHaveStartingStyle(element: &RawGeckoElement) -> bool {
-    let element = GeckoElement(element);
-    let data = match element.borrow_data() {
-        Some(d) => d,
-        None => return false,
-    };
-    data.flags
-        .contains(data::ElementDataFlags::MAY_HAVE_STARTING_STYLE)
 }
 
 #[no_mangle]
@@ -2789,8 +2779,7 @@ where
     F: FnOnce(Option<&ScopeRootCandidate>) -> R,
 {
     use selectors::matching::{
-        matches_selector, IncludeStartingStyle, MatchingContext, MatchingMode, NeedsSelectorFlags,
-        VisitedHandlingMode,
+        matches_selector, MatchingContext, MatchingMode, NeedsSelectorFlags, VisitedHandlingMode,
     };
 
     let quirks_mode = element.as_node().owner_doc().quirks_mode();
@@ -2839,7 +2828,6 @@ where
         /* bloom_filter = */ None,
         &mut selector_caches,
         visited_mode,
-        IncludeStartingStyle::No,
         quirks_mode,
         NeedsSelectorFlags::No,
         MatchingForInvalidation::No,
@@ -4660,6 +4648,7 @@ pub struct MatchingDeclarationBlock {
 #[no_mangle]
 pub extern "C" fn Servo_ComputedValues_GetMatchingDeclarations(
     values: &ComputedValues,
+    with_starting_style: bool,
     rules: &mut nsTArray<MatchingDeclarationBlock>,
 ) {
     use style::rule_tree::CascadeOrigin;
@@ -4681,7 +4670,12 @@ pub extern "C" fn Servo_ComputedValues_GetMatchingDeclarations(
             continue;
         };
 
-        let origin = match node.cascade_level().origin() {
+        let prio = node.cascade_priority();
+        if prio.flags().intersects(RuleCascadeFlags::STARTING_STYLE) && !with_starting_style {
+            continue;
+        }
+
+        let origin = match prio.cascade_level().origin() {
             CascadeOrigin::UA => MatchingDeclarationBlockOrigin::UserAgent,
             CascadeOrigin::User => MatchingDeclarationBlockOrigin::User,
             CascadeOrigin::Author => MatchingDeclarationBlockOrigin::Author,
@@ -4727,14 +4721,13 @@ fn dump_properties_and_rules(cv: &ComputedValues, properties: &LonghandIdSet) {
 #[cfg(feature = "gecko_debug")]
 fn dump_rules(cv: &ComputedValues) {
     println_stderr!("  Rules({:?}):", cv.pseudo());
-    if let Some(rules) = cv.rules.as_ref() {
-        for rn in rules.self_and_ancestors() {
-            if rn.importance().important() {
-                continue;
-            }
-            if let Some(d) = rn.style_source() {
-                println_stderr!("    {:?}", d.get());
-            }
+    let Some(ref rules) = cv.rules else { return };
+    for rn in rules.self_and_ancestors() {
+        if rn.importance().important() {
+            continue;
+        }
+        if let Some(d) = rn.style_source() {
+            println_stderr!("    {:?} - {:?}", d.get(), rn.cascade_priority());
         }
     }
 }
@@ -6838,44 +6831,6 @@ pub extern "C" fn Servo_ResolveStyleLazily(
     finish(&styles, /* is_probe = */ false)
         .expect("We're not probing, so we should always get a style back")
         .into()
-}
-
-#[no_mangle]
-pub extern "C" fn Servo_ResolveStartingStyle(
-    element: &RawGeckoElement,
-    snapshots: *const ServoElementSnapshotTable,
-    raw_data: &PerDocumentStyleData,
-) -> Strong<ComputedValues> {
-    use style::style_resolver::{PseudoElementResolution, StyleResolverForElement};
-
-    let doc_data = raw_data.borrow();
-    let global_style_data = &*GLOBAL_STYLE_DATA;
-    let guard = global_style_data.shared_lock.read();
-    let shared = create_shared_context(
-        &global_style_data,
-        &guard,
-        &doc_data.stylist,
-        TraversalFlags::empty(),
-        unsafe { &*snapshots },
-    );
-    let mut tlc = ThreadLocalStyleContext::new();
-    let mut context = StyleContext {
-        shared: &shared,
-        thread_local: &mut tlc,
-    };
-
-    let element = GeckoElement(element);
-    context.thread_local.bloom_filter.rebuild(element);
-
-    let mut resolver = StyleResolverForElement::new(
-        element,
-        &mut context,
-        RuleInclusion::All,
-        PseudoElementResolution::IfApplicable,
-    );
-
-    let starting_style = resolver.resolve_starting_style();
-    starting_style.style.0.into()
 }
 
 #[no_mangle]

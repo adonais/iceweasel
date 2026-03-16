@@ -261,10 +261,6 @@ class ServoStyleSet {
       dom::Element* aParentElement, PseudoStyleType aType,
       ComputedStyle* aParentStyle, const AtomArray& aInputWord);
 
-  // Try to resolve the staring style for a given element. Please call this
-  // function after checking if it may have rules inside @starting-style.
-  already_AddRefed<ComputedStyle> ResolveStartingStyle(dom::Element& aElement);
-
   already_AddRefed<ComputedStyle> ResolvePositionTry(
       dom::Element& aElement, const ComputedStyle& aStyle,
       const StylePositionTryFallbacksItem&);
