@@ -45,6 +45,7 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.WindowInsetsCompat;
 import java.io.File;
@@ -83,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.geckoview.AIFeaturesController;
 import org.mozilla.geckoview.AllowOrDeny;
 import org.mozilla.geckoview.Autocomplete;
 import org.mozilla.geckoview.Autofill;
@@ -131,6 +133,37 @@ import org.mozilla.geckoview.WebRequestError;
 import org.mozilla.geckoview.WebResponse;
 
 package org.mozilla.geckoview {
+
+  public class AIFeaturesController {
+    ctor public AIFeaturesController();
+  }
+
+  public static class AIFeaturesController.AIFeature {
+    ctor @VisibleForTesting protected AIFeature();
+    field @NonNull public final String id;
+    field public final boolean isAllowed;
+    field public final boolean isEnabled;
+  }
+
+  public static class AIFeaturesController.AIFeaturesException extends Exception {
+    ctor public AIFeaturesException(int);
+    field public static final int ERROR_COULD_NOT_PARSE = -2;
+    field public static final int ERROR_COULD_NOT_RESET = -5;
+    field public static final int ERROR_COULD_NOT_SET = -4;
+    field public static final int ERROR_UNKNOWN = -1;
+    field public static final int ERROR_UNKNOWN_FEATURE = -3;
+    field public final int code;
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface AIFeaturesController.AIFeaturesException.Code {
+  }
+
+  public static class AIFeaturesController.RuntimeAIFeatures {
+    ctor public RuntimeAIFeatures();
+    method @HandlerThread @NonNull public static GeckoResult<Map<String,AIFeaturesController.AIFeature>> listFeatures();
+    method @HandlerThread @NonNull public static GeckoResult<Void> resetFeature(@NonNull String);
+    method @HandlerThread @NonNull public static GeckoResult<Void> setFeatureEnablement(@NonNull String, boolean);
+  }
 
   @AnyThread public final enum AllowOrDeny {
     method public static AllowOrDeny valueOf(String);
