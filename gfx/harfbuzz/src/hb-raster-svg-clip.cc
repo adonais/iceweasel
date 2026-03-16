@@ -83,24 +83,10 @@ svg_clip_append_shape (hb_svg_clip_collect_context_t *ctx,
     clip_shape.has_transform = true;
     clip_shape.transform = transform;
   }
-  ctx->defs->clip_shapes.push (clip_shape);
-  if (likely (!ctx->defs->clip_shapes.in_error ()))
+  if (likely (ctx->defs->clip_shapes.push_or_fail (clip_shape)))
     ctx->clip->shape_count++;
   else if (ctx->had_alloc_failure)
     *ctx->had_alloc_failure = true;
-}
-
-static void
-svg_skip_subtree (hb_svg_xml_parser_t &parser)
-{
-  int depth = 1;
-  while (depth > 0)
-  {
-    hb_svg_token_type_t tok = parser.next ();
-    if (tok == SVG_TOKEN_EOF) break;
-    if (tok == SVG_TOKEN_CLOSE_TAG) depth--;
-    else if (tok == SVG_TOKEN_OPEN_TAG) depth++;
-  }
 }
 
 static inline bool

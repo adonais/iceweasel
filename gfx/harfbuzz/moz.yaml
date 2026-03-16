@@ -20,11 +20,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: 13.0.1 (2026-03-07T20:25:13+02:00).
+  release: 13.1.1 (2026-03-13T03:08:03+02:00).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: 13.0.1
+  revision: 13.1.1
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/

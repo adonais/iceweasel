@@ -131,6 +131,7 @@ UNIFIED_SOURCES += [
     'hb-vector-svg-subset.cc',
     'hb-vector-svg-utils.cc',
     'hb-vector.cc',
+    'hb-zlib.cc',
 ]
 
 SOURCES = [
