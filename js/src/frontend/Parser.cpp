@@ -9019,7 +9019,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeAddInitializerFunction(
   if (!notePositionalFormalParameter(
           funNode, TaggedParserAtomIndex::WellKnown::initializer(), pos().begin,
           disallowDuplicateParams, &duplicatedParam)) {
-    return null();
+    return errorResult();
   }
   MOZ_ASSERT(!duplicatedParam);
   MOZ_ASSERT(pc_->positionalFormalParameterNames().length() == 1);
@@ -9035,15 +9035,15 @@ GeneralParser<ParseHandler, Unit>::synthesizeAddInitializerFunction(
   ListNodeType stmtList = MOZ_TRY(handler_.newStatementList(propNamePos));
 
   if (!noteUsedName(initializers)) {
-    return null();
+    return errorResult();
   }
 
   bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
-    return null();
+    return errorResult();
   }
   if (!pc_->declareNewTarget(usedNames_, canSkipLazyClosedOverBindings)) {
-    return null();
+    return errorResult();
   }
 
   LexicalScopeNodeType addInitializerBody = MOZ_TRY(finishLexicalScope(
@@ -10987,7 +10987,7 @@ typename ParseHandler::NodeResult GeneralParser<ParseHandler, Unit>::memberExpr(
 #ifdef ENABLE_DECORATORS
         if (!noteUsedName(TaggedParserAtomIndex::WellKnown::
                               dot_instanceExtraInitializers_())) {
-          return null();
+          return errorResult();
         }
 #endif
       } else {
