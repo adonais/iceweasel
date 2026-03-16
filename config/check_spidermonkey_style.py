@@ -176,30 +176,37 @@ js/src/tests/style/BadIncludes2.h:1: error:
 
 js/src/tests/style/BadIncludesOrder-inl.h:5:6: error:
     "vm/JSScript-inl.h" should be included after "vm/Interpreter-inl.h"
+    (alphabetical order within inline (-inl.h) header)
 
 js/src/tests/style/BadIncludesOrder-inl.h:6:7: error:
-    "vm/Interpreter-inl.h" should be included after "js/Value.h"
+    expected order: module header, mozilla/ headers, system headers (<...>), top-level headers (no path), local headers, inline (-inl.h) headers
+    "js/Value.h" (local header) appears after "vm/Interpreter-inl.h" (inline (-inl.h) header)
 
 js/src/tests/style/BadIncludesOrder-inl.h:7:8: error:
     "js/Value.h" should be included after "ds/LifoAlloc.h"
+    (alphabetical order within local header)
 
 js/src/tests/style/BadIncludesOrder-inl.h:9: error:
     "jsapi.h" is deprecated: Prefer including headers from js/public.
 
 js/src/tests/style/BadIncludesOrder-inl.h:8:9: error:
-    "ds/LifoAlloc.h" should be included after "jsapi.h"
+    expected order: module header, mozilla/ headers, system headers (<...>), top-level headers (no path), local headers, inline (-inl.h) headers
+    "jsapi.h" (top-level header (no path)) appears after "ds/LifoAlloc.h" (local header)
 
 js/src/tests/style/BadIncludesOrder-inl.h:9:10: error:
-    "jsapi.h" should be included after <stdio.h>
+    expected order: module header, mozilla/ headers, system headers (<...>), top-level headers (no path), local headers, inline (-inl.h) headers
+    <stdio.h> (system header (<...>)) appears after "jsapi.h" (top-level header (no path))
 
 js/src/tests/style/BadIncludesOrder-inl.h:10:11: error:
-    <stdio.h> should be included after "mozilla/HashFunctions.h"
+    expected order: module header, mozilla/ headers, system headers (<...>), top-level headers (no path), local headers, inline (-inl.h) headers
+    "mozilla/HashFunctions.h" (mozilla/ header) appears after <stdio.h> (system header (<...>))
 
 js/src/tests/style/BadIncludesOrder-inl.h:20: error:
     "jsapi.h" is deprecated: Prefer including headers from js/public.
 
 js/src/tests/style/BadIncludesOrder-inl.h:28:29: error:
     "vm/JSScript.h" should be included after "vm/JSFunction.h"
+    (alphabetical order within local header)
 
 (multiple files): error:
     header files form one or more cycles
@@ -422,6 +429,23 @@ class Include:
         # Includes are style-relevant; that is, they're checked by the pairwise
         # style-checking algorithm in check_file.
         return True
+
+    # Human-readable names for each section, used in error messages.
+    section_names = {
+        0: "module header",
+        1: "mozilla/ header",
+        2: "system header (<...>)",
+        3: "top-level header (no path)",
+        4: "local header",
+        5: "inline (-inl.h) header",
+        6: "non-header (.tbl/.msg)",
+    }
+
+    # Summary of the expected include ordering, shown in ordering error messages.
+    order_description = (
+        "expected order: module header, mozilla/ headers, system headers (<...>),"
+        " top-level headers (no path), local headers, inline (-inl.h) headers"
+    )
 
     def section(self, enclosing_inclname):
         """Identify which section inclname belongs to.
@@ -755,11 +779,26 @@ def check_file(
             (section1 == section2)
             and (include1.inclname.lower() > include2.inclname.lower())
         ):
-            error(
-                filename,
-                str(include1.linenum) + ":" + str(include2.linenum),
-                include1.quote() + " should be included after " + include2.quote(),
-            )
+            if section1 != section2:
+                # include2 is the misplaced one: it has a lower section number
+                # so it should appear earlier, but it's showing up after include1.
+                s1_name = Include.section_names[section1]
+                s2_name = Include.section_names[section2]
+                error(
+                    filename,
+                    str(include1.linenum) + ":" + str(include2.linenum),
+                    Include.order_description,
+                    f"{include2.quote()} ({s2_name}) appears after"
+                    f" {include1.quote()} ({s1_name})",
+                )
+            else:
+                section_name = Include.section_names[section1]
+                error(
+                    filename,
+                    str(include1.linenum) + ":" + str(include2.linenum),
+                    include1.quote() + " should be included after " + include2.quote(),
+                    f"(alphabetical order within {section_name})",
+                )
 
     # Check the extracted #include statements, both individually, and the ordering of
     # adjacent pairs that live in the same block.
