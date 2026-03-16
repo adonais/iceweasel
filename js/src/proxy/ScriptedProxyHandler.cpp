@@ -1173,7 +1173,7 @@ void ScriptedProxyHandler::reportGetTrapValidationError(
       js::Throw(cx, id, JSMSG_MUST_REPORT_SAME_VALUE);
       return;
     case GetTrapValidationResult::MustReportUndefined:
-      js::Throw(cx, id, JSMSG_MUST_REPORT_SAME_VALUE);
+      js::Throw(cx, id, JSMSG_MUST_REPORT_UNDEFINED);
       return;
     case GetTrapValidationResult::Exception:
       return;
