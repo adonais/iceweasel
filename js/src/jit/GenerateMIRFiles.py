@@ -59,7 +59,6 @@ type_policies = {
     "Double": "DoublePolicy",
     "String": "StringPolicy",
     "Symbol": "SymbolPolicy",
-    "NoTypePolicy": "NoTypePolicy",
     "Slots": "NoTypePolicy",
 }
 
@@ -68,15 +67,11 @@ def decide_type_policy(types, no_type_policy):
     if no_type_policy:
         return "public NoTypePolicy::Data"
 
-    type_num = 0
     mixed_type_policies = []
-    for mir_type in types:
+    for type_num, mir_type in enumerate(types):
         policy = type_policies[mir_type]
-        if policy == "NoTypePolicy":
-            type_num += 1
-            continue
-        mixed_type_policies.append(f"{policy}<{type_num}>")
-        type_num += 1
+        if policy != "NoTypePolicy":
+            mixed_type_policies.append(f"{policy}<{type_num}>")
 
     if len(mixed_type_policies) == 0:
         return "public NoTypePolicy::Data"
@@ -239,8 +234,7 @@ def gen_mir_class(
     # Items for NAMED_OPERANDS.
     named_operands = []
     if operands:
-        current_oper_num = 0
-        for oper_name in operands:
+        for current_oper_num, oper_name in enumerate(operands):
             oper = "MDefinition* " + oper_name
             mir_operands.append(oper)
             mir_base_class_operands.append(", " + oper_name)
@@ -249,7 +243,6 @@ def gen_mir_class(
             mir_types.append(operands[oper_name])
             # Collecting named operands for defining accessors.
             named_operands.append(f"({current_oper_num}, {oper_name})")
-            current_oper_num += 1
         type_policy = decide_type_policy(mir_types, no_type_policy)
 
     class_name = "M" + name
