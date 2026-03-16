@@ -2516,11 +2516,11 @@ void CodeGenerator::visitWasmStoreLaneSimd128(LWasmStoreLaneSimd128* ins) {
   MOZ_CRASH("No SIMD");
 }
 
-void CodeGenerator::visitWasmMulI64WideHI64(LWasmMulI64WideHI64* lir) {
-  Register lhs = ToRegister(lir->lhs());
-  Register rhs = ToRegister(lir->rhs());
-  Register output = ToRegister(lir->output());
+void CodeGenerator::visitWasmMulI64WideHI64(LWasmMulI64WideHI64* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  Register rhs = ToRegister(ins->rhs());
+  Register output = ToRegister(ins->output());
   // This holds because both operands are non-AtStart variants.
   MOZ_ASSERT(output != lhs && output != rhs);
-  masm.wasmMulI64WideHI64(lhs, rhs, output, lir->isSigned());
+  masm.wasmMulI64WideHI64(lhs, rhs, output, ins->isSigned());
 }
