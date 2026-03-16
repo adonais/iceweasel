@@ -287,6 +287,21 @@ def gen_mir_class(
                 code += arg_name
             code += ")"
     code += " {\\\n"
+    if operands:
+        for oper_name in operands:
+            mir_type = operands[oper_name]
+
+            # Skip over Value-typed operands of instructions like IsNullOrUndefined,
+            # which allow any typed input. Maybe we should give these operands a
+            # new "Any" type instead?
+            if no_type_policy and mir_type == "Value":
+                continue
+
+            policy = type_policies.get(mir_type, "NoTypePolicy")
+            if no_type_policy or policy == "NoTypePolicy":
+                code += (
+                    f"    MOZ_ASSERT({oper_name}->type() == MIRType::{mir_type});\\\n"
+                )
     if guard:
         code += "    setGuard();\\\n"
     if movable:

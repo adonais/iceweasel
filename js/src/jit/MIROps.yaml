@@ -3283,7 +3283,7 @@
 
 - name: IsNoIter
   operands:
-    def: Object
+    def: Value
   result_type: Boolean
   type_policy: none
   movable : true
@@ -4594,7 +4594,7 @@
 
 - name: WasmStackSwitchToMain
   operands:
-    instance: WasmAnyRef
+    instance: Pointer
     suspender: WasmAnyRef
     fn: WasmAnyRef
     data: WasmAnyRef
@@ -4605,7 +4605,7 @@
 
 - name: WasmStackSwitchToSuspendable
   operands:
-    instance: WasmAnyRef
+    instance: Pointer
     suspender: WasmAnyRef
     fn: WasmAnyRef
     data: WasmAnyRef
@@ -4615,7 +4615,7 @@
 
 - name: WasmStackContinueOnSuspendable
   operands:
-    instance: WasmAnyRef
+    instance: Pointer
     suspender: WasmAnyRef
     result: WasmAnyRef
   type_policy: none
