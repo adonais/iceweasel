@@ -133,6 +133,7 @@ UNLOCKED_RULE_TYPE(FontFeatureValues)
 UNLOCKED_RULE_TYPE(FontPaletteValues)
 UNLOCKED_RULE_TYPE(Scope)
 UNLOCKED_RULE_TYPE(StartingStyle)
+UNLOCKED_RULE_TYPE(AppearanceBase)
 
 SERVO_ARC_TYPE(AnimationValue, mozilla::StyleAnimationValue)
 SERVO_ARC_TYPE(ComputedStyle, mozilla::ComputedStyle)

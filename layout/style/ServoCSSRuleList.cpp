@@ -10,6 +10,7 @@
 
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StyleSheet.h"
+#include "mozilla/dom/CSSAppearanceBaseRule.h"
 #include "mozilla/dom/CSSContainerRule.h"
 #include "mozilla/dom/CSSCounterStyleRule.h"
 #include "mozilla/dom/CSSCustomMediaRule.h"
@@ -106,6 +107,7 @@ css::Rule* ServoCSSRuleList::GetRule(uint32_t aIndex) {
       CASE_RULE_UNLOCKED(Container, Container)
       CASE_RULE_UNLOCKED(Scope, Scope)
       CASE_RULE_UNLOCKED(StartingStyle, StartingStyle)
+      CASE_RULE_UNLOCKED(AppearanceBase, AppearanceBase)
       CASE_RULE_LOCKED(PositionTry, PositionTry)
       CASE_RULE_LOCKED(NestedDeclarations, NestedDeclarations)
       CASE_RULE_UNLOCKED(CustomMedia, CustomMedia)
@@ -286,6 +288,7 @@ void ServoCSSRuleList::SetRawContents(RefPtr<StyleLockedCssRules> aNewRules,
       RULE_CASE_UNLOCKED(Container, Container)
       RULE_CASE_UNLOCKED(Scope, Scope)
       RULE_CASE_UNLOCKED(StartingStyle, StartingStyle)
+      RULE_CASE_UNLOCKED(AppearanceBase, AppearanceBase)
       RULE_CASE_LOCKED(PositionTry, PositionTry)
       RULE_CASE_LOCKED(NestedDeclarations, NestedDeclarations)
       RULE_CASE_UNLOCKED(CustomMedia, CustomMedia)
