@@ -448,3 +448,12 @@ void CodeGeneratorMIPS64::emitBigIntPtrMod(LBigIntPtrMod* ins,
   masm.as_mfhi(/* result= */ output);
 #endif
 }
+
+void CodeGenerator::visitWasmMulI64WideHI64(LWasmMulI64WideHI64* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  Register rhs = ToRegister(ins->rhs());
+  Register output = ToRegister(ins->output());
+  // This holds because both operands are non-AtStart variants.
+  MOZ_ASSERT(output != lhs && output != rhs);
+  masm.wasmMulI64WideHI64(lhs, rhs, output, ins->isSigned());
+}

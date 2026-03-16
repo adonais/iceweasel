@@ -249,6 +249,10 @@ void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
   mulPtr(scratch, srcDest);
 }
 
+void MacroAssembler::mul64(const Register64& rhs, const Register64& srcDest) {
+  mul64(rhs, srcDest, InvalidReg);
+}
+
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest) {
   UseScratchRegisterScope temps(*this);
   Register scratch = temps.Acquire();
@@ -872,6 +876,47 @@ void MacroAssembler::fallibleUnboxPtr(const BaseIndex& src, Register dest,
                                       JSValueType type, Label* fail) {
   loadValue(src, ValueOperand(dest));
   fallibleUnboxPtr(ValueOperand(dest), dest, type, fail);
+}
+
+// ===============================================================
+// 128-bit arithmetic
+
+void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
+                                        Register rhsLo, Register rhsHi,
+                                        Register output, bool isAdd) {
+  // Require: the output is not the same as any of the inputs.
+  MOZ_RELEASE_ASSERT(output != lhsLo && output != lhsHi && output != rhsLo &&
+                     output != rhsHi);
+  // We use `output` as a temp to hold the carry or borrow.
+  if (isAdd) {
+    as_daddu(output, lhsLo, rhsLo);   // output = lhsLo + rhsLo
+    as_sltu(output, output, lhsLo);   // output = carry from `lhsLo + rhsLo`
+    as_daddu(output, output, lhsHi);  // output = carry + lhsHi
+    as_daddu(output, output, rhsHi);  // output = carry + lhsHi + rhsHi
+  } else {
+    as_sltu(output, lhsLo, rhsLo);    // output = borrow from `lhsLo - rhsLo`
+    as_dsubu(output, lhsHi, output);  // output = lhsHi - borrow
+    as_dsubu(output, output, rhsHi);  // output = lhsHi - borrow - rhsHi
+  }
+}
+
+void MacroAssembler::wasmMulI64WideHI64(Register lhs, Register rhs,
+                                        Register output, bool isSigned) {
+  if (isSigned) {
+#ifdef MIPSR6
+    as_dmuh(output, lhs, rhs);
+#else
+    as_dmult(lhs, rhs);
+    as_mfhi(output);
+#endif
+  } else {
+#ifdef MIPSR6
+    as_dmuhu(output, lhs, rhs);
+#else
+    as_dmultu(lhs, rhs);
+    as_mfhi(output);
+#endif
+  }
 }
 
 //}}} check_macroassembler_style
