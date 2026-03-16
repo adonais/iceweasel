@@ -575,12 +575,10 @@ apiLint {
     helpCommand = { variantName -> "\$ ./mach gradle :geckoview:apiUpdateFile${variantName}" }
 }
 
-// generateDebugLintModel and other lint tasks that depend on it check the geckoview assets folder
-// too which is used by machStagePackage task in parallel. This is a temporary fix to allow building
-// from root folder and should be replaced by a proper input and output dependency definition
-// or with an AGP update.
+// Lint tasks check the geckoview assets folder, which machStagePackage also writes to.
+// Ensure lint runs after machStagePackage when both are in the task graph to avoid conflicts.
 tasks.configureEach { task ->
     if (task.name.toLowerCase().contains("lint")) {
-        dependsOn(":machStagePackage")
+        mustRunAfter(":machStagePackage")
     }
 }
