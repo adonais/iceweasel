@@ -1489,6 +1489,7 @@ struct CCGraphDescriber : public LinkedListElement<CCGraphDescriber> {
     eGCedObject,
     eGCMarkedObject,
     eEdge,
+    eWeakMapEntry,
     eRoot,
     eGarbage,
     eUnknown
@@ -1497,6 +1498,8 @@ struct CCGraphDescriber : public LinkedListElement<CCGraphDescriber> {
   nsCString mAddress;
   nsCString mName;
   nsCString mCompartmentOrToAddress;
+  nsCString mKeyDelegateAddress;
+  nsCString mValueAddress;
   uint32_t mCnt;
   Type mType;
 };
@@ -1883,7 +1886,19 @@ class nsCycleCollectorLogger final : public nsICycleCollectorListener {
       fprintf(mCCLog, "WeakMapEntry map=%p key=%p keyDelegate=%p value=%p\n",
               (void*)aMap, (void*)aKey, (void*)aKeyDelegate, (void*)aValue);
     }
-    // We don't support after-processing for weak map entries.
+    if (mWantAfterProcessing) {
+      CCGraphDescriber* d = new CCGraphDescriber();
+      mDescribers.insertBack(d);
+      d->mType = CCGraphDescriber::eWeakMapEntry;
+      d->mAddress.AssignLiteral("0x");
+      d->mAddress.AppendInt(aMap, 16);
+      d->mCompartmentOrToAddress.AssignLiteral("0x");
+      d->mCompartmentOrToAddress.AppendInt(aKey, 16);
+      d->mKeyDelegateAddress.AssignLiteral("0x");
+      d->mKeyDelegateAddress.AppendInt(aKeyDelegate, 16);
+      d->mValueAddress.AssignLiteral("0x");
+      d->mValueAddress.AppendInt(aValue, 16);
+    }
   }
   void NoteIncrementalRoot(uint64_t aAddress) {
     if (!mDisableLog) {
@@ -1944,6 +1959,10 @@ class nsCycleCollectorLogger final : public nsICycleCollectorListener {
           break;
         case CCGraphDescriber::eEdge:
           aHandler->NoteEdge(d->mAddress, d->mCompartmentOrToAddress, d->mName);
+          break;
+        case CCGraphDescriber::eWeakMapEntry:
+          aHandler->NoteWeakMapEntry(d->mAddress, d->mCompartmentOrToAddress,
+                                     d->mKeyDelegateAddress, d->mValueAddress);
           break;
         case CCGraphDescriber::eRoot:
           aHandler->DescribeRoot(d->mAddress, d->mCnt);

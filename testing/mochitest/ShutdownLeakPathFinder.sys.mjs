@@ -4,8 +4,6 @@
 
 // Uses parallel arrays indexed by node ID to minimize allocations when
 // processing large CC graphs.
-// Note: weak map edges are not handled. See bug 2020003 for adding the
-// necessary cycle collector support.
 
 export class ShutdownLeakPathFinder {
   constructor() {
@@ -115,6 +113,23 @@ export class ShutdownLeakPathFinder {
     this.edgeFroms.push(this._ensureIndex(fromAddress));
     this.edgeTos.push(this._ensureIndex(toAddress));
     this.edgeNames.push(edgeName);
+  }
+
+  noteWeakMapEntry(mapAddr, keyAddr, keyDelegateAddr, valueAddr) {
+    if (valueAddr == "0x0") {
+      return;
+    }
+    // A weak map entry keeps the value alive if both the map and the key are
+    // alive. As an approximation, we only record the edge from the key to the
+    // value, ignoring the path to the map (which is usually a global variable
+    // and less interesting). We also ignore key delegates.
+    let fromAddr = keyAddr != "0x0" ? keyAddr : mapAddr;
+    if (fromAddr == "0x0") {
+      return;
+    }
+    this.edgeFroms.push(this._ensureIndex(fromAddr));
+    this.edgeTos.push(this._ensureIndex(valueAddr));
+    this.edgeNames.push("WeakMap value via key " + keyAddr);
   }
 
   describeRoot(address, knownEdges) {
