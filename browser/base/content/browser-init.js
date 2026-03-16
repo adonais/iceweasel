@@ -418,6 +418,12 @@ var gBrowserInit = {
       )?.removeAttribute("key");
     }
 
+    if (window.browsingContext.isDocumentPiP) {
+      for (const cmd of ["Browser:AddBookmarkAs", "Browser:Reload"]) {
+        document.getElementById(cmd).setAttribute("disabled", "true");
+      }
+    }
+
     this._loadHandled = true;
   },
 
