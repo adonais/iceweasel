@@ -1710,26 +1710,38 @@ Result<mozilla::LayoutDeviceRect, nsresult> nsDOMWindowUtils::ConvertTo(
     return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  // Note that if the document is NOT in OOP iframes, i.e. it's in the top level
-  // content subtree in the same process,
-  // nsIWidget::WidgetToTopLevelWidgetTransform() doesn't include the desktop
-  // zoom value, so for documents in the top level content document subtree,
-  // this ViewportUtils::DocumentRelativeLayoutToVisual call applies the desktop
-  // zoom value via PresShell::GetResolution() in the function.
   CSSRect rect(aX, aY, aWidth, aHeight);
-  rect = ViewportUtils::DocumentRelativeLayoutToVisual(rect, presShell);
 
+  nsRect appUnitsRect = CSSPixel::ToAppUnits(rect);
   nsPresContext* presContext = presShell->GetPresContext();
   MOZ_ASSERT(presContext);
+  nsPresContext* rootPresContext = presContext->GetRootPresContext();
+  MOZ_ASSERT(rootPresContext);
 
-  // For OOP iframe documents, we don't have desktop zoom value specifically in
-  // each iframe documents (i.e. the in-process root presshell's resolution is
-  // 1.0), instead nsIWidget::WidgetToTopLevelWidgetTransform() includes the
-  // desktop zoom scale value along with translations by ancestor scroll
-  // containers, ancestor CSS transforms, etc.
-  nsRect appUnitsRect = CSSPixel::ToAppUnits(rect);
+  // Use TransformRect to map coordinates from the subdocument frame to the
+  // top-level root frame, applying intermediate CSS transforms. For OOP iframe
+  // documents, rootFrame and topRootFrame are the same frame, so this is a
+  // no-op.
+  if (presContext != rootPresContext) {
+    nsIFrame* rootFrame = presShell->GetRootFrame();
+    nsIFrame* topRootFrame = rootPresContext->PresShell()->GetRootFrame();
+    if (rootFrame && topRootFrame) {
+      nsLayoutUtils::TransformRect(rootFrame, topRootFrame, appUnitsRect);
+    }
+  }
+
   LayoutDeviceRect devPixelsRect = LayoutDeviceRect::FromAppUnits(
       appUnitsRect, presContext->AppUnitsPerDevPixel());
+
+  // Apply the desktop zoom value via PresShell::GetResolution()
+  devPixelsRect =
+      ViewportUtils::DocumentRelativeLayoutToVisual(devPixelsRect, presShell);
+
+  // For OOP iframe documents, we don't have the desktop zoom value specifically
+  // in each iframe document (i.e. the in-process root presshell's resolution is
+  // 1.0). Instead, nsIWidget::WidgetToTopLevelWidgetTransform() includes the
+  // desktop zoom scale value along with translations by ancestor scroll
+  // containers, ancestor CSS transforms, etc.
   devPixelsRect =
       widget->WidgetToTopLevelWidgetTransform().TransformBounds(devPixelsRect);
 
