@@ -737,7 +737,6 @@ void LIRGeneratorX86::lowerWasmBuiltinModI64(MWasmBuiltinModI64* mod) {
   MOZ_ASSERT(IsNumberType(mod->type()));
 
   MOZ_ASSERT(mod->type() == MIRType::Int64);
-  MOZ_ASSERT(mod->type() == MIRType::Int64);
 
   if (mod->isUnsigned()) {
     LUDivOrModI64* lir = new (alloc())
