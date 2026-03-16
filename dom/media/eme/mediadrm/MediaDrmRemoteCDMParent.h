@@ -99,6 +99,9 @@ class MediaDrmRemoteCDMParent final : public RemoteCDMParent {
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
+  static void UnprovisionMediaDrmOrigins(
+      const nsTArray<nsCString>& aOriginKeys);
+
  private:
   virtual ~MediaDrmRemoteCDMParent();
 

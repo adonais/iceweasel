@@ -898,4 +898,41 @@ MediaDrmCryptoInfo::~MediaDrmCryptoInfo() {
   AMediaCodecCryptoInfo_delete(mCryptoInfo);
 }
 
+/* static */
+void MediaDrmRemoteCDMParent::UnprovisionMediaDrmOrigins(
+    const nsTArray<nsCString>& aOriginKeys) {
+  EME_LOG("UnprovisionMediaDrmOrigins: unprovisioning %zu origin(s)",
+          aOriginKeys.Length());
+
+  for (const auto& originKey : aOriginKeys) {
+    AMediaDrm* drm = AMediaDrm_createByUUID(WIDEVINE_UUID);
+    if (!drm) {
+      EME_LOG("UnprovisionMediaDrmOrigins: failed to create AMediaDrm");
+      continue;
+    }
+
+    media_status_t status =
+        AMediaDrm_setPropertyString(drm, "origin", originKey.get());
+    if (status != AMEDIA_OK) {
+      EME_LOG("UnprovisionMediaDrmOrigins: setPropertyString origin failed: %d",
+              status);
+      AMediaDrm_release(drm);
+      continue;
+    }
+
+    static constexpr char kUnprovision[] = "unprovision";
+    status = AMediaDrm_provideProvisionResponse(
+        drm, reinterpret_cast<const uint8_t*>(kUnprovision),
+        sizeof(kUnprovision) - 1);
+    if (status != AMEDIA_OK) {
+      EME_LOG(
+          "UnprovisionMediaDrmOrigins: provideProvisionResponse failed: %d "
+          "(may already be unprovisioned)",
+          status);
+    }
+
+    AMediaDrm_release(drm);
+  }
+}
+
 }  // namespace mozilla
