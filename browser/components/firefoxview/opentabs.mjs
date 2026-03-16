@@ -823,13 +823,13 @@ class OpenTabsContextMenu extends MozLitElement {
     });
 
     if (device && this.triggerNode) {
-      await viewPage
-        .getWindow()
-        .gSync.sendTabToDevice(
-          this.triggerNode.url,
-          [device],
-          this.triggerNode.title
-        );
+      let chromeWindow = viewPage.getWindow();
+      let tab = {
+        url: this.triggerNode.url,
+        title: this.triggerNode.title,
+        private: lazy.PrivateBrowsingUtils.isWindowPrivate(chromeWindow),
+      };
+      await chromeWindow.gSync.sendTabToDevice(tab, [device]);
     }
   }
 
