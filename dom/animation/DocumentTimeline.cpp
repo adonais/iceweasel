@@ -7,6 +7,7 @@
 #include "DocumentTimeline.h"
 
 #include "AnimationUtils.h"
+#include "mozilla/dom/Animation.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimelineBinding.h"
 #include "nsContentUtils.h"

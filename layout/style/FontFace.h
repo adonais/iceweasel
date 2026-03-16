@@ -9,7 +9,6 @@
 
 #include "gfxUserFontSet.h"
 #include "mozilla/GlobalTeardownObserver.h"
-#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/FontFaceBinding.h"
 #include "nsWrapperCache.h"
 

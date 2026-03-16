@@ -10,7 +10,6 @@
 #define nsTransitionManager_h_
 
 #include "AnimationCommon.h"
-#include "mozilla/dom/CSSTransition.h"
 #include "nsISupportsImpl.h"
 
 class nsPresContext;
@@ -18,9 +17,13 @@ class nsCSSPropertyIDSet;
 struct nsStyleUIReset;
 
 namespace mozilla {
+struct AnimationValue;
 class AnimatedPropertyIDSet;
 class ComputedStyle;
 struct PseudoStyleRequest;
+namespace dom {
+class CSSTransition;
+}
 }  // namespace mozilla
 
 class nsTransitionManager final

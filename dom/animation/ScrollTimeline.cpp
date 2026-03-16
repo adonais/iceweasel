@@ -11,6 +11,7 @@
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/AnimationTimelinesController.h"
 #include "mozilla/dom/Document.h"

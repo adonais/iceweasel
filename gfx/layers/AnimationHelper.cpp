@@ -24,6 +24,7 @@
 #include "mozilla/StyleAnimationValue.h"  // for StyleAnimationValue, etc
 #include "NonCustomCSSPropertyId.h"       // for eCSSProperty_offset_path, etc
 #include "nsDisplayList.h"                // for nsDisplayTransform, etc
+#include "nsStyleTransformMatrix.h"
 
 namespace mozilla::layers {
 

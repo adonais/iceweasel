@@ -13,7 +13,6 @@
 #include "mozilla/widget/ThemeChangeKind.h"
 #include "nsIClipboard.h"
 #include "nsIWidget.h"
-#include "nsStyleConsts.h"
 
 namespace IPC {
 

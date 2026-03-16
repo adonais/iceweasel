@@ -14,7 +14,6 @@
 #include "Units.h"  // for CSSPoint
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/gfx/Matrix.h"
-#include "nsSize.h"
 
 class nsIFrame;
 class nsPresContext;

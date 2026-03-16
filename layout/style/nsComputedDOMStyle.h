@@ -11,15 +11,11 @@
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PseudoStyleType.h"
-#include "mozilla/StyleColorInlines.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/gfx/Types.h"
-#include "nsCOMPtr.h"
 #include "nsColor.h"
-#include "nsContentUtils.h"
 #include "nsCoord.h"
 #include "nsDOMCSSDeclaration.h"
-#include "nsIWeakReferenceUtils.h"
 #include "nsStubMutationObserver.h"
 #include "nsStyleStruct.h"
 #include "nsStyleStructList.h"
@@ -100,11 +96,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   static already_AddRefed<const ComputedStyle> GetComputedStyleNoFlush(
       const Element* aElement, const PseudoStyleRequest& aPseudo = {},
-      StyleType aStyleType = StyleType::All) {
-    return DoGetComputedStyleNoFlush(
-        aElement, aPseudo, nsContentUtils::GetPresShellForContent(aElement),
-        aStyleType);
-  }
+      StyleType aStyleType = StyleType::All);
 
   static already_AddRefed<const ComputedStyle>
   GetUnanimatedComputedStyleNoFlush(Element*, const PseudoStyleRequest&);

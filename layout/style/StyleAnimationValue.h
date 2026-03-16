@@ -12,11 +12,10 @@
 #include "NonCustomCSSPropertyId.h"
 #include "mozilla/CSSPropertyId.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/ServoBindingTypes.h"
-#include "mozilla/ServoStyleConsts.h"  // Servo_AnimationValue_Dump
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/gfx/Matrix.h"
 #include "nsColor.h"
 #include "nsStringFwd.h"
-#include "nsStyleTransformMatrix.h"
 
 class nsIFrame;
 
@@ -36,6 +35,8 @@ class Animatable;
 
 enum class PseudoStyleType : uint8_t;
 struct PropertyStyleAnimationValuePair;
+struct StyleAnimationValue;
+struct StylePerDocumentStyleData;
 
 struct AnimationValue {
   explicit AnimationValue(const RefPtr<StyleAnimationValue>& aValue)
@@ -113,13 +114,7 @@ struct AnimationValue {
   RefPtr<StyleAnimationValue> mServo;
 };
 
-inline std::ostream& operator<<(std::ostream& aOut,
-                                const AnimationValue& aValue) {
-  MOZ_ASSERT(aValue.mServo);
-  nsAutoCString s;
-  Servo_AnimationValue_Dump(aValue.mServo, &s);
-  return aOut << s;
-}
+std::ostream& operator<<(std::ostream& aOut, const AnimationValue& aValue);
 
 struct PropertyStyleAnimationValuePair {
   CSSPropertyId mProperty;

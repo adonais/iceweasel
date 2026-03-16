@@ -7,11 +7,9 @@
 #ifndef nsPrintSettingsService_h
 #define nsPrintSettingsService_h
 
-#include "nsCOMPtr.h"
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
 #include "nsString.h"
-#include "nsFont.h"
 
 /**
  * Class nsPrintSettingsService.  Base class for the platform specific widget

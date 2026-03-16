@@ -8,7 +8,6 @@
 #define mozilla_AnimatedPropertyIDSet_h
 
 #include "CSSPropertyId.h"
-#include "mozilla/ServoBindings.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsTHashSet.h"
 

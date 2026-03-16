@@ -10,8 +10,6 @@
 #include "nsCellMap.h"
 #include "nsContainerFrame.h"
 #include "nsDisplayList.h"
-#include "nsGkAtoms.h"
-#include "nsStyleConsts.h"
 #include "nscore.h"
 
 struct BCPaintBorderAction;

@@ -10,7 +10,7 @@
  * liability, trademark and document use rules apply.
  */
 
-[HeaderFile="nsTransitionManager.h", Exposed=Window]
+[Exposed=Window]
 interface CSSTransition : Animation {
   [Constant] readonly attribute DOMString transitionProperty;
 };

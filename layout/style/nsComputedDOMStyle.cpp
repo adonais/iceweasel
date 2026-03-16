@@ -511,6 +511,15 @@ static bool IsInFlatTree(const Element& aElement) {
 }
 
 already_AddRefed<const ComputedStyle>
+nsComputedDOMStyle::GetComputedStyleNoFlush(const Element* aElement,
+                                            const PseudoStyleRequest& aPseudo,
+                                            StyleType aStyleType) {
+  return DoGetComputedStyleNoFlush(
+      aElement, aPseudo, nsContentUtils::GetPresShellForContent(aElement),
+      aStyleType);
+}
+
+already_AddRefed<const ComputedStyle>
 nsComputedDOMStyle::DoGetComputedStyleNoFlush(const Element* aElement,
                                               const PseudoStyleRequest& aPseudo,
                                               PresShell* aPresShell,

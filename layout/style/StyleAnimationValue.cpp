@@ -26,6 +26,7 @@
 #include "nsComputedDOMStyle.h"
 #include "nsIFrame.h"
 #include "nsString.h"
+#include "nsStyleTransformMatrix.h"
 
 using namespace mozilla;
 using namespace mozilla::css;
@@ -217,6 +218,13 @@ AnimationValue AnimationValue::FromString(CSSPropertyId& aProperty,
   result.mServo = presShell->StyleSet()->ComputeAnimationValue(
       aElement, declarations, computedStyle);
   return result;
+}
+
+std::ostream& operator<<(std::ostream& aOut, const AnimationValue& aValue) {
+  MOZ_ASSERT(aValue.mServo);
+  nsAutoCString s;
+  Servo_AnimationValue_Dump(aValue.mServo, &s);
+  return aOut << s;
 }
 
 /* static */

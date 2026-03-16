@@ -35,6 +35,14 @@ uint64_t nsDOMMutationObserver::sCount = 0;
 AutoTArray<AutoTArray<RefPtr<nsDOMMutationObserver>, 4>, 4>*
     nsDOMMutationObserver::sCurrentlyHandlingObservers = nullptr;
 
+nsDOMMutationRecord::nsDOMMutationRecord(nsAtom* aType, nsISupports* aOwner)
+    : mType(aType),
+      mAttrNamespace(VoidString()),
+      mPrevValue(VoidString()),
+      mOwner(aOwner) {}
+
+nsDOMMutationRecord::~nsDOMMutationRecord() = default;
+
 nsINodeList* nsDOMMutationRecord::AddedNodes() {
   if (!mAddedNodes) {
     mAddedNodes = new nsSimpleContentList(mTarget);
@@ -956,6 +964,18 @@ void nsDOMMutationObserver::AddCurrentlyHandlingObserver(
   }
 }
 
+void nsDOMMutationRecord::GetAddedAnimations(AnimationArray& aOut) const {
+  aOut = mAddedAnimations.Clone();
+}
+
+void nsDOMMutationRecord::GetRemovedAnimations(AnimationArray& aOut) const {
+  aOut = mRemovedAnimations.Clone();
+}
+
+void nsDOMMutationRecord::GetChangedAnimations(AnimationArray& aOut) const {
+  aOut = mChangedAnimations.Clone();
+}
+
 void nsDOMMutationObserver::Shutdown() {
   delete sCurrentlyHandlingObservers;
   sCurrentlyHandlingObservers = nullptr;
@@ -1042,6 +1062,128 @@ void nsAutoMutationBatch::Done() {
 
 nsAutoAnimationMutationBatch* nsAutoAnimationMutationBatch::sCurrentBatch =
     nullptr;
+
+nsAutoAnimationMutationBatch::nsAutoAnimationMutationBatch(
+    Document* aDocument) {
+  Init(aDocument);
+}
+
+void nsAutoAnimationMutationBatch::Init(Document* aDocument) {
+  if (!aDocument || !aDocument->MayHaveDOMMutationObservers() ||
+      sCurrentBatch) {
+    return;
+  }
+
+  sCurrentBatch = this;
+  nsDOMMutationObserver::EnterMutationHandling();
+}
+
+nsAutoAnimationMutationBatch::~nsAutoAnimationMutationBatch() { Done(); }
+
+nsAutoAnimationMutationBatch::Entry* nsAutoAnimationMutationBatch::FindEntry(
+    Animation* aAnimation, nsINode* aTarget) {
+  EntryArray* entries = mEntryTable.Get(aTarget);
+  if (!entries) {
+    return nullptr;
+  }
+
+  for (Entry& e : *entries) {
+    if (e.mAnimation == aAnimation) {
+      return &e;
+    }
+  }
+  return nullptr;
+}
+
+nsAutoAnimationMutationBatch::Entry* nsAutoAnimationMutationBatch::AddEntry(
+    Animation* aAnimation, nsINode* aTarget) {
+  EntryArray* entries = sCurrentBatch->mEntryTable.GetOrInsertNew(aTarget);
+  if (entries->IsEmpty()) {
+    sCurrentBatch->mBatchTargets.AppendElement(aTarget);
+  }
+  Entry* entry = entries->AppendElement();
+  entry->mAnimation = aAnimation;
+  return entry;
+}
+
+/* static */
+void nsAutoAnimationMutationBatch::AnimationAdded(Animation* aAnimation,
+                                                  nsINode* aTarget) {
+  if (!IsBatching()) {
+    return;
+  }
+
+  Entry* entry = sCurrentBatch->FindEntry(aAnimation, aTarget);
+  if (entry) {
+    switch (entry->mState) {
+      case eState_RemainedAbsent:
+        entry->mState = eState_Added;
+        break;
+      case eState_Removed:
+        entry->mState = eState_RemainedPresent;
+        break;
+      case eState_Added:
+        // FIXME bug 1189015
+        NS_ERROR("shouldn't have observed an animation being added twice");
+        break;
+      case eState_RemainedPresent:
+        MOZ_ASSERT_UNREACHABLE(
+            "shouldn't have observed an animation "
+            "remaining present");
+        break;
+    }
+  } else {
+    entry = sCurrentBatch->AddEntry(aAnimation, aTarget);
+    entry->mState = eState_Added;
+    entry->mChanged = false;
+  }
+}
+
+/* static */
+void nsAutoAnimationMutationBatch::AnimationChanged(Animation* aAnimation,
+                                                    nsINode* aTarget) {
+  Entry* entry = sCurrentBatch->FindEntry(aAnimation, aTarget);
+  if (entry) {
+    NS_ASSERTION(entry->mState == eState_RemainedPresent ||
+                     entry->mState == eState_Added,
+                 "shouldn't have observed an animation being changed after "
+                 "being removed");
+    entry->mChanged = true;
+  } else {
+    entry = sCurrentBatch->AddEntry(aAnimation, aTarget);
+    entry->mState = eState_RemainedPresent;
+    entry->mChanged = true;
+  }
+}
+
+/* static */
+void nsAutoAnimationMutationBatch::AnimationRemoved(Animation* aAnimation,
+                                                    nsINode* aTarget) {
+  Entry* entry = sCurrentBatch->FindEntry(aAnimation, aTarget);
+  if (entry) {
+    switch (entry->mState) {
+      case eState_RemainedPresent:
+        entry->mState = eState_Removed;
+        break;
+      case eState_Added:
+        entry->mState = eState_RemainedAbsent;
+        break;
+      case eState_RemainedAbsent:
+        MOZ_ASSERT_UNREACHABLE(
+            "shouldn't have observed an animation "
+            "remaining absent");
+        break;
+      case eState_Removed:
+        // FIXME bug 1189015
+        NS_ERROR("shouldn't have observed an animation being removed twice");
+        break;
+    }
+  } else {
+    entry = sCurrentBatch->AddEntry(aAnimation, aTarget);
+    entry->mState = eState_Removed;
+    entry->mChanged = false;
+  }
+}
 
 void nsAutoAnimationMutationBatch::Done() {
   if (sCurrentBatch != this) {

@@ -6,7 +6,6 @@
 #ifndef AccAttributes_h_
 #define AccAttributes_h_
 
-#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/a11y/AccGroupInfo.h"
 #include "mozilla/Variant.h"
 #include "nsTHashMap.h"

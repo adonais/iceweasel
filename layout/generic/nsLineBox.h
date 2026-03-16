@@ -14,7 +14,6 @@
 #include "mozilla/Likely.h"
 #include "nsIFrame.h"
 #include "nsILineIterator.h"
-#include "nsStyleConsts.h"
 #include "nsTHashSet.h"
 
 class nsLineBox;

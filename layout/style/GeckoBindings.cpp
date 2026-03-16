@@ -43,6 +43,7 @@
 #include "mozilla/URLExtraData.h"
 #include "mozilla/css/ImageLoader.h"
 #include "mozilla/dom/CSSMozDocumentRule.h"
+#include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"

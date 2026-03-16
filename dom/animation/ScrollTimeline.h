@@ -8,9 +8,14 @@
 #define mozilla_dom_ScrollTimeline_h
 
 #include "mozilla/LinkedList.h"
-#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/AnimationTimeline.h"
+
+namespace mozilla {
+enum class StyleScrollAxis : uint8_t;
+enum class StyleScroller : uint8_t;
+enum class StyleOverflow : uint8_t;
+}  // namespace mozilla
 
 #define PROGRESS_TIMELINE_DURATION_MILLISEC 100000
 

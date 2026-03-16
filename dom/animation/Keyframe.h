@@ -12,7 +12,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  // CompositeOperationOrAuto
-#include "nsCSSValue.h"
 #include "nsTArray.h"
 
 namespace mozilla {

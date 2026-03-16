@@ -6,6 +6,7 @@
 #include "nsPrinterBase.h"
 #include "nsPaperMargin.h"
 #include <utility>
+#include "nsServiceManagerUtils.h"
 #include "nsPaper.h"
 #include "nsIPrintSettings.h"
 #include "nsPrintSettingsService.h"
