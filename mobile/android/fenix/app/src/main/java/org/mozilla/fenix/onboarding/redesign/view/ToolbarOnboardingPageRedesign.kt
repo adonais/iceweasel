@@ -13,7 +13,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,7 +42,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
@@ -131,13 +129,9 @@ private fun ToolbarPositionOptions(
 ) {
     val state by onboardingStore.stateFlow.collectAsState()
     pageState.toolbarOptions?.let { options ->
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(26.dp),
-            modifier = Modifier.width(IntrinsicSize.Min),
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(26.dp)) {
             options.forEach {
                 ToolbarPositionOption(
-                    modifier = Modifier.weight(1f),
                     option = it,
                     isSelected = it.toolbarType == state.toolbarOptionSelected,
                     onClick = { onToolbarSelectionClicked(it.toolbarType) },
@@ -152,16 +146,14 @@ private fun ToolbarPositionOption(
     option: ToolbarOption,
     isSelected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .clickable(
-                role = Role.Button,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null, // Prevents onClick press/ripple animation
-                onClick = onClick,
-            ),
+        modifier = Modifier.clickable(
+            role = Role.Button,
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null, // Prevents onClick press/ripple animation
+            onClick = onClick,
+        ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(8.dp))
@@ -241,44 +233,6 @@ private fun SelectedCheckmark(selected: Boolean = false) {
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun OnboardingPagePreview() {
-    FirefoxTheme {
-        ToolbarOnboardingPageRedesign(
-            onboardingStore = OnboardingStore(),
-            pageState = OnboardingPageState(
-                imageRes = R.drawable.ic_onboarding_customize_toolbar,
-                title = stringResource(id = R.string.nova_onboarding_toolbar_selection_title),
-                description = "", // Unused in redesign
-                primaryButton = Action(
-                    text = stringResource(
-                        id = R.string.nova_onboarding_continue_button,
-                    ),
-                    onClick = {},
-                ),
-                toolbarOptions = listOf(
-                    ToolbarOption(
-                        toolbarType = ToolbarOptionType.TOOLBAR_TOP,
-                        imageRes = R.drawable.ic_onboarding_top_toolbar,
-                        label = stringResource(R.string.nova_onboarding_toolbar_selection_top_label),
-                    ),
-                    ToolbarOption(
-                        toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
-                        imageRes = R.drawable.ic_onboarding_bottom_toolbar,
-                        label = stringResource(R.string.nova_onboarding_toolbar_selection_bottom_label),
-                    ),
-                ),
-                onRecordImpressionEvent = {},
-            ),
-            onToolbarSelectionClicked = {},
-        )
-    }
-}
-
-@Preview(
-    locale = "es",
-    fontScale = 2f,
-)
-@Composable
-private fun SpanishOnboardingPagePreview() {
     FirefoxTheme {
         ToolbarOnboardingPageRedesign(
             onboardingStore = OnboardingStore(),
