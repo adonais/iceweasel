@@ -70,6 +70,7 @@ UNIFIED_SOURCES += [
     "TestRust.cpp",
     "TestSimpleMap.cpp",
     "TestTimeUnit.cpp",
+    "TestUnboundedMPSCQueue.cpp",
     "TestVideoFrameContainer.cpp",
     "TestVideoSegment.cpp",
     "TestVideoSink.cpp",
