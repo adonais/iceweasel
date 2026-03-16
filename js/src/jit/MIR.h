@@ -1391,6 +1391,14 @@ inline Synchronization SynchronizeStore(
   return Synchronization::None();
 }
 
+enum class StringCase {
+  // Convert string to lower case.
+  Lower,
+
+  // Convert string to upper case.
+  Upper,
+};
+
 MIR_OPCODE_CLASS_GENERATED
 
 // Truncation barrier. This is intended for protecting its input against
@@ -5892,14 +5900,10 @@ class MConcat : public MBinaryInstruction,
 
 class MStringConvertCase : public MUnaryInstruction,
                            public StringPolicy<0>::Data {
- public:
-  enum Mode { LowerCase, UpperCase };
+  StringCase stringCase_;
 
- private:
-  Mode mode_;
-
-  MStringConvertCase(MDefinition* string, Mode mode)
-      : MUnaryInstruction(classOpcode, string), mode_(mode) {
+  MStringConvertCase(MDefinition* string, StringCase stringCase)
+      : MUnaryInstruction(classOpcode, string), stringCase_(stringCase) {
     setResultType(MIRType::String);
     setMovable();
   }
@@ -5912,23 +5916,19 @@ class MStringConvertCase : public MUnaryInstruction,
   MDefinition* foldsTo(TempAllocator& alloc) override;
   bool congruentTo(const MDefinition* ins) const override {
     return congruentIfOperandsEqual(ins) &&
-           ins->toStringConvertCase()->mode() == mode();
+           ins->toStringConvertCase()->stringCase() == stringCase();
   }
   AliasSet getAliasSet() const override { return AliasSet::None(); }
   bool possiblyCalls() const override { return true; }
-  Mode mode() const { return mode_; }
+  StringCase stringCase() const { return stringCase_; }
 };
 
 class MCharCodeConvertCase : public MUnaryInstruction,
                              public UnboxedInt32Policy<0>::Data {
- public:
-  enum Mode { LowerCase, UpperCase };
+  StringCase stringCase_;
 
- private:
-  Mode mode_;
-
-  MCharCodeConvertCase(MDefinition* code, Mode mode)
-      : MUnaryInstruction(classOpcode, code), mode_(mode) {
+  MCharCodeConvertCase(MDefinition* code, StringCase stringCase)
+      : MUnaryInstruction(classOpcode, code), stringCase_(stringCase) {
     setResultType(MIRType::String);
     setMovable();
   }
@@ -5940,10 +5940,10 @@ class MCharCodeConvertCase : public MUnaryInstruction,
 
   bool congruentTo(const MDefinition* ins) const override {
     return congruentIfOperandsEqual(ins) &&
-           ins->toCharCodeConvertCase()->mode() == mode();
+           ins->toCharCodeConvertCase()->stringCase() == stringCase();
   }
   AliasSet getAliasSet() const override { return AliasSet::None(); }
-  Mode mode() const { return mode_; }
+  StringCase stringCase() const { return stringCase_; }
 };
 
 // This is a 3 state flag used by FlagPhiInputsAsImplicitlyUsed to record and

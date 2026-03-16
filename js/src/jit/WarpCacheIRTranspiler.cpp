@@ -1650,9 +1650,8 @@ bool WarpCacheIRTranspiler::emitInt32ToStringWithBaseResult(
   add(guardedBase);
 
   // Use lower-case characters by default.
-  constexpr bool lower = true;
-
-  auto* ins = MInt32ToStringWithBase::New(alloc(), input, guardedBase, lower);
+  auto* ins = MInt32ToStringWithBase::New(alloc(), input, guardedBase,
+                                          StringCase::Lower);
   add(ins);
 
   pushResult(ins);
@@ -2959,8 +2958,7 @@ bool WarpCacheIRTranspiler::emitStringEndsWithResult(
 bool WarpCacheIRTranspiler::emitStringToLowerCaseResult(StringOperandId strId) {
   MDefinition* str = getOperand(strId);
 
-  auto* convert =
-      MStringConvertCase::New(alloc(), str, MStringConvertCase::LowerCase);
+  auto* convert = MStringConvertCase::New(alloc(), str, StringCase::Lower);
   add(convert);
 
   pushResult(convert);
@@ -2970,8 +2968,7 @@ bool WarpCacheIRTranspiler::emitStringToLowerCaseResult(StringOperandId strId) {
 bool WarpCacheIRTranspiler::emitStringToUpperCaseResult(StringOperandId strId) {
   MDefinition* str = getOperand(strId);
 
-  auto* convert =
-      MStringConvertCase::New(alloc(), str, MStringConvertCase::UpperCase);
+  auto* convert = MStringConvertCase::New(alloc(), str, StringCase::Upper);
   add(convert);
 
   pushResult(convert);

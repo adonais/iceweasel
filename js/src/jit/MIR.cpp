@@ -1937,9 +1937,7 @@ MDefinition* MStringConvertCase::foldsTo(TempAllocator& alloc) {
   // |CharCodeConvertCase(CharCodeAt(str, idx))|.
   if (string->isFromCharCode()) {
     auto* charCode = string->toFromCharCode()->code();
-    auto mode = mode_ == Mode::LowerCase ? MCharCodeConvertCase::LowerCase
-                                         : MCharCodeConvertCase::UpperCase;
-    return MCharCodeConvertCase::New(alloc, charCode, mode);
+    return MCharCodeConvertCase::New(alloc, charCode, stringCase_);
   }
 
   // Handle the pattern |num.toString(base).toUpperCase()| and simplify it to
@@ -1947,12 +1945,11 @@ MDefinition* MStringConvertCase::foldsTo(TempAllocator& alloc) {
   if (string->isInt32ToStringWithBase()) {
     auto* toString = string->toInt32ToStringWithBase();
 
-    bool lowerCase = mode_ == Mode::LowerCase;
-    if (toString->lowerCase() == lowerCase) {
+    if (toString->stringCase() == stringCase_) {
       return toString;
     }
     return MInt32ToStringWithBase::New(alloc, toString->input(),
-                                       toString->base(), lowerCase);
+                                       toString->base(), stringCase_);
   }
 
   return this;

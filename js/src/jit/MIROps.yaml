@@ -1335,7 +1335,7 @@
     input: Int32
     base: Int32
   arguments:
-    lowerCase: bool
+    stringCase: StringCase
   result_type: String
   movable: true
   congruent_to: if_operands_and_arguments_equal

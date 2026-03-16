@@ -12795,7 +12795,7 @@ void CodeGenerator::visitInt32ToStringWithBase(LInt32ToStringWithBase* lir) {
   Register temp0 = ToRegister(lir->temp0());
   Register temp1 = ToRegister(lir->temp1());
 
-  bool lowerCase = lir->mir()->lowerCase();
+  bool lowerCase = lir->mir()->stringCase() == StringCase::Lower;
 
   using Fn = JSLinearString* (*)(JSContext*, int32_t, int32_t, bool);
   if (base.is<Register>()) {

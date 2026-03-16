@@ -3215,7 +3215,7 @@ void LIRGenerator::visitStringEndsWith(MStringEndsWith* ins) {
 void LIRGenerator::visitStringConvertCase(MStringConvertCase* ins) {
   MOZ_ASSERT(ins->string()->type() == MIRType::String);
 
-  if (ins->mode() == MStringConvertCase::LowerCase) {
+  if (ins->stringCase() == StringCase::Lower) {
 #ifdef JS_CODEGEN_X86
     // Due to lack of registers on x86, we reuse the string register as
     // temporary. As a result we only need four temporary registers and take a
@@ -3240,7 +3240,7 @@ void LIRGenerator::visitStringConvertCase(MStringConvertCase* ins) {
 void LIRGenerator::visitCharCodeConvertCase(MCharCodeConvertCase* ins) {
   MOZ_ASSERT(ins->code()->type() == MIRType::Int32);
 
-  if (ins->mode() == MCharCodeConvertCase::LowerCase) {
+  if (ins->stringCase() == StringCase::Lower) {
     auto* lir = new (alloc())
         LCharCodeToLowerCase(useRegister(ins->code()), tempByteOpRegister());
     define(lir, ins);
