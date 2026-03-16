@@ -4157,11 +4157,8 @@ GeneralParser<ParseHandler, Unit>::PossibleError::error(ErrorKind kind) {
   if (kind == ErrorKind::Expression) {
     return exprError_;
   }
-  if (kind == ErrorKind::Destructuring) {
-    return destructuringError_;
-  }
-  MOZ_ASSERT(kind == ErrorKind::DestructuringWarning);
-  return destructuringWarning_;
+  MOZ_ASSERT(kind == ErrorKind::Destructuring);
+  return destructuringError_;
 }
 
 template <class ParseHandler, typename Unit>
@@ -4206,13 +4203,6 @@ void GeneralParser<ParseHandler, Unit>::PossibleError::
 
 template <class ParseHandler, typename Unit>
 void GeneralParser<ParseHandler, Unit>::PossibleError::
-    setPendingDestructuringWarningAt(const TokenPos& pos,
-                                     unsigned errorNumber) {
-  setPending(ErrorKind::DestructuringWarning, pos, errorNumber);
-}
-
-template <class ParseHandler, typename Unit>
-void GeneralParser<ParseHandler, Unit>::PossibleError::
     setPendingExpressionErrorAt(const TokenPos& pos, unsigned errorNumber) {
   setPending(ErrorKind::Expression, pos, errorNumber);
 }
@@ -4246,7 +4236,6 @@ bool GeneralParser<ParseHandler,
   // Clear pending destructuring error, because we're definitely not
   // in a destructuring context.
   setResolved(ErrorKind::Destructuring);
-  setResolved(ErrorKind::DestructuringWarning);
 
   // Report any pending expression error.
   return checkForError(ErrorKind::Expression);
@@ -11693,24 +11682,13 @@ void GeneralParser<ParseHandler, Unit>::checkDestructuringAssignmentName(
 
   if (pc_->sc()->strict()) {
     if (handler_.isArgumentsName(name)) {
-      if (pc_->sc()->strict()) {
-        possibleError->setPendingDestructuringErrorAt(
-            namePos, JSMSG_BAD_STRICT_ASSIGN_ARGUMENTS);
-      } else {
-        possibleError->setPendingDestructuringWarningAt(
-            namePos, JSMSG_BAD_STRICT_ASSIGN_ARGUMENTS);
-      }
+      possibleError->setPendingDestructuringErrorAt(
+          namePos, JSMSG_BAD_STRICT_ASSIGN_ARGUMENTS);
       return;
     }
-
     if (handler_.isEvalName(name)) {
-      if (pc_->sc()->strict()) {
-        possibleError->setPendingDestructuringErrorAt(
-            namePos, JSMSG_BAD_STRICT_ASSIGN_EVAL);
-      } else {
-        possibleError->setPendingDestructuringWarningAt(
-            namePos, JSMSG_BAD_STRICT_ASSIGN_EVAL);
-      }
+      possibleError->setPendingDestructuringErrorAt(
+          namePos, JSMSG_BAD_STRICT_ASSIGN_EVAL);
       return;
     }
   }
