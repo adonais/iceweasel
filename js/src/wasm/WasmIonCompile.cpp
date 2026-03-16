@@ -1124,6 +1124,15 @@ class FunctionCompiler {
     return ins;
   }
 
+  MDefinition* wrapI32(MDefinition* op) {
+    if (inDeadCode()) {
+      return nullptr;
+    }
+    auto* ins = MWrapInt64ToInt32::New(alloc(), op, /*bottomHalf=*/true);
+    curBlock_->add(ins);
+    return ins;
+  }
+
   MDefinition* convertI64ToFloatingPoint(MDefinition* op, MIRType type,
                                          bool isUnsigned) {
     if (inDeadCode()) {
@@ -5962,6 +5971,7 @@ class FunctionCompiler {
                     bool isSaturating);
   bool emitSignExtend(uint32_t srcSize, uint32_t targetSize);
   bool emitExtendI32(bool isUnsigned);
+  bool emitWrapI32();
   bool emitConvertI64ToFloatingPoint(ValType resultType, MIRType mirType,
                                      bool isUnsigned);
   bool emitReinterpret(ValType resultType, ValType operandType,
@@ -6973,6 +6983,16 @@ bool FunctionCompiler::emitExtendI32(bool isUnsigned) {
   }
 
   iter().setResult(extendI32(input, isUnsigned));
+  return true;
+}
+
+bool FunctionCompiler::emitWrapI32() {
+  MDefinition* input;
+  if (!iter().readConversion(ValType::I64, ValType::I32, &input)) {
+    return false;
+  }
+
+  iter().setResult(wrapI32(input));
   return true;
 }
 
@@ -9945,7 +9965,7 @@ bool FunctionCompiler::emitBodyExprs() {
 
       // Conversions
       case uint16_t(Op::I32WrapI64):
-        CHECK(emitConversion<MWrapInt64ToInt32>(ValType::I64, ValType::I32));
+        CHECK(emitWrapI32());
       case uint16_t(Op::I32TruncF32S):
       case uint16_t(Op::I32TruncF32U):
         CHECK(emitTruncate(ValType::F32, ValType::I32,
