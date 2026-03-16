@@ -4,6 +4,12 @@
 
 package mozilla.components.feature.summarize.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -22,12 +28,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
@@ -47,6 +60,37 @@ internal fun SummarizingContent(
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.mozac_feature_summarize_loading_title),
 ) {
+    val contentColor = if (isSystemInDarkTheme()) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onPrimary
+    }
+
+    val transition = rememberInfiniteTransition()
+
+    val progress by transition.animateFloat(
+        initialValue = -600f,
+        targetValue = 600f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 2000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+    )
+
+    val brush = Brush.linearGradient(
+        colorStops = arrayOf(
+            0.0f to contentColor.copy(alpha = 0.5f),
+            0.351f to Color.White,
+            0.6298f to Color.White,
+            1.0f to contentColor.copy(alpha = 0.5f),
+        ),
+        start = Offset(progress - 300f, 0f),
+        end = Offset(progress + 300f, 0f),
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -54,12 +98,6 @@ internal fun SummarizingContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        val contentColor = if (isSystemInDarkTheme()) {
-            MaterialTheme.colorScheme.onSurface
-        } else {
-            MaterialTheme.colorScheme.onPrimary
-        }
-
         Icon(
             painter = painterResource(id = iconsR.drawable.mozac_ic_logo_firefox_24),
             contentDescription = null,
@@ -68,7 +106,11 @@ internal fun SummarizingContent(
         )
 
         Text(
-            text = title,
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(brush = brush)) {
+                    append(title)
+                }
+            },
             textAlign = TextAlign.Center,
             color = contentColor.copy(alpha = 0.5f),
             fontSize = 16.sp,
