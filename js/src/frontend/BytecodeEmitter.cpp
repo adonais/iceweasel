@@ -11678,10 +11678,10 @@ bool BytecodeEmitter::tryEmitTypeofEq(ListNode* node, bool* emitted) {
       } else {
         op = JSOp::Eq;
       }
-    } else if (left->isKind(ParseNodeKind::TypeOfNameExpr) &&
-               right->isKind(ParseNodeKind::StringExpr)) {
-      typeofNode = &left->as<UnaryNode>();
-      typenameNode = &right->as<NameNode>();
+    } else if (left->isKind(ParseNodeKind::StringExpr) &&
+               right->isKind(ParseNodeKind::TypeOfNameExpr)) {
+      typeofNode = &right->as<UnaryNode>();
+      typenameNode = &left->as<NameNode>();
 
       if (node->isKind(ParseNodeKind::LtExpr)) {
         op = JSOp::Eq;
