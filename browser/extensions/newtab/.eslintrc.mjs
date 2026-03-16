@@ -163,6 +163,14 @@ export default [
     },
   },
   {
+    // vendor.mjs is a webpack entry point; its npm imports are resolved by
+    // webpack, not Node
+    files: ["content-src/vendor.mjs"],
+    rules: {
+      "import/no-unresolved": "off",
+    },
+  },
+  {
     // These tests simulate the browser environment.
     files: "test/unit/**",
     languageOptions: {

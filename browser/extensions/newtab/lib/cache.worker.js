@@ -30,22 +30,10 @@ importScripts("resource://gre/modules/workers/require.js");
   // eslint-disable-next-line no-implicit-globals, no-global-assign
   ChromeUtils = undefined;
 
-  /* import-globals-from ../../../../toolkit/content/vendor/react/react.js */
-  /* import-globals-from ../../../../toolkit/content/vendor/react/react-dom.js */
-  /* import-globals-from ../../../../toolkit/content/vendor/react/react-dom-server.js */
-  /* import-globals-from ../../../../toolkit/content/vendor/react/redux.js */
-  /* import-globals-from ../../../../toolkit/content/vendor/react/react-transition-group.js */
-  /* import-globals-from ../../../../toolkit/content/vendor/react/prop-types.js */
-  /* import-globals-from ../../../../toolkit/content/vendor/react/react-redux.js */
+  /* import-globals-from ../data/content/vendor.bundle.js */
   /* import-globals-from ../data/content/activity-stream.bundle.js */
   importScripts(
-    "chrome://global/content/vendor/react.js",
-    "chrome://global/content/vendor/react-dom.js",
-    "chrome://global/content/vendor/react-dom-server.js",
-    "chrome://global/content/vendor/redux.js",
-    "chrome://global/content/vendor/react-transition-group.js",
-    "chrome://global/content/vendor/prop-types.js",
-    "chrome://global/content/vendor/react-redux.js",
+    "resource://newtab/data/content/vendor.bundle.js",
     "resource://newtab/data/content/activity-stream.bundle.js"
   );
 
