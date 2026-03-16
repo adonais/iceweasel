@@ -138,13 +138,12 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
 
   mDedicatedConnection = aDedicated;
 
-  if (!aServerCertHashes.IsEmpty()) {
-    mServerCertHashes.Clear();
-    mServerCertHashes.AppendElements(aServerCertHashes);
-  }
-
   {
     MutexAutoLock lock(mMutex);
+    if (!aServerCertHashes.IsEmpty()) {
+      mServerCertHashes.Clear();
+      mServerCertHashes.AppendElements(aServerCertHashes);
+    }
     ChangeState(WebTransportSessionProxyState::NEGOTIATING);
   }
 
@@ -270,6 +269,7 @@ NS_IMETHODIMP WebTransportSessionProxy::GetDedicated(bool* dedicated) {
 
 NS_IMETHODIMP WebTransportSessionProxy::GetServerCertificateHashes(
     nsTArray<RefPtr<nsIWebTransportHash>>& aServerCertHashes) {
+  MutexAutoLock lock(mMutex);
   aServerCertHashes.Clear();
   aServerCertHashes.AppendElements(mServerCertHashes);
   return NS_OK;
