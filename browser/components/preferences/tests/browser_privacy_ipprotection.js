@@ -670,6 +670,11 @@ add_task(async function test_VPN_get_started_entrypoint() {
         "vpn_integration_settings",
         "entrypoint should be vpn_integration_settings when enrolling from settings"
       );
+      Assert.equal(
+        fxaStub.firstCall.args[0].extraParams.utm_source,
+        "settings",
+        "utm_source should be settings when enrolling from settings"
+      );
     }
   );
 
