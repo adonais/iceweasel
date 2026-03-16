@@ -275,7 +275,8 @@
 - name: Throw
   operands:
     value: Value
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   possibly_calls: true
   generate_lir: true
 
@@ -283,7 +284,8 @@
   operands:
     value: Value
     stack: Value
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   possibly_calls: true
   generate_lir: true
 
@@ -300,7 +302,8 @@
   # Need to throw if length is negative.
   guard: true
   # Throws if length is negative.
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   generate_lir: true
   lir_temps: 1
 
@@ -316,7 +319,8 @@
   result_type: Object
   guard: true
   # Throws if length is negative.
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   possibly_calls: true
   generate_lir: true
   lir_temps: 3
@@ -577,7 +581,8 @@
   result_type: Value
   # Performs a property read from |newTarget| iff |newTarget| is a JSFunction
   # with an own |.prototype| property.
-  alias_set: custom
+  alias_set:
+    load: Any
   possibly_calls: true
   generate_lir: true
 
@@ -601,7 +606,8 @@
     argno: size_t
   result_type: Value
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load: Any
   generate_lir: true
   lir_temps: 1
 
@@ -612,7 +618,8 @@
     value: Value
   arguments:
     argno: size_t
-  alias_set: custom
+  alias_set:
+    store: Any
   generate_lir: true
   lir_temps: 1
 
@@ -626,7 +633,8 @@
   result_type: Value
   guard: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: Any
   generate_lir: true
   lir_temps: 1
 
@@ -640,7 +648,8 @@
   result_type: Value
   guard: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: Any
   generate_lir: true
   lir_temps: 1
 
@@ -651,7 +660,13 @@
   result_type: Boolean
   guard: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  # Loads |arguments.length|, but not the actual element, so we can use the
+  # same alias-set as ArgumentsObjectLength.
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
   lir_temps: 1
 
@@ -666,7 +681,11 @@
   # Even though the "length" property is lazily resolved, it acts similar to
   # a normal property load, so we can treat this operation like any other
   # property read.
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
 
 # Create an array from an arguments object.
@@ -690,7 +709,8 @@
   guard: true
   congruent_to: if_operands_and_arguments_equal
   # The flags are packed with the length in a fixed private slot.
-  alias_set: custom
+  alias_set:
+    load: FixedSlot
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -726,7 +746,8 @@
     id: Value
     value: Value
   guard: true
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   generate_lir: true
   lir_temps: 2
 #endif
@@ -1045,7 +1066,8 @@
 
 - name: Random
   result_type: Double
-  alias_set: custom
+  alias_set:
+    store: RNG
   compute_range: custom
   can_recover: custom
   clone: true
@@ -1572,7 +1594,8 @@
     errorNumber: unsigned
   result_type: None
   guard: true
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   possibly_calls: true
   generate_lir: true
 
@@ -1710,7 +1733,8 @@
   result_type: Slots
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   might_alias: custom
   clone: true
   generate_lir: true
@@ -1722,7 +1746,8 @@
   result_type: Elements
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   clone: true
   generate_lir: true
 
@@ -1734,7 +1759,8 @@
   result_type: Int32
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   compute_range: custom
   clone: true
   generate_lir: true
@@ -1746,7 +1772,8 @@
     elements: Elements
     index: Int32
   type_policy: none
-  alias_set: custom
+  alias_set:
+    store: ObjectFields
   clone: true
   generate_lir: true
 
@@ -1759,7 +1786,8 @@
   movable: true
   congruent_to: if_operands_equal
   folds_to: custom
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   compute_range: custom
   clone: true
   generate_lir: true
@@ -1771,7 +1799,8 @@
     elements: Elements
     index: Int32
   type_policy: none
-  alias_set: custom
+  alias_set:
+    store: ObjectFields
   generate_lir: true
 
 # Load the function length. Bails for functions with lazy scripts or a
@@ -1785,7 +1814,11 @@
   # Even though the "length" property is lazily resolved, it acts similar to
   # a normal property load, so we can treat this operation like any other
   # property read.
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
 
 # Load the function name. Bails for bound functions when the bound function
@@ -1799,7 +1832,11 @@
   # Even though the "name" property is lazily resolved, it acts similar to
   # a normal property load, so we can treat this operation like any other
   # property read.
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
 
 - name: GetNextEntryForIterator
@@ -1812,7 +1849,8 @@
   result_type: IntPtr
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: FixedSlot
   generate_lir: true
 
 # Read the length of an array buffer view.
@@ -1822,7 +1860,8 @@
   result_type: IntPtr
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ArrayBufferViewLengthOrOffset
   compute_range: custom
   generate_lir: true
 
@@ -1833,7 +1872,8 @@
   result_type: IntPtr
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ArrayBufferViewLengthOrOffset
   compute_range: custom
   generate_lir: true
 
@@ -1844,7 +1884,8 @@
   result_type: Elements
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   clone: true
   generate_lir: true
 
@@ -1887,7 +1928,14 @@
   result_type: IntPtr
   guard: true
   movable: false
-  alias_set: custom
+  # Requires a barrier, so make the instruction effectful by giving it a
+  # "store" effect. Also prevent reordering LoadUnboxedScalar before this
+  # instruction by including |UnboxedElement| in the alias set.
+  alias_set:
+    store:
+      - FixedSlot
+      - SharedArrayRawBufferLength
+      - UnboxedElement
   generate_lir: true
 
 # Return the element size of a typed array.
@@ -1910,7 +1958,10 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -1923,7 +1974,10 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  # Additionally reads the |initialLength| and |initialByteOffset| slots, but
+  # since these can't change after construction, we don't need to track them.
+  alias_set:
+    load: ArrayBufferViewLengthOrOffset
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -1936,7 +1990,13 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  # Loads the byteOffset and additionally checks for detached buffers, so the
+  # alias set also has to include |ObjectFields| and |FixedSlot|.
+  alias_set:
+    load:
+      - ArrayBufferViewLengthOrOffset
+      - ObjectFields
+      - FixedSlot
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -1953,7 +2013,15 @@
     offset: IntPtr
   arguments:
     canUseBitwiseCopy: bool
-  alias_set: custom
+  # Loads typed array length and elements.
+  # Stores into typed array elements.
+  alias_set:
+    load:
+      - ArrayBufferViewLengthOrOffset
+      - ObjectFields
+      - UnboxedElement
+    store:
+      - UnboxedElement
   possibly_calls: true
   generate_lir: true
 
@@ -1966,7 +2034,15 @@
     sourceLength: IntPtr
   arguments:
     canUseBitwiseCopy: bool
-  alias_set: custom
+  # Loads typed array length and elements.
+  # Stores into typed array elements.
+  alias_set:
+    load:
+      - ArrayBufferViewLengthOrOffset
+      - ObjectFields
+      - UnboxedElement
+    store:
+      - UnboxedElement
   possibly_calls: true
   generate_lir: true
 
@@ -2060,7 +2136,10 @@
     object: Object
     value: Value
   result_type: Int32
-  alias_set: custom
+  alias_set:
+    store:
+      - ObjectFields
+      - Element
   compute_range: custom
   clone: true
   generate_lir: true
@@ -2167,7 +2246,8 @@
   result_type: Int32
   movable: false
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   clone: true
   possibly_calls: true
   generate_lir: true
@@ -2209,7 +2289,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: FixedSlot
   generate_lir: true
 
 - name: LoadFixedSlotAndUnbox
@@ -2236,7 +2317,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
 
 - name: GetPropSuperCache
@@ -2267,7 +2349,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   might_alias: custom
   folds_to: custom
   generate_lir: true
@@ -2281,7 +2364,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
 
 - name: GuardFuse
@@ -2291,7 +2375,14 @@
   guard: true
   movable: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  # The alias set below reflects the set of operations which could cause a fuse
+  # to be popped, and therefore MGuardFuse aliases with.
+  alias_set:
+    load:
+      - ObjectFields
+      - DynamicSlot
+      - FixedSlot
+      - GlobalGenerationCounter
   generate_lir: true
 
 # This is the equivalent of the GuardMultipleShapes CacheIR op. Because it
@@ -2305,7 +2396,11 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  # Note: This instruction loads the elements of the ListObject used to
+  # store the list of shapes, but that object is internal and not exposed
+  # to script, so it doesn't have to be in the alias set.
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_temps: 4
 
@@ -2322,7 +2417,8 @@
   guard: true
   movable: true
   congruent_to: custom
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_temps: 2
 
@@ -2335,7 +2431,8 @@
   guard: true
   movable: true
   congruent_to: custom
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_temps: 2
 
@@ -2347,7 +2444,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
 
 - name: GuardProto
   gen_boilerplate: false
@@ -2375,7 +2473,8 @@
   result_type: None
   guard: true
   movable: true
-  alias_set: custom
+  alias_set:
+    load: GlobalGenerationCounter
   congruent_to: if_operands_and_arguments_equal
   generate_lir: true
   lir_temps: 1
@@ -2485,7 +2584,11 @@
   guard: true
   possibly_calls: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
   lir_temps: 4
 
@@ -2510,7 +2613,11 @@
   guard: true
   folds_to: custom
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   possibly_calls: true
   generate_lir: true
   lir_temps: 3
@@ -2556,7 +2663,11 @@
   # DCE this instruction.
   guard: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   possibly_calls: true
   generate_lir: true
   lir_temps: 3
@@ -2568,7 +2679,11 @@
     shape: Shape*
   congruent_to: if_operands_and_arguments_equal
   result_type: Boolean
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
 
 - name: GuardToArrayBuffer
@@ -2705,7 +2820,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2720,7 +2836,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2829,7 +2946,8 @@
   result_type: Object
   guard: true
   movable: true
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2904,7 +3022,10 @@
     numNewSlots: uint32_t
     preserveWrapper: bool
   possibly_calls: true
-  alias_set: custom
+  alias_set:
+    store:
+      - ObjectFields
+      - DynamicSlot
   generate_lir: true
   lir_temps: 2
 
@@ -2990,7 +3111,8 @@
     object: Object
     iterator: Object
   result_type: Boolean
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
 
 - name: IteratorsMatchAndHaveIndices
   operands:
@@ -2998,14 +3120,20 @@
     iterator: Object
     otherIterator: Object
   result_type: Boolean
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
 
 - name: LoadSlotByIteratorIndex
   operands:
     object: Object
     iterator: Object # TODO: add MIRType::NativeIterator?
   result_type: Value
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
+      - Element
   generate_lir: true
   lir_temps: 2
 
@@ -3014,7 +3142,12 @@
     object: Object
     iterator: Object
     value: Value
-  alias_set: custom
+  alias_set:
+    store:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
+      - Element
   generate_lir: true
   lir_temps: 2
 
@@ -3028,7 +3161,12 @@
     iterator: Object
     index: Int32
   result_type: Value
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
+      - Element
   generate_lir: true
   lir_temps: 2
 
@@ -3038,7 +3176,12 @@
     iterator: Object
     index: Int32
     value: Value
-  alias_set: custom
+  alias_set:
+    store:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
+      - Element
   generate_lir: true
   lir_temps: 2
 
@@ -3052,7 +3195,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: DOMProxyExpando
   generate_lir: true
 
 - name: LoadDOMExpandoValueGuardGeneration
@@ -3064,7 +3208,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: DOMProxyExpando
   generate_lir: true
 
 # Takes an expando Value as input, then guards it's either UndefinedValue or
@@ -3078,7 +3223,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -3360,7 +3506,11 @@
   possibly_calls: true
   # Tests @@toStringTag is neither present on this object nor on any object
   # of the prototype chain.
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
   lir_temps: 1
 
@@ -3371,7 +3521,8 @@
   result_type: Value
   guard: true
   folds_to: custom
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   generate_lir: true
 
 - name: CheckThis
@@ -3380,7 +3531,8 @@
   result_type: Value
   guard: true
   folds_to: custom
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   generate_lir: true
   lir_result_type: none
 
@@ -3425,7 +3577,8 @@
   result_type: Value
   guard: true
   folds_to: custom
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   generate_lir: true
   lir_result_type: none
 
@@ -3478,7 +3631,8 @@
   result_type: Object
   guard: true
   folds_to: custom
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   generate_lir: true
 
 - name: CheckObjCoercible
@@ -3488,7 +3642,8 @@
   guard: true
   folds_to: custom
   # Throws on null or undefined.
-  alias_set: custom
+  alias_set:
+    store: ExceptionState
   generate_lir: true
   lir_result_type: none
 
@@ -3515,7 +3670,8 @@
     object: Object
   result_type: Boolean
   movable: true
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_temps: 1
 
@@ -3526,7 +3682,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 2
@@ -3538,7 +3695,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
 
 - name: GetPrototypeOf
@@ -3581,7 +3739,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
 
 - name: SuperFunctionAndUnbox
@@ -3591,7 +3750,8 @@
   movable: true
   guard: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
 
 - name: InitHomeObject
@@ -3599,7 +3759,8 @@
     function: Object
     homeObject: Value
   result_type: Object
-  alias_set: custom
+  alias_set:
+    store: ObjectFields
   generate_lir: true
   lir_result_type: none
 
@@ -3639,7 +3800,8 @@
   congruent_to: if_operands_and_arguments_equal
   # Can't use |AliasSet::None| because the target changes on navigation.
   # TODO: Investigate using a narrower or a custom alias set.
-  alias_set: custom
+  alias_set:
+    load: Any
   generate_lir: true
 
 - name: LoadGetterSetterFunction
@@ -3665,7 +3827,8 @@
   movable: true
   possibly_calls: true
   congruent_to: if_operands_and_arguments_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 3
@@ -3677,7 +3840,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -3731,7 +3895,10 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load:
+      - ObjectFields
+      - Element
   generate_lir: true
   lir_result_type: none
   lir_temps: 2
@@ -3746,7 +3913,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: ObjectFields
   generate_lir: true
   lir_result_type: none
   lir_temps: 2
@@ -3800,7 +3968,12 @@
   guard: true
   congruent_to: if_operands_equal
   possibly_calls: true
-  alias_set: custom
+  alias_set:
+    load:
+      - Element
+      - ObjectFields
+      - FixedSlot
+      - DynamicSlot
   generate_lir: true
   lir_temps: 2
 
@@ -3943,7 +4116,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 2
 
@@ -3955,7 +4129,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 4
 
@@ -3967,7 +4142,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 4
 
@@ -3978,7 +4154,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   possibly_calls: true
   generate_lir: true
 
@@ -4003,7 +4180,8 @@
   result_type: Int32
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
 
 - name: MapObjectHasNonBigInt
@@ -4014,7 +4192,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 2
 
@@ -4026,7 +4205,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 4
 
@@ -4038,7 +4218,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 4
 
@@ -4049,7 +4230,8 @@
   result_type: Boolean
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   possibly_calls: true
   generate_lir: true
 
@@ -4061,7 +4243,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 2
 
@@ -4073,7 +4256,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 4
 
@@ -4085,7 +4269,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
   lir_temps: 4
 
@@ -4096,7 +4281,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   possibly_calls: true
   generate_lir: true
 
@@ -4122,7 +4308,8 @@
   result_type: Int32
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   generate_lir: true
 
 # Note: for now these WeakMap/WeakSet instructions are non-movable and don't
@@ -4132,7 +4319,8 @@
     weakMap: Object
     object: Object
   result_type: Value
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   movable: false
   generate_lir: true
 #ifdef JS_CODEGEN_X86
@@ -4147,7 +4335,8 @@
     weakMap: Object
     object: Object
   result_type: Boolean
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   movable: false
   generate_lir: true
 #ifdef JS_CODEGEN_X86
@@ -4161,7 +4350,8 @@
     weakSet: Object
     object: Object
   result_type: Boolean
-  alias_set: custom
+  alias_set:
+    load: MapOrSetHashTable
   movable: false
   possibly_calls: true
   generate_lir: true
@@ -4170,7 +4360,10 @@
   operands:
     date: Object
   congruent_to: if_operands_equal
-  alias_set: custom
+  # Reads and stores fixed slots. Additional reads from DateTimeInfo don't need
+  # to be tracked, because they don't interact with other alias set states.
+  alias_set:
+    store: FixedSlot
   generate_lir: true
   lir_temps: 1
 
