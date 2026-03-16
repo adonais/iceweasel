@@ -674,6 +674,7 @@
         tab.setAttribute("usercontextid", userContextId);
         ContextualIdentityService.setTabStyle(tab);
       }
+      updateUserContextUIIndicator();
 
       this._tabForBrowser.set(browser, tab);
 
