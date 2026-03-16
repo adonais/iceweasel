@@ -127,6 +127,7 @@ add_task(async function pip_context_menu_items_hidden() {
     "context-reload",
     "context-bookmarkpage",
     "context-viewsource",
+    "context-ask-chat",
   ];
 
   await withContextMenu(tab.linkedBrowser, doc => {

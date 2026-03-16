@@ -2,21 +2,21 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 // Bug 1895789 to standarize contextmenu helpers in BrowserTestUtils
-async function openContextMenu() {
-  const contextMenu = document.getElementById("contentAreaContextMenu");
+async function openContextMenu(doc = document) {
+  const contextMenu = doc.getElementById("contentAreaContextMenu");
   const promise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   await BrowserTestUtils.synthesizeMouse(
     null,
     0,
     0,
     { type: "contextmenu" },
-    gBrowser.selectedBrowser
+    doc.ownerGlobal.gBrowser.selectedBrowser
   );
   await promise;
 }
 
-async function hideContextMenu() {
-  const contextMenu = document.getElementById("contentAreaContextMenu");
+async function hideContextMenu(doc = document) {
+  const contextMenu = doc.getElementById("contentAreaContextMenu");
   const promise = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
   contextMenu.hidePopup();
   await promise;
@@ -121,6 +121,30 @@ add_task(async function test_remove_option() {
     const events = Glean.genaiChatbot.contextmenuRemove.testGetValue();
     Assert.equal(events.length, 1, "One remove event recorded");
     Assert.equal(events[0].extra.provider, "localhost", "Provider recorded");
+  });
+});
+
+/**
+ * Check that the chat context menu is hidden in popup windows because
+ * they don't have a sidebar
+ */
+add_task(async function test_hidden_in_popup() {
+  await BrowserTestUtils.withNewTab("https://example.com", async browser => {
+    const popupWindowPromise = BrowserTestUtils.waitForNewWindow();
+    await SpecialPowers.spawn(browser, [], () => {
+      content.open("https://example.com", "_blank", "popup");
+    });
+    const popupWin = await popupWindowPromise;
+
+    await openContextMenu(popupWin.document);
+    await waitMenuState(
+      popupWin.document.getElementById("context-ask-chat"),
+      true,
+      "Menu should be hidden in popup"
+    );
+    await hideContextMenu(popupWin.document);
+
+    await BrowserTestUtils.closeWindow(popupWin);
   });
 });
 

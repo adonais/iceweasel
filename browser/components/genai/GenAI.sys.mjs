@@ -734,6 +734,14 @@ export const GenAI = {
       return;
     }
 
+    // Popups don't have a sidebar, so don't show the menu.
+    // Also, it's not useful for most Document Picture-in-Picture API use-cases.
+    const isPopup = !browser.ownerGlobal.toolbar.visible;
+    if (browser.browsingContext?.isDocumentPiP || isPopup) {
+      showItem(menu, false);
+      return;
+    }
+
     // Page feature can be shown without provider unless disabled via menu
     // or revamp sidebar excludes chatbot
     const isPageFeatureAllowed =
