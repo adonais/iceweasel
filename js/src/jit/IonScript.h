@@ -574,7 +574,7 @@ struct IonScriptCounts {
   size_t sizeOfOneIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     size_t size = mallocSizeOf(this) + mallocSizeOf(blocks_);
     for (size_t i = 0; i < numBlocks_; i++) {
-      blocks_[i].sizeOfExcludingThis(mallocSizeOf);
+      size += blocks_[i].sizeOfExcludingThis(mallocSizeOf);
     }
     return size;
   }
