@@ -21,7 +21,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
@@ -134,7 +134,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
      * Updates save and autofill cards preference switch state depending on the saved user preference.
      */
     internal fun updateSaveAndAutofillCardsSwitch() {
-        requirePreference<SwitchPreference>(R.string.pref_key_credit_cards_save_and_autofill_cards).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_credit_cards_save_and_autofill_cards).apply {
             isChecked = context.settings().shouldAutofillCreditCardDetails
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -144,7 +144,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
      * Updates save and autofill addresses preference switch state depending on the saved user preference.
      */
     internal fun updateSaveAndAutofillAddressesSwitch() {
-        requirePreference<SwitchPreference>(R.string.pref_key_addresses_save_and_autofill_addresses).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_addresses_save_and_autofill_addresses).apply {
             isChecked = context.settings().shouldAutofillAddressDetails
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -216,7 +216,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
             return
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_credit_cards_save_and_autofill_cards).summary =
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_credit_cards_save_and_autofill_cards).summary =
             getString(R.string.preferences_credit_cards_save_and_autofill_cards_summary_2, getString(R.string.app_name))
 
         consumeFrom(store) { state ->

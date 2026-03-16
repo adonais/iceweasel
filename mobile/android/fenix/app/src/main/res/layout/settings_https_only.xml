@@ -42,7 +42,7 @@
         tools:targetApi="p"
         tools:text="@string/preferences_https_only_summary" />
 
-    <androidx.appcompat.widget.SwitchCompat
+    <com.google.android.material.materialswitch.MaterialSwitch
         android:id="@+id/https_only_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -33,6 +33,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -503,6 +504,7 @@ fun SwitchListItem(
             checked = checked,
             onCheckedChange = onClick,
             enabled = enabled,
+            colors = SwitchDefaults.colors(),
             modifier = Modifier
                 .clearAndSetSemantics {},
         )

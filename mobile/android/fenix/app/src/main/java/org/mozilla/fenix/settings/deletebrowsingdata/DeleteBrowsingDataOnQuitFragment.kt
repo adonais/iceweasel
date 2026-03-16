@@ -8,7 +8,7 @@ import android.os.Bundle
 import androidx.preference.CheckBoxPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -38,7 +38,7 @@ class DeleteBrowsingDataOnQuitFragment : PreferenceFragmentCompat() {
         showToolbar(getString(R.string.preferences_delete_browsing_data_on_quit))
 
         // Delete Browsing Data on Quit Switch
-        val deleteOnQuitPref = requirePreference<SwitchPreference>(
+        val deleteOnQuitPref = requirePreference<SwitchPreferenceCompat>(
             R.string.pref_key_delete_browsing_data_on_quit,
         )
         deleteOnQuitPref.apply {

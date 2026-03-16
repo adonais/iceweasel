@@ -6,7 +6,7 @@ package org.mozilla.fenix.settings.search
 
 import android.content.SharedPreferences
 import androidx.preference.Preference
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -55,7 +55,7 @@ class SearchEngineFragmentTest {
     @Test
     fun `GIVEN pref_key_show_voice_search preference WHEN it is modified THEN the value is persisted and widgets updated`() {
         val voiceSearchPreferenceKey = testContext.getString(R.string.pref_key_show_voice_search)
-        val voiceSearchPreference = spyk(SwitchPreference(testContext)) {
+        val voiceSearchPreference = spyk(SwitchPreferenceCompat(testContext)) {
             every { key } returns voiceSearchPreferenceKey
         }
 

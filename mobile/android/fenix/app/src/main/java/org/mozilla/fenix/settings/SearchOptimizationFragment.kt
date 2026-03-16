@@ -7,7 +7,7 @@ package org.mozilla.fenix.settings
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -41,7 +41,7 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
             ),
         )
 
-        requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_feature).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_search_optimization_feature).apply {
             isChecked = isFeatureEnabled
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
                 (newValue as? Boolean)?.let { newOption ->
@@ -72,7 +72,7 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
         onEnable: () -> Unit,
         onDisable: () -> Unit,
     ) {
-        requirePreference<SwitchPreference>(preference).apply {
+        requirePreference<SwitchPreferenceCompat>(preference).apply {
             isEnabled = isFeatureEnabled
             summary = when (isFeatureEnabled) {
                 true -> null
@@ -95,7 +95,7 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
         isFeatureEnabled: Boolean,
         isChecked: Boolean,
     ) {
-        requirePreference<SwitchPreference>(preference).apply {
+        requirePreference<SwitchPreferenceCompat>(preference).apply {
             isEnabled = isFeatureEnabled
             this.isChecked = isChecked
             summary = when (isFeatureEnabled) {

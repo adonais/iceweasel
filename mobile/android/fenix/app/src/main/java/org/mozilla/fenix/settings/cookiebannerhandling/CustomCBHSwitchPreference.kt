@@ -6,17 +6,17 @@ package org.mozilla.fenix.settings.cookiebannerhandling
 
 import android.content.Context
 import android.util.AttributeSet
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.ext.settings
 
 /**
- * Custom [SwitchPreference] that automatically creates the switch for the
+ * Custom [SwitchPreferenceCompat] that automatically creates the switch for the
  * cookie banner handling feature depending on the current Nimbus configurations.
  */
 class CustomCBHSwitchPreference @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-) : SwitchPreference(context, attrs) {
+) : SwitchPreferenceCompat(context, attrs) {
     init {
         with(context) {
             setDefaultValue(settings().shouldUseCookieBannerPrivateModeDefaultValue)

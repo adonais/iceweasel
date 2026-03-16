@@ -15,6 +15,7 @@
         <item name="preferenceTheme">@style/PreferenceTheme</item>
         <item name="materialTimePickerTheme">@style/Normal.MaterialTimePicker</item>
         <item name="materialCalendarTheme">@style/MaterialCalendar</item>
+        <item name="materialSwitchStyle">@style/MaterialSwitchStyle</item>
         <!-- Android system styling -->
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
@@ -294,6 +295,7 @@
         <!-- Android system styling -->
         <item name="materialTimePickerTheme">@style/Private.MaterialTimePicker</item>
         <item name="materialCalendarTheme">@style/MaterialCalendar</item>
+        <item name="materialSwitchStyle">@style/MaterialSwitchStyle</item>
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="android:textColorLink">@color/fx_mobile_private_text_color_accent</item>
         <item name="preferenceTheme">@style/PreferenceTheme</item>
@@ -526,6 +528,7 @@
     <style name="PreferenceTheme" parent="PreferenceThemeOverlay.v14.Material">
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_light</item>
         <item name="android:fontWeight">@integer/font_weight_light</item>
+        <item name="switchPreferenceCompatStyle">@style/SwitchCompatPreferenceMaterialStyle</item>
     </style>
 
     <style name="HeaderTextStyle" parent="TextAppearance.MaterialComponents.Subtitle1">
@@ -812,4 +815,13 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">false</item>
     </style>
+
+    <style name="SwitchCompatPreferenceMaterialStyle" parent="@style/Preference.SwitchPreferenceCompat.Material">
+        <item name="widgetLayout">@layout/preference_material_switch</item>
+    </style>
+
+    <style name="MaterialSwitchStyle" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="trackTint">@color/material_switch_track_tint</item>
+    </style>
+
 </resources>

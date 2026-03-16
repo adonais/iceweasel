@@ -7,7 +7,7 @@ package org.mozilla.fenix.settings.autofill
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
 import androidx.preference.Preference
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -169,7 +169,7 @@ class AutofillSettingFragmentTest {
     fun `GIVEN the autofill addresses feature is enabled THEN the addresses switch preference is checked`() = runTest {
         every { testContext.components.settings.shouldAutofillAddressDetails } returns true
 
-        val autofillAddressesPreference = autofillSettingFragment.findPreference<SwitchPreference>(
+        val autofillAddressesPreference = autofillSettingFragment.findPreference<SwitchPreferenceCompat>(
             autofillSettingFragment.getPreferenceKey(R.string.pref_key_addresses_save_and_autofill_addresses),
         )
 
@@ -219,7 +219,7 @@ class AutofillSettingFragmentTest {
     fun `GIVEN the autofill addresses feature is disabled THEN the addresses switch preference is NOT checked`() = runTest {
         every { testContext.components.settings.shouldAutofillAddressDetails } returns false
 
-        val autofillAddressesPreference = autofillSettingFragment.findPreference<SwitchPreference>(
+        val autofillAddressesPreference = autofillSettingFragment.findPreference<SwitchPreferenceCompat>(
             autofillSettingFragment.getPreferenceKey(R.string.pref_key_addresses_save_and_autofill_addresses),
         )
 
@@ -233,7 +233,7 @@ class AutofillSettingFragmentTest {
     fun `GIVEN the autofill cards feature is enabled THEN cards the switch preference is checked`() = runTest {
         every { testContext.components.settings.shouldAutofillCreditCardDetails } returns true
 
-        val autofillCardsPreference = autofillSettingFragment.findPreference<SwitchPreference>(
+        val autofillCardsPreference = autofillSettingFragment.findPreference<SwitchPreferenceCompat>(
             autofillSettingFragment.getPreferenceKey(R.string.pref_key_credit_cards_save_and_autofill_cards),
         )
 
@@ -247,7 +247,7 @@ class AutofillSettingFragmentTest {
     fun `GIVEN the autofill cards feature is disabled THEN the cards switch preference is NOT checked`() = runTest {
         every { testContext.components.settings.shouldAutofillCreditCardDetails } returns false
 
-        val autofillCardsPreference = autofillSettingFragment.findPreference<SwitchPreference>(
+        val autofillCardsPreference = autofillSettingFragment.findPreference<SwitchPreferenceCompat>(
             autofillSettingFragment.getPreferenceKey(R.string.pref_key_credit_cards_save_and_autofill_cards),
         )
 

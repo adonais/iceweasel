@@ -13,7 +13,7 @@ import androidx.biometric.BiometricManager
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
@@ -69,12 +69,12 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_open_links_in_a_private_tab).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_open_links_in_a_private_tab).apply {
             onPreferenceChangeListener = SharedPreferenceUpdater()
             isChecked = context.settings().openLinksInAPrivateTab
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_allow_screenshots_in_private_mode).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_allow_screenshots_in_private_mode).apply {
             isEnabled = !(context.settings().privateBrowsingModeLocked && biometricManager.isAuthenticatorAvailable())
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -96,7 +96,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
                 deviceCapable && !userHasEnabledCapability && context.settings().privateBrowsingLockedFeatureEnabled
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_private_browsing_locked_enabled).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_private_browsing_locked_enabled).apply {
             isChecked =
                 context.settings().privateBrowsingModeLocked && biometricManager.isAuthenticatorAvailable()
             isVisible = context.settings().privateBrowsingLockedFeatureEnabled && deviceCapable
@@ -150,7 +150,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
         recordPbmLockFeatureEnabledStateTelemetry(newValue)
         requireContext().settings().privateBrowsingModeLocked = newValue
         // Update switch state manually
-        requirePreference<SwitchPreference>(R.string.pref_key_private_browsing_locked_enabled).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_private_browsing_locked_enabled).apply {
             isChecked = !isChecked
         }
         updateScreenshotPreference(newValue)
@@ -165,7 +165,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
         recordPbmLockFeatureEnabledStateTelemetry(pbmLockEnabled)
         requireContext().settings().privateBrowsingModeLocked = pbmLockEnabled
         // Update switch state manually
-        (preference as? SwitchPreference)?.isChecked = pbmLockEnabled
+        (preference as? SwitchPreferenceCompat)?.isChecked = pbmLockEnabled
         updateScreenshotPreference(pbmLockEnabled)
     }
 
@@ -178,7 +178,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
     }
 
     private fun updateScreenshotPreference(pbmLockEnabled: Boolean) {
-        requirePreference<SwitchPreference>(R.string.pref_key_allow_screenshots_in_private_mode)
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_allow_screenshots_in_private_mode)
             .apply {
                 if (pbmLockEnabled) {
                     requireContext().settings().allowScreenshotsInPrivateMode = false

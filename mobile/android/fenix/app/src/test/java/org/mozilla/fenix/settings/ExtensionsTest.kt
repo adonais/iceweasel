@@ -8,7 +8,7 @@ import android.graphics.Rect
 import android.widget.RadioButton
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import io.mockk.Called
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -80,26 +80,26 @@ class ExtensionsTest {
 
     @Test
     fun `requirePreference returns corresponding preference`() {
-        val switchPreference = mockk<SwitchPreference>()
+        val switchPreference = mockk<SwitchPreferenceCompat>()
         every {
-            fragment.findPreference<SwitchPreference>("pref_key_accessibility_auto_size")
+            fragment.findPreference<SwitchPreferenceCompat>("pref_key_accessibility_auto_size")
         } returns switchPreference
 
         assertEquals(
             switchPreference,
-            fragment.requirePreference<SwitchPreference>(R.string.pref_key_accessibility_auto_size),
+            fragment.requirePreference<SwitchPreferenceCompat>(R.string.pref_key_accessibility_auto_size),
         )
     }
 
     @Test
     fun `requirePreference throws if null preference is returned`() {
         every {
-            fragment.findPreference<SwitchPreference>("pref_key_accessibility_force_enable_zoom")
+            fragment.findPreference<SwitchPreferenceCompat>("pref_key_accessibility_force_enable_zoom")
         } returns null
 
         var exception: IllegalArgumentException? = null
         try {
-            fragment.requirePreference<SwitchPreference>(R.string.pref_key_accessibility_force_enable_zoom)
+            fragment.requirePreference<SwitchPreferenceCompat>(R.string.pref_key_accessibility_force_enable_zoom)
         } catch (e: IllegalArgumentException) {
             exception = e
         }

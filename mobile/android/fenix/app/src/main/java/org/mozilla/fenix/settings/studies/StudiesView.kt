@@ -12,11 +12,11 @@ import android.text.style.URLSpan
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.edit
 import androidx.core.text.HtmlCompat
 import androidx.core.text.getSpans
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.materialswitch.MaterialSwitch
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -153,7 +153,7 @@ class StudiesView(
     internal fun provideStudiesTitle(): TextView = binding.studiesTitle
 
     @VisibleForTesting
-    internal fun provideStudiesSwitch(): SwitchCompat = binding.studiesSwitch
+    internal fun provideStudiesSwitch(): MaterialSwitch = binding.studiesSwitch
 
     @VisibleForTesting
     internal fun provideStudiesList(): RecyclerView = binding.studiesList

@@ -201,7 +201,7 @@
             app:isPreferenceVisible="false"
             android:title="@string/firefox_labs_title" />
 
-        <androidx.preference.SwitchPreference
+        <androidx.preference.SwitchPreferenceCompat
             android:key="@string/pref_key_leakcanary"
             android:title="@string/preference_leakcanary"
             app:iconSpaceReserved="false"
@@ -212,13 +212,13 @@
             android:title="@string/preferences_remote_improvements"
             app:iconSpaceReserved="false" />
 
-        <androidx.preference.SwitchPreference
+        <androidx.preference.SwitchPreferenceCompat
             android:key="@string/pref_key_remote_debugging"
             android:title="@string/preferences_remote_debugging"
             app:iconSpaceReserved="false"
             android:defaultValue="false" />
 
-        <androidx.preference.SwitchPreference
+        <androidx.preference.SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/pref_key_enable_gecko_logs"
             app:iconSpaceReserved="false"

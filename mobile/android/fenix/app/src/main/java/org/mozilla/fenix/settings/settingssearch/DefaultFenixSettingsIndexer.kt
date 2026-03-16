@@ -311,8 +311,8 @@ class DefaultFenixSettingsIndexer(
         private const val PREFERENCE_CATEGORY_TAG = "androidx.preference.PreferenceCategory"
         private const val CHECKBOX_PREFERENCE_TAG = "androidx.preference.CheckBoxPreference"
         private const val PREFERENCE_TAG = "androidx.preference.Preference"
-        private const val SWITCH_PREFERENCE_TAG = "androidx.preference.SwitchPreference"
-        private const val SWITCH_PREFERENCE_PLAIN_TAG = "SwitchPreference"
+        private const val SWITCH_PREFERENCE_TAG = "androidx.preference.SwitchPreferenceCompat"
+        private const val SWITCH_PREFERENCE_PLAIN_TAG = "SwitchPreferenceCompat"
         private const val CUSTOM_CBH_SWITCH_PREFERENCE_TAG =
             "org.mozilla.fenix.settings.cookiebannerhandling.CustomCBHSwitchPreference"
         private const val DEFAULT_BROWSER_PREFERENCE_TAG = "org.mozilla.fenix.settings.DefaultBrowserPreference"

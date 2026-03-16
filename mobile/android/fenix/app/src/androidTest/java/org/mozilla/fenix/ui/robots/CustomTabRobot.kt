@@ -325,7 +325,7 @@ private fun mainMenuButton() = itemWithResId("$packageName:id/mozac_browser_tool
 private fun mainMenuButtonFromRedesignedToolbar() =
     itemWithDescription(getStringResource(R.string.content_description_menu))
 
-private fun desktopSiteButton() = onView(withId(R.id.switch_widget))
+private fun desktopSiteButton() = onView(withId(R.id.switchWidget))
 
 private fun findInPageButton() = onView(withText("Find in page"))
 

@@ -10,7 +10,7 @@ import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.materialswitch.MaterialSwitch
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
@@ -111,8 +111,8 @@ class InstalledAddonDetailsFragmentTest {
     @Test
     fun `GIVEN blocklisted addon WHEN binding the enable switch THEN disable the switch`() {
         val addon = mockk<Addon>()
-        val enableSwitch = mockk<SwitchMaterial>(relaxed = true)
-        val privateBrowsingSwitch = mockk<SwitchMaterial>(relaxed = true)
+        val enableSwitch = mockk<MaterialSwitch>(relaxed = true)
+        val privateBrowsingSwitch = mockk<MaterialSwitch>(relaxed = true)
 
         every { fragment.provideEnableSwitch() } returns enableSwitch
         every { fragment.providePrivateBrowsingSwitch() } returns privateBrowsingSwitch
@@ -128,8 +128,8 @@ class InstalledAddonDetailsFragmentTest {
     @Test
     fun `GIVEN enabled addon WHEN binding the enable switch THEN do not disable the switch`() {
         val addon = mockk<Addon>()
-        val enableSwitch = mockk<SwitchMaterial>(relaxed = true)
-        val privateBrowsingSwitch = mockk<SwitchMaterial>(relaxed = true)
+        val enableSwitch = mockk<MaterialSwitch>(relaxed = true)
+        val privateBrowsingSwitch = mockk<MaterialSwitch>(relaxed = true)
 
         every { fragment.provideEnableSwitch() } returns enableSwitch
         every { fragment.providePrivateBrowsingSwitch() } returns privateBrowsingSwitch
@@ -147,8 +147,8 @@ class InstalledAddonDetailsFragmentTest {
     @Test
     fun `GIVEN addon not correctly signed WHEN binding the enable switch THEN disable the switch`() {
         val addon = mockk<Addon>()
-        val enableSwitch = mockk<SwitchMaterial>(relaxed = true)
-        val privateBrowsingSwitch = mockk<SwitchMaterial>(relaxed = true)
+        val enableSwitch = mockk<MaterialSwitch>(relaxed = true)
+        val privateBrowsingSwitch = mockk<MaterialSwitch>(relaxed = true)
 
         every { fragment.provideEnableSwitch() } returns enableSwitch
         every { fragment.providePrivateBrowsingSwitch() } returns privateBrowsingSwitch
@@ -165,8 +165,8 @@ class InstalledAddonDetailsFragmentTest {
     @Test
     fun `GIVEN incompatible addon WHEN binding the enable switch THEN disable the switch`() {
         val addon = mockk<Addon>()
-        val enableSwitch = mockk<SwitchMaterial>(relaxed = true)
-        val privateBrowsingSwitch = mockk<SwitchMaterial>(relaxed = true)
+        val enableSwitch = mockk<MaterialSwitch>(relaxed = true)
+        val privateBrowsingSwitch = mockk<MaterialSwitch>(relaxed = true)
 
         every { fragment.provideEnableSwitch() } returns enableSwitch
         every { fragment.providePrivateBrowsingSwitch() } returns privateBrowsingSwitch
@@ -270,7 +270,7 @@ class InstalledAddonDetailsFragmentTest {
     @Test
     fun `GIVEN addon does not allow private browsing WHEN binding THEN update switch`() {
         val addon = mockAddon()
-        val privateBrowsingSwitch = mockk<SwitchMaterial>(relaxed = true)
+        val privateBrowsingSwitch = mockk<MaterialSwitch>(relaxed = true)
 
         every { fragment.providePrivateBrowsingSwitch() } returns privateBrowsingSwitch
         every { addon.incognito } returns Addon.Incognito.NOT_ALLOWED

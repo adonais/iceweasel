@@ -36,7 +36,7 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Turn off Cookie Banner Blocker for [domain.com]?" />
 
-    <androidx.appcompat.widget.SwitchCompat
+    <com.google.android.material.materialswitch.MaterialSwitch
         android:id="@+id/cookieBannerSwitch"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"

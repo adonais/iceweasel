@@ -13,7 +13,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import org.mozilla.fenix.R
@@ -65,7 +65,7 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat() {
             DefaultAndroidFileUtils(requireContext()),
         )
         setPreferencesFromResource(R.xml.downloads_settings_preferences, rootKey)
-        requirePreference<SwitchPreference>(R.string.pref_key_downloads_clean_up_files_automatically).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_downloads_clean_up_files_automatically).apply {
             title = getString(
                 R.string.preferences_downloads_settings_clean_up_files_title,
                 getString(R.string.app_name),

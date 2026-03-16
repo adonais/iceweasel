@@ -7,7 +7,7 @@ package org.mozilla.fenix.settings
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
@@ -21,7 +21,7 @@ class RemoteImprovementsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.remote_improvements_preferences, rootKey)
 
-        requirePreference<SwitchPreference>(R.string.pref_key_rollouts).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_rollouts).apply {
             isChecked = context.settings().isRolloutsEnabled
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
                 val enabled = newValue as? Boolean ?: false

@@ -8,7 +8,7 @@ import android.os.Bundle
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import mozilla.components.feature.autofill.preference.AutofillPreference
 import mozilla.components.service.fxa.SyncEngine
 import mozilla.telemetry.glean.private.NoExtras
@@ -62,7 +62,7 @@ class SavedLoginsAuthFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_autofill_logins).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_autofill_logins).apply {
             title = context.getString(
                 R.string.preferences_passwords_autofill2,
                 getString(R.string.app_name),

@@ -28,7 +28,7 @@
                 android:layout_marginBottom="6dp"
                 layout="@layout/mozac_feature_addons_message_bars" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/enable_switch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -44,7 +44,7 @@
                 android:textColor="?attr/textPrimary"
                 android:textSize="16sp" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/allow_in_private_browsing_switch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

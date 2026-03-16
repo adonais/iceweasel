@@ -9,7 +9,7 @@ import android.view.View
 import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.Tabs
@@ -29,7 +29,7 @@ class TabsSettingsFragment : PreferenceFragmentCompat() {
     private lateinit var radioOneWeek: RadioButtonPreference
     private lateinit var radioOneMonth: RadioButtonPreference
     private lateinit var inactiveTabsCategory: PreferenceCategory
-    private lateinit var inactiveTabs: SwitchPreference
+    private lateinit var inactiveTabs: SwitchPreferenceCompat
     private val args by navArgs<TabsSettingsFragmentArgs>()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -65,7 +65,7 @@ class TabsSettingsFragment : PreferenceFragmentCompat() {
         radioOneWeek = requirePreference(R.string.pref_key_close_tabs_after_one_week)
         radioOneDay = requirePreference(R.string.pref_key_close_tabs_after_one_day)
 
-        inactiveTabs = requirePreference<SwitchPreference>(R.string.pref_key_inactive_tabs).also {
+        inactiveTabs = requirePreference<SwitchPreferenceCompat>(R.string.pref_key_inactive_tabs).also {
             it.isChecked = requireContext().settings().inactiveTabsAreEnabled
             it.onPreferenceChangeListener = SharedPreferenceUpdater()
         }

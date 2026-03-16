@@ -8,7 +8,7 @@ import android.os.Bundle
 import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
@@ -29,7 +29,7 @@ class AccessibilityFragment : PreferenceFragmentCompat() {
         super.onResume()
         showToolbar(getString(R.string.preferences_accessibility))
 
-        val forceZoomPreference = requirePreference<SwitchPreference>(
+        val forceZoomPreference = requirePreference<SwitchPreferenceCompat>(
             R.string.pref_key_accessibility_force_enable_zoom,
         )
 
@@ -60,7 +60,7 @@ class AccessibilityFragment : PreferenceFragmentCompat() {
         }
 
         val useAutoSizePreference =
-            requirePreference<SwitchPreference>(R.string.pref_key_accessibility_auto_size)
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_accessibility_auto_size)
         useAutoSizePreference.setOnPreferenceChangeListener<Boolean> { preference, useAutoSize ->
             val settings = preference.context.settings()
             val components = preference.context.components

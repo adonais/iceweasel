@@ -15,7 +15,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.mozilla.fenix.BuildConfig
@@ -70,7 +70,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
 
         setPreferencesFromResource(R.xml.secret_settings_preferences, rootKey)
 
-        requirePreference<SwitchPreference>(R.string.pref_key_allow_third_party_root_certs).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_allow_third_party_root_certs).apply {
             isVisible = true
             isChecked = context.settings().allowThirdPartyRootCerts
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
@@ -82,18 +82,18 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_nimbus_use_preview).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_nimbus_use_preview).apply {
             isVisible = true
             isChecked = context.settings().nimbusUsePreview
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_composable_toolbar).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_composable_toolbar).apply {
             isChecked = context.settings().shouldUseComposableToolbar
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
                 (newValue as? Boolean)?.let { newOption ->
                     context.settings().shouldUseComposableToolbar = newOption
-                    requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_redesign).apply {
+                    requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_redesign).apply {
                         isEnabled = newOption
                         when (newOption) {
                             true -> {
@@ -108,7 +108,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                             }
                         }
                     }
-                    requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_customization).apply {
+                    requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_customization).apply {
                         val newOption = context.settings().toolbarRedesignEnabled
                         isEnabled = newOption
                         summary = when (newOption) {
@@ -120,7 +120,9 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                             context.settings().shouldShowToolbarCustomization = false
                         }
                     }
-                    requirePreference<SwitchPreference>(R.string.pref_key_should_show_custom_tab_extensions).apply {
+                    requirePreference<SwitchPreferenceCompat>(
+                        R.string.pref_key_should_show_custom_tab_extensions,
+                    ).apply {
                         val shouldEnableCustomTabExtensions = newOption
                         isEnabled = shouldEnableCustomTabExtensions
                         when (shouldEnableCustomTabExtensions) {
@@ -135,7 +137,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                             }
                         }
                     }
-                    requirePreference<SwitchPreference>(
+                    requirePreference<SwitchPreferenceCompat>(
                         R.string.pref_key_use_minimal_bottom_toolbar_while_entering_text,
                     ).apply {
                         isEnabled = newOption
@@ -157,7 +159,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                 true
             }
         }
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_customization).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_customization).apply {
             isChecked = context.settings().shouldShowToolbarCustomization
             val newOption = context.settings().toolbarRedesignEnabled
             isEnabled = newOption
@@ -168,7 +170,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_redesign).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_redesign).apply {
             isEnabled = context.settings().shouldUseComposableToolbar
             summary = when (context.settings().shouldUseComposableToolbar) {
                 true -> null
@@ -181,7 +183,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                     if (!newOption) {
                         context.settings().shouldUseExpandedToolbar = false
                     }
-                    requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_customization).apply {
+                    requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_customization).apply {
                         isEnabled = newOption
                         summary = when (newOption) {
                             true -> null
@@ -201,7 +203,9 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             isVisible = Config.channel.isDebug
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_use_minimal_bottom_toolbar_while_entering_text).apply {
+        requirePreference<SwitchPreferenceCompat>(
+            R.string.pref_key_use_minimal_bottom_toolbar_while_entering_text,
+        ).apply {
             isVisible = false // disabled temporarily based on https://bugzilla.mozilla.org/show_bug.cgi?id=1943053#c31
             isEnabled = context.settings().shouldUseComposableToolbar
             isChecked = context.settings().shouldUseMinimalBottomToolbarWhenEnteringText
@@ -212,19 +216,19 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_use_scroll_data_for_dynamic_toolbar).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_use_scroll_data_for_dynamic_toolbar).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().useNewDynamicToolbarBehaviour
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_address_sync).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_address_sync).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isAddressSyncEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_should_show_custom_tab_extensions).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_should_show_custom_tab_extensions).apply {
             isVisible = Config.channel.isDebug
             isChecked = context.settings().shouldShowCustomTabExtensions
             val newOption = context.settings().shouldUseComposableToolbar
@@ -236,51 +240,51 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_homepage_searchbar).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_searchbar).apply {
             isVisible = true
             isChecked = context.settings().enableHomepageSearchBar
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_homepage_as_new_tab).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_as_new_tab).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableHomepageAsNewTab
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_firefox_labs).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_firefox_labs).apply {
             isChecked = context.settings().enableFirefoxLabs
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_merino_client).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_merino_client).apply {
             isChecked = context.settings().enableMerinoClient
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_mozilla_ads_client).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_mozilla_ads_client).apply {
             isChecked = context.settings().enableMozillaAdsClient
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_discover_more_stories).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_discover_more_stories).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableDiscoverMoreStories
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_privacy_report).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_privacy_report).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().showPrivacyReportSectionToggle
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_unified_trust_panel).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_unified_trust_panel).apply {
             isChecked = context.settings().enableUnifiedTrustPanel
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_lna_feature_enabled).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_lna_feature_enabled).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isLnaFeatureEnabled
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
@@ -292,7 +296,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_lna_blocking_enabled).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_lna_blocking_enabled).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isLnaBlockingEnabled
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
@@ -304,7 +308,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_lna_tracker_blocking_enabled).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_lna_tracker_blocking_enabled).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isLnaTrackerBlockingEnabled
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
@@ -316,13 +320,13 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_allow_settings_search).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_allow_settings_search).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isSettingsSearchEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_fxsuggest).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_fxsuggest).apply {
             isVisible = FeatureFlags.FX_SUGGEST
             isChecked = context.settings().enableFxSuggest
             onPreferenceChangeListener = object : Preference.OnPreferenceChangeListener {
@@ -343,14 +347,14 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_doh_settings_enabled).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_doh_settings_enabled).apply {
             isVisible = true
             isChecked = context.settings().showDohEntryPoint
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         lifecycleScope.launch {
-            requirePreference<SwitchPreference>(R.string.pref_key_enable_debug_drawer).apply {
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_debug_drawer).apply {
                 isVisible = true
                 isChecked = debugSettingsRepository.debugDrawerEnabled.first()
                 onPreferenceChangeListener =
@@ -361,7 +365,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_use_new_crash_reporter).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_use_new_crash_reporter).apply {
             isVisible = true
             isChecked = context.settings().useNewCrashReporterFlow
             onPreferenceChangeListener =
@@ -381,7 +385,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             summary = context.settings().getRemoteSettingsServerString()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_use_remote_search_configuration).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_use_remote_search_configuration).apply {
             isVisible = true
             isChecked = context.settings().useRemoteSearchConfiguration
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
@@ -396,84 +400,84 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_microsurvey_feature_enabled).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_microsurvey_feature_enabled).apply {
             isVisible = true
             isChecked = context.settings().microsurveyFeatureEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_shake_to_summarize).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_shake_to_summarize).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().shakeToSummarizeFeatureFlagEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_persistent_debug_menu).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_persistent_debug_menu).apply {
             isVisible = true
             isChecked = context.settings().isDebugMenuPersistentlyRevealed
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_crash_pull_never_show_again).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_crash_pull_never_show_again).apply {
             isVisible = true
             isChecked = context.settings().crashPullNeverShowAgain
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_tab_manager_opening_animation).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_manager_opening_animation).apply {
             isVisible = true
             isChecked = context.settings().tabManagerOpeningAnimationEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_terms_accepted).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_terms_accepted).apply {
             isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
             isChecked = context.settings().hasAcceptedTermsOfService
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_terms_latest_date).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_terms_latest_date).apply {
             isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
             isChecked = context.settings().isTermsOfUsePublishedDebugDateEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_debug_terms_trigger_time).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_debug_terms_trigger_time).apply {
             isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
             isChecked = context.settings().isDebugTermsOfServiceTriggerTimeEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_isolated_process).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_isolated_process).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isIsolatedProcessEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_app_zygote_process).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_app_zygote_process).apply {
             isVisible = Config.channel.isNightlyOrDebug && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
             isChecked = context.settings().isAppZygoteEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_persistent_onboarding).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_persistent_onboarding).apply {
             isChecked = context.settings().enablePersistentOnboarding
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_tab_search).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_search).apply {
             isVisible = true
             isChecked = context.settings().tabSearchEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_tab_groups).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups).apply {
             isVisible = true
             isChecked = context.settings().tabGroupsEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_native_share_sheet).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_native_share_sheet).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().nativeShareSheetEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()

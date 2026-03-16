@@ -23,13 +23,13 @@
         android:layout="@layout/preference_spacer"
         android:selectable="false"/>
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="@string/pref_key_external_download_manager"
         android:title="@string/preferences_choose_app_for_downloads"
         app:iconSpaceReserved="false" />
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="@string/pref_key_downloads_clean_up_files_automatically"
         android:summary="@string/preferences_downloads_settings_clean_up_files_summary"

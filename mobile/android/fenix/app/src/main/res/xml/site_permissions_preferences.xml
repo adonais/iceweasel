@@ -10,7 +10,7 @@
         android:layout="@layout/preference_category_no_icon_style"
         android:title="@string/preferences_category_content">
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:icon="@drawable/mozac_ic_device_desktop_24"
             android:defaultValue="false"
             android:key="@string/pref_key_desktop_browsing"

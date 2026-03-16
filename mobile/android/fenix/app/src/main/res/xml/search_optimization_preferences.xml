@@ -6,15 +6,15 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:key="@string/pref_key_search_optimization_feature"
         android:title="@string/preferences_debug_settings_enable_search_optimization"
         app:iconSpaceReserved="false" />
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:key="@string/pref_key_search_optimization_stocks"
         android:title="@string/preferences_debug_settings_enable_search_optimization_stock"
         app:iconSpaceReserved="false" />
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:key="@string/pref_key_search_optimization_sports"
         android:title="@string/preferences_debug_settings_enable_search_optimization_sport"
         app:iconSpaceReserved="false" />

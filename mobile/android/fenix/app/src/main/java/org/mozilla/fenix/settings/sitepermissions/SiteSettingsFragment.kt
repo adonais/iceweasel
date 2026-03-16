@@ -10,7 +10,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.Preference.OnPreferenceClickListener
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.color.MaterialColors
 import mozilla.components.browser.state.action.DefaultDesktopModeAction
 import mozilla.telemetry.glean.private.NoExtras
@@ -57,7 +57,7 @@ class SiteSettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun bindDesktopMode() {
-        requirePreference<SwitchPreference>(R.string.pref_key_desktop_browsing).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_desktop_browsing).apply {
             icon?.setTint(
                 MaterialColors.getColor(
                     requireContext(),

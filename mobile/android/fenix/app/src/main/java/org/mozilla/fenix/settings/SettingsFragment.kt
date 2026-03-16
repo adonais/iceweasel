@@ -25,7 +25,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
@@ -775,7 +775,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     internal fun setupCookieBannerPreference(settings: Settings) {
         FxNimbus.features.cookieBanners.recordExposure()
         if (settings.shouldShowCookieBannerUI) {
-            with(requirePreference<SwitchPreference>(R.string.pref_key_cookie_banner_private_mode)) {
+            with(requirePreference<SwitchPreferenceCompat>(R.string.pref_key_cookie_banner_private_mode)) {
                 isVisible = settings.shouldShowCookieBannerUI
 
                 onPreferenceChangeListener = object : SharedPreferenceUpdater() {
