@@ -92,7 +92,7 @@ def remove_ignored_path(paths, topsrcdir, log):
             ignored_dir.append(r"^[\./]*" + line.rstrip())
 
     # Generates the list of regexp
-    ignored_dir_re = "(%s)" % "|".join(ignored_dir)
+    ignored_dir_re = "({})".format("|".join(ignored_dir))
 
     path_list = []
     for f in paths:

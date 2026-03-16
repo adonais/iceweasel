@@ -65,7 +65,7 @@ def run_perfdocs(config, logger=None, paths=None, generate=True):
 
     for path in target_dir:
         if not path.exists():
-            raise Exception("Cannot locate directory at %s" % str(path))
+            raise Exception(f"Cannot locate directory at {str(path)}")
 
     decision_task_id = os.environ.get("DECISION_TASK_ID", None)
     if decision_task_id:

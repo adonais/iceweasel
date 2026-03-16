@@ -85,11 +85,11 @@ def run_prettier(cmd_args, config, fix):
     else:
         # When in "check" mode, Prettier will output the list of files that
         # need changing, so we'll wrap them in our result structure here.
-        for file in output:
-            if not file:
+        for f in output:
+            if not f:
                 continue
 
-            file = os.path.abspath(file)
+            file = os.path.abspath(f)
             results.append(
                 result.from_config(
                     config,

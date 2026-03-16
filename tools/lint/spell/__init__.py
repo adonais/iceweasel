@@ -130,8 +130,7 @@ def lint(paths, config, fix=None, **lintargs):
     run_process(config, base_command)
 
     if fix:
-        global results
-        results = []
+        results.clear()
         cmd_args.append("--write-changes")
         log.debug("Command: {}".format(" ".join(cmd_args)))
         log.debug(f"Version: {get_codespell_version(binary)}")

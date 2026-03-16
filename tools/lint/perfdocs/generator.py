@@ -218,8 +218,8 @@ class Generator:
             pathlib.Path(self.templates_path, "index.rst"), stringify=True
         )
 
-        fmt_frameworks = "\n".join(["  * :doc:`%s`" % name for name in frameworks])
-        fmt_toctree = "\n".join(["  %s" % name for name in frameworks])
+        fmt_frameworks = "\n".join([f"  * :doc:`{name}`" for name in frameworks])
+        fmt_toctree = "\n".join([f"  {name}" for name in frameworks])
 
         fmt_mainpage = re.sub(r"{toctree_documentation}", fmt_toctree, mainpage)
         fmt_mainpage = re.sub(r"{test_documentation}", fmt_frameworks, fmt_mainpage)

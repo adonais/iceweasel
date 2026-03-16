@@ -138,7 +138,7 @@ def s3_upload(files, key_prefix=None):
 
     def upload(f, path, bucket, key, extra_args):
         # Need to flush to avoid buffering/interleaving from multiple threads.
-        sys.stdout.write("uploading %s to %s\n" % (path, key))
+        sys.stdout.write(f"uploading {path} to {key}\n")
         sys.stdout.flush()
         s3.upload_fileobj(f, bucket, key, ExtraArgs=extra_args)
 
@@ -155,7 +155,7 @@ def s3_upload(files, key_prefix=None):
                 extra_args["ContentEncoding"] = content_encoding
 
             if key_prefix:
-                key = "%s/%s" % (key_prefix, path)
+                key = f"{key_prefix}/{path}"
             else:
                 key = path
 

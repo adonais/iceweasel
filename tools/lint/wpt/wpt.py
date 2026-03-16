@@ -53,7 +53,7 @@ def lint(files, config, **kwargs):
             results.append(
                 result.from_config(
                     config,
-                    message="Lint process exited with return code %s" % proc.returncode,
+                    message=f"Lint process exited with return code {proc.returncode}",
                 )
             )
     except KeyboardInterrupt:

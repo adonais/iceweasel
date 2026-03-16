@@ -126,9 +126,7 @@ def site_ordering(path: Path, fix: bool, config):
             new_lines = [first_line]
             for comments, spec in sorted_blocks:
                 new_lines.extend(comments)
-                if not spec.endswith("\n"):
-                    spec += "\n"
-                new_lines.append(spec)
+                new_lines.append(spec if spec.endswith("\n") else spec + "\n")
             path.write_text("".join(new_lines), newline="\n")
             fixed = 1
         else:

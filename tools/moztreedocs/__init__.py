@@ -54,21 +54,23 @@ def read_build_config(docdir):
             if not is_main and absdir not in (str(docdir), str(MAIN_DOC_PATH)):
                 # allow subpaths of absdir (i.e. docdir = <absdir>/sub/path/)
                 if str(docdir).startswith(absdir):
-                    key = os.path.join(key, str(docdir).split(f"{key}/")[-1])
+                    tree_key = os.path.join(key, str(docdir).split(f"{key}/")[-1])
                 else:
                     continue
-
-            assert key
-            if key.startswith("/"):
-                key = key[1:]
             else:
-                key = os.path.normpath(os.path.join(reldir, key))
+                tree_key = key
 
-            if key in trees:
+            assert tree_key
+            if tree_key.startswith("/"):
+                tree_key = tree_key[1:]
+            else:
+                tree_key = os.path.normpath(os.path.join(reldir, tree_key))
+
+            if tree_key in trees:
                 raise Exception(
-                    "%s has already been registered as a destination." % key
+                    f"{tree_key} has already been registered as a destination."
                 )
-            trees[key] = os.path.join(reldir, value)
+            trees[tree_key] = os.path.join(reldir, value)
 
         if name == "SPHINX_PYTHON_PACKAGE_DIRS":
             python_package_dirs.add(os.path.join(reldir, value))
@@ -180,7 +182,7 @@ class _SphinxManager:
             return True
 
         def format_paths(paths):
-            source_doc = ["%s/index" % p for p in paths]
+            source_doc = [f"{p}/index" for p in paths]
             return "\n   ".join(source_doc)
 
         toplevel_trees = {k: v for k, v in self.trees.items() if is_toplevel(k)}

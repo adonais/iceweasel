@@ -28,8 +28,7 @@ def getfiletext(config, filename):
         except Exception as e:
             res = {
                 "path": filename,
-                "message": "Could not open file as utf-8 - maybe an encoding error: %s"
-                % e,
+                "message": f"Could not open file as utf-8 - maybe an encoding error: {e}",
                 "level": "error",
             }
             results.append(result.from_config(config, **res))
@@ -59,7 +58,7 @@ def lint(paths, config, **lintargs):
                 res = {
                     "path": f,
                     "lineno": line,
-                    "message": "disallowed characters: %s" % subset,
+                    "message": f"disallowed characters: {subset}",
                     "level": "error",
                 }
                 results.append(result.from_config(config, **res))
