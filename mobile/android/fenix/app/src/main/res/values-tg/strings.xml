@@ -2507,6 +2507,8 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">«%s» шуморо аз бисёр васоити пайгирие, ки фаъолияти шуморо дар онлайн пайгирӣ мекунанд, муҳофизат менамояд.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Маълумоти бештар</string>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Мо шуморо муҳофизат мекунем</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Стандартӣ (пешфарз)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
