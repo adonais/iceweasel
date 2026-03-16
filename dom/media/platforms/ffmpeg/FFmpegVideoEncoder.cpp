@@ -791,7 +791,7 @@ FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
   if (isH264 && mConfig.mCodecSpecific.as<H264Specific>().mFormat ==
                     H264BitStreamFormat::AVC) {
     if (!mCodecName.Equals("libx264"_ns) && AnnexB::IsAnnexB(*data)) {
-      if (AnnexB::ConvertSampleToAVCC(data, mLastExtraData)) {
+      if (!AnnexB::ConvertSampleToAVCC(data, mLastExtraData)) {
         return Err(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                                "Failed to convert to AVCC"_ns));
       }
