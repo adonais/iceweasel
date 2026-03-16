@@ -13,6 +13,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkConstructor
@@ -42,7 +43,7 @@ class SyncPreferenceViewTest {
 
     @MockK private lateinit var accountManager: FxaAccountManager
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var navController: NavController
     private lateinit var accountObserver: CapturingSlot<AccountObserver>
     private lateinit var preferenceChangeListener: CapturingSlot<Preference.OnPreferenceChangeListener>

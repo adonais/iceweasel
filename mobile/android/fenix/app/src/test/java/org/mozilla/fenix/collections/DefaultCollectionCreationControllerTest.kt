@@ -9,6 +9,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -45,7 +46,7 @@ class DefaultCollectionCreationControllerTest {
     private lateinit var controller: DefaultCollectionCreationController
     private var dismissed = false
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var store: CollectionCreationStore
 
     @MockK(relaxUnitFun = true)

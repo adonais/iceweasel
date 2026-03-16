@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.concept.engine.permission.SitePermissions
@@ -29,10 +29,10 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SitePermissionsDetailsExceptionsFragmentTest {
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var settings: Settings
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var permissions: SitePermissions
 
     private lateinit var fragment: SitePermissionsDetailsExceptionsFragment

@@ -9,6 +9,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
@@ -24,7 +25,7 @@ import org.mozilla.fenix.helpers.MockkRetryTestRule
 
 class ExceptionsListItemViewHolderTest {
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var view: WidgetSiteItemView
 
     @MockK private lateinit var icons: BrowserIcons

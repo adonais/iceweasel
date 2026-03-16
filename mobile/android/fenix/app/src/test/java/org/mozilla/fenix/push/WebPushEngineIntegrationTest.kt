@@ -10,6 +10,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
@@ -41,7 +42,7 @@ class WebPushEngineIntegrationTest {
 
     @MockK private lateinit var pushFeature: AutoPushFeature
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var handler: WebPushHandler
     private lateinit var delegate: CapturingSlot<WebPushDelegate>
     private lateinit var integration: WebPushEngineIntegration

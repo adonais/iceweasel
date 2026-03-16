@@ -10,7 +10,7 @@ import android.widget.RadioButton
 import androidx.core.view.isVisible
 import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -34,10 +34,10 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SitePermissionsManageExceptionsPhoneFeatureFragmentTest {
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var settings: Settings
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var permissions: SitePermissions
 
     private lateinit var fragment: SitePermissionsManageExceptionsPhoneFeatureFragment

@@ -7,6 +7,7 @@ package org.mozilla.fenix.components
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import mozilla.components.support.base.log.logger.Logger
 import org.junit.Assert.assertFalse
@@ -18,7 +19,7 @@ import org.mozilla.fenix.components.metrics.MetricServiceType
 
 class MetricsServiceHelperTest {
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var mockLogger: Logger
 
     @MockK

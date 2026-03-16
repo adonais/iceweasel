@@ -7,7 +7,7 @@ package org.mozilla.fenix.settings.quicksettings
 import android.content.pm.PackageManager
 import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -47,13 +47,13 @@ import org.robolectric.RobolectricTestRunner
 class QuickSettingsFragmentStoreTest {
     private val context = spyk(testContext)
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var permissions: SitePermissions
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var permissionHighlights: PermissionHighlightsState
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var appSettings: Settings
 
     @Before

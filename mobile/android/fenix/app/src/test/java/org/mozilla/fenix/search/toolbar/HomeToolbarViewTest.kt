@@ -11,7 +11,7 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
 import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.spyk
@@ -54,7 +54,7 @@ import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
 class HomeToolbarViewTest {
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var interactor: ToolbarInteractor
 
     private lateinit var context: Context

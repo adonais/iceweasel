@@ -10,6 +10,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -62,21 +63,21 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class) // for gleanTestRule
 class SearchDialogControllerTest {
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var activity: HomeActivity
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var store: SearchDialogFragmentStore
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var navController: NavController
 
     @MockK private lateinit var searchEngine: SearchEngine
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var settings: Settings
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var fenixBrowserUseCases: FenixBrowserUseCases
 
     private lateinit var middleware: CaptureActionsMiddleware<BrowserState, BrowserAction>

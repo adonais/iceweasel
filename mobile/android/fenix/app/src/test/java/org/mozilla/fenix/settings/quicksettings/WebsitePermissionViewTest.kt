@@ -10,7 +10,7 @@ import androidx.appcompat.widget.AppCompatSpinner
 import androidx.core.view.isVisible
 import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -30,7 +30,7 @@ import java.util.EnumMap
 @RunWith(RobolectricTestRunner::class)
 class WebsitePermissionViewTest {
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var interactor: WebsitePermissionInteractor
     private lateinit var view: WebsitePermissionsView
 

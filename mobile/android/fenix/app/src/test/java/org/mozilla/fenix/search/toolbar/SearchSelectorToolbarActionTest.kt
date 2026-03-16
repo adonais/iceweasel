@@ -14,7 +14,7 @@ import androidx.core.graphics.createBitmap
 import com.google.android.material.card.MaterialCardView
 import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -53,10 +53,10 @@ class SearchSelectorToolbarActionTest {
 
     private lateinit var store: SearchDialogFragmentStore
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var menu: SearchSelectorMenu
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var settings: Settings
 
     @get:Rule

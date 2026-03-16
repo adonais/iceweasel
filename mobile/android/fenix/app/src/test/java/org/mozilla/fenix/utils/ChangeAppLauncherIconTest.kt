@@ -12,7 +12,7 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.verify
 import kotlinx.coroutines.Job
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -29,7 +29,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ChangeAppLauncherIconTest {
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var shortcutWrapper: ShortcutManagerWrapper
     private lateinit var shortcutsUpdater: ShortcutsUpdater
     private lateinit var fakeCrashReporter: CrashReporting

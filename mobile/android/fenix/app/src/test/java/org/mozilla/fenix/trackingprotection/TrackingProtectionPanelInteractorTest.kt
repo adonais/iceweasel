@@ -11,7 +11,7 @@ import androidx.navigation.NavDirections
 import io.mockk.MockKAnnotations
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
@@ -34,19 +34,19 @@ class TrackingProtectionPanelInteractorTest {
 
     private lateinit var context: Context
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var navController: NavController
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var fragment: Fragment
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var sitePermissions: SitePermissions
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var store: ProtectionsStore
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var cookieBannersStorage: CookieBannersStorage
     private lateinit var interactor: TrackingProtectionPanelInteractor
 

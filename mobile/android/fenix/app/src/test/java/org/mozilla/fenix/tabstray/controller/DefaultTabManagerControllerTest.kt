@@ -12,7 +12,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
@@ -85,28 +85,28 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class) // for gleanTestRule
 class DefaultTabManagerControllerTest {
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var trayStore: TabsTrayStore
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var browserStore: BrowserStore
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var browsingModeManager: BrowsingModeManager
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var navController: NavController
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var profiler: Profiler
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var tabsUseCases: TabsUseCases
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var fenixBrowserUseCases: FenixBrowserUseCases
 
-    @MockK(relaxed = true)
+    @RelaxedMockK
     private lateinit var accountManager: FxaAccountManager
 
     private lateinit var loadUrlUseCase: SessionUseCases.DefaultLoadUrlUseCase
