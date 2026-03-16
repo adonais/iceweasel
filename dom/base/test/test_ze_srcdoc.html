@@ -8,21 +8,15 @@
 <script>
 let count = 0;
 SimpleTest.waitForExplicitFinish();
-window.ZComponents = { foo: "bar" };
-async function runTest() {
-    await SpecialPowers.pushPrefEnv({
-    "set": [
-        ["dom.about-blank-ze-hack.enabled", true],
-    ]
-    });
+window.ZE_Init = { foo: "bar" };
+function runTest() {
     let iframe = document.createElement("iframe");
     iframe.srcdoc = "<!DOCTYPE html>";
     iframe.className = "ze_area";
     iframe.onload = function() {
         ++count;
         is(count, 1, "iframe onload should have fired exactly once")
-        window.setTimeout(async function() {
-            await SpecialPowers.popPrefEnv();
+        window.setTimeout(function() {
             SimpleTest.finish();
         }, 0);
     }

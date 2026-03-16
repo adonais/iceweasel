@@ -17495,6 +17495,23 @@ use.counter.deprecated_ops.page:
     send_in_pings:
       - use-counters
 
+  old_zecompat_hack:
+    type: counter
+    description: >
+      Whether a page used OldZECompatHack.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   mozorientation_deprecated:
     type: counter
     description: >
@@ -18419,6 +18436,23 @@ use.counter.deprecated_ops.doc:
     type: counter
     description: >
       Whether a document used GWTRichTextAreaCompatHack.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  old_zecompat_hack:
+    type: counter
+    description: >
+      Whether a document used OldZECompatHack.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:

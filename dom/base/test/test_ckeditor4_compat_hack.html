@@ -67,11 +67,7 @@ add_task(async function test_gwt_src_present() {
 });
 
 add_task(async function test_ze() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.about-blank-ze-hack.enabled", true]],
-  });
-  await base_test({ name: "ZComponents", cls: "ze_area", src: null });
-  await SpecialPowers.popPrefEnv();
+  await base_test({ name: "ZE_Init", cls: "ze_area", src: null });
 });
 
   </script>
