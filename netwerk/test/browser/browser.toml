@@ -98,8 +98,6 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1829935
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone", # Bug 1829935
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt && verify-standalone", # Bug 1829935
 ]
 
 ["browser_103_csp.js"]
@@ -306,6 +304,11 @@ support-files = [
   "head_local_network_access.js",
   "page_with_non_trackers.html",
   "page_with_non_trackers.html^headers^",
+]
+
+["browser_test_local_network_access_sni_leak.js"]
+support-files = [
+  "page_fetch_localhost_https.html",
 ]
 
 ["browser_test_local_network_trackers.js"]
