@@ -1,6 +1,3 @@
-/* -*- js-indent-level: 2; tab-width: 2; indent-tabs-mode: nil -*- */
-/* vim:set ts=2 sw=2 sts=2 et: */
-
 // Generally gTestPath should be set by the harness.
 /* global gTestPath */
 

@@ -1,5 +1,3 @@
-// -*- Mode: js; tab-width: 2; indent-tabs-mode: nil; js2-basic-offset: 2; js2-skip-preprocessor-directives: t; -*-
-
 /* globals ExtensionAPI, Services */
 
 ChromeUtils.defineESModuleGetters(this, {
