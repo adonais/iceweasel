@@ -1031,14 +1031,6 @@ class CompilerGCPointer {
   CompilerGCPointer<T>& operator=(const CompilerGCPointer<T>&) = delete;
 };
 
-using CompilerObject = CompilerGCPointer<JSObject*>;
-using CompilerNativeObject = CompilerGCPointer<NativeObject*>;
-using CompilerFunction = CompilerGCPointer<JSFunction*>;
-using CompilerBaseScript = CompilerGCPointer<BaseScript*>;
-using CompilerPropertyName = CompilerGCPointer<PropertyName*>;
-using CompilerShape = CompilerGCPointer<Shape*>;
-using CompilerGetterSetter = CompilerGCPointer<GetterSetter*>;
-
 // An instruction is an SSA name that is inserted into a basic block's IR
 // stream.
 class MInstruction : public MDefinition, public InlineListNode<MInstruction> {
@@ -2316,7 +2308,7 @@ class MArrayState : public MVariadicInstruction,
 // to access these flags off-thread.
 class WrappedFunction : public TempObject {
   // If this is a native function without a JitEntry, the JSFunction*.
-  CompilerFunction nativeFun_;
+  CompilerGCPointer<JSFunction*> nativeFun_;
   uint16_t nargs_;
   js::FunctionFlags flags_;
 
@@ -6385,7 +6377,7 @@ class MLambda : public MBinaryInstruction, public SingleObjectPolicy::Data {
 class MFunctionWithProto : public MTernaryInstruction,
                            public MixPolicy<ObjectPolicy<0>, ObjectPolicy<1>,
                                             ObjectPolicy<2>>::Data {
-  CompilerFunction fun_;
+  CompilerGCPointer<JSFunction*> fun_;
 
   MFunctionWithProto(MDefinition* envChain, MDefinition* prototype,
                      MConstant* cst)
@@ -8011,7 +8003,7 @@ class MAddAndStoreSlot
  private:
   Kind kind_;
   uint32_t slotOffset_;
-  CompilerShape shape_;
+  CompilerGCPointer<Shape*> shape_;
   bool preserveWrapper_;
 
   MAddAndStoreSlot(MDefinition* obj, MDefinition* value, Kind kind,
@@ -8798,7 +8790,7 @@ class MNewCallObject : public MUnaryInstruction,
 
 class MNewStringObject : public MUnaryInstruction,
                          public ConvertToStringPolicy<0>::Data {
-  CompilerObject templateObj_;
+  CompilerGCPointer<JSObject*> templateObj_;
 
   MNewStringObject(MDefinition* input, JSObject* templateObj)
       : MUnaryInstruction(classOpcode, input), templateObj_(templateObj) {
