@@ -497,6 +497,30 @@ class DefaultDownloadFileUtilsTest {
     }
 
     @Test
+    fun `Given a file scheme URI When createOpenFileIntent is called Then it converts to a shareable content URI via getFilePathUri`() {
+        val fileName = "test.pdf"
+        val directoryPath = "some/directory"
+        val contentType = "application/pdf"
+
+        val rawPath = "/storage/emulated/0/Download/test.pdf"
+        val fileUri = Uri.parse("file://$rawPath")
+
+        val fileUtils = spy(DefaultDownloadFileUtils(testContext))
+
+        doReturn(fileUri).`when`(fileUtils).findDownloadFileUri(fileName, directoryPath)
+
+        val expectedContentUri = Uri.parse("content://mozilla.components.support.utils.fileprovider/root$rawPath")
+        doReturn(expectedContentUri).`when`(fileUtils).getFilePathUri(rawPath)
+
+        val intent = fileUtils.createOpenFileIntent(fileName, directoryPath, contentType)
+
+        verify(fileUtils).getFilePathUri(rawPath)
+
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals(expectedContentUri, intent.data)
+    }
+
+    @Test
     fun `Given fileName is null When findDownloadFileUri is called Then it returns null`() {
         val fileUtils = spy(DefaultDownloadFileUtils(testContext) { "/default/path" })
 
