@@ -1808,9 +1808,8 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   // then remove attr.
   if (aLocalName == nsGkAtoms::attributeName &&
       aNamespaceID == kNameSpaceID_None &&
-      aElement->IsAnyOfSVGElements(nsGkAtoms::animate, nsGkAtoms::animateMotion,
-                                   nsGkAtoms::animateTransform,
-                                   nsGkAtoms::set)) {
+      aElement->IsAnyOfSVGElements(
+          nsGkAtoms::animate, nsGkAtoms::animateTransform, nsGkAtoms::set)) {
     nsAutoString value;
     if (!aElement->GetAttr(aNamespaceID, aLocalName, value)) {
       return false;
