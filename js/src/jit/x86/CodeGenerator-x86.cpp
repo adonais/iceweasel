@@ -519,10 +519,8 @@ class OutOfLineTruncate : public OutOfLineCodeBase<CodeGeneratorX86> {
   LDefinition* tempFloat() { return ins_->getTemp(0); }
 
   const wasm::TrapSiteDesc& trapSiteDesc() const {
-    if (ins_->isTruncateDToInt32()) {
-      return ins_->toTruncateDToInt32()->mir()->trapSiteDesc();
-    }
-
+    MOZ_ASSERT(ins_->isWasmBuiltinTruncateDToInt32(),
+               "Wasm only uses WasmBuiltinTruncateDToInt32");
     return ins_->toWasmBuiltinTruncateDToInt32()->mir()->trapSiteDesc();
   }
 };
@@ -545,10 +543,8 @@ class OutOfLineTruncateFloat32 : public OutOfLineCodeBase<CodeGeneratorX86> {
   LDefinition* tempFloat() { return ins_->getTemp(0); }
 
   const wasm::TrapSiteDesc& trapSiteDesc() const {
-    if (ins_->isTruncateFToInt32()) {
-      return ins_->toTruncateDToInt32()->mir()->trapSiteDesc();
-    }
-
+    MOZ_ASSERT(ins_->isWasmBuiltinTruncateFToInt32(),
+               "Wasm only uses WasmBuiltinTruncateFToInt32");
     return ins_->toWasmBuiltinTruncateFToInt32()->mir()->trapSiteDesc();
   }
 };
