@@ -243,6 +243,7 @@ let JSWINDOWACTORS = {
     },
     allFrames: true,
     matches: ["about:aichatcontent"],
+    remoteTypes: ["privilegedabout"],
     enablePreference: "browser.smartwindow.enabled",
   },
 

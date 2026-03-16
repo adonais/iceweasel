@@ -477,6 +477,8 @@ export class AIWindow extends MozLitElement {
     browser.setAttribute("id", "aichat-browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("maychangeremoteness", "true");
+    browser.setAttribute("remote", "true");
+    browser.setAttribute("remoteType", "privilegedabout");
     browser.setAttribute("disableglobalhistory", "true");
     browser.setAttribute("transparent", "true");
     browser.setAttribute("src", "about:aichatcontent");

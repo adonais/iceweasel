@@ -762,7 +762,6 @@ add_task(
 
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
       await dispatchSmartbarCommit(browser, "initial prompt", "chat");
       await TestUtils.waitForTick();
@@ -801,7 +800,6 @@ add_task(
 
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
       await dispatchSmartbarCommit(browser, "initial prompt", "chat");
       await TestUtils.waitForTick();

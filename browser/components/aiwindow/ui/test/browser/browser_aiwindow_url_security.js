@@ -427,13 +427,6 @@ add_task(async function test_aiwindow_component_trust_smoke() {
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    // In chaos mode, the page may already be loaded before we start listening
-    if (
-      !browser.currentURI?.spec?.startsWith("chrome://browser/content/aiwindow")
-    ) {
-      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-    }
-
     // Register session and get ledger (don't seed yet, wait for actor binding)
     testConversationId = "test-integration-conv-" + Date.now();
     const orchestrator = await getSecurityOrchestrator();
@@ -442,7 +435,7 @@ add_task(async function test_aiwindow_component_trust_smoke() {
     info(`Registered session ${testConversationId}`);
 
     // Bind actor to conversation and seed URL to trigger push chain
-    await SpecialPowers.spawn(browser, [testConversationId], async convId => {
+    let innerBC = await SpecialPowers.spawn(browser, [], async () => {
       await content.customElements.whenDefined("ai-window");
 
       const aiWindowElement = content.document.querySelector("ai-window");
@@ -457,17 +450,32 @@ add_task(async function test_aiwindow_component_trust_smoke() {
       const nestedBrowser =
         aiWindowElement.shadowRoot.querySelector("#aichat-browser");
       Assert.ok(nestedBrowser, "Nested aichat-browser should exist");
+      return nestedBrowser.browsingContext;
+    });
 
+    if (innerBC.currentURI.spec != "about:aichatcontent") {
+      // If the inner browser hasn't loaded yet, wait for it to load about:aichatcontent
+      await BrowserTestUtils.browserLoaded(innerBC, {
+        wantLoad: "about:aichatcontent",
+      });
+      innerBC = browser.browsingContext.children[0];
+    }
+    Assert.equal(
+      innerBC.currentURI.spec,
+      "about:aichatcontent",
+      "Inner browser should load chat content"
+    );
+    Assert.equal(
+      innerBC.currentRemoteType,
+      "privilegedabout",
+      "Inner browser should have privilegedabout remote type."
+    );
+    await SpecialPowers.spawn(innerBC, [], async () => {
       await ContentTaskUtils.waitForCondition(() => {
-        try {
-          const innerDoc = nestedBrowser.contentDocument;
-          return innerDoc?.querySelector("ai-chat-content");
-        } catch {
-          return false;
-        }
+        return content.document?.querySelector("ai-chat-content");
       }, "ai-chat-content should exist in nested browser");
 
-      const innerDoc = nestedBrowser.contentDocument;
+      const innerDoc = content.document;
       const chatContent = innerDoc.querySelector("ai-chat-content");
       Assert.ok(chatContent, "ai-chat-content should exist");
 
@@ -481,14 +489,11 @@ add_task(async function test_aiwindow_component_trust_smoke() {
           return false;
         }
       }, "ai-chat-content shadow DOM should be rendered");
-
-      // Bind actor to the test conversation
-      const actor =
-        nestedBrowser.browsingContext?.currentWindowGlobal?.getActor(
-          "AIChatContent"
-        );
-      actor.setConversation(convId);
     });
+
+    // Bind actor to the test conversation
+    const actor = innerBC.currentWindowGlobal.getActor("AIChatContent");
+    actor.setConversation(testConversationId);
 
     // Seed the URL from chrome - triggers the push chain:
     // ledger.seedConversation -> "change" event -> parent pushes -> child receives
@@ -498,13 +503,10 @@ add_task(async function test_aiwindow_component_trust_smoke() {
 
     // Dispatch message and verify links
     await SpecialPowers.spawn(
-      browser,
+      innerBC,
       [trustedUrl, untrustedUrl, testConversationId],
       async (trusted, untrusted, convId) => {
-        const aiWindowElement = content.document.querySelector("ai-window");
-        const nestedBrowser =
-          aiWindowElement.shadowRoot.querySelector("#aichat-browser");
-        const innerDoc = nestedBrowser.contentDocument;
+        const innerDoc = content.document;
         const chatContent = innerDoc.querySelector("ai-chat-content");
         const chatContentJS = chatContent.wrappedJSObject || chatContent;
 
@@ -528,10 +530,10 @@ add_task(async function test_aiwindow_component_trust_smoke() {
             followUpSuggestions: [],
             convId,
           },
-          nestedBrowser.contentWindow
+          content
         );
 
-        const messageEvent = new nestedBrowser.contentWindow.CustomEvent(
+        const messageEvent = new content.CustomEvent(
           "aiChatContentActor:message",
           {
             detail: eventDetail,

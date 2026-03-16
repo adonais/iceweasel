@@ -66,8 +66,13 @@ async function openAIWindowWithSidebar() {
     win.gBrowser.selectedBrowser,
     "about:blank"
   );
-  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
-  AIWindowUI.toggleSidebar(win);
+  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser, {
+    wantLoad: "about:blank",
+  });
+  if (!AIWindowUI.isSidebarOpen(win)) {
+    info("Opening sidebar");
+    AIWindowUI.toggleSidebar(win);
+  }
   const sidebarBrowser = win.document.getElementById("ai-window-browser");
   await BrowserTestUtils.waitForCondition(
     () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
