@@ -2,7 +2,7 @@ requires-python:>=3.9
 # We need sphinx to avoid some rstcheck errors and warnings
 pypi:Sphinx==7.1.2
 pypi:alabaster==0.7.13
-pypi:codespell==2.4.0
+pypi:codespell==2.4.2
 pypi:dataclasses==0.6
 pypi:distlib==0.3.7
 pypi:docutils==0.18.1
