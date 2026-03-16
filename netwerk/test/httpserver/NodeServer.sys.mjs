@@ -98,7 +98,7 @@ class ADB {
   }
 }
 
-export class BaseNodeServer {
+class BaseNodeServer {
   protocol() {
     return this._protocol;
   }
