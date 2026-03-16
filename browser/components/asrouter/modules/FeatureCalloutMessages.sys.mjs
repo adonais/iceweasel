@@ -146,7 +146,7 @@ const MESSAGES = () => {
                 action: {
                   type: "OPEN_URL",
                   data: {
-                    args: "https://www.mozilla.org/products/vpn/?utm_medium=firefox-desktop&utm_source=freevpnpilot&utm_campaign=evergreen&utm_content=vpnpanel#pricing",
+                    args: "https://www.mozilla.org/products/vpn/?utm_medium=firefox-desktop&utm_source=vpn-panel&utm_campaign=fx-vpn&utm_content=upgrade-button#pricing",
                     where: "tabshifted",
                   },
                   dismiss: true,
@@ -243,7 +243,7 @@ const MESSAGES = () => {
                 action: {
                   type: "OPEN_URL",
                   data: {
-                    args: "https://www.mozilla.org/products/vpn/?utm_medium=firefox-desktop&utm_source=freevpnpilot&utm_campaign=evergreen&utm_content=vpnpanel#pricing",
+                    args: "https://www.mozilla.org/products/vpn/?utm_medium=firefox-desktop&utm_source=vpn-panel&utm_campaign=fx-vpn&utm_content=upgrade-button#pricing",
                     where: "tabshifted",
                   },
                   dismiss: true,
