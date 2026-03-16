@@ -30,6 +30,7 @@ const lazy = XPCOMUtils.declareLazy({
   AboutHomeStartupCache: "resource:///modules/AboutHomeStartupCache.sys.mjs",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NewTabGleanUtils: "resource://newtab/lib/NewTabGleanUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 
@@ -818,6 +819,7 @@ export var AboutNewTabResourceMapping = {
     this.logger.debug(
       "First startup with a new profile. Checking for any train-hops to perform restartless install."
     );
+    await lazy.ExperimentAPI.ready();
 
     const nimbusFeature =
       lazy.NimbusFeatures[TRAINHOP_NIMBUS_FIRST_STARTUP_FEATURE_ID];
