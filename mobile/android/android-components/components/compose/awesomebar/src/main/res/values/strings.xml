@@ -19,4 +19,39 @@
     <string name="mozac_browser_awesomebar_stock_suggestion_increase">Gained %s percent</string>
     <!-- Description for the stock suggestion card when the stock is the same. -->
     <string name="mozac_browser_awesomebar_stock_suggestion_no_change">No change</string>
+    <!-- Description for the sport suggestion card when the game is live. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_live">LIVE</string>
+    <!-- Description for the sport suggestion card when the game is scheduled. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_scheduled">Scheduled</string>
+    <!-- Description for the sport suggestion card when the game is delayed. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_delayed">Delayed</string>
+    <!-- Description for the sport suggestion card when the game is postponed. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_postponed">Postponed</string>
+    <!-- Description for the sport suggestion card when the game is in progress. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_in_progress">In Progress</string>
+    <!-- Description for the sport suggestion card when the game is suspended. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_suspended">Suspended</string>
+    <!-- Description for the sport suggestion card when the game is canceled. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_canceled">Canceled</string>
+    <!-- Description for the sport suggestion card when the game is final. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_final">Final</string>
+    <!-- Description for the sport suggestion card when the game is final after over time.
+         "OT" is the abbreviation for "overtime". “Overtime” means the extra period(s) played
+         after regular time when the score is tied to determine a winner. Use the standard sports
+         term and abbreviation for this in your locale.  -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_final_over_time">Final(OT)</string>
+    <!-- Description for the sport suggestion card when the game is final after a penalty shoot out.
+         "SO" is the abbreviation for "shootout". “Shootout” is a tie-breaking method used to
+         determine a winner when a match remains tied after regular play and any extra time.
+         Use the standard sports term and abbreviation for this in your locale.  -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_final_shoot_out">Final(SO)</string>
+    <!-- Description for the sport suggestion card when the game was forfeited. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_forfeited">Forfeited</string>
+    <!-- Description for the sport suggestion card's date when the game will hold today. -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_date_today">Today</string>
+    <!--
+      The description for the stock suggestion card's date when the game will hold tomorrow.
+      %s is a placeholder that will be replaced by the time e.g. 5:00 PM or 17:00 depending on the locale
+    -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_date_tomorrow">Tomorrow at %s</string>
 </resources>
