@@ -2492,8 +2492,10 @@ fn add_clip_node_to_current_chain(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use super::projected_rect_contains;
     use euclid::{Transform3D, rect};
+    use api::units::{LayoutRect, LayoutSize, LayoutPoint};
 
     #[test]
     fn test_empty_projected_rect() {
@@ -2507,6 +2509,226 @@ mod tests {
             "Empty rectangle is considered to include a non-empty!"
         );
     }
+
+    fn lr(x: f32, y: f32, w: f32, h: f32) -> LayoutRect {
+        LayoutRect::from_origin_and_size(LayoutPoint::new(x, y), LayoutSize::new(w, h))
+    }
+
+    fn uniform_radius(r: f32) -> BorderRadius {
+        BorderRadius::uniform(r)
+    }
+
+    fn per_corner_radius(tl: f32, tr: f32, bl: f32, br: f32) -> BorderRadius {
+        BorderRadius {
+            top_left: LayoutSize::new(tl, tl),
+            top_right: LayoutSize::new(tr, tr),
+            bottom_left: LayoutSize::new(bl, bl),
+            bottom_right: LayoutSize::new(br, br),
+        }
+    }
+
+    #[test]
+    fn test_intersect_identical() {
+        let rect = lr(0.0, 0.0, 400.0, 400.0);
+        let radius = uniform_radius(20.0);
+        let result = intersect_rounded_rects(rect, radius, rect, radius);
+        assert!(result.is_some());
+        let (r, rad) = result.unwrap();
+        assert_eq!(r, rect);
+        assert_eq!(rad.top_left.width, 20.0);
+    }
+
+    #[test]
+    fn test_intersect_inner_fully_inside() {
+        let outer = lr(0.0, 0.0, 400.0, 400.0);
+        let inner = lr(50.0, 50.0, 300.0, 300.0);
+        let result = intersect_rounded_rects(
+            outer, uniform_radius(20.0),
+            inner, uniform_radius(15.0),
+        );
+        assert!(result.is_some());
+        let (r, rad) = result.unwrap();
+        assert_eq!(r, inner);
+        assert_eq!(rad.top_left.width, 15.0);
+        assert_eq!(rad.bottom_right.width, 15.0);
+    }
+
+    #[test]
+    fn test_intersect_shared_top_different_bottom() {
+        let outer = lr(0.0, 0.0, 400.0, 400.0);
+        let inner = lr(0.0, 0.0, 400.0, 350.0);
+        let result = intersect_rounded_rects(
+            outer, uniform_radius(20.0),
+            inner, uniform_radius(15.0),
+        );
+        assert!(result.is_some());
+        let (r, rad) = result.unwrap();
+        assert_eq!(r, inner);
+        assert_eq!(rad.top_left.width, 20.0);
+        assert_eq!(rad.top_right.width, 20.0);
+        assert_eq!(rad.bottom_left.width, 15.0);
+        assert_eq!(rad.bottom_right.width, 15.0);
+    }
+
+    #[test]
+    fn test_intersect_no_overlap() {
+        let a = lr(0.0, 0.0, 100.0, 100.0);
+        let b = lr(200.0, 200.0, 100.0, 100.0);
+        let result = intersect_rounded_rects(a, uniform_radius(10.0), b, uniform_radius(10.0));
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_intersect_encroaching_corner() {
+        let outer = lr(0.0, 0.0, 400.0, 400.0);
+        let inner = lr(10.0, 10.0, 380.0, 380.0);
+        let result = intersect_rounded_rects(
+            outer, uniform_radius(200.0),
+            inner, uniform_radius(15.0),
+        );
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_intersect_zero_radius_no_encroach() {
+        let outer = lr(0.0, 0.0, 400.0, 400.0);
+        let inner = lr(50.0, 50.0, 300.0, 300.0);
+        let result = intersect_rounded_rects(
+            outer, uniform_radius(20.0),
+            inner, BorderRadius::zero(),
+        );
+        assert!(result.is_some());
+        let (_, rad) = result.unwrap();
+        assert_eq!(rad.top_left.width, 0.0);
+        assert_eq!(rad.bottom_right.width, 0.0);
+    }
+
+    #[test]
+    fn test_intersect_linux_window_corners() {
+        let window = lr(0.0, 0.0, 1920.0, 1080.0);
+        let content = lr(0.0, 40.0, 1920.0, 1040.0);
+        let window_radius = uniform_radius(10.0);
+        let content_radius = per_corner_radius(8.0, 0.0, 0.0, 0.0);
+
+        let result = intersect_rounded_rects(window, window_radius, content, content_radius);
+        assert!(result.is_some());
+        let (r, rad) = result.unwrap();
+        assert_eq!(r, content);
+        assert_eq!(rad.top_left.width, 8.0);
+        assert_eq!(rad.top_right.width, 0.0);
+        assert_eq!(rad.bottom_left.width, 10.0);
+        assert_eq!(rad.bottom_right.width, 10.0);
+    }
+}
+
+/// Try to intersect two ClipMode::Clip rounded rects (in the same coordinate
+/// space) into a single rounded rect. Returns None if the two rounded rects
+/// cannot be combined (e.g. their curved regions overlap in a way that can't
+/// be represented by a single rounded rect).
+pub fn intersect_rounded_rects(
+    rect_a: LayoutRect,
+    radius_a: BorderRadius,
+    rect_b: LayoutRect,
+    radius_b: BorderRadius,
+) -> Option<(LayoutRect, BorderRadius)> {
+    let result_rect = rect_a.intersection(&rect_b)?;
+    if result_rect.is_empty() {
+        return None;
+    }
+
+    let result_radius = BorderRadius {
+        top_left: resolve_corner_radius(
+            result_rect.min.x, result_rect.min.y,
+            rect_a.min.x, rect_a.min.y, radius_a.top_left,
+            rect_b.min.x, rect_b.min.y, radius_b.top_left,
+            1.0, 1.0,
+        )?,
+        top_right: resolve_corner_radius(
+            result_rect.max.x, result_rect.min.y,
+            rect_a.max.x, rect_a.min.y, radius_a.top_right,
+            rect_b.max.x, rect_b.min.y, radius_b.top_right,
+            -1.0, 1.0,
+        )?,
+        bottom_left: resolve_corner_radius(
+            result_rect.min.x, result_rect.max.y,
+            rect_a.min.x, rect_a.max.y, radius_a.bottom_left,
+            rect_b.min.x, rect_b.max.y, radius_b.bottom_left,
+            1.0, -1.0,
+        )?,
+        bottom_right: resolve_corner_radius(
+            result_rect.max.x, result_rect.max.y,
+            rect_a.max.x, rect_a.max.y, radius_a.bottom_right,
+            rect_b.max.x, rect_b.max.y, radius_b.bottom_right,
+            -1.0, -1.0,
+        )?,
+    };
+
+    if !result_radius.can_use_fast_path_in(&result_rect) {
+        return None;
+    }
+
+    Some((result_rect, result_radius))
+}
+
+/// Determine the radius at a single corner of the intersection of two rounded
+/// rects. Each corner is identified by:
+///  - (ix, iy): corner position in the intersection rect
+///  - (ax, ay), ra: corner position and radius from rect A
+///  - (bx, by), rb: corner position and radius from rect B
+///  - (sx, sy): direction signs toward the interior (e.g. top-left = +1,+1)
+fn resolve_corner_radius(
+    ix: f32, iy: f32,
+    ax: f32, ay: f32, ra: LayoutSize,
+    bx: f32, by: f32, rb: LayoutSize,
+    sx: f32, sy: f32,
+) -> Option<LayoutSize> {
+    let a_matches = ax == ix && ay == iy;
+    let b_matches = bx == ix && by == iy;
+
+    match (a_matches, b_matches) {
+        (true, true) => {
+            Some(LayoutSize::new(ra.width.max(rb.width), ra.height.max(rb.height)))
+        }
+        (true, false) => {
+            if corner_encroaches(ix, iy, bx, by, rb, sx, sy) {
+                None
+            } else {
+                Some(ra)
+            }
+        }
+        (false, true) => {
+            if corner_encroaches(ix, iy, ax, ay, ra, sx, sy) {
+                None
+            } else {
+                Some(rb)
+            }
+        }
+        (false, false) => {
+            if corner_encroaches(ix, iy, ax, ay, ra, sx, sy) ||
+               corner_encroaches(ix, iy, bx, by, rb, sx, sy) {
+                None
+            } else {
+                Some(LayoutSize::zero())
+            }
+        }
+    }
+}
+
+/// Check if a rounded corner region from a rect whose corner is at (cx, cy)
+/// with radius r extends into the intersection rect at corner (ix, iy).
+/// (sx, sy) are direction signs toward the rect interior from this corner.
+fn corner_encroaches(
+    ix: f32, iy: f32,
+    cx: f32, cy: f32,
+    r: LayoutSize,
+    sx: f32, sy: f32,
+) -> bool {
+    if r.width == 0.0 || r.height == 0.0 {
+        return false;
+    }
+    let dx = sx * (ix - cx);
+    let dy = sy * (iy - cy);
+    r.width > dx && r.height > dy
 }
 
 /// PolygonKeys get interned, because it's a convenient way to move the data

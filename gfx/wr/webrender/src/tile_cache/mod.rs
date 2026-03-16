@@ -15,7 +15,7 @@ pub mod slice_builder;
 use api::{AlphaType, BorderRadius, ClipMode, ColorF, ColorDepth, DebugFlags, ImageKey, ImageRendering};
 use api::{PropertyBindingId, PrimitiveFlags, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
-use crate::clip::{ClipNodeId, ClipLeafId, ClipItemKind, ClipSpaceConversion, ClipChainInstance, ClipStore};
+use crate::clip::{ClipNodeId, ClipLeafId, ClipItemKind, ClipSpaceConversion, ClipChainInstance, ClipStore, intersect_rounded_rects};
 use crate::composite::{CompositorKind, CompositeState, CompositorSurfaceKind, ExternalSurfaceDescriptor};
 use crate::composite::{ExternalSurfaceDependency, NativeSurfaceId, NativeTileId};
 use crate::composite::{CompositorClipIndex, CompositorTransformIndex};
@@ -54,6 +54,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 pub use self::slice_builder::{
     TileCacheBuilder, TileCacheConfig,
     PictureCacheDebugInfo, SliceDebugInfo, DirtyTileDebugInfo, TileDebugInfo,
+    CompositorClipDebugInfo,
 };
 
 pub use api::units::TileOffset;
@@ -1111,61 +1112,60 @@ impl TileCacheInstance {
                 self.compositor_clip = None;
 
                 if clip_chain.needs_mask {
+                    let mut combined: Option<(DeviceRect, BorderRadius)> = None;
+
                     for i in 0 .. clip_chain.clips_range.count {
                         let clip_instance = frame_state
                             .clip_store
                             .get_instance_from_range(&clip_chain.clips_range, i);
                         let clip_node = &frame_state.data_stores.clip[clip_instance.handle];
 
-                        match clip_node.item.kind {
-                            ClipItemKind::RoundedRectangle { rect, radius, mode } => {
-                                assert_eq!(mode, ClipMode::Clip);
+                        if let ClipItemKind::RoundedRectangle { rect, radius, mode } = clip_node.item.kind {
+                            assert_eq!(mode, ClipMode::Clip);
 
-                                // Map the clip in to device space. We know from the shared
-                                // clip creation logic it's in root coord system, so only a
-                                // 2d axis-aligned transform can apply. For example, in the
-                                // case of a pinch-zoom effect.
-                                let map = ClipSpaceConversion::new(
-                                    frame_context.root_spatial_node_index,
-                                    clip_instance.spatial_node_index,
-                                    frame_context.root_spatial_node_index,
-                                    frame_context.spatial_tree,
-                                );
+                            // Map to device space. All shared rounded-rect clips are in the
+                            // root coordinate system (is_rcs), so only a 2D axis-aligned
+                            // transform can apply (e.g. pinch-zoom).
+                            let map = ClipSpaceConversion::new(
+                                frame_context.root_spatial_node_index,
+                                clip_instance.spatial_node_index,
+                                frame_context.root_spatial_node_index,
+                                frame_context.spatial_tree,
+                            );
 
-                                let (rect, radius) = match map {
-                                    ClipSpaceConversion::Local => {
-                                        (rect.cast_unit(), radius)
-                                    }
-                                    ClipSpaceConversion::ScaleOffset(scale_offset) => {
-                                        (
-                                            scale_offset.map_rect(&rect),
-                                            BorderRadius {
-                                                top_left: scale_offset.map_size(&radius.top_left),
-                                                top_right: scale_offset.map_size(&radius.top_right),
-                                                bottom_left: scale_offset.map_size(&radius.bottom_left),
-                                                bottom_right: scale_offset.map_size(&radius.bottom_right),
-                                            },
-                                        )
-                                    }
-                                    ClipSpaceConversion::Transform(..) => {
-                                        unreachable!();
-                                    }
-                                };
+                            let (device_rect, device_radius) = match map {
+                                ClipSpaceConversion::Local => (rect.cast_unit(), radius),
+                                ClipSpaceConversion::ScaleOffset(so) => (
+                                    so.map_rect(&rect),
+                                    BorderRadius {
+                                        top_left: so.map_size(&radius.top_left),
+                                        top_right: so.map_size(&radius.top_right),
+                                        bottom_left: so.map_size(&radius.bottom_left),
+                                        bottom_right: so.map_size(&radius.bottom_right),
+                                    },
+                                ),
+                                ClipSpaceConversion::Transform(..) => unreachable!(),
+                            };
 
-                                self.compositor_clip = Some(frame_state.composite_state.register_clip(
-                                    rect,
-                                    radius,
-                                ));
-
-                                break;
-                            }
-                            _ => {
-                                // The logic to check for shared clips excludes other mask
-                                // clip types (box-shadow, image-mask) and ensures that the
-                                // clip is in the root coord system (so rect clips can't
-                                // produce a mask).
-                            }
+                            combined = Some(match combined {
+                                None => (device_rect, device_radius),
+                                Some((prev_rect, prev_radius)) => {
+                                    intersect_rounded_rects(
+                                        prev_rect.cast_unit(), prev_radius,
+                                        device_rect.cast_unit(), device_radius,
+                                    )
+                                    .map(|(r, rad)| (r.cast_unit(), rad))
+                                    .unwrap_or((prev_rect, prev_radius))
+                                }
+                            });
                         }
+                    }
+
+                    if let Some((rect, radius)) = combined {
+                        self.compositor_clip = Some(frame_state.composite_state.register_clip(
+                            rect,
+                            radius,
+                        ));
                     }
                 }
             }

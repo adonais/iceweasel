@@ -4,7 +4,7 @@
 
 use api::{BorderRadius, ClipId, ClipMode, ColorF, DebugFlags, PrimitiveFlags, QualitySettings, RasterSpace};
 use api::units::*;
-use crate::clip::{ClipItemKeyKind, ClipNodeId, ClipTreeBuilder};
+use crate::clip::{ClipItemKeyKind, ClipNodeId, ClipTreeBuilder, intersect_rounded_rects};
 use crate::frame_builder::FrameBuilderConfig;
 use crate::internal_types::FastHashMap;
 use crate::picture::{PrimitiveList, PictureCompositeMode, PicturePrimitive, Picture3DContext, PictureFlags};
@@ -540,13 +540,15 @@ fn create_tile_cache(
     //         that we can't handle during compositing, such as:
     //         (a) Non axis-aligned clips
     //         (b) Box-shadow or image-mask clips
-    //         (c) Rounded rect clips.
-    //
-    //         A follow up patch to this series will relax the condition on (c) to
-    //         allow tile caches to apply a single rounded-rect clip during compositing.
+    //         (c) More than one rounded-rect clip (unless they can be intersected
+    //             into a single rounded-rect clip).
     let mut shared_clip_node_id = shared_clip_node_id.unwrap_or(ClipNodeId::NONE);
     let mut current_node_id = shared_clip_node_id;
     let mut rounded_rect_count = 0;
+
+    // Track accumulated rounded rect info so we can attempt to combine
+    // multiple rounded rects into a single compositing clip.
+    let mut accumulated_rounded_rect: Option<(LayoutRect, BorderRadius)> = None;
 
     // Walk up the hierarchy to the root of the clip-tree
     while current_node_id != ClipNodeId::NONE {
@@ -568,8 +570,13 @@ fn create_tile_cache(
                 ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip) => {
                     // The shader and CoreAnimation rely on certain constraints such
                     // as uniform radii to be able to apply the clip during compositing.
-                    if BorderRadius::from(radius).can_use_fast_path_in(&rect.into()) {
+                    let br = BorderRadius::from(radius);
+                    if br.can_use_fast_path_in(&rect.into()) {
                         rounded_rect_count += 1;
+
+                        if accumulated_rounded_rect.is_none() {
+                            accumulated_rounded_rect = Some((rect.into(), br));
+                        }
 
                         true
                     } else {
@@ -590,11 +597,38 @@ fn create_tile_cache(
         if node_valid {
             // This node was found to be one we can apply during compositing.
             if rounded_rect_count > 1 {
-                // However, we plan to only support one rounded-rect clip. If
-                // we have found > 1 rounded rect, drop children from the shared
-                // clip, and continue looking up the chain.
-                shared_clip_node_id = current_node_id;
-                rounded_rect_count = 1;
+                // Check if the two rounded rects can be combined. Both clips are in
+                // the root coordinate system (is_rcs). The actual intersection with
+                // correct spatial transforms is performed in pre_update; here we just
+                // verify the clips are geometrically compatible in their local spaces
+                // to decide whether to keep both in the shared clip chain.
+                let can_combine = match (accumulated_rounded_rect, clip_node_data.key.kind) {
+                    (
+                        Some((acc_rect, acc_radius)),
+                        ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip),
+                    ) => {
+                        intersect_rounded_rects(
+                            acc_rect, acc_radius,
+                            rect.into(), BorderRadius::from(radius),
+                        )
+                    }
+                    _ => None,
+                };
+
+                if let Some((combined_rect, combined_radius)) = can_combine {
+                    // Successfully combined — keep both clips in the shared
+                    // set and update the accumulated state for potential
+                    // further combinations.
+                    rounded_rect_count = 1;
+                    accumulated_rounded_rect = Some((combined_rect, combined_radius));
+                } else {
+                    // Can't combine, drop children and keep only this clip.
+                    shared_clip_node_id = current_node_id;
+                    rounded_rect_count = 1;
+                    if let ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip) = clip_node_data.key.kind {
+                        accumulated_rounded_rect = Some((rect.into(), BorderRadius::from(radius)));
+                    }
+                }
             }
         } else {
             // Node was invalid, due to transform / clip type. Drop this clip
@@ -602,6 +636,7 @@ fn create_tile_cache(
             // from here too.
             shared_clip_node_id = node.parent;
             rounded_rect_count = 0;
+            accumulated_rounded_rect = None;
         }
 
         current_node_id = node.parent;
@@ -687,18 +722,29 @@ impl Default for PictureCacheDebugInfo {
     }
 }
 
+/// Debug information about the compositor clip applied to a picture cache slice
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct CompositorClipDebugInfo {
+    pub rect: DeviceRect,
+    pub radius: BorderRadius,
+}
+
 /// Debug information about a set of picture cache tiles, exposed via RenderResults
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SliceDebugInfo {
     pub tiles: FastHashMap<TileOffset, TileDebugInfo>,
+    pub compositor_clip: Option<CompositorClipDebugInfo>,
 }
 
 impl SliceDebugInfo {
     pub fn new() -> Self {
         SliceDebugInfo {
             tiles: FastHashMap::default(),
+            compositor_clip: None,
         }
     }
 
