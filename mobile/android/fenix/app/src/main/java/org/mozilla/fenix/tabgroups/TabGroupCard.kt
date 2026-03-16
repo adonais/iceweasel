@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -49,6 +50,7 @@ import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
+import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.TabThumbnailImageData
@@ -75,12 +77,10 @@ const val BOTTOM_END_THUMBNAIL_INDEX = 3
 
 /**
  * A Tab Group presented as a clickable item in a grid.
- *
- * @param group The data of the [TabsTrayItem.TabGroup].
- * @param selectionState The tab selection state.
- * @param clickHandler Handler for all click-handling inputs (long click, click, etc.)
- * @param thumbnails The list of thumbnails.  May be empty, or up to size 4.
- * @param modifier The Modifier
+ * @param group: The data of the [TabsTrayItem.TabGroup].
+ * @param selectionState: The tab selection state.
+ * @param clickHandler: Handler for all click-handling inputs (long click, click, etc)
+ * @param modifier: The Modifier
  * @param thumbnailSizePx: The size of each thumbnail in px.
  */
 @Composable
@@ -88,7 +88,6 @@ fun TabGroupCard(
     group: TabsTrayItem.TabGroup,
     selectionState: TabsTrayItemSelectionState,
     clickHandler: TabsTrayItemClickHandler,
-    thumbnails: List<TabThumbnailImageData>,
     modifier: Modifier = Modifier,
     thumbnailSizePx: Int,
 ) {
@@ -134,7 +133,7 @@ fun TabGroupCard(
                         modifier = Modifier
                             .weight(1f)
                             .testTag(TAB_GROUP_TITLE),
-                        color = MaterialTheme.colorScheme.inverseOnSurface,
+                        color = group.theme.onPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = FirefoxTheme.typography.caption,
@@ -142,7 +141,7 @@ fun TabGroupCard(
 
                     Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static50))
 
-                    TabGroupOptionButton(selectionState)
+                    TabGroupOptionButton(groupTheme = group.theme, selectionState = selectionState)
                 }
 
                 Spacer(
@@ -158,7 +157,7 @@ fun TabGroupCard(
                     shape = ThumbnailShape,
                 ) {
                     ThumbnailsGridView(
-                        thumbnails = thumbnails,
+                        thumbnails = group.thumbnails,
                         thumbnailSizePx = thumbnailSizePx,
                     )
                 }
@@ -173,13 +172,13 @@ fun TabGroupCard(
  * Renders the button in the top-right corner of the TabGroupCard.
  */
 @Composable
-private fun TabGroupOptionButton(selectionState: TabsTrayItemSelectionState) {
+private fun TabGroupOptionButton(groupTheme: TabGroupTheme, selectionState: TabsTrayItemSelectionState) {
     if (selectionState.multiSelectEnabled) {
         MultiSelectTabButton(
             isSelected = selectionState.isSelected,
             isActive = selectionState.isFocused,
             activeColors = RadioCheckmarkColors.default(),
-            uncheckedBorderColor = MaterialTheme.colorScheme.inverseOnSurface,
+            uncheckedBorderColor = groupTheme.onPrimary,
         )
     } else {
         IconButton(
@@ -191,8 +190,8 @@ private fun TabGroupOptionButton(selectionState: TabsTrayItemSelectionState) {
         ) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.ic_menu),
-                contentDescription = null, // Will be handled as part of FXDROID-7488
-                tint = MaterialTheme.colorScheme.inverseOnSurface,
+                contentDescription = stringResource(R.string.content_description_menu),
+                tint = groupTheme.onPrimary,
             )
         }
     }
@@ -306,23 +305,23 @@ private data class TabGroupCardPreviewState(
             isFocused = false,
             multiSelectEnabled = false,
         ),
-    val thumbnails: List<TabThumbnailImageData>,
+    val groupSize: Int,
 )
 
 private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCardPreviewState> {
     val data = listOf(
-        Pair("Empty", TabGroupCardPreviewState(thumbnails = emptyList())),
-        Pair("1 Tab", TabGroupCardPreviewState(thumbnails = fakeThumbnails(1))),
-        Pair("2 Tabs", TabGroupCardPreviewState(thumbnails = fakeThumbnails(2))),
-        Pair("3 Tabs", TabGroupCardPreviewState(thumbnails = fakeThumbnails(3))),
-        Pair("4 Tabs", TabGroupCardPreviewState(thumbnails = fakeThumbnails(4))),
+        Pair("Empty", TabGroupCardPreviewState(groupSize = 4)),
+        Pair("1 Tab", TabGroupCardPreviewState(groupSize = 1)),
+        Pair("2 Tabs", TabGroupCardPreviewState(groupSize = 2)),
+        Pair("3 Tabs", TabGroupCardPreviewState(groupSize = 3)),
+        Pair("4 Tabs", TabGroupCardPreviewState(groupSize = 4)),
         Pair(
             "No Title",
-            TabGroupCardPreviewState(title = "", thumbnails = fakeThumbnails(2)),
+            TabGroupCardPreviewState(title = "", groupSize = 4),
         ),
         Pair(
             "Long Title",
-            TabGroupCardPreviewState(title = LOREM_IPSUM, thumbnails = fakeThumbnails(4)),
+            TabGroupCardPreviewState(title = LOREM_IPSUM, groupSize = 4),
         ),
         Pair(
             "Active",
@@ -333,7 +332,7 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                         isSelected = false,
                         multiSelectEnabled = false,
                     ),
-                thumbnails = fakeThumbnails(4),
+                groupSize = 4,
             ),
         ),
         Pair(
@@ -345,7 +344,7 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                         isSelected = false,
                         multiSelectEnabled = true,
                     ),
-                thumbnails = fakeThumbnails(4),
+                groupSize = 4,
             ),
         ),
         Pair(
@@ -357,7 +356,7 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                         isSelected = true,
                         multiSelectEnabled = true,
                     ),
-                thumbnails = fakeThumbnails(4),
+                groupSize = 4,
             ),
         ),
         Pair(
@@ -369,7 +368,7 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                         isSelected = true,
                         multiSelectEnabled = true,
                     ),
-                thumbnails = fakeThumbnails(4),
+                groupSize = 4,
             ),
         ),
     )
@@ -460,7 +459,6 @@ private fun TabGroupCardTablet() {
                     isFocused = false,
                     multiSelectEnabled = false,
                 ),
-                thumbnails = fakeThumbnails(),
                 thumbnailSizePx = 12,
                 clickHandler = TabsTrayItemClickHandler(
                     enabled = true,
@@ -508,7 +506,6 @@ private fun TabGroupCardPreview(
             TabGroupCard(
                 group = tabGroupCardState.group,
                 selectionState = tabGroupCardState.selectionState,
-                thumbnails = tabGroupCardState.thumbnails,
                 thumbnailSizePx = 12,
                 clickHandler = TabsTrayItemClickHandler(
                     enabled = true,
@@ -522,7 +519,7 @@ private fun TabGroupCardPreview(
     }
 }
 
-private fun fakeThumbnails(limit: Int = 4): List<TabThumbnailImageData> {
+internal fun fakeThumbnails(limit: Int = 4): List<TabThumbnailImageData> {
     return listOf(
         TabThumbnailImageData(
             tabId = "1",

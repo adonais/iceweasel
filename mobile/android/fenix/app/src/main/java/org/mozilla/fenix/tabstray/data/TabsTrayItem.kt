@@ -86,7 +86,16 @@ sealed class TabsTrayItem(
     ) : TabsTrayItem(
         id = id,
         isHomepageItem = false,
-    )
+    ) {
+        /**
+         * Retrieves the thumbnail image data for the first 4 tabs in the group's tab set.
+         * Note - since HashSet has no guaranteed order, we should sort in this call
+         * if there's a desired priority of thumbnail ordering.
+         */
+        val thumbnails by lazy {
+            tabs.take(4).map { it.toThumbnailImageData() }
+        }
+    }
 
     /**
      * @param text The text to search for.
@@ -119,6 +128,18 @@ internal fun createTab(
     private = private,
     icon = null,
     lastAccess = lastAccess,
+)
+
+internal fun createTabGroup(
+    id: String = UUID.randomUUID().toString(),
+    title: String = "",
+    theme: TabGroupTheme = TabGroupTheme.default,
+    tabs: HashSet<TabsTrayItem.Tab> = hashSetOf(),
+): TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
+    id = id,
+    title = title,
+    theme = theme,
+    tabs = tabs,
 )
 
 internal fun createTabGroup(

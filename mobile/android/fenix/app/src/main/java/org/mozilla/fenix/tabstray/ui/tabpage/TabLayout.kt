@@ -58,21 +58,26 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.support.utils.ext.isLandscape
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
+import org.mozilla.fenix.tabgroups.TabGroupCard
 import org.mozilla.fenix.tabstray.browser.compose.DragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.GridReorderState
 import org.mozilla.fenix.tabstray.browser.compose.createGridReorderState
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectGridPressAndDragGestures
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
+import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
+import org.mozilla.fenix.tabstray.data.createTabGroup
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridTabItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabListTabItem
+import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 // Key for the span item at the bottom of the tray, used to make the item not reorderable.
 const val SPAN_ITEM_KEY = "span"
@@ -254,9 +259,10 @@ private fun TabGrid(
                 key = { _, tab -> tab.id },
             ) { index, tab ->
                 TabGridItemContent(
-                    tab = tab,
+                    tabsTrayItem = tab,
                     index = index,
                     thumbnailSizePx = thumbnailSizePx,
+                    groupThumbnailSizePx = groupThumbnailSizePx,
                     hasHeader = header != null,
                     isSelected = tab.id == selectedTabId,
                     isInMultiSelectMode = isInMultiSelectMode,
@@ -278,9 +284,10 @@ private fun TabGrid(
 @Suppress("LongParameterList")
 @Composable
 private fun LazyGridItemScope.TabGridItemContent(
-    tab: TabsTrayItem,
+    tabsTrayItem: TabsTrayItem,
     index: Int,
     thumbnailSizePx: Int,
+    groupThumbnailSizePx: Int,
     hasHeader: Boolean,
     isSelected: Boolean,
     isInMultiSelectMode: Boolean,
@@ -308,27 +315,35 @@ private fun LazyGridItemScope.TabGridItemContent(
     DragItemContainer(
         state = reorderState,
         position = index + if (hasHeader) 1 else 0,
-        key = tab.id,
+        key = tabsTrayItem.id,
         swipingActive = swipingActive,
     ) {
-        when (tab) {
+        val selectionState = TabsTrayItemSelectionState(
+            isFocused = isSelected,
+            isSelected = isMultiSelected,
+            multiSelectEnabled = isInMultiSelectMode,
+        )
+        when (tabsTrayItem) {
             is TabsTrayItem.Tab -> {
                 TabGridTabItem(
-                    tab = tab,
+                    tab = tabsTrayItem,
                     thumbnailSizePx = thumbnailSizePx,
-                    selectionState = TabsTrayItemSelectionState(
-                        isFocused = isSelected,
-                        isSelected = isMultiSelected,
-                        multiSelectEnabled = isInMultiSelectMode,
-                    ),
-                    shouldClickListen = reorderState.draggingItemKey != tab.id,
+                    selectionState = selectionState,
+                    shouldClickListen = reorderState.draggingItemKey != tabsTrayItem.id,
                     swipeState = swipeState,
                     onCloseClick = onTabClose,
                     onClick = onItemClick,
                 )
             }
 
-            is TabsTrayItem.TabGroup -> {}
+            is TabsTrayItem.TabGroup -> {
+                TabGroupCard(
+                    group = tabsTrayItem,
+                    selectionState = selectionState,
+                    clickHandler = TabsTrayItemClickHandler(onClick = {}),
+                    thumbnailSizePx = groupThumbnailSizePx,
+                )
+            }
         }
     }
 }
@@ -348,6 +363,13 @@ private val BoxWithConstraintsScope.thumbnailSizePx: Int
         val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
         val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
         return max(thumbnailWidth, thumbnailHeight)
+    }
+
+private val BoxWithConstraintsScope.groupThumbnailSizePx: Int
+    @ReadOnlyComposable
+    @Composable
+    get() {
+        return (thumbnailSizePx / 4.0).roundToInt()
     }
 
 @Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
@@ -497,26 +519,59 @@ private fun numberOfGridColumnsLandscape(screenWidthDp: Float): Int = when {
 private data class TabLayoutPreviewModel(
     val tabCount: Int = 10,
     val selectedTabIndex: Int = 0,
+    val tabGroupIndices: List<Int> = emptyList(),
 )
 
 private class TabLayoutPreviewParameterProvider : PreviewParameterProvider<TabLayoutPreviewModel> {
-    override val values: Sequence<TabLayoutPreviewModel>
-        get() = sequenceOf(
+    val data = listOf(
+        Pair(
+            "50 Tabs, 10th selected",
             TabLayoutPreviewModel(
                 tabCount = 50,
                 selectedTabIndex = 10,
             ),
-            TabLayoutPreviewModel(),
+        ),
+        Pair(
+            "10 Tabs, 1st selected",
+            TabLayoutPreviewModel(tabCount = 10, selectedTabIndex = 0),
+        ),
+        Pair(
+            "10 Groups, 1st selected",
+            TabLayoutPreviewModel(tabCount = 10, tabGroupIndices = (0..9).toList(), selectedTabIndex = 0),
+        ),
+        Pair(
+            "10 Tabs, 3 groups, 2nd selected",
+            TabLayoutPreviewModel(tabCount = 10, tabGroupIndices = listOf(3, 6, 9), selectedTabIndex = 1),
+        ),
+        Pair(
+            "Single, selected tab",
             TabLayoutPreviewModel(tabCount = 1),
-        )
+        ),
+        Pair(
+            "Single, selected group",
+            TabLayoutPreviewModel(tabCount = 1, tabGroupIndices = listOf(0)),
+        ),
+    )
+
+    override val values: Sequence<TabLayoutPreviewModel>
+        get() = data.map { it.second }.asSequence()
+
+    override fun getDisplayName(index: Int): String? {
+        return data[index].first
     }
+}
 
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun TabListPreview(
     @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
 ) {
-    val tabs = remember { generateFakeTabsList(tabCount = previewModel.tabCount).toMutableStateList() }
+    val tabs = remember {
+        generateFakeTabsList(
+            tabCount = previewModel.tabCount,
+            tabGroupIndices = previewModel.tabGroupIndices,
+        ).toMutableStateList()
+    }
 
     FirefoxTheme {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
@@ -540,7 +595,12 @@ private fun TabListPreview(
 private fun TabGridPreview(
     @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
 ) {
-    val tabs = remember { generateFakeTabsList(tabCount = previewModel.tabCount).toMutableStateList() }
+    val tabs = remember {
+        generateFakeTabsList(
+            tabCount = previewModel.tabCount,
+            tabGroupIndices = previewModel.tabGroupIndices,
+        ).toMutableStateList()
+    }
 
     FirefoxTheme {
         TabLayout(
@@ -562,8 +622,13 @@ private const val SELECTED_TAB_COUNT_PREVIEW = 4
 
 @PreviewLightDark
 @Composable
-private fun TabGridMultiSelectPreview() {
-    val tabs = generateFakeTabsList()
+private fun TabGridMultiSelectPreview(
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+) {
+    val tabs = generateFakeTabsList(
+        tabCount = previewModel.tabCount,
+        tabGroupIndices = previewModel.tabGroupIndices,
+    )
     val selectedTabs = remember { tabs.take(SELECTED_TAB_COUNT_PREVIEW).toMutableStateList() }
 
     FirefoxTheme {
@@ -590,8 +655,13 @@ private fun TabGridMultiSelectPreview() {
 
 @PreviewLightDark
 @Composable
-private fun TabListMultiSelectPreview() {
-    val tabs = generateFakeTabsList()
+private fun TabListMultiSelectPreview(
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+) {
+    val tabs = generateFakeTabsList(
+        tabCount = previewModel.tabCount,
+        tabGroupIndices = previewModel.tabGroupIndices,
+    )
     val selectedTabs = remember { tabs.take(SELECTED_TAB_COUNT_PREVIEW).toMutableStateList() }
 
     FirefoxTheme {
@@ -619,10 +689,42 @@ private fun TabListMultiSelectPreview() {
 private fun generateFakeTabsList(
     tabCount: Int = 10,
     isPrivate: Boolean = false,
-): List<TabsTrayItem> = List(tabCount) { index ->
-        createTab(
-            id = "tabId$index-$isPrivate",
-            url = "www.mozilla.com",
-            private = isPrivate,
-        )
+    tabGroupIndices: List<Int> = emptyList(),
+): List<TabsTrayItem> {
+    return List(tabCount) { index ->
+        if (index in tabGroupIndices) {
+            createTabGroup(
+                title = "Group $index",
+                theme = TabGroupTheme.Pink,
+                tabs = hashSetOf(
+                    createTab(
+                        id = "groupTab1",
+                        url = "www.mozilla.com",
+                        private = isPrivate,
+                    ),
+                    createTab(
+                        id = "groupTab2",
+                        url = "www.mozilla.com",
+                        private = isPrivate,
+                    ),
+                    createTab(
+                        id = "groupTab3",
+                        url = "www.mozilla.com",
+                        private = isPrivate,
+                    ),
+                    createTab(
+                        id = "groupTab4",
+                        url = "www.mozilla.com",
+                        private = isPrivate,
+                    ),
+                ),
+            )
+        } else {
+            createTab(
+                id = "tabId$index-$isPrivate",
+                url = "www.mozilla.com",
+                private = isPrivate,
+            )
+        }
     }
+}

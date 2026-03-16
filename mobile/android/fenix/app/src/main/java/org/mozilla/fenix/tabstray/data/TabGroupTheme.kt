@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import mozilla.components.compose.base.theme.information
+import mozilla.components.ui.colors.PhotonColors
 
 /**
  * Value class representing the possible themes for Tab Groups.
@@ -39,7 +40,7 @@ enum class TabGroupTheme {
 
     Pink {
         override val primary: Color
-            @Composable get() = MaterialTheme.colorScheme.surface
+            @Composable get() = PhotonColors.Pink70
 
         override val onPrimary: Color
             @Composable get() = MaterialTheme.colorScheme.onSurface

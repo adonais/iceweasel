@@ -17,10 +17,10 @@ import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -107,33 +107,11 @@ class TabGroupCardTest {
         TabGroupCard(
             group = TabsTrayItem.TabGroup(
                 title = "Group 1",
-                theme = TabGroupTheme.default,
-                tabs = hashSetOf(),
-            ),
-            thumbnails = listOf(
-                TabThumbnailImageData(
-                    tabId = "123",
-                    isPrivate = false,
-                    tabUrl = ABOUT_HOME_URL,
-                    tabIcon = null,
-                ),
-                TabThumbnailImageData(
-                    tabId = "123",
-                    isPrivate = false,
-                    tabUrl = ABOUT_HOME_URL,
-                    tabIcon = null,
-                ),
-                TabThumbnailImageData(
-                    tabId = "123",
-                    isPrivate = false,
-                    tabUrl = ABOUT_HOME_URL,
-                    tabIcon = null,
-                ),
-                TabThumbnailImageData(
-                    tabId = "123",
-                    isPrivate = false,
-                    tabUrl = ABOUT_HOME_URL,
-                    tabIcon = null,
+                theme = TabGroupTheme.Yellow,
+                tabs = hashSetOf(
+                    createTab(
+                        url = ABOUT_HOME_URL,
+                    ),
                 ),
             ),
             selectionState = TabsTrayItemSelectionState(),
