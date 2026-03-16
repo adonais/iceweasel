@@ -24,7 +24,7 @@
 .dbg-img.dbg-img-arrow {
   width: 10px;
   height: 10px;
-  mask-image: url(chrome://devtools/content/debugger/images/arrow.svg);
+  mask-image: url(chrome://devtools/content/shared/components/images/arrow.svg);
   /* we may override the width/height in specific contexts to make the
      clickable area bigger, but we should always keep the mask size 10x10 */
   mask-size: 10px 10px;
@@ -44,11 +44,11 @@
 }
 
 .dbg-img.dbg-img-arrow-down {
-  mask-image: url(chrome://devtools/content/debugger/images/arrow-down.svg);
+  mask-image: url(chrome://devtools/content/shared/components/images/arrow-down.svg);
 }
 
 .dbg-img.dbg-img-arrow-up {
-  mask-image: url(chrome://devtools/content/debugger/images/arrow-up.svg);
+  mask-image: url(chrome://devtools/content/shared/components/images/arrow-up.svg);
 }
 
 .dbg-img.dbg-img-blackBox {
@@ -73,12 +73,12 @@
 }
 
 .dbg-img.dbg-img-globe-small {
-  mask-image: url(chrome://devtools/content/debugger/images/globe-small.svg);
+  mask-image: url(chrome://devtools/content/shared/components/images/globe-small.svg);
   mask-size: 12px 12px;
 }
 
 .dbg-img.dbg-img-window {
-  mask-image: url(chrome://devtools/content/debugger/images/window.svg);
+  mask-image: url(chrome://devtools/content/shared/components/images/window.svg);
 }
 
 .dbg-img.dbg-img-file {
@@ -105,7 +105,7 @@
 }
 
 .dbg-img.dbg-img-loader {
-  background-image: url(chrome://devtools/content/debugger/images/loader.svg);
+  background-image: url(chrome://devtools/content/shared/components/images/loader.svg);
   -moz-context-properties: fill;
   fill: var(--theme-icon-color);
   background-color: unset;
@@ -124,7 +124,7 @@ html[dir="rtl"] .dbg-img.dbg-img-more-tabs {
 }
 
 .dbg-img.dbg-img-sourcemap {
-  background-image: url(chrome://devtools/content/debugger/images/sourcemap.svg);
+  background-image: url(chrome://devtools/content/shared/components/images/sourcemap.svg);
   -moz-context-properties: fill;
   fill: var(--theme-icon-warning-color);
   background-color: unset;
@@ -155,7 +155,7 @@ html[dir="rtl"] .dbg-img.dbg-img-more-tabs {
 }
 
 .dbg-img.dbg-img-prettyPrint {
-  background-image: url(chrome://devtools/content/debugger/images/prettyPrint.svg);
+  background-image: url(chrome://devtools/content/shared/components/images/prettyPrint.svg);
   background-size: 14px 14px;
   background-color: transparent !important;
   fill: var(--theme-icon-color);
@@ -199,9 +199,9 @@ html[dir="rtl"] .dbg-img.dbg-img-more-tabs {
 }
 
 .dbg-img.dbg-img-worker {
-  mask-image: url(chrome://devtools/content/debugger/images/worker.svg);
+  mask-image: url(chrome://devtools/content/shared/components/images/worker.svg);
 }
 
 .dbg-img.dbg-img-extension {
-  mask-image: url(chrome://devtools/content/debugger/images/sources/extension.svg);
+  mask-image: url(chrome://devtools/content/shared/components/images/extension.svg);
 }
