@@ -795,9 +795,6 @@ class GCStructPtr : public BarrieredBase<T> {
 
   GCStructPtr(const GCStructPtr<T>& other) : BarrieredBase<T>(other) {}
 
-  GCStructPtr(GCStructPtr<T>&& other) noexcept
-      : BarrieredBase<T>(other.release()) {}
-
   ~GCStructPtr() {
     // No barriers are necessary as this only happens when the GC is sweeping.
     MOZ_ASSERT_IF(isTraceable(),
