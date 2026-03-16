@@ -453,3 +453,71 @@ add_task(async function test_drag_tab_group_label_with_splitview() {
   await removeTabGroup(group);
   BrowserTestUtils.removeTab(tab5);
 });
+
+add_task(
+  async function test_drag_splitview_to_second_window_before_tab_group() {
+    let win2 = await BrowserTestUtils.openNewBrowserWindow();
+
+    // Set up window 2: [win2StartingTab, Group(win2GroupTab)]
+    let win2StartingTab = win2.gBrowser.tabs[0];
+    let win2GroupTab = BrowserTestUtils.addTab(win2.gBrowser, "about:blank");
+    let win2Group = win2.gBrowser.addTabGroup([win2GroupTab]);
+    is(win2.gBrowser.tabs.length, 2, "win2 has 2 tabs");
+
+    // Set up window 1: splitview(splitTab1, splitTab2)
+    let [splitTab1, splitTab2] = await Promise.all(
+      Array.from({ length: 2 }).map((_, index) =>
+        addTab(`data:text/plain,tab${index + 1}`)
+      )
+    );
+    let splitview = gBrowser.addTabSplitView([splitTab1, splitTab2]);
+    is(splitview.tabs.length, 2, "splitview has 2 tabs");
+
+    let tabsClosePromise = Promise.all([
+      BrowserTestUtils.waitForEvent(splitTab1, "TabClose"),
+      BrowserTestUtils.waitForEvent(splitTab2, "TabClose"),
+    ]);
+
+    // Drop the split view onto the group label in win2 before the midpoint,
+    // so the drop index lands at the group label's element index (before the group).
+    let win2GroupLabel = win2Group.labelElement;
+    let rect = win2GroupLabel.getBoundingClientRect();
+    EventUtils.synthesizeDrop(
+      splitTab1,
+      win2GroupLabel,
+      [[{ type: TAB_DROP_TYPE, data: splitTab1 }]],
+      null,
+      window,
+      win2,
+      { clientX: rect.left + 1 }
+    );
+
+    await tabsClosePromise;
+
+    is(
+      win2.gBrowser.tabs.length,
+      4,
+      "win2 has 4 tabs after split view adoption"
+    );
+
+    let [, adoptedSplitTab1, adoptedSplitTab2] = win2.gBrowser.tabs;
+
+    Assert.deepEqual(
+      win2.gBrowser.tabs,
+      [win2StartingTab, adoptedSplitTab1, adoptedSplitTab2, win2GroupTab],
+      "Split view tabs are inserted before the tab group"
+    );
+
+    Assert.ok(
+      adoptedSplitTab1.splitview && adoptedSplitTab2.splitview,
+      "Adopted tabs are in a split view in win2"
+    );
+
+    Assert.ok(
+      !adoptedSplitTab1.group && !adoptedSplitTab2.group,
+      "Adopted split view tabs are not inside the tab group"
+    );
+
+    await BrowserTestUtils.closeWindow(win2);
+  }
+);
