@@ -70,14 +70,14 @@ static constexpr int32_t PayloadSize(JSValueType type) {
 }
 #endif
 
-static void AssertValidPayload(MacroAssemblerCompat& masm, JSValueType type,
+static void AssertValidPayload(MacroAssembler& masm, JSValueType type,
                                Register payload, Register scratch) {
 #ifdef DEBUG
   // All bits above the payload must be zeroed.
   Label upperBitsZeroed;
   masm.Lsr(ARMRegister(scratch, 64), ARMRegister(payload, 64),
            PayloadSize(type));
-  masm.Cbz(ARMRegister(scratch, 64), &upperBitsZeroed);
+  masm.branchTestPtr(Assembler::Zero, scratch, scratch, &upperBitsZeroed);
   masm.breakpoint();
   masm.bind(&upperBitsZeroed);
 #endif
@@ -92,7 +92,7 @@ void MacroAssemblerCompat::tagValue(JSValueType type, Register payload,
     vixl::UseScratchRegisterScope temps(this);
     Register scratch = temps.AcquireX().asUnsized();
 
-    AssertValidPayload(*this, type, payload, scratch);
+    AssertValidPayload(asMasm(), type, payload, scratch);
   }
 #endif
 
@@ -105,7 +105,7 @@ void MacroAssemblerCompat::boxValue(JSValueType type, Register src,
   MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
   MOZ_ASSERT(src != dest);
 
-  AssertValidPayload(*this, type, src, dest);
+  AssertValidPayload(asMasm(), type, src, dest);
 
   Orr(ARMRegister(dest, 64), ARMRegister(src, 64),
       Operand(ImmShiftedTag(type).value));

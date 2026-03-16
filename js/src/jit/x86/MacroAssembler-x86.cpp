@@ -569,14 +569,12 @@ void MacroAssemblerX86::boxNonDouble(Register type, Register src,
   breakpoint();
   {
     bind(&isNullOrUndefined);
-    cmp32(src, src);
-    j(Assembler::Zero, &ok);
+    asMasm().branchTest32(Assembler::Zero, src, src, &ok);
     breakpoint();
   }
   {
     bind(&isBoolean);
-    cmp32(src, Imm32(1));
-    j(Assembler::BelowOrEqual, &ok);
+    asMasm().branch32(Assembler::BelowOrEqual, src, Imm32(1), &ok);
     breakpoint();
   }
   bind(&ok);

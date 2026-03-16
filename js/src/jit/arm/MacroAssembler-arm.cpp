@@ -2978,14 +2978,12 @@ void MacroAssemblerARMCompat::boxNonDouble(Register type, Register src,
   breakpoint();
   {
     bind(&isNullOrUndefined);
-    as_cmp(src, Imm8(0));
-    ma_b(&ok, Assembler::Zero);
+    asMasm().branchTest32(Assembler::Zero, src, src, &ok);
     breakpoint();
   }
   {
     bind(&isBoolean);
-    as_cmp(src, Imm8(1));
-    ma_b(&ok, Assembler::BelowOrEqual);
+    asMasm().branch32(Assembler::BelowOrEqual, src, Imm32(1), &ok);
     breakpoint();
   }
   bind(&ok);
