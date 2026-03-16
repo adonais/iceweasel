@@ -26,6 +26,7 @@
   "gSessionHistoryObserver",
   "gStoragePressureObserver",
   "PopupAndRedirectBlockerObserver",
+  "ReducedProtectionNotification",
   "gKeywordURIFixup",
   "HandleAppCommandEvent",
   "BrowserCommands",

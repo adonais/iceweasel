@@ -17314,6 +17314,12 @@
   value: 25
   mirror: always
 
+# Reduce page protection infobar
+- name: privacy.reducePageProtection.infobar.enabled.pbmode
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "prompts."
 #---------------------------------------------------------------------------
