@@ -72,7 +72,7 @@ MOZ_ALWAYS_INLINE PropMap* PropMap::lookupLinear(uint32_t mapLength,
     LOOKUP_KEY(5);
     LOOKUP_KEY(6);
     LOOKUP_KEY(7);
-#undef LOOKUP_INDEX
+#undef LOOKUP_KEY
   }
 
   return nullptr;
