@@ -1,4 +1,3 @@
-/* -*- Mode: c; c-basic-offset: 4; tab-width: 8; indent-tabs-mode: t; -*- */
 /*
  *
  * Copyright © 2000 Keith Packard, member of The XFree86 Project, Inc.

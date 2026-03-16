@@ -1,4 +1,3 @@
-/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
 /*
  * Copyright © 2004 Carl Worth
  * Copyright © 2006 Red Hat, Inc.

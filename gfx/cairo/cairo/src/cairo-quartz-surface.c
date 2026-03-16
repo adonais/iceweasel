@@ -1,4 +1,3 @@
-/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright � 2006, 2007 Mozilla Corporation

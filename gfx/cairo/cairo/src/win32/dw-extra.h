@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
 /* MinGW workarounds
  *
  * It doesn't define operators for DWRITE_GLYPH_IMAGE_FORMATS.

@@ -1,4 +1,3 @@
-/* vim: set ts=8 sw=8 noexpandtab: */
 #ifndef QCMS_INT_H
 #define QCMS_INT_H
 

@@ -1,4 +1,3 @@
-/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /*
  * Copyright © 2005 Keith Packard
  *

@@ -1,4 +1,3 @@
-/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
 /* cairo-output-stream.c: Output stream abstraction
  *
  * Copyright © 2005 Red Hat, Inc

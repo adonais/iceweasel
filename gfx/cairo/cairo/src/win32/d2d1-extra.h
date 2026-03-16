@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
 /* Mingw-w64 does not have d2d1_2.h and d2d2_3.h.
  *
  *
