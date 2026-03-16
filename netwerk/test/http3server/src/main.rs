@@ -326,10 +326,6 @@ impl HttpServer for Http3TestServer {
                                 stream
                                     .stream_reset_send(Error::HttpRequestRejected.code())
                                     .unwrap();
-                            } else if path == b"/UnknownReset" {
-                                // Reset with an unrecognized application error code.
-                                stream.stream_stop_sending(0xfe).unwrap();
-                                stream.stream_reset_send(0xfe).unwrap();
                             } else if path == b"/closeafter1000ms" {
                                 let response_body = b"0123456789".to_vec();
                                 stream
