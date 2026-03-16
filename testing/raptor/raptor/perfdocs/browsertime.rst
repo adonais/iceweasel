@@ -158,7 +158,7 @@ Page-load tests can also be executed on both Firefox Desktop and Firefox for And
 third party extensions installed (similarly to talos-realworld-webextensions, which runs tp5 tests with a set of third
 party extensions installed).
 
-Any of the page-load tests can be executed locally with the pre-selected set of third party extensions installed by just
+Any of the page-load tests can be executed locally with the preselected set of third party extensions installed by just
 adding to the base raptor command the additional ``--conditioned-profile settled-webext`` command line option.
 
 Launch amazon tp6 page-load test on Firefox Desktop:
