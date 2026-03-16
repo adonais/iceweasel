@@ -84,7 +84,8 @@ class InputToolbarIntegration(
                 }
 
                 override fun onTextChanged(text: String) {
-                    fragment.viewLifecycleOwner.lifecycleScope.launch {
+                    val lifecycleOwner = fragment.viewLifecycleOwnerLiveData.value ?: return
+                    lifecycleOwner.lifecycleScope.launch {
                         fragment.onTextChange(text)
                     }
                 }
