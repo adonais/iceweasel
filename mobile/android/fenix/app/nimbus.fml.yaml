@@ -599,10 +599,6 @@ features:
         description: If true, the menu banner is visible.
         type: Boolean
         default: true
-    defaults:
-      - channel: release
-        value:
-          report-site-issue: false
 
   override-user-specified-homepage-sections:
     description: Whether to ignore the user-specified homepage section visibility settings and hide the options in the settings.
