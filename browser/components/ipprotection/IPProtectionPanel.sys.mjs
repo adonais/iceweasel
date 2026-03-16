@@ -294,11 +294,8 @@ export class IPProtectionPanel {
     const win = this.#window.get();
     const inPrivateBrowsing =
       !!win && lazy.PrivateBrowsingUtils.isWindowPrivate(win);
-    const { started, error } = await lazy.IPPProxyManager.start(
-      true,
-      inPrivateBrowsing
-    );
-    if (!started) {
+    const { error } = await lazy.IPPProxyManager.start(true, inPrivateBrowsing);
+    if (error && error !== ERRORS.CANCELED) {
       const errorMessage =
         error == ERRORS.NETWORK ? ERRORS.NETWORK : ERRORS.GENERIC;
       this.setState({

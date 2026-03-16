@@ -408,7 +408,7 @@ class IPPProxyManagerSingleton extends EventTarget {
       if (!this.#activationAbortController) {
         throw new Error(ERRORS.MISSING_ABORT);
       }
-      this.#activationAbortController?.abort();
+      this.#activationAbortController?.abort(ERRORS.CANCELED);
       await this.#activatingPromise.then(() => this.stop(userAction));
       return;
     }
