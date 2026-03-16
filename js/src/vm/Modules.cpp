@@ -1061,7 +1061,7 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
     JSContext* cx, Handle<ModuleObject*> module) {
   // Step 1. Assert: If module is a Cyclic Module Record, then module.[[Status]]
   //         is not new or unlinked.
-  MOZ_ASSERT(module->status() != ModuleStatus::New ||
+  MOZ_ASSERT(module->status() != ModuleStatus::New &&
              module->status() != ModuleStatus::Unlinked);
 
   // Step 2. Let namespace be module.[[Namespace]].
