@@ -84,10 +84,6 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
     mRequest->GetBody(aStream, aBodyLength);
   }
 
-  void CloneBody(nsIInputStream** aStream, int64_t* aBodyLength = nullptr) {
-    mRequest->CloneBody(aStream, aBodyLength);
-  }
-
   void SetBody(nsIInputStream* aStream, int64_t aBodyLength) {
     mRequest->SetBody(aStream, aBodyLength);
   }

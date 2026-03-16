@@ -235,37 +235,6 @@ InternalResponse::ToParentToChildInternalResponse() {
   return result;
 }
 
-void InternalResponse::CloneBody(nsIInputStream** aStream, int64_t* aBodySize) {
-  if (Type() == ResponseType::Opaque ||
-      Type() == ResponseType::Opaqueredirect) {
-    *aStream = nullptr;
-    if (aBodySize) {
-      *aBodySize = UNKNOWN_BODY_SIZE;
-    }
-    return;
-  }
-
-  if (mWrappedResponse) {
-    mWrappedResponse->CloneBody(aStream, aBodySize);
-    return;
-  }
-
-  nsCOMPtr<nsIInputStream> replacementBody;
-
-  nsresult rv =
-      NS_CloneInputStream(mBody, aStream, getter_AddRefs(replacementBody));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    *aStream = nullptr;
-    if (aBodySize) {
-      *aBodySize = UNKNOWN_BODY_SIZE;
-    }
-    return;
-  }
-  if (replacementBody) {
-    mBody.swap(replacementBody);
-  }
-}
-
 SafeRefPtr<InternalResponse> InternalResponse::Clone(CloneType aCloneType) {
   SafeRefPtr<InternalResponse> clone = CreateIncompleteCopy();
   clone->mCloned = (mCloned = true);

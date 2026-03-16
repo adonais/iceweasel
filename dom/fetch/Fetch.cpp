@@ -1663,22 +1663,7 @@ already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
   }
 
   nsCOMPtr<nsIInputStream> inputStream;
-  // Here, we clone the body for creating ReadableStream, so if response.clone()
-  // before reading ReadableStream, clone() doesn't need to update the
-  // underlying nsIInputStream of ReadableStream.
-  // For the case that ReadableStream is locked by readableStream.getReader(),
-  // clone() and ConsumeBody() will check if the readableStream is locked or not
-  // to perform the behavoir correctly.
-  // For the case that response.body be called twice, the ReadableStream is only
-  // created at the first time. Therefore the twice response.body will use the
-  // same ReadableStream.
-  if (!BodyUsed()) {
-    DerivedClass()->CloneBody(getter_AddRefs(inputStream));
-  } else {
-    // For the case that the body has been used already by ConsumeBody(), using
-    // the original underlying inputstream for creating ReadableStrea.
-    DerivedClass()->GetBody(getter_AddRefs(inputStream));
-  }
+  DerivedClass()->GetBody(getter_AddRefs(inputStream));
 
   if (!inputStream) {
     return nullptr;
@@ -1896,29 +1881,6 @@ void EmptyBody::GetBody(nsIInputStream** aStream, int64_t* aBodyLength) {
 
   nsCOMPtr<nsIInputStream> bodyStream = mBodyStream;
   bodyStream.forget(aStream);
-}
-
-void EmptyBody::CloneBody(nsIInputStream** aStream, int64_t* aBodyLength) {
-  MOZ_ASSERT(aStream);
-
-  if (aBodyLength) {
-    *aBodyLength = 0;
-  }
-
-  nsCOMPtr<nsIInputStream> replacementBody;
-
-  nsresult rv = NS_CloneInputStream(mBodyStream, aStream,
-                                    getter_AddRefs(replacementBody));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    *aStream = nullptr;
-    if (aBodyLength) {
-      *aBodyLength = -1;
-    }
-    return;
-  }
-  if (replacementBody) {
-    mBodyStream.swap(replacementBody);
-  }
 }
 
 }  // namespace mozilla::dom
