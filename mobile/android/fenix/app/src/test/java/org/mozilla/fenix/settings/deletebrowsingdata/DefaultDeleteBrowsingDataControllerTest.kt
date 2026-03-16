@@ -4,9 +4,12 @@
 
 package org.mozilla.fenix.settings.deletebrowsingdata
 
+import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
@@ -118,7 +121,7 @@ class DefaultDeleteBrowsingDataControllerTest {
                 onSuccess = capture(onSuccessSlot),
                 onError = capture(onErrorSlot),
             )
-        } returns Unit
+        } just Runs
 
         controller.deleteCachedFiles()
 
@@ -232,7 +235,7 @@ class DefaultDeleteBrowsingDataControllerTest {
         every { settings.getDeleteDataOnQuit(succeedingType) } returns true
 
         coEvery { controller.deleteType(failingType) } throws RuntimeException("Deletion failed!")
-        coEvery { controller.deleteType(succeedingType) } returns Unit
+        coJustRun { controller.deleteType(succeedingType) }
 
         withContext(coroutineContext + exceptionHandler) {
             controller.clearBrowsingDataOnQuit(onDeletionComplete)

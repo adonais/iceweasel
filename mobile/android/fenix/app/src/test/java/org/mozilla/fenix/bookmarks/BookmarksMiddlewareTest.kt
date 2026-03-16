@@ -7,6 +7,7 @@ package org.mozilla.fenix.bookmarks
 import android.content.ClipboardManager
 import androidx.navigation.NavController
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -3281,7 +3282,7 @@ class BookmarksMiddlewareTest {
         coEvery { lastSavedFolderCache.getGuid() } returns cachedFolderGuid
         coEvery { bookmarksStorage.getBookmark(cachedFolderGuid) } returns Result.success(null)
         coEvery { bookmarksStorage.deleteNode(bookmarkGuid) } returns Result.success(true)
-        coEvery { lastSavedFolderCache.setGuid(null) } returns Unit
+        coJustRun { lastSavedFolderCache.setGuid(null) }
         coEvery { navController.popBackStack() } returns true
 
         val store = buildMiddleware(this).makeStore(initialState)

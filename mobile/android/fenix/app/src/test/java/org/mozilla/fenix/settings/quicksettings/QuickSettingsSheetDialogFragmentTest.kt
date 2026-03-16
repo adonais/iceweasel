@@ -7,7 +7,9 @@ package org.mozilla.fenix.settings.quicksettings
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
@@ -55,7 +57,7 @@ class QuickSettingsSheetDialogFragmentTest {
         val tab = createTab("mozilla.org")
 
         every { fragment.provideTabId() } returns tab.id
-        every { fragment.updateTrackers(any()) } returns Unit
+        every { fragment.updateTrackers(any()) } just Runs
 
         fragment.observeTrackersChange(
             store,
@@ -86,7 +88,7 @@ class QuickSettingsSheetDialogFragmentTest {
         val tab = createTab("mozilla.org")
 
         every { fragment.provideTabId() } returns tab.id
-        every { fragment.updateTrackers(any()) } returns Unit
+        every { fragment.updateTrackers(any()) } just Runs
 
         fragment.observeTrackersChange(
             store,

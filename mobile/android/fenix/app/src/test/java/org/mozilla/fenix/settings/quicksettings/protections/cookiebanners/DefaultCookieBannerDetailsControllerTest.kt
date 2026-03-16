@@ -11,6 +11,7 @@ import androidx.navigation.NavDirections
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -181,7 +182,7 @@ internal class DefaultCookieBannerDetailsControllerTest {
 
             assertNull(CookieBanners.exceptionRemoved.testGetValue())
             every { protectionsStore.dispatch(any()) } returns mockk()
-            coEvery { controller.clearSiteData(any()) } just Runs
+            coJustRun { controller.clearSiteData(any()) }
 
             controller.handleTogglePressed(false)
 

@@ -9,7 +9,9 @@ import android.view.View
 import android.widget.Button
 import android.widget.RadioButton
 import io.mockk.Called
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -54,10 +56,10 @@ class DefaultReaderModeControllerTest {
         readerViewControlsBar = mockk(relaxed = true)
         onReaderModeChanged = mockk(relaxed = true)
 
-        every { readerViewFeature.hideReaderView() } returns Unit
-        every { readerViewFeature.showReaderView() } returns Unit
-        every { readerViewFeature.showControls() } returns Unit
-        every { readerViewFeature.hideControls() } returns Unit
+        every { readerViewFeature.hideReaderView() } just Runs
+        every { readerViewFeature.showReaderView() } just Runs
+        every { readerViewFeature.showControls() } just Runs
+        every { readerViewFeature.hideControls() } just Runs
     }
 
     @Test

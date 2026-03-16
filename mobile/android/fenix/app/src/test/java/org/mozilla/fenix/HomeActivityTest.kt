@@ -101,7 +101,7 @@ class HomeActivityTest {
 
         every { settings.shouldReturnToBrowser } returns true
         every { activity.components.settings.shouldReturnToBrowser } returns true
-        every { activity.openToBrowser(any(), any()) } returns Unit
+        every { activity.openToBrowser(any(), any()) } just Runs
 
         activity.browsingModeManager = browsingModeManager
         activity.navigateToBrowserOnColdStart()
@@ -116,7 +116,7 @@ class HomeActivityTest {
 
         every { settings.shouldReturnToBrowser } returns true
         every { activity.components.settings.shouldReturnToBrowser } returns true
-        every { activity.openToBrowser(any(), any()) } returns Unit
+        every { activity.openToBrowser(any(), any()) } just Runs
 
         activity.browsingModeManager = browsingModeManager
         activity.navigateToBrowserOnColdStart()

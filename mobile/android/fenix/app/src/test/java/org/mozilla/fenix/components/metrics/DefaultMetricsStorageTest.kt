@@ -57,7 +57,7 @@ class DefaultMetricsStorageTest {
         installTime = System.currentTimeMillis()
 
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf()
-        every { settings.firstWeekDaysOfUseGrowthData = any() } returns Unit
+        every { settings.firstWeekDaysOfUseGrowthData = any() } just Runs
 
         storage = DefaultMetricsStorage(
             context = mockk(),
@@ -114,7 +114,7 @@ class DefaultMetricsStorageTest {
     @Test
     fun `WHEN set as default updated THEN settings will be updated accordingly`() = runTest(dispatcher) {
         val updateSlot = slot<Boolean>()
-        every { settings.setAsDefaultGrowthSent = capture(updateSlot) } returns Unit
+        every { settings.setAsDefaultGrowthSent = capture(updateSlot) } just Runs
 
         storage.updateSentState(Event.GrowthData.SetAsDefault)
 
@@ -124,7 +124,7 @@ class DefaultMetricsStorageTest {
     @Test
     fun `GIVEN that app has been used for less than 3 days in a row WHEN checked for first week activity THEN event will not be sent`() = runTest(dispatcher) {
         val tomorrow = calendarStart.createNextDay()
-        every { settings.firstWeekDaysOfUseGrowthData = any() } returns Unit
+        every { settings.firstWeekDaysOfUseGrowthData = any() } just Runs
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
@@ -149,7 +149,7 @@ class DefaultMetricsStorageTest {
     fun `GIVEN that app has been used for 3 days but not consecutively WHEN checked for first week activity THEN event will be not sent`() = runTest(dispatcher) {
         val tomorrow = calendarStart.createNextDay()
         val fourDaysFromNow = tomorrow.createNextDay().createNextDay()
-        every { settings.firstWeekDaysOfUseGrowthData = any() } returns Unit
+        every { settings.firstWeekDaysOfUseGrowthData = any() } just Runs
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, fourDaysFromNow).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
@@ -189,7 +189,7 @@ class DefaultMetricsStorageTest {
         val captureRolling = slot<Set<String>>()
         val previousDay = calendarStart.createPreviousDay()
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(previousDay).toStrings()
-        every { settings.firstWeekDaysOfUseGrowthData = capture(captureRolling) } returns Unit
+        every { settings.firstWeekDaysOfUseGrowthData = capture(captureRolling) } just Runs
         every { settings.firstWeekSeriesGrowthSent } returns false
 
         storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
@@ -201,7 +201,7 @@ class DefaultMetricsStorageTest {
     fun `WHEN first week activity state updated THEN settings updated accordingly`() = runTest(dispatcher) {
         val captureSent = slot<Boolean>()
         every { settings.firstWeekSeriesGrowthSent } returns false
-        every { settings.firstWeekSeriesGrowthSent = capture(captureSent) } returns Unit
+        every { settings.firstWeekSeriesGrowthSent = capture(captureSent) } just Runs
 
         storage.updateSentState(Event.GrowthData.FirstWeekSeriesActivity)
 
@@ -213,7 +213,7 @@ class DefaultMetricsStorageTest {
         shouldSendGenerally = false
         val captureSlot = slot<Set<String>>()
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf()
-        every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } returns Unit
+        every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } just Runs
 
         storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
 
@@ -224,7 +224,7 @@ class DefaultMetricsStorageTest {
     fun `GIVEN outside first week after install WHEN checking to track THEN days of use is not updated`() = runTest(dispatcher) {
         val captureSlot = slot<Set<String>>()
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf()
-        every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } returns Unit
+        every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } just Runs
         installTime = calendarStart.timeInMillis - (dayMillis * 9)
 
         storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
@@ -274,7 +274,7 @@ class DefaultMetricsStorageTest {
     fun `GIVEN usage time growth has not been sent and within first day WHEN registering as usage recorder THEN will be registered`() {
         val application = mockk<Application>()
         every { settings.usageTimeGrowthSent } returns false
-        every { application.registerActivityLifecycleCallbacks(any()) } returns Unit
+        every { application.registerActivityLifecycleCallbacks(any()) } just Runs
 
         storage.tryRegisterAsUsageRecorder(application)
 
@@ -308,7 +308,7 @@ class DefaultMetricsStorageTest {
         val update = 15L
         val slot = slot<Long>()
         every { settings.usageTimeGrowthData } returns initial
-        every { settings.usageTimeGrowthData = capture(slot) } returns Unit
+        every { settings.usageTimeGrowthData = capture(slot) } just Runs
 
         storage.updateUsageState(update)
 
@@ -320,7 +320,7 @@ class DefaultMetricsStorageTest {
         val storage = mockk<MetricsStorage>()
         val activity = mockk<Activity>()
         val slot = slot<Long>()
-        every { storage.updateUsageState(capture(slot)) } returns Unit
+        every { storage.updateUsageState(capture(slot)) } just Runs
         every { activity.componentName } returns mockk()
 
         val usageRecorder = DefaultMetricsStorage.UsageRecorder(storage)
@@ -358,7 +358,7 @@ class DefaultMetricsStorageTest {
     fun `WHEN last resumed state updated THEN settings updated accordingly`() = runTest(dispatcher) {
         val updateSlot = slot<Long>()
         every { settings.resumeGrowthLastSent } returns 0
-        every { settings.resumeGrowthLastSent = capture(updateSlot) } returns Unit
+        every { settings.resumeGrowthLastSent = capture(updateSlot) } just Runs
 
         storage.updateSentState(Event.GrowthData.FirstAppOpenForDay)
 
@@ -390,7 +390,7 @@ class DefaultMetricsStorageTest {
     fun `WHEN uri load updated THEN settings updated accordingly`() = runTest(dispatcher) {
         val updateSlot = slot<Long>()
         every { settings.uriLoadGrowthLastSent } returns 0
-        every { settings.uriLoadGrowthLastSent = capture(updateSlot) } returns Unit
+        every { settings.uriLoadGrowthLastSent = capture(updateSlot) } just Runs
 
         storage.updateSentState(Event.GrowthData.FirstUriLoadForDay)
 
@@ -457,7 +457,7 @@ class DefaultMetricsStorageTest {
         every { settings.growthEarlyUseCount.value } returns 1
         every { settings.growthEarlyUseCount.increment() } just Runs
         every { settings.growthEarlyUseCountLastIncrement } returns 0L
-        every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } returns Unit
+        every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } just Runs
 
         storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = false))
 
@@ -472,7 +472,7 @@ class DefaultMetricsStorageTest {
         val lastUsageIncrementTime = currentTime - (dayMillis / 2)
         every { settings.growthEarlyUseCount.value } returns 1
         every { settings.growthEarlyUseCountLastIncrement } returns lastUsageIncrementTime
-        every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } returns Unit
+        every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } just Runs
 
         storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = false))
 
@@ -485,7 +485,7 @@ class DefaultMetricsStorageTest {
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 3) - 100
         every { settings.growthEarlySearchUsed } returns false
-        every { settings.growthEarlySearchUsed = capture(captureSent) } returns Unit
+        every { settings.growthEarlySearchUsed = capture(captureSent) } just Runs
 
         storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = true))
 
@@ -498,7 +498,7 @@ class DefaultMetricsStorageTest {
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 3) + 100
         every { settings.growthEarlySearchUsed } returns false
-        every { settings.growthEarlySearchUsed = capture(captureSent) } returns Unit
+        every { settings.growthEarlySearchUsed = capture(captureSent) } just Runs
 
         storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = true))
 
@@ -827,7 +827,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTimeMillis
         every {
             settings.firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays = any()
-        } returns Unit
+        } just Runs
         val secondDayMillis = installTime + dayMillis
 
         storage.updateIsDefaultBrowserDuringFirstFourDays(
@@ -844,7 +844,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTimeMillis
         every {
             settings.firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays = any()
-        } returns Unit
+        } just Runs
         val secondDayMillis = installTime + dayMillis
 
         storage.updateIsDefaultBrowserDuringFirstFourDays(
@@ -863,7 +863,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTimeMillis
         every {
             settings.firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays = any()
-        } returns Unit
+        } just Runs
         val fourthDayMillis = installTime + (dayMillis * 3)
         val fifthDayMillis = installTime + (dayMillis * 4)
 
@@ -893,7 +893,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTimeMillis
         every {
             settings.firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays = any()
-        } returns Unit
+        } just Runs
         val secondDayMillis = installTime + dayMillis
 
         storage.updateIsDefaultBrowserDuringFirstFourDays(

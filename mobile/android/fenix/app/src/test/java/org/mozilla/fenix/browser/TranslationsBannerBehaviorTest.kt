@@ -172,7 +172,7 @@ class TranslationsBannerBehaviorTest {
         val child = mockk<View> {
             every { height } returns 100
             every { translationY } returns 0f
-            every { translationY = any() } returns Unit
+            every { translationY = any() } just Runs
         }
 
         behavior.onNestedPreScroll(

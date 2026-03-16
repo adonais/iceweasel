@@ -4,7 +4,9 @@
 
 package org.mozilla.fenix.home.blocklist
 
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import mozilla.components.browser.state.state.createTab
@@ -212,7 +214,7 @@ class BlocklistMiddlewareTest {
 
         val updateSlot = slot<Set<String>>()
         every { mockSettings.homescreenBlocklist } returns setOf() andThen setOf(removedUrl.stripAndHash())
-        every { mockSettings.homescreenBlocklist = capture(updateSlot) } returns Unit
+        every { mockSettings.homescreenBlocklist = capture(updateSlot) } just Runs
         val middleware = BlocklistMiddleware(blocklistHandler)
         val appStore = AppStore(
             AppState(bookmarks = listOf(removedBookmark)),
@@ -437,7 +439,7 @@ class BlocklistMiddlewareTest {
             middlewares = listOf(BlocklistMiddleware(blocklistHandler)),
         )
         val updateSlot = slot<Set<String>>()
-        every { mockSettings.homescreenBlocklist = capture(updateSlot) } returns Unit
+        every { mockSettings.homescreenBlocklist = capture(updateSlot) } just Runs
         every { mockSettings.homescreenBlocklist } returns setOf(tabUrls[0].stripAndHash())
         every { mockSettings.frecencyFilterQuery } returns ""
 

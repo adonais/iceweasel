@@ -7,7 +7,9 @@ package org.mozilla.fenix.trackingprotection
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
@@ -80,7 +82,7 @@ class TrackingProtectionPanelDialogFragmentTest {
 
         every { fragment.protectionsStore } returns protectionsStore
         every { fragment.provideCurrentTabId() } returns tab.id
-        every { fragment.updateTrackers(any()) } returns Unit
+        every { fragment.updateTrackers(any()) } just Runs
 
         fragment.observeTrackersChange(store, coroutineContext[ContinuationInterceptor] as CoroutineDispatcher)
         testScheduler.advanceUntilIdle()
@@ -111,7 +113,7 @@ class TrackingProtectionPanelDialogFragmentTest {
 
         every { fragment.protectionsStore } returns protectionsStore
         every { fragment.provideCurrentTabId() } returns tab.id
-        every { fragment.updateTrackers(any()) } returns Unit
+        every { fragment.updateTrackers(any()) } just Runs
 
         fragment.observeTrackersChange(store, coroutineContext[ContinuationInterceptor] as CoroutineDispatcher)
         testScheduler.advanceUntilIdle()

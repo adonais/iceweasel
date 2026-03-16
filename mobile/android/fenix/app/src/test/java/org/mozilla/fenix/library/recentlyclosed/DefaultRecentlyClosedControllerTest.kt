@@ -7,6 +7,7 @@ package org.mozilla.fenix.library.recentlyclosed
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -56,7 +57,7 @@ class DefaultRecentlyClosedControllerTest {
 
     @Before
     fun setUp() {
-        coEvery { tabsUseCases.restore.invoke(any(), any(), true) } returns Unit
+        coJustRun { tabsUseCases.restore.invoke(any(), any(), true) }
     }
 
     @Test

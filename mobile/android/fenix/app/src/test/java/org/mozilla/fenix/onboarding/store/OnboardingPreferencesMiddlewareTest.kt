@@ -6,9 +6,11 @@ package org.mozilla.fenix.onboarding.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.emptyFlow
@@ -36,7 +38,7 @@ class OnboardingPreferencesMiddlewareTest {
             val middleware = OnboardingPreferencesMiddleware(repository, this)
 
             every { repository.onboardingPreferenceUpdates } returns emptyFlow()
-            every { repository.init() } returns Unit
+            every { repository.init() } just Runs
             middleware.invoke(store = mockk(), next = {}, action = OnboardingAction.Init)
             testScheduler.advanceUntilIdle()
 
@@ -50,7 +52,7 @@ class OnboardingPreferencesMiddlewareTest {
         runTest {
             val middleware = OnboardingPreferencesMiddleware(repository, this)
 
-            every { repository.updateOnboardingPreference(any()) } returns Unit
+            every { repository.updateOnboardingPreference(any()) } just Runs
             middleware.invoke(
                 store = mockk(),
                 next = {},
@@ -73,7 +75,7 @@ class OnboardingPreferencesMiddlewareTest {
         runTest {
             val middleware = OnboardingPreferencesMiddleware(repository, this)
 
-            every { repository.updateOnboardingPreference(any()) } returns Unit
+            every { repository.updateOnboardingPreference(any()) } just Runs
             middleware.invoke(
                 store = mockk(),
                 next = {},
