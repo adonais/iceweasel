@@ -51,6 +51,7 @@ pref("pdfjs.forcePageColors", false);
 pref("pdfjs.highlightEditorColors", "yellow=#FFFF98,green=#53FFBC,blue=#80EBFF,pink=#FFCBE6,red=#FF4F5F,yellow_HCM=#FFFFCC,green_HCM=#53FFBC,blue_HCM=#80EBFF,pink_HCM=#F6B8FF,red_HCM=#C50043");
 pref("pdfjs.historyUpdateUrl", false);
 pref("pdfjs.ignoreDestinationZoom", false);
+pref("pdfjs.imagesRightClickMinSize", 16);
 pref("pdfjs.pageColorsBackground", "Canvas");
 pref("pdfjs.pageColorsForeground", "CanvasText");
 pref("pdfjs.pdfBugEnabled", false);

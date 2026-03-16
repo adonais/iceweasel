@@ -19,6 +19,7 @@ async function openContextMenuAt(browser, x, y) {
     contextMenu,
     "popupshown"
   );
+  info("Opening context menu at coordinates: " + x + ", " + y);
   await BrowserTestUtils.synthesizeMouseAtPoint(
     x,
     y,
@@ -29,7 +30,11 @@ async function openContextMenuAt(browser, x, y) {
   return contextMenu;
 }
 
-async function getPagesContextMenuItems(browser, box) {
+async function getPagesContextMenuItems(
+  browser,
+  box,
+  waitForStatesChanged = false
+) {
   info(`Opening context menu at the center of box: ${JSON.stringify(box)}`);
   return new Promise(resolve => {
     setTimeout(async () => {
@@ -41,7 +46,21 @@ async function getPagesContextMenuItems(browser, box) {
         "context-pdfjs-save-page",
         "context-sep-pdfjs-save-page",
       ];
+      let statesChangedPromise;
+      if (waitForStatesChanged) {
+        statesChangedPromise = BrowserTestUtils.waitForContentEvent(
+          browser,
+          "editingstateschanged",
+          false,
+          null,
+          true
+        );
+      }
+
       await openContextMenuAt(browser, x + width / 2, y + height / 2);
+      if (waitForStatesChanged) {
+        await statesChangedPromise;
+      }
       const doc = browser.ownerDocument;
       const results = new Map();
       for (const id of ids) {
@@ -200,19 +219,11 @@ add_task(async function test_pages_context_menu() {
       );
 
       // Select the first page.
-      const statesChangedPromise = BrowserTestUtils.waitForContentEvent(
-        browser,
-        "editingstateschanged",
-        false,
-        null,
-        true
-      );
       await selectPage(browser, 0);
-      await statesChangedPromise;
 
       // Pages context menu items must be visible when a page is selected.
       let thumbnailBox = await getThumbnailBox(browser, 0);
-      menuitems = await getPagesContextMenuItems(browser, thumbnailBox);
+      menuitems = await getPagesContextMenuItems(browser, thumbnailBox, true);
       assertMenuitems(menuitems, [
         "context-pdfjs-copy-page",
         "context-pdfjs-cut-page",
@@ -237,6 +248,8 @@ add_task(async function test_pages_context_menu() {
         "Paste buttons must appear after copy"
       );
 
+      await clickOn(browser, "#viewsManagerStatusUndoButton");
+
       // Select the first page again (checkboxes were cleared by the copy).
       await selectPage(browser, 0);
 
@@ -246,7 +259,7 @@ add_task(async function test_pages_context_menu() {
         "#thumbnailsView .thumbnail"
       );
       thumbnailBox = await getThumbnailBox(browser, 0);
-      menuitems = await getPagesContextMenuItems(browser, thumbnailBox);
+      menuitems = await getPagesContextMenuItems(browser, thumbnailBox, true);
 
       pagesEditedPromise = BrowserTestUtils.waitForContentEvent(
         browser,
@@ -266,22 +279,14 @@ add_task(async function test_pages_context_menu() {
       );
 
       // Select the first page and cut it: count must decrease and paste buttons appear.
-      const statesChanged2 = BrowserTestUtils.waitForContentEvent(
-        browser,
-        "editingstateschanged",
-        false,
-        null,
-        true
-      );
       await selectPage(browser, 0);
-      await statesChanged2;
 
       const countAfterDelete = await countElements(
         browser,
         "#thumbnailsView .thumbnail"
       );
       thumbnailBox = await getThumbnailBox(browser, 0);
-      menuitems = await getPagesContextMenuItems(browser, thumbnailBox);
+      menuitems = await getPagesContextMenuItems(browser, thumbnailBox, true);
 
       const cutEditedPromise = BrowserTestUtils.waitForContentEvent(
         browser,
@@ -306,18 +311,10 @@ add_task(async function test_pages_context_menu() {
       );
 
       // Select the first page and save: saveextractedpages event must fire.
-      const statesChanged3 = BrowserTestUtils.waitForContentEvent(
-        browser,
-        "editingstateschanged",
-        false,
-        null,
-        true
-      );
       await selectPage(browser, 0);
-      await statesChanged3;
 
       thumbnailBox = await getThumbnailBox(browser, 0);
-      menuitems = await getPagesContextMenuItems(browser, thumbnailBox);
+      menuitems = await getPagesContextMenuItems(browser, thumbnailBox, true);
 
       const savePromise = BrowserTestUtils.waitForContentEvent(
         browser,

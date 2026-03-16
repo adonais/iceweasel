@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.339
- * pdfjsBuild = 98f7e859a
+ * pdfjsVersion = 5.5.358
+ * pdfjsBuild = a7083d08f
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -29715,8 +29715,8 @@ class ErrorFont {
 
 class CssFontInfo {
   #buffer;
+  #decoder = new TextDecoder();
   #view;
-  #decoder;
   static strings = ["fontFamily", "fontWeight", "italicAngle"];
   static write(info) {
     const encoder = new TextEncoder();
@@ -29744,7 +29744,6 @@ class CssFontInfo {
   constructor(buffer) {
     this.#buffer = buffer;
     this.#view = new DataView(this.#buffer);
-    this.#decoder = new TextDecoder();
   }
   #readString(index) {
     assert(index < CssFontInfo.strings.length, "Invalid string index");
@@ -29767,8 +29766,8 @@ class CssFontInfo {
 }
 class SystemFontInfo {
   #buffer;
+  #decoder = new TextDecoder();
   #view;
-  #decoder;
   static strings = ["css", "loadedName", "baseFontName", "src"];
   static write(info) {
     const encoder = new TextEncoder();
@@ -29819,7 +29818,6 @@ class SystemFontInfo {
   constructor(buffer) {
     this.#buffer = buffer;
     this.#view = new DataView(this.#buffer);
-    this.#decoder = new TextDecoder();
   }
   get guessFallback() {
     return this.#view.getUint8(0) !== 0;
@@ -29869,14 +29867,13 @@ class FontInfo {
   static #OFFSET_DEFAULT_VMETRICS = this.#OFFSET_FONT_MATRIX + 1 + 8 * 6;
   static #OFFSET_STRINGS = this.#OFFSET_DEFAULT_VMETRICS + 1 + 2 * 3;
   #buffer;
-  #decoder;
+  #decoder = new TextDecoder();
   #view;
   constructor({
     data,
     extra
   }) {
     this.#buffer = data;
-    this.#decoder = new TextDecoder();
     this.#view = new DataView(this.#buffer);
     if (extra) {
       Object.assign(this, extra);
@@ -29997,7 +29994,7 @@ class FontInfo {
   get name() {
     return this.#readString(3);
   }
-  get data() {
+  #getDataOffsets() {
     let offset = FontInfo.#OFFSET_STRINGS;
     const stringsLength = this.#view.getUint32(offset);
     offset += 4 + stringsLength;
@@ -30006,23 +30003,29 @@ class FontInfo {
     const cssFontInfoLength = this.#view.getUint32(offset);
     offset += 4 + cssFontInfoLength;
     const length = this.#view.getUint32(offset);
-    if (length === 0) {
-      return undefined;
-    }
-    return new Uint8Array(this.#buffer, offset + 4, length);
+    return {
+      offset,
+      length
+    };
+  }
+  get data() {
+    const {
+      offset,
+      length
+    } = this.#getDataOffsets();
+    return length === 0 ? undefined : new Uint8Array(this.#buffer, offset + 4, length);
   }
   clearData() {
-    let offset = FontInfo.#OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + systemFontInfoLength;
-    const cssFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + cssFontInfoLength;
-    const length = this.#view.getUint32(offset);
-    const data = new Uint8Array(this.#buffer, offset + 4, length);
-    data.fill(0);
+    const {
+      offset,
+      length
+    } = this.#getDataOffsets();
+    if (length === 0) {
+      return;
+    }
     this.#view.setUint32(offset, 0);
+    this.#buffer = new Uint8Array(this.#buffer, 0, offset + 4).slice().buffer;
+    this.#view = new DataView(this.#buffer);
   }
   get cssFontInfo() {
     let offset = FontInfo.#OFFSET_STRINGS;
@@ -30060,7 +30063,7 @@ class FontInfo {
       encodedStrings[prop] = encoder.encode(font[prop]);
       stringsLength += 4 + encodedStrings[prop].length;
     }
-    const lengthEstimate = FontInfo.#OFFSET_STRINGS + 4 + stringsLength + 4 + (systemFontInfoBuffer ? systemFontInfoBuffer.byteLength : 0) + 4 + (cssFontInfoBuffer ? cssFontInfoBuffer.byteLength : 0) + 4 + (font.data ? font.data.length : 0);
+    const lengthEstimate = FontInfo.#OFFSET_STRINGS + 4 + stringsLength + 4 + (systemFontInfoBuffer?.byteLength ?? 0) + 4 + (cssFontInfoBuffer?.byteLength ?? 0) + 4 + (font.data?.length ?? 0);
     const buffer = new ArrayBuffer(lengthEstimate);
     const data = new Uint8Array(buffer);
     const view = new DataView(buffer);
@@ -58497,10 +58500,6 @@ class XRef {
 }
 
 ;// ./src/core/document.js
-/* unused harmony import specifier */ var document_Cmd;
-/* unused harmony import specifier */ var document_Name;
-/* unused harmony import specifier */ var document_Ref;
-/* unused harmony import specifier */ var document_Dict;
 
 
 
@@ -59933,68 +59932,6 @@ class PDFDocument {
   async toJSObject(value, firstCall = true) {
     throw new Error("Not implemented: toJSObject");
   }
-}
-let _opsIdToName = null;
-function _tokenToJSObject(obj) {
-  if (obj instanceof document_Cmd) {
-    return {
-      type: "cmd",
-      value: obj.cmd
-    };
-  }
-  if (obj instanceof document_Name) {
-    return {
-      type: "name",
-      value: obj.name
-    };
-  }
-  if (obj instanceof document_Ref) {
-    return {
-      type: "ref",
-      num: obj.num,
-      gen: obj.gen
-    };
-  }
-  if (Array.isArray(obj)) {
-    return {
-      type: "array",
-      value: obj.map(_tokenToJSObject)
-    };
-  }
-  if (obj instanceof document_Dict) {
-    const result = Object.create(null);
-    for (const [key, val] of obj.getRawEntries()) {
-      result[key] = _tokenToJSObject(val);
-    }
-    return {
-      type: "dict",
-      value: result
-    };
-  }
-  if (typeof obj === "number") {
-    return {
-      type: "number",
-      value: obj
-    };
-  }
-  if (typeof obj === "string") {
-    return {
-      type: "string",
-      value: obj
-    };
-  }
-  if (typeof obj === "boolean") {
-    return {
-      type: "boolean",
-      value: obj
-    };
-  }
-  if (obj === null) {
-    return {
-      type: "null"
-    };
-  }
-  return null;
 }
 
 ;// ./src/core/pdf_manager.js
@@ -62879,7 +62816,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.5.339";
+    const workerVersion = "5.5.358";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
@@ -63494,12 +63431,6 @@ class WorkerMessageHandler {
     });
     handler.on("FontFallback", function (data) {
       return pdfManager.fontFallback(data.id, handler);
-    });
-    handler.on("GetRawData", async function ({
-      ref,
-      page
-    }) {
-      throw new Error("Not implemented: GetRawData");
     });
     handler.on("Cleanup", function (data) {
       return pdfManager.cleanup(true);
