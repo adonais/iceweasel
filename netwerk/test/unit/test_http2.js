@@ -328,6 +328,12 @@ add_task(async function do_test_http2_retry_rst() {
   Assert.equal(httpProxyConnectResponseCode, -1);
 });
 
+add_task(async function do_test_http2_unknown_rst() {
+  const { httpProxyConnectResponseCode } =
+    await test_http2_unknown_rst(serverPort);
+  Assert.equal(httpProxyConnectResponseCode, -1);
+});
+
 add_task(async function do_test_http2_wrongsuite_tls12() {
   const { httpProxyConnectResponseCode } =
     await test_http2_wrongsuite_tls12(serverPort);
