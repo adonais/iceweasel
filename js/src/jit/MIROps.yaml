@@ -1597,10 +1597,26 @@
   generate_lir: true
 
 - name: StringConvertCase
-  gen_boilerplate: false
+  operands:
+    string: String
+  arguments:
+    stringCase: StringCase
+  result_type: String
+  movable: true
+  possibly_calls: true
+  alias_set: none
+  congruent_to: if_operands_and_arguments_equal
+  folds_to: custom
 
 - name: CharCodeConvertCase
-  gen_boilerplate: false
+  operands:
+    code: Int32
+  arguments:
+    stringCase: StringCase
+  result_type: String
+  movable: true
+  alias_set: none
+  congruent_to: if_operands_and_arguments_equal
 
 # Index of first non-whitespace character.
 - name: StringTrimStartIndex

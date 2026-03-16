@@ -5898,54 +5898,6 @@ class MConcat : public MBinaryInstruction,
   ALLOW_CLONE(MConcat)
 };
 
-class MStringConvertCase : public MUnaryInstruction,
-                           public StringPolicy<0>::Data {
-  StringCase stringCase_;
-
-  MStringConvertCase(MDefinition* string, StringCase stringCase)
-      : MUnaryInstruction(classOpcode, string), stringCase_(stringCase) {
-    setResultType(MIRType::String);
-    setMovable();
-  }
-
- public:
-  INSTRUCTION_HEADER(StringConvertCase)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, string))
-
-  MDefinition* foldsTo(TempAllocator& alloc) override;
-  bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins) &&
-           ins->toStringConvertCase()->stringCase() == stringCase();
-  }
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-  bool possiblyCalls() const override { return true; }
-  StringCase stringCase() const { return stringCase_; }
-};
-
-class MCharCodeConvertCase : public MUnaryInstruction,
-                             public UnboxedInt32Policy<0>::Data {
-  StringCase stringCase_;
-
-  MCharCodeConvertCase(MDefinition* code, StringCase stringCase)
-      : MUnaryInstruction(classOpcode, code), stringCase_(stringCase) {
-    setResultType(MIRType::String);
-    setMovable();
-  }
-
- public:
-  INSTRUCTION_HEADER(CharCodeConvertCase)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, code))
-
-  bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins) &&
-           ins->toCharCodeConvertCase()->stringCase() == stringCase();
-  }
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-  StringCase stringCase() const { return stringCase_; }
-};
-
 // This is a 3 state flag used by FlagPhiInputsAsImplicitlyUsed to record and
 // propagate the information about the consumers of a Phi instruction. This is
 // then used to set ImplicitlyUsed flags on the inputs of such Phi instructions.
