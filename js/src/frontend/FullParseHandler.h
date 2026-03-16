@@ -259,6 +259,10 @@ class FullParseHandler {
       return newUnary(ParseNodeKind::DeletePropExpr, begin, expr);
     }
 
+    if (expr->isKind(ParseNodeKind::ArgumentsLength)) {
+      return newUnary(ParseNodeKind::DeletePropExpr, begin, expr);
+    }
+
     if (expr->isKind(ParseNodeKind::ElemExpr)) {
       return newUnary(ParseNodeKind::DeleteElemExpr, begin, expr);
     }
@@ -273,6 +277,9 @@ class FullParseHandler {
           kid->isKind(ParseNodeKind::OptionalElemExpr)) {
         return newUnary(ParseNodeKind::DeleteOptionalChainExpr, begin, kid);
       }
+
+      // ArgumentsLength shouldn't be used for optional chain.
+      MOZ_ASSERT(!kid->isKind(ParseNodeKind::ArgumentsLength));
     }
 
     return newUnary(ParseNodeKind::DeleteExpr, begin, expr);

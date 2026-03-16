@@ -10701,6 +10701,10 @@ typename ParseHandler::NodeResult GeneralParser<ParseHandler, Unit>::unaryExpr(
         return errorResult();
       }
 
+      if (handler_.isArgumentsLength(expr)) {
+        pc_->sc()->setIneligibleForArgumentsLength();
+      }
+
       return handler_.newDelete(begin, expr);
     }
     case TokenKind::Await: {
