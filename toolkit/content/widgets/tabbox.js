@@ -257,8 +257,6 @@
   customElements.define("deck", MozDeck);
 
   class MozTabpanels extends MozDeck {
-    static SPLIT_VIEW_RESIZE_THROTTLE_MS = 300;
-
     /**
      * Panels that are currently within an active Split View.
      *
@@ -290,7 +288,6 @@
         this.#splitterAriaUpdateTask.arm();
       }
     });
-    #splitViewSplitterKeysDown = new Set();
 
     static #SPLIT_VIEW_PANEL_EVENTS = Object.freeze([
       "click",
@@ -309,14 +306,12 @@
         () => this.updateSplitterAriaAttributes(),
         0
       );
-      window.addEventListener("SplitViewRemoved", this);
     }
 
     disconnectedCallback() {
       super.disconnectedCallback();
       this.#splitViewSplitterObserver.disconnect();
       this.#splitterAriaUpdateTask.finalize();
-      window.removeEventListener("SplitViewRemoved", this);
     }
 
     #recordSplitViewResizeTelemetry() {
@@ -337,10 +332,6 @@
     }
 
     handleEvent(e) {
-      if (e.type === "SplitViewRemoved") {
-        this.#unthrottleSplitViewResizing();
-        return;
-      }
       const browser =
         e.currentTarget.tagName === "browser"
           ? e.currentTarget
@@ -404,20 +395,6 @@
       });
       this.#splitViewSplitterObserver.observe(splitter, {
         attributeFilter: ["state"],
-      });
-      splitter.addEventListener("keydown", e => {
-        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-          this.#splitViewSplitterKeysDown.add(e.key);
-          this.#throttleSplitViewResizing();
-        }
-      });
-      splitter.addEventListener("keyup", e => {
-        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-          this.#splitViewSplitterKeysDown.delete(e.key);
-          if (!this.#splitViewSplitterKeysDown.size) {
-            this.#unthrottleSplitViewResizing();
-          }
-        }
       });
       return splitter;
     }
@@ -627,50 +604,6 @@
     setSplitViewPanelActive(isActive, panel) {
       const panelEl = document.getElementById(panel);
       panelEl?.classList.toggle("split-view-panel-active", isActive);
-    }
-
-    #throttleSplitViewResizing() {
-      if (!this._splitViewRenderTask || this._splitViewRenderTask.isFinalized) {
-        this.#freezeSplitViewBrowsers();
-        this._splitViewRenderTask = new imports.DeferredTask(
-          () => {
-            this.#unfreezeSplitViewBrowsers();
-            // Wait for repaint before re-freezing browsers.
-            return new Promise(resolve =>
-              requestAnimationFrame(() =>
-                Services.tm.dispatchToMainThread(() => {
-                  this.#freezeSplitViewBrowsers();
-                  resolve();
-                })
-              )
-            );
-          },
-          MozTabpanels.SPLIT_VIEW_RESIZE_THROTTLE_MS,
-          0
-        );
-      }
-      this._splitViewRenderTask.arm();
-    }
-
-    async #unthrottleSplitViewResizing() {
-      if (this._splitViewRenderTask && !this._splitViewRenderTask.isFinalized) {
-        await this._splitViewRenderTask.finalize();
-      }
-      this.#unfreezeSplitViewBrowsers();
-    }
-
-    #freezeSplitViewBrowsers() {
-      for (const browser of gBrowser.splitViewBrowsers) {
-        browser.preserveLayers(true);
-        browser.docShellIsActive = false;
-      }
-    }
-
-    #unfreezeSplitViewBrowsers() {
-      for (const browser of gBrowser.splitViewBrowsers) {
-        browser.docShellIsActive = true;
-        browser.preserveLayers(false);
-      }
     }
   }
 
