@@ -127,6 +127,7 @@ class ExternalAppBrowserFragment : BaseBrowserFragment() {
                     customTabsStore = requireComponents.core.customTabsStore,
                     tabId = customTabSessionId,
                     manifest = manifest,
+                    scope = viewLifecycleOwner.lifecycleScope,
                 ) { toolbarVisible ->
                     webAppToolbarShouldBeVisible = toolbarVisible
                     when (toolbarVisible) {
