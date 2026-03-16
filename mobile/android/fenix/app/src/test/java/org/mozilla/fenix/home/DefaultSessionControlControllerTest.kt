@@ -6,11 +6,10 @@ package org.mozilla.fenix.home
 
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
-import io.mockk.Runs
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.BrowserState
@@ -26,7 +25,6 @@ import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.service.nimbus.messaging.Message
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -74,9 +72,6 @@ class DefaultSessionControlControllerTest {
     val temporaryFolder = TemporaryFolder()
 
     @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-
-    @get:Rule
     val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val activity: HomeActivity = mockk(relaxed = true)
@@ -92,7 +87,6 @@ class DefaultSessionControlControllerTest {
     private val selectTabUseCase: TabsUseCases = mockk(relaxed = true)
     private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
-    private val scope = coroutinesTestRule.scope
     private val searchEngine = SearchEngine(
         id = "test",
         name = "Test Engine",
@@ -709,7 +703,7 @@ class DefaultSessionControlControllerTest {
             fenixBrowserUseCases = fenixBrowserUseCases,
             appStore = appStore,
             navControllerRef = WeakReference(navController),
-            viewLifecycleScope = scope,
+            viewLifecycleScope = TestScope(),
             showAddSearchWidgetPrompt = { showAddSearchWidgetPromptCalled = true },
             requestSetDefaultBrowserPrompt = { requestSetDefaultBrowserPromptCalled = true },
         ).apply {
