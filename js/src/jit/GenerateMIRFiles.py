@@ -87,6 +87,60 @@ def decide_type_policy(types, no_type_policy):
     return "public MixPolicy<{}>::Data".format(", ".join(mixed_type_policies))
 
 
+# Alias set flags defined in MIR.h.
+alias_set_flags = {
+    "None",
+    "ObjectFields",
+    "Element",
+    "UnboxedElement",
+    "DynamicSlot",
+    "FixedSlot",
+    "DOMProperty",
+    "WasmInstanceData",
+    "WasmHeap",
+    "WasmHeapMeta",
+    "ArrayBufferViewLengthOrOffset",
+    "WasmGlobalCell",
+    "WasmTableElement",
+    "WasmTableMeta",
+    "WasmStackResult",
+    "ExceptionState",
+    "DOMProxyExpando",
+    "MapOrSetHashTable",
+    "RNG",
+    "WasmPendingException",
+    "FuzzilliHash",
+    "WasmStructInlineDataArea",
+    "WasmStructOutlineDataPointer",
+    "WasmStructOutlineDataArea",
+    "WasmArrayNumElements",
+    "WasmArrayDataPointer",
+    "WasmArrayDataArea",
+    "GlobalGenerationCounter",
+    "SharedArrayRawBufferLength",
+    "Any",
+}
+
+
+def get_alias_set(load_or_store, alias_set):
+    assert load_or_store in ("load", "store")
+
+    flags = alias_set.get(load_or_store, [])
+    if isinstance(flags, str):
+        flags = [flags]
+
+    assert isinstance(flags, list)
+    assert alias_set_flags.issuperset(flags), "unknown alias set flag: " + str(flags)
+    assert len(flags) == len(set(flags)), "unexpected duplicates: " + str(flags)
+
+    # `AliasSet::{Load,Store}(AliasSet::None)` is not valid, so handle it early.
+    if len(flags) == 0 or flags[0] == "None":
+        return None
+
+    expr = " | ".join(f"AliasSet::{flag}" for flag in flags)
+    return f"AliasSet::{load_or_store.title()}({expr})"
+
+
 mir_base_class = [
     "MNullaryInstruction",
     "MUnaryInstruction",
@@ -267,12 +321,26 @@ def gen_mir_class(
     if alias_set:
         if alias_set == "custom":
             code += "  AliasSet getAliasSet() const override;\\\n"
-        else:
-            assert alias_set == "none"
+        elif alias_set == "none":
             code += (
                 "  AliasSet getAliasSet() const override { "
                 "return AliasSet::None(); }\\\n"
             )
+        else:
+            assert isinstance(alias_set, dict)
+            assert {"load", "store"}.issuperset(alias_set.keys())
+
+            load = get_alias_set("load", alias_set)
+            store = get_alias_set("store", alias_set)
+
+            if load and store:
+                expr = f"{load} | {store}"
+            elif load or store:
+                expr = load if load else store
+            else:
+                expr = "AliasSet::None()"
+
+            code += f"  AliasSet getAliasSet() const override {{ return {expr}; }}\\\n"
     if might_alias:
         code += "  AliasType mightAlias(const MDefinition* store) const override;\\\n"
     if folds_to:
@@ -410,7 +478,7 @@ def generate_mir_header(c_out, yaml_path):
             )
 
             alias_set = op.get("alias_set", None)
-            assert alias_set in (None, "none", "custom")
+            assert alias_set in (None, "none", "custom") or isinstance(alias_set, dict)
 
             might_alias = op.get("might_alias", None)
             assert might_alias in (None, "custom")

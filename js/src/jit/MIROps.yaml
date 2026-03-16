@@ -133,6 +133,17 @@
 #   - attribute not specified (default): no code generated, alias set is Any
 #   - none: this is the most common case, this is will set the alias set to None.
 #   - custom: custom C++ implementation in MIR.cpp
+#   - dictionary with keys "load" and "store" whose value is a single alias set flag or a list of alias set flags.
+#     Valid alias set flags are the enum values of `AliasSet::Flag` defined in MIR.h.
+#
+#     Examples:
+#       alias_set:
+#         load: Any
+#
+#       alias_set:
+#         store:
+#           - ObjectFields
+#           - Element
 #
 # possibly_calls
 # ==============
