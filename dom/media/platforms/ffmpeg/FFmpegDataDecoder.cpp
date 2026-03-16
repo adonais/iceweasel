@@ -79,7 +79,7 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData() {
         FF_INPUT_BUFFER_PADDING_SIZE;
 #endif
     mCodecContext->extradata = static_cast<uint8_t*>(
-        mLib->av_malloc(mExtraData->Length() + padding_size));
+        mLib->av_mallocz(mExtraData->Length() + padding_size));
     if (!mCodecContext->extradata) {
       return MediaResult(NS_ERROR_OUT_OF_MEMORY,
                          RESULT_DETAIL("Couldn't init ffmpeg extradata"));

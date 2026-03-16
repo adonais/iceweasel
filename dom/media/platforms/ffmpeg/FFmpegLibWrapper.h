@@ -132,6 +132,7 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
                                                va_list));
   void (*av_log_set_level)(int level);
   void* (*av_malloc)(size_t size);
+  void* (*av_mallocz)(size_t size);
   void (*av_freep)(void* ptr);
   int (*av_image_check_size)(unsigned int w, unsigned int h, int log_offset,
                              void* log_ctx);
