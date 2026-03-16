@@ -7,6 +7,8 @@
 // If any others are needed, update extract_rfp_targets.py
 
 #ifdef NIGHTLY_BUILD
+DESKTOP_DEFAULT(CanvasRandomization)
+DESKTOP_DEFAULT(EfficientCanvasRandomization)
 DESKTOP_DEFAULT(ScreenAvailToResolution)
 DESKTOP_DEFAULT(MaxTouchPointsCollapse)
 #endif
