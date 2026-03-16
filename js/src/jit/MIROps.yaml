@@ -227,11 +227,25 @@
 - name: LimitedTruncate
   gen_boilerplate: false
 
+# Truncation barrier. This is intended for protecting its input against
+# follow-up truncation optimizations.
 - name: IntPtrLimitedTruncate
-  gen_boilerplate: false
+  operands:
+    input: IntPtr
+  result_type: IntPtr
+  type_policy: none
+  alias_set: none
+  movable: true
 
+# Truncation barrier. This is intended for protecting its input against
+# follow-up truncation optimizations.
 - name: Int64LimitedTruncate
-  gen_boilerplate: false
+  operands:
+    input: Int64
+  result_type: Int64
+  type_policy: none
+  alias_set: none
+  movable: true
 
 - name: Constant
   gen_boilerplate: false
@@ -500,7 +514,13 @@
   gen_boilerplate: false
 
 - name: AssertFloat32
-  gen_boilerplate: false
+  operands:
+    value: Value
+  arguments:
+    mustBeFloat32: bool
+  result_type: None
+  type_policy: none
+  can_consume_float32: true
 
 - name: Compare
   gen_boilerplate: false
@@ -570,7 +590,13 @@
   gen_boilerplate: false
 
 - name: AssertShape
-  gen_boilerplate: false
+  operands:
+    object: Object
+  arguments:
+    shape: Shape*
+  type_policy: none
+  alias_set: none
+  guard: true
 
 # Caller-side allocation of |this| for |new|:
 # Constructs |this| when possible, else MagicValue(JS_IS_CONSTRUCTING).
@@ -811,10 +837,30 @@
   gen_boilerplate: false
 
 - name: WrapInt64ToInt32
-  gen_boilerplate: false
+  operands:
+    input: Int64
+  arguments:
+    bottomHalf: bool
+  result_type: Int32
+  type_policy: none
+  alias_set: none
+  movable: true
+  clone: true
+  congruent_to: if_operands_and_arguments_equal
+  folds_to: custom
 
 - name: ExtendInt32ToInt64
-  gen_boilerplate: false
+  operands:
+    input: Int32
+  arguments:
+    isUnsigned: bool
+  result_type: Int64
+  type_policy: none
+  alias_set: none
+  movable: true
+  clone: true
+  congruent_to: if_operands_and_arguments_equal
+  folds_to: custom
 
 - name: WasmBuiltinTruncateToInt64
   gen_boilerplate: false
@@ -912,11 +958,26 @@
 - name: Int32ToIntPtr
   gen_boilerplate: false
 
+# Converts an IntPtr value >= 0 to Int32. Bails out if the value > INT32_MAX.
 - name: NonNegativeIntPtrToInt32
-  gen_boilerplate: false
+  operands:
+    input: IntPtr
+  result_type: Int32
+  type_policy: none
+  alias_set: none
+  movable: true
+  congruent_to: if_operands_equal
+  compute_range: custom
 
+# Converts an IntPtr value to Double.
 - name: IntPtrToDouble
-  gen_boilerplate: false
+  operands:
+    input: IntPtr
+  result_type: Double
+  type_policy: none
+  alias_set: none
+  movable: true
+  congruent_to: if_operands_equal
 
 - name: AdjustDataViewLength
   gen_boilerplate: false
@@ -952,17 +1013,55 @@
 - name: ToInt64
   gen_boilerplate: false
 
+# Takes a BigInt pointer and returns its toInt64 value.
 - name: TruncateBigIntToInt64
-  gen_boilerplate: false
+  operands:
+    input: BigInt
+  result_type: Int64
+  type_policy: none
+  alias_set: none
+  movable: true
+  clone: true
+  congruent_to: if_operands_equal
+  folds_to: custom
 
+# Takes an Int64 and returns a fresh BigInt pointer.
 - name: Int64ToBigInt
-  gen_boilerplate: false
+  operands:
+    input: Int64
+  arguments:
+    isSigned: bool
+  result_type: BigInt
+  type_policy: none
+  alias_set: none
+  movable: true
+  clone: true
+  can_recover: true
+  congruent_to: if_operands_and_arguments_equal
 
+# Takes an Int64 and returns a IntPtr.
 - name: Int64ToIntPtr
-  gen_boilerplate: false
+  operands:
+    input: Int64
+  arguments:
+    isSigned: bool
+  result_type: IntPtr
+  type_policy: none
+  alias_set: none
+  movable: true
+  clone: true
+  congruent_to: if_operands_and_arguments_equal
 
+# Takes a IntPtr and returns an Int64.
 - name: IntPtrToInt64
-  gen_boilerplate: false
+  operands:
+    input: IntPtr
+  result_type: Int64
+  type_policy: none
+  alias_set: none
+  movable: true
+  clone: true
+  congruent_to: if_operands_and_arguments_equal
 
 - name: ToString
   gen_boilerplate: false
@@ -1609,8 +1708,14 @@
   possibly_calls: true
   generate_lir: true
 
+# Unconditionally throw a known error number.
 - name: ThrowMsg
-  gen_boilerplate: false
+  arguments:
+    throwMsgKind: ThrowMsgKind
+  result_type: None
+  guard: true
+  alias_set:
+    store: ExceptionState
 
 # In the prologues of global and eval scripts, check for redeclarations and
 # initialize bindings.
@@ -3325,8 +3430,17 @@
 - name: InArray
   gen_boilerplate: false
 
+# Bail when the element is a hole.
 - name: GuardElementNotHole
-  gen_boilerplate: false
+  operands:
+    elements: Elements
+    index: Int32
+  type_policy: none
+  movable: true
+  guard: true
+  alias_set:
+    load: Element
+  congruent_to: if_operands_equal
 
 - name: NewPrivateName
   arguments:
