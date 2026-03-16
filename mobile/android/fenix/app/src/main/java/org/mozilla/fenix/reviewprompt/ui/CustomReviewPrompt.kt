@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,8 @@ import org.mozilla.fenix.reviewprompt.CustomReviewPromptStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 
 /**
  * Prompt that can show either:
@@ -193,6 +196,8 @@ private fun FoxEmojiButton(
 
         Text(
             text = label,
+            modifier = Modifier.padding(horizontal = 10.dp),
+            textAlign = TextAlign.Center,
             style = FirefoxTheme.typography.caption,
         )
     }
@@ -350,13 +355,13 @@ private fun FeedbackPromptPreview(
 @Preview
 @Composable
 private fun FoxEmojiButtonPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+    @PreviewParameter(FoxEmojiButtonLabelProvider::class) params: ThemedValue<String>,
 ) {
-    FirefoxTheme(theme) {
+    FirefoxTheme(params.theme) {
         Surface {
             FoxEmojiButton(
                 emoji = painterResource(R.drawable.review_prompt_positive_button),
-                label = "It’s great!",
+                label = params.value,
                 onClick = {},
                 modifier = Modifier
                     .padding(16.dp)
@@ -365,6 +370,9 @@ private fun FoxEmojiButtonPreview(
         }
     }
 }
+
+private class FoxEmojiButtonLabelProvider :
+    ThemedValueProvider<String>(sequenceOf("It’s great!", "It’s great! And the text is very long omg"))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
