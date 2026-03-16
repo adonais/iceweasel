@@ -9,8 +9,6 @@
 
 #include "ButtonControlFrame.h"
 #include "mozilla/Attributes.h"
-#include "nsIRollupListener.h"
-#include "nsThreadUtils.h"
 
 namespace mozilla {
 class PresShell;
@@ -26,8 +24,7 @@ class nsComboboxControlFrame final : public mozilla::ButtonControlFrame {
 
  public:
   friend class mozilla::ComboboxLabelFrame;
-  explicit nsComboboxControlFrame(ComputedStyle* aStyle,
-                                  nsPresContext* aPresContext);
+  nsComboboxControlFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
   ~nsComboboxControlFrame();
 
   NS_DECL_QUERYFRAME
@@ -67,28 +64,8 @@ class nsComboboxControlFrame final : public mozilla::ButtonControlFrame {
   int32_t CharCountOfLargestOptionForInflation() const;
 
  protected:
-  friend class RedisplayTextEvent;
-  friend class nsAsyncResize;
-  friend class nsResizeDropdownAtFinalPosition;
-
   nscoord DropDownButtonISize();
-
   nscoord GetLongestOptionISize(gfxContext*) const;
-
-  class RedisplayTextEvent : public mozilla::Runnable {
-   public:
-    NS_DECL_NSIRUNNABLE
-    explicit RedisplayTextEvent(nsComboboxControlFrame* c)
-        : mozilla::Runnable("nsComboboxControlFrame::RedisplayTextEvent"),
-          mControlFrame(c) {}
-    void Revoke() { mControlFrame = nullptr; }
-
-   private:
-    nsComboboxControlFrame* mControlFrame;
-  };
-
-  nsresult RedisplayText();
-  void HandleRedisplayTextEvent();
 
   mozilla::dom::HTMLSelectElement& Select() const;
   void GetOptionText(uint32_t aIndex, nsAString& aText) const;
@@ -96,6 +73,7 @@ class nsComboboxControlFrame final : public mozilla::ButtonControlFrame {
   // The inline size of our display area. Used by that frame's reflow to size to
   // the full inline size except the drop-marker.
   nscoord mDisplayISize = 0;
+  // TODO(emilio, bug 2023453): Move this to HTMLSelectElement.cpp
   RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 };
 
