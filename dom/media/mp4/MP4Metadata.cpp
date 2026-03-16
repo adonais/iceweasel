@@ -444,8 +444,13 @@ MP4Metadata::ResultAndTrackInfo MP4Metadata::GetTrackInfo(
     if (rv == MP4PARSE_STATUS_OK) {
       // This doesn't use the time scale of the track, but the time scale
       // indicated in the mvhd box
-      e->mDuration = TimeUnit(fragmentInfo.fragment_duration,
-                              AssertedCast<int64_t>(fragmentInfo.time_scale));
+      if (fragmentInfo.fragment_duration > TimeUnit::MaxTicks()) {
+        e->mDuration = TimeUnit::FromInfinity();
+      } else {
+        e->mDuration =
+            TimeUnit(AssertedCast<int64_t>(fragmentInfo.fragment_duration),
+                     AssertedCast<int64_t>(fragmentInfo.time_scale));
+      }
     }
   }
 

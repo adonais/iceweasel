@@ -90,11 +90,17 @@ static MediaResult VerifyAudioOrVideoInfoAndRecordTelemetry(
   glean::media_mp4_parse::num_sample_description_entries.AccumulateSingleSample(
       audioOrVideoInfo->sample_info_count);
 
+  if (audioOrVideoInfo->sample_info_count == 0) {
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_METADATA_ERR,
+        RESULT_DETAIL("Got 0 sample info while verifying track."));
+  }
+
   bool hasMultipleCodecs = false;
   uint32_t cryptoCount = 0;
   Mp4parseCodec codecType = audioOrVideoInfo->sample_info[0].codec_type;
   for (uint32_t i = 0; i < audioOrVideoInfo->sample_info_count; i++) {
-    if (audioOrVideoInfo->sample_info[0].codec_type != codecType) {
+    if (audioOrVideoInfo->sample_info[i].codec_type != codecType) {
       hasMultipleCodecs = true;
     }
 
@@ -118,12 +124,6 @@ static MediaResult VerifyAudioOrVideoInfoAndRecordTelemetry(
                                SampleDescriptionEntriesHaveMultipleCryptoLabel>(
           cryptoCount >= 2))
       .Add();
-
-  if (audioOrVideoInfo->sample_info_count == 0) {
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_METADATA_ERR,
-        RESULT_DETAIL("Got 0 sample info while verifying track."));
-  }
 
   if (hasMultipleCodecs) {
     // Different codecs in a single track. We don't handle this.
@@ -185,15 +185,12 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
   } else if (codecType == MP4PARSE_CODEC_AAC ||
              codecType == MP4PARSE_CODEC_XHEAAC) {
     mMimeType = "audio/mp4a-latm"_ns;
-    int64_t codecDelayUS = aTrack->media_time;
-    double USECS_PER_S = 1e6;
-    // We can't use mozilla::UsecsToFrames here because we need to round, and it
-    // floors.
+    int64_t codecDelayTicks = aTrack->media_time;
     uint32_t encoderDelayFrameCount = 0;
-    if (codecDelayUS > 0) {
+    if (codecDelayTicks > 0) {
       encoderDelayFrameCount = static_cast<uint32_t>(
-          std::lround(static_cast<double>(codecDelayUS) *
-                      aAudio->sample_info->sample_rate / USECS_PER_S));
+          std::lround(static_cast<double>(codecDelayTicks) *
+                      aAudio->sample_info->sample_rate / aTrack->time_scale));
       LOG("AAC stream in MP4 container, %" PRIu32 " frames of encoder delay.",
           encoderDelayFrameCount);
     }
@@ -259,8 +256,10 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
   mRate = aAudio->sample_info[0].sample_rate;
   mChannels = aAudio->sample_info[0].channels;
   mBitDepth = aAudio->sample_info[0].bit_depth;
-  mExtendedProfile =
-      AssertedCast<int8_t>(aAudio->sample_info[0].extended_profile);
+  if (aAudio->sample_info[0].extended_profile <= INT8_MAX) {
+    mExtendedProfile =
+        AssertedCast<int8_t>(aAudio->sample_info[0].extended_profile);
+  }
   if (aTrack->duration > TimeUnit::MaxTicks()) {
     mDuration = TimeUnit::FromInfinity();
   } else {
