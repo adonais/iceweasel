@@ -46,8 +46,7 @@ class StorageAccessPermissionRequest final
 
  private:
   StorageAccessPermissionRequest(nsPIDOMWindowInner* aWindow,
-                                 nsIPrincipal* aNodePrincipal,
-                                 bool aFrameOnly,
+                                 nsIPrincipal* aNodePrincipal, bool aFrameOnly,
                                  AllowCallback&& aAllowCallback,
                                  CancelCallback&& aCancelCallback);
   ~StorageAccessPermissionRequest() {

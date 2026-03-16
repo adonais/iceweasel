@@ -81,7 +81,7 @@ LoggingIdString<CheckLoggingMode>::LoggingIdString(const nsID& aID) {
     SetLength(NSID_LENGTH - 1);
 
     aID.ToProvidedString(
-        *reinterpret_cast<char(*)[NSID_LENGTH]>(BeginWriting()));
+        *reinterpret_cast<char (*)[NSID_LENGTH]>(BeginWriting()));
   }
 }
 

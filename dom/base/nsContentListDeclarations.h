@@ -38,7 +38,7 @@ using nsContentListDestroyFunc = void (*)(void* aData);
  * FuncStringContentList.  Returning aString is perfectly fine; in
  * that case the destructor function should be a no-op.
  */
-using nsFuncStringContentListDataAllocator = void* (*)(nsINode* aRootNode,
+using nsFuncStringContentListDataAllocator = void* (*)(nsINode * aRootNode,
                                                        const nsString* aString);
 
 // If aMatchNameSpaceId is kNameSpaceID_Unknown, this will return a
