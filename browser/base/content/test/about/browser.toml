@@ -11,6 +11,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1996741
 ]
 
+["browser_aboutCertError_accesskey.js"]
+
 ["browser_aboutCertError_cca_telemetry.js"]
 
 ["browser_aboutCertError_clockSkew.js"]

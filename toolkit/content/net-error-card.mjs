@@ -539,7 +539,8 @@ export class NetErrorCard extends MozLitElement {
       ${!this.hideExceptionButton
         ? html` <moz-button
             id="exception-button"
-            data-l10n-id="fp-certerror-override-exception-button"
+            data-l10n-id="fp-certerror-override-exception-button-2"
+            data-l10n-attrs="accesskey"
             data-l10n-args=${JSON.stringify({ hostname: this.hostname })}
             data-telemetry-id="exception_button"
             @click=${this.handleProceedToUrlClick}
@@ -626,7 +627,8 @@ export class NetErrorCard extends MozLitElement {
   returnButtonTemplate() {
     return html`<moz-button
       type="primary"
-      data-l10n-id="fp-certerror-return-to-previous-page-recommended-button"
+      data-l10n-id="fp-certerror-return-to-previous-page-recommended-button-2"
+      data-l10n-attrs="accesskey"
       data-telemetry-id="return_button_adv"
       id="returnButton"
       @click=${this.handleGoBackClick}
@@ -637,7 +639,8 @@ export class NetErrorCard extends MozLitElement {
     return html`<moz-button
       id="tryAgainButton"
       type="primary"
-      data-l10n-id="neterror-try-again-button"
+      data-l10n-id="neterror-try-again-button-2"
+      data-l10n-attrs="accesskey"
       data-telemetry-id="try_again_button"
       @click=${this.handleTryAgain}
     ></moz-button>`;
