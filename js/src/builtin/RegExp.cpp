@@ -783,11 +783,12 @@ bool js::regexp_construct(JSContext* cx, unsigned argc, Value* vp) {
         shared = nullptr;
       }
 
-      if (!flags.unicode() && flagsArg.unicode()) {
-        // Have to check syntax again when adding 'u' flag.
+      if ((!flags.unicode() && flagsArg.unicode()) ||
+          (!flags.unicodeSets() && flagsArg.unicodeSets())) {
+        // Have to check syntax again when adding 'u' or 'v' flag.
 
-        // ES 2017 draft rev 9b49a888e9dfe2667008a01b2754c3662059ae56
-        // 21.2.3.2.2 step 7.
+        // https://tc39.es/ecma262/#sec-regexpinitialize
+        // 22.2.3.3 step 13.
         shared = CheckPatternSyntax(cx, sourceAtom, flagsArg);
         if (!shared) {
           return false;
