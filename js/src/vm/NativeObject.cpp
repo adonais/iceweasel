@@ -1262,11 +1262,6 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(
     if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
       return true;
     }
-
-    if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
-      return true;
-    }
-
     MOZ_ALWAYS_TRUE(MaybePreserveDOMWrapper(cx, obj));
     return JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
   }
