@@ -399,11 +399,6 @@ struct NativeIterator : public NativeIteratorListNode {
     return reinterpret_cast<PropertyIndex*>(propertiesEnd());
   }
 
-  PropertyIndex* indicesEnd() const {
-    MOZ_ASSERT(flags_ & Flags::IndicesAllocated);
-    return indicesBegin() + propertyCount_ * sizeof(PropertyIndex);
-  }
-
   MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
     while (propertyCursor_ < propertyCount_) {
       IteratorProperty& prop = *nextProperty();
