@@ -72,8 +72,8 @@ class BaseAssembler : public GenericAssembler {
     // See also nop_five.
     MOZ_ASSERT(inst[0] == OP_NOP_0F || inst[0] == OP_CALL_rel32);
     MOZ_ASSERT_IF(inst[0] == OP_NOP_0F,
-                  inst[1] == OP_NOP_1F || inst[2] == OP_NOP_44 ||
-                      inst[3] == OP_NOP_00 || inst[4] == OP_NOP_00);
+                  inst[1] == OP_NOP_1F && inst[2] == OP_NOP_44 &&
+                      inst[3] == OP_NOP_00 && inst[4] == OP_NOP_00);
     inst[0] = OP_CALL_rel32;
     SetRel32(callsite, target);
   }
@@ -83,8 +83,8 @@ class BaseAssembler : public GenericAssembler {
     uint8_t* inst = callsite - sizeof(int32_t) - 1;
     // The call can be already patched as nop.
     if (inst[0] == OP_NOP_0F) {
-      MOZ_ASSERT(inst[1] == OP_NOP_1F || inst[2] == OP_NOP_44 ||
-                 inst[3] == OP_NOP_00 || inst[4] == OP_NOP_00);
+      MOZ_ASSERT(inst[1] == OP_NOP_1F && inst[2] == OP_NOP_44 &&
+                 inst[3] == OP_NOP_00 && inst[4] == OP_NOP_00);
       return;
     }
     MOZ_ASSERT(inst[0] == OP_CALL_rel32);
