@@ -78,12 +78,13 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
   if (sdBuffer.desc().type() == BufferDescriptor::TYCbCrDescriptor) {
     const YCbCrDescriptor& descriptor = sdBuffer.desc().get_YCbCrDescriptor();
 
-    size_t descriptorSize = ImageDataSerializer::ComputeYCbCrBufferSize(
+    Maybe<size_t> descriptorSize = ImageDataSerializer::ComputeYCbCrBufferSize(
         descriptor.display(), descriptor.ySize(), descriptor.yStride(),
         descriptor.cbCrSize(), descriptor.cbCrStride(), descriptor.yOffset(),
         descriptor.cbOffset(), descriptor.crOffset(), descriptor.colorDepth(),
         descriptor.chromaSubsampling());
-    if (NS_WARN_IF(descriptorSize == 0 || descriptorSize > bufferSize)) {
+    if (NS_WARN_IF(descriptorSize.isNothing() ||
+                   descriptorSize.value() > bufferSize)) {
       MOZ_ASSERT_UNREACHABLE("Buffer too small to fit descriptor!");
       return nullptr;
     }
@@ -116,9 +117,10 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
   if (sdBuffer.desc().type() == BufferDescriptor::TRGBDescriptor) {
     const RGBDescriptor& descriptor = sdBuffer.desc().get_RGBDescriptor();
 
-    size_t descriptorSize = ImageDataSerializer::ComputeRGBBufferSize(
+    Maybe<size_t> descriptorSize = ImageDataSerializer::ComputeRGBBufferSize(
         descriptor.size(), descriptor.format());
-    if (NS_WARN_IF(descriptorSize == 0 || descriptorSize > bufferSize)) {
+    if (NS_WARN_IF(descriptorSize.isNothing() ||
+                   descriptorSize.value() > bufferSize)) {
       MOZ_ASSERT_UNREACHABLE("Buffer too small to fit descriptor!");
       return nullptr;
     }

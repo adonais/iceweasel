@@ -167,17 +167,18 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
   // do not set mBuffer like in PlanarYCbCrImage because the later
   // will try to manage this memory without knowing it belongs to a
   // shmem.
-  mBufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
+  Maybe<uint32_t> bufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
       mData.mPictureRect, aYSize, mData.mYStride, aCbCrSize, mData.mCbCrStride,
       mData.mColorDepth, mData.mChromaSubsampling);
+  mBufferSize = bufferSize.valueOr(0);
   mSize = mData.mPictureRect.Size();
   mOrigin = mData.mPictureRect.TopLeft();
 
   mTextureClient->Unlock();
 
-  // ImageDataSerializer::ComputeYCbCrBufferSize may return zero when the size
-  // requested is out of the limit.
-  return mBufferSize > 0 ? NS_OK : NS_ERROR_INVALID_ARG;
+  // ImageDataSerializer::ComputeYCbCrBufferSize may return Nothing() when the
+  // size requested is out of the limit.
+  return bufferSize.isSome() ? NS_OK : NS_ERROR_INVALID_ARG;
 }
 
 void SharedPlanarYCbCrImage::SetIsDRM(bool aIsDRM) {

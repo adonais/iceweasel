@@ -30,26 +30,23 @@ int32_t ComputeRGBStride(gfx::SurfaceFormat aFormat, int32_t aWidth);
 
 int32_t GetRGBStride(const RGBDescriptor& aDescriptor);
 
-uint32_t ComputeRGBBufferSize(gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
+Maybe<uint32_t> ComputeRGBBufferSize(gfx::IntSize aSize,
+                                     gfx::SurfaceFormat aFormat);
 
 // YCbCr
 
 /// This function is meant as a helper to know how much shared memory we need
 /// to allocate in a shmem in order to place a shared YCbCr image blob of
 /// given dimensions.
-uint32_t ComputeYCbCrBufferSize(const gfx::IntRect& aDisplay,
-                                const gfx::IntSize& aYSize, int32_t aYStride,
-                                const gfx::IntSize& aCbCrSize,
-                                int32_t aCbCrStride, gfx::ColorDepth aDepth,
-                                const gfx::ChromaSubsampling aSubsampling);
-uint32_t ComputeYCbCrBufferSize(const gfx::IntRect& aDisplay,
-                                const gfx::IntSize& aYSize, int32_t aYStride,
-                                const gfx::IntSize& aCbCrSize,
-                                int32_t aCbCrStride, uint32_t aYOffset,
-                                uint32_t aCbOffset, uint32_t aCrOffset,
-                                gfx::ColorDepth aDepth,
-                                const gfx::ChromaSubsampling aSubsampling);
-uint32_t ComputeYCbCrBufferSize(uint32_t aBufferSize);
+Maybe<uint32_t> ComputeYCbCrBufferSize(
+    const gfx::IntRect& aDisplay, const gfx::IntSize& aYSize, int32_t aYStride,
+    const gfx::IntSize& aCbCrSize, int32_t aCbCrStride, gfx::ColorDepth aDepth,
+    const gfx::ChromaSubsampling aSubsampling);
+Maybe<uint32_t> ComputeYCbCrBufferSize(
+    const gfx::IntRect& aDisplay, const gfx::IntSize& aYSize, int32_t aYStride,
+    const gfx::IntSize& aCbCrSize, int32_t aCbCrStride, uint32_t aYOffset,
+    uint32_t aCbOffset, uint32_t aCrOffset, gfx::ColorDepth aDepth,
+    const gfx::ChromaSubsampling aSubsampling);
 
 void ComputeYCbCrOffsets(int32_t yStride, int32_t yHeight, int32_t cbCrStride,
                          int32_t cbCrHeight, uint32_t& outYOffset,

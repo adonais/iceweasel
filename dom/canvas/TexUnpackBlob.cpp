@@ -1108,9 +1108,9 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
         gfxCriticalError() << "TexUnpackSurface failed to get rgb stride";
         return false;
       }
-      size_t bufSize = layers::ImageDataSerializer::ComputeRGBBufferSize(
+      Maybe<size_t> bufSize = layers::ImageDataSerializer::ComputeRGBBufferSize(
           rgb.size(), rgb.format());
-      if (!bufSize || bufSize > shmemSize) {
+      if (bufSize.isNothing() || bufSize.value() > shmemSize) {
         gfxCriticalError() << "TexUnpackSurface failed to get rgb buffer size";
         return false;
       }

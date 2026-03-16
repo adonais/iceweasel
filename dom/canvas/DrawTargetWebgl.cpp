@@ -449,13 +449,14 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
     return false;
   }
 
-  size_t byteSize = layers::ImageDataSerializer::ComputeRGBBufferSize(
+  Maybe<size_t> byteSize = layers::ImageDataSerializer::ComputeRGBBufferSize(
       mSize, SurfaceFormat::B8G8R8A8);
-  if (byteSize == 0) {
+  if (byteSize.isNothing()) {
     return false;
   }
 
-  size_t shmemSize = mozilla::ipc::shared_memory::PageAlignedSize(byteSize);
+  size_t shmemSize =
+      mozilla::ipc::shared_memory::PageAlignedSize(byteSize.value());
   if (NS_WARN_IF(shmemSize > UINT32_MAX)) {
     MOZ_ASSERT_UNREACHABLE("Buffer too big?");
     return false;

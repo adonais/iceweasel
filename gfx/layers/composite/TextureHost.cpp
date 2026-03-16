@@ -271,7 +271,7 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
           }
 
           size_t bufSize = shmem.Size<char>();
-          size_t reqSize = SIZE_MAX;
+          Maybe<size_t> reqSize;
           switch (desc.type()) {
             case BufferDescriptor::TYCbCrDescriptor: {
               const YCbCrDescriptor& ycbcr = desc.get_YCbCrDescriptor();
@@ -294,7 +294,7 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
               MOZ_CRASH("GFX: Bad descriptor");
           }
 
-          if (reqSize == 0 || bufSize < reqSize) {
+          if (reqSize.isNothing() || bufSize < reqSize.value()) {
             NS_ERROR(
                 "A client process gave a shmem too small to fit for its "
                 "descriptor!");

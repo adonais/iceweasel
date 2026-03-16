@@ -168,7 +168,8 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
 
   static size_t GetExportSurfaceSize(gfx::SourceSurface* aSurface) {
     return ImageDataSerializer::ComputeRGBBufferSize(aSurface->GetSize(),
-                                                     aSurface->GetFormat());
+                                                     aSurface->GetFormat())
+        .valueOr(0);
   }
 
   bool GetSurfaceDescriptor(SurfaceDescriptor& aDesc) final {
@@ -520,10 +521,11 @@ size_t CanvasChild::SizeOfDataSurfaceShmem(gfx::IntSize aSize,
   if (!mRecorder) {
     return 0;
   }
-  size_t sizeRequired =
+  Maybe<uint32_t> sizeRequired =
       ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
-  return sizeRequired > 0 ? ipc::shared_memory::PageAlignedSize(sizeRequired)
-                          : 0;
+  return sizeRequired.isSome()
+             ? ipc::shared_memory::PageAlignedSize(size_t(sizeRequired.value()))
+             : 0;
 }
 
 bool CanvasChild::ShouldGrowDataSurfaceShmem(size_t aSizeRequired) {

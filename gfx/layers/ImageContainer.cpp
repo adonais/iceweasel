@@ -210,14 +210,15 @@ ImageContainer::~ImageContainer() {
     SurfaceDescriptorBuffer& aSdBuffer, int32_t& aStride,
     const std::function<layers::MemoryOrShmem(uint32_t)>& aAllocate) {
   aStride = ImageDataSerializer::ComputeRGBStride(aFormat, aSize.width);
-  size_t length = ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
+  Maybe<uint32_t> length =
+      ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
 
-  if (aStride <= 0 || length == 0) {
+  if (aStride <= 0 || length.isNothing()) {
     return NS_ERROR_INVALID_ARG;
   }
 
   aSdBuffer.desc() = RGBDescriptor(aSize, aFormat);
-  aSdBuffer.data() = aAllocate(length);
+  aSdBuffer.data() = aAllocate(length.value());
 
   const layers::MemoryOrShmem& memOrShmem = aSdBuffer.data();
   switch (memOrShmem.type()) {
@@ -812,15 +813,15 @@ nsresult PlanarYCbCrImage::BuildSurfaceDescriptorBuffer(
                                            pdata->mCbCrStride, cbcrSize.height,
                                            yOffset, cbOffset, crOffset);
 
-  uint32_t bufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
+  Maybe<uint32_t> bufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
       pdata->mPictureRect, ySize, pdata->mYStride, cbcrSize, pdata->mCbCrStride,
       yOffset, cbOffset, crOffset, pdata->mColorDepth,
       pdata->mChromaSubsampling);
-  if (bufferSize == 0) {
+  if (bufferSize.isNothing()) {
     return NS_ERROR_FAILURE;
   }
 
-  aSdBuffer.data() = aAllocate(bufferSize);
+  aSdBuffer.data() = aAllocate(bufferSize.value());
 
   uint8_t* buffer = nullptr;
   const MemoryOrShmem& memOrShmem = aSdBuffer.data();

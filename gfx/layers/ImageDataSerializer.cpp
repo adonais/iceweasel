@@ -33,13 +33,13 @@ int32_t GetRGBStride(const RGBDescriptor& aDescriptor) {
   return ComputeRGBStride(aDescriptor.format(), aDescriptor.size().width);
 }
 
-uint32_t ComputeRGBBufferSize(IntSize aSize, SurfaceFormat aFormat) {
+Maybe<uint32_t> ComputeRGBBufferSize(IntSize aSize, SurfaceFormat aFormat) {
   MOZ_ASSERT(aSize.height >= 0 && aSize.width >= 0);
 
   // This takes care of checking whether there could be overflow
   // with enough margin for the metadata.
   if (!gfx::Factory::AllowedSurfaceSize(aSize)) {
-    return 0;
+    return Nothing();
   }
 
   // Note we're passing height instad of the bpp parameter, but the end
@@ -48,12 +48,12 @@ uint32_t ComputeRGBBufferSize(IntSize aSize, SurfaceFormat aFormat) {
   int32_t bufsize = GetAlignedStride<16>(ComputeRGBStride(aFormat, aSize.width),
                                          aSize.height);
 
-  if (bufsize < 0) {
+  if (bufsize <= 0) {
     // This should not be possible thanks to Factory::AllowedSurfaceSize
-    return 0;
+    return Nothing();
   }
 
-  return bufsize;
+  return Some(uint32_t(bufsize));
 }
 
 static bool CheckYCbCrStride(const gfx::IntSize& aSize, int32_t aStride,
@@ -65,11 +65,10 @@ static bool CheckYCbCrStride(const gfx::IntSize& aSize, int32_t aStride,
 }
 
 // Minimum required shmem size in bytes
-uint32_t ComputeYCbCrBufferSize(const gfx::IntRect& aDisplay,
-                                const gfx::IntSize& aYSize, int32_t aYStride,
-                                const gfx::IntSize& aCbCrSize,
-                                int32_t aCbCrStride, gfx::ColorDepth aDepth,
-                                const ChromaSubsampling aSubsampling) {
+Maybe<uint32_t> ComputeYCbCrBufferSize(
+    const gfx::IntRect& aDisplay, const gfx::IntSize& aYSize, int32_t aYStride,
+    const gfx::IntSize& aCbCrSize, int32_t aCbCrStride, gfx::ColorDepth aDepth,
+    const ChromaSubsampling aSubsampling) {
   MOZ_ASSERT(aYSize.height >= 0 && aYSize.width >= 0);
 
   if (aDisplay.IsEmpty() || aDisplay.x < 0 || aDisplay.y < 0 ||
@@ -82,7 +81,7 @@ uint32_t ComputeYCbCrBufferSize(const gfx::IntRect& aDisplay,
       !CheckYCbCrStride(aYSize, aYStride, aDepth) ||
       !CheckYCbCrStride(aCbCrSize, aCbCrStride, aDepth) ||
       !(ChromaSize(aYSize, aSubsampling) <= aCbCrSize)) {
-    return 0;
+    return Nothing();
   }
 
   // Overflow checks are performed only individually in AllowedSurfaceSize
@@ -90,29 +89,27 @@ uint32_t ComputeYCbCrBufferSize(const gfx::IntRect& aDisplay,
       CheckedInt<uint32_t>(GetAlignedStride<4>(aYSize.height, aYStride)) +
       CheckedInt<uint32_t>(GetAlignedStride<4>(aCbCrSize.height, aCbCrStride)) *
           2;
-  if (!bufLen.isValid()) {
-    return 0;
+  if (!bufLen.isValid() || bufLen.value() <= 0) {
+    return Nothing();
   }
-  return bufLen.value();
+  return Some(bufLen.value());
 }
 
-uint32_t ComputeYCbCrBufferSize(const gfx::IntRect& aDisplay,
-                                const gfx::IntSize& aYSize, int32_t aYStride,
-                                const gfx::IntSize& aCbCrSize,
-                                int32_t aCbCrStride, uint32_t aYOffset,
-                                uint32_t aCbOffset, uint32_t aCrOffset,
-                                gfx::ColorDepth aDepth,
-                                const ChromaSubsampling aSubsampling) {
-  uint32_t minBufLen = ComputeYCbCrBufferSize(
+Maybe<uint32_t> ComputeYCbCrBufferSize(
+    const gfx::IntRect& aDisplay, const gfx::IntSize& aYSize, int32_t aYStride,
+    const gfx::IntSize& aCbCrSize, int32_t aCbCrStride, uint32_t aYOffset,
+    uint32_t aCbOffset, uint32_t aCrOffset, gfx::ColorDepth aDepth,
+    const ChromaSubsampling aSubsampling) {
+  Maybe<uint32_t> minBufLen = ComputeYCbCrBufferSize(
       aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride, aDepth, aSubsampling);
-  if (minBufLen == 0) {
-    return 0;
+  if (minBufLen.isNothing()) {
+    return Nothing();
   }
 
   uint32_t yLength = GetAlignedStride<4>(aYStride, aYSize.height);
   uint32_t cbCrLength = GetAlignedStride<4>(aCbCrStride, aCbCrSize.height);
   if (yLength == 0 || cbCrLength == 0) {
-    return 0;
+    return Nothing();
   }
 
   CheckedInt<uint32_t> yEnd = aYOffset;
@@ -124,15 +121,12 @@ uint32_t ComputeYCbCrBufferSize(const gfx::IntRect& aDisplay,
 
   if (!yEnd.isValid() || !cbEnd.isValid() || !crEnd.isValid() ||
       yEnd.value() > aCbOffset || cbEnd.value() > aCrOffset ||
-      crEnd.value() < minBufLen) {
-    return 0;
+      crEnd.value() < minBufLen.value()) {
+    return Nothing();
   }
 
-  return crEnd.value();
-}
-
-uint32_t ComputeYCbCrBufferSize(uint32_t aBufferSize) {
-  return GetAlignedStride<4>(aBufferSize, 1);
+  MOZ_ASSERT(crEnd.value() > 0);
+  return Some(crEnd.value());
 }
 
 void ComputeYCbCrOffsets(int32_t yStride, int32_t yHeight, int32_t cbCrStride,

@@ -157,10 +157,10 @@ BufferTextureData* BufferTextureData::CreateForYCbCr(
     gfx::ColorDepth aColorDepth, gfx::YUVColorSpace aYUVColorSpace,
     gfx::ColorRange aColorRange, gfx::ChromaSubsampling aSubsampling,
     TextureFlags aTextureFlags) {
-  uint32_t bufSize = ImageDataSerializer::ComputeYCbCrBufferSize(
+  Maybe<uint32_t> bufSize = ImageDataSerializer::ComputeYCbCrBufferSize(
       aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride, aColorDepth,
       aSubsampling);
-  if (bufSize == 0) {
+  if (bufSize.isNothing()) {
     return nullptr;
   }
 
@@ -178,7 +178,7 @@ BufferTextureData* BufferTextureData::CreateForYCbCr(
 
   return CreateInternal(
       aAllocator ? aAllocator->GetTextureForwarder() : nullptr, descriptor,
-      gfx::BackendType::NONE, bufSize, aTextureFlags);
+      gfx::BackendType::NONE, bufSize.value(), aTextureFlags);
 }
 
 void BufferTextureData::FillInfo(TextureData::Info& aInfo) const {
@@ -441,13 +441,14 @@ MemoryTextureData* MemoryTextureData::Create(gfx::IntSize aSize,
     return nullptr;
   }
 
-  uint32_t bufSize = ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
-  if (!bufSize) {
+  Maybe<uint32_t> bufSize =
+      ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
+  if (bufSize.isNothing()) {
     return nullptr;
   }
 
-  uint8_t* buf = new (fallible) uint8_t[bufSize];
-  if (!InitBuffer(buf, bufSize, aFormat, aAllocFlags, false)) {
+  uint8_t* buf = new (fallible) uint8_t[bufSize.value()];
+  if (!InitBuffer(buf, bufSize.value(), aFormat, aAllocFlags, false)) {
     return nullptr;
   }
 
@@ -459,7 +460,7 @@ MemoryTextureData* MemoryTextureData::Create(gfx::IntSize aSize,
   // that memory is freed when the owning MemoryTextureData goes away.
   bool autoDeallocate = !!(aFlags & TextureFlags::REMOTE_TEXTURE);
   bool isClear = (aAllocFlags & ALLOC_CLEAR_BUFFER) != 0;
-  return new MemoryTextureData(descriptor, aMoz2DBackend, buf, bufSize,
+  return new MemoryTextureData(descriptor, aMoz2DBackend, buf, bufSize.value(),
                                autoDeallocate, isClear);
 }
 
@@ -511,18 +512,19 @@ ShmemTextureData* ShmemTextureData::Create(gfx::IntSize aSize,
     return nullptr;
   }
 
-  uint32_t bufSize = ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
-  if (!bufSize) {
+  Maybe<uint32_t> bufSize =
+      ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
+  if (bufSize.isNothing()) {
     return nullptr;
   }
 
   mozilla::ipc::Shmem shm;
-  if (!aAllocator->AllocUnsafeShmem(bufSize, &shm)) {
+  if (!aAllocator->AllocUnsafeShmem(bufSize.value(), &shm)) {
     return nullptr;
   }
 
   uint8_t* buf = shm.get<uint8_t>();
-  if (!InitBuffer(buf, bufSize, aFormat, aAllocFlags, true)) {
+  if (!InitBuffer(buf, bufSize.value(), aFormat, aAllocFlags, true)) {
     return nullptr;
   }
 

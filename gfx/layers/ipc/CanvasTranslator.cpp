@@ -447,9 +447,9 @@ void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
   gfx::SurfaceFormat format = dataSurface->GetFormat();
   int32_t dstStride =
       ImageDataSerializer::ComputeRGBStride(format, dstSize.width);
-  auto requiredSize =
+  Maybe<uint32_t> requiredSize =
       ImageDataSerializer::ComputeRGBBufferSize(dstSize, format);
-  if (requiredSize <= 0) {
+  if (requiredSize.isNothing()) {
     return;
   }
 
@@ -463,7 +463,7 @@ void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
   }
 
   // Try directly reading the data surface into shmem to avoid further copies.
-  if (size_t(requiredSize) > it->second.mShmem.Size()) {
+  if (size_t(requiredSize.value()) > it->second.mShmem.Size()) {
     return;
   }
 
