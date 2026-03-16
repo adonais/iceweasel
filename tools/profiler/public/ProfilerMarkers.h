@@ -621,12 +621,18 @@ namespace detail {
 
 // Implement this here to prevent BaseProfilerMarkersPrerequisites from pulling
 // in nsString.h
-template <>
-inline void StreamPayload<ProfilerString16View>(
-    baseprofiler::SpliceableJSONWriter& aWriter, const Span<const char> aKey,
-    const ProfilerString16View& aPayload) {
-  aWriter.StringProperty(aKey, NS_ConvertUTF16toUTF8(aPayload));
-}
+template <MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<ProfilerString16View, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey,
+                     const ProfilerString16View& aPayload) {
+    if constexpr (aFormat == MarkerSchema::Format::UniqueString) {
+      aWriter.UniqueStringProperty(aKey, NS_ConvertUTF16toUTF8(aPayload));
+    } else {
+      aWriter.StringProperty(aKey, NS_ConvertUTF16toUTF8(aPayload));
+    }
+  }
+};
 
 }  // namespace detail
 }  // namespace mozilla

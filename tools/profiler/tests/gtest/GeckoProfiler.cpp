@@ -2342,6 +2342,27 @@ class MockClassOfService final : public nsIClassOfService {
 
 NS_IMPL_ISUPPORTS(MockClassOfService, nsIClassOfService)
 
+// BaseMarkerType-based marker with Format::UniqueString payload fields.
+// Must be at file scope since local structs cannot have static data members.
+struct GtestBaseMarkerTypeUniqueString
+    : public mozilla::BaseMarkerType<GtestBaseMarkerTypeUniqueString> {
+  static constexpr const char* Name = "markers-gtest-base-unique-string";
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"uniqueField", MS::InputType::CString, "Unique Field",
+       MS::Format::UniqueString},
+      {"plainField", MS::InputType::CString, "Plain Field",
+       MS::Format::String}};
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+      const mozilla::ProfilerString8View& aUniqueText,
+      const mozilla::ProfilerString8View& aPlainText) {
+    StreamJSONMarkerDataImpl(aWriter, aUniqueText, aPlainText);
+  }
+};
+
 TEST(GeckoProfiler, Markers)
 {
   uint32_t features = ProfilerFeature::StackWalk;
@@ -2538,6 +2559,11 @@ TEST(GeckoProfiler, Markers)
 
   // Make sure the compiler doesn't complain about this unused struct.
   (void)GtestUnusedMarker{};
+
+  EXPECT_TRUE(profiler_add_marker_impl(
+      "Gtest base marker type unique string", geckoprofiler::category::OTHER,
+      {}, GtestBaseMarkerTypeUniqueString{}, "gtest unique field value",
+      "gtest plain field value"));
 
   // Test PROFILER_MARKER_SIMPLE_PAYLOAD with various data types.
   int testInt = 42;
@@ -2896,6 +2922,7 @@ TEST(GeckoProfiler, Markers)
     S_FirstMarker,
     S_CustomMarker,
     S_SpecialMarker,
+    S_BaseMarkerTypeUniqueString,
     S_SimplePayload_int,
     S_SimplePayload_double,
     S_SimplePayload_bool,
@@ -3187,6 +3214,21 @@ TEST(GeckoProfiler, Markers)
                   state = State(S_SpecialMarker + 1);
                   EXPECT_EQ(typeString, "markers-gtest-special");
                   EXPECT_EQ(payload.size(), 1u) << "Only 'type' in the payload";
+
+                } else if (nameString ==
+                           "Gtest base marker type unique string") {
+                  EXPECT_EQ(state, S_BaseMarkerTypeUniqueString);
+                  state = State(S_BaseMarkerTypeUniqueString + 1);
+                  EXPECT_EQ(typeString, "markers-gtest-base-unique-string");
+                  // uniqueField should be stored as a unique-string index.
+                  ASSERT_TRUE(payload["uniqueField"].isUInt());
+                  auto uniqueIndex = payload["uniqueField"].asUInt();
+                  GET_JSON(uniqueValue, stringTable[uniqueIndex], String);
+                  ASSERT_TRUE(uniqueValue.isString());
+                  EXPECT_EQ(uniqueValue.asString(), "gtest unique field value");
+                  // plainField should be stored as a regular string.
+                  EXPECT_EQ_JSON(payload["plainField"], String,
+                                 "gtest plain field value");
 
                 } else if (nameString == "SimplePayload with int") {
                   EXPECT_EQ(state, S_SimplePayload_int);
@@ -3709,6 +3751,23 @@ TEST(GeckoProfiler, Markers)
             EXPECT_TRUE(data[17u]["label"].isNull());
             EXPECT_EQ_JSON(data[17u]["format"], String, "string");
             EXPECT_EQ_JSON(data[17u]["hidden"], Bool, true);
+
+          } else if (nameString == "markers-gtest-base-unique-string") {
+            EXPECT_EQ(display.size(), 2u);
+            EXPECT_EQ(display[0u].asString(), "marker-chart");
+            EXPECT_EQ(display[1u].asString(), "marker-table");
+
+            ASSERT_EQ(data.size(), 2u);
+
+            ASSERT_TRUE(data[0u].isObject());
+            EXPECT_EQ_JSON(data[0u]["key"], String, "uniqueField");
+            EXPECT_EQ_JSON(data[0u]["label"], String, "Unique Field");
+            EXPECT_EQ_JSON(data[0u]["format"], String, "unique-string");
+
+            ASSERT_TRUE(data[1u].isObject());
+            EXPECT_EQ_JSON(data[1u]["key"], String, "plainField");
+            EXPECT_EQ_JSON(data[1u]["label"], String, "Plain Field");
+            EXPECT_EQ_JSON(data[1u]["format"], String, "string");
 
           } else if (nameString == "markers-gtest-special") {
             EXPECT_EQ(display.size(), 0u);
