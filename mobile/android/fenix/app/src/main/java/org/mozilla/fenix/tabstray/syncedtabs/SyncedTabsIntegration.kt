@@ -85,7 +85,7 @@ class SyncedTabsIntegration(
     }
 
     override fun startLoading() {
-        if (!store.state.syncing) {
+        if (!store.state.sync.isSyncing) {
             store.dispatch(TabsTrayAction.SyncNow)
         }
     }

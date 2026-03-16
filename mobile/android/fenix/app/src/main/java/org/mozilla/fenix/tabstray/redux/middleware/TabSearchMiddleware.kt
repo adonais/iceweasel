@@ -36,9 +36,14 @@ class TabSearchMiddleware(
         when (action) {
             is TabSearchAction.SearchQueryChanged -> {
                 scope.launch {
-                    val tabs = when (store.state.selectedPage) {
-                        Page.NormalTabs -> store.state.normalTabs + store.state.inactiveTabs
-                        Page.PrivateTabs -> store.state.privateTabs
+                    val state = store.state
+                    val tabs = when (state.selectedPage) {
+                        Page.NormalTabs -> {
+                            state.normalTabs + state.inactiveTabs.tabs
+                        }
+                        Page.PrivateTabs -> {
+                            state.privateBrowsing.tabs
+                        }
                         else -> emptyList()
                     }
 

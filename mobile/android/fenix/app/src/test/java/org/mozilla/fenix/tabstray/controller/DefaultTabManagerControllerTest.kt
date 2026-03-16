@@ -276,7 +276,7 @@ class DefaultTabManagerControllerTest {
 
     @Test
     fun `GIVEN the user is on the synced tabs page WHEN the fab is clicked THEN fire off a sync action`() {
-        every { trayStore.state.syncing } returns false
+        every { trayStore.state.sync.isSyncing } returns false
 
         createController().handleSyncedTabsFabClick()
 
@@ -285,7 +285,7 @@ class DefaultTabManagerControllerTest {
 
     @Test
     fun `GIVEN the user is on the synced tabs page and there is already an active sync WHEN the fab is clicked THEN no action should be taken`() {
-        every { trayStore.state.syncing } returns true
+        every { trayStore.state.sync.isSyncing } returns true
 
         createController().handleSyncedTabsFabClick()
 

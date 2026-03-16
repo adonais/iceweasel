@@ -111,22 +111,22 @@ class TabsTrayStoreTest {
     fun `WHEN sync now action is triggered THEN update the sync now boolean`() {
         val store = TabsTrayStore()
 
-        assertFalse(store.state.syncing)
+        assertFalse(store.state.sync.isSyncing)
 
         store.dispatch(TabsTrayAction.SyncNow)
 
-        assertTrue(store.state.syncing)
+        assertTrue(store.state.sync.isSyncing)
     }
 
     @Test
     fun `WHEN sync is complete THEN the syncing boolean is updated`() {
-        val store = TabsTrayStore(initialState = TabsTrayState(syncing = true))
+        val store = TabsTrayStore(initialState = TabsTrayState(sync = TabsTrayState.SyncState(isSyncing = true)))
 
-        assertTrue(store.state.syncing)
+        assertTrue(store.state.sync.isSyncing)
 
         store.dispatch(TabsTrayAction.SyncCompleted)
 
-        assertFalse(store.state.syncing)
+        assertFalse(store.state.sync.isSyncing)
     }
 
     @Test
@@ -141,13 +141,16 @@ class TabsTrayStoreTest {
 
     @Test
     fun `WHEN UpdateInactiveExpanded is dispatched THEN update inactiveTabsExpanded`() {
-        val tabsTrayStore =
-            TabsTrayStore(initialState = TabsTrayState(inactiveTabsExpanded = false))
+        val tabsTrayStore = TabsTrayStore(
+            initialState = TabsTrayState(
+                inactiveTabs = TabsTrayState.InactiveTabsState(isExpanded = false),
+            ),
+        )
 
-        assertFalse(tabsTrayStore.state.inactiveTabsExpanded)
+        assertFalse(tabsTrayStore.state.inactiveTabs.isExpanded)
 
         tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveExpanded(true))
 
-        assertTrue(tabsTrayStore.state.inactiveTabsExpanded)
+        assertTrue(tabsTrayStore.state.inactiveTabs.isExpanded)
     }
 }

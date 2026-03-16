@@ -26,7 +26,7 @@ class SyncButtonBinding(
     private val onSyncNow: () -> Unit,
 ) : AbstractBinding<TabsTrayState>(tabsTrayStore, mainDispatcher) {
     override suspend fun onState(flow: Flow<TabsTrayState>) {
-        flow.map { it.syncing }
+        flow.map { it.sync.isSyncing }
             .distinctUntilChanged()
             .collect { syncingNow ->
                 if (syncingNow) {

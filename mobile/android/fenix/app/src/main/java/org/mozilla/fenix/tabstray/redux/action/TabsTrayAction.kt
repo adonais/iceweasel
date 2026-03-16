@@ -154,4 +154,21 @@ sealed interface TabsTrayAction : Action {
      * [TabsTrayAction] fired when the user clicks on the back button or swipes to navigate back.
      */
     object NavigateBackInvoked : TabsTrayAction
+
+    /**
+     * Updates the private browsing lock status.
+     *
+     * @property isLocked Whether the private browsing mode is currently locked by biometrics/passcode.
+     */
+    data class UpdatePbmLockStatus(val isLocked: Boolean) : TabsTrayAction
+
+    /**
+     * [TabsTrayAction] fired when the user dismisses the Inactive Tabs CFR.
+     */
+    object DismissInactiveTabsCFR : TabsTrayAction
+
+    /**
+     * [TabsTrayAction] fired when the user dismisses the inactive tabs auto-close dialog.
+     */
+    object DismissInactiveTabsAutoCloseDialog : TabsTrayAction
 }

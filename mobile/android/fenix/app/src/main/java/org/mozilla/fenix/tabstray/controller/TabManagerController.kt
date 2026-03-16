@@ -278,7 +278,7 @@ class DefaultTabManagerController(
     }
 
     override fun handleSyncedTabsFabClick() {
-        if (!tabsTrayStore.state.syncing) {
+        if (!tabsTrayStore.state.sync.isSyncing) {
             tabsTrayStore.dispatch(TabsTrayAction.SyncNow)
         }
     }

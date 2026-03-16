@@ -14,7 +14,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,7 +78,7 @@ internal fun NormalTabsPage(
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onItemLongClick: (TabsTrayItem) -> Unit,
-    shouldShowInactiveTabsAutoCloseDialog: (Int) -> Boolean,
+    shouldShowInactiveTabsAutoCloseDialog: Boolean,
     onInactiveTabsHeaderClick: (Boolean) -> Unit,
     onDeleteAllInactiveTabsClick: () -> Unit,
     onInactiveTabsAutoCloseDialogShown: () -> Unit,
@@ -88,20 +87,14 @@ internal fun NormalTabsPage(
     onInactiveTabClick: (TabsTrayItem.Tab) -> Unit,
     onInactiveTabClose: (TabsTrayItem.Tab) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
-    shouldShowInactiveTabsCFR: () -> Boolean,
+    shouldShowInactiveTabsCFR: Boolean,
     onInactiveTabsCFRShown: () -> Unit,
     onInactiveTabsCFRClick: () -> Unit,
     onInactiveTabsCFRDismiss: () -> Unit,
     onTabDragStart: () -> Unit,
 ) {
     if (normalTabs.isNotEmpty() || inactiveTabs.isNotEmpty()) {
-        val showInactiveTabsAutoCloseDialog by remember(inactiveTabs) {
-            derivedStateOf {
-                shouldShowInactiveTabsAutoCloseDialog(inactiveTabs.size)
-            }
-        }
-
-        var showAutoCloseDialog by remember { mutableStateOf(showInactiveTabsAutoCloseDialog) }
+        var showAutoCloseDialog by remember { mutableStateOf(shouldShowInactiveTabsAutoCloseDialog) }
 
         val optionalInactiveTabsHeader: (@Composable () -> Unit)? = if (inactiveTabs.isEmpty()) {
             null
@@ -111,7 +104,7 @@ internal fun NormalTabsPage(
                     inactiveTabs = inactiveTabs,
                     expanded = inactiveTabsExpanded,
                     showAutoCloseDialog = showAutoCloseDialog,
-                    showCFR = shouldShowInactiveTabsCFR(),
+                    showCFR = shouldShowInactiveTabsCFR,
                     onHeaderClick = onInactiveTabsHeaderClick,
                     onDeleteAllButtonClick = onDeleteAllInactiveTabsClick,
                     onAutoCloseDismissClick = {
@@ -131,7 +124,7 @@ internal fun NormalTabsPage(
             }
         }
 
-        if (showInactiveTabsAutoCloseDialog) {
+        if (shouldShowInactiveTabsAutoCloseDialog) {
             onInactiveTabsAutoCloseDialogShown()
         }
 
