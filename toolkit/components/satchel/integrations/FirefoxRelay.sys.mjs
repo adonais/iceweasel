@@ -257,20 +257,47 @@ async function showReusableMasksAsync(browser, origin, error) {
     return null;
   }
 
+  // Parse the mask count from the error message
+  let maskCount = 5;
+  if (error?.detail) {
+    const match = error.detail.match(/(\d+)\s+(?:free\s+)?email\s+masks?/i);
+    if (match) {
+      maskCount = parseInt(match[1], 10);
+    }
+  }
+
   let fillUsername;
   const fillUsernamePromise = new Promise(resolve => (fillUsername = resolve));
-  const [getUnlimitedMasksStrings] = await formatMessages(
-    "firefox-relay-get-unlimited-masks"
+  const [
+    seeAllMasksStrings,
+    dismissStrings,
+    headerMessage,
+    bodyMessage,
+    selectLabelMessage,
+  ] = await formatMessages(
+    "firefox-relay-see-all-masks",
+    "firefox-relay-dismiss",
+    { id: "firefox-relay-reuse-masks-header", args: { count: maskCount } },
+    "firefox-relay-reuse-masks-description",
+    "firefox-relay-reuse-masks-select-label"
   );
-  const getUnlimitedMasks = {
-    label: getUnlimitedMasksStrings.label,
-    accessKey: getUnlimitedMasksStrings.accesskey,
+  const seeAllMasks = {
+    label: seeAllMasksStrings.label,
+    accessKey: seeAllMasksStrings.accesskey,
     dismiss: true,
     async callback() {
       Glean.relayIntegration.getUnlimitedMasksReusePanel.record({
         value: gFlowId,
       });
       browser.ownerGlobal.openWebLinkIn(gConfig.manageURL, "tab");
+    },
+  };
+  const dismiss = {
+    label: dismissStrings.label,
+    accessKey: dismissStrings.accesskey,
+    dismiss: true,
+    callback() {
+      // Just dismiss the notification
     },
   };
 
@@ -287,11 +314,58 @@ async function showReusableMasksAsync(browser, origin, error) {
       return;
     }
 
-    customizeNotificationHeader(notification);
+    // Set custom header with dynamic mask count
+    const doc = notification.owner.panel.ownerDocument;
+    const description = doc.querySelector(
+      `description[popupid=${notification.id}]`
+    );
 
-    notification.owner.panel.getElementsByClassName(
-      "error-message"
-    )[0].textContent = error.detail || "";
+    const headerDiv = doc.createElement("div");
+    headerDiv.className = "relay-integration-header-variation";
+    headerDiv.style.marginBottom = "0";
+    const headerP = doc.createElement("p");
+    headerP.textContent = headerMessage;
+    headerP.style.marginBottom = "0";
+    headerDiv.appendChild(headerP);
+    description.replaceChildren(headerDiv);
+
+    // Set body message with learn more link
+    const errorMessageEl =
+      notification.owner.panel.getElementsByClassName("error-message")[0];
+    errorMessageEl.textContent = "";
+    errorMessageEl.style.marginTop = "8px";
+    const bodyP = doc.createElement("p");
+    bodyP.style.marginTop = "0";
+    bodyP.style.marginBottom = "0";
+
+    // Parse the message and create link for the labeled part
+    const parts = bodyMessage.split(/<label[^>]*>|<\/label>/);
+    parts.forEach((part, index) => {
+      if (index % 2 === 0) {
+        bodyP.appendChild(doc.createTextNode(part));
+      } else {
+        const link = doc.createElement("a");
+        link.href = gConfig.manageURL;
+        link.className = "text-link";
+        link.textContent = part;
+        link.addEventListener("click", event => {
+          event.preventDefault();
+          browser.ownerGlobal.openWebLinkIn(gConfig.manageURL, "tab");
+        });
+        bodyP.appendChild(link);
+      }
+    });
+
+    errorMessageEl.appendChild(bodyP);
+
+    // Add section label
+    const selectLabel = doc.createElement("p");
+    selectLabel.textContent = selectLabelMessage;
+    selectLabel.style.fontWeight = "600";
+    selectLabel.style.fontSize = "1.1em";
+    selectLabel.style.marginTop = "24px";
+    selectLabel.style.marginBottom = "8px";
+    errorMessageEl.appendChild(selectLabel);
 
     // rebuild "reuse mask" buttons list
     const list = getReusableMasksList();
@@ -301,6 +375,7 @@ async function showReusableMasksAsync(browser, origin, error) {
     const fragment = document.createDocumentFragment();
     reusableMasks
       .filter(mask => mask.enabled)
+      .slice(0, 5)
       .forEach(mask => {
         const button = document.createElement("button");
 
@@ -332,6 +407,35 @@ async function showReusableMasksAsync(browser, origin, error) {
         fragment.appendChild(button);
       });
     list.appendChild(fragment);
+
+    // Style buttons to be the same size and aligned right
+    const panel = notification.owner.panel;
+    const buttonContainer = panel.querySelector(
+      ".popup-notification-footer-container"
+    );
+    const mainAction = panel.querySelector(
+      ".popup-notification-primary-button"
+    );
+    const secondaryActions = panel.querySelectorAll(
+      ".popup-notification-secondary-button"
+    );
+
+    if (buttonContainer) {
+      buttonContainer.style.justifyContent = "flex-end";
+      buttonContainer.style.gap = "8px";
+    }
+
+    if (mainAction) {
+      mainAction.style.flex = "0 0 auto";
+      mainAction.style.minWidth = "120px";
+    }
+
+    if (secondaryActions.length) {
+      secondaryActions.forEach(button => {
+        button.style.flex = "0 0 auto";
+        button.style.minWidth = "120px";
+      });
+    }
   }
 
   function notificationRemoved() {
@@ -360,12 +464,13 @@ async function showReusableMasksAsync(browser, origin, error) {
     "relay-integration-reuse-masks",
     "", // content is provided after popup shown
     "password-notification-icon",
-    getUnlimitedMasks,
-    [],
+    seeAllMasks,
+    [dismiss],
     {
       autofocus: true,
       removeOnDismissal: true,
       hideClose: true,
+      persistent: true,
       eventCallback: onNotificationEvent,
     }
   );
