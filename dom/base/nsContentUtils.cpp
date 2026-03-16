@@ -13080,7 +13080,7 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
 
 nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(
     nsIContent* aHost, ShadowRootMode aMode, bool aIsClonable,
-    bool aIsSerializable, bool aDelegatesFocus,
+    bool aIsSerializable, bool aDelegatesFocus, bool aCustomElementRegistry,
     const nsAString& aReferenceTarget) {
   RefPtr<Element> host = mozilla::dom::Element::FromNodeOrNull(aHost);
   if (!host || host->GetShadowRoot()) {

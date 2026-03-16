@@ -288,6 +288,7 @@ struct opGetShadowRootFromHost {
   bool mShadowRootIsClonable;
   bool mShadowRootIsSerializable;
   bool mShadowRootDelegatesFocus;
+  bool mShadowRootCustomElementRegistry;
 
   explicit opGetShadowRootFromHost(nsIContentHandle* aHost,
                                    nsIContentHandle* aFragHandle,
@@ -296,6 +297,7 @@ struct opGetShadowRootFromHost {
                                    bool aShadowRootIsClonable,
                                    bool aShadowRootIsSerializable,
                                    bool aShadowRootDelegatesFocus,
+                                   bool aShadowRootCustomElementRegistry,
                                    nsAString& aShadowRootReferenceTarget) {
     mHost = static_cast<nsIContent**>(aHost);
     mFragHandle = static_cast<nsIContent**>(aFragHandle);
@@ -304,6 +306,7 @@ struct opGetShadowRootFromHost {
     mShadowRootIsClonable = aShadowRootIsClonable;
     mShadowRootIsSerializable = aShadowRootIsSerializable;
     mShadowRootDelegatesFocus = aShadowRootDelegatesFocus;
+    mShadowRootCustomElementRegistry = aShadowRootCustomElementRegistry;
     mShadowRootReferenceTarget = aShadowRootReferenceTarget;
   }
 };

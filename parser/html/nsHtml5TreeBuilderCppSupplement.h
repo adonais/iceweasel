@@ -1729,6 +1729,7 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
     nsIContentHandle* aHost, nsIContentHandle* aTemplateNode,
     nsHtml5String aShadowRootMode, bool aShadowRootIsClonable,
     bool aShadowRootIsSerializable, bool aShadowRootDelegatesFocus,
+    bool aShadowRootCustomElementRegistry,
     nsHtml5String aShadowRootReferenceTarget) {
   mozilla::dom::ShadowRootMode mode;
   if (aShadowRootMode.LowerCaseEqualsASCII("open")) {
@@ -1746,7 +1747,7 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
     nsIContent* root = nsContentUtils::AttachDeclarativeShadowRoot(
         static_cast<nsIContent*>(aHost), mode, aShadowRootIsClonable,
         aShadowRootIsSerializable, aShadowRootDelegatesFocus,
-        shadowRootReferenceTarget);
+        aShadowRootCustomElementRegistry, shadowRootReferenceTarget);
     if (!root) {
       nsContentUtils::LogSimpleConsoleError(
           u"Failed to attach Declarative Shadow DOM."_ns, "DOM"_ns,
@@ -1765,7 +1766,7 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
   opGetShadowRootFromHost operation(
       aHost, fragHandle, aTemplateNode, mode, aShadowRootIsClonable,
       aShadowRootIsSerializable, aShadowRootDelegatesFocus,
-      shadowRootReferenceTarget);
+      aShadowRootCustomElementRegistry, shadowRootReferenceTarget);
   treeOp->Init(mozilla::AsVariant(operation));
   return fragHandle;
 }
