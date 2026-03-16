@@ -283,6 +283,8 @@ class EmptyBody final : public FetchBody<EmptyBody> {
 
   void GetBody(nsIInputStream** aStream, int64_t* aBodyLength = nullptr);
 
+  void CloneBody(nsIInputStream** aStream, int64_t* aBodyLength = nullptr);
+
   using FetchBody::BodyBlobURISpec;
 
   const nsACString& BodyBlobURISpec() const { return EmptyCString(); }

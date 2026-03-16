@@ -63,6 +63,31 @@ SafeRefPtr<InternalRequest> InternalRequest::GetRequestConstructorCopy(
   return copy;
 }
 
+void InternalRequest::CloneBody(nsIInputStream** aStream, int64_t* aBodySize) {
+  if (!mBodyStream) {
+    *aStream = nullptr;
+    if (aBodySize) {
+      *aBodySize = UNKNOWN_BODY_SIZE;
+    }
+    return;
+  }
+
+  nsCOMPtr<nsIInputStream> replacementBody;
+
+  nsresult rv = NS_CloneInputStream(mBodyStream, aStream,
+                                    getter_AddRefs(replacementBody));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    *aStream = nullptr;
+    if (aBodySize) {
+      *aBodySize = UNKNOWN_BODY_SIZE;
+    }
+  }
+
+  if (replacementBody) {
+    mBodyStream.swap(replacementBody);
+  }
+}
+
 SafeRefPtr<InternalRequest> InternalRequest::Clone() {
   auto clone = MakeSafeRefPtr<InternalRequest>(*this, ConstructorGuard{});
 
