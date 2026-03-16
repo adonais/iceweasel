@@ -592,6 +592,12 @@ async function testOpenPDFPreview({
           );
         });
         itemTarget = listbox.itemChildren[0];
+        // The allDownloads view does lazy refreshes, differently from the
+        // downloads panel which eagerly updates. In order to ensure that the
+        // "viewable-internally" attribute is set on the item element, we need
+        // to trigger a refresh of the download, which will cause the view to
+        // update that attribute.
+        await itemTarget._shell.download.refresh();
         contextMenu = uiWindow.document.querySelector("#downloadsContextMenu");
 
         break;
@@ -645,9 +651,7 @@ async function testOpenPDFPreview({
         info("waiting for downloadsLoaded");
         await downloadsLoaded;
 
-        // TODO: Switch to SpecialPowers.spawn
-        // eslint-disable-next-line mozilla/reject-contenttask-spawn
-        await ContentTask.spawn(
+        await SpecialPowers.spawn(
           browser,
           [expected.downloadCount],
           async function awaitListItems(expectedCount) {
