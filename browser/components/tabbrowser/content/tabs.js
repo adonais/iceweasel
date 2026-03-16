@@ -1367,7 +1367,11 @@
           let rect = ele => {
             return window.windowUtils.getBoundsWithoutFlushing(ele);
           };
-          let tab = this.visibleTabs[gBrowser.pinnedTabCount];
+          // See bug 2007766, we need to find the first tab that isn't
+          // inside a split view, because those can be narrower than the threshold.
+          let tab = this.visibleTabs
+            .slice(gBrowser.pinnedTabCount)
+            .find(t => !t.splitview);
           if (tab && rect(tab).width <= this._tabClipWidth) {
             this.setAttribute("closebuttons", "activetab");
           } else {
