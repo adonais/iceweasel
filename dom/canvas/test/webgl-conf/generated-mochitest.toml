@@ -3,7 +3,12 @@
 # Mark failing (fail-if) and crashing (skip-if) tests in mochitest-errata.toml.
 
 [DEFAULT]
-prefs = "media.seamless-looping-video=false"
+prefs = [
+  # Bug 1799213
+  "media.seamless-looping-video=false",
+  # Bug 2021606
+  "privacy.baselineFingerprintingProtection=false",
+]
 
 support-files = [
                   "always-fail.html",

@@ -17,8 +17,13 @@
 #   * Windows 10: 10.0
 
 [DEFAULT]
-# Bug 1799213
-prefs = "media.seamless-looping-video=false"
+
+prefs = [
+  # Bug 1799213
+  "media.seamless-looping-video=false",
+  # Bug 2021606
+  "privacy.baselineFingerprintingProtection=false",
+]
 
 ["generated/test_..__always-fail.html"]
 fail-if = [
