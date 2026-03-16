@@ -554,7 +554,14 @@ class FenixSearchMiddlewareTest {
 
         store.dispatch(SuggestionSelected(selectedSuggestion))
 
-        verify { toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(BrowserToolbarQuery("test"))) }
+        verify {
+            toolbarStore.dispatch(
+                BrowserEditToolbarAction.SearchQueryUpdated(
+                    query = BrowserToolbarQuery("test"),
+                    isQueryPrefilled = true,
+                ),
+            )
+        }
     }
 
     private fun buildMiddlewareAndAddToSearchStore(

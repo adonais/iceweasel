@@ -170,7 +170,12 @@ class FenixSearchMiddleware(
 
             is SuggestionSelected -> {
                 action.suggestion.editSuggestion?.let {
-                    toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(BrowserToolbarQuery(it)))
+                    toolbarStore.dispatch(
+                        BrowserEditToolbarAction.SearchQueryUpdated(
+                            query = BrowserToolbarQuery(it),
+                            isQueryPrefilled = true,
+                        ),
+                    )
                 }
             }
 

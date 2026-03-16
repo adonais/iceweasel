@@ -227,7 +227,7 @@ class BrowserToolbarMiddleware(
         searchTerms: String? = null,
     ) {
         browsingMode?.let { browsingModeManager.mode = it }
-        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms ?: "")))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms ?: ""), true))
         appStore.dispatch(SearchStarted())
     }
 

@@ -1071,6 +1071,7 @@ class BrowserToolbarSearchMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("mozilla.test", store.state.editState.query.current)
+        assertTrue(store.state.editState.isQueryPrefilled)
         appStoreActionsCaptor.assertLastAction(QrScannerInputConsumed::class)
         verify {
             browserUseCases.loadUrlOrSearch(
@@ -1105,6 +1106,7 @@ class BrowserToolbarSearchMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("test.mozilla", store.state.editState.query.current)
+        assertTrue(store.state.editState.isQueryPrefilled)
         appStoreActionsCaptor.assertLastAction(QrScannerInputConsumed::class)
         verify {
             browserUseCases.loadUrlOrSearch(
@@ -1144,6 +1146,7 @@ class BrowserToolbarSearchMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("test.com", store.state.editState.query.current)
+        assertTrue(store.state.editState.isQueryPrefilled)
         appStoreActionsCaptor.assertLastAction(QrScannerInputConsumed::class)
         verify {
             browserUseCases.loadUrlOrSearch(

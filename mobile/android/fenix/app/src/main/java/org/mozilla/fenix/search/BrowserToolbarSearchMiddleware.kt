@@ -551,7 +551,8 @@ class BrowserToolbarSearchMiddleware(
                         appStore.dispatch(AppAction.QrScannerAction.QrScannerInputConsumed)
                         store.dispatch(
                             SearchQueryUpdated(
-                                BrowserToolbarQuery(it.qrScannerState.lastScanData),
+                                query = BrowserToolbarQuery(it.qrScannerState.lastScanData),
+                                isQueryPrefilled = true,
                             ),
                         )
                         components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
