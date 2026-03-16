@@ -4,6 +4,7 @@
 
 #include "RemoteCDMChild.h"
 
+#include "mozilla/EMEOriginID.h"
 #include "mozilla/RemoteDecodeUtils.h"
 #include "mozilla/dom/MediaKeySession.h"
 
@@ -126,27 +127,44 @@ void RemoteCDMChild::Init(PromiseId aPromiseId, const nsAString& aOrigin,
     return;
   }
 
-  mIPDLPromise->Then(
-      mThread, __func__,
-      [self = RefPtr{this}, aPromiseId](
-          const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
-        LOGD("[{}] RemoteCDMChild::Init -- promise {} resolved {}",
-             fmt::ptr(self.get()), aPromiseId, aValue.IsResolve());
-
-        if (aValue.IsReject()) {
-          self->RejectPromise(
-              aPromiseId,
-              MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
-                          "PRemoteCDMChild ensure process fail"_ns));
-          return;
-        }
-
-        self->InitInternal(aPromiseId);
-      });
+  RefPtr<GenericNonExclusivePromise> ipdlPromise = mIPDLPromise;
   mIPDLPromise = nullptr;
+
+  GetEMEOriginID(mKeys->GetPrincipal())
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [self = RefPtr{this}, aPromiseId, ipdlPromise](
+              const media::PrincipalKeyPromise::ResolveOrRejectValue& aValue) {
+            if (self->mKeys.IsNull()) {
+              return;
+            }
+            nsCString originID;
+            if (aValue.IsResolve()) {
+              originID = aValue.ResolveValue();
+            }
+            // On rejection, proceed without origin ID.
+            ipdlPromise->Then(
+                self->mThread, __func__,
+                [self, aPromiseId, originID = std::move(originID)](
+                    const GenericNonExclusivePromise::ResolveOrRejectValue&
+                        aValue) {
+                  LOGD("[{}] RemoteCDMChild::Init -- promise {} resolved {}",
+                       fmt::ptr(self.get()), aPromiseId, aValue.IsResolve());
+
+                  if (aValue.IsReject()) {
+                    self->RejectPromise(
+                        aPromiseId,
+                        MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
+                                    "PRemoteCDMChild ensure process fail"_ns));
+                    return;
+                  }
+                  self->InitInternal(aPromiseId, originID);
+                });
+          });
 }
 
-void RemoteCDMChild::InitInternal(PromiseId aPromiseId) {
+void RemoteCDMChild::InitInternal(PromiseId aPromiseId,
+                                  const nsCString& aOriginID) {
   LOGD("[{}] RemoteCDMChild::InitInternal -- promise {}", fmt::ptr(this),
        aPromiseId);
   RefPtr<RemoteMediaManagerChild> manager =
@@ -168,7 +186,7 @@ void RemoteCDMChild::InitInternal(PromiseId aPromiseId) {
 
   LOGD("[{}] RemoteCDMChild::InitInternal -- send init", fmt::ptr(this));
   SendInit(RemoteCDMInitRequestIPDL(mDistinctiveIdentifierRequired,
-                                    mPersistentStateRequired))
+                                    mPersistentStateRequired, aOriginID))
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [self = RefPtr{this},

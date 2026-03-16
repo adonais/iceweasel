@@ -11764,6 +11764,12 @@
   value: true
   mirror: always
 
+# Enable per-origin provisioning for MediaDrm on Android
+- name: media.eme.mediadrm.origin-id.enabled
+  type: bool
+  value: @IS_ANDROID@
+  mirror: always
+
 - name: media.eme.max-throughput-ms
   type: RelaxedAtomicUint32
   value: 500

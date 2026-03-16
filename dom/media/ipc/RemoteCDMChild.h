@@ -113,7 +113,7 @@ class RemoteCDMChild final : public PRemoteCDMChild,
  private:
   virtual ~RemoteCDMChild();
 
-  void InitInternal(PromiseId aPromiseId);
+  void InitInternal(PromiseId aPromiseId, const nsCString& aOriginID);
   void RejectPromise(PromiseId aId, const MediaResult& aResult);
   void ResolveOrRejectPromise(PromiseId aId, const MediaResult& aResult);
 

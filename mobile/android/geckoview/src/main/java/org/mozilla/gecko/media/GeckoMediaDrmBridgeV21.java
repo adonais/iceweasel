@@ -325,6 +325,19 @@ public class GeckoMediaDrmBridgeV21 implements GeckoMediaDrm {
     return;
   }
 
+  @Override
+  public void setOriginID(final String originID) {
+    if (DEBUG) Log.d(LOGTAG, "setOriginID()");
+    if (mDrm == null) {
+      throw new IllegalStateException("MediaDrm instance doesn't exist !!");
+    }
+    try {
+      mDrm.setPropertyString("origin", originID);
+    } catch (final RuntimeException e) {
+      Log.w(LOGTAG, "Failed to set origin ID property: " + e.getMessage());
+    }
+  }
+
   protected void HandleKeyStatusChangeByDummyKey(final String sessionId) {
     final SessionKeyInfo[] keyInfos = new SessionKeyInfo[1];
     keyInfos[0] = new SessionKeyInfo(DUMMY_KEY_ID, MediaDrm.KeyStatus.STATUS_USABLE);

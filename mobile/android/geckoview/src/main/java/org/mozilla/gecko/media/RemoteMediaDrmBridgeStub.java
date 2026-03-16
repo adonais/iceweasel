@@ -240,4 +240,14 @@ final class RemoteMediaDrmBridgeStub extends IMediaDrmBridge.Stub
       throw e;
     }
   }
+
+  @Override
+  public synchronized void setOriginID(final String originID) {
+    try {
+      mBridge.setOriginID(originID);
+    } catch (final IllegalStateException e) {
+      Log.e(LOGTAG, "Failed to setOriginID.", e);
+      throw e;
+    }
+  }
 }

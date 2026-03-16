@@ -46,6 +46,7 @@ struct RemoteCDMInitRequestIPDL
 {
   bool allowDistinctiveIdentifier;
   bool allowPersistentState;
+  nsCString originID;
 };
 
 struct RemoteCDMCreateSessionRequestIPDL

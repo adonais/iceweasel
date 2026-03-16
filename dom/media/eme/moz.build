@@ -20,6 +20,7 @@ EXPORTS.mozilla += [
     "CDMProxy.h",
     "DecryptorProxyCallback.h",
     "DetailedPromise.h",
+    "EMEOriginID.h",
     "EMEUtils.h",
     "KeySystemConfig.h",
 ]

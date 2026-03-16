@@ -189,7 +189,8 @@ void MediaDrmJavaCallbacksSupport::OnRejectPromise(
   mDecryptorProxyCallback->RejectPromise(aPromiseId, std::move(rv), reason);
 }
 
-MediaDrmProxySupport::MediaDrmProxySupport(const nsAString& aKeySystem)
+MediaDrmProxySupport::MediaDrmProxySupport(const nsAString& aKeySystem,
+                                           const nsACString& aOriginID)
     : mKeySystem(aKeySystem), mDestroyed(false) {
   mJavaCallbacks = java::MediaDrmProxy::NativeMediaDrmProxyCallbacks::New();
 
@@ -197,6 +198,13 @@ MediaDrmProxySupport::MediaDrmProxySupport(const nsAString& aKeySystem)
 
   MOZ_ASSERT(mBridgeProxy, "mBridgeProxy should not be null");
   mMediaDrmStubId = mBridgeProxy->GetStubId()->ToString();
+
+  if (!aOriginID.IsEmpty()) {
+    mBridgeProxy->SetOriginID(aOriginID);
+    MDRMN_LOG("Have origin ID (%.4s)", PromiseFlatCString(aOriginID).get());
+  } else {
+    MDRMN_LOG("Origin ID is empty");
+  }
 }
 
 MediaDrmProxySupport::~MediaDrmProxySupport() {

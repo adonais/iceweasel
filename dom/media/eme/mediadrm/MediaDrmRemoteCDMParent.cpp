@@ -244,6 +244,22 @@ mozilla::ipc::IPCResult MediaDrmRemoteCDMParent::RecvInit(
     return IPC_OK();
   }
 
+  // Set per-origin ID if available.
+  if (!request.originID().IsEmpty()) {
+    EME_LOG(
+        "[%p] MediaDrmRemoteCDMParent::RecvInit -- "
+        "setting origin ID property (%.4s...)",
+        this, request.originID().get());
+    media_status_t originStatus =
+        AMediaDrm_setPropertyString(mDrm, "origin", request.originID().get());
+    if (originStatus != AMEDIA_OK) {
+      EME_LOG(
+          "[%p] MediaDrmRemoteCDMParent::RecvInit -- "
+          "AMediaDrm_setPropertyString origin ID failed: %d",
+          this, originStatus);
+    }
+  }
+
   status = AMediaDrm_setOnEventListener(mDrm, HandleEventCb);
   if (NS_WARN_IF(status != AMEDIA_OK)) {
     aResolver(MediaResult(

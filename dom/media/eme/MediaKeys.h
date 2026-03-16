@@ -111,6 +111,8 @@ class MediaKeys final : public nsIObserver,
 
   CDMProxy* GetCDMProxy() { return mProxy; }
 
+  nsIPrincipal* GetPrincipal() const { return mPrincipal; }
+
   // Makes a new promise, or nullptr on failure.
   already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv,
                                                 const nsACString& aName);

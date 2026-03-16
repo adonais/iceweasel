@@ -5,6 +5,7 @@
 #include "mozilla/MediaDrmCDMProxy.h"
 
 #include "MediaDrmCDMCallbackProxy.h"
+#include "mozilla/EMEOriginID.h"
 #include "mozilla/dom/MediaKeySession.h"
 
 namespace mozilla {
@@ -46,23 +47,47 @@ void MediaDrmCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
           NS_ConvertUTF16toUTF8(aTopLevelOrigin).get(),
           NS_ConvertUTF16toUTF8(aName).get());
 
-  // Create a thread to work with cdm.
-  if (!mOwnerThread) {
-    nsresult rv =
-        NS_NewNamedThread("MDCDMThread", getter_AddRefs(mOwnerThread));
-    if (NS_FAILED(rv)) {
-      RejectPromiseWithStateError(
-          aPromiseId, nsLiteralCString(
-                          "Couldn't create CDM thread MediaDrmCDMProxy::Init"));
-      return;
-    }
-  }
+  GetEMEOriginID(mKeys->GetPrincipal())
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [self = RefPtr{this}, aPromiseId](
+              const media::PrincipalKeyPromise::ResolveOrRejectValue& aValue) {
+            nsCString originID;
+            if (aValue.IsResolve()) {
+              originID = aValue.ResolveValue();
+            }
+            // On rejection, proceed without origin ID
 
-  mCDM = mozilla::MakeUnique<MediaDrmProxySupport>(mKeySystem);
-  nsCOMPtr<nsIRunnable> task(
-      NewRunnableMethod<uint32_t>("MediaDrmCDMProxy::md_Init", this,
-                                  &MediaDrmCDMProxy::md_Init, aPromiseId));
-  mOwnerThread->Dispatch(task, NS_DISPATCH_NORMAL);
+            if (self->mKeys.IsNull()) {
+              return;
+            }
+
+            // Create a thread to work with cdm.
+            if (!self->mOwnerThread) {
+              nsresult rv = NS_NewNamedThread(
+                  "MDCDMThread", getter_AddRefs(self->mOwnerThread));
+              if (NS_FAILED(rv)) {
+                self->RejectPromiseWithStateError(
+                    aPromiseId,
+                    nsLiteralCString(
+                        "Couldn't create CDM thread MediaDrmCDMProxy::Init"));
+                return;
+              }
+            }
+
+            self->mCDM = mozilla::MakeUnique<MediaDrmProxySupport>(
+                self->mKeySystem, originID);
+
+            nsCOMPtr<nsIRunnable> task(NewRunnableMethod<uint32_t>(
+                "MediaDrmCDMProxy::md_Init", self.get(),
+                &MediaDrmCDMProxy::md_Init, aPromiseId));
+            if (NS_FAILED(
+                    self->mOwnerThread->Dispatch(task, NS_DISPATCH_NORMAL))) {
+              self->RejectPromiseWithStateError(
+                  aPromiseId,
+                  "Failed to dispatch to CDM thread MediaDrmCDMProxy::Init"_ns);
+            }
+          });
 }
 
 void MediaDrmCDMProxy::CreateSession(uint32_t aCreateSessionToken,
