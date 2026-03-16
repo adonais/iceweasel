@@ -2965,7 +2965,8 @@
   result_type: Value
   movable: true
   congruent_to: if_operands_equal
-  alias_set: custom
+  alias_set:
+    load: DynamicSlot
   generate_lir: true
 
 # Inline call to access a function's environment (scope chain).

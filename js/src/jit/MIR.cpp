@@ -7098,11 +7098,6 @@ MDefinition::AliasType MGuardShape::mightAlias(const MDefinition* store) const {
   return MInstruction::mightAlias(store);
 }
 
-AliasSet MLoadDynamicSlotFromOffset::getAliasSet() const {
-  MOZ_ASSERT(slots()->type() == MIRType::Slots);
-  return AliasSet::Load(AliasSet::DynamicSlot);
-}
-
 MDefinition* MGuardIsNotProxy::foldsTo(TempAllocator& alloc) {
   KnownClass known = GetObjectKnownClass(object());
   if (known == KnownClass::None) {
