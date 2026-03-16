@@ -14,6 +14,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/AutoSuppressEventHandlingAndSuspend.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DOMStringList.h"
@@ -370,6 +371,7 @@ DataTransfer::WaitForClipboardDataSnapshotAndCreate(
     return nullptr;
   }
 
+  AutoSuppressEventHandlingAndSuspend autoSuppress(bc->Group());
   if (!SpinEventLoopUntil(
           "DataTransfer::WaitForClipboardDataSnapshotAndCreate"_ns,
           [&]() { return callback->IsComplete(); })) {

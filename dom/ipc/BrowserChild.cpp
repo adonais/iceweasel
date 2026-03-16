@@ -2469,7 +2469,18 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
   localEvent.mUniqueId = aEvent.mUniqueId;
 
   if (!SkipRepeatedKeyEvent(aEvent) && !isPrecedingKeyDownEventConsumed) {
+    const bool isOtherKeyDownBeingDispatched =
+        mCurrentBeingDispatchedKeyDownCode.isSome();
+    if (aEvent.mMessage == eKeyDown && !isOtherKeyDownBeingDispatched) {
+      mCurrentBeingDispatchedKeyDownCode.emplace(aEvent.mCodeNameIndex);
+    }
     nsEventStatus status = DispatchWidgetEventViaAPZ(localEvent);
+    // If another keydown event is still being dispatched, the event loop is
+    // likely being spun. If the following key event is not suppressed or
+    // delayed, it could cause mPreviousConsumedKeyDownCode is not updated
+    // correctly.
+    MOZ_DIAGNOSTIC_ASSERT_IF(isOtherKeyDownBeingDispatched,
+                             localEvent.mFlags.mIsSuppressedOrDelayed);
 
     // Update the end time of the possible repeated event so that we can skip
     // some incoming events in case event handling took long time.
@@ -2482,14 +2493,28 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
       if (status == nsEventStatus_eConsumeNoDefault) {
         MOZ_ASSERT_IF(!aEvent.mFlags.mIsSynthesizedForTests,
                       aEvent.mCodeNameIndex != CODE_NAME_INDEX_USE_STRING);
-        // If mPreviousConsumedKeyDownCode is not Nothing, 2 or more keys may be
-        // pressed at same time and their eKeyDown are consumed.  However, we
-        // forget the previous eKeyDown event result here and that might cause
-        // dispatching eKeyPress events caused by the previous eKeyDown in
-        // theory.  However, this should not occur because eKeyPress should be
-        // fired before another eKeyDown, although it's depend on how the native
-        // keyboard event handler is implemented.
-        mPreviousConsumedKeyDownCode = Some(aEvent.mCodeNameIndex);
+        MOZ_ASSERT(!localEvent.mFlags.mIsSuppressedOrDelayed);
+        MOZ_ASSERT(!isOtherKeyDownBeingDispatched);
+
+        // In most of cases, this keydown event should be still tracked, we need
+        // to remember whether it was consumed for the following keypress event.
+        // If this is not the case, it likely means the event loop is being spun
+        // while dispatching the keydown event, and the subsequent keypress
+        // event is suppressed or delayed. In such case, PresShell will check
+        // whether this keydown event was consumed and handle the delayed
+        // keypress event accordingly.
+        if (MOZ_LIKELY(mCurrentBeingDispatchedKeyDownCode)) {
+          MOZ_ASSERT(mCurrentBeingDispatchedKeyDownCode.value() ==
+                     aEvent.mCodeNameIndex);
+          // If mPreviousConsumedKeyDownCode is not Nothing, 2 or more keys may
+          // be pressed at same time and their eKeyDown are consumed.  However,
+          // we forget the previous eKeyDown event result here and that might
+          // cause dispatching eKeyPress events caused by the previous eKeyDown
+          // in theory.  However, this should not occur because eKeyPress should
+          // be fired before another eKeyDown, although it's depend on how the
+          // native keyboard event handler is implemented.
+          mPreviousConsumedKeyDownCode = Some(aEvent.mCodeNameIndex);
+        }
       }
       // If eKeyDown is not consumed but we know preceding eKeyDown is consumed,
       // we need to forget it since we should not stop dispatching following
@@ -2497,6 +2522,15 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
       else if (mPreviousConsumedKeyDownCode.isSome() &&
                aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
         mPreviousConsumedKeyDownCode.reset();
+      }
+
+      // `mPreviousConsumedKeyDownCode` has been updated, so we no longer need
+      // to track the keydown event.
+      if (!isOtherKeyDownBeingDispatched &&
+          mCurrentBeingDispatchedKeyDownCode) {
+        MOZ_ASSERT(mCurrentBeingDispatchedKeyDownCode.value() ==
+                   aEvent.mCodeNameIndex);
+        mCurrentBeingDispatchedKeyDownCode.reset();
       }
     }
     // eKeyPress is a default action of eKeyDown.  Therefore, eKeyPress is fired
@@ -2511,6 +2545,21 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
              mPreviousConsumedKeyDownCode.isSome() &&
              aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
       mPreviousConsumedKeyDownCode.reset();
+    }
+    // If the preceding keydown event is still being dispatched and a keypress
+    // is received for the same key, it likely means the event loop is being
+    // spun. In that case, the keypress event should be suppressed or delayed,
+    // so we can stop tracking the current dispatched keydown event and let
+    // PresShell track whether the keydown event was consumed and
+    // PresShell::FireOrClearDelayedEvents() will handle the keypress event
+    // correctly.
+    else if (aEvent.mMessage == eKeyPress &&
+             mCurrentBeingDispatchedKeyDownCode &&
+             mCurrentBeingDispatchedKeyDownCode.value() ==
+                 aEvent.mCodeNameIndex) {
+      MOZ_DIAGNOSTIC_ASSERT(isOtherKeyDownBeingDispatched);
+      MOZ_DIAGNOSTIC_ASSERT(localEvent.mFlags.mIsSuppressedOrDelayed);
+      mCurrentBeingDispatchedKeyDownCode.reset();
     }
 
     if (localEvent.mFlags.mIsSuppressedOrDelayed) {

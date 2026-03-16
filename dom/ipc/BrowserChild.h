@@ -847,7 +847,14 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   RefPtr<BrowsingContext> mBrowsingContext;
   RefPtr<nsIDragSession> mDragSession;
 
+  // Tracks the keydown event currently being dispatched.
+  // This allows us to detect whether the event loop is being spun during
+  // keydown dispatch, which can cause key event IPC messages to be handled
+  // out of order.
+  Maybe<CodeNameIndex> mCurrentBeingDispatchedKeyDownCode;
+  // Tracks the most recent keydown event that was consumed.
   Maybe<CodeNameIndex> mPreviousConsumedKeyDownCode;
+
   uint32_t mChromeFlags;
   uint32_t mMaxTouchPoints;
   // The number of windows which may have ePointerRawUpdate event listener.

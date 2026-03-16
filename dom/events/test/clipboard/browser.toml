@@ -16,6 +16,8 @@ skip-if = [
   "headless", # bug 1989339
 ]
 
+["browser_document_command_paste_contextmenu_event_loop.js"]
+
 ["browser_document_command_paste_contextmenu_ext.js"]
 skip-if = [
   "headless", # bug 1989339
