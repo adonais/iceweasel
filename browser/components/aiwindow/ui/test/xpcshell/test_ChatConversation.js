@@ -17,6 +17,10 @@ const { UserRoleOpts, AssistantRoleOpts, ToolRoleOpts } =
     "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs"
   );
 
+const { MemoryStore } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
+);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -889,6 +893,47 @@ add_task(function test_ChatConversation_renderState_filters_phantom_messages() {
   Assert.equal(renderState[1].role, MESSAGE_ROLE.ASSISTANT);
   Assert.equal(renderState[1].content.body, "Here is the weather forecast.");
 });
+
+add_task(
+  async function test_deduplicatesMemoryIds_ChatConversation_receiveResponse() {
+    let sandbox = lazy.sinon.createSandbox();
+
+    const mockMemories = [{ id: "mem-1" }, { id: "mem-2" }];
+    sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+
+    const conversation = new ChatConversation({});
+    conversation.addAssistantMessage("text", "some response");
+    const assistantMsg = conversation.messages.at(-1);
+    assistantMsg._pendingMemoryIds = ["mem-1", "mem-1", "mem-2", "mem-2"];
+
+    async function* emptyStream() {}
+    await conversation.receiveResponse(emptyStream());
+
+    Assert.ok(
+      MemoryStore.getMemories.calledOnce,
+      "MemoryStore.getMemories should be called exactly once"
+    );
+    const { memoryIds } = MemoryStore.getMemories.firstCall.args[0];
+    Assert.equal(
+      memoryIds.size,
+      2,
+      "memoryIds should be a deduplicated Set of size 2"
+    );
+    Assert.ok(memoryIds.has("mem-1"), "memoryIds should contain mem-1");
+    Assert.ok(memoryIds.has("mem-2"), "memoryIds should contain mem-2");
+    Assert.deepEqual(
+      assistantMsg.memoriesApplied,
+      mockMemories,
+      "memoriesApplied should be set to the resolved memories"
+    );
+    Assert.ok(
+      !("_pendingMemoryIds" in assistantMsg),
+      "_pendingMemoryIds should be deleted after processing"
+    );
+
+    sandbox.restore();
+  }
+);
 
 add_task(async function test_addUserMessage_sets_memories_fields() {
   const conversation = new ChatConversation({});

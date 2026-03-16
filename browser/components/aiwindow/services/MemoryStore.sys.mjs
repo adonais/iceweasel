@@ -307,15 +307,15 @@ export const MemoryStore = {
    *   Sort direction.
    * @param {boolean} [options.includeSoftDeleted=false]
    *   Whether to include soft-deleted memories.
-   * @param {Array<string>} [options.memoryIds=[]]
-   *   Optional list of memory IDs; will return all if list is empty
+   * @param {Set<string>} [options.memoryIds=new Set()]
+   *   Optional set of memory IDs; will return all if set is empty
    * @returns {Promise<Memory[]>}
    */
   async getMemories({
     sortBy = "updated_at",
     sortDir = "desc",
     includeSoftDeleted = false,
-    memoryIds = [],
+    memoryIds = new Set(),
   } = {}) {
     await this.ensureInitialized();
 
@@ -325,8 +325,8 @@ export const MemoryStore = {
       res = res.filter(i => !i.is_deleted);
     }
 
-    if (memoryIds.length) {
-      res = res.filter(i => memoryIds.includes(i.id));
+    if (memoryIds.size) {
+      res = res.filter(i => memoryIds.has(i.id));
     }
 
     if (sortBy) {

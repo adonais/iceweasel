@@ -205,10 +205,9 @@ add_task(async function test_getMemoriesByID() {
   const firstMemoryToRetrieve = memories[0];
   const secontMemoryToRetreive = memories[2];
 
-  const memoryRetrievedById = await MemoriesManager.getMemoriesByID([
-    firstMemoryToRetrieve.id,
-    secontMemoryToRetreive.id,
-  ]);
+  const memoryRetrievedById = await MemoriesManager.getMemoriesByID(
+    new Set([firstMemoryToRetrieve.id, secontMemoryToRetreive.id])
+  );
   const retrievedMemorySummaries = memoryRetrievedById.map(
     mem => mem.memory_summary
   );

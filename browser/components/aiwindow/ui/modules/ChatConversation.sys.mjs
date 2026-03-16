@@ -154,7 +154,7 @@ export class ChatConversation extends EventEmitter {
     if (currentMessage._pendingMemoryIds?.length) {
       currentMessage.memoriesApplied =
         await lazy.MemoriesManager.getMemoriesByID(
-          ...new Set(currentMessage._pendingMemoryIds)
+          new Set(currentMessage._pendingMemoryIds)
         );
 
       delete currentMessage._pendingMemoryIds;

@@ -400,7 +400,7 @@ export class MemoriesManager {
    * Retrieves memories by ID.
    * This is a quick-access wrapper around MemoryStore.getMemories() specifically requiring the memoryIds option.
    *
-   * @param {Array<string>} memoryIds   List of memory IDs
+   * @param {Set<string>} memoryIds   Set of memory IDs
    * @returns {Promise<Array<Map<{
    *  memory_summary: string,
    *  category: string,
