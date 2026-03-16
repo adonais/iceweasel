@@ -3,14 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::common::{from_cookie, from_name, to_cookie, to_name, Cookie, Frame, Timeouts, Window};
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Url {
-    pub url: String,
-}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Locator {
@@ -220,6 +215,38 @@ pub struct Script {
     pub args: Option<Vec<Value>>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum GeckoContext {
+    Content,
+    Chrome,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum AddonInstallParameters {
+    AddonInstallBase64 {
+        addon: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        temporary: Option<bool>,
+        #[serde(
+            rename = "allowPrivateBrowsing",
+            skip_serializing_if = "Option::is_none"
+        )]
+        allow_private_browsing: Option<bool>,
+    },
+    AddonInstallPath {
+        path: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        temporary: Option<bool>,
+        #[serde(
+            rename = "allowPrivateBrowsing",
+            skip_serializing_if = "Option::is_none"
+        )]
+        allow_private_browsing: Option<bool>,
+    },
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Command {
     #[serde(rename = "WebDriver:AcceptAlert")]
@@ -279,7 +306,7 @@ pub enum Command {
     #[serde(rename = "WebDriver:FullscreenWindow")]
     FullscreenWindow,
     #[serde(rename = "WebDriver:Navigate")]
-    Get(Url),
+    Get { url: String },
     #[serde(rename = "WebDriver:GetActiveElement")]
     GetActiveElement,
     #[serde(rename = "WebDriver:GetAlertText")]
@@ -336,8 +363,12 @@ pub enum Command {
     MaximizeWindow,
     #[serde(rename = "WebDriver:MinimizeWindow")]
     MinimizeWindow,
+    #[serde(rename = "WebDriver:NewSession")]
+    NewSession(Map<String, Value>),
     #[serde(rename = "WebDriver:NewWindow")]
     NewWindow(NewWindow),
+    #[serde(rename = "WebDriver:PerformActions")]
+    PerformActions(Map<String, Value>),
     #[serde(rename = "WebDriver:Print")]
     Print(PrintParameters),
     #[serde(rename = "WebDriver:Refresh")]
@@ -364,6 +395,10 @@ pub enum Command {
     GPCGetGlobalPrivacyControl,
     #[serde(rename = "GPC:SetGlobalPrivacyControl")]
     GPCSetGlobalPrivacyControl(GlobalPrivacyControlParameters),
+    #[serde(rename = "Addon:Install")]
+    AddonInstall(AddonInstallParameters),
+    #[serde(rename = "Addon:Uninstall")]
+    AddonUninstall { id: String },
     #[serde(rename = "WebAuthn:AddVirtualAuthenticator")]
     WebAuthnAddVirtualAuthenticator(AuthenticatorParameters),
     #[serde(rename = "WebAuthn:RemoveVirtualAuthenticator")]
@@ -378,6 +413,10 @@ pub enum Command {
     WebAuthnRemoveAllCredentials,
     #[serde(rename = "WebAuthn:SetUserVerified")]
     WebAuthnSetUserVerified(UserVerificationParameters),
+    #[serde(rename = "Marionette:GetContext")]
+    GetContext,
+    #[serde(rename = "Marionette:SetContext")]
+    SetContext { value: GeckoContext },
 }
 
 #[cfg(test)]
