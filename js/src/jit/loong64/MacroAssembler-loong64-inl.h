@@ -2362,14 +2362,14 @@ void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
                      output != rhsHi);
   // We use `output` as a temp to hold the carry or borrow.
   if (isAdd) {
-    as_add_d(output, lhsLo, rhsLo);  // output = lhsLo + rhsLo
-    as_sltu(output, output, lhsLo);  // output = carry from `lhsLo + rhsLo`
-    as_add_d(output, output, lhsHi); // output = carry + lhsHi
-    as_add_d(output, output, rhsHi); // output = carry + lhsHi + rhsHi
+    as_add_d(output, lhsLo, rhsLo);   // output = lhsLo + rhsLo
+    as_sltu(output, output, lhsLo);   // output = carry from `lhsLo + rhsLo`
+    as_add_d(output, output, lhsHi);  // output = carry + lhsHi
+    as_add_d(output, output, rhsHi);  // output = carry + lhsHi + rhsHi
   } else {
-    as_sltu(output, lhsLo, rhsLo);   // output = borrow from `lhsLo - rhsLo`
-    as_sub_d(output, lhsHi, output); // output = lhsHi - borrow
-    as_sub_d(output, output, rhsHi); // output = lhsHi - borrow - rhsHi
+    as_sltu(output, lhsLo, rhsLo);    // output = borrow from `lhsLo - rhsLo`
+    as_sub_d(output, lhsHi, output);  // output = lhsHi - borrow
+    as_sub_d(output, output, rhsHi);  // output = lhsHi - borrow - rhsHi
   }
 }
 
