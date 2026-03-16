@@ -1,3 +1,6 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ft=javascript ts=2 et sw=2 tw=80: */
+
 const TEST_HTTP_DOMAIN = "https://example.org/";
 
 const TEST_ROOT = getRootDirectory(gTestPath).replace(

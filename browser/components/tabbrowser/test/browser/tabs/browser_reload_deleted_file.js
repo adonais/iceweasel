@@ -1,3 +1,6 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ft=javascript ts=2 et sw=2 tw=80: */
+
 const uuidGenerator = Services.uuid;
 
 const DUMMY_FILE = "dummy_page.html";
