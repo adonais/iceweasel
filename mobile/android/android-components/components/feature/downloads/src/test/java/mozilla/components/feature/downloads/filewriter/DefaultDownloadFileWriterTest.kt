@@ -4,6 +4,10 @@
 
 package mozilla.components.feature.downloads.filewriter
 
+import android.content.ContentResolver
+import android.content.ContentValues
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import junit.framework.TestCase.assertEquals
@@ -15,6 +19,7 @@ import mozilla.components.support.utils.FakeDownloadFileUtils
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
@@ -189,5 +194,36 @@ class DefaultDownloadFileWriterTest {
             ),
             customPath.toUri(),
         )
+    }
+
+    @Test
+    fun `Given scoped storage default download When creating the file Then MediaStore entry includes Downloads metadata`() {
+        val resolver = mock<ContentResolver>()
+        val insertedUri = "content://downloads/public_downloads/1".toUri()
+        val download = DownloadState(
+            url = "https://mozilla.org/download",
+            fileName = "document.pdf",
+            contentType = "application/pdf",
+        )
+
+        doReturn(insertedUri).`when`(resolver).insert(any(), any())
+
+        val result = defaultDownloadFileWriter.handleDownloadToDefaultDirectory(
+            resolver = resolver,
+            download = download,
+            append = false,
+        )
+
+        val valuesCaptor = ArgumentCaptor.forClass(ContentValues::class.java)
+        verify(resolver).insert(
+            any(),
+            valuesCaptor.capture(),
+        )
+
+        assertEquals(insertedUri, result)
+        assertEquals("document.pdf", valuesCaptor.value.getAsString(MediaStore.Downloads.DISPLAY_NAME))
+        assertEquals(1, valuesCaptor.value.getAsInteger(MediaStore.Downloads.IS_PENDING))
+        assertEquals(Environment.DIRECTORY_DOWNLOADS, valuesCaptor.value.getAsString(MediaStore.MediaColumns.RELATIVE_PATH))
+        assertEquals("safeContentType", valuesCaptor.value.getAsString(MediaStore.MediaColumns.MIME_TYPE))
     }
 }

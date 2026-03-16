@@ -6,6 +6,5 @@
     <external-path name="Download" path="." />
     <external-files-path name="externalFilesDownload" path="Download/" />
 
-    <!-- Offer access only to files under Context.getCacheDir()/media_share_cache/ -->
     <cache-path name="mediaShareCache" path="mozac_share_cache"/>
 </paths>

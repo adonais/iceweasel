@@ -135,6 +135,13 @@ class DefaultDownloadFileWriter(
         val newFileDetails = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, fileName)
             put(MediaStore.Downloads.IS_PENDING, 1)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(
+                    MediaStore.MediaColumns.MIME_TYPE,
+                    downloadFileUtils.getSafeContentType(fileName, download.contentType),
+                )
+            }
         }
         return resolver.insert(collection, newFileDetails)
     }

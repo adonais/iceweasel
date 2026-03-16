@@ -8,6 +8,7 @@ import android.app.DownloadManager.EXTRA_DOWNLOAD_ID
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Environment
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -33,7 +34,9 @@ import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
+import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.support.utils.DownloadFileUtils
 import mozilla.components.support.utils.FakeDownloadFileUtils
 import org.junit.Assert.assertEquals
@@ -863,6 +866,52 @@ class DownloadMiddlewareTest {
             val expected = BrowserState(downloads = mapOf(download.id to download))
             assertEquals(expected, store.state)
 
+            tempFile.delete()
+        }
+
+    @Test
+    fun `WHEN RemoveDeletedDownloads is called on a completed default-directory file with missing uri THEN the download is not deleted`() =
+        runTest(dispatcher) {
+            val downloadStorage = mock<DownloadStorage>()
+            val tempFile = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "download-middleware-fallback.pdf",
+            )
+            tempFile.writeText("test")
+
+            val downloadFileUtils = spy(DefaultDownloadFileUtils(testContext))
+            doReturn(Uri.fromFile(tempFile)).`when`(downloadFileUtils).findDownloadFileUri(
+                tempFile.name,
+                tempFile.parent ?: "",
+            )
+
+            val downloadMiddleware = DownloadMiddleware(
+                applicationContext = mock(),
+                downloadServiceClass = AbstractFetchDownloadService::class.java,
+                downloadFileUtils = downloadFileUtils,
+                coroutineContext = dispatcher,
+                downloadStorage = downloadStorage,
+                deleteFileFromStorage = { false },
+            )
+
+            val download = DownloadState(
+                id = "1",
+                url = tempFile.toURI().toURL().toString(),
+                fileName = tempFile.name,
+                directoryPath = tempFile.parent ?: "",
+                status = COMPLETED,
+            )
+            whenever(downloadStorage.getDownloadsList()).thenReturn(listOf(download))
+
+            val store = BrowserStore(
+                initialState = BrowserState(downloads = mapOf(download.id to download)),
+                middleware = listOf(downloadMiddleware),
+            )
+
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(BrowserState(downloads = mapOf(download.id to download)), store.state)
             tempFile.delete()
         }
 

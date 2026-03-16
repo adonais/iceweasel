@@ -274,13 +274,14 @@ class DefaultDownloadFileUtils(
         return contentResolver.delete(uri, null, null) > 0
     }
 
-    private fun findInDefaultDownloadDirectory(fileName: String, directoryPath: String): Uri? {
+    @VisibleForTesting
+    internal fun findInDefaultDownloadDirectory(fileName: String, directoryPath: String): Uri? {
         val mediaStoreUri = context.contentResolver.findFileInMediaStore(
             collection = downloadsCollectionUri,
             fileName = fileName,
         )
 
-        if (mediaStoreUri == null && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        if (mediaStoreUri == null) {
             val file = File(directoryPath, fileName)
             if (file.exists()) {
                 return Uri.fromFile(file)
