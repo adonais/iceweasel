@@ -24,6 +24,10 @@ add_task(async function test_get_page_content_basic() {
     </html>
   `;
 
+  const { SecurityProperties } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs"
+  );
+
   const { url_list, GetPageContent, cleanup } =
     await setupGetPageContentTests(html);
 
@@ -47,7 +51,8 @@ add_task(async function test_get_page_content_basic() {
   // Call the tool with the URL
   const result_array = await GetPageContent.getPageContent(
     { url_list },
-    allowedUrls
+    allowedUrls,
+    new SecurityProperties()
   );
   const result = result_array[0];
 

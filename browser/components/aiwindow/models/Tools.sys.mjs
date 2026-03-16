@@ -8,6 +8,8 @@
  * This file contains LLM tool abstractions and tool definitions.
  */
 
+/** @import { SecurityProperties } from "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs" */
+
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
 import { PageExtractorParent } from "resource://gre/actors/PageExtractorParent.sys.mjs";
 import {
@@ -201,7 +203,7 @@ export const toolsConfig = [
  * TODO: Ignores chat-only pages (FE to implement isSidebarMode flag).
  *
  * @param {object} _params
- * @param {object} _secProps
+ * @param {SecurityProperties} securityProperties
  * @returns {Promise<Array<object>>}
  *  A promise resolving to an array of tab metadata objects, each containing:
  *  - url {string}: The tab's current URL
@@ -210,7 +212,9 @@ export const toolsConfig = [
  *  - lastAccessed {number}: Last accessed timestamp in milliseconds
  *  Tabs are sorted by most recently accessed and limited to MAX_TABS results.
  */
-export async function getOpenTabs(_params, _secProps) {
+export async function getOpenTabs(_params, securityProperties) {
+  // No security check needed. The security checks prevent data exfiltration,
+  // which requires external communication. This tool makes no external requests.
   const tabs = [];
 
   for (const win of lazy.BrowserWindowTracker.orderedWindows) {
@@ -239,7 +243,7 @@ export async function getOpenTabs(_params, _secProps) {
 
   const topTabs = tabs.slice(0, MAX_TABS);
 
-  return Promise.all(
+  const result = await Promise.all(
     topTabs.map(async ({ url, title, lastAccessed }) => {
       let description = "";
       if (url) {
@@ -259,6 +263,10 @@ export async function getOpenTabs(_params, _secProps) {
       return { url, title, description, lastAccessed };
     })
   );
+  // Tab titles are truncated to 100 characters and therefore not expected to
+  // contain enough untrusted data for a prompt injection attack.
+  securityProperties.setPrivateData();
+  return result;
 }
 
 /**
@@ -279,23 +287,28 @@ export async function getOpenTabs(_params, _secProps) {
  *  Optional local ISO-8601 start timestamp (e.g. "2025-11-07T09:00:00").
  * @param {string|null} toolParams.endTs
  *  Optional local ISO-8601 end timestamp (e.g. "2025-11-07T09:00:00").
- * @param {object} _secProps
+ * @param {number} toolParams.historyLimit
+ *  Maximum number of history results to return.
+ * @param {SecurityProperties} securityProperties
  * @returns {Promise<object>}
  *  A promise resolving to an object with the search term and history results.
  *  Includes `count` when matches exist, a `message` when none are found, or an
  *  `error` string on failure.
  */
-export async function searchBrowsingHistory(toolParams, _secProps) {
+export async function searchBrowsingHistory(toolParams, securityProperties) {
+  // No security check, always allowed because it makes no external requests.
   const params = toolParams && typeof toolParams === "object" ? toolParams : {};
 
   const { searchTerm = "", startTs = null, endTs = null } = params;
 
-  return implSearchBrowsingHistory({
+  const result = await implSearchBrowsingHistory({
     searchTerm,
     startTs,
     endTs,
     historyLimit: MAX_HISTORY_RESULTS,
   });
+  securityProperties.setPrivateData();
+  return result;
 }
 
 /**
@@ -391,10 +404,13 @@ export class RunSearch {
    * @param {object} [toolParams]
    * @param {object} [context]
    * @param {BrowsingContext} [context.browsingContext]
-   * @param {object} _secProps
+   * @param {SecurityProperties} securityProperties
    * @returns {Promise<string>}
    */
-  static async runSearch(toolParams, context = {}, _secProps) {
+  static async runSearch(toolParams, context = {}, securityProperties) {
+    // No security check, always allowed because we assume that the search
+    // provider is trusted.
+
     // Decide if we'll use the user message verbatim as the search query or generate one
     let query;
     if (toolParams.query) {
@@ -445,15 +461,20 @@ export class RunSearch {
 
     RunSearch.#showSearchingIndicator(win, true, query.trim());
 
+    let result;
     try {
       await RunSearch.#performSearchAndWait(win, originalBrowser, query.trim());
-      return RunSearch.#extractSerpContent(originalBrowser);
+      result = RunSearch.#extractSerpContent(originalBrowser);
     } catch (e) {
       console.error("[RunSearch] search failed:", e);
-      return `Error performing search for "${query}": ${e.message}`;
+      result = `Error performing search for "${query}": ${e.message}`;
     } finally {
       RunSearch.#showSearchingIndicator(win, false, null);
     }
+
+    securityProperties.setPrivateData();
+    securityProperties.setUntrustedInput();
+    return result;
   }
 
   // TODO - this may be dead code. The fetch with history already yields a
@@ -607,9 +628,7 @@ export class GetPageContent {
    * @param {object} toolParams
    * @param {string[]} toolParams.url_list
    * @param {Set<string>} allowedUrls
-   * @param {object} securityProperties - Security flags from the conversation.
-   * @param {boolean} [securityProperties.untrusted_input]
-   * @param {boolean} [securityProperties.private_data]
+   * @param {SecurityProperties} securityProperties
    * @returns {Promise<Array<string>>}
    *  A promise resolving to a string containing the extracted page content
    *  with a descriptive header, or an error message if extraction fails.
@@ -617,7 +636,7 @@ export class GetPageContent {
   static async getPageContent(
     { url_list },
     allowedUrls = new Set(),
-    securityProperties = {}
+    securityProperties
   ) {
     // Ensure `url_list` is always an array
     if (!Array.isArray(url_list)) {
@@ -630,8 +649,8 @@ export class GetPageContent {
 
     // Run all fetches in parallel
     const ret_contents = await Promise.all(promises);
-    securityProperties.untrusted_input = true;
-    securityProperties.private_data = true;
+    securityProperties.setPrivateData();
+    securityProperties.setUntrustedInput();
     return ret_contents;
   }
 
@@ -644,12 +663,8 @@ export class GetPageContent {
         // while it's open, and with a "keep alive" timeout. For now it's simpler to just
         // load the page fresh every time.
         if (
-          Services.prefs.getBoolPref(
-            "browser.smartwindow.checkSecurityFlags",
-            true
-          ) &&
-          securityProperties.untrusted_input &&
-          securityProperties.private_data
+          securityProperties.untrustedInput &&
+          securityProperties.privateData
         ) {
           return `get_page_content is not available for ${url} when the conversation involves both untrusted input and private data.`;
         }
@@ -834,11 +849,16 @@ export class GetPageContent {
  * Retrieves the summaries of all saved memories
  *
  * @param {object} _toolParams
- * @param {object} _secProps
+ * @param {SecurityProperties} securityProperties
  * @returns {Promise<Array<string>>}
  */
-export async function getUserMemories(_toolParams, _secProps) {
+export async function getUserMemories(_toolParams, securityProperties) {
+  // No security check, always allowed because it makes no external requests.
   const memories = await lazy.MemoriesManager.getAllMemories();
 
-  return memories.map(memory => memory.memory_summary);
+  const result = memories.map(memory => memory.memory_summary);
+  // Memory summaries are private user data. They are truncated to 100
+  // characters, so they are not considered untrusted input.
+  securityProperties.setPrivateData();
+  return result;
 }

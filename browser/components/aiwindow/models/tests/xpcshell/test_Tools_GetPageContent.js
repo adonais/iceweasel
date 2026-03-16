@@ -8,6 +8,10 @@ const { GetPageContent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
 
+const { SecurityProperties } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs"
+);
+
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -88,7 +92,8 @@ add_task(async function test_getPageContent_exact_url_match() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
 
     const result = result_array[0];
@@ -121,7 +126,8 @@ add_task(async function test_getPageContent_hostname_match() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: ["http://example.com/different"] },
-      new Set(["http://example.com/different"])
+      new Set(["http://example.com/different"]),
+      new SecurityProperties()
     );
 
     const result = result_array[0];
@@ -154,7 +160,8 @@ add_task(async function test_getPageContent_tab_not_found_with_allowed_url() {
     const allowedUrls = new Set([targetUrl]);
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      allowedUrls
+      allowedUrls,
+      new SecurityProperties()
     );
 
     const result = result_array[0];
@@ -194,7 +201,8 @@ add_task(
       try {
         await GetPageContent.getPageContent(
           { url_list: [targetUrl] },
-          allowedUrls
+          allowedUrls,
+          new SecurityProperties()
         );
       } catch (error) {
         errorThrown = true;
@@ -225,7 +233,8 @@ add_task(async function test_getPageContent_no_browsing_context() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
     const result = result_array[0];
 
@@ -267,7 +276,8 @@ add_task(async function test_getPageContent_successful_extraction() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
 
     const result = result_array[0];
@@ -302,7 +312,8 @@ add_task(async function test_getPageContent_content_truncation() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
     const result = result_array[0];
 
@@ -344,7 +355,8 @@ add_task(async function test_getPageContent_empty_content() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
 
     const result = result_array[0];
@@ -385,7 +397,8 @@ add_task(async function test_getPageContent_extraction_error() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
 
     const result = result_array[0];
@@ -421,7 +434,8 @@ add_task(async function test_getPageContent_reader_mode_string() {
 
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
 
     const result = result_array[0];
@@ -451,7 +465,8 @@ add_task(async function test_getPageContent_invalid_url_format() {
     // Add URL to allowed list so it searches tabs instead of trying headless
     const result_array = await GetPageContent.getPageContent(
       { url_list: [targetUrl] },
-      new Set([targetUrl])
+      new Set([targetUrl]),
+      new SecurityProperties()
     );
     const result = result_array[0];
 
@@ -464,74 +479,44 @@ add_task(async function test_getPageContent_invalid_url_format() {
   }
 });
 
-add_task(
-  {
-    pref_set: [["browser.smartwindow.checkSecurityFlags", true]],
-  },
-  async function test_getPageContent_refuses_both_security_flags() {
+add_task(async function test_getPageContent_refuses_both_security_flags() {
+  const secProps = new SecurityProperties();
+  secProps.setPrivateData();
+  secProps.setUntrustedInput();
+  secProps.commit();
+  const result = await GetPageContent.getPageContent(
+    { url_list: ["https://example.com"] },
+    new Set(),
+    secProps
+  );
+  Assert.equal(result.length, 1, "Should return one message");
+  Assert.ok(
+    result[0].includes("not available"),
+    "Should return refusal message when both security flags are set"
+  );
+});
+
+add_task(async function test_getPageContent_allows_untrusted_input_only() {
+  const sb = sinon.createSandbox();
+  try {
+    const targetUrl = "https://example.com/page";
+    const tabs = [createFakeTab(targetUrl, "Example Page")];
+    setupBrowserWindowTracker(sb, createFakeWindow(tabs));
+
+    const secProps = new SecurityProperties();
+    secProps.setUntrustedInput();
+    secProps.commit();
     const result = await GetPageContent.getPageContent(
-      { url_list: ["https://example.com"] },
-      new Set(),
-      { untrusted_input: true, private_data: true }
+      { url_list: [targetUrl] },
+      new Set([targetUrl]),
+      secProps
     );
-    Assert.equal(result.length, 1, "Should return one message");
+    Assert.equal(result.length, 1, "Should return one result");
     Assert.ok(
-      result[0].includes("not available"),
-      "Should return refusal message when both security flags are set"
+      result[0].includes("Example Page"),
+      "Should return real content, not a refusal"
     );
+  } finally {
+    sb.restore();
   }
-);
-
-add_task(
-  {
-    pref_set: [["browser.smartwindow.checkSecurityFlags", false]],
-  },
-  async function test_getPageContent_pref_disables_security_check() {
-    const sb = sinon.createSandbox();
-    try {
-      const targetUrl = "https://example.com/page";
-      const tabs = [createFakeTab(targetUrl, "Example Page")];
-      setupBrowserWindowTracker(sb, createFakeWindow(tabs));
-
-      const result = await GetPageContent.getPageContent(
-        { url_list: [targetUrl] },
-        new Set([targetUrl]),
-        { untrusted_input: true, private_data: true }
-      );
-      Assert.equal(result.length, 1, "Should return one result");
-      Assert.ok(
-        result[0].includes("Example Page"),
-        "Should return real content, not a refusal, when pref is false"
-      );
-    } finally {
-      sb.restore();
-    }
-  }
-);
-
-add_task(
-  {
-    pref_set: [["browser.smartwindow.checkSecurityFlags", true]],
-  },
-  async function test_getPageContent_allows_untrusted_input_only() {
-    const sb = sinon.createSandbox();
-    try {
-      const targetUrl = "https://example.com/page";
-      const tabs = [createFakeTab(targetUrl, "Example Page")];
-      setupBrowserWindowTracker(sb, createFakeWindow(tabs));
-
-      const result = await GetPageContent.getPageContent(
-        { url_list: [targetUrl] },
-        new Set([targetUrl]),
-        { untrusted_input: true, private_data: false }
-      );
-      Assert.equal(result.length, 1, "Should return one result");
-      Assert.ok(
-        result[0].includes("Example Page"),
-        "Should return real content, not a refusal"
-      );
-    } finally {
-      sb.restore();
-    }
-  }
-);
+});

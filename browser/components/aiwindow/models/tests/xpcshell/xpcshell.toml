@@ -36,6 +36,8 @@ support-files = [
 
 ["test_SearchBrowsingHistoryDomainBoost.js"]
 
+["test_SecurityProperties.js"]
+
 ["test_SensitiveInfoDetector.js"]
 
 ["test_TitleGeneration.js"]
@@ -45,6 +47,8 @@ support-files = [
 ["test_Tools_GetOpenTabs.js"]
 
 ["test_Tools_GetPageContent.js"]
+
+["test_Tools_GetUserMemories.js"]
 
 ["test_Tools_RunSearch.js"]
 

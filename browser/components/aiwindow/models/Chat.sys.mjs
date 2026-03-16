@@ -234,6 +234,10 @@ Object.assign(Chat, {
           .catch(() => {});
 
         if (toolName === "run_search") {
+          // Commit here because we return early below and never reach the
+          // post-loop commit.
+          conversation.securityProperties.commit();
+
           const win = searchHandoffBrowser?.ownerGlobal;
           if (!win || win.closed) {
             console.error(
@@ -261,6 +265,10 @@ Object.assign(Chat, {
         // @todo Bug 2006159 - Implement parallel tool calling
         break;
       }
+
+      // Commit flags once all tool calls in this batch have finished so that
+      // no tool call can observe flags staged by a sibling call.
+      conversation.securityProperties.commit();
     }
   },
 

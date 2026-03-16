@@ -555,13 +555,13 @@ add_task(
       const getPageContentStub = sb
         .stub(Chat.toolMap, "get_page_content")
         .callsFake(async (_params, _allowedUrls, secProps = {}) => {
-          if (secProps.untrusted_input && secProps.private_data) {
+          if (secProps.untrustedInput && secProps.privateData) {
             return [
               `get_page_content is not available for ${_params?.url} when the conversation involves both untrusted input and private data.`,
             ];
           }
-          secProps.untrusted_input = true;
-          secProps.private_data = true;
+          secProps.setUntrustedInput();
+          secProps.setPrivateData();
           return ["page content"];
         });
       sb.stub(openAIEngine, "build").resolves(fakeEngine);
@@ -572,7 +572,6 @@ add_task(
         description: "desc",
         pageUrl: new URL("https://www.firefox.com"),
         pageMeta: {},
-        securityProperties: { untrusted_input: false, private_data: false },
       });
       conversation.addUserMessage(
         "Get page content twice",
@@ -585,12 +584,12 @@ add_task(
       await Chat.fetchWithHistory(conversation, engineInstance);
 
       Assert.strictEqual(
-        conversation.securityProperties.untrusted_input,
+        conversation.securityProperties.untrustedInput,
         true,
         "untrusted_input should be true after get_page_content"
       );
       Assert.strictEqual(
-        conversation.securityProperties.private_data,
+        conversation.securityProperties.privateData,
         true,
         "private_data should be true after get_page_content"
       );

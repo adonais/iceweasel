@@ -21,6 +21,7 @@ MOZ_SRC_FILES += [
     "IntentClassifier.sys.mjs",
     "SearchBrowsingHistory.sys.mjs",
     "SearchBrowsingHistoryDomainBoost.sys.mjs",
+    "SecurityProperties.sys.mjs",
     "TitleGeneration.sys.mjs",
     "Tools.sys.mjs",
     "Utils.sys.mjs",
