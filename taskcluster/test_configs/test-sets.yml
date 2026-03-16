@@ -413,10 +413,12 @@ macosx1500-64-jittests:
 macosx1500-64-tests:
     - cppunittest
     - crashtest
+    - firefox-ui-functional
     - gtest
     - jsreftest
     - marionette-integration
     - marionette-unittest
+    - mochitest-a11y
     - mochitest-browser-a11y
     - mochitest-browser-chrome
     - mochitest-browser-media
@@ -426,12 +428,17 @@ macosx1500-64-tests:
     - mochitest-devtools-chrome
     - mochitest-media
     - mochitest-plain
+    - mochitest-plain-gpu
+    - mochitest-remote
     - mochitest-webgl1-core
     - mochitest-webgl1-ext
     - mochitest-webgl2-core
     - mochitest-webgl2-ext
     - reftest
     - telemetry-tests-client
+    - test-verify
+    - test-verify-gpu
+    - test-verify-wpt
     - xpcshell
     - web-platform-tests
     - web-platform-tests-crashtest
