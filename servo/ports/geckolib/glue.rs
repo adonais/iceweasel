@@ -745,15 +745,12 @@ pub extern "C" fn Servo_AnimationValue_GetColor(
     value: &AnimationValue,
     foreground_color: structs::nscolor,
 ) -> structs::nscolor {
-    use style::gecko::values::{
-        convert_absolute_color_to_nscolor, convert_nscolor_to_absolute_color,
-    };
     use style::values::computed::color::Color as ComputedColor;
     match *value {
         AnimationValue::BackgroundColor(ref color) => {
             let computed: ComputedColor = color.clone();
-            let foreground_color = convert_nscolor_to_absolute_color(foreground_color);
-            convert_absolute_color_to_nscolor(&computed.resolve_to_absolute(&foreground_color))
+            let foreground_color = AbsoluteColor::from_nscolor(foreground_color);
+            computed.resolve_to_absolute(&foreground_color).to_nscolor()
         },
         _ => panic!("Other color properties are not supported yet"),
     }
@@ -789,13 +786,12 @@ pub extern "C" fn Servo_AnimationValue_Color(
     color_property: NonCustomCSSPropertyId,
     color: structs::nscolor,
 ) -> Strong<AnimationValue> {
-    use style::gecko::values::convert_nscolor_to_absolute_color;
     use style::values::animated::color::Color;
 
     let property = LonghandId::from_noncustomcsspropertyid(color_property)
         .expect("We don't have shorthand property animation value");
 
-    let animated = convert_nscolor_to_absolute_color(color);
+    let animated = AbsoluteColor::from_nscolor(color);
 
     match property {
         LonghandId::BackgroundColor => {
@@ -6471,13 +6467,12 @@ pub extern "C" fn Servo_DeclarationBlock_SetColorValue(
     property: NonCustomCSSPropertyId,
     value: structs::nscolor,
 ) {
-    use style::gecko::values::convert_nscolor_to_absolute_color;
     use style::properties::longhands;
     use style::properties::PropertyDeclaration;
     use style::values::specified::Color;
 
     let long = get_longhand_from_id!(property);
-    let rgba = convert_nscolor_to_absolute_color(value);
+    let rgba = AbsoluteColor::from_nscolor(value);
     let color = Color::from_absolute_color(rgba);
 
     let prop = match_wrap_declared! { long,
@@ -8943,12 +8938,12 @@ pub unsafe extern "C" fn Servo_ComputeColor(
     was_current_color: *mut bool,
     loader: *mut Loader,
 ) -> bool {
-    let current_color = style::gecko::values::convert_nscolor_to_absolute_color(current_color);
+    let current_color = AbsoluteColor::from_nscolor(current_color);
     let Some(result) = compute_color(raw_data, &current_color, value, loader) else {
         return false;
     };
 
-    *result_color = style::gecko::values::convert_absolute_color_to_nscolor(&result.result_color);
+    *result_color = result.result_color.to_nscolor();
     if !was_current_color.is_null() {
         *was_current_color = result.was_current_color
     }
@@ -9890,13 +9885,13 @@ pub extern "C" fn Servo_SlowRgbToNearestColorName(
 pub extern "C" fn Servo_ColorNameToRgb(name: &nsACString, out: &mut structs::nscolor) -> bool {
     match cssparser::color::parse_named_color(unsafe { name.as_str_unchecked() }) {
         Ok((r, g, b)) => {
-            *out = style::gecko::values::convert_absolute_color_to_nscolor(&AbsoluteColor::new(
+            *out = AbsoluteColor::new(
                 ColorSpace::Srgb,
                 r,
                 g,
                 b,
                 1.0,
-            ));
+            ).to_nscolor();
             true
         },
         _ => false,
