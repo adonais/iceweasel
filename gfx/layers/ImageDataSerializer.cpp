@@ -20,7 +20,7 @@ namespace ImageDataSerializer {
 
 using namespace gfx;
 
-int32_t ComputeRGBStride(SurfaceFormat aFormat, int32_t aWidth) {
+Maybe<int32_t> ComputeRGBStride(SurfaceFormat aFormat, int32_t aWidth) {
 #ifdef XP_MACOSX
   // Some drivers require an alignment of 32 bytes for efficient texture upload.
   return GetAlignedStride<32>(aWidth, BytesPerPixel(aFormat));
@@ -29,7 +29,7 @@ int32_t ComputeRGBStride(SurfaceFormat aFormat, int32_t aWidth) {
 #endif
 }
 
-int32_t GetRGBStride(const RGBDescriptor& aDescriptor) {
+Maybe<int32_t> GetRGBStride(const RGBDescriptor& aDescriptor) {
   return ComputeRGBStride(aDescriptor.format(), aDescriptor.size().width);
 }
 
@@ -42,18 +42,21 @@ Maybe<uint32_t> ComputeRGBBufferSize(IntSize aSize, SurfaceFormat aFormat) {
     return Nothing();
   }
 
-  // Note we're passing height instad of the bpp parameter, but the end
-  // result is the same - and the bpp was already taken care of in the
-  // ComputeRGBStride function.
-  int32_t bufsize = GetAlignedStride<16>(ComputeRGBStride(aFormat, aSize.width),
-                                         aSize.height);
-
-  if (bufsize <= 0) {
-    // This should not be possible thanks to Factory::AllowedSurfaceSize
+  auto stride = ComputeRGBStride(aFormat, aSize.width);
+  if (stride.isNothing()) {
     return Nothing();
   }
 
-  return Some(uint32_t(bufsize));
+  // Note we're passing height instad of the bpp parameter, but the end
+  // result is the same - and the bpp was already taken care of in the
+  // ComputeRGBStride function.
+  Maybe<int32_t> bufsize = GetAlignedStride<16>(stride.value(), aSize.height);
+  if (bufsize.isNothing()) {
+    return Nothing();
+  }
+
+  MOZ_ASSERT(bufsize.value() >= 0);
+  return Some(uint32_t(bufsize.value()));
 }
 
 static bool CheckYCbCrStride(const gfx::IntSize& aSize, int32_t aStride,
@@ -85,10 +88,13 @@ Maybe<uint32_t> ComputeYCbCrBufferSize(
   }
 
   // Overflow checks are performed only individually in AllowedSurfaceSize
-  auto bufLen =
-      CheckedInt<uint32_t>(GetAlignedStride<4>(aYSize.height, aYStride)) +
-      CheckedInt<uint32_t>(GetAlignedStride<4>(aCbCrSize.height, aCbCrStride)) *
-          2;
+  auto ySize = GetAlignedStride<4>(aYSize.height, aYStride);
+  auto cbcrSize = GetAlignedStride<4>(aCbCrSize.height, aCbCrStride);
+  if (ySize.isNothing() || cbcrSize.isNothing()) {
+    return Nothing();
+  }
+  auto bufLen = CheckedInt<uint32_t>(ySize.value()) +
+                CheckedInt<uint32_t>(cbcrSize.value()) * 2;
   if (!bufLen.isValid() || bufLen.value() <= 0) {
     return Nothing();
   }
@@ -106,18 +112,18 @@ Maybe<uint32_t> ComputeYCbCrBufferSize(
     return Nothing();
   }
 
-  uint32_t yLength = GetAlignedStride<4>(aYStride, aYSize.height);
-  uint32_t cbCrLength = GetAlignedStride<4>(aCbCrStride, aCbCrSize.height);
-  if (yLength == 0 || cbCrLength == 0) {
+  auto yLength = GetAlignedStride<4>(aYStride, aYSize.height);
+  auto cbCrLength = GetAlignedStride<4>(aCbCrStride, aCbCrSize.height);
+  if (yLength.isNothing() || cbCrLength.isNothing()) {
     return Nothing();
   }
 
   CheckedInt<uint32_t> yEnd = aYOffset;
-  yEnd += yLength;
+  yEnd += yLength.value();
   CheckedInt<uint32_t> cbEnd = aCbOffset;
-  cbEnd += cbCrLength;
+  cbEnd += cbCrLength.value();
   CheckedInt<uint32_t> crEnd = aCrOffset;
-  crEnd += cbCrLength;
+  crEnd += cbCrLength.value();
 
   if (!yEnd.isValid() || !cbEnd.isValid() || !crEnd.isValid() ||
       yEnd.value() > aCbOffset || cbEnd.value() > aCrOffset ||
@@ -133,8 +139,9 @@ void ComputeYCbCrOffsets(int32_t yStride, int32_t yHeight, int32_t cbCrStride,
                          int32_t cbCrHeight, uint32_t& outYOffset,
                          uint32_t& outCbOffset, uint32_t& outCrOffset) {
   outYOffset = 0;
-  outCbOffset = outYOffset + GetAlignedStride<4>(yStride, yHeight);
-  outCrOffset = outCbOffset + GetAlignedStride<4>(cbCrStride, cbCrHeight);
+  outCbOffset = outYOffset + GetAlignedStride<4>(yStride, yHeight).valueOr(0);
+  outCrOffset =
+      outCbOffset + GetAlignedStride<4>(cbCrStride, cbCrHeight).valueOr(0);
 }
 
 gfx::SurfaceFormat FormatFromBufferDescriptor(

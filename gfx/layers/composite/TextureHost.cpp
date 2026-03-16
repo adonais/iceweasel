@@ -539,10 +539,13 @@ void BufferTextureHost::PushResourceUpdates(
   if (GetFormat() != gfx::SurfaceFormat::YUV420) {
     MOZ_ASSERT(aImageKeys.length() == 1);
 
-    wr::ImageDescriptor descriptor(
-        GetSize(),
-        ImageDataSerializer::ComputeRGBStride(GetFormat(), GetSize().width),
-        GetFormat());
+    auto stride =
+        ImageDataSerializer::ComputeRGBStride(GetFormat(), GetSize().width);
+    if (NS_WARN_IF(stride.isNothing())) {
+      return;
+    }
+
+    wr::ImageDescriptor descriptor(GetSize(), stride.value(), GetFormat());
     (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
                          /* aNormalizedUvs */ false);
   } else {
@@ -720,10 +723,13 @@ already_AddRefed<gfx::DataSourceSurface> BufferTextureHost::GetAsSurface(
       return nullptr;
     }
   } else {
+    auto stride =
+        ImageDataSerializer::GetRGBStride(mDescriptor.get_RGBDescriptor());
+    if (stride.isNothing()) {
+      return nullptr;
+    }
     result = gfx::Factory::CreateWrappingDataSourceSurface(
-        GetBuffer(),
-        ImageDataSerializer::GetRGBStride(mDescriptor.get_RGBDescriptor()),
-        mSize, mFormat);
+        GetBuffer(), stride.value(), mSize, mFormat);
   }
   return result.forget();
 }

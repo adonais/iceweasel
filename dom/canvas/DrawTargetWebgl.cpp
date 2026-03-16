@@ -477,7 +477,11 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
   mSkia = new DrawTargetSkia;
   auto stride = layers::ImageDataSerializer::ComputeRGBStride(
       SurfaceFormat::B8G8R8A8, size.width);
-  if (!mSkia->Init(mShmem.DataAs<uint8_t>(), size, stride,
+  if (NS_WARN_IF(stride.isNothing())) {
+    return false;
+  }
+
+  if (!mSkia->Init(mShmem.DataAs<uint8_t>(), size, stride.value(),
                    SurfaceFormat::B8G8R8A8, true)) {
     return false;
   }
@@ -1289,7 +1293,8 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshot(
   return surface.forget();
 }
 
-static inline int32_t GetPBOStride(int32_t aWidth, SurfaceFormat aFormat) {
+static inline Maybe<int32_t> GetPBOStride(int32_t aWidth,
+                                          SurfaceFormat aFormat) {
   return GetAlignedStride<16>(aWidth, BytesPerPixel(aFormat));
 }
 
@@ -1308,8 +1313,12 @@ already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
     format = mCurrentTarget->GetFormat();
     bounds = mCurrentTarget->GetRect();
   }
-  int32_t pboStride = GetPBOStride(bounds.width, format);
-  size_t bufSize = BufferSizeFromStrideAndHeight(pboStride, bounds.height);
+  auto pboStride = GetPBOStride(bounds.width, format);
+  if (pboStride.isNothing()) {
+    return nullptr;
+  }
+  size_t bufSize =
+      BufferSizeFromStrideAndHeight(pboStride.value(), bounds.height);
   if (!bufSize) {
     return nullptr;
   }
@@ -1330,7 +1339,7 @@ already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
   mWebgl->UninitializedBufferData_SizeOnly(LOCAL_GL_PIXEL_PACK_BUFFER, bufSize,
                                            LOCAL_GL_STREAM_READ);
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
-  if (!ReadInto(nullptr, pboStride, format, bounds, aHandle, pbo)) {
+  if (!ReadInto(nullptr, pboStride.value(), format, bounds, aHandle, pbo)) {
     return nullptr;
   }
 
@@ -1350,9 +1359,12 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
     const IntSize& aSize, uint8_t* aData, int32_t aStride) {
   // For an existing PBO where a readback has been initiated previously, create
   // a new data surface and copy the PBO's data into the data surface.
-  int32_t pboStride = GetPBOStride(aSize.width, aFormat);
-  size_t bufSize =
-      BufferSizeFromStrideAndHeight(aData ? aStride : pboStride, aSize.height);
+  auto pboStride = GetPBOStride(aSize.width, aFormat);
+  if (pboStride.isNothing()) {
+    return nullptr;
+  }
+  size_t bufSize = BufferSizeFromStrideAndHeight(
+      aData ? aStride : pboStride.value(), aSize.height);
   if (!bufSize) {
     return nullptr;
   }
@@ -1360,7 +1372,7 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
       aData ? Factory::CreateWrappingDataSourceSurface(aData, aStride, aSize,
                                                        aFormat)
             : Factory::CreateDataSourceSurfaceWithStride(aSize, aFormat,
-                                                         pboStride);
+                                                         pboStride.value());
   if (!surface) {
     return nullptr;
   }
@@ -1372,7 +1384,8 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
   Range<uint8_t> range = {dstMap.GetData(), bufSize};
   bool success = mWebgl->AsWebGL2()->GetBufferSubData(
       LOCAL_GL_PIXEL_PACK_BUFFER, 0, range, aSize.height,
-      BytesPerPixel(aFormat) * aSize.height, pboStride, dstMap.GetStride());
+      BytesPerPixel(aFormat) * aSize.height, pboStride.value(),
+      dstMap.GetStride());
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
   if (success) {
     return surface.forget();
@@ -1386,8 +1399,10 @@ void SharedContextWebgl::RemoveSnapshotPBO(
   MOZ_ASSERT(aOwner && buffer);
   IntSize size = aOwner->GetSize();
   SurfaceFormat format = aOwner->GetFormat();
-  int32_t pboStride = GetPBOStride(size.width, format);
-  size_t bufSize = BufferSizeFromStrideAndHeight(pboStride, size.height);
+  size_t bufSize = 0;
+  if (auto pboStride = GetPBOStride(size.width, format)) {
+    bufSize = BufferSizeFromStrideAndHeight(pboStride.value(), size.height);
+  }
   // If the queue is empty, no memory should be used. Otherwise, deduct the
   // usage from the queue.
   if (mSnapshotPBOs.empty()) {
@@ -2603,20 +2618,26 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
       MOZ_ASSERT_UNREACHABLE("Invalid origin for texture initialization.");
       return false;
     }
-    int32_t stride = GetAlignedStride<4>(srcRect.width, BytesPerPixel(aFormat));
-    if (stride <= 0) {
+    auto stride = GetAlignedStride<4>(srcRect.width, BytesPerPixel(aFormat));
+    if (stride.isNothing()) {
       MOZ_ASSERT_UNREACHABLE("Invalid stride for texture initialization.");
       return false;
     }
-    size_t size = size_t(stride) * srcRect.height;
-    if (!mZeroBuffer || size > mZeroSize) {
+    CheckedInt<size_t> size =
+        CheckedInt<size_t>(stride.value()) * srcRect.height;
+    if (!size.isValid()) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Invalid stride * srcRect.height for texture initialization.");
+      return false;
+    }
+    if (!mZeroBuffer || size.value() > mZeroSize) {
       ClearZeroBuffer();
       mZeroBuffer = mWebgl->CreateBuffer();
-      mZeroSize = size;
+      mZeroSize = size.value();
       mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mZeroBuffer);
       // WebGL will zero initialize the empty buffer, so we don't send zero data
       // explicitly.
-      mWebgl->BufferData(LOCAL_GL_PIXEL_UNPACK_BUFFER, size, nullptr,
+      mWebgl->BufferData(LOCAL_GL_PIXEL_UNPACK_BUFFER, mZeroSize, nullptr,
                          LOCAL_GL_STATIC_DRAW);
       AddUntrackedTextureMemory(mZeroBuffer);
     } else {

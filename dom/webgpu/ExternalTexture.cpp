@@ -602,9 +602,15 @@ ExternalTextureSourceHost::CreateFromBufferDesc(
                               mozilla::ToString(rgbDesc.format()).c_str()));
           return CreateError();
       }
+      auto stride = layers::ImageDataSerializer::GetRGBStride(rgbDesc);
+      if (stride.isNothing()) {
+        gfxCriticalErrorOnce() << "Invalid stride";
+        aParent->ReportError(aDeviceId, dom::GPUErrorFilter::Internal,
+                             "Invalid stride"_ns);
+        return CreateError();
+      }
       createPlane(aDesc.mTextureIds[0], aDesc.mViewIds[0], planeFormat,
-                  rgbDesc.size(), aBuffer,
-                  layers::ImageDataSerializer::GetRGBStride(rgbDesc));
+                  rgbDesc.size(), aBuffer, stride.value());
       usedTextureIds.AppendElement(aDesc.mTextureIds[0]);
       usedViewIds.AppendElement(aDesc.mViewIds[0]);
       colorSpace = gfx::YUVRangedColorSpace::GbrIdentity;

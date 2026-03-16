@@ -1103,8 +1103,8 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
       MOZ_ASSERT(data.type() == layers::MemoryOrShmem::TShmem);
       const auto& shmem = data.get_Shmem();
       size_t shmemSize = shmem.Size<uint8_t>();
-      int32_t stride = layers::ImageDataSerializer::GetRGBStride(rgb);
-      if (stride <= 0) {
+      auto stride = layers::ImageDataSerializer::GetRGBStride(rgb);
+      if (stride.isNothing()) {
         gfxCriticalError() << "TexUnpackSurface failed to get rgb stride";
         return false;
       }
@@ -1115,7 +1115,7 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
         return false;
       }
       surf = gfx::Factory::CreateWrappingDataSourceSurface(
-          shmem.get<uint8_t>(), stride, rgb.size(), rgb.format());
+          shmem.get<uint8_t>(), stride.value(), rgb.size(), rgb.format());
     } else if (SDIsNullRemoteDecoder(sd)) {
       const auto& sdrd = sd.get_SurfaceDescriptorGPUVideo()
                              .get_SurfaceDescriptorRemoteDecoder();

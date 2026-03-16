@@ -127,10 +127,15 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
 
     auto stride = ImageDataSerializer::ComputeRGBStride(
         descriptor.format(), descriptor.size().width);
+    if (stride.isNothing()) {
+      MOZ_ASSERT_UNREACHABLE("Invalid RBG stride!");
+      return nullptr;
+    }
+
     auto surface = MakeRefPtr<SourceSurfaceAlignedRawData>();
     if (NS_WARN_IF(!surface->Init(descriptor.size(), descriptor.format(),
                                   /* aClearMem */ false, /* aClearValue */ 0,
-                                  stride))) {
+                                  stride.value()))) {
       return nullptr;
     }
 
@@ -139,7 +144,7 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
       return nullptr;
     }
 
-    if (NS_WARN_IF(!SwizzleData(buffer, stride, descriptor.format(),
+    if (NS_WARN_IF(!SwizzleData(buffer, stride.value(), descriptor.format(),
                                 map.GetData(), map.GetStride(),
                                 descriptor.format(), descriptor.size()))) {
       return nullptr;

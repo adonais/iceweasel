@@ -464,14 +464,12 @@ static sk_sp<SkImage> ExtractAlphaImage(const sk_sp<SkImage>& aImage,
   // Skia does not fully allocate the last row according to stride.
   // Since some of our algorithms (i.e. blur) depend on this, we must allocate
   // the bitmap pixels manually.
-  size_t stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
-  if (stride) {
-    CheckedInt<size_t> size = stride;
+  if (auto stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel())) {
+    CheckedInt<size_t> size = stride.value();
     size *= info.height();
     if (size.isValid()) {
-      void* buf = sk_malloc_flags(size.value(), 0);
-      if (buf) {
-        SkPixmap pixmap(info, buf, stride);
+      if (void* buf = sk_malloc_flags(size.value(), 0)) {
+        SkPixmap pixmap(info, buf, stride.value());
         if (aImage->readPixels(pixmap, 0, 0)) {
           if (sk_sp<SkImage> result =
                   SkImages::RasterFromPixmap(pixmap, FreeAlphaImage, buf)) {
@@ -1840,8 +1838,8 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
   if (info.bytesPerPixel() != BytesPerPixel(aFormat)) {
     return false;
   }
-  size_t stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
-  if (!stride || stride < info.minRowBytes64()) {
+  auto stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
+  if (stride.isNothing() || size_t(stride.value()) < info.minRowBytes64()) {
     return false;
   }
   SkSurfaceProps props(0, GetSkPixelGeometry());
@@ -1850,7 +1848,7 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
     // Skia does not fully allocate the last row according to stride.
     // Since some of our algorithms (i.e. blur) depend on this, we must allocate
     // the bitmap pixels manually.
-    CheckedInt<size_t> size = stride;
+    CheckedInt<size_t> size = stride.value();
     size *= info.height();
     if (!size.isValid()) {
       return false;
@@ -1860,9 +1858,9 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
       return false;
     }
     mSurface = AsRefPtr(SkSurfaces::WrapPixels(
-        info, buf, stride, FreeAlphaPixels, nullptr, &props));
+        info, buf, stride.value(), FreeAlphaPixels, nullptr, &props));
   } else {
-    mSurface = AsRefPtr(SkSurfaces::Raster(info, stride, &props));
+    mSurface = AsRefPtr(SkSurfaces::Raster(info, stride.value(), &props));
   }
   if (!mSurface) {
     return false;

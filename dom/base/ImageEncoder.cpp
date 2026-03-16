@@ -412,15 +412,20 @@ nsresult ImageEncoder::ExtractDataInternal(
       layers::PlanarYCbCrImage* ycbcrImage =
           static_cast<layers::PlanarYCbCrImage*>(aImage);
       gfxImageFormat format = SurfaceFormat::A8R8G8B8_UINT32;
-      int32_t stride = GetAlignedStride<16>(aSize.width, 4);
-      size_t length = BufferSizeFromStrideAndHeight(stride, aSize.height);
+      auto stride = GetAlignedStride<16>(aSize.width, 4);
+      if (stride.isNothing()) {
+        return NS_ERROR_INVALID_ARG;
+      }
+      size_t length =
+          BufferSizeFromStrideAndHeight(stride.value(), aSize.height);
       if (length == 0) {
         return NS_ERROR_INVALID_ARG;
       }
       data.SetCapacity(length);
 
       rv = ConvertYCbCrToRGB(*ycbcrImage->GetData(), format,
-                             aSize.ToUnknownSize(), data.Elements(), stride);
+                             aSize.ToUnknownSize(), data.Elements(),
+                             stride.value());
       if (NS_FAILED(rv)) {
         MOZ_ASSERT_UNREACHABLE("Failed to convert YUV into RGB data");
         return rv;

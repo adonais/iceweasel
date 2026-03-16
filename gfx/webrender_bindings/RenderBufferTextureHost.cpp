@@ -58,11 +58,15 @@ wr::WrExternalImage RenderBufferTextureHost::Lock(uint8_t aChannelIndex,
       return InvalidToWrExternalImage();
     }
     if (mFormat != gfx::SurfaceFormat::YUV420) {
+      auto stride = layers::ImageDataSerializer::GetRGBStride(
+          mDescriptor.get_RGBDescriptor());
+      if (NS_WARN_IF(stride.isNothing())) {
+        gfxCriticalNote << "Invalid stride";
+        return InvalidToWrExternalImage();
+      }
+
       mSurface = gfx::Factory::CreateWrappingDataSourceSurface(
-          GetBuffer(),
-          layers::ImageDataSerializer::GetRGBStride(
-              mDescriptor.get_RGBDescriptor()),
-          mSize, mFormat);
+          GetBuffer(), stride.value(), mSize, mFormat);
       if (NS_WARN_IF(!mSurface)) {
         gfxCriticalNote << "DataSourceSurface is null";
         return InvalidToWrExternalImage();
@@ -235,7 +239,12 @@ bool RenderBufferTextureHost::MapPlane(RenderCompositor* aCompositor,
     default: {
       const layers::RGBDescriptor& desc = mDescriptor.get_RGBDescriptor();
       aPlaneInfo.mData = mBuffer;
-      aPlaneInfo.mStride = layers::ImageDataSerializer::GetRGBStride(desc);
+      auto stride = layers::ImageDataSerializer::GetRGBStride(desc);
+      if (stride.isNothing()) {
+        gfxCriticalNote << "Invalid stride";
+        return false;
+      }
+      aPlaneInfo.mStride = stride.value();
       aPlaneInfo.mSize = desc.size();
       break;
     }

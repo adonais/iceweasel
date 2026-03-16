@@ -335,13 +335,14 @@ bool Factory::CheckSurfaceSize(const IntSize& sz, int32_t extentLimit,
 
   // assuming 4 bytes per pixel, make sure the allocation size
   // doesn't overflow a int32_t either
-  CheckedInt<int32_t> stride = GetAlignedStride<16>(sz.width, 4);
-  if (!stride.isValid() || stride.value() == 0) {
-    gfxDebug() << "Surface size too large (stride overflows int32_t)!";
+  auto stride = GetAlignedStride<16>(sz.width, 4);
+  if (stride.isNothing()) {
+    gfxDebug() << "Surface size too large (stride is invalid)!";
     return false;
   }
 
-  CheckedInt<int32_t> numBytes = stride * sz.height;
+  CheckedInt<int32_t> numBytes =
+      CheckedInt<int32_t>(stride.value()) * sz.height;
   if (!numBytes.isValid()) {
     gfxDebug()
         << "Surface size too large (allocation size would overflow int32_t)!";

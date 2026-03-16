@@ -7,6 +7,7 @@
 #include "FakeVideoSource.h"
 
 #include "ImageContainer.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/gfx/Tools.h"
 
@@ -107,24 +108,39 @@ void FakeVideoSource::SetTrackingId(uint32_t aTrackingIdProcId) {
 static bool AllocateSolidColorFrame(layers::PlanarYCbCrData& aData, int aWidth,
                                     int aHeight, int aY, int aCb, int aCr) {
   // Allocate a single frame with a solid color
-  int yStride = GetAlignedStride<2>(aWidth, 1);
-  int yLen = yStride * aHeight;
-  int cbcrStride = yStride / 2;
-  int cbLen = cbcrStride * GetAlignedStride<2>(aHeight, 1) / 2;
-  int crLen = cbLen;
-  uint8_t* frame = (uint8_t*)malloc(yLen + cbLen + crLen);
+  auto yStride = GetAlignedStride<2>(aWidth, 1);
+  if (yStride.isNothing()) {
+    return false;
+  }
+  CheckedInt<int32_t> yLen = CheckedInt<int32_t>(yStride.value()) * aHeight;
+  if (!yLen.isValid()) {
+    return false;
+  }
+  int32_t cbcrStride = yStride.value() / 2;
+  auto heightStride = GetAlignedStride<2>(aHeight, 1);
+  if (heightStride.isNothing()) {
+    return false;
+  }
+  CheckedInt<int32_t> cbLen =
+      CheckedInt<int32_t>(cbcrStride) * heightStride.value() / 2;
+  CheckedInt<int32_t> crLen = cbLen;
+  CheckedInt<int32_t> frameLen = yLen + cbLen + crLen;
+  if (!frameLen.isValid()) {
+    return false;
+  }
+  uint8_t* frame = (uint8_t*)malloc(frameLen.value());
   if (!frame) {
     return false;
   }
-  memset(frame, aY, yLen);
-  memset(frame + yLen, aCb, cbLen);
-  memset(frame + yLen + cbLen, aCr, crLen);
+  memset(frame, aY, yLen.value());
+  memset(frame + yLen.value(), aCb, cbLen.value());
+  memset(frame + yLen.value() + cbLen.value(), aCr, crLen.value());
 
   aData.mYChannel = frame;
-  aData.mYStride = yStride;
+  aData.mYStride = yStride.value();
   aData.mCbCrStride = cbcrStride;
-  aData.mCbChannel = frame + yLen;
-  aData.mCrChannel = aData.mCbChannel + cbLen;
+  aData.mCbChannel = frame + yLen.value();
+  aData.mCrChannel = aData.mCbChannel + cbLen.value();
   aData.mPictureRect = IntRect(0, 0, aWidth, aHeight);
   aData.mStereoMode = StereoMode::MONO;
   aData.mYUVColorSpace = gfx::YUVColorSpace::BT601;

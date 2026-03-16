@@ -445,11 +445,10 @@ void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
   }
   auto dstSize = dataSurface->GetSize();
   gfx::SurfaceFormat format = dataSurface->GetFormat();
-  int32_t dstStride =
-      ImageDataSerializer::ComputeRGBStride(format, dstSize.width);
+  auto dstStride = ImageDataSerializer::ComputeRGBStride(format, dstSize.width);
   Maybe<uint32_t> requiredSize =
       ImageDataSerializer::ComputeRGBBufferSize(dstSize, format);
-  if (requiredSize.isNothing()) {
+  if (dstStride.isNothing() || requiredSize.isNothing()) {
     return;
   }
 
@@ -468,7 +467,7 @@ void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
   }
 
   uint8_t* dst = it->second.mShmem.DataAs<uint8_t>();
-  if (dataSurface->ReadDataInto(dst, dstStride)) {
+  if (dataSurface->ReadDataInto(dst, dstStride.value())) {
     // If reading directly into the shmem, then mark the data surface as the
     // shmem's owner.
     it->second.mOwner = dataSurface;
@@ -484,8 +483,8 @@ void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
     return;
   }
 
-  gfx::SwizzleData(map.GetData(), map.GetStride(), format, dst, dstStride,
-                   format, dstSize);
+  gfx::SwizzleData(map.GetData(), map.GetStride(), format, dst,
+                   dstStride.value(), format, dstSize);
 }
 
 already_AddRefed<gfx::SourceSurface> CanvasTranslator::WaitForSurface(

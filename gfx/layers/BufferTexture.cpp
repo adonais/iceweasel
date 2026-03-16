@@ -249,18 +249,22 @@ already_AddRefed<gfx::DrawTarget> BufferTextureData::BorrowDrawTarget() {
 
   const RGBDescriptor& rgb = mDescriptor.get_RGBDescriptor();
 
-  uint32_t stride = ImageDataSerializer::GetRGBStride(rgb);
+  auto stride = ImageDataSerializer::GetRGBStride(rgb);
+  if (stride.isNothing()) {
+    return nullptr;
+  }
+
   RefPtr<gfx::DrawTarget> dt;
   if (gfx::Factory::DoesBackendSupportDataDrawtarget(mMoz2DBackend)) {
     dt = gfx::Factory::CreateDrawTargetForData(mMoz2DBackend, GetBuffer(),
-                                               rgb.size(), stride, rgb.format(),
-                                               true, mIsClear);
+                                               rgb.size(), stride.value(),
+                                               rgb.format(), true, mIsClear);
   }
   if (!dt) {
     // Fall back to supported platform backend.  Note that mMoz2DBackend
     // does not match the draw target type.
-    dt = gfxPlatform::CreateDrawTargetForData(GetBuffer(), rgb.size(), stride,
-                                              rgb.format(), true, mIsClear);
+    dt = gfxPlatform::CreateDrawTargetForData(
+        GetBuffer(), rgb.size(), stride.value(), rgb.format(), true, mIsClear);
   }
 
   if (!dt) {
@@ -279,14 +283,14 @@ bool BufferTextureData::BorrowMappedData(MappedTextureData& aData) {
   gfx::IntSize size = GetSize();
 
   auto stride = ImageDataSerializer::ComputeRGBStride(GetFormat(), size.width);
-  if (stride == 0) {
+  if (stride.isNothing()) {
     return false;
   }
 
   aData.data = GetBuffer();
   aData.size = size;
   aData.format = GetFormat();
-  aData.stride = stride;
+  aData.stride = stride.value();
   mIsClear = false;
 
   return true;
@@ -335,9 +339,14 @@ bool BufferTextureData::UpdateFromSurface(gfx::SourceSurface* aSurface) {
   }
   const RGBDescriptor& rgb = mDescriptor.get_RGBDescriptor();
 
-  uint32_t stride = ImageDataSerializer::GetRGBStride(rgb);
+  auto stride = ImageDataSerializer::GetRGBStride(rgb);
+  if (stride.isNothing()) {
+    gfxCriticalError() << "Invalid stride!";
+    return false;
+  }
+
   RefPtr<gfx::DataSourceSurface> surface =
-      gfx::Factory::CreateWrappingDataSourceSurface(GetBuffer(), stride,
+      gfx::Factory::CreateWrappingDataSourceSurface(GetBuffer(), stride.value(),
                                                     rgb.size(), rgb.format());
 
   if (!surface) {

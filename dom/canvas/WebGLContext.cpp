@@ -1730,14 +1730,6 @@ void WebGLContext::ClearVRSwapChain() { mWebVRSwapChain.ClearPool(); }
 
 // ------------------------
 
-RefPtr<gfx::DataSourceSurface> GetTempSurface(const gfx::IntSize& aSize,
-                                              gfx::SurfaceFormat& aFormat) {
-  uint32_t stride =
-      gfx::GetAlignedStride<8>(aSize.width, BytesPerPixel(aFormat));
-  return gfx::Factory::CreateDataSourceSurfaceWithStride(aSize, aFormat,
-                                                         stride);
-}
-
 void WebGLContext::DummyReadFramebufferOperation() {
   if (!mBoundReadFramebuffer) return;  // Infallible.
 

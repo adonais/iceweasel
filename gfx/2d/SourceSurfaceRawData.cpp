@@ -74,9 +74,11 @@ bool SourceSurfaceAlignedRawData::Init(const IntSize& aSize,
                                        uint8_t aClearValue, int32_t aStride) {
   mFormat = aFormat;
   mStride = aStride ? aStride
-                    : GetAlignedStride<16>(aSize.width, BytesPerPixel(aFormat));
+                    : GetAlignedStride<16>(aSize.width, BytesPerPixel(aFormat))
+                          .valueOr(0);
 
-  size_t bufLen = BufferSizeFromStrideAndHeight(mStride, aSize.height);
+  size_t bufLen =
+      mStride ? BufferSizeFromStrideAndHeight(mStride, aSize.height) : 0;
   if (bufLen > 0) {
     bool zeroMem = aClearMem && !aClearValue;
     static_assert(sizeof(decltype(mArray[0])) == 1,

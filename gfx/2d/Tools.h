@@ -12,6 +12,7 @@
 #include "Point.h"
 #include "Types.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"  // for MallocSizeOf
 
 namespace mozilla {
@@ -178,16 +179,17 @@ struct AlignedArray final {
  * implementation.
  */
 template <int alignment>
-int32_t GetAlignedStride(int32_t aWidth, int32_t aBytesPerPixel) {
+Maybe<int32_t> GetAlignedStride(int32_t aWidth, int32_t aBytesPerPixel) {
   static_assert(alignment > 0 && (alignment & (alignment - 1)) == 0,
                 "This implementation currently require power-of-two alignment");
   const int32_t mask = alignment - 1;
   CheckedInt32 stride =
       CheckedInt32(aWidth) * CheckedInt32(aBytesPerPixel) + CheckedInt32(mask);
-  if (stride.isValid()) {
-    return stride.value() & ~mask;
+  if (!stride.isValid()) {
+    return Nothing();
   }
-  return 0;
+  int32_t aligned = stride.value() & ~mask;
+  return aligned > 0 ? Some(aligned) : Nothing();
 }
 
 }  // namespace gfx

@@ -139,10 +139,11 @@ bool SourceSurfaceSkia::InitFromImage(const sk_sp<SkImage>& aImage,
     if (info.bytesPerPixel() != BytesPerPixel(mFormat)) {
       return false;
     }
-    mStride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
-    if (mStride <= 0 || size_t(mStride) < info.minRowBytes64()) {
+    auto stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
+    if (stride.isNothing() || size_t(stride.value()) < info.minRowBytes64()) {
       return false;
     }
+    mStride = stride.value();
   } else {
     return false;
   }
@@ -162,11 +163,12 @@ already_AddRefed<SourceSurface> SourceSurfaceSkia::ExtractSubrect(
     return nullptr;
   }
   SkImageInfo info = MakeSkiaImageInfo(aRect.Size(), mFormat);
-  size_t stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
-  if (!stride) {
+  auto stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
+  if (stride.isNothing()) {
     return nullptr;
   }
-  sk_sp<SkImage> subImage = ReadSkImage(mImage, info, stride, aRect.x, aRect.y);
+  sk_sp<SkImage> subImage =
+      ReadSkImage(mImage, info, stride.value(), aRect.x, aRect.y);
   if (!subImage) {
     return nullptr;
   }

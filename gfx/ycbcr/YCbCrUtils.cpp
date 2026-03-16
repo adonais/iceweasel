@@ -125,15 +125,15 @@ struct YUV8BitData {
     mData.mColorRange = aData.mColorRange;
     mData.mChromaSubsampling = aData.mChromaSubsampling;
 
-    size_t yMemorySize = GetAlignedStride<1>(mData.mYStride, ySize.height);
-    size_t cbcrMemorySize =
+    auto yMemorySize = GetAlignedStride<1>(mData.mYStride, ySize.height);
+    auto cbcrMemorySize =
         GetAlignedStride<1>(mData.mCbCrStride, cbcrSize.height);
-    if (yMemorySize == 0) {
-      MOZ_DIAGNOSTIC_ASSERT(cbcrMemorySize == 0,
+    if (yMemorySize.isNothing()) {
+      MOZ_DIAGNOSTIC_ASSERT(cbcrMemorySize.isNothing(),
                             "CbCr without Y makes no sense");
       return NS_ERROR_INVALID_ARG;
     }
-    mYChannel = MakeUnique<uint8_t[]>(yMemorySize);
+    mYChannel = MakeUnique<uint8_t[]>(yMemorySize.value());
     if (!mYChannel) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -147,12 +147,12 @@ struct YUV8BitData {
                           aData.mYStride / 2, ySize.width, ySize.height,
                           bitDepth);
 
-    if (cbcrMemorySize) {
-      mCbChannel = MakeUnique<uint8_t[]>(cbcrMemorySize);
+    if (cbcrMemorySize.isSome()) {
+      mCbChannel = MakeUnique<uint8_t[]>(cbcrMemorySize.value());
       if (!mCbChannel) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
-      mCrChannel = MakeUnique<uint8_t[]>(cbcrMemorySize);
+      mCrChannel = MakeUnique<uint8_t[]>(cbcrMemorySize.value());
       if (!mCrChannel) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
@@ -172,9 +172,12 @@ struct YUV8BitData {
     }
     if (aData.mAlpha) {
       int32_t alphaStride8bpp = (aData.mAlpha->mSize.width + 31) & ~31;
-      size_t alphaSize =
+      auto alphaSize =
           GetAlignedStride<1>(alphaStride8bpp, aData.mAlpha->mSize.height);
-      mAlphaChannel = MakeUnique<uint8_t[]>(alphaSize);
+      if (alphaSize.isNothing()) {
+        return NS_ERROR_INVALID_ARG;
+      }
+      mAlphaChannel = MakeUnique<uint8_t[]>(alphaSize.value());
       if (!mAlphaChannel) {
         return NS_ERROR_OUT_OF_MEMORY;
       }

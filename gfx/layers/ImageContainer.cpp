@@ -209,13 +209,15 @@ ImageContainer::~ImageContainer() {
     const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat, uint8_t*& aOutBuffer,
     SurfaceDescriptorBuffer& aSdBuffer, int32_t& aStride,
     const std::function<layers::MemoryOrShmem(uint32_t)>& aAllocate) {
-  aStride = ImageDataSerializer::ComputeRGBStride(aFormat, aSize.width);
+  auto stride = ImageDataSerializer::ComputeRGBStride(aFormat, aSize.width);
   Maybe<uint32_t> length =
       ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
 
-  if (aStride <= 0 || length.isNothing()) {
+  if (stride.isNothing() || length.isNothing()) {
     return NS_ERROR_INVALID_ARG;
   }
+
+  aStride = stride.value();
 
   aSdBuffer.desc() = RGBDescriptor(aSize, aFormat);
   aSdBuffer.data() = aAllocate(length.value());

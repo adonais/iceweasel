@@ -443,9 +443,14 @@ already_AddRefed<DataSourceSurface> ReadBackSurface(GLContext* gl,
   gl->fGetTexLevelParameteriv(LOCAL_GL_TEXTURE_2D, 0, LOCAL_GL_TEXTURE_HEIGHT,
                               &size.height);
 
+  auto stride =
+      GetAlignedStride<4>(size.width, BytesPerPixel(SurfaceFormat::B8G8R8A8));
+  if (stride.isNothing()) {
+    return nullptr;
+  }
+
   RefPtr<DataSourceSurface> surf = Factory::CreateDataSourceSurfaceWithStride(
-      size, SurfaceFormat::B8G8R8A8,
-      GetAlignedStride<4>(size.width, BytesPerPixel(SurfaceFormat::B8G8R8A8)));
+      size, SurfaceFormat::B8G8R8A8, stride.value());
 
   if (NS_WARN_IF(!surf)) {
     return nullptr;

@@ -1202,11 +1202,12 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   RefPtr<PresentationData> data = lookup->second.get();
   data->mReadbackSnapshotCallbackCalled = false;
 
-  const size_t stride = layers::ImageDataSerializer::GetRGBStride(data->mDesc);
-  // `GetRGBStride` returns 0 if it overflows
-  if (stride == 0) {
+  const Maybe<int32_t> maybeStride =
+      layers::ImageDataSerializer::GetRGBStride(data->mDesc);
+  if (maybeStride.isNothing()) {
     return IPC_OK();
   }
+  const auto stride = maybeStride.value();
 
   const auto& size = data->mDesc.size();
   const auto len = CheckedInt<size_t>(size.height) * stride;

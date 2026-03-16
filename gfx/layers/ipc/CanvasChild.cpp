@@ -617,6 +617,9 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
   gfx::IntSize ssSize = aSurface->GetSize();
   gfx::SurfaceFormat ssFormat = aSurface->GetFormat();
   auto stride = ImageDataSerializer::ComputeRGBStride(ssFormat, ssSize.width);
+  if (stride.isNothing()) {
+    return nullptr;
+  }
 
   // Shmem is only valid if the surface is the latest snapshot (not detached).
   if (!aDetached) {
@@ -641,7 +644,7 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
       // DataSourceSurface will not be written to.
       RefPtr<gfx::DataSourceSurface> dataSurface =
           gfx::Factory::CreateWrappingDataSourceSurface(
-              const_cast<uint8_t*>(shmemPtr), stride, ssSize, ssFormat,
+              const_cast<uint8_t*>(shmemPtr), stride.value(), ssSize, ssFormat,
               ReleaseDataShmemHolder, closure);
       aMayInvalidate = true;
       return dataSurface.forget();
@@ -679,7 +682,7 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
   // DataSourceSurface will not be written to.
   RefPtr<gfx::DataSourceSurface> dataSurface =
       gfx::Factory::CreateWrappingDataSourceSurface(
-          const_cast<uint8_t*>(data), stride, ssSize, ssFormat,
+          const_cast<uint8_t*>(data), stride.value(), ssSize, ssFormat,
           ReleaseDataShmemHolder, closure);
   aMayInvalidate = false;
   return dataSurface.forget();

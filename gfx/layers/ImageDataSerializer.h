@@ -26,9 +26,9 @@ namespace ImageDataSerializer {
 
 // RGB
 
-int32_t ComputeRGBStride(gfx::SurfaceFormat aFormat, int32_t aWidth);
+Maybe<int32_t> ComputeRGBStride(gfx::SurfaceFormat aFormat, int32_t aWidth);
 
-int32_t GetRGBStride(const RGBDescriptor& aDescriptor);
+Maybe<int32_t> GetRGBStride(const RGBDescriptor& aDescriptor);
 
 Maybe<uint32_t> ComputeRGBBufferSize(gfx::IntSize aSize,
                                      gfx::SurfaceFormat aFormat);

@@ -76,9 +76,12 @@ already_AddRefed<gfx::DataSourceSurface> GetSurfaceForDescriptor(
   uint8_t* data = GetAddressFromDescriptor(aDescriptor);
   auto rgb =
       aDescriptor.get_SurfaceDescriptorBuffer().desc().get_RGBDescriptor();
-  uint32_t stride = ImageDataSerializer::GetRGBStride(rgb);
-  return gfx::Factory::CreateWrappingDataSourceSurface(data, stride, rgb.size(),
-                                                       rgb.format());
+  auto stride = ImageDataSerializer::GetRGBStride(rgb);
+  if (stride.isNothing()) {
+    return nullptr;
+  }
+  return gfx::Factory::CreateWrappingDataSourceSurface(
+      data, stride.value(), rgb.size(), rgb.format());
 }
 
 void DestroySurfaceDescriptor(ipc::IShmemAllocator* aAllocator,
