@@ -524,6 +524,8 @@ add_task(async function test_aiwindow_component_trust_smoke() {
             },
             memoriesApplied: [],
             tokens: { search: [] },
+            webSearchQueries: [],
+            followUpSuggestions: [],
             convId,
           },
           nestedBrowser.contentWindow
