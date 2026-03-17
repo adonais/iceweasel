@@ -16,6 +16,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozPageHeader.ftl");
  * @property {string} iconSrc - The src for an optional icon.
  * @property {string} supportPage - Optional URL for a related support article.
  * @property {boolean} backButton - Whether or not the header should include a back button.
+ * @property {"beta" | "new" | undefined} badge - Include a badge of this type with matching text.
  * @slot breadcrumbs - Container for a <moz-breadcrumb-group, shown above the heading.
  * @fires navigate-back
  *  Event indicating the backwards navigation should occur.
@@ -27,6 +28,7 @@ export default class MozPageHeader extends MozLitElement {
     iconSrc: { type: String },
     supportPage: { type: String, attribute: "support-page" },
     backButton: { type: Boolean },
+    badge: { type: String },
   };
 
   static queries = {
@@ -41,6 +43,8 @@ export default class MozPageHeader extends MozLitElement {
     this.iconSrc = "";
     this.supportPage = "";
     this.backButton = false;
+    /** @type {"beta" | "new" | undefined} */
+    this.badge = undefined;
   }
 
   backButtonTemplate() {
@@ -86,6 +90,13 @@ export default class MozPageHeader extends MozLitElement {
     ></a>`;
   }
 
+  badgeTemplate() {
+    if (!this.badge) {
+      return "";
+    }
+    return html`<moz-badge type=${this.badge}></moz-badge>`;
+  }
+
   handleBack() {
     this.dispatchEvent(new Event("navigate-back"));
   }
@@ -105,6 +116,7 @@ export default class MozPageHeader extends MozLitElement {
         <div class="heading">
           ${this.backButtonTemplate()}${this.iconTemplate()}
           <h1 id="heading">${this.heading}</h1>
+          ${this.badgeTemplate()}
           ${!this.description ? this.supportLinkTemplate() : ""}
         </div>
         ${this.descriptionTemplate()}

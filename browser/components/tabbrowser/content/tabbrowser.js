@@ -16,7 +16,7 @@
     "about:privatebrowsing":
       "chrome://browser/skin/privatebrowsing/favicon.svg",
     "chrome://browser/content/aiwindow/aiWindow.html":
-      "chrome://global/skin/icons/highlights.svg",
+      "chrome://browser/skin/smart-window-simplified.svg",
   };
 
   const {

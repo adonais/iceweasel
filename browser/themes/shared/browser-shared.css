@@ -1379,15 +1379,18 @@ popupnotificationcontent {
     padding: 0 var(--toolbarbutton-outer-padding);
   }
 
-  /* Toggle button icon is designed to be slightly larger at 20px */
   > .toolbarbutton-icon {
+    padding: 8px;
     box-shadow: 0 0 16px 4px var(--box-shadow-color-darker-layer-1) inset;
   }
 
+  /* Smart Window toggle */
   :root[ai-window] & {
     list-style-image: url("chrome://browser/skin/smart-window-simplified.svg");
 
     > .toolbarbutton-icon {
+      /* Smart Window icon has additional 2px padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
+      padding: var(--toolbarbutton-inner-padding);
       box-shadow: 0 0 16px 4px var(--smartwindow-toggle-shadow-color) inset;
     }
   }
@@ -1429,10 +1432,15 @@ popupnotificationcontent {
   :root:not([ai-window]) &::after {
     display: none;
   }
-}
 
-#ai-window-switch-ai > moz-badge {
-  margin-inline-start: var(--space-medium);
+  & > .toolbarbutton-icon {
+    /* Smart Window icon has additional 2px padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
+    padding: 2px;
+  }
+
+  & > moz-badge {
+    margin-inline-start: var(--space-medium);
+  }
 }
 
 #appMenu-new-ai-window-button > moz-badge {
