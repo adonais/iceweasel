@@ -36,6 +36,8 @@ module.exports = {
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
     // megalist components stories
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
+    // autocomplete-row-item stories
+    `${projectRoot}/toolkit/components/satchel/autocomplete-row-item/**/*.stories.@(mjs|md)`,
     // WebRTC components stories
     `${projectRoot}/browser/components/webrtc/content/**/*.stories.mjs`,
     // AI Window components stories
