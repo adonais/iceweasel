@@ -18,12 +18,6 @@ from mozpack.files import FileListFinder
 from packaging.version import Version
 
 MINIMUM_SUPPORTED_JJ_VERSION = Version("0.28")
-USING_JJ_DETECTED = 'Using JujutsuRepository because a ".jj/" directory was detected!'
-USING_JJ_WARNING = """\
-
-Warning: jj support is currently experimental, and may be disabled by setting the
-environment variable MOZ_AVOID_JJ_VCS=1. (This warning may be suppressed by
-setting MOZ_AVOID_JJ_VCS=0.)"""
 
 from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
@@ -607,7 +601,6 @@ class JujutsuRepository(Repository):
 
     def configure(self, state_dir: Path, update_only: bool = False):
         """Run the Jujutsu configuration steps."""
-        print(USING_JJ_WARNING, file=sys.stderr)
         print(
             "\nOur jj support currently relies on Git; checks will run for both jj and Git.\n"
         )

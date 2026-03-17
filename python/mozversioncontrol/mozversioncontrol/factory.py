@@ -5,7 +5,6 @@
 import os
 import re
 import subprocess
-import sys
 from functools import cache
 from pathlib import Path
 from typing import Literal, Optional, Union, overload
@@ -21,8 +20,6 @@ from mozversioncontrol.errors import (
 from mozversioncontrol.repo.git import GitRepository
 from mozversioncontrol.repo.jj import (
     MINIMUM_SUPPORTED_JJ_VERSION,
-    USING_JJ_DETECTED,
-    USING_JJ_WARNING,
     JjVersionError,
     JujutsuRepository,
 )
@@ -117,21 +114,11 @@ def get_repository_object(path: Optional[Union[str, Path]]):
     if (path / ".hg").is_dir():
         return HgRepository(path)
     if (path / ".jj").is_dir():
-        avoid = os.getenv("MOZ_AVOID_JJ_VCS")
-        try_using_jj = avoid in (None, "0", "")
+        try_using_jj = os.getenv("MOZ_AVOID_JJ_VCS") in (None, "0", "")
         if try_using_jj:
             _check_jj_version()
-
-            avoid_is_unset = avoid not in ("0", "")
-            if avoid_is_unset and not hasattr(get_repository_object, "_warned"):
-                # Warn (once) if MOZ_AVOID_JJ_VCS is unset. If it is set to 0, then use
-                # jj without warning. If it is set to anything else, do not use jj (so
-                # eg fall back to git if .git exists.)
-                get_repository_object._warned = True
-                print(USING_JJ_DETECTED, file=sys.stderr)
-                print(USING_JJ_WARNING, file=sys.stderr)
-
             return JujutsuRepository(path)
+
     if (path / ".git").exists():
         return GitRepository(path)
     if (path / "config" / "milestone.txt").exists():
