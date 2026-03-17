@@ -339,9 +339,14 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     await lazy.IPProtectionServerlist.maybeFetchList();
 
-    const enrollAndEntitleData =
-      await lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle(abortSignal);
-    if (!enrollAndEntitleData || !enrollAndEntitleData.isEnrolledAndEntitled) {
+    let enrollAndEntitleData;
+    if (lazy.IPPEnrollAndEntitleManager.isEnrolling) {
+      enrollAndEntitleData =
+        await lazy.IPPEnrollAndEntitleManager.waitForEnrollment();
+    }
+    // If the current account can not be enrolled or is not entitled,
+    // the starting the proxy should fail.
+    if (!lazy.IPPEnrollAndEntitleManager.isEnrolledAndEntitled) {
       throw enrollAndEntitleData?.error || ERRORS.GENERIC;
     }
 
