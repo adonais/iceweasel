@@ -10,6 +10,7 @@
 #include "mozilla/Span.h"
 
 #include <bit>
+#include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>

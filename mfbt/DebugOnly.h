@@ -12,9 +12,7 @@
 
 #include "mozilla/Attributes.h"
 
-#ifdef DEBUG
-#  include <utility>
-#endif
+#include <utility>
 
 namespace mozilla {
 

@@ -9,14 +9,14 @@
 #include "mozilla/MacroArgs.h"
 #include "mozilla/MacroForEach.h"
 
-#include <cstdint>      // IWYU pragma: keep(used within macro)
-#include <type_traits>  // IWYU pragma: keep(used within macro)
+#include <cstdint>
+#include <type_traits>
 
 #ifdef __wasi__
 #  include "mozilla/WasiAtomic.h"
 #else
-#  include <atomic>  // IWYU pragma: keep(used within macro)
-#endif               // __wasi__
+#  include <atomic>
+#endif  // __wasi__
 
 namespace mozilla {
 

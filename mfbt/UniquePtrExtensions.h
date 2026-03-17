@@ -7,12 +7,12 @@
 #ifndef mozilla_UniquePtrExtensions_h
 #define mozilla_UniquePtrExtensions_h
 
-#include <cstdlib>
 #include <type_traits>
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/fallible.h"
-#include "mozilla/Types.h"
 #include "mozilla/UniquePtr.h"
 
 #ifdef XP_WIN
@@ -20,11 +20,6 @@
 #endif
 #if defined(XP_DARWIN)
 #  include <mach/mach.h>
-#  include "mozilla/Assertions.h"
-#  include "mozilla/DebugOnly.h"
-#endif
-#if defined(XP_UNIX) && (defined(DEBUG) || defined(FUZZING))
-#  include "mozilla/Assertions.h"
 #endif
 
 namespace mozilla {

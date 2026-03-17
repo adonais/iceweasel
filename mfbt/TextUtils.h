@@ -9,9 +9,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Latin1.h"
-#include "mozilla/Span.h"
-
-#include <cstdint>
 
 #ifdef MOZ_HAS_JSRUST
 // Can't include mozilla/Encoding.h here.

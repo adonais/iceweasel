@@ -9,7 +9,7 @@
 
 #include "mozilla/Assertions.h"
 
-#include <cstdint>
+#include <cinttypes>
 #include <cmath>
 #include <limits>
 #include <type_traits>
@@ -19,7 +19,7 @@
 #endif
 
 #ifdef DEBUG
-#  include "fmt/format.h"  // IWYU pragma: keep(for fmt::)
+#  include "fmt/format.h"
 #  include <cstdio>
 #endif
 

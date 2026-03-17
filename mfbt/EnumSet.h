@@ -11,11 +11,9 @@
 #include "mozilla/Attributes.h"
 
 #include <bit>
+#include <cstdint>
 #include <initializer_list>
 #include <type_traits>
-#ifdef DEBUG
-#  include <cstdint>
-#endif
 
 namespace mozilla {
 

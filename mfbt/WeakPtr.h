@@ -69,12 +69,13 @@
 #ifndef mozilla_WeakPtr_h
 #define mozilla_WeakPtr_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 
 #if defined(MOZILLA_INTERNAL_API)
-#  include "mozilla/Assertions.h"
 // For thread safety checking.
 #  include "nsISupportsImpl.h"
 // For main thread destructor behavior.
@@ -83,8 +84,6 @@
 
 #if defined(MOZILLA_INTERNAL_API) && \
     defined(MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED)
-
-#  include "mozilla/Maybe.h"
 
 // Weak referencing is not implemented as thread safe.  When a WeakPtr
 // is created or dereferenced on thread A but the real object is just

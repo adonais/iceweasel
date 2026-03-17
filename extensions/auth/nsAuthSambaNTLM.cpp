@@ -12,7 +12,6 @@
 #include "mozilla/Base64.h"
 
 #include <stdlib.h>
-#include <signal.h>
 #include <sys/wait.h>
 
 nsAuthSambaNTLM::nsAuthSambaNTLM() = default;
