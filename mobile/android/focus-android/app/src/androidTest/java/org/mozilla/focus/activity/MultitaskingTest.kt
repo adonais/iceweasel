@@ -17,8 +17,8 @@ import org.mozilla.focus.activity.robots.browserScreen
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.helpers.FeatureSettingsHelper
+import org.mozilla.focus.helpers.FocusTestRule
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
-import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.RetryTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getGenericTabAsset
@@ -26,14 +26,13 @@ import org.mozilla.focus.helpers.TestHelper.clickSnackBarActionButton
 import org.mozilla.focus.helpers.TestHelper.getStringResource
 import org.mozilla.focus.helpers.TestHelper.openAppFromExternalLink
 import org.mozilla.focus.helpers.TestHelper.verifySnackBarText
-import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
 
 /**
  * Open multiple sessions and verify that the trash icon changes to a tabs counter
  */
 @RunWith(AndroidJUnit4ClassRunner::class)
-class MultitaskingTest : TestSetup() {
+class MultitaskingTest {
     private val store = InstrumentationRegistry.getInstrumentation()
         .targetContext
         .applicationContext
@@ -41,8 +40,10 @@ class MultitaskingTest : TestSetup() {
         .store
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule
-    val webServerRule = MockWebServerRule()
+    @get:Rule(order = 0)
+    val focusTestRule: FocusTestRule = FocusTestRule()
+
+    private val webServerRule get() = focusTestRule.mockWebServerRule
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -53,8 +54,7 @@ class MultitaskingTest : TestSetup() {
 
     @Before
     @Throws(Exception::class)
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
     }
 

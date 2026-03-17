@@ -20,9 +20,9 @@ import org.junit.Test
 import org.mozilla.focus.activity.robots.homeScreen
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
+import org.mozilla.focus.helpers.FocusTestRule
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
 import org.mozilla.focus.helpers.MockLocationUpdatesRule
-import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.TestAssetHelper.genericAsset
 import org.mozilla.focus.helpers.TestAssetHelper.getMediaTestAsset
 import org.mozilla.focus.helpers.TestHelper.exitToTop
@@ -30,10 +30,9 @@ import org.mozilla.focus.helpers.TestHelper.grantAppPermission
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.packageName
 import org.mozilla.focus.helpers.TestHelper.waitingTime
-import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
 
-class SitePermissionsTest : TestSetup() {
+class SitePermissionsTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
     // Test page created and handled by the Mozilla mobile test-eng team
@@ -41,8 +40,10 @@ class SitePermissionsTest : TestSetup() {
     private val permissionsPageHost = "mozilla-mobile.github.io"
     private val cameraManager = (InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager)
 
-    @get:Rule
-    val webServerRule = MockWebServerRule()
+    @get:Rule(order = 0)
+    val focusTestRule: FocusTestRule = FocusTestRule()
+
+    private val webServerRule get() = focusTestRule.mockWebServerRule
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
@@ -56,8 +57,7 @@ class SitePermissionsTest : TestSetup() {
     val mockLocationUpdatesRule = MockLocationUpdatesRule()
 
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
         featureSettingsHelper.setSearchWidgetDialogEnabled(false)
         PromptAbuserDetector.validationsEnabled = false

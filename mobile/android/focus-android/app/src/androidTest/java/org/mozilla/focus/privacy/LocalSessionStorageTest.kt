@@ -11,10 +11,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.focus.activity.robots.searchScreen
 import org.mozilla.focus.helpers.FeatureSettingsHelper
+import org.mozilla.focus.helpers.FocusTestRule
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
-import org.mozilla.focus.helpers.MockWebServerRule
 import org.mozilla.focus.helpers.TestAssetHelper.getStorageTestAsset
-import org.mozilla.focus.helpers.TestSetup
 import org.mozilla.focus.testAnnotations.SmokeTest
 import java.io.IOException
 
@@ -22,7 +21,7 @@ import java.io.IOException
  * Make sure that session storage values are kept and written but removed at the end of a session.
  */
 @RunWith(AndroidJUnit4ClassRunner::class)
-class LocalSessionStorageTest : TestSetup() {
+class LocalSessionStorageTest {
 
     private val featureSettingsHelper = FeatureSettingsHelper()
 
@@ -31,15 +30,16 @@ class LocalSessionStorageTest : TestSetup() {
         const val LOCAL_STORAGE_MISS = "Local storage empty"
     }
 
-    @get:Rule
-    val webServerRule = MockWebServerRule()
+    @get:Rule(order = 0)
+    val focusTestRule: FocusTestRule = FocusTestRule()
+
+    private val webServerRule get() = focusTestRule.mockWebServerRule
 
     @get:Rule
     val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         featureSettingsHelper.setCfrForTrackingProtectionEnabled(false)
         featureSettingsHelper.setSearchWidgetDialogEnabled(false)
     }
