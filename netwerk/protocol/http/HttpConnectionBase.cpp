@@ -89,28 +89,7 @@ void HttpConnectionBase::ChangeConnectionState(ConnectionState aState) {
 }
 
 void HttpConnectionBase::RecordConnectionCloseTelemetry(nsresult aReason) {
-  /**
-   *
-   * The returned telemetry key has the format:
-   * "Version_EndToEndSSL_IsTrrServiceChannel_ExperienceState_ConnectionState"
-   *
-   * - Version: The HTTP version of the connection.
-   * - EndToEndSSL: Indicates whether SSL encryption is end-to-end.
-   * - IsTrrServiceChannel: Specifies if the connection is used to send TRR
-   *    requests.
-   * - ExperienceState: ConnectionExperienceState
-   * - ConnectionState: The connection state before closing.
-   */
-  auto key = nsPrintfCString("%d_%d_%d_%d_%d", static_cast<uint32_t>(Version()),
-                             mConnInfo->EndToEndSSL(),
-                             mConnInfo->GetIsTrrServiceChannel(),
-                             static_cast<uint32_t>(mExperienceState),
-                             static_cast<uint32_t>(mConnectionState));
   SetCloseReason(ToCloseReason(aReason));
-  LOG(("RecordConnectionCloseTelemetry key=%s reason=%d\n", key.get(),
-       static_cast<uint32_t>(mCloseReason)));
-  glean::http::connection_close_reason.Get(key).AccumulateSingleSample(
-      static_cast<uint32_t>(mCloseReason));
 }
 
 void HttpConnectionBase::RecordConnectionAddressType() {

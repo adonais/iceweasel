@@ -1950,47 +1950,6 @@ http:
     expires: never
     telemetry_mirror: HTTP_CONTENT_ENCODING
 
-  connection_close_reason:
-    type: labeled_custom_distribution
-    description: >
-      Reason for HTTP connection closure, keyed by properties like HTTP version
-      and connection state.
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram HTTP_CONNECTION_CLOSE_REASON.
-    range_min: 0
-    range_max: 50
-    bucket_count: 51
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1784261
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1784261
-    notification_emails:
-      - necko@mozilla.com
-      - kershaw@mozilla.com
-    expires: never
-
-  transaction_restart_reason:
-    type: custom_distribution
-    description: >
-      The reason why a HTTP transaction is restarted.
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram HTTP_TRANSACTION_RESTART_REASON.
-    range_min: 0
-    range_max: 50
-    bucket_count: 51
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1667775
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1667775
-    notification_emails:
-      - necko@mozilla.com
-      - kershaw@mozilla.com
-    expires: never
-
   transaction_ech_retry_with_ech_count:
     type: custom_distribution
     description: >
@@ -2127,23 +2086,6 @@ http:
       - necko@mozilla.com
     expires: never
 
-  transaction_wait_time_http2_sup_http3:
-    type: timing_distribution
-    description: >
-      Time from submission to dispatch of HTTP2 transaction that has received a
-      respone from a server that addretizes HTTP3 support (ms)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram TRANSACTION_WAIT_TIME_HTTP2_SUP_HTTP3.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-
   tls_early_data_negotiated:
     type: custom_distribution
     description: >
@@ -2273,26 +2215,6 @@ http:
       - kershaw@mozilla.com
     expires: never
     telemetry_mirror: DNS_HTTPSSVC_RECORD_RECEIVING_STAGE
-
-  dns_httpssvc_connection_failed_reason:
-    type: custom_distribution
-    description: >
-      The reason why we failed to connect with an HTTPSSVC record
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram DNS_HTTPSSVC_CONNECTION_FAILED_REASON.
-    range_min: 0
-    range_max: 50
-    bucket_count: 51
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1652667
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1652667
-    notification_emails:
-      - necko@mozilla.com
-      - kershaw@mozilla.com
-    expires: never
 
   script_block_incorrect_mime:
     type: labeled_counter

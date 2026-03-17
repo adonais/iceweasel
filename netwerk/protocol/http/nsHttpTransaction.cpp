@@ -1306,9 +1306,6 @@ void nsHttpTransaction::MaybeReportFailedSVCDomain(
     return;
   }
 
-  glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
-      ErrorCodeToFailedReason(aReason));
-
   nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
   if (dns) {
     const nsCString& failedHost = aFailedConnInfo->GetRoutedHost().IsEmpty()
@@ -1574,9 +1571,6 @@ void nsHttpTransaction::Close(nsresult reason) {
     }
   }
 
-  glean::http::transaction_restart_reason.AccumulateSingleSample(
-      mRestartReason);
-
   if (!mResponseIsComplete && NS_SUCCEEDED(reason) && isHttp2or3) {
     // Responses without content-length header field are still complete if
     // they are transfered over http2 or http3 and the stream is properly
@@ -1674,11 +1668,6 @@ void nsHttpTransaction::Close(nsresult reason) {
 
     // Use mOrigConnInfo as an indicator that this transaction is completed
     // successfully with an HTTPSSVC record.
-    if (mOrigConnInfo) {
-      glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
-          HTTPSSVC_CONNECTION_OK);
-    }
-
     if (mConnection) {
       RefPtr<HttpConnectionBase> conn = mConnection->HttpConnection();
       if (conn) {
@@ -2454,12 +2443,6 @@ nsresult nsHttpTransaction::HandleContentStart() {
     mSupportsHTTP3 = nsHttpHandler::IsHttp3SupportedByServer(mResponseHead);
 
     CollectTelemetryForUploads();
-
-    // Report telemetry
-    if (mSupportsHTTP3) {
-      glean::http::transaction_wait_time_http2_sup_http3.AccumulateRawDuration(
-          mPendingDurationTime);
-    }
 
     // If we're only connecting then we're going to be upgrading this
     // connection since we were successful. Any data from now on belongs to
@@ -3384,9 +3367,6 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
     nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
     bool allRecordsExcluded = false;
     (void)record->GetAllRecordsExcluded(&allRecordsExcluded);
-    glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
-        allRecordsExcluded ? HTTPSSVC_CONNECTION_ALL_RECORDS_EXCLUDED
-                           : HTTPSSVC_CONNECTION_NO_USABLE_RECORD);
     if (allRecordsExcluded &&
         StaticPrefs::network_dns_httpssvc_reset_exclustion_list() && dns) {
       (void)dns->ResetExcludedSVCDomainName(mConnInfo->GetOrigin());

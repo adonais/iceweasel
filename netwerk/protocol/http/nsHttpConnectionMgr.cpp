@@ -1783,17 +1783,6 @@ nsresult nsHttpConnectionMgr::DispatchTransaction(ConnectionEntry* ent,
 
   TimeStamp now = TimeStamp::Now();
   TimeDuration elapsed = now - trans->GetPendingTime();
-  auto recordPendingTimeForHTTPSRR = [&](nsCString& aKey) {
-    uint32_t stage = trans->HTTPSSVCReceivedStage();
-    if (HTTPS_RR_IS_USED(stage)) {
-      glean::networking::transaction_wait_time_https_rr.AccumulateRawDuration(
-          elapsed);
-
-    } else {
-      glean::networking::transaction_wait_time.AccumulateRawDuration(elapsed);
-    }
-  };
-
   PerfStats::RecordMeasurement(PerfStats::Metric::HttpTransactionWaitTime,
                                elapsed);
 
@@ -1820,7 +1809,6 @@ nsresult nsHttpConnectionMgr::DispatchTransaction(ConnectionEntry* ent,
         glean::http::transaction_wait_time_http3.AccumulateRawDuration(
             now - trans->GetPendingTime());
       }
-      recordPendingTimeForHTTPSRR(httpVersionkey);
       trans->SetPendingTime(false);
     }
     return rv;
@@ -1834,7 +1822,6 @@ nsresult nsHttpConnectionMgr::DispatchTransaction(ConnectionEntry* ent,
   if (NS_SUCCEEDED(rv) && !trans->GetPendingTime().IsNull()) {
     glean::http::transaction_wait_time_http.AccumulateRawDuration(
         now - trans->GetPendingTime());
-    recordPendingTimeForHTTPSRR(httpVersionkey);
     trans->SetPendingTime(false);
   }
   return rv;
