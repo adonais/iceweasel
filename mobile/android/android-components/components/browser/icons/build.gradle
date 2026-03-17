@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
+
 plugins {
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.android)
@@ -26,7 +28,7 @@ android {
 }
 
 tasks.register("updateBuiltInExtensionVersion", Copy) { task ->
-    updateExtensionVersion(task, 'src/main/assets/extensions/browser-icons')
+    updateExtensionVersion(task, 'src/main/assets/extensions/browser-icons', rootProject.ext.config.componentsVersion)
 }
 
 // Make sure DAGP asset-source exploding happens after ExtensionVersion tasks

@@ -5,8 +5,6 @@
 
 import org.yaml.snakeyaml.Yaml
 
-import static org.mozilla.conventions.BuildConfigKt.getManifestVersionString
-
 buildscript {
     if (!gradle.root.hasProperty("mozconfig")){
         apply from: file('./gradle/mozconfig.gradle')
@@ -99,25 +97,6 @@ gradle.projectsLoaded { ->
             configData.targetSdkVersion,
             ndkVersion
     )
-
-    // Define a reusable task for updating the version in manifest.json for modules that package
-    // a web extension. We automate this to make sure we never forget to update the version, either
-    // in local development or for releases. In both cases, we want to make sure the latest version
-    // of all extensions (including their latest changes) are installed on first start-up.
-    gradle.rootProject.allprojects {
-        ext.updateExtensionVersion = { task, extDir ->
-            configure(task) {
-                from extDir
-                include 'manifest.template.json'
-                rename { 'manifest.json' }
-                into extDir
-
-                def values = ['version': getManifestVersionString(rootProject.ext.config.componentsVersion, gradle.mozconfig.topobjdir)]
-                inputs.properties(values)
-                expand(values)
-            }
-        }
-    }
 
     // Initialize all project buildDirs to be in ${topobjdir} to follow
     // conventions of mozilla-central build system.
