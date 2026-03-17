@@ -123,10 +123,7 @@ class Registers {
 
   typedef uint32_t SetType;
 
-  static uint32_t SetSize(SetType x) {
-    static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return std::popcount(x);
-  }
+  static uint32_t SetSize(SetType x) { return std::popcount(x); }
   static uint32_t FirstBit(SetType x) {
     MOZ_ASSERT(x);
     return std::countr_zero(x);
@@ -349,19 +346,16 @@ struct FloatRegister {
   using SetType = Codes::SetType;
 
   static uint32_t SetSize(SetType x) {
-    static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
     x |= x >> FloatRegisters::TotalPhys;
     x &= FloatRegisters::AllPhysMask;
     return std::popcount(x);
   }
 
   static uint32_t FirstBit(SetType x) {
-    static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
     MOZ_ASSERT(x);
     return std::countr_zero(x);
   }
   static uint32_t LastBit(SetType x) {
-    static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
     MOZ_ASSERT(x);
     return std::bit_width(x) - 1;
   }

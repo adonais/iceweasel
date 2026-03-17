@@ -73,10 +73,7 @@ class Registers {
   static const uint32_t Allocatable = 14;
 #endif
 
-  static uint32_t SetSize(SetType x) {
-    static_assert(sizeof(SetType) <= 4, "SetType must be, at most, 32 bits");
-    return std::popcount(x);
-  }
+  static uint32_t SetSize(SetType x) { return std::popcount(x); }
   static uint32_t FirstBit(SetType x) {
     MOZ_ASSERT(x);
     return std::countr_zero(x);
@@ -283,13 +280,6 @@ struct FloatRegister {
                   "Optimizable to 32-bit std::popcount");
     return std::popcount(x);
   }
-
-#if defined(JS_CODEGEN_X86)
-  static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-#elif defined(JS_CODEGEN_X64)
-  static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-#endif
-
   static uint32_t FirstBit(SetType x) {
     MOZ_ASSERT(x);
     return std::countr_zero(x);

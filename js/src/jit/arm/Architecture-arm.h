@@ -125,10 +125,7 @@ class Registers {
 
   static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 
-  static uint32_t SetSize(SetType x) {
-    static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-    return std::popcount(x);
-  }
+  static uint32_t SetSize(SetType x) { return std::popcount(x); }
   static uint32_t FirstBit(SetType x) {
     MOZ_ASSERT(x);
     return std::countr_zero(x);
@@ -535,10 +532,7 @@ class VFPRegister {
     return SetType(0);
   }
 
-  static uint32_t SetSize(SetType x) {
-    static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-    return std::popcount(x);
-  }
+  static uint32_t SetSize(SetType x) { return std::popcount(x); }
   static Code FromName(const char* name) {
     return FloatRegisters::FromName(name);
   }
