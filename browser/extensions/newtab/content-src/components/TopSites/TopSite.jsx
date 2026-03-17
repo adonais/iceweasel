@@ -103,7 +103,18 @@ export class TopSiteLink extends React.PureComponent {
     }
   }
 
-  static getDerivedStateFromProps(nextProps, prevState) {
+  /**
+   * Helper to obtain the next state based on nextProps and prevState.
+   *
+   * NOTE: Rename this method to getDerivedStateFromProps when we update React
+   *       to >= 16.3. We will need to update tests as well. We cannot rename this
+   *       method to getDerivedStateFromProps now because there is a mismatch in
+   *       the React version that we are using for both testing and production.
+   *       (i.e. react-test-render => "16.3.2", react => "16.2.0").
+   *
+   * See https://github.com/airbnb/enzyme/blob/master/packages/enzyme-adapter-react-16/package.json#L43.
+   */
+  static getNextStateFromProps(nextProps, prevState) {
     const { screenshot } = nextProps.link;
     const imageInState = ScreenshotUtils.isRemoteImageLocal(
       prevState.screenshotImage,
@@ -119,6 +130,26 @@ export class TopSiteLink extends React.PureComponent {
     return {
       screenshotImage: ScreenshotUtils.createLocalImageObject(screenshot),
     };
+  }
+
+  // NOTE: Remove this function when we update React to >= 16.3 since React will
+  //       call getDerivedStateFromProps automatically. We will also need to
+  //       rename getNextStateFromProps to getDerivedStateFromProps.
+  componentWillMount() {
+    const nextState = TopSiteLink.getNextStateFromProps(this.props, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
+
+  // NOTE: Remove this function when we update React to >= 16.3 since React will
+  //       call getDerivedStateFromProps automatically. We will also need to
+  //       rename getNextStateFromProps to getDerivedStateFromProps.
+  componentWillReceiveProps(nextProps) {
+    const nextState = TopSiteLink.getNextStateFromProps(nextProps, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
   }
 
   componentWillUnmount() {
@@ -733,10 +764,10 @@ export class _TopSiteList extends React.PureComponent {
     this.onKeyDown = this.onKeyDown.bind(this);
   }
 
-  componentDidUpdate(prevProps) {
+  componentWillReceiveProps(nextProps) {
     if (this.state.draggedSite) {
-      const prevTopSites = prevProps.TopSites && prevProps.TopSites.rows;
-      const newTopSites = this.props.TopSites && this.props.TopSites.rows;
+      const prevTopSites = this.props.TopSites && this.props.TopSites.rows;
+      const newTopSites = nextProps.TopSites && nextProps.TopSites.rows;
       if (
         prevTopSites &&
         prevTopSites[this.state.draggedIndex] &&
@@ -747,7 +778,6 @@ export class _TopSiteList extends React.PureComponent {
             this.state.draggedSite.url)
       ) {
         // We got the new order from the redux store via props. We can clear state now.
-        // eslint-disable-next-line react/no-did-update-set-state
         this.setState(_TopSiteList.DEFAULT_STATE);
       }
     }
@@ -977,14 +1007,14 @@ export class _TopSiteList extends React.PureComponent {
         });
 
       const slotProps = {
-        key: link && link.url ? link.url : `hole-${holeIndex++}`,
+        key: link ? link.url : holeIndex++,
         index: i,
       };
       if (i >= maxNarrowVisibleIndex) {
         slotProps.className = "hide-for-narrow";
       }
 
-      let topSiteLink = null;
+      let topSiteLink;
       // Use a placeholder if the link is empty or it's rendering a sponsored
       // tile for the about:home startup cache.
       if (
@@ -1039,9 +1069,7 @@ export class _TopSiteList extends React.PureComponent {
         );
       }
 
-      if (topSiteLink) {
-        topSitesUI.push(topSiteLink);
-      }
+      topSitesUI.push(topSiteLink);
     }
     return (
       <div className="top-sites-list-wrapper">

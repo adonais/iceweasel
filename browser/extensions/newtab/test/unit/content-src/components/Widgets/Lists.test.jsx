@@ -657,7 +657,7 @@ describe("<Lists>", () => {
       "Expected telemetry event on cancel"
     );
 
-    const listsState = localWrapper.find(Provider).prop("store").getState()
+    const listsState = localWrapper.find("Provider").prop("store").getState()
       .ListsWidget.lists;
     assert.strictEqual(
       Object.keys(listsState).length,

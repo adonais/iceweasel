@@ -96,11 +96,6 @@ add_task(async function test_dismiss() {
 
     contextMenuButton.click();
 
-    await ContentTaskUtils.waitForCondition(
-      () => contextMenuDiv.querySelector(".context-menu"),
-      "Should find context menu after clicking button"
-    );
-
     const contextMenu = contextMenuDiv.querySelector(".context-menu");
 
     const dismissButton = contextMenu.querySelector(

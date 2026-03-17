@@ -102,11 +102,6 @@ browser/defaults/settings/main/search-config-icons/fed4f021-ff3e-942a-010e-afa43
 
 browser/chrome/browser/builtin-addons/newtab/data/data/content/assets/glyph-mail-16.svg
 
-# Bug 2022304 - activity-stream-debug.html is intentionally identical to
-# activity-stream.html now that vendor bundling replaces separate dev/prod builds
-browser/chrome/browser/builtin-addons/newtab/prerendered/activity-stream-debug.html
-browser/chrome/browser/builtin-addons/newtab/prerendered/activity-stream.html
-
 # Bug 1946597 - Move glyph-webextension-16.svg in browser/themes/shared/icons
 browser/chrome/browser/content/activity-stream/data/content/assets/glyph-webextension-16.svg
 browser/chrome/browser/content/newtab/data/content/assets/glyph-webextension-16.svg

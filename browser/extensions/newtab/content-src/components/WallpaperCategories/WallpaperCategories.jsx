@@ -56,7 +56,6 @@ export class _WallpaperCategories extends React.PureComponent {
     this.arrowButtonRef = React.createRef(); // Used to focus arrow button when category opens
     this.customColorPickerRef = React.createRef(); // Used to determine contrast icon color for custom color picker
     this.customColorInput = React.createRef(); // Used to determine contrast icon color for custom color picker
-    this.wallpaperListRef = React.createRef(); // Used for CSSTransition nodeRef
     this.state = {
       activeCategory: null,
       activeCategoryFluentID: null,
@@ -648,17 +647,13 @@ export class _WallpaperCategories extends React.PureComponent {
         </div>
 
         <CSSTransition
-          nodeRef={this.wallpaperListRef}
           in={!!activeCategory}
           timeout={300}
           classNames="wallpaper-list"
           unmountOnExit={true}
           onEntered={this.handleWallpaperListEntered}
         >
-          <section
-            ref={this.wallpaperListRef}
-            className="category wallpaper-list ignore-color-mode"
-          >
+          <section className="category wallpaper-list ignore-color-mode">
             <button
               ref={this.arrowButtonRef}
               className="arrow-button"
@@ -692,7 +687,7 @@ export class _WallpaperCategories extends React.PureComponent {
                       style.backgroundColor = solid_color || "";
                     }
                     return (
-                      <React.Fragment key={title}>
+                      <>
                         <input
                           ref={el => {
                             if (el) {
@@ -719,7 +714,7 @@ export class _WallpaperCategories extends React.PureComponent {
                         >
                           {fluent_id}
                         </label>
-                      </React.Fragment>
+                      </>
                     );
                   }
                 )}
