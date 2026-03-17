@@ -3989,10 +3989,6 @@
         selectTab && container.ownerGlobal.gBrowser.selectedTab;
       let newTabs = [];
 
-      if (typeof elementIndex == "number") {
-        tabIndex = this.#elementIndexToTabIndex(elementIndex);
-      }
-
       // When tabs are adopted across windows, they exit the tab split of the
       // source window, moved to the new window, and finally moved into a split
       // view in the new window. Although the splitViewId stays effectively the
@@ -4002,11 +3998,14 @@
       for (let tab of container.tabs) {
         tab.removedByAdoption = true;
         let adoptedTab = this.adoptTab(tab, {
-          tabIndex,
           selectTab: tab === oldSelectedTab,
+          tabIndex,
+          elementIndex,
         });
         adoptedTab.addedByAdoption = true;
         newTabs.push(adoptedTab);
+        // Put next tab after current one.
+        elementIndex = undefined;
         tabIndex = adoptedTab._tPos + 1;
       }
 
