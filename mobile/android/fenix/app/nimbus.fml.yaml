@@ -85,16 +85,6 @@ features:
         description: The drawable displayed in the app menu for Settings
         type: String
         default: mozac_ic_settings
-  gecko-nimbus-validation:
-    description: "Feature for validating Nimbus Gecko functionality"
-    variables:
-      test-preference:
-        description: "A test gecko preference"
-        type: String
-        default: ""
-        gecko-pref:
-          pref: "gecko.nimbus.test"
-          branch: "default"
   cookie-banners:
     description: Features for cookie banner handling.
     variables:

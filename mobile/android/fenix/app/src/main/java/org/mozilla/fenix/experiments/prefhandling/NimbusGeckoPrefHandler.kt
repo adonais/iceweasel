@@ -99,14 +99,14 @@ class NimbusGeckoPrefHandler(
                     prefs = preferenceList,
                     onSuccess = { preferences ->
                         for (preference in preferences) {
-                            val state = getPreferenceState(preference.pref)!!
+                            preferenceTypes[preference.pref] = preference.prefType
+                            val state = getPreferenceState(preference.pref) ?: continue
                             state.geckoValue = if (state.branch() == PrefBranch.DEFAULT) {
                                 preference.defaultValue
                             } else {
                                 preference.userValue
                             }.toString()
                             state.isUserSet = preference.hasUserChangedValue
-                            preferenceTypes[preference.pref] = preference.prefType
                         }
                         completable.complete(true)
                     },
@@ -260,12 +260,12 @@ class NimbusGeckoPrefHandler(
                     val succeeded = mutableListOf<String>()
                     resultMap.forEach { (prefString, wasSet) ->
                         if (wasSet) {
-                            val state = getPreferenceState(prefString)!!
+                            val state = getPreferenceState(prefString) ?: return@forEach
                             state.enrollmentValue =
-                                newPrefsState.findByPrefString(prefString)!!.enrollmentValue
+                                newPrefsState.findByPrefString(prefString)?.enrollmentValue
                             succeeded.add(prefString)
                         } else {
-                            val state = getPreferenceState(prefString)!!
+                            val state = getPreferenceState(prefString) ?: return@forEach
                             val throwable = Throwable(
                                 "Preference $prefString value was " +
                                         "not set",
@@ -286,7 +286,7 @@ class NimbusGeckoPrefHandler(
 
                     // Reports back the value for Nimbus to store
                     nimbusApi.value.registerPreviousGeckoPrefStates(
-                        geckoPrefStates = succeeded.map { getPreferenceState(it)!! },
+                        geckoPrefStates = succeeded.mapNotNull { getPreferenceState(it) },
                     )
                     handleErrors()
                 },

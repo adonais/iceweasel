@@ -8,6 +8,8 @@ import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
@@ -18,7 +20,9 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.preferences.BrowserPrefType
 import mozilla.components.concept.engine.preferences.BrowserPreference
 import mozilla.components.service.nimbus.NimbusApi
+import org.junit.After
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.experiments.nimbus.internal.GeckoPref
@@ -27,6 +31,7 @@ import org.mozilla.experiments.nimbus.internal.OriginalGeckoPref
 import org.mozilla.experiments.nimbus.internal.PrefBranch
 import org.mozilla.experiments.nimbus.internal.PrefEnrollmentData
 import org.mozilla.experiments.nimbus.internal.PrefUnenrollReason
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.robolectric.Shadows.shadowOf
 
 const val TEST_PREF = "gecko.nimbus.test"
@@ -38,27 +43,23 @@ class NimbusGeckoPrefHandlerTest {
     private val mockNimbusApi = mockk<NimbusApi>(relaxed = true)
     private val mockEngine = mockk<Engine>(relaxed = true)
 
-    private fun makeHandler(
-        engine: Engine = mockEngine,
-        nimbusApi: NimbusApi = mockNimbusApi,
-    ) = NimbusGeckoPrefHandler(lazy { engine }, lazy { nimbusApi })
-
-    @Test
-    fun `test nimbusGeckoPreferences has appropriate values`() {
-        val handler = makeHandler()
-        assertNotNull(handler.nimbusGeckoPreferences["gecko-nimbus-validation"])
-        assertNotNull(
-            handler.nimbusGeckoPreferences["gecko-nimbus-validation"]?.get(
-                "test-preference",
+    // Bug 2020769: This is temporary until we update the Nimbus FML in Bug 2020683 to avoid
+    // difficulty when landing an Application Services change.
+    @Suppress("NoObjectMocking")
+    @Before
+    fun setUp() {
+        mockkObject(FxNimbus)
+        every { FxNimbus.geckoPrefsMap() } returns mapOf(
+            "gecko-nimbus-validation" to mapOf(
+                "test-preference" to GeckoPref(pref = TEST_PREF, branch = PrefBranch.DEFAULT),
             ),
         )
     }
 
-    @Test
-    fun `preferenceList has appropriate values`() {
-        val handler = makeHandler()
-        assertTrue(handler.preferenceList.contains(TEST_PREF))
-    }
+    private fun makeHandler(
+        engine: Engine = mockEngine,
+        nimbusApi: NimbusApi = mockNimbusApi,
+    ) = NimbusGeckoPrefHandler(lazy { engine }, lazy { nimbusApi })
 
     @Test
     fun `WHEN getPreferenceStateFromGecko is successful THEN getBrowserPrefs is called AND it returns true`() {
