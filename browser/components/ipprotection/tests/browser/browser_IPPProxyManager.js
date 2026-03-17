@@ -320,6 +320,51 @@ add_task(async function test_IPPProxyManager_active_shown() {
 });
 
 /**
+ * Tests that the paused modal isn't shown when quota is exceeded during activation.
+ */
+add_task(async function test_IPPProxyManager_paused_on_activation() {
+  IPPProxyManager.reset();
+
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  IPProtectionService.updateState();
+
+  let content = await openPanel();
+
+  let statusCard = content.statusCardEl;
+  let actionButton = statusCard.actionButtonEl;
+
+  Assert.ok(actionButton, "Turn on button should be shown");
+
+  // Pause the service
+  const quotaExceededUsage = makeUsage("5368709120", "0");
+  setupService({
+    proxyPass: {
+      status: 429,
+      error: "quota_exceeded",
+      pass: null,
+      usage: quotaExceededUsage,
+    },
+  });
+
+  actionButton.click();
+
+  await waitForProxyState(IPPProxyStates.PAUSED);
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.PAUSED,
+    "IPPProxyManager state should be paused after quota is exceeded"
+  );
+
+  Assert.ok(!window.gDialogBox?.isOpen, "Paused dialog is not shown");
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
  * Tests that calling rotateProxyPass when quota is exceeded moves to PAUSED state,
  * not ERROR state (Bug 2022865).
  */

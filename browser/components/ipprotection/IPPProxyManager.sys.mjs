@@ -363,7 +363,7 @@ class IPPProxyManagerSingleton extends EventTarget {
       if (usage) {
         this.#setUsage(usage);
         if (this.#usage.remaining <= 0) {
-          this.pause();
+          this.#setPausedState();
           return false;
         }
       }
@@ -475,11 +475,22 @@ class IPPProxyManagerSingleton extends EventTarget {
    *
    * Usage refresh will still be attempted at the reset time.
    */
-  pause() {
+  #setPausedState() {
+    const wasActive = this.#state === IPPProxyStates.ACTIVE;
     this.#pass = null;
-    this.#connection?.uninitialize();
     lazy.clearTimeout(this.#rotationTimer);
     this.#rotationTimer = 0;
+
+    if (wasActive) {
+      this.#connection?.uninitialize();
+    } else {
+      this.#connection?.stop();
+    }
+
+    Glean.ipprotection.paused.record({
+      wasActive,
+    });
+
     this.#setState(IPPProxyStates.PAUSED);
   }
 
@@ -577,7 +588,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     if (usage) {
       this.#setUsage(usage);
       if (this.#usage.remaining <= 0) {
-        this.pause();
+        this.#setPausedState();
         return null;
       }
     }
@@ -743,12 +754,6 @@ class IPPProxyManagerSingleton extends EventTarget {
   #setState(state) {
     if (state === this.#state) {
       return;
-    }
-
-    if (state === IPPProxyStates.PAUSED) {
-      Glean.ipprotection.paused.record({
-        wasActive: this.#state === IPPProxyStates.ACTIVE,
-      });
     }
 
     this.#state = state;
