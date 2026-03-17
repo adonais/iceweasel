@@ -1,0 +1,22 @@
+{
+  "color/accent/primary": {
+    "light": "{Colors$color/violet/50}",
+    "dark": "{Colors$color/violet/30}",
+    "forcedColors": "{HCM Theme$AccentColor}"
+  },
+  "color/accent/primary/hover": {
+    "light": "{Colors$color/violet/60}",
+    "dark": "{Colors$color/violet/40}",
+    "forcedColors": "{HCM Theme$SelectedItem}"
+  },
+  "color/accent/primary/active": {
+    "light": "{Colors$color/violet/70}",
+    "dark": "{Colors$color/violet/50}",
+    "forcedColors": "{Theme$color/accent/primary/hover}"
+  },
+  "color/accent/primary/selected": {
+    "light": "{Colors$color/violet/50}",
+    "dark": "{Colors$color/violet/30}",
+    "forcedColors": "{HCM Theme$SelectedItem}"
+  }
+}

@@ -40,7 +40,6 @@ This is the documentation for the code powering the Firefox Desktop front-end.
    components/storybook/docs/README.xul-and-html.stories
    components/storybook/docs/README.figma-code-connect.stories
    /toolkit/themes/shared/design-system/docs/README.design-tokens.stories
-   /toolkit/themes/shared/design-system/docs/README.json-design-tokens.stories
    components/backup/docs/index
    components/sidebar/docs/index
    components/mozcachedohttp/docs/index
