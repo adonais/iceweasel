@@ -225,9 +225,10 @@ class Components(private val context: Context) {
             isLargeScreenSize = context.isLargeScreenSize(),
         )
     }
-    val nimbus by lazyMonitored {
+    val nimbus: NimbusComponents by lazyMonitored {
         NimbusComponents(
             context = context,
+            engine = lazyMonitored { core.engine },
             remoteSettingsService = remoteSettingsService.value.remoteSettingsService,
         )
     }

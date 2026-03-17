@@ -24,20 +24,22 @@ import org.mozilla.experiments.nimbus.internal.OriginalGeckoPref
 import org.mozilla.experiments.nimbus.internal.PrefBranch
 import org.mozilla.experiments.nimbus.internal.PrefUnenrollReason
 import org.mozilla.fenix.nimbus.FxNimbus
-import java.lang.IllegalStateException
-import kotlin.collections.iterator
 
 private val logger = Logger("Nimbus/GeckoPrefHandler")
 
 /**
- * The handler Nimbus uses for reading and writing Gecko preferences
+ * The handler Nimbus uses for reading and writing Gecko preferences.
+ *
+ * @param engine The browser engine used to read and write preferences.
+ * @param nimbusApi The Nimbus API that will orchestrate enrollment and unenrollment.
  */
-object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration.Observer {
+class NimbusGeckoPrefHandler(
+    private val engine: Lazy<Engine>,
+    private val nimbusApi: Lazy<NimbusApi>,
+) : GeckoPrefHandler, BrowserPrefObserverIntegration.Observer {
     val geckoScope = MainScope() + CoroutineName("NimbusGeckoPrefHandler")
 
-    var nimbusApi: NimbusApi? = null
-    var browserPrefObserverIntegration: BrowserPrefObserverIntegration? = null
-    var engine: Engine? = null
+    val browserPrefObserverIntegration by lazy { BrowserPrefObserverIntegration(engine.value) }
 
     // Used for handling errors when we fail to set during enrollment
     val enrollmentErrors = mutableListOf<Pair<GeckoPrefState, Throwable?>>()
@@ -64,6 +66,14 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
     }
 
     /**
+     * Called when ready to begin observation.
+     */
+    fun start() {
+        browserPrefObserverIntegration.start()
+        browserPrefObserverIntegration.register(this)
+    }
+
+    /**
      * Obtains the preference state for a specific preference string
      *
      * @param pref: The string name of the preference for which to obtain the value
@@ -85,11 +95,7 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
         val completable = CompletableDeferred<Boolean>()
         geckoScope.launch {
             try {
-                if (engine == null) {
-                    logger.error("Engine is not initialized for getting preferences.")
-                    completable.complete(false)
-                }
-                engine?.getBrowserPrefs(
+                engine.value.getBrowserPrefs(
                     prefs = preferenceList,
                     onSuccess = { preferences ->
                         for (preference in preferences) {
@@ -122,7 +128,7 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
      */
     fun handleErrors() {
         for ((prefState, _) in enrollmentErrors) {
-            nimbusApi?.unenrollForGeckoPref(prefState, PrefUnenrollReason.FAILED_TO_SET)
+            nimbusApi.value.unenrollForGeckoPref(prefState, PrefUnenrollReason.FAILED_TO_SET)
         }
     }
 
@@ -145,16 +151,11 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
     @OptIn(ExperimentalAndroidComponentsApi::class)
     override fun setGeckoPrefsOriginalValues(originalGeckoPrefs: List<OriginalGeckoPref>) {
         geckoScope.launch {
-            if (engine == null) {
-                logger.error("Engine is not initialized for restoring preferences.")
-                return@launch
-            }
-
             val (prefsWithValues, prefsToReset) = originalGeckoPrefs.partition { it.value != null }
 
             // Set elements that we have values we can restore back to
             val setters = createSettersFromOriginalGeckoPrefs(prefsWithValues, preferenceTypes)
-            engine?.setBrowserPrefs(
+            engine.value.setBrowserPrefs(
                 prefs = setters,
                 onSuccess = { resultMap ->
                     logRestoreSuccess(resultMap)
@@ -164,7 +165,7 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
 
             // Clear elements that we have no values we can restore back to
             prefsToReset.forEach { (prefString, _) ->
-                engine?.clearBrowserUserPref(
+                engine.value.clearBrowserUserPref(
                     pref = prefString,
                     onSuccess = { logger.info("Unset preference $prefString") },
                     onError = { logger.warn("Error unsetting Gecko preference $prefString") },
@@ -213,7 +214,7 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
                 }
             }
 
-            engine?.setBrowserPrefs(
+            engine.value.setBrowserPrefs(
                 prefs = setters,
                 onSuccess = { resultMap ->
                     val succeeded = mutableListOf<String>()
@@ -233,20 +234,18 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
                             enrollmentErrors.add(Pair(state, throwable))
                         }
                     }
-                    browserPrefObserverIntegration?.register(NimbusGeckoPrefHandler)
-
-                        browserPrefObserverIntegration?.registerPrefsForObservation(
-                            prefs = succeeded,
-                            onSuccess = {
-                                logger.info("Successfully registered prefs for observation")
-                            },
-                            onError = { throwable ->
-                                logger.error("Failed to register prefs for observation: ", throwable)
-                            },
-                        )
+                    browserPrefObserverIntegration.registerPrefsForObservation(
+                        prefs = succeeded,
+                        onSuccess = {
+                            logger.info("Successfully registered prefs for observation")
+                        },
+                        onError = { throwable ->
+                            logger.error("Failed to register prefs for observation: ", throwable)
+                        },
+                    )
 
                     // Reports back the value for Nimbus to store
-                    nimbusApi!!.registerPreviousGeckoPrefStates(
+                    nimbusApi.value.registerPreviousGeckoPrefStates(
                         geckoPrefStates = succeeded.map { getPreferenceState(it)!! },
                     )
                     handleErrors()
@@ -275,7 +274,7 @@ object NimbusGeckoPrefHandler : GeckoPrefHandler, BrowserPrefObserverIntegration
                 )
                 return
             }
-            nimbusApi!!.unenrollForGeckoPref(geckoPrefState, PrefUnenrollReason.CHANGED)
+            nimbusApi.value.unenrollForGeckoPref(geckoPrefState, PrefUnenrollReason.CHANGED)
         } else {
             logger.info(
                 "Preference ${observedPreference.pref} was changed, but is not " +

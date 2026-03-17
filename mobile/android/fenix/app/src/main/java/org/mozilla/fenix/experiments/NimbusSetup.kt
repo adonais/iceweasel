@@ -13,11 +13,11 @@ import mozilla.components.service.nimbus.messaging.FxNimbusMessaging
 import mozilla.components.service.nimbus.messaging.NimbusSystem
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.experiments.nimbus.NimbusInterface
+import org.mozilla.experiments.nimbus.internal.GeckoPrefHandler
 import org.mozilla.experiments.nimbus.internal.NimbusException
 import org.mozilla.experiments.nimbus.internal.NimbusServerSettings
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.R
-import org.mozilla.fenix.experiments.prefhandling.NimbusGeckoPrefHandler
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.messaging.CustomAttributeProvider
@@ -37,11 +37,11 @@ private val logger = Logger("service/Nimbus")
 /**
  * Create the Nimbus singleton object for the Fenix app.
  */
-@org.mozilla.geckoview.ExperimentalGeckoViewApi
 fun createNimbus(
     context: Context,
     urlString: String?,
     remoteSettingsService: RemoteSettingsService?,
+    geckoPrefHandler: GeckoPrefHandler,
 ): NimbusApi {
     // These values can be used in the JEXL expressions when targeting experiments.
     val customTargetingAttributes = CustomAttributeProvider.getCustomTargetingAttributes(context)
@@ -94,12 +94,9 @@ fun createNimbus(
             context.settings().nimbusExperimentsFetched = true
         }
         recordedContext = recordedNimbusContext
-        @org.mozilla.geckoview.ExperimentalGeckoViewApi
-        geckoPrefHandler = NimbusGeckoPrefHandler
+        this.geckoPrefHandler = geckoPrefHandler
     }.build(appInfo, serverSettings).also { nimbusApi ->
         nimbusApi.recordIsReady(FxNimbus.features.nimbusIsReady.value().eventCount)
-        @org.mozilla.geckoview.ExperimentalGeckoViewApi
-        NimbusGeckoPrefHandler.nimbusApi = nimbusApi
     }
 }
 
