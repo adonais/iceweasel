@@ -290,7 +290,7 @@ async function dragAndDrop(
 
   if (destWindow != origWindow) {
     // Make sure that both tab1 and tab2 are visible
-    origWindow.focus();
+    await SimpleTest.promiseFocus(origWindow);
     origWindow.moveTo(rect.left, rect.top + rect.height * 3);
   }
 
