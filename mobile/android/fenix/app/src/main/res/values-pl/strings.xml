@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Przetłumacz stronę</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Streść stronę</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Nowe</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Zgłoś niepoprawnie działającą stronę…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -370,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Język oryginalnej strony: %1$s, język tłumaczenia: %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Potrząśnij urządzeniem, aby w\u00a0kilka sekund streścić tę stronę. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -940,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Podpowiedzi przeglądarki %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Otrzymuj podpowiedzi z\u00a0Internetu związane z\u00a0wyszukiwanymi słowami</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Pobieranie podpowiedzi od Mozilli podczas pisania</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Udostępnianie odnośników</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -970,7 +976,7 @@
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Zarządzanie pobieraniem za pomocą innej aplikacji</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_downloads_settings_clean_up_files_title">Usuwaj z\u00a0aplikacji %s i\u00a0z\u00a0urządzenia</string>
+  <string name="preferences_downloads_settings_clean_up_files_title">Usuwanie z\u00a0aplikacji %s i\u00a0z\u00a0urządzenia</string>
   <!-- Summary for the setting to automatically clean up downloaded files -->
   <string name="preferences_downloads_settings_clean_up_files_summary">Usunięcie plików z\u00a0menedżera pobierania spowoduje również ich usunięcie z\u00a0urządzenia</string>
   <!-- Preference for downloads -->
@@ -1027,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Właściciel kolekcji (identyfikator użytkownika)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Zmieniono kolekcję rozszerzeń. Wyłączanie aplikacji, aby zastosować zmiany…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Informacja o\u00a0prywatności</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Wskocz z\u00a0powrotem</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1586,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Udostępnij</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Dodaj do kolekcji</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Dodaj do grupy</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Udostępnij zaznaczone karty</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1626,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (tryb prywatny)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Szukaj w\u00a0otwartych kartach</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Utwórz grupę kart</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Edytuj grupę</string>
+  <string name="create_tab_group_save_button">Zachowaj</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Zamknij edycję grupy kart</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupa</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grupa %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nazwa grupy kart</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Nazwa</string>
   <!--
     History
 
@@ -1753,7 +1788,14 @@
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Nie można zmienić nazwy tego pliku z\u00a0powodu ograniczeń systemu lub pamięci.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Czy zmienić typ pliku na %s?</string>
+  <string name="change_file_extension_description">Może to spowodować otwarcie pliku w\u00a0innej aplikacji i\u00a0stanowić zagrożenie dla urządzenia.</string>
   <string name="change_file_extension_cancel_button">Anuluj</string>
+  <string name="change_file_extension_confirm_button">Tak, zmień</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">W\u00a0trakcie</string>
   <!--
@@ -2475,6 +2517,18 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s chroni Cię przed wieloma najpopularniejszymi elementami śledzącymi, które monitorują, co robisz w\u00a0Internecie.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Więcej informacji</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d zablokowany element śledzący</item>
+    <item quantity="few">%d zablokowane elementy śledzące</item>
+    <item quantity="other">%d zablokowanych elementów śledzących</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Ochrona jest włączona</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standardowa (domyślna)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2871,6 +2925,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Więcej informacji</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Zarządzaj maskami dla adresu e-mail</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">5\u00a0bezpłatnych masek dla adresu e-mail zostało już utworzonych, więc wybraliśmy jedną, którą można wykorzystać ponownie.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Maski dla adresu e-mail nie są obecnie dostępne. Spróbuj ponownie za kilka minut.</string>
   <!--
     Autofill
 
@@ -3631,6 +3689,13 @@
   -->
   <string name="connection_security_panel_verified_by">Zweryfikowane przez: %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Wystawiony dla: %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Kwalifikowany w\u00a0rozumieniu rozporządzenia (UE) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3720,6 +3785,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Nie korzystam z\u00a0wyszukiwania w\u00a0Firefoksie</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Nie korzystam z\u00a0synchronizacji</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Jest powolny lub ma błędy</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Trudno znaleźć funkcje lub ich brakuje</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Jest mylący lub trudny w\u00a0użyciu</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Jest w\u00a0porządku, ale nie jest lepszy od innych przeglądarek</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Planuję nadal używać Firefoksa</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Pomóż ulepszyć drukowanie w\u00a0Firefoksie. To zajmie tylko chwilkę</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3734,6 +3809,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Jak określisz swoje zadowolenie z\u00a0wyszukiwania w\u00a0Firefoksie?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Jak określisz swoje zadowolenie z\u00a0synchronizacji w\u00a0Firefoksie?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Pomóż nam ulepszyć Firefoksa. Które z\u00a0poniższych najlepiej opisuje Twoje dotychczasowe wrażenia?</string>
   <!--
     Accessibility
 

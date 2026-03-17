@@ -1029,6 +1029,12 @@
   <string name="customize_addon_collection_user_hint">Vlastník sbírky (ID uživatele)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Nastavení sbírky změněno. Pro aplikování změn se nyní aplikace ukončí…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Hlášení o soukromí</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Návrat zpět</string>
   <!-- Title for the customize home screen section with bookmarks. -->
