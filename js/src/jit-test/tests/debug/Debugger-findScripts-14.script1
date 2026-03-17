@@ -1,5 +1,3 @@
-// -*- mode:js2 -*-
-
 function f() {
     var x = 1;                          // line 4
     return function g() {
