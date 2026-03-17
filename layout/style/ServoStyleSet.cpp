@@ -25,6 +25,7 @@
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/AnonymousContent.h"
+#include "mozilla/dom/CSSAppearanceBaseRule.h"
 #include "mozilla/dom/CSSBinding.h"
 #include "mozilla/dom/CSSContainerRule.h"
 #include "mozilla/dom/CSSCounterStyleRule.h"
@@ -1022,6 +1023,7 @@ static Maybe<StyleCssRuleRef> ToRuleRef(css::Rule& aRule) {
     CASE_FOR(Container, Container)
     CASE_FOR(Scope, Scope)
     CASE_FOR(StartingStyle, StartingStyle)
+    CASE_FOR(AppearanceBase, AppearanceBase)
     CASE_FOR(PositionTry, PositionTry)
     CASE_FOR(NestedDeclarations, NestedDeclarations)
     CASE_FOR(Namespace, Namespace)
@@ -1072,6 +1074,7 @@ void ServoStyleSet::RuleChangedInternal(StyleSheet& aSheet, css::Rule& aRule,
     CASE_FOR(Container, Container)
     CASE_FOR(Scope, Scope)
     CASE_FOR(StartingStyle, StartingStyle)
+    CASE_FOR(AppearanceBase, AppearanceBase)
     CASE_FOR(PositionTry, PositionTry)
     CASE_FOR(NestedDeclarations, NestedDeclarations)
     // @namespace can only be inserted / removed when there are only other

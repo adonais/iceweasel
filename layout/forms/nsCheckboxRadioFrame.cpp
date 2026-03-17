@@ -29,7 +29,7 @@ NS_QUERYFRAME_HEAD(nsCheckboxRadioFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsAtomicContainerFrame)
 
 nscoord nsCheckboxRadioFrame::DefaultSize() {
-  const CSSCoord size = StyleDisplay()->HasAppearance()
+  const CSSCoord size = StyleDisplay()->HasNativeAppearance()
                             ? PresContext()->Theme()->GetCheckboxRadioPrefSize()
                             : CSSCoord(13.0f);
   return CSSPixel::ToAppUnits(Style()->EffectiveZoom().Zoom(size));
@@ -44,7 +44,7 @@ void nsCheckboxRadioFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 nscoord nsCheckboxRadioFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                              IntrinsicISizeType aType) {
-  return StyleDisplay()->HasAppearance() ? DefaultSize() : 0;
+  return StyleDisplay()->HasNativeAppearance() ? DefaultSize() : 0;
 }
 
 /* virtual */
@@ -54,7 +54,7 @@ LogicalSize nsCheckboxRadioFrame::ComputeAutoSize(
     const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
     const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   LogicalSize size(aWM, 0, 0);
-  if (!StyleDisplay()->HasAppearance()) {
+  if (!StyleDisplay()->HasNativeAppearance()) {
     return size;
   }
   return nsAtomicContainerFrame::ComputeAutoSize(
@@ -77,7 +77,7 @@ Maybe<nscoord> nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
 
   // For appearance:none we use a standard CSS baseline, i.e. synthesized from
   // our margin-box.
-  if (!StyleDisplay()->HasAppearance()) {
+  if (!StyleDisplay()->HasNativeAppearance()) {
     return Nothing{};
   }
 
