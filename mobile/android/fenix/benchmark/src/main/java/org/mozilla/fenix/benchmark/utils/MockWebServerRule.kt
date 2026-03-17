@@ -7,6 +7,7 @@ package org.mozilla.fenix.benchmark.utils
 import mockwebserver3.MockWebServer
 import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.rules.ExternalResource
+import java.io.IOException
 
 /**
  * A JUnit [ExternalResource] that manages the lifecycle of a [MockWebServer] instance.
@@ -28,11 +29,18 @@ class MockWebServerRule(
     override fun before() {
         server = MockWebServer().apply {
             dispatcher = AndroidAssetDispatcher()
-            start(this@MockWebServerRule.port)
+        }
+        try {
+            server.start(port)
+        } catch (e: IOException) {
+            server.close()
+            server.start(port)
         }
     }
 
     override fun after() {
-        server.close()
+        if (::server.isInitialized) {
+            server.close()
+        }
     }
 }

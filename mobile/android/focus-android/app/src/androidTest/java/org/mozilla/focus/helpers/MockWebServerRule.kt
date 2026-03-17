@@ -7,6 +7,7 @@ package org.mozilla.focus.helpers
 import mockwebserver3.MockWebServer
 import mozilla.components.support.android.test.rules.AndroidAssetDispatcher
 import org.junit.rules.ExternalResource
+import java.io.IOException
 
 /**
  * A JUnit [ExternalResource] that manages the lifecycle of a [MockWebServer] instance backed
@@ -22,11 +23,18 @@ class MockWebServerRule : ExternalResource() {
     override fun before() {
         server = MockWebServer().apply {
             dispatcher = AndroidAssetDispatcher()
-            start()
+        }
+        try {
+            server.start()
+        } catch (e: IOException) {
+            server.close()
+            server.start()
         }
     }
 
     override fun after() {
-        server.close()
+        if (::server.isInitialized) {
+            server.close()
+        }
     }
 }
