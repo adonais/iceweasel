@@ -14,6 +14,7 @@
 #include "MP4Decoder.h"
 #include "MediaData.h"
 #include "MediaDataDecoderProxy.h"
+#include "MediaGleanMetrics.h"
 #include "MediaInfo.h"
 #include "PDMFactory.h"
 #include "PerformanceRecorder.h"
@@ -2467,16 +2468,24 @@ void MediaFormatReader::Update(TrackType aTrack) {
     } else if (decoder.HasFatalError()) {
       nsCString mimeType = decoder.GetCurrentInfo()->mMimeType;
       if (!mimeType.IsEmpty()) {
-        glean::media_playback::DecodeErrorExtra extraData;
-        extraData.mimeType = Some(mimeType);
-        extraData.errorName = Some(decoder.mError->ErrorName());
-        if (mCDMProxy) {
-          extraData.keySystem =
-              Some(NS_ConvertUTF16toUTF8(mCDMProxy->KeySystem()));
+        const nsCString& errorName = decoder.mError->ErrorName();
+        if (!IsNotRealDecodeError(errorName)) {
+          nsCString errorLabel = ErrorNameToLabel(errorName);
+          if (mCDMProxy) {
+            glean::media_playback::encrypted_decode_error
+                .Get(MimeTypeToEncryptedLabel(mimeType),
+                     KeySystemToLabel(mCDMProxy->KeySystem()))
+                .Add();
+          } else if (decoder.mIsHardwareAccelerated) {
+            glean::media_playback::unencrypted_hw_decode_error
+                .Get(MimeTypeToUnencryptedLabel(mimeType), errorLabel)
+                .Add();
+          } else {
+            glean::media_playback::unencrypted_sw_decode_error
+                .Get(MimeTypeToUnencryptedLabel(mimeType), errorLabel)
+                .Add();
+          }
         }
-        extraData.decoderName = Some(decoder.mDescription);
-        extraData.isHardwareAccelerated = Some(decoder.mIsHardwareAccelerated);
-        glean::media_playback::decode_error.Record(Some(extraData));
       }
       LOG("Rejecting %s promise for %s : DECODE_ERROR", TrackTypeToStr(aTrack),
           mimeType.get());

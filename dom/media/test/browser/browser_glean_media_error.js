@@ -38,8 +38,9 @@ const testCases = [
       category: "non_encrypted",
     },
     decodeError: {
-      mime_type: "video/vp9",
-      error_name: "NS_ERROR_DOM_MEDIA_DECODE_ERR",
+      codec: "video_vp9",
+      error: "decode_err",
+      probe: "unencryptedSwDecodeError",
     },
   },
 ];
@@ -94,19 +95,20 @@ async function CheckMediaErrorProbe(expected) {
   const count = Glean.media.error
     .get(expected.key, expected.category)
     .testGetValue();
-  Assert.greater(count, 0, `media.error[${expected.key},${expected.category}] was recorded`);
+  Assert.greater(
+    count,
+    0,
+    `media.error[${expected.key},${expected.category}] was recorded`
+  );
 }
 
 async function CheckDecodeErrorProbe(expected) {
-  const extra = await Glean.mediaPlayback.decodeError.testGetValue()[0].extra;
-  is(
-    extra.mime_type,
-    expected.mime_type,
-    `'${extra.mime_type}' is equal to expected '${expected.mime_type}'`
-  );
-  is(
-    extra.error_name,
-    expected.error_name,
-    `'${extra.error_name}' is equal to expected '${expected.error_name}'`
+  const count = Glean.mediaPlayback[expected.probe]
+    .get(expected.codec, expected.error)
+    .testGetValue();
+  Assert.greater(
+    count,
+    0,
+    `media.playback.${expected.probe}[${expected.codec},${expected.error}] was recorded`
   );
 }
