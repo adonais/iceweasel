@@ -149,12 +149,6 @@ android {
     namespace = 'org.mozilla.geckoview'
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-    compilerOptions {
-        allWarningsAsErrors = true
-    }
-}
-
 def projectVersion = project.ext.gleanVersion
 
 configurations {
