@@ -552,6 +552,7 @@ static uint32_t CollectAtRules(ServoCSSRuleList& aRuleList,
       case StyleCssRuleType::Scope:
       case StyleCssRuleType::StartingStyle:
       case StyleCssRuleType::NestedDeclarations:
+      case StyleCssRuleType::AppearanceBase:
         break;
     }
 
