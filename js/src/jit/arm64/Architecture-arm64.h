@@ -320,6 +320,8 @@ class Bitset128 {
     }
     return std::countl_zero(lo) + 64;
   }
+
+  uint32_t bitWidth() const { return 128 - countLeadingZeroes(); }
 };
 
 class FloatRegisters {
@@ -584,7 +586,7 @@ struct FloatRegister {
   static uint32_t LastBit(SetType x) {
     static_assert(sizeof(SetType) == 16, "SetType");
     MOZ_ASSERT(x);
-    return 127 - x.countLeadingZeroes();
+    return x.bitWidth() - 1;
   }
 
   static constexpr size_t SizeOfSimd128 = 16;
