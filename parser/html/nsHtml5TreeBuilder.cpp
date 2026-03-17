@@ -338,7 +338,6 @@ void nsHtml5TreeBuilder::characters(const char16_t* buf, int32_t start,
               }
               case IN_SELECT:
               case IN_SELECT_IN_TABLE: {
-                MOZ_ASSERT(!noInSelectMode);
                 NS_HTML5_BREAK(charactersloop);
               }
               case IN_TABLE:
@@ -468,7 +467,6 @@ void nsHtml5TreeBuilder::characters(const char16_t* buf, int32_t start,
               }
               case IN_SELECT:
               case IN_SELECT_IN_TABLE: {
-                MOZ_ASSERT(!noInSelectMode);
                 NS_HTML5_BREAK(charactersloop);
               }
               case AFTER_BODY: {
@@ -1347,17 +1345,6 @@ starttagloop:
             }
             case HR: {
               implicitlyCloseP();
-              if (noInSelectMode &&
-                  findLastInScope(nsGkAtoms::select) !=
-                      nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                generateImpliedEndTags();
-                if (findLastInScope(nsGkAtoms::option) !=
-                        nsHtml5TreeBuilder::NOT_FOUND_ON_STACK ||
-                    findLastInScope(nsGkAtoms::optgroup) !=
-                        nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                  errUnclosedElements(currentPtr, name);
-                }
-              }
               appendVoidElementToCurrentMayFoster(elementName, attributes);
               selfClosing = false;
               attributes = nullptr;
@@ -1368,25 +1355,8 @@ starttagloop:
               elementName = nsHtml5ElementName::ELT_IMG;
               NS_HTML5_CONTINUE(starttagloop);
             }
+            case IMG:
             case INPUT: {
-              if (noInSelectMode) {
-                if (fragment && nsGkAtoms::select == contextName) {
-                  errStartTagWithSelectOpen(name);
-                  NS_HTML5_BREAK(starttagloop);
-                }
-                eltPos = findLastInScope(nsGkAtoms::select);
-                if (eltPos != nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                  errStartTagWithSelectOpen(name);
-                  while (currentPtr >= eltPos) {
-                    pop();
-                  }
-                  resetTheInsertionMode();
-                  NS_HTML5_CONTINUE(starttagloop);
-                }
-              }
-              [[fallthrough]];
-            }
-            case IMG: {
               reconstructTheActiveFormattingElements();
               appendVoidElementToCurrentMayFoster(elementName, attributes,
                                                   formPointer);
@@ -1435,90 +1405,29 @@ starttagloop:
               NS_HTML5_BREAK(starttagloop);
             }
             case SELECT: {
-              if (noInSelectMode) {
-                if (fragment && nsGkAtoms::select == contextName) {
-                  errStartSelectWhereEndSelectExpected();
-                  NS_HTML5_BREAK(starttagloop);
-                }
-                eltPos = findLastInScope(nsGkAtoms::select);
-                if (eltPos != nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                  errStartSelectWhereEndSelectExpected();
-                  while (currentPtr >= eltPos) {
-                    pop();
-                  }
-                  NS_HTML5_BREAK(starttagloop);
-                }
-                reconstructTheActiveFormattingElements();
-                appendToCurrentNodeAndPushElementMayFoster(
-                    elementName, attributes, formPointer);
-                framesetOk = false;
-                attributes = nullptr;
-                NS_HTML5_BREAK(starttagloop);
-              }
               reconstructTheActiveFormattingElements();
               appendToCurrentNodeAndPushElementMayFoster(
                   elementName, attributes, formPointer);
-              if (!noInSelectMode) {
-                switch (mode) {
-                  case IN_TABLE:
-                  case IN_CAPTION:
-                  case IN_COLUMN_GROUP:
-                  case IN_TABLE_BODY:
-                  case IN_ROW:
-                  case IN_CELL: {
-                    mode = IN_SELECT_IN_TABLE;
-                    break;
-                  }
-                  default: {
-                    mode = IN_SELECT;
-                    break;
-                  }
+              switch (mode) {
+                case IN_TABLE:
+                case IN_CAPTION:
+                case IN_COLUMN_GROUP:
+                case IN_TABLE_BODY:
+                case IN_ROW:
+                case IN_CELL: {
+                  mode = IN_SELECT_IN_TABLE;
+                  break;
+                }
+                default: {
+                  mode = IN_SELECT;
+                  break;
                 }
               }
               attributes = nullptr;
               NS_HTML5_BREAK(starttagloop);
             }
+            case OPTGROUP:
             case OPTION: {
-              if (noInSelectMode) {
-                if (findLastInScope(nsGkAtoms::select) !=
-                    nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                  generateImpliedEndTagsExceptFor(nsGkAtoms::optgroup);
-                  if (findLastInScope(nsGkAtoms::option) !=
-                      nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                    errUnclosedElements(findLastInScope(nsGkAtoms::option),
-                                        name);
-                  }
-                } else {
-                  if (isCurrent(nsGkAtoms::option)) {
-                    pop();
-                  }
-                }
-                reconstructTheActiveFormattingElements();
-                appendToCurrentNodeAndPushElement(elementName, attributes);
-                attributes = nullptr;
-                NS_HTML5_BREAK(starttagloop);
-              }
-              [[fallthrough]];
-            }
-            case OPTGROUP: {
-              if (noInSelectMode) {
-                if (findLastInScope(nsGkAtoms::select) !=
-                    nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                  generateImpliedEndTags();
-                  if (findLastInScope(nsGkAtoms::option) !=
-                          nsHtml5TreeBuilder::NOT_FOUND_ON_STACK ||
-                      findLastInScope(nsGkAtoms::optgroup) !=
-                          nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                    errUnclosedElements(currentPtr, name);
-                  }
-                } else if (isCurrent(nsGkAtoms::option)) {
-                  pop();
-                }
-                reconstructTheActiveFormattingElements();
-                appendToCurrentNodeAndPushElement(elementName, attributes);
-                attributes = nullptr;
-                NS_HTML5_BREAK(starttagloop);
-              }
               if (isCurrent(nsGkAtoms::option)) {
                 pop();
               }
@@ -1776,7 +1685,6 @@ starttagloop:
         }
       }
       case IN_SELECT_IN_TABLE: {
-        MOZ_ASSERT(!noInSelectMode);
         switch (group) {
           case CAPTION:
           case TBODY_OR_THEAD_OR_TFOOT:
@@ -1800,7 +1708,6 @@ starttagloop:
         [[fallthrough]];
       }
       case IN_SELECT: {
-        MOZ_ASSERT(!noInSelectMode);
         switch (group) {
           case HTML: {
             errStrayStartTag(name);
@@ -2955,24 +2862,6 @@ void nsHtml5TreeBuilder::endTag(nsHtml5ElementName* elementName) {
           case TEMPLATE: {
             break;
           }
-          case SELECT: {
-            if (noInSelectMode) {
-              eltPos = findLastInScope(name);
-              if (eltPos == nsHtml5TreeBuilder::NOT_FOUND_ON_STACK) {
-                errStrayEndTag(name);
-              } else {
-                generateImpliedEndTags();
-                if (!!MOZ_UNLIKELY(mViewSource) && !isCurrent(name)) {
-                  errUnclosedElements(eltPos, name);
-                }
-                while (currentPtr >= eltPos) {
-                  pop();
-                }
-              }
-              NS_HTML5_BREAK(endtagloop);
-            }
-            [[fallthrough]];
-          }
           case AREA_OR_WBR:
           case KEYGEN:
           case PARAM_OR_SOURCE_OR_TRACK:
@@ -2984,6 +2873,7 @@ void nsHtml5TreeBuilder::endTag(nsHtml5ElementName* elementName) {
           case IFRAME:
           case NOEMBED:
           case NOFRAMES:
+          case SELECT:
           case TABLE:
           case TEXTAREA: {
             errStrayEndTag(name);
@@ -3110,7 +3000,6 @@ void nsHtml5TreeBuilder::endTag(nsHtml5ElementName* elementName) {
         }
       }
       case IN_SELECT_IN_TABLE: {
-        MOZ_ASSERT(!noInSelectMode);
         switch (group) {
           case CAPTION:
           case TABLE:
@@ -3139,7 +3028,6 @@ void nsHtml5TreeBuilder::endTag(nsHtml5ElementName* elementName) {
         [[fallthrough]];
       }
       case IN_SELECT: {
-        MOZ_ASSERT(!noInSelectMode);
         switch (group) {
           case OPTION: {
             if (isCurrent(nsGkAtoms::option)) {
@@ -3635,23 +3523,21 @@ void nsHtml5TreeBuilder::resetTheInsertionMode() {
       }
     }
     if (nsGkAtoms::select == name) {
-      if (!noInSelectMode) {
-        int32_t ancestorIndex = i;
-        while (ancestorIndex > 0) {
-          nsHtml5StackNode* ancestor = stack[ancestorIndex--];
-          if (kNameSpaceID_XHTML == ancestor->ns) {
-            if (nsGkAtoms::_template == ancestor->name) {
-              break;
-            }
-            if (nsGkAtoms::table == ancestor->name) {
-              mode = IN_SELECT_IN_TABLE;
-              return;
-            }
+      int32_t ancestorIndex = i;
+      while (ancestorIndex > 0) {
+        nsHtml5StackNode* ancestor = stack[ancestorIndex--];
+        if (kNameSpaceID_XHTML == ancestor->ns) {
+          if (nsGkAtoms::_template == ancestor->name) {
+            break;
+          }
+          if (nsGkAtoms::table == ancestor->name) {
+            mode = IN_SELECT_IN_TABLE;
+            return;
           }
         }
-        mode = IN_SELECT;
-        return;
       }
+      mode = IN_SELECT;
+      return;
     } else if (nsGkAtoms::td == name || nsGkAtoms::th == name) {
       mode = IN_CELL;
       return;
@@ -4655,10 +4541,6 @@ bool nsHtml5TreeBuilder::isAllowDeclarativeShadowRoots() {
 void nsHtml5TreeBuilder::setAllowDeclarativeShadowRoots(bool allow) {
   allowDeclarativeShadowRoots = allow;
 }
-
-bool nsHtml5TreeBuilder::isNoInSelectMode() { return noInSelectMode; }
-
-void nsHtml5TreeBuilder::setNoInSelectMode(bool mode) { noInSelectMode = mode; }
 
 void nsHtml5TreeBuilder::flushCharacters() {
   if (charBufferLen > 0) {

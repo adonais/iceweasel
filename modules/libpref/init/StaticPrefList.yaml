@@ -4849,14 +4849,6 @@
   mirror: always
   rust: true
 
-# Whether to lift select parser restrictions per the updated HTML spec,
-# removing the "in select" insertion mode and handling <select> via
-# scope-based checks in "in body" mode.
-- name: dom.lift_select_parser_restrictions.enabled
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
 - name: dom.send_after_paint_to_content
   type: bool
   value: false
