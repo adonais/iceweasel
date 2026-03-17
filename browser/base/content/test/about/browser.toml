@@ -73,6 +73,11 @@ support-files = [
 
 ["browser_aboutNetError_emptyResponse.js"]
 
+["browser_aboutNetError_feltprivacy_illustrations.js"]
+support-files = [
+  "server_error.sjs",
+]
+
 ["browser_aboutNetError_httpAuthDisabled.js"]
 
 ["browser_aboutNetError_internet_connection_offline.js"]

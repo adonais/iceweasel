@@ -159,6 +159,9 @@ certerror-mitm-title = Software is Preventing { -brand-short-name } From Safely 
 fp-certerror-page-title = Warning: Security Risk
 fp-certerror-body-title = Be careful. Something doesn’t look right.
 
+fp-certerror-illustration-alt =
+  .alt = Illustration of a fox looking at an orange warning sign.
+
 fp-certerror-why-site-dangerous = What makes the site look dangerous?
 fp-certerror-what-can-you-do = What can you do about it?
 

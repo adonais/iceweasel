@@ -196,6 +196,9 @@ neterror-response-status-code = Error code: { $responsestatus } { $responsestatu
 
 fp-neterror-offline-body-title = Looks like there’s a problem with your internet connection
 
+fp-neterror-illustration-alt =
+  .alt = Illustration of a fox looking at disconnected network cables.
+
 ## Variables:
 ##   $hostname (String) - Hostname of the website to which the user was trying to connect.
 

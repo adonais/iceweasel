@@ -194,6 +194,7 @@ toolkit.jar:
    content/global/errors/pkix-errors.mjs                            (errors/pkix-errors.mjs)
    content/global/errors/ssl-errors.mjs                             (errors/ssl-errors.mjs)
    content/global/errors/net-errors.mjs                             (errors/net-errors.mjs)
+   content/global/errors/net-error-illustrations.mjs                (errors/net-error-illustrations.mjs)
 #ifdef XP_MACOSX
    content/global/macWindowMenu.js
 #endif
