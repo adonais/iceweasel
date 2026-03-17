@@ -512,7 +512,7 @@ def clobber(command_context, what, full=False):
     ".pyc", "__pycache__", etc).
 
     The `gradle` target will remove the "gradle" subdirectory of the object
-    directory.
+    directory and all ".gradle" cache directories in the source tree.
 
     The `artifacts` target will remove cached artifact files from
     ~/.mozbuild/package-frontend or $MOZBUILD_STATE_PATH/package-frontend.
@@ -625,6 +625,10 @@ def clobber(command_context, what, full=False):
         shutil.rmtree(
             mozpath.join(command_context.topobjdir, "gradle"), ignore_errors=True
         )
+        topsrcdir = Path(command_context.topsrcdir)
+        for gradle_cache in topsrcdir.rglob(".gradle"):
+            if gradle_cache.is_dir():
+                shutil.rmtree(gradle_cache, ignore_errors=True)
 
     if "artifacts" in what:
         from mach.util import get_state_dir
