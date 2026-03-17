@@ -56,6 +56,12 @@ internal object TabsTrayTestTag {
     const val TAB_GROUP_TITLE = "$TAB_GROUP_ROOT.title"
     const val TAB_GROUP_THREE_DOT_BUTTON = "$TAB_GROUP_ROOT.threeDotButton"
 
+    // Bottom sheet group items
+    const val TAB_GROUP_BOTTOM_SHEET_ROOT = "$TAB_GROUP_ROOT.bottomSheet"
+    const val BOTTOM_SHEET_SHARE_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.share"
+    const val BOTTOM_SHEET_THREE_DOT_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.threeDotButton"
+    const val BOTTOM_SHEET_CIRCLE = "$TAB_GROUP_BOTTOM_SHEET_ROOT.circle"
+
     // Bottom app bar
     const val TAB_SEARCH_ICON = "$TABS_TRAY.tabSearchIcon"
 }

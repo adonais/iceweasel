@@ -12,6 +12,8 @@ import mozilla.components.ui.colors.PhotonColors
 
 /**
  * Value class representing the possible themes for Tab Groups.
+ *
+ * Note - values here are placeholders which will be replaced when group color tokens are in place.
  **/
 enum class TabGroupTheme {
     Yellow {

@@ -43,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -55,7 +54,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.support.utils.ext.isLandscape
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.tabgroups.TabGroupCard
@@ -126,6 +124,7 @@ private val TabListLastItemShape = RoundedCornerShape(
  * @param onMove Invoked when the user moves a tab.
  * @param onTabDragStart Invoked when starting to drag a tab.
  * @param header Optional layout to display before [tabs].
+ * @param contentPadding Optional PaddingValues to pad the tab's content.
  */
 @Suppress("LongParameterList")
 @Composable
@@ -141,6 +140,7 @@ fun TabLayout(
     onMove: (String, String?, Boolean) -> Unit,
     onTabDragStart: () -> Unit,
     header: (@Composable () -> Unit)? = null,
+    contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
 ) {
     var selectedTabIndex = 0
     selectedTabId?.let {
@@ -165,6 +165,7 @@ fun TabLayout(
             onMove = onMove,
             onTabDragStart = onTabDragStart,
             header = header,
+            contentPadding = contentPadding,
         )
     } else {
         TabList(
@@ -191,6 +192,7 @@ private fun TabGrid(
     selectedTabIndex: Int,
     selectionMode: TabsTrayState.Mode,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onItemLongClick: (TabsTrayItem) -> Unit,
@@ -237,14 +239,7 @@ private fun TabGrid(
                     shouldLongPressToDrag = shouldLongPress,
                 ),
             state = gridState,
-            contentPadding = PaddingValues(
-                horizontal = if (LocalContext.current.isLandscape()) {
-                    52.dp
-                } else {
-                    FirefoxTheme.layout.space.static200
-                },
-                vertical = 24.dp,
-            ),
+            contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(space = FirefoxTheme.layout.space.static200),
             horizontalArrangement = Arrangement.spacedBy(space = horizontalGridPadding),
         ) {
@@ -728,3 +723,19 @@ private fun generateFakeTabsList(
         }
     }
 }
+
+/**
+ * The default horizontal content padding used by TabLayout.
+ * In some cases, such as when a tab layout is embedded inside another view,
+ * we may wish to override this content padding.
+ */
+@Composable
+@ReadOnlyComposable
+private fun defaultTabLayoutContentPadding(): PaddingValues = PaddingValues(
+    horizontal = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        52.dp
+    } else {
+        FirefoxTheme.layout.space.static200
+    },
+    vertical = 24.dp,
+)
