@@ -3422,7 +3422,7 @@ nsChangeHint nsStyleUIReset::CalcDifference(
     }
   }
 
-  if (mViewTransitionClass != aNewData.mViewTransitionClass) {
+  if (mViewTransitionClass.value != aNewData.mViewTransitionClass.value) {
     hint |= nsChangeHint_NeutralChange;
   }
 

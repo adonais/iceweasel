@@ -107,7 +107,14 @@ static inline nsRect CapturedRect(const nsIFrame* aFrame,
 
 static StyleViewTransitionClass DocumentScopedClassListFor(
     const nsIFrame* aFrame) {
-  return aFrame->StyleUIReset()->mViewTransitionClass;
+  const auto& classInfo = aFrame->StyleUIReset()->mViewTransitionClass;
+  nsIContent* content = aFrame->GetContent();
+  if (!content || AnchorPositioningUtils::GetShadowRootForTreeScope(
+                      *content, classInfo.scope)) {
+    return StyleViewTransitionClass();
+  }
+
+  return classInfo;
 }
 
 static constexpr wr::ImageKey kNoKey{{0}, 0};
@@ -752,7 +759,7 @@ bool ViewTransition::MatchClassList(
     // no repro for it. For now not matching is pretty safe...
     return false;
   }
-  const auto& classList = el->mClassList._0.AsSpan();
+  const auto& classList = el->mClassList.value._0.AsSpan();
   if (classList.IsEmpty()) {
     return false;
   }
