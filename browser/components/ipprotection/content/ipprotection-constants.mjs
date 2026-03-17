@@ -10,7 +10,7 @@ export const LINKS = Object.freeze({
         "browser.ipProtection.productVpn.endpoint",
         "https://www.mozilla.org"
       ) +
-      "/products/vpn/?utm_medium=firefox-desktop&utm_source=freevpnpilot&utm_campaign=evergreen&utm_content=vpnpanel"
+      "/products/vpn/?utm_medium=firefox-desktop&utm_source=vpn-panel&utm_campaign=fx-vpn&utm_content=upgrade-button"
     );
   },
 
