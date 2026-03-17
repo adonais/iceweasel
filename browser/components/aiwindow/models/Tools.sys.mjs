@@ -16,7 +16,10 @@ import {
   ChatStore,
   MESSAGE_ROLE,
 } from "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs";
-import { truncateUntrustedMetadata } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+import {
+  truncateUntrustedMetadata,
+  isNewPageUrl,
+} from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -245,7 +248,7 @@ export async function getOpenTabs(_params, securityProperties) {
         const url = browser?.currentURI?.spec;
         const title = tab.label;
 
-        if (isAllowedTabUrl(url)) {
+        if (isAllowedTabUrl(url) && !isNewPageUrl(url)) {
           tabs.push({
             url,
             title: truncateUntrustedMetadata(title),

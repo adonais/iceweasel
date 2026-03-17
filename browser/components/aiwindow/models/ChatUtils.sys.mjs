@@ -116,7 +116,7 @@ export async function constructRealTimeInfoInjectionMessage(depsOverride) {
   const datePart = isoTimestamp?.split("T")[0] ?? "";
   const locale = Services.locale.appLocaleAsBCP47;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const hasTabInfo = Boolean(url || title || description);
+  const hasTabInfo = Boolean(url || title || description) && !isNewPageUrl(url);
 
   return {
     url,
@@ -257,6 +257,16 @@ const INTERNAL_SCHEMES = [
  */
 function isInternalUrl(url) {
   return INTERNAL_SCHEMES.some(scheme => url.startsWith(scheme));
+}
+
+/**
+ * To filter specific URL chrome://browser/content/aiwindow/aiWindow.html
+ *
+ * @param {string} url - URL to check
+ * @returns {boolean} True if url = chrome://browser/content/aiwindow/aiWindow.html
+ */
+export function isNewPageUrl(url) {
+  return url === "chrome://browser/content/aiwindow/aiWindow.html";
 }
 
 /**
