@@ -49,6 +49,7 @@ function getLayoutData(responsiveLayouts, index) {
   let layoutData = {
     classNames: [],
     imageSizes: {},
+    cardPositions: {},
     allowsWidget: false,
   };
 
@@ -60,6 +61,7 @@ function getLayoutData(responsiveLayouts, index) {
           `col-${layout.columnCount}-position-${tileIndex}`
         );
         layoutData.imageSizes[layout.columnCount] = tile.size;
+        layoutData.cardPositions[layout.columnCount] = tileIndex;
 
         if (tile.allowsWidget) {
           layoutData.allowsWidget = true;
@@ -134,6 +136,8 @@ function CardSection({
   ctaButtonSponsors,
   anySectionsFollowed,
   placeholder,
+  activeColumnLayout,
+  syncLayoutOnFocus,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
 
@@ -144,10 +148,12 @@ function CardSection({
   );
   const { isForStartupCache } = useSelector(state => state.App);
 
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [focusedPosition, setFocusedPosition] = useState(0);
 
-  const onCardFocus = index => {
-    setFocusedIndex(index);
+  const onCardFocus = position => {
+    if (Number.isInteger(position)) {
+      setFocusedPosition(position);
+    }
   };
 
   const handleCardKeyDown = e => {
@@ -159,8 +165,6 @@ function CardSection({
         return;
       }
 
-      const activeColumn = getActiveColumnLayout(window.innerWidth);
-
       // Arrow direction should match visual navigation direction in RTL
       const isRTL = document.dir === "rtl";
       const navigateToPrevious = isRTL
@@ -169,7 +173,7 @@ function CardSection({
 
       // Extract current position from classList
       let currentPosition = null;
-      const positionPrefix = `${activeColumn}-position-`;
+      const positionPrefix = `${activeColumnLayout}-position-`;
       for (let className of currentCardEl.classList) {
         if (className.startsWith(positionPrefix)) {
           currentPosition = parseInt(
@@ -191,7 +195,7 @@ function CardSection({
       // Find card with target position
       const parentEl = currentCardEl.parentElement;
       if (parentEl) {
-        const targetSelector = `article.ds-card.${activeColumn}-position-${targetPosition}`;
+        const targetSelector = `article.ds-card.${activeColumnLayout}-position-${targetPosition}`;
         const targetCardEl = parentEl.querySelector(targetSelector);
 
         if (targetCardEl) {
@@ -335,10 +339,15 @@ function CardSection({
   function buildCards() {
     const cards = [];
     let dataIndex = 0;
+    const activeColumnCount = parseInt(
+      activeColumnLayout.replace("col-", ""),
+      10
+    );
+    const activeFocusPositions = [];
 
     for (let position = 0; position < maxTile; position++) {
       const layoutData = getLayoutData(responsiveLayouts, position);
-      const { classNames, imageSizes } = layoutData;
+      const { classNames, imageSizes, cardPositions } = layoutData;
       const shouldRenderWidget =
         shouldShowBriefingCard &&
         layoutData.allowsWidget &&
@@ -364,6 +373,11 @@ function CardSection({
       }
       const rec = displaySections[dataIndex];
       const currentIndex = dataIndex;
+      const mappedFocusPosition = cardPositions[activeColumnCount];
+      // Fall back to card order when this layout does not define a mapped position.
+      const activeFocusPosition = Number.isInteger(mappedFocusPosition)
+        ? mappedFocusPosition
+        : currentIndex;
 
       // Render a placeholder card when:
       // 1. No recommendation is available.
@@ -380,66 +394,89 @@ function CardSection({
       if (isPlaceholder) {
         cards.push(<PlaceholderDSCard key={`dscard-${currentIndex}`} />);
       } else {
-        cards.push(
-          <DSCard
-            key={`dscard-${rec.id}`}
-            pos={rec.pos}
-            flightId={rec.flight_id}
-            image_src={rec.image_src}
-            raw_image_src={rec.raw_image_src}
-            icon_src={rec.icon_src}
-            word_count={rec.word_count}
-            time_to_read={rec.time_to_read}
-            title={rec.title}
-            topic={rec.topic}
-            features={rec.features}
-            excerpt={rec.excerpt}
-            url={rec.url}
-            id={rec.id}
-            shim={rec.shim}
-            fetchTimestamp={rec.fetchTimestamp}
-            type={type}
-            context={rec.context}
-            sponsor={rec.sponsor}
-            sponsored_by_override={rec.sponsored_by_override}
-            dispatch={dispatch}
-            source={rec.domain}
-            publisher={rec.publisher}
-            pocket_id={rec.pocket_id}
-            context_type={rec.context_type}
-            bookmarkGuid={rec.bookmarkGuid}
-            recommendation_id={rec.recommendation_id}
-            firstVisibleTimestamp={firstVisibleTimestamp}
-            corpus_item_id={rec.corpus_item_id}
-            scheduled_corpus_item_id={rec.scheduled_corpus_item_id}
-            recommended_at={rec.recommended_at}
-            received_rank={rec.received_rank}
-            format={rec.format}
-            alt_text={rec.alt_text}
-            mayHaveSectionsCards={mayHaveSectionsCards}
-            showTopics={shouldShowLabels}
-            selectedTopics={selectedTopics}
-            availableTopics={availableTopics}
-            ctaButtonSponsors={ctaButtonSponsors}
-            ctaButtonVariant={ctaButtonVariant}
-            sectionsClassNames={classNames.join(" ")}
-            sectionsCardImageSizes={imageSizes}
-            section={sectionKey}
-            sectionPosition={sectionPosition}
-            sectionFollowed={following}
-            sectionLayoutName={layoutName}
-            isTimeSensitive={rec.isTimeSensitive}
-            tabIndex={currentIndex === focusedIndex ? 0 : -1}
-            onFocus={() => onCardFocus(currentIndex)}
-            attribution={rec.attribution}
-            isDailyBrief={shouldShowBriefingCard}
-          />
-        );
+        activeFocusPositions.push(activeFocusPosition);
+        cards.push({
+          isDSCard: true,
+          key: `dscard-${rec.id}`,
+          rec,
+          classNames,
+          imageSizes,
+          activeFocusPosition,
+        });
       }
       dataIndex++;
     }
 
-    return cards;
+    const uniqueFocusPositions = [...new Set(activeFocusPositions)].sort(
+      (a, b) => a - b
+    );
+    const activeRovingIndex = uniqueFocusPositions.includes(focusedPosition)
+      ? focusedPosition
+      : uniqueFocusPositions[0];
+
+    return cards.map(card => {
+      if (!card.isDSCard) {
+        return card;
+      }
+
+      const { rec, classNames, imageSizes, activeFocusPosition } = card;
+
+      return (
+        <DSCard
+          key={card.key}
+          pos={rec.pos}
+          flightId={rec.flight_id}
+          image_src={rec.image_src}
+          raw_image_src={rec.raw_image_src}
+          icon_src={rec.icon_src}
+          word_count={rec.word_count}
+          time_to_read={rec.time_to_read}
+          title={rec.title}
+          topic={rec.topic}
+          features={rec.features}
+          excerpt={rec.excerpt}
+          url={rec.url}
+          id={rec.id}
+          shim={rec.shim}
+          fetchTimestamp={rec.fetchTimestamp}
+          type={type}
+          context={rec.context}
+          sponsor={rec.sponsor}
+          sponsored_by_override={rec.sponsored_by_override}
+          dispatch={dispatch}
+          source={rec.domain}
+          publisher={rec.publisher}
+          pocket_id={rec.pocket_id}
+          context_type={rec.context_type}
+          bookmarkGuid={rec.bookmarkGuid}
+          recommendation_id={rec.recommendation_id}
+          firstVisibleTimestamp={firstVisibleTimestamp}
+          corpus_item_id={rec.corpus_item_id}
+          scheduled_corpus_item_id={rec.scheduled_corpus_item_id}
+          recommended_at={rec.recommended_at}
+          received_rank={rec.received_rank}
+          format={rec.format}
+          alt_text={rec.alt_text}
+          mayHaveSectionsCards={mayHaveSectionsCards}
+          showTopics={shouldShowLabels}
+          selectedTopics={selectedTopics}
+          availableTopics={availableTopics}
+          ctaButtonSponsors={ctaButtonSponsors}
+          ctaButtonVariant={ctaButtonVariant}
+          sectionsClassNames={classNames.join(" ")}
+          sectionsCardImageSizes={imageSizes}
+          section={sectionKey}
+          sectionPosition={sectionPosition}
+          sectionFollowed={following}
+          sectionLayoutName={layoutName}
+          isTimeSensitive={rec.isTimeSensitive}
+          tabIndex={activeFocusPosition === activeRovingIndex ? 0 : -1}
+          onFocus={() => onCardFocus(activeFocusPosition)}
+          attribution={rec.attribution}
+          isDailyBrief={shouldShowBriefingCard}
+        />
+      );
+    });
   }
 
   const cards = buildCards();
@@ -528,6 +565,7 @@ function CardSection({
       </div>
       <div
         className={`ds-section-grid ds-card-grid`}
+        onFocusCapture={syncLayoutOnFocus}
         onKeyDown={handleCardKeyDown}
       >
         {cards}
@@ -553,6 +591,15 @@ function CardSections({
   const { messageData } = useSelector(state => state.Messages);
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
+  const [activeColumnLayout, setActiveColumnLayout] = useState(() =>
+    getActiveColumnLayout(window.innerWidth)
+  );
+  const syncLayoutOnFocus = useCallback(() => {
+    const nextLayout = getActiveColumnLayout(window.innerWidth);
+    setActiveColumnLayout(currLayout =>
+      currLayout === nextLayout ? currLayout : nextLayout
+    );
+  }, []);
 
   // Handle a render before feed has been fetched by displaying nothing
   if (!data) {
@@ -613,6 +660,8 @@ function CardSections({
       ctaButtonSponsors={ctaButtonSponsors}
       anySectionsFollowed={anySectionsFollowed}
       placeholder={placeholder}
+      activeColumnLayout={activeColumnLayout}
+      syncLayoutOnFocus={syncLayoutOnFocus}
     />
   ));
 

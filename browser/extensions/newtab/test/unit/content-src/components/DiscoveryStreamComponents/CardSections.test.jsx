@@ -470,6 +470,260 @@ describe("<CardSections />", () => {
       assert.equal(thirdCard.prop("tabIndex"), -1);
     });
 
+    it("should assign tabIndex based on layout position, not recommendation index", () => {
+      wrapper = mount(
+        <WrapWithProvider>
+          <CardSections
+            dispatch={dispatch}
+            {...DEFAULT_PROPS}
+            data={{
+              sections: [
+                {
+                  ...DEFAULT_PROPS.data.sections[0],
+                  data: [
+                    {
+                      id: "rec-1",
+                      title: "Card 1",
+                      image_src: "image1.jpg",
+                      url: "http://example.com/1",
+                    },
+                    {
+                      id: "rec-2",
+                      title: "Card 2",
+                      image_src: "image2.jpg",
+                      url: "http://example.com/2",
+                    },
+                  ],
+                  layout: {
+                    title: "layout_name",
+                    responsiveLayouts: [
+                      {
+                        columnCount: 1,
+                        tiles: [
+                          {
+                            size: "medium",
+                            position: 1,
+                            hasAd: false,
+                            hasExcerpt: true,
+                          },
+                          {
+                            size: "small",
+                            position: 0,
+                            hasAd: false,
+                            hasExcerpt: false,
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ],
+            }}
+          />
+        </WrapWithProvider>
+      );
+
+      const firstRenderedCard = wrapper.find(DSCard).at(0);
+      const secondRenderedCard = wrapper.find(DSCard).at(1);
+
+      assert.equal(firstRenderedCard.prop("tabIndex"), -1);
+      assert.equal(secondRenderedCard.prop("tabIndex"), 0);
+    });
+
+    it("should update first tab target when the section receives focus after layout changes", () => {
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 500,
+      });
+
+      wrapper = mount(
+        <WrapWithProvider>
+          <CardSections
+            dispatch={dispatch}
+            {...DEFAULT_PROPS}
+            data={{
+              sections: [
+                {
+                  ...DEFAULT_PROPS.data.sections[0],
+                  data: [
+                    {
+                      id: "rec-1",
+                      title: "Card 1",
+                      image_src: "image1.jpg",
+                      url: "http://example.com/1",
+                    },
+                    {
+                      id: "rec-2",
+                      title: "Card 2",
+                      image_src: "image2.jpg",
+                      url: "http://example.com/2",
+                    },
+                  ],
+                  layout: {
+                    title: "layout_name",
+                    responsiveLayouts: [
+                      {
+                        columnCount: 1,
+                        tiles: [
+                          {
+                            size: "medium",
+                            position: 1,
+                            hasAd: false,
+                            hasExcerpt: true,
+                          },
+                          {
+                            size: "small",
+                            position: 0,
+                            hasAd: false,
+                            hasExcerpt: false,
+                          },
+                        ],
+                      },
+                      {
+                        columnCount: 2,
+                        tiles: [
+                          {
+                            size: "small",
+                            position: 0,
+                            hasAd: false,
+                            hasExcerpt: false,
+                          },
+                          {
+                            size: "medium",
+                            position: 1,
+                            hasAd: false,
+                            hasExcerpt: true,
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ],
+            }}
+          />
+        </WrapWithProvider>
+      );
+
+      assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), -1);
+      assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), 0);
+
+      window.innerWidth = 800;
+      wrapper
+        .find(".ds-section-grid.ds-card-grid")
+        .first()
+        .prop("onFocusCapture")();
+      wrapper.update();
+
+      assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), 0);
+      assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), -1);
+    });
+
+    it("should preserve focus on the same card after focus-driven layout sync when falling back to card order", () => {
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 500,
+      });
+
+      wrapper = mount(
+        <WrapWithProvider>
+          <CardSections
+            dispatch={dispatch}
+            {...DEFAULT_PROPS}
+            data={{
+              sections: [
+                {
+                  ...DEFAULT_PROPS.data.sections[0],
+                  data: [
+                    {
+                      id: "rec-1",
+                      title: "Card 1",
+                      image_src: "image1.jpg",
+                      url: "http://example.com/1",
+                    },
+                    {
+                      id: "rec-2",
+                      title: "Card 2",
+                      image_src: "image2.jpg",
+                      url: "http://example.com/2",
+                    },
+                    {
+                      id: "rec-3",
+                      title: "Card 3",
+                      image_src: "image3.jpg",
+                      url: "http://example.com/3",
+                    },
+                  ],
+                  layout: {
+                    title: "layout_name",
+                    responsiveLayouts: [
+                      {
+                        columnCount: 1,
+                        tiles: [
+                          {
+                            size: "small",
+                            position: 0,
+                            hasAd: false,
+                            hasExcerpt: false,
+                          },
+                          {
+                            size: "medium",
+                            position: 1,
+                            hasAd: false,
+                            hasExcerpt: true,
+                          },
+                          {
+                            size: "small",
+                            position: 2,
+                            hasAd: false,
+                            hasExcerpt: false,
+                          },
+                        ],
+                      },
+                      {
+                        columnCount: 2,
+                        tiles: [
+                          {
+                            size: "small",
+                            position: 0,
+                            hasAd: false,
+                            hasExcerpt: false,
+                          },
+                          {
+                            size: "medium",
+                            position: 1,
+                            hasAd: false,
+                            hasExcerpt: true,
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ],
+            }}
+          />
+        </WrapWithProvider>
+      );
+
+      wrapper.find(DSCard).at(2).prop("onFocus")();
+      wrapper.update();
+      assert.equal(wrapper.find(DSCard).at(2).prop("tabIndex"), 0);
+
+      window.innerWidth = 800;
+      wrapper
+        .find(".ds-section-grid.ds-card-grid")
+        .first()
+        .prop("onFocusCapture")();
+      wrapper.update();
+
+      assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), -1);
+      assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), -1);
+      assert.equal(wrapper.find(DSCard).at(2).prop("tabIndex"), 0);
+    });
+
     it("should update focused index when onFocus is called", () => {
       const secondCard = wrapper.find(DSCard).at(1);
       const onFocus = secondCard.prop("onFocus");
@@ -479,6 +733,16 @@ describe("<CardSections />", () => {
 
       assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), 0);
       assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), -1);
+    });
+
+    it("should preserve focused index when focus leaves section grid", () => {
+      wrapper.find(DSCard).at(1).prop("onFocus")();
+      wrapper.update();
+
+      assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), 0);
+
+      assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), -1);
+      assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), 0);
     });
 
     describe("handleCardKeyDown", () => {

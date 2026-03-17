@@ -56,13 +56,15 @@ function useIntersectionObserver(callback, threshold = 0.3) {
  * @returns {string} The active column layout (e.g. "col-3", "col-2", "col-1")
  */
 function getActiveColumnLayout(screenWidth) {
+  // Startup-cache rendering can call this before window.innerWidth is usable.
+  const safeScreenWidth = Number.isFinite(screenWidth) ? screenWidth : 0;
   const breakpoints = [
     { min: 1374, column: "col-4" }, // $break-point-sections-variant
     { min: 1122, column: "col-3" }, // $break-point-widest
     { min: 724, column: "col-2" }, // $break-point-layout-variant
     { min: 0, column: "col-1" }, // (default layout)
   ];
-  return breakpoints.find(bp => screenWidth >= bp.min).column;
+  return breakpoints.find(bp => safeScreenWidth >= bp.min).column;
 }
 
 /**

@@ -185,6 +185,11 @@ describe("getActiveColumnLayout", () => {
     const result = getActiveColumnLayout(500);
     assert.equal(result, "col-1");
   });
+
+  it("returns 'col-1' when screen width is missing", () => {
+    const result = getActiveColumnLayout(undefined);
+    assert.equal(result, "col-1");
+  });
 });
 
 describe("useConfetti hook", () => {
