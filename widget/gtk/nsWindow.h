@@ -553,9 +553,10 @@ class nsWindow final : public nsIWidget {
   }
   static nsWindow* FromWidget(nsWindow*) = delete;
 
-  void SetTextInputArea(GdkRectangle aCursorArea);
+  void SetTextInputArea(LayoutDeviceIntRect aCursorArea);
+  DesktopIntRect GetTextInputArea() { return mIMContextInputArea; };
   void UnlockCursor() { mWidgetCursorLocked = false; };
-  void InsertEmoji();
+  void InsertEmoji(RefPtr<nsWindow> aToplevelWindow = nullptr);
 
  protected:
   virtual ~nsWindow();
@@ -1001,7 +1002,7 @@ class nsWindow final : public nsIWidget {
    * however, IME doesn't work at that time.
    */
   RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
-  GdkRectangle mIMContextInputArea{0, 0, 0, 0};
+  DesktopIntRect mIMContextInputArea;
 
   int mEmojiHidenSignal = 0;
 

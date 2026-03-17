@@ -69,7 +69,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   // I.e., the focus is in the normal editors.
   bool IsEnabled() const;
 
-  bool IsEditable() { return mInputContext.mIMEState.IsEditable(); }
+  bool IsEditable() const { return mInputContext.mIMEState.IsEditable(); }
 
   // OnFocusWindow is a notification that aWindow is going to be focused.
   void OnFocusWindow(nsWindow* aWindow);
