@@ -8075,6 +8075,7 @@ void HTMLMediaElement::NotifyAboutPlaying() {
   // Stick to the QueueEvent() call path for now because we want to
   // trigger some telemetry-related codes in the QueueEvent() method.
   QueueEvent(u"playing"_ns);
+  StartMediaControlKeyListenerIfNeeded();
 }
 
 already_AddRefed<PlayPromise> HTMLMediaElement::CreatePlayPromise(
