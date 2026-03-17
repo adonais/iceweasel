@@ -2077,30 +2077,21 @@ class HTMLMediaElement::ErrorSink {
   void ReportErrorProbe(uint16_t aErrorCode,
                         const Maybe<MediaResult>& aResult) {
     MOZ_ASSERT(IsValidErrorCode(aErrorCode));
-    auto getErrorType = [&]() {
+    auto getErrorTypeLabel = [&]() {
       if (aErrorCode == MEDIA_ERR_ABORTED) {
-        return "AbortError"_ns;
+        return "abort_error"_ns;
       }
       if (aErrorCode == MEDIA_ERR_NETWORK) {
-        return "NetworkError"_ns;
+        return "network_error"_ns;
       }
       if (aErrorCode == MEDIA_ERR_DECODE) {
-        return "DecodeErr"_ns;
+        return "decode_error"_ns;
       }
-      return "SrcNotSupportedErr"_ns;
+      return "not_supported_error"_ns;
     };
-
-    glean::media::ErrorExtra extraData;
-    extraData.errorType = Some(getErrorType());
-    if (aResult) {
-      extraData.errorName = Some(aResult->ErrorName());
-    }
-    nsAutoString keySystem;
-    if (mOwner->mMediaKeys) {
-      mOwner->mMediaKeys->GetKeySystem(keySystem);
-      extraData.keySystem = Some(NS_ConvertUTF16toUTF8(keySystem));
-    }
-    glean::media::error.Record(Some(extraData));
+    nsCString encryptedLabel =
+        mOwner->mMediaKeys ? "encrypted"_ns : "non_encrypted"_ns;
+    glean::media::error.Get(getErrorTypeLabel(), encryptedLabel).Add();
   }
 
   // Media elememt's life cycle would be longer than error sink, so we use the

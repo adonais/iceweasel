@@ -10,30 +10,32 @@ const testCases = [
   {
     fileName: "bogus.wav",
     mediaError: {
-      error_type: "SrcNotSupportedErr",
+      key: "not_supported_error",
+      category: "non_encrypted",
     },
   },
   {
     fileName: "404.webm",
     mediaError: {
-      error_type: "SrcNotSupportedErr",
+      key: "not_supported_error",
+      category: "non_encrypted",
     },
   },
   // Failed with the key system
   {
     fileName: "404.mp4",
     mediaError: {
-      error_type: "SrcNotSupportedErr",
+      key: "not_supported_error",
+      category: "encrypted",
       key_system: "org.w3.clearkey",
-      error_name: "NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR",
     },
   },
   // Failed during decoding
   {
     fileName: "decode_error_vp9.webm",
     mediaError: {
-      error_type: "DecodeErr",
-      error_name: "NS_ERROR_DOM_MEDIA_DECODE_ERR",
+      key: "decode_error",
+      category: "non_encrypted",
     },
     decodeError: {
       mime_type: "video/vp9",
@@ -89,26 +91,10 @@ async function PlayMediaAndWaitForError(tab, testInfo) {
 }
 
 async function CheckMediaErrorProbe(expected) {
-  const extra = await Glean.media.error.testGetValue()[0].extra;
-  is(
-    extra.error_type,
-    expected.error_type,
-    `'${extra.error_type}' is equal to expected '${expected.error_type}'`
-  );
-  if (expected.error_name !== undefined) {
-    is(
-      extra.error_name,
-      expected.error_name,
-      `'${extra.error_name}' is equal to expected '${expected.error_name}'`
-    );
-  }
-  if (expected.key_system !== undefined) {
-    is(
-      extra.key_system,
-      expected.key_system,
-      `'${extra.key_system}' is equal to expected '${expected.key_system}'`
-    );
-  }
+  const count = Glean.media.error
+    .get(expected.key, expected.category)
+    .testGetValue();
+  Assert.greater(count, 0, `media.error[${expected.key},${expected.category}] was recorded`);
 }
 
 async function CheckDecodeErrorProbe(expected) {
