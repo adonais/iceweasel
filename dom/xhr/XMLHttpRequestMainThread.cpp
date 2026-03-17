@@ -3121,6 +3121,16 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
     return;
   }
 
+  // https://fetch.spec.whatwg.org/#concept-fetch
+  // XHR uses the Fetch algorithm; MIME sniffing does not apply to fetch
+  // requests, only to browsing contexts.
+  // Exception: when responseType is "document", XHR needs the content type
+  // to parse the response as HTML/XML, so allow sniffing as a fallback.
+  if (mResponseType != XMLHttpRequestResponseType::Document) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    loadInfo->SetSkipContentSniffing(true);
+  }
+
   // XXX We should probably send a warning to the JS console
   //     if there are no event listeners set and we are doing
   //     an asynchronous call.

@@ -65,7 +65,7 @@ const EXPECTATION_BASIC_FETCH = {
 
 const EXPECTATION_BASIC_FETCH_COMPLETED = {
   ...EXPECTATION_BASIC_FETCH,
-  contentType: "text/plain",
+  contentType: "application/x-unknown-content-type",
   statusCode: 200,
   statusLine: "HTTP/1.1 200 OK",
   remoteAddress: "127.0.0.1",

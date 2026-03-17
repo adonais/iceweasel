@@ -659,6 +659,14 @@ nsresult FetchDriver::HttpFetch(
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
+  // https://fetch.spec.whatwg.org/#concept-fetch
+  // MIME sniffing does not apply to fetch requests, only to browsing contexts.
+  // no-cors requests may need sniffing for Opaque Response Blocking (ORB).
+  if (mRequest->Mode() != RequestMode::No_cors) {
+    nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
+    loadInfo->SetSkipContentSniffing(true);
+  }
+
   if (mCSPEventListener) {
     nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
     rv = loadInfo->SetCspEventListener(mCSPEventListener);
