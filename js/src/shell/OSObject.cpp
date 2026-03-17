@@ -25,7 +25,6 @@
 #  include <unistd.h>
 #else
 #  include <dirent.h>
-#  include <signal.h>
 #  include <sys/types.h>
 #  include <sys/wait.h>
 #  include <unistd.h>
@@ -1313,8 +1312,3 @@ bool DefineOS(JSContext* cx, HandleObject global, bool fuzzingSafe,
 
 }  // namespace shell
 }  // namespace js
-
-#ifdef XP_WIN
-#  undef PATH_MAX
-#  undef getcwd _getcwd
-#endif

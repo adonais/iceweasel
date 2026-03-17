@@ -5,8 +5,6 @@
 #ifndef AudioDecoderInputTrack_h
 #define AudioDecoderInputTrack_h
 
-#include <thread>
-
 #include "AudioSegment.h"
 #include "MediaEventSource.h"
 #include "MediaSegment.h"

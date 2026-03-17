@@ -7,12 +7,11 @@
 #ifndef mozilla_MruCache_h
 #define mozilla_MruCache_h
 
-#include <cstddef>
 #include <type_traits>
 #include <utility>
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Assertions.h"
+#include "mozilla/HashFunctions.h"
 
 namespace mozilla {
 

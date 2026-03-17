@@ -4,8 +4,6 @@
 
 #include "ResourceHasher.h"
 
-#include <cinttypes>
-
 #include "WAICTUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsNetCID.h"

@@ -8,7 +8,7 @@
 #define mozilla_Try_h
 
 #include "mozilla/Likely.h"
-#include "mozilla/Result.h"  // IWYU pragma: keep(used by macro MOZ_TRY)
+#include "mozilla/Result.h"
 
 /**
  * MOZ_TRY(expr) is the C++ equivalent of Rust's `target = try!(expr);`, using

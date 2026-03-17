@@ -9,12 +9,6 @@
 #ifndef mozilla_Assertions_h
 #define mozilla_Assertions_h
 
-#ifndef __cplusplus
-#  ifndef bool
-#    include <stdbool.h>
-#  endif
-#endif
-
 #if (defined(MOZ_HAS_MOZGLUE) || defined(MOZILLA_INTERNAL_API)) && \
     !defined(__wasi__)
 #  define MOZ_DUMP_ASSERTION_STACK
@@ -88,6 +82,12 @@ __declspec(dllimport) int __stdcall TerminateProcess(void* hProcess,
                                                      unsigned int uExitCode);
 __declspec(dllimport) void* __stdcall GetCurrentProcess(void);
 MOZ_END_EXTERN_C
+#elif defined(__wasi__)
+/*
+ * On Wasm/WASI platforms, we just call __builtin_trap().
+ */
+#else
+#  include <signal.h>
 #endif
 #ifdef ANDROID
 #  include <android/log.h>
