@@ -1402,6 +1402,7 @@ abstract class BaseBrowserFragment :
         @org.mozilla.geckoview.ExperimentalGeckoViewApi
         browserPrefObserverIntegration.get()?.let<BrowserPrefObserverIntegration, Unit> { integration ->
             NimbusGeckoPrefHandler.browserPrefObserverIntegration = integration
+            NimbusGeckoPrefHandler.engine = requireComponents.core.engine
             integration.register(NimbusGeckoPrefHandler)
         }
 
