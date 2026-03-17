@@ -215,7 +215,9 @@ export class GeckoViewMediaControl extends GeckoViewModule {
         type = "GeckoView:MediaSession:Playback:None";
         break;
       case "paused":
-        type = "GeckoView:MediaSession:Playback:Paused";
+        type = this.controller.isAnyMediaBeingControlled
+          ? "GeckoView:MediaSession:Playback:Paused"
+          : "GeckoView:MediaSession:Playback:None";
         break;
       case "playing":
         type = "GeckoView:MediaSession:Playback:Playing";
