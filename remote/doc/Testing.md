@@ -116,6 +116,13 @@ But you can also schedule tests by selecting relevant jobs yourself:
 % ./mach try fuzzy
 ```
 
+## Puppeteer tests on Try
+
+Puppeteer tests can be scheduled on try as well. However if you need to modify
+Puppeteer itself, you also need to update files inside the puppeteer folder so
+that try uses the updated version. See the [updating Puppeteer section] in the
+Vendoring documentation.
+
 [Puppeteer test suite]: https://github.com/puppeteer/puppeteer/blob/master/test/README.md
 [Puppeteer support]: https://bugzilla.mozilla.org/show_bug.cgi?id=puppeteer
 [Mocha]: https://mochajs.org/
@@ -124,3 +131,4 @@ But you can also schedule tests by selecting relevant jobs yourself:
 [try preset]: /tools/try/presets
 [TestExpectations.json]: https://searchfox.org/mozilla-central/source/remote/test/puppeteer/test/TestExpectations.json
 [CanaryTestExpectations.json]: https://searchfox.org/mozilla-central/source/remote/test/puppeteer/test/CanaryTestExpectations.json
+[updating Puppeteer section]: PuppeteerVendor.md#updating-puppeteer-before-the-next-vendoring

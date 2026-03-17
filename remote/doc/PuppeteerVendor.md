@@ -116,6 +116,20 @@ Once you are happy with the metadata and are ready to submit the sync patch
 up for review, run the Puppeteer test job on try again with `--rebuild 10`
 to check for stability.
 
+### Updating Puppeteer before the next vendoring
+
+Puppeteer should normally be updated only by vendoring a new version, but in
+some cases you might need to modify it to synchronize an upstream change or test
+a fix locally.
+
+However, on CI servers Puppeteer is built via the toolchain and only updated
+when either `package.json` or `TestExpectations.json` files are updated (see
+listed [resources in misc.yml]). Consequently if you need to change any other
+file in the vendored Puppeteer, please modify the root package.json file. Any
+change will force the artifact to be rebuilt. Some suggestions:
+- update the "name" field - be careful not to use the same name twice
+- or add a "timestamp" field with a value set to the current time
+
 [Testing]: Testing.md
 [Puppeteer test suite]: https://github.com/GoogleChrome/puppeteer/tree/master/test
 [install the project]: https://github.com/puppeteer/puppeteer/blob/main/docs/contributing.md#getting-started
@@ -123,3 +137,4 @@ to check for stability.
 [TestExpectations.json]: https://searchfox.org/mozilla-central/source/remote/test/puppeteer/test/TestExpectations.json
 [CanaryTestExpectations.json]: https://searchfox.org/mozilla-central/source/remote/test/puppeteer/test/CanaryTestExpectations.json
 [contributing.md]: https://github.com/puppeteer/puppeteer/blob/main/docs/contributing.md
+[resources in misc.yml]: https://searchfox.org/firefox-main/rev/7b08fa00f500ed877b16983a6a77d2c852aad1d0/taskcluster/kinds/toolchain/misc.yml#413-416
