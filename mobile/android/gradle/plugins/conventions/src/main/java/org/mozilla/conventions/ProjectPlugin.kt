@@ -10,12 +10,14 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySubstitution
 import org.gradle.api.artifacts.component.ModuleComponentSelector
+import java.io.File
 
 class ProjectPlugin : Plugin<Project> {
     @Suppress("UNCHECKED_CAST")
     override fun apply(project: Project) {
         val extraProperties = project.gradle.extensions.extraProperties
         val mozconfig = extraProperties["mozconfig"] as Map<String, Any>
+        val topsrcdir = mozconfig["topsrcdir"] as String
         val topobjdir = mozconfig["topobjdir"] as String
         val substs = mozconfig["substs"] as Map<String, Any>
         val configureMavenRepositories = extraProperties["configureMavenRepositories"] as groovy.lang.Closure<*>
@@ -25,8 +27,30 @@ class ProjectPlugin : Plugin<Project> {
             maven { setUrl("${topobjdir}/gradle/maven") }
         }
 
+        configureBuildDirectory(project, topsrcdir, topobjdir)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
+    }
+
+    // Initialize the project buildDir to be in ${topobjdir} to follow
+    // conventions of mozilla-central build system.
+    private fun configureBuildDirectory(project: Project, topsrcdir: String, topobjdir: String) {
+        val topSrcPath = File(topsrcdir).toPath()
+        val topObjPath = File(topobjdir).toPath()
+
+        val sourcePath = project.buildFile.toPath().parent
+        val relativePath = topSrcPath.relativize(sourcePath)
+
+        if (relativePath.startsWith("..")) {
+            // The project doesn't appear to be in topsrcdir so leave the
+            // buildDir alone.
+        } else {
+            // Transplant the project path into "${topobjdir}/gradle/build".
+            // This is consistent with existing gradle / taskcluster
+            // configurations but less consistent with the result of the
+            // non-gradle build system.
+            project.layout.buildDirectory.set(topObjPath.resolve("gradle/build").resolve(relativePath).toFile())
+        }
     }
 
     private fun configureAppServicesSubstitution(
