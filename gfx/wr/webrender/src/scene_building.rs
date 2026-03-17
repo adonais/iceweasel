@@ -75,7 +75,7 @@ use crate::prim_store::borders::{ImageBorder, NormalBorderPrim};
 use crate::prim_store::gradient::{
     GradientStopKey, LinearGradient, RadialGradient, RadialGradientParams, ConicGradient,
     ConicGradientParams, optimize_radial_gradient, apply_gradient_local_clip,
-    optimize_linear_gradient, self,
+    optimize_linear_gradient,
 };
 use crate::prim_store::image::{Image, YuvImage};
 use crate::prim_store::line_dec::{LineDecoration, LineDecorationCacheKey, get_line_decoration_size};
@@ -3472,14 +3472,8 @@ impl<'a> SceneBuilder<'a> {
         let mut prim_rect = info.rect;
         simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut prim_rect);
 
-        let mut has_hard_stops = false;
         let mut is_entirely_transparent = true;
-        let mut prev_stop = None;
         for stop in &stops {
-            if Some(stop.offset) == prev_stop {
-                has_hard_stops = true;
-            }
-            prev_stop = Some(stop.offset);
             if stop.color.a > 0 {
                 is_entirely_transparent = false;
             }
@@ -3509,20 +3503,6 @@ impl<'a> SceneBuilder<'a> {
             (start_point, end_point)
         };
 
-        // We set a limit to the resolution at which cached gradients are rendered.
-        // For most gradients this is fine but when there are hard stops this causes
-        // noticeable artifacts. If so, fall back to non-cached gradients.
-        let max = gradient::LINEAR_MAX_CACHED_SIZE;
-        let caching_causes_artifacts = has_hard_stops && (stretch_size.width > max || stretch_size.height > max);
-
-        let is_tiled = prim_rect.width() > stretch_size.width
-         || prim_rect.height() > stretch_size.height;
-
-        // Use the brush gradient code path with caching enabled if tiling is enabled.
-        // The other (quad) code path can also cache the gradient in some circumstances
-        // as well.
-        let cached = is_tiled && !caching_causes_artifacts;
-
         Some(LinearGradient {
             extend_mode,
             start_point: sp.into(),
@@ -3532,7 +3512,7 @@ impl<'a> SceneBuilder<'a> {
             stops,
             reverse_stops,
             nine_patch,
-            cached,
+            cached: false,
             edge_aa_mask,
             enable_dithering: self.config.enable_dithering,
         })
