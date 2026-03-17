@@ -210,6 +210,9 @@ https_first_disabled = true
 ["browser_webapi_sendAbuseReport.js"]
 
 ["browser_webapi_theme.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_webapi_uninstall.js"]
 

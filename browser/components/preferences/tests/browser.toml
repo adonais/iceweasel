@@ -345,6 +345,9 @@ skip-if = [
 ["browser_searchRestoreDefaults.js"]
 
 ["browser_searchScroll.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js"]
 
 ["browser_searchShowSuggestionsFirst.js"]

@@ -277,6 +277,9 @@ skip-if = [
 ["browser_restore_verticalPinnedTabs.js"]
 
 ["browser_restored_window_features.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_revive_crashed_bg_tabs.js"]
 https_first_disabled = true

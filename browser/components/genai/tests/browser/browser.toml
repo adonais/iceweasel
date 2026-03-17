@@ -45,6 +45,9 @@ skip-if = [
 ]
 
 ["browser_chat_sidebar_permissions.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 support-files = [
   "file_chat-webrtc.html",
 ]

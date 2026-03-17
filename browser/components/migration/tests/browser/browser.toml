@@ -22,6 +22,9 @@ run-if = [
 ["browser_disabled_migrator.js"]
 
 ["browser_do_migration.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_entrypoint_telemetry.js"]
 

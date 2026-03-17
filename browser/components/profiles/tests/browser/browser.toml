@@ -79,6 +79,9 @@ skip-if = [
 ["browser_test_nimbus_feature.js"]
 
 ["browser_test_profile_selector.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_update_profile_on_window_switch.js"]
 skip-if = [

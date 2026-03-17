@@ -32,6 +32,7 @@ skip-if = [
 
 ["browser_autocomplete_marked_detached_tab.js"]
 skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",

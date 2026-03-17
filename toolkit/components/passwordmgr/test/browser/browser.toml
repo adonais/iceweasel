@@ -187,6 +187,9 @@ support-files = ["subtst_notifications_12_target_blank.html"]
 ["browser_doorhanger_username_edits.js"]
 
 ["browser_doorhanger_window_open.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 support-files = [
   "subtst_notifications_11.html",
   "subtst_notifications_11_popup.html",

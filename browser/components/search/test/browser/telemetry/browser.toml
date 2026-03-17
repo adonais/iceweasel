@@ -175,6 +175,9 @@ support-files = ["searchTelemetryAd_components_text.html", "serp.css"]
 ["browser_search_telemetry_impressionAttributes.js"]
 
 ["browser_search_telemetry_new_window.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
 
 ["browser_search_telemetry_private.js"]

@@ -78,6 +78,7 @@ support-files = ["file_pdfjs_jp2_image.pdf"]
 ["browser_pdfjs_js.js"]
 support-files = ["file_pdfjs_js.pdf"]
 skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
   "tsan",
 ]
 

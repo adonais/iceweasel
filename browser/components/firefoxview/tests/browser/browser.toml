@@ -37,6 +37,9 @@ skip-if = [
 ["browser_history_firefoxview.js"]
 
 ["browser_opentabs_cards.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_opentabs_changes.js"]
 skip-if = [

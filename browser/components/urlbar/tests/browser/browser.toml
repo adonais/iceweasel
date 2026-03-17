@@ -22,6 +22,9 @@ skip-if = [
 ]
 
 ["browser_UrlbarInput_formatValue_detachedTab.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_UrlbarInput_formatValue_strikeout.js"]
 support-files = ["mixed_active.html"]

@@ -11,6 +11,9 @@ https_first_disabled = true
 support-files = ["file_empty.html"]
 
 ["browser_popup_keyNav.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 https_first_disabled = true
 support-files = ["focusableContent.html"]
 

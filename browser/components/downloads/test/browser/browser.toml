@@ -71,6 +71,9 @@ support-files = [
 ["browser_downloads_panel_height.js"]
 
 ["browser_downloads_panel_opens.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 support-files = [
   "foo.txt",
   "foo.txt^headers^",

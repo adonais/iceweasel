@@ -599,6 +599,9 @@ skip-if = [
 ["browser_ext_tabs_move_discarded.js"]
 
 ["browser_ext_tabs_move_window.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_ext_tabs_move_window_multiple.js"]
 
@@ -722,6 +725,9 @@ tags = "fullscreen"
 ["browser_ext_windows_create_cookieStoreId.js"]
 
 ["browser_ext_windows_create_params.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_ext_windows_create_tabId.js"]
 https_first_disabled = true

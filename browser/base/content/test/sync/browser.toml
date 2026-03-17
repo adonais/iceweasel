@@ -23,6 +23,9 @@ support-files = ["browser_fxa_web_channel.html"]
 ["browser_sendtab_telemetry.js"]
 
 ["browser_signed_out_avatar_variants.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_sync.js"]
 support-files = ["!/browser/components/profiles/tests/browser/head.js"]

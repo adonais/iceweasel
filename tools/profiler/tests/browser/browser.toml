@@ -17,6 +17,9 @@ support-files = ["simple.html", "tracing.html"]
 support-files = ["simple.html", "test_dedup_script.js"]
 
 ["browser_test_feature_js_sources_retrieval.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 support-files = [
   "simple.html",
   "page_with_external_js.html",

@@ -4,5 +4,8 @@ support-files = ["head.js"]
 ["browser_PageActions_bookmark.js"]
 
 ["browser_PageActions_overflow.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_PageActions_removeExtension.js"]

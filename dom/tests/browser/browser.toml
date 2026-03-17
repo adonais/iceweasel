@@ -25,6 +25,9 @@ prefs = [
 ["browser_ConsoleStoragePBTest_perwindowpb.js"]
 
 ["browser_alert_from_about_blank.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_autofocus_background.js"]
 

@@ -31,6 +31,9 @@ https_first_disabled = true
 https_first_disabled = true
 
 ["browser_protectionsUI_cookie_banner.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_protectionsUI_cookies_subview.js"]
 https_first_disabled = true

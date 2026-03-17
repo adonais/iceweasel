@@ -43,6 +43,9 @@ fail-if = [
 ["browser_autoscroll_disabled.js"]
 
 ["browser_autoscroll_disabled_on_editable_content.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 fail-if = [
   "a11y_checks", # Bug 1854538 clicked browser may not be focusable
 ]

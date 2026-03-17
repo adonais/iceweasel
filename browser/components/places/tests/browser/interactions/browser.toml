@@ -38,5 +38,8 @@ skip-if = [
 ["browser_interactions_typing_dom_history.js"]
 
 ["browser_interactions_view_time.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_interactions_view_time_dom_history.js"]
