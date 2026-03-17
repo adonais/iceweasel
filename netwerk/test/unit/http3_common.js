@@ -338,6 +338,38 @@ async function do_test_request_cancelled_by_server(h3Route, httpsOrigin) {
   await promise;
 }
 
+// Server resets request stream with an unrecognized application error code.
+// The transaction must retry via H2/H1 and succeed.
+async function do_test_unknown_reset(httpsOrigin) {
+  dump("do_test_unknown_reset()\n");
+
+  const chan = makeChan(httpsOrigin + "UnknownReset");
+  const promise = new Promise(resolve => {
+    const listener = {
+      onStartRequest(request) {
+        Assert.ok(request instanceof Ci.nsIHttpChannel);
+        Assert.equal(request.status, Cr.NS_OK);
+        Assert.equal(request.responseStatus, 200);
+      },
+      onDataAvailable(request, stream, off, cnt) {
+        read_stream(stream, cnt);
+      },
+      onStopRequest(request, status) {
+        Assert.equal(status, Cr.NS_OK);
+        let httpVersion = "";
+        try {
+          httpVersion = request.protocolVersion;
+        } catch (e) {}
+        Assert.notEqual(httpVersion, "h3");
+        resolve(request);
+      },
+    };
+    chan.asyncOpen(listener);
+  });
+
+  await promise;
+}
+
 // Promise-backed Http3CheckListener must already exist:
 //   createHttp3CheckListener({ expectedStatus, expectedRoute })
 

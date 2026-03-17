@@ -138,3 +138,10 @@ add_task(async function test_slow_receiver() {
 add_task(async function test_version_fallback() {
   await do_test_version_fallback(httpsOrigin);
 });
+
+// This test must run after test_version_fallback: it triggers an H2/H1
+// fallback which establishes an H2 connection, interfering with the h1.1
+// assertion in test_version_fallback if placed before it.
+add_task(async function test_unknown_reset() {
+  await do_test_unknown_reset(httpsOrigin);
+});
