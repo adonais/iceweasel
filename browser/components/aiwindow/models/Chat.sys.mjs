@@ -210,7 +210,18 @@ Object.assign(Chat, {
             result = await toolFunc(params ?? {}, context, secProps);
             conversation._searchExecutedTurn = currentTurn;
           } else if (toolName === "get_page_content") {
+            const startTime = new Date();
             result = await toolFunc(params, undefined, secProps);
+            Glean.smartWindow.getPageContent.record({
+              location: context.telemetry.location,
+              chat_id: context.telemetry.chat_id,
+              message_seq: context.telemetry.message_seq,
+              length: result.reduce(
+                (acc, curr) => acc + (curr?.length || 0),
+                0
+              ),
+              time: new Date() - startTime,
+            });
           } else {
             result = await toolFunc(params, secProps);
           }

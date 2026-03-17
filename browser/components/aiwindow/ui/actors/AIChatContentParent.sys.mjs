@@ -172,6 +172,8 @@ export class AIChatContentParent extends JSWindowActorParent {
   }
 
   #handleOpenLink(data) {
+    const aiWindow = this.#getAIWindowElement();
+    aiWindow.onOpenLink();
     try {
       const { url } = data;
       if (!url) {

@@ -764,7 +764,7 @@ Preferences.addSetting({
     const action = e.target.getAttribute("action");
     const memoryId = e.target.getAttribute("memoryId");
     if (action === "delete") {
-      lazy.MemoryStore.hardDeleteMemory(memoryId);
+      lazy.MemoryStore.hardDeleteMemory(memoryId, "settings");
     }
   },
 });
@@ -810,7 +810,7 @@ Preferences.addSetting({
     if (result.get("buttonNumClicked") === 0) {
       for (const memory of memories) {
         try {
-          await lazy.MemoryStore.hardDeleteMemory(memory.id);
+          await lazy.MemoryStore.hardDeleteMemory(memory.id, "settings");
         } catch (err) {
           console.error("Failed to delete memory:", memory.id, err);
         }
