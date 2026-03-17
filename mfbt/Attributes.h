@@ -8,7 +8,7 @@
 #define mozilla_Attributes_h
 
 #ifdef __cplusplus
-#  include <version>
+#  include <version>  // IWYU pragma: keep(__GLIBCXX__ lookup)
 #endif
 
 /*

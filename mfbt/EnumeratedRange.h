@@ -18,11 +18,14 @@
 #ifndef mozilla_EnumeratedRange_h
 #define mozilla_EnumeratedRange_h
 
-#include <limits>
 #include <type_traits>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/ReverseIterator.h"
+
+#ifdef DEBUG
+#  include <limits>
+#endif
 
 namespace mozilla {
 
