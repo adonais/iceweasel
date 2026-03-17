@@ -1,4 +1,5 @@
 // |jit-test| error: TypeError
+// vim: set ts=8 sts=4 et sw=4 tw=99:
 g = undefined;
 function L() { }
 

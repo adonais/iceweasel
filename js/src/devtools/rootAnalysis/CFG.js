@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* -*- indent-tabs-mode: nil; js-indent-level: 4 -*- */
+
 // Utility code for traversing the JSON data structures produced by sixgill.
 
 "use strict";

@@ -1,3 +1,5 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 4 -*- */
+
 // Apply FUNCNAME to ARGS, and check against EXPECTED.
 // Expect a loop containing such a call to be traced.
 // FUNCNAME and ARGS are both strings.
