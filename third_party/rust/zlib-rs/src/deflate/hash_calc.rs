@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use crate::deflate::{State, HASH_SIZE, STD_MIN_MATCH};
 
 #[derive(Debug, Clone, Copy)]
@@ -36,21 +34,15 @@ impl StandardHashCalc {
         Self::hash_calc(h, val) & Self::HASH_CALC_MASK
     }
 
-    #[inline]
     pub fn quick_insert_string(state: &mut State, string: usize) -> u16 {
         let slice = &state.window.filled()[string + Self::HASH_CALC_OFFSET..];
         let val = u32::from_le_bytes(slice[..4].try_into().unwrap());
 
-        Self::quick_insert_value(state, string, val)
-    }
-
-    #[inline]
-    pub fn quick_insert_value(state: &mut State, string: usize, val: u32) -> u16 {
         let hm = Self::update_hash(0, val) as usize;
 
         let head = state.head.as_slice()[hm];
         if head != string as u16 {
-            state.prev.as_mut_slice()[string & state.w_mask()] = head;
+            state.prev.as_mut_slice()[string & state.w_mask] = head;
             state.head.as_mut_slice()[hm] = string as u16;
         }
 
@@ -64,7 +56,6 @@ impl StandardHashCalc {
         // .take(count) generates worse assembly
         let slice = &slice[..Ord::min(slice.len(), count + 3)];
 
-        let w_mask = state.w_mask();
         for (i, w) in slice.windows(4).enumerate() {
             let idx = string as u16 + i as u16;
 
@@ -74,7 +65,7 @@ impl StandardHashCalc {
 
             let head = state.head.as_slice()[hm];
             if head != idx {
-                state.prev.as_mut_slice()[idx as usize & w_mask] = head;
+                state.prev.as_mut_slice()[idx as usize & state.w_mask] = head;
                 state.head.as_mut_slice()[hm] = idx;
             }
         }
@@ -107,7 +98,7 @@ impl RollHashCalc {
 
         let head = state.head.as_slice()[hm];
         if head != string as u16 {
-            state.prev.as_mut_slice()[string & state.w_mask()] = head;
+            state.prev.as_mut_slice()[string & state.w_mask] = head;
             state.head.as_mut_slice()[hm] = string as u16;
         }
 
@@ -117,7 +108,6 @@ impl RollHashCalc {
     pub fn insert_string(state: &mut State, string: usize, count: usize) {
         let slice = &state.window.filled()[string + Self::HASH_CALC_OFFSET..][..count];
 
-        let w_mask = state.w_mask();
         for (i, val) in slice.iter().copied().enumerate() {
             let idx = string as u16 + i as u16;
 
@@ -127,7 +117,7 @@ impl RollHashCalc {
 
             let head = state.head.as_slice()[hm];
             if head != idx {
-                state.prev.as_mut_slice()[idx as usize & w_mask] = head;
+                state.prev.as_mut_slice()[idx as usize & state.w_mask] = head;
                 state.head.as_mut_slice()[hm] = idx;
             }
         }

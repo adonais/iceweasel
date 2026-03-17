@@ -122,8 +122,7 @@ uritemplate_glue = { path = "../../../../netwerk/base/uritemplate_glue" }
 adblock = { version = "0.12.1", features = ["full-regex-handling", "single-thread"], default-features = false }
 content_classifier_engine = { path = "../../../components/content-classifier/content_classifier_engine" }
 
-libz-rs-sys = { version = "0.6", features = ["custom-prefix"], optional = true }
-zlib-rs = { version = "0.6", features = ["avx512"], optional = true }
+libz-rs-sys = { version = "0.4.1", features = ["custom-prefix"], optional = true }
 
 gecko-trace = { path = "../../../components/gecko-trace" }
 
@@ -166,7 +165,6 @@ uniffi_fixtures = ["uniffi-bindgen-gecko-js-test-fixtures"]
 webmidi_midir_impl = ["midir_impl"]
 icu4x = ["jsrust_shared/icu4x"]
 jxl_decoder = ["dep:jxl_decoder"]
-libz-rs-sys = ["dep:libz-rs-sys", "dep:zlib-rs"]
 # Set when we're building libxul (as opposed to building the unittests, for example)
 for_xul = [
     # This makes it so `rusqlite` doesn't handle linking itself.  Instead, we'll link it to the

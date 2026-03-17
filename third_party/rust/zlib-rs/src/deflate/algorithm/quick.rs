@@ -1,6 +1,5 @@
 #![forbid(unsafe_code)]
 
-use crate::deflate::hash_calc::StandardHashCalc;
 use crate::{
     deflate::{
         fill_window, flush_pending, BlockState, BlockType, DeflateStream, State, StaticTreeDesc,
@@ -93,27 +92,23 @@ pub fn deflate_quick(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockSt
             }
         }
 
-        let lc: u8;
         if state.lookahead >= WANT_MIN_MATCH {
-            macro_rules! first_four_bytes {
-                ($slice:expr, $offset:expr) => {
-                    u32::from_le_bytes($slice[$offset..$offset + 4].try_into().unwrap())
-                };
-            }
-
-            let str_val = {
-                let str_start = &state.window.filled()[state.strstart..];
-                first_four_bytes!(str_start, 0)
-            };
-            let hash_head = StandardHashCalc::quick_insert_value(state, state.strstart, str_val);
+            let hash_head = state.quick_insert_string(state.strstart);
             let dist = state.strstart as isize - hash_head as isize;
 
             if dist <= state.max_dist() as isize && dist > 0 {
+                let str_start = &state.window.filled()[state.strstart..];
                 let match_start = &state.window.filled()[hash_head as usize..];
 
-                if str_val == first_four_bytes!(match_start, 0) {
+                macro_rules! first_two_bytes {
+                    ($slice:expr, $offset:expr) => {
+                        u16::from_le_bytes($slice[$offset..$offset + 2].try_into().unwrap())
+                    };
+                }
+
+                if first_two_bytes!(str_start, 0) == first_two_bytes!(match_start, 0) {
                     let mut match_len = crate::deflate::compare256::compare256_slice(
-                        &state.window.filled()[state.strstart + 2..],
+                        &str_start[2..],
                         &match_start[2..],
                     ) + 2;
 
@@ -137,10 +132,9 @@ pub fn deflate_quick(stream: &mut DeflateStream, flush: DeflateFlush) -> BlockSt
                     }
                 }
             }
-            lc = str_val as u8;
-        } else {
-            lc = state.window.filled()[state.strstart];
         }
+
+        let lc = state.window.filled()[state.strstart];
         state.bit_writer.emit_lit(StaticTreeDesc::L.static_tree, lc);
         state.strstart += 1;
         state.lookahead -= 1;

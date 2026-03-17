@@ -56,7 +56,8 @@ use winapi::{
     shared::ws2def::{AF_INET, AF_INET6},
 };
 use xpcom::{interfaces::nsISocketProvider, AtomicRefcnt, RefCounted, RefPtr};
-use zlib_rs::{decompress_slice, InflateConfig, ReturnCode};
+use zlib_rs::inflate::{uncompress_slice, InflateConfig};
+use zlib_rs::ReturnCode;
 
 std::thread_local! {
     static RECV_BUF: RefCell<neqo_udp::RecvBuf> = RefCell::new(neqo_udp::RecvBuf::default());
@@ -178,7 +179,7 @@ fn enable_zlib_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
         const NAME: &std::ffi::CStr = c"zlib";
 
         fn decode(input: &[u8], output: &mut [u8]) -> neqo_crypto::Res<()> {
-            let (output_slice, error) = decompress_slice(output, &input, InflateConfig::default());
+            let (output_slice, error) = uncompress_slice(output, &input, InflateConfig::default());
             if error != ReturnCode::Ok {
                 return Err(neqo_crypto::Error::CertificateDecoding);
             }
