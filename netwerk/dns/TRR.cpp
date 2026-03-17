@@ -517,7 +517,7 @@ void TRR::SaveAdditionalRecords(
         mRec->originSuffix, getter_AddRefs(hostRecord));
     if (NS_FAILED(rv)) {
       LOG(("Failed to get host record for additional record %s",
-           nsCString(recordEntry.GetKey()).get()));
+           PromiseFlatCString(recordEntry.GetKey()).get()));
       continue;
     }
     RefPtr<AddrInfo> ai(
@@ -534,7 +534,7 @@ void TRR::SaveAdditionalRecords(
     hostRecord->mEffectiveTRRMode =
         static_cast<nsIRequest::TRRMode>(mRec->mEffectiveTRRMode);
     LOG(("Completing lookup for additional: %s",
-         nsCString(recordEntry.GetKey()).get()));
+         PromiseFlatCString(recordEntry.GetKey()).get()));
     (void)mHostResolver->CompleteLookup(hostRecord, NS_OK, ai, mPB,
                                         mOriginSuffix, TRRSkippedReason::TRR_OK,
                                         this);

@@ -163,7 +163,7 @@ ObliviousHttpService::GetTRRSettings(nsIURI** relayURI,
                                      nsTArray<uint8_t>& encodedConfig) {
   auto trrConfig = mTRRConfig.Lock();
   *relayURI = do_AddRef(trrConfig->mRelayURI).take();
-  encodedConfig.Assign(trrConfig->mEncodedConfig.Clone());
+  encodedConfig.Assign(trrConfig->mEncodedConfig);
   return NS_OK;
 }
 

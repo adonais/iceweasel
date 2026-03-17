@@ -47,9 +47,7 @@ const RedirectHistoryArray& InterceptionInfo::RedirectChain() {
 
 void InterceptionInfo::SetRedirectChain(
     const RedirectHistoryArray& aRedirectChain) {
-  for (auto entry : aRedirectChain) {
-    mRedirectChain.AppendElement(entry);
-  }
+  mRedirectChain.AppendElements(aRedirectChain);
 }
 
 bool InterceptionInfo::FromThirdParty() { return mFromThirdParty; }
