@@ -11,11 +11,16 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySubstitution
 import org.gradle.api.artifacts.component.ModuleComponentSelector
 import org.gradle.api.plugins.AppliedPlugin
+import org.gradle.api.tasks.testing.Test
 import java.io.File
 
 class ProjectPlugin : Plugin<Project> {
     @Suppress("UNCHECKED_CAST")
     override fun apply(project: Project) {
+        val mozilla = project.extensions.create("mozilla", ProjectExtension::class.java)
+        mozilla.androidComponentsProject.convention(false)
+        mozilla.disableAndroidComponentsTasks.convention(false)
+
         val extraProperties = project.gradle.extensions.extraProperties
         val mozconfig = extraProperties["mozconfig"] as Map<String, Any>
         val topsrcdir = mozconfig["topsrcdir"] as String
@@ -30,6 +35,7 @@ class ProjectPlugin : Plugin<Project> {
 
         configureBuildDirectory(project, topsrcdir, topobjdir)
         configureJniKeepDebugSymbols(project)
+        configureAcTestAndLintDisabling(project, mozilla)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
     }
@@ -70,6 +76,24 @@ class ProjectPlugin : Plugin<Project> {
         }
         project.pluginManager.withPlugin("com.android.library", action)
         project.pluginManager.withPlugin("com.android.application", action)
+    }
+
+    // Disables A-C tests and lint when building Fenix or Focus.
+    private fun configureAcTestAndLintDisabling(project: Project, mozilla: ProjectExtension) {
+        if (!mozilla.androidComponentsProject.get()) return
+
+        project.tasks.withType(Test::class.java).configureEach {
+            if (mozilla.disableAndroidComponentsTasks.get()) {
+                project.logger.debug("Disabling task ${project.path}:$name")
+                enabled = false
+            }
+        }
+        project.tasks.configureEach {
+            if (name.contains("lint") && mozilla.disableAndroidComponentsTasks.get()) {
+                project.logger.debug("Disabling task ${project.path}:$name")
+                enabled = false
+            }
+        }
     }
 
     private fun configureAppServicesSubstitution(
