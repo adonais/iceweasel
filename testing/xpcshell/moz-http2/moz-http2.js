@@ -222,6 +222,7 @@ var h11required_conn = null;
 var h11required_header = "yes";
 var didRst = false;
 var rstConnection = null;
+var didUnknownRst = false;
 var illegalheader_conn = null;
 
 // eslint-disable-next-line complexity
@@ -432,6 +433,20 @@ function handleRequest(req, res) {
     if (req.httpVersionMajor != 2) {
       res.setHeader("Connection", "close");
     }
+    res.writeHead(200);
+    res.end("It's all good.");
+    return;
+  } else if (u.pathname === "/unknown_rst_once") {
+    // First H2 request gets RST_STREAM with an unrecognized error code; the
+    // retry succeeds.
+    if (!didUnknownRst && req.httpVersionMajor === 2) {
+      didUnknownRst = true;
+      req.stream.reset(0xfe);
+      return;
+    }
+    // Clear so the test can be re-run with --verify
+    didUnknownRst = false;
+    res.setHeader("Content-Type", "text/html");
     res.writeHead(200);
     res.end("It's all good.");
     return;
