@@ -1,6 +1,5 @@
 // This file expects imgutils.js to be loaded as well.
 /* import-globals-from imgutils.js */
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
 var currentTest;
 var gIsRefImageLoaded = false;
 const gShouldOutputDebugInfo = false;
