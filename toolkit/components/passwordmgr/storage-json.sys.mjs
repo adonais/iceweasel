@@ -15,6 +15,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginStore: "resource://gre/modules/LoginStore.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "logger", () => {
+  let logger = lazy.LoginHelper.createLogger("storage-json");
+  return logger;
+});
+
 const SYNCABLE_LOGIN_FIELDS = [
   // `nsILoginInfo` fields.
   "hostname",
@@ -111,11 +116,11 @@ export class LoginManagerStorage_json {
 
       return (async () => {
         // Load the data asynchronously.
-        this.log(`Opening database at ${this._store.path}.`);
+        lazy.logger.log(`Opening database at ${this._store.path}.`);
         await this._store.load();
       })().catch(console.error);
     } catch (e) {
-      this.log(`Initialization failed ${e.name}.`);
+      lazy.logger.log(`Initialization failed ${e.name}.`);
       throw new Error("Initialization failed");
     }
   }
@@ -152,7 +157,7 @@ export class LoginManagerStorage_json {
       return raw ? this._crypto.decrypt(raw) : null;
     } catch (e) {
       if (e.result == Cr.NS_ERROR_FAILURE) {
-        this.log("Could not decrypt the syncID - returning null.");
+        lazy.logger.log("Could not decrypt the syncID - returning null.");
         return null;
       }
       // any other errors get re-thrown.
@@ -341,7 +346,14 @@ export class LoginManagerStorage_json {
     return resultLogins;
   }
 
+  /**
+   * @deprecated Use removeLoginAsync instead.
+   * Will be removed in Bug 2022270.
+   */
   removeLogin(login, fromSync) {
+    lazy.logger.warn(
+      "DEPRECATED: LoginManagerStorage_json.removeLogin() is deprecated. Use removeLoginAsync(). Will be removed in Bug 2022270."
+    );
     this._store.ensureDataReady();
 
     let [idToDelete, storedLogin] = this._getIdForLogin(login);
@@ -378,7 +390,14 @@ export class LoginManagerStorage_json {
     return Promise.resolve(result);
   }
 
+  /**
+   * @deprecated Use modifyLoginAsync instead.
+   * Will be removed in Bug 2022270.
+   */
   modifyLogin(oldLogin, newLoginData, fromSync) {
+    lazy.logger.warn(
+      "DEPRECATED: LoginManagerStorage_json.modifyLogin() is deprecated. Use modifyLoginAsync(). Will be removed in Bug 2022270."
+    );
     this._store.ensureDataReady();
 
     let [idToModify, oldStoredLogin] = this._getIdForLogin(oldLogin);
@@ -490,7 +509,14 @@ export class LoginManagerStorage_json {
     delete login.encryptedUnknownFields;
   }
 
+  /**
+   * @deprecated Use recordPasswordUseAsync instead.
+   * Will be removed in Bug 2022270.
+   */
   recordPasswordUse(login) {
+    lazy.logger.warn(
+      "DEPRECATED: LoginManagerStorage_json.recordPasswordUse() is deprecated. Use recordPasswordsUseAsync(). Will be removed in Bug 2022270."
+    );
     // Update the lastUsed timestamp and increment the use count.
     let propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
       Ci.nsIWritablePropertyBag
@@ -548,8 +574,16 @@ export class LoginManagerStorage_json {
     return this.#decryptLogins(logins);
   }
 
+  /**
+   * Public wrapper around _searchLogins to convert the nsIPropertyBag to a
+   * JavaScript object and decrypt the results.
+   *
+   * @return {nsILoginInfo[]} which are decrypted.
+   */
   async searchLoginsAsync(matchData, includeDeleted) {
-    this.log(`Searching for matching logins for origin ${matchData.origin}.`);
+    lazy.logger.log(
+      `Searching for matching logins for origin ${matchData.origin}.`
+    );
     let result = this.searchLogins(
       lazy.LoginHelper.newPropertyBag(matchData),
       includeDeleted
@@ -559,12 +593,13 @@ export class LoginManagerStorage_json {
   }
 
   /**
-   * Public wrapper around _searchLogins to convert the nsIPropertyBag to a
-   * JavaScript object and decrypt the results.
-   *
-   * @return {nsILoginInfo[]} which are decrypted.
+   * @deprecated Use searchLoginsAsync instead.
+   * Will be removed in Bug 2022270.
    */
   searchLogins(matchData, includeDeleted) {
+    lazy.logger.warn(
+      "DEPRECATED: LoginManagerStorage_json.searchLogin() is deprecated. Use searchLoginAsync(). Will be removed in Bug 2022270."
+    );
     this._store.ensureDataReady();
 
     let realMatchData = {};
@@ -668,10 +703,21 @@ export class LoginManagerStorage_json {
       }
     }
 
-    this.log(
+    lazy.logger.log(
       `Returning ${foundLogins.length} logins for specified origin with options ${aOptions}`
     );
     return [foundLogins, foundIds];
+  }
+
+  /**
+   * @deprecated Use removeAllLoginsAsync instead.
+   * Will be removed in Bug 2022270.
+   */
+  removeAllLogins() {
+    lazy.logger.warn(
+      "DEPRECATED: LoginManagerStorage_json.removeAllLogins() is deprecated. Use removeAllLoginsAsync(). Will be removed in Bug 2022270."
+    );
+    this.#removeLogins(false, true);
   }
 
   /**
@@ -680,14 +726,19 @@ export class LoginManagerStorage_json {
    * NOTE: You probably want removeAllUserFacingLogins instead of this function.
    *
    */
-  removeAllLogins() {
-    this.#removeLogins(false, true);
-  }
-
   async removeAllLoginsAsync() {
     this.removeAllLogins();
   }
-
+  /**
+   * @deprecated Use removeAllUserFacingLoginsAsync instead.
+   * Will be removed in Bug 2022270.
+   */
+  removeAllUserFacingLogins(fullyRemove) {
+    lazy.logger.warn(
+      "DEPRECATED: LoginManagerStorage_json.removeAllUserFacingLogins() is deprecated. Use removeAllUserFacingLoginsAsync(). Will be removed in Bug 2022270."
+    );
+    this.#removeLogins(fullyRemove, false);
+  }
   /**
    * Removes all user facing logins from storage. e.g. all logins except the FxA Sync key
    *
@@ -695,10 +746,6 @@ export class LoginManagerStorage_json {
    *
    * @param fullyRemove remove the logins rather than mark them deleted.
    */
-  removeAllUserFacingLogins(fullyRemove) {
-    this.#removeLogins(fullyRemove, false);
-  }
-
   async removeAllUserFacingLoginsAsync(fullyRemove) {
     this.removeAllUserFacingLogins(fullyRemove);
   }
@@ -712,7 +759,7 @@ export class LoginManagerStorage_json {
    */
   #removeLogins(fullyRemove, removeFXALogin = false) {
     this._store.ensureDataReady();
-    this.log("Removing all logins.");
+    lazy.logger.log("Removing all logins.");
 
     let removedLogins = [];
     let remainingLogins = [];
@@ -789,7 +836,7 @@ export class LoginManagerStorage_json {
     // Decrypt entries found for the caller.
     logins = this._decryptLogins(logins);
 
-    this.log(`Returning ${logins.length} logins.`);
+    lazy.logger.log(`Returning ${logins.length} logins.`);
     return logins;
   }
 
@@ -895,7 +942,14 @@ export class LoginManagerStorage_json {
     return true;
   }
 
+  /**
+   * @deprecated Use countLoginsAsync instead.
+   * Will be removed in Bug 2022270.
+   */
   countLogins(origin, formActionOrigin, httpRealm) {
+    lazy.logger.warn(
+      "DEPRECATED: LoginManagerStorage_json.countLogins() is deprecated. Use countLoginsAsync(). Will be removed in Bug 2022270."
+    );
     this._store.ensureDataReady();
 
     let loginData = {
@@ -914,7 +968,7 @@ export class LoginManagerStorage_json {
       loginItem => !loginItem.deleted && this.#matchLogin(loginItem, matchData)
     );
 
-    this.log(`Counted ${foundLogins.length} logins.`);
+    lazy.logger.log(`Counted ${foundLogins.length} logins.`);
     return foundLogins.length;
   }
 
@@ -1100,7 +1154,7 @@ export class LoginManagerStorage_json {
             // If decryption failed (corrupt entry?), just return it as it is.
             // Rethrow other errors (like canceling entry of a primary pw)
             if (e.result == Cr.NS_ERROR_FAILURE) {
-              this.log(
+              lazy.logger.log(
                 `Could not decrypt login: ${
                   login.QueryInterface(Ci.nsILoginMetaInfo).guid
                 }.`
@@ -1234,7 +1288,7 @@ export class LoginManagerStorage_json {
         // This login has been changed or got deleted while we were
         // asynchronously reencrypting the logins. As we shoudn't overwrite it
         // and potentially loose the update, we will just skip it.
-        this.log(
+        lazy.logger.log(
           `Login ${
             oldLogin.guid
           } changed during migration and doesn't need to be updated.`
@@ -1290,8 +1344,3 @@ export class LoginManagerStorage_json {
     }
   }
 }
-
-ChromeUtils.defineLazyGetter(LoginManagerStorage_json.prototype, "log", () => {
-  let logger = lazy.LoginHelper.createLogger("Login storage");
-  return logger.log.bind(logger);
-});
