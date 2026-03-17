@@ -90,6 +90,9 @@ aiwindow-firstrun-model-title = What’s important to you?
 aiwindow-firstrun-model-subtitle = Pick a model to power Smart Window. Switch anytime.
 aiwindow-firstrun-model-fast-label = Fast
 aiwindow-firstrun-model-fast-body = Answers quickly
+# $modelName (string) - The name of the AI model
+# $ownerName (string) - The name of the model owner/provider
+aiwindow-firstrun-model-chip-subtitle = Model { $modelName } by { $ownerName }
 aiwindow-firstrun-model-allpurpose-label = Flexible
 aiwindow-firstrun-model-allpurpose-body = Solid fit for most needs
 aiwindow-firstrun-model-personal-label = Personal

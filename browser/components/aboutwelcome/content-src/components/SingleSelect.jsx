@@ -104,6 +104,7 @@ export const SingleSelect = ({
               id,
               label = "",
               body = "",
+              subtitle = "",
               theme,
               tooltip,
               type = "",
@@ -191,6 +192,13 @@ export const SingleSelect = ({
                       <Localized text={body}>
                         <div className="text body-text" />
                       </Localized>
+                    )}
+                    {subtitle && selected ? (
+                      <Localized text={subtitle}>
+                        <div className="text subtitle-text" />
+                      </Localized>
+                    ) : (
+                      ""
                     )}
                     {tilebutton ? (
                       <TileButton

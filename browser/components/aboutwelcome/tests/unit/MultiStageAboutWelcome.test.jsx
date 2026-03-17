@@ -718,6 +718,9 @@ describe("MultiStageAboutWelcome module", () => {
                   label: {
                     raw: "test1 label",
                   },
+                  subtitle: {
+                    raw: "test1 subtitle",
+                  },
                   action: {
                     type: "SET_PREF",
                     data: {
@@ -868,6 +871,28 @@ describe("MultiStageAboutWelcome module", () => {
         };
         mount(<WelcomeScreen {...SINGLE_SELECT_SCREEN_PROPS} />);
         assert.calledOnce(AboutWelcomeUtils.handleUserAction);
+      });
+      it("should show subtitle text when tile is selected", () => {
+        SINGLE_SELECT_SCREEN_PROPS.activeSingleSelectSelections = {
+          "single-select-0": "test1",
+        };
+        const wrapper = mount(
+          <WelcomeScreen {...SINGLE_SELECT_SCREEN_PROPS} />
+        );
+        assert.ok(
+          wrapper.find(".subtitle-text").exists(),
+          "Subtitle should render for selected tile"
+        );
+        assert.equal(wrapper.find(".subtitle-text").text(), "test1 subtitle");
+      });
+      it("should not show subtitle text when tile is not selected", () => {
+        const wrapper = mount(
+          <WelcomeScreen {...SINGLE_SELECT_SCREEN_PROPS} />
+        );
+        assert.isFalse(
+          wrapper.find(".subtitle-text").exists(),
+          "Subtitle should not render when tile is not selected"
+        );
       });
       it("should not trigger any of the selected tile's action if MULTI_ACTION is used with one unallowed pref", () => {
         SINGLE_SELECT_SCREEN_PROPS.content.tiles.autoTrigger = true;

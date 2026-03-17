@@ -3147,6 +3147,7 @@ const SingleSelect = ({
     id,
     label = "",
     body = "",
+    subtitle = "",
     theme,
     tooltip,
     type = "",
@@ -3213,7 +3214,11 @@ const SingleSelect = ({
       text: body
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "text body-text"
-    })), tilebutton ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_TileButton__WEBPACK_IMPORTED_MODULE_2__.TileButton, {
+    })), subtitle && selected ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: subtitle
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "text subtitle-text"
+    })) : "", tilebutton ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_TileButton__WEBPACK_IMPORTED_MODULE_2__.TileButton, {
       content: tilebutton,
       handleAction: handleAction,
       inputName: inputName

@@ -101,6 +101,10 @@ const AI_WINDOW_CONFIG = {
                 fontSize: "15px",
                 fontWeight: 320,
               },
+              subtitle: {
+                string_id: "aiwindow-firstrun-model-chip-subtitle",
+                args: { modelName: "gemini-flash-lite", ownerName: "Google" },
+              },
               action: {
                 type: "SET_PREF",
                 data: {
@@ -127,6 +131,10 @@ const AI_WINDOW_CONFIG = {
                 fontSize: "15px",
                 fontWeight: 320,
               },
+              subtitle: {
+                string_id: "aiwindow-firstrun-model-chip-subtitle",
+                args: { modelName: "Qwen3-235B-A22B", ownerName: "Alibaba" },
+              },
               action: {
                 type: "SET_PREF",
                 data: {
@@ -152,6 +160,10 @@ const AI_WINDOW_CONFIG = {
                 string_id: "aiwindow-firstrun-model-personal-body",
                 fontSize: "15px",
                 fontWeight: 320,
+              },
+              subtitle: {
+                string_id: "aiwindow-firstrun-model-chip-subtitle",
+                args: { modelName: "gpt-oss-120B", ownerName: "OpenAI" },
               },
               action: {
                 type: "SET_PREF",

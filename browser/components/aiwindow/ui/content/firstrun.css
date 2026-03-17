@@ -17,9 +17,12 @@
   --bg-transparent: transparent;
   --card-bg: light-dark(#fff, #191622);
   --card-bg-translucent: light-dark(color-mix(in srgb, #fff 60%, var(--bg-transparent)), color-mix(in srgb, #191622 40%, var(--bg-transparent)));
-  --card-border-color: light-dark(#f1e7f8, #736a8a);
+  --card-border-color: light-dark(#f1e7f8, #423a57);
   --card-border-gradient: light-dark(var(--aiwindow-input-gradient), var(--aiwindow-input-gradient-dark));
-  --card-selected-shadow: light-dark(0 3px 16px 0 color-mix(in srgb, rgb(59 34 121) 12%, var(--bg-transparent)), 0 27px 124px 0 rgba(117, 67, 227, 0.18));
+  --card-hovered-border-color: light-dark(#c7b2ff, #5d5670);
+  --card-hovered-and-selected-shadow: 0 0 24px 0 rgba(158, 122, 255, 0.3);
+  --subtitle-text-color: light-dark(#3b2279, #e4dcf7);
+  --subtitle-bg-color: light-dark(#f8f6ff, #38324a);
   --brand-text-color: light-dark(#210340, #e4dcf7);
   --button-text-color: light-dark(var(--button-text-color-primary), #fbfbfe);
   --button-gradient: light-dark(var(--aiwindow-gradient-button), var(--aiwindow-gradient-button-dark));
@@ -60,6 +63,10 @@
       color: var(--brand-text-color);
     }
 
+    .welcome-text {
+      margin-bottom: var(--space-xsmall);
+    }
+
     .welcome-text h2 {
       opacity: 0.8;
       margin-top: var(--space-medium);
@@ -94,14 +101,17 @@
   }
 
   .tiles-single-select-section.single-select {
+    align-items: center;
     gap: var(--space-large);
-    margin-top: calc(var(--space-xsmall) * 8);
-    margin-bottom: var(--space-xxlarge);
+    margin-block: calc(var(--space-xxlarge) * 2);
+    height: calc(var(--size-item-medium) * 10);
+    flex-shrink: 0;
+    overflow: visible;
 
     .select-item {
-      width: calc(var(--size-item-large) * 7);
-      height: calc(var(--size-item-medium) * 11);
-      padding-block: calc(var(--space-xsmall) * 9) 0;
+      width: calc(var(--size-item-large) * 9);
+      height: calc(var(--size-item-medium) * 10);
+      padding-block: calc(var(--space-small) * 5) var(--space-large);
       /* stylelint-disable-next-line -- custom border color per Figma design */
       border: var(--border-width) solid var(--card-border-color);
       display: flex;
@@ -116,44 +126,96 @@
       background: var(--card-bg-translucent);
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand color per Figma design */
       color: var(--brand-text-color);
+      overflow: hidden;
+      transition:
+        height 0.4s ease,
+        margin-block 0.4s ease,
+        padding-block-start 0.4s ease,
+        box-shadow 0.4s ease;
 
       .label-text {
-        margin-top: calc(var(--space-xsmall) * 5);
+        margin-top: var(--space-xlarge);
         margin-bottom: 0;
         letter-spacing: 0.5px;
         opacity: 0.8;
         line-height: normal;
+        transition: margin-top 0.4s ease;
       }
 
       .body-text {
         opacity: 0.8;
         line-height: normal;
+        margin-bottom: var(--space-xxlarge);
+      }
+
+      .subtitle-text {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand color per Figma design */
+        color: var(--subtitle-text-color);
+        text-align: center;
+        opacity: 0.8;
+        margin-top: 0;
+        padding: var(--space-medium) calc(var(--space-xsmall) * 5);
+        border-radius: var(--border-radius-medium);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom background per Figma design */
+        background: var(--subtitle-bg-color);
+        font-weight: normal;
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom font size per Figma design */
+        font-size: 16px;
+        line-height: 20px;
       }
 
       .icon {
-        width: calc(var(--size-item-xlarge) * 2);
-        height: calc(var(--size-item-xlarge) * 2);
+        width: var(--size-image-xlarge);
+        height: var(--size-image-xlarge);
         display: flex;
         justify-content: center;
         align-items: center;
         flex-shrink: 0;
+        transition: transform 0.4s ease;
       }
 
       &:hover:not(:has(.selected)) {
         /* stylelint-disable-next-line -- custom background for hover state */
         background: var(--card-bg);
         cursor: pointer;
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom border per Figma design */
+        border: var(--border-width) solid var(--card-hovered-border-color);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom shadow per Figma design */
+        box-shadow: var(--card-hovered-and-selected-shadow);
+      }
+
+      &:has(.selected) .label-text {
+        margin-top: var(--space-xxlarge);
       }
 
       &:has(.selected) {
-        border: calc(var(--border-width) * 2) solid var(--border-color-transparent);
+        height: calc(var(--size-item-small) * 19);
+        padding-block-start: var(--space-xxlarge);
+        margin-block: calc(var(--space-xxlarge) * -1);
+        border: var(--border-width) solid var(--border-color-transparent);
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- gradient defined in ai-window-content.css */
         background:
           linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
           var(--card-border-gradient) border-box;
         /* stylelint-disable-next-line -- custom shadow per Figma design */
-        box-shadow: var(--card-selected-shadow);
+        box-shadow: var(--card-hovered-and-selected-shadow);
       }
+
+      &:hover .icon,
+      &:has(.selected) .icon {
+        transform: scale(1.2);
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #multi-stage-message-root .select-item {
+    transition: none;
+
+    .icon,
+    .label-text {
+      transition: none;
     }
   }
 }
