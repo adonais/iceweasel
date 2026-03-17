@@ -484,12 +484,16 @@ void WasmStructObject::obj_trace(JSTracer* trc, JSObject* object) {
   }
   if (MOZ_UNLIKELY(structType.totalSizeOOL_ > 0)) {
     uint8_t** addressOfOOLPtr = structObj.addressOfOOLPointer();
-    TraceBufferEdge(trc, &structObj, addressOfOOLPtr,
-                    "WasmStructObject outline data");
-    uint8_t* oolBase = *addressOfOOLPtr;
-    for (uint32_t offset : structType.outlineTraceOffsets_) {
-      AnyRef* fieldPtr = reinterpret_cast<AnyRef*>(oolBase + offset);
-      TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
+    // *addressOfOOLPtr may be null if the struct was only partially initialized
+    // due to OOM during createStructOOL.
+    if (MOZ_LIKELY(*addressOfOOLPtr)) {
+      TraceBufferEdge(trc, &structObj, addressOfOOLPtr,
+                      "WasmStructObject outline data");
+      uint8_t* oolBase = *addressOfOOLPtr;
+      for (uint32_t offset : structType.outlineTraceOffsets_) {
+        AnyRef* fieldPtr = reinterpret_cast<AnyRef*>(oolBase + offset);
+        TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
+      }
     }
   }
 }
