@@ -445,6 +445,9 @@ class IPPProxyManagerSingleton extends EventTarget {
       duration: String(sessionLength),
     });
     this.updateState();
+    if (userAction && this.#state !== IPPProxyStates.PAUSED) {
+      this.refreshUsage();
+    }
   }
 
   /**
