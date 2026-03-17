@@ -3613,7 +3613,7 @@ nsCSSFrameConstructor::FindInputData(const Element& aElement,
   // not (respectively) StyleAppearance::Radio and StyleAppearance::Checkbox.)
   if ((controlType == FormControlType::InputCheckbox ||
        controlType == FormControlType::InputRadio) &&
-      !aStyle.StyleDisplay()->HasNativeAppearance()) {
+      !aStyle.StyleDisplay()->HasAppearance()) {
     return nullptr;
   }
 
