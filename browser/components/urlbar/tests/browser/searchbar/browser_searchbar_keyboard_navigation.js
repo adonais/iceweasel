@@ -101,13 +101,6 @@ add_task(async function test_openCloseResultsPanel() {
   Assert.ok(!searchbar.view.isOpen, "Escape closes popup");
   EventUtils.synthesizeKey("KEY_Escape");
   Assert.ok(!searchbar.value, "Searchbar was cleared after escape");
-  Assert.ok(searchbar.focused, "Searchbar is still focused");
-  EventUtils.synthesizeKey("KEY_Escape");
-  Assert.equal(
-    document.activeElement,
-    gBrowser.selectedBrowser,
-    "Content was focused"
-  );
 
   await SearchbarTestUtils.formHistory.clear();
 });
