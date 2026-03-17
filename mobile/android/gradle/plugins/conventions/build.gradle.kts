@@ -7,10 +7,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-dependencies {
-    implementation(libs.kaml)
-}
-
 group = "org.mozilla"
 
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
@@ -38,6 +34,8 @@ gradlePlugin {
 }
 
 dependencies {
+    implementation(libs.kaml)
+    compileOnly(libs.android.gradle.plugin)
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
