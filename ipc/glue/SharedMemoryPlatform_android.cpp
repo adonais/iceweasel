@@ -20,6 +20,7 @@
 #endif
 
 #include "mozilla/Maybe.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "prenv.h"
 

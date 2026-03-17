@@ -9,8 +9,10 @@
 #ifndef mozilla_ReentrancyGuard_h
 #define mozilla_ReentrancyGuard_h
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#ifdef DEBUG
+#  include "mozilla/Assertions.h"
+#endif
 
 namespace mozilla {
 

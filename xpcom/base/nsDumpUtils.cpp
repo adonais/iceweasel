@@ -16,6 +16,7 @@
 #  include "mozilla/Preferences.h"
 #  include <fcntl.h>
 #  include <unistd.h>
+#  include <signal.h>
 #  include <sys/stat.h>
 
 using namespace mozilla;

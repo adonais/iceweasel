@@ -11,7 +11,7 @@
 
 #include "mozilla/Assertions.h"
 
-#include <cinttypes>
+#include <cstdint>
 #include <cmath>
 #include <limits>
 #include <type_traits>
@@ -21,7 +21,7 @@
 #endif
 
 #ifdef DEBUG
-#  include "fmt/format.h"
+#  include "fmt/format.h"  // IWYU pragma: keep(for fmt::)
 #  include <cstdio>
 #endif
 

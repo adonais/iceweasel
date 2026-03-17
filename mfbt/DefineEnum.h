@@ -10,7 +10,7 @@
 #define mozilla_DefineEnum_h
 
 #include <stddef.h>  // for size_t
-#include <ostream>   // for std::ostream
+#include <ostream>   // IWYU pragma: keep(for std::ostream within macro)
 
 #include "mozilla/MacroArgs.h"     // for MOZ_ARG_COUNT
 #include "mozilla/MacroForEach.h"  // for MOZ_FOR_EACH

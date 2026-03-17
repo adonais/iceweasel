@@ -9,6 +9,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/intl/Segmenter.h"

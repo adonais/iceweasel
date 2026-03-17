@@ -9,6 +9,12 @@
 #ifndef mozilla_Fuzzing_h
 #define mozilla_Fuzzing_h
 
+#ifndef __cplusplus
+#  ifndef bool
+#    include <stdbool.h>
+#  endif
+#endif
+
 #ifdef FUZZING_SNAPSHOT
 #  include "mozilla/fuzzing/NyxWrapper.h"
 

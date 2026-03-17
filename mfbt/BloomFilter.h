@@ -17,7 +17,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 
-#include <climits>
 #include <cstdint>
 #include <cstring>
 

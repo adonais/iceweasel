@@ -14,7 +14,9 @@
 
 #include "mozilla/Attributes.h"
 
-#include <utility>
+#ifdef DEBUG
+#  include <utility>
+#endif
 
 namespace mozilla {
 

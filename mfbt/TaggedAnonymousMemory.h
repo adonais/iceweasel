@@ -40,7 +40,7 @@
 #    include <sys/mman.h>
 #  endif  // __wasi__
 
-#  include "mozilla/Types.h"
+#  include "mozilla/Types.h"  // IWYU pragma: keep(MFBT_API)
 
 #  ifdef XP_LINUX
 

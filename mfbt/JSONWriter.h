@@ -92,9 +92,8 @@
 #ifndef mozilla_JSONWriter_h
 #define mozilla_JSONWriter_h
 
-#include "double-conversion/double-conversion.h"
+#include "double-conversion/double-conversion.h"  // IWYU pragma: keep(used for double_conversion)
 #include "mozilla/Assertions.h"
-#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Span.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtr.h"
