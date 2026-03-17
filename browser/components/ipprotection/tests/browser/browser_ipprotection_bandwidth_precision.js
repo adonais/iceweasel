@@ -190,6 +190,35 @@ add_task(async function test_bandwidth_no_decimal_outside_75_percent() {
   }
 });
 
+add_task(async function test_bandwidth_gb_display_with_less_than_1gb_used() {
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+
+  const remaining = Math.floor(maxBytes - 100 * BANDWIDTH.BYTES_IN_MB);
+  await setupBandwidthPrecisionTest(String(maxBytes), String(remaining));
+
+  let content = await openPanel({
+    location: mockLocation,
+    isProtectionEnabled: true,
+  });
+
+  const bandwidthEl = await getBandwidthEl(content);
+
+  Assert.less(
+    bandwidthEl.bandwidthUsedGB,
+    1,
+    "bandwidthUsedGB should be less than 1"
+  );
+
+  Assert.equal(
+    bandwidthEl.remainingRounded,
+    BANDWIDTH.MAX_IN_GB,
+    "Less than 1 GB used, remainingRounded should round to max GB"
+  );
+
+  await closePanel();
+  await cleanupBandwidthPrecisionTest();
+});
+
 add_task(async function test_bandwidth_mb_display_below_1gb() {
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
 

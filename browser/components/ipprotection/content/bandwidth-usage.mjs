@@ -60,8 +60,6 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
     if (this.remainingGB < 1) {
       // Bug 2006997 - Handle this scenario where less than 1 GB used.
       return Math.floor(this.remainingMB);
-    } else if (this.bandwidthUsedGB < 1) {
-      return Math.floor(this.remainingGB);
     }
 
     if (this.bandwidthPercent === 75) {
