@@ -9,6 +9,7 @@
 #include "ErrorList.h"
 #include "encoding_rs_statics.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCRT.h"
 #include "nsContentUtils.h"  // for kLoadAsData
@@ -438,6 +439,8 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
             mTreeBuilder->isScriptingEnabled());
         mDocWriteSpeculativeTreeBuilder->setAllowDeclarativeShadowRoots(
             mTreeBuilder->isAllowDeclarativeShadowRoots());
+        mDocWriteSpeculativeTreeBuilder->setNoInSelectMode(
+            mTreeBuilder->isNoInSelectMode());
         mDocWriteSpeculativeTokenizer = mozilla::MakeUnique<nsHtml5Tokenizer>(
             mDocWriteSpeculativeTreeBuilder.get(), false);
         mDocWriteSpeculativeTokenizer->setInterner(&mAtomTable);
@@ -684,6 +687,8 @@ nsresult nsHtml5Parser::StartExecutor() {
   mTreeBuilder->setScriptingEnabled(executor->IsScriptEnabled());
   mTreeBuilder->setAllowDeclarativeShadowRoots(
       executor->GetDocument()->AllowsDeclarativeShadowRoots());
+  mTreeBuilder->setNoInSelectMode(
+      StaticPrefs::dom_lift_select_parser_restrictions_enabled());
 
   mTreeBuilder->setIsSrcdocDocument(false);
 
@@ -702,6 +707,8 @@ nsresult nsHtml5Parser::Initialize(mozilla::dom::Document* aDoc, nsIURI* aURI,
                                    nsIChannel* aChannel) {
   mTreeBuilder->setAllowDeclarativeShadowRoots(
       aDoc->AllowsDeclarativeShadowRoots());
+  mTreeBuilder->setNoInSelectMode(
+      StaticPrefs::dom_lift_select_parser_restrictions_enabled());
   return mExecutor->Init(aDoc, aURI, aContainer, aChannel);
 }
 
@@ -718,6 +725,8 @@ void nsHtml5Parser::StartTokenizer(bool aScriptingEnabled) {
   mTreeBuilder->setScriptingEnabled(aScriptingEnabled);
   mTreeBuilder->setAllowDeclarativeShadowRoots(
       mExecutor->GetDocument()->AllowsDeclarativeShadowRoots());
+  mTreeBuilder->setNoInSelectMode(
+      StaticPrefs::dom_lift_select_parser_restrictions_enabled());
   mTokenizer->start();
 }
 
