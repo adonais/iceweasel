@@ -152,6 +152,9 @@ mozilla::ipc::IPCResult RemotePrintJobParent::RecvProcessPage(
 void RemotePrintJobParent::FinishProcessingPage(
     const gfx::IntSize& aSizeInPoints,
     gfx::CrossProcessPaint::ResolvedFragmentMap* aFragments) {
+  if (NS_WARN_IF(!mIsDoingPrinting)) {
+    return;
+  }
   nsresult rv = PrintPage(aSizeInPoints, mCurrentPageStream, aFragments);
 
   mCurrentPageStream.Close();
