@@ -491,8 +491,6 @@ included in a large number of translation units.
 
    .. code-block:: cpp
 
-      /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-      /* vim: set ts=8 sts=2 et sw=2 tw=80: */
       /* This Source Code Form is subject to the terms of the Mozilla Public
       * License, v. 2.0. If a copy of the MPL was not distributed with this file,
       * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -528,8 +526,6 @@ An example header file based on these rules (with some extra comments):
 
 .. code-block:: cpp
 
-   /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-   /* vim: set ts=8 sts=2 et sw=2 tw=80: */
    /* This Source Code Form is subject to the terms of the Mozilla Public
    * License, v. 2.0. If a copy of the MPL was not distributed with this file,
    * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -586,8 +582,6 @@ Corresponding implementation file:
 
 .. code-block:: cpp
 
-   /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-   /* vim: set ts=8 sts=2 et sw=2 tw=80: */
    /* This Source Code Form is subject to the terms of the Mozilla Public
    * License, v. 2.0. If a copy of the MPL was not distributed with this file,
    * You can obtain one at http://mozilla.org/MPL/2.0/. */
