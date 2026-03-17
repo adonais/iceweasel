@@ -81,6 +81,11 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   static WebRenderBridgeParent* CreateDestroyed(
       const wr::PipelineId& aPipelineId, nsCString&& aError);
 
+  // Ensures the WebRenderBridgeParent has completed initialization, returning
+  // true if successful, or false if initialization failed or the bridge is
+  // alreay destroyed. Must only be called from Compositor thread.
+  bool EnsureInitialized();
+
   // Called for root WebRenderBridgeParents to complete initialization once the
   // WebRenderAPI and AsyncImagePipelineManager have been created.
   void FinishInitialization(RefPtr<wr::WebRenderAPI>&& aApi,
@@ -88,15 +93,12 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   void FinishInitializationError(nsCString&& aError);
 
   wr::PipelineId PipelineId() { return mPipelineId; }
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() {
-    return do_AddRef(mLateInit->mApi);
-  }
-  AsyncImagePipelineManager* AsyncImageManager() {
-    return mLateInit->mAsyncImageManager;
-  }
-  CompositorVsyncScheduler* CompositorScheduler() {
-    return mLateInit->mCompositorScheduler.get();
-  }
+  // Must only be called from Compositor thread.
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI();
+  // Must only be called from Compositor thread.
+  AsyncImagePipelineManager* AsyncImageManager();
+  // Must only be called from Compositor thread.
+  CompositorVsyncScheduler* CompositorScheduler();
   CompositorBridgeParentBase* GetCompositorBridge() {
     return mCompositorBridge;
   }
@@ -238,7 +240,6 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
       nsTArray<ImageCompositeNotificationInfo>* aNotifications);
 
   wr::Epoch GetCurrentEpoch() const { return mWrEpoch; }
-  wr::IdNamespace GetIdNamespace() { return mLateInit->mIdNamespace; }
 
   bool MatchesNamespace(const wr::ImageKey& aImageKey) const {
     return aImageKey.mNamespace == mLateInit->mIdNamespace;
