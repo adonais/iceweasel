@@ -35,6 +35,11 @@ import mozilla.components.compose.base.theme.success
 import mozilla.components.compose.browser.awesomebar.R
 import mozilla.components.compose.browser.awesomebar.internal.utils.SportSuggestionDataProvider
 import mozilla.components.compose.browser.awesomebar.internal.utils.SportSuggestionPreviewModel
+import mozilla.components.compose.browser.awesomebar.internal.utils.stringResId
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionTeam
 
 @Composable
 internal fun SportSuggestion(
@@ -64,8 +69,8 @@ internal fun SportSuggestion(
                 Text(
                     text = buildString {
                         append("$sport · ")
-                        if (status.stringResId != null) {
-                            append("${stringResource(status.stringResId)} · ")
+                        status.stringResId?.let {
+                            append("${stringResource(it)} · ")
                         }
                         append(getSportsDate(date))
                     },

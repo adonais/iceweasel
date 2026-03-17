@@ -8,7 +8,10 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.view.View
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
-import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag.BOOKMARK
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionTeam
 import java.util.UUID
 
 /**
@@ -133,7 +136,7 @@ interface AwesomeBar {
      * @property changePercToday The percentage change today.
      * @property lastPrice The last traded price, including currency.
      * @property exchange The index the stock belongs to.
-     * @property currency The currency symbol associated with the stock.
+     * @property imageUrl The URL of the stock's logo.
      */
     data class StockItem(
         val query: String,
@@ -144,6 +147,57 @@ interface AwesomeBar {
         val exchange: String,
         val imageUrl: String?,
     )
+
+    /**
+     * This interface decouples the [SportsOnlineSuggestionProvider] from the
+     * underlying data source (e.g. mocked data, network API, local cache, etc.).
+     */
+    interface SportsSuggestionDataSource {
+        /**
+         * Fetch sports suggestions for the given [query].
+         *
+         * @param query The current user input from the address/search bar.
+         *
+         * @return A list of [StockItem] representing stock suggestions relevant to the query.
+         * Implementations may return an empty list if no matches are found.
+         */
+        suspend fun fetch(query: String): List<SportItem>
+    }
+
+    /**
+     * Domain model representing a single sport suggestion result.
+     *
+     * This model is independent of UI classes and is used as an intermediate
+     * data representation before being mapped into an AwesomeBar-specific
+     * suggestion type (e.g. [AwesomeBar.SportSuggestion]).
+     *
+     * @property query The full query string that triggered this suggestion.
+     * @property sport The sport name.
+     * @property date The date of the event.
+     * @property status The status of the event.
+     * @property statusType The type of the status.
+     * @property homeTeam The home team information.
+     * @property awayTeam The away team information.
+     */
+    data class SportItem(
+        val query: String,
+        val sport: String,
+        val date: String,
+        val status: String,
+        val statusType: String,
+        val homeTeam: Team,
+        val awayTeam: Team,
+    ) {
+        /**
+         * Represents a team in a sport suggestion.
+         */
+        data class Team(
+            val key: String,
+            val name: String,
+            val colors: List<String>,
+            val score: Int?,
+        )
+    }
 
     /**
      * Represents the change percent used by the Stocks Suggestion.
@@ -297,6 +351,37 @@ interface AwesomeBar {
         val index: String,
         val lastPrice: String,
         val changePercToday: ChangePercent,
+        override val flags: Set<Flag> = emptySet(),
+    ) : SuggestionItem
+
+    /**
+     * [SportSuggestion] to be displayed by an [AwesomeBar] implementation for sport information.
+     *
+     * @property provider The provider this suggestion came from.
+     * @property id A unique ID (provider scope) identifying this [SportSuggestion].
+     * @property score A score used to rank suggestions of this provider against each other.
+     * @property onSuggestionClicked A callback to be executed when the [SportSuggestion] was clicked by the user.
+     * @property query The user input in the toolbar.
+     * @property sport The sport name.
+     * @property date The date of the event.
+     * @property status The status of the event.
+     * @property statusType The type of the status.
+     * @property homeTeam The home team information.
+     * @property awayTeam The away team information.
+     * @property flags A set of [Flag] values for this [Suggestion].
+     */
+    data class SportSuggestion(
+        override val provider: SuggestionProvider,
+        override val id: String = UUID.randomUUID().toString(),
+        override val score: Int = 0,
+        override val onSuggestionClicked: (() -> Unit)? = null,
+        val query: String,
+        val sport: String,
+        val date: SportSuggestionDate,
+        val status: SportSuggestionStatus,
+        val statusType: SportSuggestionStatusType,
+        val homeTeam: SportSuggestionTeam,
+        val awayTeam: SportSuggestionTeam,
         override val flags: Set<Flag> = emptySet(),
     ) : SuggestionItem
 
