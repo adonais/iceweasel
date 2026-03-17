@@ -9,10 +9,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.unmockkObject
+import io.mockk.slot
 import io.mockk.verify
 import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.runBlocking
 import mozilla.components.ExperimentalAndroidComponentsApi
@@ -20,7 +19,6 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.preferences.BrowserPrefType
 import mozilla.components.concept.engine.preferences.BrowserPreference
 import mozilla.components.service.nimbus.NimbusApi
-import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -135,7 +133,7 @@ class NimbusGeckoPrefHandlerTest {
     }
 
     @Test
-    fun `WHEN setGeckoPrefsState fails THEN the item is in errorsList`() {
+    fun `WHEN setGeckoPrefsState fails THEN the item is unenrolled`() {
         val handler = makeHandler(engine = mockEngine)
         handler.start()
         handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
@@ -157,16 +155,20 @@ class NimbusGeckoPrefHandlerTest {
             onSuccess(mapOf(TEST_PREF to false))
         }
 
+        val capturedPrefState = slot<GeckoPrefState>()
+        val capturedReason = slot<PrefUnenrollReason>()
+        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns emptyList()
+
         handler.setGeckoPrefsState(listOf(prefState))
         shadowOf(Looper.getMainLooper()).idle()
 
-        verify { mockNimbusApi.unenrollForGeckoPref(any(), eq(PrefUnenrollReason.FAILED_TO_SET)) }
-        assertEquals(1, handler.enrollmentErrors.size)
-        assertEquals(TEST_PREF, handler.enrollmentErrors.first().first.prefString())
+        verify { mockNimbusApi.unenrollForGeckoPref(any(), any()) }
+        assertEquals(TEST_PREF, capturedPrefState.captured.prefString())
+        assertEquals(PrefUnenrollReason.FAILED_TO_SET, capturedReason.captured)
     }
 
     @Test
-    fun `WHEN setGeckoPrefsState cannot make a setter THEN the item is in errorsList`() {
+    fun `WHEN setGeckoPrefsState cannot make a setter THEN the item is unenrolled`() {
         val handler = makeHandler(engine = mockEngine)
         handler.start()
         handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
@@ -184,15 +186,16 @@ class NimbusGeckoPrefHandlerTest {
             onSuccess(emptyMap())
         }
 
+        val capturedPrefState = slot<GeckoPrefState>()
+        val capturedReason = slot<PrefUnenrollReason>()
+        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns emptyList()
+
         handler.setGeckoPrefsState(listOf(prefState))
         shadowOf(Looper.getMainLooper()).idle()
 
-        verify { mockNimbusApi.unenrollForGeckoPref(any(), eq(PrefUnenrollReason.FAILED_TO_SET)) }
-        assertEquals(1, handler.enrollmentErrors.size)
-        assertEquals(TEST_PREF, handler.enrollmentErrors.first().first.prefString())
-        val error = handler.enrollmentErrors.first().second
-        assertTrue(error is IllegalStateException)
-        assertEquals("Failed to make a setter!", error?.message)
+        verify { mockNimbusApi.unenrollForGeckoPref(any(), any()) }
+        assertEquals(TEST_PREF, capturedPrefState.captured.prefString())
+        assertEquals(PrefUnenrollReason.FAILED_TO_SET, capturedReason.captured)
     }
 
     @Test

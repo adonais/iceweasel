@@ -159,6 +159,7 @@ class NimbusGeckoPrefHandler(
         for ((prefState, _) in enrollmentErrors) {
             nimbusApi.value.unenrollForGeckoPref(prefState, PrefUnenrollReason.FAILED_TO_SET)
         }
+        enrollmentErrors.clear()
     }
 
     /**
@@ -228,7 +229,7 @@ class NimbusGeckoPrefHandler(
      *
      * This is part of the Nimbus Gecko pref enrollment flow.
      *
-     * @param newPrefsState: The list of new Gecko preference states
+     * @param newPrefsState: The list of new Gecko preference states.
      */
     @OptIn(ExperimentalAndroidComponentsApi::class)
     override fun setGeckoPrefsState(newPrefsState: List<GeckoPrefState>) {
@@ -254,28 +255,33 @@ class NimbusGeckoPrefHandler(
                 }
             }
 
-            engine.value.setBrowserPrefs(
-                prefs = setters,
-                onSuccess = { resultMap ->
-                    val succeeded = mutableListOf<String>()
-                    resultMap.forEach { (prefString, wasSet) ->
-                        if (wasSet) {
-                            val state = getPreferenceState(prefString) ?: return@forEach
-                            state.enrollmentValue =
-                                newPrefsState.findByPrefString(prefString)?.enrollmentValue
-                            succeeded.add(prefString)
-                        } else {
-                            val state = getPreferenceState(prefString) ?: return@forEach
-                            val throwable = Throwable(
-                                "Preference $prefString value was " +
-                                        "not set",
-                            )
-                            logger.error("Error while setting preference value", throwable)
-                            enrollmentErrors.add(Pair(state, throwable))
-                        }
-                    }
+            applyEnrollmentPrefs(setters, newPrefsState)
+        }
+    }
+
+    /**
+     * This function sets the browser prefs, registers errors, registers observation, and
+     * does the Nimbus callback of `registerPreviousGeckoPrefStates` to set the original values on
+     * the database.
+     * @param setters The preferences that should be set on the browser.
+     * @param newPrefsState: The list of new Gecko preference states.
+     */
+    @OptIn(ExperimentalAndroidComponentsApi::class)
+    private fun applyEnrollmentPrefs(
+        setters: List<SetBrowserPreference<*>>,
+        newPrefsState: List<GeckoPrefState>,
+    ) {
+        engine.value.setBrowserPrefs(
+            prefs = setters,
+            onSuccess = { resultMap ->
+
+                // Ensures state and processes errors
+                val succeededPrefs = processSetResults(resultMap, newPrefsState)
+
+                if (succeededPrefs.isNotEmpty()) {
+                    // Observe the newly set prefs for changes
                     browserPrefObserverIntegration.registerPrefsForObservation(
-                        prefs = succeeded,
+                        prefs = succeededPrefs,
                         onSuccess = {
                             logger.info("Successfully registered prefs for observation")
                         },
@@ -286,18 +292,52 @@ class NimbusGeckoPrefHandler(
 
                     // Reports back the value for Nimbus to store
                     nimbusApi.value.registerPreviousGeckoPrefStates(
-                        geckoPrefStates = succeeded.mapNotNull { getPreferenceState(it) },
+                        geckoPrefStates = succeededPrefs.mapNotNull { getPreferenceState(it) },
                     )
-                    handleErrors()
-                },
-                onError = {
-                    logger.error(
-                        "Unknown error while awaiting setting Gecko preferences",
-                        it,
-                    )
-                },
-            )
+                }
+
+                handleErrors()
+            },
+            onError = {
+                logger.error(
+                    "Unknown error while awaiting setting Gecko preferences",
+                    it,
+                )
+            },
+        )
+    }
+
+    /**
+     * Method checks the Nimbus state of the known prefs, adds errors, and creates a list of
+     * successful sets.
+     * @param preferencesSettingSuccess A map of prefs, by pref identifier as key and if it set
+     * as expected by value.
+     * @param newPrefsState The list of new Gecko preference states.
+     *
+     * @return A validated list of what [preferencesSettingSuccess] set.
+     */
+    private fun processSetResults(
+        preferencesSettingSuccess: Map<String, Boolean>,
+        newPrefsState: List<GeckoPrefState>,
+    ): List<String> {
+        val succeeded = mutableListOf<String>()
+        preferencesSettingSuccess.forEach { (prefString, wasSet) ->
+            if (wasSet) {
+                val state = getPreferenceState(prefString) ?: return@forEach
+                state.enrollmentValue =
+                    newPrefsState.findByPrefString(prefString)?.enrollmentValue
+                succeeded.add(prefString)
+            } else {
+                val state = getPreferenceState(prefString) ?: return@forEach
+                val throwable = Throwable(
+                    "Preference $prefString value was " +
+                            "not set",
+                )
+                logger.error("Error while setting preference value", throwable)
+                enrollmentErrors.add(Pair(state, throwable))
+            }
         }
+        return succeeded
     }
 
     /**
