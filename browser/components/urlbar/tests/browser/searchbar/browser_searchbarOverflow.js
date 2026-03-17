@@ -20,12 +20,12 @@ async function openOverflowPanel() {
   await shown;
 }
 
-async function hideOverflowPanel() {
-  let overflowButton = document.getElementById("nav-bar-overflow-button");
+/**
+ * @returns {Promise}
+ */
+function promiseOverflowHidden() {
   let menu = document.getElementById("widget-overflow");
-  let hidden = BrowserTestUtils.waitForEvent(menu, "popuphidden");
-  overflowButton.click();
-  await hidden;
+  return BrowserTestUtils.waitForEvent(menu, "popuphidden");
 }
 
 add_setup(async function () {
@@ -106,7 +106,18 @@ add_task(async function test_fixedOverflow() {
   await SearchbarTestUtils.assertSearchMode(window, null);
   Assert.ok(true, "Exited search mode");
 
-  await hideOverflowPanel();
+  await SearchbarTestUtils.withContextMenu(window, () => {});
+  Assert.equal(
+    document.getElementById("widget-overflow").state,
+    "open",
+    "Opening the context menu doesn't close the overflow panel"
+  );
+
+  let hiddenPanelPromise = promiseOverflowHidden(window);
+  EventUtils.synthesizeKey("KEY_Escape");
+  await hiddenPanelPromise;
+  Assert.ok(true, "Escape closes overflow panel");
+
   // Move back to the navbar.
   await gCUITestUtils.addSearchBar();
 });

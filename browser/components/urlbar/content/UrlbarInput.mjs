@@ -404,6 +404,7 @@ export class UrlbarInput extends HTMLElement {
     if (this.inOverflowPanel && this.view.isOpen) {
       this.view.close();
     }
+    this.toggleAttribute("focused", this.focused);
 
     // Don't attach event listeners if the toolbar is not visible
     // in this window or the urlbar is readonly.
