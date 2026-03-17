@@ -286,3 +286,110 @@ add_task(async function test_firstrun_explainer_page_opens() {
   win.openLinkIn = originalOpenLinkIn;
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(async function test_firstrun_telemetry() {
+  Services.fog.testResetFOG();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.firstrun.autoAdvanceMS", 0],
+      ["browser.smartwindow.firstrun.modelChoice", ""],
+    ],
+  });
+
+  const win = Services.wm.getMostRecentWindow("navigator:browser");
+  let calls = [];
+  const originalOpenLinkIn = win.openLinkIn;
+  win.openLinkIn = function (url, where, params) {
+    calls.push({ url, where, params });
+    return null;
+  };
+
+  const tab = await openFirstrunPage();
+  const browser = tab.linkedBrowser;
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const root = content.document.documentElement;
+
+    await ContentTaskUtils.waitForMutationCondition(
+      root,
+      { childList: true, subtree: true },
+      () => content.document.querySelector(".screen.AI_WINDOW_INTRO")
+    );
+
+    await ContentTaskUtils.waitForMutationCondition(
+      root,
+      { childList: true, subtree: true, attributes: true },
+      () => content.document.querySelector(".screen.AI_WINDOW_CHOOSE_MODEL")
+    );
+
+    const model2Box = content.document.querySelectorAll(".select-item")[1];
+    const letsGoButton = content.document.querySelector(
+      ".action-buttons > button"
+    );
+
+    Assert.ok(model2Box, "Model 2 box exists");
+    Assert.ok(letsGoButton, "Let's go button exists");
+
+    EventUtils.synthesizeMouseAtCenter(model2Box, {}, content);
+    EventUtils.synthesizeMouseAtCenter(letsGoButton, {}, content);
+  });
+
+  await BrowserTestUtils.waitForCondition(
+    () => calls.length,
+    "openLinkIn was called after onboarding completion"
+  );
+
+  const impressionEvents =
+    Glean.smartWindow.onboardingScreenImpression.testGetValue();
+  Assert.equal(
+    impressionEvents?.length,
+    2,
+    "Two screen impression events were recorded"
+  );
+  Assert.ok(
+    impressionEvents[0].extra.message_id.includes("AI_WINDOW_INTRO"),
+    "First impression is for AI_WINDOW_INTRO"
+  );
+  Assert.ok(
+    impressionEvents[1].extra.message_id.includes("AI_WINDOW_CHOOSE_MODEL"),
+    "Second impression is for AI_WINDOW_CHOOSE_MODEL"
+  );
+
+  const modelSelectedEvents =
+    Glean.smartWindow.onboardingModelSelected.testGetValue();
+  Assert.equal(
+    modelSelectedEvents?.length,
+    1,
+    "One model selected event was recorded"
+  );
+  Assert.equal(
+    modelSelectedEvents[0].extra.model,
+    "2",
+    "Model selected event records 2 for model 2"
+  );
+
+  const modelNavigateEvents =
+    Glean.smartWindow.onboardingModelNavigate.testGetValue();
+  Assert.equal(
+    modelNavigateEvents?.length,
+    1,
+    "One model navigate event was recorded"
+  );
+  Assert.equal(
+    modelNavigateEvents[0].extra.model,
+    "2",
+    "Model navigate event records 2 for model 2"
+  );
+
+  const completeEvents = Glean.smartWindow.onboardingComplete.testGetValue();
+  Assert.equal(
+    completeEvents?.length,
+    1,
+    "One onboarding complete event was recorded"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  win.openLinkIn = originalOpenLinkIn;
+  await SpecialPowers.popPrefEnv();
+});

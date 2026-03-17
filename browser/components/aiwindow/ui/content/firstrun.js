@@ -211,6 +211,36 @@ function renderFirstRun() {
   window.AWGetSelectedTheme = () => ({});
   window.AWGetInstalledAddons = () => [];
   window.AWSendToParent = (name, data) => receive(name)(data);
+  window.AWSendEventTelemetry = ({
+    event,
+    message_id,
+    event_context: { source },
+  }) => {
+    switch (event) {
+      case "IMPRESSION":
+        Glean.smartWindow.onboardingScreenImpression.record({
+          message_id,
+        });
+        break;
+
+      case "CLICK_BUTTON":
+        if (["model_1", "model_2", "model_3"].includes(source)) {
+          Glean.smartWindow.onboardingModelSelected.record({
+            model: source.split("_")[1],
+          });
+        } else if (
+          source === "primary_button" &&
+          message_id.includes("AI_WINDOW_CHOOSE_MODEL")
+        ) {
+          const prefValue = Services.prefs.getStringPref(MODEL_PREF, "");
+          Glean.smartWindow.onboardingModelNavigate.record({
+            model: prefValue || "",
+          });
+        }
+        break;
+    }
+  };
+
   window.AWFinish = () => {
     window.AWSendToParent("SPECIAL_ACTION", {
       type: "OPEN_URL",
@@ -222,6 +252,7 @@ function renderFirstRun() {
         where: "tab",
       },
     });
+    Glean.smartWindow.onboardingComplete.record();
     window.location.href = lazy.AIWindow.newTabURL;
   };
 

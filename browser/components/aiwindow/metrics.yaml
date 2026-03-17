@@ -7,6 +7,9 @@
 
 ---
 $schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - "Core :: Machine Learning"
+
 smart_window:
   chat_submit:
     type: event
@@ -47,6 +50,7 @@ smart_window:
         unit: count
         description: >
           Number of tabs restored
+
   history_displayed:
     type: event
     description: |
@@ -367,3 +371,78 @@ smart_window:
         type: boolean
         description: >
           Whether the memories feature is enabled or not. True for turning on and false for turning off
+
+  onboarding_screen_impression:
+      type: event
+      description: |
+        Recorded when onboarding screen is displayed in smart window mode
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+      data_sensitivity:
+        - interaction
+      notification_emails:
+        - pdahiya@mozilla.com
+      extra_keys:
+        message_id:
+          description: >
+            Identifier for the onboarding screen that is displayed, for example
+            'AI_WINDOW_WELCOME_0_AI_WINDOW_INTRO_WW' for the welcome screen,
+            'AI_WINDOW_WELCOME_1_AI_WINDOW_CHOOSE_MODEL_WW' for the model selection screen
+          type: string
+      expires: never
+
+  onboarding_model_selected:
+    type: event
+    description: |
+      Recorded when user selects a model for Smart Window during onboarding
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - pdahiya@mozilla.com
+    extra_keys:
+      model:
+        description: >
+          Identifier for the model tile clicked by the user during onboarding,
+          for example: '1', '2', '3'
+        type: string
+    expires: never
+
+  onboarding_model_navigate:
+    type: event
+    description: |
+      Recorded when user clicks done on the model selection screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - pdahiya@mozilla.com
+    extra_keys:
+      model:
+        description: >
+          Identifier for the selected model during onboarding when user clicks done,
+          for example: '1', '2', '3'
+        type: string
+    expires: never
+
+  onboarding_complete:
+    type: event
+    description: |
+      Indicates if user completed onboarding successfully
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - pdahiya@mozilla.com
+    expires: never
