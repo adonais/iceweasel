@@ -40,6 +40,7 @@ val EMPTY_SEARCH_FRAGMENT_STATE = SearchFragmentState(
     showSponsoredSuggestions = false,
     showNonSponsoredSuggestions = false,
     showStocksSuggestions = false,
+    showSportsSuggestions = false,
     showTrendingSearches = false,
     showRecentSearches = false,
     showQrButton = false,

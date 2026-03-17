@@ -150,6 +150,8 @@ sealed class SearchEngineSource {
  * in the AwesomeBar. Always `false` in private mode, or when a non-default engine is selected.
  * @property showStocksSuggestions Whether or not to show the optimized search suggestion stock cards
  * in the AwesomeBar.
+ * @property showSportsSuggestions Whether or not to show the optimized search suggestion sports cards
+ * in the AwesomeBar.
  * @property showTrendingSearches Whether the setting for showing trending searches is enabled or disabled.
  * @property showRecentSearches Whether the setting for showing recent searches is enabled or disabled.
  * @property showQrButton Whether or not to show the QR button.
@@ -187,6 +189,7 @@ data class SearchFragmentState(
     val showSponsoredSuggestions: Boolean,
     val showNonSponsoredSuggestions: Boolean,
     val showStocksSuggestions: Boolean,
+    val showSportsSuggestions: Boolean,
     val showTrendingSearches: Boolean,
     val showRecentSearches: Boolean,
     val showQrButton: Boolean,
@@ -231,6 +234,7 @@ data class SearchFragmentState(
             showSponsoredSuggestions = false,
             showNonSponsoredSuggestions = false,
             showStocksSuggestions = false,
+            showSportsSuggestions = false,
             showTrendingSearches = false,
             showRecentSearches = false,
             showQrButton = false,
@@ -298,9 +302,10 @@ fun createInitialSearchFragmentState(
             settings.enableFxSuggest && settings.showSponsoredSuggestions,
         showNonSponsoredSuggestions = browsingMode == BrowsingMode.Normal &&
             settings.enableFxSuggest && settings.showNonSponsoredSuggestions,
-        showStocksSuggestions = settings.enableFxSuggest && settings.showNonSponsoredSuggestions &&
-                settings.isSearchOptimizationEnabled && settings.shouldShowSearchOptimizationCards &&
+        showStocksSuggestions = shouldShowCardSuggestions(settings) &&
                 settings.shouldShowSearchOptimizationStockCard,
+        showSportsSuggestions = shouldShowCardSuggestions(settings) &&
+                settings.shouldShowSearchOptimizationSportCard,
         showTrendingSearches = shouldShowTrendingSearchSuggestions(
             browsingMode = browsingMode,
             settings = settings,
@@ -488,11 +493,10 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                     action.settings.enableFxSuggest && action.settings.showSponsoredSuggestions,
                 showNonSponsoredSuggestions = action.browsingMode == BrowsingMode.Normal &&
                     action.settings.enableFxSuggest && action.settings.showNonSponsoredSuggestions,
-                showStocksSuggestions = action.settings.enableFxSuggest &&
-                        action.settings.showNonSponsoredSuggestions &&
-                        action.settings.isSearchOptimizationEnabled &&
-                        action.settings.shouldShowSearchOptimizationCards &&
+                showStocksSuggestions = shouldShowCardSuggestions(action.settings) &&
                         action.settings.shouldShowSearchOptimizationStockCard,
+                showSportsSuggestions = shouldShowCardSuggestions(action.settings) &&
+                        action.settings.shouldShowSearchOptimizationSportCard,
                 showAllSessionSuggestions = true,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
@@ -540,6 +544,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
+                showSportsSuggestions = false,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
                     settings = action.settings,
@@ -565,6 +570,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
+                showSportsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -586,6 +592,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
+                showSportsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -607,6 +614,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
                 showStocksSuggestions = false,
+                showSportsSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -706,3 +714,13 @@ internal fun shouldShowTrendingSearchSuggestions(
 ) =
     settings.trendingSearchSuggestionsEnabled &&
         isTrendingSuggestionSupported && shouldShowSearchSuggestions(browsingMode, settings)
+
+/**
+ * Check whether search optimization cards should be shown in the AwesomeBar.
+ *
+ * @param settings Persistence layer containing user option's for showing search suggestions.
+ */
+private fun shouldShowCardSuggestions(
+    settings: Settings,
+) = settings.enableFxSuggest && settings.showNonSponsoredSuggestions &&
+        settings.isSearchOptimizationEnabled && settings.shouldShowSearchOptimizationCards

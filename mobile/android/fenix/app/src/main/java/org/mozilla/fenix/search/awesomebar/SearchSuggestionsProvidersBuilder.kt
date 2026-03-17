@@ -20,9 +20,11 @@ import mozilla.components.feature.awesomebar.provider.SearchEngineSuggestionProv
 import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.SearchTermSuggestionsProvider
 import mozilla.components.feature.awesomebar.provider.SessionSuggestionProvider
+import mozilla.components.feature.awesomebar.provider.SportsOnlineSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.StocksOnlineSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.TrendingSearchProvider
 import mozilla.components.feature.fxsuggest.FxSuggestSuggestionProvider
+import mozilla.components.feature.fxsuggest.MockedSportsSuggestionDataSource
 import mozilla.components.feature.fxsuggest.MockedStocksSuggestionDataSource
 import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.session.SessionUseCases.LoadUrlUseCase
@@ -269,6 +271,15 @@ class SearchSuggestionsProvidersBuilder(
                 StocksOnlineSuggestionProvider(
                     searchUseCase = searchUseCase,
                     dataSource = MockedStocksSuggestionDataSource(),
+                    suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
+                ),
+            )
+        }
+
+        if (state.showSportsSuggestions) {
+            providersToAdd.add(
+                SportsOnlineSuggestionProvider(
+                    dataSource = MockedSportsSuggestionDataSource(),
                     suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
                 ),
             )
@@ -530,6 +541,7 @@ class SearchSuggestionsProvidersBuilder(
      * @property showSponsoredSuggestions Whether to show sponsored suggestions.
      * @property showNonSponsoredSuggestions Whether to show non-sponsored suggestions.
      * @property showStocksSuggestions Whether to show optimized search suggestion stock cards.
+     * @property showSportsSuggestions Whether to show optimized search suggestion sports cards.
      * @property showTrendingSearches Whether to show trending searches.
      * @property showRecentSearches Whether to show recent searches.
      * @property searchEngineSource Hoe the current search engine was selected.
@@ -549,6 +561,7 @@ class SearchSuggestionsProvidersBuilder(
         val showSponsoredSuggestions: Boolean,
         val showNonSponsoredSuggestions: Boolean,
         val showStocksSuggestions: Boolean,
+        val showSportsSuggestions: Boolean,
         val showTrendingSearches: Boolean,
         val showRecentSearches: Boolean,
         val searchEngineSource: SearchEngineSource,
