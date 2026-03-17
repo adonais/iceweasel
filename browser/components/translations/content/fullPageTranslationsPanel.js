@@ -1424,8 +1424,7 @@ var FullPageTranslationsPanel = new (class {
       return;
     }
 
-    if (browser.currentURI.spec.startsWith("about:reader")) {
-      // Hide the translations button when entering reader mode.
+    if (TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser)) {
       this.buttonElements.button.hidden = true;
     } else if (!TranslationsParent.AIFeature.isEnabled) {
       // When the Translations feature is disabled, no actor instance is created, therefore no

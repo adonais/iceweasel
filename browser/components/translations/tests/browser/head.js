@@ -49,6 +49,8 @@ function median(numbers) {
  * Opens a new tab in the foreground.
  *
  * @param {string} url
+ * @param {string} message
+ * @param {Window} [win=window]
  */
 async function addTab(url, message, win = window) {
   logAction(url);
