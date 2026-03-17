@@ -203,10 +203,14 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "saveEditBookmark: Clicked navigate up toolbar button")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clickParentFolderSelector() {
         Log.i(TAG, "clickParentFolderSelector: Trying to click folder selector")
         composeTestRule.bookmarkFolderSelector().performClick()
         Log.i(TAG, "clickParentFolderSelector: Clicked folder selector")
+        Log.i(TAG, "clickParentFolderSelector: Waiting for the Bookmarks folder to exist")
+        composeTestRule.waitUntilAtLeastOneExists(hasText("Bookmarks"), waitingTime)
+        Log.i(TAG, "clickParentFolderSelector: Waited for the Bookmarks folder to exist")
     }
 
     fun expandSelectableFolder(title: String) {
@@ -336,7 +340,10 @@ private fun ComposeTestRule.bookmarkFolderSelector() =
     onNodeWithText("Bookmarks")
 
 private fun ComposeTestRule.expandBookmarkFolderSelector(title: String) =
-    onNodeWithContentDescription(getStringResource(R.string.bookmark_select_folder_expand_folder_content_description, title))
+    onNodeWithContentDescription(
+        getStringResource(R.string.bookmark_select_folder_expand_folder_content_description, title),
+        useUnmergedTree = true,
+    )
 
 private fun ComposeTestRule.closeBookmarkFolderSelector(title: String) =
     onNodeWithContentDescription(getStringResource(R.string.bookmark_select_folder_close_folder_content_description, title))
