@@ -43,6 +43,23 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // some users can have thousands of tabs open at once.
 const MAX_TABS = 15;
 
+// Allow list of URL protocols for tabs exposed to the LLM. Only http/https are
+// permitted; internal (about:, chrome:, moz-extension:, file:, data:, etc.)
+// URLs are excluded to reduce the attack surface for prompt injection.
+const ALLOWED_TAB_PROTOCOLS = new Set(["http:", "https:"]);
+
+/**
+ * @param {string} url
+ * @returns {boolean}
+ */
+function isAllowedTabUrl(url) {
+  try {
+    return ALLOWED_TAB_PROTOCOLS.has(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+}
+
 // Important! Changing or removing this value requires a security review.
 //
 // Hard code a reasonable working limit for how many history results that a language model
@@ -198,8 +215,8 @@ export const toolsConfig = [
 ];
 
 /**
- * Retrieves a list of (up to n) the latest open tabs from the current active browser window.
- * Ignores config pages (about:xxx).
+ * Retrieves a list of the latest open tabs from the current active browser window.
+ * Only includes tabs with http/https URLs.
  * TODO: Ignores chat-only pages (FE to implement isSidebarMode flag).
  *
  * @param {object} _params
@@ -228,7 +245,7 @@ export async function getOpenTabs(_params, securityProperties) {
         const url = browser?.currentURI?.spec;
         const title = tab.label;
 
-        if (url && !url.startsWith("about:")) {
+        if (isAllowedTabUrl(url)) {
           tabs.push({
             url,
             title: truncateUntrustedMetadata(title),
