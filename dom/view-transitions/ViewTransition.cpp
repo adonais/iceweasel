@@ -4,6 +4,7 @@
 
 #include "ViewTransition.h"
 
+#include "AnchorPositioningUtils.h"
 #include "Units.h"
 #include "WindowRenderer.h"
 #include "mozilla/AnimationEventDispatcher.h"
@@ -1856,6 +1857,15 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
     return nullptr;
   }
 
+  // If the name is not associated with the document, return null.
+  // https://drafts.csswg.org/css-view-transitions-1/#document-scoped-view-transition-name
+  nsIContent* content = aFrame->GetContent();
+  if (MOZ_UNLIKELY(!content) ||
+      AnchorPositioningUtils::GetShadowRootForTreeScope(*content,
+                                                        computed.scope)) {
+    return nullptr;
+  }
+
   // 3. If computed is a <custom-ident>, return computed.
   if (computed.value.IsIdent()) {
     return RefPtr<nsAtom>{computed.value.AsIdent().AsAtom()}.forget();
@@ -1876,8 +1886,7 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
   // 6. Return a unique string starting with "-ua-". The string should remain
   // consistent and unique for this element and Document, at least for the
   // lifetime of element’s node document’s active view transition.
-  nsIContent* content = aFrame->GetContent();
-  if (MOZ_UNLIKELY(!content || !content->IsElement())) {
+  if (MOZ_UNLIKELY(!content->IsElement())) {
     return nullptr;
   }
 

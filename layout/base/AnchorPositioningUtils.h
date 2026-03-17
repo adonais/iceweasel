@@ -422,6 +422,10 @@ struct AnchorPositioningUtils {
    */
   static nsRect ReassembleAnchorRect(const nsIFrame* aAnchor,
                                      const nsIFrame* aContainingBlock);
+
+  // Helper to get shadow root for a property's tree scope
+  static dom::ShadowRoot* GetShadowRootForTreeScope(
+      const nsIContent& aContent, const StyleCascadeLevel& aTreeScope);
 };
 
 }  // namespace mozilla
