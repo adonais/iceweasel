@@ -373,6 +373,10 @@ Window includes SpeechSynthesisGetter;
 dictionary SynthesizeEventData {
   // A unique identifier for the pointer causing the event, defaulting to 0.
   unsigned long identifier = 0;
+  // Input pressure (0.0 -> 1.0).
+  // If unspecified, synthesized events use the default value defined at
+  // https://w3c.github.io/pointerevents/#dom-pointerevent-pressure.
+  float pressure;
 };
 
 // Mozilla-specific stuff
@@ -386,8 +390,6 @@ dictionary SynthesizeMouseEventData : SynthesizeEventData {
   // is generated based on the event type, e.g. 1 for mousedown and mouseup events,
   // and 0 for others.
   long clickCount;
-  // Touch input pressure (0.0 -> 1.0).
-  float pressure = 0;
   // Input source, see MouseEvent for values. Defaults to MouseEvent.MOZ_SOURCE_MOUSE.
   short inputSource = 1;
   // Modifiers pressed, using constants defined as MODIFIER_* in nsIDOMWindowUtils.
@@ -406,8 +408,6 @@ dictionary SynthesizeTouchEventData : SynthesizeEventData {
   unsigned long radiiY = 1;
   // Rotation angle in degrees.
   float rotationAngle = 0;
-  // Touch input pressure (0.0 -> 1.0).
-  float pressure = 1;
   // X tilt in degrees (-90 -> 90). If altitudeAngle and azimuthAngle are
   // specified, tiltX is ignored.
   long tiltX = 0;

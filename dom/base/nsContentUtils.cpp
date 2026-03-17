@@ -9883,7 +9883,11 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
           : (msg != eMouseDown
                  ? 0
                  : GetButtonsFlagForButton(aMouseEventData.mButton));
-  mouseOrPointerEvent.mPressure = aMouseEventData.mPressure;
+  // https://w3c.github.io/pointerevents/#dom-pointerevent-pressure.
+  mouseOrPointerEvent.mPressure =
+      aMouseEventData.mPressure.WasPassed()
+          ? aMouseEventData.mPressure.Value()
+          : ((mouseOrPointerEvent.mButtons == 0) ? 0.0f : 0.5f);
   mouseOrPointerEvent.mInputSource = aMouseEventData.mInputSource;
   mouseOrPointerEvent.mClickCount =
       aMouseEventData.mClickCount.WasPassed()
@@ -10015,10 +10019,14 @@ mozilla::Result<bool, nsresult> nsContentUtils::SynthesizeTouchEvent(
         CSSPoint::ToAppUnits(
             CSSPoint(aTouches[i].mRadiiX, aTouches[i].mRadiiY)),
         aPresContext->AppUnitsPerDevPixel());
+    // https://w3c.github.io/pointerevents/#dom-pointerevent-pressure.
+    float pressure = aTouches[i].mPressure.WasPassed()
+                         ? aTouches[i].mPressure.Value()
+                         : (msg == eTouchEnd ? 0.0f : 0.5f);
 
     RefPtr<Touch> t =
-        new Touch(aTouches[i].mIdentifier, pt, radius,
-                  aTouches[i].mRotationAngle, aTouches[i].mPressure);
+        new Touch(CheckedInt<int32_t>(aTouches[i].mIdentifier).value(), pt,
+                  radius, aTouches[i].mRotationAngle, pressure);
     if (aTouches[i].mAltitudeAngle.WasPassed()) {
       MOZ_ASSERT(aTouches[i].mAzimuthAngle.WasPassed());
       t->mAngle.emplace(aTouches[i].mAltitudeAngle.Value(),

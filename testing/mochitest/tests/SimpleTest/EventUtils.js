@@ -749,7 +749,6 @@ function synthesizeMouseAtPoint(
     var button = computeButton(aEvent);
     var clickCount = aEvent.clickCount || 1;
     var modifiers = _parseModifiers(aEvent, aWindow);
-    var pressure = "pressure" in aEvent ? aEvent.pressure : 0;
 
     // aWindow might be cross-origin from us.
     var MouseEvent = _EU_maybeWrap(aWindow).MouseEvent;
@@ -792,7 +791,7 @@ function synthesizeMouseAtPoint(
           buttons: aEvent.buttons,
           clickCount,
           modifiers,
-          pressure,
+          pressure: aEvent.pressure,
           inputSource,
         },
         {
@@ -813,7 +812,7 @@ function synthesizeMouseAtPoint(
           buttons: aEvent.buttons,
           clickCount,
           modifiers,
-          pressure,
+          pressure: aEvent.pressure,
           inputSource,
         },
         {
@@ -833,7 +832,7 @@ function synthesizeMouseAtPoint(
           buttons: aEvent.buttons,
           clickCount,
           modifiers,
-          pressure,
+          pressure: aEvent.pressure,
           inputSource,
         },
         {
@@ -1060,10 +1059,7 @@ function synthesizeTouchAtPoint(
   const rxArray = getSameLengthArrayOfEventProperty("rx", 1);
   const ryArray = getSameLengthArrayOfEventProperty("ry", 1);
   const angleArray = getSameLengthArrayOfEventProperty("angle", 0);
-  const forceArray = getSameLengthArrayOfEventProperty(
-    "force",
-    aEvent.type === "touchend" ? 0 : 1
-  );
+  const forceArray = getSameLengthArrayOfEventProperty("force");
   const tiltXArray = getSameLengthArrayOfEventProperty("tiltX", 0);
   const tiltYArray = getSameLengthArrayOfEventProperty("tiltY", 0);
   const twistArray = getSameLengthArrayOfEventProperty("twist", 0);
