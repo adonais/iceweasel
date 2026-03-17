@@ -8,7 +8,6 @@
   --card-border: var(--card-border-width) solid var(--card-border-color);
   --card-background-color: var(--background-color-box);
   --card-focus-outline: var(--focus-outline);
-  --card-box-shadow: var(--card-box-shadow);
   --card-padding: var(--space-large);
   --card-gap: var(--card-padding);
   --card-article-gap: var(--space-small);
