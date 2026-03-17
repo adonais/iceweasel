@@ -29,10 +29,19 @@ void MappedDeclarationsBuilder::SetBackgroundImage(const nsAttrValue& aValue) {
   if (aValue.Type() != nsAttrValue::eURL) {
     return;
   }
-  nsAutoString str;
-  aValue.ToString(str);
+  // Use the already-resolved absolute URI spec rather than the raw attribute
+  // string. The URI was resolved with the document's character encoding during
+  // attribute parsing (via nsContentUtils::NewURIWithDocumentCharset), so using
+  // its spec preserves the correct query encoding. If we used the raw string,
+  // it would be re-resolved in StyleCssUrl::GetURI() assuming UTF-8.
   nsAutoCString utf8;
-  CopyUTF16toUTF8(str, utf8);
+  if (nsIURI* uri = aValue.GetURLValue()) {
+    uri->GetSpec(utf8);
+  } else {
+    nsAutoString str;
+    aValue.ToString(str);
+    CopyUTF16toUTF8(str, utf8);
+  }
   Servo_DeclarationBlock_SetBackgroundImage(
       &EnsureDecls(), &utf8, mDocument.DefaultStyleAttrURLData());
 }
