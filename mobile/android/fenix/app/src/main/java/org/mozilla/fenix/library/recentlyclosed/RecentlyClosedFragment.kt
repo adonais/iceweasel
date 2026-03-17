@@ -29,17 +29,22 @@ import org.mozilla.fenix.GleanMetrics.RecentlyClosedTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.databinding.FragmentRecentlyClosedTabsBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setTextColor
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.library.LibraryPageFragment
 
+/**
+ * Screen showing all recently closed tabs.
+ */
 @Suppress("TooManyFunctions")
 class RecentlyClosedFragment :
     LibraryPageFragment<RecoverableTab>(),
     UserInteractionHandler,
-    MenuProvider {
+    MenuProvider,
+    SystemInsetsPaddedFragment {
     private lateinit var recentlyClosedFragmentStore: RecentlyClosedFragmentStore
     private var _recentlyClosedFragmentView: RecentlyClosedFragmentView? = null
     private val recentlyClosedFragmentView: RecentlyClosedFragmentView

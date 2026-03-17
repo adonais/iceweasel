@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.map
 import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.fenix.components.components
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.topsites.controller.DefaultTopSiteController
 import org.mozilla.fenix.home.topsites.controller.TopSiteController
@@ -32,7 +33,7 @@ import java.lang.ref.WeakReference
 /**
  * A [Fragment] displaying the shortcuts screen.
  */
-class ShortcutsFragment : Fragment() {
+class ShortcutsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private val topSitesBinding = ViewBoundFeatureWrapper<TopSitesBinding>()
 

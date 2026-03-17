@@ -9,6 +9,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceFragmentCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.view.addToRadioGroup
@@ -16,7 +17,7 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
 /**
  * Lets the user choose how open links in apps feature behaves.
  */
-class OpenLinksInAppsFragment : PreferenceFragmentCompat() {
+class OpenLinksInAppsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var radioAlways: RadioButtonPreference
     private lateinit var radioAskBeforeOpening: RadioButtonPreference
     private lateinit var radioNever: RadioButtonPreference

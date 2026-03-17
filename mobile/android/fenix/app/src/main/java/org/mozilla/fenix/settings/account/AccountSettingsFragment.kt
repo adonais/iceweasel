@@ -46,6 +46,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.pixelSizeFor
@@ -58,8 +59,11 @@ import org.mozilla.fenix.settings.requirePreference
 import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 import org.mozilla.fenix.settings.showCustomEditTextPreferenceDialog
 
+/**
+ * Settings screen allowing users to manage their Firefox account and what data to sync through it.
+ */
 @SuppressWarnings("TooManyFunctions", "LargeClass")
-class AccountSettingsFragment : PreferenceFragmentCompat() {
+class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var accountManager: FxaAccountManager
     private lateinit var accountSettingsStore: AccountSettingsFragmentStore
     private lateinit var accountSettingsInteractor: AccountSettingsInteractor

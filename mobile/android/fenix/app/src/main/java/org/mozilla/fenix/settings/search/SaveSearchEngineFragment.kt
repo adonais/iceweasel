@@ -21,6 +21,7 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentSaveSearchEngineBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
@@ -29,7 +30,7 @@ import org.mozilla.fenix.settings.SupportUtils
  * A [Fragment] that allows user to add a new search engine.
  */
 @SuppressWarnings("LargeClass", "TooManyFunctions")
-class SaveSearchEngineFragment : Fragment(R.layout.fragment_save_search_engine) {
+class SaveSearchEngineFragment : Fragment(R.layout.fragment_save_search_engine), SystemInsetsPaddedFragment {
 
     private val args by navArgs<SaveSearchEngineFragmentArgs>()
     private val searchEngine by lazy {

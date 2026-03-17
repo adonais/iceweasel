@@ -22,6 +22,7 @@ import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.settings
@@ -33,7 +34,7 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
  * Displays the toggle for tracking protection, options for tracking protection policy and a button
  * to open info about the tracking protection [org.mozilla.fenix.settings.TrackingProtectionFragment].
  */
-class TrackingProtectionFragment : PreferenceFragmentCompat() {
+class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private val args by navArgs<TrackingProtectionFragmentArgs>()
 
     private val exceptionsClickListener = Preference.OnPreferenceClickListener {

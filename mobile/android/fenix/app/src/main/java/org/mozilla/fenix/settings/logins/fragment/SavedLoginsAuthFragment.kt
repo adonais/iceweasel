@@ -17,6 +17,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
 import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.navigateWithBreadcrumb
 import org.mozilla.fenix.ext.requireComponents
@@ -26,8 +27,11 @@ import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.SyncPreferenceView
 import org.mozilla.fenix.settings.requirePreference
 
+/**
+ * Settings screen allowing users to configure the passwords manager functionality of the application.
+ */
 @Suppress("TooManyFunctions")
-class SavedLoginsAuthFragment : PreferenceFragmentCompat() {
+class SavedLoginsAuthFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.logins_preferences, rootKey)

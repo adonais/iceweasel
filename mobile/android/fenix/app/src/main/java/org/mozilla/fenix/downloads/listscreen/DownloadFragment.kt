@@ -24,6 +24,7 @@ import org.mozilla.fenix.downloads.listscreen.di.DownloadUIMiddlewareProvider
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIStore
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
@@ -32,7 +33,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * Fragment for displaying and managing the downloads list.
  */
-class DownloadFragment : Fragment() {
+class DownloadFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

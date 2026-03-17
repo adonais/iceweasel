@@ -25,14 +25,18 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.databinding.FragmentDeleteBrowsingDataBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.Settings
 
+/**
+ * Settings screen allowing users to choose what browsing data to delete.
+ */
 @SuppressWarnings("TooManyFunctions", "LargeClass")
-class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_data) {
+class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_data), SystemInsetsPaddedFragment {
 
     private lateinit var controller: DeleteBrowsingDataController
     private var scope: CoroutineScope? = null

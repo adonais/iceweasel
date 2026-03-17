@@ -27,6 +27,7 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.BL
 import org.mozilla.fenix.GleanMetrics.Autoplay
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentManageSitePermissionsFeaturePhoneBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.settings
@@ -50,8 +51,11 @@ enum class AutoplaySettingMetricsExtraKey {
     BLOCK_CELLULAR, BLOCK_AUDIO, BLOCK_ALL, ALLOW_ALL
 }
 
+/**
+ * Settings screen allowing users to manage the browser phone permission.
+ */
 @SuppressWarnings("TooManyFunctions")
-class SitePermissionsManagePhoneFeatureFragment : Fragment() {
+class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<SitePermissionsManagePhoneFeatureFragmentArgs>()
     private val settings by lazy { requireContext().settings() }

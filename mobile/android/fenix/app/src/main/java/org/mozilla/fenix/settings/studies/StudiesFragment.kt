@@ -12,13 +12,14 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.databinding.SettingsStudiesBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 
 /**
  * Lets the users control studies settings.
  */
-class StudiesFragment : Fragment() {
+class StudiesFragment : Fragment(), SystemInsetsPaddedFragment {
     private var _binding: SettingsStudiesBinding? = null
 
     // This property is only valid between onCreateView and

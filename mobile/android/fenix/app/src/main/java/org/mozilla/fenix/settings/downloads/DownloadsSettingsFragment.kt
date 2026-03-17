@@ -17,6 +17,7 @@ import androidx.preference.SwitchPreferenceCompat
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -26,7 +27,7 @@ import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 /**
  * A [androidx.preference.PreferenceFragmentCompat] that displays settings related to downloads.
  */
-class DownloadsSettingsFragment : PreferenceFragmentCompat() {
+class DownloadsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private val logger = Logger("DownloadsSettingsFragment")
     private val args by navArgs<DownloadsSettingsFragmentArgs>()
     private lateinit var downloadLocationFormatter: DownloadLocationFormatter

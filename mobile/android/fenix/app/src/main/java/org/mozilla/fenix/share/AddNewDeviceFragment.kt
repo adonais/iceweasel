@@ -13,13 +13,14 @@ import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentAddNewDeviceBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
 
 /**
  * Fragment to add a new device. Tabs can be shared to devices after they are added.
  */
-class AddNewDeviceFragment : Fragment(R.layout.fragment_add_new_device) {
+class AddNewDeviceFragment : Fragment(R.layout.fragment_add_new_device), SystemInsetsPaddedFragment {
 
     override fun onResume() {
         super.onResume()

@@ -24,6 +24,7 @@ import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.UserInteractionHandler
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -33,7 +34,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * A fragment displaying the Firefox Translation settings screen.
  */
-class TranslationSettingsFragment : Fragment(), UserInteractionHandler {
+class TranslationSettingsFragment : Fragment(), UserInteractionHandler, SystemInsetsPaddedFragment {
     private val browserStore: BrowserStore by lazy { requireComponents.core.store }
 
     override fun onResume() {

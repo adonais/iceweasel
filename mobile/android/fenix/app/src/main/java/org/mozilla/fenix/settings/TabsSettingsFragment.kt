@@ -14,6 +14,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.Tabs
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.view.addToRadioGroup
@@ -21,7 +22,7 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
 /**
  * Lets the user customize auto closing tabs.
  */
-class TabsSettingsFragment : PreferenceFragmentCompat() {
+class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var listRadioButton: RadioButtonPreference
     private lateinit var gridRadioButton: RadioButtonPreference
     private lateinit var radioManual: RadioButtonPreference

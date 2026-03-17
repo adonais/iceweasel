@@ -39,6 +39,7 @@ import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.LogMiddleware
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.requireComponents
@@ -65,7 +66,7 @@ import mozilla.components.ui.icons.R as iconsR
  * syncing credit cards and addresses.
  */
 @SuppressWarnings("TooManyFunctions")
-class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
+class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInsetsPaddedFragment {
 
     private lateinit var store: AutofillFragmentStore
 

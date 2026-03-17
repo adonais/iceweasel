@@ -15,6 +15,7 @@ import mozilla.components.support.remotesettings.RemoteSettingsServer
 import mozilla.components.support.remotesettings.RemoteSettingsServerConfig
 import mozilla.components.support.remotesettings.into
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -23,7 +24,7 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
 /**
  * Lets the user choose which remote settings server to use.
  */
-class RemoteSettingsServerFragment : PreferenceFragmentCompat() {
+class RemoteSettingsServerFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var radioProduction: RadioButtonPreference
     private lateinit var radioStaging: RadioButtonPreference
     private lateinit var radioDevelopment: RadioButtonPreference

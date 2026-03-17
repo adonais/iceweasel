@@ -9,13 +9,14 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 
 /**
  * Settings related to the Search Optimization feature
  */
-class SearchOptimizationFragment : PreferenceFragmentCompat() {
+class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     override fun onResume() {
         super.onResume()
         showToolbar(getString(R.string.preferences_debug_settings_search_optimization))

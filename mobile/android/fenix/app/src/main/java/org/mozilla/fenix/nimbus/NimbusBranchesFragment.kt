@@ -21,6 +21,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.navigateWithBreadcrumb
 import org.mozilla.fenix.ext.settings
@@ -32,7 +33,7 @@ import mozilla.components.service.nimbus.R as nimbusR
 /**
  * A fragment to show the branches of a Nimbus experiment.
  */
-class NimbusBranchesFragment : Fragment() {
+class NimbusBranchesFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private lateinit var nimbusBranchesStore: NimbusBranchesStore
     private lateinit var nimbusBranchesView: NimbusBranchesView

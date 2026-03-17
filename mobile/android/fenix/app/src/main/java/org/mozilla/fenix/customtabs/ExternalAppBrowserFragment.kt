@@ -34,6 +34,7 @@ import org.mozilla.fenix.browser.CustomTabContextMenuCandidate
 import org.mozilla.fenix.components.toolbar.BrowserToolbarComposable
 import org.mozilla.fenix.components.toolbar.BrowserToolbarView
 import org.mozilla.fenix.customtabs.ext.updateCustomTabsColors
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
@@ -44,7 +45,7 @@ import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCoo
 /**
  * Fragment used for browsing the web within external apps.
  */
-class ExternalAppBrowserFragment : BaseBrowserFragment() {
+class ExternalAppBrowserFragment : BaseBrowserFragment(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<ExternalAppBrowserFragmentArgs>()
 

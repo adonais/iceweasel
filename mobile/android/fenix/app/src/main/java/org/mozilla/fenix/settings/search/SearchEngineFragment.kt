@@ -20,6 +20,7 @@ import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.navigateWithBreadcrumb
@@ -32,7 +33,10 @@ import org.mozilla.fenix.utils.canShowAddSearchWidgetPrompt
 import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
 import org.mozilla.gecko.search.SearchWidgetProvider
 
-class SearchEngineFragment : PreferenceFragmentCompat() {
+/**
+ * Settings screen allowing users to configure the browser search functionality.
+ */
+class SearchEngineFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(

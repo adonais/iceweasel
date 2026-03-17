@@ -20,6 +20,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.DefaultPendingIntentFactory
 import org.mozilla.fenix.components.DefaultShortcutManagerCompatWrapper
 import org.mozilla.fenix.components.PrivateShortcutCreateManager
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -30,7 +31,7 @@ import org.mozilla.fenix.settings.biometric.ext.isHardwareAvailable
 /**
  * Lets the user customize Private browsing options.
  */
-class PrivateBrowsingFragment : PreferenceFragmentCompat() {
+class PrivateBrowsingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var startForResult: ActivityResultLauncher<Intent>
 
     override fun onResume() {

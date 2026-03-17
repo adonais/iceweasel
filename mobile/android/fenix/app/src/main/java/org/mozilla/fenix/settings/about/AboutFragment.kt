@@ -25,6 +25,7 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentAboutBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
@@ -42,7 +43,7 @@ import org.mozilla.geckoview.BuildConfig as GeckoViewBuildConfig
  */
 class AboutFragment(
     private val toastHandler: ToastHandler = DefaultToastHandler(),
-) : Fragment(), AboutPageListener {
+) : Fragment(), AboutPageListener, SystemInsetsPaddedFragment {
 
     private lateinit var appName: String
     private var aboutPageAdapter: AboutPageAdapter? = null

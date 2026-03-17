@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
@@ -19,7 +20,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * Lets the user toggle telemetry on/off.
  */
-class DataChoicesFragment : Fragment() {
+class DataChoicesFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onCreateView(
         inflater: LayoutInflater,

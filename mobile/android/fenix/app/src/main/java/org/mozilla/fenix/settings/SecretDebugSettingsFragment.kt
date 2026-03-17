@@ -32,10 +32,14 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.metrics.MarketingAttributionService
 import org.mozilla.fenix.distributions.DefaultDistributionProviderChecker
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
 
-class SecretDebugSettingsFragment : Fragment() {
+/**
+ * Settings screen allowing users to see specific debug information available for the application.
+ */
+class SecretDebugSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onResume() {
         super.onResume()

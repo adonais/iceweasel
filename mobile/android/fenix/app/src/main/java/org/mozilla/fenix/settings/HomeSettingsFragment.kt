@@ -18,6 +18,7 @@ import org.mozilla.fenix.GleanMetrics.CustomizeHome
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.navigateWithBreadcrumb
 import org.mozilla.fenix.ext.settings
@@ -32,7 +33,7 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
  * User interactions with these preferences are persisted in [Settings] and may trigger
  * telemetry events via [CustomizeHome] metrics.
  */
-class HomeSettingsFragment : PreferenceFragmentCompat() {
+class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<HomeSettingsFragmentArgs>()
 

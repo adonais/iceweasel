@@ -16,6 +16,7 @@ import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStor
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.SecureFragment
 import org.mozilla.fenix.components.LogMiddleware
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.openToBrowser
@@ -33,7 +34,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * Defines the fragment containing the saved logins.
  */
-class SavedLoginsFragment : SecureFragment() {
+class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
 
     override fun onResume() {
         super.onResume()

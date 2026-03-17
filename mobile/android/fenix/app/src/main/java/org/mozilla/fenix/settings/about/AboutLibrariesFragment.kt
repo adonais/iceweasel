@@ -16,6 +16,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentAboutLibrariesBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.showToolbar
 import java.nio.charset.Charset
 import java.util.Locale
@@ -34,7 +35,7 @@ import java.util.Locale
  * extract the dependencies and their licenses, and this fragment
  * to show the extracted licenses to the end-user.
  */
-class AboutLibrariesFragment : Fragment(R.layout.fragment_about_libraries) {
+class AboutLibrariesFragment : Fragment(R.layout.fragment_about_libraries), SystemInsetsPaddedFragment {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val binding = FragmentAboutLibrariesBinding.bind(view)

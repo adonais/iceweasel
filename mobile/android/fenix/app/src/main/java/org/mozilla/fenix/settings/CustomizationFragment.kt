@@ -21,6 +21,7 @@ import org.mozilla.fenix.GleanMetrics.PullToRefreshInBrowser
 import org.mozilla.fenix.GleanMetrics.ToolbarSettings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.isTallWindow
 import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.ext.requireComponents
@@ -34,7 +35,7 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
  */
 
 @Suppress("TooManyFunctions")
-class CustomizationFragment : PreferenceFragmentCompat() {
+class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var radioLightTheme: RadioButtonPreference
     private lateinit var radioDarkTheme: RadioButtonPreference
     private lateinit var radioAutoBatteryTheme: RadioButtonPreference

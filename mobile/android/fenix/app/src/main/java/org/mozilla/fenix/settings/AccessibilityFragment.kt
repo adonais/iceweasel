@@ -10,6 +10,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -21,7 +22,7 @@ import org.mozilla.fenix.utils.Settings
  * Includes an automatic font sizing toggle. When turned on, font sizing follows the Android device settings.
  * When turned off, the font sizing can be controlled manually within the app.
  */
-class AccessibilityFragment : PreferenceFragmentCompat() {
+class AccessibilityFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<AccessibilityFragmentArgs>()
 

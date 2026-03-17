@@ -22,6 +22,7 @@ import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStor
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
@@ -34,7 +35,7 @@ import org.mozilla.fenix.utils.lastSavedFolderCache
 /**
  * Menu to edit the name, URL, and location of a bookmark item.
  */
-class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark) {
+class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark), SystemInsetsPaddedFragment {
 
     private val args by navArgs<EditBookmarkFragmentArgs>()
 
