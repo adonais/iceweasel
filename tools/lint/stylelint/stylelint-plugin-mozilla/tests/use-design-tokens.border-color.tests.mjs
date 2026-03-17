@@ -210,6 +210,11 @@ testRule({
       description:
         "Using a custom token that resolves to a system color, even if non-semantic, is valid.",
     },
+    {
+      code: ".bg { border-color: var(--custom-token, ButtonBorder); }",
+      description:
+        "Using a custom token that falls back to a system color is valid",
+    },
   ],
 
   reject: [
@@ -445,11 +450,10 @@ testRule({
     },
     {
       code: ".a { border-color: FieldText; }",
-      message: messages.rejected("FieldText", [
-        "border-color",
-        "border",
-        "outline",
-      ]),
+      message: messages.warning(
+        "FieldText",
+        "a border-color, border or outline design token"
+      ),
       description: "FieldText should use a border-color design token.",
     },
     {
