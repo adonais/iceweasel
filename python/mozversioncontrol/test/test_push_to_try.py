@@ -149,7 +149,13 @@ def test_push_to_try(repo, monkeypatch):
                 "-T",
                 "id.short(16)",
             ),
-            (str(tool), "debug", "snapshot"),
+            (
+                str(tool),
+                "log",
+                "-n0",
+                "-T",
+                '"snapshot: prepare_try_push"',
+            ),
             (
                 str(tool),
                 "operation",
@@ -168,7 +174,7 @@ def test_push_to_try(repo, monkeypatch):
             ),
             (str(tool), "file", "track", "extra-file"),
             (str(tool), "file", "track", "other/extra-file"),
-            (str(tool), "log", "-n0"),
+            (str(tool), "log", "-n0", "-T", '"snapshot: prepare_try_push"'),
             (
                 str(tool),
                 "bookmark",
