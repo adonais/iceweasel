@@ -282,6 +282,10 @@ class FloatRegisters {
     //
   /* clang-format on */
   using SetType = uint64_t;
+
+  static_assert(sizeof(SetType) * 8 >= Total,
+                "SetType should be large enough to enumerate all registers.");
+
   static const SetType AllSingleMask = (1ull << TotalSingle) - 1;
   static const SetType AllDoubleMask = ((1ull << TotalDouble) - 1)
                                        << TotalSingle;
