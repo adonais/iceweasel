@@ -261,14 +261,6 @@ def add_eager_cache_index_tasks(taskgraph, label_to_taskid, parameters, graph_co
 
 @register_morph
 def add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config):
-    return _add_try_task_duplicates(
-        taskgraph, label_to_taskid, parameters, graph_config
-    )
-
-
-# this shim function exists so we can call it from the unittests.
-# this works around an issue with the morph in upstream Taskgraph
-def _add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config):
     try_config = parameters.get("try_task_config", {})
     tasks = try_config.get("tasks", [])
     glob_tasks = {x.strip("-*") for x in tasks if x.endswith("-*")}

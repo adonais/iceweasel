@@ -112,7 +112,7 @@ def test_try_task_duplicates(make_taskgraph, graph_config, params, expected):
         task2.label: task2,
     })
 
-    taskgraph, label_to_taskid = morph._add_try_task_duplicates(
+    taskgraph, label_to_taskid = morph.add_try_task_duplicates(
         taskgraph, label_to_taskid, params, graph_config
     )
     for label in expected:
