@@ -9,7 +9,6 @@
 #include "TCPSocketParent.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -1163,10 +1162,6 @@ TCPSocket::Observe(nsISupports* aSubject, const char* aTopic,
 
 /* static */
 bool TCPSocket::ShouldTCPSocketExist(JSContext* aCx, JSObject* aGlobal) {
-  if (XRE_IsContentProcess() &&
-      !StaticPrefs::dom_tcpsocket_in_child_enabled()) {
-    return false;
-  }
   JS::Rooted<JSObject*> global(aCx, aGlobal);
   return nsContentUtils::ObjectPrincipal(global)->IsSystemPrincipal();
 }

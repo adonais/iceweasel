@@ -8,7 +8,6 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/net/NeckoCommon.h"
@@ -77,9 +76,6 @@ NS_IMETHODIMP_(MozExternalRefCountType) TCPSocketParent::Release(void) {
 mozilla::ipc::IPCResult TCPSocketParent::RecvOpen(
     const nsString& aHost, const uint16_t& aPort, const bool& aUseSSL,
     const bool& aUseArrayBuffers) {
-  if (!StaticPrefs::dom_tcpsocket_in_child_enabled()) {
-    return IPC_FAIL(this, "tcp socket not enabled");
-  }
   mSocket = new TCPSocket(nullptr, aHost, aPort, aUseSSL, aUseArrayBuffers);
   mSocket->SetSocketBridgeParent(this);
   NS_ENSURE_SUCCESS(mSocket->Init(nullptr), IPC_OK());
