@@ -116,6 +116,7 @@
 #endif
 
 #if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
+#  include <signal.h>
 #  include <ucontext.h>
 #endif
 

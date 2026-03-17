@@ -18,12 +18,12 @@
                                 // encoding_rs_mem.h and MOZ_HAS_JSRUST.
 #include "mozilla/Types.h"      // for MFBT_API
 
-#include <limits>    // for std::numeric_limits
 #include <limits.h>  // for CHAR_BIT
 #include <stddef.h>  // for size_t
 #include <stdint.h>  // for uint8_t
 
 #if MOZ_HAS_JSRUST()
+#  include <limits>  // for std::numeric_limits
 // Can't include mozilla/Encoding.h here.
 extern "C" {
 // Declared as uint8_t instead of char to match declaration in another header.

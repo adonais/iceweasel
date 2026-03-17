@@ -5,6 +5,7 @@
 #ifndef SystemTimeConverter_h
 #define SystemTimeConverter_h
 
+#include <cinttypes>
 #include <limits>
 #include <type_traits>
 #include "mozilla/ThreadSafety.h"

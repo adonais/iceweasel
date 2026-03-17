@@ -12,14 +12,17 @@
 #ifndef mozilla_FStream_h
 #define mozilla_FStream_h
 
-#include "mozilla/Char16.h"
-#include <istream>
-#include <ostream>
-#include <fstream>
 #if defined(__MINGW32__) && defined(__GLIBCXX__)
+#  include <istream>
+#  include <ostream>
 #  include "mozilla/UniquePtr.h"
 #  include <fcntl.h>
 #  include <ext/stdio_filebuf.h>
+#else
+#  if defined(XP_WIN)
+#    include "mozilla/Char16.h"
+#  endif
+#  include <fstream>
 #endif
 
 namespace mozilla {

@@ -14,8 +14,10 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
-#include <thread>
 #include <type_traits>
+#ifdef DEBUG
+#  include <thread>
+#endif
 
 namespace mozilla {
 

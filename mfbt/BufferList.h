@@ -12,8 +12,10 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <type_traits>
 #include <utility>
+#ifdef DEBUG
+#  include <type_traits>
+#endif
 
 // BufferList represents a sequence of buffers of data. A BufferList can choose
 // to own its buffers or not. The class handles writing to the buffers,
