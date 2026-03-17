@@ -46,7 +46,7 @@ class NoDispatchersSetMainDetector : Detector(), SourceCodeScanner {
             briefDescription = "Prohibits `Dispatchers.setMain` in test files",
             explanation = """
                 Using `Dispatchers.setMain` directly within test methods can lead to complex and hard-to-manage test setups.
-                It's preferable to use a JUnit TestRule (e.g., `MainCoroutineRule`, `MainLooperTestRule` or a custom local rule)
+                It's preferable to use a JUnit TestRule (e.g., `MainCoroutineRule` or a custom local rule)
                 to handle main dispatcher configuration. See their documentation for details on how to set up these rules, and when to use them.
                 This promotes consistency and simplifies test code.
             """.trimIndent(),

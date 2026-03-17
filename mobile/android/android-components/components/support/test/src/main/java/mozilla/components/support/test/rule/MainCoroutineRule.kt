@@ -46,12 +46,6 @@ import org.junit.runner.Description
  * }
  *```
  *
- * **Note on [MainLooperTestRule]:**
- * For tests, particularly in Robolectric, that need to manage tasks posted directly to the
- * Android `Looper.getMainLooper()` via `Handler.post()` (rather than `Dispatchers.Main` coroutines),
- * consider using `MainLooperTestRule`. See `MainLooperTestRule` documentation for more details
- * on when it's appropriate.
- *
  * @param testDispatcher The [TestDispatcher] to use.
  * Defaults to [UnconfinedTestDispatcher] which will eagerly enter `launch` or `async` blocks.
  * For more control over the execution order,you can provide a [StandardTestDispatcher].
