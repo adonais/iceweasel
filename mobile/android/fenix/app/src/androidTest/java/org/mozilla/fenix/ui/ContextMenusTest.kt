@@ -10,6 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
 import org.mozilla.fenix.helpers.Constants.PackageName.YOUTUBE_APP
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
@@ -21,7 +22,6 @@ import org.mozilla.fenix.helpers.TestAssetHelper.imageAsset
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickContextMenuItem
 import org.mozilla.fenix.ui.robots.clickPageObject
@@ -44,9 +44,14 @@ import org.mozilla.fenix.ui.robots.shareOverlay
  *
  */
 
-class ContextMenusTest : TestSetup() {
+class ContextMenusTest {
 
     @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
+
+    @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityIntentTestRule(
@@ -56,10 +61,10 @@ class ContextMenusTest : TestSetup() {
             ),
         ) { it.activity }
 
-    @get:Rule(order = 1)
+    @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
-    @Rule(order = 2)
+    @Rule
     @JvmField
     val retryTestRule = RetryTestRule(3)
 

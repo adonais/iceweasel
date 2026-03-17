@@ -9,9 +9,9 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.ui.efficiency.logging.LoggingBridge
 import org.mozilla.fenix.ui.efficiency.logging.TestLogging
 
@@ -38,9 +38,12 @@ abstract class BaseTest(
     private val skipOnboarding: Boolean = true,
     private val isMenuRedesignCFREnabled: Boolean = false,
     private val isPageLoadTranslationsPromptEnabled: Boolean = false,
-) : TestSetup() {
+) {
 
     @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    @get:Rule
     val composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *> =
         AndroidComposeTestRule(
             HomeActivityIntentTestRule(
@@ -52,7 +55,7 @@ abstract class BaseTest(
 
     protected val on: PageContext = PageContext(composeRule)
 
-    @get:Rule(order = 1)
+    @get:Rule
     val retryTestRule = RetryTestRule(3)
 
     /**
@@ -65,8 +68,7 @@ abstract class BaseTest(
      * - Makes it easier to evolve toward a more formal "test context" object later.
      */
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         if (TestLogging.reporter == null) {
             TestLogging.reporter = LoggingBridge.createReporter()
         }

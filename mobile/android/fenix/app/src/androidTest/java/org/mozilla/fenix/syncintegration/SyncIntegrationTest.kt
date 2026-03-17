@@ -19,17 +19,20 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestHelper
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.ui.robots.accountSettings
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.settingsSubMenuLoginsAndPassword
 
 @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-class SyncIntegrationTest : TestSetup() {
+class SyncIntegrationTest {
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
     val composeTestRule = AndroidComposeTestRule(HomeActivityIntentTestRule()) { it.activity }

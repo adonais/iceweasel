@@ -8,11 +8,15 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.ui.robots.navigationToolbar
 
-class AboutURITest : TestSetup() {
+class AboutURITest {
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
     @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(

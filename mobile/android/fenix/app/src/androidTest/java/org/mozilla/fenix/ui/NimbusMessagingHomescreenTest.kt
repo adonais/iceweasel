@@ -16,9 +16,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.experiments.nimbus.Res
 import org.mozilla.fenix.FenixApplication
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
 import org.mozilla.fenix.nimbus.Homescreen
@@ -29,10 +29,13 @@ import org.mozilla.fenix.ui.robots.homeScreen
  *
  *  Verifies a message can be displayed with all of the correct components
 **/
-class NimbusMessagingHomescreenTest : TestSetup() {
+class NimbusMessagingHomescreenTest {
     private var messageButtonLabel = "CLICK ME"
     private var messageText = "Some Nimbus Messaging text"
     private var messageTitle = "A Nimbus title"
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
     val homeActivityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides(
@@ -51,8 +54,7 @@ class NimbusMessagingHomescreenTest : TestSetup() {
         AndroidComposeTestRule(HomeActivityIntentTestRule.withDefaultSettingsOverrides()) { it.activity }
 
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         // Set up nimbus message
         FxNimbusMessaging.features.messaging.withInitializer { _, _ ->
             // FML generated objects.

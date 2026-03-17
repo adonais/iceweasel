@@ -14,6 +14,7 @@ import org.junit.Test
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
@@ -23,7 +24,6 @@ import org.mozilla.fenix.helpers.TestAssetHelper.videoPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
@@ -36,8 +36,15 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  *  - the settings effects on the app behavior
  *
  */
-class SettingsSitePermissionsTest : TestSetup() {
+class SettingsSitePermissionsTest {
     // Test page created and handled by the Mozilla mobile test-eng team
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
+
+    private val browserStore get() = fenixTestRule.browserStore
+
     private val permissionsTestPage = "https://mozilla-mobile.github.io/testapp/v2.0/permissions"
     private val permissionsTestPageOrigin = "https://mozilla-mobile.github.io"
     private val permissionsTestPageHost = "mozilla-mobile.github.io"

@@ -18,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
 import org.mozilla.fenix.helpers.Constants
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
@@ -27,12 +28,11 @@ import org.mozilla.fenix.helpers.TestAssetHelper.appLinksRedirectAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.navigationToolbar
 
-class AppLinksTest : TestSetup() {
+class AppLinksTest {
     private val youtubeSchemaUrlLink = itemContainingText("Youtube schema link")
     private val youtubeUrlLink = itemContainingText("Youtube link")
     private val intentSchemaUrlLink = itemContainingText("Intent schema link")
@@ -44,6 +44,11 @@ class AppLinksTest : TestSetup() {
     private val linkWithFallbackLink = itemContainingText("Link with fallback link")
     private val linkWithBrowserFallbackLink = itemContainingText("Link with browser fallback link")
     private val phoneSchemaLink = "tel://1234567890"
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
 
     @get:Rule
     val composeTestRule =

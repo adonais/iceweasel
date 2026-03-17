@@ -11,11 +11,11 @@ import org.junit.Test
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickRateButtonGooglePlay
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -25,7 +25,10 @@ import org.mozilla.fenix.ui.robots.homeScreen
  *
  */
 
-class SettingsAboutTest : TestSetup() {
+class SettingsAboutTest {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
     @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(

@@ -12,9 +12,9 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
 import org.mozilla.fenix.helpers.DataGenerationHelper.getSponsoredFxSuggestPlaceHolder
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.TestHelper
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
@@ -24,7 +24,9 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  *
  */
 
-class FirefoxSuggestTest : TestSetup() {
+class FirefoxSuggestTest {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
     val composeTestRule = AndroidComposeTestRule(

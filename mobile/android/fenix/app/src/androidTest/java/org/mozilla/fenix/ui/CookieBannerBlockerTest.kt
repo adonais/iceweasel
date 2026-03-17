@@ -12,9 +12,9 @@ import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.appContext
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
@@ -23,7 +23,10 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  *  Tests for verifying the new Cookie banner blocker option and functionality.
  */
 @Ignore("Disabled feature in: https://bugzilla.mozilla.org/show_bug.cgi?id=1940418")
-class CookieBannerBlockerTest : TestSetup() {
+class CookieBannerBlockerTest {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
     @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(

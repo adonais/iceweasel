@@ -14,10 +14,10 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.experiments.nimbus.HardcodedNimbusFeatures
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.TestHelper
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
 import org.mozilla.fenix.nimbus.Homescreen
@@ -29,17 +29,19 @@ import org.mozilla.fenix.ui.robots.surveyScreen
  *  Verifies a message can be displayed with all of the correct components
 **/
 
-class NimbusMessagingSurveyTest : TestSetup() {
+class NimbusMessagingSurveyTest {
     private lateinit var context: Context
     private lateinit var hardcodedNimbus: HardcodedNimbusFeatures
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true)) { it.activity }
 
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         context = TestHelper.appContext
 
         // Set up nimbus message

@@ -27,6 +27,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
 import org.mozilla.fenix.helpers.AppAndSystemHelper.verifyKeyboardVisibility
 import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
@@ -42,7 +43,6 @@ import org.mozilla.fenix.helpers.TestHelper.longTapSelectItem
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickContextMenuItem
 import org.mozilla.fenix.ui.robots.clickPageObject
@@ -64,11 +64,14 @@ import java.util.Locale
  *
  */
 
-class SearchTest : TestSetup() {
+class SearchTest {
     private val queryString: String = "firefox"
     private val generalEnginesList = listOf("DuckDuckGo", "Google", "Bing")
     private val topicEnginesList = listOf("Wikipedia (en)")
     private val firefoxSuggestHeader = getStringResource(R.string.firefox_suggest_header)
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
     val composeTestRule = AndroidComposeTestRule(

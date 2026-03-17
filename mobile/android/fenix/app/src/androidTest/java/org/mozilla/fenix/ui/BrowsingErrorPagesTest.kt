@@ -12,12 +12,12 @@ import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.setNetworkEnabled
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
@@ -27,7 +27,7 @@ import mozilla.components.browser.errorpages.R as errorpagesR
 /**
  * Tests that verify errors encountered while browsing websites: unsafe pages, connection errors, etc
  */
-class BrowsingErrorPagesTest : TestSetup() {
+class BrowsingErrorPagesTest {
     private val malwareWarning =
         getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_browsing_malware_uri_title)
     private val phishingWarning =
@@ -36,6 +36,11 @@ class BrowsingErrorPagesTest : TestSetup() {
         getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_browsing_unwanted_uri_title)
     private val harmfulSiteWarning =
         getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_harmful_uri_title)
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
 
     @get:Rule
     val composeTestRule =

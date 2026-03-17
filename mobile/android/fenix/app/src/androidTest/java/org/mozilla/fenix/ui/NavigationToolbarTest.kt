@@ -30,6 +30,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.setScreenOrientation
 import org.mozilla.fenix.helpers.AppAndSystemHelper.verifyKeyboardVisibility
 import org.mozilla.fenix.helpers.DataGenerationHelper.createCustomTabIntent
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
@@ -45,7 +46,6 @@ import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.verifyDarkThemeApplied
 import org.mozilla.fenix.helpers.TestHelper.verifyLightThemeApplied
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.ui.robots.browserScreen
@@ -66,7 +66,12 @@ import org.mozilla.fenix.ui.robots.searchScreen
  *  - Find in page
  */
 
-class NavigationToolbarTest : TestSetup() {
+class NavigationToolbarTest {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
+
     private val customTabActionButton = "CustomActionButton"
 
     private val bookmarkFolderName = "My Folder"

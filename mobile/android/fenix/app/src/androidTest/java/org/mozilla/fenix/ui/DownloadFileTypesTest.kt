@@ -11,9 +11,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.downloadRobot
 
@@ -24,8 +24,11 @@ import org.mozilla.fenix.ui.robots.downloadRobot
  *  - Verifies downloading of varying file types and the appearance inside the Downloads listing.
  **/
 @RunWith(Parameterized::class)
-class DownloadFileTypesTest(fileName: String) : TestSetup() {
+class DownloadFileTypesTest(fileName: String) {
     // Remote test page managed by Mozilla Mobile QA team at https://github.com/mozilla-mobile/testapp
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
     private val downloadTestPage = "https://storage.googleapis.com/mobile_test_assets/test_app/downloads.html"
     private var downloadFile: String = fileName
 

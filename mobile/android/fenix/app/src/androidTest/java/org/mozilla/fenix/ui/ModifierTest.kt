@@ -17,14 +17,16 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.helpers.TestSetup
+import org.mozilla.fenix.helpers.FenixTestRule
 
 private const val ON_SHOWN_ROOT_TAG = "onShownRoot"
 private const val ON_SHOWN_SETTLE_TIME_MS = 1000
 private const val ON_SHOWN_INDEX = 15
 private const val ON_SHOWN_NODE_COUNT = 30
 
-class ModifierTest : TestSetup() {
+class ModifierTest {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
     val composeTestRule = createComposeRule()

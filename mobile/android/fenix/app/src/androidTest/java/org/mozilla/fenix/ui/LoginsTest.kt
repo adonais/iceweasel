@@ -15,6 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
@@ -28,7 +29,6 @@ import org.mozilla.fenix.helpers.TestHelper.scrollToElementByText
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
@@ -42,7 +42,12 @@ import org.mozilla.fenix.ui.robots.setPageObjectText
  * - save login prompts.
  * - saving logins based on the user's preferences.
  */
-class LoginsTest : TestSetup() {
+class LoginsTest {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
+
     @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(
@@ -53,8 +58,7 @@ class LoginsTest : TestSetup() {
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
             val autofillManager: AutofillManager =
                 TestHelper.appContext.getSystemService(AutofillManager::class.java)

@@ -5,10 +5,7 @@
 package org.mozilla.fenix.ui
 
 import android.content.Context
-import android.os.Build
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.test.rule.GrantPermissionRule
-import androidx.test.rule.GrantPermissionRule.grant
 import mozilla.components.service.nimbus.messaging.FxNimbusMessaging
 import org.json.JSONObject
 import org.junit.Before
@@ -16,19 +13,22 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.experiments.nimbus.HardcodedNimbusFeatures
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.mDevice
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.ui.robots.notificationShade
 
 /**
  * A UI test for testing the notification surface for Nimbus Messaging.
  */
-class NimbusMessagingNotificationTest : TestSetup() {
+class NimbusMessagingNotificationTest {
     private lateinit var context: Context
     private lateinit var hardcodedNimbus: HardcodedNimbusFeatures
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
     val composeTestRule =
@@ -36,17 +36,8 @@ class NimbusMessagingNotificationTest : TestSetup() {
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true),
         ) { it.activity }
 
-    @get:Rule
-    val grantPermissionRule: GrantPermissionRule =
-        if (Build.VERSION.SDK_INT >= 33) {
-            grant("android.permission.POST_NOTIFICATIONS")
-        } else {
-            grant()
-        }
-
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         context = TestHelper.appContext
     }
 

@@ -9,6 +9,7 @@ import mozilla.components.concept.engine.mediasession.MediaSession
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper
 import org.mozilla.fenix.helpers.RetryTestRule
@@ -16,7 +17,6 @@ import org.mozilla.fenix.helpers.TestAssetHelper.audioPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.videoPageAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
@@ -30,17 +30,23 @@ import org.mozilla.fenix.ui.robots.notificationShade
  *  - a media notification icon is displayed on the homescreen for the tab playing media content
  *  Note: this test only verifies media notifications, not media itself
  */
-class MediaNotificationTest : TestSetup() {
+class MediaNotificationTest {
     @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val browserStore get() = fenixTestRule.browserStore
+
+    @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule(order = 1)
+    @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
-    @Rule(order = 2)
+    @Rule
     @JvmField
     val retryTestRule = RetryTestRule(3)
 

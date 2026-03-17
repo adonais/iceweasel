@@ -12,6 +12,7 @@ import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.bringAppToForeground
 import org.mozilla.fenix.helpers.AppAndSystemHelper.putAppToBackground
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
@@ -19,14 +20,13 @@ import org.mozilla.fenix.helpers.TestAssetHelper.creditCardFormAsset
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 import java.time.LocalDate
 
-class CreditCardAutofillTest : TestSetup() {
+class CreditCardAutofillTest {
     object MockCreditCard1 {
         const val MOCK_CREDIT_CARD_NUMBER = "5555555555554444"
         const val MOCK_LAST_CARD_DIGITS = "4444"
@@ -35,6 +35,11 @@ class CreditCardAutofillTest : TestSetup() {
         val MOCK_EXPIRATION_YEAR = (LocalDate.now().year + 1).toString()
         val MOCK_EXPIRATION_MONTH_AND_YEAR = "02/${(LocalDate.now().year + 1)}"
     }
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
 
     object MockCreditCard2 {
         const val MOCK_CREDIT_CARD_NUMBER = "2720994326581252"

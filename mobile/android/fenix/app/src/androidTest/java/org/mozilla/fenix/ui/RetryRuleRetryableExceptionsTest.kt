@@ -15,8 +15,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.ThrowableCase
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -24,7 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger
 @LargeTest
 class RetryRuleRetryableExceptionsTest(
     private val case: ThrowableCase,
-) : TestSetup() {
+) {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     private val attempts = AtomicInteger(0)
 

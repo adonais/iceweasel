@@ -27,14 +27,17 @@ import org.mozilla.fenix.crashes.UnsubmittedCrashDialog
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.TestHelper
-import org.mozilla.fenix.helpers.TestSetup
 
-class UnsubmittedCrashDialogTest : TestSetup() {
+class UnsubmittedCrashDialogTest {
     private lateinit var fakeContext: Context
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @Before
     fun setup() {
@@ -44,7 +47,7 @@ class UnsubmittedCrashDialogTest : TestSetup() {
         every { fakeContext.startActivity(any()) } returns mockk()
     }
 
-    @get:Rule(order = 0)
+    @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityTestRule.withDefaultSettingsOverrides(useNewCrashReporterFlow = true),

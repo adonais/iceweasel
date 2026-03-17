@@ -8,8 +8,8 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.DeepLinkRobot
 
@@ -26,7 +26,10 @@ import org.mozilla.fenix.ui.robots.DeepLinkRobot
  *  - fenix://settings_logins — take the user to the settings page to do with logins (not the saved logins).
  **/
 
-class DeepLinkTest : TestSetup() {
+class DeepLinkTest {
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
     @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(

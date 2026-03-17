@@ -12,6 +12,7 @@ import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertYoutubeAppOpens
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
@@ -22,7 +23,6 @@ import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -33,10 +33,15 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  *
  */
 
-class SettingsAdvancedTest : TestSetup() {
+class SettingsAdvancedTest {
     private val youTubeSchemaLink = itemContainingText("Youtube schema link")
     private val playStoreLink = itemContainingText("Playstore link")
     private val playStoreUrl = "play.google.com"
+
+    @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
 
     @get:Rule
     val composeTestRule =
@@ -50,8 +55,7 @@ class SettingsAdvancedTest : TestSetup() {
     lateinit var externalLinksPage: TestAssetHelper.TestAsset
 
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         externalLinksPage = mockWebServer.externalLinksAsset
     }
 

@@ -8,10 +8,10 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.TestAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.gcpTestAsset
-import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
@@ -20,10 +20,15 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  * Tests for Global Privacy Control setting.
  */
 
-class GlobalPrivacyControlTest : TestSetup() {
+class GlobalPrivacyControlTest {
     private lateinit var gpcPage: TestAsset
 
     @get:Rule(order = 0)
+    val fenixTestRule: FenixTestRule = FenixTestRule()
+
+    private val mockWebServer get() = fenixTestRule.mockWebServer
+
+    @get:Rule
     val composeTestRule =
         AndroidComposeTestRule(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(
@@ -31,12 +36,11 @@ class GlobalPrivacyControlTest : TestSetup() {
             ),
         ) { it.activity }
 
-    @get:Rule(order = 1)
+    @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
     @Before
-    override fun setUp() {
-        super.setUp()
+    fun setUp() {
         gpcPage = mockWebServer.gcpTestAsset
     }
 
