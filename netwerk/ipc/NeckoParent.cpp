@@ -548,6 +548,10 @@ mozilla::ipc::IPCResult NeckoParent::RecvPDNSRequestConstructor(
     const nsACString& aTrrServer, const int32_t& aPort, const uint16_t& aType,
     const OriginAttributes& aOriginAttributes,
     const nsIDNSService::DNSFlags& aFlags) {
+  if (!aTrrServer.IsEmpty()) {
+    return IPC_FAIL(this, "Content process should not specify TRR server");
+  }
+
   RefPtr<DNSRequestParent> actor = static_cast<DNSRequestParent*>(aActor);
   RefPtr<DNSRequestHandler> handler =
       actor->GetDNSRequest()->AsDNSRequestHandler();
