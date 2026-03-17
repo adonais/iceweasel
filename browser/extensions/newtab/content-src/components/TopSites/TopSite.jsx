@@ -433,7 +433,7 @@ export class TopSiteLink extends React.PureComponent {
                 {link.searchTopSite && (
                   <div className="top-site-icon search-topsite" />
                 )}
-                {title || <br />}
+                {title}
               </span>
               <span
                 className="sponsored-label"
