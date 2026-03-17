@@ -346,6 +346,12 @@ export class BrowserTestUtilsChild extends JSWindowActorChild {
         left += rect.width / 2;
         top += rect.height / 2;
       }
+    } else {
+      dump(
+        `Target not found for selector ${data.target} ` +
+          `and targetFn ${data.targetFn} ` +
+          `in document ${this.document.documentURI}\n`
+      );
     }
 
     let result;
