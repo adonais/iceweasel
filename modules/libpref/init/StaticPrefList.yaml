@@ -19649,6 +19649,12 @@
   value: true
   mirror: always
 
+# Whether use native GTK emoji selection dialog.
+- name: widget.gtk.native-emoji-dialog
+  type: bool
+  value: true
+  mirror: always
+
 #ifdef MOZ_WAYLAND
 - name: widget.wayland.fractional-scale.enabled
   type: bool

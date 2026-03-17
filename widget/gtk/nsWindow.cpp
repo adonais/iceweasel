@@ -10007,6 +10007,10 @@ void nsWindow::SetTextInputArea(GdkRectangle aCursorArea) {
 }
 
 void nsWindow::InsertEmoji() {
+  if (!StaticPrefs::widget_gtk_native_emoji_dialog()) {
+    return;
+  }
+
   if (mIsDestroyed || !mIMContext || !mIMContext->IsEditable()) {
     LOG("nsWindow::InsertEmoji() failed, mIMContext [%p] editable [%d]",
         (void*)mIMContext, mIMContext ? mIMContext->IsEditable() : 0);
