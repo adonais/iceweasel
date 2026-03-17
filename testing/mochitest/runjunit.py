@@ -49,6 +49,7 @@ class JUnitTestRunner(MochitestDesktop):
         self.verbose = False
         self.http3Server = None
         self.http2Server = None
+        self.mozHttp2Server = None
         self.dohServer = None
         if (
             options.log_tbpl_level == "debug"
