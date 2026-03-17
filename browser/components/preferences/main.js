@@ -4162,7 +4162,7 @@ SettingGroupManager.registerGroups({
         items: [
           {
             id: "popupPolicyButton",
-            l10nId: "permissions-block-popups-exceptions-button3",
+            l10nId: "permissions-block-popups-exceptions-button2",
             control: "moz-box-button",
             controlAttrs: {
               "search-l10n-ids":
