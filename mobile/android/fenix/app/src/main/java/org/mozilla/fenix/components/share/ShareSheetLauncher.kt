@@ -4,6 +4,13 @@
 
 package org.mozilla.fenix.components.share
 
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.graphics.drawable.Icon
+import android.os.Build
+import android.service.chooser.ChooserAction
+import androidx.annotation.RequiresApi
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import mozilla.components.browser.state.action.ShareResourceAction
@@ -11,10 +18,12 @@ import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.support.ktx.android.content.share
+import mozilla.components.support.ktx.android.content.shareWithChooserActions
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogFragmentDirections
 import org.mozilla.fenix.ext.nav
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Interface for handling share events and launching the appropriate share sheet.
@@ -110,10 +119,45 @@ class ShareSheetLauncherImpl(
     ) {
         val context = navController.context
         dismissMenu(title, url, id, isCustomTab)
-        context.share(
-            text = url,
-            subject = title ?: "",
+        if (id != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            context.shareWithChooserActions(
+                text = url,
+                subject = title ?: "",
+                actions = arrayOf(savePDFChooserAction(context, id)),
+            )
+        } else {
+            context.share(text = url, subject = title ?: "")
+        }
+    }
+
+    /**
+     * Create a [ChooserAction] for saving the current page as a PDF.
+     *
+     * @param context The context used to create intents.
+     * @param id The session ID of the tab to save as PDF.
+     * @return A [ChooserAction] that can be added to the share intent chooser.
+     */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun savePDFChooserAction(context: Context, id: String): ChooserAction {
+        val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_save_file_24)
+
+        val actionIntent = Intent(context, SaveToPdfReceiver::class.java).apply {
+            action = SAVE_PDF_ACTION
+            putExtra(TAB_ID_KEY, id)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            id.hashCode(),
+            actionIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+        return ChooserAction.Builder(
+            icon,
+            context.getString(R.string.share_save_to_pdf),
+            pendingIntent,
+        ).build()
     }
 
     /**
@@ -154,3 +198,6 @@ class ShareSheetLauncherImpl(
         )
     }
 }
+
+internal const val SAVE_PDF_ACTION = "org.mozilla.fenix.ACTION_SAVE_TO_PDF"
+internal const val TAB_ID_KEY = "tabID"

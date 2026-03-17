@@ -823,6 +823,13 @@
                 <action android:name="com.attribution.SYSTEM_INSTALLER_REFERRER" />
             </intent-filter>
         </receiver>
+
+        <receiver android:name="org.mozilla.fenix.components.share.SaveToPdfReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.mozilla.fenix.ACTION_SAVE_TO_PDF" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
