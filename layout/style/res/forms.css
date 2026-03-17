@@ -247,7 +247,8 @@ select::-moz-select-content {
   user-select: none;
 }
 
-select::-moz-select-picker-icon {
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+select::picker-icon {
   display: inline-block;
   appearance: auto;
   -moz-default-appearance: -moz-menulist-arrow-button;
