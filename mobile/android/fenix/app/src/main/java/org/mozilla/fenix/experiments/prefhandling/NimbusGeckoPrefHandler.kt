@@ -121,6 +121,35 @@ class NimbusGeckoPrefHandler(
     }
 
     /**
+     * Fetches specified preferences and adds them to the [preferenceTypes] variable for reference.
+     *
+     * @param prefs The preferences that we need to know type information for.
+     */
+    @OptIn(ExperimentalAndroidComponentsApi::class)
+    private fun fetchPrefTypeInfo(prefs: List<String>): Deferred<Boolean> {
+        val completable = CompletableDeferred<Boolean>()
+        geckoScope.launch {
+            try {
+                engine.value.getBrowserPrefs(
+                    prefs = prefs,
+                    onSuccess = { prefInfo ->
+                        prefInfo.associateTo(preferenceTypes) { it.pref to it.prefType }
+                        completable.complete(true)
+                    },
+                    onError = {
+                        logger.error("Error getting preference type info from Gecko")
+                        completable.complete(false)
+                    },
+                )
+            } catch (e: IllegalThreadStateException) {
+                logger.error("Error getting preference state from Gecko", e)
+                completable.complete(false)
+            }
+        }
+        return completable
+    }
+
+    /**
      * Handles the errors stored in [enrollmentErrors], and unenrolls from Nimbus experiments for the
      * preferences that failed to set.
      *
@@ -151,6 +180,11 @@ class NimbusGeckoPrefHandler(
     @OptIn(ExperimentalAndroidComponentsApi::class)
     override fun setGeckoPrefsOriginalValues(originalGeckoPrefs: List<OriginalGeckoPref>) {
         geckoScope.launch {
+            // We need type information to correctly revert
+            if (preferenceTypes.isEmpty() || originalGeckoPrefs.any { it.pref !in preferenceTypes }) {
+                fetchPrefTypeInfo(originalGeckoPrefs.map { it.pref }).await()
+            }
+
             val (prefsWithValues, prefsToReset) = originalGeckoPrefs.partition { it.value != null }
 
             // Set elements that we have values we can restore back to
@@ -203,6 +237,12 @@ class NimbusGeckoPrefHandler(
         }
 
         geckoScope.launch {
+            // All preference values from Nimbus arrive as strings.
+            // Type information from gecko is needed to know how to parse.
+            if (preferenceTypes.isEmpty() || newPrefsState.any { it.prefString() !in preferenceTypes }) {
+                fetchPrefTypeInfo(newPrefsState.map { it.prefString() }).await()
+            }
+
             val setters: List<SetBrowserPreference<*>> =
                 createSettersFromGeckoPrefStates(newPrefsState, preferenceTypes)
 
