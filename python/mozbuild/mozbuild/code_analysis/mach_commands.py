@@ -24,6 +24,12 @@ from mozbuild.controller.clobber import Clobberer
 from mozbuild.util import cpu_count
 
 
+# FIXME: use itertools.batched when moving to python 3.12
+def batched(iterable, n):
+    for ndx in range(0, len(iterable), n):
+        yield iterable[ndx : ndx + n]
+
+
 def build_repo_relative_path(abs_path, repo_path):
     """Build path relative to repository root"""
 
@@ -341,16 +347,6 @@ def check(
     # Filter source to remove excluded files
     source = _generate_path_list(command_context, sources, verbose=verbose)
 
-    if not sources or not source:
-        command_context.log(
-            logging.WARNING,
-            "static-analysis",
-            {},
-            "There are no files eligible for analysis. Please note that 'header' files "
-            "cannot be used for analysis since they do not consist compilation units.",
-        )
-        return 0
-
     cwd = command_context.topobjdir
 
     monitor = StaticAnalysisMonitor(
@@ -365,17 +361,16 @@ def check(
     with StaticAnalysisOutputManager(
         command_context.log_manager, monitor, footer
     ) as output_manager:
-        import math
-
-        batch_size = int(math.ceil(float(len(source)) / cpu_count()))
-        for i in range(0, len(source), batch_size):
+        nproc = cpu_count()
+        batch_size = max((len(source) + nproc - 1) // nproc, 1)
+        for batch in batched(source, batch_size):
             args = _get_clang_tidy_command(
                 command_context,
                 clang_paths,
                 compilation_commands_path,
                 checks=checks,
                 header_filter=header_filter,
-                sources=source[i : (i + batch_size)],
+                sources=batch,
                 jobs=jobs,
                 fix=fix,
                 verbose=verbose,
@@ -397,6 +392,16 @@ def check(
         # Write output file
         if output is not None:
             output_manager.write(output, format)
+
+    if not sources or not source:
+        command_context.log(
+            logging.WARNING,
+            "static-analysis",
+            {},
+            "There are no files eligible for analysis. Please note that 'header' files "
+            "cannot be used for analysis since they do not consist compilation units.",
+        )
+        return 0
 
     return rc
 
