@@ -312,12 +312,21 @@ class ArenaCollection {
   void SetDefaultMaxDirtyPageModifier(int32_t aModifier) {
     {
       MutexAutoLock lock(mLock);
+      bool decreased = aModifier < mDefaultMaxDirtyPageModifier;
       mDefaultMaxDirtyPageModifier = aModifier;
       for (auto* arena : iter()) {
         // We can only update max-dirty for main-thread-only arenas from the
         // main thread.
         if (!arena->IsMainThreadOnly() || IsOnMainThreadWeak()) {
           arena->UpdateMaxDirty();
+          if (decreased) {
+            purge_action_t action;
+            {
+              MaybeMutexAutoLock arena_lock(arena->mLock);
+              action = arena->ShouldStartPurge();
+            }
+            arena->MayDoOrQueuePurge(action, "SetDefaultMaxDirtyPageModifier");
+          }
         }
       }
     }
