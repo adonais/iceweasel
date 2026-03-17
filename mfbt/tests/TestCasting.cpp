@@ -8,11 +8,11 @@
 
 #include <stdint.h>
 #include <cstdint>
+#include <cmath>
 #include <limits>
 #include <type_traits>
 #include <iostream>
 #include <tuple>
-#include <type_traits>
 
 using mozilla::AssertedCast;
 using mozilla::BitwiseCast;
@@ -41,6 +41,60 @@ static void TestBitwiseCast() {
   MOZ_RELEASE_ASSERT(BitwiseCast<int>(int(8675309)) == int(8675309));
   UintUlongBitwiseCast<unsigned int, unsigned long>::test();
 }
+
+// Disable optimizations so that the compiler won't inline fully BitwiseCast,
+// otherwise it's not possible to test that floating point return values are
+// passed on the x87 stack.
+#if defined(__clang__)
+#  define MOZ_NEVER_OPTIMIZE [[clang::optnone]]
+#elif defined(__GNUC__)
+#  define MOZ_NEVER_OPTIMIZE __attribute__((optimize("O0")))
+#else
+#  define MOZ_NEVER_OPTIMIZE /* no support */
+#endif
+
+MOZ_NEVER_OPTIMIZE static void TestBitwiseCastNaN() {
+  // Test that the outparam version of BitwiseCast preserves all NaN bits and
+  // doesn't silently turn signalling into quiet NaNs.
+
+  // SNaN and QNaN according to x86 and ARM conventions. Other architectures
+  // may use other conventions where the most significant fraction bit is
+  // flipped.
+
+  for (uint32_t nan : {
+           0x7f80'0001,  // Smallest SNaN
+           0x7fbf'ffff,  // Largest SNaN
+           0x7fc0'0000,  // Smallest QNaN
+           0x7fff'ffff,  // Largest QNaN
+       }) {
+    float f;
+    BitwiseCast<float>(nan, &f);
+    MOZ_RELEASE_ASSERT(std::isnan(f));
+
+    uint32_t bits;
+    BitwiseCast<uint32_t>(f, &bits);
+
+    MOZ_RELEASE_ASSERT(bits == nan);
+  }
+
+  for (uint64_t nan : {
+           UINT64_C(0x7ff0'0000'0000'0001),  // Smallest SNaN
+           UINT64_C(0x7ff7'ffff'ffff'ffff),  // Largest SNaN
+           UINT64_C(0x7ff8'0000'0000'0000),  // Smallest QNaN
+           UINT64_C(0x7fff'ffff'ffff'ffff),  // Largest QNaN
+       }) {
+    double d;
+    BitwiseCast<double>(nan, &d);
+    MOZ_RELEASE_ASSERT(std::isnan(d));
+
+    uint64_t bits;
+    BitwiseCast<uint64_t>(d, &bits);
+
+    MOZ_RELEASE_ASSERT(bits == nan);
+  }
+}
+
+#undef MOZ_NEVER_OPTIMIZE
 
 static void TestSameSize() {
   MOZ_RELEASE_ASSERT((IsInBounds<int16_t, int16_t>(int16_t(0))));
@@ -381,6 +435,7 @@ void TestSaturatingCast() {
 
 int main() {
   TestBitwiseCast();
+  TestBitwiseCastNaN();
 
   TestSameSize();
   TestToBiggerSize();

@@ -50,7 +50,9 @@ namespace mozilla {
  */
 template <typename To, typename From>
 inline void BitwiseCast(const From aFrom, To* aResult) {
-  // FIXME: use std::bit_cast once we move to C++20
+  // FIXME: Use std::bit_cast for the value returning version once we move to
+  // C++20 and minimum GCC to 11. The outparam version can't use std::bit_cast
+  // because of the x87 stack issue described above.
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 11)
   *aResult = __builtin_bit_cast(To, aFrom);
 #else
