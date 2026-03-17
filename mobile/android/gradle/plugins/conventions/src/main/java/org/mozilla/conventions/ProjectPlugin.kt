@@ -10,6 +10,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySubstitution
 import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.plugins.AppliedPlugin
 import java.io.File
 
 class ProjectPlugin : Plugin<Project> {
@@ -28,6 +29,7 @@ class ProjectPlugin : Plugin<Project> {
         }
 
         configureBuildDirectory(project, topsrcdir, topobjdir)
+        configureJniKeepDebugSymbols(project)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
     }
@@ -51,6 +53,23 @@ class ProjectPlugin : Plugin<Project> {
             // non-gradle build system.
             project.layout.buildDirectory.set(topObjPath.resolve("gradle/build").resolve(relativePath).toFile())
         }
+    }
+
+    // This explicitly disables stripping of native libraries in our projects to match the existing
+    // implicit behaviour. Our projects do not specify the `ndkVersion` for our main Android builds
+    // and so stripping would otherwise fail with a warning. Note that gecko builds themselves will
+    // already strip the *.so files when compiled as release targets.
+    @Suppress("UNCHECKED_CAST")
+    private fun configureJniKeepDebugSymbols(project: Project) {
+        val action = Action<AppliedPlugin> {
+            val android = project.extensions.getByName("android")
+            val packagingOptions = android.javaClass.getMethod("getPackagingOptions").invoke(android)
+            val jniLibs = packagingOptions.javaClass.getMethod("getJniLibs").invoke(packagingOptions)
+            val keepDebugSymbols = jniLibs.javaClass.getMethod("getKeepDebugSymbols").invoke(jniLibs)
+            (keepDebugSymbols as MutableSet<String>).add("**/*.so")
+        }
+        project.pluginManager.withPlugin("com.android.library", action)
+        project.pluginManager.withPlugin("com.android.application", action)
     }
 
     private fun configureAppServicesSubstitution(
