@@ -1280,6 +1280,10 @@ ModuleObject* ModuleObject::getCycleRoot() const {
   return cyclicModuleFields()->cycleRoot;
 }
 
+bool ModuleObject::hasCycleRoot() const {
+  return bool(cyclicModuleFields()->cycleRoot);
+}
+
 LoadedModuleMap& ModuleObject::loadedModules() {
   return cyclicModuleFields()->loadedModules;
 }

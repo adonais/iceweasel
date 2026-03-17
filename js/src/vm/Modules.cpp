@@ -1912,34 +1912,21 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
     return false;
   }
 
-  // Note: we return early in the error case, as the spec assumes we can get the
-  // cycle root of |module| which may not be available.
-  if (module->hadEvaluationError()) {
-    Rooted<PromiseObject*> capability(cx);
-    if (!module->hasTopLevelCapability()) {
-      capability = ModuleObject::createTopLevelCapability(cx, module);
-      if (!capability) {
-        return false;
-      }
-
-      Rooted<Value> error(cx, module->evaluationError());
-      if (!ModuleObject::topLevelCapabilityReject(cx, module, error)) {
-        return false;
-      }
-    }
-
-    capability = module->topLevelCapability();
-    MOZ_ASSERT(JS::GetPromiseState(capability) == JS::PromiseState::Rejected);
-    MOZ_ASSERT(JS::GetPromiseResult(capability) == module->evaluationError());
-    result.set(ObjectValue(*capability));
-    return true;
-  }
-
   // Step 3. If module.[[Status]] is evaluating-async or evaluated, set module
   //         to module.[[CycleRoot]].
   if (module->status() == ModuleStatus::EvaluatingAsync ||
       module->status() == ModuleStatus::Evaluated) {
-    module = module->getCycleRoot();
+    // a. If module.[[CycleRoot]] is not empty, then
+    if (module->hasCycleRoot()) {
+      // i. Set module to module.[[CycleRoot]].
+      module = module->getCycleRoot();
+    } else {
+      // b. Else
+      //   i. Assert: module.[[Status]] is evaluated and
+      //      module.[[EvaluationError]] is a throw completion.
+      MOZ_ASSERT((module->status() == ModuleStatus::Evaluated) &&
+                 module->hadEvaluationError());
+    }
   }
 
   // Step 4. If module.[[TopLevelCapability]] is not empty, then:
