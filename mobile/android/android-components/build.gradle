@@ -137,10 +137,6 @@ subprojects {
                 lintChecks project(':components:tooling-lint')
             }
 
-            kotlin {
-                jvmToolchain(config.jvmTargetCompatibility)
-            }
-
             android {
                 // We can't have one baseline file at the root of android-components because
                 // this is not a project module and we would have to coordinate every module to
