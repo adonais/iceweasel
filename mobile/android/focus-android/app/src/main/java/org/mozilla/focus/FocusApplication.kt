@@ -330,5 +330,6 @@ open class FocusApplication : Application(), Provider {
         )
     }
 
-    override val workManagerConfiguration = Builder().setMinimumLoggingLevel(INFO).build()
+    override val workManagerConfiguration
+        get() = Builder().setMinimumLoggingLevel(INFO).build()
 }

@@ -1191,7 +1191,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
     }
 
-    override val workManagerConfiguration = Builder().setMinimumLoggingLevel(INFO).build()
+    override val workManagerConfiguration
+        get() = Builder().setMinimumLoggingLevel(INFO).build()
 
     @OptIn(DelicateCoroutinesApi::class)
     open fun downloadWallpapers() {
