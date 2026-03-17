@@ -151,6 +151,8 @@ namespace InspectorUtils {
   // Given a DOM element, return the anchor named `anchorName`, or the default
   // anchor otherwise.
   InspectorAnchorElement? getAnchorFor(Element element, optional DOMString? anchorName = null);
+  // Given a DOM element, return a list of valid anchor anchor names.
+  sequence<DOMString> getAnchorNamesFor(Element element);
 };
 
 enum InspectorAnchorType {

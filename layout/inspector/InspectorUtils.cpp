@@ -1396,4 +1396,16 @@ void InspectorUtils::GetAnchorFor(GlobalObject&, Element& aElement,
   result.mType = type;
 }
 
+/* static */
+void InspectorUtils::GetAnchorNamesFor(GlobalObject& aGlobalObject,
+                                       Element& aElement,
+                                       nsTArray<nsString>& aResult) {
+  auto* frame = aElement.GetPrimaryFrame(FlushType::Frames);
+  if (!frame || !frame->IsAbsolutelyPositioned()) {
+    return;
+  }
+
+  frame->PresShell()->CollectAnchorNames(frame, aResult);
+}
+
 }  // namespace mozilla::dom

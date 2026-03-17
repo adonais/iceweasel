@@ -318,6 +318,8 @@ class InspectorUtils {
   static uint16_t GetGridContainerType(GlobalObject&, Element&);
   static void GetAnchorFor(GlobalObject&, Element&, const nsAString& aName,
                            Nullable<InspectorAnchorElement>&);
+  static void GetAnchorNamesFor(GlobalObject& aGlobal, Element&,
+                                nsTArray<nsString>& aResult);
 };
 
 }  // namespace mozilla::dom
