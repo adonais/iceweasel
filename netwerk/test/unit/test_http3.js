@@ -131,10 +131,6 @@ add_task(async function test_slow_receiver() {
   await do_test_slow_receiver(httpsOrigin, h3Route);
 });
 
-add_task(async function test_unknown_reset() {
-  await do_test_unknown_reset(httpsOrigin);
-});
-
 // This test should be at the end, because it will close http3
 // connection and the transaction will switch to already existing http2
 // connection.

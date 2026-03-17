@@ -3095,8 +3095,9 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
       return NS_ERROR_UNEXPECTED;
     }
 
-    // There is no bounds checking on the error code. We provide special
-    // handling for a few cases; all others trigger a retry.
+    // There is no bounds checking on the error code.. we provide special
+    // handling for a couple of cases and all others (including unknown) are
+    // equivalent to cancel.
     if (mDownstreamRstReason == REFUSED_STREAM_ERROR) {
       streamCleanupCode = NS_ERROR_NET_RESET;  // can retry this 100% safely
       mInputFrameDataStream->ReuseConnectionOnRestartOK(true);
@@ -3106,21 +3107,10 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
       mInputFrameDataStream->DisableSpdy();
       // actually allow restart by unsticking
       mInputFrameDataStream->MakeNonSticky();
-    } else if (mDownstreamRstReason == CANCEL_ERROR ||
-               mDownstreamRstReason == NO_HTTP_ERROR) {
-      // The server cancelled or gracefully closed this stream; do not retry.
+    } else {
       streamCleanupCode = mInputFrameDataStream->RecvdData()
                               ? NS_ERROR_NET_PARTIAL_TRANSFER
                               : NS_ERROR_NET_INTERRUPT;
-    } else {
-      // Unrecognized RST_STREAM error code. Use NS_ERROR_NET_RESET so the
-      // transaction restart path retries the request.
-      if (mInputFrameDataStream->RecvdData()) {
-        streamCleanupCode = NS_ERROR_NET_PARTIAL_TRANSFER;
-      } else {
-        streamCleanupCode = NS_ERROR_NET_RESET;
-        mInputFrameDataStream->ReuseConnectionOnRestartOK(true);
-      }
     }
 
     if (mDownstreamRstReason == COMPRESSION_ERROR) {
