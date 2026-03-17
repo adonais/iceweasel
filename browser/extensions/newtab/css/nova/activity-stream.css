@@ -839,7 +839,7 @@ main section {
 }
 @media (min-width: 1122px) {
   .top-sites-list {
-    grid-template-columns: repeat(8, auto);
+    grid-template-columns: repeat(var(--top-sites-max-per-row, 8), auto);
   }
 }
 .top-sites-list a {
@@ -922,6 +922,14 @@ main section {
 }
 @media (min-width: 1122px) {
   .top-sites-list .hide-for-narrow {
+    display: inline-block;
+  }
+}
+.top-sites-list .hide-for-small {
+  display: none;
+}
+@media (min-width: 1390px) {
+  .top-sites-list .hide-for-small {
     display: inline-block;
   }
 }
@@ -8211,7 +8219,7 @@ hr {
 }
 
 /* stylelint-disable max-nesting-depth */
-.outer-wrapper .ds-top-sites .collapsible-section {
+.outer-wrapper .ds-top-sites .top-sites {
   margin-block-end: var(--space-large);
 }
 .outer-wrapper .ds-top-sites .top-sites .top-site-outer .top-site-inner > a:is(.active, :focus) .tile {
@@ -10178,4 +10186,107 @@ hr {
   .personalized-card-wrapper {
     padding-block-end: 0;
   }
+}
+
+.nova-enabled .top-sites {
+  display: contents;
+}
+
+.nova-enabled .top-sites-list-wrapper,
+.nova-enabled .edit-topsites-wrapper {
+  grid-column: 1/-1;
+}
+
+.nova-enabled .top-sites-list {
+  grid-template-columns: repeat(6, auto);
+  column-gap: var(--space-medium);
+  row-gap: var(--space-large);
+}
+.nova-enabled .top-sites-list .nova-hide-for-xs,
+.nova-enabled .top-sites-list .nova-hide-for-s {
+  display: none;
+}
+@container content-grid (inline-size >= calc(8 * 75px + 7 * 0.75rem)) {
+  .nova-enabled .top-sites-list {
+    grid-template-columns: repeat(8, auto);
+  }
+  .nova-enabled .top-sites-list .nova-hide-for-xs {
+    display: inline-block;
+  }
+}
+@container content-grid (inline-size >= calc(12 * 75px + 11 * 0.75rem)) {
+  .nova-enabled .top-sites-list {
+    grid-template-columns: repeat(var(--top-sites-max-per-row, 8), auto);
+  }
+  .nova-enabled .top-sites-list .nova-hide-for-s {
+    display: inline-block;
+  }
+}
+
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) {
+  background: none;
+}
+
+.nova-enabled .top-site-outer {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  width: var(--col-width);
+  margin-block-end: 0;
+}
+.nova-enabled .top-site-outer .top-site-button {
+  padding: 0;
+  justify-content: flex-end;
+}
+.nova-enabled .top-site-outer .tile {
+  box-shadow: none;
+  margin-block-start: var(--space-medium);
+  transition: width 100ms ease-out, height 100ms ease-out, margin-block-start 100ms ease-out;
+}
+.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  width: var(--col-width);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  height: var(--col-width);
+  margin-block-start: 0;
+  box-shadow: var(--card-box-shadow);
+}
+.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .icon-pin-small,
+.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .context-menu-button {
+  opacity: 1;
+  transition: opacity 100ms ease-out 50ms;
+}
+.nova-enabled .top-site-outer .top-site-inner > a:focus .tile {
+  outline: var(--focus-outline);
+}
+.lightWallpaper .nova-enabled .top-site-outer .title {
+  color-scheme: light;
+}
+.darkWallpaper .nova-enabled .top-site-outer .title {
+  color-scheme: dark;
+}
+.nova-enabled .top-site-outer .context-menu {
+  inset-block-start: var(--space-xlarge);
+}
+.nova-enabled .top-site-outer .context-menu-button {
+  inset-inline-end: var(--space-xxsmall);
+  inset-block-start: var(--space-xxsmall);
+  border-radius: var(--border-radius-circle);
+}
+.lightWallpaper .nova-enabled .top-site-outer .context-menu-button, .darkWallpaper .nova-enabled .top-site-outer .context-menu-button {
+  color-scheme: light dark;
+}
+.lightWallpaper .nova-enabled .top-site-outer .context-menu-button:focus-visible::after, .darkWallpaper .nova-enabled .top-site-outer .context-menu-button:focus-visible::after {
+  content: none;
+}
+.nova-enabled .top-site-outer .icon-pin-small {
+  inset-block-start: calc(var(--space-xsmall) + var(--space-xxsmall));
+  inset-inline-start: calc(var(--space-xsmall) + var(--space-xxsmall));
+}
+.lightWallpaper .nova-enabled .top-site-outer .icon-pin-small, .darkWallpaper .nova-enabled .top-site-outer .icon-pin-small {
+  color-scheme: light dark;
+}
+.nova-enabled .top-site-outer .title .title-label {
+  font-weight: var(--font-weight-semibold);
+  padding: 0;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  width: var(--col-width);
 }

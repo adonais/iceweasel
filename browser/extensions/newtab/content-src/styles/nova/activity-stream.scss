@@ -202,4 +202,7 @@ input {
 @import '../../components/DiscoveryStreamComponents/ReportContent/ReportContent';
 @import '../../components/DiscoveryStreamComponents/PersonalizedCard/PersonalizedCard';
 
+// Nova Component Styles
+@import 'TopSites';
+
 // stylelint-enable no-invalid-position-at-import-rule

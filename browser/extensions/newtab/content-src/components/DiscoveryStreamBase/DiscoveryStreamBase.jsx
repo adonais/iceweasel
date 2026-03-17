@@ -17,6 +17,9 @@ import { TopSites } from "content-src/components/TopSites/TopSites";
 import { CardSections } from "../DiscoveryStreamComponents/CardSections/CardSections";
 import { Widgets } from "content-src/components/Widgets/Widgets";
 
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const PREF_NOVA_ENABLED = "nova.enabled";
+
 const ALLOWED_CSS_URL_PREFIXES = [
   "chrome://",
   "resource://",
@@ -113,6 +116,11 @@ export class _DiscoveryStreamBase extends React.PureComponent {
       case "Highlights":
         return <Highlights />;
       case "TopSites":
+        // @nova-cleanup(remove-conditional): Remove this guard when DiscoveryStreamBase
+        // is no longer used in the Nova layout
+        if (this.props.Prefs.values[PREF_NOVA_ENABLED]) {
+          return null;
+        }
         return (
           <div className="ds-top-sites">
             <TopSites isFixed={true} title={component.header?.title} />

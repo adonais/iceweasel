@@ -11,6 +11,7 @@ import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundar
 import { CustomizeMenu } from "content-src/components/CustomizeMenu/CustomizeMenu";
 import React, { useState, useEffect } from "react";
 import { Search } from "content-src/components/Search/Search";
+import { TopSites } from "content-src/components/TopSites/TopSites";
 import { Sections } from "content-src/components/Sections/Sections";
 import { Logo } from "content-src/components/Logo/Logo";
 import { Weather } from "content-src/components/Weather/Weather";
@@ -728,14 +729,15 @@ export class BaseContent extends React.PureComponent {
       section => section.id !== "topstories"
     );
 
+    const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled =
       prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
     const noSectionsEnabled =
-      !prefs["feeds.topsites"] &&
+      !topSitesEnabled &&
       !pocketEnabled &&
       filteredSections.filter(section => section.enabled).length === 0;
     const enabledSections = {
-      topSitesEnabled: prefs["feeds.topsites"],
+      topSitesEnabled,
       pocketEnabled: prefs["feeds.section.topstories"],
       showInferredPersonalizationEnabled:
         prefs[PREF_INFERRED_PERSONALIZATION_USER],
@@ -838,10 +840,7 @@ export class BaseContent extends React.PureComponent {
         !noSectionsEnabled &&
         "fixed-search",
       prefs.showSearch && noSectionsEnabled && "only-search",
-      prefs["feeds.topsites"] &&
-        !pocketEnabled &&
-        !prefs.showSearch &&
-        "only-topsites",
+      topSitesEnabled && !pocketEnabled && !prefs.showSearch && "only-topsites",
       noSectionsEnabled && "no-sections",
       prefs["logowordmark.alwaysVisible"] && "visible-logo",
     ]
@@ -896,6 +895,11 @@ export class BaseContent extends React.PureComponent {
               )}
               {/* TODO: Break out Topsites, Widgets from DiscoveryStreamBase */}
               {/* Shortcuts / Topsites */}
+              {topSitesEnabled && (
+                <ErrorBoundary>
+                  <TopSites />
+                </ErrorBoundary>
+              )}
               {/* Widgets */}
               {/* Content Feed */}
               {isDiscoveryStream && (

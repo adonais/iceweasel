@@ -137,6 +137,16 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
       display: inline-block;
     }
   }
+
+  .hide-for-small {
+    display: none;
+  }
+
+  @media (min-width: $break-point-sections-variant) {
+    .hide-for-small {
+      display: inline-block;
+    }
+  }
 }
 
 .discovery-stream.ds-layout.ds-layout-topsites {

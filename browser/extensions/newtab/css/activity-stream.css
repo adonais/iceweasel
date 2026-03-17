@@ -948,6 +948,14 @@ main section {
     display: inline-block;
   }
 }
+.top-sites-list .hide-for-small {
+  display: none;
+}
+@media (min-width: 1390px) {
+  .top-sites-list .hide-for-small {
+    display: inline-block;
+  }
+}
 
 .discovery-stream.ds-layout.ds-layout-topsites {
   display: flex;
@@ -8234,7 +8242,7 @@ hr {
 }
 
 /* stylelint-disable max-nesting-depth */
-.outer-wrapper .ds-top-sites .collapsible-section {
+.outer-wrapper .ds-top-sites .top-sites {
   margin-block-end: var(--space-large);
 }
 .outer-wrapper .ds-top-sites .top-sites .top-site-outer .top-site-inner > a:is(.active, :focus) .tile {

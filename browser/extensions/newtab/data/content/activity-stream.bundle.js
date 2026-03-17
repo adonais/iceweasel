@@ -8516,8 +8516,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       "data-l10n-args": JSON.stringify({
         title
       })
-    }), link.isPinned && /*#__PURE__*/external_React_default().createElement("div", {
-      className: "icon icon-pin-small"
     }), /*#__PURE__*/external_React_default().createElement("div", {
       className: "tile",
       "aria-hidden": true
@@ -8534,7 +8532,9 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "top-site-icon default-icon",
       "data-fallback": smallFaviconStyle ? "" : letterFallback,
       style: smallFaviconStyle
-    }))), /*#__PURE__*/external_React_default().createElement("div", {
+    }))), link.isPinned && /*#__PURE__*/external_React_default().createElement("div", {
+      className: "icon icon-pin-small"
+    }), /*#__PURE__*/external_React_default().createElement("div", {
       className: `title${link.isPinned ? " has-icon pinned" : ""}${link.type === SPOC_TYPE || link.show_sponsored_label ? " sponsored" : ""}`
     }, /*#__PURE__*/external_React_default().createElement("span", TopSite_extends({
       className: "title-label",
@@ -9029,7 +9029,9 @@ class _TopSiteList extends (external_React_default()).PureComponent {
 
     // On narrow viewports, we only show 6 sites per row. We'll mark the rest as
     // .hide-for-narrow to hide in CSS via @media query.
+    const novaEnabled = this.props.Prefs.values["nova.enabled"];
     const maxNarrowVisibleIndex = props.TopSitesRows * 6;
+    const maxSmallVisibleIndex = props.TopSitesRows * 8;
     for (let i = 0, l = topSites.length; i < l; i++) {
       const link = topSites[i] && Object.assign({}, topSites[i], {
         iconType: this.props.topSiteIconType(topSites[i])
@@ -9038,7 +9040,16 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         key: link ? link.url : holeIndex++,
         index: i
       };
-      if (i >= maxNarrowVisibleIndex) {
+      // @nova-cleanup(remove-conditional): Remove classic path once Nova ships
+      if (novaEnabled) {
+        if (i >= maxSmallVisibleIndex) {
+          slotProps.className = "nova-hide-for-s";
+        } else if (i >= maxNarrowVisibleIndex) {
+          slotProps.className = "nova-hide-for-xs";
+        }
+      } else if (i >= maxSmallVisibleIndex) {
+        slotProps.className = "hide-for-small";
+      } else if (i >= maxNarrowVisibleIndex) {
         slotProps.className = "hide-for-narrow";
       }
       let topSiteLink;
@@ -9401,6 +9412,9 @@ function TopSites_extends() { return TopSites_extends = Object.assign ? Object.a
 
 
 
+
+// @nova-cleanup(remove-pref): Remove once classic path is gone
+const TopSites_PREF_NOVA_ENABLED = "nova.enabled";
 function topSiteIconType(link) {
   if (link.customScreenshotURL) {
     return "custom_screenshot";
@@ -9436,6 +9450,13 @@ function countTopSitesIconsTypes(topSites) {
     no_image: 0
   });
 }
+function getTopSiteGridCols(fallback) {
+  const grid = globalThis.document?.querySelector(".top-sites-list");
+  if (!grid) {
+    return fallback;
+  }
+  return globalThis.getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+}
 class _TopSites extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -9466,11 +9487,14 @@ class _TopSites extends (external_React_default()).PureComponent {
    * Return the TopSites that are visible based on prefs and window width.
    */
   _getVisibleTopSites() {
-    // We hide 2 sites per row when not in the wide layout.
+    const novaEnabled = this.props.Prefs.values[TopSites_PREF_NOVA_ENABLED];
     let sitesPerRow = this.props.TopSitesMaxSitesPerRow;
-    // $break-point-widest = 1072px (from _variables.scss)
-    if (!globalThis.matchMedia(`(min-width: 1072px)`).matches) {
-      sitesPerRow -= 2;
+    if (novaEnabled) {
+      sitesPerRow = getTopSiteGridCols(sitesPerRow);
+    } else if (!globalThis.matchMedia("(min-width: 1072px)").matches) {
+      sitesPerRow = 6;
+    } else if (sitesPerRow > 8 && !globalThis.matchMedia("(min-width: 1374px)").matches) {
+      sitesPerRow = 8;
     }
     return this.props.TopSites.rows.slice(0, this.props.TopSitesRows * sitesPerRow);
   }
@@ -9506,7 +9530,6 @@ class _TopSites extends (external_React_default()).PureComponent {
       editForm,
       showSearchShortcutsForm
     } = props.TopSites;
-    const extraMenuOptions = ["AddTopSite"];
     let visibleTopSites;
     const colors = props.Prefs.values["newNewtabExperience.colors"];
 
@@ -9514,28 +9537,15 @@ class _TopSites extends (external_React_default()).PureComponent {
     if (!props.App.isForStartupCache.TopSites) {
       visibleTopSites = this._getVisibleTopSites()?.length;
     }
-    if (props.Prefs.values["improvesearch.topSiteSearchShortcuts"]) {
-      extraMenuOptions.push("AddSearchShortcut");
-    }
     return /*#__PURE__*/external_React_default().createElement(ComponentPerfTimer, {
       id: "topsites",
       initialized: props.TopSites.initialized,
       dispatch: props.dispatch
-    }, /*#__PURE__*/external_React_default().createElement(CollapsibleSection, {
+    }, /*#__PURE__*/external_React_default().createElement("section", {
       className: "top-sites",
-      id: "topsites",
-      title: props.title || {
-        id: "newtab-section-header-topsites"
-      },
-      hideTitle: true,
-      extraMenuOptions: extraMenuOptions,
-      showPrefName: "feeds.topsites",
-      eventSource: TOP_SITES_SOURCE,
-      collapsed: false,
-      isFixed: props.isFixed,
-      isFirst: props.isFirst,
-      isLast: props.isLast,
-      dispatch: props.dispatch
+      "data-section-id": "topsites"
+    }, /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+      className: "section-body-fallback"
     }, /*#__PURE__*/external_React_default().createElement(TopSiteList, {
       TopSites: props.TopSites,
       TopSitesRows: props.TopSitesRows,
@@ -9566,7 +9576,7 @@ class _TopSites extends (external_React_default()).PureComponent {
       TopSites: props.TopSites,
       onClose: this.onSearchShortcutsFormClose,
       dispatch: this.props.dispatch
-    }))))));
+    })))))));
   }
 }
 const TopSites_TopSites = (0,external_ReactRedux_namespaceObject.connect)(state => {
@@ -13933,6 +13943,9 @@ function Widgets() {
 
 
 
+
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const DiscoveryStreamBase_PREF_NOVA_ENABLED = "nova.enabled";
 const ALLOWED_CSS_URL_PREFIXES = ["chrome://", "resource://", "https://img-getpocket.cdn.mozilla.net/"];
 const DUMMY_CSS_SELECTOR = "DUMMY#CSS.SELECTOR";
 
@@ -14008,6 +14021,11 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       case "Highlights":
         return /*#__PURE__*/external_React_default().createElement(Highlights, null);
       case "TopSites":
+        // @nova-cleanup(remove-conditional): Remove this guard when DiscoveryStreamBase
+        // is no longer used in the Nova layout
+        if (this.props.Prefs.values[DiscoveryStreamBase_PREF_NOVA_ENABLED]) {
+          return null;
+        }
         return /*#__PURE__*/external_React_default().createElement("div", {
           className: "ds-top-sites"
         }, /*#__PURE__*/external_React_default().createElement(TopSites_TopSites, {
@@ -16989,6 +17007,7 @@ function Base_extends() { return Base_extends = Object.assign ? Object.assign.bi
 
 
 
+
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
@@ -17584,10 +17603,11 @@ class BaseContent extends (external_React_default()).PureComponent {
     const mayShowTopicSelection = showTopicSelection && prefs["discoverystream.topicSelection.enabled"];
     const isDiscoveryStream = props.DiscoveryStream.config && props.DiscoveryStream.config.enabled;
     let filteredSections = props.Sections.filter(section => section.id !== "topstories");
+    const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled = prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
-    const noSectionsEnabled = !prefs["feeds.topsites"] && !pocketEnabled && filteredSections.filter(section => section.enabled).length === 0;
+    const noSectionsEnabled = !topSitesEnabled && !pocketEnabled && filteredSections.filter(section => section.enabled).length === 0;
     const enabledSections = {
-      topSitesEnabled: prefs["feeds.topsites"],
+      topSitesEnabled,
       pocketEnabled: prefs["feeds.section.topstories"],
       showInferredPersonalizationEnabled: prefs[Base_PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
@@ -17641,7 +17661,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     // layoutsVariantAEnabled ? "layout-variant-a" : "", // Layout experiment variant A
     // layoutsVariantBEnabled ? "layout-variant-b" : "", // Layout experiment variant B
     pocketEnabled ? "has-recommended-stories" : "no-recommended-stories", sectionsEnabled ? "has-sections-grid" : ""].filter(v => v).join(" ");
-    const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["feeds.topsites"] && !pocketEnabled && !prefs.showSearch && "only-topsites", noSectionsEnabled && "no-sections", prefs["logowordmark.alwaysVisible"] && "visible-logo"].filter(v => v).join(" ");
+    const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", topSitesEnabled && !pocketEnabled && !prefs.showSearch && "only-topsites", noSectionsEnabled && "no-sections", prefs["logowordmark.alwaysVisible"] && "visible-logo"].filter(v => v).join(" ");
 
     // If state.showDownloadHighlightOverride has value, let it override the logic
     // Otherwise, defer to OMC message display logic
@@ -17665,7 +17685,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "content"
       }, logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null)), prefs.showSearch && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
         showLogo: false
-      }, props.Search))), isDiscoveryStream && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+      }, props.Search))), topSitesEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(TopSites_TopSites, null)), isDiscoveryStream && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
         className: "borderless-error"
       }, /*#__PURE__*/external_React_default().createElement(DiscoveryStreamBase, {
         locale: props.App.locale,

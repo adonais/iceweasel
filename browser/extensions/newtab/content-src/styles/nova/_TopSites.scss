@@ -1,0 +1,120 @@
+// @nova-cleanup(merge-styles): Merge nova/_TopSites.scss back to TopSites/_TopSites.scss after ship
+
+.nova-enabled .top-sites {
+  display: contents;
+}
+
+.nova-enabled .top-sites-list-wrapper,
+.nova-enabled .edit-topsites-wrapper {
+  grid-column: 1 / -1;
+}
+
+.nova-enabled .top-sites-list {
+  grid-template-columns: repeat(6, auto);
+  column-gap: var(--space-medium);
+  row-gap: var(--space-large);
+
+  .nova-hide-for-xs,
+  .nova-hide-for-s {
+    display: none;
+  }
+
+  @include at-content-cols(8) {
+    grid-template-columns: repeat(8, auto);
+
+    .nova-hide-for-xs {
+      display: inline-block;
+    }
+  }
+
+  @include at-content-cols(12) {
+    grid-template-columns: repeat(var(--top-sites-max-per-row, 8), auto);
+
+    .nova-hide-for-s {
+      display: inline-block;
+    }
+  }
+}
+
+// @nova-cleanup(remove-conditional): Nova gets rid of outer hover background
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) {
+  background: none;
+}
+
+.nova-enabled .top-site-outer {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  width: var(--col-width);
+  margin-block-end: 0;
+
+  .top-site-button {
+    padding: 0;
+    justify-content: flex-end;
+  }
+
+  .tile {
+    box-shadow: none; // @nova-cleanup(remove-conditional): Nova gets rid of box shadow at rest
+    margin-block-start: var(--space-medium);
+    transition: width 100ms ease-out, height 100ms ease-out, margin-block-start 100ms ease-out;
+  }
+
+  &:is(:hover, :focus-within, .active) {
+    .tile {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: var(--col-width);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      height: var(--col-width);
+      margin-block-start: 0;
+      box-shadow: var(--card-box-shadow);
+    }
+
+    .icon-pin-small,
+    .context-menu-button {
+      opacity: 1;
+      transition: opacity 100ms ease-out 50ms;
+    }
+  }
+
+  .top-site-inner > a:focus .tile {
+    outline: var(--focus-outline);
+  }
+
+  .title {
+    @include wallpaper-contrast-fix;
+  }
+
+  .context-menu {
+    inset-block-start: var(--space-xlarge);
+  }
+
+  .context-menu-button {
+    inset-inline-end: var(--space-xxsmall);
+    inset-block-start: var(--space-xxsmall);
+    border-radius: var(--border-radius-circle);
+
+    .lightWallpaper &,
+    .darkWallpaper & {
+      color-scheme: light dark; // @nova-cleanup(remove-conditional): mixin no longer needed
+
+      &:focus-visible::after {
+        content: none; // @nova-cleanup(remove-conditional): ::after no longer needed
+      }
+    }
+  }
+
+  .icon-pin-small {
+    inset-block-start: calc(var(--space-xsmall) + var(--space-xxsmall));
+    inset-inline-start: calc(var(--space-xsmall) + var(--space-xxsmall));
+
+    .lightWallpaper &,
+    .darkWallpaper & {
+      color-scheme: light dark; // @nova-cleanup(remove-conditional): mixin no longer needed
+    }
+  }
+
+  .title .title-label {
+    font-weight: var(--font-weight-semibold);
+    padding: 0;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: var(--col-width);
+  }
+}

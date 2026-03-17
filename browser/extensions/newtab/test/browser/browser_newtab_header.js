@@ -21,7 +21,8 @@ test_newtab({
       ".section-title-container"
     );
     ok(
-      titleContainer && titleContainer.style.visibility === "hidden",
+      !titleContainer ||
+        (titleContainer && titleContainer.style.visibility === "hidden"),
       "Top sites header should  not be visible"
     );
 
