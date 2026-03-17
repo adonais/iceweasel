@@ -16202,6 +16202,18 @@
   value: true
   mirror: always
 
+# Maximum duration (seconds) that transmitted data may remain unacknowledged
+# before TCP forcibly closes the connection. 0 = disabled (kernel default).
+# Only effective on Linux/Android (TCP_USER_TIMEOUT, kernel 2.6.37+).
+- name: network.tcp.user_timeout
+  type: RelaxedAtomicInt32
+#ifdef NIGHTLY_BUILD
+  value: 30
+#else
+  value: 0
+#endif
+  mirror: always
+
 # Whether to redirect a failing request to an essential domain
 # to a fallback domain that hosts the same content.
 - name: network.essential_domains_fallback

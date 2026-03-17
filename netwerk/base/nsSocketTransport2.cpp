@@ -1486,6 +1486,25 @@ nsresult nsSocketTransport::InitiateSocket() {
   PR_SetSocketOption(fd, &opt);
 #endif
 
+#if defined(TCP_USER_TIMEOUT)
+  {
+    int32_t tcpUserTimeoutS = StaticPrefs::network_tcp_user_timeout();
+    if (tcpUserTimeoutS > 0) {
+      PRFileDesc* bottom = PR_GetIdentitiesLayer(fd, PR_NSPR_IO_LAYER);
+      if (bottom) {
+        PROsfd sock = PR_FileDesc2NativeHandle(bottom);
+        if (sock != -1) {
+          int tcpUserTimeoutMs = tcpUserTimeoutS * 1000;
+          if (setsockopt(sock, IPPROTO_TCP, TCP_USER_TIMEOUT, &tcpUserTimeoutMs,
+                         sizeof(tcpUserTimeoutMs)) != 0) {
+            NS_WARNING("nsSocketTransport: Failed setting TCP_USER_TIMEOUT");
+          }
+        }
+      }
+    }
+  }
+#endif
+
   // up to here, mFD will only be accessed by us
 
   // assign mFD so that we can properly handle OnSocketDetached before we've
