@@ -3722,9 +3722,7 @@ already_AddRefed<wr::WebRenderAPI> APZCTreeManager::GetWebRenderAPI() const {
   RefPtr<wr::WebRenderAPI> api;
   CompositorBridgeParent::CallWithIndirectShadowTree(
       mRootLayersId, [&](LayerTreeState& aState) -> void {
-        if (aState.mWrBridge) {
-          api = aState.mWrBridge->GetWebRenderAPI();
-        }
+        api = aState.mWebRenderAPI;
       });
   return api.forget();
 }

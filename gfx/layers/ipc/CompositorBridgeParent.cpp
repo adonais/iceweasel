@@ -343,6 +343,10 @@ void CompositorBridgeParent::StopAndClearResources() {
     indirectBridgeParents.clear();
 
     RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI();
+    {
+      StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
+      sIndirectLayerTrees[mRootLayerTreeID].mWebRenderAPI = nullptr;
+    }
     // Ensure we are not holding the sIndirectLayerTreesLock here because we
     // are going to block on WR threads in order to shut it down properly.
     mWrBridge->Destroy();
@@ -1127,6 +1131,7 @@ bool CompositorBridgeParent::DeallocPWebRenderBridgeParent(
     auto it = sIndirectLayerTrees.find(wr::AsLayersId(parent->PipelineId()));
     if (it != sIndirectLayerTrees.end()) {
       it->second.mWrBridge = nullptr;
+      it->second.mWebRenderAPI = nullptr;
     }
   }
   parent->Release();  // IPDL reference
@@ -1188,6 +1193,11 @@ void CompositorBridgeParent::EnsureWebRenderBridgeParentInitialized() {
   mAsyncImageManager =
       new AsyncImagePipelineManager(api->Clone(), useCompositorWnd);
   RefPtr<AsyncImagePipelineManager> asyncMgr = mAsyncImageManager;
+
+  {
+    StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
+    sIndirectLayerTrees[mRootLayerTreeID].mWebRenderAPI = api;
+  }
 
   mWrBridge->FinishInitialization(std::move(api), std::move(asyncMgr));
 
