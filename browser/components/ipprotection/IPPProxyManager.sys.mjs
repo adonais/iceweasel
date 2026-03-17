@@ -574,17 +574,17 @@ class IPPProxyManagerSingleton extends EventTarget {
     });
     this.#rotateProxyPassPromise = promise;
     const { pass, usage, error } = await this.#getPassAndUsage();
-    if (error) {
-      this.#setErrorState(error);
-      return null;
-    }
-
     if (usage) {
       this.#setUsage(usage);
       if (this.#usage.remaining <= 0) {
         this.pause();
         return null;
       }
+    }
+
+    if (error) {
+      this.#setErrorState(error);
+      return null;
     }
 
     if (!pass) {
