@@ -360,7 +360,7 @@ private fun OnboardingContent(
                         .padding(bottom = 16.dp),
                     activeColor = MaterialTheme.colorScheme.onPrimary,
                     inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    leaveTrail = true,
+                    leaveTrail = false,
                 )
             }
         }
