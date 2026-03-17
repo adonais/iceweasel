@@ -10,6 +10,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySubstitution
 import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.logging.StandardOutputListener
 import org.gradle.api.plugins.AppliedPlugin
 import org.gradle.api.tasks.testing.Test
 import java.io.File
@@ -36,6 +37,7 @@ class ProjectPlugin : Plugin<Project> {
         configureBuildDirectory(project, topsrcdir, topobjdir)
         configureJniKeepDebugSymbols(project)
         configureAcTestAndLintDisabling(project, mozilla)
+        configureKotlinCompilerMessageReformatting(project)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
     }
@@ -166,6 +168,56 @@ class ProjectPlugin : Plugin<Project> {
                 }
             }
         })
+    }
+
+    private fun configureKotlinCompilerMessageReformatting(project: Project) {
+        // Kotlin compiler message formats:
+        // - Current: "e: file.kt:10:5 message" (colon-separated, used by fenix/focus/A-C)
+        // - Legacy:  "e: file.kt: (10, 5): message" (parenthesized, used by geckoview)
+        val messageFormats = listOf(
+            Regex("""([ew]): (.+):(\d+):(\d+) (.*)"""),
+            Regex("""([ew]): (.+): \((\d+), (\d+)\): (.*)"""),
+        )
+
+        project.tasks.configureEach {
+            if (!this::class.java.name.startsWith("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")) {
+                return@configureEach
+            }
+
+            // Translate Kotlin messages like "w: ..." and "e: ..." into
+            // "...: warning: ..." and "...: error: ...", to make Treeherder understand.
+            val listener = StandardOutputListener { message ->
+                if (message.startsWith("e: warnings found")) {
+                    return@StandardOutputListener
+                }
+
+                if (message.startsWith("w: ") || message.startsWith("e: ")) {
+                    val match = messageFormats.firstNotNullOfOrNull { it.find(message) }
+                    if (match == null) {
+                        logger.quiet("kotlinc message format has changed!")
+                        // For warnings, don't continue because we don't want to throw an
+                        // exception. For errors, we want the exception so that the new error
+                        // message format gets translated properly.
+                        if (message.startsWith("w: ")) {
+                            return@StandardOutputListener
+                        }
+                    }
+                    match?.let {
+                        val (type, file, line, column, msg) = it.destructured
+                        val level = if (type == "w") "warning" else "error"
+                        // Use logger.lifecycle, which does not go through stderr again.
+                        logger.lifecycle("$file:$line:$column: $level: $msg")
+                    }
+                }
+            }
+
+            doFirst {
+                logging.addStandardErrorListener(listener)
+            }
+            doLast {
+                logging.removeStandardErrorListener(listener)
+            }
+        }
     }
 
     companion object {
