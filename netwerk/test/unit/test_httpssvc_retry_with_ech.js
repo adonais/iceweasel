@@ -308,10 +308,9 @@ add_task(async function testEchRetry() {
   checkSecurityInfo(chan, true, true);
   // Only check telemetry if network process is disabled.
   if (!mozinfo.socketprocess_networking) {
-    for (let hName of ["SSL_HANDSHAKE_RESULT", "SSL_HANDSHAKE_RESULT_ECH"]) {
-      let h = Services.telemetry.getHistogramById(hName);
+    for (let f of ["", "_ECH"]) {
       HandshakeTelemetryHelpers.assertHistogramMap(
-        h.snapshot(),
+        HandshakeTelemetryHelpers.resultDelta(f),
         new Map([
           ["0", 1],
           ["188", 1],

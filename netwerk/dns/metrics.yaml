@@ -31,7 +31,6 @@ dns:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: DNS_LOOKUP_METHOD2
 
 
   cleanup_age:
@@ -123,7 +122,6 @@ dns:
       - necko@mozilla.com
       - vgosu@mozilla.com
     expires: never
-    telemetry_mirror: DNS_TRR_LOOKUP_TIME3
 
   trr_processing_time:
     type: timing_distribution
@@ -141,7 +139,6 @@ dns:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: DNS_TRR_PROCESSING_TIME
 
   trr_skip_reason_trr_first:
     type: labeled_custom_distribution
@@ -165,7 +162,6 @@ dns:
       - necko@mozilla.com
       - vgosu@mozilla.com
     expires: never
-    telemetry_mirror: TRR_SKIP_REASON_TRR_FIRST2
 
   trr_skip_reason_native_success:
     type: labeled_custom_distribution
@@ -237,7 +233,6 @@ dns:
       - necko@mozilla.com
       - vgosu@mozilla.com
     expires: never
-    telemetry_mirror: TRR_RELEVANT_SKIP_REASON_TRR_FIRST
 
   trr_relevant_skip_reason_native_success:
     type: labeled_custom_distribution
@@ -376,7 +371,6 @@ dns:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: TRR_RELEVANT_SKIP_REASON_TRR_FIRST_TYPE_REC
 
   trr_attempt_count:
     type: labeled_custom_distribution
@@ -431,7 +425,6 @@ dns:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: DNS_BY_TYPE_FAILED_LOOKUP_TIME
 
   by_type_succeeded_lookup_time:
     type: timing_distribution
@@ -448,7 +441,6 @@ dns:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: DNS_BY_TYPE_SUCCEEDED_LOOKUP_TIME
 
   native_queuing:
     type: timing_distribution
@@ -487,7 +479,6 @@ dns:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: h#DNS_LOOKUP_ALGORITHM
 
   trr_http_version:
     type: dual_labeled_counter
@@ -515,7 +506,6 @@ dns:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: DNS_TRR_HTTP_VERSION2
 
   trr_first:
     type: dual_labeled_counter
@@ -747,4 +737,3 @@ dns:
       - necko@mozilla.com
       - vgosu@mozilla.com
     expires: never
-    telemetry_mirror: DNS_LOOKUP_DISPOSITION3
