@@ -1076,14 +1076,9 @@ export class AIWindow extends MozLitElement {
           formattedPrompt,
           pageUrl,
           engineInstance,
-          userOpts
+          userOpts,
+          skipUserDispatch
         );
-
-        if (!skipUserDispatch) {
-          this.#dispatchMessageToChatContent(
-            this.#conversation.messages.at(-1)
-          );
-        }
 
         // @todo
         // fill out these assistant message flags

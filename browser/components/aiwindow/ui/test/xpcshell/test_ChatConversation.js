@@ -961,3 +961,86 @@ add_task(async function test_addUserMessage_sets_memories_fields() {
     "memoriesFlagSource is persisted on the user message"
   );
 });
+
+add_task(async function test_generatePrompt_emitsUserMessage() {
+  const conversation = new ChatConversation({});
+  const mockEngineInstance = {
+    loadPrompt: lazy.sinon.stub().resolves("system prompt"),
+  };
+  lazy.sinon.stub(conversation, "getRealTimeInfo").resolves(null);
+  lazy.sinon.stub(conversation, "getMemoriesContext").resolves(null);
+
+  let emittedMessage = null;
+  conversation.on("chat-conversation:message-update", (_, msg) => {
+    emittedMessage = msg;
+  });
+
+  await conversation.generatePrompt("hello", null, mockEngineInstance);
+
+  Assert.ok(emittedMessage, "event should have been emitted");
+  Assert.equal(emittedMessage.content.body, "hello");
+  Assert.equal(emittedMessage.role, MESSAGE_ROLE.USER);
+});
+
+add_task(async function test_generatePrompt_skipUserDispatch() {
+  const conversation = new ChatConversation({});
+  const mockEngineInstance = {
+    loadPrompt: lazy.sinon.stub().resolves("system prompt"),
+  };
+  lazy.sinon.stub(conversation, "getRealTimeInfo").resolves(null);
+  lazy.sinon.stub(conversation, "getMemoriesContext").resolves(null);
+
+  let emitted = false;
+  conversation.on("chat-conversation:message-update", () => {
+    emitted = true;
+  });
+
+  await conversation.generatePrompt(
+    "hello",
+    null,
+    mockEngineInstance,
+    undefined,
+    true
+  );
+
+  Assert.ok(
+    !emitted,
+    "event should not be emitted when skipUserDispatch is true"
+  );
+});
+
+add_task(
+  async function test_generatePrompt_userContextPopulatedBeforeResolving() {
+    const conversation = new ChatConversation({});
+    const mockEngineInstance = {
+      loadPrompt: lazy.sinon.stub().resolves("system prompt"),
+    };
+    lazy.sinon
+      .stub(conversation, "getRealTimeInfo")
+      .resolves("real time context");
+    lazy.sinon
+      .stub(conversation, "getMemoriesContext")
+      .resolves("memories context");
+
+    await conversation.generatePrompt("hello", null, mockEngineInstance, {
+      memoriesEnabled: true,
+    });
+
+    const userMessage = conversation.messages.find(
+      m => m.role === MESSAGE_ROLE.USER
+    );
+
+    Assert.withSoftAssertions(function (soft) {
+      soft.equal(
+        userMessage.content.userContext.realTimeContext,
+        "real time context",
+        "realTimeContext should be set on userContext before generatePrompt resolves"
+      );
+      soft.equal(
+        userMessage.content.userContext.memoriesContext,
+        "memories context",
+        "memoriesContext should be set on userContext before generatePrompt resolves"
+      );
+    });
+  }
+);

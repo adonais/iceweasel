@@ -373,8 +373,17 @@ export class ChatConversation extends EventEmitter {
    * @param {URL} pageUrl - The URL of the page when prompt was submitted
    * @param {openAIEngine} engineInstance
    * @param {UserRoleOpts} [userOpts]
+   * @param {boolean} [skipUserDispatch=false] - If true, do not emit the
+   *   message-update event after adding the user message (used for retries
+   *   to avoid duplicate user messages in the child process).
    */
-  async generatePrompt(prompt, pageUrl, engineInstance, userOpts = undefined) {
+  async generatePrompt(
+    prompt,
+    pageUrl,
+    engineInstance,
+    userOpts = undefined,
+    skipUserDispatch = false
+  ) {
     // Remove stale ephemeral messages before adding new user message
     this.removeSystemTimeMemoriesMessages();
 
@@ -383,7 +392,17 @@ export class ChatConversation extends EventEmitter {
       this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, systemPrompt);
     }
 
+    // userContext starts empty so the user message can be added and dispatched
+    // immediately for better perceived performance. The realTimeContext and
+    // memoriesContext properties are set on it by reference below before this
+    // method returns, so the full context is available to getMessagesInOpenAiFormat()
+    // when the LLM call is made.
     let userContext = {};
+    this.addUserMessage(prompt, pageUrl, userOpts, userContext);
+    if (!skipUserDispatch) {
+      this.emit("chat-conversation:message-update", this.messages.at(-1));
+    }
+
     const realTimeContext = await this.getRealTimeInfo(engineInstance, {
       contextMentions: userOpts?.contextMentions,
     });
@@ -400,7 +419,6 @@ export class ChatConversation extends EventEmitter {
         userContext.memoriesContext = memoriesContext;
       }
     }
-    this.addUserMessage(prompt, pageUrl, userOpts, userContext);
 
     return this;
   }
