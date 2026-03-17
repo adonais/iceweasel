@@ -8,8 +8,6 @@ import { truncateUntrustedMetadata } from "moz-src:///browser/components/aiwindo
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
-  PageThumbsStorage: "resource://gre/modules/PageThumbs.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   getPlacesSemanticHistoryManager:
     "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
@@ -39,10 +37,10 @@ function isoToMicroseconds(iso) {
  *
  * @param {object} row
  * @param {boolean} [fromNode=false]  // true if row came from Places node
- * @returns {Promise<object>}         // normalized history entry
+ * @returns {object}                  // normalized history entry
  */
-async function buildHistoryRow(row, fromNode = false) {
-  let title, url, visitDateIso, visitCount, distance, frecency, previewImageURL;
+function buildHistoryRow(row, fromNode = false) {
+  let title, url, visitDateIso, visitCount, distance, frecency;
 
   if (!fromNode) {
     // from semantic / SQL result (mozIStorageRow)
@@ -51,7 +49,6 @@ async function buildHistoryRow(row, fromNode = false) {
     visitCount = row.getResultByName("visit_count");
     distance = row.getResultByName("distance");
     frecency = row.getResultByName("frecency");
-    previewImageURL = row.getResultByName("preview_image_url");
 
     // convert last_visit_date to ISO format
     const lastVisitRaw = row.getResultByName("last_visit_date");
@@ -82,34 +79,12 @@ async function buildHistoryRow(row, fromNode = false) {
     relevanceScore = frecency;
   }
 
-  // Get thumbnail URL for the page if preview_image_url does not exist
-  try {
-    if (!previewImageURL) {
-      if (await lazy.PageThumbsStorage.fileExistsForURL(url)) {
-        previewImageURL = lazy.PageThumbs.getThumbnailURL(url);
-      }
-    }
-  } catch (e) {
-    // If thumbnail lookup fails, skip it
-  }
-
-  // Get favicon URL for the page
-  let faviconUrl = null;
-  try {
-    const faviconURI = Services.io.newURI(url);
-    faviconUrl = `page-icon:${faviconURI.spec}`;
-  } catch (e) {
-    // If favicon lookup fails, skip it
-  }
-
   return {
     title: truncateUntrustedMetadata(title || url),
     url,
     visitDate: visitDateIso, // ISO timestamp format
     visitCount: visitCount || 0,
     relevanceScore: relevanceScore || 0, // Use embedding's distance as relevance score when available
-    ...(faviconUrl && { favicon: faviconUrl }), // Only include favicon if available
-    ...(previewImageURL && { thumbnail: previewImageURL }), // Only include thumbnail if available
   };
 }
 
@@ -139,8 +114,7 @@ async function searchBrowsingHistoryTimeRange({
                  NULL AS distance,
                  visit_count,
                  frecency,
-                 last_visit_date,
-                 preview_image_url
+                 last_visit_date
           FROM moz_places
           WHERE frecency <> 0
           AND (:startTs IS NULL OR last_visit_date >= :startTs)
@@ -163,7 +137,7 @@ async function searchBrowsingHistoryTimeRange({
 
   const rows = [];
   for (let row of results) {
-    rows.push(await buildHistoryRow(row));
+    rows.push(buildHistoryRow(row));
   }
   return rows;
 }
@@ -271,8 +245,7 @@ async function searchBrowsingHistorySemantic({
            distance,
            visit_count,
            frecency,
-           last_visit_date,
-           preview_image_url
+           last_visit_date
     FROM moz_places
     JOIN matches USING (url_hash)
     WHERE frecency <> 0
@@ -291,7 +264,7 @@ async function searchBrowsingHistorySemantic({
 
   const rows = [];
   for (let row of results) {
-    rows.push(await buildHistoryRow(row));
+    rows.push(buildHistoryRow(row));
   }
 
   // Domain fallback for general-category queries (games, movies, news, etc.)
@@ -359,7 +332,7 @@ async function searchBrowsingHistoryBasic({ searchTerm, historyLimit }) {
     const rows = [];
     for (let i = 0; i < root.childCount && rows.length < historyLimit; i++) {
       const node = root.getChild(i);
-      rows.push(await buildHistoryRow(node, true));
+      rows.push(buildHistoryRow(node, true));
     }
     return rows;
   } catch (error) {
