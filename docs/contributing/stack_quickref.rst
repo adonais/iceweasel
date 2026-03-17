@@ -102,7 +102,7 @@ mozilla-central before landing the changes.
 .. code-block:: shell
 
     $ git remote update
-    $ git rebase mozilla/central
+    $ git rebase origin/main
 
 
 Reorganizing the stack in Phabricator
