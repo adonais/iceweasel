@@ -738,8 +738,8 @@ bool nsListControlFrame::UpdateSelection() {
   return true;
 }
 
-void
-nsListControlFrame::OnSetSelectedIndex(int32_t aOldIndex, int32_t aNewIndex) {
+void nsListControlFrame::OnSetSelectedIndex(int32_t aOldIndex,
+                                            int32_t aNewIndex) {
 #ifdef ACCESSIBILITY
   nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
 #endif

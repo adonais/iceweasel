@@ -8,11 +8,9 @@ DisableStlWrapping()
 
 # Important: for these tests to be run, they also need to be added
 # to testing/cppunittest.ini.
-CppUnitTests(
-    [
-        "TestMozJemallocUtils",
-    ]
-)
+CppUnitTests([
+    "TestMozJemallocUtils",
+])
 # The gtests won't work in a SpiderMonkey-only build or a build without
 # jemalloc.
 if CONFIG["MOZ_PHC"] and CONFIG["MOZ_BUILD_APP"] != "memory":

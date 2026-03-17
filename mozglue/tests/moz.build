@@ -14,13 +14,11 @@ GeckoCppUnitTests(
     linkage=None,
 )
 
-CppUnitTests(
-    [
-        "TestBaseProfiler",
-        "TestIntegerPrintfMacros",
-        "TestPrintf",
-    ]
-)
+CppUnitTests([
+    "TestBaseProfiler",
+    "TestIntegerPrintfMacros",
+    "TestPrintf",
+])
 
 with Files("TestBaseProfiler.cpp"):
     BUG_COMPONENT = ("Core", "Gecko Profiler")
