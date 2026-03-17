@@ -701,7 +701,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s తొలగించబడింది</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">చర్య రద్దు</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">చర్య రద్దు</string>
   <!--
     Site Permissions
 

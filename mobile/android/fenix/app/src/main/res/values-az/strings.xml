@@ -341,7 +341,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s silindi</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">GERİ AL</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">GERİ AL</string>
   <!--
     Site Permissions
 

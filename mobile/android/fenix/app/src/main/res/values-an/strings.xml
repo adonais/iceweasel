@@ -655,7 +655,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">S’ha borrau %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">DESFER</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">DESFER</string>
   <!--
     Site Permissions
 

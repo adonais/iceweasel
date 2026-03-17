@@ -1899,11 +1899,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">ລຶບ %1$s ແລ້ວ</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">ເອົາກັບຄືນ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ເອົາກັບຄືນ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s ລຶບແລ້ວ</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s ລຶບແລ້ວ</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">ລາຍການທີ່ລຶບແລ້ວ: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">ລາຍການທີ່ລຶບແລ້ວ: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">ນຳທາງຍ້ອນກັບ</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->

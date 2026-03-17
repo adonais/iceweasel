@@ -357,7 +357,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Scanseƚà %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">ANUȽA</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ANUȽA</string>
   <!--
     Site Permissions
 

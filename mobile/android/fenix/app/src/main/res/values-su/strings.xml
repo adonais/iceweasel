@@ -1096,7 +1096,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Mupus %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">BEDO</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">BEDO</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Mundur</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->

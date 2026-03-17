@@ -1715,9 +1715,9 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s выдалена</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">АДМЯНІЦЬ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">АДМЯНІЦЬ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">Закладка %s выдалена</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">Закладка %s выдалена</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Перайсці назад</string>
   <!-- Content description for the bookmark screen delete bookmark navigation bar button -->
