@@ -37,6 +37,7 @@ const DEFAULT_PROPS = {
     isForStartupCache: false,
   },
   TopSitesRows: TOP_SITES_DEFAULT_ROWS,
+  TopSitesMaxSitesPerRow: TOP_SITES_MAX_SITES_PER_ROW,
   topSiteIconType: () => "no_image",
   dispatch() {},
   perfSvc,
