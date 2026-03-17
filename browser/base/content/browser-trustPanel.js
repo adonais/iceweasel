@@ -640,13 +640,13 @@ class TrustPanel {
     if (this.#isInternalSecurePage) {
       return true;
     }
+    if (this.#isCertErrorPage || this.#isCertUserOverridden) {
+      return false;
+    }
     if (this.#isSecureConnection) {
       return true;
     }
     if (this.#isBrokenConnection) {
-      return false;
-    }
-    if (this.#isCertErrorPage || this.#isCertUserOverridden) {
       return false;
     }
     if (this.#isPotentiallyTrustworthy) {
