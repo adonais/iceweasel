@@ -2564,7 +2564,7 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
               IsTableCellElement(*aNode.AsContent()), false};
     }
     if (styleDisplay->mDisplay != StyleDisplay::None &&
-        styleDisplay->HasNativeAppearance()) {
+        styleDisplay->HasAppearance()) {
       return {false, false, true};
     }
     if (styleDisplay->IsListItem()) {

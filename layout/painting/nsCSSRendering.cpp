@@ -1833,7 +1833,7 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayer(const PaintBGParams& aParams,
     // a root, otherwise keep going in order to let the theme stuff
     // draw the background. The canvas really should be drawing the
     // bg, but there's no way to hook that up via css.
-    if (!aParams.frame->StyleDisplay()->HasNativeAppearance()) {
+    if (!aParams.frame->StyleDisplay()->HasAppearance()) {
       return ImgDrawResult::SUCCESS;
     }
 
@@ -1917,7 +1917,7 @@ ImgDrawResult nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(
     // a root, otherwise keep going in order to let the theme stuff
     // draw the background. The canvas really should be drawing the
     // bg, but there's no way to hook that up via css.
-    if (!aParams.frame->StyleDisplay()->HasNativeAppearance()) {
+    if (!aParams.frame->StyleDisplay()->HasAppearance()) {
       return ImgDrawResult::SUCCESS;
     }
 

@@ -110,7 +110,6 @@ void Rule::AssertParentRuleType() {
                type == StyleCssRuleType::Container ||
                type == StyleCssRuleType::Scope ||
                type == StyleCssRuleType::StartingStyle ||
-               type == StyleCssRuleType::AppearanceBase ||
                type == StyleCssRuleType::Page);
   }
 }

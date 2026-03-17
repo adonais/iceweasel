@@ -1724,11 +1724,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     }
   }
 
-  bool HasNativeAppearance() const {
-    auto appearance = EffectiveAppearance();
-    return appearance != mozilla::StyleAppearance::None &&
-           appearance != mozilla::StyleAppearance::Base &&
-           appearance != mozilla::StyleAppearance::BaseSelect;
+  bool HasAppearance() const {
+    return EffectiveAppearance() != mozilla::StyleAppearance::None;
   }
 
   mozilla::StyleAppearance EffectiveAppearance() const {

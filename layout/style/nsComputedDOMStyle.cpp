@@ -898,8 +898,7 @@ static Side SideForPaddingOrMarginOrInsetProperty(
 
 static bool PaddingNeedsUsedValue(const LengthPercentage& aValue,
                                   const ComputedStyle& aStyle) {
-  return !aValue.ConvertsToLength() ||
-         aStyle.StyleDisplay()->HasNativeAppearance();
+  return !aValue.ConvertsToLength() || aStyle.StyleDisplay()->HasAppearance();
 }
 
 static bool HasPositionFallbacks(nsIFrame* aFrame) {

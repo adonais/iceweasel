@@ -1992,7 +1992,7 @@ class nsIFrame : public nsQueryFrame {
   }
   bool IsThemed(const nsStyleDisplay* aDisp,
                 nsITheme::Transparency* aTransparencyState = nullptr) const {
-    if (!aDisp->HasNativeAppearance()) {
+    if (!aDisp->HasAppearance()) {
       return false;
     }
     nsIFrame* mutable_this = const_cast<nsIFrame*>(this);

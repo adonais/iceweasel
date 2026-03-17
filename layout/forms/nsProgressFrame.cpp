@@ -237,6 +237,6 @@ nscoord nsProgressFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 }
 
 bool nsProgressFrame::ShouldUseNativeStyle() const {
-  return StyleDisplay()->HasNativeAppearance() &&
+  return StyleDisplay()->HasAppearance() &&
          !Style()->HasAuthorSpecifiedBorderOrBackground();
 }

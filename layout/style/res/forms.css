@@ -387,7 +387,7 @@ input[type="hidden"] {
 }
 
 /* image buttons */
-input:where([type="image"]) {
+input[type="image"] {
   appearance: none;
   -moz-default-appearance: none;
   padding: unset;
@@ -398,7 +398,7 @@ input:where([type="image"]) {
   cursor: pointer;
 }
 
-input:where([type="image"]):disabled {
+input[type="image"]:disabled {
   cursor: unset;
 }
 
@@ -436,7 +436,8 @@ input[type="checkbox"] {
 
 /* Common features of radio buttons and check boxes */
 
-input:where([type="radio"], [type="checkbox"]) {
+input[type="radio"],
+input[type="checkbox"] {
   box-sizing: border-box;
   cursor: default;
   /* unset some values from the general 'input' rule above: */
@@ -446,7 +447,7 @@ input:where([type="radio"], [type="checkbox"]) {
   color: unset;
 }
 
-input:where([type="radio"], [type="checkbox"]):is(:disabled, :disabled:active, :disabled:hover:active) {
+input:is([type="radio"], [type="checkbox"]):is(:disabled, :disabled:active, :disabled:hover:active) {
   cursor: unset;
 }
 
@@ -463,7 +464,7 @@ input[type="search"] {
    input[type=color] */
 button,
 ::file-selector-button,
-input:where([type="color"], [type="reset"], [type="button"], [type="submit"]) {
+input:is([type="color"], [type="reset"], [type="button"], [type="submit"]) {
   appearance: auto;
   -moz-default-appearance: button;
   /* The sum of border and padding on block-start and block-end
@@ -482,7 +483,7 @@ input:where([type="color"], [type="reset"], [type="button"], [type="submit"]) {
    input[type=color] */
 button,
 ::file-selector-button,
-input:where([type="reset"], [type="button"], [type="submit"]) {
+input:is([type="reset"], [type="button"], [type="submit"]) {
   color: ButtonText;
   font: -moz-button;
   white-space: pre;
@@ -512,7 +513,7 @@ button,
 
 ::file-selector-button:hover,
 button:hover,
-input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):hover {
+input:is([type="reset"], [type="button"], [type="submit"], [type="color"]):hover {
   color: -moz-buttonhovertext;
   border-color: -moz-buttonhoverborder;
   background-color: -moz-buttonhoverface;
@@ -520,7 +521,7 @@ input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):ho
 
 ::file-selector-button:active:hover,
 button:active:hover,
-input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):active:hover {
+input:is([type="reset"], [type="button"], [type="submit"], [type="color"]):active:hover {
   border-style: inset;
   border-color: -moz-buttonactiveborder;
   color: -moz-buttonactivetext;
@@ -529,7 +530,7 @@ input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):ac
 
 :is(:disabled, :disabled:active)::file-selector-button,
 button:is(:disabled, :disabled:active),
-input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):is(:disabled, :disabled:active),
+input:is([type="reset"], [type="button"], [type="submit"], [type="color"]):is(:disabled, :disabled:active),
 select:is(:disabled, :disabled:active) > button {
   border-style: outset;
   cursor: unset;
@@ -537,7 +538,7 @@ select:is(:disabled, :disabled:active) > button {
 
 :is(:disabled, :disabled:active)::file-selector-button,
 button:is(:disabled, :disabled:active),
-input:where([type="reset"], [type="button"], [type="submit"]):is(:disabled, :disabled:active),
+input:is([type="reset"], [type="button"], [type="submit"]):is(:disabled, :disabled:active),
 select:is(:disabled, :disabled:active) > button {
   color: GrayText;
   background-color: -moz-ButtonDisabledFace;
@@ -870,94 +871,4 @@ textarea:autofill {
   background-color: -moz-autofill-background !important;
   background-image: none !important;
   color: FieldText !important;
-}
-
-/* https://drafts.csswg.org/css-forms/#basic-appearance-stylesheet */
-/* See https://github.com/w3c/csswg-drafts/pull/13658 for divergences.
- * Other divergences are due to us not supporting calc-size(). */
-/* stylelint-disable-next-line at-rule-no-unknown */
-@appearance-base {
-  input,
-  textarea,
-  button,
-  ::file-selector-button,
-  select,
-  meter,
-  progress {
-    color: inherit;
-    font: inherit;
-    /* XXX: Redundant at least for <select> */
-    box-sizing: border-box;
-    background-color: transparent;
-  }
-
-  input:not([type="file"], [type="range"], [type="checkbox"][switch]),
-  textarea,
-  button,
-  ::file-selector-button,
-  ::slider-track,
-  select {
-    border: 1px solid currentColor;
-    background-color: transparent;
-  }
-  button,
-  ::file-selector-button,
-  select,
-  input:is([type="color"], [type="button"], [type="reset"], [type="submit"]) {
-    border: 1px solid currentColor;
-    background-color: transparent;
-    color: inherit;
-    /* Padding prevents the text from sticking to the borders.
-     * optically centered to account for half leading */
-    padding-block: 0.25em;
-    padding-inline: 0.5em;
-
-    /* <select>s and <button>s should have border-radius to be
-     * distinct from <input>s: https://github.com/w3c/csswg-drafts/issues/10857#issuecomment-2520875011*/
-    border-radius: 0.5em;
-
-    /* These min-size rules ensure accessibility by following WCAG rules:
-     * https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html
-     * The 1lh is there to make sure that options without text don't change
-     * the block size of the button.
-     * TODO: Needs calc-size():
-    min-block-size: calc-size(auto, max(size, 24px, 1lh));
-    min-inline-size: calc-size(auto, max(size, 24px)); */
-
-    /* box-sizing comes from existing UA styles which happen to
-     * already be interoperable. */
-    /* box-sizing: border-box; */
-
-    /* Push picker icon to the right of the box and have some space
-     * in between it and the text. */
-    display: inline-flex;
-    gap: 0.5em;
-
-    user-select: none;
-
-    text-transform: initial;
-    text-align: initial;
-    text-indent: initial;
-  }
-
-  button:enabled:hover,
-  select:enabled:hover,
-  input:is([type="color"], [type="button"], [type="reset"], [type="submit"]):enabled:hover,
-  input[type="file"]:enabled::file-selector-button:hover {
-    background-color: color-mix(currentColor 10%, transparent);
-  }
-
-  button:enabled:active,
-  select:enabled:active,
-  input:is([type="color"], [type="button"], [type="reset"], [type="submit"]):enabled:active,
-  input[type="file"]:enabled::file-selector-button:active {
-    background-color: color-mix(currentColor 20%, transparent);
-  }
-
-  button:disabled,
-  select:disabled,
-  input:is([type="color"], [type="button"], [type="reset"], [type="submit"]):disabled,
-  input[type="file"]:disabled::file-selector-button {
-    color: color-mix(currentColor 50%, transparent);
-  }
 }
