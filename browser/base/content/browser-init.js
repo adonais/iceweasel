@@ -19,7 +19,6 @@ var gBrowserInit = {
   _tabToAdopt: undefined,
   _firstContentWindowPaintDeferred: Promise.withResolvers(),
   idleTasksFinished: Promise.withResolvers(),
-  _reducedProtectionPrefObserver: null,
 
   /**
    * Handles considerations when the enabled state of the Translations feature
@@ -566,8 +565,6 @@ var gBrowserInit = {
 
     ctrlTab.readPref();
     Services.prefs.addObserver(ctrlTab.prefName, ctrlTab);
-
-    ReducedProtectionNotification.observePref();
 
     // The object handling the downloads indicator is initialized here in the
     // delayed startup function, but the actual indicator element is not loaded

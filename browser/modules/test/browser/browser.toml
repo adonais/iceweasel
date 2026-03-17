@@ -25,9 +25,6 @@ prefs = [
 
 ["browser_ProcessHangNotifications.js"]
 
-["browser_ReducedProtectionNotification.js"]
-https_first_disabled = true
-
 ["browser_SitePermissions.js"]
 
 ["browser_SitePermissions_combinations.js"]
