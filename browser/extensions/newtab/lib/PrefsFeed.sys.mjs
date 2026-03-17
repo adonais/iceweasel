@@ -257,6 +257,14 @@ export class PrefsFeed {
         .setStringPref("weather.display", valueObj.weather.display);
     }
 
+    // Write topSitesRows to the default branch to enable experiments with
+    // the default row count without overriding an explicit user choice.
+    if (valueObj.topSites?.topSitesRows) {
+      Services.prefs
+        .getDefaultBranch(this._prefs._branchStr)
+        .setIntPref("topSitesRows", valueObj.topSites.topSitesRows);
+    }
+
     return valueObj;
   }
 
