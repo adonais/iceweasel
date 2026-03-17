@@ -12331,6 +12331,7 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
       case LayoutFrameType::SVGOuterSVG:
       case LayoutFrameType::SVGSymbol:
       case LayoutFrameType::Image:
+      case LayoutFrameType::HTMLVideo:
       case LayoutFrameType::TableCell:
         return kPhysicalAxesBoth;
       case LayoutFrameType::Table:
