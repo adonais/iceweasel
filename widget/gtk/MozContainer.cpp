@@ -56,7 +56,7 @@ GType moz_container_get_type(void) {
     };
 
     moz_container_type =
-        g_type_register_static(GTK_TYPE_WIDGET, "MozContainer",
+        g_type_register_static(GTK_TYPE_CONTAINER, "MozContainer",
                                &moz_container_info, static_cast<GTypeFlags>(0));
   }
 
@@ -118,6 +118,10 @@ static void moz_container_destroy(GtkWidget* widget) {
   }
   LOGCONTAINER(("moz_container_destroy() [%p]\n",
                 (void*)moz_container_get_nsWindow(MOZ_CONTAINER(widget))));
+  if (container->entry_widget) {
+    gtk_widget_unparent(container->entry_widget);
+    container->entry_widget = nullptr;
+  }
   container->destroyed = TRUE;
 #ifdef MOZ_WAYLAND
   if (container->wl) {
@@ -208,6 +212,11 @@ void moz_container_unrealize(GtkWidget* widget) {
   MOZ_DIAGNOSTIC_ASSERT(w);
   w->SetGdkWindow(nullptr);
 
+  GtkWidget* entry = MOZ_CONTAINER(widget)->entry_widget;
+  if (entry) {
+    gtk_widget_unrealize(entry);
+  }
+
   if (gtk_widget_get_mapped(widget)) {
     gtk_widget_unmap(widget);
   }
@@ -248,4 +257,30 @@ void moz_container_size_allocate(GtkWidget* widget, GtkAllocation* allocation) {
 nsWindow* moz_container_get_nsWindow(MozContainer* container) {
   gpointer user_data = g_object_get_data(G_OBJECT(container), "nsWindow");
   return static_cast<nsWindow*>(user_data);
+}
+
+void moz_container_entry_position(MozContainer* container, int x, int y,
+                                  int height) {
+  if (container->entry_widget) {
+    // We want to make GtkEntry widget small as possible.
+    // Emoji picker is placed in the middle of GtkEntry so adjust x coordinate.
+    static const int kEntryWidth = 20;
+    GtkAllocation allocation{(x < kEntryWidth / 2) ? 0 : x - kEntryWidth / 2, y,
+                             kEntryWidth, height};
+    gtk_widget_size_allocate(container->entry_widget, &allocation);
+  }
+}
+
+GtkWidget* moz_container_entry_set(MozContainer* container, GtkWidget* widget) {
+  MOZ_DIAGNOSTIC_ASSERT(!container->entry_widget ||
+                        container->entry_widget == widget);
+  if (!container->entry_widget) {
+    container->entry_widget = widget;
+    gtk_widget_set_parent(widget, GTK_WIDGET(container));
+  }
+  return container->entry_widget;
+}
+
+GtkWidget* moz_container_get_entry(MozContainer* container) {
+  return container->entry_widget;
 }

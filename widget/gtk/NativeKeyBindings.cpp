@@ -12,6 +12,7 @@
 #include "NativeKeyBindings.h"
 #include "nsString.h"
 #include "nsGtkKeyUtils.h"
+#include "nsWindow.h"
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
@@ -198,6 +199,14 @@ static void paste_clipboard_cb(GtkWidget* w, gpointer user_data) {
   gHandled = true;
 }
 
+static void insert_emoji_cb(GtkWidget* w) {
+  RefPtr<nsWindow> window = nsWindow::GetFocusedWindow();
+  if (!window) {
+    return;
+  }
+  window->InsertEmoji();
+}
+
 // GtkTextView-only signals
 static void select_all_cb(GtkWidget* aWidget, gboolean aSelect,
                           gpointer aUserData) {
@@ -260,7 +269,6 @@ void NativeKeyBindings::Init(NativeKeyBindingsType aType) {
                        this);
       break;
   }
-
   g_object_ref_sink(mNativeTarget);
 
   g_signal_connect(mNativeTarget, "copy_clipboard",
@@ -273,6 +281,8 @@ void NativeKeyBindings::Init(NativeKeyBindingsType aType) {
                    this);
   g_signal_connect(mNativeTarget, "paste_clipboard",
                    G_CALLBACK(paste_clipboard_cb), this);
+  g_signal_connect(mNativeTarget, "insert-emoji", G_CALLBACK(insert_emoji_cb),
+                   this);
 }
 
 NativeKeyBindings::~NativeKeyBindings() {

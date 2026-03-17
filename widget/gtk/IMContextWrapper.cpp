@@ -3044,6 +3044,8 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
   GdkRectangle area = rootWindow->DevicePixelsToGdkRectRoundOut(rect);
 
   gtk_im_context_set_cursor_location(aContext, &area);
+
+  rootWindow->SetTextInputArea(area);
 }
 
 nsresult IMContextWrapper::GetCurrentParagraph(nsAString& aText,

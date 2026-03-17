@@ -733,6 +733,9 @@ void nsWindow::Destroy() {
   // just drop the reference here.
   mEGLWindow = nullptr;
 
+  // Emoji picker will be deleted with mContainer
+  mEmojiHidenSignal = 0;
+
   gtk_widget_destroy(mShell);
   mShell = nullptr;
   mContainer = nullptr;
@@ -9990,6 +9993,79 @@ void nsWindow::UnexportHandle() {
     if (auto* toplevel = GetToplevelGdkWindow()) {
       sGdkWaylandWindowUnexportHandle(toplevel);
     }
+  }
+}
+
+void nsWindow::SetTextInputArea(GdkRectangle aCursorArea) {
+  if (!mIMContext) {
+    LOG("nsWindow::SetTextInputArea() called without IMContext?");
+    return;
+  }
+  LOG("nsWindow::SetTextInputArea() pos [%d, %d]", aCursorArea.x,
+      aCursorArea.y);
+  mIMContextInputArea = aCursorArea;
+}
+
+void nsWindow::InsertEmoji() {
+  if (mIsDestroyed || !mIMContext || !mIMContext->IsEditable()) {
+    LOG("nsWindow::InsertEmoji() failed, mIMContext [%p] editable [%d]",
+        (void*)mIMContext, mIMContext ? mIMContext->IsEditable() : 0);
+    return;
+  }
+  if (!!nsXULPopupManager::GetInstance()->GetRollupWidget()) {
+    LOG("nsWindow::InsertEmoji() is not implemented for popups.");
+    return;
+  }
+
+  LOG("nsWindow::InsertEmoji()");
+
+  GtkWidget* entry = moz_container_get_entry(MOZ_CONTAINER(mContainer));
+  if (!entry) {
+    entry = moz_container_entry_set(MOZ_CONTAINER(mContainer), gtk_entry_new());
+    gtk_widget_show(entry);
+    g_signal_connect(entry, "insert_text",
+                     G_CALLBACK(+[](GtkWidget* entry, gchar* text, gint length,
+                                    gint* position, gpointer data) {
+                       nsWindow* window = static_cast<nsWindow*>(data);
+                       if (!window || window->IsDestroyed()) {
+                         return;
+                       }
+                       LOGW("[%p] nsWindow::Emoji() insert_text", window);
+                       WidgetContentCommandEvent insertTextEvent(
+                           true, eContentCommandInsertText, window);
+                       NS_ConvertUTF8toUTF16 str(text);
+                       insertTextEvent.mString.emplace(str);
+                       window->DispatchEvent(&insertTextEvent);
+                     }),
+                     this);
+  }
+  moz_container_entry_position(MOZ_CONTAINER(mContainer), mIMContextInputArea.x,
+                               mIMContextInputArea.y,
+                               mIMContextInputArea.height);
+  // We may hide cursor when text input is active but we don't want to do it
+  // for emoji picker.
+  mWidgetCursorLocked = true;
+
+  // Calls gtk_entry_insert_emoji() directly, creates emoji chooser widget
+  // as child of GtkEntry.
+  g_signal_emit_by_name(entry, "insert-emoji");
+
+  if (!mEmojiHidenSignal) {
+    GtkWidget* chooser =
+        GTK_WIDGET(g_object_get_data(G_OBJECT(entry), "gtk-emoji-chooser"));
+    if (!chooser) {
+      return;
+    }
+    mEmojiHidenSignal = g_signal_connect(
+        chooser, "hide", G_CALLBACK(+[](GtkWidget* emojiPicker, gpointer data) {
+          nsWindow* window = static_cast<nsWindow*>(data);
+          if (!window || window->IsDestroyed()) {
+            return;
+          }
+          LOGW("[%p] nsWindow::Emoji() emoji picker hide", window);
+          window->UnlockCursor();
+        }),
+        this);
   }
 }
 
