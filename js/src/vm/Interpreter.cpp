@@ -4501,8 +4501,8 @@ error:
       ReservedRooted<Value> exceptionStack(&rootValue1);
       if (!cx->getPendingException(&exception) ||
           !cx->getPendingExceptionStack(&exceptionStack)) {
-        interpReturnOK = false;
-        goto return_continuation;
+        exception = UndefinedValue();
+        exceptionStack = NullValue();
       }
       PUSH_COPY(exception);
       PUSH_COPY(exceptionStack);
