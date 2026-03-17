@@ -8,6 +8,8 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import android.view.View
+import android.view.Window
+import androidx.core.view.WindowCompat.enableEdgeToEdge
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -20,8 +22,21 @@ import mozilla.components.support.ktx.android.view.setupPersistentInsets
 /**
  * [FragmentLifecycleCallbacks] delegate for configuring the container activity
  * as edge-to-edge or not to match how the new fragment navigated to is wants to be displayed.
+ *
+ * @param startingFragment The currently shown fragment for which the appropriate edge-to-edge
+ * strategy should be applied.
+ * For the next fragment navigations the appropriate edge-to-edge strategy will be automatically applied.
  */
-class EdgeToEdgeFragmentLifecycleCallbacks : FragmentLifecycleCallbacks() {
+class EdgeToEdgeFragmentLifecycleCallbacks(
+    private var startingFragment: Fragment? = null,
+) : FragmentLifecycleCallbacks() {
+
+    init {
+        startingFragment?.let {
+            setEdgeToEdgeStrategy(it)
+            startingFragment = null
+        }
+    }
 
     override fun onFragmentViewCreated(
         fm: FragmentManager,
@@ -32,15 +47,15 @@ class EdgeToEdgeFragmentLifecycleCallbacks : FragmentLifecycleCallbacks() {
         // Dialog fragments have their own edge-to-edge behavior, separate from Fenix's main activity.
         if (f is DialogFragment) return
 
-        // This Jetpack Navigation specialized fragment acts as a container for application's own fragments
-        // and only the later set different edge-to-edge handling strategies.
-        if (f is NavHostFragment) return
+        setEdgeToEdgeStrategy(f)
+    }
 
-        f.requireActivity().window.apply {
+    private fun setEdgeToEdgeStrategy(fragment: Fragment) {
+        fragment.requireActivity().window.apply {
             // Change the edge-to-edge behavior right before the new fragment is about to be drawn
             // to prevent the previous one with a different strategy "jumping".
-            v.doOnPreDraw {
-                when (f is SystemInsetsPaddedFragment) {
+            fragment.view?.doOnPreDraw {
+                when (fragment is SystemInsetsPaddedFragment || fragment is NavHostFragment) {
                     true -> setupPersistentInsets()
                     else -> clearPersistentInsets()
                 }
@@ -56,12 +71,15 @@ class EdgeToEdgeFragmentLifecycleCallbacks : FragmentLifecycleCallbacks() {
          *
          * @param supportFragmentManager [FragmentManager] hosting all screens for which to set
          * a different edge-to-edge behavior.
+         * @param window [Window] which will be shown as edge-to-edge or not depending on
+         * the current fragment being shown.
          */
-        fun register(supportFragmentManager: FragmentManager) {
+        fun register(supportFragmentManager: FragmentManager, window: Window) {
             // Matching the same API guard used for the methods controlling the edge-to-edge insets.
             if (SDK_INT < VERSION_CODES.TIRAMISU) return
+            enableEdgeToEdge(window)
 
-            val callbacks = EdgeToEdgeFragmentLifecycleCallbacks()
+            val callbacks = EdgeToEdgeFragmentLifecycleCallbacks(supportFragmentManager.fragments.lastOrNull())
 
             // Applying this recursively is needed because
             // NavHostFragment adds additional fragments as subfragments.

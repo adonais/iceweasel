@@ -377,7 +377,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         components.nimbus.sdk.initializeTooling(applicationContext, intent)
         components.strictMode.attachListenerToDisablePenaltyDeath(supportFragmentManager)
         MarkersFragmentLifecycleCallbacks.register(supportFragmentManager, components.core.engine)
-        EdgeToEdgeFragmentLifecycleCallbacks.register(supportFragmentManager)
 
         // There is disk read violations on some devices such as samsung and pixel for android 9/10
         components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
@@ -439,6 +438,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             storage = DefaultSplashScreenStorage(components.settings),
             showSplashScreen = { installSplashScreen().setKeepOnScreenCondition(it) },
             onSplashScreenFinished = { result ->
+                // Before the slashscreen ends the application has a different theme not supporting edge to edge.
+                EdgeToEdgeFragmentLifecycleCallbacks.register(supportFragmentManager, window)
+
                 if (result.sendTelemetry) {
                     SplashScreen.firstLaunchExtended.record(
                         SplashScreen.FirstLaunchExtendedExtra(dataFetched = result.wasDataFetched),
