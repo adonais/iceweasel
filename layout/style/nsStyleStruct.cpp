@@ -3332,7 +3332,7 @@ nsStyleUIReset::nsStyleUIReset()
       mViewTimelineAxisCount(1),
       mViewTimelineInsetCount(1),
       mFieldSizing(StyleFieldSizing::Fixed),
-      mViewTransitionName(StyleViewTransitionName::None()),
+      mViewTransitionName(StyleViewTransitionNameKeyword::None()),
       mTimelineScope(StyleScopedNameKeyword::None()) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
@@ -3414,7 +3414,7 @@ nsChangeHint nsStyleUIReset::CalcDifference(
     hint |= nsChangeHint_SchedulePaint;
   }
 
-  if (mViewTransitionName != aNewData.mViewTransitionName) {
+  if (mViewTransitionName.value != aNewData.mViewTransitionName.value) {
     if (HasViewTransitionName() != aNewData.HasViewTransitionName()) {
       hint |= nsChangeHint_RepaintFrame;
     } else {
