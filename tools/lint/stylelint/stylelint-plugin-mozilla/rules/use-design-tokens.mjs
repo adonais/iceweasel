@@ -8,11 +8,7 @@
 
 import stylelint from "stylelint";
 import valueParser from "postcss-value-parser";
-import {
-  namespace,
-  getLocalCustomProperties,
-  isSystemColor,
-} from "../helpers.mjs";
+import { namespace, getLocalCustomProperties } from "../helpers.mjs";
 import { propertyConfig } from "../config.mjs";
 import { PropertyValidator } from "../property-validator.mjs";
 
@@ -115,26 +111,11 @@ const ruleFunction = primaryOption => {
           warningPropertyValue = `${value}, which resolves to ${resolvedValue},`;
         }
 
-        let message = isSuggestedValueValid
-          ? messages.warning(warningPropertyValue, suggestedValue)
-          : messages.rejected(value, tokenCategories, fixedValue);
-        let severity = isSuggestedValueValid ? "warning" : "error";
-
-        if (
-          severity !== "warning" &&
-          config.validator.warnSystemColors &&
-          isSystemColor(value)
-        ) {
-          message = messages.warning(
-            value,
-            `${formatTokenCategory(tokenCategories)}design token`
-          );
-          severity = "warning";
-        }
-
         report({
-          message,
-          severity,
+          message: isSuggestedValueValid
+            ? messages.warning(warningPropertyValue, suggestedValue)
+            : messages.rejected(value, tokenCategories, fixedValue),
+          severity: isSuggestedValueValid ? "warning" : "error",
           node: decl,
           result,
           ruleName,

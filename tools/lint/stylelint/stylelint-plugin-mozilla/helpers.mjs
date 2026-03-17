@@ -7,35 +7,6 @@
 import { tokensTable } from "../../../../toolkit/themes/shared/design-system/dist/semantic-categories.mjs";
 
 /**
- * The list of system colors that are valid and intended to be used for high contrast/forced colors mode situations.
- */
-export const SYSTEM_COLORS = [
-  "accentcolor",
-  "accentcolortext",
-  "activetext",
-  "buttonborder",
-  "buttonface",
-  "buttontext",
-  "canvas",
-  "canvastext",
-  "field",
-  "fieldtext",
-  "graytext",
-  "highlight",
-  "highlighttext",
-  "linktext",
-  "mark",
-  "marktext",
-  "selecteditem",
-  "selecteditemtext",
-  "visitedtext",
-  // -moz- prefixed colors, used rarely but still valid
-  "-moz-combobox",
-  "-moz-dialog",
-  "-moz-dialogtext",
-];
-
-/**
  * Our namespace used to prefix Mozilla stylelint rules.
  */
 const MOZILLA_NAMESPACE = "stylelint-plugin-mozilla";
@@ -111,12 +82,3 @@ export const isUrlFunction = node => isFunction(node) && node.value === "url";
  * @returns {string}
  */
 export const trimValue = value => String(value).trim();
-
-/**
- * Checks whether a value is a system color (e.g. ButtonText, Canvas)
- *
- * @param {string} value
- * @returns {boolean}
- */
-export const isSystemColor = value =>
-  SYSTEM_COLORS.includes(value.toLowerCase());
