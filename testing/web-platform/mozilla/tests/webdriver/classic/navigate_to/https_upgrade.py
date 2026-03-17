@@ -1,7 +1,7 @@
 from urllib.parse import urlunsplit
 
 import pytest
-from tests.support.asserts import assert_error
+from tests.support.classic.asserts import assert_error
 
 
 def navigate_to(session, url):

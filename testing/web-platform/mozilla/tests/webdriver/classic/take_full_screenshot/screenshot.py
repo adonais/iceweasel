@@ -1,4 +1,5 @@
-from tests.support.asserts import assert_error, assert_png, assert_success
+from tests.support.asserts import assert_png
+from tests.support.classic.asserts import assert_error, assert_success
 from tests.support.image import png_dimensions
 
 from . import document_dimensions
