@@ -92,11 +92,13 @@ media.playback:
     type: event
     description:
       The time that the media pipeline takes to load the first video frame.
+      Only recorded on pre-release builds (Nightly and Beta).
     metadata:
       tags:
         - 'Core :: Audio/Video: Playback'
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1882205
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021157
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1882205
     data_sensitivity:
