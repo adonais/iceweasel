@@ -311,9 +311,6 @@ LightweightThemeConsumer.prototype = {
     // Store user's theme before replacing with aiThemeData.
     this._lastData = themeData;
 
-    // Capture original theme's color scheme before replacing with aiThemeData.
-    let originalThemeColorScheme = themeData?.theme?.color_scheme;
-
     if (this._isAIWindow) {
       if (manager.aiThemeData) {
         themeData = manager.aiThemeData;
@@ -336,18 +333,6 @@ LightweightThemeConsumer.prototype = {
 
       if (!supportsDarkTheme) {
         return false;
-      }
-
-      // AI windows: use color scheme from original user's theme
-      if (this._isAIWindow) {
-        switch (originalThemeColorScheme) {
-          case "dark":
-            return true;
-          case "system":
-            break;
-          default:
-            return false;
-        }
       }
 
       if (this.darkThemeMediaQuery?.matches) {

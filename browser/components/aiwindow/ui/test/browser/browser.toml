@@ -69,6 +69,8 @@ support-files = [
 
 ["browser_aiwindow_switcher.js"]
 
+["browser_aiwindow_theme.js"]
+
 ["browser_aiwindow_token_parsing.js"]
 
 ["browser_aiwindow_transparency.js"]
