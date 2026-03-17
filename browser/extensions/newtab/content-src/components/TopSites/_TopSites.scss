@@ -59,7 +59,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   }
 
   @media (min-width: $break-point-widest) {
-    grid-template-columns: repeat(8, auto);
+    grid-template-columns: repeat(var(--top-sites-max-per-row, 8), auto);
   }
 
   a {

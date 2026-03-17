@@ -89,7 +89,7 @@ export class _TopSites extends React.PureComponent {
    */
   _getVisibleTopSites() {
     // We hide 2 sites per row when not in the wide layout.
-    let sitesPerRow = TOP_SITES_MAX_SITES_PER_ROW;
+    let sitesPerRow = this.props.TopSitesMaxSitesPerRow;
     // $break-point-widest = 1072px (from _variables.scss)
     if (!globalThis.matchMedia(`(min-width: 1072px)`).matches) {
       sitesPerRow -= 2;
@@ -167,6 +167,7 @@ export class _TopSites extends React.PureComponent {
           <TopSiteList
             TopSites={props.TopSites}
             TopSitesRows={props.TopSitesRows}
+            topSitesMaxSitesPerRow={props.TopSitesMaxSitesPerRow}
             dispatch={props.dispatch}
             topSiteIconType={topSiteIconType}
             colors={colors}
@@ -211,9 +212,16 @@ export class _TopSites extends React.PureComponent {
   }
 }
 
-export const TopSites = connect(state => ({
-  App: state.App,
-  TopSites: state.TopSites,
-  Prefs: state.Prefs,
-  TopSitesRows: state.Prefs.values.topSitesRows,
-}))(_TopSites);
+export const TopSites = connect(state => {
+  const prefs = state.Prefs.values;
+  return {
+    App: state.App,
+    TopSites: state.TopSites,
+    Prefs: state.Prefs,
+    TopSitesRows: prefs.topSitesRows,
+    TopSitesMaxSitesPerRow:
+      prefs.trainhopConfig?.topSites?.maxSitesPerRow ??
+      prefs.topSitesMaxSitesPerRow ??
+      TOP_SITES_MAX_SITES_PER_ROW,
+  };
+})(_TopSites);

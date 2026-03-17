@@ -851,7 +851,9 @@ export class _TopSiteList extends React.PureComponent {
   _getTopSites() {
     // Make a copy of the sites to truncate or extend to desired length
     let topSites = this.props.TopSites.rows.slice();
-    topSites.length = this.props.TopSitesRows * TOP_SITES_MAX_SITES_PER_ROW;
+    topSites.length =
+      this.props.TopSitesRows *
+      (this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
     // if topSites do not fill an entire row add 'Add shortcut' button to array of topSites
     // (there should only be one of these)
     const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
@@ -1084,6 +1086,10 @@ export class _TopSiteList extends React.PureComponent {
           className={`top-sites-list${
             this.state.draggedSite ? " dnd-active" : ""
           }`}
+          style={{
+            "--top-sites-max-per-row":
+              this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW,
+          }}
         >
           {topSitesUI}
         </ul>

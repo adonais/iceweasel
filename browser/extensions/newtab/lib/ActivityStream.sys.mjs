@@ -515,6 +515,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "topSitesMaxSitesPerRow",
+    {
+      title: "Max number of Top Sites to display per row",
+      value: 8,
+    },
+  ],
+  [
     "telemetry",
     {
       title: "Enable system error and usage data collection",

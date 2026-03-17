@@ -65,6 +65,7 @@ const PINNED_FAVICON_PROPS_TO_MIGRATE = [
 
 const CACHE_KEY = "contile";
 const ROWS_PREF = "topSitesRows";
+const PREF_MAX_SITES_PER_ROW = "topSitesMaxSitesPerRow";
 const SHOW_SPONSORED_PREF = "showSponsoredTopSites";
 // The default total number of sponsored top sites to fetch from Contile
 // and Pocket.
@@ -144,6 +145,15 @@ ChromeUtils.defineLazyGetter(lazy, "userAgent", () => {
     Ci.nsIHttpProtocolHandler
   ).userAgent;
 });
+
+function getTopSitesCount(prefValues) {
+  return (
+    prefValues[ROWS_PREF] *
+    (prefValues.trainhopConfig?.topSites?.maxSitesPerRow ??
+      prefValues[PREF_MAX_SITES_PER_ROW] ??
+      TOP_SITES_MAX_SITES_PER_ROW)
+  );
+}
 
 // Smart shortcuts
 import { RankShortcutsProvider } from "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs";
@@ -1308,9 +1318,9 @@ export class TopSitesFeed {
         return false;
       }
 
-      const numberOfSlots =
-        this.store.getState().Prefs.values[ROWS_PREF] *
-        TOP_SITES_MAX_SITES_PER_ROW;
+      const numberOfSlots = getTopSitesCount(
+        this.store.getState().Prefs.values
+      );
 
       // The plainPinnedSites array is populated with pinned sites at their
       // respective indices, and null everywhere else, but is not always the
@@ -1513,9 +1523,8 @@ export class TopSitesFeed {
     const numFetch =
       (smartshortcutsEnabled(this.store.getState().Prefs.values)
         ? overSampleMultiplier
-        : 1) *
-      (prefValues[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW);
-    const numItems = prefValues[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
+        : 1) * getTopSitesCount(prefValues);
+    const numItems = getTopSitesCount(prefValues);
     const searchShortcutsExperiment = prefValues[SEARCH_SHORTCUTS_EXPERIMENT];
     // We must wait for search services to initialize in order to access default
     // search engine properties without triggering a synchronous initialization
@@ -2245,9 +2254,7 @@ export class TopSitesFeed {
     // Don't insert any pins past the end of the visible top sites. Otherwise,
     // we can end up with a bunch of pinned sites that can never be unpinned again
     // from the UI.
-    const topSitesCount =
-      this.store.getState().Prefs.values[ROWS_PREF] *
-      TOP_SITES_MAX_SITES_PER_ROW;
+    const topSitesCount = getTopSitesCount(this.store.getState().Prefs.values);
     if (index >= topSitesCount) {
       return;
     }
@@ -2299,8 +2306,7 @@ export class TopSitesFeed {
       index,
       action.data.draggedFromIndex !== undefined
         ? action.data.draggedFromIndex
-        : this.store.getState().Prefs.values[ROWS_PREF] *
-            TOP_SITES_MAX_SITES_PER_ROW
+        : getTopSitesCount(this.store.getState().Prefs.values)
     );
 
     await this._clearLinkCustomScreenshot(action.data.site);
@@ -2314,9 +2320,7 @@ export class TopSitesFeed {
     });
 
     // Pin the addedShortcuts.
-    const numberOfSlots =
-      this.store.getState().Prefs.values[ROWS_PREF] *
-      TOP_SITES_MAX_SITES_PER_ROW;
+    const numberOfSlots = getTopSitesCount(this.store.getState().Prefs.values);
     addedShortcuts.forEach(shortcut => {
       // Find first hole in pinnedLinks.
       let index = lazy.NewTabUtils.pinnedLinks.links.findIndex(link => !link);

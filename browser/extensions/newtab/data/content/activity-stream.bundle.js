@@ -8904,7 +8904,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
   _getTopSites() {
     // Make a copy of the sites to truncate or extend to desired length
     let topSites = this.props.TopSites.rows.slice();
-    topSites.length = this.props.TopSitesRows * TOP_SITES_MAX_SITES_PER_ROW;
+    topSites.length = this.props.TopSitesRows * (this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
     // if topSites do not fill an entire row add 'Add shortcut' button to array of topSites
     // (there should only be one of these)
     const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
@@ -9089,7 +9089,10 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       ref: el => {
         this.focusRef = el;
       },
-      className: `top-sites-list${this.state.draggedSite ? " dnd-active" : ""}`
+      className: `top-sites-list${this.state.draggedSite ? " dnd-active" : ""}`,
+      style: {
+        "--top-sites-max-per-row": this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW
+      }
     }, topSitesUI));
   }
 }
@@ -9464,7 +9467,7 @@ class _TopSites extends (external_React_default()).PureComponent {
    */
   _getVisibleTopSites() {
     // We hide 2 sites per row when not in the wide layout.
-    let sitesPerRow = TOP_SITES_MAX_SITES_PER_ROW;
+    let sitesPerRow = this.props.TopSitesMaxSitesPerRow;
     // $break-point-widest = 1072px (from _variables.scss)
     if (!globalThis.matchMedia(`(min-width: 1072px)`).matches) {
       sitesPerRow -= 2;
@@ -9536,6 +9539,7 @@ class _TopSites extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement(TopSiteList, {
       TopSites: props.TopSites,
       TopSitesRows: props.TopSitesRows,
+      topSitesMaxSitesPerRow: props.TopSitesMaxSitesPerRow,
       dispatch: props.dispatch,
       topSiteIconType: topSiteIconType,
       colors: colors,
@@ -9565,12 +9569,16 @@ class _TopSites extends (external_React_default()).PureComponent {
     }))))));
   }
 }
-const TopSites_TopSites = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  App: state.App,
-  TopSites: state.TopSites,
-  Prefs: state.Prefs,
-  TopSitesRows: state.Prefs.values.topSitesRows
-}))(_TopSites);
+const TopSites_TopSites = (0,external_ReactRedux_namespaceObject.connect)(state => {
+  const prefs = state.Prefs.values;
+  return {
+    App: state.App,
+    TopSites: state.TopSites,
+    Prefs: state.Prefs,
+    TopSitesRows: prefs.topSitesRows,
+    TopSitesMaxSitesPerRow: prefs.trainhopConfig?.topSites?.maxSitesPerRow ?? prefs.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW
+  };
+})(_TopSites);
 ;// CONCATENATED MODULE: ./content-src/components/Sections/Sections.jsx
 function Sections_extends() { return Sections_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Sections_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
