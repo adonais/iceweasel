@@ -279,6 +279,7 @@ class SearchSuggestionsProvidersBuilder(
         if (state.showSportsSuggestions) {
             providersToAdd.add(
                 SportsOnlineSuggestionProvider(
+                    searchUseCase = searchUseCase,
                     dataSource = MockedSportsSuggestionDataSource(),
                     suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
                 ),

@@ -11,6 +11,7 @@ import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestio
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionTeam
+import mozilla.components.feature.search.SearchUseCases
 import java.time.DateTimeException
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -31,6 +32,7 @@ const val DEFAULT_SPORT_SUGGESTION_LIMIT = 1
  * @property maxNumberOfSuggestions the maximum number of suggestions to be provided.
  */
 class SportsOnlineSuggestionProvider(
+    private val searchUseCase: SearchUseCases.SearchUseCase,
     private val dataSource: AwesomeBar.SportsSuggestionDataSource,
     private val suggestionsHeader: String? = null,
     @get:VisibleForTesting internal val maxNumberOfSuggestions: Int = DEFAULT_SPORT_SUGGESTION_LIMIT,
@@ -71,7 +73,9 @@ class SportsOnlineSuggestionProvider(
 
         return if (hasRequiredFields && hasAllFields) {
             AwesomeBar.SportSuggestion(
+                onSuggestionClicked = { searchUseCase.invoke(query) },
                 provider = this@SportsOnlineSuggestionProvider,
+                score = Int.MAX_VALUE,
                 query = query,
                 sport = sport,
                 date = date,

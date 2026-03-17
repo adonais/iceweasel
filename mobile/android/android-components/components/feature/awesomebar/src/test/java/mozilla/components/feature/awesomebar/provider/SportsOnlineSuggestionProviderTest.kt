@@ -13,11 +13,15 @@ import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
+import mozilla.components.feature.search.SearchUseCases.SearchUseCase
+import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito.verify
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
@@ -42,6 +46,7 @@ class SportsOnlineSuggestionProviderTest {
         )
 
         provider = SportsOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = fakeDataSource,
             suggestionsHeader = null,
             maxNumberOfSuggestions = DEFAULT_SPORT_SUGGESTION_LIMIT,
@@ -72,6 +77,32 @@ class SportsOnlineSuggestionProviderTest {
     }
 
     @Test
+    fun `onSuggestionClicked invokes search use case with query`() = runTest {
+        val searchUseCase: SearchUseCase = mock()
+        val localDateSource = FakeSportsSuggestionDataSource(
+            results = listOf(
+                sampleSportItem("test query"),
+            ),
+        )
+        val localProvider = SportsOnlineSuggestionProvider(
+            searchUseCase = searchUseCase,
+            dataSource = localDateSource,
+            suggestionsHeader = null,
+            maxNumberOfSuggestions = DEFAULT_SPORT_SUGGESTION_LIMIT,
+        )
+
+        val deferred = async { localProvider.onInputChanged("NHL sport") }
+        advanceTimeBy(ARTIFICIAL_DELAY)
+        val results = deferred.await()
+
+        val suggestion = results.single()
+        assertNotNull(suggestion.onSuggestionClicked)
+        suggestion.onSuggestionClicked!!.invoke()
+
+        verify(searchUseCase).invoke("test query")
+    }
+
+    @Test
     fun `respects maxNumberOfSuggestions`() = runTest {
         val manyResults = listOf(
             sampleSportItem(query = "a sport", sport = "A"),
@@ -82,6 +113,7 @@ class SportsOnlineSuggestionProviderTest {
         val localDataSource = FakeSportsSuggestionDataSource(results = manyResults)
 
         val limitedProvider = SportsOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = localDataSource,
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,
@@ -97,6 +129,7 @@ class SportsOnlineSuggestionProviderTest {
     @Test
     fun `id is stable per instance`() = runTest {
         val p = SportsOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = FakeSportsSuggestionDataSource(results = listOf(sampleSportItem())),
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,
@@ -115,6 +148,7 @@ class SportsOnlineSuggestionProviderTest {
     fun `cancellation before delay prevents data source call`() = runTest {
         val localDataSource = FakeSportsSuggestionDataSource(results = listOf(sampleSportItem()))
         val cancellableProvider = SportsOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = localDataSource,
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,

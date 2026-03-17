@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.parcelize.Parcelize
 import mozilla.components.compose.browser.awesomebar.AwesomeBarColors
 import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
+import mozilla.components.compose.browser.awesomebar.internal.optimizedsuggestions.SportSuggestion
 import mozilla.components.compose.browser.awesomebar.internal.optimizedsuggestions.StockSuggestion
 import mozilla.components.concept.awesomebar.AwesomeBar
 
@@ -78,6 +79,18 @@ internal fun Suggestions(
                             index = suggestion.index,
                             lastPrice = suggestion.lastPrice,
                             changePercent = suggestion.changePercToday,
+                        )
+                    }
+
+                    is AwesomeBar.SportSuggestion -> {
+                        SportSuggestion(
+                            onClick = { onSuggestionClicked(group, suggestion) },
+                            sport = suggestion.sport,
+                            status = suggestion.status,
+                            statusType = suggestion.statusType,
+                            date = suggestion.date,
+                            homeTeam = suggestion.homeTeam,
+                            awayTeam = suggestion.awayTeam,
                         )
                     }
                 }
