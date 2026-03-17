@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.test.rule.GrantPermissionRule
 import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.support.android.test.rules.MockWebServerRule
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.Description

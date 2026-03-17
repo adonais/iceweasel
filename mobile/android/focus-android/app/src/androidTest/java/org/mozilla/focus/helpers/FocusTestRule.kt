@@ -7,6 +7,7 @@ package org.mozilla.focus.helpers
 import android.Manifest
 import android.os.Build
 import androidx.test.rule.GrantPermissionRule
+import mozilla.components.support.android.test.rules.MockWebServerRule
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.Description

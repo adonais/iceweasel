@@ -31,7 +31,7 @@ import org.mozilla.fenix.ui.robots.notificationShade
  * teardown: device orientation, storage cleanup, notification dismissal, and browser state
  * initialization.
  *
- * Intended to be used alongside [MockWebServerRule] and a [androidx.test.rule.GrantPermissionRule].
+ * Intended to be used alongside [MockWebServerRule][mozilla.components.support.android.test.rules.MockWebServerRule] and a [androidx.test.rule.GrantPermissionRule].
  */
 class TestSetupRule : ExternalResource() {
 
