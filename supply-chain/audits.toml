@@ -1435,6 +1435,11 @@ who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.1 -> 0.12.0"
 
+[[audits.codespan-reporting]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.12.0 -> 0.13.1"
+
 [[audits.comedy]]
 who = "Nick Alexander <nalexander@mozilla.com>"
 criteria = "safe-to-deploy"
