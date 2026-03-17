@@ -2439,12 +2439,8 @@ static bool ScrollbarGenerationChanged(const nsStyleDisplay& aOld,
 static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
                                          StyleAppearance aDefaultAppearance) {
   switch (aAppearance) {
-    case StyleAppearance::Base:
-      /* TODO: Other appearance: base cases */
-      return aDefaultAppearance == StyleAppearance::Checkbox ||
-             aDefaultAppearance == StyleAppearance::Radio;
     case StyleAppearance::None:
-      // Checkbox / radio with appearance: none don't construct an
+      // Checkbox / radio with appearance none doesn't construct an
       // nsCheckboxRadioFrame.
       return aDefaultAppearance == StyleAppearance::Checkbox ||
              aDefaultAppearance == StyleAppearance::Radio;

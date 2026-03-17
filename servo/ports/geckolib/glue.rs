@@ -110,14 +110,14 @@ use style::stylesheets::keyframes_rule::{Keyframe, KeyframeSelector, KeyframesSt
 use style::stylesheets::scope_rule::{ImplicitScopeRoot, ScopeRootCandidate, ScopeSubjectMap};
 use style::stylesheets::supports_rule::parse_condition_or_declaration;
 use style::stylesheets::{
-    AllowImportRules, AppearanceBaseRule, ContainerRule, CounterStyleRule, CssRule, CssRuleRef,
-    CssRuleType, CssRuleTypes, CssRules, CustomMediaCondition, CustomMediaEvaluator,
-    CustomMediaRule, DocumentRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule,
-    ImportRule, KeyframesRule, LayerBlockRule, LayerStatementRule, MarginRule, MediaRule,
-    NamespaceRule, NestedDeclarationsRule, Origin, OriginSet, PagePseudoClassFlags, PageRule,
-    PositionTryRule, PropertyRule, SanitizationData, SanitizationKind, ScopeRule,
-    StartingStyleRule, StyleRule, StylesheetContents, StylesheetInDocument,
-    StylesheetLoader as StyleStylesheetLoader, SupportsRule, UrlExtraData,
+    AllowImportRules, ContainerRule, CounterStyleRule, CssRule, CssRuleRef, CssRuleType,
+    CssRuleTypes, CssRules, CustomMediaCondition, CustomMediaEvaluator, CustomMediaRule,
+    DocumentRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule, ImportRule,
+    KeyframesRule, LayerBlockRule, LayerStatementRule, MarginRule, MediaRule, NamespaceRule,
+    NestedDeclarationsRule, Origin, OriginSet, PagePseudoClassFlags, PageRule, PositionTryRule,
+    PropertyRule, SanitizationData, SanitizationKind, ScopeRule, StartingStyleRule, StyleRule,
+    StylesheetContents, StylesheetInDocument, StylesheetLoader as StyleStylesheetLoader,
+    SupportsRule, UrlExtraData,
 };
 use style::stylist::{
     add_size_of_ua_cache, replace_parent_selector_with_implicit_scope, scope_root_candidates,
@@ -1066,7 +1066,7 @@ fn resolve_rules_for_element_with_context<'a>(
         rules: Some(rules),
         visited_rules: None,
         flags: original_computed_values.flags.for_cascade_inputs(),
-        included_cascade_flags: RuleCascadeFlags::empty(),
+        include_starting_style: Default::default(),
     };
 
     // Actually `PseudoElementResolution` doesn't matter.
@@ -2564,14 +2564,6 @@ impl_group_rule_funcs! { (StartingStyle, StartingStyleRule, StartingStyleRule),
     debug: Servo_StartingStyleRule_Debug,
     to_css: Servo_StartingStyleRule_GetCssText,
     changed: Servo_StyleSet_StartingStyleRuleChanged,
-}
-
-impl_group_rule_funcs! { (AppearanceBase, AppearanceBaseRule, AppearanceBaseRule),
-    get_rules: Servo_AppearanceBaseRule_GetRules,
-    getter: Servo_CssRules_GetAppearanceBaseRuleAt,
-    debug: Servo_AppearanceBaseRule_Debug,
-    to_css: Servo_AppearanceBaseRule_GetCssText,
-    changed: Servo_StyleSet_AppearanceBaseRuleChanged,
 }
 
 impl_basic_rule_funcs! { (PositionTry, PositionTryRule, Locked<PositionTryRule>),
