@@ -23,6 +23,8 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.mediasession.MediaSession
+import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.PAUSED
+import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.PLAYING
 import mozilla.components.feature.media.ext.getArtistOrUrl
 import mozilla.components.feature.media.ext.getNonPrivateIcon
 import mozilla.components.feature.media.ext.getTitleOrUrl
@@ -182,11 +184,18 @@ internal class MediaSessionServiceDelegate(
     @VisibleForTesting
     internal fun updateNotification(sessionState: SessionState) {
         notificationScope?.launch {
-            val notification = notificationHelper.create(sessionState, mediaSession)
-            notificationsDelegate.notify(
-                notificationId = notificationId,
-                notification = notification,
-            )
+            when (sessionState.mediaSessionState?.playbackState) {
+                PLAYING, PAUSED -> {
+                    val notification = notificationHelper.create(sessionState, mediaSession)
+                    notificationsDelegate.notify(
+                        notificationId = notificationId,
+                        notification = notification,
+                    )
+                }
+                else -> {
+                    notificationsDelegate.notificationManagerCompat.cancel(notificationId)
+                }
+            }
         }
     }
 

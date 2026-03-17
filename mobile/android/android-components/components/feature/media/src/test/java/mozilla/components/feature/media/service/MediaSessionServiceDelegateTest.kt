@@ -333,9 +333,11 @@ class MediaSessionServiceDelegateTest {
     }
 
     @Test
-    fun `WHEN handling stopped media THEN update internal state and notification and stop the service`() = runTest {
+    fun `WHEN handling stopped media THEN update internal state and cancel notification and stop the service`() = runTest {
         val mediaTab = getMediaTab(PlaybackState.STOPPED)
-        val notificationsDelegate: NotificationsDelegate = mock()
+        val notificationManagerCompat = spy(NotificationManagerCompat.from(testContext))
+        val notificationsDelegate = spy(NotificationsDelegate(notificationManagerCompat))
+        doReturn(true).`when`(notificationManagerCompat).areNotificationsEnabled()
 
         val delegate = spy(MediaSessionServiceDelegate(testContext, mock(), BrowserStore(), mock(), notificationsDelegate, this))
         delegate.isForegroundService = true
@@ -347,7 +349,7 @@ class MediaSessionServiceDelegateTest {
         verify(delegate).updateMediaSession(mediaTab)
         verify(delegate).unregisterBecomingNoisyListenerIfNeeded()
         verify(delegate.service).stopForegroundCompat(false)
-        verify(notificationsDelegate).notify(any(), eq(notificationId), any(), any(), any(), eq(false))
+        verify(notificationManagerCompat).cancel(eq(notificationId))
         assertFalse(delegate.isForegroundService)
     }
 
