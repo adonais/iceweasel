@@ -60,7 +60,7 @@ if CONFIG["WRAP_STL_INCLUDES"]:
             script="make-stl-wrappers.py",
             entry_point="gen_wrappers",
             inputs=[template_file],
-            flags=[TOPOBJDIR + output_dir, stl_compiler] + stl_headers
+            flags=[TOPOBJDIR + output_dir, stl_compiler] + stl_headers,
         )
 
     # Wrap <windows.h> to make it easier to use correctly
@@ -104,7 +104,7 @@ if CONFIG["WRAP_SYSTEM_INCLUDES"]:
         *outputs,
         script="make-system-wrappers.py",
         entry_point="gen_wrappers",
-        flags=[TOPOBJDIR + output_dir] + stl_headers + system_headers
+        flags=[TOPOBJDIR + output_dir] + stl_headers + system_headers,
     )
 
 if CONFIG["COMPILE_ENVIRONMENT"] and CONFIG["CBINDGEN"]:
