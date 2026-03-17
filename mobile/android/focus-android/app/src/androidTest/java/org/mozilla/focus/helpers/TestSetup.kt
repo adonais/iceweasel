@@ -1,31 +1,24 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.focus.helpers
 
-import android.Manifest
-import android.os.Build
-import androidx.test.rule.GrantPermissionRule
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
-import org.mozilla.focus.helpers.TestHelper.allowOrPreventSystemUIFromReadingTheClipboard
-import org.mozilla.focus.helpers.TestHelper.mDevice
 
+/**
+ * Compatibility shim kept for test classes that still extend [TestSetup].
+ * All setup logic lives in [FocusTestRule].
+ */
 open class TestSetup {
-
     @get:Rule
-    val generalPermissionRule: GrantPermissionRule =
-        if (Build.VERSION.SDK_INT >= 33) {
-            GrantPermissionRule.grant(
-                Manifest.permission.POST_NOTIFICATIONS,
-            )
-        } else {
-            GrantPermissionRule.grant()
-        }
+    val focusTestRule: FocusTestRule = FocusTestRule()
 
     @Before
-    open fun setUp() {
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            allowOrPreventSystemUIFromReadingTheClipboard(allowToReadClipboard = false)
-        }
-        // Closes the notification tray if it's open, otherwise it's a no-op.
-        mDevice.executeShellCommand("cmd statusbar collapse")
-    }
+    open fun setUp() = Unit
+
+    @After
+    open fun tearDown() = Unit
 }
