@@ -185,7 +185,7 @@ class GenerateTestBackup(BackupTestBase):
             OSKeyStore.STORE_LABEL = "test-" + Math.random().toString(36).substr(2);
 
             let bs = BackupService.init();
-            bs.setParentDirPath(destPath);
+            await bs.setParentDirPath(destPath);
 
             await bs.enableEncryption(recoveryCode);
 

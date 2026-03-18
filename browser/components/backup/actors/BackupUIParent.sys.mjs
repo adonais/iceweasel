@@ -146,7 +146,7 @@ export class BackupUIParent extends JSWindowActorParent {
       try {
         let { parentDirPath, password } = message.data;
         if (parentDirPath) {
-          this.#bs.setParentDirPath(parentDirPath);
+          await this.#bs.setParentDirPath(parentDirPath);
         }
 
         if (password) {
