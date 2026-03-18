@@ -927,6 +927,14 @@ export class AIWindow extends MozLitElement {
     this.submitChatMessage(text);
   }
 
+  onOpenLink() {
+    Glean.smartWindow.linkClick.record({
+      location: this.mode,
+      chat_id: this.conversationId,
+      message_seq: this.#conversation.messages.length,
+    });
+  }
+
   /**
    * Creates a UserRoleOpts object with current memories settings.
    *
@@ -1091,6 +1099,9 @@ export class AIWindow extends MozLitElement {
       await lazy.Chat.fetchWithHistory(this.#conversation, engineInstance, {
         inputText,
         browsingContext: this.#getBrowsingContext(),
+        telemetry: {
+          location: this.mode,
+        },
       });
 
       const lastMsg = this.#conversation.messages.at(-1);
@@ -1480,7 +1491,10 @@ export class AIWindow extends MozLitElement {
   async #removeAppliedMemory(messageId, memory) {
     try {
       const memoryId = memory.id;
-      const deleted = await lazy.MemoriesManager.hardDeleteMemoryById(memoryId);
+      const deleted = await lazy.MemoriesManager.hardDeleteMemoryById(
+        memoryId,
+        "assistant"
+      );
       if (!deleted) {
         console.warn("hardDeleteMemory returned false", memoryId);
       }

@@ -226,10 +226,6 @@ smart_window:
       location: *location
       chat_id: *chat_id
       message_seq: *message_seq
-      link_type:
-        type: string
-        description: >
-          Type of link clicked
 
   memory_removed_panel:
     type: event
@@ -250,6 +246,10 @@ smart_window:
         unit: count
         description: >
           Total number of memories still present after the removal
+      trigger:
+        type: string
+        description: >
+          The location where the removal occurred (assistant, settings)
 
   memory_applied:
     type: event

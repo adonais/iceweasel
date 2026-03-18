@@ -144,7 +144,7 @@ export class AIChatContentParent extends JSWindowActorParent {
 
   #notifyContentReady() {
     const aiWindow = this.#getAIWindowElement();
-    aiWindow.onContentReady();
+    aiWindow?.onContentReady();
 
     // If the ledger is already bound (setConversation completed before child
     // was ready), push trusted URLs now that the child can receive messages.
@@ -172,6 +172,8 @@ export class AIChatContentParent extends JSWindowActorParent {
   }
 
   #handleOpenLink(data) {
+    const aiWindow = this.#getAIWindowElement();
+    aiWindow?.onOpenLink();
     try {
       const { url } = data;
       if (!url) {
