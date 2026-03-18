@@ -25,8 +25,6 @@ import {
 } from "./helpers.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/firefoxview/syncedtabs-tab-list.mjs";
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/elements/moz-button.mjs";
 
 const UI_OPEN_STATE = "browser.tabs.firefox-view.ui-state.tab-pickup.open";
 
@@ -151,15 +149,14 @@ class SyncedTabsInView extends ViewPage {
         mainImageUrl=${ifDefined(mainImageUrl)}
         id="empty-container"
       >
-        <moz-button
+        <button
           class="primary"
-          type="primary"
           slot="primary-action"
           ?hidden=${!buttonLabel}
           data-l10n-id=${ifDefined(buttonLabel)}
           data-action=${action}
           @click=${e => this.controller.handleEvent(e)}
-        ></moz-button>
+        ></button>
       </fxview-empty-state>
     `;
   }
@@ -409,12 +406,21 @@ class SyncedTabsInView extends ViewPage {
             ${when(
               this.controller.currentSetupStateIndex === 4,
               () => html`
-                <moz-button
-                  iconSrc="chrome://global/skin/icons/plus.svg"
-                  data-l10n-id="firefoxview-syncedtabs-connect-another-device"
+                <button
+                  class="small-button"
                   data-action="add-device"
                   @click=${e => this.controller.handleEvent(e)}
-                ></moz-button>
+                >
+                  <img
+                    class="icon"
+                    role="presentation"
+                    src="chrome://global/skin/icons/plus.svg"
+                    alt="plus sign"
+                  /><span
+                    data-l10n-id="firefoxview-syncedtabs-connect-another-device"
+                    data-action="add-device"
+                  ></span>
+                </button>
               `
             )}
           </div>

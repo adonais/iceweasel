@@ -433,14 +433,10 @@ export class OpenTabsTabRow extends FxviewTabRowBase {
           (this.indicators?.includes("muted") ||
             this.indicators?.includes("soundplaying")),
         () => html`
-          <moz-button
-            type="icon ghost"
+          <button
             class="fxview-tab-row-pinned-media-button"
             id="fxview-tab-row-media-button"
             tabindex="-1"
-            iconSrc=${this.indicators?.includes("muted")
-              ? "chrome://global/skin/media/audio-muted.svg"
-              : "chrome://global/skin/media/audio.svg"}
             data-l10n-id=${this.indicators?.includes("muted")
               ? "fxviewtabrow-unmute-tab-button-no-context"
               : "fxviewtabrow-mute-tab-button-no-context"}
@@ -448,7 +444,7 @@ export class OpenTabsTabRow extends FxviewTabRowBase {
             soundplaying=${this.indicators?.includes("soundplaying") &&
             !this.indicators?.includes("muted")}
             @click=${this.muteOrUnmuteTab}
-          ></moz-button>
+          ></button>
         `
       )}
     </span>`;
