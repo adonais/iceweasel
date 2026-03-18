@@ -246,7 +246,7 @@ export const AIWindowUI = {
    * @param {boolean} sidebarIsOpen
    */
   _setAskButtonStyle(win, sidebarIsOpen) {
-    const askBtn = win.document.querySelector("#smartwindow-ask-button");
+    const askBtn = win.document.querySelector("#smartwindow-ask-button-inner");
     if (!askBtn) {
       return;
     }

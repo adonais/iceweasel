@@ -686,6 +686,12 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
 
 /* Smart Window toolbar ask button */
 #smartwindow-ask-button {
+  align-items: center;
+  padding-inline-start: var(--toolbarbutton-outer-padding);
+  padding-inline-end: var(--toolbar-start-end-padding);
+}
+
+#smartwindow-ask-button-inner {
   align-self: center;
   background-image: var(--smartwindow-ask-btn-gradient);
   background-origin: border-box;
@@ -703,7 +709,7 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
     background-image: var(--smartwindow-ask-btn-gradient-dark);
   }
 
-  &:hover {
+  #smartwindow-ask-button:hover > & {
     --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-hover);
     > :is(.toolbarbutton-icon, .toolbarbutton-text) {
       background-color: transparent;
@@ -740,7 +746,7 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
     --smartwindow-ask-btn-text-color: var(--smartwindow-ask-btn-text-color-opened);
     --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-opened);
 
-    &:hover {
+    #smartwindow-ask-button:hover > & {
       background-color: var(--smartwindow-ask-btn-bg-opened-hover);
       background-image: none;
     }
@@ -752,7 +758,7 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
         linear-gradient(var(--smartwindow-ask-btn-bg-opened-dark), var(--smartwindow-ask-btn-bg-opened-dark)), var(--smartwindow-ask-btn-gradient-dark);
       border-color: transparent;
 
-      &:hover {
+      #smartwindow-ask-button:hover > & {
         background-image: var(--smartwindow-ask-btn-bg-opened-hover-dark), var(--smartwindow-ask-btn-gradient-dark);
       }
     }

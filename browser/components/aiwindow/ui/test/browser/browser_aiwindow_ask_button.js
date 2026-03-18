@@ -35,7 +35,7 @@ async function testImmersiveView(isVerticalTabs) {
     "Chrome window has the aiwindow-immersive-view attribute"
   );
 
-  const askButton = win.document.getElementById("smartwindow-ask-button");
+  const askButton = win.document.getElementById("smartwindow-ask-button-inner");
   Assert.ok(askButton, "Ask button exists in the toolbar");
   Assert.ok(
     BrowserTestUtils.isHidden(askButton),
@@ -64,10 +64,12 @@ add_task(async function test_ask_button() {
       "Example url tab should be open"
     );
 
-    const askButton = win.document.getElementById("smartwindow-ask-button");
+    const askButton = win.document.getElementById(
+      "smartwindow-ask-button-inner"
+    );
     Assert.ok(askButton, "Ask button exists in the toolbar");
     Assert.ok(
-      !askButton.hidden,
+      BrowserTestUtils.isVisible(askButton),
       "Ask button is initially visible for AI Window"
     );
 
@@ -163,7 +165,9 @@ add_task(async function test_classic_window() {
   }
 
   try {
-    const askButton = win.document.getElementById("smartwindow-ask-button");
+    const askButton = win.document.getElementById(
+      "smartwindow-ask-button-inner"
+    );
     Assert.ok(
       BrowserTestUtils.isHidden(askButton),
       "Ask button is not visible in the toolbar for classic window"
