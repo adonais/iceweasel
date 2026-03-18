@@ -1240,8 +1240,7 @@ nsresult nsSocketTransport::BuildSocket(PRFileDesc*& fd, bool& proxyTransparent,
     SOCKET_LOG(("  error pushing io layer [%u:%s rv=%" PRIx32 "]\n", i,
                 mTypes[i].get(), static_cast<uint32_t>(rv)));
     if (fd) {
-      CloseSocket(
-          fd, mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
+      CloseSocket(fd);
     }
   }
   return rv;
@@ -1514,8 +1513,7 @@ nsresult nsSocketTransport::InitiateSocket() {
     // inform socket transport about this newly created socket...
     rv = mSocketTransportService->AttachSocket(fd, this);
     if (NS_FAILED(rv)) {
-      CloseSocket(
-          fd, mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
+      CloseSocket(fd);
       return rv;
     }
     mAttached = true;
@@ -1581,14 +1579,6 @@ nsresult nsSocketTransport::InitiateSocket() {
     }
   }
 
-  // We use PRIntervalTime here because we need
-  // nsIOService::LastOfflineStateChange time and
-  // nsIOService::LastConectivityChange time to be atomic.
-  PRIntervalTime connectStarted = 0;
-  if (gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase()) {
-    connectStarted = PR_IntervalNow();
-  }
-
   if (Telemetry::CanRecordPrereleaseData() ||
       Telemetry::CanRecordReleaseData()) {
     if (NS_FAILED(AttachNetworkDataCountLayer(fd))) {
@@ -1608,21 +1598,10 @@ nsresult nsSocketTransport::InitiateSocket() {
     }
   }
 
-  bool connectCalled = true;  // This is only needed for telemetry.
   status = PR_Connect(fd, &prAddr, NS_SOCKET_CONNECT_TIMEOUT);
   PRErrorCode code = PR_GetError();
   if (status == PR_SUCCESS) {
     PR_SetFDInheritable(fd, false);
-  }
-
-  if (gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase() &&
-      connectStarted && connectCalled) {
-    SendPRBlockingTelemetry(
-        connectStarted, glean::networking::prconnect_blocking_time_normal,
-        glean::networking::prconnect_blocking_time_shutdown,
-        glean::networking::prconnect_blocking_time_connectivity_change,
-        glean::networking::prconnect_blocking_time_link_change,
-        glean::networking::prconnect_blocking_time_offline);
   }
 
   if (status == PR_SUCCESS) {
@@ -1677,17 +1656,6 @@ nsresult nsSocketTransport::InitiateSocket() {
     // The connection was refused...
     //
     else {
-      if (gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase() &&
-          connectStarted && connectCalled) {
-        SendPRBlockingTelemetry(
-            connectStarted,
-            glean::networking::prconnect_fail_blocking_time_normal,
-            glean::networking::prconnect_fail_blocking_time_shutdown,
-            glean::networking::prconnect_fail_blocking_time_connectivity_change,
-            glean::networking::prconnect_fail_blocking_time_link_change,
-            glean::networking::prconnect_fail_blocking_time_offline);
-      }
-
       rv = ErrorAccordingToNSPR(code);
       if ((rv == NS_ERROR_CONNECTION_REFUSED) && !mProxyHost.IsEmpty()) {
         rv = NS_ERROR_PROXY_CONNECTION_REFUSED;
@@ -1977,8 +1945,7 @@ class ThunkPRClose : public Runnable {
       : Runnable("net::ThunkPRClose"), mFD(fd) {}
 
   NS_IMETHOD Run() override {
-    nsSocketTransport::CloseSocket(
-        mFD, gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
+    nsSocketTransport::CloseSocket(mFD);
     return NS_OK;
   }
 
@@ -2018,8 +1985,7 @@ void nsSocketTransport::ReleaseFD_Locked(PRFileDesc* fd) {
       }
       if (OnSocketThread()) {
         SOCKET_LOG(("nsSocketTransport: calling PR_Close [this=%p]\n", this));
-        CloseSocket(
-            mFD, mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
+        CloseSocket(mFD);
       } else {
         // Can't PR_Close() a socket off STS thread. Thunk it to STS to die
         STS_PRCloseOnSocketTransport(mFD, mLingerPolarity, mLingerTimeout);
@@ -2216,27 +2182,7 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
     // We do not need to do PR_ConnectContinue when we are already
     // shutting down.
 
-    // We use PRIntervalTime here because we need
-    // nsIOService::LastOfflineStateChange time and
-    // nsIOService::LastConectivityChange time to be atomic.
-    PRIntervalTime connectStarted = 0;
-    if (gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase()) {
-      connectStarted = PR_IntervalNow();
-    }
-
     PRStatus status = PR_ConnectContinue(fd, outFlags);
-
-    if (gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase() &&
-        connectStarted) {
-      SendPRBlockingTelemetry(
-          connectStarted,
-          glean::networking::prconnectcontinue_blocking_time_normal,
-          glean::networking::prconnectcontinue_blocking_time_shutdown,
-          glean::networking::
-              prconnectcontinue_blocking_time_connectivity_change,
-          glean::networking::prconnectcontinue_blocking_time_link_change,
-          glean::networking::prconnectcontinue_blocking_time_offline);
-    }
 
     if (status == PR_SUCCESS) {
       //
@@ -3396,55 +3342,12 @@ nsresult nsSocketTransport::PRFileDescAutoLock::SetKeepaliveVals(
 #endif
 }
 
-void nsSocketTransport::CloseSocket(PRFileDesc* aFd, bool aTelemetryEnabled) {
+void nsSocketTransport::CloseSocket(PRFileDesc* aFd) {
 #if defined(XP_WIN)
   AttachShutdownLayer(aFd);
 #endif
 
-  // We use PRIntervalTime here because we need
-  // nsIOService::LastOfflineStateChange time and
-  // nsIOService::LastConectivityChange time to be atomic.
-  PRIntervalTime closeStarted;
-  if (aTelemetryEnabled) {
-    closeStarted = PR_IntervalNow();
-  }
-
   PR_Close(aFd);
-
-  if (aTelemetryEnabled) {
-    SendPRBlockingTelemetry(
-        closeStarted, glean::networking::prclose_tcp_blocking_time_normal,
-        glean::networking::prclose_tcp_blocking_time_shutdown,
-        glean::networking::prclose_tcp_blocking_time_connectivity_change,
-        glean::networking::prclose_tcp_blocking_time_link_change,
-        glean::networking::prclose_tcp_blocking_time_offline);
-  }
-}
-
-void nsSocketTransport::SendPRBlockingTelemetry(
-    PRIntervalTime aStart,
-    const glean::impl::TimingDistributionMetric& aMetricNormal,
-    const glean::impl::TimingDistributionMetric& aMetricShutdown,
-    const glean::impl::TimingDistributionMetric& aMetricConnectivityChange,
-    const glean::impl::TimingDistributionMetric& aMetricLinkChange,
-    const glean::impl::TimingDistributionMetric& aMetricOffline) {
-  PRIntervalTime now = PR_IntervalNow();
-  TimeDuration delta =
-      TimeDuration::FromMilliseconds(PR_IntervalToMilliseconds(now - aStart));
-  if (gIOService->IsNetTearingDown()) {
-    aMetricShutdown.AccumulateRawDuration(delta);
-  } else if (PR_IntervalToSeconds(now - gIOService->LastConnectivityChange()) <
-             60) {
-    aMetricConnectivityChange.AccumulateRawDuration(delta);
-  } else if (PR_IntervalToSeconds(now - gIOService->LastNetworkLinkChange()) <
-             60) {
-    aMetricLinkChange.AccumulateRawDuration(delta);
-  } else if (PR_IntervalToSeconds(now - gIOService->LastOfflineStateChange()) <
-             60) {
-    aMetricOffline.AccumulateRawDuration(delta);
-  } else {
-    aMetricNormal.AccumulateRawDuration(delta);
-  }
 }
 
 NS_IMETHODIMP

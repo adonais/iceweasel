@@ -109,14 +109,7 @@ class nsSocketTransport final : public nsASocketHandler,
   uint64_t ByteCountReceived() override;
   uint64_t ByteCountSent() override;
   bool IsTRRConnection() override;
-  static void CloseSocket(PRFileDesc* aFd, bool aTelemetryEnabled);
-  static void SendPRBlockingTelemetry(
-      PRIntervalTime aStart,
-      const glean::impl::TimingDistributionMetric& aMetricNormal,
-      const glean::impl::TimingDistributionMetric& aMetricShutdown,
-      const glean::impl::TimingDistributionMetric& aMetricConnectivityChange,
-      const glean::impl::TimingDistributionMetric& aMetricLinkChange,
-      const glean::impl::TimingDistributionMetric& aMetricOffline);
+  static void CloseSocket(PRFileDesc* aFd);
 
  protected:
   virtual ~nsSocketTransport();
