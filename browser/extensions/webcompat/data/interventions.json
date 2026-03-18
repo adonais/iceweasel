@@ -6442,6 +6442,23 @@
       }
     ]
   },
+  "2018543": {
+    "label": "lacunacoil.com",
+    "bugs": {
+      "2018543": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://lacunacoil.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "js": ["bug2018543-lacunacoil.com-ua-change.js"]
+        }
+      }
+    ]
+  },
   "2018641": {
     "label": "cloudplay.jiogames.com",
     "bugs": {
