@@ -4402,7 +4402,7 @@ export class UrlbarInput extends HTMLElement {
     contextMenu.addEventListener("popupshowing", () => {
       let browser = this.window.gBrowser?.selectedBrowser;
       if (browser) {
-        lazy.SharingUtils.updateShareURLMenuItem(browser, separator);
+        lazy.SharingUtils.updateShareURLMenuItem(browser, null, separator);
       }
     });
   }

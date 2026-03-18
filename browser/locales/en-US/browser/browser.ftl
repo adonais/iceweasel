@@ -1102,8 +1102,14 @@ panel-save-update-password = Password
 # "More" item in macOS share menu
 menu-share-more =
     .label = More…
-menu-share-copy-link =
-    .label = Copy Link
+# Variables:
+#   $count (Number) - The number of links that will be copied.
+menu-share-copy-links =
+    .label =
+        { $count ->
+            [one] Copy Link
+           *[other] Copy { $count } Links
+        }
     .accesskey = L
 ui-tour-info-panel-close =
     .tooltiptext = Close

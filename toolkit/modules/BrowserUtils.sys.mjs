@@ -9,7 +9,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
 });
@@ -161,13 +160,59 @@ export var BrowserUtils = {
    *   The label/title of the URL
    */
   copyLink(url, title) {
-    // This is a little hacky, but there is a lot of code in Places that handles
-    // clipboard stuff, so it's easier to reuse.
-    let node = {};
-    node.type = 0;
-    node.title = title;
-    node.uri = url;
-    lazy.PlacesUtils.copyNode(node);
+    this.copyLinks([{ url, title }]);
+  },
+
+  /**
+   * Copy multiple links to the clipboard. Writes three clipboard flavors:
+   *   text/x-moz-url  — "url\ntitle" pairs separated by newlines
+   *   text/html       — "<A HREF="url">title</A>" anchors separated by <BR>
+   *   text/plain      — plain URLs separated by newlines
+   *
+   * @param {Array<{url: string, title: string}>} links
+   */
+  copyLinks(links) {
+    let htmlEscape = s =>
+      s
+        .replace(/&/g, "&amp;")
+        .replace(/>/g, "&gt;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+
+    let mozURLData = links
+      .map(({ url, title }) => `${url}\n${title}`)
+      .join("\n");
+    let htmlData = links
+      .map(({ url, title }) => `<A HREF="${url}">${htmlEscape(title)}</A>`)
+      .join("<BR>\n");
+    let textData = links.map(({ url }) => url).join("\n");
+
+    let xferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+      Ci.nsITransferable
+    );
+    xferable.init(null);
+
+    for (let [type, data] of [
+      // This order is _important_! It controls how this and other applications
+      // select data to be inserted based on type.
+      ["text/x-moz-url", mozURLData],
+      ["text/html", htmlData],
+      ["text/plain", textData],
+    ]) {
+      let str = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
+      str.data = data;
+      xferable.addDataFlavor(type);
+      xferable.setTransferData(type, str);
+    }
+
+    Services.clipboard.setData(
+      xferable,
+      null,
+      Ci.nsIClipboard.kGlobalClipboard
+    );
   },
 
   /**
