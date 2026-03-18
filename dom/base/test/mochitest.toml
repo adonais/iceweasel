@@ -1145,7 +1145,6 @@ support-files = [
 
 ["test_document_wireframe.html"]
 skip-if = [
-  "!sessionHistoryInParent",
   "http2",
   "http3",
 ]

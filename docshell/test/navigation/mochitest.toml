@@ -50,8 +50,6 @@ support-files = [
   "file_bug1300461_redirect.html^headers^",
   "file_bug1300461_back.html",
   "file_contentpolicy_block_window.html",
-  "file_bug1326251.html",
-  "file_bug1326251_evict_cache.html",
   "file_bug1364364-1.html",
   "file_bug1364364-2.html",
   "file_bug1375833.html",
@@ -155,12 +153,6 @@ skip-if = [
 
 ["test_bug1300461.html"]
 
-["test_bug1326251.html"]
-skip-if = [
-  "os == 'android'",
-  "sessionHistoryInParent", # It relies on the bfcache
-]
-
 ["test_bug1364364.html"]
 skip-if = [
   "os == 'android'", # Bug 1560378
@@ -206,9 +198,6 @@ support-files = ["file_bug1750973.html"]
 
 ["test_bug1758664.html"]
 support-files = ["file_bug1758664.html"]
-run-if = [
-  "sessionHistoryInParent", # the old implementation behaves inconsistently
-]
 
 ["test_child.html"]
 skip-if = [
@@ -340,9 +329,6 @@ support-files = [
 
 ["test_ship_beforeunload_fired.html"]
 support-files = ["file_ship_beforeunload_fired.html"]
-run-if = [
-  "sessionHistoryInParent",
-]
 skip-if = [
   "http2",
   "http3",
@@ -350,15 +336,9 @@ skip-if = [
 
 ["test_ship_beforeunload_fired_2.html"]
 support-files = ["file_ship_beforeunload_fired.html"]
-run-if = [
-  "sessionHistoryInParent",
-]
 
 ["test_ship_beforeunload_fired_3.html"]
 support-files = ["file_ship_beforeunload_fired.html"]
-skip-if = [
-  "!sessionHistoryInParent",
-]
 
 ["test_sibling-matching-parent.html"]
 

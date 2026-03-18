@@ -395,9 +395,6 @@ skip-if = [
 ["browser_targetTopLevelLinkClicksToBlank.js"]
 
 ["browser_title_in_session_history.js"]
-run-if = [
-  "sessionHistoryInParent",
-]
 
 ["browser_ua_emulation.js"]
 

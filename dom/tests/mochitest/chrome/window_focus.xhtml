@@ -1566,11 +1566,7 @@ function doFrameHistoryTests()
       return fm.focusedElement === t20;
     });
   }).then((focusCorrect) => {
-    if (SpecialPowers.Services.appinfo.sessionHistoryInParent) {
-      todo(focusCorrect, "focus restored after history back");
-    } else {
-      ok(focusCorrect, "focus restored after history back");
-    }
+    todo(focusCorrect, "focus restored after history back");
     done();
   });
 }

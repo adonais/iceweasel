@@ -774,15 +774,11 @@ add_task(async function test_check_open_with_internal_handler_noask() {
           "Loaded PDF uri has the correct scheme"
         );
 
-        // intentionally don't bother checking session history without ship to
-        // keep complexity down.
-        if (Services.appinfo.sessionHistoryInParent) {
-          let shistory = browser.browsingContext.sessionHistory;
-          is(shistory.count, 1, "should a single shentry");
-          is(shistory.index, 0, "should be on the first entry");
-          let shentry = shistory.getEntryAtIndex(shistory.index);
-          is(shentry.URI.spec, TEST_PATH + "blank.html");
-        }
+        let shistory = browser.browsingContext.sessionHistory;
+        is(shistory.count, 1, "should a single shentry");
+        is(shistory.index, 0, "should be on the first entry");
+        let shentry = shistory.getEntryAtIndex(shistory.index);
+        is(shentry.URI.spec, TEST_PATH + "blank.html");
 
         await SpecialPowers.spawn(
           browser,

@@ -513,32 +513,20 @@ const selectNetworkThrottling = (ui, value) =>
   ]);
 
 async function getSessionHistory(browser) {
-  if (Services.appinfo.sessionHistoryInParent) {
-    const browsingContext = browser.browsingContext;
-    const uri = browsingContext.currentWindowGlobal.documentURI.displaySpec;
-    const history = browsingContext.sessionHistory;
-    const documentHasChildNodes = await SpecialPowers.spawn(
-      browser,
-      [],
-      function () {
-        return !!content.document.body;
-      }
-    );
-    const { SessionHistory } = ChromeUtils.importESModule(
-      "resource://gre/modules/sessionstore/SessionHistory.sys.mjs"
-    );
-    return SessionHistory.collectFromParent(
-      uri,
-      documentHasChildNodes,
-      history
-    );
-  }
-  return SpecialPowers.spawn(browser, [], function () {
-    const { SessionHistory } = ChromeUtils.importESModule(
-      "resource://gre/modules/sessionstore/SessionHistory.sys.mjs"
-    );
-    return SessionHistory.collect(content.docShell);
-  });
+  const browsingContext = browser.browsingContext;
+  const uri = browsingContext.currentWindowGlobal.documentURI.displaySpec;
+  const history = browsingContext.sessionHistory;
+  const documentHasChildNodes = await SpecialPowers.spawn(
+    browser,
+    [],
+    function () {
+      return !!content.document.body;
+    }
+  );
+  const { SessionHistory } = ChromeUtils.importESModule(
+    "resource://gre/modules/sessionstore/SessionHistory.sys.mjs"
+  );
+  return SessionHistory.collectFromParent(uri, documentHasChildNodes, history);
 }
 
 function getContentSize(ui) {

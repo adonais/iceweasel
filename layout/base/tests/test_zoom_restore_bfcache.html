@@ -52,8 +52,7 @@ bc.onmessage = (msgEvent) => {
     case "case3data": {
       is(loadCount, 2, "Case 3");
       is(msg.devicePixelRatio, originalDPR * 2, "Should preserve zoom when restored");
-      let is_if_ship = SpecialPowers.Services.appinfo.sessionHistoryInParent ? is : todo_is;
-      is_if_ship(msg.frameDevicePixelRatio, originalDPR * 2, "Should preserve zoom on frames too");
+      is(msg.frameDevicePixelRatio, originalDPR * 2, "Should preserve zoom on frames too");
       bc.postMessage({command: "close"});
       // Now we wait for "closed"
       break;

@@ -104,11 +104,7 @@ async function openURIInPrivateTab(uri) {
     `XULFrameLoaderCreated was fired ${xulFrameLoaderCreatedListenerInfo.numCalledSoFar} time(s) for ${uri} in private tab`
   );
 
-  if (
-    SpecialPowers.Services.appinfo.sessionHistoryInParent &&
-    currRemoteType == prevRemoteType &&
-    uri == "about:blank"
-  ) {
+  if (currRemoteType == prevRemoteType && uri == "about:blank") {
     // about:blank page gets flagged for being eligible to go into bfcache
     // and thus we create a new XULFrameLoader for these pages
     is(
