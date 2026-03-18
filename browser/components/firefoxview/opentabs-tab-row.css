@@ -58,14 +58,6 @@
     min-height: 0;
     position: absolute;
 
-    &[muted="true"] {
-      background-image: url("chrome://global/skin/media/audio-muted.svg");
-    }
-
-    &[soundplaying="true"] {
-      background-image: url("chrome://global/skin/media/audio.svg");
-    }
-
     &:active,
     &:hover:active {
       background-color: var(--button-background-color-active);

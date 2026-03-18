@@ -74,7 +74,7 @@ h3.device-header:not([slot="header"]):not(:first-child) {
   overflow-wrap: anywhere;
 }
 
-button.primary {
+.primary {
   white-space: nowrap;
   min-width: fit-content;
 }

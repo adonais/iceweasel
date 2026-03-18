@@ -14,6 +14,8 @@ import { searchTabList } from "./search-helpers.mjs";
 import { ViewPage, ViewPageContent } from "./viewpage.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/firefoxview/opentabs-tab-list.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-label.mjs";
 
 const lazy = {};
 
@@ -236,6 +238,7 @@ class OpenTabsInView extends ViewPage {
                 @click=${this.onChangeSortOption}
               />
               <label
+                is="moz-label"
                 for="sort-by-recency"
                 data-l10n-id="firefoxview-sort-open-tabs-by-recency-label"
               ></label>
@@ -250,6 +253,7 @@ class OpenTabsInView extends ViewPage {
                 @click=${this.onChangeSortOption}
               />
               <label
+                is="moz-label"
                 for="sort-by-order"
                 data-l10n-id="firefoxview-sort-open-tabs-by-order-label"
               ></label>
