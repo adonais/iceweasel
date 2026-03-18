@@ -8,8 +8,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   getSecurityOrchestrator:
     "chrome://global/content/ml/security/SecurityOrchestrator.sys.mjs",
-  SmartWindowTelemetry:
-    "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
 });
 
 /**
@@ -189,7 +187,6 @@ export class AIChatContentParent extends JSWindowActorParent {
 
       const window = this.browsingContext.topChromeWindow;
       if (window) {
-        lazy.SmartWindowTelemetry.recordUriLoad();
         const tabFound = window.switchToTabHavingURI(url, false, {});
         if (!tabFound) {
           window.gBrowser.selectedTab = window.gBrowser.addTab(url, {
