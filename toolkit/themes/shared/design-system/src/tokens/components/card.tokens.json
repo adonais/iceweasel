@@ -11,10 +11,10 @@
   "box": {
     "shadow": {
       "@base": {
-        "value": "{box.shadow.level-2}"
+        "value": "{box-shadow.level-2}"
       },
       "hover": {
-        "value": "{box.shadow.level-4}"
+        "value": "{box-shadow.level-4}"
       }
     }
   }

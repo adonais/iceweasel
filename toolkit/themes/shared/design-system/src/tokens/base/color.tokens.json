@@ -488,6 +488,18 @@
           }
         }
       }
+    },
+    "attention": {
+      "value": {
+        "platform": {
+          "default": "AccentColor"
+        },
+        "brand": {
+          "light": "#2ac3a2",
+          "dark": "#54ffbd"
+        },
+        "prefersContrast": "AccentColor"
+      }
     }
   }
 }

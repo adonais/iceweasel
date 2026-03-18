@@ -2564,7 +2564,7 @@ export class FeatureCallout {
         "link-color-hover": "LinkText",
         "link-color-active": "ActiveText",
         "link-color-visited": "VisitedText",
-        "icon-success-color": "var(--attention-dot-color)",
+        "icon-success-color": "var(--color-accent-attention)",
         // Dismiss Button
         "dismiss-button-background":
           "Menu linear-gradient(var(--arrowpanel-background), var(--arrowpanel-background))",

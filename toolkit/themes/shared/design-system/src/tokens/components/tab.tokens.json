@@ -1,7 +1,14 @@
 {
   "box": {
     "shadow": {
-      "value": "{box.shadow.level-1}"
+      "value": "{box-shadow.level-1}"
+    }
+  },
+  "attention": {
+    "dot": {
+      "color": {
+        "value": "{color.accent.attention}"
+      }
     }
   }
 }

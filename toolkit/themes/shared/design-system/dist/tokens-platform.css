@@ -10,9 +10,6 @@
 @layer tokens-foundation {
   :root,
   :host(.anonymous-content-host) {
-    /** attention **/
-    --attention-dot-color: AccentColor;
-
     /** background-color **/
     --background-color-box-info: color-mix(in srgb, currentColor 6%, transparent);
     --background-color-canvas: Canvas;
@@ -31,6 +28,7 @@
     --button-text-color-primary: AccentColorText;
 
     /** color **/
+    --color-accent-attention: AccentColor;
     --color-accent-primary: AccentColor;
     --color-accent-primary-hover: color-mix(in srgb, black 10%, var(--color-accent-primary));
     --color-accent-primary-active: color-mix(in srgb, black 20%, var(--color-accent-primary));

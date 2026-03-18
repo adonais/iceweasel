@@ -1,7 +1,7 @@
 {
   "box": {
     "shadow": {
-      "value": "{box.shadow.level-3}"
+      "value": "{box-shadow.level-3}"
     }
   }
 }

@@ -50,7 +50,7 @@
     --link-color-hover: light-dark(var(--color-blue-70), var(--color-cyan-20));
     --link-color-active: light-dark(var(--color-blue-80), var(--color-cyan-10));
     --tabs-navbar-separator-color: light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3));
-    --attention-dot-color: light-dark(#2ac3a2, #54ffbd);
+    --color-accent-attention: light-dark(#2ac3a2, #54ffbd);
 
     @media not (prefers-contrast) {
       --focus-outline-color: light-dark(#0061e0, #00ddff);
@@ -116,7 +116,7 @@
     }
 
     --link-color: light-dark(rgb(0, 97, 224), rgb(0, 221, 255));
-    --attention-dot-color: light-dark(#2ac3a2, #54ffbd);
+    --color-accent-attention: light-dark(#2ac3a2, #54ffbd);
 
     --sidebar-background-color: light-dark(white, rgb(28, 27, 34));
     --sidebar-text-color: light-dark(rgb(21, 20, 26), rgb(249, 249, 250));

@@ -12,7 +12,7 @@
   --uei-button-hover-color: var(--button-text-color-ghost-hover);
   --uei-button-active-bgcolor: var(--button-background-color-ghost-active);
   --uei-button-active-color: var(--button-text-color-ghost-active);
-  --uei-button-attention-dot-color: var(--attention-dot-color);
+  --uei-button-attention-dot-color: var(--color-accent-attention);
 
   &[uidensity="compact"] {
     --uei-icon-size: 24px;

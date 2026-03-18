@@ -785,7 +785,15 @@ export const tokensTable = {
         },
         prefersContrast: "AccentColor",
       },
-      name: "--attention-dot-color",
+      name: "--color-accent-attention",
+    },
+    {
+      value: "var(--color-accent-attention)",
+      name: "--button-attention-dot-color",
+    },
+    {
+      value: "var(--color-accent-attention)",
+      name: "--tab-attention-dot-color",
     },
   ],
   dimension: [
@@ -1634,6 +1642,15 @@ export const variableLookupTable = {
     },
     platform: { default: "SelectedItem" },
   },
+  "color-accent-attention": {
+    platform: { default: "AccentColor" },
+    brand: {
+      light: "#2ac3a2",
+      dark: "#54ffbd",
+      default: "light-dark(#2ac3a2, #54ffbd)",
+    },
+    prefersContrast: "AccentColor",
+  },
   "dimension-2": "2px",
   "dimension-4": "4px",
   "dimension-8": "8px",
@@ -1775,15 +1792,6 @@ export const variableLookupTable = {
   "text-color-list-item-hover": {
     default: "var(--text-color)",
     prefersContrast: "SelectedItemText",
-  },
-  "attention-dot-color": {
-    platform: { default: "AccentColor" },
-    brand: {
-      light: "#2ac3a2",
-      dark: "#54ffbd",
-      default: "light-dark(#2ac3a2, #54ffbd)",
-    },
-    prefersContrast: "AccentColor",
   },
   "badge-text-color": {
     default: "var(--text-color)",
@@ -2058,6 +2066,7 @@ export const variableLookupTable = {
   "button-text-color-primary-selected":
     "var(--button-text-color-primary-active)",
   "button-text-color-selected": "var(--button-text-color-active)",
+  "button-attention-dot-color": "var(--color-accent-attention)",
   "card-border-color": {
     default: "color-mix(in srgb, currentColor 10%, transparent)",
     prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
@@ -2128,6 +2137,7 @@ export const variableLookupTable = {
   "page-main-content-width": { brand: { default: "664px" } },
   "popup-box-shadow": "var(--box-shadow-level-3)",
   "tab-box-shadow": "var(--box-shadow-level-1)",
+  "tab-attention-dot-color": "var(--color-accent-attention)",
   "table-background-color": {
     light: "#f8f8fa",
     dark: "rgb(35, 34, 43)",

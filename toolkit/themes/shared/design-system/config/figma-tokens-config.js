@@ -430,7 +430,7 @@ function getNestedBrandColor(token) {
  * or `undefined` if the token is not a shadow or cannot be parsed.
  */
 function attemptShadowDestructuring(token, originalVal) {
-  if (!token.path.includes("shadow") || typeof originalVal !== "string") {
+  if (!token.path.includes("box-shadow") || typeof originalVal !== "string") {
     return undefined;
   }
 

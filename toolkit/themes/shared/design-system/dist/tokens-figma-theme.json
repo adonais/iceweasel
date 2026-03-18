@@ -84,30 +84,30 @@
     "dark": "{Colors$color/red/20}",
     "forcedColors": "{Theme$border/color}"
   },
-  "box/shadow/level-1/shadow-1/color": "{Theme$box/shadow/color/darker/layer-1}",
-  "box/shadow/level-1/shadow-2/color": "{Theme$box/shadow/color/darker/layer-2}",
-  "box/shadow/level-2/shadow-1/color": "{Theme$box/shadow/color/lighter/layer-1}",
-  "box/shadow/level-2/shadow-2/color": "{Theme$box/shadow/color/lighter/layer-2}",
-  "box/shadow/level-3/shadow-1/color": "{Theme$box/shadow/color/lighter/layer-1}",
-  "box/shadow/level-3/shadow-2/color": "{Theme$box/shadow/color/lighter/layer-2}",
-  "box/shadow/level-4/shadow-1/color": "{Theme$box/shadow/color/lighter/layer-1}",
-  "box/shadow/level-4/shadow-2/color": "{Theme$box/shadow/color/lighter/layer-2}",
-  "box/shadow/color/darker/layer-1": {
+  "box-shadow/level-1/shadow-1/color": "{Theme$box-shadow/color/darker/layer-1}",
+  "box-shadow/level-1/shadow-2/color": "{Theme$box-shadow/color/darker/layer-2}",
+  "box-shadow/level-2/shadow-1/color": "{Theme$box-shadow/color/lighter/layer-1}",
+  "box-shadow/level-2/shadow-2/color": "{Theme$box-shadow/color/lighter/layer-2}",
+  "box-shadow/level-3/shadow-1/color": "{Theme$box-shadow/color/lighter/layer-1}",
+  "box-shadow/level-3/shadow-2/color": "{Theme$box-shadow/color/lighter/layer-2}",
+  "box-shadow/level-4/shadow-1/color": "{Theme$box-shadow/color/lighter/layer-1}",
+  "box-shadow/level-4/shadow-2/color": "{Theme$box-shadow/color/lighter/layer-2}",
+  "box-shadow/color/darker/layer-1": {
     "light": "rgba(0, 0, 0, 0.15)",
     "dark": "rgba(0, 0, 0, 0.2)",
     "forcedColors": "transparent"
   },
-  "box/shadow/color/darker/layer-2": {
+  "box-shadow/color/darker/layer-2": {
     "light": "rgba(0, 0, 0, 0.2)",
     "dark": "rgba(0, 0, 0, 0.4)",
     "forcedColors": "transparent"
   },
-  "box/shadow/color/lighter/layer-1": {
+  "box-shadow/color/lighter/layer-1": {
     "light": "rgba(0, 0, 0, 0.05)",
     "dark": "rgba(0, 0, 0, 0.2)",
     "forcedColors": "transparent"
   },
-  "box/shadow/color/lighter/layer-2": {
+  "box-shadow/color/lighter/layer-2": {
     "light": "rgba(0, 0, 0, 0.1)",
     "dark": "rgba(0, 0, 0, 0.4)",
     "forcedColors": "transparent"
@@ -131,6 +131,11 @@
     "light": "{Colors$color/blue/60}",
     "dark": "{Colors$color/cyan/30}",
     "forcedColors": "{HCM Theme$SelectedItem}"
+  },
+  "color/accent/attention": {
+    "light": "#2ac3a2",
+    "dark": "#54ffbd",
+    "forcedColors": "{HCM Theme$AccentColor}"
   },
   "focus/outline": {
     "light": "{Primitives$focus/outline/width} solid {Theme$focus/outline/color}",
@@ -171,11 +176,6 @@
     "light": "{Theme$text/color}",
     "dark": "{Theme$text/color}",
     "forcedColors": "{HCM Theme$SelectedItemText}"
-  },
-  "attention/dot/color": {
-    "light": "#2ac3a2",
-    "dark": "#54ffbd",
-    "forcedColors": "{HCM Theme$AccentColor}"
   },
   "badge/text/color": {
     "light": "{Theme$text/color}",
@@ -559,6 +559,11 @@
     "dark": "{Theme$button/text/color/active}",
     "forcedColors": "{Theme$button/text/color/active}"
   },
+  "button/attention/dot/color": {
+    "light": "{Theme$color/accent/attention}",
+    "dark": "{Theme$color/accent/attention}",
+    "forcedColors": "{Theme$color/accent/attention}"
+  },
   "card/border/color": {
     "light": "color-mix(in srgb, currentColor 10%, transparent)",
     "dark": "color-mix(in srgb, currentColor 10%, transparent)",
@@ -608,6 +613,11 @@
     "light": "{Theme$link/color}",
     "dark": "{Theme$link/color}",
     "forcedColors": "{Theme$link/color}"
+  },
+  "tab/attention/dot/color": {
+    "light": "{Theme$color/accent/attention}",
+    "dark": "{Theme$color/accent/attention}",
+    "forcedColors": "{Theme$color/accent/attention}"
   },
   "table/background/color": {
     "light": "#f8f8fa",

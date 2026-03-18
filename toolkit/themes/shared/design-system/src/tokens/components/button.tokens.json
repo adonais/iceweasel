@@ -472,5 +472,12 @@
         "value": "{button.text.color.active}"
       }
     }
+  },
+  "attention": {
+    "dot": {
+      "color": {
+        "value": "{color.accent.attention}"
+      }
+    }
   }
 }

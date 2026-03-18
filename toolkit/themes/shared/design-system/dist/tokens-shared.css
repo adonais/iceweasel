@@ -51,6 +51,7 @@
     --box-shadow-level-4: 0 0.5px 2px var(--box-shadow-color-lighter-layer-1), 0 4px 16px var(--box-shadow-color-lighter-layer-2);
 
     /** button **/
+    --button-attention-dot-color: var(--color-accent-attention);
     --button-background-color-disabled: var(--button-background-color);
     --button-background-color-destructive: light-dark(var(--color-red-60), var(--color-red-30));
     --button-background-color-destructive-hover: light-dark(var(--color-red-70), var(--color-red-20));
@@ -387,6 +388,7 @@
     --space-xxlarge: var(--dimension-relative-200); /* 2rem */
 
     /** tab **/
+    --tab-attention-dot-color: var(--color-accent-attention);
     --tab-box-shadow: var(--box-shadow-level-1);
 
     /** table **/
@@ -409,9 +411,6 @@
   @media (prefers-contrast) {
     :root,
     :host(.anonymous-content-host) {
-      /** attention **/
-      --attention-dot-color: AccentColor;
-
       /** background-color **/
       --background-color-box: var(--background-color-canvas);
       --background-color-box-info: var(--background-color-canvas);
@@ -436,6 +435,9 @@
 
       /** card **/
       --card-border-color: color-mix(in srgb, currentColor 41%, transparent);
+
+      /** color **/
+      --color-accent-attention: AccentColor;
 
       /** icon **/
       --icon-color: var(--text-color);
