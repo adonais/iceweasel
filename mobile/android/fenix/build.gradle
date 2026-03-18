@@ -37,14 +37,6 @@ allprojects {
 }
 
 subprojects {
-    afterEvaluate {
-        if (it.hasProperty('kotlin')) {
-            kotlin {
-                jvmToolchain(config.jvmTargetCompatibility)
-            }
-        }
-    }
-
     project.configurations.configureEach {
         // Dependencies can't depend on a different major version of Glean than A-C itself.
         resolutionStrategy.eachDependency { details ->

@@ -38,6 +38,7 @@ class ProjectPlugin : Plugin<Project> {
         configureKotlinCompilerMessageReformatting(project)
         configureKotlinWarningsAsErrors(project)
         configureAndroidBuildToolsVersion(project, substs)
+        configureKotlinJvmToolchain(project)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
     }
@@ -221,6 +222,19 @@ class ProjectPlugin : Plugin<Project> {
             val android = project.extensions.findByName("android") ?: return@withPlugin
             android::class.java.getMethod("setBuildToolsVersion", String::class.java)
                 .invoke(android, buildToolsVersion)
+        }
+    }
+
+    private fun configureKotlinJvmToolchain(project: Project) {
+        // Wait for Android plugin first to ensure Java plugin extension exists
+        project.pluginManager.withPlugin("com.android.base") {
+            project.pluginManager.withPlugin("org.jetbrains.kotlin.android") {
+                val kotlin = project.extensions.findByName("kotlin") ?: return@withPlugin
+                val config = project.rootProject.extensions.extraProperties["config"] ?: return@withPlugin
+                val jvmTargetCompatibility = config.javaClass.getField("jvmTargetCompatibility").get(config) as Int
+                kotlin::class.java.getMethod("jvmToolchain", Integer.TYPE)
+                    .invoke(kotlin, jvmTargetCompatibility)
+            }
         }
     }
 
