@@ -49,6 +49,8 @@ class DrawTargetRecording final : public DrawTarget {
   virtual void Destination(const char* aDestination,
                            const Point& aPoint) override;
 
+  virtual void AccessibleId(uint64_t aBrowsingContextId, uint64_t aAccId) final;
+
   virtual already_AddRefed<SourceSurface> Snapshot() override;
   virtual already_AddRefed<SourceSurface> IntoLuminanceSource(
       LuminanceType aLuminanceType, float aOpacity) override;
