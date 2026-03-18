@@ -515,12 +515,11 @@ export class MemoriesManager {
    * Hard deletion permenantly removes the memory from storage entirely. This method should be used
    * by UI to allow users to delete memories they no longer want stored.
    *
-   * @param {string} memoryId       ID of the memory to hard-delete
-   * @param {boolean} trigger       What was the trigger (assistant, settings, other)
-   * @returns {Promise<boolean>}    True if the memory was found and deleted, false otherwise
+   * @param {string} memoryId        ID of the memory to hard-delete
+   * @returns {Promise<boolean>}      True if the memory was found and deleted, false otherwise
    */
-  static async hardDeleteMemoryById(memoryId, trigger) {
-    return await MemoryStore.hardDeleteMemory(memoryId, trigger);
+  static async hardDeleteMemoryById(memoryId) {
+    return await MemoryStore.hardDeleteMemory(memoryId);
   }
 
   /**

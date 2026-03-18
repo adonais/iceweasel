@@ -282,10 +282,9 @@ export const MemoryStore = {
    * hard delete (remove from array).
    *
    * @param {string} id
-   * @param {boolean} trigger
    * @returns {Promise<boolean>}
    */
-  async hardDeleteMemory(id, trigger = "other") {
+  async hardDeleteMemory(id) {
     await this.ensureInitialized();
     const idx = gState.memories.findIndex(i => i.id === id);
     if (idx === -1) {
@@ -293,10 +292,6 @@ export const MemoryStore = {
     }
     gState.memories.splice(idx, 1);
     gJSONFile?.saveSoon();
-    Glean.smartWindow.memoryRemovedPanel.record({
-      memories: gState.memories.length,
-      trigger,
-    });
     Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     return true;
   },
