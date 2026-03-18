@@ -641,7 +641,7 @@ nsresult nsPACMan::GetPACFromDHCP(nsACString& aSpec) {
 }
 
 nsresult nsPACMan::ConfigureWPAD(nsACString& aSpec) {
-  LOG(("nsPACMan::ConfigureWPAD(%s)", PromiseFlatCString(aSpec).get()));
+  LOG(("nsPACMan::ConfigureWPAD(%s)", nsCString(aSpec).get()));
   MOZ_ASSERT(!NS_IsMainThread(), "wrong thread");
 
   if (!IsProxyConfigValidForWPAD(mProxyConfigType, mAutoDetect)) {

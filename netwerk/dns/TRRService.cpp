@@ -969,7 +969,7 @@ bool TRRService::IsDomainBlocked(const nsACString& aHost,
         *val + int32_t(StaticPrefs::network_trr_temp_blocklist_duration_sec());
     int32_t expire = NowInSeconds();
     if (until > expire) {
-      LOG(("Host [%s] is TRR blocklisted\n", PromiseFlatCString(aHost).get()));
+      LOG(("Host [%s] is TRR blocklisted\n", nsCString(aHost).get()));
       return true;
     }
 
@@ -1075,7 +1075,7 @@ void TRRService::AddToBlocklist(const nsACString& aHost,
     return;
   }
 
-  LOG(("TRR blocklist %s\n", PromiseFlatCString(aHost).get()));
+  LOG(("TRR blocklist %s\n", nsCString(aHost).get()));
   nsAutoCString hashkey(aHost + aOriginSuffix);
 
   // this overwrites any existing entry

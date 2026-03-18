@@ -145,14 +145,7 @@ nsCString NetAddr::ToString() const {
 void NetAddr::ToAddrPortString(nsACString& aOutput) const {
   uint16_t port = 0;
   GetPort(&port);
-  aOutput.SetLength(kNetAddrMaxCStrBufSize);
-  if (ToStringBuffer(aOutput.BeginWriting(), kNetAddrMaxCStrBufSize)) {
-    aOutput.SetLength(strlen(aOutput.BeginReading()));
-  } else {
-    aOutput.Truncate();
-  }
-  aOutput.Append(':');
-  aOutput.AppendInt(port);
+  aOutput.Assign(nsPrintfCString("%s:%d", ToString().get(), port));
 }
 
 bool NetAddr::IsLoopbackAddr() const {
@@ -273,6 +266,7 @@ nsILoadInfo::IPAddressSpace NetAddr::GetIpAddressSpace() const {
 
 nsresult NetAddr::InitFromString(const nsACString& aString, uint16_t aPort) {
   PRNetAddr prAddr{};
+  memset(&prAddr, 0, sizeof(PRNetAddr));
   if (PR_StringToNetAddr(PromiseFlatCString(aString).get(), &prAddr) !=
       PR_SUCCESS) {
     return NS_ERROR_FAILURE;
