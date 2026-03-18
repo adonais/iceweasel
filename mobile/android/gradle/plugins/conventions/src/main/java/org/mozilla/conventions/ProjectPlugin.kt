@@ -10,21 +10,12 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySubstitution
 import org.gradle.api.artifacts.component.ModuleComponentSelector
-import org.gradle.api.logging.StandardOutputListener
-import org.gradle.api.plugins.AppliedPlugin
-import org.gradle.api.tasks.testing.Test
-import java.io.File
 
 class ProjectPlugin : Plugin<Project> {
     @Suppress("UNCHECKED_CAST")
     override fun apply(project: Project) {
-        val mozilla = project.extensions.create("mozilla", ProjectExtension::class.java)
-        mozilla.androidComponentsProject.convention(false)
-        mozilla.disableAndroidComponentsTasks.convention(false)
-
         val extraProperties = project.gradle.extensions.extraProperties
         val mozconfig = extraProperties["mozconfig"] as Map<String, Any>
-        val topsrcdir = mozconfig["topsrcdir"] as String
         val topobjdir = mozconfig["topobjdir"] as String
         val substs = mozconfig["substs"] as Map<String, Any>
         val configureMavenRepositories = extraProperties["configureMavenRepositories"] as groovy.lang.Closure<*>
@@ -34,71 +25,8 @@ class ProjectPlugin : Plugin<Project> {
             maven { setUrl("${topobjdir}/gradle/maven") }
         }
 
-        configureBuildDirectory(project, topsrcdir, topobjdir)
-        configureJniKeepDebugSymbols(project)
-        configureAcTestAndLintDisabling(project, mozilla)
-        configureKotlinCompilerMessageReformatting(project)
-        configureKotlinWarningsAsErrors(project)
-        configureAndroidBuildToolsVersion(project, substs)
-        configureKotlinJvmToolchain(project)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
-    }
-
-    // Initialize the project buildDir to be in ${topobjdir} to follow
-    // conventions of mozilla-central build system.
-    private fun configureBuildDirectory(project: Project, topsrcdir: String, topobjdir: String) {
-        val topSrcPath = File(topsrcdir).toPath()
-        val topObjPath = File(topobjdir).toPath()
-
-        val sourcePath = project.buildFile.toPath().parent
-        val relativePath = topSrcPath.relativize(sourcePath)
-
-        if (relativePath.startsWith("..")) {
-            // The project doesn't appear to be in topsrcdir so leave the
-            // buildDir alone.
-        } else {
-            // Transplant the project path into "${topobjdir}/gradle/build".
-            // This is consistent with existing gradle / taskcluster
-            // configurations but less consistent with the result of the
-            // non-gradle build system.
-            project.layout.buildDirectory.set(topObjPath.resolve("gradle/build").resolve(relativePath).toFile())
-        }
-    }
-
-    // This explicitly disables stripping of native libraries in our projects to match the existing
-    // implicit behaviour. Our projects do not specify the `ndkVersion` for our main Android builds
-    // and so stripping would otherwise fail with a warning. Note that gecko builds themselves will
-    // already strip the *.so files when compiled as release targets.
-    @Suppress("UNCHECKED_CAST")
-    private fun configureJniKeepDebugSymbols(project: Project) {
-        val action = Action<AppliedPlugin> {
-            val android = project.extensions.getByName("android")
-            val packagingOptions = android.javaClass.getMethod("getPackagingOptions").invoke(android)
-            val jniLibs = packagingOptions.javaClass.getMethod("getJniLibs").invoke(packagingOptions)
-            val keepDebugSymbols = jniLibs.javaClass.getMethod("getKeepDebugSymbols").invoke(jniLibs)
-            (keepDebugSymbols as MutableSet<String>).add("**/*.so")
-        }
-        project.pluginManager.withPlugin("com.android.library", action)
-        project.pluginManager.withPlugin("com.android.application", action)
-    }
-
-    // Disables A-C tests and lint when building Fenix or Focus.
-    private fun configureAcTestAndLintDisabling(project: Project, mozilla: ProjectExtension) {
-        if (!mozilla.androidComponentsProject.get()) return
-
-        project.tasks.withType(Test::class.java).configureEach {
-            if (mozilla.disableAndroidComponentsTasks.get()) {
-                project.logger.debug("Disabling task ${project.path}:$name")
-                enabled = false
-            }
-        }
-        project.tasks.configureEach {
-            if (name.contains("lint") && mozilla.disableAndroidComponentsTasks.get()) {
-                project.logger.debug("Disabling task ${project.path}:$name")
-                enabled = false
-            }
-        }
     }
 
     private fun configureAppServicesSubstitution(
@@ -171,91 +99,6 @@ class ProjectPlugin : Plugin<Project> {
                 }
             }
         })
-    }
-
-    private fun configureKotlinCompilerMessageReformatting(project: Project) {
-        // Kotlin compiler message formats:
-        // - Current: "e: file.kt:10:5 message" (colon-separated, used by fenix/focus/A-C)
-        // - Legacy:  "e: file.kt: (10, 5): message" (parenthesized, used by geckoview)
-        val messageFormats = listOf(
-            Regex("""([ew]): (.+):(\d+):(\d+) (.*)"""),
-            Regex("""([ew]): (.+): \((\d+), (\d+)\): (.*)"""),
-        )
-
-        project.tasks.configureEach {
-            if (!this::class.java.name.startsWith("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")) {
-                return@configureEach
-            }
-
-            // Translate Kotlin messages like "w: ..." and "e: ..." into
-            // "...: warning: ..." and "...: error: ...", to make Treeherder understand.
-            val listener = StandardOutputListener { message ->
-                if (message.startsWith("e: warnings found")) {
-                    return@StandardOutputListener
-                }
-
-                if (message.startsWith("w: ") || message.startsWith("e: ")) {
-                    val match = messageFormats.firstNotNullOfOrNull { it.find(message) }
-                    if (match == null) {
-                        logger.quiet("kotlinc message format has changed!")
-                        // For warnings, don't continue because we don't want to throw an
-                        // exception. For errors, we want the exception so that the new error
-                        // message format gets translated properly.
-                        if (message.startsWith("w: ")) {
-                            return@StandardOutputListener
-                        }
-                    }
-                    match?.let {
-                        val (type, file, line, column, msg) = it.destructured
-                        val level = if (type == "w") "warning" else "error"
-                        // Use logger.lifecycle, which does not go through stderr again.
-                        logger.lifecycle("$file:$line:$column: $level: $msg")
-                    }
-                }
-            }
-
-            doFirst {
-                logging.addStandardErrorListener(listener)
-            }
-            doLast {
-                logging.removeStandardErrorListener(listener)
-            }
-        }
-    }
-
-    private fun configureKotlinWarningsAsErrors(project: Project) {
-        project.tasks.configureEach {
-            if (!this::class.java.name.startsWith("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")) {
-                return@configureEach
-            }
-            val compilerOptions = this::class.java.getMethod("getCompilerOptions").invoke(this)
-            val allWarningsAsErrors = compilerOptions::class.java.getMethod("getAllWarningsAsErrors").invoke(compilerOptions)
-            allWarningsAsErrors::class.java.getMethod("set", Any::class.java).invoke(allWarningsAsErrors, true)
-        }
-    }
-
-    private fun configureAndroidBuildToolsVersion(project: Project, substs: Map<String, Any>) {
-        val buildToolsVersion = substs["ANDROID_BUILD_TOOLS_VERSION"] as String
-
-        // Use android plugin id string and reflection to avoid classloader isolation issues
-        project.pluginManager.withPlugin("com.android.base") {
-            val android = project.extensions.findByName("android") ?: return@withPlugin
-            android::class.java.getMethod("setBuildToolsVersion", String::class.java)
-                .invoke(android, buildToolsVersion)
-        }
-    }
-
-    private fun configureKotlinJvmToolchain(project: Project) {
-        // Wait for Android plugin first to ensure Java plugin extension exists
-        project.pluginManager.withPlugin("com.android.base") {
-            project.pluginManager.withPlugin("org.jetbrains.kotlin.android") {
-                val kotlin = project.extensions.findByName("kotlin") ?: return@withPlugin
-                val config = project.rootProject.extensions.extraProperties["config"] ?: return@withPlugin
-                val jvmTargetCompatibility = config.javaClass.getField("jvmTargetCompatibility").get(config) as Int
-                kotlin::class.java.getMethod("jvmToolchain", Integer.TYPE)
-                    .invoke(kotlin, jvmTargetCompatibility)
-            }
-        }
     }
 
     companion object {

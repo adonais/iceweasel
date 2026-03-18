@@ -2,6 +2,7 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static org.gradle.api.tasks.testing.TestResult.ResultType
 
@@ -26,6 +27,11 @@ plugins {
 allprojects {
     ext {
         gleanVersion = libs.versions.glean.get()
+    }
+
+    // Enable Kotlin warnings as errors for all modules
+    tasks.withType(KotlinCompile).configureEach {
+        compilerOptions.allWarningsAsErrors = true
     }
 
     if (gradle.mozconfig.substs.DOWNLOAD_ALL_GRADLE_DEPENDENCIES) {
@@ -137,6 +143,10 @@ subprojects {
                 lintChecks project(':components:tooling-lint')
             }
 
+            kotlin {
+                jvmToolchain(config.jvmTargetCompatibility)
+            }
+
             android {
                 // We can't have one baseline file at the root of android-components because
                 // this is not a project module and we would have to coordinate every module to
@@ -144,6 +154,8 @@ subprojects {
                 lint {
                     baseline = file("${projectDir}/lint-baseline.xml")
                 }
+
+                buildToolsVersion gradle.mozconfig.substs.ANDROID_BUILD_TOOLS_VERSION
 
                 testOptions {
                     testCoverage {
@@ -207,6 +219,40 @@ subprojects {
                     }
                 }
             }
+        }
+    }
+
+    tasks.withType(KotlinCompile).configureEach {
+        // Translate Kotlin messages like "w: ..." and "e: ..." into
+        // "...: warning: ..." and "...: error: ...", to make Treeherder understand.
+        def listener = {
+            if (it.startsWith("e: warnings found")) {
+                return
+            }
+
+            if (it.startsWith('w: ') || it.startsWith('e: ')) {
+                def matches = (it =~ /([ew]): (.+):(\d+):(\d+) (.*)/)
+                if (!matches) {
+                    logger.quiet "kotlinc message format has changed!"
+                    if (it.startsWith('w: ')) {
+                        // For warnings, don't continue because we don't want to throw an
+                        // exception. For errors, we want the exception so that the new error
+                        // message format gets translated properly.
+                        return
+                    }
+                }
+                def (_, type, file, line, column, message) = matches[0]
+                type = (type == 'w') ? 'warning' : 'error'
+                // Use logger.lifecycle, which does not go through stderr again.
+                logger.lifecycle "$file:$line:$column: $type: $message"
+            }
+        } as StandardOutputListener
+
+        doFirst {
+            logging.addStandardErrorListener(listener)
+        }
+        doLast {
+            logging.removeStandardErrorListener(listener)
         }
     }
 

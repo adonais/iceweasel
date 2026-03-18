@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
-
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -57,11 +55,11 @@ dependencies {
 }
 
 tasks.register("updateAdsExtensionVersion", Copy) { task ->
-    updateExtensionVersion(task, 'src/main/assets/extensions/ads', rootProject.ext.config.componentsVersion)
+    updateExtensionVersion(task, 'src/main/assets/extensions/ads')
 }
 
 tasks.register("updateCookiesExtensionVersion", Copy) { task ->
-    updateExtensionVersion(task, 'src/main/assets/extensions/search', rootProject.ext.config.componentsVersion)
+    updateExtensionVersion(task, 'src/main/assets/extensions/search')
 }
 
 // Make sure DAGP asset-source exploding happens after ExtensionVersion tasks

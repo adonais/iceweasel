@@ -48,8 +48,20 @@ include ':app:longfox'
 include ':mozilla-detekt-rules'
 include ':benchmark'
 
-mozilla {
-    disableAndroidComponentsTasks = true
+gradle.projectsLoaded { ->
+    // Disables A-C tests and lint when building Fenix.
+    gradle.allprojects { project ->
+        if (project.projectDir.absolutePath.contains("/android-components/")) {
+            project.tasks.withType(Test).configureEach {
+                enabled = false
+            }
+            project.tasks.configureEach { task ->
+                if (task.name.contains("lint")) {
+                    task.enabled = false
+                }
+            }
+        }
+    }
 }
 
 def projectLocalProperties = file("local.properties").with { localPropertiesFile ->

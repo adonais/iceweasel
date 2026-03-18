@@ -4,8 +4,6 @@ import groovy.json.JsonOutput
 
 import java.time.format.DateTimeFormatter
 
-import static org.mozilla.conventions.BuildConfigKt.getBuildId
-
 import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 buildscript {
@@ -48,6 +46,17 @@ ext.getAbi = { output ->
 }
 
 def isAppBundle = gradle.startParameter.taskNames.any { it.toLowerCase().contains("bundle") }
+
+// Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
+def getBuildId() {
+    if (System.env.MOZ_BUILD_DATE) {
+        if (System.env.MOZ_BUILD_DATE.length() == 14) {
+            return System.env.MOZ_BUILD_DATE
+        }
+        logger.warn("Ignoring invalid MOZ_BUILD_DATE: ${System.env.MOZ_BUILD_DATE}")
+    }
+    return file("${gradle.mozconfig.topobjdir}/buildid.h").getText('utf-8').split()[2]
+}
 
 android {
     project.maybeConfigForJetpackBenchmark(it)
@@ -364,7 +373,7 @@ android.applicationVariants.configureEach { variant ->
     if (isDebug) {
         buildConfigField 'String', 'BUILD_DATE', '"debug build"'
     } else {
-        def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
+        def buildDate = LocalDateTime.parse(getBuildId(), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
         buildConfigField 'String', 'BUILD_DATE', '"' + buildDate + '"'
     }
 

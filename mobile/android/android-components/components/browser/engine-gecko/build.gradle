@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import static org.mozilla.conventions.BuildConfigKt.getBuildId
-
 buildscript {
     repositories {
         gradle.configureMavenRepositories(delegate)
@@ -118,10 +116,21 @@ def getAppVersionWithoutMilestone() {
     return gradle.mozconfig.substs.MOZ_APP_VERSION.replaceFirst(/a[0-9]/, "")
 }
 
+// Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
+def getBuildId() {
+    if (System.env.MOZ_BUILD_DATE) {
+        if (System.env.MOZ_BUILD_DATE.length() == 14) {
+            return System.env.MOZ_BUILD_DATE
+        }
+        logger.warn("Ignoring invalid MOZ_BUILD_DATE: ${System.env.MOZ_BUILD_DATE}")
+    }
+    return file("${gradle.mozconfig.topobjdir}/buildid.h").getText('utf-8').split()[2]
+}
+
 def getVersionNumber() {
     def appVersion = getAppVersionWithoutMilestone()
     def parts = appVersion.split('\\.')
-    def version = parts[0] + "." + parts[1] + "." + getBuildId(gradle.mozconfig.topobjdir)
+    def version = parts[0] + "." + parts[1] + "." + getBuildId()
 
     if (!gradle.mozconfig.substs.MOZILLA_OFFICIAL && !gradle.mozconfig.substs.MOZ_ANDROID_FAT_AAR_ARCHITECTURES) {
         // Use -SNAPSHOT versions locally to enable the local GeckoView substitution flow.

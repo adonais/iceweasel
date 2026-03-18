@@ -8,7 +8,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.api.logging.Logging
-import org.gradle.kotlin.dsl.create
 import java.io.File
 
 private data class AutoPublishConfig(
@@ -25,9 +24,6 @@ class SettingsPlugin : Plugin<Settings> {
     private val logger = Logging.getLogger(SettingsPlugin::class.java)
 
     override fun apply(settings: Settings) {
-        val extension = settings.extensions.create<SettingsExtension>("mozilla")
-        extension.disableAndroidComponentsTasks.convention(false)
-
         loadBuildConfig(settings)
 
         settings.gradle.settingsEvaluated {
@@ -36,12 +32,6 @@ class SettingsPlugin : Plugin<Settings> {
 
         settings.gradle.allprojects {
             pluginManager.apply(ProjectPlugin::class.java)
-            extensions.configure(ProjectExtension::class.java) {
-                androidComponentsProject.set(
-                    projectDir.absolutePath.replace('\\', '/').contains("/android-components/")
-                )
-                disableAndroidComponentsTasks.set(extension.disableAndroidComponentsTasks)
-            }
         }
 
         settings.gradle.rootProject {
