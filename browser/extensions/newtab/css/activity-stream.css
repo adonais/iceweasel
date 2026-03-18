@@ -5127,7 +5127,7 @@ hr {
 .forecast-row .forecast-row-items {
   list-style: none;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   padding: 0;
   margin-block: var(--space-xxsmall);
 }
