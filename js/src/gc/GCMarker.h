@@ -593,6 +593,8 @@ class GCMarker {
   template <uint32_t markingOptions>
   void eagerlyMarkChildren(Shape* shape);
   template <uint32_t markingOptions>
+  void eagerlyMarkChildren(BaseShape* shape);
+  template <uint32_t markingOptions>
   void eagerlyMarkChildren(PropMap* map);
   template <uint32_t markingOptions>
   void eagerlyMarkChildren(Scope* scope);

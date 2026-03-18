@@ -1030,10 +1030,6 @@ void js::GCMarker::markAndTraverse(T* thing) {
 //    weakmap key and thereby recurse into weakmapped values.
 
 template <uint32_t opts>
-void GCMarker::traverse(BaseShape* thing) {
-  traceChildren<opts>(thing);
-}
-template <uint32_t opts>
 void GCMarker::traverse(GetterSetter* thing) {
   traceChildren<opts>(thing);
 }
@@ -1059,6 +1055,10 @@ void GCMarker::traverse(JSString* thing) {
 }
 template <uint32_t opts>
 void GCMarker::traverse(Shape* thing) {
+  scanChildren<opts>(thing);
+}
+template <uint32_t opts>
+void GCMarker::traverse(BaseShape* thing) {
   scanChildren<opts>(thing);
 }
 template <uint32_t opts>

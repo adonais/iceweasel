@@ -15,6 +15,8 @@
 #ifndef gc_TraceMethods_inl_h
 #define gc_TraceMethods_inl_h
 
+#include "mozilla/Likely.h"
+
 #include "gc/GCMarker.h"
 #include "gc/Tracer.h"
 #include "jit/JitCode.h"
@@ -74,15 +76,37 @@ void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
   MOZ_ASSERT(shape->isMarked(markColor()));
 
   BaseShape* base = shape->base();
-  checkTraversedEdge(shape, base);
-  if (mark<opts>(base)) {
-    base->traceChildren(tracer());
-  }
+  markAndTraverseEdge<opts>(shape, base);
 
   if (shape->isNative()) {
     if (PropMap* map = shape->asNative().propMap()) {
       markAndTraverseEdge<opts>(shape, map);
     }
+  }
+}
+
+inline void js::BaseShape::traceChildren(JSTracer* trc) {
+  // Note: the realm's global can be nullptr if we GC while creating the global.
+  JSObject* global = realm()->unsafeUnbarrieredMaybeGlobal();
+  if (MOZ_LIKELY(global)) {
+    TraceManuallyBarrieredEdge(trc, &global, "baseshape_global");
+  }
+
+  if (proto_.isObject()) {
+    TraceEdge(trc, &proto_, "baseshape_proto");
+  }
+}
+
+template <uint32_t opts>
+void js::GCMarker::eagerlyMarkChildren(BaseShape* base) {
+  JSObject* global = base->realm()->unsafeUnbarrieredMaybeGlobal();
+  if (MOZ_LIKELY(global)) {
+    markAndTraverseEdge<opts>(base, global);
+  }
+
+  TaggedProto proto = base->proto();
+  if (proto.isObject()) {
+    markAndTraverseEdge<opts>(base, proto.toObject());
   }
 }
 
@@ -360,17 +384,6 @@ void js::GCMarker::eagerlyMarkChildren(Scope* scope) {
     }
     scope = scope->enclosing();
   } while (scope && mark<opts>(scope));
-}
-
-inline void js::BaseShape::traceChildren(JSTracer* trc) {
-  // Note: the realm's global can be nullptr if we GC while creating the global.
-  if (JSObject* global = realm()->unsafeUnbarrieredMaybeGlobal()) {
-    TraceManuallyBarrieredEdge(trc, &global, "baseshape_global");
-  }
-
-  if (proto_.isObject()) {
-    TraceEdge(trc, &proto_, "baseshape_proto");
-  }
 }
 
 inline void js::GetterSetter::traceChildren(JSTracer* trc) {
