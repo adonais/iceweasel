@@ -235,9 +235,7 @@ EndpointsList ReportingHeader::ProcessReportingEndpointsListFromResponse(
     return {};
   }
 
-  // No other browsers seem to do this, even though it's defined in
-  // specification
-  if (NS_WARN_IF(!IsSecureURI(uri))) {
+  if (!IsSecureURI(uri)) {
     return {};
   }
 
