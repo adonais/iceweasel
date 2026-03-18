@@ -15,6 +15,7 @@
 #include "GLContextProvider.h"
 #include "GLLibraryLoader.h"
 #include "nsExceptionHandler.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Range.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -267,8 +268,19 @@ class MOZ_STACK_CLASS AutoWebRenderBridgeParentAsyncMessageSender final {
     mWebRenderBridgeParent->SendPendingAsyncMessages();
     if (mActorsToDestroy) {
       // Destroy the actors after sending the async messages because the latter
-      // may contain references to some actors.
+      // may contain references to some actors. De-duplicate the array to avoid
+      // destroying the same texture parent actor twice.
+      nsTHashSet<PTextureParent*> seenTextureParents;
       for (const auto& op : *mActorsToDestroy) {
+        // Peek inside the op (as DestroyActor does) to see if we are about
+        // to destroy a PTextureParent.
+        if (op.type() == OpDestroy::TPTexture) {
+          PTextureParent* textureParent = op.get_PTexture().AsParent();
+          if (!seenTextureParents.EnsureInserted(textureParent)) {
+            // Already seen, so skip this one.
+            continue;
+          }
+        }
         mWebRenderBridgeParent->DestroyActor(op);
       }
     }
@@ -1797,12 +1809,16 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  uint32_t buffer_size = size.width * size.height * 4;
+  auto buffer_size = (CheckedInt<size_t>(size.width) * size.height * 4);
+  if (!buffer_size.isValid()) {
+    return IPC_FAIL_NO_REASON(this);
+  }
 
   FlushSceneBuilds();
   FlushFrameGeneration(wr::RenderReasons::SNAPSHOT);
   mApi->Readback(start, size, bufferTexture->GetFormat(),
-                 Range<uint8_t>(buffer, buffer_size), aNeedsYFlip);
+                 Range<uint8_t>(buffer, buffer_size.value()),
+                 aNeedsYFlip);
 
   return IPC_OK();
 }

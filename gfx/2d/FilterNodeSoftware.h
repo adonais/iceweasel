@@ -502,6 +502,7 @@ class FilterNodeConvolveMatrixSoftware : public FilterNodeSoftware {
                                                CoordType aKernelUnitLengthX,
                                                CoordType aKernelUnitLengthY);
 
+  MarginDouble GetInflateSourceMargin() const;
   IntRect InflatedSourceRect(const IntRect& aDestRect);
   IntRect InflatedDestRect(const IntRect& aSourceRect);
 
@@ -763,6 +764,9 @@ class FilterNodeLightingSoftware : public FilterNodeSoftware {
   already_AddRefed<DataSourceSurface> DoRender(const IntRect& aRect,
                                                CoordType aKernelUnitLengthX,
                                                CoordType aKernelUnitLengthY);
+
+  MarginDouble GetInflateSourceMargin() const;
+  IntRect InflatedSourceRect(const IntRect& aDestRect);
 
   LightType mLight;
   LightingType mLighting;

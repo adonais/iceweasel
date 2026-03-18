@@ -597,7 +597,9 @@ Maybe<PlanarYCbCrData> PlanarYCbCrData::From(
       yuvDesc.ySize().width < 0 || yuvDesc.ySize().height < 0 ||
       yuvDesc.cbCrSize().width < 0 || yuvDesc.cbCrSize().height < 0 ||
       yuvData.mYStride < 0 || yuvData.mCbCrStride < 0 || !yuvData.mYChannel ||
-      !yuvData.mCbChannel || !yuvData.mCrChannel) {
+      !yuvData.mCbChannel || !yuvData.mCrChannel ||
+      !(yuvData.YDataSize() <= yuvDesc.ySize()) ||
+      !(yuvData.CbCrDataSize() <= yuvDesc.cbCrSize())) {
     gfxCriticalError() << "Unusual PlanarYCbCrData: " << yuvData.mYSkip << ","
                        << yuvData.mCbSkip << "," << yuvData.mCrSkip << ", "
                        << yuvDesc.ySize().width << "," << yuvDesc.ySize().height
@@ -605,7 +607,8 @@ Maybe<PlanarYCbCrData> PlanarYCbCrData::From(
                        << yuvDesc.cbCrSize().height << ", " << yuvData.mYStride
                        << "," << yuvData.mCbCrStride << ", "
                        << yuvData.mYChannel << "," << yuvData.mCbChannel << ","
-                       << yuvData.mCrChannel;
+                       << yuvData.mCrChannel << "," << yuvData.YDataSize().width
+                       << "," << yuvData.YDataSize().height;
     return {};
   }
 

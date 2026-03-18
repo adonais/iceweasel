@@ -712,6 +712,10 @@ geckodriver-mac-notarization
 ----------------------------
 Apple notarization for mac geckodriver binary.
 
+mark-as-merged
+--------------
+Mark merge automation as completed in shipit.
+
 maybe-release
 -------------
 A shipitscript task that does the following:

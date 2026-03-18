@@ -558,8 +558,9 @@ static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
   *ptest = nullptr;
 
   if (phiBlock != testBlock) {
-    MOZ_ASSERT(phiBlock->numSuccessors() == 1 &&
-               phiBlock->getSuccessor(0) == testBlock);
+    MOZ_RELEASE_ASSERT(phiBlock->lastIns()->isGoto());
+    MOZ_RELEASE_ASSERT(phiBlock->lastIns()->toGoto()->target() == testBlock);
+    MOZ_RELEASE_ASSERT(testBlock->numPredecessors() == 1);
     if (!phiBlock->begin()->isGoto()) {
       return false;
     }
@@ -668,7 +669,7 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
                                               MBasicBlock* target,
                                               MBasicBlock* existingPred) {
   MInstruction* ins = block->lastIns();
-  MOZ_ASSERT(ins->isGoto());
+  MOZ_RELEASE_ASSERT(ins->isGoto());
   ins->toGoto()->target()->removePredecessor(block);
   block->discardLastIns();
 
@@ -689,15 +690,14 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
   MInstruction* ins = block->lastIns();
   if (ins->isTest()) {
     MTest* test = ins->toTest();
-    MOZ_ASSERT(test->input() == value);
+    MOZ_RELEASE_ASSERT(test->input() == value);
 
     if (ifTrue != test->ifTrue()) {
       test->ifTrue()->removePredecessor(block);
       if (!ifTrue->addPredecessorSameInputsAs(block, existingPred)) {
         return false;
       }
-      MOZ_ASSERT(test->ifTrue() == test->getSuccessor(0));
-      test->replaceSuccessor(0, ifTrue);
+      test->replaceSuccessor(MTest::TrueBranchIndex, ifTrue);
     }
 
     if (ifFalse != test->ifFalse()) {
@@ -705,14 +705,13 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
       if (!ifFalse->addPredecessorSameInputsAs(block, existingPred)) {
         return false;
       }
-      MOZ_ASSERT(test->ifFalse() == test->getSuccessor(1));
-      test->replaceSuccessor(1, ifFalse);
+      test->replaceSuccessor(MTest::FalseBranchIndex, ifFalse);
     }
 
     return true;
   }
 
-  MOZ_ASSERT(ins->isGoto());
+  MOZ_RELEASE_ASSERT(ins->isGoto());
   ins->toGoto()->target()->removePredecessor(block);
   block->discardLastIns();
 
@@ -757,8 +756,8 @@ static bool IsDiamondPattern(MBasicBlock* initialBlock) {
     return false;
   }
 
-  MBasicBlock* phiBlock = trueBranch->getSuccessor(0);
-  if (phiBlock != falseBranch->getSuccessor(0)) {
+  MBasicBlock* phiBlock = trueBranch->lastIns()->toGoto()->target();
+  if (phiBlock != falseBranch->lastIns()->toGoto()->target()) {
     return false;
   }
   if (phiBlock->numPredecessors() != 2) {
@@ -802,13 +801,13 @@ static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
     return true;
   }
 
-  MBasicBlock* phiBlock = trueBranch->getSuccessor(0);
+  MBasicBlock* phiBlock = trueBranch->lastIns()->toGoto()->target();
   MBasicBlock* testBlock = phiBlock;
-  if (testBlock->numSuccessors() == 1) {
+  if (testBlock->lastIns()->isGoto()) {
     if (testBlock->isLoopBackedge()) {
       return true;
     }
-    testBlock = testBlock->getSuccessor(0);
+    testBlock = testBlock->lastIns()->toGoto()->target();
     if (testBlock->numPredecessors() != 1) {
       return true;
     }
@@ -820,7 +819,7 @@ static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
     return true;
   }
 
-  MOZ_ASSERT(phi->numOperands() == 2);
+  MOZ_RELEASE_ASSERT(phi->numOperands() == 2);
 
   // Make sure the test block does not have any outgoing loop backedges.
   if (!SplitCriticalEdgesForBlock(graph, testBlock)) {
@@ -911,8 +910,8 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
   MBasicBlock* trueBranch = initialTest->ifTrue();
   MBasicBlock* falseBranch = initialTest->ifFalse();
 
-  if (trueBranch->numSuccessors() == 1 &&
-      trueBranch->getSuccessor(0) == falseBranch) {
+  if (trueBranch->lastIns()->isGoto() &&
+      trueBranch->lastIns()->toGoto()->target() == falseBranch) {
     if (trueBranch->numPredecessors() != 1) {
       return false;
     }
@@ -922,8 +921,8 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
     return true;
   }
 
-  if (falseBranch->numSuccessors() == 1 &&
-      falseBranch->getSuccessor(0) == trueBranch) {
+  if (falseBranch->lastIns()->isGoto() &&
+      falseBranch->lastIns()->toGoto()->target() == trueBranch) {
     if (trueBranch->numPredecessors() != 2) {
       return false;
     }
@@ -981,19 +980,19 @@ static bool MaybeFoldTriangleConditionBlock(MIRGraph& graph,
   }
 
   MBasicBlock* phiBlock;
-  if (trueBranch->numSuccessors() == 1 &&
-      trueBranch->getSuccessor(0) == falseBranch) {
+  if (trueBranch->lastIns()->isGoto() &&
+      trueBranch->lastIns()->toGoto()->target() == falseBranch) {
     phiBlock = falseBranch;
   } else {
-    MOZ_ASSERT(falseBranch->getSuccessor(0) == trueBranch);
+    MOZ_ASSERT(falseBranch->lastIns()->toGoto()->target() == trueBranch);
     phiBlock = trueBranch;
   }
 
   MBasicBlock* testBlock = phiBlock;
-  if (testBlock->numSuccessors() == 1) {
-    MOZ_ASSERT(!testBlock->isLoopBackedge());
+  if (testBlock->lastIns()->isGoto()) {
+    MOZ_RELEASE_ASSERT(!testBlock->isLoopBackedge());
 
-    testBlock = testBlock->getSuccessor(0);
+    testBlock = testBlock->lastIns()->toGoto()->target();
     if (testBlock->numPredecessors() != 1) {
       return true;
     }
@@ -1005,7 +1004,7 @@ static bool MaybeFoldTriangleConditionBlock(MIRGraph& graph,
     return true;
   }
 
-  MOZ_ASSERT(phi->numOperands() == 2);
+  MOZ_RELEASE_ASSERT(phi->numOperands() == 2);
 
   // If the phi-operand doesn't match the initial input, we can't fold the test.
   auto* phiInputForInitialBlock =
@@ -1175,17 +1174,17 @@ static bool MaybeFoldTestBlock(MIRGraph& graph, MBasicBlock* initialBlock) {
   }
 
   MBasicBlock* testBlock = phiBlock;
-  if (testBlock->numSuccessors() == 1) {
+  if (testBlock->lastIns()->isGoto()) {
     if (testBlock->isLoopBackedge()) {
       return true;
     }
-    testBlock = testBlock->getSuccessor(0);
+    testBlock = testBlock->lastIns()->toGoto()->target();
     if (testBlock->numPredecessors() != 1) {
       return true;
     }
   }
 
-  MOZ_ASSERT(!phiBlock->isLoopBackedge());
+  MOZ_RELEASE_ASSERT(!phiBlock->isLoopBackedge());
 
   MPhi* phi = nullptr;
   MTest* finalTest = nullptr;
@@ -1193,7 +1192,7 @@ static bool MaybeFoldTestBlock(MIRGraph& graph, MBasicBlock* initialBlock) {
     return true;
   }
 
-  MOZ_ASSERT(phiBlock->numPredecessors() == phi->numOperands());
+  MOZ_RELEASE_ASSERT(phiBlock->numPredecessors() == phi->numOperands());
 
   // If the phi-operand doesn't match the initial input, we can't fold the test.
   auto* phiInputForInitialBlock =
@@ -1224,7 +1223,7 @@ static bool MaybeFoldTestBlock(MIRGraph& graph, MBasicBlock* initialBlock) {
       return true;
     }
 
-    MOZ_ASSERT(!pred->isLoopBackedge());
+    MOZ_RELEASE_ASSERT(!pred->isLoopBackedge());
   }
 
   // Ensure we found the single goto block.
@@ -1251,7 +1250,7 @@ static bool MaybeFoldTestBlock(MIRGraph& graph, MBasicBlock* initialBlock) {
 
   // Update all test instructions to point to the final target.
   while (phiBlock->numPredecessors()) {
-    mozilla::DebugOnly<size_t> oldNumPred = phiBlock->numPredecessors();
+    size_t oldNumPred = phiBlock->numPredecessors();
 
     auto* pred = phiBlock->getPredecessor(0);
     auto* test = pred->lastIns()->toTest();
@@ -1262,7 +1261,7 @@ static bool MaybeFoldTestBlock(MIRGraph& graph, MBasicBlock* initialBlock) {
         return false;
       }
     } else {
-      MOZ_ASSERT(test->ifFalse() == phiBlock);
+      MOZ_RELEASE_ASSERT(test->ifFalse() == phiBlock);
       if (!UpdateTestSuccessors(graph.alloc(), pred, test->input(),
                                 test->ifTrue(), finalTest->ifFalse(),
                                 testBlock)) {
@@ -1271,7 +1270,7 @@ static bool MaybeFoldTestBlock(MIRGraph& graph, MBasicBlock* initialBlock) {
     }
 
     // Ensure we've made progress.
-    MOZ_ASSERT(phiBlock->numPredecessors() + 1 == oldNumPred);
+    MOZ_RELEASE_ASSERT(phiBlock->numPredecessors() + 1 == oldNumPred);
   }
 
   // Remove phiBlock, if different from testBlock.
