@@ -417,7 +417,6 @@ export default class RestoreFromBackup extends MozLitElement {
         <fieldset id="backup-filepicker-controls">
           <label
             id="backup-filepicker-label"
-            class="heading-medium"
             for="backup-filepicker-input"
             data-l10n-id="restore-from-backup-filepicker-label"
           ></label>
@@ -631,10 +630,14 @@ export default class RestoreFromBackup extends MozLitElement {
         class="field-error"
         data-l10n-id="backup-file-restore-file-validation-error"
       >
-        ${this.getSupportLinkAnchor({
-          id: "backup-generic-error-link",
-          l10nName: "restore-problems",
-        })}
+        <a
+          id="backup-generic-error-link"
+          target="_blank"
+          slot="support-link"
+          data-l10n-name="restore-problems"
+          href=${this.getSupportURLWithUTM("firefox-backup")}
+          rel="noopener noreferrer"
+        ></a>
       </span>
     `;
   }
