@@ -47,6 +47,7 @@ import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.data.createTabGroup
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabitems.LOREM_IPSUM
+import org.mozilla.fenix.tabstray.ui.tabitems.TabGroupMenuButton
 import org.mozilla.fenix.tabstray.ui.tabpage.TabLayout
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.R as iconsR
@@ -56,7 +57,6 @@ private const val BOTTOM_SHEET_HANDLER_ALPHA = 0.4F
 // todo-bug 2022914: replace these placeholders when strings are ready
 private const val PLACEHOLDER_BOTTOM_SHEET_HANDLE_TAB_GROUP_CONTENT_DESCRIPTION = "Close expanded tab group"
 private const val PLACEHOLDER_SHARE_TAB_GROUP_CONTENT_DESCRIPTION = "Share tab group"
-private const val PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION = "More options"
 
 /**
  * Renders an expanded view of a user's tab group.
@@ -186,18 +186,7 @@ private fun ViewTabGroupHeader(title: String, groupColor: Color) {
 
         Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
-        IconButton(
-            modifier = Modifier
-                .testTag(TabsTrayTestTag.BOTTOM_SHEET_THREE_DOT_BUTTON),
-            onClick = {
-            },
-        ) {
-            Icon(
-                painter = painterResource(id = iconsR.drawable.ic_menu),
-                contentDescription = PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION,
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        TabGroupMenuButton(includeCloseOption = true)
     }
 }
 

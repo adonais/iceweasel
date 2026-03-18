@@ -22,8 +22,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,8 +34,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -50,7 +46,6 @@ import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
-import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.TabThumbnailImageData
@@ -62,6 +57,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.LOREM_IPSUM
 import org.mozilla.fenix.tabstray.ui.tabitems.MultiSelectTabButton
 import org.mozilla.fenix.tabstray.ui.tabitems.TabContentCardShape
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridTabItem
+import org.mozilla.fenix.tabstray.ui.tabitems.TabGroupMenuButton
 import org.mozilla.fenix.tabstray.ui.tabitems.TabHeaderIconTouchTargetSize
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
@@ -69,7 +65,6 @@ import org.mozilla.fenix.tabstray.ui.tabitems.ThumbnailShape
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemClickable
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.R as iconsR
 
 const val TOP_START_THUMBNAIL_INDEX = 0
 const val TOP_END_THUMBNAIL_INDEX = 1
@@ -182,19 +177,7 @@ private fun TabGroupOptionButton(groupTheme: TabGroupTheme, selectionState: Tabs
             uncheckedBorderColor = groupTheme.onPrimary,
         )
     } else {
-        IconButton(
-            modifier = Modifier
-                .size(TabHeaderIconTouchTargetSize)
-                .testTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON),
-            onClick = {
-            },
-        ) {
-            Icon(
-                painter = painterResource(id = iconsR.drawable.ic_menu),
-                contentDescription = stringResource(R.string.content_description_menu),
-                tint = groupTheme.onPrimary,
-            )
-        }
+        TabGroupMenuButton(modifier = Modifier.size(TabHeaderIconTouchTargetSize), includeCloseOption = true)
     }
 }
 
@@ -482,7 +465,8 @@ private fun TabGroupCardPreview(
 ) {
     FirefoxTheme {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.Top,
         ) {

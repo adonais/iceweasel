@@ -54,13 +54,17 @@ internal object TabsTrayTestTag {
     const val TAB_GROUP_THUMBNAIL_THIRD = "$TAB_GROUP_THUMBNAIL_ROOT.3"
     const val TAB_GROUP_THUMBNAIL_FOURTH = "$TAB_GROUP_THUMBNAIL_ROOT.4"
     const val TAB_GROUP_TITLE = "$TAB_GROUP_ROOT.title"
-    const val TAB_GROUP_THREE_DOT_BUTTON = "$TAB_GROUP_ROOT.threeDotButton"
 
     // Bottom sheet group items
     const val TAB_GROUP_BOTTOM_SHEET_ROOT = "$TAB_GROUP_ROOT.bottomSheet"
     const val BOTTOM_SHEET_SHARE_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.share"
-    const val BOTTOM_SHEET_THREE_DOT_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.threeDotButton"
     const val BOTTOM_SHEET_CIRCLE = "$TAB_GROUP_BOTTOM_SHEET_ROOT.circle"
+
+    // Tab group three dot menu
+    const val TAB_GROUP_THREE_DOT_BUTTON = "$TAB_GROUP_ROOT.threeDotButton"
+    const val EDIT_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.editGroup"
+    const val CLOSE_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.closeGroup"
+    const val DELETE_TAB_GROUP = "$TAB_GROUP_THREE_DOT_BUTTON.deleteGroup"
 
     // Bottom app bar
     const val TAB_SEARCH_ICON = "$TABS_TRAY.tabSearchIcon"

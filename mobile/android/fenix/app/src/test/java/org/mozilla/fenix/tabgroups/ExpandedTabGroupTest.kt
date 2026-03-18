@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -44,10 +45,8 @@ class ExpandedTabGroupTest {
                 }
             }
         }
-        composeTestRule.runOnIdle {
-            assertTrue(sheetState?.currentValue == SheetValue.PartiallyExpanded)
-            assertTrue(sheetState?.isVisible == true)
-        }
+        assertTrue(sheetState?.currentValue == SheetValue.PartiallyExpanded)
+        assertTrue(sheetState?.isVisible == true)
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -68,16 +67,39 @@ class ExpandedTabGroupTest {
                 }
             }
         }
-        composeTestRule.runOnIdle {
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_BOTTOM_SHEET_ROOT)
-                .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.BOTTOM_SHEET_SHARE_BUTTON)
-                .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.BOTTOM_SHEET_THREE_DOT_BUTTON)
-                .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(TabsTrayTestTag.BOTTOM_SHEET_CIRCLE).assertIsDisplayed()
-            composeTestRule.onNodeWithText(testGroupTitle).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_BOTTOM_SHEET_ROOT)
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.BOTTOM_SHEET_SHARE_BUTTON)
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.BOTTOM_SHEET_CIRCLE).assertIsDisplayed()
+        composeTestRule.onNodeWithText(testGroupTitle).assertIsDisplayed()
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun verifyMenuItems() {
+        var sheetState: SheetState? = null
+        composeTestRule.setContent {
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = false,
+            )
+            FirefoxTheme(theme = Theme.Light) {
+                Surface {
+                    ExpandedTabGroup(
+                        group = fakeTabGroup(),
+                        focusedTabId = null,
+                        sheetState = sheetState,
+                    )
+                }
+            }
         }
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)
+            .performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.EDIT_TAB_GROUP).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.CLOSE_TAB_GROUP).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.DELETE_TAB_GROUP).assertIsDisplayed()
     }
 
     private fun fakeTabGroup(): TabsTrayItem.TabGroup {

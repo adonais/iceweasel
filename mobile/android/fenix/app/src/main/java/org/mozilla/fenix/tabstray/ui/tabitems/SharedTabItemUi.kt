@@ -12,21 +12,35 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.compose.base.RadioCheckmarkColors
+import mozilla.components.compose.base.menu.DropdownMenu
+import mozilla.components.compose.base.menu.MenuItem
+import mozilla.components.compose.base.text.Text
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
+import org.mozilla.fenix.R
+import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import mozilla.components.ui.icons.R as iconsR
 
 // Rounded corner shape used by all tab items
 val TabContentCardShape = RoundedCornerShape(16.dp)
@@ -47,6 +61,13 @@ val ThumbnailShape = RoundedCornerShape(
 
 // The touch target size of a tab's header icon
 val TabHeaderIconTouchTargetSize = 40.dp
+
+//region placeholder strings
+private const val PLACEHOLDER_EDIT = "Edit"
+private const val PLACEHOLDER_CLOSE = "Close"
+private const val PLACEHOLDER_DELETE = "Delete"
+private const val PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION = "More options"
+//endregion
 
 /**
  * @param isSelected: Whether the tab is selected in multiselect mode
@@ -131,6 +152,78 @@ val gridItemAspectRatio: Float
     } else {
         0.8f
     }
+
+/**
+ * Renders the three dot button and its menu items for [org.mozilla.fenix.tabstray.data.TabsTrayItem.TabGroup] views.
+ * @param modifier: The Modifier parameter
+ * @param includeCloseOption: Whether to include the "Close" dropdown item in the menu item list.
+ */
+@Composable
+fun TabGroupMenuButton(
+    modifier: Modifier = Modifier,
+    includeCloseOption: Boolean = false,
+) {
+    var showDropdownMenu by remember { mutableStateOf(false) }
+    IconButton(
+        onClick = {
+            showDropdownMenu = true
+        },
+        modifier = modifier
+            .testTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON),
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_menu),
+            contentDescription = PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION,
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+
+        DropdownMenu(
+            expanded = showDropdownMenu,
+            onDismissRequest = { showDropdownMenu = false },
+            menuItems = generateTabGroupMenuItems(
+                editTabGroup = {}, // handle edit
+                closeTabGroup = {}, // handle close
+                deleteTabGroup = {}, // handle delete
+                includeCloseOption = includeCloseOption,
+            ),
+        )
+    }
+}
+
+private fun generateTabGroupMenuItems(
+    includeCloseOption: Boolean = false,
+    editTabGroup: () -> Unit,
+    closeTabGroup: () -> Unit,
+    deleteTabGroup: () -> Unit,
+): List<MenuItem> {
+    val editItem = MenuItem.IconItem(
+        text = Text.String(PLACEHOLDER_EDIT),
+        drawableRes = iconsR.drawable.mozac_ic_edit_24,
+        testTag = TabsTrayTestTag.EDIT_TAB_GROUP,
+        onClick = editTabGroup,
+        enabled = false,
+    )
+    val closeItem = MenuItem.IconItem(
+        text = Text.String(PLACEHOLDER_CLOSE),
+        drawableRes = iconsR.drawable.mozac_ic_tab_group_close_24,
+        testTag = TabsTrayTestTag.CLOSE_TAB_GROUP,
+        onClick = closeTabGroup,
+        enabled = false,
+    )
+    val deleteItem = MenuItem.IconItem(
+        text = Text.String(PLACEHOLDER_DELETE),
+        drawableRes = iconsR.drawable.mozac_ic_delete_24,
+        testTag = TabsTrayTestTag.DELETE_TAB_GROUP,
+        onClick = deleteTabGroup,
+        level = MenuItem.FixedItem.Level.Critical,
+        enabled = false,
+    )
+    return if (includeCloseOption) {
+        listOf(editItem, closeItem, deleteItem)
+    } else {
+        listOf(editItem, deleteItem)
+    }
+}
 
 // Long text string for verifying that tab items handle long titles with appropriate truncation.
 const val LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do " +
