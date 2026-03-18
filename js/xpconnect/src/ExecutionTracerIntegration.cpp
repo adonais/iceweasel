@@ -63,7 +63,7 @@ bool ExecutionTracerIntegration::WriteNodeSummary(
                         uint8_t(NodeSubkind::Document));
     RefPtr<Location> location = doc->GetLocation();
     nsAutoCString href;
-    if (location->GetHref(href) != NS_OK) {
+    if (location && location->GetHref(href) != NS_OK) {
       JS_ReportErrorASCII(aCx, "Failed to get document location's href");
       return false;
     }
