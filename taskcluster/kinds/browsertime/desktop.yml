@@ -1243,13 +1243,11 @@ browsertime-trr-performance:
         subtests:
             - dns-multi
             - dns-native
-            - dns-usatdy
             - trr-cira
             - trr-cloudf
             - trr-comcas
             - trr-multi
             - trr-next
-            - trr-usatdy
             - trr-w-cira
             - trr-w-clou
             - trr-w-comc

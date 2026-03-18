@@ -556,11 +556,9 @@ browsertime-trr-performance-m:
         subtests:
             - dns-multi
             - dns-native
-            - dns-usatdy
             - trr-cloudf
             - trr-multi
             - trr-next
-            - trr-usatdy
             - trr-w-clou
             - trr-w-next
 
