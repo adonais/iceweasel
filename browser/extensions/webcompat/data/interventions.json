@@ -5491,21 +5491,6 @@
       }
     ]
   },
-  "1990193": {
-    "label": "zeit.werkheim.de",
-    "bugs": {
-      "1990193": {
-        "issue": "page-fails-to-load",
-        "matches": ["*://zeit.werkheim.de/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
   "1992402": {
     "label": "ehssrisk.sai360.net",
     "bugs": {
