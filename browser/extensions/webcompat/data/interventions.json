@@ -4902,25 +4902,6 @@
       }
     ]
   },
-  "1975953": {
-    "label": "envios.mercadolibre.com.ar",
-    "bugs": {
-      "1975953": {
-        "issue": "broken-layout",
-        "matches": [
-          "*://envios.mercadolibre.com.ar/shipping/agencies-map/pick-up*"
-        ]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["android"],
-        "content_scripts": {
-          "css": ["bug1975953-envios.mercadolibre.com.ar-reveal-content.css"]
-        }
-      }
-    ]
-  },
   "1977195": {
     "label": "wattpad.com",
     "bugs": {
