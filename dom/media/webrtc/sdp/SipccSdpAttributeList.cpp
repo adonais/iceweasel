@@ -17,7 +17,7 @@ namespace mozilla {
 using InternalResults = SdpParser::InternalResults;
 
 /* static */
-MOZ_RUNINIT const std::string SipccSdpAttributeList::kEmptyString = "";
+MOZ_GLIBCXX_CONSTINIT const std::string SipccSdpAttributeList::kEmptyString;
 
 SipccSdpAttributeList::SipccSdpAttributeList(
     const SipccSdpAttributeList* sessionLevel)
