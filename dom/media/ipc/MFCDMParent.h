@@ -92,11 +92,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   void ShutdownCDM();
 
-  // Called when a hardware context reset (e.g. GPU/DRM device lost) invalidates
-  // all active CDM sessions. Closes every open session and resets the trusted
-  // input so the content process can re-establish keys.
-  void OnHardwareContextReset();
-
   void Destroy();
 
  private:
@@ -131,12 +126,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   MFCDMSession* GetSession(const nsString& aSessionId);
 
-  // Called after a GPU/DRM hardware context reset to discard the invalid CDM
-  // and create a fresh one so new sessions can be established.
-  HRESULT RecreateCDM();
-  // Sets up the PMPHostApp on the CDM. Only required by PlayReady.
-  HRESULT SetupPMPHostApp() MOZ_REQUIRES(mCDMAccessLock);
-
   mozilla::Mutex& Mutex() MOZ_RETURN_CAPABILITY(mCDMAccessLock.Lock()) {
     return mCDMAccessLock.Lock();
   }
@@ -145,8 +134,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   const RefPtr<RemoteMediaManagerParent> mManager;
   const RefPtr<nsISerialEventTarget> mManagerThread;
-
-  Maybe<MFCDMInitParamsIPDL> mInitParams;
 
   MOZ_RUNINIT static inline nsTHashMap<nsUint64HashKey, MFCDMParent*>
       sRegisteredCDMs;

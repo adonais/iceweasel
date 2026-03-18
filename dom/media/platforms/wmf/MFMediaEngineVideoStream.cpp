@@ -37,8 +37,6 @@ MFMediaEngineVideoStream* MFMediaEngineVideoStream::Create(
       GetStreamTypeFromMimeType(aInfo.GetAsVideoInfo()->mMimeType);
   MOZ_ASSERT(StreamTypeIsVideo(stream->mStreamType));
   stream->mHasReceivedInitialCreateDecoderConfig = false;
-  stream->mHasClearLead =
-      aIsEncryptedCustomInit && !aInfo.GetAsVideoInfo()->mCrypto.IsEncrypted();
   stream->SetDCompSurfaceHandle(INVALID_HANDLE_VALUE, gfx::IntSize{});
   return stream;
 }
@@ -85,9 +83,6 @@ HRESULT MFMediaEngineVideoStream::CreateMediaType(const TrackInfo& aInfo,
                                                   IMFMediaType** aMediaType) {
   auto& videoInfo = *aInfo.GetAsVideoInfo();
   mIsEncrypted = videoInfo.mCrypto.IsEncrypted();
-  if (mHasClearLead && mIsEncrypted) {
-    mSwitchedClearToEncrypted = true;
-  }
 
   GUID subType = VideoMimeTypeToMediaFoundationSubtype(videoInfo.mMimeType);
   NS_ENSURE_TRUE(subType != GUID_NULL, MF_E_TOPO_CODEC_NOT_FOUND);
@@ -404,10 +399,6 @@ void MFMediaEngineVideoStream::ShutdownCleanUpOnTaskQueue() {
   mPendingDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mVideoDecodeBeforeDcompPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED,
                                                 __func__);
-  if (mDCompSurfaceHandle && mDCompSurfaceHandle != INVALID_HANDLE_VALUE) {
-    CloseHandle(mDCompSurfaceHandle);
-    mDCompSurfaceHandle = INVALID_HANDLE_VALUE;
-  }
 }
 
 void MFMediaEngineVideoStream::SendRequestSampleEvent(bool aIsEnough) {
@@ -435,9 +426,6 @@ bool MFMediaEngineVideoStream::IsEnded() const {
 }
 
 bool MFMediaEngineVideoStream::IsEncrypted() const {
-  if (mHasClearLead) {
-    return mSwitchedClearToEncrypted;
-  }
   return mIsEncrypted || mIsEncryptedCustomInit;
 }
 

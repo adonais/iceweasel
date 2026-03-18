@@ -1272,13 +1272,6 @@ void ExternalEngineStateMachine::NotifyErrorInternal(
   LOG("Engine error: %s", aError.Description().get());
   PROFILER_MARKER_TEXT("EESM::NotifyErrorInternal", MEDIA_PLAYBACK, {},
                        aError.Description());
-  if (mState.IsRecoverEngine()) {
-    // Suppress errors that arrive during engine recovery to avoid
-    // interrupting the in-progress reinit sequence.
-    LOG("Ignoring error during hardware reset recovery: %s",
-        aError.Description().get());
-    return;
-  }
   if (aError == NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR) {
     // The external engine doesn't support the type, try to notify the decoder
     // to use our own state machine again.
@@ -1321,7 +1314,6 @@ void ExternalEngineStateMachine::NotifyResizingInternal(uint32_t aWidth,
 void ExternalEngineStateMachine::RecoverFromCDMProcessCrashIfNeeded() {
   AssertOnTaskQueue();
   if (mState.IsRecoverEngine()) {
-    LOG("In the recover state already");
     return;
   }
   ProcessCrashMonitor::NotifyCrash();
@@ -1362,42 +1354,6 @@ void ExternalEngineStateMachine::RecoverFromCDMProcessCrashIfNeeded() {
   mReader->ReleaseResources();
   InitEngine();
 }
-
-void ExternalEngineStateMachine::RecoverFromHardwareReset() {
-  AssertOnTaskQueue();
-  if (mState.IsRecoverEngine()) {
-    LOG("In the recover state already");
-    return;
-  }
-  if (IsBeingProfiledOrLogEnabled()) {
-    nsPrintfCString msg(
-        "Hardware context reset, recovering engine (pos=%" PRId64 ")",
-        mCurrentPosition.Ref().ToMicroseconds());
-    LOG("%s", msg.get());
-    PROFILER_MARKER_TEXT("EESM::RecoverFromHardwareReset", MEDIA_PLAYBACK, {},
-                         msg);
-  }
-  ChangeStateTo(State::RecoverEngine);
-  if (HasVideo()) {
-    mVideoDataRequest.DisconnectIfExists();
-    mVideoWaitRequest.DisconnectIfExists();
-  }
-  if (HasAudio()) {
-    mAudioDataRequest.DisconnectIfExists();
-    mAudioWaitRequest.DisconnectIfExists();
-  }
-  MOZ_ASSERT(mEngine);
-  mEngine->Shutdown();
-  mReader->ReleaseResources();
-  InitEngine();
-}
-
-#ifdef MOZ_WMF_CDM
-void ExternalEngineStateMachine::NotifyWaitingForKeyInternal() {
-  AssertOnTaskQueue();
-  mReader->NotifyWaitingForKey();
-}
-#endif
 
 media::TimeUnit ExternalEngineStateMachine::GetVideoThreshold() {
   AssertOnTaskQueue();
