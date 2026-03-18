@@ -7,6 +7,8 @@ package mozilla.components.feature.app.links
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,6 +29,7 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -34,7 +37,9 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyBoolean
+import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
@@ -49,6 +54,7 @@ class AppLinksFeatureTest {
 
     private lateinit var store: BrowserStore
     private lateinit var mockContext: Context
+    private lateinit var mockPackageManager: PackageManager
     private lateinit var mockFragmentManager: FragmentManager
     private lateinit var mockUseCases: AppLinksUseCases
     private lateinit var mockGetRedirect: AppLinksUseCases.GetAppLinkRedirect
@@ -67,6 +73,12 @@ class AppLinksFeatureTest {
     fun setup() {
         store = BrowserStore()
         mockContext = mock()
+        mockPackageManager = mock()
+        doReturn(mockPackageManager).`when`(mockContext).packageManager
+        doReturn(ApplicationInfo()).`when`(mockContext).applicationInfo
+        doReturn("").`when`(mockPackageManager).getApplicationLabel(any())
+        doAnswer { "" }.`when`(mockContext).getString(anyInt())
+        doAnswer { "" }.`when`(mockContext).getString(anyInt(), any<Any>())
 
         mockFragmentManager = mock()
         `when`(mockFragmentManager.beginTransaction()).thenReturn(mock())
@@ -93,7 +105,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -154,7 +166,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -178,7 +190,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 shouldPrompt = { false },
@@ -202,7 +214,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -239,7 +251,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -276,7 +288,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -300,7 +312,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -366,7 +378,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -395,7 +407,7 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                dialog = mockDialog,
+                dialog = { _ -> mockDialog },
                 useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 mainDispatcher = testDispatcher,
@@ -505,5 +517,119 @@ class AppLinksFeatureTest {
                 isWallet = true,
             ),
         )
+    }
+
+    @Test
+    fun `WHEN custom dialog factory is set THEN it receives correct source URL, destination URL, and package name`() {
+        var capturedData: RedirectDialogData? = null
+        val capturingFeature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            dialog = { data -> capturedData = data; mockDialog },
+            useCases = mockUseCases,
+            loadUrlUseCase = mockLoadUrlUseCase,
+            mainDispatcher = testDispatcher,
+        )
+
+        capturingFeature.getOrCreateDialog(
+            isPrivate = false,
+            isWallet = false,
+            url = intentUrl,
+            targetAppName = "TestApp",
+            packageName = "com.test.app",
+            sourceUrl = webUrl,
+            fallbackUrl = null,
+        )
+
+        val data = requireNotNull(capturedData)
+        assertEquals(webUrl, data.sourceUrl)
+        assertEquals(intentUrl, data.destinationUrl)
+        assertEquals("com.test.app", data.packageName)
+    }
+
+    @Test
+    fun `WHEN private mode THEN showCheckbox is false in RedirectDialogData`() {
+        var capturedData: RedirectDialogData? = null
+        val capturingFeature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            dialog = { data -> capturedData = data; mockDialog },
+            useCases = mockUseCases,
+            loadUrlUseCase = mockLoadUrlUseCase,
+            mainDispatcher = testDispatcher,
+            alwaysOpenCheckboxAction = {},
+        )
+
+        capturingFeature.getOrCreateDialog(isPrivate = true, isWallet = false, url = intentUrl, targetAppName = null)
+
+        assertFalse(capturedData!!.showCheckbox)
+    }
+
+    @Test
+    fun `WHEN destination URL scheme is supported THEN firefoxUrl equals destination URL`() {
+        var capturedData: RedirectDialogData? = null
+        val capturingFeature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            dialog = { data -> capturedData = data; mockDialog },
+            useCases = mockUseCases,
+            loadUrlUseCase = mockLoadUrlUseCase,
+            mainDispatcher = testDispatcher,
+        )
+
+        capturingFeature.getOrCreateDialog(isPrivate = false, isWallet = false, url = webUrl, targetAppName = null)
+
+        assertEquals(webUrl, capturedData?.firefoxUrl)
+    }
+
+    @Test
+    fun `WHEN destination URL scheme is unsupported AND fallback URL provided THEN firefoxUrl equals fallback`() {
+        var capturedData: RedirectDialogData? = null
+        val capturingFeature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            dialog = { data -> capturedData = data; mockDialog },
+            useCases = mockUseCases,
+            loadUrlUseCase = mockLoadUrlUseCase,
+            mainDispatcher = testDispatcher,
+        )
+
+        capturingFeature.getOrCreateDialog(
+            isPrivate = false,
+            isWallet = false,
+            url = intentUrl,
+            targetAppName = null,
+            fallbackUrl = webUrl,
+        )
+
+        assertEquals(webUrl, capturedData?.firefoxUrl)
+    }
+
+    @Test
+    fun `WHEN destination URL scheme is unsupported AND no fallback THEN firefoxUrl is null`() {
+        var capturedData: RedirectDialogData? = null
+        val capturingFeature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            dialog = { data -> capturedData = data; mockDialog },
+            useCases = mockUseCases,
+            loadUrlUseCase = mockLoadUrlUseCase,
+            mainDispatcher = testDispatcher,
+        )
+
+        capturingFeature.getOrCreateDialog(
+            isPrivate = false,
+            isWallet = false,
+            url = intentUrl,
+            targetAppName = null,
+            fallbackUrl = null,
+        )
+
+        assertNull(capturedData?.firefoxUrl)
     }
 }
