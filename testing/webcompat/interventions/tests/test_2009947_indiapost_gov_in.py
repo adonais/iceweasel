@@ -15,16 +15,8 @@ async def visit_site(client):
 
 
 @pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
+@pytest.mark.without_interventions
+async def test_regression(client):
     await visit_site(client)
     assert client.await_css(SUPPORTED_CSS, is_displayed=True)
     assert not client.find_text(UNSUPPORTED_TEXT, is_displayed=True)
-
-
-@pytest.mark.asyncio
-@pytest.mark.without_interventions
-async def test_disabled(client):
-    await visit_site(client)
-    assert client.await_text(UNSUPPORTED_TEXT, is_displayed=True)
-    assert not client.find_css(SUPPORTED_CSS, is_displayed=True)

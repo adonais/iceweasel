@@ -6081,21 +6081,6 @@
       }
     ]
   },
-  "2009947": {
-    "label": "app.indiapost.gov.in",
-    "bugs": {
-      "2009947": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://app.indiapost.gov.in/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
   "2010102": {
     "label": "osmosis.org",
     "bugs": {
