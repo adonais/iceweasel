@@ -36,6 +36,7 @@ class ProjectPlugin : Plugin<Project> {
         configureBuildDirectory(project, topsrcdir, topobjdir)
         configureJniKeepDebugSymbols(project)
         configureKotlinCompilerMessageReformatting(project)
+        configureKotlinWarningsAsErrors(project)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
     }
@@ -197,6 +198,17 @@ class ProjectPlugin : Plugin<Project> {
             doLast {
                 logging.removeStandardErrorListener(listener)
             }
+        }
+    }
+
+    private fun configureKotlinWarningsAsErrors(project: Project) {
+        project.tasks.configureEach {
+            if (!this::class.java.name.startsWith("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")) {
+                return@configureEach
+            }
+            val compilerOptions = this::class.java.getMethod("getCompilerOptions").invoke(this)
+            val allWarningsAsErrors = compilerOptions::class.java.getMethod("getAllWarningsAsErrors").invoke(compilerOptions)
+            allWarningsAsErrors::class.java.getMethod("set", Any::class.java).invoke(allWarningsAsErrors, true)
         }
     }
 

@@ -2,7 +2,6 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static org.gradle.api.tasks.testing.TestResult.ResultType
 
@@ -27,11 +26,6 @@ plugins {
 allprojects {
     ext {
         gleanVersion = libs.versions.glean.get()
-    }
-
-    // Enable Kotlin warnings as errors for all modules
-    tasks.withType(KotlinCompile).configureEach {
-        compilerOptions.allWarningsAsErrors = true
     }
 
     if (gradle.mozconfig.substs.DOWNLOAD_ALL_GRADLE_DEPENDENCIES) {

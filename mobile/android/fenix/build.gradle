@@ -3,7 +3,6 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     repositories {
@@ -34,10 +33,6 @@ plugins {
 allprojects {
     ext {
         gleanVersion = libs.versions.glean.get()
-    }
-
-    tasks.withType(KotlinCompile).configureEach {
-        compilerOptions.allWarningsAsErrors = true
     }
 }
 
