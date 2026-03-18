@@ -341,6 +341,30 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
       return;
     }
     case MF_MEDIA_ENGINE_ERR_SRC_NOT_SUPPORTED: {
+#ifdef MOZ_WMF_CDM
+      if (mProxyId) {
+        // When a CDM is active the media format was validated before the CDM
+        // was initialised, so a genuine codec/container issue is unlikely.
+        // Most errors tunnelled through SRC_NOT_SUPPORTED in this context are
+        // CDM pipeline or content-protection failures. Use an allowlist of the
+        // few HRESULTs that genuinely mean unsupported format; classify
+        // everything else as a decode error so it surfaces correctly.
+        bool isSrcError =
+            (aResult == S_OK || aResult == MF_E_INVALIDMEDIATYPE ||
+             aResult == MF_E_UNSUPPORTED_BYTESTREAM_TYPE ||
+             aResult == MF_E_UNSUPPORTED_FORMAT ||
+             aResult == MF_E_TOPO_CODEC_NOT_FOUND);
+        MediaResult error(
+            isSrcError ? NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR
+                       : NS_ERROR_DOM_MEDIA_DECODE_ERR,
+            nsPrintfCString(
+                "%s (hr=%lx)",
+                isSrcError ? "Source not supported" : "Decode error", aResult),
+            Some(static_cast<int32_t>(aResult)));
+        (void)SendNotifyError(error);
+        return;
+      }
+#endif
       MediaResult error(
           NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR,
           nsPrintfCString("Source not supported (hr=%lx)", aResult),
