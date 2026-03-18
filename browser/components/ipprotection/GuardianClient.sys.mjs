@@ -440,8 +440,8 @@ export class ProxyPass extends EventTarget {
   asBearerToken() {
     return `Bearer ${this.token}`;
   }
-  // Rotate 10 Minutes from the End Time
-  static ROTATION_TIME = Temporal.Duration.from({ minutes: 10 });
+  // Rotate 2 Minutes from the End Time
+  static ROTATION_TIME = Temporal.Duration.from({ minutes: 2 });
 
   static get bodySchema() {
     return {

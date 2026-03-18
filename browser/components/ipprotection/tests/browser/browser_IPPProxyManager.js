@@ -181,6 +181,7 @@ add_task(async function test_IPPProxyManager_paused_shown() {
 
   let content = await openPanel();
 
+  IPPProxyManager.refreshUsage();
   await waitForProxyState(IPPProxyStates.PAUSED);
 
   Assert.equal(
@@ -227,6 +228,7 @@ add_task(async function test_IPPProxyManager_unpause_on_available() {
 
   let content = await openPanel();
 
+  IPPProxyManager.refreshUsage();
   await waitForProxyState(IPPProxyStates.PAUSED);
 
   Assert.equal(
