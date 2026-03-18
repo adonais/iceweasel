@@ -369,6 +369,7 @@ abstract class BaseBrowserFragment :
     private var pipFeature: PictureInPictureFeature? = null
 
     var customTabSessionId: String? = null
+        private set
 
     @VisibleForTesting
     internal var browserInitialized: Boolean = false
@@ -1492,19 +1493,21 @@ abstract class BaseBrowserFragment :
                 hideWhenKeyboardShown = true,
             )
 
-        // set the summarize CFR binding
-        summarizeToolbarCfrBinding.set(
-            feature = SummarizeToolbarCFRBinding(
-                browserStore = requireComponents.core.store,
-                browserToolbarStore = toolbarStore,
-                featureDiscovery = requireComponents.core.summarizeFeatureSettings,
-                eligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
-                mainDispatcher = Dispatchers.Main,
-                ioDispatcher = Dispatchers.IO,
-            ),
-            owner = viewLifecycleOwner,
-            view = binding.root,
-        )
+        // set the summarize CFR binding only for regular, non-custom tabs
+        if (customTabSessionId == null) {
+            summarizeToolbarCfrBinding.set(
+                feature = SummarizeToolbarCFRBinding(
+                    browserStore = requireComponents.core.store,
+                    browserToolbarStore = toolbarStore,
+                    featureDiscovery = requireComponents.core.summarizeFeatureSettings,
+                    eligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
+                    mainDispatcher = Dispatchers.Main,
+                    ioDispatcher = Dispatchers.IO,
+                ),
+                owner = viewLifecycleOwner,
+                view = binding.root,
+            )
+        }
 
         return BrowserToolbarComposable(
             activity = activity,

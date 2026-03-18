@@ -31,8 +31,11 @@ import org.mozilla.fenix.tabstray.ext.isNormalTab
  * Contextual Feature Recommendation (CFR) in the toolbar when the page content is eligible
  * for summarization for the first time.
  *
+ * This Binding should be used in [org.mozilla.fenix.browser.BrowserFragment] to ensure that we
+ * don't show it in a custom tab.
+ *
  * The CFR is shown only when all of the following conditions are met:
- * - The selected tab is a normal (non-private, non-custom) tab.
+ * - The selected tab is a normal (non-private) tab.
  * - The feature discovery settings indicate the CFR should be shown.
  * - The page is readerable and has finished loading.
  * - The page content passes the summarization eligibility check (e.g. word count).
