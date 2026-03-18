@@ -6664,7 +6664,8 @@ class MLoadElement : public MBinaryInstruction, public NoTypePolicy::Data {
   bool needsHoleCheck() const { return needsHoleCheck_; }
 
   bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins);
+    return congruentIfOperandsEqual(ins) &&
+           ins->toLoadElement()->needsHoleCheck() == needsHoleCheck();
   }
   AliasType mightAlias(const MDefinition* store) const override;
   MDefinition* foldsTo(TempAllocator& alloc) override;
