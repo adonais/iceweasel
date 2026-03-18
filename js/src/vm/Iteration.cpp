@@ -306,16 +306,18 @@ bool PropertyEnumerator::enumerateNativeProperties(JSContext* cx) {
     size_t firstElemIndex = props_.length();
     size_t initlen = pobj->getDenseInitializedLength();
     const Value* elements = pobj->getDenseElements();
+    bool elementsAreFrozen = pobj->denseElementsAreFrozen();
     bool hasHoles = false;
     for (uint32_t i = 0; i < initlen; ++i) {
       if (elements[i].isMagic(JS_ELEMENTS_HOLE)) {
         hasHoles = true;
       } else {
+        PropertyIndex index = elementsAreFrozen ? PropertyIndex::Invalid()
+                                                : PropertyIndex::ForElement(i);
         // Dense arrays never get so large that i would not fit into an
         // integer id.
         if (!enumerate<CheckForDuplicates>(cx, PropertyKey::Int(i),
-                                           /* enumerable = */ true,
-                                           PropertyIndex::ForElement(i))) {
+                                           /* enumerable = */ true, index)) {
           return false;
         }
       }
