@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.358
- * pdfjsBuild = a7083d08f
+ * pdfjsVersion = 5.6.65
+ * pdfjsBuild = bda745672
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -7793,14 +7793,14 @@ class FontLoader {
 class FontFaceObject {
   compiledGlyphs = Object.create(null);
   #fontData;
-  constructor(translatedData, inspectFont = null, extra, charProcOperatorList) {
+  constructor(translatedData, inspectFont = null, charProcOperatorList, extra) {
     this.#fontData = translatedData;
     this._inspectFont = inspectFont;
-    if (extra) {
-      Object.assign(this, extra);
-    }
     if (charProcOperatorList) {
       this.charProcOperatorList = charProcOperatorList;
+    }
+    if (extra) {
+      Object.assign(this, extra);
     }
   }
   createNativeFontFace() {
@@ -7902,9 +7902,6 @@ class FontFaceObject {
   get bbox() {
     return this.#fontData.bbox;
   }
-  set bbox(bbox) {
-    shadow(this, "bbox", bbox);
-  }
   get fontMatrix() {
     return this.#fontData.fontMatrix;
   }
@@ -7937,42 +7934,47 @@ class FontFaceObject {
   }
 }
 
-;// ./src/shared/obj-bin-transform.js
+;// ./src/shared/obj_bin_transform_utils.js
+class CSS_FONT_INFO {
+  static strings = ["fontFamily", "fontWeight", "italicAngle"];
+}
+class SYSTEM_FONT_INFO {
+  static strings = ["css", "loadedName", "baseFontName", "src"];
+}
+class FONT_INFO {
+  static bools = ["black", "bold", "disableFontFace", "fontExtraProperties", "isInvalidPDFjsFont", "isType3Font", "italic", "missingFile", "remeasure", "vertical"];
+  static numbers = ["ascent", "defaultWidth", "descent"];
+  static strings = ["fallbackName", "loadedName", "mimetype", "name"];
+  static OFFSET_NUMBERS = Math.ceil(this.bools.length * 2 / 8);
+  static OFFSET_BBOX = this.OFFSET_NUMBERS + this.numbers.length * 8;
+  static OFFSET_FONT_MATRIX = this.OFFSET_BBOX + 1 + 2 * 4;
+  static OFFSET_DEFAULT_VMETRICS = this.OFFSET_FONT_MATRIX + 1 + 8 * 6;
+  static OFFSET_STRINGS = this.OFFSET_DEFAULT_VMETRICS + 1 + 2 * 3;
+}
+class PATTERN_INFO {
+  static KIND = 0;
+  static HAS_BBOX = 1;
+  static HAS_BACKGROUND = 2;
+  static SHADING_TYPE = 3;
+  static N_COORD = 4;
+  static N_COLOR = 8;
+  static N_STOP = 12;
+  static N_FIGURES = 16;
+}
+
+;// ./src/display/obj_bin_transform_display.js
+
 
 class CssFontInfo {
   #buffer;
   #decoder = new TextDecoder();
   #view;
-  static strings = ["fontFamily", "fontWeight", "italicAngle"];
-  static write(info) {
-    const encoder = new TextEncoder();
-    const encodedStrings = {};
-    let stringsLength = 0;
-    for (const prop of CssFontInfo.strings) {
-      const encoded = encoder.encode(info[prop]);
-      encodedStrings[prop] = encoded;
-      stringsLength += 4 + encoded.length;
-    }
-    const buffer = new ArrayBuffer(stringsLength);
-    const data = new Uint8Array(buffer);
-    const view = new DataView(buffer);
-    let offset = 0;
-    for (const prop of CssFontInfo.strings) {
-      const encoded = encodedStrings[prop];
-      const length = encoded.length;
-      view.setUint32(offset, length);
-      data.set(encoded, offset + 4);
-      offset += 4 + length;
-    }
-    assert(offset === buffer.byteLength, "CssFontInfo.write: Buffer overflow");
-    return buffer;
-  }
   constructor(buffer) {
     this.#buffer = buffer;
-    this.#view = new DataView(this.#buffer);
+    this.#view = new DataView(buffer);
   }
   #readString(index) {
-    assert(index < CssFontInfo.strings.length, "Invalid string index");
+    assert(index < CSS_FONT_INFO.strings.length, "Invalid string index");
     let offset = 0;
     for (let i = 0; i < index; i++) {
       offset += this.#view.getUint32(offset) + 4;
@@ -7994,62 +7996,15 @@ class SystemFontInfo {
   #buffer;
   #decoder = new TextDecoder();
   #view;
-  static strings = ["css", "loadedName", "baseFontName", "src"];
-  static write(info) {
-    const encoder = new TextEncoder();
-    const encodedStrings = {};
-    let stringsLength = 0;
-    for (const prop of SystemFontInfo.strings) {
-      const encoded = encoder.encode(info[prop]);
-      encodedStrings[prop] = encoded;
-      stringsLength += 4 + encoded.length;
-    }
-    stringsLength += 4;
-    let encodedStyleStyle,
-      encodedStyleWeight,
-      lengthEstimate = 1 + stringsLength;
-    if (info.style) {
-      encodedStyleStyle = encoder.encode(info.style.style);
-      encodedStyleWeight = encoder.encode(info.style.weight);
-      lengthEstimate += 4 + encodedStyleStyle.length + 4 + encodedStyleWeight.length;
-    }
-    const buffer = new ArrayBuffer(lengthEstimate);
-    const data = new Uint8Array(buffer);
-    const view = new DataView(buffer);
-    let offset = 0;
-    view.setUint8(offset++, info.guessFallback ? 1 : 0);
-    view.setUint32(offset, 0);
-    offset += 4;
-    stringsLength = 0;
-    for (const prop of SystemFontInfo.strings) {
-      const encoded = encodedStrings[prop];
-      const length = encoded.length;
-      stringsLength += 4 + length;
-      view.setUint32(offset, length);
-      data.set(encoded, offset + 4);
-      offset += 4 + length;
-    }
-    view.setUint32(offset - stringsLength - 4, stringsLength);
-    if (info.style) {
-      view.setUint32(offset, encodedStyleStyle.length);
-      data.set(encodedStyleStyle, offset + 4);
-      offset += 4 + encodedStyleStyle.length;
-      view.setUint32(offset, encodedStyleWeight.length);
-      data.set(encodedStyleWeight, offset + 4);
-      offset += 4 + encodedStyleWeight.length;
-    }
-    assert(offset <= buffer.byteLength, "SubstitionInfo.write: Buffer overflow");
-    return buffer.transferToFixedLength(offset);
-  }
   constructor(buffer) {
     this.#buffer = buffer;
-    this.#view = new DataView(this.#buffer);
+    this.#view = new DataView(buffer);
   }
   get guessFallback() {
     return this.#view.getUint8(0) !== 0;
   }
   #readString(index) {
-    assert(index < SystemFontInfo.strings.length, "Invalid string index");
+    assert(index < SYSTEM_FONT_INFO.strings.length, "Invalid string index");
     let offset = 5;
     for (let i = 0; i < index; i++) {
       offset += this.#view.getUint32(offset) + 4;
@@ -8084,29 +8039,21 @@ class SystemFontInfo {
   }
 }
 class FontInfo {
-  static bools = ["black", "bold", "disableFontFace", "fontExtraProperties", "isInvalidPDFjsFont", "isType3Font", "italic", "missingFile", "remeasure", "vertical"];
-  static numbers = ["ascent", "defaultWidth", "descent"];
-  static strings = ["fallbackName", "loadedName", "mimetype", "name"];
-  static #OFFSET_NUMBERS = Math.ceil(this.bools.length * 2 / 8);
-  static #OFFSET_BBOX = this.#OFFSET_NUMBERS + this.numbers.length * 8;
-  static #OFFSET_FONT_MATRIX = this.#OFFSET_BBOX + 1 + 2 * 4;
-  static #OFFSET_DEFAULT_VMETRICS = this.#OFFSET_FONT_MATRIX + 1 + 8 * 6;
-  static #OFFSET_STRINGS = this.#OFFSET_DEFAULT_VMETRICS + 1 + 2 * 3;
   #buffer;
   #decoder = new TextDecoder();
   #view;
   constructor({
-    data,
+    buffer,
     extra
   }) {
-    this.#buffer = data;
-    this.#view = new DataView(this.#buffer);
+    this.#buffer = buffer;
+    this.#view = new DataView(buffer);
     if (extra) {
       Object.assign(this, extra);
     }
   }
   #readBoolean(index) {
-    assert(index < FontInfo.bools.length, "Invalid boolean index");
+    assert(index < FONT_INFO.bools.length, "Invalid boolean index");
     const byteOffset = Math.floor(index / 4);
     const bitOffset = index * 2 % 8;
     const value = this.#view.getUint8(byteOffset) >> bitOffset & 0x03;
@@ -8143,8 +8090,8 @@ class FontInfo {
     return this.#readBoolean(9);
   }
   #readNumber(index) {
-    assert(index < FontInfo.numbers.length, "Invalid number index");
-    return this.#view.getFloat64(FontInfo.#OFFSET_NUMBERS + index * 8);
+    assert(index < FONT_INFO.numbers.length, "Invalid number index");
+    return this.#view.getFloat64(FONT_INFO.OFFSET_NUMBERS + index * 8);
   }
   get ascent() {
     return this.#readNumber(0);
@@ -8155,51 +8102,32 @@ class FontInfo {
   get descent() {
     return this.#readNumber(2);
   }
-  get bbox() {
-    let offset = FontInfo.#OFFSET_BBOX;
-    const numCoords = this.#view.getUint8(offset);
-    if (numCoords === 0) {
+  #readArray(offset, arrLen, lookupName, increment) {
+    const len = this.#view.getUint8(offset);
+    if (len === 0) {
       return undefined;
     }
+    assert(len === arrLen, "Invalid array length.");
     offset += 1;
-    const bbox = [];
-    for (let i = 0; i < 4; i++) {
-      bbox.push(this.#view.getInt16(offset, true));
-      offset += 2;
+    const arr = new Array(len);
+    for (let i = 0; i < len; i++) {
+      arr[i] = this.#view[lookupName](offset, true);
+      offset += increment;
     }
-    return bbox;
+    return arr;
+  }
+  get bbox() {
+    return this.#readArray(FONT_INFO.OFFSET_BBOX, 4, "getInt16", 2);
   }
   get fontMatrix() {
-    let offset = FontInfo.#OFFSET_FONT_MATRIX;
-    const numPoints = this.#view.getUint8(offset);
-    if (numPoints === 0) {
-      return undefined;
-    }
-    offset += 1;
-    const fontMatrix = [];
-    for (let i = 0; i < 6; i++) {
-      fontMatrix.push(this.#view.getFloat64(offset, true));
-      offset += 8;
-    }
-    return fontMatrix;
+    return this.#readArray(FONT_INFO.OFFSET_FONT_MATRIX, 6, "getFloat64", 8);
   }
   get defaultVMetrics() {
-    let offset = FontInfo.#OFFSET_DEFAULT_VMETRICS;
-    const numMetrics = this.#view.getUint8(offset);
-    if (numMetrics === 0) {
-      return undefined;
-    }
-    offset += 1;
-    const defaultVMetrics = [];
-    for (let i = 0; i < 3; i++) {
-      defaultVMetrics.push(this.#view.getInt16(offset, true));
-      offset += 2;
-    }
-    return defaultVMetrics;
+    return this.#readArray(FONT_INFO.OFFSET_DEFAULT_VMETRICS, 3, "getInt16", 2);
   }
   #readString(index) {
-    assert(index < FontInfo.strings.length, "Invalid string index");
-    let offset = FontInfo.#OFFSET_STRINGS + 4;
+    assert(index < FONT_INFO.strings.length, "Invalid string index");
+    let offset = FONT_INFO.OFFSET_STRINGS + 4;
     for (let i = 0; i < index; i++) {
       offset += this.#view.getUint32(offset) + 4;
     }
@@ -8221,7 +8149,7 @@ class FontInfo {
     return this.#readString(3);
   }
   #getDataOffsets() {
-    let offset = FontInfo.#OFFSET_STRINGS;
+    let offset = FONT_INFO.OFFSET_STRINGS;
     const stringsLength = this.#view.getUint32(offset);
     offset += 4 + stringsLength;
     const systemFontInfoLength = this.#view.getUint32(offset);
@@ -8254,7 +8182,7 @@ class FontInfo {
     this.#view = new DataView(this.#buffer);
   }
   get cssFontInfo() {
-    let offset = FontInfo.#OFFSET_STRINGS;
+    let offset = FONT_INFO.OFFSET_STRINGS;
     const stringsLength = this.#view.getUint32(offset);
     offset += 4 + stringsLength;
     const systemFontInfoLength = this.#view.getUint32(offset);
@@ -8268,7 +8196,7 @@ class FontInfo {
     return new CssFontInfo(cssFontInfoData.buffer);
   }
   get systemFontInfo() {
-    let offset = FontInfo.#OFFSET_STRINGS;
+    let offset = FONT_INFO.OFFSET_STRINGS;
     const stringsLength = this.#view.getUint32(offset);
     offset += 4 + stringsLength;
     const systemFontInfoLength = this.#view.getUint32(offset);
@@ -8279,241 +8207,22 @@ class FontInfo {
     systemFontInfoData.set(new Uint8Array(this.#buffer, offset + 4, systemFontInfoLength));
     return new SystemFontInfo(systemFontInfoData.buffer);
   }
-  static write(font) {
-    const systemFontInfoBuffer = font.systemFontInfo ? SystemFontInfo.write(font.systemFontInfo) : null;
-    const cssFontInfoBuffer = font.cssFontInfo ? CssFontInfo.write(font.cssFontInfo) : null;
-    const encoder = new TextEncoder();
-    const encodedStrings = {};
-    let stringsLength = 0;
-    for (const prop of FontInfo.strings) {
-      encodedStrings[prop] = encoder.encode(font[prop]);
-      stringsLength += 4 + encodedStrings[prop].length;
-    }
-    const lengthEstimate = FontInfo.#OFFSET_STRINGS + 4 + stringsLength + 4 + (systemFontInfoBuffer?.byteLength ?? 0) + 4 + (cssFontInfoBuffer?.byteLength ?? 0) + 4 + (font.data?.length ?? 0);
-    const buffer = new ArrayBuffer(lengthEstimate);
-    const data = new Uint8Array(buffer);
-    const view = new DataView(buffer);
-    let offset = 0;
-    const numBools = FontInfo.bools.length;
-    let boolByte = 0,
-      boolBit = 0;
-    for (let i = 0; i < numBools; i++) {
-      const value = font[FontInfo.bools[i]];
-      const bits = value === undefined ? 0x00 : value ? 0x02 : 0x01;
-      boolByte |= bits << boolBit;
-      boolBit += 2;
-      if (boolBit === 8 || i === numBools - 1) {
-        view.setUint8(offset++, boolByte);
-        boolByte = 0;
-        boolBit = 0;
-      }
-    }
-    assert(offset === FontInfo.#OFFSET_NUMBERS, "FontInfo.write: Boolean properties offset mismatch");
-    for (const prop of FontInfo.numbers) {
-      view.setFloat64(offset, font[prop]);
-      offset += 8;
-    }
-    assert(offset === FontInfo.#OFFSET_BBOX, "FontInfo.write: Number properties offset mismatch");
-    if (font.bbox) {
-      view.setUint8(offset++, 4);
-      for (const coord of font.bbox) {
-        view.setInt16(offset, coord, true);
-        offset += 2;
-      }
-    } else {
-      view.setUint8(offset++, 0);
-      offset += 2 * 4;
-    }
-    assert(offset === FontInfo.#OFFSET_FONT_MATRIX, "FontInfo.write: BBox properties offset mismatch");
-    if (font.fontMatrix) {
-      view.setUint8(offset++, 6);
-      for (const point of font.fontMatrix) {
-        view.setFloat64(offset, point, true);
-        offset += 8;
-      }
-    } else {
-      view.setUint8(offset++, 0);
-      offset += 8 * 6;
-    }
-    assert(offset === FontInfo.#OFFSET_DEFAULT_VMETRICS, "FontInfo.write: FontMatrix properties offset mismatch");
-    if (font.defaultVMetrics) {
-      view.setUint8(offset++, 1);
-      for (const metric of font.defaultVMetrics) {
-        view.setInt16(offset, metric, true);
-        offset += 2;
-      }
-    } else {
-      view.setUint8(offset++, 0);
-      offset += 3 * 2;
-    }
-    assert(offset === FontInfo.#OFFSET_STRINGS, "FontInfo.write: DefaultVMetrics properties offset mismatch");
-    view.setUint32(FontInfo.#OFFSET_STRINGS, 0);
-    offset += 4;
-    for (const prop of FontInfo.strings) {
-      const encoded = encodedStrings[prop];
-      const length = encoded.length;
-      view.setUint32(offset, length);
-      data.set(encoded, offset + 4);
-      offset += 4 + length;
-    }
-    view.setUint32(FontInfo.#OFFSET_STRINGS, offset - FontInfo.#OFFSET_STRINGS - 4);
-    if (!systemFontInfoBuffer) {
-      view.setUint32(offset, 0);
-      offset += 4;
-    } else {
-      const length = systemFontInfoBuffer.byteLength;
-      view.setUint32(offset, length);
-      assert(offset + 4 + length <= buffer.byteLength, "FontInfo.write: Buffer overflow at systemFontInfo");
-      data.set(new Uint8Array(systemFontInfoBuffer), offset + 4);
-      offset += 4 + length;
-    }
-    if (!cssFontInfoBuffer) {
-      view.setUint32(offset, 0);
-      offset += 4;
-    } else {
-      const length = cssFontInfoBuffer.byteLength;
-      view.setUint32(offset, length);
-      assert(offset + 4 + length <= buffer.byteLength, "FontInfo.write: Buffer overflow at cssFontInfo");
-      data.set(new Uint8Array(cssFontInfoBuffer), offset + 4);
-      offset += 4 + length;
-    }
-    if (font.data === undefined) {
-      view.setUint32(offset, 0);
-      offset += 4;
-    } else {
-      view.setUint32(offset, font.data.length);
-      data.set(font.data, offset + 4);
-      offset += 4 + font.data.length;
-    }
-    assert(offset <= buffer.byteLength, "FontInfo.write: Buffer overflow");
-    return buffer.transferToFixedLength(offset);
-  }
 }
 class PatternInfo {
-  static #KIND = 0;
-  static #HAS_BBOX = 1;
-  static #HAS_BACKGROUND = 2;
-  static #SHADING_TYPE = 3;
-  static #N_COORD = 4;
-  static #N_COLOR = 8;
-  static #N_STOP = 12;
-  static #N_FIGURES = 16;
   constructor(buffer) {
     this.buffer = buffer;
     this.view = new DataView(buffer);
     this.data = new Uint8Array(buffer);
   }
-  static write(ir) {
-    let kind,
-      bbox = null,
-      coords = [],
-      colors = [],
-      colorStops = [],
-      figures = [],
-      shadingType = null,
-      background = null;
-    switch (ir[0]) {
-      case "RadialAxial":
-        kind = ir[1] === "axial" ? 1 : 2;
-        bbox = ir[2];
-        colorStops = ir[3];
-        if (kind === 1) {
-          coords.push(...ir[4], ...ir[5]);
-        } else {
-          coords.push(ir[4][0], ir[4][1], ir[6], ir[5][0], ir[5][1], ir[7]);
-        }
-        break;
-      case "Mesh":
-        kind = 3;
-        shadingType = ir[1];
-        coords = ir[2];
-        colors = ir[3];
-        figures = ir[4] || [];
-        bbox = ir[6];
-        background = ir[7];
-        break;
-      default:
-        throw new Error(`Unsupported pattern type: ${ir[0]}`);
-    }
-    const nCoord = Math.floor(coords.length / 2);
-    const nColor = Math.floor(colors.length / 3);
-    const nStop = colorStops.length;
-    const nFigures = figures.length;
-    let figuresSize = 0;
-    for (const figure of figures) {
-      figuresSize += 1;
-      figuresSize = Math.ceil(figuresSize / 4) * 4;
-      figuresSize += 4 + figure.coords.length * 4;
-      figuresSize += 4 + figure.colors.length * 4;
-      if (figure.verticesPerRow !== undefined) {
-        figuresSize += 4;
-      }
-    }
-    const byteLen = 20 + nCoord * 8 + nColor * 3 + nStop * 8 + (bbox ? 16 : 0) + (background ? 3 : 0) + figuresSize;
-    const buffer = new ArrayBuffer(byteLen);
-    const dataView = new DataView(buffer);
-    const u8data = new Uint8Array(buffer);
-    dataView.setUint8(PatternInfo.#KIND, kind);
-    dataView.setUint8(PatternInfo.#HAS_BBOX, bbox ? 1 : 0);
-    dataView.setUint8(PatternInfo.#HAS_BACKGROUND, background ? 1 : 0);
-    dataView.setUint8(PatternInfo.#SHADING_TYPE, shadingType);
-    dataView.setUint32(PatternInfo.#N_COORD, nCoord, true);
-    dataView.setUint32(PatternInfo.#N_COLOR, nColor, true);
-    dataView.setUint32(PatternInfo.#N_STOP, nStop, true);
-    dataView.setUint32(PatternInfo.#N_FIGURES, nFigures, true);
-    let offset = 20;
-    const coordsView = new Float32Array(buffer, offset, nCoord * 2);
-    coordsView.set(coords);
-    offset += nCoord * 8;
-    u8data.set(colors, offset);
-    offset += nColor * 3;
-    for (const [pos, hex] of colorStops) {
-      dataView.setFloat32(offset, pos, true);
-      offset += 4;
-      dataView.setUint32(offset, parseInt(hex.slice(1), 16), true);
-      offset += 4;
-    }
-    if (bbox) {
-      for (const v of bbox) {
-        dataView.setFloat32(offset, v, true);
-        offset += 4;
-      }
-    }
-    if (background) {
-      u8data.set(background, offset);
-      offset += 3;
-    }
-    for (let i = 0; i < figures.length; i++) {
-      const figure = figures[i];
-      dataView.setUint8(offset, figure.type);
-      offset += 1;
-      offset = Math.ceil(offset / 4) * 4;
-      dataView.setUint32(offset, figure.coords.length, true);
-      offset += 4;
-      const figureCoordsView = new Int32Array(buffer, offset, figure.coords.length);
-      figureCoordsView.set(figure.coords);
-      offset += figure.coords.length * 4;
-      dataView.setUint32(offset, figure.colors.length, true);
-      offset += 4;
-      const colorsView = new Int32Array(buffer, offset, figure.colors.length);
-      colorsView.set(figure.colors);
-      offset += figure.colors.length * 4;
-      if (figure.verticesPerRow !== undefined) {
-        dataView.setUint32(offset, figure.verticesPerRow, true);
-        offset += 4;
-      }
-    }
-    return buffer;
-  }
   getIR() {
     const dataView = this.view;
-    const kind = this.data[PatternInfo.#KIND];
-    const hasBBox = !!this.data[PatternInfo.#HAS_BBOX];
-    const hasBackground = !!this.data[PatternInfo.#HAS_BACKGROUND];
-    const nCoord = dataView.getUint32(PatternInfo.#N_COORD, true);
-    const nColor = dataView.getUint32(PatternInfo.#N_COLOR, true);
-    const nStop = dataView.getUint32(PatternInfo.#N_STOP, true);
-    const nFigures = dataView.getUint32(PatternInfo.#N_FIGURES, true);
+    const kind = this.data[PATTERN_INFO.KIND];
+    const hasBBox = !!this.data[PATTERN_INFO.HAS_BBOX];
+    const hasBackground = !!this.data[PATTERN_INFO.HAS_BACKGROUND];
+    const nCoord = dataView.getUint32(PATTERN_INFO.N_COORD, true);
+    const nColor = dataView.getUint32(PATTERN_INFO.N_COLOR, true);
+    const nStop = dataView.getUint32(PATTERN_INFO.N_STOP, true);
+    const nFigures = dataView.getUint32(PATTERN_INFO.N_FIGURES, true);
     let offset = 20;
     const coords = new Float32Array(this.buffer, offset, nCoord * 2);
     offset += nCoord * 8;
@@ -8571,22 +8280,13 @@ class PatternInfo {
       return ["RadialAxial", "radial", bbox, stops, [coords[0], coords[1]], [coords[3], coords[4]], coords[2], coords[5]];
     }
     if (kind === 3) {
-      const shadingType = this.data[PatternInfo.#SHADING_TYPE];
+      const shadingType = this.data[PATTERN_INFO.SHADING_TYPE];
       let bounds = null;
       if (coords.length > 0) {
-        let minX = coords[0],
-          maxX = coords[0];
-        let minY = coords[1],
-          maxY = coords[1];
-        for (let i = 0; i < coords.length; i += 2) {
-          const x = coords[i],
-            y = coords[i + 1];
-          minX = minX > x ? x : minX;
-          minY = minY > y ? y : minY;
-          maxX = maxX < x ? x : maxX;
-          maxY = maxY < y ? y : maxY;
+        bounds = [Infinity, Infinity, -Infinity, -Infinity];
+        for (let i = 0, ii = coords.length; i < ii; i += 2) {
+          Util.pointBoundingBox(coords[i], coords[i + 1], bounds);
         }
-        bounds = [minX, minY, maxX, maxY];
       }
       return ["Mesh", shadingType, coords, colors, figures, bounds, bbox, background];
     }
@@ -8594,14 +8294,6 @@ class PatternInfo {
   }
 }
 class FontPathInfo {
-  static write(path) {
-    let data;
-    let buffer;
-    buffer = new ArrayBuffer(path.length * 2);
-    data = new Float16Array(buffer);
-    data.set(path);
-    return buffer;
-  }
   #buffer;
   constructor(buffer) {
     this.#buffer = buffer;
@@ -9131,6 +8823,13 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
   isRadial() {
     return this._type === "radial";
   }
+  _isCircleCenterOutside() {
+    if (!this.isRadial() || this._r0 > this._r1) {
+      return false;
+    }
+    const dist = Math.hypot(this._p0[0] - this._p1[0], this._p0[1] - this._p1[1]);
+    return dist > this._r1;
+  }
   _createGradient(ctx, transform = null) {
     let grad;
     let firstPoint = this._p0;
@@ -9156,6 +8855,30 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     }
     for (const colorStop of this._colorStops) {
       grad.addColorStop(colorStop[0], colorStop[1]);
+    }
+    return grad;
+  }
+  _createReversedGradient(ctx, transform = null) {
+    let firstPoint = this._p1;
+    let secondPoint = this._p0;
+    if (transform) {
+      firstPoint = firstPoint.slice();
+      secondPoint = secondPoint.slice();
+      Util.applyTransform(firstPoint, transform);
+      Util.applyTransform(secondPoint, transform);
+    }
+    let r0 = this._r1;
+    let r1 = this._r0;
+    if (transform) {
+      const scale = new Float32Array(2);
+      Util.singularValueDecompose2dScale(transform, scale);
+      r0 *= scale[0];
+      r1 *= scale[0];
+    }
+    const grad = ctx.createRadialGradient(firstPoint[0], firstPoint[1], r0, secondPoint[0], secondPoint[1], r1);
+    const reversedStops = this._colorStops.map(([t, c]) => [1 - t, c]).reverse();
+    for (const [t, c] of reversedStops) {
+      grad.addColorStop(t, c);
     }
     return grad;
   }
@@ -9196,12 +8919,23 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         tmpCtx.transform(...this.matrix);
       }
       applyBoundingBox(tmpCtx, this._bbox);
+      if (this._isCircleCenterOutside()) {
+        tmpCtx.fillStyle = this._createReversedGradient(tmpCtx);
+        tmpCtx.fill();
+      }
       tmpCtx.fillStyle = this._createGradient(tmpCtx);
       tmpCtx.fill();
       pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
       const domMatrix = new DOMMatrix(inverse);
       pattern.setTransform(domMatrix);
     } else {
+      if (this._isCircleCenterOutside()) {
+        ctx.save();
+        applyBoundingBox(ctx, this._bbox);
+        ctx.fillStyle = this._createReversedGradient(ctx);
+        ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+        ctx.restore();
+      }
       applyBoundingBox(ctx, this._bbox);
       pattern = this._createGradient(ctx);
     }
@@ -9355,10 +9089,10 @@ class MeshShadingPattern extends BaseShadingPattern {
     const offsetY = Math.floor(this._bounds[1]);
     const boundsWidth = Math.ceil(this._bounds[2]) - offsetX;
     const boundsHeight = Math.ceil(this._bounds[3]) - offsetY;
-    const width = Math.min(Math.ceil(Math.abs(boundsWidth * combinedScale[0] * EXPECTED_SCALE)), MAX_PATTERN_SIZE);
-    const height = Math.min(Math.ceil(Math.abs(boundsHeight * combinedScale[1] * EXPECTED_SCALE)), MAX_PATTERN_SIZE);
-    const scaleX = boundsWidth / width;
-    const scaleY = boundsHeight / height;
+    const width = Math.min(Math.ceil(Math.abs(boundsWidth * combinedScale[0] * EXPECTED_SCALE)), MAX_PATTERN_SIZE) || 1;
+    const height = Math.min(Math.ceil(Math.abs(boundsHeight * combinedScale[1] * EXPECTED_SCALE)), MAX_PATTERN_SIZE) || 1;
+    const scaleX = boundsWidth ? boundsWidth / width : 1;
+    const scaleY = boundsHeight ? boundsHeight / height : 1;
     const context = {
       coords: this._coords,
       colors: this._colors,
@@ -9845,30 +9579,28 @@ function mirrorContextOperations(ctx, destCtx) {
   };
 }
 class CachedCanvases {
+  #cache = new Map();
   constructor(canvasFactory) {
     this.canvasFactory = canvasFactory;
-    this.cache = Object.create(null);
   }
   getCanvas(id, width, height) {
-    let canvasEntry;
-    if (this.cache[id] !== undefined) {
-      canvasEntry = this.cache[id];
+    let canvasEntry = this.#cache.get(id);
+    if (canvasEntry) {
       this.canvasFactory.reset(canvasEntry, width, height);
     } else {
       canvasEntry = this.canvasFactory.create(width, height);
-      this.cache[id] = canvasEntry;
+      this.#cache.set(id, canvasEntry);
     }
     return canvasEntry;
   }
   delete(id) {
-    delete this.cache[id];
+    this.#cache.delete(id);
   }
   clear() {
-    for (const id in this.cache) {
-      const canvasEntry = this.cache[id];
+    for (const canvasEntry of this.#cache.values()) {
       this.canvasFactory.destroy(canvasEntry);
-      delete this.cache[id];
     }
+    this.#cache.clear();
   }
 }
 function drawImageAtIntegerCoords(ctx, srcImg, srcX, srcY, srcW, srcH, destX, destY, destW, destH) {
@@ -10232,9 +9964,15 @@ class CanvasGraphics {
     const objs = this.objs;
     let fnId, fnArgs;
     while (true) {
-      if (stepper !== undefined && i === stepper.nextBreakPoint) {
-        stepper.breakIt(i, continueCallback);
-        return i;
+      if (stepper !== undefined) {
+        if (i === stepper.nextBreakPoint) {
+          stepper.breakIt(i, continueCallback);
+          return i;
+        }
+        if (stepper.shouldSkip(i)) {
+          i++;
+          continue;
+        }
       }
       if (!operationsFilter || operationsFilter(i)) {
         fnId = fnArray[i];
@@ -12574,13 +12312,10 @@ class OptionalContentConfig {
 ;// ./src/display/pages_mapper.js
 
 class PagesMapper {
-  #idToPageNumber = null;
   #pageNumberToId = null;
   #prevPageNumbers = null;
   #pagesNumber = 0;
-  #listeners = [];
-  #copiedPageIds = null;
-  #copiedPageNumbers = null;
+  #clipboard = null;
   #savedData = null;
   get pagesNumber() {
     return this.#pagesNumber;
@@ -12590,45 +12325,23 @@ class PagesMapper {
       return;
     }
     this.#pagesNumber = n;
-    this.#reset();
-  }
-  #reset() {
     this.#pageNumberToId = null;
-    this.#idToPageNumber = null;
+    this.#prevPageNumbers = null;
   }
-  addListener(listener) {
-    this.#listeners.push(listener);
-  }
-  removeListener(listener) {
-    const index = this.#listeners.indexOf(listener);
-    if (index >= 0) {
-      this.#listeners.splice(index, 1);
-    }
-  }
-  #updateListeners(data) {
-    for (const listener of this.#listeners) {
-      listener(data);
-    }
-  }
-  #init(mustInit) {
+  #ensureInit() {
     if (this.#pageNumberToId) {
       return;
     }
     const n = this.#pagesNumber;
     const pageNumberToId = this.#pageNumberToId = new Uint32Array(n);
-    this.#prevPageNumbers = new Int32Array(pageNumberToId);
-    const idToPageNumber = this.#idToPageNumber = new Map();
-    if (mustInit) {
-      for (let i = 1; i <= n; i++) {
-        pageNumberToId[i - 1] = i;
-        idToPageNumber.set(i, [i]);
-      }
+    for (let i = 0; i < n; i++) {
+      pageNumberToId[i] = i + 1;
     }
+    this.#prevPageNumbers = new Int32Array(pageNumberToId);
   }
-  #updateIdToPageNumber() {
-    const idToPageNumber = this.#idToPageNumber;
+  #buildIdToPageNumber() {
+    const idToPageNumber = new Map();
     const pageNumberToId = this.#pageNumberToId;
-    idToPageNumber.clear();
     for (let i = 0, ii = this.#pagesNumber; i < ii; i++) {
       const id = pageNumberToId[i];
       const pageNumbers = idToPageNumber.get(id);
@@ -12638,11 +12351,12 @@ class PagesMapper {
         idToPageNumber.set(id, [i + 1]);
       }
     }
+    return idToPageNumber;
   }
   movePages(selectedPages, pagesToMove, index) {
-    this.#init(true);
+    this.#ensureInit();
     const pageNumberToId = this.#pageNumberToId;
-    const idToPageNumber = this.#idToPageNumber;
+    const prevIdToPageNumber = this.#buildIdToPageNumber();
     const movedCount = pagesToMove.length;
     const mappedPagesToMove = new Uint32Array(movedCount);
     let removedBeforeTarget = 0;
@@ -12650,13 +12364,12 @@ class PagesMapper {
       const pageIndex = pagesToMove[i] - 1;
       mappedPagesToMove[i] = pageNumberToId[pageIndex];
       if (pageIndex < index) {
-        removedBeforeTarget += 1;
+        removedBeforeTarget++;
       }
     }
     const pagesNumber = this.#pagesNumber;
-    let adjustedTarget = index - removedBeforeTarget;
     const remainingLen = pagesNumber - movedCount;
-    adjustedTarget = MathClamp(adjustedTarget, 0, remainingLen);
+    const adjustedTarget = MathClamp(index - removedBeforeTarget, 0, remainingLen);
     for (let i = 0, r = 0; i < pagesNumber; i++) {
       if (!selectedPages.has(i + 1)) {
         pageNumberToId[r++] = pageNumberToId[i];
@@ -12664,28 +12377,24 @@ class PagesMapper {
     }
     pageNumberToId.copyWithin(adjustedTarget + movedCount, adjustedTarget, remainingLen);
     pageNumberToId.set(mappedPagesToMove, adjustedTarget);
-    this.#setPrevPageNumbers(idToPageNumber, null);
-    this.#updateIdToPageNumber();
-    this.#updateListeners({
-      type: "move"
-    });
+    this.#updatePrevPageNumbers(prevIdToPageNumber);
     if (pageNumberToId.every((id, i) => id === i + 1)) {
-      this.#reset();
+      this.#pageNumberToId = null;
     }
   }
   deletePages(pagesToDelete) {
-    this.#init(true);
+    this.#ensureInit();
     const pageNumberToId = this.#pageNumberToId;
-    const prevIdToPageNumber = this.#idToPageNumber;
+    const prevIdToPageNumber = this.#buildIdToPageNumber();
     this.#savedData = {
       pageNumberToId: pageNumberToId.slice(),
-      idToPageNumber: new Map(prevIdToPageNumber),
-      pageNumber: this.#pagesNumber,
+      pagesNumber: this.#pagesNumber,
       prevPageNumbers: this.#prevPageNumbers.slice()
     };
-    this.pagesNumber -= pagesToDelete.length;
-    this.#init(false);
-    const newPageNumberToId = this.#pageNumberToId;
+    const newN = this.#pagesNumber - pagesToDelete.length;
+    this.#pagesNumber = newN;
+    const newPageNumberToId = this.#pageNumberToId = new Uint32Array(newN);
+    this.#prevPageNumbers = new Int32Array(newN);
     let sourceIndex = 0;
     let destIndex = 0;
     for (const pageNumber of pagesToDelete) {
@@ -12699,91 +12408,74 @@ class PagesMapper {
     if (sourceIndex < pageNumberToId.length) {
       newPageNumberToId.set(pageNumberToId.subarray(sourceIndex), destIndex);
     }
-    this.#setPrevPageNumbers(prevIdToPageNumber, null);
-    this.#updateIdToPageNumber();
-    this.#updateListeners({
-      type: "delete",
-      pageNumbers: pagesToDelete
-    });
+    this.#updatePrevPageNumbers(prevIdToPageNumber, new Set(pagesToDelete));
   }
   cancelDelete() {
     if (this.#savedData) {
       this.#pageNumberToId = this.#savedData.pageNumberToId;
-      this.#idToPageNumber = this.#savedData.idToPageNumber;
-      this.pagesNumber = this.#savedData.pageNumber;
+      this.#pagesNumber = this.#savedData.pagesNumber;
       this.#prevPageNumbers = this.#savedData.prevPageNumbers;
       this.#savedData = null;
-      this.#updateListeners({
-        type: "cancelDelete"
-      });
     }
   }
   cleanSavedData() {
     this.#savedData = null;
-    this.#updateListeners({
-      type: "cleanSavedData"
-    });
   }
   copyPages(pagesToCopy) {
-    this.#init(true);
-    this.#copiedPageNumbers = pagesToCopy;
-    this.#copiedPageIds = pagesToCopy.map(pageNumber => this.#pageNumberToId[pageNumber - 1]);
-    this.#updateListeners({
-      type: "copy",
-      pageNumbers: pagesToCopy
-    });
+    this.#ensureInit();
+    this.#clipboard = {
+      pageNumbers: pagesToCopy,
+      pageIds: pagesToCopy.map(n => this.#pageNumberToId[n - 1])
+    };
   }
   cancelCopy() {
-    this.#copiedPageIds = null;
-    this.#copiedPageNumbers = null;
-    this.#updateListeners({
-      type: "cancelCopy"
-    });
+    this.#clipboard = null;
   }
   pastePages(index) {
-    this.#init(true);
+    this.#ensureInit();
     const pageNumberToId = this.#pageNumberToId;
-    const prevIdToPageNumber = this.#idToPageNumber;
-    const copiedPageNumbers = this.#copiedPageNumbers;
-    const copiedPageMapping = new Map();
-    let base = index;
-    for (const pageNumber of copiedPageNumbers) {
-      copiedPageMapping.set(++base, pageNumber);
-    }
-    this.pagesNumber += copiedPageNumbers.length;
-    this.#init(false);
-    const newPageNumberToId = this.#pageNumberToId;
+    const prevIdToPageNumber = this.#buildIdToPageNumber();
+    const {
+      pageNumbers: copiedPageNumbers,
+      pageIds: copiedPageIds
+    } = this.#clipboard;
+    const newN = this.#pagesNumber + copiedPageNumbers.length;
+    this.#pagesNumber = newN;
+    const newPageNumberToId = this.#pageNumberToId = new Uint32Array(newN);
+    this.#prevPageNumbers = new Int32Array(newN);
     newPageNumberToId.set(pageNumberToId.subarray(0, index), 0);
-    newPageNumberToId.set(this.#copiedPageIds, index);
+    newPageNumberToId.set(copiedPageIds, index);
     newPageNumberToId.set(pageNumberToId.subarray(index), index + copiedPageNumbers.length);
-    this.#setPrevPageNumbers(prevIdToPageNumber, copiedPageMapping);
-    this.#updateIdToPageNumber();
-    this.#updateListeners({
-      type: "paste"
-    });
-    this.#copiedPageIds = null;
-    this.#copiedPageNumbers = null;
+    this.#updatePrevPageNumbers(prevIdToPageNumber, null, index, copiedPageNumbers);
+    this.#clipboard = null;
   }
-  #setPrevPageNumbers(prevIdToPageNumber, copiedPageMapping) {
+  #updatePrevPageNumbers(prevIdToPageNumber, deletedPageNumbers = null, pasteIndex = -1, copiedPageNumbers = null) {
     const prevPageNumbers = this.#prevPageNumbers;
     const newPageNumberToId = this.#pageNumberToId;
+    const pasteEnd = pasteIndex + (copiedPageNumbers?.length ?? 0);
     const idsIndices = new Map();
     for (let i = 0, ii = this.#pagesNumber; i < ii; i++) {
-      const oldPageNumber = copiedPageMapping?.get(i + 1);
-      if (oldPageNumber) {
-        prevPageNumbers[i] = -oldPageNumber;
+      if (i >= pasteIndex && i < pasteEnd) {
+        prevPageNumbers[i] = -copiedPageNumbers[i - pasteIndex];
         continue;
       }
       const id = newPageNumberToId[i];
-      const j = idsIndices.get(id) || 0;
-      prevPageNumbers[i] = prevIdToPageNumber.get(id)?.[j];
+      const oldPositions = prevIdToPageNumber.get(id);
+      let j = idsIndices.get(id) || 0;
+      if (deletedPageNumbers && oldPositions) {
+        while (j < oldPositions.length && deletedPageNumbers.has(oldPositions[j])) {
+          j++;
+        }
+      }
+      prevPageNumbers[i] = oldPositions?.[j];
       idsIndices.set(id, j + 1);
     }
   }
   hasBeenAltered() {
     return this.#pageNumberToId !== null;
   }
-  getPageMappingForSaving(idToPageNumber = this.#idToPageNumber) {
+  getPageMappingForSaving(idToPageNumber = null) {
+    idToPageNumber ??= this.#buildIdToPageNumber();
     let nCopy = 0;
     for (const pageNumbers of idToPageNumber.values()) {
       nCopy = Math.max(nCopy, pageNumbers.length);
@@ -12824,10 +12516,19 @@ class PagesMapper {
     return this.getPageMappingForSaving(usedIds);
   }
   getPrevPageNumber(pageNumber) {
-    return this.#prevPageNumbers[pageNumber - 1] ?? 0;
+    return this.#prevPageNumbers?.[pageNumber - 1] ?? 0;
   }
   getPageNumber(id) {
-    return this.#idToPageNumber ? this.#idToPageNumber.get(id)?.[0] ?? 0 : id;
+    if (!this.#pageNumberToId) {
+      return id;
+    }
+    const pageNumberToId = this.#pageNumberToId;
+    for (let i = 0, ii = this.#pagesNumber; i < ii; i++) {
+      if (pageNumberToId[i] === id) {
+        return i + 1;
+      }
+    }
+    return 0;
   }
   getPageId(pageNumber) {
     return this.#pageNumberToId?.[pageNumber - 1] ?? pageNumber;
@@ -13618,7 +13319,6 @@ function getDocument(src = {}) {
   const enableHWA = src.enableHWA === true;
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
-  const length = rangeTransport ? rangeTransport.length : src.length ?? NaN;
   const useSystemFonts = typeof src.useSystemFonts === "boolean" ? src.useSystemFonts : !isNodeJS && !disableFontFace;
   const useWorkerFetch = typeof src.useWorkerFetch === "boolean" ? src.useWorkerFetch : true;
   const styleElement = null;
@@ -13645,12 +13345,11 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.5.358",
+    apiVersion: "5.6.65",
     data,
     password,
     disableAutoFetch,
     rangeChunkSize,
-    length,
     docBaseUrl,
     enableXfa,
     evaluatorOptions: {
@@ -13690,14 +13389,16 @@ function getDocument(src = {}) {
     }
     const workerIdPromise = worker.messageHandler.sendWithPromise("GetDocRequest", docParams, data ? [data.buffer] : null);
     let networkStream;
-    if (rangeTransport) {
+    if (data) {} else if (rangeTransport) {
       networkStream = new PDFDataTransportStream({
         pdfDataRangeTransport: rangeTransport,
         disableRange,
         disableStream
       });
-    } else if (!data) {
+    } else if (url) {
       throw new Error("Not implemented: NetworkStream");
+    } else {
+      throw new Error("getDocument - expected either `data`, `range`, or `url` parameter.");
     }
     return workerIdPromise.then(workerId => {
       if (task.destroyed) {
@@ -13936,11 +13637,18 @@ class PDFPageProxy {
     this.#pagesMapper = pagesMapper;
     this.imageCoordinates = null;
   }
+  clone(id) {
+    const clone = new PDFPageProxy(id, this._pageInfo, this._transport, this.#pagesMapper, this._pdfBug);
+    clone.clonedFromIndex = this.clonedFromIndex ?? this._pageIndex;
+    this._transport.updatePage(clone);
+    return clone;
+  }
   get pageNumber() {
     return this._pageIndex + 1;
   }
   set pageNumber(value) {
     this._pageIndex = value - 1;
+    this._transport.updatePage(this);
   }
   get rotate() {
     return this._pageInfo.rotate;
@@ -14034,8 +13742,8 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
     const recordForDebugger = !!(this._pdfBug && globalThis.StepperManager?.enabled);
-    const shouldRecordOperations = !this.recordedBBoxes && (recordOperations || recordForDebugger);
-    const shouldRecordImages = !this.imageCoordinates && recordImages;
+    const shouldRecordOperations = !!canvas && !this.recordedBBoxes && (recordOperations || recordForDebugger);
+    const shouldRecordImages = !!canvas && !this.imageCoordinates && recordImages;
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
       if (shouldRecordOperations) {
@@ -14530,8 +14238,6 @@ class WorkerTransport {
   #pagePromises = new Map();
   #pageRefCache = new Map();
   #passwordCapability = null;
-  #copiedPageInfo = null;
-  #savedPageInfo = null;
   constructor(messageHandler, loadingTask, networkStream, params, factory, pagesMapper) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
@@ -14553,80 +14259,13 @@ class WorkerTransport {
     this.destroyCapability = null;
     this.setupMessageHandler();
     this.pagesMapper = pagesMapper;
-    this.pagesMapper.addListener(this.#updateCaches.bind(this));
   }
-  #updateCaches({
-    type,
-    pageNumbers
-  }) {
-    if (type === "copy") {
-      this.#copiedPageInfo = new Map();
-      for (const pageNum of pageNumbers) {
-        this.#copiedPageInfo.set(pageNum, {
-          proxy: this.#pageCache.get(pageNum - 1) || null,
-          promise: this.#pagePromises.get(pageNum - 1) || null
-        });
-      }
-      return;
-    }
-    if (type === "cancelCopy") {
-      this.#copiedPageInfo = null;
-      return;
-    }
-    if (type === "delete") {
-      this.#savedPageInfo = {
-        pageCache: new Map(this.#pageCache),
-        pagePromises: new Map(this.#pagePromises)
-      };
-      for (const pageNum of pageNumbers) {
-        this.#pageCache.delete(pageNum - 1);
-        this.#pagePromises.delete(pageNum - 1);
-      }
-    }
-    if (type === "cancelDelete") {
-      if (this.#savedPageInfo) {
-        this.#pageCache = this.#savedPageInfo.pageCache;
-        this.#pagePromises = this.#savedPageInfo.pagePromises;
-        this.#savedPageInfo = null;
-      }
-      return;
-    }
-    if (type === "cleanSavedData") {
-      this.#savedPageInfo = null;
-      return;
-    }
-    const newPageCache = new Map();
-    const newPromiseCache = new Map();
+  updatePage(page) {
     const {
-      pagesMapper
-    } = this;
-    for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
-      const prevPageNumber = pagesMapper.getPrevPageNumber(i + 1);
-      if (prevPageNumber < 0) {
-        const {
-          proxy,
-          promise
-        } = this.#copiedPageInfo?.get(-prevPageNumber) || {};
-        if (proxy) {
-          newPageCache.set(i, proxy);
-        }
-        if (promise) {
-          newPromiseCache.set(i, promise);
-        }
-        continue;
-      }
-      const prevPageIndex = prevPageNumber - 1;
-      const page = this.#pageCache.get(prevPageIndex);
-      if (page) {
-        newPageCache.set(i, page);
-      }
-      const promise = this.#pagePromises.get(prevPageIndex);
-      if (promise) {
-        newPromiseCache.set(i, promise);
-      }
-    }
-    this.#pageCache = newPageCache;
-    this.#pagePromises = newPromiseCache;
+      _pageIndex
+    } = page;
+    this.#pageCache.set(_pageIndex, page);
+    this.#pagePromises.set(_pageIndex, Promise.resolve(page));
   }
   #cacheSimpleMethod(name, data = null) {
     return this.#methodPromises.getOrInsertComputed(name, () => this.messageHandler.sendWithPromise(name, data));
@@ -14872,7 +14511,7 @@ class WorkerTransport {
           }
           const fontData = new FontInfo(exportedData);
           const inspectFont = this._params.pdfBug && globalThis.FontInspector?.enabled ? (font, url) => globalThis.FontInspector.fontAdded(font, url) : null;
-          const font = new FontFaceObject(fontData, inspectFont, exportedData.extra, exportedData.charProcOperatorList);
+          const font = new FontFaceObject(fontData, inspectFont, exportedData.charProcOperatorList, exportedData.extra);
           this.fontLoader.bind(font).catch(() => messageHandler.sendWithPromise("FontFallback", {
             id
           })).finally(() => {
@@ -15317,8 +14956,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.5.358";
-const build = "a7083d08f";
+const version = "5.6.65";
+const build = "bda745672";
 
 ;// ./src/display/editor/color_picker.js
 

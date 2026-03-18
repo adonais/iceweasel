@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.358
- * pdfjsBuild = a7083d08f
+ * pdfjsVersion = 5.6.65
+ * pdfjsBuild = bda745672
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -118,7 +118,7 @@ const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
 const DEFAULT_SCALE_DELTA = 1.1;
 const MIN_SCALE = 0.1;
-const MAX_SCALE = 10.0;
+const MAX_SCALE = 25.0;
 const UNKNOWN_SCALE = 0;
 const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
@@ -742,6 +742,10 @@ const defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   enableNewAltTextWhenAddingImage: {
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
+  enableNewBadge: {
     value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
@@ -3625,7 +3629,9 @@ class EditorUndoBar {
       signal: this.#showController.signal
     });
     this.#focusTimeout = setTimeout(() => {
-      this.#container.focus();
+      if (!this.#container.contains(document.activeElement)) {
+        this.#container.focus();
+      }
       this.#focusTimeout = null;
     }, 100);
   }
@@ -7777,7 +7783,7 @@ class PDFPageView extends BasePDFPageView {
       l10n: this.l10n,
       clonedFrom: this
     });
-    clone.setPdfPage(this.pdfPage);
+    clone.setPdfPage(this.pdfPage.clone(id - 1));
     return clone;
   }
   #addLayer(div, name) {
@@ -8586,7 +8592,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "5.5.358";
+    const viewerVersion = "5.6.65";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9184,6 +9190,10 @@ class PDFViewer {
       this.#deletedPageNumbers = pageNumbers;
     }
     if (type === "cancelDelete") {
+      this.#deletedPageNumbers = null;
+      if (!this.#savedPageViews) {
+        return;
+      }
       const viewerElement = this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
       if (viewerElement) {
         const fragment = document.createDocumentFragment();
@@ -9196,15 +9206,18 @@ class PDFViewer {
       }
       this._pages = this.#savedPageViews;
       this.#savedPageViews = null;
-      this.#deletedPageNumbers = null;
       return;
     }
     if (type === "cleanSavedData") {
-      for (const pageNum of this.#deletedPageNumbers) {
-        this.#savedPageViews[pageNum - 1].deleteMe();
+      if (this.#deletedPageNumbers) {
+        if (this.#savedPageViews) {
+          for (const pageNum of this.#deletedPageNumbers) {
+            this.#savedPageViews[pageNum - 1].deleteMe();
+          }
+          this.#savedPageViews = null;
+        }
+        this.#deletedPageNumbers = null;
       }
-      this.#savedPageViews = null;
-      this.#deletedPageNumbers = null;
       return;
     }
     this._currentPageNumber = 0;
@@ -9226,7 +9239,7 @@ class PDFViewer {
       newPages.push(page);
       page.updatePageNumber(i);
     }
-    if (!isCut) {
+    if (type === "paste") {
       this.#copiedPageViews = null;
     }
     const viewerElement = this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
@@ -10699,6 +10712,7 @@ const PDFViewerApplication = {
         pageColors,
         abortSignal,
         enableSplitMerge,
+        enableNewBadge: AppOptions.get("enableNewBadge"),
         statusBar: viewsManager.viewsManagerStatusBar,
         undoBar: viewsManager.viewsManagerUndoBar,
         manageMenu: viewsManager.manageMenu,

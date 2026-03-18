@@ -38,6 +38,7 @@ pref("pdfjs.enableGuessAltText", true);
 pref("pdfjs.enableHWA", false);
 pref("pdfjs.enableHighlightFloatingButton", false);
 pref("pdfjs.enableNewAltTextWhenAddingImage", true);
+pref("pdfjs.enableNewBadge", true);
 pref("pdfjs.enableOptimizedPartialRendering", false);
 pref("pdfjs.enablePermissions", false);
 pref("pdfjs.enablePrintAutoRotate", true);
