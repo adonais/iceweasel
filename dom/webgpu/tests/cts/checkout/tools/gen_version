@@ -14,7 +14,7 @@ if (!fs.existsSync(myself)) {
   process.exit(1);
 }
 
-const version = 'd213d4b8dba58ca7a0685e30cfaf1d29f4fc5d5b';
+const version = '5ca78e5515baa2e2c6681f1b2dae2926cc8884d7';
 
 fs.mkdirSync('./gen/common/internal', { recursive: true });
 // This will be copied into the various other build directories.
