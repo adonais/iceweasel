@@ -8048,7 +8048,7 @@
 
 - name: gfx.webrender.enable-item-cache
   type: bool
-  value: true
+  value: false
   mirror: once
 
 # Whether or not to fallback from WebRender to Software WebRender.
