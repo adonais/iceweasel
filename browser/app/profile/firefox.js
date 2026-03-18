@@ -3409,8 +3409,8 @@ pref("browser.places.interactions.enabled", true);
 // If the user has seen the Firefox View feature tour this value reflects
 // the id of the last screen they saw and whether they completed the tour
 pref("browser.firefox-view.feature-tour", "{\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\",\"complete\":false}");
-// Number of times the user visited about:firefoxview via the button/hidden tab in the past 30 days
-pref("browser.firefox-view.button-clicks", "{\"count\":0,\"lastCountTime\":\"\"}")
+// Number of times the user visited about:firefoxview
+pref("browser.firefox-view.view-count", 0);
 // Maximum number of rows to show on the "History" page (0 = unlimited).
 pref("browser.firefox-view.max-history-rows", 0);
 // Enables virtual list functionality in Firefox View.
