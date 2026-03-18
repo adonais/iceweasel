@@ -340,6 +340,13 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   }
 
   /**
+   * Waits for the current enrollment to complete, if any.
+   */
+  async waitForEnrollment() {
+    return this.#enrollingPromise;
+  }
+
+  /**
    * Refetches the entitlement even if it is cached.
    */
   async refetchEntitlement() {

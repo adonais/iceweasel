@@ -471,7 +471,7 @@ add_task(async function test_exclusion_added() {
 add_task(async function test_get_started() {
   setupService({
     isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isEnrolledAndEntitled: false,
   });
   IPProtectionService.updateState();
   await openPanel();
@@ -479,6 +479,7 @@ add_task(async function test_get_started() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
+  let panelShownPromise = waitForPanelEvent(document, "popupshown");
   document.dispatchEvent(
     new CustomEvent("IPProtection:OptIn", { bubbles: true })
   );
@@ -492,6 +493,7 @@ add_task(async function test_get_started() {
   Assert.equal(getStartedEvents[0].category, "ipprotection");
   Assert.equal(getStartedEvents[0].name, "get_started");
 
+  await panelShownPromise;
   await closePanel();
   Services.fog.testResetFOG();
   cleanupService();
