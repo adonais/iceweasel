@@ -16,6 +16,10 @@ import java.io.File
 class ProjectPlugin : Plugin<Project> {
     @Suppress("UNCHECKED_CAST")
     override fun apply(project: Project) {
+        project.extensions.create("mozilla", ProjectExtension::class.java).apply {
+            androidComponentsProject.convention(false)
+        }
+
         val extraProperties = project.gradle.extensions.extraProperties
         val mozconfig = extraProperties["mozconfig"] as Map<String, Any>
         val topsrcdir = mozconfig["topsrcdir"] as String

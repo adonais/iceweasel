@@ -8,6 +8,8 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.create
 import java.io.File
 
 private data class AutoPublishConfig(
@@ -24,6 +26,9 @@ class SettingsPlugin : Plugin<Settings> {
     private val logger = Logging.getLogger(SettingsPlugin::class.java)
 
     override fun apply(settings: Settings) {
+        val extension = settings.extensions.create<SettingsExtension>("mozilla")
+        extension.disableAndroidComponentsTasks.convention(false)
+
         loadBuildConfig(settings)
 
         settings.gradle.settingsEvaluated {
@@ -32,11 +37,18 @@ class SettingsPlugin : Plugin<Settings> {
 
         settings.gradle.allprojects {
             pluginManager.apply(ProjectPlugin::class.java)
+            extensions.configure(ProjectExtension::class.java) {
+                androidComponentsProject.set(
+                    projectDir.absolutePath.replace('\\', '/').contains("/android-components/")
+                )
+            }
         }
 
         settings.gradle.rootProject {
             pluginManager.apply(BuildConfigPlugin::class.java)
         }
+
+        configureAcTestAndLintDisabling(settings, extension)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -82,6 +94,25 @@ class SettingsPlugin : Plugin<Settings> {
                 runCmd(settings, publishCmd, localPath, "Published ${config.displayName} for local development.")
             } else {
                 logger.lifecycle("SettingsPlugin> Disabled auto-publication of ${config.displayName}. Enable it by settings 'autoPublish.${config.propertyName}.dir' in local.properties")
+            }
+        }
+    }
+
+    private fun configureAcTestAndLintDisabling(settings: Settings, extension: SettingsExtension) {
+        val rootGradle = generateSequence(settings.gradle) { it.parent }.last()
+
+        rootGradle.taskGraph.whenReady {
+            if (!extension.disableAndroidComponentsTasks.get()) {
+                return@whenReady
+            }
+
+            rootGradle.taskGraph.allTasks.forEach { task ->
+                val mozilla = task.project.extensions.findByType(ProjectExtension::class.java)
+                    ?: return@forEach
+                if (mozilla.androidComponentsProject.get() && (task is Test || task.name.contains("lint"))) {
+                    task.project.logger.debug("Disabling task ${task.path}")
+                    task.enabled = false
+                }
             }
         }
     }
