@@ -6174,7 +6174,7 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
   if (LoadInitedCacheEntry()) {
     MOZ_ASSERT(mResponseHead, "oops");
     if (NS_FAILED(mStatus) && doomOnFailure && LoadCacheEntryIsWriteOnly() &&
-        !mResponseHead->IsResumable()) {
+        (!mResponseHead || !mResponseHead->IsResumable())) {
       doom = true;
     }
   } else if (LoadCacheEntryIsWriteOnly()) {
@@ -7440,7 +7440,8 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
 
   // We don't want the content process to see any header values
   // when the request is blocked by ORB
-  if (mChannelBlockedByOpaqueResponse && mCachedOpaqueResponseBlockingPref) {
+  if (mChannelBlockedByOpaqueResponse && mCachedOpaqueResponseBlockingPref &&
+      mResponseHead) {
     mResponseHead->ClearHeaders();
   }
 
@@ -10585,7 +10586,13 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
           LOG(("  but range request setup failed rv=0x%08" PRIx32
                ", failing load",
                static_cast<uint32_t>(rv)));
+          aStatus = NS_ERROR_NET_INTERRUPT;
         }
+
+        // Range-request recovery failed. Restore mResponseHead so that
+        // it's available to late callers of Cancel (such as the ORB
+        // async JS-validation callback)
+        mResponseHead = std::move(mCachedResponseHead);
       }
     }
   }
@@ -10696,7 +10703,8 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
 
   RemoveAsNonTailRequest();
 
-  if (mChannelBlockedByOpaqueResponse && mCachedOpaqueResponseBlockingPref) {
+  if (mChannelBlockedByOpaqueResponse && mCachedOpaqueResponseBlockingPref &&
+      mResponseHead) {
     mResponseHead->ClearHeaders();
   }
   // If a preferred alt-data type was set, this signals the consumer is
