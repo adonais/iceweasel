@@ -109,6 +109,7 @@ import org.mozilla.geckoview.WebNotificationDelegate;
 import org.mozilla.geckoview.WebRequest;
 import org.mozilla.geckoview.WebRequestError;
 import org.mozilla.geckoview.WebResponse;
+import org.mozilla.geckoview_example.utils.EdgeToEdgeUtils;
 import org.mozilla.geckoview_example.utils.WindowUtils;
 
 interface WebExtensionDelegate {
@@ -776,6 +777,14 @@ public class GeckoViewActivity extends AppCompatActivity
         }
       };
 
+  private final BooleanSetting mEdgeToEdgeEnabled =
+      new BooleanSetting(R.string.key_edge_to_edge_enabled, R.bool.edge_to_edge_enabled_default) {
+        @Override
+        public void setValue(final GeckoRuntimeSettings settings, final Boolean value) {
+          EdgeToEdgeUtils.setEdgeToEdgeEnabled(value);
+        }
+      };
+
   private final StringSetting mEnhancedTrackingProtection =
       new StringSetting(
           R.string.key_enhanced_tracking_protection,
@@ -900,7 +909,7 @@ public class GeckoViewActivity extends AppCompatActivity
     mGeckoView.setActivityContextDelegate(new ExampleActivityDelegate());
     mTabSessionManager = new TabSessionManager();
 
-    WindowUtils.setupPersistentInsets(getWindow());
+    WindowUtils.setupPersistentInsets(getWindow(), true);
     WindowUtils.setupImeBehavior(getWindow());
     setSupportActionBar(findViewById(R.id.toolbar));
 
@@ -908,6 +917,9 @@ public class GeckoViewActivity extends AppCompatActivity
     preferences.registerOnSharedPreferenceChangeListener(this);
     // Read initial preference state
     onPreferencesChange(preferences);
+
+    // This references a preference value, so this is after reading initial preference state
+    EdgeToEdgeUtils.init(getWindow(), mEdgeToEdgeEnabled.value());
 
     mToolbarView = new ToolbarLayout(this, mTabSessionManager);
     mToolbarView.setId(R.id.toolbar_layout);
