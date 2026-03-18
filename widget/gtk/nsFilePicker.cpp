@@ -31,6 +31,7 @@
 
 #include "gfxPlatform.h"
 #include "nsXULAppAPI.h"
+#include "GRefPtr.h"
 #include "nsFilePicker.h"
 
 #undef LOG
@@ -859,10 +860,10 @@ bool nsFilePicker::WarnForNonReadableFile() {
       mParentWidget
           ? GTK_WINDOW(mParentWidget->GetNativeData(NS_NATIVE_SHELLWIDGET))
           : nullptr;
-  auto* cancel_dialog = gtk_message_dialog_new(
+  RefPtr<GtkWidget> cancel_dialog = gtk_message_dialog_new(
       parent_window, flags, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE, "%s",
       NS_ConvertUTF16toUTF8(errorMessage).get());
-  gtk_dialog_run(GTK_DIALOG(cancel_dialog));
+  gtk_dialog_run(GTK_DIALOG(cancel_dialog.get()));
   gtk_widget_destroy(cancel_dialog);
 
   return true;
