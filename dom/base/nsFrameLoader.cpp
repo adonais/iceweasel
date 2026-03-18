@@ -738,7 +738,7 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
   if (mPendingSwitchID) {
     bool tmpState = mNeedsAsyncDestroy;
     mNeedsAsyncDestroy = true;
-    rv = GetDocShell()->ResumeRedirectedLoad(mPendingSwitchID, -1);
+    rv = GetDocShell()->ResumeRedirectedLoad(mPendingSwitchID);
     mNeedsAsyncDestroy = tmpState;
     mPendingSwitchID = 0;
     return rv;

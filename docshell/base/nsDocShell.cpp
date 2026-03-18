@@ -12595,7 +12595,7 @@ nsresult nsDocShell::SetOriginAttributes(const OriginAttributes& aAttrs) {
 }
 
 NS_IMETHODIMP
-nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
+nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier) {
   RefPtr<nsDocShell> self = this;
   RefPtr<ChildProcessChannelListener> cpcl =
       ChildProcessChannelListener::GetSingleton();

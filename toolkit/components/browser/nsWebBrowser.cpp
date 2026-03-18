@@ -507,11 +507,10 @@ nsWebBrowser::FixupAndLoadURIStringFromScript(
 }
 
 NS_IMETHODIMP
-nsWebBrowser::ResumeRedirectedLoad(uint64_t aIdentifier,
-                                   int32_t aHistoryIndex) {
+nsWebBrowser::ResumeRedirectedLoad(uint64_t aIdentifier) {
   NS_ENSURE_STATE(mDocShell);
 
-  return mDocShell->ResumeRedirectedLoad(aIdentifier, aHistoryIndex);
+  return mDocShell->ResumeRedirectedLoad(aIdentifier);
 }
 
 NS_IMETHODIMP

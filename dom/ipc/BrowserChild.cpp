@@ -906,7 +906,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvResumeLoad(
     ApplyParentShowInfo(aInfo);
   }
 
-  nsresult rv = WebNavigation()->ResumeRedirectedLoad(aPendingSwitchID, -1);
+  nsresult rv = WebNavigation()->ResumeRedirectedLoad(aPendingSwitchID);
   if (NS_FAILED(rv)) {
     NS_WARNING("WebNavigation()->ResumeRedirectedLoad failed");
   }
