@@ -59,7 +59,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Sprintf.h"
 
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "LulCommonExt.h"
 #include "LulDwarfExt.h"
 #include "LulElfInt.h"

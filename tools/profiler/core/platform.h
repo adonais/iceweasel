@@ -29,7 +29,7 @@
 #ifndef TOOLS_PLATFORM_H_
 #define TOOLS_PLATFORM_H_
 
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 
 #include "json/json.h"
 #include "mozilla/Atomics.h"

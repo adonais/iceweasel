@@ -11,7 +11,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Sprintf.h"
 
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "AutoObjectMapper.h"
 
 // A helper function for creating failure error messages in

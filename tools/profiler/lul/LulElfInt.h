@@ -44,7 +44,7 @@
 
 #include "mozilla/Assertions.h"
 
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 
 // (derived from)
 // elfutils.h: Utilities for dealing with ELF files.

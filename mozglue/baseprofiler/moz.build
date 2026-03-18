@@ -27,7 +27,7 @@ if not CONFIG["JS_STANDALONE"]:
         "core/RegisteredThread.cpp",
     ]
 
-    # Keep in sync with PlatformMacros.h
+    # Keep in sync with ProfilerPlatformMacros.h
     if (
         (
             CONFIG["OS_TARGET"] == "Android"
@@ -118,6 +118,7 @@ EXPORTS.mozilla += [
     "public/ProfileChunkedBuffer.h",
     "public/ProfileChunkedBufferDetail.h",
     "public/ProfilerBufferSize.h",
+    "public/ProfilerPlatformMacros.h",
     "public/ProgressLogger.h",
     "public/ProportionValue.h",
     "public/SharedLibraries.h",

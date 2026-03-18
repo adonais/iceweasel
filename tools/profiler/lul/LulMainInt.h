@@ -5,7 +5,7 @@
 #ifndef LulMainInt_h
 #define LulMainInt_h
 
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "LulMain.h"  // for TaggedUWord
 
 #include <string>

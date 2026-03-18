@@ -8,7 +8,7 @@
 #include "mozilla/ProfilerState.h"
 #include "mozilla/SharedLibraries.h"
 #include "platform.h"
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "LulMain.h"
 #include "AutoObjectMapper.h"
 

@@ -8,7 +8,7 @@
 #include <string>
 
 #include "mozilla/Attributes.h"
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 
 // A (nearly-) RAII class that maps an object in and then unmaps it on
 // destruction.  This base class version uses the "normal" POSIX

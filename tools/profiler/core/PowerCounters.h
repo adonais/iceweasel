@@ -5,7 +5,7 @@
 #ifndef TOOLS_POWERCOUNTERS_H_
 #define TOOLS_POWERCOUNTERS_H_
 
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "mozilla/ProfilerCounts.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
