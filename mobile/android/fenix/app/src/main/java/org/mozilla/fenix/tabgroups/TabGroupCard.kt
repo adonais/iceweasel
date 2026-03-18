@@ -203,12 +203,14 @@ private fun TabGroupOptionButton(groupTheme: TabGroupTheme, selectionState: Tabs
  * @param thumbnails: List of thumbnails.  May be empty, or up to size 4.
  * @param thumbnailSizePx: The size of each thumbnail in px.
  * @param modifier: Modifier parameter
+ * @param aspectRatio: The aspect ratio for the tab group thumbnail.
  */
 @Composable
-private fun ThumbnailsGridView(
+fun ThumbnailsGridView(
     thumbnails: List<TabThumbnailImageData>,
     thumbnailSizePx: Int,
     modifier: Modifier = Modifier,
+    aspectRatio: Float = groupThumbnailItemAspectRatio,
 ) {
     Column(
         modifier = modifier
@@ -227,6 +229,7 @@ private fun ThumbnailsGridView(
                 modifier = Modifier
                     .weight(1f)
                     .testTag(TabsTrayTestTag.TAB_GROUP_THUMBNAIL_FIRST),
+                aspectRatio = aspectRatio,
             )
             TabGroupThumbnail(
                 tabThumbnailImageData = thumbnails.getOrNull(TOP_END_THUMBNAIL_INDEX),
@@ -234,8 +237,10 @@ private fun ThumbnailsGridView(
                 modifier = Modifier
                     .weight(1f)
                     .testTag(TabsTrayTestTag.TAB_GROUP_THUMBNAIL_SECOND),
+                aspectRatio = aspectRatio,
             )
         }
+
         Row(
             modifier =
                 Modifier.fillMaxWidth(),
@@ -247,6 +252,7 @@ private fun ThumbnailsGridView(
                 modifier = Modifier
                     .weight(1f)
                     .testTag(TabsTrayTestTag.TAB_GROUP_THUMBNAIL_THIRD),
+                aspectRatio = aspectRatio,
             )
             TabGroupThumbnail(
                 tabThumbnailImageData = thumbnails.getOrNull(BOTTOM_END_THUMBNAIL_INDEX),
@@ -254,6 +260,7 @@ private fun ThumbnailsGridView(
                 modifier = Modifier
                     .weight(1f)
                     .testTag(TabsTrayTestTag.TAB_GROUP_THUMBNAIL_FOURTH),
+                aspectRatio = aspectRatio,
             )
         }
     }
@@ -267,12 +274,14 @@ private fun ThumbnailsGridView(
  * @param tabThumbnailImageData: thumbnail image data (may be null)
  * @param thumbnailSizePx: the size of each thumbnail in px
  * @param modifier: The modifier
+ * @param aspectRatio: The aspect ratio for the tab group thumbnail.
  */
 @Composable
 private fun TabGroupThumbnail(
     tabThumbnailImageData: TabThumbnailImageData?,
     thumbnailSizePx: Int,
     modifier: Modifier = Modifier,
+    aspectRatio: Float = groupThumbnailItemAspectRatio,
 ) {
     if (tabThumbnailImageData != null) {
         TabThumbnail(
@@ -280,13 +289,13 @@ private fun TabGroupThumbnail(
             thumbnailSizePx = thumbnailSizePx,
             shape = RectangleShape,
             modifier = modifier
-                .aspectRatio(groupThumbnailItemAspectRatio),
+                .aspectRatio(aspectRatio),
         )
     } else {
         Box(
             modifier = modifier
                 .background(color = MaterialTheme.colorScheme.surfaceDimVariant)
-                .aspectRatio(groupThumbnailItemAspectRatio),
+                .aspectRatio(aspectRatio),
         )
     }
 }

@@ -107,6 +107,7 @@ internal object TabsTrayReducer {
                 normalTabs = action.tabStorageUpdate.normalTabs,
                 inactiveTabs = state.inactiveTabs.copy(tabs = action.tabStorageUpdate.inactiveTabs),
                 privateBrowsing = state.privateBrowsing.copy(tabs = action.tabStorageUpdate.privateTabs),
+                tabGroups = action.tabStorageUpdate.tabGroups,
             )
             else -> state
         }
