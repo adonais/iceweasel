@@ -26,7 +26,6 @@ use std::mem;
 use std::os::fd::{FromRawFd, IntoRawFd, OwnedFd, RawFd};
 use std::os::raw::c_char;
 use std::ptr;
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 
 #[allow(unused_imports)]
@@ -358,7 +357,28 @@ fn support_use_shared_texture_in_swap_chain(
     false
 }
 
-static TRACE_IDX: AtomicU32 = AtomicU32::new(0);
+fn create_next_numbered_dir(dir: &std::path::Path) -> std::io::Result<std::path::PathBuf> {
+    use std::fs;
+
+    loop {
+        let next = match fs::read_dir(dir) {
+            Ok(entries) => entries
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| entry.file_name().to_str()?.parse::<u64>().ok())
+                .max()
+                .map(|n| n + 1),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => return Err(e),
+        };
+
+        let path = dir.join(next.unwrap_or(0).to_string());
+        match fs::create_dir_all(&path) {
+            Ok(()) => return Ok(path),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e),
+        }
+    }
+}
 
 unsafe fn adapter_request_device(
     global: &Global,
@@ -379,14 +399,9 @@ unsafe fn adapter_request_device(
     }
     desc.trace = wgt::Trace::Off;
     if let Some(env_dir) = std::env::var_os("WGPU_TRACE") {
-        let mut path = std::path::PathBuf::from(env_dir);
-        let idx = TRACE_IDX.fetch_add(1, Ordering::Relaxed);
-        path.push(idx.to_string());
-
-        if std::fs::create_dir_all(&path).is_err() {
-            log::warn!("Failed to create directory {:?} for wgpu recording.", path);
-        } else {
-            desc.trace = wgt::Trace::Directory(path);
+        match create_next_numbered_dir(&std::path::PathBuf::from(env_dir)) {
+            Ok(path) => desc.trace = wgt::Trace::Directory(path),
+            Err(err) => log::warn!("Failed to create directory for wgpu recording: {err:?}"),
         }
     }
 
