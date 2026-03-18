@@ -3982,6 +3982,12 @@ criteria = "safe-to-deploy"
 delta = "0.4.1 -> 0.4.2"
 notes = "Only documentation changes."
 
+[[audits.libz-rs-sys]]
+who = "Lars Eggert <lars@eggert.org>"
+criteria = "safe-to-deploy"
+delta = "0.5.2 -> 0.6.3"
+notes = "Implements a C API, which is inherently unsafe."
+
 [[audits.linked-hash-map]]
 who = "Aria Beingessner <a.beingessner@gmail.com>"
 criteria = "safe-to-deploy"
@@ -8057,6 +8063,12 @@ non-1-byte-aligned type, however right now that is not the case
 who = "Lars Eggert <lars@eggert.org>"
 criteria = "safe-to-deploy"
 delta = "2.1.3 -> 2.4.2"
+
+[[audits.zlib-rs]]
+who = "Lars Eggert <lars@eggert.org>"
+criteria = "safe-to-deploy"
+delta = "0.5.2 -> 0.6.3"
+notes = "New unsafe code mostly deals with lining up things for newly-supported processor intrinsics."
 
 [[audits.zmij]]
 who = "Benjamin VanderSloot <bvandersloot@mozilla.com>"
