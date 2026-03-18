@@ -35,6 +35,18 @@ export const AIWindowUI = {
   },
 
   /**
+   * @param {Window} win
+   * @returns {{ chatId: string, messageSeq: number }}
+   */
+  _getConversationFromSidebar(win) {
+    const conversation = AIWindow.getActiveConversation(win);
+    return {
+      chatId: conversation?.id ?? "",
+      messageSeq: conversation?.messageCount ?? 0,
+    };
+  },
+
+  /**
    * Ensure the aiwindow <browser> exists under the sidebar box.
    *
    * @param {Document} chromeDoc
@@ -133,6 +145,11 @@ export const AIWindowUI = {
       })
     );
 
+    Glean.smartWindow.sidebarOpen.record({
+      chat_id: conversation?.id ?? "",
+      message_seq: conversation?.messageCount ?? 0,
+    });
+
     if (conversation) {
       aiBrowser.setAttribute("data-conversation-id", conversation.id);
     } else {
@@ -201,6 +218,12 @@ export const AIWindowUI = {
         },
       })
     );
+
+    const { chatId, messageSeq } = this._getConversationFromSidebar(win);
+    Glean.smartWindow.sidebarClose.record({
+      chat_id: chatId,
+      message_seq: messageSeq,
+    });
   },
 
   /**
@@ -230,6 +253,13 @@ export const AIWindowUI = {
           },
         })
       );
+
+      const { chatId, messageSeq } = this._getConversationFromSidebar(win);
+      Glean.smartWindow.sidebarClose.record({
+        chat_id: chatId,
+        message_seq: messageSeq,
+      });
+
       return false;
     }
 
@@ -246,6 +276,13 @@ export const AIWindowUI = {
         },
       })
     );
+
+    const { chatId, messageSeq } = this._getConversationFromSidebar(win);
+    Glean.smartWindow.sidebarOpen.record({
+      chat_id: chatId,
+      message_seq: messageSeq,
+    });
+
     return true;
   },
 
