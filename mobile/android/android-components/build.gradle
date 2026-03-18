@@ -149,8 +149,6 @@ subprojects {
                     baseline = file("${projectDir}/lint-baseline.xml")
                 }
 
-                buildToolsVersion gradle.mozconfig.substs.ANDROID_BUILD_TOOLS_VERSION
-
                 testOptions {
                     testCoverage {
                         jacocoVersion = libs.versions.jacoco.get()

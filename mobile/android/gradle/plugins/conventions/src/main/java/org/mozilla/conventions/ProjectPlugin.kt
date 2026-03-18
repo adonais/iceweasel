@@ -37,6 +37,7 @@ class ProjectPlugin : Plugin<Project> {
         configureJniKeepDebugSymbols(project)
         configureKotlinCompilerMessageReformatting(project)
         configureKotlinWarningsAsErrors(project)
+        configureAndroidBuildToolsVersion(project, substs)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
     }
@@ -209,6 +210,17 @@ class ProjectPlugin : Plugin<Project> {
             val compilerOptions = this::class.java.getMethod("getCompilerOptions").invoke(this)
             val allWarningsAsErrors = compilerOptions::class.java.getMethod("getAllWarningsAsErrors").invoke(compilerOptions)
             allWarningsAsErrors::class.java.getMethod("set", Any::class.java).invoke(allWarningsAsErrors, true)
+        }
+    }
+
+    private fun configureAndroidBuildToolsVersion(project: Project, substs: Map<String, Any>) {
+        val buildToolsVersion = substs["ANDROID_BUILD_TOOLS_VERSION"] as String
+
+        // Use android plugin id string and reflection to avoid classloader isolation issues
+        project.pluginManager.withPlugin("com.android.base") {
+            val android = project.extensions.findByName("android") ?: return@withPlugin
+            android::class.java.getMethod("setBuildToolsVersion", String::class.java)
+                .invoke(android, buildToolsVersion)
         }
     }
 
