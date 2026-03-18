@@ -50,14 +50,12 @@ val CONTENT_IMAGE_HEIGHT = 176.dp
  * A composable for displaying onboarding page content.
  *
  * @param pageState [OnboardingPageState] The page content that's displayed.
- * @param isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  */
 @Composable
 fun OnboardingPageRedesign(
     pageState: OnboardingPageState,
-    isSmallDevice: Boolean = false,
 ) {
-    CardView(pageState, isSmallDevice)
+    CardView(pageState, pageState.isSmallDevice)
 
     LaunchedEffect(Unit) {
         pageState.onRecordImpressionEvent()
@@ -192,7 +190,6 @@ private fun OnboardingPageSetToDefaultPreview() {
                 ),
                 onRecordImpressionEvent = {},
             ),
-            isSmallDevice = false,
         )
     }
 }
@@ -216,7 +213,6 @@ private fun OnboardingPageSyncPreview() {
                 ),
                 onRecordImpressionEvent = {},
             ),
-            isSmallDevice = false,
         )
     }
 }
@@ -240,7 +236,6 @@ private fun OnboardingPageNotificationPreview() {
                 ),
                 onRecordImpressionEvent = {},
             ),
-            isSmallDevice = false,
         )
     }
 }
@@ -264,7 +259,6 @@ private fun OnboardingPageSearchWidgetPreview() {
                 ),
                 onRecordImpressionEvent = {},
             ),
-            isSmallDevice = false,
         )
     }
 }

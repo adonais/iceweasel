@@ -61,13 +61,11 @@ private val kitImageResources = listOf(
  *
  * @param pageState The page content that's displayed.
  * @param eventHandler The event handler for all user interactions of this page.
- * @param isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  */
 @Composable
 fun TermsOfServiceOnboardingPageRedesign(
     pageState: OnboardingPageState,
     eventHandler: OnboardingTermsOfServiceEventHandler,
-    isSmallDevice: Boolean,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -76,13 +74,13 @@ fun TermsOfServiceOnboardingPageRedesign(
         Column(
             modifier = Modifier.padding(
                 horizontal = 16.dp,
-                vertical = if (isSmallDevice) 0.dp else 24.dp,
+                vertical = if (pageState.isSmallDevice) 0.dp else 24.dp,
             ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val scrollState = rememberScrollState()
 
-            if (!isSmallDevice) {
+            if (!pageState.isSmallDevice) {
                 Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
             }
 
@@ -115,7 +113,7 @@ fun TermsOfServiceOnboardingPageRedesign(
                     ScrollIndicator(
                         scrollState = scrollState,
                         modifier = Modifier.align(Alignment.CenterEnd),
-                        enabled = isSmallDevice,
+                        enabled = pageState.isSmallDevice,
                     )
                 }
             }
@@ -280,7 +278,6 @@ private fun OnboardingPagePreview() {
                 ),
             ),
             eventHandler = object : OnboardingTermsOfServiceEventHandler {},
-            isSmallDevice = false,
         )
     }
 }

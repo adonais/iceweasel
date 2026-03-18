@@ -188,6 +188,7 @@ private fun ThemeType.toThemeOptionType() = when (this) {
 internal fun mapToOnboardingPageState(
     onboardingPageUiData: OnboardingPageUiData,
     shouldShowElevation: Boolean,
+    isSmallDevice: Boolean = false,
     onMakeFirefoxDefaultClick: () -> Unit,
     onMakeFirefoxDefaultSkipClick: () -> Unit,
     onSignInButtonClick: () -> Unit,
@@ -206,6 +207,7 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onMakeFirefoxDefaultClick,
         onNegativeButtonClick = onMakeFirefoxDefaultSkipClick,
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 
     OnboardingPageUiData.Type.ADD_SEARCH_WIDGET -> createOnboardingPageState(
@@ -213,6 +215,7 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onAddFirefoxWidgetClick,
         onNegativeButtonClick = onAddFirefoxWidgetSkipClick,
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 
     OnboardingPageUiData.Type.SYNC_SIGN_IN -> createOnboardingPageState(
@@ -220,6 +223,7 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onSignInButtonClick,
         onNegativeButtonClick = onSignInSkipClick,
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 
     OnboardingPageUiData.Type.NOTIFICATION_PERMISSION -> createOnboardingPageState(
@@ -227,6 +231,7 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onNotificationPermissionButtonClick,
         onNegativeButtonClick = onNotificationPermissionSkipClick,
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 
     OnboardingPageUiData.Type.TOOLBAR_PLACEMENT -> createOnboardingPageState(
@@ -234,6 +239,7 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onCustomizeToolbarButtonClick,
         onNegativeButtonClick = {}, // No negative button option for toolbar placement.
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 
     OnboardingPageUiData.Type.THEME_SELECTION -> createOnboardingPageState(
@@ -241,6 +247,7 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onCustomizeThemeClick,
         onNegativeButtonClick = {}, // No negative button option for theme selection.
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 
     OnboardingPageUiData.Type.TERMS_OF_SERVICE -> createOnboardingPageState(
@@ -248,6 +255,7 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onTermsOfServiceButtonClick,
         onNegativeButtonClick = {}, // No negative button option for terms of service.
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 
     OnboardingPageUiData.Type.MARKETING_DATA -> createOnboardingPageState(
@@ -255,12 +263,14 @@ internal fun mapToOnboardingPageState(
         onPositiveButtonClick = onMarketingDataContinueClick,
         onNegativeButtonClick = {}, // No negative button option for marketing data.
         shouldShowElevation = shouldShowElevation,
+        isSmallDevice = isSmallDevice,
     )
 }
 
 private fun createOnboardingPageState(
     onboardingPageUiData: OnboardingPageUiData,
     shouldShowElevation: Boolean,
+    isSmallDevice: Boolean,
     onPositiveButtonClick: () -> Unit,
     onNegativeButtonClick: () -> Unit,
 ): OnboardingPageState = OnboardingPageState(
@@ -277,4 +287,5 @@ private fun createOnboardingPageState(
     termsOfService = onboardingPageUiData.termsOfService,
     marketingData = onboardingPageUiData.marketingData,
     shouldShowElevation = shouldShowElevation,
+    isSmallDevice = isSmallDevice,
 )

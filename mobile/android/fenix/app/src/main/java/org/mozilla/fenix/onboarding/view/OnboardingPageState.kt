@@ -22,6 +22,7 @@ import org.mozilla.fenix.compose.LinkTextState
  * @property marketingData Optional marketing page data.
  * @property onRecordImpressionEvent Callback for recording impression event.
  * @property shouldShowElevation Whether to show elevation/shadow for the page card.
+ * @property isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  */
 data class OnboardingPageState(
     @param:DrawableRes val imageRes: Int,
@@ -36,6 +37,7 @@ data class OnboardingPageState(
     val marketingData: OnboardingMarketingData? = null,
     val onRecordImpressionEvent: () -> Unit = {},
     val shouldShowElevation: Boolean = true,
+    val isSmallDevice: Boolean = false,
 )
 
 /**

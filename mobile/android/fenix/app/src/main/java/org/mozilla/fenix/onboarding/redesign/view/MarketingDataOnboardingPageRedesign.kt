@@ -60,7 +60,6 @@ private val buttonHeight = 40.dp
  * UI for an onboarding page that allows the user to opt out of marketing data analytics.
  *
  * @param state the UI state containing strings etc.
- * @param isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  * @param onMarketingDataLearnMoreClick callback for when the user clicks the learn more text link.
  * @param onMarketingOptInToggle callback for when the user toggles the opt-in checkbox.
  * @param onMarketingDataContinueClick callback for when the user clicks the continue button.
@@ -69,7 +68,6 @@ private val buttonHeight = 40.dp
 @Composable
 fun MarketingDataOnboardingPageRedesign(
     state: OnboardingPageState,
-    isSmallDevice: Boolean = false,
     onMarketingDataLearnMoreClick: () -> Unit,
     onMarketingOptInToggle: (optIn: Boolean) -> Unit,
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
@@ -81,11 +79,11 @@ fun MarketingDataOnboardingPageRedesign(
         Column(
             modifier = Modifier.padding(
                 horizontal = 16.dp,
-                vertical = if (isSmallDevice) 0.dp else 24.dp,
+                vertical = if (state.isSmallDevice) 0.dp else 24.dp,
             ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.weight(TITLE_TOP_SPACER_WEIGHT)).takeIf { !isSmallDevice }
+            Spacer(Modifier.weight(TITLE_TOP_SPACER_WEIGHT)).takeIf { !state.isSmallDevice }
 
             var checkboxChecked by remember { mutableStateOf(true) }
 
@@ -140,7 +138,7 @@ fun MarketingDataOnboardingPageRedesign(
                 ScrollIndicator(
                     scrollState = scrollState,
                     modifier = Modifier.align(Alignment.CenterEnd),
-                    enabled = isSmallDevice,
+                    enabled = state.isSmallDevice,
                 )
             }
 

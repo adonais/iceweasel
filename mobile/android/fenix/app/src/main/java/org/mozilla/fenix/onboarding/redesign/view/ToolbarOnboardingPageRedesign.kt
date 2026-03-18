@@ -69,14 +69,12 @@ private val buttonHeight = 40.dp
  *
  * @param onboardingStore The [OnboardingStore] that holds the toolbar selection state.
  * @param pageState The page content that's displayed.
- * @param isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  * @param onToolbarSelectionClicked Callback for when a toolbar selection is clicked.
  */
 @Composable
 fun ToolbarOnboardingPageRedesign(
     onboardingStore: OnboardingStore,
     pageState: OnboardingPageState,
-    isSmallDevice: Boolean = false,
     onToolbarSelectionClicked: (ToolbarOptionType) -> Unit,
 ) {
     Card(
@@ -86,11 +84,11 @@ fun ToolbarOnboardingPageRedesign(
         Column(
             modifier = Modifier.padding(
                 horizontal = 16.dp,
-                vertical = if (isSmallDevice) 0.dp else 24.dp,
+                vertical = if (pageState.isSmallDevice) 0.dp else 24.dp,
             ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.weight(TITLE_TOP_SPACER_WEIGHT)).takeIf { !isSmallDevice }
+            Spacer(Modifier.weight(TITLE_TOP_SPACER_WEIGHT)).takeIf { !pageState.isSmallDevice }
 
             Box(
                 modifier = Modifier
@@ -131,7 +129,7 @@ fun ToolbarOnboardingPageRedesign(
                 ScrollIndicator(
                     scrollState = scrollState,
                     modifier = Modifier.align(Alignment.CenterEnd),
-                    enabled = isSmallDevice,
+                    enabled = pageState.isSmallDevice,
                 )
             }
 
