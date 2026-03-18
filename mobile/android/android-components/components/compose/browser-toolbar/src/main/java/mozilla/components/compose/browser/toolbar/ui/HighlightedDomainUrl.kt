@@ -171,7 +171,7 @@ private fun Modifier.focusTextIndexRange(
                     .drawWithContent {
                         drawContent()
 
-                        val brush = createDomainHighlightBrush(text, highlightRange, fadeFraction)
+                        val brush = createDomainHighlightBrush(text, highlightRange, scrollState.value, fadeFraction)
 
                         drawRect(
                             brush = brush,
@@ -223,11 +223,12 @@ internal fun computeDomainEndScrollValue(
 internal fun createDomainHighlightBrush(
     text: String,
     highlightRange: Pair<Int, Int>?,
+    scrolledPixels: Int,
     fadeFraction: Float,
 ): Brush {
     val brush = when {
-        // Don't fade the start if the highlight is also at the start of the text.
-        (highlightRange?.first ?: Int.MAX_VALUE) <= LTR_MARK_OFFSET -> Brush.horizontalGradient(
+        // Don't fade the start if the text is not scrolled to fit the highlighted domain.
+         scrolledPixels == 0 -> Brush.horizontalGradient(
             (1f - fadeFraction) to Color.Black,
             1f to Color.Transparent,
         )

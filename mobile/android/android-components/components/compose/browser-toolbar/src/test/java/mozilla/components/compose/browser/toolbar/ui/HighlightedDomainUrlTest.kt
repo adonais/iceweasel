@@ -92,13 +92,15 @@ class HighlightedDomainUrlTest {
     @Test
     fun `GIVEN the start of the URL should be highlighted THEN get an appropriate highlight brush`() {
         val url = "pagedomain.com/testing"
+        scrollState.stubScrollInfo(url)
         val highlightRange = computeHighlightRange(url, "pagedomain.com")
+        val scrolledPixels = computeDomainEndScrollValue(url, highlightRange)
         val expected = Brush.horizontalGradient(
             0.5f to Color.Black,
             1f to Color.Transparent,
         )
 
-        val result = createDomainHighlightBrush(url, highlightRange, 0.5f)
+        val result = createDomainHighlightBrush(url, highlightRange, scrolledPixels, 0.5f)
 
         assertEquals(expected, result)
     }
@@ -106,13 +108,15 @@ class HighlightedDomainUrlTest {
     @Test
     fun `GIVEN the end of the URL should be highlighted THEN get an appropriate highlight brush`() {
         val url = "subdomain.pagedomain.com"
+        scrollState.stubScrollInfo(url)
         val highlightRange = computeHighlightRange(url, "pagedomain.com")
+        val scrolledPixels = computeDomainEndScrollValue(url, highlightRange)
         val expected = Brush.horizontalGradient(
             0f to Color.Transparent,
             0.5f to Color.Black,
         )
 
-        val result = createDomainHighlightBrush(url, highlightRange, 0.5f)
+        val result = createDomainHighlightBrush(url, highlightRange, scrolledPixels, 0.5f)
 
         assertEquals(expected, result)
     }
@@ -120,7 +124,9 @@ class HighlightedDomainUrlTest {
     @Test
     fun `GIVEN the middle of the URL should be highlighted THEN get an appropriate highlight brush`() {
         val url = "subdomain.pagedomain.com/testing"
+        scrollState.stubScrollInfo(url)
         val highlightRange = computeHighlightRange(url, "pagedomain.com")
+        val scrolledPixels = computeDomainEndScrollValue(url, highlightRange)
         val expected = Brush.horizontalGradient(
             colorStops = arrayOf(
                 0f to Color.Transparent,
@@ -130,7 +136,7 @@ class HighlightedDomainUrlTest {
             ),
         )
 
-        val result = createDomainHighlightBrush(url, highlightRange, 0.5f)
+        val result = createDomainHighlightBrush(url, highlightRange, scrolledPixels, 0.5f)
 
         assertEquals(expected, result)
     }
@@ -171,7 +177,7 @@ class HighlightedDomainUrlTest {
         return when (text.length == highlightRange.second) {
             true -> scrollState.maxValue
             else -> {
-                val lastVisibleCharIndex = (highlightRange.second.plus(END_SCROLL_OFFSET) ?: 0)
+                val lastVisibleCharIndex = (highlightRange.second.plus(END_SCROLL_OFFSET))
                     .coerceAtMost(text.lastIndex)
                 (lastVisibleCharIndex - maxVisibleCharCount).coerceAtLeast(0)
             }
