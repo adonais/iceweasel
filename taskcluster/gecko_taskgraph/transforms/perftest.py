@@ -6,53 +6,59 @@ This transform passes options from `mach perftest` to the corresponding task.
 """
 
 from datetime import date, timedelta
+from typing import Optional, Union
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
-from voluptuous import Any, Extra, Optional
 
 from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
 
 transforms = TransformSequence()
 
 
-perftest_description_schema = LegacySchema({
+class PerftestDescriptionSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # The test names and the symbols to use for them: [test-symbol, test-path]
-    Optional("perftest"): [[str]],
+    perftest: Optional[list[list[str]]] = None
     # Metrics to gather for the test. These will be merged
     # with options specified through perftest-perfherder-global
-    Optional("perftest-metrics"): optionally_keyed_by(
-        "perftest",
-        Any(
-            [str],
-            {str: Any(None, {str: Any(None, str, [str])})},
-        ),
-    ),
+    perftest_metrics: Optional[
+        optionally_keyed_by(
+            "perftest",
+            Union[
+                list[str],
+                dict[str, Union[None, dict[str, Union[None, str, list[str]]]]],
+            ],
+            use_msgspec=True,
+        )
+    ] = None
     # Perfherder data options that will be applied to
     # all metrics gathered.
-    Optional("perftest-perfherder-global"): optionally_keyed_by(
-        "perftest", {str: Any(None, str, [str])}
-    ),
+    perftest_perfherder_global: Optional[
+        optionally_keyed_by(
+            "perftest",
+            dict[str, Union[None, str, list[str]]],
+            use_msgspec=True,
+        )
+    ] = None
     # Extra options to add to the test's command
-    Optional("perftest-extra-options"): optionally_keyed_by("perftest", [str]),
+    perftest_extra_options: Optional[
+        optionally_keyed_by("perftest", list[str], use_msgspec=True)
+    ] = None
     # Variants of the test to make based on extra browsertime
     # arguments. Expecting:
     #    [variant-suffix, options-to-use]
     # If variant-suffix is `null` then the options will be added
     # to the existing task. Otherwise, a new variant is created
     # with the given suffix and with its options replaced.
-    Optional("perftest-btime-variants"): optionally_keyed_by(
-        "perftest", [[Any(None, str)]]
-    ),
-    # These options will be parsed in the next schemas
-    Extra: object,
-})
+    perftest_btime_variants: Optional[
+        optionally_keyed_by("perftest", list[list[Optional[str]]], use_msgspec=True)
+    ] = None
 
 
-transforms.add_validate(perftest_description_schema)
+transforms.add_validate(PerftestDescriptionSchema)
 
 
 @transforms.add
