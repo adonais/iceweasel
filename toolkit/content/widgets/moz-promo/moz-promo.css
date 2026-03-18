@@ -44,6 +44,7 @@
   --promo-border-color: var(--border-color);
   --promo-border-width: var(--border-width);
   --promo-border-radius: var(--border-radius-medium);
+  --promo-container-min-height: var(--dimension-56);
 
   @media (prefers-contrast) {
     --promo-message-text-color: var(--text-color);
@@ -60,7 +61,7 @@
   display: flex;
   flex-direction: row;
   gap: var(--space-xsmall);
-  min-height: 56px;
+  min-height: var(--promo-container-min-height);
   align-items: center;
   overflow: hidden;
 }
