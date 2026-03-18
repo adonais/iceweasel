@@ -121,6 +121,7 @@ void MFMediaEngineParent::DestroyEngineIfExists(
     mContentProtectionManager->Shutdown();
     mContentProtectionManager = nullptr;
   }
+  mProxyId.reset();
 #endif
   if (mMediaEngine) {
     LOG_IF_FAILED(mMediaEngine->Shutdown());
@@ -296,11 +297,9 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
     LOG("Notifying hardware reset error, hr=%lx", aResult);
     ENGINE_MARKER("MFMediaEngineParent,HardwareContextReset");
     mHardwareResetInProgress = true;
-    auto* proxy = mContentProtectionManager
-                      ? mContentProtectionManager->GetCDMProxy()
-                      : nullptr;
-    if (proxy) {
-      proxy->OnHardwareContextReset();
+    if (MFCDMParent* cdmParent =
+            mProxyId ? MFCDMParent::GetCDMById(*mProxyId) : nullptr) {
+      cdmParent->OnHardwareContextReset();
     }
     (void)SendNotifyHardwareReset();
     return;
@@ -561,6 +560,7 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   }
 #ifdef MOZ_WMF_CDM
   LOG("SetCDMProxy, Id=%" PRIu64, aProxyId);
+  mProxyId = Some(aProxyId);
   MFCDMParent* cdmParent = MFCDMParent::GetCDMById(aProxyId);
   MOZ_DIAGNOSTIC_ASSERT(cdmParent);
   HRESULT rv =
