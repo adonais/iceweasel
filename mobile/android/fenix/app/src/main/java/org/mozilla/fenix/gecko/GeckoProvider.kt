@@ -131,7 +131,6 @@ object GeckoProvider {
         if (FxNimbus.features.fission.value().shouldUseNimbus) {
             builder
                 .fissionEnabled(FxNimbus.features.fission.value().enabled)
-                .disableShip(FxNimbus.features.ship.value().disabled)
         }
 
         return builder.build()
