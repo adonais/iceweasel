@@ -7,6 +7,7 @@
 // happens when calling these functions. They don't do much inspection of
 // profiler internals.
 
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "mozilla/ProfilerThreadPlatformData.h"
 #include "mozilla/ProfilerThreadRegistration.h"
 #include "mozilla/ProfilerThreadRegistrationInfo.h"
@@ -26,10 +27,10 @@
 
 #include <thread>
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(GP_OS_windows)
 #  include <processthreadsapi.h>
 #  include <realtimeapiset.h>
-#elif defined(__APPLE__)
+#elif defined(GP_OS_darwin)
 #  include <mach/thread_act.h>
 #endif
 
@@ -256,7 +257,7 @@ static void TestConstUnlockedConstReader(
   EXPECT_EQ(aData.Info().ThreadId(), aThreadId);
   EXPECT_FALSE(aData.Info().IsMainThread());
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(GP_OS_windows) && defined(MOZ_GECKO_PROFILER)
   HANDLE threadHandle = aData.PlatformDataCRef().ProfiledThread();
   EXPECT_NE(threadHandle, nullptr);
   EXPECT_EQ(ProfilerThreadId::FromNumber(::GetThreadId(threadHandle)),
@@ -265,7 +266,7 @@ static void TestConstUnlockedConstReader(
   // work, but at least it shouldn't crash.
   ULONG64 cycles;
   (void)QueryThreadCycleTime(threadHandle, &cycles);
-#elif defined(__APPLE__)
+#elif defined(GP_OS_darwin) && defined(MOZ_GECKO_PROFILER)
   // Test calling thread_info, we cannot assume that it will always work, but at
   // least it shouldn't crash.
   thread_basic_info_data_t threadBasicInfo;
@@ -273,7 +274,7 @@ static void TestConstUnlockedConstReader(
   (void)thread_info(
       aData.PlatformDataCRef().ProfiledThread(), THREAD_BASIC_INFO,
       reinterpret_cast<thread_info_t>(&threadBasicInfo), &basicCount);
-#elif defined(__linux__) || defined(__ANDROID__) || defined(__FreeBSD__)
+#elif (defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd))
   // Test calling GetClockId, we cannot assume that it will always work, but at
   // least it shouldn't crash.
   Maybe<clockid_t> maybeClockId = aData.PlatformDataCRef().GetClockId();

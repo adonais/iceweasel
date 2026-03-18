@@ -19,6 +19,7 @@
 // some generic process and thread information.
 
 #include "mozilla/BaseProfilerUtils.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
@@ -125,17 +126,17 @@ class MOZ_RAII AutoProfilerStats {
 // Profiler features
 //---------------------------------------------------------------------------
 
-#if defined(__APPLE__) && defined(__aarch64__)
+#if defined(GP_PLAT_arm64_darwin)
 #  define POWER_HELP "Sample per process power use"
-#elif defined(__APPLE__) && defined(__x86_64__)
+#elif defined(GP_PLAT_amd64_darwin)
 #  define POWER_HELP \
     "Record the power used by the entire system with each sample."
-#elif defined(__linux__) && defined(__x86_64__)
+#elif defined(GP_PLAT_amd64_linux)
 #  define POWER_HELP                                                \
     "Record the power used by the entire system with each sample. " \
     "Only available with Intel CPUs and requires setting "          \
     "the sysctl kernel.perf_event_paranoid to 0."
-#elif defined(_MSC_VER)
+#elif defined(GP_OS_windows)
 #  define POWER_HELP                                                       \
     "Record the value of every energy meter available on the system with " \
     "each sample. Only available on Windows 11 with Intel CPUs."

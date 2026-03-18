@@ -6,10 +6,11 @@
 #define ProfilerThreadPlatformData_h
 
 #include "mozilla/ProfilerUtils.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 
-#if defined(__APPLE__)
+#if defined(GP_OS_darwin)
 #  include <mach/mach_types.h>
-#elif defined(__linux__) || defined(__ANDROID__) || defined(__FreeBSD__)
+#elif defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
 #  include "mozilla/Maybe.h"
 #  include <time.h>
 #endif
@@ -17,7 +18,7 @@
 namespace mozilla::profiler {
 
 class PlatformData {
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(GP_OS_windows)
  public:
   explicit PlatformData(ProfilerThreadId aThreadId);
   ~PlatformData();
@@ -30,7 +31,7 @@ class PlatformData {
 
  private:
   WindowsHandle mProfiledThread;
-#elif defined(__APPLE__)
+#elif defined(GP_OS_darwin)
  public:
   explicit PlatformData(ProfilerThreadId aThreadId);
   ~PlatformData();
@@ -41,7 +42,7 @@ class PlatformData {
   // because the latter doesn't provide thread manipulation primitives
   // required. For details, consult "Mac OS X Internals" book, Section 7.3.
   thread_act_t mProfiledThread;
-#elif defined(__linux__) || defined(__ANDROID__) || defined(__FreeBSD__)
+#elif (defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd))
  public:
   explicit PlatformData(ProfilerThreadId aThreadId);
   ~PlatformData();
