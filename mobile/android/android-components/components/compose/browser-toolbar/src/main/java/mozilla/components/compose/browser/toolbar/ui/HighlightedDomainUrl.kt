@@ -6,6 +6,8 @@ package mozilla.components.compose.browser.toolbar.ui
 
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.content.res.Configuration.UI_MODE_TYPE_NORMAL
+import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -59,7 +61,8 @@ private const val FADE_LENGTH_PX = 20
 /**
  * How many other characters to try showing to the end of the scrolled to domain
  */
-private const val END_SCROLL_OFFSET = 1
+@VisibleForTesting
+internal const val END_SCROLL_OFFSET = 1
 
 /**
  * The LTR mark character which will force all other characters following it to be rendered from left to right.
@@ -156,18 +159,9 @@ private fun Modifier.focusTextIndexRange(
                 constraints = Constraints(maxWidth = it.width),
             ).also {
                 coroutineScope.launch {
-                    val endOffset = when (highlightRange?.second == text.length) {
-                        true -> scrollState.maxValue
-                        else -> {
-                            val index = (highlightRange?.second?.plus(END_SCROLL_OFFSET) ?: 0)
-                                .coerceAtMost(text.lastIndex)
-                            val offset = it.getBoundingBox(index)
-                            // Ensure the end of [highlightRange] is shown to the end of the viewport.
-                            (offset.right - scrollState.viewportSize).toInt().coerceIn(0, scrollState.maxValue)
-                        }
-                    }
+                    val endScrollValue = computeDomainEndScrollValue(text, highlightRange, scrollState, it)
 
-                    scrollState.scrollTo(endOffset)
+                    scrollState.scrollTo(endScrollValue)
                 }
             }
         }
@@ -177,28 +171,7 @@ private fun Modifier.focusTextIndexRange(
                     .drawWithContent {
                         drawContent()
 
-                        val brush = when {
-                            // Don't fade the start if the highlight is also at the start of the text.
-                            highlightRange?.first == LTR_MARK_OFFSET -> Brush.horizontalGradient(
-                                (1f - fadeFraction) to Color.Black,
-                                1f to Color.Transparent,
-                            )
-
-                            // Don't fade the end if the highlight is also at the end of the text.
-                            (highlightRange?.second ?: 0) >= text.lastIndex -> Brush.horizontalGradient(
-                                0f to Color.Transparent,
-                                fadeFraction to Color.Black,
-                            )
-
-                            else -> Brush.horizontalGradient(
-                                colorStops = arrayOf(
-                                    0f to Color.Transparent,
-                                    fadeFraction to Color.Black,
-                                    (1f - fadeFraction) to Color.Black,
-                                    1f to Color.Transparent,
-                                ),
-                            )
-                        }
+                        val brush = createDomainHighlightBrush(text, highlightRange, fadeFraction)
 
                         drawRect(
                             brush = brush,
@@ -225,6 +198,57 @@ private fun Modifier.focusTextIndexRange(
         properties["fadeLengthDp"] = fadeLength.value
     },
 )
+
+@VisibleForTesting
+internal fun computeDomainEndScrollValue(
+    text: String,
+    highlightRange: Pair<Int, Int>?,
+    scrollState: ScrollState,
+    textLayoutResult: TextLayoutResult,
+): Int {
+    val endOffset = when (highlightRange?.second == text.length) {
+        true -> scrollState.maxValue
+        else -> {
+            val index = (highlightRange?.second?.plus(END_SCROLL_OFFSET) ?: 0)
+                .coerceAtMost(text.lastIndex)
+            val offset = textLayoutResult.getBoundingBox(index)
+            // Ensure the end of [highlightRange] is shown to the end of the viewport.
+            (offset.right - scrollState.viewportSize).toInt().coerceIn(0, scrollState.maxValue)
+        }
+    }
+    return endOffset
+}
+
+@VisibleForTesting
+internal fun createDomainHighlightBrush(
+    text: String,
+    highlightRange: Pair<Int, Int>?,
+    fadeFraction: Float,
+): Brush {
+    val brush = when {
+        // Don't fade the start if the highlight is also at the start of the text.
+        (highlightRange?.first ?: Int.MAX_VALUE) <= LTR_MARK_OFFSET -> Brush.horizontalGradient(
+            (1f - fadeFraction) to Color.Black,
+            1f to Color.Transparent,
+        )
+
+        // Don't fade the end if the highlight is also at the end of the text.
+        (highlightRange?.second ?: Int.MIN_VALUE) >= text.lastIndex -> Brush.horizontalGradient(
+            0f to Color.Transparent,
+            fadeFraction to Color.Black,
+        )
+
+        else -> Brush.horizontalGradient(
+            colorStops = arrayOf(
+                0f to Color.Transparent,
+                fadeFraction to Color.Black,
+                (1f - fadeFraction) to Color.Black,
+                1f to Color.Transparent,
+            ),
+        )
+    }
+    return brush
+}
 
 @Composable
 @Preview(uiMode = UI_MODE_NIGHT_YES or UI_MODE_TYPE_NORMAL)
