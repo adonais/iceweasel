@@ -123,14 +123,10 @@ interface nsIDocShell : nsIDocShellTreeItem
 
   /**
    * Notify the associated content viewer and all child docshells that they are
-   * about to be hidden.  If |isUnload| is true, then the document is being
-   * unloaded and all dynamic subframe history entries are removed as well.
-   *
-   * @param isUnload
-   *        True to fire the unload event in addition to the pagehide event,
-   *        and remove all dynamic subframe history entries.
+   * about to be hidden.  The document is being unloaded and all dynamic
+   * subframe history entries are removed as well.
    */
-  [noscript] void firePageHideNotification(in boolean isUnload);
+  [noscript] void firePageHideNotification();
 
   /**
    * Presentation context for the currently loaded document.  This may be null.

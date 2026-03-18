@@ -920,7 +920,7 @@ class nsDocShell final : public nsDocLoader,
   // children docshells.
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideNotificationInternal(
-      bool aIsUnload, bool aSkipCheckingDynEntries);
+      bool aSkipCheckingDynEntries);
 
   void ThawFreezeNonRecursive(bool aThaw);
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
@@ -1323,12 +1323,6 @@ class nsDocShell final : public nsDocLoader,
   bool mIsBeingDestroyed : 1;
 
   bool mIsExecutingOnLoadHandler : 1;
-
-  // Indicates to CreateDocumentViewer() that it is safe to cache the old
-  // presentation of the page, and to SetupNewViewer() that the old viewer
-  // should be passed a SHEntry to save itself into.
-  // Only used with SHIP disabled.
-  bool mSavingOldViewer : 1;
 
   bool mInvisible : 1;
 

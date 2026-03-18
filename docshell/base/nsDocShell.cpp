@@ -363,7 +363,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mURIResultedInDocument(false),
       mIsBeingDestroyed(false),
       mIsExecutingOnLoadHandler(false),
-      mSavingOldViewer(false),
       mInvisible(false),
       mHasLoadedNonBlankURI(false),
       mHasStartedLoadingOtherThanInitialBlankURI(false),
@@ -1204,13 +1203,13 @@ nsDocShell::PrepareForNewContentModel() {
 }
 
 NS_IMETHODIMP
-nsDocShell::FirePageHideNotification(bool aIsUnload) {
-  FirePageHideNotificationInternal(aIsUnload, false);
+nsDocShell::FirePageHideNotification() {
+  FirePageHideNotificationInternal(false);
   return NS_OK;
 }
 
 void nsDocShell::FirePageHideNotificationInternal(
-    bool aIsUnload, bool aSkipCheckingDynEntries) {
+    bool aSkipCheckingDynEntries) {
   {
     nsAutoMicroTask mt;
     SetOngoingNavigation(Nothing());
@@ -1226,7 +1225,7 @@ void nsDocShell::FirePageHideNotificationInternal(
       mTiming->NotifyUnloadEventStart();
     }
 
-    viewer->PageHide(aIsUnload);
+    viewer->PageHide(true);
 
     if (mTiming) {
       mTiming->NotifyUnloadEventEnd();
@@ -1244,12 +1243,12 @@ void nsDocShell::FirePageHideNotificationInternal(
       RefPtr<nsDocShell> child = static_cast<nsDocShell*>(kids[i].get());
       if (child) {
         // Skip checking dynamic subframe entries in our children.
-        child->FirePageHideNotificationInternal(aIsUnload, true);
+        child->FirePageHideNotificationInternal(true);
       }
     }
 
     // If the document is unloading, remove all dynamic subframe entries.
-    if (aIsUnload && !aSkipCheckingDynEntries) {
+    if (!aSkipCheckingDynEntries) {
       RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
       if (rootSH) {
         MOZ_LOG(
@@ -4344,7 +4343,7 @@ nsDocShell::Destroy() {
   mLoadingURI = nullptr;
 
   // Fire unload event before we blow anything away.
-  (void)FirePageHideNotification(true);
+  (void)FirePageHideNotification();
 
   // Note: mContentListener can be null if Init() failed and we're being
   // called from the destructor.
@@ -6535,8 +6534,6 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
       }
     }
 
-    mSavingOldViewer = false;
-
     // Make sure to blow away our mLoadingURI just in case.  No loads
     // from inside this pagehide.
     mLoadingURI = nullptr;
@@ -6551,7 +6548,7 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
     // is changed within the DocShell - otherwise, javascript will get the
     // wrong information :-(
     //
-    (void)FirePageHideNotification(!mSavingOldViewer);
+    (void)FirePageHideNotification();
     // pagehide notification might destroy this docshell.
     if (mIsBeingDestroyed) {
       return NS_ERROR_DOCSHELL_DYING;
@@ -6888,14 +6885,6 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   // wrong information :-(
   //
 
-  if (mSavingOldViewer) {
-    // We determined that it was safe to cache the document presentation
-    // at the time we initiated the new load.  We need to check whether
-    // it's still safe to do so, since there may have been DOM mutations
-    // or new requests initiated.
-    mSavingOldViewer = false;
-  }
-
   NS_ASSERTION(!mLoadingURI, "Re-entering unload?");
 
   nsCOMPtr<nsIChannel> aOpenedChannel = do_QueryInterface(aRequest);
@@ -6907,7 +6896,7 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   // it before we do call Embed.
   nsCOMPtr<nsIURI> previousURI = mCurrentURI;
 
-  FirePageHideNotification(!mSavingOldViewer);
+  FirePageHideNotification();
   if (mIsBeingDestroyed) {
     // Force to stop the newly created orphaned viewer.
     viewer->Stop();
@@ -7081,7 +7070,6 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   }
 
   mSavedRefreshURIList = nullptr;
-  mSavingOldViewer = false;
   mEODForCurrentDocument = false;
 
   // if this document is part of a multipart document,
@@ -7177,13 +7165,6 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
       // XXX: it would be far better to just reuse the document viewer ,
       //      since we know we're just displaying the same document as before
       oldViewer = mDocumentViewer;
-
-      // Tell the old content viewer to hibernate in session history when
-      // it is destroyed.
-
-      if (mSavingOldViewer) {
-        mSavingOldViewer = false;
-      }
     } else {
       // No old content viewer, so get state from parent's content viewer
       parent->GetDocViewer(getter_AddRefs(oldViewer));
@@ -8792,14 +8773,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
   }
 
-  // Check for saving the presentation here, before calling Stop().
-  // This is necessary so that we can catch any pending requests.
-  // Since the new request has not been created yet, we pass null for the
-  // new request parameter.
-  // Also pass nullptr for the document, since it doesn't affect the return
-  // value for our purposes here.
-  bool savePresentation = false;
-
+  // Do a check so that we know if there are ongoing requests
+  // before calling Stop() below.
   Document* document = GetDocument();
   uint32_t flags = 0;
   if (document && !document->CanSavePresentation(nullptr, flags, true)) {
@@ -8844,8 +8819,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   }
 
   mLoadType = aLoadState->LoadType();
-
-  mSavingOldViewer = savePresentation;
 
   if (aLoadState->LoadIsFromSessionHistory() &&
       (mLoadType & LOAD_CMD_HISTORY)) {
