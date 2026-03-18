@@ -974,31 +974,6 @@ export class BackupService extends EventTarget {
   }
 
   /**
-   * The setting name which has the user's backup path as value.
-   *
-   * @returns {string} the name of a setting.
-   */
-  static get BACKUP_DIR_PREF_NAME() {
-    return BACKUP_DIR_PREF_NAME;
-  }
-
-  /**
-   * The value of BACKUP_DIR_NAME can be configured through a desktop.ini file,
-   * enabling users to see a custom display name while the actual folder has a
-   * different, disk-based name. This approach allows for more efficient
-   * automatic detection of existing backups, as it avoids the need to iterate
-   * over language versions on the disk.
-   *
-   * @returns {string} the backup folder's descriptive name (translation)
-   */
-  static get BACKUP_DIR_TRANSLATION() {
-    let folderDesc = lazy.gFluentStrings.formatValueSync("backup-folder-name");
-    folderDesc =
-      folderDesc != "" ? folderDesc : BackupService.#backupFolderName;
-    return folderDesc;
-  }
-
-  /**
    * The localized name for the user's backup archive file. This will have
    * `.html` appended to it before writing the archive file.
    *
@@ -1414,12 +1389,6 @@ export class BackupService extends EventTarget {
         createAncestors: true,
         ignoreExisting: true,
       });
-      if (Services.sysinfo.getProperty("name") === "Windows_NT") {
-        // On Windows, adding a desktop.ini file to the folder and setting the
-        // required properties allows us to display a language-translated name
-        // for the folder.
-        await this.#createDesktopIni(configuredDestFolderPath);
-      }
       return configuredDestFolderPath;
     } catch (e) {
       lazy.logConsole.warn("Could not create configured destination path: ", e);
@@ -3696,112 +3665,12 @@ export class BackupService extends EventTarget {
   }
 
   /**
-   * This local function reads and returns a desktop.ini file's contents,
-   * allowing creation or verification of existing files.
-   *
-   * @param {string} LocalizedResourceName - translation of the folder name
-   */
-  #getDesktopIni(LocalizedResourceName) {
-    return (
-      `\r\n` +
-      `[.ShellClassInfo]\r\n` +
-      `LocalizedResourceName=${LocalizedResourceName}\r\n`
-    );
-  }
-
-  /**
-   * This function generates a `desktop.ini` file to translate a folder's name,
-   * potentially laying the groundwork for future custom icon support. It also
-   * configures Windows file pickers to recognize and display the new folder
-   * name by adjusting both directory and file attributes accordingly.
-   *
-   * @param {string} fullPath directory path
-   */
-  async #createDesktopIni(fullPath) {
-    let desktopIni = PathUtils.join(fullPath, "desktop.ini");
-    try {
-      lazy.logConsole.debug(`Creating desktop.ini file: ${desktopIni}`);
-      await IOUtils.writeUTF8(
-        desktopIni,
-        this.#getDesktopIni(BackupService.BACKUP_DIR_TRANSLATION),
-        { compress: false }
-      );
-
-      // set desktop file attributes to "system" and "hidden"
-      await IOUtils.setWindowsAttributes(
-        desktopIni,
-        { system: true, hidden: true },
-        false
-      );
-
-      // set folder attributes to "system"
-      await IOUtils.setWindowsAttributes(fullPath, { system: true }, false);
-
-      return true;
-    } catch (e) {
-      lazy.logConsole.warn(`Could not create ${desktopIni}: ${e}`);
-    }
-    return false;
-  }
-
-  /**
-   * This function reverses the effects of createDesktopIni(...), removing the
-   * `desktop.ini` file and resetting the folder's attributes. It will only
-   * delete unmodified desktop.ini files and always return success when done.
-   *
-   * @param {string} fullPath - path where the desktop.ini can be found
-   * @returns {Promise} - this promise always resolves, because a desktop.ini
-   *                      is not considered to be very imporant.
-   */
-  async maybeCleanupDesktopIni(fullPath) {
-    try {
-      let desktopIni = PathUtils.join(fullPath, "desktop.ini");
-      lazy.logConsole.debug(
-        `Attempting to delete desktop.ini: '${desktopIni}'`
-      );
-      if (await IOUtils.exists(desktopIni)) {
-        let expectedContents = this.#getDesktopIni(
-          BackupService.BACKUP_DIR_TRANSLATION
-        );
-
-        // If the desktop.ini exists, its integrity is suspect because it may
-        // have been tampered with. Checking its size first avoids potential
-        // delays caused by large files; if the size does not match our
-        // expected value, the file was altered and should be avoided for
-        // further manipulation.
-        let fileInfo = await IOUtils.stat(desktopIni);
-        if (fileInfo && fileInfo.size == expectedContents.length) {
-          // Now let us compare the content of a desktop.ini that we would
-          // create today with the one on disk (could have been customized)
-          let currentContents = await IOUtils.readUTF8(desktopIni);
-          if (currentContents == expectedContents) {
-            await IOUtils.remove(desktopIni, { retryReadonly: false });
-          }
-        } else {
-          throw new BackupError(
-            "The desktop.ini file has been modified and differs in size:" +
-              ` ${fileInfo.size} != ${expectedContents.length}: ${desktopIni}`
-          );
-        }
-
-        // Remove the system permission from the folder, which is set when the
-        // `desktop.ini` file is created.
-        await IOUtils.setWindowsAttributes(fullPath, { system: false }, false);
-      }
-    } catch (e) {
-      lazy.logConsole.warn(
-        `Unable to remove a desktop.ini file from ${fullPath}: ${e}`
-      );
-    }
-  }
-
-  /**
    * Sets the parent directory of the backups folder. Calling this function will update
    * browser.backup.location.
    *
    * @param {string} parentDirPath directory path
    */
-  async setParentDirPath(parentDirPath) {
+  setParentDirPath(parentDirPath) {
     try {
       let filename = parentDirPath ? PathUtils.filename(parentDirPath) : null;
       if (!filename) {
@@ -4765,7 +4634,6 @@ export class BackupService extends EventTarget {
             "Attempting to delete last backup file at ",
             oldBackupFilePath
           );
-          await this.maybeCleanupDesktopIni(lazy.backupDirPref);
           await IOUtils.remove(oldBackupFilePath, {
             ignoreAbsent: true,
             retryReadonly: true,
@@ -5104,7 +4972,7 @@ export class BackupService extends EventTarget {
       );
       // Fall through so the new backup directory is set.
     }
-    await this.setParentDirPath(path);
+    this.setParentDirPath(path);
   }
 
   /**
@@ -5151,10 +5019,6 @@ export class BackupService extends EventTarget {
         }
 
         if (await this.#infalliblePathExists(lazy.backupDirPref)) {
-          // Remove the desktop.ini file from the previously backed-up folder
-          // to ensure it is completely empty and ready for removal.
-          await this.maybeCleanupDesktopIni(lazy.backupDirPref);
-
           // See if there are any other files lingering around in the destination
           // folder. If not, delete that folder too.
           let children = await IOUtils.getChildren(lazy.backupDirPref);

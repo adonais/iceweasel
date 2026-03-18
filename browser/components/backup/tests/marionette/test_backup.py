@@ -126,8 +126,10 @@ class BackupTest(MarionetteTestCase):
           }
 
           let [archiveDestPath, recoveryCode, outerResolve] = arguments;
+          bs.setParentDirPath(archiveDestPath);
+
           (async () => {
-            await bs.setParentDirPath(archiveDestPath);
+
             await bs.enableEncryption(recoveryCode);
 
             let { archivePath } = await bs.createBackup();
@@ -320,9 +322,9 @@ class BackupTest(MarionetteTestCase):
           }
 
           let [archiveDestPath, outerResolve] = arguments;
+          bs.setParentDirPath(archiveDestPath);
 
           (async () => {
-            await bs.setParentDirPath(archiveDestPath);
             bs.setScheduledBackups(true);
             let { archivePath } = await bs.createBackup();
             if (!archivePath) {

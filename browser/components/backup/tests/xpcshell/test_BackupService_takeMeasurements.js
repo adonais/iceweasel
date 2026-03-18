@@ -175,7 +175,7 @@ add_task(async function test_BackupService_location_on_device() {
   const NON_DEFAULT_LOCATION = 2;
 
   let bs = new BackupService();
-  await bs.setParentDirPath(PathUtils.tempDir);
+  bs.setParentDirPath(PathUtils.tempDir);
 
   await bs.takeMeasurements();
   Assert.equal(
@@ -195,7 +195,7 @@ add_task(async function test_BackupService_location_on_device() {
   Services.telemetry.clearScalars();
   // The default will be either the test machine's OneDrive folder, if present,
   // or else the Docs folder.
-  await bs.setParentDirPath(BackupService.DEFAULT_PARENT_DIR_PATH);
+  bs.setParentDirPath(BackupService.DEFAULT_PARENT_DIR_PATH);
 
   await bs.takeMeasurements();
   Assert.equal(

@@ -180,7 +180,7 @@ class BackupTestBase(MarionetteTestCase):
                 "resource:///modules/backup/BackupService.sys.mjs"
             );
             let bs = BackupService.init();
-            await bs.setParentDirPath(arguments[0]);
+            bs.setParentDirPath(arguments[0]);
             let { archivePath } = await bs.createBackup();
             return archivePath;
             """,
