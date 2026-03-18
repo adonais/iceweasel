@@ -190,15 +190,7 @@ interface nsIDragService : nsISupports
    * True if this is a mock nsIDragService, created with
    * createMockDragController().
    */
-  readonly attribute boolean isMockService;
-
-%{ C++
-  bool IsMockService() {
-    bool ret = false;
-    MOZ_ALWAYS_SUCCEEDS(GetIsMockService(&ret));
-    return ret;
-  }
-%}
+  [infallible] readonly attribute boolean isMockService;
 
   /**
    * If this is true, mSessionIsSynthesizedForTests should not become true.
@@ -213,8 +205,3 @@ interface nsIDragService : nsISupports
    */
   [infallible] attribute boolean neverAllowSessionIsSynthesizedForTests;
 };
-
-
-%{ C++
-
-%}

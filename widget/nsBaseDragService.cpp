@@ -341,7 +341,7 @@ nsresult nsBaseDragSession::InvokeDragSession(
         do_GetService("@mozilla.org/widget/dragservice;1");
     MOZ_ASSERT(dragService);
     MOZ_ASSERT(
-        !xpc::IsInAutomation() || dragService->IsMockService(),
+        !xpc::IsInAutomation() || dragService->GetIsMockService(),
         "About to start drag-drop native loop on which will prevent later "
         "tests from running properly.");
   }
