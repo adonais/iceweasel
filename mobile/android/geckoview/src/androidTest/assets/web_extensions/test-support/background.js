@@ -77,9 +77,6 @@ const APIS = {
   ClearHSTSState() {
     return browser.test.clearHSTSState();
   },
-  IsSessionHistoryInParentRunning() {
-    return browser.test.isSessionHistoryInParentRunning();
-  },
   IsFissionRunning() {
     return browser.test.isFissionRunning();
   },

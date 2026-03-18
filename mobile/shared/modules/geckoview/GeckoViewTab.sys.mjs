@@ -215,10 +215,8 @@ export class GeckoViewTab extends GeckoViewModule {
         break;
       }
       case "GeckoView:FlushSessionState": {
-        if (Services.appinfo.sessionHistoryInParent) {
-          if (this.browser && this.browser.frameLoader) {
-            this.browser.frameLoader.requestTabStateFlush();
-          }
+        if (this.browser && this.browser.frameLoader) {
+          this.browser.frameLoader.requestTabStateFlush();
         }
         break;
       }

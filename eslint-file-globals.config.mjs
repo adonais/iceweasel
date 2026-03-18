@@ -310,7 +310,6 @@ export default [
       "dom/ipc/tests/test_child_docshell.js",
       "dom/messagechannel/tests/mm_messageChannel.js",
       "layout/tools/reftest/reftest-content.js",
-      "mobile/shared/chrome/geckoview/SessionStateAggregator.js",
       "netwerk/test/browser/browser_nsIFormPOSTActionChannel.js",
       "remote/cdp/sessions/frame-script.js",
       "remote/marionette/reftest-content.js",

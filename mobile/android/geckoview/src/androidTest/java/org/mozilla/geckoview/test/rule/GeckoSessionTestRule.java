@@ -2819,11 +2819,6 @@ public class GeckoSessionTestRule implements TestRule {
     webExtensionApiCall("ClearHSTSState", null);
   }
 
-  /** Checks if SHIP is running. */
-  public boolean isSessionHistoryInParentRunning() {
-    return (Boolean) webExtensionApiCall("IsSessionHistoryInParentRunning", null);
-  }
-
   /** Checks if fission is running. */
   public boolean isFissionRunning() {
     return (Boolean) webExtensionApiCall("IsFissionRunning", null);

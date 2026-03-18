@@ -190,19 +190,6 @@ var ModuleManager = {
     }
   },
 
-  // Ensures that session history has been flushed before changing remoteness
-  async prepareToChangeRemoteness() {
-    // Session state like history is maintained at the process level so we need
-    // to collect it and restore it in the other process when switching.
-    // TODO: This should go away when we migrate the history to the main
-    // process Bug 1507287.
-    const { history } = await this.getActor("GeckoViewContent").collectState();
-
-    // Ignore scroll and form data since we're navigating away from this page
-    // anyway
-    this.sessionState = { history };
-  },
-
   willChangeBrowserRemoteness() {
     debug`WillChangeBrowserRemoteness`;
 
@@ -243,19 +230,6 @@ var ModuleManager = {
       module.enabled = true;
     });
     this.disabledModules = null;
-  },
-
-  afterBrowserRemotenessChange(aSwitchId) {
-    const { sessionState } = this;
-    this.sessionState = null;
-
-    sessionState.switchId = aSwitchId;
-
-    this.getActor("GeckoViewContent").restoreState(sessionState);
-    this.browser.focus();
-
-    // Load was handled
-    return true;
   },
 
   _updateSettings(aSettings) {
@@ -727,12 +701,6 @@ function startup() {
       },
     },
     {
-      name: "SessionStateAggregator",
-      onInit: {
-        frameScript: "chrome://geckoview/content/SessionStateAggregator.js",
-      },
-    },
-    {
       name: "GeckoViewAutofill",
       onInit: {
         actors: {
@@ -884,13 +852,6 @@ function startup() {
       },
     },
   ]);
-
-  if (!Services.appinfo.sessionHistoryInParent) {
-    browser.prepareToChangeRemoteness = () =>
-      ModuleManager.prepareToChangeRemoteness();
-    browser.afterChangeRemoteness = switchId =>
-      ModuleManager.afterBrowserRemotenessChange(switchId);
-  }
 
   browser.addEventListener("WillChangeBrowserRemoteness", () =>
     ModuleManager.willChangeBrowserRemoteness()
