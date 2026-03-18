@@ -246,6 +246,10 @@ fail-if = [
 ["browser_net_domain-not-found.js"]
 
 ["browser_net_duration-sort.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && !opt", # Bug 2021427 Frequent delays on windows non-opt builds
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && !opt", # Bug 2021427 Frequent delays on windows non-opt builds
+]
 
 ["browser_net_duration.js"]
 
