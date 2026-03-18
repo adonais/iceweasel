@@ -23,6 +23,10 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/ScreenManager.h"  // for ScreenManager
 
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/PdfStructTreeBuilder.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::gfx;
 using mozilla::widget::ScreenManager;
@@ -270,6 +274,17 @@ RefPtr<PrintEndDocumentPromise> nsDeviceContext::EndDocument() {
                             "nsDeviceContext::EndDocument"_ns);
 
   mIsCurrentlyPrintingDoc = false;
+#ifdef ACCESSIBILITY
+  // PdfStructTreeBuilder::Init is called in
+  // a11y::DocManager::NotifyOfPrintDocument for same-process documents or
+  // a11y::DocAccessibleParent::RecvPrinting for remote documents, triggered by
+  // nsPrintJob::SetupToPrintContent. This is because the accessibility tree
+  // needs to be built from the DOM document and potentially sent async from the
+  // content process before printing begins. However, cleanup is much simpler:
+  // we can do it synchronously as soon as we're finished printing and
+  // nsDeviceContext will always be notified when we finish printing.
+  mozilla::a11y::PdfStructTreeBuilder::Done(mBrowsingContextId);
+#endif
 
   if (mPrintTarget) {
     auto result = mPrintTarget->EndPrinting();
@@ -296,6 +311,10 @@ nsresult nsDeviceContext::AbortDocument() {
 
   nsresult rv = mPrintTarget->AbortPrinting();
   mIsCurrentlyPrintingDoc = false;
+#ifdef ACCESSIBILITY
+  // See the comment in EndDocument.
+  mozilla::a11y::PdfStructTreeBuilder::Done(mBrowsingContextId);
+#endif
 
   if (mDeviceContextSpec) {
     (void)mDeviceContextSpec->EndDocument();
