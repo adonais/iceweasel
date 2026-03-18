@@ -5282,15 +5282,9 @@
   value: 30000
   mirror: always
 
-# TCPSocket API
-- name: dom.tcpsocket_in_child.enabled
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
 # UDPSocket API
 - name: dom.udpsocket.enabled
-  type: RelaxedAtomicBool
+  type: bool
   value: false
   mirror: always
 
