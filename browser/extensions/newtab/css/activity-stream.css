@@ -862,6 +862,11 @@ main section {
 }
 @media (min-width: 1122px) {
   .top-sites-list {
+    grid-template-columns: repeat(8, auto);
+  }
+}
+@media (min-width: 1390px) {
+  .top-sites-list {
     grid-template-columns: repeat(var(--top-sites-max-per-row, 8), auto);
   }
 }
