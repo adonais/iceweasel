@@ -41,6 +41,7 @@ win32/debug:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -91,6 +92,7 @@ win32/opt:
     use-python: "3.11"
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -141,6 +143,7 @@ win32-fuzzing/debug:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -193,6 +196,7 @@ win64/debug:
     use-python: "3.11"
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -243,6 +247,7 @@ win64-non-unified/plain:
     run-on-projects: ['integration']
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -293,6 +298,7 @@ win64-fuzzing/debug:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -391,6 +397,7 @@ win64/opt:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -502,6 +509,7 @@ win32-shippable/opt:
             mozconfig_platform: win32
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -556,6 +564,7 @@ win64-shippable/opt:
             max_build_output_timeout: 3600
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -608,6 +617,7 @@ win64-nightlyasrelease/opt:
     run-on-projects: [trunk-only]
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -653,6 +663,7 @@ win32-add-on-devel/opt:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -698,6 +709,7 @@ win64-add-on-devel/opt:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -744,6 +756,7 @@ win64-noopt/debug:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -790,6 +803,7 @@ win32-noopt/debug:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1015,6 +1029,7 @@ win64-ccov/opt:
     use-sccache: false
     fetches:
         toolchain:
+            - win64-7zz
             - win64-cbindgen
             - win64-clang
             - win64-dump_syms
@@ -1069,6 +1084,7 @@ win64-fuzzing-ccov/opt:
     use-sccache: false
     fetches:
         toolchain:
+            - win64-7zz
             - win64-cbindgen
             - win64-clang
             - win64-dump_syms
@@ -1116,6 +1132,7 @@ win64-asan/debug:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1167,6 +1184,7 @@ win64-asan/opt:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1214,6 +1232,7 @@ win64-asan-fuzzing/opt:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1282,6 +1301,7 @@ win32-devedition/opt:
     run-on-projects: ['mozilla-beta']
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1337,6 +1357,7 @@ win64-devedition/opt:
     run-on-projects: ['mozilla-beta']
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1386,6 +1407,7 @@ win64-aarch64/debug:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1437,6 +1459,7 @@ win64-aarch64/opt:
     use-sccache: true
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1493,6 +1516,7 @@ win64-aarch64-shippable/opt:
             max_build_output_timeout: 3600
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
@@ -1547,6 +1571,7 @@ win64-aarch64-devedition/opt:
     run-on-projects: ['mozilla-beta']
     fetches:
         toolchain:
+            - linux64-7zz
             - linux64-clang
             - linux64-rust-cross
             - linux64-rust-size
