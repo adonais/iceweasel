@@ -45,7 +45,12 @@ XPCOM_MANIFESTS += [
 ]
 
 # Keep in sync with ProfilerPlatformMacros.h
-if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64"):
+if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] in (
+    "aarch64",
+    "arm",
+    "x86",
+    "x86_64",
+):
     UNIFIED_SOURCES += [
         "core/ProfilerCPUFreq-linux-android.cpp",
         "gecko/nsProfiler.cpp",
@@ -76,7 +81,13 @@ if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] in ("aarch64", "arm
             SOURCES += [
                 "/toolkit/crashreporter/google-breakpad/src/common/linux/breakpad_getcontext.S"
             ]
-elif CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64", "mips64"):
+elif CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] in (
+    "aarch64",
+    "arm",
+    "x86",
+    "x86_64",
+    "mips64",
+):
     UNIFIED_SOURCES += [
         "core/ProfilerCPUFreq-linux-android.cpp",
         "gecko/nsProfiler.cpp",
@@ -148,7 +159,11 @@ elif CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_CPU"] in ("aarch64", "x8
         UNIFIED_SOURCES += [
             "core/PowerCounters-mac-amd64.cpp",
         ]
-elif CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] in ("aarch64", "x86", "x86_64"):
+elif CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] in (
+    "aarch64",
+    "x86",
+    "x86_64",
+):
     UNIFIED_SOURCES += [
         "gecko/nsProfiler.cpp",
     ]
