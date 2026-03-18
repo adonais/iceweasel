@@ -1145,11 +1145,20 @@ nsresult Http3Session::ProcessOutput(nsIUDPSocket* socket) {
           LOG(("Http3Session::ProcessOutput sending packet rv=%d osError=%d",
                static_cast<int32_t>(rv), NS_FAILED(rv) ? PR_GetOSError() : 0));
           if (NS_FAILED(rv) && (rv != NS_BASE_STREAM_WOULD_BLOCK)) {
-            self->mSocketError = rv;
-            // If there was an error that is not NS_BASE_STREAM_WOULD_BLOCK
-            // return from here. We do not need to set a timer, because we
-            // will close the connection.
-            return rv;
+            if (rv == NS_ERROR_OUT_OF_MEMORY) {
+              // NSPR maps ENOBUFS to PR_INSUFFICIENT_RESOURCES_ERROR, which
+              // becomes NS_ERROR_OUT_OF_MEMORY. On macOS/BSD, ENOBUFS means
+              // the NIC transmit queue is momentarily full.
+              LOG(
+                  ("Http3Session::ProcessOutput ENOBUFS (transient), dropping "
+                   "datagram [this=%p]",
+                   self));
+            } else {
+              self->mSocketError = rv;
+              // If there was another error, return from here. We do not need to
+              // set a timer, because we will close the connection.
+              return rv;
+            }
           }
           self->mTotalBytesWritten += aLength;
           self->mLastWriteTime = PR_IntervalNow();
