@@ -1275,6 +1275,7 @@ tab-group > tab-split-view-wrapper {
   }
 }
 
+/* Tabs in split-view-wrapper defaults */
 #tabbrowser-tabs tab-split-view-wrapper {
   display: grid;
   grid-template-columns: 50% 50%;
@@ -1293,12 +1294,6 @@ tab-group > tab-split-view-wrapper {
     }
   }
 
-  /* Prevent the close button from being cutoff by the bookmarks toolbar / nav bar
-  if split view is first in list if non-pinned vertical tabs */
-  #tabbrowser-tabs[orient="vertical"]:not([expanded]) &:first-child {
-    margin-block-start: var(--space-xsmall);
-  }
-
   @media (prefers-reduced-motion: no-preference) {
     #tabbrowser-tabs[movingtab] &:not(:active) {
       transition: var(--tab-dragover-transition);
@@ -1312,11 +1307,6 @@ tab-group > tab-split-view-wrapper {
 
   .tabbrowser-tab {
     padding-block: 0 !important;
-
-    /* Allow close button to overflow the split view wrapper */
-    #tabbrowser-tabs[orient="vertical"]:not([expanded]) & {
-      overflow: visible;
-    }
 
     .tab-background {
       margin-inline: var(--space-xxsmall);
@@ -1333,23 +1323,27 @@ tab-group > tab-split-view-wrapper {
       }
     }
 
-    &:first-child {
-      .tab-background {
-        margin-inline-end: 0;
+    /* For explicitly horizontally-oriented split-view-wrapped tabs only.
+       We do want the specificity granted by :is (vs. :where) in this case */
+    :is(#tabbrowser-tabs[orient="horizontal"], #tabbrowser-tabs[orient="vertical"][expanded]) tab-split-view-wrapper & {
+      &:first-child {
+        .tab-background {
+          margin-inline-end: 0;
+        }
+
+        tab-split-view-wrapper:not([hasactivetab]) & {
+          border-block-end: transparent;
+        }
       }
 
-      tab-split-view-wrapper:not([hasactivetab]) & {
-        border-block-end: transparent;
-      }
-    }
+      &:last-child {
+        .tab-background {
+          margin-inline-start: 0;
+        }
 
-    &:last-child {
-      .tab-background {
-        margin-inline-start: 0;
-      }
-
-      .tab-content {
-        padding-inline-start: var(--space-medium);
+        .tab-content {
+          padding-inline-start: var(--space-medium);
+        }
       }
     }
   }
@@ -1380,36 +1374,60 @@ tab-group > tab-split-view-wrapper {
       }
     }
   }
+}
 
-  #tabbrowser-tabs[orient="vertical"] & {
-    border-radius: var(--tab-border-radius);
-    gap: var(--space-xsmall);
-    grid-template-columns: 49.5% 49.5%;
+/* Overrides for split-view-wrapped tabs in a vertical tabstrip */
+#tabbrowser-tabs[orient="vertical"] tab-split-view-wrapper {
+  border-radius: var(--tab-border-radius);
+  gap: var(--space-xsmall);
+  grid-template-columns: 49.5% 49.5%;
 
-    @container vertical-tabs-container (max-width: 210px) {
-      grid-template-columns: 1fr;
+  @container vertical-tabs-container (max-width: 210px) {
+    grid-template-columns: 1fr;
 
-      &:not([hasactivetab]) .tabbrowser-tab {
-        &:first-child {
-          border-block-end: 1px solid var(--toolbarbutton-icon-fill);
-          border-inline-end: transparent;
-        }
-
-        &:last-child {
-          border-inline-start: transparent !important;
-        }
+    &:not([hasactivetab]) .tabbrowser-tab {
+      &:first-child {
+        border-block-end: 1px solid var(--toolbarbutton-icon-fill);
+        border-inline-end: transparent;
       }
-    }
-  }
 
-  #tabbrowser-tabs[orient="vertical"]:not([expanded]) & {
-    .tab-close-button {
-      top: -5px;
-      inset-inline-start: -7px;
+      &:last-child {
+        border-inline-start: transparent !important;
+      }
     }
   }
 }
 
+/* Overrides for split-view-wrapped tabs in a collapsed vertical tabstrip */
+#tabbrowser-tabs[orient="vertical"]:not([expanded]) tab-split-view-wrapper {
+  /* Prevent the close button from being cutoff by the bookmarks toolbar / nav bar
+  if split view is first in list if non-pinned vertical tabs */
+  &:first-child {
+    margin-block-start: var(--space-xsmall);
+  }
+
+  /* Allow close button to overflow the split view wrapper */
+  .tabbrowser-tab {
+    overflow: visible;
+
+    .tab-background {
+      margin-inline: 0;
+      margin-block: 0;
+    }
+
+    .tab-content {
+      padding-inline: unset;
+      justify-content: center;
+    }
+  }
+
+  .tab-close-button {
+    top: -5px;
+    inset-inline-start: -7px;
+  }
+}
+
+/* Drag/drop of split-view-wrapped tabs */
 #tabbrowser-tabs[orient="vertical"] tab-split-view-wrapper {
   &[small-stack] {
     box-shadow:
