@@ -294,6 +294,8 @@ class DocAccessibleParent : public RemoteAccessible,
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;
 
+  mozilla::ipc::IPCResult RecvPrinting();
+
  private:
   ~DocAccessibleParent();
 

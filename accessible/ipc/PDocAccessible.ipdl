@@ -135,6 +135,14 @@ parent:
    */
   async AccessiblesWillMove(uint64_t[] aIDs);
 
+  /*
+   * Tell the parent process that this document is being printed. This must
+   * be called first for the document itself that is being printed and then for
+   * each out-of-process iframe therein. It must not be called on in-process
+   * iframes.
+   */
+  async Printing();
+
 child:
   async __delete__();
 
