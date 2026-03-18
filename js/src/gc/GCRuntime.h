@@ -1276,6 +1276,10 @@ class GCRuntime {
 
   MainThreadData<size_t> markSliceCount;
 
+#ifdef JS_GC_CONCURRENT_MARKING
+  MainThreadData<size_t> concurrentMarkingFinishedCount;
+#endif
+
 #ifdef DEBUG
   /* Shutdown has started. Further collections must be shutdown collections. */
   MainThreadData<bool> hadShutdownGC;

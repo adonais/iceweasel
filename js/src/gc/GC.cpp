@@ -3174,6 +3174,10 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
 
   markSliceCount = 0;
 
+#ifdef JS_GC_CONCURRENT_MARKING
+  concurrentMarkingFinishedCount = 0;
+#endif
+
 #ifdef DEBUG
   queuePos = 0;
   queueMarkColor.reset();
@@ -4112,6 +4116,12 @@ void GCRuntime::finishAnyConcurrentMarking(JS::SliceBudget& budget) {
 
   pauseBackgroundMarking();
 
+  if (concurrentMarker().isMarkStackEmpty()) {
+    concurrentMarkingFinishedCount++;
+  } else {
+    concurrentMarkingFinishedCount = 0;
+  }
+
   // Perform as much main-thread-only marking as we can within the budget.
   concurrentMarker().processMainThreadBuffers(budget);
 
@@ -4157,19 +4167,17 @@ std::tuple<JS::SliceBudget, JS::SliceBudget> GCRuntime::budgetConcurrentMarking(
 
   // Try to ensure we don't get bogged down bouncing things we can't mark
   // concurrently between the helper thread and the main thread. If the helper
-  // thread has run out of work and we're several slices in, try to perform an
+  // thread has run out of work more than a couple of times, start performing an
   // increasing amount of marking on the main thread.
-  //
-  // TODO: Investigate better heuristics for this. We could check whether the
-  // background thread ran out of work in which case we may be nearly finished.
 
-  const size_t MarkOnMainThreadAfterSlices = 5;
+  const size_t MarkOnMainThreadAfterFinishedSlices = 2;
   const double MainThreadMarkTimePerSlice = 0.5;
   if (sliceReason == JS::GCReason::BG_TASK_FINISHED &&
       requestedBudget.isTimeBudget() &&
-      markSliceCount > MarkOnMainThreadAfterSlices) {
-    double millis = MainThreadMarkTimePerSlice *
-                    (markSliceCount - MarkOnMainThreadAfterSlices);
+      concurrentMarkingFinishedCount >= MarkOnMainThreadAfterFinishedSlices) {
+    double millis =
+        MainThreadMarkTimePerSlice *
+        (concurrentMarkingFinishedCount - MarkOnMainThreadAfterFinishedSlices);
     TimeDuration remaining = requestedBudget.deadline() - TimeStamp::Now();
     millis = std::min(millis, remaining.ToMilliseconds());
     if (millis > 0.0) {
