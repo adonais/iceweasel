@@ -140,8 +140,23 @@ class HomeFragmentTest {
     }
 
     @Test
-    fun `GIVEN wallpaper is EdgeToEdge WHEN isEdgeToEdgeBackgroundEnabled is called THEN return true`() {
+    fun `GIVEN edgeToEdge is enabled by nimbus and wallpaper is EdgeToEdge WHEN isEdgeToEdgeBackgroundEnabled is called THEN return true`() {
+        every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
         every { settings.currentWallpaperName } returns Wallpaper.EDGE_TO_EDGE
         assertTrue(homeFragment.isEdgeToEdgeBackgroundEnabled())
+    }
+
+    @Test
+    fun `GIVEN edgeToEdge is disabled by nimbus wallpaper is Default WHEN isEdgeToEdgeBackgroundEnabled is called THEN return true`() {
+        every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns false
+        every { settings.currentWallpaperName } returns Wallpaper.DEFAULT
+        assertFalse(homeFragment.isEdgeToEdgeBackgroundEnabled())
+    }
+
+    @Test
+    fun `GIVEN edgeToEdge is disabled by nimbus wallpaper is EdgeToEdge WHEN isEdgeToEdgeBackgroundEnabled is called THEN return true`() {
+        every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns false
+        every { settings.currentWallpaperName } returns Wallpaper.EDGE_TO_EDGE
+        assertFalse(homeFragment.isEdgeToEdgeBackgroundEnabled())
     }
 }

@@ -28,6 +28,8 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.nimbus.DefaultBrowserPrompt
 import org.mozilla.fenix.nimbus.FakeNimbusEventStore
+import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.nimbus.HomescreenEdgeToEdgeBackground
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
@@ -146,10 +148,25 @@ class SettingsTest {
     }
 
     @Test
-    fun defaultWallpaperIsEdgeToEdge() {
-        // When just created
+    fun defaultWallpaperIsEdgeToEdgeWhenEdgeToEdgeFeatureEnabled() {
+        FxNimbus.features.homescreenEdgeToEdgeBackground.withCachedValue(
+            HomescreenEdgeToEdgeBackground(enabled = true),
+        )
+        val settings = Settings(testContext)
+
         // Then
         assertEquals(Wallpaper.EdgeToEdge.name, settings.currentWallpaperName)
+    }
+
+    @Test
+    fun defaultWallpaperIsDefaultWhenEdgeToEdgeDisabled() {
+        FxNimbus.features.homescreenEdgeToEdgeBackground.withCachedValue(
+            HomescreenEdgeToEdgeBackground(enabled = false),
+        )
+        val settings = Settings(testContext)
+
+        // Then
+        assertEquals(Wallpaper.Default.name, settings.currentWallpaperName)
     }
 
     @Test

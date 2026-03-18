@@ -111,7 +111,9 @@ internal class HomeToolbarComposable(
             val isAddressBarVisible = remember { addressBarVisibility }
 
             val currentWallpaperName = appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }
-            val isEdgeToEdgeBackgroundEnabled = currentWallpaperName.value == Wallpaper.EDGE_TO_EDGE
+            val isEdgeToEdgeBackgroundEnabled =
+                settings.enableHomepageEdgeToEdgeBackgroundFeature &&
+                        currentWallpaperName.value == Wallpaper.EDGE_TO_EDGE
 
             BackInvokedHandler(isSearching) {
                 val sourceTabId = appStore.state.searchState.sourceTabId

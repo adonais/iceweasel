@@ -61,7 +61,9 @@ data class TabStripColors(
             settings: Settings,
         ): TabStripColors {
             val isPrivate = browsingModeManager.mode.isPrivate
-            val isEdgeToEdgeBackgroundEnabled = settings.currentWallpaperName == Wallpaper.EDGE_TO_EDGE
+            val isEdgeToEdgeBackgroundEnabled =
+                settings.enableHomepageEdgeToEdgeBackgroundFeature &&
+                        settings.currentWallpaperName == Wallpaper.EDGE_TO_EDGE
             val isSearching = toolbarState?.let {
                 it.isEditMode() && it.editState.query.current.isNotEmpty()
             }
