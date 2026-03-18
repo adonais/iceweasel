@@ -625,9 +625,10 @@ export const NET_ERRORS = [
     },
     customNetError: {
       titleL10nId: "netOffline-title",
-      whatCanYouDoL10nId: "fp-neterror-offline-what-can-you-do-body",
+      whatCanYouDoL10nId: "neterror-net-offline",
     },
     hasNoUserFix: false,
+    image: "chrome://global/skin/illustrations/no-connection.svg",
   },
   {
     id: "networkProtocolError",

@@ -16,6 +16,7 @@ import {
   handleNSSFailure,
   recordSecurityUITelemetry,
   gOffline,
+  gNoConnectivity,
   retryThis,
   VPN_ACTIVE,
 } from "chrome://global/content/aboutNetErrorHelpers.mjs";
@@ -72,7 +73,11 @@ export class NetErrorCard extends MozLitElement {
   };
 
   static getCustomErrorID(defaultCode) {
-    if (gOffline) {
+    // gNoConnectivity is only true when there's no network connectivity,
+    // regardless of whether "Work Offline" mode is enabled. NS_ERROR_OFFLINE
+    // is the error ID for real connectivity loss, while netOffline is the
+    // error code for when "Work Offline" mode is enabled.
+    if (gNoConnectivity) {
       return "NS_ERROR_OFFLINE";
     }
     if (defaultCode === "proxyConnectFailure" && VPN_ACTIVE) {

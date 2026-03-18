@@ -80,9 +80,7 @@ registerCleanupFunction(function () {
 add_task(async function test_offline_mode() {
   Services.io.offline = true;
   await checkErrorForInvalidUriLoad("netOffline-title");
-  await checkErrorForInvalidUriLoad_feltPrivacyToTrue(
-    "fp-neterror-offline-body-title"
-  );
+  await checkErrorForInvalidUriLoad_feltPrivacyToTrue("netOffline-title");
 });
 
 add_task(async function test_internet_connection_offline() {
