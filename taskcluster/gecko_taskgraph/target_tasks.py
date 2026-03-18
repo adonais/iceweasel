@@ -1741,6 +1741,7 @@ def target_tasks_test_info_timings_periodic(full_task_graph, parameters, graph_c
         "source-test-file-metadata-test-info-xpcshell-timings-periodic",
         "source-test-file-metadata-test-info-mochitest-timings-periodic",
         "source-test-file-metadata-test-info-manifest-timings-periodic",
+        "source-test-file-metadata-test-info-worker-data-periodic",
     ]
 
 

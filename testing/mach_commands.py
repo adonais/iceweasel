@@ -1489,3 +1489,44 @@ def test_info_manifest_timings(command_context, output_dir):
         return_code = process.wait()
         if return_code != 0:
             raise subprocess.CalledProcessError(return_code, cmd)
+
+
+@SubCommand(
+    "test-info",
+    "worker-data",
+    description="Collect worker pool activity data from STMO.",
+)
+@CommandArgument("--output-dir", help="Path to output directory.")
+def test_info_worker_data(command_context, output_dir):
+    with resource_monitor_profile(command_context, output_dir) as monitor:
+        workers_dir = os.path.join(command_context.topsrcdir, "testing", "workers")
+        script_path = os.path.join(workers_dir, "fetch-worker-data.js")
+
+        node_binary, _ = find_node_executable()
+        cmd = [node_binary, script_path]
+
+        if output_dir:
+            cmd.extend(["--output-dir", os.path.abspath(output_dir)])
+
+        print(f"Running: {' '.join(cmd)}")
+        print(f"Working directory: {workers_dir}")
+
+        process = subprocess.Popen(
+            cmd,
+            cwd=workers_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        for line_ in process.stdout:
+            line = line_.rstrip()
+            print(line)
+
+            if line:
+                monitor.record_event(line)
+
+        return_code = process.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, cmd)

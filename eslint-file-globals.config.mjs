@@ -463,6 +463,7 @@ export default [
       "testing/runtimes/fetch-manifest-data.js",
       "testing/timings/fetch-test-data.js",
       "testing/timings/profile-worker.js",
+      "testing/workers/fetch-worker-data.js",
       "testing/web-platform/tests/webrtc/third_party/sdp/sdp.js",
       "testing/xpcshell/moz-http2/moz-http2-child.js",
       "testing/xpcshell/moz-http2/moz-http2.js",
