@@ -6509,6 +6509,21 @@
       }
     ]
   },
+  "2019543": {
+    "label": "showroom-live.com",
+    "bugs": {
+      "2019231": {
+        "issue": "page-fails-to-load",
+        "matches": ["*://www.showroom-live.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "ua_string": ["Chrome_with_FxQuantum"]
+      }
+    ]
+  },
   "2020285": {
     "label": "Eurocontrol Network Operations Portal",
     "bugs": {
