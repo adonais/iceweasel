@@ -80,6 +80,12 @@ HRESULT MFCDMProxy::SetContentEnabler(IUnknown* aRequest,
   return mCDM->SetContentEnabler(contentEnabler.Get(), aResult);
 }
 
+void MFCDMProxy::ResetTrustedInput() {
+  LOG("ResetTrustedInput");
+  mTrustedInput = nullptr;
+  mInputTrustAuthorities.clear();
+}
+
 void MFCDMProxy::OnHardwareContextReset() {
   LOG("OnHardwareContextReset");
   // Hardware context reset invalidates all crypto sessions and the CDM's
@@ -88,8 +94,7 @@ void MFCDMProxy::OnHardwareContextReset() {
   for (auto& inputAuthorities : mInputTrustAuthorities) {
     SHUTDOWN_IF_POSSIBLE(inputAuthorities.second);
   }
-  mTrustedInput.Reset();
-  mInputTrustAuthorities.clear();
+  ResetTrustedInput();
   mCDM = nullptr;
 }
 
