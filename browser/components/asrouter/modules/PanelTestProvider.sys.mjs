@@ -3185,6 +3185,62 @@ const MESSAGES = () => [
     targeting:
       "source == 'newtab' && !isMajorUpgrade && !activeNotifications && userPrefs.cfrFeatures && previousSessionEnd && !hasActiveEnterprisePolicies",
   },
+  {
+    id: "TEST_CONTENT_ANCHOR",
+    template: "feature_callout",
+    content: {
+      id: "TEST_CONTENT_ANCHOR",
+      padding: "16",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "TEST_CONTENT_ANCHOR_SCREEN",
+          anchors: [
+            {
+              selector:
+                "hbox.deck-selected browser::%document%ai-window::%shadow%context-icon-button::%shadow% .context-icon-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            width: "400px",
+            padding: 16,
+            title: {
+              raw: "Test Content Anchor",
+            },
+            subtitle: {
+              raw: "This callout is for testing content anchors.",
+            },
+            additional_button: {
+              action: {
+                dismiss: true,
+              },
+              label: {
+                string_id: "dismiss-button-label",
+                fontWeight: "590",
+                fontSize: "11px",
+              },
+              style: "secondary",
+            },
+          },
+        },
+      ],
+    },
+    frequency: {
+      lifetime: 2,
+    },
+    trigger: {
+      id: "smartWindowNewTab",
+    },
+    targeting: "isAIWindow",
+  },
 ];
 
 export const PanelTestProvider = {
@@ -3192,7 +3248,11 @@ export const PanelTestProvider = {
     return Promise.resolve(
       MESSAGES().map(message => ({
         ...message,
-        targeting: `providerCohorts.panel_local_testing == "SHOW_TEST"`,
+        targeting:
+          typeof message.targeting === "string" &&
+          message.targeting?.includes("isAIWindow")
+            ? `isAIWindow && providerCohorts.panel_local_testing == "SHOW_TEST"`
+            : `providerCohorts.panel_local_testing == "SHOW_TEST"`,
       }))
     );
   },

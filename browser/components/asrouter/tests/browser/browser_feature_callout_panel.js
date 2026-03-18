@@ -856,3 +856,61 @@ add_task(async function feature_callout_more_button_with_dismiss() {
   await waitForCalloutRemoved(doc);
   await BrowserTestUtils.closeWindow(win);
 });
+
+add_task(async function test_content_document_selector() {
+  const { AIWindowAccountAuth } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs"
+  );
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", true],
+    ],
+  });
+  const stub = sinon
+    .stub(AIWindowAccountAuth, "ensureAIWindowAccess")
+    .resolves(true);
+  const win = await BrowserTestUtils.openNewBrowserWindow({ aiWindow: true });
+  await BrowserTestUtils.waitForMutationCondition(
+    win.document.documentElement,
+    { attributes: true },
+    () => win.document.documentElement.hasAttribute("ai-window")
+  );
+  const browser = win.gBrowser.selectedBrowser;
+  const config = {
+    win,
+    location: "chrome",
+    context: "chrome",
+    browser,
+    theme: { preset: "chrome" },
+  };
+
+  const message = getTestMessage();
+  message.content.screens[0].anchors[0].selector =
+    "hbox.deck-selected browser::%document% body";
+  const sandbox = sinon.createSandbox();
+
+  const doc = win.document;
+  const featureCallout = new FeatureCallout(config);
+  const getAnchorSpy = sandbox.spy(featureCallout, "_getAnchor");
+  featureCallout.showFeatureCallout(message);
+  await waitForCalloutScreen(doc, message.content.screens[0].id);
+  ok(
+    getAnchorSpy.alwaysReturned(
+      sandbox.match(message.content.screens[0].anchors[0])
+    ),
+    "The first anchor is selected and works in a content document"
+  );
+  Assert.notStrictEqual(
+    featureCallout._container.anchorNode.ownerDocument,
+    win.document,
+    "The anchor node is in a content document"
+  );
+
+  win.document.querySelector(calloutDismissSelector).click();
+  await waitForCalloutRemoved(win.document);
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+  sandbox.restore();
+  stub.restore();
+});
