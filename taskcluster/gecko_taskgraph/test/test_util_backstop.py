@@ -156,7 +156,7 @@ def params():
             {
                 "repository_type": "git",
             },
-            True,
+            False,
             id="git",
         ),
     ),
