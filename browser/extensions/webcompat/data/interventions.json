@@ -6376,5 +6376,23 @@
         }
       }
     ]
+  },
+  "2021019": {
+    "label": "rudder.taleez.com",
+    "bugs": {
+      "2021019": {
+        "issue": "broken-layout",
+        "matches": ["*://rudder.taleez.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "pref_check": { "layout.css.webkit-fill-available.enabled": true },
+        "content_scripts": {
+          "css": ["bug2021019-rudder.taleez.com-fix-overlapping-content.css"]
+        }
+      }
+    ]
   }
 }
