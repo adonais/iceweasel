@@ -286,7 +286,6 @@ export class AIWindowTabStatesManager {
         tabState.state.input ?? ""
       );
     } else {
-      lazy.AIWindowUI.updateSidebarInput(this.#window, "");
       lazy.AIWindowUI.closeSidebar(this.#window);
     }
   }
@@ -409,12 +408,6 @@ export class AIWindowTabStatesManager {
         ...newState,
       };
 
-      // Enforce the above: newState may carry an input value, but fullpage
-      // mode input should never be stored.
-      if (tabState.state.mode === "fullpage") {
-        tabState.state.input = "";
-      }
-
       this.#tabStates.set(tab, tabState);
     }
 
@@ -485,13 +478,6 @@ export class AIWindowTabStatesManager {
         keepSidebarOpen: isOpen,
       });
     }
-
-    if (isOpen) {
-      lazy.AIWindowUI.updateSidebarInput(
-        this.#window,
-        currentTabState?.state?.input ?? ""
-      );
-    }
   };
 
   /**
@@ -508,7 +494,6 @@ export class AIWindowTabStatesManager {
     }
 
     this.#getTabState(tab, { input: "" });
-    lazy.AIWindowUI.updateSidebarInput(this.#window, "");
   };
 
   /**

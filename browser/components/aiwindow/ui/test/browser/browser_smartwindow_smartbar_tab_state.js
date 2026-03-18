@@ -245,59 +245,6 @@ describe("Smartbar tab state input tracking", () => {
     });
   });
 
-  describe("when navigating away from the fullpage AI window", () => {
-    let win, browser, tab, sandbox;
-
-    beforeEach(async () => {
-      sandbox = lazy.sinon.createSandbox();
-
-      const mockConversation = createMockConversation();
-      sandbox
-        .stub(ChatStore, "findConversationById")
-        .resolves(mockConversation);
-      sandbox.stub(Chat, "fetchWithHistory");
-      sandbox.stub(openAIEngine, "build").resolves({
-        loadPrompt: () => Promise.resolve("Mock system prompt"),
-      });
-
-      win = await openAIWindow();
-      browser = win.gBrowser.selectedBrowser;
-      tab = win.gBrowser.selectedTab;
-    });
-
-    afterEach(async () => {
-      await BrowserTestUtils.removeTab(tab);
-      await BrowserTestUtils.closeWindow(win);
-      sandbox.restore();
-      win = null;
-      browser = null;
-      tab = null;
-      sandbox = null;
-    });
-
-    it("should not leak fullpage smartbar input into the sidebar", async () => {
-      const mockConversation = createMockConversation();
-      AIWindowUI.openInFullWindow(browser, mockConversation);
-
-      await typeInSmartbar(browser, "youtube.com");
-
-      const loaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
-      await loaded;
-
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should open after navigating away with active conversation"
-      );
-
-      Assert.equal(
-        await getSidebarInputValue(win),
-        "",
-        "Sidebar should not show text typed in the fullpage smartbar"
-      );
-    });
-  });
-
   describe("when switching between two tabs with sidebars", () => {
     let win, tabA, tabB, browserA, conversationA, sandbox, sidebarBrowser;
 
