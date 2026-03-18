@@ -183,10 +183,7 @@ const getCertificateLabel = securityInfo => {
 };
 
 const getObject = ({ securityInfo, url }) => {
-  if (
-    !securityInfo.state.startsWith("secure") &&
-    securityInfo.state !== "weak"
-  ) {
+  if (securityInfo.state !== "secure" && securityInfo.state !== "weak") {
     return {
       [ERROR_LABEL]: securityInfo.errorMessage || NOT_AVAILABLE,
     };

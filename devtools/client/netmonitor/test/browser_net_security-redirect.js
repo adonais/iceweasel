@@ -52,9 +52,7 @@ add_task(async function () {
   );
 
   const redirectDomainSecurityOk = await waitUntil(() =>
-    redirectDomainSecurityIcon.classList.contains(
-      "security-state-secure-custom-root"
-    )
+    redirectDomainSecurityIcon.classList.contains("security-state-secure")
   );
   ok(
     redirectDomainSecurityOk,
@@ -70,9 +68,7 @@ add_task(async function () {
   );
 
   const redirectUrlSecurityOk = await waitUntil(() =>
-    redirectUrlSecurityIcon.classList.contains(
-      "security-state-secure-custom-root"
-    )
+    redirectUrlSecurityIcon.classList.contains("security-state-secure")
   );
   ok(
     redirectUrlSecurityOk,

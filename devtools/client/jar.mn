@@ -83,7 +83,6 @@ devtools.jar:
     skin/images/reload.svg (themes/images/reload.svg)
     skin/images/security-state-insecure.svg (themes/images/security-state-insecure.svg)
     skin/images/security-state-secure.svg (themes/images/security-state-secure.svg)
-    skin/images/security-state-secure-custom-root.svg (themes/images/security-state-secure-custom-root.svg)
     skin/images/security-state-weak.svg (themes/images/security-state-weak.svg)
     skin/images/diff.svg (themes/images/diff.svg)
     skin/images/import.svg (themes/images/import.svg)

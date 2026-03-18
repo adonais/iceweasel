@@ -342,11 +342,6 @@
   width: 16px;
 }
 
-.security-state-secure-custom-root {
-  background-image: url(chrome://devtools/skin/images/security-state-secure-custom-root.svg);
-  width: 16px;
-}
-
 .security-state-weak {
   /* Shift icon to the right (in both LTR and RTL directions) to align the
    * padlock shape with other padlock icons. */
