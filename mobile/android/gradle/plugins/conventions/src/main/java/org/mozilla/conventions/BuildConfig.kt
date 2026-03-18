@@ -13,6 +13,8 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.initialization.Settings
 import org.gradle.api.logging.Logging
 import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 private val buildIdLogger = Logging.getLogger("org.mozilla.conventions.BuildId")
 
@@ -27,6 +29,29 @@ fun getBuildId(topobjdir: String): String {
     }
 
     return File(topobjdir, "buildid.h").readText().split(Regex("\\s+"))[2]
+}
+
+// Return a manifest version string that respects the Firefox version format,
+// see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version#version_format
+fun getManifestVersionString(componentsVersion: String, topobjdir: String): String {
+    // We assume that the `version.txt` file will always contain a version
+    // string with at least two parts separated with a dot. Below, we extract
+    // each part, and we make sure that there is no letter, e.g. `"0a2"` would
+    // become `"0"`.
+    val parts = componentsVersion.split(".").map { part ->
+        part.split(Regex("[ab]"))[0]
+    }
+
+    // Per https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version,
+    // each part can have up to 9 digits. Note the single `H` when formatting the output to avoid
+    // leading zeros, which are not allowed.
+    val buildDate = LocalDateTime.parse(
+        getBuildId(topobjdir),
+        DateTimeFormatter.ofPattern("yyyyMMddHHmmss"),
+    )
+    val dateAndTime = buildDate.format(DateTimeFormatter.ofPattern("YYYYMMdd.Hmmss"))
+
+    return "${parts[0]}.${parts[1]}.$dateAndTime"
 }
 
 @Serializable

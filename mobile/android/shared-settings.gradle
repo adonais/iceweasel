@@ -5,9 +5,7 @@
 
 import org.yaml.snakeyaml.Yaml
 
-import java.time.format.DateTimeFormatter
-
-import static org.mozilla.conventions.BuildConfigKt.getBuildId
+import static org.mozilla.conventions.BuildConfigKt.getManifestVersionString
 
 buildscript {
     if (!gradle.root.hasProperty("mozconfig")){
@@ -69,26 +67,6 @@ class Config {
     }
 }
 
-// Return a manifest version string that respects the Firefox version format,
-// see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version#version_format
-def getManifestVersionString(componentsVersion) {
-    // We assume that the `version.txt` file will always contain a version
-    // string with at least two parts separated with a dot. Below, we extract
-    // each part, and we make sure that there is no letter, e.g. `"0a2"` would
-    // become `"0"`.
-    String[] parts = componentsVersion.split("\\.").collect {
-        part -> part.split("a|b")[0]
-    };
-
-    // Per https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version,
-    // each part can have up to 9 digits.  Note the single `H` when formatting the output avoid
-    // leading zeros, which are not allowed.
-    def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir), DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-    def dateAndTime = buildDate.format(DateTimeFormatter.ofPattern("YYYYMMdd.Hmmss"));
-
-    return "${parts[0]}.${parts[1]}.${dateAndTime}";
-}
-
 gradle.projectsLoaded { ->
     def versionFile = new File(gradle.mozconfig.topsrcdir, "mobile/android/version.txt")
     String version = versionFile.text.stripTrailing()
@@ -134,7 +112,7 @@ gradle.projectsLoaded { ->
                 rename { 'manifest.json' }
                 into extDir
 
-                def values = ['version': getManifestVersionString(rootProject.ext.config.componentsVersion)]
+                def values = ['version': getManifestVersionString(rootProject.ext.config.componentsVersion, gradle.mozconfig.topobjdir)]
                 inputs.properties(values)
                 expand(values)
             }
