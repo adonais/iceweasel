@@ -4921,21 +4921,6 @@
       }
     ]
   },
-  "1976200": {
-    "label": "unak.medlemssidor.org",
-    "bugs": {
-      "1976200": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://unak.medlemssidor.org/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["Chrome_with_FxQuantum"]
-      }
-    ]
-  },
   "1977195": {
     "label": "wattpad.com",
     "bugs": {
