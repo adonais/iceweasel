@@ -97,16 +97,4 @@ gradle.projectsLoaded { ->
             configData.targetSdkVersion,
             ndkVersion
     )
-
-    // This explicitly disables stripping of native libraries in our projects to match the existing
-    // implicit behaviour. Our projects do not specify the `ndkVersion` for our main Android builds
-    // and so stripping would otherwise fail with a warning. Note that gecko builds themselves will
-    // already strip the *.so files when compiled as release targets.
-    gradle.rootProject.allprojects { project ->
-        project.afterEvaluate {
-            if (it.hasProperty('android')) {
-                android.packagingOptions.jniLibs.keepDebugSymbols += "**/*.so"
-            }
-        }
-    }
 }
