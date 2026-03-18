@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DownloadPaths: "resource://gre/modules/DownloadPaths.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -336,6 +337,17 @@ class SelectableProfileServiceClass extends EventEmitter {
       return;
     }
 
+    const resetProfilePath = Services.env.get("SELECTABLE_PROFILE_RESET_PATH");
+    if (resetProfilePath) {
+      await this.#updateProfilePath(
+        resetProfilePath,
+        ProfilesDatastoreService.constructor.getDirectory("ProfD").path
+      );
+
+      Services.env.set("SELECTABLE_PROFILE_RESET_PATH", "");
+      Services.env.set("SELECTABLE_PROFILE_RESET_STORE_ID", "");
+    }
+
     // When we launch into the startup window, the `ProfD` is not defined so
     // getting the directory will throw. Leaving the `currentProfile` as null
     // is fine for the startup window.
@@ -346,6 +358,16 @@ class SelectableProfileServiceClass extends EventEmitter {
         ProfilesDatastoreService.constructor.getDirectory("ProfD")
       );
     } catch {}
+
+    if (resetProfilePath && this.#currentProfile) {
+      let { themeBg, themeFg } = this.getColorsForDefaultTheme();
+
+      this.currentProfile.theme = {
+        themeId: DEFAULT_THEME_ID,
+        themeFg,
+        themeBg,
+      };
+    }
 
     // If this isn't the first init prior to creating the first new profile and
     // the app is started up we should have found a current profile.
@@ -420,6 +442,24 @@ class SelectableProfileServiceClass extends EventEmitter {
       // We only need to migrate if we are in an existing profile group.
       await this.#maybeAddDAUGroupIDToDB();
     }
+  }
+
+  async startupMigrationInit() {
+    if (this.#initialized) {
+      return;
+    }
+
+    if (!lazy.MigrationUtils.isStartupMigration) {
+      return;
+    }
+
+    this.#connection =
+      await ProfilesDatastoreService.getStartupMigrationConnection();
+    if (!this.#connection) {
+      return;
+    }
+
+    this.#storeID = await ProfilesDatastoreService.storeID;
   }
 
   async uninit() {
@@ -1392,6 +1432,33 @@ class SelectableProfileServiceClass extends EventEmitter {
     }
 
     ProfilesDatastoreService.notify();
+  }
+
+  /**
+   * Update the profile path in the db.
+   *
+   * @param {string} aProfilePath The absolute path of the selectable profile
+   * to be updated
+   * @param {string} aUpdatedPath The new absolute path for the selectable
+   * profile
+   */
+  async #updateProfilePath(aProfilePath, aUpdatedPath) {
+    let aProfileDir = Cc["@mozilla.org/file/local;1"].createInstance(
+      Ci.nsIFile
+    );
+    aProfileDir.initWithPath(aProfilePath);
+    let relativePath = this.getRelativeProfilePath(aProfileDir);
+
+    let aUpdatedDir = Cc["@mozilla.org/file/local;1"].createInstance(
+      Ci.nsIFile
+    );
+    aUpdatedDir.initWithPath(aUpdatedPath);
+    let updatedRelativePath = this.getRelativeProfilePath(aUpdatedDir);
+
+    await this.#connection.execute(
+      `UPDATE Profiles SET path = :path WHERE path = :current;`,
+      { current: relativePath, path: updatedRelativePath }
+    );
   }
 
   /**

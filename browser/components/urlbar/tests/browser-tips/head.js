@@ -12,6 +12,10 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/mozapps/update/tests/browser/head.js",
   this
 );
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/browser/components/profiles/tests/browser/head.js",
+  this
+);
 
 ChromeUtils.defineESModuleGetters(this, {
   HttpServer: "resource://testing-common/httpd.sys.mjs",
@@ -399,29 +403,12 @@ async function awaitAppRestartRequest() {
 /**
  * Sets up the profile so that it can be reset.
  */
-function makeProfileResettable() {
-  // Make reset possible.
-  let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-    Ci.nsIToolkitProfileService
-  );
-  let currentProfileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-  let profileName = "mochitest-test-profile-temp-" + Date.now();
-  let tempProfile = profileService.createProfile(
-    currentProfileDir,
-    profileName
-  );
+async function makeProfileResettable() {
+  await initGroupDatabase();
   Assert.ok(
-    ResetProfile.resetSupported(),
-    "Should be able to reset from mochitest's temporary profile once it's in the profile manager."
+    SelectableProfileService.currentProfile,
+    "Should have a profile now"
   );
-
-  registerCleanupFunction(() => {
-    tempProfile.remove(false);
-    Assert.ok(
-      !ResetProfile.resetSupported(),
-      "Shouldn't be able to reset from mochitest's temporary profile once removed from the profile manager."
-    );
-  });
 }
 
 /**
