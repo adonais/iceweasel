@@ -135,6 +135,7 @@ EXTRA_JS_MODULES += [
     "PermissionUI.sys.mjs",
     "PopupAndRedirectBlockerObserver.sys.mjs",
     "ProcessHangMonitor.sys.mjs",
+    "ReducedProtectionNotification.sys.mjs",
     "Sanitizer.sys.mjs",
     "SelectionChangedMenulist.sys.mjs",
     "SharingUtils.sys.mjs",
