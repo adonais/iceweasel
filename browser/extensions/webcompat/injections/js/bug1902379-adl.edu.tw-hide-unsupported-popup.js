@@ -17,7 +17,7 @@ if (!navigator.userAgent.includes("Chrome")) {
 
   const nav = Object.getPrototypeOf(navigator);
   const userAgent = navigator.userAgent;
-  let osSegment = "Windows NT 11.0; Win64; x64";
+  let osSegment = "Windows NT 10.0; Win64; x64";
   if (userAgent.includes("Android")) {
     const androidVer = userAgent.match(/Android [0-9.]+/) || "Android 6.0";
     const device = userAgent.includes("Mobile")
