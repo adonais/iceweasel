@@ -1082,6 +1082,10 @@
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.bonusblitz.com/*"]
       },
+      "2016407": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://*.123whitesector.com/*"]
+      },
       "2017590": {
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.slotsofvegas.com/*"]
