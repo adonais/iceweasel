@@ -14,8 +14,6 @@ ChromeUtils.defineESModuleGetters(this, {
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
-  SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 

@@ -4935,10 +4935,7 @@ var SessionStoreInternal = {
     let window = this._openWindowWithState(state);
     this.windowToFocus = window;
     WINDOW_SHOWING_PROMISES.get(window).promise.then(win =>
-      this.restoreWindows(win, state, {
-        overwriteTabs: true,
-        trigger: "undo_close",
-      })
+      this.restoreWindows(win, state, { overwriteTabs: true })
     );
 
     // Notify of changes to closed objects.
@@ -6252,9 +6249,7 @@ var SessionStoreInternal = {
     for (let window of windows) {
       let state = this._statesToRestore[WINDOW_RESTORE_IDS.get(window)];
       // Wait for these promises after we've restored data into them below.
-      resizePromises.push(
-        this.restoreWindowFeatures(window, state.windows[0], state.options)
-      );
+      resizePromises.push(this.restoreWindowFeatures(window, state.windows[0]));
     }
 
     // Then we restore data into windows.
@@ -6771,23 +6766,15 @@ var SessionStoreInternal = {
    * @param aWinData
    *        Object containing session data for the window
    */
-  restoreWindowFeatures: function ssi_restoreWindowFeatures(
-    aWindow,
-    aWinData,
-    aOptions = {}
-  ) {
+  restoreWindowFeatures: function ssi_restoreWindowFeatures(aWindow, aWinData) {
     var hidden = aWinData.hidden ? aWinData.hidden.split(",") : [];
     var isTaskbarTab =
       aWindow.document.documentElement.hasAttribute("taskbartab");
 
     const shouldBeAIWindow =
       !!aWinData.isAIWindow && lazy.AIWindow.isAIWindowEnabled();
-    const trigger = aOptions.trigger ?? "open_browser";
-
     if (lazy.AIWindow.isAIWindowActive(aWindow) !== shouldBeAIWindow) {
-      lazy.AIWindow.toggleAIWindow(aWindow, shouldBeAIWindow, trigger);
-    } else if (shouldBeAIWindow) {
-      lazy.AIWindow.recordOpenWindowTelemetry(trigger);
+      lazy.AIWindow.toggleAIWindow(aWindow, shouldBeAIWindow);
     }
 
     if (!isTaskbarTab) {

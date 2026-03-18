@@ -691,8 +691,4 @@ export class ChatConversation extends EventEmitter {
   get messages() {
     return this.#messages;
   }
-
-  get messageCount() {
-    return this.#messages.filter(m => CHAT_ROLES.includes(m.role)).length;
-  }
 }

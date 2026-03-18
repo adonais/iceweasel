@@ -26,7 +26,6 @@ MOZ_SRC_FILES += [
     "modules/ChatSql.sys.mjs",
     "modules/ChatStore.sys.mjs",
     "modules/ChatUtils.sys.mjs",
-    "modules/SmartWindowTelemetry.sys.mjs",
 ]
 
 TESTING_JS_MODULES += [

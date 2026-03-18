@@ -11,8 +11,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   ChatStore:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
-  SmartWindowTelemetry:
-    "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
 });
 
 /**
@@ -57,17 +55,6 @@ export class AIWindowTabStatesManager {
 
   constructor(win) {
     this.#init(win);
-  }
-
-  /**
-   * Get the active conversation from the current selected tab.
-   *
-   * @returns {ChatConversation|null}
-   */
-
-  getActiveConversation() {
-    const tab = this.#selectedTab ?? this.#window?.gBrowser.selectedTab;
-    return this.#tabStates.get(tab)?.state?.conversation ?? null;
   }
 
   /**
@@ -247,7 +234,6 @@ export class AIWindowTabStatesManager {
    */
   #onTabOpen(event) {
     this.#addTabState(event.target);
-    Glean.smartWindow.tabsOpened.add(1);
   }
 
   /**
@@ -532,10 +518,6 @@ export class AIWindowTabStatesManager {
         const isSidebarOpen = lazy.AIWindowUI.isSidebarOpen(this.#window);
         const isFullPageMode = tabState.state.mode === "fullpage";
         const shouldKeepSidebarOpen = tabState.state.keepSidebarOpen ?? true;
-
-        if (!isAiWindowUrl) {
-          lazy.SmartWindowTelemetry.recordUriLoad();
-        }
 
         if (isFullPageMode && isAiWindowUrl && isSidebarOpen) {
           lazy.AIWindowUI.closeSidebar(this.#window);
