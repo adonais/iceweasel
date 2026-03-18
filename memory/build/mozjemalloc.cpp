@@ -1410,8 +1410,9 @@ ArenaPurgeResult arena_t::Purge(
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
       chunk_is_dying = chunk->mDying;
 
-      // The code below will exit returning false if these are both false, so
-      // clear mIsDeferredPurgeNeeded while we still hold the lock.
+      // The code below will exit returning ReachedThresholdOrBusy if these are
+      // both false, so clear mIsDeferredPurgeNeeded while we still hold the
+      // lock.
       if (!continue_purge_chunk && !continue_purge_arena) {
         purge_info.mArena.mIsPurgePending = false;
       }
@@ -1426,6 +1427,10 @@ ArenaPurgeResult arena_t::Purge(
       // if continue_purge_arena is true.
       return continue_purge_arena ? NotDone : ReachedThresholdOrBusy;
     }
+    // Note that even if continue_purge_arena is false, then the purge may still
+    // continue (as long as continue_purge_chunk is true). It must because the
+    // pages have already been marked in FindDirtyPages(), then it will exit
+    // after phase 2.
 
 #ifdef MALLOC_DECOMMIT
     pages_decommit(purge_info.DirtyPtr(), purge_info.DirtyLenBytes());
