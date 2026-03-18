@@ -2545,6 +2545,7 @@ STATIC_ATOMS = [
     Atom("PseudoStyle_FirstLetter", ":first-letter"),
     Atom("PseudoStyle_FirstLine", ":first-line"),
     Atom("PseudoStyle_Highlight", ":highlight"),
+    Atom("PseudoStyle_Picker", ":picker"),
     Atom("PseudoStyle_Selection", ":selection"),
     Atom("PseudoStyle_TargetText", ":target-text"),
     Atom("PseudoStyle_ViewTransition", ":view-transition"),
