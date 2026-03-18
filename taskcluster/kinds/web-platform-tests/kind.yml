@@ -392,7 +392,7 @@ tasks:
                 - --timeout-multiplier=5.0
         worker-type:
             by-test-platform:
-                .*windows.*: win11-64-24h2-webgpu
+                .*windows.*: win11-64-25h2-webgpu
                 default: default
 
     web-platform-tests-webgpu-long:
@@ -417,6 +417,10 @@ tasks:
                 - --skip-implementation-status=backlog
                 - --skip-implementation-status=not-implementing
                 - --timeout-multiplier=5.0
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2-webgpu
+                default: default
 
     web-platform-tests-webgpu-backlog:
         description: "Web platform WebGPU test run (backlog)"
@@ -457,7 +461,7 @@ tasks:
                 - --timeout-multiplier=5.0
         worker-type:
             by-test-platform:
-                .*windows.*: win11-64-24h2-webgpu
+                .*windows.*: win11-64-25h2-webgpu
                 default: default
 
     web-platform-tests-webgpu-backlog-long:
@@ -484,6 +488,10 @@ tasks:
                 - --skip-implementation-status=not-implementing
                 - --backlog
                 - --timeout-multiplier=5.0
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2-webgpu
+                default: default
 
     web-platform-tests-canvas:
         description: "Web platform Canvas test run"
