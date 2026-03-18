@@ -2,7 +2,6 @@ var gMimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 var gHandlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
   Ci.nsIHandlerService
 );
-const testItemType = "text/x-test-handler";
 
 SimpleTest.requestCompleteLog();
 
@@ -28,73 +27,71 @@ function setupFakeHandler() {
 
 add_task(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
+    set: [["browser.settings-redesign.enabled", false]],
   });
 
   setupFakeHandler();
 
-  let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
-
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
-
   is(prefs.selectedPane, "paneGeneral", "General pane was selected");
   let win = gBrowser.selectedBrowser.contentWindow;
 
-  await appHandlerInitialized;
-
-  let container = win.document.getElementById("applicationsHandlersView");
-  ok(container, "handlersView is present");
-
-  let ourItem = container.querySelector(`moz-box-item[type="${testItemType}"]`);
-  ok(ourItem, "at least one item is present");
+  let container = win.document.getElementById("handlersView");
+  let ourItem = container.querySelector(
+    "richlistitem[type='text/x-test-handler']"
+  );
+  ok(ourItem, "handlersView is present");
   ourItem.scrollIntoView();
+  container.selectItem(ourItem);
+  ok(ourItem.selected, "Should be able to select our item.");
 
   let list = ourItem.querySelector(".actionsMenu");
 
-  let chooseItem = list.querySelector(".choose-app-item");
-
+  let chooseItem = list.menupopup.querySelector(".choose-app-item");
   let dialogLoadedPromise = promiseLoadSubDialog(
     "chrome://global/content/appPicker.xhtml"
   );
-  /**
-   * Must choose option by manually changing to replicate
-   * what the component does to select an option.
-   */
-  list.value = chooseItem.value;
-  list.dispatchEvent(new CustomEvent("change"));
-  await list.updateComplete;
+  let cmdEvent = win.document.createEvent("xulcommandevent");
+  cmdEvent.initCommandEvent(
+    "command",
+    true,
+    true,
+    win,
+    0,
+    false,
+    false,
+    false,
+    false,
+    0,
+    null,
+    0
+  );
+  chooseItem.dispatchEvent(cmdEvent);
 
   let dialog = await dialogLoadedPromise;
-  ok(dialog, "Dialog loaded");
+  info("Dialog loaded");
 
   let dialogDoc = dialog.document;
   let dialogElement = dialogDoc.getElementById("app-picker");
   let dialogList = dialogDoc.getElementById("app-picker-listbox");
   dialogList.selectItem(dialogList.firstElementChild);
   let selectedApp = dialogList.firstElementChild.handlerApp;
-
-  let dialogClosePromise = BrowserTestUtils.waitForEvent(
-    dialog,
-    "dialogclosing"
-  );
   dialogElement.acceptDialog();
-  await dialogClosePromise;
 
   // Verify results are correct in mime service:
-  let mimeInfo = gMimeSvc.getFromTypeAndExtension(testItemType, null);
+  let mimeInfo = gMimeSvc.getFromTypeAndExtension("text/x-test-handler", null);
   ok(
     mimeInfo.preferredApplicationHandler.equals(selectedApp),
     "App should be set as preferred."
   );
 
-  const selectedAppItem = list.querySelector(
-    `moz-option[value="${list.value}"]`
-  );
+  // Check that we display this result:
+  ok(list.selectedItem, "Should have a selected item");
   ok(
-    selectedAppItem.handlerApp.equals(selectedApp),
-    "Selected item matches app in dropdown"
+    mimeInfo.preferredApplicationHandler.equals(list.selectedItem.handlerApp),
+    "App should be visible as preferred item."
   );
 
   // Now try to 'manage' this list:
@@ -102,13 +99,26 @@ add_task(async function () {
     "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"
   );
 
-  let manageItem = list.querySelector(".manage-app-item");
-  list.value = manageItem.value;
-  list.dispatchEvent(new CustomEvent("change"));
-  await list.updateComplete;
+  let manageItem = list.menupopup.querySelector(".manage-app-item");
+  cmdEvent = win.document.createEvent("xulcommandevent");
+  cmdEvent.initCommandEvent(
+    "command",
+    true,
+    true,
+    win,
+    0,
+    false,
+    false,
+    false,
+    false,
+    0,
+    null,
+    0
+  );
+  manageItem.dispatchEvent(cmdEvent);
 
   dialog = await dialogLoadedPromise;
-  ok(dialog, "Dialog loaded the second time");
+  info("Dialog loaded the second time");
 
   dialogDoc = dialog.document;
   dialogElement = dialogDoc.getElementById("appManager");
@@ -121,25 +131,29 @@ add_task(async function () {
   dialogDoc.getElementById("remove").click();
   ok(!itemToRemove.parentNode, "Item got removed from DOM");
   is(dialogList.children.length, itemsBefore - 1, "Item got removed");
-
-  dialogClosePromise = BrowserTestUtils.waitForEvent(dialog, "dialogclosing");
   dialogElement.acceptDialog();
-  await dialogClosePromise;
 
   // Verify results are correct in mime service:
-  mimeInfo = gMimeSvc.getFromTypeAndExtension(testItemType, null);
+  mimeInfo = gMimeSvc.getFromTypeAndExtension("text/x-test-handler", null);
   ok(
     !mimeInfo.preferredApplicationHandler,
     "App should no longer be set as preferred."
   );
-  const selectedItem = list.querySelector(`moz-option[value="${list.value}"]`);
 
-  ok(!selectedItem.handlerApp, "No app should be visible as preferred item.");
+  // Check that we display this result:
+  ok(list.selectedItem, "Should have a selected item");
+  ok(
+    !list.selectedItem.handlerApp,
+    "No app should be visible as preferred item."
+  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 registerCleanupFunction(function () {
-  let infoToModify = gMimeSvc.getFromTypeAndExtension(testItemType, null);
+  let infoToModify = gMimeSvc.getFromTypeAndExtension(
+    "text/x-test-handler",
+    null
+  );
   gHandlerSvc.remove(infoToModify);
 });
