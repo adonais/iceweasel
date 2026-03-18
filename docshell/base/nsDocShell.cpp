@@ -11224,31 +11224,6 @@ void nsDocShell::UpdateActiveEntry(
   }
 }
 
-nsresult nsDocShell::LoadHistoryEntry(SessionHistoryEntry* aEntry,
-                                      uint32_t aLoadType,
-                                      bool aUserActivation) {
-  NS_ENSURE_TRUE(aEntry, NS_ERROR_FAILURE);
-
-  nsresult rv;
-  RefPtr<nsDocShellLoadState> loadState;
-  rv = aEntry->CreateLoadInfo(getter_AddRefs(loadState));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  // Calling CreateAboutBlankDocumentViewer can set mOSHE to null, and if
-  // that's the only thing holding a ref to aEntry that will cause aEntry to
-  // die while we're loading it.  So hold a strong ref to aEntry here, just
-  // in case.
-  RefPtr<SessionHistoryEntry> kungFuDeathGrip(aEntry);
-
-  loadState->SetHasValidUserGestureActivation(
-      loadState->HasValidUserGestureActivation() || aUserActivation);
-
-  loadState->SetTextDirectiveUserActivation(
-      loadState->GetTextDirectiveUserActivation() || aUserActivation);
-
-  return LoadHistoryEntry(loadState, aLoadType, !aEntry);
-}
-
 nsresult nsDocShell::LoadHistoryEntry(const LoadingSessionHistoryInfo& aEntry,
                                       uint32_t aLoadType, bool aUserActivation,
                                       bool aNotifiedBeforeUnloadListeners) {

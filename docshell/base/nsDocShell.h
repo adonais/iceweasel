@@ -967,8 +967,6 @@ class nsDocShell final : public nsDocLoader,
       const mozilla::dom::SessionHistoryInfo& aInfo,
       mozilla::Maybe<mozilla::dom::UserNavigationInvolvement> aUserInvolvement);
 
-  nsresult LoadHistoryEntry(mozilla::dom::SessionHistoryEntry* aEntry,
-                            uint32_t aLoadType, bool aUserActivation);
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
       bool aUserActivation, bool aNotifiedBeforeUnloadListeners);
