@@ -314,6 +314,7 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   bool quirks;
   bool forceNoQuirks;
   bool allowDeclarativeShadowRoots;
+  bool noInSelectMode;
   bool keepBuffer;
   inline nsHtml5ContentCreatorFunction htmlCreator(
       mozilla::dom::HTMLContentCreatorFunction htmlCreator) {
@@ -564,6 +565,8 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   void setIsSrcdocDocument(bool isSrcdocDocument);
   bool isAllowDeclarativeShadowRoots();
   void setAllowDeclarativeShadowRoots(bool allow);
+  bool isNoInSelectMode();
+  void setNoInSelectMode(bool mode);
   void flushCharacters();
 
  private:

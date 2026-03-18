@@ -1008,7 +1008,7 @@ void nsHtml5ElementName::initializeStatics() {
       nsHtml5TreeBuilder::OTHER);
   ELT_SELECT = new nsHtml5ElementName(
       nsGkAtoms::select, nsGkAtoms::select, NS_NewHTMLSelectElement,
-      NS_NewSVGUnknownElement, nsHtml5TreeBuilder::SELECT | SPECIAL);
+      NS_NewSVGUnknownElement, nsHtml5TreeBuilder::SELECT | SPECIAL | SCOPING);
   ELT_SLOT = new nsHtml5ElementName(
       nsGkAtoms::slot, nsGkAtoms::slot, NS_NewHTMLSlotElement,
       NS_NewSVGUnknownElement, nsHtml5TreeBuilder::OTHER);

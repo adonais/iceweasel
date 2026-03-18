@@ -19,6 +19,7 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_html5.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TextUtils.h"
@@ -1125,6 +1126,8 @@ nsresult nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest) {
       !((mMode == NORMAL) && scriptingEnabled));
   mTreeBuilder->setAllowDeclarativeShadowRoots(
       mExecutor->GetDocument()->AllowsDeclarativeShadowRoots());
+  mTreeBuilder->setNoInSelectMode(
+      StaticPrefs::dom_lift_select_parser_restrictions_enabled());
   mTokenizer->start();
   mExecutor->Start();
   mExecutor->StartReadingFromStage();
