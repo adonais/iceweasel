@@ -196,6 +196,15 @@ mozilla::ipc::IPCResult MFMediaEngineChild::RecvNotifyError(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult MFMediaEngineChild::RecvNotifyHardwareReset() {
+  AssertOnManagerThread();
+  if (mShutdown) {
+    return IPC_OK();
+  }
+  mOwner->NotifyHardwareReset();
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult MFMediaEngineChild::RecvUpdateStatisticData(
     const StatisticData& aData) {
   AssertOnManagerThread();
@@ -402,6 +411,12 @@ void MFMediaEngineWrapper::NotifyError(const MediaResult& aError) {
   AssertOnManagerThread();
   WLOG("Received error: %s", aError.Description().get());
   mOwner->NotifyError(aError);
+}
+
+void MFMediaEngineWrapper::NotifyHardwareReset() {
+  AssertOnManagerThread();
+  WLOG("Received hardware reset");
+  mOwner->NotifyHardwareReset();
 }
 
 void MFMediaEngineWrapper::NotifyResizing(uint32_t aWidth, uint32_t aHeight) {
