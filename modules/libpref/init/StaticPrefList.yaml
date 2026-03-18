@@ -2544,7 +2544,6 @@
   mirror: always
 
 # If true, page with beforeunload event listeners can be bfcached.
-# This only works when sessionHistoryInParent is enabled.
 - name: docshell.shistory.bfcache.ship_allow_beforeunload_listeners
   type: bool
   value: true
@@ -6328,19 +6327,6 @@
   type: bool
   value: true
   mirror: never
-
-# Disable storing the session history in the parent process, and accessing it
-# over IPC from the child processes.
-# WARNING: Until the test harness can understand ship-pref default values, this pref’s
-# default must be synchronized with the values set in testing/mochitest/runtests.py and in
-# testing/web-platform/tests/tools/wptrunner/wptrunner/browsers/firefox_android.py.
-# Changing the default here without updating the test harnesses will cause mismatches
-# in automation.
-- name: fission.disableSessionHistoryInParent
-  type: bool
-  value: false
-  mirror: once
-  do_not_use_directly: true
 
 # If session history is stored in the parent process, enable bfcache for it.
 - name: fission.bfcacheInParent

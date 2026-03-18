@@ -471,10 +471,8 @@ interface nsISHEntry : nsISupports
 
     /**
      * If browser.history.collectWireframes is true, this will get populated
-     * with a Wireframe upon document navigation / pushState. This will only
-     * be set for nsISHEntry's accessed in the parent process with
-     * sessionHistoryInParent enabled. See Document.webidl for more details on
-     * what a Wireframe is.
+     * with a Wireframe upon document navigation / pushState. See
+     * Document.webidl for more details on what a Wireframe is.
      */
     [implicit_jscontext] attribute jsval wireframe;
 
