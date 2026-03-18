@@ -12,6 +12,7 @@ import androidx.annotation.MainThread
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.activity.ActivityDelegate
 import mozilla.components.concept.engine.activity.OrientationDelegate
+import mozilla.components.concept.engine.ai.AIFeaturesRuntime
 import mozilla.components.concept.engine.autofill.AddressStructureRuntime
 import mozilla.components.concept.engine.content.blocking.TrackerLog
 import mozilla.components.concept.engine.content.blocking.TrackingProtectionExceptionStorage
@@ -344,4 +345,10 @@ interface Engine :
      * Returns the version of the engine as [EngineVersion] object.
      */
     val version: EngineVersion
+
+    /**
+     * Provides access to the runtime AI features for this engine.
+     */
+    val aiFeatures: AIFeaturesRuntime
+        get() = object : AIFeaturesRuntime {}
 }

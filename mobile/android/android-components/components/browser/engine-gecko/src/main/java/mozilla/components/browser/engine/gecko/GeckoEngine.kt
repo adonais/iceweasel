@@ -14,6 +14,8 @@ import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.engine.fission.GeckoWebContentIsolationMapper.intoWebContentIsolationStrategy
 import mozilla.components.browser.engine.gecko.activity.GeckoActivityDelegate
 import mozilla.components.browser.engine.gecko.activity.GeckoScreenOrientationDelegate
+import mozilla.components.browser.engine.gecko.ai.DefaultGeckoAIFeaturesAccessor
+import mozilla.components.browser.engine.gecko.ai.GeckoAIFeaturesAccessor
 import mozilla.components.browser.engine.gecko.autofill.DefaultRuntimeAddressStructureAccessor
 import mozilla.components.browser.engine.gecko.autofill.RuntimeAddressStructureAccessor
 import mozilla.components.browser.engine.gecko.ext.getAntiTrackingPolicy
@@ -115,6 +117,7 @@ class GeckoEngine(
     private val geckoPreferenceAccessor: GeckoPreferenceAccessor = DefaultGeckoPreferenceAccessor(),
     private val runtimeTranslationAccessor: RuntimeTranslationAccessor = DefaultRuntimeTranslationAccessor(),
     private val addressStructureAccessor: RuntimeAddressStructureAccessor = DefaultRuntimeAddressStructureAccessor(),
+    override val aiFeatures: GeckoAIFeaturesAccessor = DefaultGeckoAIFeaturesAccessor(),
 ) : Engine, WebExtensionRuntime, TranslationsRuntime, BrowserPreferencesRuntime {
     private val executor by lazy { executorProvider.invoke() }
     private val localeUpdater = LocaleSettingUpdater(context, runtime)
