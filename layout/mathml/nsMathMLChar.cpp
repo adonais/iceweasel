@@ -5,6 +5,7 @@
 #include "nsMathMLChar.h"
 
 #include <algorithm>
+#include <numeric>
 
 #include "gfxContext.h"
 #include "gfxMathTable.h"
@@ -1793,7 +1794,7 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
     } else if (2 == i) {  // bottom
       dy = aRect.y + aRect.height - bm.descent;
     } else {  // middle
-      dy = aRect.y + bm.ascent + (aRect.height - (bm.ascent + bm.descent)) / 2;
+      dy = aRect.y + std::midpoint(bm.ascent, aRect.height - bm.descent);
     }
     // _cairo_scaled_font_show_glyphs snaps origins to device pixels.
     // Do this now so that we can get the other dimensions right.
@@ -1818,7 +1819,7 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
   // If there are overlaps, then join at the mid point
   for (i = 0; i < 2; ++i) {
     if (end[i] > start[i + 1]) {
-      end[i] = (end[i] + start[i + 1]) / 2;
+      end[i] = std::midpoint(end[i], start[i + 1]);
       start[i + 1] = end[i];
     }
   }
@@ -1992,7 +1993,7 @@ nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
   // If there are overlaps, then join at the mid point
   for (i = 0; i < 2; ++i) {
     if (end[i] > start[i + 1]) {
-      end[i] = (end[i] + start[i + 1]) / 2;
+      end[i] = std::midpoint(end[i], start[i + 1]);
       start[i + 1] = end[i];
     }
   }
