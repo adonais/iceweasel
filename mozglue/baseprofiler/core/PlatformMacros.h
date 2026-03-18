@@ -27,6 +27,8 @@
 #undef GP_PLAT_x86_windows
 #undef GP_PLAT_amd64_windows
 #undef GP_PLAT_arm64_windows
+#undef GP_PLAT_amd64_freebsd
+#undef GP_PLAT_arm64_freebsd
 #undef GP_PLAT_unknown
 
 #undef GP_ARCH_x86
@@ -40,6 +42,7 @@
 #undef GP_OS_linux
 #undef GP_OS_darwin
 #undef GP_OS_windows
+#undef GP_OS_freebsd
 #undef GP_OS_unknown
 
 // We test __ANDROID__ before __linux__ because __linux__ is defined on both
