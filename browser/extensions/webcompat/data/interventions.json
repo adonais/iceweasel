@@ -3727,25 +3727,6 @@
       }
     ]
   },
-  "1927121": {
-    "label": "southerndevilhd.com",
-    "bugs": {
-      "1927121": {
-        "issue": "broken-images",
-        "matches": ["*://www.southerndevilhd.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "js": [
-            "bug1927121-southerndevilhd.com-shim-WebkitMutationObserver.js"
-          ]
-        }
-      }
-    ]
-  },
   "1927984": {
     "label": "modules.sms-timing.com",
     "bugs": {
