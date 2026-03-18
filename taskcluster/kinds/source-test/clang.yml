@@ -75,3 +75,32 @@ external:
             - type: file
               name: public/code-review/clang-tidy.json
               path: /builds/worker/clang-tidy.json
+
+
+unittest:
+    description: Ensure static analysis works correctly
+    treeherder:
+        symbol: cpp(clang-tidy-unittest)
+    attributes:
+        code-review: false
+    when:
+        files-changed:
+            - 'config/mozunit/**'
+            - 'python/mach_commands.py'
+            - 'python/mach/**'
+            - 'python/mozbuild/mozbuild/code_analysis/mach_commands.py'
+            - 'taskcluster/scripts/misc/source-test-clang-setup.sh'
+            - 'tools/clang-tidy/**'
+    run:
+        cwd: '{checkout}'
+        command: >-
+            source taskcluster/scripts/misc/source-test-clang-setup.sh &&
+            ./mach --log-no-times static-analysis unittest
+
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-clang-tidy
+            - linux64-rust
+            - sysroot-x86_64-linux-gnu
+            - sysroot-wasm32-wasi

@@ -11,6 +11,7 @@ import posixpath
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from types import SimpleNamespace
 
@@ -361,6 +362,7 @@ def check(
     with StaticAnalysisOutputManager(
         command_context.log_manager, monitor, footer
     ) as output_manager:
+        rc = 0
         nproc = cpu_count()
         batch_size = max((len(source) + nproc - 1) // nproc, 1)
         for batch in batched(source, batch_size):
@@ -375,7 +377,7 @@ def check(
                 fix=fix,
                 verbose=verbose,
             )
-            rc = command_context.run_process(
+            rc |= command_context.run_process(
                 args=args,
                 ensure_exit_code=False,
                 line_handler=output_manager.on_line,
@@ -533,6 +535,7 @@ def _get_clang_tidy_command(
         "-clang-apply-replacements-binary",
         clang_paths._clang_apply_replacements,
         "-checks=%s" % checks,
+        "-warnings-as-errors=*",
         "-extra-arg=-DMOZ_CLANG_PLUGIN",
     ]
 
@@ -1473,3 +1476,66 @@ def _generate_path_list(command_context, paths, verbose=True):
             path_list.append(f)
 
     return path_list
+
+
+@StaticAnalysisSubCommand("static-analysis", "unittest", "Run unittest")
+def unittest(command_context, verbose=True):
+    moz_objdir = tempfile.mkdtemp(prefix="obj-code_analysis-unittest")
+    env = os.environ.copy()
+    env["MOZ_OBJDIR"] = moz_objdir
+
+    try:
+        # Check when everything is fine
+        result = subprocess.run(
+            [
+                sys.executable,
+                "mach",
+                "static-analysis",
+                "check",
+                "js/src/builtin/RegExp.cpp",
+            ],
+            check=False,
+            env=env,
+            cwd=command_context.topsrcdir,
+        )
+        assert result.returncode == 0, "in-tree files should pass the linter"
+
+        # And when errors are emitted
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as fd:
+            try:
+                fd.close()
+
+                # modernize-use-auto is an unsupported check, and it generates
+                # plenty of warnings on js/src/builtin/TestingFunctions.cpp
+                failing_flag = "modernize-use-auto"
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        "mach",
+                        "static-analysis",
+                        "check",
+                        f"--checks=-*,{failing_flag}",
+                        f"--output={fd.name}",
+                        "--format=json",
+                        "js/src/builtin/TestingFunctions.cpp",
+                    ],
+                    check=False,
+                    env=env,
+                    cwd=command_context.topsrcdir,
+                )
+                with open(fd.name) as fd:
+                    errors = json.load(fd)
+            finally:
+                # FIXME: use delete_on_close=False once we move to 3.12
+                os.remove(fd.name)
+
+        assert result.returncode != 0, f"{failing_flag} check should find warnings"
+        assert len(errors["files"]) > 0, "warnings should be present in the log file"
+
+        file_with_warning = next(iter(errors["files"].values()))
+        assert (
+            file_with_warning["warnings"][0]["flag"]
+            == f"{failing_flag},-warnings-as-errors"
+        ), f"warnings should mention {failing_flag}"
+    finally:
+        shutil.rmtree(moz_objdir)
