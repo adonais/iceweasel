@@ -38,6 +38,7 @@ RUN apt-get update && \
       libucl1 \
       libxml2 \
       make \
+      p7zip-full \
       perl \
       procps \
       python3-dev \

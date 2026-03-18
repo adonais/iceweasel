@@ -42,6 +42,7 @@ RUN apt-get update && \
       msitools \
       ninja-build \
       openssh-client \
+      p7zip-full \
       pkg-config \
       procps \
       python3-requests \
