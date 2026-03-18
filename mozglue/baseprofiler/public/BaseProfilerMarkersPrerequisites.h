@@ -26,7 +26,6 @@ enum class StackCaptureOptions {
 #include "mozilla/BaseProfilingCategory.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfileChunkedBuffer.h"
-#include "mozilla/BaseProfilerState.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
