@@ -45,14 +45,12 @@ class MockedSportsSuggestionDataSource : AwesomeBar.SportsSuggestionDataSource {
             .toOffsetDateTime()
             .toString()
 
-        val items = buildList {
+        return buildList {
             if ("nba" in q) add(nbaSportItem(oct28))
             if ("nfl" in q) add(nflSportItem(today))
             if ("mlb" in q) add(mlbSportItem(tomorrowAt5pm))
             if ("nhl" in q) add(nhlSportItem(nov28))
         }
-
-        return items.ifEmpty { listOf(nbaSportItem(oct28)) }
     }
 
     private fun nbaSportItem(date: String) = AwesomeBar.SportItem(
