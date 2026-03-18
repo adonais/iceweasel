@@ -4883,6 +4883,21 @@
       }
     ]
   },
+  "1975927": {
+    "label": "trafficnews.jp",
+    "bugs": {
+      "1975927": {
+        "issue": "desktop-layout-not-mobile",
+        "matches": ["*://trafficnews.jp/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["android"],
+        "ua_string": ["Chrome_with_FxQuantum"]
+      }
+    ]
+  },
   "1977195": {
     "label": "wattpad.com",
     "bugs": {
