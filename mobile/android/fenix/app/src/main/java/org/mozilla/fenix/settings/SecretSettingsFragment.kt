@@ -486,12 +486,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             isChecked = context.settings().nativeShareSheetEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_longfox).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = context.settings().longfoxEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
