@@ -56,7 +56,7 @@ const loginInfoToLoginEntryWithMeta = loginInfo =>
   new LoginEntryWithMeta({
     entry: loginInfoToLoginEntry(loginInfo),
     meta: new LoginMeta({
-      id: loginInfo.guid || Services.uuid.generateUUID().toString(),
+      id: loginInfo.guid,
       timesUsed: loginInfo.timesUsed,
       timeCreated: loginInfo.timeCreated,
       timeLastUsed: loginInfo.timeLastUsed,
@@ -106,37 +106,37 @@ class RustLoginsStoreAdapter {
     this.#store = store;
   }
 
-  async get(id) {
-    const login = await this.#store.get(id);
+  get(id) {
+    const login = this.#store.get(id);
     return login && loginToLoginInfo(login);
   }
 
-  async list() {
-    const logins = await this.#store.list();
+  list() {
+    const logins = this.#store.list();
     return logins.map(loginToLoginInfo);
   }
 
-  async update(id, loginInfo) {
+  update(id, loginInfo) {
     const loginEntry = loginInfoToLoginEntry(loginInfo);
-    const login = await this.#store.update(id, loginEntry);
+    const login = this.#store.update(id, loginEntry);
     return loginToLoginInfo(login);
   }
 
-  async add(loginInfo) {
+  add(loginInfo) {
     const loginEntry = loginInfoToLoginEntry(loginInfo);
-    const login = await this.#store.add(loginEntry);
+    const login = this.#store.add(loginEntry);
     return loginToLoginInfo(login);
   }
 
-  async addWithMeta(loginInfo) {
+  addWithMeta(loginInfo) {
     const loginEntryWithMeta = loginInfoToLoginEntryWithMeta(loginInfo);
-    const login = await this.#store.addWithMeta(loginEntryWithMeta);
+    const login = this.#store.addWithMeta(loginEntryWithMeta);
     return loginToLoginInfo(login);
   }
 
-  async addManyWithMeta(loginInfos, continueOnDuplicates) {
+  addManyWithMeta(loginInfos, continueOnDuplicates) {
     const loginEntriesWithMeta = loginInfos.map(loginInfoToLoginEntryWithMeta);
-    const results = await this.#store.addManyWithMeta(loginEntriesWithMeta);
+    const results = this.#store.addManyWithMeta(loginEntriesWithMeta);
 
     // on continuous mode, return result objects, which could be either a login
     // or an error containing the error message
@@ -164,41 +164,41 @@ class RustLoginsStoreAdapter {
       .map(({ login }) => loginToLoginInfo(login));
   }
 
-  async delete(id) {
-    return await this.#store.delete(id);
+  delete(id) {
+    return this.#store.delete(id);
   }
 
-  async deleteMany(ids) {
-    return await this.#store.deleteMany(ids);
+  deleteMany(ids) {
+    return this.#store.deleteMany(ids);
   }
 
   // reset() {
   //   return this.#store.reset()
   // }
 
-  async wipeLocal() {
-    return await this.#store.wipeLocal();
+  wipeLocal() {
+    return this.#store.wipeLocal();
   }
 
-  async count() {
-    return await this.#store.count();
+  count() {
+    return this.#store.count();
   }
 
-  async countByOrigin(origin) {
-    return await this.#store.countByOrigin(origin);
+  countByOrigin(origin) {
+    return this.#store.countByOrigin(origin);
   }
 
-  async countByFormActionOrigin(formActionOrigin) {
-    return await this.#store.countByFormActionOrigin(formActionOrigin);
+  countByFormActionOrigin(formActionOrigin) {
+    return this.#store.countByFormActionOrigin(formActionOrigin);
   }
 
-  async touch(id) {
-    return await this.#store.touch(id);
+  touch(id) {
+    this.#store.touch(id);
   }
 
-  async findLoginToUpdate(loginInfo) {
+  findLoginToUpdate(loginInfo) {
     const loginEntry = loginInfoToLoginEntry(loginInfo);
-    const login = await this.#store.findLoginToUpdate(loginEntry);
+    const login = this.#store.findLoginToUpdate(loginEntry);
     return login && loginToLoginInfo(login);
   }
 
@@ -227,7 +227,7 @@ class RustLoginsStoreAdapter {
     for (const {
       id,
       timeLastBreachAlertDismissed: timeBreachAlertDismissed,
-    } of await this.#store.list()) {
+    } of this.#store.list()) {
       if (timeBreachAlertDismissed) {
         result[id] = {
           timeBreachAlertDismissed,
@@ -238,7 +238,7 @@ class RustLoginsStoreAdapter {
   }
 
   shutdown() {
-    return this.#store.shutdown();
+    this.#store.shutdown();
   }
 }
 
@@ -256,7 +256,6 @@ export class LoginManagerRustStorage {
     if (LoginManagerRustStorage._instance) {
       return LoginManagerRustStorage._instance;
     }
-    this.__crypto = null; // nsILoginManagerCrypto service
     LoginManagerRustStorage._instance = this;
   }
 
@@ -317,7 +316,16 @@ export class LoginManagerRustStorage {
    * Internal method used by tests only. It is called before replacing
    * this storage module with a new instance.
    */
-  testSaveForReplace() {}
+  testSaveForReplace() {
+    // Currently we only ever call this on LoginManagerStorage which is derived
+    // from LoginManagerStorage_json and there seems to be nothing that would
+    // want to call it here, but maybe once we entirely replace the JSON store
+    // with this one it would be called and we'd need to implement it.
+    throw Components.Exception(
+      "testSaveForReplace",
+      Cr.NS_ERROR_NOT_IMPLEMENTED
+    );
+  }
 
   /**
    * Returns the "sync id" used by Sync to know whether the store is current with
@@ -351,6 +359,7 @@ export class LoginManagerRustStorage {
     throw Components.Exception("resetSyncCounter", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
+  // Returns false if the login has marked as deleted or doesn't exist.
   loginIsDeleted(_guid) {
     throw Components.Exception("loginIsDeleted", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
@@ -362,26 +371,26 @@ export class LoginManagerRustStorage {
     );
   }
 
+  addWithMeta(login) {
+    return this.#storageAdapter.addWithMeta(login);
+  }
+
   async addLoginsAsync(logins, continueOnDuplicates = false) {
     if (logins.length === 0) {
       return logins;
     }
 
-    const result = await this.#storageAdapter.addManyWithMeta(
+    const result = this.#storageAdapter.addManyWithMeta(
       logins,
       continueOnDuplicates
     );
 
-    return result;
+    // Emulate being async
+    return Promise.resolve(result);
   }
 
-  modifyLogin(_oldLogin, _newLoginData, _fromSync) {
-    throw Components.Exception("modifyLogin", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
-  async modifyLoginAsync(oldLogin, newLoginData, _fromSync) {
-    const oldStoredLogin =
-      await this.#storageAdapter.findLoginToUpdate(oldLogin);
+  modifyLogin(oldLogin, newLoginData, _fromSync) {
+    const oldStoredLogin = this.#storageAdapter.findLoginToUpdate(oldLogin);
 
     if (!oldStoredLogin) {
       throw new Error("No matching logins");
@@ -395,22 +404,21 @@ export class LoginManagerRustStorage {
     );
 
     // Check if the new GUID is duplicate.
-    if (
-      newLogin.guid != idToModify &&
-      (await this.#storageAdapter.get(newLogin.guid))
-    ) {
+    if (newLogin.guid != idToModify && !this.#isGuidUnique(newLogin.guid)) {
       throw new Error("specified GUID already exists");
     }
 
     // Look for an existing entry in case key properties changed.
     if (!newLogin.matches(oldLogin, true)) {
-      const matchData = {};
-      for (const field of ["origin", "formActionOrigin", "httpRealm"]) {
-        if (newLogin[field] != "") {
-          matchData[field] = newLogin[field];
-        }
-      }
-      const [logins] = await this.#searchLogins(matchData);
+      const loginData = {
+        origin: newLogin.origin,
+        formActionOrigin: newLogin.formActionOrigin,
+        httpRealm: newLogin.httpRealm,
+      };
+
+      const logins = this.searchLogins(
+        lazy.LoginHelper.newPropertyBag(loginData)
+      );
 
       const matchingLogin = logins.find(login => newLogin.matches(login, true));
       if (matchingLogin) {
@@ -420,28 +428,37 @@ export class LoginManagerRustStorage {
       }
     }
 
-    const updatedLogin = await this.#storageAdapter.update(
-      idToModify,
-      newLogin
-    );
-    return updatedLogin;
+    this.#storageAdapter.update(idToModify, newLogin);
   }
 
-  recordPasswordUse(_login) {
-    throw Components.Exception(
-      "recordPasswordUse",
-      Cr.NS_ERROR_NOT_IMPLEMENTED
-    );
+  async modifyLoginAsync(oldLogin, newLoginData, _fromSync) {
+    let result = this.modifyLogin(oldLogin, newLoginData, _fromSync);
+
+    // Emulate being async:
+    return Promise.resolve(result);
   }
 
-  async recordPasswordUseAsync(login) {
-    const oldStoredLogin = await this.#storageAdapter.findLoginToUpdate(login);
+  /**
+   * Checks to see if the specified GUID already exists.
+   */
+  #isGuidUnique(guid) {
+    return !this.#storageAdapter.get(guid);
+  }
+
+  recordPasswordUse(login) {
+    const oldStoredLogin = this.#storageAdapter.findLoginToUpdate(login);
 
     if (!oldStoredLogin) {
       throw new Error("No matching logins");
     }
 
-    return await this.#storageAdapter.touch(oldStoredLogin.guid);
+    this.#storageAdapter.touch(oldStoredLogin.guid);
+  }
+
+  async recordPasswordUseAsync(login) {
+    let result = this.recordPasswordUse(login);
+    // Emulate being async:
+    return Promise.resolve(result);
   }
 
   async recordBreachAlertDismissal(loginGUID) {
@@ -467,48 +484,58 @@ export class LoginManagerRustStorage {
         Cr.NS_ERROR_NOT_IMPLEMENTED
       );
     }
-    return await this.#storageAdapter.list();
+    return Promise.resolve(this.#storageAdapter.list());
   }
 
-  searchLogins(_matchData, _includeDeleted) {
-    throw Components.Exception("searchLogins", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  // The Rust API is sync atm
+  searchLoginsAsync(matchData, includeDeleted) {
+    this.log(`Searching for matching logins for origin ${matchData.origin}.`);
+    const result = this.searchLogins(
+      lazy.LoginHelper.newPropertyBag(matchData),
+      includeDeleted
+    );
+
+    // Emulate being async:
+    return Promise.resolve(result);
   }
 
-  async searchLoginsAsync(matchData, includeDeleted) {
+  /**
+   * Public wrapper around #searchLogins to convert the nsIPropertyBag to a
+   * JavaScript object and decrypt the results.
+   *
+   * @return {nsILoginInfo[]} which are decrypted.
+   */
+  searchLogins(matchData, includeDeleted) {
     const realMatchData = {};
     const options = {};
+    matchData.QueryInterface(Ci.nsIPropertyBag2);
 
-    if ("guid" in matchData) {
-      realMatchData.guid = matchData.guid;
+    if (matchData.hasKey("guid")) {
+      realMatchData.guid = matchData.getProperty("guid");
     } else {
-      for (const name in matchData) {
-        switch (name) {
+      for (const prop of matchData.enumerator) {
+        switch (prop.name) {
           // Some property names aren't field names but are special options to
           // affect the search.
           case "acceptDifferentSubdomains":
           case "schemeUpgrades":
           case "acceptRelatedRealms":
           case "relatedRealms": {
-            options[name] = matchData[name];
+            options[prop.name] = prop.value;
             break;
           }
           default: {
-            realMatchData[name] = matchData[name];
+            realMatchData[prop.name] = prop.value;
             break;
           }
         }
       }
     }
-
-    const [logins] = await this.#searchLogins(
-      realMatchData,
-      includeDeleted,
-      options
-    );
+    const [logins] = this.#searchLogins(realMatchData, includeDeleted, options);
     return logins;
   }
 
-  async #searchLogins(
+  #searchLogins(
     matchData,
     includeDeleted = false,
     aOptions = {
@@ -517,10 +544,8 @@ export class LoginManagerRustStorage {
       acceptRelatedRealms: false,
       relatedRealms: [],
     },
-    candidateLogins
+    candidateLogins = this.#storageAdapter.list()
   ) {
-    candidateLogins ||= await this.#storageAdapter.list();
-
     function match(aLoginItem) {
       for (const field in matchData) {
         const wantedValue = matchData[field];
@@ -625,18 +650,23 @@ export class LoginManagerRustStorage {
     return [foundLogins, foundIds];
   }
 
-  removeLogin(_login, _fromSync) {
-    throw Components.Exception("removeLogin", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
-  async removeLoginAsync(login, _fromSync) {
-    const storedLogin = await this.#storageAdapter.findLoginToUpdate(login);
+  removeLogin(login, _fromSync) {
+    const storedLogin = this.#storageAdapter.findLoginToUpdate(login);
 
     if (!storedLogin) {
       throw new Error("No matching logins");
     }
 
-    await this.#storageAdapter.delete(storedLogin.guid);
+    const idToDelete = storedLogin.guid;
+
+    this.#storageAdapter.delete(idToDelete);
+  }
+
+  async removeLoginAsync(login, _fromSync) {
+    let result = this.removeLogin(login, _fromSync);
+
+    // Emulate being async:
+    return Promise.resolve(result);
   }
 
   /**
@@ -646,11 +676,11 @@ export class LoginManagerRustStorage {
    *
    */
   removeAllLogins() {
-    throw Components.Exception("removeLogin", Cr.NS_ERROR_NOT_IMPLEMENTED);
+    this.#removeLogins(false, true);
   }
 
   async removeAllLoginsAsync() {
-    return await this.#removeLogins(false, true);
+    this.removeAllLogins();
   }
 
   /**
@@ -660,15 +690,12 @@ export class LoginManagerRustStorage {
    *
    * @param fullyRemove remove the logins rather than mark them deleted.
    */
-  removeAllUserFacingLogins(_fullyRemove) {
-    throw Components.Exception(
-      "removeAllUserFacingLogins",
-      Cr.NS_ERROR_NOT_IMPLEMENTED
-    );
+  removeAllUserFacingLogins(fullyRemove) {
+    this.#removeLogins(fullyRemove, false);
   }
 
   async removeAllUserFacingLoginsAsync(fullyRemove) {
-    return await this.#removeLogins(fullyRemove, true);
+    this.removeAllUserFacingLogins(fullyRemove);
   }
 
   /**
@@ -678,13 +705,13 @@ export class LoginManagerRustStorage {
    * @param fullyRemove remove the logins rather than mark them deleted.
    * @param removeFXALogin also remove the FxA Sync key.
    */
-  async #removeLogins(fullyRemove, removeFXALogin = false) {
+  #removeLogins(fullyRemove, removeFXALogin = false) {
     this.log("Removing all logins.");
 
     const removedLogins = [];
     const remainingLogins = [];
 
-    const logins = await this.#storageAdapter.list();
+    const logins = this.#storageAdapter.list();
     const idsToDelete = [];
     for (const login of logins) {
       if (
@@ -700,32 +727,38 @@ export class LoginManagerRustStorage {
       }
     }
 
-    if (idsToDelete.length) {
-      await this.#storageAdapter.deleteMany(idsToDelete);
+    this.#storageAdapter.deleteMany(idsToDelete);
+  }
+
+  findLogins(origin, formActionOrigin, httpRealm) {
+    const loginData = {
+      origin,
+      formActionOrigin,
+      httpRealm,
+    };
+    const matchData = {};
+    for (const field of ["origin", "formActionOrigin", "httpRealm"]) {
+      if (loginData[field] != "") {
+        matchData[field] = loginData[field];
+      }
     }
+    const [logins] = this.#searchLogins(matchData);
+
+    this.log(`Returning ${logins.length} logins.`);
+    return logins;
   }
 
-  findLogins(_origin, _formActionOrigin, _httpRealm) {
-    throw Components.Exception("findLogins", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
-  countLogins(_origin, _formActionOrigin, _httpRealm) {
-    throw Components.Exception("countLogins", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
-  async countLoginsAsync(origin, formActionOrigin, httpRealm) {
+  countLogins(origin, formActionOrigin, httpRealm) {
     if (!origin && !formActionOrigin && !httpRealm) {
-      return await this.#storageAdapter.count();
+      return this.#storageAdapter.count();
     }
 
     if (origin && !formActionOrigin && !httpRealm) {
-      return await this.#storageAdapter.countByOrigin(origin);
+      return this.#storageAdapter.countByOrigin(origin);
     }
 
     if (!origin && formActionOrigin && !httpRealm) {
-      return await this.#storageAdapter.countByFormActionOrigin(
-        formActionOrigin
-      );
+      return this.#storageAdapter.countByFormActionOrigin(formActionOrigin);
     }
 
     const loginData = {
@@ -740,7 +773,7 @@ export class LoginManagerRustStorage {
         matchData[field] = loginData[field];
       }
     }
-    const [logins] = await this.#searchLogins(matchData);
+    const [logins] = this.#searchLogins(matchData);
 
     this.log(`Counted ${logins.length} logins.`);
     return logins.length;
@@ -772,21 +805,12 @@ export class LoginManagerRustStorage {
     await this.#storageAdapter.clearAllPotentiallyVulnerablePasswords();
   }
 
-  get _crypto() {
-    if (!this.__crypto) {
-      this.__crypto = Cc["@mozilla.org/login-manager/crypto/SDR;1"].getService(
-        Ci.nsILoginManagerCrypto
-      );
-    }
-    return this.__crypto;
-  }
-
   get uiBusy() {
-    return this._crypto.uiBusy;
+    throw Components.Exception("uiBusy", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
   get isLoggedIn() {
-    return this._crypto.isLoggedIn;
+    throw Components.Exception("isLoggedIn", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 }
 

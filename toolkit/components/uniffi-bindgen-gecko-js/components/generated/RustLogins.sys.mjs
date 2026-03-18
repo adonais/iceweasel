@@ -2424,45 +2424,45 @@ export class LoginStoreInterface {
     /**
      * add
      * @param {LoginEntry} login
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async add(
+    add(
         login) {
       throw Error("add not implemented");
     }
     /**
      * addMany
      * @param {Array.<LoginEntry>} logins
-     * @returns {Promise<Array.<BulkResultEntry[keyof BulkResultEntry]>>}}
+     * @returns {Array.<BulkResultEntry[keyof BulkResultEntry]>}
      */
-    async addMany(
+    addMany(
         logins) {
       throw Error("addMany not implemented");
     }
     /**
      * addManyWithMeta
      * @param {Array.<LoginEntryWithMeta>} entriesWithMeta
-     * @returns {Promise<Array.<BulkResultEntry[keyof BulkResultEntry]>>}}
+     * @returns {Array.<BulkResultEntry[keyof BulkResultEntry]>}
      */
-    async addManyWithMeta(
+    addManyWithMeta(
         entriesWithMeta) {
       throw Error("addManyWithMeta not implemented");
     }
     /**
      * addOrUpdate
      * @param {LoginEntry} login
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async addOrUpdate(
+    addOrUpdate(
         login) {
       throw Error("addOrUpdate not implemented");
     }
     /**
      * addWithMeta
      * @param {LoginEntryWithMeta} entryWithMeta
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async addWithMeta(
+    addWithMeta(
         entryWithMeta) {
       throw Error("addWithMeta not implemented");
     }
@@ -2481,44 +2481,44 @@ export class LoginStoreInterface {
     }
     /**
      * count
-     * @returns {Promise<number>}}
+     * @returns {number}
      */
-    async count() {
+    count() {
       throw Error("count not implemented");
     }
     /**
      * countByFormActionOrigin
      * @param {string} formActionOrigin
-     * @returns {Promise<number>}}
+     * @returns {number}
      */
-    async countByFormActionOrigin(
+    countByFormActionOrigin(
         formActionOrigin) {
       throw Error("countByFormActionOrigin not implemented");
     }
     /**
      * countByOrigin
      * @param {string} origin
-     * @returns {Promise<number>}}
+     * @returns {number}
      */
-    async countByOrigin(
+    countByOrigin(
         origin) {
       throw Error("countByOrigin not implemented");
     }
     /**
      * delete
      * @param {string} id
-     * @returns {Promise<boolean>}}
+     * @returns {boolean}
      */
-    async delete(
+    delete(
         id) {
       throw Error("delete not implemented");
     }
     /**
      * deleteMany
      * @param {Array.<string>} ids
-     * @returns {Promise<Array.<boolean>>}}
+     * @returns {Array.<boolean>}
      */
-    async deleteMany(
+    deleteMany(
         ids) {
       throw Error("deleteMany not implemented");
     }
@@ -2529,59 +2529,59 @@ export class LoginStoreInterface {
      * 
      * NB: This function was created to unblock iOS logins users who are unable to sync logins and should not be used
      * outside of this use case.
-     * @returns {Promise<LoginsDeletionMetrics>}}
+     * @returns {LoginsDeletionMetrics}
      */
-    async deleteUndecryptableRecordsForRemoteReplacement() {
+    deleteUndecryptableRecordsForRemoteReplacement() {
       throw Error("deleteUndecryptableRecordsForRemoteReplacement not implemented");
     }
     /**
      * findLoginToUpdate
      * @param {LoginEntry} look
-     * @returns {Promise<?Login>}}
+     * @returns {?Login}
      */
-    async findLoginToUpdate(
+    findLoginToUpdate(
         look) {
       throw Error("findLoginToUpdate not implemented");
     }
     /**
      * get
      * @param {string} id
-     * @returns {Promise<?Login>}}
+     * @returns {?Login}
      */
-    async get(
+    get(
         id) {
       throw Error("get not implemented");
     }
     /**
      * getByBaseDomain
      * @param {string} baseDomain
-     * @returns {Promise<Array.<Login>>}}
+     * @returns {Array.<Login>}
      */
-    async getByBaseDomain(
+    getByBaseDomain(
         baseDomain) {
       throw Error("getByBaseDomain not implemented");
     }
     /**
      * getCheckpoint
-     * @returns {Promise<?string>}}
+     * @returns {?string}
      */
-    async getCheckpoint() {
+    getCheckpoint() {
       throw Error("getCheckpoint not implemented");
     }
     /**
      * hasLoginsByBaseDomain
      * @param {string} baseDomain
-     * @returns {Promise<boolean>}}
+     * @returns {boolean}
      */
-    async hasLoginsByBaseDomain(
+    hasLoginsByBaseDomain(
         baseDomain) {
       throw Error("hasLoginsByBaseDomain not implemented");
     }
     /**
      * isEmpty
-     * @returns {Promise<boolean>}}
+     * @returns {boolean}
      */
-    async isEmpty() {
+    isEmpty() {
       throw Error("isEmpty not implemented");
     }
     /**
@@ -2599,16 +2599,16 @@ export class LoginStoreInterface {
     }
     /**
      * list
-     * @returns {Promise<Array.<Login>>}}
+     * @returns {Array.<Login>}
      */
-    async list() {
+    list() {
       throw Error("list not implemented");
     }
     /**
      * Stores that the user dismissed the breach alert for a login.
      * @param {string} id
      */
-    async recordBreachAlertDismissal(
+    recordBreachAlertDismissal(
         id) {
       throw Error("recordBreachAlertDismissal not implemented");
     }
@@ -2617,7 +2617,7 @@ export class LoginStoreInterface {
      * @param {string} id
      * @param {number} timestamp
      */
-    async recordBreachAlertDismissalTime(
+    recordBreachAlertDismissalTime(
         id, 
         timestamp) {
       throw Error("recordBreachAlertDismissalTime not implemented");
@@ -2637,19 +2637,19 @@ export class LoginStoreInterface {
     /**
      * registerWithSyncManager
      */
-    async registerWithSyncManager() {
+    registerWithSyncManager() {
       throw Error("registerWithSyncManager not implemented");
     }
     /**
      * reset
      */
-    async reset() {
+    reset() {
       throw Error("reset not implemented");
     }
     /**
      * Removes all recorded breaches.
      */
-    async resetAllBreaches() {
+    resetAllBreaches() {
       throw Error("resetAllBreaches not implemented");
     }
     /**
@@ -2665,7 +2665,7 @@ export class LoginStoreInterface {
      * setCheckpoint
      * @param {string} checkpoint
      */
-    async setCheckpoint(
+    setCheckpoint(
         checkpoint) {
       throw Error("setCheckpoint not implemented");
     }
@@ -2679,7 +2679,7 @@ export class LoginStoreInterface {
      * touch
      * @param {string} id
      */
-    async touch(
+    touch(
         id) {
       throw Error("touch not implemented");
     }
@@ -2687,9 +2687,9 @@ export class LoginStoreInterface {
      * update
      * @param {string} id
      * @param {LoginEntry} login
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async update(
+    update(
         id, 
         login) {
       throw Error("update not implemented");
@@ -2707,7 +2707,7 @@ export class LoginStoreInterface {
      * This is a no-op for freshly created databases, so it's safe to call this whenever a key is
      * generated.
      */
-    async wipeLocal() {
+    wipeLocal() {
       throw Error("wipeLocal not implemented");
     }
 
@@ -2734,15 +2734,15 @@ export class LoginStore extends LoginStoreInterface {
      * init
      * @param {string} path
      * @param {EncryptorDecryptor} encdec
-     * @returns {Promise<LoginStore>}}
+     * @returns {LoginStore}
      */
-    static async init(
+    static init(
         path, 
         encdec) {
        
         FfiConverterString.checkType(path);
         FfiConverterTypeEncryptorDecryptor.checkType(encdec);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             18, // uniffi_logins_fn_constructor_loginstore_new
             FfiConverterString.lower(path),
             FfiConverterTypeEncryptorDecryptor.lower(encdec),
@@ -2757,13 +2757,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * add
      * @param {LoginEntry} login
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async add(
+    add(
         login) {
        
         FfiConverterTypeLoginEntry.checkType(login);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             19, // uniffi_logins_fn_method_loginstore_add
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntry.lower(login),
@@ -2778,13 +2778,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * addMany
      * @param {Array.<LoginEntry>} logins
-     * @returns {Promise<Array.<BulkResultEntry[keyof BulkResultEntry]>>}}
+     * @returns {Array.<BulkResultEntry[keyof BulkResultEntry]>}
      */
-    async addMany(
+    addMany(
         logins) {
        
         FfiConverterSequenceTypeLoginEntry.checkType(logins);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             20, // uniffi_logins_fn_method_loginstore_add_many
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceTypeLoginEntry.lower(logins),
@@ -2799,13 +2799,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * addManyWithMeta
      * @param {Array.<LoginEntryWithMeta>} entriesWithMeta
-     * @returns {Promise<Array.<BulkResultEntry[keyof BulkResultEntry]>>}}
+     * @returns {Array.<BulkResultEntry[keyof BulkResultEntry]>}
      */
-    async addManyWithMeta(
+    addManyWithMeta(
         entriesWithMeta) {
        
         FfiConverterSequenceTypeLoginEntryWithMeta.checkType(entriesWithMeta);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             21, // uniffi_logins_fn_method_loginstore_add_many_with_meta
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceTypeLoginEntryWithMeta.lower(entriesWithMeta),
@@ -2820,13 +2820,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * addOrUpdate
      * @param {LoginEntry} login
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async addOrUpdate(
+    addOrUpdate(
         login) {
        
         FfiConverterTypeLoginEntry.checkType(login);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             22, // uniffi_logins_fn_method_loginstore_add_or_update
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntry.lower(login),
@@ -2841,13 +2841,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * addWithMeta
      * @param {LoginEntryWithMeta} entryWithMeta
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async addWithMeta(
+    addWithMeta(
         entryWithMeta) {
        
         FfiConverterTypeLoginEntryWithMeta.checkType(entryWithMeta);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             23, // uniffi_logins_fn_method_loginstore_add_with_meta
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntryWithMeta.lower(entryWithMeta),
@@ -2886,11 +2886,11 @@ export class LoginStore extends LoginStoreInterface {
 
     /**
      * count
-     * @returns {Promise<number>}}
+     * @returns {number}
      */
-    async count() {
+    count() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             25, // uniffi_logins_fn_method_loginstore_count
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -2904,13 +2904,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * countByFormActionOrigin
      * @param {string} formActionOrigin
-     * @returns {Promise<number>}}
+     * @returns {number}
      */
-    async countByFormActionOrigin(
+    countByFormActionOrigin(
         formActionOrigin) {
        
         FfiConverterString.checkType(formActionOrigin);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             26, // uniffi_logins_fn_method_loginstore_count_by_form_action_origin
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(formActionOrigin),
@@ -2925,13 +2925,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * countByOrigin
      * @param {string} origin
-     * @returns {Promise<number>}}
+     * @returns {number}
      */
-    async countByOrigin(
+    countByOrigin(
         origin) {
        
         FfiConverterString.checkType(origin);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             27, // uniffi_logins_fn_method_loginstore_count_by_origin
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(origin),
@@ -2946,13 +2946,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * delete
      * @param {string} id
-     * @returns {Promise<boolean>}}
+     * @returns {boolean}
      */
-    async delete(
+    delete(
         id) {
        
         FfiConverterString.checkType(id);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             28, // uniffi_logins_fn_method_loginstore_delete
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
@@ -2967,13 +2967,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * deleteMany
      * @param {Array.<string>} ids
-     * @returns {Promise<Array.<boolean>>}}
+     * @returns {Array.<boolean>}
      */
-    async deleteMany(
+    deleteMany(
         ids) {
        
         FfiConverterSequenceString.checkType(ids);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             29, // uniffi_logins_fn_method_loginstore_delete_many
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterSequenceString.lower(ids),
@@ -2992,11 +2992,11 @@ export class LoginStore extends LoginStoreInterface {
      * 
      * NB: This function was created to unblock iOS logins users who are unable to sync logins and should not be used
      * outside of this use case.
-     * @returns {Promise<LoginsDeletionMetrics>}}
+     * @returns {LoginsDeletionMetrics}
      */
-    async deleteUndecryptableRecordsForRemoteReplacement() {
+    deleteUndecryptableRecordsForRemoteReplacement() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             30, // uniffi_logins_fn_method_loginstore_delete_undecryptable_records_for_remote_replacement
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -3010,13 +3010,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * findLoginToUpdate
      * @param {LoginEntry} look
-     * @returns {Promise<?Login>}}
+     * @returns {?Login}
      */
-    async findLoginToUpdate(
+    findLoginToUpdate(
         look) {
        
         FfiConverterTypeLoginEntry.checkType(look);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             31, // uniffi_logins_fn_method_loginstore_find_login_to_update
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterTypeLoginEntry.lower(look),
@@ -3031,13 +3031,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * get
      * @param {string} id
-     * @returns {Promise<?Login>}}
+     * @returns {?Login}
      */
-    async get(
+    get(
         id) {
        
         FfiConverterString.checkType(id);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             32, // uniffi_logins_fn_method_loginstore_get
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
@@ -3052,13 +3052,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * getByBaseDomain
      * @param {string} baseDomain
-     * @returns {Promise<Array.<Login>>}}
+     * @returns {Array.<Login>}
      */
-    async getByBaseDomain(
+    getByBaseDomain(
         baseDomain) {
        
         FfiConverterString.checkType(baseDomain);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             33, // uniffi_logins_fn_method_loginstore_get_by_base_domain
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(baseDomain),
@@ -3072,11 +3072,11 @@ export class LoginStore extends LoginStoreInterface {
 
     /**
      * getCheckpoint
-     * @returns {Promise<?string>}}
+     * @returns {?string}
      */
-    async getCheckpoint() {
+    getCheckpoint() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             34, // uniffi_logins_fn_method_loginstore_get_checkpoint
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -3090,13 +3090,13 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * hasLoginsByBaseDomain
      * @param {string} baseDomain
-     * @returns {Promise<boolean>}}
+     * @returns {boolean}
      */
-    async hasLoginsByBaseDomain(
+    hasLoginsByBaseDomain(
         baseDomain) {
        
         FfiConverterString.checkType(baseDomain);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             35, // uniffi_logins_fn_method_loginstore_has_logins_by_base_domain
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(baseDomain),
@@ -3110,11 +3110,11 @@ export class LoginStore extends LoginStoreInterface {
 
     /**
      * isEmpty
-     * @returns {Promise<boolean>}}
+     * @returns {boolean}
      */
-    async isEmpty() {
+    isEmpty() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             36, // uniffi_logins_fn_method_loginstore_is_empty
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -3152,11 +3152,11 @@ export class LoginStore extends LoginStoreInterface {
 
     /**
      * list
-     * @returns {Promise<Array.<Login>>}}
+     * @returns {Array.<Login>}
      */
-    async list() {
+    list() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             38, // uniffi_logins_fn_method_loginstore_list
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -3171,11 +3171,11 @@ export class LoginStore extends LoginStoreInterface {
      * Stores that the user dismissed the breach alert for a login.
      * @param {string} id
      */
-    async recordBreachAlertDismissal(
+    recordBreachAlertDismissal(
         id) {
        
         FfiConverterString.checkType(id);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             39, // uniffi_logins_fn_method_loginstore_record_breach_alert_dismissal
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
@@ -3192,13 +3192,13 @@ export class LoginStore extends LoginStoreInterface {
      * @param {string} id
      * @param {number} timestamp
      */
-    async recordBreachAlertDismissalTime(
+    recordBreachAlertDismissalTime(
         id, 
         timestamp) {
        
         FfiConverterString.checkType(id);
         FfiConverterInt64.checkType(timestamp);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             40, // uniffi_logins_fn_method_loginstore_record_breach_alert_dismissal_time
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
@@ -3238,9 +3238,9 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * registerWithSyncManager
      */
-    async registerWithSyncManager() {
+    registerWithSyncManager() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             42, // uniffi_logins_fn_method_loginstore_register_with_sync_manager
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -3254,9 +3254,9 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * reset
      */
-    async reset() {
+    reset() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             43, // uniffi_logins_fn_method_loginstore_reset
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -3270,9 +3270,9 @@ export class LoginStore extends LoginStoreInterface {
     /**
      * Removes all recorded breaches.
      */
-    async resetAllBreaches() {
+    resetAllBreaches() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             44, // uniffi_logins_fn_method_loginstore_reset_all_breaches
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )
@@ -3306,11 +3306,11 @@ export class LoginStore extends LoginStoreInterface {
      * setCheckpoint
      * @param {string} checkpoint
      */
-    async setCheckpoint(
+    setCheckpoint(
         checkpoint) {
        
         FfiConverterString.checkType(checkpoint);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             46, // uniffi_logins_fn_method_loginstore_set_checkpoint
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(checkpoint),
@@ -3342,11 +3342,11 @@ export class LoginStore extends LoginStoreInterface {
      * touch
      * @param {string} id
      */
-    async touch(
+    touch(
         id) {
        
         FfiConverterString.checkType(id);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             48, // uniffi_logins_fn_method_loginstore_touch
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
@@ -3362,15 +3362,15 @@ export class LoginStore extends LoginStoreInterface {
      * update
      * @param {string} id
      * @param {LoginEntry} login
-     * @returns {Promise<Login>}}
+     * @returns {Login}
      */
-    async update(
+    update(
         id, 
         login) {
        
         FfiConverterString.checkType(id);
         FfiConverterTypeLoginEntry.checkType(login);
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             49, // uniffi_logins_fn_method_loginstore_update
             FfiConverterTypeLoginStore.lowerReceiver(this),
             FfiConverterString.lower(id),
@@ -3396,9 +3396,9 @@ export class LoginStore extends LoginStoreInterface {
      * This is a no-op for freshly created databases, so it's safe to call this whenever a key is
      * generated.
      */
-    async wipeLocal() {
+    wipeLocal() {
        
-        const result = await UniFFIScaffolding.callAsyncWrapper(
+        const result = UniFFIScaffolding.callSync(
             50, // uniffi_logins_fn_method_loginstore_wipe_local
             FfiConverterTypeLoginStore.lowerReceiver(this),
         )

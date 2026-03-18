@@ -528,7 +528,7 @@ export class LoginManagerRustMirror {
     let numberOfLoginsMigrated = 0;
 
     try {
-      await this.#rustStorage.removeAllLoginsAsync();
+      this.#rustStorage.removeAllLogins();
       await this.#rustStorage.clearAllPotentiallyVulnerablePasswords();
 
       this.#logger.log("Cleared existing Rust logins.");
