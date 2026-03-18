@@ -296,7 +296,7 @@ AltSvcMapping::AltSvcMapping(nsIDataStorage* storage, int32_t epoch,
   }
 
   LOG(("AltSvcMapping ctor %p %s://%s:%d to %s:%d\n", this,
-       nsCString(originScheme).get(), mOriginHost.get(), mOriginPort,
+       PromiseFlatCString(originScheme).get(), mOriginHost.get(), mOriginPort,
        mAlternateHost.get(), mAlternatePort));
 
   if (mAlternateHost.IsEmpty()) {
@@ -509,19 +509,17 @@ AltSvcMapping::AltSvcMapping(nsIDataStorage* storage, int32_t epoch,
     _NS_NEXT_TOKEN;
     mOriginHost = Substring(str, start, idx - start);
     _NS_NEXT_TOKEN;
-    mOriginPort =
-        nsCString(Substring(str, start, idx - start)).ToInteger(&code);
+    mOriginPort = Substring(str, start, idx - start).ToInteger(&code);
     _NS_NEXT_TOKEN;
     mAlternateHost = Substring(str, start, idx - start);
     _NS_NEXT_TOKEN;
-    mAlternatePort =
-        nsCString(Substring(str, start, idx - start)).ToInteger(&code);
+    mAlternatePort = Substring(str, start, idx - start).ToInteger(&code);
     _NS_NEXT_TOKEN;
     mUsername = Substring(str, start, idx - start);
     _NS_NEXT_TOKEN;
     mPrivate = Substring(str, start, idx - start).EqualsLiteral("y");
     _NS_NEXT_TOKEN;
-    mExpiresAt = nsCString(Substring(str, start, idx - start)).ToInteger(&code);
+    mExpiresAt = Substring(str, start, idx - start).ToInteger(&code);
     _NS_NEXT_TOKEN;
     mNPNToken = Substring(str, start, idx - start);
     _NS_NEXT_TOKEN;

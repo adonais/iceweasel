@@ -5107,7 +5107,7 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(bool isHttps) {
   }
 
   if (mPostID) {
-    mCacheIdExtension.Append(nsPrintfCString("%d", mPostID));
+    mCacheIdExtension.AppendInt(mPostID);
   }
   if (LoadIsTRRServiceChannel()) {
     mCacheIdExtension.Append("TRR");

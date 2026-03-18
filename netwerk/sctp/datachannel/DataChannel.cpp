@@ -355,7 +355,7 @@ void DataChannelConnection::ProcessQueuedOpens() {
   // Technically in an unspecified state, although no reasonable impl will leave
   // anything in here.
   mPending.clear();
-  for (auto channel : temp) {
+  for (const auto& channel : temp) {
     DC_DEBUG(("%p: Processing queued open for %p (%u)", this, channel.get(),
               channel->mStream));
     OpenFinish(channel);  // may end up back in mPending

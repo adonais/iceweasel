@@ -417,13 +417,15 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
       const UniquePtr<TokenCacheRecord>& rec = cacheEntry->Get();
 
       if (rec->mExpirationTime > now) {
-        aToken = rec->mToken.Clone();
-        aResult = rec->mSessionCacheInfo.Clone();
+        uint64_t id = rec->mId;
+        uint32_t size = rec->Size();
+        UniquePtr<TokenCacheRecord> owned = cacheEntry->RemoveWithId(id);
+        aToken = std::move(owned->mToken);
+        aResult = std::move(owned->mSessionCacheInfo);
         if (aTokenId) {
-          *aTokenId = rec->mId;
+          *aTokenId = id;
         }
-        mCacheSize -= rec->Size();
-        cacheEntry->RemoveWithId(rec->mId);
+        mCacheSize -= size;
         if (cacheEntry->RecordCount() == 0) {
           mTokenCacheRecords.Remove(aKey);
         }
