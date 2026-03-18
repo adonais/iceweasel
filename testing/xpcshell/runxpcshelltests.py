@@ -1699,7 +1699,7 @@ class XPCShellTests:
         self.mozInfo = fixedInfo
 
         self.mozInfo["fission"] = prefs.get("fission.autostart", True)
-        self.mozInfo["sessionHistoryInParent"] = self.mozInfo["fission"]
+        self.mozInfo["sessionHistoryInParent"] = True
 
         self.mozInfo["verify"] = options.get("verify", False)
 

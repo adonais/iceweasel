@@ -3548,14 +3548,7 @@ toolbar#nav-bar {
             "http3": options.useHttp3Server,
             "http2": options.useHttp2Server,
             "inc_origin_init": os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1",
-            # Until the test harness can understand default pref values,
-            # (https://bugzilla.mozilla.org/show_bug.cgi?id=1577912) this value
-            # should by synchronized with the default pref value indicated in
-            # StaticPrefList.yaml.
-            #
-            # Currently for automation, the pref defaults to true (but can be
-            # overridden with --setpref).
-            "sessionHistoryInParent": not options.disable_fission,
+            "sessionHistoryInParent": True,
             "socketprocess_e10s": self.extraPrefs.get("network.process.enabled", False),
             "socketprocess_networking": self.extraPrefs.get(
                 "network.http.network_access_on_socket_process.enabled", False
