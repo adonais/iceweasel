@@ -223,16 +223,6 @@ def msvs_version(vc_compiler_version):
 
 set_config("MSVS_VERSION", msvs_version)
 
-with only_when(target_is_windows):
-
-    @depends(target)
-    def dxc_task_name(target):
-        return "dxc-" + target.cpu + "-pc-windows-msvc"
-
-    @depends_if(bootstrap_path(dxc_task_name))
-    def dxc_dll_path(bootstrap):
-        return os.path.join(bootstrap, "dxcompiler.dll")
-
 
 @depends(target.abi, host.abi, vc_toolchain_search_path)
 @imports("os")
@@ -258,7 +248,16 @@ def vc_path(target_windows_abi, host_windows_abi, vc_toolchain_search_path):
     return os.path.normpath(result)
 
 
-@depends_if(vc_path)
-@imports("os")
-def windows_toolchain_flags(vc_path):
-    return [f"-I{os.path.join(vc_path, 'include')}"]
+with only_when(target_is_windows):
+
+    @depends(target)
+    def dxc_task_name(target):
+        return "dxc-" + target.cpu + "-pc-windows-msvc"
+
+    @depends_if(bootstrap_path(dxc_task_name))
+    def dxc_dll_path(bootstrap):
+        return os.path.join(bootstrap, "dxcompiler.dll")
+
+    @depends_if(vc_path)
+    def windows_toolchain_flags(vc_path):
+        return [f"-I{os.path.join(vc_path, 'include')}"]
