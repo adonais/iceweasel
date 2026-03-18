@@ -14,6 +14,21 @@ import org.gradle.api.initialization.Settings
 import org.gradle.api.logging.Logging
 import java.io.File
 
+private val buildIdLogger = Logging.getLogger("org.mozilla.conventions.BuildId")
+
+// Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
+fun getBuildId(topobjdir: String): String {
+    val envDate = System.getenv("MOZ_BUILD_DATE")
+    if (envDate != null) {
+        if (envDate.length == 14) {
+            return envDate
+        }
+        buildIdLogger.warn("Ignoring invalid MOZ_BUILD_DATE: $envDate")
+    }
+
+    return File(topobjdir, "buildid.h").readText().split(Regex("\\s+"))[2]
+}
+
 @Serializable
 data class BuildConfig(
     val projects: Map<String, ProjectConfig> = emptyMap(),

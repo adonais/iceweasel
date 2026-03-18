@@ -7,6 +7,8 @@ import org.yaml.snakeyaml.Yaml
 
 import java.time.format.DateTimeFormatter
 
+import static org.mozilla.conventions.BuildConfigKt.getBuildId
+
 buildscript {
     if (!gradle.root.hasProperty("mozconfig")){
         apply from: file('./gradle/mozconfig.gradle')
@@ -67,17 +69,6 @@ class Config {
     }
 }
 
-// Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
-def getBuildId() {
-    if (System.env.MOZ_BUILD_DATE) {
-        if (System.env.MOZ_BUILD_DATE.length() == 14) {
-            return System.env.MOZ_BUILD_DATE
-        }
-        logger.warn("Ignoring invalid MOZ_BUILD_DATE: ${System.env.MOZ_BUILD_DATE}")
-    }
-    return file("${gradle.mozconfig.topobjdir}/buildid.h").getText('utf-8').split()[2]
-}
-
 // Return a manifest version string that respects the Firefox version format,
 // see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version#version_format
 def getManifestVersionString(componentsVersion) {
@@ -92,7 +83,7 @@ def getManifestVersionString(componentsVersion) {
     // Per https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version,
     // each part can have up to 9 digits.  Note the single `H` when formatting the output avoid
     // leading zeros, which are not allowed.
-    def buildDate = LocalDateTime.parse(getBuildId(), DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+    def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir), DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
     def dateAndTime = buildDate.format(DateTimeFormatter.ofPattern("YYYYMMdd.Hmmss"));
 
     return "${parts[0]}.${parts[1]}.${dateAndTime}";
