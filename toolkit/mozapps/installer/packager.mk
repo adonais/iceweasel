@@ -87,10 +87,10 @@ ifdef ENABLE_MOZSEARCH_PLUGIN
 	@echo 'Generating mozsearch scip index...'
 	$(RM) $(MOZSEARCH_SCIP_INDEX_BASENAME).zip
 	cd $(topsrcdir)/ && \
-          $(PYTHON3) $(topsrcdir)/mach rust-analyzer-config -o rust-analyzer.json && \
+          $(PYTHON3) $(topsrcdir)/mach rust-analyzer-config -o $(topsrcdir)/rust-analyzer.json && \
           CARGO=$(MOZ_FETCHES_DIR)/rustc/bin/cargo \
           RUSTC=$(MOZ_FETCHES_DIR)/rustc/bin/rustc \
-          $(MOZ_FETCHES_DIR)/rustc/bin/rust-analyzer scip . --config-path rust-analyzer.json && \
+          $(MOZ_FETCHES_DIR)/rustc/bin/rust-analyzer scip . --config-path $(topsrcdir)/rust-analyzer.json && \
           zip -r5D '$(ABS_DIST)/$(PKG_PATH)$(MOZSEARCH_SCIP_INDEX_BASENAME).zip' \
           index.scip
 	rm $(topsrcdir)/rust-analyzer.json
