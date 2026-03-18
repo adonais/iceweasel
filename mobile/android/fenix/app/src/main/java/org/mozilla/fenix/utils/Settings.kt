@@ -1407,7 +1407,7 @@ class Settings(
 
     var shouldUseBottomToolbar by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_toolbar_bottom),
-        default = false,
+        default = { FxNimbus.features.defaultBottomToolbar.value().enabled },
         persistDefaultIfNotExists = true,
     )
 
