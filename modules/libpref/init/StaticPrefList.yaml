@@ -300,6 +300,11 @@
 #endif
   mirror: always
 
+- name: accessibility.tagged_pdf_output.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Whether to enable support for the UI Automation API on Windows. Values:
 # * 0: Never.
 # * 1: Always.
