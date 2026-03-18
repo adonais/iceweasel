@@ -1670,8 +1670,10 @@ impl Global {
                 .drm_format_modifier(vk_image_wrapper.modifier)
                 .plane_layouts(&memory_plane_layouts);
 
+            let flags = vk::ImageCreateFlags::empty();
+
             let vk_info = vk::ImageCreateInfo::default()
-                .flags(vk::ImageCreateFlags::ALIAS)
+                .flags(flags)
                 .image_type(vk::ImageType::TYPE_2D)
                 // Bug 1971883: Rather than hard-coding this format, we should use
                 // whatever format was negotiated between `GPUCanvasContext.configure`
