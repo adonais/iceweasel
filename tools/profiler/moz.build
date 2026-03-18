@@ -44,33 +44,26 @@ XPCOM_MANIFESTS += [
     "gecko/components.conf",
 ]
 
-if CONFIG["OS_TARGET"] == "Darwin":
-    # This file cannot be built in unified mode because it includes
-    # "nsLocalFile.h", which pulls in a system header which uses a type
-    # called TextRange, which conflicts with mozilla::TextRange due to
-    # a "using namespace mozilla;" declaration from a different file.
-    SOURCES += [
-        "gecko/nsProfiler.cpp",
-    ]
-else:
-    UNIFIED_SOURCES += [
-        "gecko/nsProfiler.cpp",
-    ]
-
-if CONFIG["OS_TARGET"] in ("Android", "Linux"):
+# Keep in sync with ProfilerPlatformMacros.h
+if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64"):
     UNIFIED_SOURCES += [
         "core/ProfilerCPUFreq-linux-android.cpp",
+        "gecko/nsProfiler.cpp",
+        "lul/AutoObjectMapper.cpp",
+        "lul/LulCommon.cpp",
+        "lul/LulDwarf.cpp",
+        "lul/LulDwarfSummariser.cpp",
+        "lul/LulElf.cpp",
+        "lul/LulMain.cpp",
+        "lul/platform-linux-lul.cpp",
     ]
-if CONFIG["OS_TARGET"] in ("Android", "Linux", "FreeBSD"):
-    if CONFIG["TARGET_CPU"] in ("arm", "aarch64", "x86", "x86_64", "mips64"):
-        UNIFIED_SOURCES += [
-            "lul/AutoObjectMapper.cpp",
-            "lul/LulCommon.cpp",
-            "lul/LulDwarf.cpp",
-            "lul/LulDwarfSummariser.cpp",
-            "lul/LulElf.cpp",
-            "lul/LulMain.cpp",
-            "lul/platform-linux-lul.cpp",
+    if CONFIG["TARGET_CPU"] == "aarch64":
+        SOURCES += [
+            "core/PowerCounters-android.cpp",
+        ]
+    if CONFIG["TARGET_CPU"] == "arm":
+        SOURCES += [
+            "core/EHABIStackWalk.cpp",
         ]
     if not CONFIG["MOZ_CRASHREPORTER"]:
         SOURCES += [
@@ -83,19 +76,67 @@ if CONFIG["OS_TARGET"] in ("Android", "Linux", "FreeBSD"):
             SOURCES += [
                 "/toolkit/crashreporter/google-breakpad/src/common/linux/breakpad_getcontext.S"
             ]
-    if CONFIG["TARGET_CPU"] == "x86_64" and CONFIG["OS_TARGET"] == "Linux":
+elif CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64", "mips64"):
+    UNIFIED_SOURCES += [
+        "core/ProfilerCPUFreq-linux-android.cpp",
+        "gecko/nsProfiler.cpp",
+        "lul/AutoObjectMapper.cpp",
+        "lul/LulCommon.cpp",
+        "lul/LulDwarf.cpp",
+        "lul/LulDwarfSummariser.cpp",
+        "lul/LulElf.cpp",
+        "lul/LulMain.cpp",
+        "lul/platform-linux-lul.cpp",
+    ]
+    if CONFIG["TARGET_CPU"] == "x86_64":
         UNIFIED_SOURCES += [
             "core/PowerCounters-linux.cpp",
         ]
-    elif CONFIG["TARGET_CPU"] == "aarch64" and CONFIG["OS_TARGET"] == "Android":
-        SOURCES += [
-            "core/PowerCounters-android.cpp",
-        ]
-    if CONFIG["TARGET_CPU"] == "arm" and CONFIG["OS_TARGET"] != "FreeBSD":
+    if CONFIG["TARGET_CPU"] == "arm":
         SOURCES += [
             "core/EHABIStackWalk.cpp",
         ]
-elif CONFIG["OS_TARGET"] == "Darwin":
+    if not CONFIG["MOZ_CRASHREPORTER"]:
+        SOURCES += [
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/elfutils.cc",
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/file_id.cc",
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/linux_libc_support.cc",
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/memory_mapped_file.cc",
+        ]
+        if not CONFIG["HAVE_GETCONTEXT"]:
+            SOURCES += [
+                "/toolkit/crashreporter/google-breakpad/src/common/linux/breakpad_getcontext.S"
+            ]
+elif CONFIG["OS_TARGET"] == "FreeBSD" and CONFIG["TARGET_CPU"] in ("aarch64", "x86_64"):
+    UNIFIED_SOURCES += [
+        "gecko/nsProfiler.cpp",
+        "lul/AutoObjectMapper.cpp",
+        "lul/LulCommon.cpp",
+        "lul/LulDwarf.cpp",
+        "lul/LulDwarfSummariser.cpp",
+        "lul/LulElf.cpp",
+        "lul/LulMain.cpp",
+        "lul/platform-linux-lul.cpp",
+    ]
+    if not CONFIG["MOZ_CRASHREPORTER"]:
+        SOURCES += [
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/elfutils.cc",
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/file_id.cc",
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/linux_libc_support.cc",
+            "/toolkit/crashreporter/google-breakpad/src/common/linux/memory_mapped_file.cc",
+        ]
+        if not CONFIG["HAVE_GETCONTEXT"]:
+            SOURCES += [
+                "/toolkit/crashreporter/google-breakpad/src/common/linux/breakpad_getcontext.S"
+            ]
+elif CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_CPU"] in ("aarch64", "x86_64"):
+    # This file cannot be built in unified mode because it includes
+    # "nsLocalFile.h", which pulls in a system header which uses a type
+    # called TextRange, which conflicts with mozilla::TextRange due to
+    # a "using namespace mozilla;" declaration from a different file.
+    SOURCES += [
+        "gecko/nsProfiler.cpp",
+    ]
     UNIFIED_SOURCES += [
         "core/ProfilerThermalState-mac.mm",
     ]
@@ -107,7 +148,10 @@ elif CONFIG["OS_TARGET"] == "Darwin":
         UNIFIED_SOURCES += [
             "core/PowerCounters-mac-amd64.cpp",
         ]
-elif CONFIG["OS_TARGET"] == "WINNT":
+elif CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] in ("aarch64", "x86", "x86_64"):
+    UNIFIED_SOURCES += [
+        "gecko/nsProfiler.cpp",
+    ]
     if CONFIG["CC_TYPE"] == "clang-cl":
         UNIFIED_SOURCES += [
             "core/PowerCounters-win.cpp",
@@ -117,6 +161,10 @@ elif CONFIG["OS_TARGET"] == "WINNT":
         }
     SOURCES += [
         "core/ProfilerCPUFreq-win.cpp",
+    ]
+else:
+    UNIFIED_SOURCES += [
+        "gecko/nsProfiler.cpp",
     ]
 
 LOCAL_INCLUDES += [
