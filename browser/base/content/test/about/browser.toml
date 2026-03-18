@@ -101,6 +101,8 @@ skip-if = [
   "socketprocess_networking",
 ]
 
+["browser_aboutNetError_neterror_telemetry.js"]
+
 ["browser_aboutNetError_xfo_iframe.js"]
 https_first_disabled = true
 support-files = [
