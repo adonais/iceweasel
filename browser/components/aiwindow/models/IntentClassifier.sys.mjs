@@ -203,9 +203,9 @@ export const IntentClassifier = {
       }
       const engine = await this._createEngine({
         featureId: "smart-intent",
-        modelId: "mozilla/mobilebert-query-intent-detection",
-        modelRevision: "v0.3.0",
         taskName: "text-classification",
+        modelId: "mozilla/mobilebert-query-intent-detection",
+        backend: "onnx-native",
       });
       const threshold = 0.8;
       const resp = await engine.run({ args: [[cleanedQuery]] });
