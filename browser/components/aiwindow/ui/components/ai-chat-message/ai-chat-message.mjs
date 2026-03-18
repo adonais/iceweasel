@@ -119,22 +119,6 @@ export class AIChatMessage extends MozLitElement {
   };
 
   /**
-   * Checks if a URL is trusted for enabling as a clickable link.
-   *
-   * Fail-closed: returns false for invalid URLs or if trustedUrls
-   * is not available.
-   *
-   * @param {URL} url - The parsed/normalized URL to check
-   * @returns {boolean} True if the URL is trusted, false otherwise
-   */
-  #isTrustedUrl(url) {
-    if (!url) {
-      return false;
-    }
-    return this.#trustedUrlSet.has(url.href);
-  }
-
-  /**
    * Replaces "website mention" markdown links rendered as anchors with an
    * <ai-website-chip> custom element.
    *
@@ -201,16 +185,12 @@ export class AIChatMessage extends MozLitElement {
    * Processes http/https links for security validation.
    *
    * For each anchor:
-   * - If trusted: strips fragment and enables href (clickable)
-   * - If not trusted: removes href (not clickable)
+   * - Trusted: strips fragment and enables href
+   * - Untrusted: formatted for disclosure via #formatUntrustedLink
    * - Non-http(s) schemes: removes href entirely
    *
-   * Fragments are stripped from enabled links to prevent fragment-based
-   * data exfiltration via prompt injection. Links are normalized
-   * without fragments so "example.com/page#section" matches trusted
-   * "example.com/page".
-   *
-   * This is fail-closed: links are only clickable if explicitly trusted.
+   * Fragments are stripped to prevent fragment-based data exfiltration
+   * via prompt injection.
    *
    * @param {Element} root - The element containing rendered markdown
    */
@@ -225,22 +205,55 @@ export class AIChatMessage extends MozLitElement {
     for (const anchor of anchors) {
       const parsed = URL.parse(anchor.href);
 
-      const isHttpUrl =
-        parsed?.protocol === "http:" || parsed?.protocol === "https:";
-
-      if (isHttpUrl) {
-        parsed.hash = "";
-      }
-      const isAllowed = isHttpUrl && this.#isTrustedUrl(parsed);
-
-      if (!isAllowed) {
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
         anchor.removeAttribute("href");
-      } else {
-        // Apply fragment-free URL to prevent data exfiltration.
+        continue;
+      }
+
+      parsed.hash = "";
+      const href = parsed.href;
+      if (this.#trustedUrlSet.has(href)) {
         // TODO Bug 2022066: Allow fragments when full URL+fragment matches ledger.
-        anchor.href = parsed.href;
+        anchor.href = href;
+      } else {
+        this.#formatUntrustedLink(anchor, href);
       }
     }
+  }
+
+  /**
+   * Formats an untrusted link for disclosure. Bare links (text matches URL)
+   * remain clickable as-is. Text links are expanded to show the label with
+   * a dashed underline followed by the clickable URL in parentheses.
+   *
+   * @param {HTMLAnchorElement} anchor
+   * @param {string} href - Fragment-stripped URL string
+   */
+  #formatUntrustedLink(anchor, href) {
+    const rawText = anchor.textContent;
+    const textUrl = URL.parse(rawText.trim());
+    if (textUrl) {
+      textUrl.hash = "";
+      if (textUrl.href === href) {
+        anchor.href = href;
+        return;
+      }
+    }
+
+    const doc = anchor.ownerDocument;
+
+    const label = doc.createElement("span");
+    label.className = "untrusted-link-label";
+    label.textContent = rawText;
+
+    const link = doc.createElement("a");
+    link.href = href;
+    link.textContent = href;
+
+    const disclosure = doc.createElement("span");
+    disclosure.append(" (", link, ")");
+
+    anchor.replaceWith(label, disclosure);
   }
 
   /**

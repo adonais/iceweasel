@@ -73,18 +73,21 @@ add_task(async function test_fail_closed_default() {
 
       await ContentTaskUtils.waitForCondition(() => {
         const div = getRoot(el).querySelector(".message-assistant");
-        return div && div.querySelectorAll("a").length === 2;
-      }, "Both anchors should be rendered");
+        return (
+          div && div.querySelectorAll(".untrusted-link-label").length === 2
+        );
+      }, "Both untrusted link labels should be rendered");
 
       const assistantDiv = getRoot(el).querySelector(".message-assistant");
-      const anchors = [...assistantDiv.querySelectorAll("a")];
 
-      Assert.equal(anchors.length, 2, "Should have 2 anchors");
+      const anchors = [...assistantDiv.querySelectorAll("a[href]")];
+      Assert.equal(anchors.length, 2, "Should have 2 disclosure anchors");
 
       for (const anchor of anchors) {
-        Assert.ok(
-          !anchor.hasAttribute("href"),
-          `Anchor "${anchor.textContent}" should NOT have href (fail-closed)`
+        Assert.equal(
+          anchor.textContent,
+          anchor.getAttribute("href"),
+          "Disclosure anchor text should match its href"
         );
       }
 
@@ -158,32 +161,39 @@ add_task(async function test_trusted_and_untrusted_links() {
 
         await ContentTaskUtils.waitForCondition(() => {
           const div = getRoot(el).querySelector(".message-assistant");
-          return div && div.querySelectorAll("a").length === 2;
-        }, "Both anchors should be rendered");
+          return div && div.querySelectorAll("a[href]").length === 2;
+        }, "Both clickable anchors should be rendered");
 
         const assistantDiv = getRoot(el).querySelector(".message-assistant");
-        const anchors = [...assistantDiv.querySelectorAll("a")];
 
-        const trustedAnchor = anchors.find(a => a.textContent === "Trusted");
-        const untrustedAnchor = anchors.find(
-          a => a.textContent === "Untrusted"
+        const trustedAnchor = assistantDiv.querySelector(
+          `a[href="${trusted}"]`
         );
-
         Assert.ok(trustedAnchor, "Trusted anchor should exist");
-        Assert.ok(
-          trustedAnchor.hasAttribute("href"),
-          "Trusted anchor should have href"
-        );
         Assert.equal(
-          trustedAnchor.getAttribute("href"),
-          trusted,
-          "Trusted anchor href should match trusted URL"
+          trustedAnchor.textContent,
+          "Trusted",
+          "Trusted anchor should have original text"
         );
 
-        Assert.ok(untrustedAnchor, "Untrusted anchor should exist");
-        Assert.ok(
-          !untrustedAnchor.hasAttribute("href"),
-          "Untrusted anchor should NOT have href"
+        const untrustedLabel = assistantDiv.querySelector(
+          ".untrusted-link-label"
+        );
+        Assert.ok(untrustedLabel, "Untrusted link label should exist");
+        Assert.equal(
+          untrustedLabel.textContent,
+          "Untrusted",
+          "Untrusted label should have original text"
+        );
+
+        const disclosureAnchor = assistantDiv.querySelector(
+          `a[href="${untrusted}"]`
+        );
+        Assert.ok(disclosureAnchor, "Disclosure anchor should exist");
+        Assert.equal(
+          disclosureAnchor.textContent,
+          untrusted,
+          "Disclosure anchor text should show the URL"
         );
 
         el.remove();
@@ -246,22 +256,20 @@ add_task(async function test_trust_update_triggers_rerender() {
       elJS.message = `Read this [Article](${url}).`;
       el.setAttribute("message", `Read this [Article](${url}).`);
 
-      // Wait for anchor to be rendered and disabled
+      // Wait for untrusted link formatting
       await ContentTaskUtils.waitForCondition(() => {
         const div = getRoot(el).querySelector(".message-assistant");
         if (!div) {
           return false;
         }
-        const anchor = div.querySelector("a");
-        return anchor && !anchor.hasAttribute("href");
-      }, "Initial render should have disabled link");
+        return div.querySelector(".untrusted-link-label");
+      }, "Initial render should show untrusted link label");
 
       let assistantDiv = getRoot(el).querySelector(".message-assistant");
-      let anchor = assistantDiv.querySelector("a");
 
       Assert.ok(
-        !anchor.hasAttribute("href"),
-        "Link should be disabled initially (fail-closed)"
+        assistantDiv.querySelector(".untrusted-link-label"),
+        "Link should show untrusted label initially (fail-closed)"
       );
 
       // Update trustedUrls to include the URL (new array instance)
@@ -273,12 +281,11 @@ add_task(async function test_trust_update_triggers_rerender() {
         if (!div) {
           return false;
         }
-        const a = div.querySelector("a");
-        return a && a.hasAttribute("href");
-      }, "Re-render should enable the link");
+        return !div.querySelector(".untrusted-link-label");
+      }, "Re-render should remove untrusted label");
 
       assistantDiv = getRoot(el).querySelector(".message-assistant");
-      anchor = assistantDiv.querySelector("a");
+      const anchor = assistantDiv.querySelector("a");
 
       Assert.ok(
         anchor.hasAttribute("href"),
@@ -288,6 +295,11 @@ add_task(async function test_trust_update_triggers_rerender() {
         anchor.getAttribute("href"),
         url,
         "Link href should match trusted URL"
+      );
+      Assert.equal(
+        anchor.textContent,
+        "Article",
+        "Trusted link should have original text"
       );
 
       el.remove();
@@ -553,8 +565,11 @@ add_task(async function test_aiwindow_component_trust_smoke() {
           const assistantDiv = (msg.shadowRoot ?? msg).querySelector(
             ".message-assistant"
           );
-          return assistantDiv?.querySelectorAll("a").length === 2;
-        }, "Message with two anchors should render");
+          return (
+            assistantDiv?.querySelectorAll("a[href]").length === 2 &&
+            assistantDiv?.querySelector(".untrusted-link-label")
+          );
+        }, "Message with trusted anchor, untrusted label, and disclosure anchor should render");
 
         const messageEl = chatContent.shadowRoot.querySelector(
           `ai-chat-message[data-message-id="${testMessageId}"]`
@@ -562,28 +577,38 @@ add_task(async function test_aiwindow_component_trust_smoke() {
         const assistantDiv = (messageEl.shadowRoot ?? messageEl).querySelector(
           ".message-assistant"
         );
-        const anchors = [...assistantDiv.querySelectorAll("a")];
 
-        const trustedAnchor = anchors.find(a => a.textContent === "Trusted");
-        const untrustedAnchor = anchors.find(
-          a => a.textContent === "Untrusted"
+        const trustedAnchor = assistantDiv.querySelector(
+          `a[href="${trusted}"]`
+        );
+        Assert.ok(trustedAnchor, "Trusted anchor should exist");
+        Assert.equal(
+          trustedAnchor.textContent,
+          "Trusted",
+          "Trusted anchor should have original text"
         );
 
-        Assert.ok(trustedAnchor, "Trusted anchor should exist");
-        Assert.ok(untrustedAnchor, "Untrusted anchor should exist");
+        const untrustedLabel = assistantDiv.querySelector(
+          ".untrusted-link-label"
+        );
+        Assert.ok(untrustedLabel, "Untrusted link label should exist");
+        Assert.equal(
+          untrustedLabel.textContent,
+          "Untrusted",
+          "Untrusted label text should match"
+        );
 
+        const disclosureAnchor = assistantDiv.querySelector(
+          `a[href="${untrusted}"]`
+        );
         Assert.ok(
-          trustedAnchor.hasAttribute("href"),
-          "Trusted anchor should have href (pushed via actor chain)"
+          disclosureAnchor,
+          "Disclosure anchor should exist for untrusted URL"
         );
         Assert.equal(
-          trustedAnchor.getAttribute("href"),
-          trusted,
-          "Trusted anchor href should match seeded URL"
-        );
-        Assert.ok(
-          !untrustedAnchor.hasAttribute("href"),
-          "Untrusted anchor should NOT have href (fail-closed)"
+          disclosureAnchor.textContent,
+          untrusted,
+          "Disclosure anchor should show the URL"
         );
       }
     );
