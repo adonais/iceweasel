@@ -293,7 +293,7 @@ export class AIChatContent extends MozLitElement {
       content,
       memoriesApplied,
       webSearchQueries,
-      followUpSuggestions,
+      followUpSuggestions = [],
     } = event.detail;
 
     if (typeof content.body !== "string" || !content.body) {

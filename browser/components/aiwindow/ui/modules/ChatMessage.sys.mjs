@@ -97,7 +97,7 @@ export class ChatMessage {
     memoriesFlagSource = null,
     memoriesApplied = [],
     webSearchQueries = [],
-    followUpSuggestions = null,
+    followUpSuggestions = [],
     params = null,
     usage = null,
     modelId = null,
