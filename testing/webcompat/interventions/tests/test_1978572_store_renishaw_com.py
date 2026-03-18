@@ -13,6 +13,7 @@ async def does_left_slider_work(client):
     client.hide_elements(POPUPS_CSS)
     client.await_css(MOBILE_FILTERS_CSS, is_displayed=True).click()
     slider = client.await_css(LEFT_SLIDER_CSS, is_displayed=True)
+    client.scroll_into_view(slider)
     await asyncio.sleep(0.5)
 
     # Unfortunately, on desktop range thumbs do not react to any attempts to

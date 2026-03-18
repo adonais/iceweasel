@@ -2,7 +2,7 @@ import pytest
 
 URL = "https://chaturbate.com/"
 AGREE_CSS = "#close_entrance_terms"
-FIRST_ROOM_CSS = "a.room_thumbnail_container[href]"
+FIRST_ROOM_CSS = "a[data-room][href]"
 FS_CSS = "[data-testid='mobile-fullscreen-button']"
 VID_CSS = ".videoPlayerDiv"
 

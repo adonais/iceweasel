@@ -4,6 +4,7 @@ URL = "https://demo.museumofpragueai.com/chatbot/"
 LANG_OVERLAY_CSS = "#langOverlay"
 FIRST_FLAG_CSS = ".lang-option.emoji"
 MIC_CSS = "#micBtn"
+MISSING_API_TEXT = "SpeechRecognition API not supported"
 
 
 async def can_click_on_flags(client):
@@ -27,7 +28,10 @@ async def test_enabled(client):
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):
-    assert not await can_click_on_flags(client)
+    assert await can_click_on_flags(client)
+    # also check that the mic button is hidden
+    assert client.await_css(MIC_CSS, is_displayed=True)
+    client.await_text(MISSING_API_TEXT, is_displayed=True)
 
 
 @pytest.mark.enable_speechrecognition

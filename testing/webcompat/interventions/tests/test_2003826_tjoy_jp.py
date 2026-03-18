@@ -5,8 +5,8 @@ import pytest
 URL = "https://tjoy.jp/shinjuku_wald9#schedule-content"
 
 DATES_CSS = ".calendar-item"
-CARD_CSS = ".card-header.js-card-click"
-RESERVE_CSS = ".schedule-box-body[onclick*=reservation]"
+CARD_CSS = ".box-film-wapper:has(.schedule-status[onclick])"
+RESERVE_CSS = ".schedule-status[onclick]"
 ZOOM_WRAPPER_CSS = ".js-zoom-in"
 MAP_CSS = ".js-map"
 
