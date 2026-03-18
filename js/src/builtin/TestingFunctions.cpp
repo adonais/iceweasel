@@ -7210,7 +7210,6 @@ class BackEdge {
   EdgeName forgetName() { return std::move(name_); }
   JS::ubi::Node predecessor() const { return predecessor_; }
 
- private:
   // No copy constructor or copying assignment.
   BackEdge(const BackEdge&) = delete;
   BackEdge& operator=(const BackEdge&) = delete;

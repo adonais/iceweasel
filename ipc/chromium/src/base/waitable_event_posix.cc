@@ -37,7 +37,7 @@ namespace base {
 WaitableEvent::WaitableEvent(bool manual_reset, bool initially_signaled)
     : kernel_(new WaitableEventKernel(manual_reset, initially_signaled)) {}
 
-WaitableEvent::~WaitableEvent() {}
+WaitableEvent::~WaitableEvent() = default;
 
 void WaitableEvent::Reset() {
   AutoLock locked(kernel_->lock_);

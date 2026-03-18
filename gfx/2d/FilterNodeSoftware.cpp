@@ -900,7 +900,7 @@ void FilterNodeSoftware::Invalidate() {
   }
 }
 
-FilterNodeSoftware::FilterNodeSoftware() {}
+FilterNodeSoftware::FilterNodeSoftware() = default;
 
 FilterNodeSoftware::~FilterNodeSoftware() {
   MOZ_ASSERT(

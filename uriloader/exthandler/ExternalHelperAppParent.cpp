@@ -161,7 +161,7 @@ ExternalHelperAppParent::OnStopRequest(nsIRequest* request, nsresult status) {
   return rv;
 }
 
-ExternalHelperAppParent::~ExternalHelperAppParent() {}
+ExternalHelperAppParent::~ExternalHelperAppParent() = default;
 
 //
 // nsIRequest implementation...

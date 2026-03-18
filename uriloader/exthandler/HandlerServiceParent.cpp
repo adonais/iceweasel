@@ -35,7 +35,7 @@ class ProxyHandlerInfo final : public nsIHandlerInfo {
   nsTArray<nsCString>& Extensions() { return mHandlerInfo.extensions(); }
 
  protected:
-  ~ProxyHandlerInfo() {}
+  ~ProxyHandlerInfo() = default;
   HandlerInfo mHandlerInfo;
   nsHandlerInfoAction mPrefAction;
   nsCOMPtr<nsIMutableArray> mPossibleApps;
@@ -154,7 +154,7 @@ class ProxyMIMEInfo : public nsIMIMEInfo {
       : mProxyHandlerInfo(new ProxyHandlerInfo(aHandlerInfo)) {}
 
  private:
-  virtual ~ProxyMIMEInfo() {}
+  virtual ~ProxyMIMEInfo() = default;
   RefPtr<ProxyHandlerInfo> mProxyHandlerInfo;
 
  protected:
@@ -249,9 +249,9 @@ static already_AddRefed<nsIHandlerInfo> WrapHandlerInfo(
 
 }  // anonymous namespace
 
-HandlerServiceParent::HandlerServiceParent() {}
+HandlerServiceParent::HandlerServiceParent() = default;
 
-HandlerServiceParent::~HandlerServiceParent() {}
+HandlerServiceParent::~HandlerServiceParent() = default;
 
 mozilla::ipc::IPCResult HandlerServiceParent::RecvFillHandlerInfo(
     const HandlerInfo& aHandlerInfoData, const nsACString& aOverrideType,

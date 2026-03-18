@@ -94,7 +94,7 @@ nsExtProtocolChannel::nsExtProtocolChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo)
       mConnectedParent(false),
       mLoadInfo(aLoadInfo) {}
 
-nsExtProtocolChannel::~nsExtProtocolChannel() {}
+nsExtProtocolChannel::~nsExtProtocolChannel() = default;
 
 NS_IMETHODIMP nsExtProtocolChannel::GetLoadGroup(nsILoadGroup** aLoadGroup) {
   NS_IF_ADDREF(*aLoadGroup = mLoadGroup);
@@ -473,7 +473,7 @@ nsExternalProtocolHandler::nsExternalProtocolHandler() {
   m_schemeName = "default";
 }
 
-nsExternalProtocolHandler::~nsExternalProtocolHandler() {}
+nsExternalProtocolHandler::~nsExternalProtocolHandler() = default;
 
 NS_IMPL_ADDREF(nsExternalProtocolHandler)
 NS_IMPL_RELEASE(nsExternalProtocolHandler)

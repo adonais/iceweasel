@@ -664,7 +664,7 @@ NS_IMPL_ISUPPORTS(nsExternalHelperAppService, nsIExternalHelperAppService,
                   nsPIExternalAppLauncher, nsIExternalProtocolService,
                   nsIMIMEService, nsIObserver, nsISupportsWeakReference)
 
-nsExternalHelperAppService::nsExternalHelperAppService() {}
+nsExternalHelperAppService::nsExternalHelperAppService() = default;
 nsresult nsExternalHelperAppService::Init() {
   // Add an observer for profile change
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -675,7 +675,7 @@ nsresult nsExternalHelperAppService::Init() {
   return obs->AddObserver(this, "last-pb-context-exited", true);
 }
 
-nsExternalHelperAppService::~nsExternalHelperAppService() {}
+nsExternalHelperAppService::~nsExternalHelperAppService() = default;
 
 nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
     const nsACString& aMimeContentType, nsIChannel* aChannel,

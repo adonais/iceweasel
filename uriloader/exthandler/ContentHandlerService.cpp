@@ -21,7 +21,7 @@ namespace dom {
 
 NS_IMPL_ISUPPORTS(ContentHandlerService, nsIHandlerService)
 
-ContentHandlerService::ContentHandlerService() {}
+ContentHandlerService::ContentHandlerService() = default;
 
 /* static */ already_AddRefed<nsIHandlerService>
 ContentHandlerService::Create() {
@@ -162,7 +162,7 @@ static inline void CopyHandlerInfoTonsIHandlerInfo(
   }
 }
 
-ContentHandlerService::~ContentHandlerService() {}
+ContentHandlerService::~ContentHandlerService() = default;
 
 NS_IMETHODIMP ContentHandlerService::AsyncInit() {
   return NS_ERROR_NOT_IMPLEMENTED;

@@ -58,7 +58,7 @@ RootAccessible::RootAccessible(Document* aDocument, PresShell* aPresShell)
   mType = eRootType;
 }
 
-RootAccessible::~RootAccessible() {}
+RootAccessible::~RootAccessible() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 // LocalAccessible

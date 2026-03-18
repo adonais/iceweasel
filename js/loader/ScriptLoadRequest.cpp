@@ -104,7 +104,7 @@ ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
   }
 }
 
-ScriptLoadRequest::~ScriptLoadRequest() {}
+ScriptLoadRequest::~ScriptLoadRequest() = default;
 
 void ScriptLoadRequest::SetReady() {
   MOZ_ASSERT(!IsFinished());

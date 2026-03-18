@@ -1583,9 +1583,8 @@ RInstructionResults& RInstructionResults::operator=(RInstructionResults&& rhs) {
   return *this;
 }
 
-RInstructionResults::~RInstructionResults() {
-  // results_ is freed by the UniquePtr.
-}
+// results_ is freed by the UniquePtr.
+RInstructionResults::~RInstructionResults() = default;
 
 bool RInstructionResults::init(JSContext* cx, uint32_t numResults) {
   if (numResults) {

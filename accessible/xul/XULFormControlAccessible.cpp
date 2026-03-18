@@ -39,7 +39,7 @@ XULButtonAccessible::XULButtonAccessible(nsIContent* aContent,
   }
 }
 
-XULButtonAccessible::~XULButtonAccessible() {}
+XULButtonAccessible::~XULButtonAccessible() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULButtonAccessible: nsISupports

@@ -8,7 +8,7 @@
 namespace mozilla {
 namespace layers {
 
-SampledAPZCState::SampledAPZCState() {}
+SampledAPZCState::SampledAPZCState() = default;
 
 SampledAPZCState::SampledAPZCState(const FrameMetrics& aMetrics)
     : mLayoutViewport(aMetrics.GetLayoutViewport()),

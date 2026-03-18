@@ -25,7 +25,7 @@ nsRefreshTimer::nsRefreshTimer(nsDocShell* aDocShell, nsIURI* aURI,
       mPrincipal(aPrincipal),
       mDelay(aDelay) {}
 
-nsRefreshTimer::~nsRefreshTimer() {}
+nsRefreshTimer::~nsRefreshTimer() = default;
 
 NS_IMETHODIMP
 nsRefreshTimer::Notify(nsITimer* aTimer) {

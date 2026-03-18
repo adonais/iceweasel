@@ -334,7 +334,7 @@ void Http2BaseCompressor::SetDumpTables(bool dumpTables) {
   mDumpTables = dumpTables;
 }
 
-Http2Decompressor::~Http2Decompressor() {}
+Http2Decompressor::~Http2Decompressor() = default;
 
 nsresult Http2Decompressor::DecodeHeaderBlock(const uint8_t* data,
                                               uint32_t datalen,

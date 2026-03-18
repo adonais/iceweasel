@@ -9,7 +9,7 @@
 namespace mozilla {
 namespace layers {
 
-TextureSourceProvider::~TextureSourceProvider() {}
+TextureSourceProvider::~TextureSourceProvider() = default;
 
 void TextureSourceProvider::Destroy() {}
 

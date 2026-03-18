@@ -167,7 +167,7 @@ nsASDOMWindowEnumerator::nsASDOMWindowEnumerator(const char16_t* aTypeString,
                                                  nsWindowMediator& aMediator)
     : nsAppShellWindowEnumerator(aTypeString, aMediator) {}
 
-nsASDOMWindowEnumerator::~nsASDOMWindowEnumerator() {}
+nsASDOMWindowEnumerator::~nsASDOMWindowEnumerator() = default;
 
 NS_IMETHODIMP nsASDOMWindowEnumerator::GetNext(nsISupports** retval) {
   if (!retval) return NS_ERROR_INVALID_ARG;
@@ -190,7 +190,7 @@ nsASAppWindowEnumerator::nsASAppWindowEnumerator(const char16_t* aTypeString,
                                                  nsWindowMediator& aMediator)
     : nsAppShellWindowEnumerator(aTypeString, aMediator) {}
 
-nsASAppWindowEnumerator::~nsASAppWindowEnumerator() {}
+nsASAppWindowEnumerator::~nsASAppWindowEnumerator() = default;
 
 NS_IMETHODIMP nsASAppWindowEnumerator::GetNext(nsISupports** retval) {
   if (!retval) return NS_ERROR_INVALID_ARG;
@@ -215,7 +215,8 @@ nsASDOMWindowEarlyToLateEnumerator::nsASDOMWindowEarlyToLateEnumerator(
   AdjustInitialPosition();
 }
 
-nsASDOMWindowEarlyToLateEnumerator::~nsASDOMWindowEarlyToLateEnumerator() {}
+nsASDOMWindowEarlyToLateEnumerator::~nsASDOMWindowEarlyToLateEnumerator() =
+    default;
 
 nsWindowInfo* nsASDOMWindowEarlyToLateEnumerator::FindNext() {
   nsWindowInfo *info, *listEnd;
@@ -246,7 +247,8 @@ nsASAppWindowEarlyToLateEnumerator::nsASAppWindowEarlyToLateEnumerator(
   AdjustInitialPosition();
 }
 
-nsASAppWindowEarlyToLateEnumerator::~nsASAppWindowEarlyToLateEnumerator() {}
+nsASAppWindowEarlyToLateEnumerator::~nsASAppWindowEarlyToLateEnumerator() =
+    default;
 
 nsWindowInfo* nsASAppWindowEarlyToLateEnumerator::FindNext() {
   nsWindowInfo *info, *listEnd;
@@ -283,7 +285,8 @@ nsASAppWindowFrontToBackEnumerator::nsASAppWindowFrontToBackEnumerator(
   AdjustInitialPosition();
 }
 
-nsASAppWindowFrontToBackEnumerator::~nsASAppWindowFrontToBackEnumerator() {}
+nsASAppWindowFrontToBackEnumerator::~nsASAppWindowFrontToBackEnumerator() =
+    default;
 
 nsWindowInfo* nsASAppWindowFrontToBackEnumerator::FindNext() {
   nsWindowInfo *info, *listEnd;
@@ -315,7 +318,8 @@ nsASAppWindowBackToFrontEnumerator::nsASAppWindowBackToFrontEnumerator(
   AdjustInitialPosition();
 }
 
-nsASAppWindowBackToFrontEnumerator::~nsASAppWindowBackToFrontEnumerator() {}
+nsASAppWindowBackToFrontEnumerator::~nsASAppWindowBackToFrontEnumerator() =
+    default;
 
 nsWindowInfo* nsASAppWindowBackToFrontEnumerator::FindNext() {
   nsWindowInfo *info, *listEnd;

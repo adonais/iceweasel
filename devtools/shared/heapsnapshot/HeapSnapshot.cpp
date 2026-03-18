@@ -1153,7 +1153,7 @@ class MOZ_STACK_CLASS StreamWriter : public CoreDumpWriter {
         stream(stream),
         compartments(compartments) {}
 
-  ~StreamWriter() override {}
+  ~StreamWriter() override = default;
 
   bool writeMetadata(uint64_t timestamp) final {
     protobuf::Metadata metadata;
@@ -1386,7 +1386,7 @@ already_AddRefed<nsIFile> HeapSnapshot::CreateUniqueCoreDumpFile(
 // Deletion policy for cleaning up PHeapSnapshotTempFileHelperChild pointers.
 class DeleteHeapSnapshotTempFileHelperChild {
  public:
-  constexpr DeleteHeapSnapshotTempFileHelperChild() {}
+  constexpr DeleteHeapSnapshotTempFileHelperChild() = default;
 
   void operator()(PHeapSnapshotTempFileHelperChild* ptr) const {
     (void)NS_WARN_IF(!HeapSnapshotTempFileHelperChild::Send__delete__(ptr));

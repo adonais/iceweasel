@@ -34,7 +34,7 @@ FilteredContentIterator::FilteredContentIterator(
       mIsOutOfRange(false),
       mDirection(eDirNotSet) {}
 
-FilteredContentIterator::~FilteredContentIterator() {}
+FilteredContentIterator::~FilteredContentIterator() = default;
 
 NS_IMPL_CYCLE_COLLECTION(FilteredContentIterator, mPostIterator, mPreIterator,
                          mRange)

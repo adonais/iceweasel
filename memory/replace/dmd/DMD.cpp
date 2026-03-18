@@ -382,12 +382,10 @@ class MutexBase {
 class MutexBase {
   pthread_mutex_t mMutex;
 
-  MutexBase(const MutexBase&) = delete;
-
-  const MutexBase& operator=(const MutexBase&) = delete;
-
  public:
   MutexBase() { pthread_mutex_init(&mMutex, nullptr); }
+  MutexBase(const MutexBase&) = delete;
+  const MutexBase& operator=(const MutexBase&) = delete;
 
   void Lock() { pthread_mutex_lock(&mMutex); }
   void Unlock() { pthread_mutex_unlock(&mMutex); }
@@ -396,14 +394,12 @@ class MutexBase {
 #endif
 
 class Mutex : private MutexBase {
-  bool mIsLocked;
-
-  Mutex(const Mutex&) = delete;
-
-  const Mutex& operator=(const Mutex&) = delete;
+  bool mIsLocked = false;
 
  public:
-  Mutex() : mIsLocked(false) {}
+  Mutex() = default;
+  Mutex(const Mutex&) = delete;
+  const Mutex& operator=(const Mutex&) = delete;
 
   void Lock() {
     MutexBase::Lock();
@@ -428,23 +424,19 @@ class Mutex : private MutexBase {
 static Mutex* gStateLock = nullptr;
 
 class AutoLockState {
-  AutoLockState(const AutoLockState&) = delete;
-
-  const AutoLockState& operator=(const AutoLockState&) = delete;
-
  public:
   AutoLockState() { gStateLock->Lock(); }
   ~AutoLockState() { gStateLock->Unlock(); }
+  AutoLockState(const AutoLockState&) = delete;
+  const AutoLockState& operator=(const AutoLockState&) = delete;
 };
 
 class AutoUnlockState {
-  AutoUnlockState(const AutoUnlockState&) = delete;
-
-  const AutoUnlockState& operator=(const AutoUnlockState&) = delete;
-
  public:
   AutoUnlockState() { gStateLock->Unlock(); }
   ~AutoUnlockState() { gStateLock->Lock(); }
+  AutoUnlockState(const AutoUnlockState&) = delete;
+  const AutoUnlockState& operator=(const AutoUnlockState&) = delete;
 };
 
 //---------------------------------------------------------------------------
@@ -469,13 +461,9 @@ class Thread {
   // functions to themselves call malloc.  (Nb: for direct calls to malloc we
   // can just use InfallibleAllocPolicy::{malloc_,new_}, but we sometimes
   // indirectly call vanilla malloc via functions like MozStackWalk.)
-  bool mBlockIntercepts;
+  bool mBlockIntercepts = false;
 
-  Thread() : mBlockIntercepts(false) {}
-
-  Thread(const Thread&) = delete;
-
-  const Thread& operator=(const Thread&) = delete;
+  Thread() = default;
 
   static DMD_THREAD_LOCAL(Thread*) tlsThread;
 
@@ -485,6 +473,9 @@ class Thread {
       MOZ_CRASH();
     }
   }
+
+  Thread(const Thread&) = delete;
+  const Thread& operator=(const Thread&) = delete;
 
   static Thread* Fetch() {
     Thread* t = tlsThread.get();
@@ -518,16 +509,15 @@ DMD_THREAD_LOCAL(Thread*) Thread::tlsThread;
 class AutoBlockIntercepts {
   Thread* const mT;
 
-  AutoBlockIntercepts(const AutoBlockIntercepts&) = delete;
-
-  const AutoBlockIntercepts& operator=(const AutoBlockIntercepts&) = delete;
-
  public:
   explicit AutoBlockIntercepts(Thread* aT) : mT(aT) { mT->BlockIntercepts(); }
   ~AutoBlockIntercepts() {
     MOZ_ASSERT(mT->InterceptsAreBlocked());
     mT->UnblockIntercepts();
   }
+
+  AutoBlockIntercepts(const AutoBlockIntercepts&) = delete;
+  const AutoBlockIntercepts& operator=(const AutoBlockIntercepts&) = delete;
 };
 
 //---------------------------------------------------------------------------

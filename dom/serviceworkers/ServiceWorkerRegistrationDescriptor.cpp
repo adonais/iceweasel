@@ -95,9 +95,9 @@ ServiceWorkerRegistrationDescriptor::operator=(
   return *this;
 }
 
-ServiceWorkerRegistrationDescriptor::~ServiceWorkerRegistrationDescriptor() {
-  // Non-default destructor to avoid exposing the IPC type in the header.
-}
+// Avoid exposing the IPC type in the header.
+ServiceWorkerRegistrationDescriptor::~ServiceWorkerRegistrationDescriptor() =
+    default;
 
 bool ServiceWorkerRegistrationDescriptor::operator==(
     const ServiceWorkerRegistrationDescriptor& aRight) const {

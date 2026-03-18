@@ -174,7 +174,7 @@ class PeerConnectionCtxObserver : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
 
-  PeerConnectionCtxObserver() {}
+  PeerConnectionCtxObserver() = default;
 
   void Init() {
     nsCOMPtr<nsIObserverService> observerService =

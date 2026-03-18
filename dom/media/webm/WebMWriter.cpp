@@ -12,9 +12,8 @@ namespace mozilla {
 
 WebMWriter::WebMWriter() : mEbmlComposer(new EbmlComposer()) {}
 
-WebMWriter::~WebMWriter() {
-  // Out-of-line dtor so mEbmlComposer UniquePtr can delete a complete type.
-}
+// Out-of-line dtor so mEbmlComposer UniquePtr can delete a complete type.
+WebMWriter::~WebMWriter() = default;
 
 nsresult WebMWriter::WriteEncodedTrack(
     const nsTArray<RefPtr<EncodedFrame>>& aData, uint32_t aFlags) {

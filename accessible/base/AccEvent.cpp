@@ -122,7 +122,7 @@ AccTextSelChangeEvent::AccTextSelChangeEvent(HyperTextAccessible* aTarget,
       mReason(aReason),
       mGranularity(aGranularity) {}
 
-AccTextSelChangeEvent::~AccTextSelChangeEvent() {}
+AccTextSelChangeEvent::~AccTextSelChangeEvent() = default;
 
 bool AccTextSelChangeEvent::IsCaretMoveOnly() const {
   return mSel->RangeCount() == 1 && mSel->IsCollapsed() &&

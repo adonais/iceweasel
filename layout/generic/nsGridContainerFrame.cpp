@@ -631,7 +631,7 @@ class nsGridContainerFrame::TrackPlan {
 
   explicit TrackPlan(size_t aCapacity) : mTrackSizes(aCapacity) {}
 
-  TrackPlan(const TrackPlan& aOther) : mTrackSizes(aOther.mTrackSizes) {}
+  TrackPlan(const TrackPlan& aOther) = default;
 
   TrackPlan(TrackPlan&& aOther) : mTrackSizes(std::move(aOther.mTrackSizes)) {}
 

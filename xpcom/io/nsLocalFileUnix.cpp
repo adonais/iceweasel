@@ -268,7 +268,7 @@ nsDirEnumeratorUnix::Close() {
   return NS_OK;
 }
 
-nsLocalFile::nsLocalFile() {}
+nsLocalFile::nsLocalFile() = default;
 
 nsLocalFile::nsLocalFile(const nsLocalFile& aOther) : mPath(aOther.mPath) {}
 

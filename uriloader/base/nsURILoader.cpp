@@ -84,7 +84,7 @@ nsDocumentOpenInfo::nsDocumentOpenInfo(uint32_t aFlags,
           mozilla::StaticPrefs::general_document_open_conversion_depth_limit()),
       mAllowListenerConversions(aAllowListenerConversions) {}
 
-nsDocumentOpenInfo::~nsDocumentOpenInfo() {}
+nsDocumentOpenInfo::~nsDocumentOpenInfo() = default;
 
 nsresult nsDocumentOpenInfo::Prepare() {
   LOG(("[0x%p] nsDocumentOpenInfo::Prepare", this));
@@ -817,9 +817,9 @@ bool nsDocumentOpenInfo::TryDefaultContentListener(nsIChannel* aChannel) {
 // Implementation of nsURILoader
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-nsURILoader::nsURILoader() {}
+nsURILoader::nsURILoader() = default;
 
-nsURILoader::~nsURILoader() {}
+nsURILoader::~nsURILoader() = default;
 
 NS_IMPL_ADDREF(nsURILoader)
 NS_IMPL_RELEASE(nsURILoader)

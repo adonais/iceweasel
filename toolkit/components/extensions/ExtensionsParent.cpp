@@ -16,8 +16,8 @@
 namespace mozilla {
 namespace extensions {
 
-ExtensionsParent::ExtensionsParent() {}
-ExtensionsParent::~ExtensionsParent() {}
+ExtensionsParent::ExtensionsParent() = default;
+ExtensionsParent::~ExtensionsParent() = default;
 
 extIWebNavigation* ExtensionsParent::WebNavigation() {
   if (!mWebNavigation) {

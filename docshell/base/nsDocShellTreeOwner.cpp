@@ -978,7 +978,7 @@ ChromeTooltipListener::ChromeTooltipListener(nsWebBrowser* aInBrowser,
       mShowingTooltip(false),
       mTooltipShownOnce(false) {}
 
-ChromeTooltipListener::~ChromeTooltipListener() {}
+ChromeTooltipListener::~ChromeTooltipListener() = default;
 
 nsITooltipTextProvider* ChromeTooltipListener::GetTooltipTextProvider() {
   if (!mTooltipTextProvider) {

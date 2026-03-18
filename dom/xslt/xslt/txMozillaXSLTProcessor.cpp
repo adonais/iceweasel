@@ -598,7 +598,7 @@ class XSLTProcessRequest final : public nsIRequest {
   void Done() { mState = nullptr; }
 
  private:
-  ~XSLTProcessRequest() {}
+  ~XSLTProcessRequest() = default;
   txExecutionState* mState;
 };
 NS_IMPL_ISUPPORTS(XSLTProcessRequest, nsIRequest)

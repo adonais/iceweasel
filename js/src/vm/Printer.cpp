@@ -474,10 +474,9 @@ void Fprinter::put(const char* s, size_t len) {
 LSprinter::LSprinter(LifoAlloc* lifoAlloc)
     : alloc_(lifoAlloc), head_(nullptr), tail_(nullptr), unused_(0) {}
 
-LSprinter::~LSprinter() {
-  // This LSprinter might be allocated as part of the same LifoAlloc, so we
-  // should not expect the destructor to be called.
-}
+// This LSprinter might be allocated as part of the same LifoAlloc, so we
+// should not expect the destructor to be called.
+LSprinter::~LSprinter() = default;
 
 void LSprinter::exportInto(GenericPrinter& out) const {
   if (!head_) {

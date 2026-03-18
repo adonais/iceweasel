@@ -66,9 +66,8 @@ TransportLayerIce::TransportLayerIce() : stream_(nullptr), component_(0) {
   // setup happens later
 }
 
-TransportLayerIce::~TransportLayerIce() {
-  // No need to do anything here, since we use smart pointers
-}
+// No need to do anything here, since we use smart pointers
+TransportLayerIce::~TransportLayerIce() = default;
 
 void TransportLayerIce::SetParameters(RefPtr<NrIceMediaStream> stream,
                                       int component) {

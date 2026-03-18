@@ -206,9 +206,6 @@ class MOZ_CAPABILITY("mutex") Mutex : private ::mozilla::detail::MutexImpl {
 };
 
 class MOZ_SCOPED_CAPABILITY MutexAutoLock {
-  MutexAutoLock(const MutexAutoLock&) = delete;
-  void operator=(const MutexAutoLock&) = delete;
-
   Mutex& mMutex;
 
  public:
@@ -217,6 +214,8 @@ class MOZ_SCOPED_CAPABILITY MutexAutoLock {
     mMutex.Lock();
   }
   ~MutexAutoLock() MOZ_CAPABILITY_RELEASE() { mMutex.Unlock(); }
+  MutexAutoLock(const MutexAutoLock&) = delete;
+  void operator=(const MutexAutoLock&) = delete;
 };
 
 //---------------------------------------------------------------------------

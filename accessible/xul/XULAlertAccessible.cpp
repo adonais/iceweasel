@@ -20,7 +20,7 @@ XULAlertAccessible::XULAlertAccessible(nsIContent* aContent,
   mGenericTypes |= eAlert;
 }
 
-XULAlertAccessible::~XULAlertAccessible() {}
+XULAlertAccessible::~XULAlertAccessible() = default;
 
 role XULAlertAccessible::NativeRole() const { return roles::ALERT; }
 

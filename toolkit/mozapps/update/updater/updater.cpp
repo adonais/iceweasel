@@ -1594,7 +1594,7 @@ class PatchFileDecoder {
     return ptr;
   }
 
-  virtual ~PatchFileDecoder() {}
+  virtual ~PatchFileDecoder() = default;
 
   virtual unsigned int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) = 0;
 
@@ -1616,7 +1616,7 @@ class PatchFileDecoder {
 #if defined(MOZ_BSPATCH)
 class BSPatchFileDecoder : public PatchFileDecoder {
  public:
-  ~BSPatchFileDecoder() override {}
+  ~BSPatchFileDecoder() override = default;
 
   unsigned int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) override;
 

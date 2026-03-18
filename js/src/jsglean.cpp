@@ -72,6 +72,6 @@ void TimingDistributionStandalone::AutoTimer::Cancel() {
   (void)mTimerId;
 }
 
-TimingDistributionStandalone::AutoTimer::~AutoTimer() {}
+TimingDistributionStandalone::AutoTimer::~AutoTimer() = default;
 
 }  // namespace mozilla::glean::impl

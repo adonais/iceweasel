@@ -122,7 +122,7 @@ TextAttrsMgr::LangTextAttr::LangTextAttr(HyperTextAccessible* aRoot,
   }
 }
 
-TextAttrsMgr::LangTextAttr::~LangTextAttr() {}
+TextAttrsMgr::LangTextAttr::~LangTextAttr() = default;
 
 void TextAttrsMgr::LangTextAttr::ExposeValue(AccAttributes* aAttributes,
                                              const nsString& aValue) {

@@ -98,6 +98,8 @@ class ProcessCrashMonitor final {
     }
     return monitor->mCrashNums <= monitor->mMaxCrashes;
   }
+  ProcessCrashMonitor(const ProcessCrashMonitor&) = delete;
+  ProcessCrashMonitor& operator=(const ProcessCrashMonitor&) = delete;
 
  private:
   ProcessCrashMonitor() : mCrashNums(0) {
@@ -107,8 +109,6 @@ class ProcessCrashMonitor final {
     mMaxCrashes = 0;
 #endif
   };
-  ProcessCrashMonitor(const ProcessCrashMonitor&) = delete;
-  ProcessCrashMonitor& operator=(const ProcessCrashMonitor&) = delete;
 
   static ProcessCrashMonitor* EnsureInstance() {
     if (sIsShutdown) {

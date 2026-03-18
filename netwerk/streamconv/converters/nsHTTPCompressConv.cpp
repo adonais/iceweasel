@@ -47,7 +47,7 @@ extern LazyLogModule gDictionaryLog;
 
 class BrotliWrapper {
  public:
-  BrotliWrapper() {}
+  BrotliWrapper() = default;
   ~BrotliWrapper() { BrotliDecoderStateCleanup(&mState); }
 
   bool Init(nsIRequest* aRequest) {

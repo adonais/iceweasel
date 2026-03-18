@@ -43,7 +43,7 @@ struct ShutdownObserver : public nsIObserver {
   }
 
  private:
-  virtual ~ShutdownObserver() {}
+  virtual ~ShutdownObserver() = default;
 };
 
 NS_IMPL_ISUPPORTS(ShutdownObserver, nsIObserver)

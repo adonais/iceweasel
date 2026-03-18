@@ -1893,7 +1893,7 @@ class DeferredClearResolvedFonts final : public nsIRunnable {
       : mFontList(std::move(aFontList)) {}
 
  protected:
-  virtual ~DeferredClearResolvedFonts() {}
+  virtual ~DeferredClearResolvedFonts() = default;
 
   NS_IMETHOD Run(void) override {
     mFontList.Clear();
@@ -3997,7 +3997,7 @@ class DeferredNotifyMissingFonts final : public nsIRunnable {
       : mScriptList(std::move(aScriptList)) {}
 
  protected:
-  virtual ~DeferredNotifyMissingFonts() {}
+  virtual ~DeferredNotifyMissingFonts() = default;
 
   NS_IMETHOD Run(void) override {
     nsCOMPtr<nsIObserverService> service = GetObserverService();

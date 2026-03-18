@@ -27,9 +27,8 @@ AuthenticatorResponse::AuthenticatorResponse(nsPIDOMWindowInner* aParent)
   // Call HoldJSObjects() in subclasses.
 }
 
-AuthenticatorResponse::~AuthenticatorResponse() {
-  // Call DropJSObjects() in subclasses.
-}
+// Call DropJSObjects() in subclasses.
+AuthenticatorResponse::~AuthenticatorResponse() = default;
 
 nsISupports* AuthenticatorResponse::GetParentObject() const { return mParent; }
 

@@ -610,11 +610,10 @@ struct JSStructuredCloneWriter {
   void extractBuffer(JSStructuredCloneData* newData) {
     out.extractBuffer(newData);
   }
-
- private:
   JSStructuredCloneWriter() = delete;
   JSStructuredCloneWriter(const JSStructuredCloneWriter&) = delete;
 
+ private:
   JSContext* context() { return out.context(); }
 
   bool writeHeader();

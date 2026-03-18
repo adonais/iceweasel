@@ -178,7 +178,7 @@ nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
       mPSIPath(kPSIPath),
       mIsTesting(false) {}
 
-nsAvailableMemoryWatcher::~nsAvailableMemoryWatcher() {}
+nsAvailableMemoryWatcher::~nsAvailableMemoryWatcher() = default;
 
 NS_IMETHODIMP
 nsAvailableMemoryWatcher::GetCachedPSIInfo(mozilla::PSIInfo& aResult) {

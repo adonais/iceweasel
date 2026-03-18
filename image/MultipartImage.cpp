@@ -161,7 +161,7 @@ class NextPartObserver : public IProgressObserver {
   virtual void ClearPendingNotify() override {}
 
  private:
-  virtual ~NextPartObserver() {}
+  virtual ~NextPartObserver() = default;
 
   void FinishObserving() {
     MOZ_ASSERT(mImage);

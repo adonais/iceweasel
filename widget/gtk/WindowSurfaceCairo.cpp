@@ -18,7 +18,7 @@ namespace widget {
 using namespace mozilla::gfx;
 
 WindowSurfaceCairo::WindowSurfaceCairo(nsWindow* aWidget) : mWidget(aWidget) {}
-WindowSurfaceCairo::~WindowSurfaceCairo() {}
+WindowSurfaceCairo::~WindowSurfaceCairo() = default;
 
 already_AddRefed<gfx::DrawTarget> WindowSurfaceCairo::Lock(
     const LayoutDeviceIntRegion& aRegion) {

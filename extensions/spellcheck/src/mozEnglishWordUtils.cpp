@@ -15,7 +15,7 @@ mozEnglishWordUtils::mozEnglishWordUtils() {
   mURLDetector = do_CreateInstance(MOZ_TXTTOHTMLCONV_CONTRACTID);
 }
 
-mozEnglishWordUtils::~mozEnglishWordUtils() {}
+mozEnglishWordUtils::~mozEnglishWordUtils() = default;
 
 // This needs vast improvement
 

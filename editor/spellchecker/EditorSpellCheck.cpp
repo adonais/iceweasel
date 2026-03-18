@@ -155,7 +155,7 @@ class DictionaryFetcher final : public nsIContentPrefCallback2 {
   nsTArray<nsCString> mDictionaries;
 
  private:
-  ~DictionaryFetcher() {}
+  ~DictionaryFetcher() = default;
 
   RefPtr<EditorSpellCheck> mSpellCheck;
 };

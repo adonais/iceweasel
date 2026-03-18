@@ -329,7 +329,7 @@ class MDefinitionRemapper {
   mozilla::Vector<Pair, 32, SystemAllocPolicy> pairs;
 
  public:
-  MDefinitionRemapper() {}
+  MDefinitionRemapper() = default;
   // Register `original` as a key in the mapper, and map it to itself.
   [[nodiscard]] bool enregister(MDefinition* original) {
     MOZ_ASSERT(original);

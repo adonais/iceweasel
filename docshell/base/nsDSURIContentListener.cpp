@@ -35,7 +35,7 @@ MaybeCloseWindowHelper::MaybeCloseWindowHelper(BrowsingContext* aContentContext)
       mTimer(nullptr),
       mShouldCloseWindow(false) {}
 
-MaybeCloseWindowHelper::~MaybeCloseWindowHelper() {}
+MaybeCloseWindowHelper::~MaybeCloseWindowHelper() = default;
 
 void MaybeCloseWindowHelper::SetShouldCloseWindow(bool aShouldCloseWindow) {
   mShouldCloseWindow = aShouldCloseWindow;
@@ -108,7 +108,7 @@ nsDSURIContentListener::nsDSURIContentListener(nsDocShell* aDocShell)
       mExistingJPEGRequest(nullptr),
       mParentContentListener(nullptr) {}
 
-nsDSURIContentListener::~nsDSURIContentListener() {}
+nsDSURIContentListener::~nsDSURIContentListener() = default;
 
 NS_IMPL_ADDREF(nsDSURIContentListener)
 NS_IMPL_RELEASE(nsDSURIContentListener)

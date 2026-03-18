@@ -147,7 +147,7 @@ Pickle::Pickle(Pickle&& other)
   other.header_ = nullptr;
 }
 
-Pickle::~Pickle() {}
+Pickle::~Pickle() = default;
 
 Pickle& Pickle::operator=(Pickle&& other) {
   BufferList tmp = std::move(other.buffers_);

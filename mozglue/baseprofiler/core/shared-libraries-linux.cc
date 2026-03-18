@@ -153,7 +153,7 @@ class MemoryRange {
 // directly making system calls for open, close, mmap, and munmap.
 class MemoryMappedFile {
  public:
-  MemoryMappedFile() {}
+  MemoryMappedFile() = default;
 
   // Constructor that calls Map() to map a file at |path| into memory.
   // If Map() fails, the object behaves as if it is default constructed.
@@ -259,7 +259,7 @@ const size_t kMDGUIDSize = sizeof(MDGUID);
 class FileID {
  public:
   explicit FileID(const char* path) : path_(path) {}
-  ~FileID() {}
+  ~FileID() = default;
 
   // Load the identifier for the elf file path specified in the constructor into
   // |identifier|.

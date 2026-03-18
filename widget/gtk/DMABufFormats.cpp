@@ -367,7 +367,7 @@ void DMABufFormats::EnsureBasicFormats() {
   mDMABufFeedback->PendingTrancheDone();
 }
 
-DMABufFormats::DMABufFormats() {}
+DMABufFormats::DMABufFormats() = default;
 
 DMABufFormats::~DMABufFormats() {
 #ifdef MOZ_WAYLAND

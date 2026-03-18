@@ -41,6 +41,12 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   UniqueContentParentKeepAlive Take(const nsACString& aRemoteType);
   void Erase(ContentParent* aParent);
 
+  PreallocatedProcessManagerImpl(const PreallocatedProcessManagerImpl&) =
+      delete;
+
+  const PreallocatedProcessManagerImpl& operator=(
+      const PreallocatedProcessManagerImpl&) = delete;
+
  private:
   static const char* const kObserverTopics[];
 
@@ -48,11 +54,6 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
 
   PreallocatedProcessManagerImpl();
   ~PreallocatedProcessManagerImpl();
-  PreallocatedProcessManagerImpl(const PreallocatedProcessManagerImpl&) =
-      delete;
-
-  const PreallocatedProcessManagerImpl& operator=(
-      const PreallocatedProcessManagerImpl&) = delete;
 
   void Init();
 
@@ -111,11 +112,10 @@ NS_IMPL_ISUPPORTS(PreallocatedProcessManagerImpl, nsIObserver)
 PreallocatedProcessManagerImpl::PreallocatedProcessManagerImpl()
     : mEnabled(false), mNumberPreallocs(1) {}
 
-PreallocatedProcessManagerImpl::~PreallocatedProcessManagerImpl() {
-  // Note: mPreallocatedProcesses may not be null, but all processes should
-  // be dead (IsDead==true).  We block Erase() when our observer sees
-  // shutdown starting.
-}
+// Note: mPreallocatedProcesses may not be null, but all processes should
+// be dead (IsDead==true).  We block Erase() when our observer sees
+// shutdown starting.
+PreallocatedProcessManagerImpl::~PreallocatedProcessManagerImpl() = default;
 
 void PreallocatedProcessManagerImpl::Init() {
   Preferences::AddStrongObserver(this, "dom.ipc.processPrelaunch.enabled");

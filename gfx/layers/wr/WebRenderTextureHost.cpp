@@ -22,7 +22,7 @@ namespace mozilla::layers {
 
 class ScheduleHandleRenderTextureOps : public wr::NotificationHandler {
  public:
-  explicit ScheduleHandleRenderTextureOps() {}
+  explicit ScheduleHandleRenderTextureOps() = default;
 
   virtual void Notify(wr::Checkpoint aCheckpoint) override {
     if (aCheckpoint == wr::Checkpoint::FrameTexturesUpdated) {

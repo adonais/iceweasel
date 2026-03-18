@@ -20,7 +20,7 @@ class ImageMemoryReporter::WebRenderReporter final : public nsIMemoryReporter {
  public:
   NS_DECL_ISUPPORTS
 
-  WebRenderReporter() {}
+  WebRenderReporter() = default;
 
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
                             nsISupports* aData, bool aAnonymize) override {
@@ -32,7 +32,7 @@ class ImageMemoryReporter::WebRenderReporter final : public nsIMemoryReporter {
   }
 
  private:
-  virtual ~WebRenderReporter() {}
+  virtual ~WebRenderReporter() = default;
 };
 
 NS_IMPL_ISUPPORTS(ImageMemoryReporter::WebRenderReporter, nsIMemoryReporter)

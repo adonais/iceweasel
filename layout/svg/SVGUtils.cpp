@@ -491,10 +491,9 @@ class MixModeBlender {
     mSourceCtx->SetPattern(pattern);
     mSourceCtx->Paint();
   }
-
- private:
   MixModeBlender() = delete;
 
+ private:
   IntRect ComputeClipExtsInDeviceSpace(const gfxMatrix& aTransform) {
     // These are used if we require a temporary surface for a custom blend
     // mode. Clip the source context first, so that we can generate a smaller

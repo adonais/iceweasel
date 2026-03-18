@@ -1439,7 +1439,6 @@ struct SRIVerifierAndOutputHolder {
   SRICheckDataVerifier* mVerifier;
   nsIOutputStream* mOutputStream;
 
- private:
   SRIVerifierAndOutputHolder() = delete;
 };
 

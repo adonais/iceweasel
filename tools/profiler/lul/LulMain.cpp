@@ -203,9 +203,8 @@ LExpr* RuleSet::ExprForRegno(DW_REG_NUMBER aRegno) {
   }
 }
 
-RuleSet::RuleSet() {
-  // All fields are of type LExpr and so are initialised by LExpr::LExpr().
-}
+// All fields are of type LExpr and so are initialised by LExpr::LExpr().
+RuleSet::RuleSet() = default;
 
 ////////////////////////////////////////////////////////////////
 // SecMap                                                     //

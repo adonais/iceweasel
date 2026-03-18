@@ -210,11 +210,11 @@ class nsUnicodeTable final : public nsGlyphTable {
       DrawTarget* aDrawTarget, int32_t aAppUnitsPerDevPixel,
       gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) override;
 
- private:
   // Not available for the heap!
   void* operator new(size_t) = delete;
   void* operator new[](size_t) = delete;
 
+ private:
   struct UnicodeConstructionComparator {
     int operator()(const UnicodeConstruction& aValue) const {
       if (mTarget < aValue[0]) {

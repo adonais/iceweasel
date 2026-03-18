@@ -97,12 +97,13 @@ class CDMShmemBuffer : public CDMBuffer {
 
   CDMShmemBuffer* AsShmemBuffer() override { return this; }
 
+  CDMShmemBuffer(const CDMShmemBuffer&) = delete;
+  void operator=(const CDMShmemBuffer&) = delete;
+
  private:
   RefPtr<ChromiumCDMChild> mProtocol;
   uint32_t mSize;
   mozilla::ipc::Shmem mShmem;
-  CDMShmemBuffer(const CDMShmemBuffer&);
-  void operator=(const CDMShmemBuffer&);
 };
 
 static auto ToString(const nsTArray<ipc::Shmem>& aBuffers) {

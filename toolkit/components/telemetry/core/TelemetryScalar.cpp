@@ -427,12 +427,12 @@ class ScalarUnsigned : public ScalarBase {
                     nsCOMPtr<nsIVariant>& aResult) final;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;
 
- private:
-  nsTArray<uint32_t> mStorage;
-
   // Prevent copying.
   ScalarUnsigned(const ScalarUnsigned& aOther) = delete;
   void operator=(const ScalarUnsigned& aOther) = delete;
+
+ private:
+  nsTArray<uint32_t> mStorage;
 };
 
 void ScalarUnsigned::SetValue(uint32_t aValue) {
@@ -500,12 +500,12 @@ class ScalarString : public ScalarBase {
                     nsCOMPtr<nsIVariant>& aResult) final;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;
 
- private:
-  nsTArray<nsString> mStorage;
-
   // Prevent copying.
   ScalarString(const ScalarString& aOther) = delete;
   void operator=(const ScalarString& aOther) = delete;
+
+ private:
+  nsTArray<nsString> mStorage;
 };
 
 ScalarResult ScalarString::SetValue(const nsAString& aValue) {
@@ -575,12 +575,12 @@ class ScalarBoolean : public ScalarBase {
                     nsCOMPtr<nsIVariant>& aResult) final;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;
 
- private:
-  nsTArray<bool> mStorage;
-
   // Prevent copying.
   ScalarBoolean(const ScalarBoolean& aOther) = delete;
   void operator=(const ScalarBoolean& aOther) = delete;
+
+ private:
+  nsTArray<bool> mStorage;
 };
 
 void ScalarBoolean::SetValue(bool aValue) {

@@ -57,7 +57,7 @@ static nsresult ParseMIMEType(const nsAString::const_iterator& aStart_iter,
 
 inline bool IsNetscapeFormat(const nsACString& aBuffer);
 
-nsOSHelperAppService::~nsOSHelperAppService() {}
+nsOSHelperAppService::~nsOSHelperAppService() = default;
 
 /*
  * Take a command with all the mailcap escapes in it and unescape it

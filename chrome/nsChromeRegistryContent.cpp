@@ -9,7 +9,7 @@
 #include "nsNetUtil.h"
 #include "mozilla/UniquePtr.h"
 
-nsChromeRegistryContent::nsChromeRegistryContent() {}
+nsChromeRegistryContent::nsChromeRegistryContent() = default;
 
 void nsChromeRegistryContent::RegisterRemoteChrome(
     const nsTArray<ChromePackage>& aPackages,

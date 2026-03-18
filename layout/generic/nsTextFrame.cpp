@@ -10634,11 +10634,11 @@ class MOZ_STACK_CLASS ReflowTextA11yNotifier {
     }
   }
 
- private:
-  ReflowTextA11yNotifier();
-  ReflowTextA11yNotifier(const ReflowTextA11yNotifier&);
-  ReflowTextA11yNotifier& operator=(const ReflowTextA11yNotifier&);
+  ReflowTextA11yNotifier() = delete;
+  ReflowTextA11yNotifier(const ReflowTextA11yNotifier&) = delete;
+  ReflowTextA11yNotifier& operator=(const ReflowTextA11yNotifier&) = delete;
 
+ private:
   nsIContent* mContent;
   nsPresContext* mPresContext;
 };
