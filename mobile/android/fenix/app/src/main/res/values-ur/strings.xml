@@ -630,7 +630,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">حذف شدہ %s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">کالعدم</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">کالعدم</string>
   <!--
     Site Permissions
 

@@ -810,7 +810,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Desanicióse «%1$s»</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">DESFACER</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">DESFACER</string>
   <!--
     Site Permissions
 

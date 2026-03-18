@@ -1072,7 +1072,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s مٹا گیا</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">موڑو</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">موڑو</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">واپس کرو</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->

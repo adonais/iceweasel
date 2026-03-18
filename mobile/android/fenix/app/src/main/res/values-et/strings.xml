@@ -959,9 +959,9 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Kustutati järjehoidja %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">VÕTA TAGASI</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">VÕTA TAGASI</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s kustutati</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s kustutati</string>
   <!-- Content description for the bookmark screen delete bookmark navigation bar button -->
   <string name="bookmark_delete_bookmark_content_description">Kustuta järjehoidja</string>
   <!-- Content description for the bookmark screen delete bookmark folder navigation bar button -->

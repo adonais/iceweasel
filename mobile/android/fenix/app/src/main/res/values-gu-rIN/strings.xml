@@ -377,7 +377,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s કાઢી નાખ્યું</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">પૂર્વવત્ કરો</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">પૂર્વવત્ કરો</string>
   <!--
     Site Permissions
 

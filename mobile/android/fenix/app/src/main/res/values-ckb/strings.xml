@@ -548,7 +548,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s سڕایەوە</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">گێڕانەوە</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">گێڕانەوە</string>
   <!--
     Site Permissions
 

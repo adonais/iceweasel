@@ -1135,9 +1135,9 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s مٹ ڳیا</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">اݨ کیتا کرو</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">اݨ کیتا کرو</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">مٹ ڳیا %s</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">مٹ ڳیا %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">واپس ون٘ڄو</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->

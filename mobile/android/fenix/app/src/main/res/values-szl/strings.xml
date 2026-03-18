@@ -849,7 +849,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Skasowane: %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">COFNIJ AKCYJO</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">COFNIJ AKCYJO</string>
   <!--
     Site Permissions
 

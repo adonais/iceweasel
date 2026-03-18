@@ -709,7 +709,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Ti párẹ́ %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">ÌFISÍPÒ PADÀ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ÌFISÍPÒ PADÀ</string>
   <!--
     Site Permissions
 
