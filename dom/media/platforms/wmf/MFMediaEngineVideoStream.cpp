@@ -404,6 +404,10 @@ void MFMediaEngineVideoStream::ShutdownCleanUpOnTaskQueue() {
   mPendingDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mVideoDecodeBeforeDcompPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED,
                                                 __func__);
+  if (mDCompSurfaceHandle && mDCompSurfaceHandle != INVALID_HANDLE_VALUE) {
+    CloseHandle(mDCompSurfaceHandle);
+    mDCompSurfaceHandle = INVALID_HANDLE_VALUE;
+  }
 }
 
 void MFMediaEngineVideoStream::SendRequestSampleEvent(bool aIsEnough) {
