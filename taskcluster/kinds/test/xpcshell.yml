@@ -47,7 +47,6 @@ xpcshell:
         - conditioned_profile
         - no-fission
         - msix
-        - geckoview-no-fission-no-ship
         - inc-origin-init
     instance-size:
         by-variant:
@@ -75,11 +74,6 @@ xpcshell:
                 by-test-platform:
                     windows11-64-24h2(-shippable)?/opt: built-projects
                     windows11-64-24h2/debug: built-projects
-                    default: []
-            geckoview-no-fission-no-ship:
-                by-test-platform:
-                    android-em.*/debug-isolated-process: []
-                    android-em.*: built-projects
                     default: []
             inc-origin-init: []
             default:

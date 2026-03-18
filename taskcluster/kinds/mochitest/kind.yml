@@ -132,7 +132,6 @@ tasks:
             - http3
             - http2
             - geckoview-fission-isolate-high-value
-            - geckoview-no-fission-no-ship
             - inc-origin-init
         run-on-projects:
             by-variant:
@@ -183,11 +182,6 @@ tasks:
                         linux2404-64/debug: built-projects
                         default: []
                 geckoview-fission-isolate-high-value:
-                    by-test-platform:
-                        android-em.*/debug-isolated-process: ['trunk']
-                        android-em.*: built-projects
-                        default: []
-                geckoview-no-fission-no-ship:
                     by-test-platform:
                         android-em.*/debug-isolated-process: ['trunk']
                         android-em.*: built-projects

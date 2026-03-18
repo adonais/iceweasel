@@ -264,7 +264,6 @@ tasks:
                 default: 8
         variants:
             - draw-snapshot
-            - geckoview-no-fission-no-ship
             - no-fission
             - no-gpu-process
             - webrender-dcomp-disabled
@@ -301,11 +300,6 @@ tasks:
                         linux2404-64(-shippable)?/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
                         android.*: built-projects
-                        default: []
-                geckoview-no-fission-no-ship:
-                    by-test-platform:
-                        android-em.*/debug-isolated-process: ['trunk']
-                        android-em.*: built-projects
                         default: []
                 no-gpu-process:
                     by-test-platform:

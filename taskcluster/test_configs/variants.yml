@@ -242,19 +242,6 @@ geckoview-zygote:
             extra-options:
                 - "--enable-isolated-zygote-process"
 
-geckoview-no-fission-no-ship:
-    description: "{description} with fission disabled and ship disabled"
-    component: "GeckoView::General"
-    expiration: "2026-09-01"
-    suffix: "nofis-noship"
-    when:
-        <<: *gv_e10s_filter
-    merge:
-        mozharness:
-            extra-options:
-                - "--disable-fission"
-                - "--setpref=fission.disableSessionHistoryInParent=true"
-
 xorigin:
     description: "{description} with cross-origin"
     component: "Core::DOM: Content Processes"
