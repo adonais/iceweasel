@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { SmartWindowTelemetry } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs"
+);
+
 async function dispatchSmartbarCommit(browser, value, action) {
   await SpecialPowers.spawn(browser, [value, action], async (val, act) => {
     const aiWindow = await ContentTaskUtils.waitForCondition(
