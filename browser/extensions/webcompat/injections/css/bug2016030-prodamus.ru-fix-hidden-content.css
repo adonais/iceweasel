@@ -1,0 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/**
+ * prodamus.ru - site content is partially obscured.
+ * Bug #2016030 - https://bugzilla.mozilla.org/show_bug.cgi?id=2016030
+ * WebCompat issue #205933 - https://github.com/webcompat/web-bugs/issues/205933
+ *
+ * The site uses the non-standard -webkit-fill-available CSS, which leads to an
+ * interop issue. We can reset that CSS to work around the issue.
+ */
+.tn-atom iframe[src*="pdf"] {
+  height: 100vh;
+}

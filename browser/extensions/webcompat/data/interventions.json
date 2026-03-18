@@ -6277,6 +6277,23 @@
       }
     ]
   },
+  "2016030": {
+    "label": "prodamus.ru",
+    "bugs": {
+      "2016030": {
+        "issue": "broken-layout",
+        "matches": ["*://prodamus.ru/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug2016030-prodamus.ru-fix-hidden-content.css"]
+        }
+      }
+    ]
+  },
   "2018543": {
     "label": "lacunacoil.com",
     "bugs": {
