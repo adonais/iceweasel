@@ -74,13 +74,28 @@ HRESULT MFContentProtectionManager::BeginEnableContent(
   RETURN_IF_FAILED(
       mCDMProxy->SetContentEnabler(unknownObject.Get(), asyncResult.Get()));
 
-  // TODO : maybe need to notify waiting for key status?
+  if (mNotifyWaitingForKeyCb) {
+    // Follow Chromium's approach of a 500ms delay before signalling
+    // waitingforkey, to avoid noise from transient content enabler requests.
+    // https://source.chromium.org/chromium/chromium/src/+/main:media/renderers/win/media_foundation_protection_manager.cc;l=201-203
+    auto result = NS_NewTimerWithFuncCallback(
+        &MFContentProtectionManager::WaitingForKeyTimerCallback, this, 500,
+        nsITimer::TYPE_ONE_SHOT,
+        "MFContentProtectionManager::WaitingForKey"_ns, mManagerThread);
+    if (result.isOk()) {
+      mWaitingForKeyTimer = result.unwrap();
+    }
+  }
   LOG("Finished BeginEnableContent");
   return S_OK;
 }
 
 HRESULT MFContentProtectionManager::EndEnableContent(
     IMFAsyncResult* aAsyncResult) {
+  if (mWaitingForKeyTimer) {
+    mWaitingForKeyTimer->Cancel();
+    mWaitingForKeyTimer = nullptr;
+  }
   HRESULT hr = aAsyncResult->GetStatus();
   if (FAILED(hr)) {
     // Follow Chromium to not to return failure, which avoid doing additional
@@ -159,7 +174,33 @@ HRESULT MFContentProtectionManager::SetPMPServer(
   return S_OK;
 }
 
-void MFContentProtectionManager::Shutdown() { mCDMProxy = nullptr; }
+void MFContentProtectionManager::SetNotifyWaitingForKeyCallback(
+    std::function<void()>&& aCallback, nsISerialEventTarget* aManagerThread) {
+  mNotifyWaitingForKeyCb = std::move(aCallback);
+  mManagerThread = aManagerThread;
+}
+
+void MFContentProtectionManager::NotifyWaitingForKey() {
+  LOG("NotifyWaitingForKey");
+  if (mNotifyWaitingForKeyCb) {
+    mNotifyWaitingForKeyCb();
+  }
+}
+
+/* static */
+void MFContentProtectionManager::WaitingForKeyTimerCallback(nsITimer* aTimer,
+                                                            void* aClosure) {
+  auto* self = static_cast<MFContentProtectionManager*>(aClosure);
+  self->NotifyWaitingForKey();
+}
+
+void MFContentProtectionManager::Shutdown() {
+  if (mWaitingForKeyTimer) {
+    mWaitingForKeyTimer->Cancel();
+    mWaitingForKeyTimer = nullptr;
+  }
+  mCDMProxy = nullptr;
+}
 
 #undef LOG
 

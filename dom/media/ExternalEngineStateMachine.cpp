@@ -1392,6 +1392,13 @@ void ExternalEngineStateMachine::RecoverFromHardwareReset() {
   InitEngine();
 }
 
+#ifdef MOZ_WMF_CDM
+void ExternalEngineStateMachine::NotifyWaitingForKeyInternal() {
+  AssertOnTaskQueue();
+  mReader->NotifyWaitingForKey();
+}
+#endif
+
 media::TimeUnit ExternalEngineStateMachine::GetVideoThreshold() {
   AssertOnTaskQueue();
   if (auto* state = mState.AsSeekingData()) {

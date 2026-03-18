@@ -56,6 +56,7 @@ child:
   async NotifyEvent(MFMediaEngineEvent event);
   async NotifyError(MediaResult error);
   async NotifyHardwareReset();
+  async NotifyWaitingForKey();
   async UpdateCurrentTime(double currentTimeInSecond);
   async RequestSample(TrackType type, bool isEnough);
   async UpdateStatisticData(StatisticData data);
