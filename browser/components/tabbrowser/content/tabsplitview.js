@@ -41,6 +41,8 @@
 
     #isClosing = false;
 
+    #shouldMoveAllTabsAtOnce = true;
+
     #storedPanelWidths = new WeakMap();
 
     /**
@@ -48,6 +50,10 @@
      */
     get hasActiveTab() {
       return this.hasAttribute("hasactivetab");
+    }
+
+    get shouldMoveAllTabsAtOnce() {
+      return this.#shouldMoveAllTabsAtOnce;
     }
 
     /**
@@ -380,7 +386,9 @@
      */
     reverseTabs(trigger = null) {
       const [firstTab, secondTab] = this.#tabs;
+      this.#shouldMoveAllTabsAtOnce = false;
       gBrowser.moveTabBefore(secondTab, firstTab);
+      this.#shouldMoveAllTabsAtOnce = true;
       this.#tabs = [secondTab, firstTab];
       if (this.hasActiveTab) {
         gBrowser.showSplitViewPanels(this.#tabs);

@@ -1237,6 +1237,21 @@ this.tabs = class extends ExtensionAPIPersistent {
 
             let splitview = nativeTab.splitview;
             let splitviewTabs = splitview?.tabs;
+            let wantReversedSplit = false;
+            if (splitview) {
+              // otherTabInSplit always exists because a split view has 2 tabs.
+              const otherTabInSplit = splitviewTabs.find(t => t !== nativeTab);
+              // tabsToMove is the (potentially empty) list of tabs that will
+              // be moved once we finish moving nativeTab.
+              if (otherTabInSplit === tabsToMove[0]) {
+                // Order was explicitly specified. Reverse if needed.
+                wantReversedSplit = splitviewTabs[0] === otherTabInSplit;
+              } else {
+                // Other tab in split was not specified, but the index points
+                // to the same split view. Reverse if needed:
+                wantReversedSplit = otherTabInSplit._tPos === insertionPoint;
+              }
+            }
             if (isSameWindow) {
               // If the window we are moving is the same, just move the tab.
               // moveTabTo handles regular tabs and split views.
@@ -1268,6 +1283,11 @@ this.tabs = class extends ExtensionAPIPersistent {
               splitview ? splitviewTabs.at(-1)._tPos : nativeTab._tPos
             );
             if (splitview) {
+              if (wantReversedSplit) {
+                // Split views move as one unit, but if the API call describes
+                // a destination within a split view, reverse the tabs within.
+                splitview.reverseTabs();
+              }
               for (const tab of splitviewTabs) {
                 let tabIsInTabsToMove = tab === nativeTab;
                 let i = 0;

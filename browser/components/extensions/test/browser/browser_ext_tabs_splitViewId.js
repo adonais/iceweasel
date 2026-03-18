@@ -255,9 +255,8 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
       browser.test.assertDeepEq(
         [
           { index: 0, tabId: tabId0, splitViewId: -1 },
-          // TODO bug 2016762: tabId1 and tabId2 should swap.
-          { index: 1, tabId: tabId1, splitViewId },
-          { index: 2, tabId: tabId2, splitViewId },
+          { index: 1, tabId: tabId2, splitViewId },
+          { index: 2, tabId: tabId1, splitViewId },
         ],
         Array.from(await browser.tabs.query({ windowId }), t => ({
           index: t.index,
@@ -265,6 +264,16 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
           splitViewId: t.splitViewId,
         })),
         "splitViewId preserved when right tab in split swaps with the left tab"
+      );
+      browser.test.assertDeepEq(
+        [
+          {
+            movedTabId: tabId2,
+            moveInfo: { windowId, fromIndex: 2, toIndex: 1 },
+          },
+        ],
+        changes.splice(0),
+        "Got expected tabs events when right tab in split swaps with left tab"
       );
 
       // Move single tab in split view: left to right.
@@ -290,18 +299,19 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
 
       browser.test.assertDeepEq(
         [
-          // TODO bug 2016762: The tabs should swap, and swap again.
-          // {
-          //   movedTabId: tabId2,
-          //   moveInfo: { windowId, fromIndex: 2, toIndex: 1 },
-          // },
-          // {
-          //   movedTabId: tabId2,
-          //   moveInfo: { windowId, fromIndex: 1, toIndex: 2 },
-          // },
+          // NOTE: Although we requested tabs.move() with tabId2 to index 1,
+          // we are observing tabId1 being moved instead, because the tabs
+          // are internally swapped via splitview.reverseTabs(), which always
+          // moves the first tab of the split to the second tab's position.
+          // This is strange, but to extensions observing the event, the result
+          // is equivalent. That is what matters most.
+          {
+            movedTabId: tabId1,
+            moveInfo: { windowId, fromIndex: 2, toIndex: 1 },
+          },
         ],
         changes.splice(0),
-        "Got expected tabs events after swapping tabs in split view"
+        "Got expected tabs events when left tab in split view swaps with right tab"
       );
 
       // Now move both tabs in the split view, to another position.
@@ -340,9 +350,6 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
         "Got expected tabs events after moving the tabs in split view elsewhere"
       );
 
-      /* // TODO bug 2016762: uncomment test when tab can move. The following
-       *    does not move because of
-       *    https://bugzilla.mozilla.org/show_bug.cgi?id=2016762#c2
       // In fact, the split is kept together not because of the request to move
       // two tabs at once, but because moving any one of the two tabs causes
       // the whole split view to move together. Intentionally (bug 2016868).
@@ -362,19 +369,21 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
       );
       browser.test.assertDeepEq(
         [
-          {
-            movedTabId: tabId1,
-            moveInfo: { windowId, fromIndex: 0, toIndex: 1 },
-          },
+          // When a split view moves forward, TabMove (and tabs.move) is
+          // dispatched in the reverse order, to allow extensions to accurately
+          // reconstruct the current state of the tabs collection.
           {
             movedTabId: tabId2,
             moveInfo: { windowId, fromIndex: 1, toIndex: 2 },
+          },
+          {
+            movedTabId: tabId1,
+            moveInfo: { windowId, fromIndex: 0, toIndex: 1 },
           },
         ],
         changes.splice(0),
         "Got expected tabs events after moving one tab in split view elsewhere"
       );
-      */
 
       await browser.windows.remove(windowId);
       browser.test.sendMessage("done");
