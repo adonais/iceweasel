@@ -1129,6 +1129,7 @@ class BrowserFragment :
     private fun showConnectionInfo() {
         val connectionInfoPanel = ConnectionDetailsPanel(
             context = requireContext(),
+            engineSession = tab.engineState.engineSession,
             tabTitle = tab.content.title,
             tabUrl = tab.content.url,
             isConnectionSecure = tab.content.securityInfo.isSecure,
