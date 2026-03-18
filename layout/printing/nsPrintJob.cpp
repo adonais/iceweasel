@@ -882,14 +882,19 @@ nsresult nsPrintJob::SetupToPrintContent() {
     endPage = std::min(mNumPrintablePages, std::max(endPage, ranges[i + 1]));
   }
 
+  uint64_t browsingContextId = 0;
+  if (auto* bc = mPrintObject->mDocument->GetBrowsingContext()) {
+    browsingContextId = bc->Id();
+  }
+
   nsresult rv = NS_OK;
   // BeginDocument may pass back a FAILURE code
   // i.e. On Windows, if you are printing to a file and hit "Cancel"
   //      to the "File Name" dialog, this comes back as an error
   // Don't start printing when regression test are executed
   if (mIsDoingPrinting) {
-    rv = printData->mPrintDC->BeginDocument(docTitleStr, fileNameStr, startPage,
-                                            endPage);
+    rv = printData->mPrintDC->BeginDocument(
+        docTitleStr, fileNameStr, browsingContextId, startPage, endPage);
   }
 
   if (mIsCreatingPrintPreview) {

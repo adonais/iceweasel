@@ -29,12 +29,13 @@ RemotePrintJobParent::RemotePrintJobParent(nsIPrintSettings* aPrintSettings)
 }
 
 mozilla::ipc::IPCResult RemotePrintJobParent::RecvInitializePrint(
-    const nsAString& aDocumentTitle, const int32_t& aStartPage,
-    const int32_t& aEndPage) {
+    const nsAString& aDocumentTitle, const uint64_t& aBrowsingContextId,
+    const int32_t& aStartPage, const int32_t& aEndPage) {
   PROFILER_MARKER_TEXT("RemotePrintJobParent", LAYOUT_Printing, {},
                        "RemotePrintJobParent::RecvInitializePrint"_ns);
 
-  nsresult rv = InitializePrintDevice(aDocumentTitle, aStartPage, aEndPage);
+  nsresult rv = InitializePrintDevice(aDocumentTitle, aBrowsingContextId,
+                                      aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
     (void)SendPrintInitializationResult(rv, FileDescriptor());
     mStatus = rv;
@@ -57,8 +58,8 @@ mozilla::ipc::IPCResult RemotePrintJobParent::RecvInitializePrint(
 }
 
 nsresult RemotePrintJobParent::InitializePrintDevice(
-    const nsAString& aDocumentTitle, const int32_t& aStartPage,
-    const int32_t& aEndPage) {
+    const nsAString& aDocumentTitle, const uint64_t& aBrowsingContextId,
+    const int32_t& aStartPage, const int32_t& aEndPage) {
   AUTO_PROFILER_MARKER_TEXT("RemotePrintJobParent", LAYOUT_Printing, {},
                             "RemotePrintJobParent::InitializePrintDevice"_ns);
 
@@ -83,8 +84,8 @@ nsresult RemotePrintJobParent::InitializePrintDevice(
   nsAutoString fileName;
   mPrintSettings->GetToFileName(fileName);
 
-  rv = mPrintDeviceContext->BeginDocument(aDocumentTitle, fileName, aStartPage,
-                                          aEndPage);
+  rv = mPrintDeviceContext->BeginDocument(
+      aDocumentTitle, fileName, aBrowsingContextId, aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_ABORT,
                          "Failed to initialize print device");

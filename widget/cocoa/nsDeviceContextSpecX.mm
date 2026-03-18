@@ -168,7 +168,7 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
 
 NS_IMETHODIMP nsDeviceContextSpecX::BeginDocument(
     const nsAString& aTitle, const nsAString& aPrintToFileName,
-    int32_t aStartPage, int32_t aEndPage) {
+    uint64_t aBrowsingContextId, int32_t aStartPage, int32_t aEndPage) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   return NS_OK;
