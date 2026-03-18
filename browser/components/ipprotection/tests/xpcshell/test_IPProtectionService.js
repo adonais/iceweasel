@@ -97,6 +97,36 @@ add_task(async function test_IPProtectionService_updateState_signedOut() {
 });
 
 /**
+ * Tests that updateEntitlement refreshes usage when an entitlement is found.
+ */
+add_task(
+  async function test_IPProtectionService_updateEntitlement_refreshes_usage() {
+    const sandbox = sinon.createSandbox();
+    setupStubs(sandbox);
+
+    IPProtectionService.init();
+    IPPEnrollAndEntitleManager.resetEntitlement();
+
+    const refreshUsageStub = sandbox.stub(IPPProxyManager, "refreshUsage");
+
+    await IPPEnrollAndEntitleManager.updateEntitlement();
+
+    Assert.ok(
+      IPPEnrollAndEntitleManager.isEnrolledAndEntitled,
+      "Should be entitled after updateEntitlement"
+    );
+
+    Assert.ok(
+      refreshUsageStub.calledOnce,
+      "refreshUsage should be called when entitlement is found"
+    );
+
+    IPProtectionService.uninit();
+    sandbox.restore();
+  }
+);
+
+/**
  * Tests that refetchEntitlement works as expected if a linked VPN is found and sends an event.
  */
 add_task(
