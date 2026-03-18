@@ -463,6 +463,7 @@ private fun OnboardingPageForType(
                 ToolbarOnboardingPageRedesign(
                     onboardingStore = store,
                     pageState = state,
+                    isSmallDevice = isSmallDevice,
                     onToolbarSelectionClicked = {
                         store.dispatch(OnboardingToolbarAction.UpdateSelected(it))
                         context.components.appStore.dispatch(
@@ -478,6 +479,7 @@ private fun OnboardingPageForType(
 
         OnboardingPageUiData.Type.MARKETING_DATA -> MarketingDataOnboardingPageRedesign(
             state = state,
+            isSmallDevice = isSmallDevice,
             onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
             onMarketingOptInToggle = onMarketingOptInToggle,
             onMarketingDataContinueClick = onMarketingDataContinueClick,

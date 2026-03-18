@@ -6,6 +6,7 @@ package org.mozilla.fenix.onboarding.redesign.view
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
+import org.mozilla.fenix.compose.ScrollIndicator
 import org.mozilla.fenix.onboarding.store.OnboardingStore
 import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
@@ -58,17 +62,21 @@ import mozilla.components.ui.icons.R as iconsR
 
 private val TOOLBAR_IMAGE_HEIGHT = 150.dp
 
+private val buttonHeight = 40.dp
+
 /**
  * A Composable for displaying toolbar placement onboarding page content.
  *
  * @param onboardingStore The [OnboardingStore] that holds the toolbar selection state.
  * @param pageState The page content that's displayed.
+ * @param isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  * @param onToolbarSelectionClicked Callback for when a toolbar selection is clicked.
  */
 @Composable
 fun ToolbarOnboardingPageRedesign(
     onboardingStore: OnboardingStore,
     pageState: OnboardingPageState,
+    isSmallDevice: Boolean = false,
     onToolbarSelectionClicked: (ToolbarOptionType) -> Unit,
 ) {
     Card(
@@ -76,35 +84,58 @@ fun ToolbarOnboardingPageRedesign(
         elevation = CardDefaults.cardElevation(if (pageState.shouldShowElevation) 6.dp else 0.dp),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+            modifier = Modifier.padding(
+                horizontal = 16.dp,
+                vertical = if (isSmallDevice) 0.dp else 24.dp,
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
+            Spacer(Modifier.weight(TITLE_TOP_SPACER_WEIGHT)).takeIf { !isSmallDevice }
 
-            Column(
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp)
                     .weight(CONTENT_WEIGHT)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(36.dp),
+                    .fillMaxWidth(),
             ) {
-                Text(
-                    text = pageState.title,
-                    textAlign = TextAlign.Start,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
+                val scrollState = rememberScrollState()
 
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
+                CompositionLocalProvider(
+                    LocalOverscrollFactory provides null,
                 ) {
-                    ToolbarPositionOptions(
-                        onboardingStore = onboardingStore,
-                        pageState = pageState,
-                        onToolbarSelectionClicked = onToolbarSelectionClicked,
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .padding(start = 20.dp, end = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(36.dp),
+                    ) {
+                        Text(
+                            text = pageState.title,
+                            textAlign = TextAlign.Start,
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            ToolbarPositionOptions(
+                                onboardingStore = onboardingStore,
+                                pageState = pageState,
+                                onToolbarSelectionClicked = onToolbarSelectionClicked,
+                            )
+                        }
+                    }
                 }
+
+                ScrollIndicator(
+                    scrollState = scrollState,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    enabled = isSmallDevice,
+                )
             }
+
+            Spacer(Modifier.height(buttonHeight))
 
             FilledButton(
                 text = pageState.primaryButton.text,

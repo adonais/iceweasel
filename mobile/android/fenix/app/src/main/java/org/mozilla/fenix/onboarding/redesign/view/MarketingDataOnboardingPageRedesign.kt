@@ -5,10 +5,13 @@
 package org.mozilla.fenix.onboarding.redesign.view
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -23,6 +26,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,15 +48,19 @@ import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
+import org.mozilla.fenix.compose.ScrollIndicator
 import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingMarketingData
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
 import org.mozilla.fenix.theme.FirefoxTheme
 
+private val buttonHeight = 40.dp
+
 /**
  * UI for an onboarding page that allows the user to opt out of marketing data analytics.
  *
  * @param state the UI state containing strings etc.
+ * @param isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  * @param onMarketingDataLearnMoreClick callback for when the user clicks the learn more text link.
  * @param onMarketingOptInToggle callback for when the user toggles the opt-in checkbox.
  * @param onMarketingDataContinueClick callback for when the user clicks the continue button.
@@ -61,6 +69,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @Composable
 fun MarketingDataOnboardingPageRedesign(
     state: OnboardingPageState,
+    isSmallDevice: Boolean = false,
     onMarketingDataLearnMoreClick: () -> Unit,
     onMarketingOptInToggle: (optIn: Boolean) -> Unit,
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
@@ -70,49 +79,72 @@ fun MarketingDataOnboardingPageRedesign(
         elevation = CardDefaults.cardElevation(if (state.shouldShowElevation) 6.dp else 0.dp),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+            modifier = Modifier.padding(
+                horizontal = 16.dp,
+                vertical = if (isSmallDevice) 0.dp else 24.dp,
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
+            Spacer(Modifier.weight(TITLE_TOP_SPACER_WEIGHT)).takeIf { !isSmallDevice }
 
             var checkboxChecked by remember { mutableStateOf(true) }
 
-            Column(
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp)
                     .weight(CONTENT_WEIGHT)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(36.dp),
+                    .fillMaxWidth(),
             ) {
-                Text(
-                    text = state.title,
-                    textAlign = TextAlign.Start,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
+                val scrollState = rememberScrollState()
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                CompositionLocalProvider(
+                    LocalOverscrollFactory provides null,
                 ) {
-                    Image(
-                        modifier = Modifier.height(CONTENT_IMAGE_HEIGHT),
-                        painter = painterResource(id = state.imageRes),
-                        contentDescription = null,
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .padding(start = 20.dp, end = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(36.dp),
+                    ) {
+                        Text(
+                            text = state.title,
+                            textAlign = TextAlign.Start,
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Image(
+                                modifier = Modifier.height(CONTENT_IMAGE_HEIGHT),
+                                painter = painterResource(id = state.imageRes),
+                                contentDescription = null,
+                            )
+                        }
+
+                        state.marketingData?.let {
+                            MarketingDataView(
+                                marketingData = it,
+                                checkboxChecked = checkboxChecked,
+                                onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
+                                onMarketingOptInToggle = { isChecked ->
+                                    checkboxChecked = isChecked
+                                    onMarketingOptInToggle(isChecked)
+                                },
+                            )
+                        }
+                    }
                 }
 
-                state.marketingData?.let {
-                    MarketingDataView(
-                        marketingData = it,
-                        checkboxChecked = checkboxChecked,
-                        onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
-                        onMarketingOptInToggle = { isChecked ->
-                            checkboxChecked = isChecked
-                            onMarketingOptInToggle(isChecked)
-                        },
-                    )
-                }
+                ScrollIndicator(
+                    scrollState = scrollState,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    enabled = isSmallDevice,
+                )
             }
+
+            Spacer(Modifier.height(buttonHeight))
 
             FilledButton(
                 text = state.primaryButton.text,
