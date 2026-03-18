@@ -1649,6 +1649,7 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Upravit skupinu</string>
   <string name="create_tab_group_save_button">Uložit</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Zavřít Upravit skupinu panelů</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
   <!--

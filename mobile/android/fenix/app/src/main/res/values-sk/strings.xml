@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Stránka bola preložená z jazyka %1$s do jazyka %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Zatraste zariadením a vytvorte súhrn tejto stránky v priebehu niekoľkých sekúnd. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Návrhy od %1$su</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Získajte návrhy z webu súvisiace s vaším vyhľadávaním</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Získavať návrhy od Mozilly počas písania</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Zdieľanie odkazov</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1029,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Vlastník kolekcie (ID používateľa)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Kolekcia rozšírení bola upravená. Aplikácia sa ukončuje a zmeny budú použité…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Správa o ochrane osobných údajov</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Návrat späť</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1588,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Zdieľať</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Pridať do kolekcie</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Pridať do skupiny</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Zdieľať vybrané karty</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1634,11 +1646,21 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Vytvoriť skupinu kariet</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Upraviť skupinu</string>
   <string name="create_tab_group_save_button">Uložiť</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Zavrieť Upraviť skupinu kariet</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Skupina %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
   <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Názov</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Názov</string>
   <!--
     History
 
@@ -2495,6 +2517,19 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s vás chráni pred mnohými sledovacími prvkami, ktoré zbierajú informácie o tom, čo robíte na internete.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Ďalšie informácie</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">Zablokovaný %d sledovací prvok</item>
+    <item quantity="few">Zablokované %d sledovacie prvky</item>
+    <item quantity="many">Zablokovaných %d sledovacích prvkov</item>
+    <item quantity="other">Zablokovaných %d sledovacích prvkov</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Ste chránení</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Štandardná (predvolená)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3761,6 +3796,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Vo Firefoxe nepoužívam vyhľadávanie</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Nepoužívam synchronizáciu</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Je pomalý alebo chybový</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Funkcie sa ťažko hľadajú alebo chýbajú</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Je zmätočný alebo ťažko použiteľný</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Je fajn, ale nie lepší ako iné prehliadače</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Plánujem naďalej používať Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Pomôžte zlepšiť tlač vo Firefoxe. Zaberie to len sekundu</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3775,6 +3820,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Ako ste spokojný s vyhľadávaním vo Firefoxe?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Ako ste spokojný so synchronizáciou vo Firefoxe?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Pomôžte nám vylepšiť Firefox. Ktoré z tvrdení najlepšie vystihuje vašu doterajšiu skúsenosť?</string>
   <!--
     Accessibility
 

@@ -372,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Саҳифа аз забони %1$s ба забони %2$s тарҷума шуд.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Дастгоҳи худро такон диҳед, то хулоса дар бораи ин саҳифа дар сонияҳо омода карда шавад. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -942,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Пешниҳодҳо аз «%1$s»</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Гирифтани пешниҳодҳо аз Интернет дар асоси ҷустуҷӯи шумо</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Ҳангоми чопкунии матн пешниҳодҳо аз «Mozilla» пешниҳод карда шаванд</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Мубодилаи пайванд</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1029,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Соҳиби маҷмуа (ID-и корбар)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Маҷмуаи васеъшавиҳо тағйир ёфт. Барои татбиқ кардани тағйирот барнома бояд хомӯш карда шавад…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Гузориш дар бораи махфият</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Бозгашт ба</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -2507,6 +2517,15 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">«%s» шуморо аз бисёр васоити пайгирие, ки фаъолияти шуморо дар онлайн пайгирӣ мекунанд, муҳофизат менамояд.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Маълумоти бештар</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d воситаи пайгирии манъшуда</item>
+    <item quantity="other">%d воситаи пайгирии манъшуда</item>
+  </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Мо шуморо муҳофизат мекунем</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->

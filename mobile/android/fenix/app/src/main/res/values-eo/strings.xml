@@ -318,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Traduki paĝon</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Resumi paĝon</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Nova</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Raporti misfunkciantan retejon…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -370,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Paĝo tradukita el la %1$s en la %2$sn.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Skuu vian aparaton por resumi tiun ĉi paĝon en sekundoj. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -940,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Sugestoj el %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Ricevu sugestojn el la reto, kiu rilatas vian serĉon</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Ricevi sugestojn el Mozilla dum tajpado</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Divido de ligilo</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1027,6 +1033,12 @@
   <string name="customize_addon_collection_user_hint">Posedanto de kolekto (identigilo de uzanto)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">La kolekto de etendaĵoj estis ŝanĝita. La programo nun finiĝos por apliki la ŝanĝojn…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Privateca raporto</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Reiri</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1586,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Dividi</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Aldoni al kolekto</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Aldoni al grupo</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Dividi elektitajn langetojn</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1626,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (Privata reĝimo)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Malfermi serĉilon de langetoj</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Krei grupon de langetoj</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Modifi grupon</string>
+  <string name="create_tab_group_save_button">Konservi</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Fini la modifon de grupo de langetoj</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grupo %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nomo de grupo de langetoj</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Nomo</string>
   <!--
     History
 
@@ -1741,11 +1776,26 @@
   <string name="download_rename_dialog_label">Nomo</string>
   <string name="download_rename_dialog_confirm_button">Konservi</string>
   <string name="download_rename_dialog_cancel_button">Nuligi</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Jam ekzistas en tiu ejo dosiero kun la nomo “%s”</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Nomoj de dosieroj ne povas enhavi “/”</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Ne eblas renomi dosieron</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Pro sistemaj aŭ konservejaj limigoj, tiu ĉi dosiero ne povas esti renomita.</string>
   <string name="download_rename_error_dismiss_button">Akcepti</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Ĉu ŝanĝi la tipo de dosiero al %s?</string>
+  <string name="change_file_extension_description">Tio povus ŝanĝi la apon, kiu malfermas la dosieron kaj povus esti danĝera.</string>
+  <string name="change_file_extension_cancel_button">Nuligi</string>
+  <string name="change_file_extension_confirm_button">Jes, ŝanĝu tion</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Progresanta</string>
   <!--
@@ -2467,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s protektas vin kontraŭ pluraj el la plej oftaj spuriloj, kiuj sekvas kion vi faras dum retumo.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Pli da informo</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d spurilo blokita</item>
+    <item quantity="other">%d spuriloj blokitaj</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Vi estas protektata</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Norma</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2863,6 +2924,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Pli da informo</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Administri retpoŝtajn maskojn</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Vi jam uzis viajn 5 senpagajn retpoŝtajn maskojn, do ni elektis unu por ke vi reuzu ĝin.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Retpoŝtaj maskoj ne haveblas en tiu ĉi momento. Provu denove post kelkaj minutoj.</string>
   <!--
     Autofill
 
@@ -3633,6 +3698,13 @@
   -->
   <string name="connection_security_panel_verified_by">Kontrolita de %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Eldonita al %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Kvalifikita laŭ la specifo en la Regularo (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3722,6 +3794,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Mi ne serĉas per Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Mi ne uzas speguladon</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Ĝi malrapidas aŭ misfunkcias</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Mankas trajtoj aŭ ili estas malfacile malkovreblaj</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Estas neklare aŭ malfacile uzebla</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Ĝi bonas, sed ĝi ne estas pli bona ol aliaj retumiloj</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Mi planas plu uzi Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Helpu plibonigi la presadon de Firefox. Tio nur prenos momenton.</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3736,6 +3818,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Kiel kontentiga estas por vi la serĉa sperto en Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Kiel kontentiga estas por vi la spegula sperto en Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Helpu nin plibonigi Firefox. Kio plej bone priskribas vian ĝisnunan sperton?</string>
   <!--
     Accessibility
 
