@@ -78,6 +78,15 @@ export const AIWindow = {
       this.initializeAITabsToolbar(win);
       this._updateToolbarButtonPositions(win);
       this._initializeAskButtonOnToolbox(win);
+      const windowArgs = win?.arguments?.[1];
+      if (
+        windowArgs instanceof Ci.nsIPropertyBag2 &&
+        windowArgs.hasKey("aiwindow-trigger")
+      ) {
+        this.recordOpenWindowTelemetry(
+          windowArgs.getPropertyAsAString("aiwindow-trigger")
+        );
+      }
     }
 
     if (
@@ -356,6 +365,9 @@ export const AIWindow = {
     }
 
     propBag.setPropertyAsBool("ai-window", true);
+    if (canInheritAIWindow) {
+      propBag.setPropertyAsAString("aiwindow-trigger", "new_window");
+    }
     const willOpenImmersive = this.immersiveViewURIs.some(
       uri => uri.spec == (initialURL || restoreSessionURL)
     );
@@ -400,7 +412,7 @@ export const AIWindow = {
           this.toggleAIWindow(win, false);
           break;
         case "ai-window-switch-ai":
-          this.launchWindow(win.gBrowser.selectedBrowser);
+          this.launchWindow(win.gBrowser.selectedBrowser, false, "switch");
           break;
       }
     });
@@ -581,7 +593,32 @@ export const AIWindow = {
     }
   },
 
-  toggleAIWindow(win, isTogglingToAIWindow) {
+  recordOpenWindowTelemetry(trigger) {
+    let signedIn = false;
+    lazy.AIWindowAccountAuth.isSignedIn()
+      .then(result => {
+        signedIn = result;
+      })
+      .finally(() => {
+        Glean.smartWindow.openWindow.record({
+          trigger,
+          fxa: signedIn,
+          onboarding: !lazy.hasFirstrunCompleted,
+        });
+      });
+  },
+
+  /**
+   * Toggles a window between Smart Window and classic browser mode.
+   * Records an open_window telemetry event when activating if a trigger
+   * is provided.
+   *
+   * @param {ChromeWindow} win
+   * @param {boolean} isTogglingToAIWindow - true to activate, false to deactivate
+   * @param {string} [trigger] - The open reason (e.g. "menu", "switch",
+   *   "undo_close", "open_browser").
+   */
+  toggleAIWindow(win, isTogglingToAIWindow, trigger) {
     let isActive = this.isAIWindowActive(win);
     if (isActive != isTogglingToAIWindow) {
       lazy.NewTabPagePreloading.removePreloadedBrowser(win);
@@ -612,6 +649,8 @@ export const AIWindow = {
         }
 
         lazy.MemoriesSchedulers.maybeRunAndSchedule();
+
+        this.recordOpenWindowTelemetry(trigger);
       } else {
         // Close sidebar when switching back to classic window if it is open
         lazy.AIWindowUI.closeSidebar(win);
@@ -629,12 +668,18 @@ export const AIWindow = {
     this._aiWindowTabStateManagers.delete(win);
   },
 
+  getActiveConversation(win) {
+    return (
+      this._aiWindowTabStateManagers.get(win)?.getActiveConversation() ?? null
+    );
+  },
+
   unloadWindow(win) {
     this._uninitTabStateManager(win);
     this._windowStates.delete(win);
   },
 
-  async _authorizeAndToggleWindow(win) {
+  async _authorizeAndToggleWindow(win, trigger) {
     const authorized = await lazy.AIWindowAccountAuth.ensureAIWindowAccess(
       win.gBrowser.selectedBrowser
     );
@@ -643,7 +688,7 @@ export const AIWindow = {
       return false;
     }
 
-    this.toggleAIWindow(win, true);
+    this.toggleAIWindow(win, true, trigger);
 
     if (!lazy.hasFirstrunCompleted) {
       win.gBrowser.loadURI(FIRSTRUN_URI, {
@@ -655,7 +700,7 @@ export const AIWindow = {
     return true;
   },
 
-  async launchWindow(browser, openNewWindow = false) {
+  async launchWindow(browser, openNewWindow = false, trigger = "other") {
     try {
       // Early return when Smart Window is blocked from AI Control
       if (this.isBlocked) {
@@ -673,7 +718,7 @@ export const AIWindow = {
       }
 
       if (!openNewWindow) {
-        return this._authorizeAndToggleWindow(browser.ownerGlobal);
+        return this._authorizeAndToggleWindow(browser.ownerGlobal, trigger);
       }
 
       const isAuthorized = await lazy.AIWindowAccountAuth.canAccessAIWindow();
@@ -682,7 +727,16 @@ export const AIWindow = {
         openerWindow: browser?.ownerGlobal,
       });
 
-      return this._authorizeAndToggleWindow(await windowPromise);
+      const newWin = await windowPromise;
+
+      if (!isAuthorized) {
+        return this._authorizeAndToggleWindow(newWin, trigger);
+      }
+
+      // The new window already has the ai-window attribute; toggleAIWindow
+      // would skip the state change and therefore skip recording telemetry.
+      this.recordOpenWindowTelemetry(trigger);
+      return true;
     } catch (e) {
       console.error("Error launching AI window:", e);
       return false;

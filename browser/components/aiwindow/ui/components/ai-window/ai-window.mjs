@@ -111,10 +111,6 @@ export class AIWindow extends MozLitElement {
   #conversation = null;
   #memoriesButton = null;
   #memoriesToggled = null;
-
-  get #memoriesIconShown() {
-    return this.memoriesConversationPref || this.memoriesHistoryPref;
-  }
   #visibilityChangeHandler;
   #starters = [];
   #smartbarResizeObserver = null;
@@ -137,6 +133,10 @@ export class AIWindow extends MozLitElement {
    */
   get #hostBrowser() {
     return window.browsingContext?.embedderElement || null;
+  }
+
+  get #memoriesIconShown() {
+    return this.memoriesConversationPref || this.memoriesHistoryPref;
   }
 
   #detectModeFromContext() {
@@ -763,9 +763,7 @@ export class AIWindow extends MozLitElement {
    * @private
    */
   #handleSmartbarCommit = event => {
-    Glean.smartWindow.chatSubmit.record({
-      chat_id: this.conversationId,
-    });
+    Glean.smartWindow.chatSubmit.record({ chat_id: this.conversationId });
 
     lazy.log.debug(
       "chatId[%s]: %s",
@@ -1285,7 +1283,7 @@ export class AIWindow extends MozLitElement {
         document.title = this.#conversation.title;
       }
       this.#updateTabFavicon();
-      this.hostBrowser?.setAttribute(
+      this.#hostBrowser?.setAttribute(
         "data-conversation-id",
         this.#conversation.id
       );

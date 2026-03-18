@@ -446,3 +446,104 @@ smart_window:
     notification_emails:
       - pdahiya@mozilla.com
     expires: never
+
+  open_window:
+    type: event
+    description: |
+      Recorded when a Smart Window is opened
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D285902
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mlucks@mozilla.com
+    extra_keys:
+      trigger:
+        type: string
+        description: >
+          The reason the Smart Window was opened. One of: switch, menu, new_window, open_browser, or undo_close
+      fxa:
+        type: boolean
+        description: >
+          Whether the user is signed in to their Firefox Account
+      onboarding:
+        type: boolean
+        description: >
+          Whether the user saw firstrun onboarding when opening Smart Window. True if onboarding has not yet been completed.
+    expires: never
+
+  uri_load:
+    type: event
+    description: |
+      User opens a URI in the Smart Window (includes session restore and external link). This event is sent at most once per hour to indicate Smart Window activity.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D285902
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mlucks@mozilla.com
+    extra_keys:
+      model:
+        type: string
+        description: >
+          The model choice selected during firstrun, corresponding to the
+          model_choice_id in Remote Settings (1, 2, or 3). "custom" if a
+          custom model override is set. Empty string if firstrun was not
+          completed.
+    expires: never
+
+  sidebar_open:
+    type: event
+    description: |
+      Recorded when the Smart Window sidebar is opened
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D285902
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mlucks@mozilla.com
+    extra_keys:
+      chat_id: *chat_id
+      message_seq: &sidebar_message_seq
+        type: quantity
+        unit: count
+        description: >
+          Number of messages in the conversation at the time the sidebar was opened or closed
+    expires: never
+
+  sidebar_close:
+    type: event
+    description: |
+      Recorded when the Smart Window sidebar is closed
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D285902
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mlucks@mozilla.com
+    extra_keys:
+      chat_id: *chat_id
+      message_seq: *sidebar_message_seq
+    expires: never
+
+  tabs_opened:
+    type: counter
+    description: |
+      The number of Smart Window tabs opened in the current ping session
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D285902
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mlucks@mozilla.com
+    expires: never
