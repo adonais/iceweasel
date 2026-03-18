@@ -50,10 +50,6 @@
         "issue": "broken-interactive-elements",
         "matches": ["*://*.franmar.com/*"]
       },
-      "1944010": {
-        "issue": "broken-interactive-elements",
-        "matches": ["*://*.lafoodbank.org/*"]
-      },
       "1944015": {
         "issue": "broken-interactive-elements",
         "matches": ["*://*.lawnmowerpartsworld.com/*"]
