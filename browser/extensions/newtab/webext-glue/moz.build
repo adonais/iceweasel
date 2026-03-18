@@ -41,6 +41,7 @@ FINAL_TARGET_FILES.data.data += [
 FINAL_TARGET_FILES.data.content += [
     "../data/content/activity-stream.bundle.js",
     "../data/content/newtab-render.js",
+    "../data/content/vendor.bundle.js",
 ]
 FINAL_TARGET_FILES.data.css += [
     "../css/activity-stream.css",

@@ -1496,7 +1496,7 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Communicates to AboutNewTabChild whether or not it should load the classic scripts or do nothing.",
-      value: false,
+      value: true,
     },
   ],
 ]);
