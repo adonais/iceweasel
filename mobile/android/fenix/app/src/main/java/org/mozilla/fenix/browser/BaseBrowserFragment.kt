@@ -136,6 +136,7 @@ import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.PermissionsFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
+import mozilla.components.support.ktx.android.content.appName
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
 import mozilla.components.support.ktx.android.view.enterImmersiveMode
 import mozilla.components.support.ktx.android.view.exitImmersiveMode
@@ -165,6 +166,7 @@ import org.mozilla.fenix.bindings.SummarizeToolbarCFRBinding
 import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
 import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
 import org.mozilla.fenix.bookmarks.friendlyRootTitle
+import org.mozilla.fenix.browser.applinks.AppLinksPromptFragment
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.permissions.FenixSitePermissionLearnMoreUrlProvider
 import org.mozilla.fenix.browser.readermode.DefaultReaderModeController
@@ -467,6 +469,19 @@ abstract class BaseBrowserFragment :
                 store = requireComponents.core.store,
                 fragmentManager = parentFragmentManager,
                 sessionId = customTabSessionId,
+                dialog = { data ->
+                    AppLinksPromptFragment.create(
+                        appName = requireContext().appName,
+                        title = data.title,
+                        message = data.message,
+                        showCheckbox = data.showCheckbox,
+                        sourceUrl = data.sourceUrl,
+                        destinationUrl = data.destinationUrl,
+                        firefoxUrl = data.firefoxUrl,
+                        uniqueIdentifier = data.uniqueIdentifier,
+                        packageName = data.packageName,
+                    )
+                },
                 launchInApp = { requireContext().settings().shouldOpenLinksInApp(customTabSessionId != null) },
                 loadUrlUseCase = requireComponents.useCases.sessionUseCases.loadUrl,
                 shouldPrompt = { requireContext().settings().shouldPromptOpenLinksInApp() },
