@@ -16,6 +16,10 @@
 
 #include "jstypes.h"
 
+namespace js {
+class GCMarker;
+};
+
 namespace JS {
 
 struct JS_PUBLIC_API TimeBudget {
@@ -170,7 +174,14 @@ class JS_PUBLIC_API SliceBudget {
     return interruptRequested;
   }
 
+  void clearInterrupted() { interrupted = false; }
+
   int describe(char* buffer, size_t maxlen) const;
+
+ private:
+  // Interrupt the budget from inside the GC.
+  void setInterrupted() { interrupted = true; }
+  friend class js::GCMarker;
 };
 
 }  // namespace JS

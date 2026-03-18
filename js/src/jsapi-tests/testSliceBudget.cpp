@@ -114,11 +114,13 @@ BEGIN_TEST(testSliceBudgetInterruptibleTime) {
   // Interrupt requested!
   CHECK(budget.isOverBudget());
 
-  // The external flag is not reset, but the budget will internally remember
-  // that an interrupt was requested.
+  // The external flag is reset, but the budget will internally remember that an
+  // interrupt was requested until the interrupt is cleared.
   CHECK(wantInterrupt);
   wantInterrupt = false;
   CHECK(budget.isOverBudget());
+  budget.clearInterrupted();
+  CHECK(!budget.isOverBudget());
 
   // This doesn't test the deadline is correct as that would require waiting.
 
@@ -153,11 +155,13 @@ BEGIN_TEST(testSliceBudgetInterruptibleUnlimited) {
   // Interrupt requested!
   CHECK(budget.isOverBudget());
 
-  // The external flag is not reset, but the budget will internally remember
-  // that an interrupt was requested.
+  // The external flag is reset, but the budget will internally remember
+  // interrupt was requested until the interrupt is cleared.
   CHECK(wantInterrupt);
   wantInterrupt = false;
   CHECK(budget.isOverBudget());
+  budget.clearInterrupted();
+  CHECK(!budget.isOverBudget());
 
   return true;
 }

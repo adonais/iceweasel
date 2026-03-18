@@ -1423,7 +1423,8 @@ bool GCMarker::markOneObjectForTest(JSObject* obj) {
 // concurrent marking and interrupt the main thread to do this work.
 static constexpr size_t MainThreadBufferThreshold = 16384;
 
-inline bool GCMarker::addToMainThreadBuffer(JS::GCCellPtr ptr) {
+inline bool GCMarker::addToMainThreadBuffer(JS::GCCellPtr ptr,
+                                            SliceBudget& budget) {
   auto& buffer = markColor() == MarkColor::Black ? blackMainThreadBuffer_.ref()
                                                  : grayMainThreadBuffer_.ref();
   if (!buffer.append(ptr)) {
@@ -1431,9 +1432,9 @@ inline bool GCMarker::addToMainThreadBuffer(JS::GCCellPtr ptr) {
   }
 
   if (MOZ_UNLIKELY(buffer.length() == MainThreadBufferThreshold)) {
-    AutoLockHelperThreadState lock;
-    GCRuntime* gc = &runtime()->gc;
-    gc->maybeRequestGCAfterBackgroundTask(lock);
+    // Ensure |budget.isOverBudget()| will return true if the buffer is full.
+    budget.setInterrupted();
+    budget.forceCheck();
   }
 
   return true;
@@ -1695,8 +1696,8 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
         if constexpr (bool(opts & MarkingOptions::ConcurrentMarking)) {
           bool skippedJitScript = false;
           script->traceChildrenConcurrently(tracer(), &skippedJitScript);
-          if (skippedJitScript &&
-              MOZ_UNLIKELY(!addToMainThreadBuffer(JS::GCCellPtr(script)))) {
+          if (skippedJitScript && MOZ_UNLIKELY(!addToMainThreadBuffer(
+                                      JS::GCCellPtr(script), budget))) {
             delayMarkingChildrenOnOOM(script);
           }
           return true;
@@ -1779,7 +1780,7 @@ scan_obj: {
   markAndTraverseEdge<opts>(obj, obj->shape());
 
   const JSClass* clasp = obj->getClass();
-  if (clasp->hasTrace() && !callOrDelayTraceHook<opts>(obj, clasp)) {
+  if (clasp->hasTrace() && !callOrDelayTraceHook<opts>(obj, clasp, budget)) {
     return false;
   }
 
@@ -1848,14 +1849,15 @@ scan_obj: {
 }
 
 template <uint32_t opts>
-bool GCMarker::callOrDelayTraceHook(JSObject* obj, const JSClass* clasp) {
+bool GCMarker::callOrDelayTraceHook(JSObject* obj, const JSClass* clasp,
+                                    JS::SliceBudget& budget) {
   MOZ_ASSERT(clasp->hasTrace());
 
 #ifdef JS_GC_CONCURRENT_MARKING
   if constexpr (bool(opts & MarkingOptions::ConcurrentMarking)) {
     // TODO: Add a class flag to allow us to call the trace hook concurrently
     // for classes that support it.
-    if (MOZ_UNLIKELY(!addToMainThreadBuffer(JS::GCCellPtr(obj)))) {
+    if (MOZ_UNLIKELY(!addToMainThreadBuffer(JS::GCCellPtr(obj), budget))) {
       delayMarkingChildrenOnOOM(obj);
       return false;
     }
