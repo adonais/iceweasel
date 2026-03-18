@@ -579,7 +579,7 @@ function matchRequest(channel, filters) {
         // `topFrame` is typically null for some chrome requests like favicons,
         // and its `browsingContext` attribute might be null if the request happened
         // while the tab is being closed.
-        browsingContext = topFrame.browsingContext;
+        browsingContext = topFrame?.browsingContext;
       }
 
       return browsingContext?.browserId == filters.sessionContext.browserId;
