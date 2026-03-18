@@ -491,33 +491,6 @@
       }
     ]
   },
-  "1739489": {
-    "label": "Sites using draft.js",
-    "bugs": {
-      "1739489": {
-        "issue": "broken-editor",
-        "matches": ["*://draftjs.org/*", "*://www.facebook.com/*"]
-      },
-      "1776229": {
-        "issue": "broken-editor",
-        "matches": [
-          "*://mobile.twitter.com/*",
-          "*://mobile.x.com/*",
-          "*://twitter.com/*",
-          "*://x.com/*"
-        ]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["desktop"],
-        "skip_if": ["text_event_supported"],
-        "content_scripts": {
-          "js": ["bug1739489-draftjs-beforeinput.js"]
-        }
-      }
-    ]
-  },
   "1741234": {
     "label": "patient.alphalabs.ca",
     "bugs": {

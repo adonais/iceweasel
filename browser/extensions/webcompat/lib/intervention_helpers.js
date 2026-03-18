@@ -225,9 +225,6 @@ var InterventionHelpers = {
       }
       return true;
     },
-    text_event_supported: () => {
-      return !!window.TextEvent;
-    },
   },
 
   ua_change_functions: {
