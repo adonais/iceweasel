@@ -2474,7 +2474,7 @@
     "bugs": {
       "1899829": {
         "issue": "broken-images",
-        "matches": ["*://www3.animeflv.net/*"]
+        "matches": ["*://*.animeflv.net/*"]
       }
     },
     "interventions": [
