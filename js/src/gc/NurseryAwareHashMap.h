@@ -53,8 +53,6 @@ class UnsafeBareWeakHeapPtr : public ReadBarriered<T> {
   explicit operator bool() const { return bool(this->value); }
 
   const T unbarrieredGet() const { return this->value; }
-  T* unsafeGet() { return &this->value; }
-  T const* unsafeGet() const { return &this->value; }
 };
 }  // namespace detail
 

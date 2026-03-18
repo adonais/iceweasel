@@ -879,7 +879,7 @@ static inline void CheckProxyIsInCCWMap(ProxyObject* proxy) {
     // invariant that the wrapped object is the key in the wrapper map.
     ObjectWrapperMap::Ptr p = proxy->compartment()->lookupWrapper(referent);
     MOZ_ASSERT(p);
-    MOZ_ASSERT(*p->value().unsafeGet() == proxy);
+    MOZ_ASSERT(p->value().unbarrieredGet() == proxy);
   }
 }
 #endif

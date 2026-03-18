@@ -524,7 +524,7 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
   // The old value should still be in the cross-compartment wrapper map, and
   // the lookup should return wobj.
   ObjectWrapperMap::Ptr p = wcompartment->lookupWrapper(origTarget);
-  MOZ_ASSERT(*p->value().unsafeGet() == wobj);
+  MOZ_ASSERT(p->value().unbarrieredGet() == wobj);
   wcompartment->removeWrapper(p);
 
   // When we remove origv from the wrapper map, its wrapper, wobj, must
@@ -647,7 +647,7 @@ JS_PUBLIC_API bool js::RecomputeWrappers(
          iter.next()) {
       // Don't remap wrappers to finalization record objects. These are used
       // internally and are not exposed.
-      JSObject* wrapper = *iter.get().value().unsafeGet();
+      JSObject* wrapper = iter.get().value().unbarrieredGet();
       if (Wrapper::wrappedObject(wrapper)->is<FinalizationRecordObject>()) {
         continue;
       }

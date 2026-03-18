@@ -2677,7 +2677,7 @@ static bool InCrossCompartmentMap(JSRuntime* rt, JSObject* src,
 
   if (dst.is<JSObject>()) {
     if (ObjectWrapperMap::Ptr p = srccomp->lookupWrapper(&dst.as<JSObject>())) {
-      if (*p->value().unsafeGet() == src) {
+      if (p->value().unbarrieredGet() == src) {
         return true;
       }
     }
