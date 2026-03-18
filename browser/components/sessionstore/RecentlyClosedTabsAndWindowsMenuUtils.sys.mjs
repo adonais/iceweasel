@@ -521,8 +521,10 @@ function createEntry(
   let element = aDocument.createXULElement(aTagName);
 
   element.setAttribute("label", aMenuLabel);
-  element.setAttribute("tooltiptext", aTooltipText);
-  element.setAttribute("aria-description", aTooltipText);
+  if (aTooltipText) {
+    element.setAttribute("tooltiptext", aTooltipText);
+    element.setAttribute("aria-description", aTooltipText);
+  }
   if (aClosedTab.image) {
     const iconURL = lazy.PlacesUIUtils.getImageURL(aClosedTab.image);
     element.setAttribute("image", ChromeUtils.encodeURIForSrcset(iconURL));
