@@ -176,6 +176,12 @@ describe("<WeatherForecast>", () => {
   describe("context menu", () => {
     it("should render context menu with correct panel items", () => {
       assert.ok(wrapper.find(".weather-forecast-context-menu-button").exists());
+      assert.equal(
+        wrapper
+          .find(".weather-forecast-context-menu-button")
+          .prop("data-l10n-id"),
+        "newtab-menu-section-tooltip"
+      );
       assert.ok(wrapper.find("#weather-forecast-context-menu").exists());
 
       assert.ok(

@@ -298,6 +298,7 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
       <div className="weather-forecast-context-menu-wrapper">
         <moz-button
           className="weather-forecast-context-menu-button"
+          data-l10n-id="newtab-menu-section-tooltip"
           iconSrc="chrome://global/skin/icons/more.svg"
           menuId="weather-forecast-context-menu"
           type="ghost"
