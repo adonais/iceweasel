@@ -215,7 +215,7 @@ Object.assign(Chat, {
             Glean.smartWindow.getPageContent.record({
               location: context?.telemetry?.location,
               chat_id: conversation.id,
-              message_seq: conversation.messages.length,
+              message_seq: conversation.messageCount,
               length: result.reduce(
                 (acc, curr) => acc + (curr?.length || 0),
                 0
