@@ -15,6 +15,7 @@ import org.gradle.api.logging.Logging
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import org.gradle.api.tasks.Copy
 
 private val buildIdLogger = Logging.getLogger("org.mozilla.conventions.BuildId")
 
@@ -52,6 +53,25 @@ fun getManifestVersionString(componentsVersion: String, topobjdir: String): Stri
     val dateAndTime = buildDate.format(DateTimeFormatter.ofPattern("YYYYMMdd.Hmmss"))
 
     return "${parts[0]}.${parts[1]}.$dateAndTime"
+}
+
+// Configure a reusable task for updating the version in manifest.json for modules that package
+// a web extension. We automate this to make sure we never forget to update the version, either
+// in local development or for releases. In both cases, we want to make sure the latest version
+// of all extensions (including their latest changes) are installed on first start-up.
+@Suppress("UNCHECKED_CAST")
+fun updateExtensionVersion(task: Copy, extDir: String, componentsVersion: String) {
+    val mozconfig = task.project.gradle.extensions.extraProperties["mozconfig"] as Map<String, Any>
+    val topobjdir = mozconfig["topobjdir"] as String
+
+    task.from(extDir)
+    task.include("manifest.template.json")
+    task.rename { "manifest.json" }
+    task.into(extDir)
+
+    val values = mapOf("version" to getManifestVersionString(componentsVersion, topobjdir))
+    task.inputs.properties(values)
+    task.expand(values)
 }
 
 @Serializable
