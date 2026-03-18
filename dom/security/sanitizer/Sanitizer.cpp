@@ -1173,34 +1173,43 @@ bool Sanitizer::RemoveElementCanonical(CanonicalElement&& aElement) {
 // https://wicg.github.io/sanitizer-api/#sanitizer-replace-an-element-with-its-children
 bool Sanitizer::ReplaceElementWithChildren(
     const StringOrSanitizerElementNamespace& aElement) {
+  // Step 1. Let configuration be this’s configuration.
+  // Step 2. Assert: configuration is valid.
   MaybeMaterializeDefaultConfig();
 
-  // Step 1. Set element to the result of canonicalize a sanitizer element
-  // with element.
+  // Step 3. Set element to the result of canonicalize a sanitizer element with
+  // element.
   CanonicalElement element = CanonicalizeElement(aElement);
 
-  // Step 2. If configuration["replaceWithChildrenElements"] contains element:
-  if (mReplaceWithChildrenElements &&
-      mReplaceWithChildrenElements->Contains(element)) {
-    // Step 2.1. Return false.
+  // Step 4. If element["name"] equals "html" and element["namespace"] equals
+  // HTML namespace:
+  if (element == CanonicalElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml)) {
+    // Step 4.1. Return false.
     return false;
   }
 
-  // Step 3. Remove element from configuration["removeElements"].
+  // Step 5. If configuration["replaceWithChildrenElements"] contains element:
+  if (mReplaceWithChildrenElements &&
+      mReplaceWithChildrenElements->Contains(element)) {
+    // Step 5.1. Return false.
+    return false;
+  }
+
+  // Step 6. Remove element from configuration["removeElements"].
   if (mRemoveElements) {
     mRemoveElements->Remove(element);
   } else {
-    // Step 4. Remove element from configuration["elements"] list.
+    // Step 7. Remove element from configuration["elements"] list.
     mElements->Remove(element);
   }
 
-  // Step 5. Add element to configuration["replaceWithChildrenElements"].
+  // Step 8. Add element to configuration["replaceWithChildrenElements"].
   if (!mReplaceWithChildrenElements) {
     mReplaceWithChildrenElements.emplace();
   }
   mReplaceWithChildrenElements->Insert(std::move(element));
 
-  // Step 6. Return true.
+  // Step 9. Return true.
   return true;
 }
 

@@ -75,9 +75,7 @@ class CanonicalElement : public PLDHashEntryHdr {
   ~CanonicalElement() = default;
 
   KeyType GetKey() const { return *this; }
-  bool KeyEquals(const CanonicalElement* aKey) const {
-    return mLocalName == aKey->mLocalName && mNamespace == aKey->mNamespace;
-  }
+  bool KeyEquals(const CanonicalElement* aKey) const { return *this == *aKey; }
 
   static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
   static PLDHashNumber HashKey(KeyTypePointer aKey) {
@@ -93,6 +91,10 @@ class CanonicalElement : public PLDHashEntryHdr {
 
   nsAtom* LocalName() const { return mLocalName; }
   nsAtom* GetNamespace() const { return mNamespace; }
+
+  bool operator==(const CanonicalElement& aOther) const {
+    return mLocalName == aOther.mLocalName && mNamespace == aOther.mNamespace;
+  }
 
  protected:
   friend std::ostream& operator<<(std::ostream& aStream,
