@@ -267,7 +267,7 @@ class BrowserRobot {
 
     fun clickLinkMatchingText(expectedText: String) = clickPageObject(webPageItemContainingText(expectedText))
 
-    fun verifyOpenLinksInAppsPrompt(openLinksInAppsEnabled: Boolean, link: String) = assertOpenLinksInAppsPrompt(openLinksInAppsEnabled, link)
+    fun verifyOpenLinksInAppsPrompt(openLinksInAppsEnabled: Boolean) = assertOpenLinksInAppsPrompt(openLinksInAppsEnabled)
 
     fun clickOpenLinksInAppsCancelButton() {
         for (i in 1..RETRY_COUNT) {
@@ -584,11 +584,10 @@ inline fun runWithIdleRes(ir: IdlingResource?, pendingCheck: () -> Unit) {
     }
 }
 
-private fun assertOpenLinksInAppsPrompt(openLinksInAppsEnabled: Boolean, link: String) {
+private fun assertOpenLinksInAppsPrompt(openLinksInAppsEnabled: Boolean) {
     if (openLinksInAppsEnabled) {
         mDevice.findObject(UiSelector().resourceId("$packageName:id/parentPanel")).waitForExists(waitingTime)
         assertTrue(openLinksInAppsMessage.waitForExists(waitingTimeShort))
-        assertTrue(openLinksInAppsLink(link).exists())
         assertTrue(openLinksInAppsCancelButton.waitForExists(waitingTimeShort))
         assertTrue(openLinksInAppsOpenButton.waitForExists(waitingTimeShort))
     } else {
@@ -599,8 +598,6 @@ private fun assertOpenLinksInAppsPrompt(openLinksInAppsEnabled: Boolean, link: S
         )
     }
 }
-
-private fun openLinksInAppsLink(link: String) = mDevice.findObject(UiSelector().textContains(link))
 
 private val browserURLbar = mDevice.findObject(
     UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_url_view"),

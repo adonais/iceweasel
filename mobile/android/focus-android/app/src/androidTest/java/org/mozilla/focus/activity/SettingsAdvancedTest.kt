@@ -46,7 +46,6 @@ class SettingsAdvancedTest {
     @Test
     fun openLinksInAppsTest() {
         val tab3Url = webServerRule.server.getGenericTabAsset(3).url
-        val youtubeLink = "https://www.youtube.com/c/MozillaChannel/videos"
 
         homeScreen {
         }.openMainMenu {
@@ -60,7 +59,7 @@ class SettingsAdvancedTest {
         }.loadPage(tab3Url) {
             progressBar.waitUntilGone(waitingTimeShort)
             clickLinkMatchingText("Mozilla Youtube link")
-            verifyOpenLinksInAppsPrompt(true, youtubeLink)
+            verifyOpenLinksInAppsPrompt(true)
             clickOpenLinksInAppsCancelButton()
         }.clearBrowsingData {
         }.openMainMenu {
@@ -74,7 +73,7 @@ class SettingsAdvancedTest {
         }.loadPage(tab3Url) {
             progressBar.waitUntilGone(waitingTimeShort)
             clickLinkMatchingText("Mozilla Youtube link")
-            verifyOpenLinksInAppsPrompt(false, youtubeLink)
+            verifyOpenLinksInAppsPrompt(false)
         }
     }
 }

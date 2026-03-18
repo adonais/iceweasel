@@ -15,7 +15,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.assertYoutubeAppOpens
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.OpenLinksInApp
 import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.externalLinksAsset
@@ -128,7 +128,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, youTubeSchemaLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Cancel"))
             verifyUrl(externalLinksPage.url.toString())
         }
     }
@@ -147,7 +147,7 @@ class SettingsAdvancedTest {
             clickPageObject(composeTestRule, youTubeSchemaLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
             waitForAppWindowToBeUpdated()
-            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button1", "Open"))
+            clickPageObject(composeTestRule, itemWithText("Open"))
             mDevice.waitForIdle()
             assertYoutubeAppOpens()
         }
@@ -173,7 +173,7 @@ class SettingsAdvancedTest {
                 url = "youtube",
                 pageObject = youTubeSchemaLink,
             )
-            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button2", "Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Cancel"))
             verifyUrl(externalLinksPage.url.toString())
         }
     }
@@ -200,7 +200,7 @@ class SettingsAdvancedTest {
                 pageObject = youTubeSchemaLink,
             )
             waitForAppWindowToBeUpdated()
-            clickPageObject(composeTestRule, itemWithResIdAndText("android:id/button1", "Open"))
+            clickPageObject(composeTestRule, itemWithText("Open"))
             mDevice.waitForIdle()
             assertYoutubeAppOpens()
         }

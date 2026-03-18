@@ -911,7 +911,6 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyOpenLinkInAnotherAppPrompt(appName: String) {
         assertUIObjectExists(
-            itemWithResId("$packageName:id/parentPanel"),
             itemContainingText(
                 getStringResource(
                     applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
@@ -942,6 +941,15 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         )
     }
 
+    fun verifyAppLinksPromptCheckbox(exists: Boolean = true) {
+        assertUIObjectExists(
+            itemContainingText(
+                getStringResource(applinksR.string.mozac_feature_applinks_confirm_dialog_checkbox_label),
+            ),
+            exists = exists,
+        )
+    }
+
     fun verifyPrivateBrowsingOpenLinkInAnotherAppPrompt(appName: String, url: String, pageObject: UiObject) {
         for (i in 1..RETRY_COUNT) {
             try {
@@ -949,7 +957,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
                 assertUIObjectExists(
                     itemContainingText(
                         getStringResource(
-                            applinksR.string.mozac_feature_applinks_confirm_dialog_title_with_app_name,
+                            applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
                             appName,
                         ),
                     ),
