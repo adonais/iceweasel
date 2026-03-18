@@ -583,3 +583,96 @@ add_task(async function test_move_tabs_of_splitview_to_other_window() {
   await extension.awaitMessage("done");
   await extension.unload();
 });
+
+// Tabs in a split view stick together as much as possible. One of the ways to
+// unsplit tabs explicitly is if an extension explicitly lists the order.
+// This test checks that a split view can be unsplit by a single `tabs.move()`
+// when the tabs are explicitly listed with other tabs in between.
+//
+// In contrast, if `tabs.move()` were to be called individually for each tabId
+// (instead of all at once in one `tabs.move()` call), then their split views
+// would not unsplit. That is verified in test_move_another_tab_into_splitview.
+add_task(async function test_bulk_move_reorder_unsplit_splitview() {
+  let extension = loadExtensionForSplitViewTest({
+    background: async createSplit => {
+      const { id: windowId, tabs } = await browser.windows.create({
+        url: [
+          "https://example.com/?1",
+          "https://example.com/?2",
+          "https://example.com/?3",
+          "https://example.com/?4",
+          "https://example.com/?5",
+        ],
+      });
+      const [tabId1, tabId2, tabId3, tabId4, tabId5] = tabs.map(t => t.id);
+      await createSplit([tabId1, tabId2]);
+      const splitViewId2 = await createSplit([tabId3, tabId4]);
+
+      const changes = [];
+      browser.tabs.onUpdated.addListener(
+        (tabId, changeInfo) => {
+          changes.push({ tabId, changeInfo });
+        },
+        { properties: ["splitViewId"] }
+      );
+      browser.tabs.onMoved.addListener((movedTabId, moveInfo) => {
+        changes.push({ movedTabId, moveInfo });
+      });
+
+      // Move tabId3 + tabId4 (part of splitViewId2) between the tabs of the
+      // other split view (of tabId1 + tabId2).
+      let moved = await browser.tabs.move([tabId1, tabId3, tabId4, tabId2], {
+        index: 0,
+      });
+      browser.test.assertDeepEq(
+        [tabId1, tabId3, tabId4, tabId2],
+        moved.map(t => t.id),
+        "tabs.move() returned tabs in the given order"
+      );
+      browser.test.assertDeepEq(
+        [
+          // tabId1,tabId2 were part of the same split but forcibly unsplit
+          // because we inserted other tabs in between.
+          { index: 0, tabId: tabId1, splitViewId: -1 },
+          // We moved tabId3,tabId4 together, and since they are adjacent in a
+          // split view, their split should be preserved.
+          { index: 1, tabId: tabId3, splitViewId: splitViewId2 },
+          { index: 2, tabId: tabId4, splitViewId: splitViewId2 },
+          { index: 3, tabId: tabId2, splitViewId: -1 },
+          { index: 4, tabId: tabId5, splitViewId: -1 },
+        ],
+        Array.from(await browser.tabs.query({ windowId }), t => ({
+          index: t.index,
+          tabId: t.id,
+          splitViewId: t.splitViewId,
+        })),
+        "Split view unsplits when tabs.move() puts other tabs in between"
+      );
+      browser.test.assertDeepEq(
+        [
+          {
+            movedTabId: tabId3,
+            moveInfo: { windowId, fromIndex: 2, toIndex: 1 },
+          },
+          {
+            movedTabId: tabId4,
+            moveInfo: { windowId, fromIndex: 3, toIndex: 2 },
+          },
+          // splitViewId onUpdated changes are detected via TabMove, which
+          // fires events in the reverse order for bulk moves of multiple tabs
+          // in a split view. The order is not tabId1,tabId2, but reversed:
+          { tabId: tabId2, changeInfo: { splitViewId: -1 } },
+          { tabId: tabId1, changeInfo: { splitViewId: -1 } },
+        ],
+        changes,
+        "Got expected events after tabs.move() unsplit a split view"
+      );
+
+      await browser.windows.remove(windowId);
+      browser.test.sendMessage("done");
+    },
+  });
+  await extension.startup();
+  await extension.awaitMessage("done");
+  await extension.unload();
+});
