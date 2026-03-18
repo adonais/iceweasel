@@ -61,7 +61,7 @@ class GetterSetter : public gc::CellWithGCPointer<JSObject> {
   // Getter object, stored in the cell header.
   JSObject* getter() const { return headerPtr(); }
 
-  GCPtr<JSObject*> setter_;
+  const GCPtr<JSObject*> setter_;
 
 #ifndef JS_64BIT
   // Ensure size >= MinCellSize on 32-bit platforms.

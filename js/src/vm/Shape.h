@@ -243,8 +243,8 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   const JSClass* clasp() const { return headerPtr(); }
 
  private:
-  JS::Realm* realm_;
-  GCPtr<TaggedProto> proto_;
+  JS::Realm* const realm_;
+  const GCPtr<TaggedProto> proto_;
 
   BaseShape(const BaseShape& base) = delete;
   BaseShape& operator=(const BaseShape& other) = delete;
