@@ -65,6 +65,12 @@ fun UiDevice.completeOnboarding() {
     clickIfExistsWithText("Continue")
 }
 
+fun UiDevice.waitForHomepage() {
+    findObject(UiSelector().resourceId("$TARGET_PACKAGE:id/toolbar_text")).run {
+        waitForExists(WAITING_TIME_MS)
+    }
+}
+
 fun UiDevice.clickIfExistsWithText(text: String) {
     findObject(UiSelector().text(text)).run {
         waitForExists(WAITING_TIME_MS)
