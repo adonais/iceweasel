@@ -45,56 +45,32 @@ export class FirefoxProfileMigrator extends MigratorBase {
     return "chrome://branding/content/icon128.png";
   }
 
-  /**
-   * Return a map of all migratable Firefox profiles.
-   *
-   * Subclasses can override this to provide profiles from different sources
-   * (e.g. selectable profiles instead of toolkit profiles).
-   *
-   * @returns {Promise<Map<string, object>>} A map keyed by absolute profile path, where
-   *   each value is an object with the following properties:
-   *   - {string} id - The absolute profile path (same as the key).
-   *   - {string} name - The display name of the profile.
-   *   - {nsIFile} rootDir - The root directory of the profile.
-   */
-  async getAllProfiles() {
+  _getAllProfiles() {
     let allProfiles = new Map();
     let profileService = Cc[
       "@mozilla.org/toolkit/profile-service;1"
     ].getService(Ci.nsIToolkitProfileService);
     for (let profile of profileService.profiles) {
       let rootDir = profile.rootDir;
-      let path = rootDir.path;
 
       if (
         rootDir.exists() &&
         rootDir.isReadable() &&
         !rootDir.equals(MigrationUtils.profileStartup.directory)
       ) {
-        allProfiles.set(path, {
-          id: path,
-          name: profile.name,
-          rootDir,
-        });
+        allProfiles.set(profile.name, rootDir);
       }
     }
     return allProfiles;
   }
 
-  async getSourceProfiles() {
+  getSourceProfiles() {
     let sorter = (a, b) => {
-      return a.name
-        .toLocaleLowerCase()
-        .localeCompare(b.name.toLocaleLowerCase());
+      return a.id.toLocaleLowerCase().localeCompare(b.id.toLocaleLowerCase());
     };
 
-    let profiles = await this.getAllProfiles();
-
-    return [...profiles.values()]
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-      }))
+    return [...this._getAllProfiles().keys()]
+      .map(x => ({ id: x, name: x }))
       .sort(sorter);
   }
 
@@ -108,24 +84,12 @@ export class FirefoxProfileMigrator extends MigratorBase {
     return file.exists() ? file : null;
   }
 
-  /**
-   * Gets the source profile directory for an object representing a profile.
-   *
-   * @param {object} aProfile An object containing an "id".
-   *   The id must be an absolute path string to the source profile directory.
-   * @returns {nsIFile} The directory of the source profile
-   */
-  async getSourceProfileDir(aProfile) {
-    let sourceProfileDir = Cc["@mozilla.org/file/local;1"].createInstance(
-      Ci.nsIFile
-    );
-    sourceProfileDir.initWithPath(aProfile.id);
-
-    return sourceProfileDir;
-  }
-
-  async getResources(aProfile) {
-    let sourceProfileDir = await this.getSourceProfileDir(aProfile);
+  getResources(aProfile) {
+    let sourceProfileDir = aProfile
+      ? this._getAllProfiles().get(aProfile.id)
+      : Cc["@mozilla.org/toolkit/profile-service;1"].getService(
+          Ci.nsIToolkitProfileService
+        ).defaultProfile.rootDir;
     if (
       !sourceProfileDir ||
       !sourceProfileDir.exists() ||
@@ -143,7 +107,7 @@ export class FirefoxProfileMigrator extends MigratorBase {
       return null;
     }
 
-    return this.getResourcesInternal(sourceProfileDir, currentProfileDir);
+    return this._getResourcesInternal(sourceProfileDir, currentProfileDir);
   }
 
   getLastUsedDate() {
@@ -153,17 +117,7 @@ export class FirefoxProfileMigrator extends MigratorBase {
     return Promise.resolve(new Date(0));
   }
 
-  /**
-   * An internal function specific to FirefoxProfileMigrator that gets the
-   * resources from the sourceProfileDir and copies the resources into
-   * currentProfileDir when the migration resources are invoked.
-   *
-   * @param {nsIFile} sourceProfileDir The profile we are migrating from
-   * @param {nsIFile} currentProfileDir The profile we are migrating into
-   * @returns {Array<object>} An array of "migration resources" objects for the
-   * sourceProfileDir to migrate into the currentProfileDir
-   */
-  getResourcesInternal(sourceProfileDir, currentProfileDir) {
+  _getResourcesInternal(sourceProfileDir, currentProfileDir) {
     let getFileResource = (aMigrationType, aFileNames) => {
       let files = [];
       for (let fileName of aFileNames) {

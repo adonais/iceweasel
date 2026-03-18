@@ -43,11 +43,6 @@ function getL10n() {
   return gL10n;
 }
 
-const FIREFOX_REFRESH_MIGRATOR_KEYS = new Set([
-  "firefox",
-  "firefox-selectable-profile",
-]);
-
 const MIGRATOR_MODULES = Object.freeze({
   EdgeProfileMigrator: {
     moduleURI: "resource:///modules/EdgeProfileMigrator.sys.mjs",
@@ -55,10 +50,6 @@ const MIGRATOR_MODULES = Object.freeze({
   },
   FirefoxProfileMigrator: {
     moduleURI: "resource:///modules/FirefoxProfileMigrator.sys.mjs",
-    platforms: ["linux", "macosx", "win"],
-  },
-  FirefoxSelectableProfileMigrator: {
-    moduleURI: "resource:///modules/FirefoxSelectableProfileMigrator.sys.mjs",
     platforms: ["linux", "macosx", "win"],
   },
   IEProfileMigrator: {
@@ -754,7 +745,7 @@ class MigrationUtils {
     let isRefresh =
       migrator &&
       skipSourceSelection &&
-      FIREFOX_REFRESH_MIGRATOR_KEYS.has(migratorKey);
+      migratorKey == AppConstants.MOZ_APP_NAME;
 
     let entrypoint = this.MIGRATION_ENTRYPOINTS.FIRSTRUN;
     if (isRefresh) {

@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 add_setup(async function () {
   Services.telemetry.clearEvents();
-  await makeProfileResettable();
+  makeProfileResettable();
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.scotchBonnet.enableOverride", false]],

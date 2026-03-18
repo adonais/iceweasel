@@ -3125,17 +3125,6 @@ static nsresult SelectProfile(nsToolkitProfileService* aProfileSvc,
     return NS_ERROR_ABORT;
   }
 
-  // Block reset without migration for selectable profiles.
-  // Bug 2020801: Update this to allow resetting without migration
-  if (gDoProfileReset && !gDoMigration && *aProfile) {
-    nsCString storeID;
-    (*aProfile)->GetStoreID(storeID);
-    if (!storeID.IsVoid()) {
-      NS_WARNING("Selectable profiles cannot be reset without migration.");
-      return NS_ERROR_ABORT;
-    }
-  }
-
   // No profile could be found. This generally shouldn't happen, a new profile
   // should be created in all cases except for profile reset which is covered
   // above, but just in case...
@@ -5599,38 +5588,18 @@ nsresult XREMain::XRE_mainRun() {
             do_CreateInstance(NS_PROFILEMIGRATOR_CONTRACTID));
         if (pm) {
           nsAutoCString aKey;
-          nsAutoCString aProfilePath;
+          nsAutoCString aName;
           if (gDoProfileReset) {
             // Automatically migrate from the current application if we just
             // reset the profile.
-            nsCOMPtr<nsIFile> rootDir = gResetOldProfile->GetRootDir();
-            nsAutoString path;
-            rootDir->GetPath(path);
-            CopyUTF16toUTF8(path, aProfilePath);
-
-            nsCString storeID;
-            gResetOldProfile->GetStoreID(storeID);
-            if (!storeID.IsVoid()) {
-              aKey = "firefox-selectable-profile";
-              // In the case that Firefox is launched with --reset-profile,
-              // the storeID and path env variables won't be set, so we set
-              // them here if we are in a profile with a storeID.
-              nsAutoCString envStoreID("SELECTABLE_PROFILE_RESET_STORE_ID=");
-              envStoreID.Append(storeID);
-              SaveToEnv(envStoreID.get());
-
-              nsAutoCString envProfilePath("SELECTABLE_PROFILE_RESET_PATH=");
-              envProfilePath.Append(aProfilePath);
-              SaveToEnv(envProfilePath.get());
-            } else {
-              aKey = MOZ_APP_NAME;
-            }
+            aKey = MOZ_APP_NAME;
+            gResetOldProfile->GetName(aName);
           }
 #ifdef XP_MACOSX
           // Necessary for migration wizard to be accessible.
           InitializeMacApp();
 #endif
-          pm->Migrate(&mDirProvider, aKey, aProfilePath);
+          pm->Migrate(&mDirProvider, aKey, aName);
         }
       }
 
