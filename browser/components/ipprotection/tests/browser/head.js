@@ -260,6 +260,7 @@ let DEFAULT_SERVICE_STATUS = {
   isSignedIn: false,
   isEnrolledAndEntitled: undefined,
   canEnroll: true,
+  isLinkedToGuardian: false,
   entitlement: {
     status: 200,
     error: undefined,
@@ -382,7 +383,7 @@ function setupStubs(stubs = STUBS) {
     fetchUserInfo: setupSandbox.stub(),
     fetchProxyPass: setupSandbox.stub(),
     fetchProxyUsage: setupSandbox.stub(),
-    isLinkedToGuardian: setupSandbox.stub().resolves(false),
+    isLinkedToGuardian: setupSandbox.stub(),
   };
   stubs.enroll = guardianStub.enroll;
   stubs.fetchUserInfo = guardianStub.fetchUserInfo;
@@ -407,6 +408,7 @@ function setupService(
     entitlement,
     proxyPass,
     usageInfo,
+    isLinkedToGuardian,
     signInFlow,
   } = DEFAULT_SERVICE_STATUS,
   stubs = STUBS
@@ -441,6 +443,10 @@ function setupService(
 
   if (typeof usageInfo != "undefined") {
     stubs.fetchProxyUsage.resolves(usageInfo);
+  }
+
+  if (typeof isLinkedToGuardian != "undefined") {
+    stubs.isLinkedToGuardian.resolves(isLinkedToGuardian);
   }
 
   if (typeof signInFlow != "undefined") {
