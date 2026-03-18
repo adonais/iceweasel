@@ -792,15 +792,16 @@ export var UnsubmittedCrashHandler = {
       maxLogLevel: this.prefs.getStringPref("loglevel", "Error"),
     });
 
+    lazy.RemoteSettingsCrashPull.start(
+      this.showRequestedSubmissionsNotification.bind(this)
+    );
+
     // UnsubmittedCrashHandler can be initialized but still be disabled.
     // This is intentional, as this makes simulating UnsubmittedCrashHandler's
     // reactions to browser startup and shutdown easier in test automation.
     //
     // UnsubmittedCrashHandler, when initialized but not enabled, is inert.
     if (this.enabled) {
-      lazy.RemoteSettingsCrashPull.start(
-        this.showRequestedSubmissionsNotification.bind(this)
-      );
       if (this.prefs.prefHasUserValue("suppressUntilDate")) {
         if (this.prefs.getCharPref("suppressUntilDate") > this.dateString()) {
           // We'll be suppressing any notifications until after suppressedDate,
@@ -834,11 +835,11 @@ export var UnsubmittedCrashHandler = {
       this._checkTimeout = null;
     }
 
+    lazy.RemoteSettingsCrashPull.stop();
+
     if (!this.enabled) {
       return;
     }
-
-    lazy.RemoteSettingsCrashPull.stop();
 
     if (this.suppressed) {
       this.suppressed = false;
