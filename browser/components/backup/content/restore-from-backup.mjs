@@ -2,11 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import {
-  html,
-  ifDefined,
-  styleMap,
-} from "chrome://global/content/vendor/lit.all.mjs";
+import { html, styleMap } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { ERRORS } from "chrome://browser/content/backup/backup-constants.mjs";
 import { getErrorL10nId } from "chrome://browser/content/backup/backup-errors.mjs";
@@ -314,47 +310,6 @@ export default class RestoreFromBackup extends MozLitElement {
     return supportURL.href;
   }
 
-  /**
-   * Returns a support link anchor element, either with UTM params for use in
-   * about:welcome, or falling back to moz-support-link otherwise
-   *
-   * @param {object} options - Link configuration options
-   * @param {string} options.id - The element id
-   * @param {string} options.l10nId - The fluent l10n id
-   * @param {string} options.l10nName - The fluent l10n name
-   * @param {string} options.supportPage - The support page slug
-   * @returns {TemplateResult} The link template
-   */
-
-  getSupportLinkAnchor({
-    id,
-    l10nId,
-    l10nName,
-    supportPage = "firefox-backup",
-  }) {
-    if (this.aboutWelcomeEmbedded) {
-      return html`<a
-        id=${id}
-        target="_blank"
-        href=${this.getSupportURLWithUTM(supportPage)}
-        data-l10n-id=${ifDefined(l10nId)}
-        data-l10n-name=${ifDefined(l10nName)}
-        dir="auto"
-        rel="noopener noreferrer"
-      ></a>`;
-    }
-
-    return html`<a
-      id=${id}
-      slot="support-link"
-      is="moz-support-link"
-      support-page=${supportPage}
-      data-l10n-id=${ifDefined(l10nId)}
-      data-l10n-name=${ifDefined(l10nName)}
-      dir="auto"
-    ></a>`;
-  }
-
   applyContentCustomizations() {
     if (this.aboutWelcomeEmbedded) {
       this.style.setProperty(
@@ -417,6 +372,7 @@ export default class RestoreFromBackup extends MozLitElement {
         <fieldset id="backup-filepicker-controls">
           <label
             id="backup-filepicker-label"
+            class="heading-medium"
             for="backup-filepicker-input"
             data-l10n-id="restore-from-backup-filepicker-label"
           ></label>
@@ -509,6 +465,48 @@ export default class RestoreFromBackup extends MozLitElement {
       ? "backup-password-error"
       : "backup-password-description";
 
+    let passwordStatus;
+    if (isInvalid && this.aboutWelcomeEmbedded) {
+      passwordStatus = html`
+        <span
+          id="backup-password-error"
+          class="field-error"
+          data-l10n-id="backup-service-error-incorrect-password"
+        >
+          <a
+            id="backup-incorrect-password-support-link"
+            target="_blank"
+            href=${this.getSupportURLWithUTM("firefox-backup")}
+            data-l10n-name="incorrect-password-support-link"
+            dir="auto"
+            rel="noopener noreferrer"
+          ></a>
+        </span>
+      `;
+    } else if (isInvalid) {
+      passwordStatus = html`
+        <span
+          id="backup-password-error"
+          class="field-error"
+          data-l10n-id="backup-service-error-incorrect-password"
+        >
+          <a
+            id="backup-incorrect-password-support-link"
+            slot="support-link"
+            is="moz-support-link"
+            support-page="firefox-backup"
+            data-l10n-name="incorrect-password-support-link"
+            dir="auto"
+          ></a>
+        </span>
+      `;
+    } else {
+      passwordStatus = html`<label
+        id="backup-password-description"
+        data-l10n-id="restore-from-backup-password-description"
+      ></label>`;
+    }
+
     return html` <fieldset id="backup-password">
       <label id="backup-password-label" for="backup-password-input">
         <span
@@ -522,23 +520,7 @@ export default class RestoreFromBackup extends MozLitElement {
           aria-describedby=${describedBy}
         />
       </label>
-      ${isInvalid
-        ? html`
-            <span
-              id="backup-password-error"
-              class="field-error"
-              data-l10n-id="backup-service-error-incorrect-password"
-            >
-              ${this.getSupportLinkAnchor({
-                id: "backup-incorrect-password-support-link",
-                l10nName: "incorrect-password-support-link",
-              })}
-            </span>
-          `
-        : html`<label
-            id="backup-password-description"
-            data-l10n-id="restore-from-backup-password-description"
-          ></label> `}
+      ${passwordStatus}
     </fieldset>`;
   }
 
@@ -624,6 +606,25 @@ export default class RestoreFromBackup extends MozLitElement {
       return null;
     }
 
+    if (this.aboutWelcomeEmbedded) {
+      return html`
+        <span
+          id="backup-generic-file-error"
+          class="field-error"
+          data-l10n-id="backup-file-restore-file-validation-error"
+        >
+          <a
+            id="backup-generic-error-link"
+            target="_blank"
+            href=${this.getSupportURLWithUTM("firefox-backup")}
+            data-l10n-name="restore-problems"
+            dir="auto"
+            rel="noopener noreferrer"
+          ></a>
+        </span>
+      `;
+    }
+
     return html`
       <span
         id="backup-generic-file-error"
@@ -632,11 +633,11 @@ export default class RestoreFromBackup extends MozLitElement {
       >
         <a
           id="backup-generic-error-link"
-          target="_blank"
           slot="support-link"
+          is="moz-support-link"
+          support-page="firefox-backup"
           data-l10n-name="restore-problems"
-          href=${this.getSupportURLWithUTM("firefox-backup")}
-          rel="noopener noreferrer"
+          dir="auto"
         ></a>
       </span>
     `;
