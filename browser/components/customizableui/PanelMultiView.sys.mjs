@@ -1577,6 +1577,13 @@ export var PanelView = class extends AssociatedToNode {
       if (node.disabled) {
         return NodeFilter.FILTER_REJECT;
       }
+      let visible = node.checkVisibility({
+        checkVisibilityCSS: true,
+        flush: false,
+      });
+      if (!visible) {
+        return NodeFilter.FILTER_REJECT;
+      }
       let bounds = this._getBoundsWithoutFlushing(node);
       if (bounds.width == 0 || bounds.height == 0) {
         return NodeFilter.FILTER_REJECT;
@@ -1603,11 +1610,12 @@ export var PanelView = class extends AssociatedToNode {
         node.dataset?.capturesFocus === "true"
       ) {
         // Set the tabindex attribute to make sure the node is focusable.
-        // Don't do this for browser and iframe elements because this breaks
-        // tabbing behavior. They're already focusable anyway.
+        // Don't do this for browser, iframe and input elements because this
+        // breaks tabbing behavior. They're already focusable anyway.
         if (
           localName != "browser" &&
           localName != "iframe" &&
+          localName != "input" &&
           !node.hasAttribute("tabindex") &&
           node.dataset?.capturesFocus !== "true"
         ) {

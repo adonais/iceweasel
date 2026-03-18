@@ -57,12 +57,27 @@ add_task(async function test_fixedOverflow() {
   Assert.ok(searchbar.inOverflowPanel, "Was moved to overflow panel");
   await openOverflowPanel();
 
+  for (let i = 0; i < 10; i++) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    if (searchbar.focused) {
+      break;
+    }
+  }
+  Assert.ok(searchbar.focused, "Searchbar is focused eventually");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  Assert.equal(
+    document.activeElement,
+    searchbar.querySelector(".searchmode-switcher"),
+    "Previous focusable element is the searchmode switcher"
+  );
+  EventUtils.synthesizeKey("KEY_Tab");
+  Assert.ok(searchbar.focused, "Searchbar is focused again");
+
   // Clear lastQueryContextPromise in case another test ran before.
   searchbar.lastQueryContextPromise = Promise.resolve();
 
   // The search term is a URL but it should still be searched.
   let searchTerm = "https://example.com/";
-  searchbar.focus();
   EventUtils.sendString(searchTerm);
 
   let lastQueryContext = await searchbar.lastQueryContextPromise;
@@ -176,4 +191,27 @@ add_task(async function test_overflowing() {
   });
   Assert.ok(searchbar.view.isOpen, "Results panel is open");
   searchbar.handleRevert();
+});
+
+// Make sure tab navigation in the overflow panel didn't break tab
+// navigation in the navbar. This happened in the past because the
+// PanelView code set tabindex="-1" on the input element.
+add_task(async function test_tabNavigation() {
+  gURLBar.focus();
+  // Move across site actions.
+  for (let i = 0; i < 10; i++) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    if (searchbar.focused) {
+      break;
+    }
+  }
+  Assert.ok(searchbar.focused, "Searchbar is focused eventually");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  Assert.equal(
+    document.activeElement,
+    searchbar.querySelector(".searchmode-switcher"),
+    "Previous focusable element is the searchmode switcher"
+  );
+  EventUtils.synthesizeKey("KEY_Tab");
+  Assert.ok(searchbar.focused, "Searchbar is focused again");
 });
