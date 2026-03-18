@@ -14,6 +14,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -40,6 +41,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStructure;
+import android.view.WindowInsets;
 import android.view.autofill.AutofillManager;
 import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
@@ -190,8 +192,15 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
       if (GeckoView.this.mSurfaceWrapper != null) {
         GeckoView.this.mSurfaceWrapper.getView().getLocationOnScreen(mOrigin);
         mDisplay.screenOriginChanged(mOrigin[0], mOrigin[1]);
-        // cutout support
-        if (Build.VERSION.SDK_INT >= 28) {
+        // cutout / edge to edge support
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+          final WindowInsets windowInsets =
+              GeckoView.this.mSurfaceWrapper.getView().getRootWindowInsets();
+          final Insets insets =
+              windowInsets.getInsets(
+                  WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+          mDisplay.safeAreaInsetsChanged(insets.top, insets.right, insets.bottom, insets.left);
+        } else if (Build.VERSION.SDK_INT >= 28) {
           final DisplayCutout cutout =
               GeckoView.this.mSurfaceWrapper.getView().getRootWindowInsets().getDisplayCutout();
           if (cutout != null) {
