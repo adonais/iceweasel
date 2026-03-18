@@ -10,7 +10,6 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "nsIXULRuntime.h"
 #include "nsComponentManagerUtils.h"
-#include "nsSHEntry.h"
 #include "nsSHistory.h"
 #include "nsDocShell.h"
 #include "nsXULAppAPI.h"

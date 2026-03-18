@@ -24,7 +24,6 @@
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
 #include "nsTHashMap.h"
-#include "nsSHEntry.h"
 #include "SessionHistoryEntry.h"
 #include "nsTArray.h"
 #include "prsystem.h"
@@ -2291,16 +2290,6 @@ void nsSHistory::RemoveDynEntries(int32_t aIndex, nsISHEntry* aEntry) {
   }
 }
 
-void nsSHistory::RemoveDynEntriesForBFCacheEntry(nsIBFCacheEntry* aBFEntry) {
-  int32_t index;
-  nsCOMPtr<nsISHEntry> shEntry;
-  FindEntryForBFCache(static_cast<nsSHEntryShared*>(aBFEntry),
-                      getter_AddRefs(shEntry), &index);
-  if (shEntry) {
-    RemoveDynEntries(index, shEntry);
-  }
-}
-
 NS_IMETHODIMP
 nsSHistory::UpdateIndex() {
   SHistoryChangeNotifier change(this);
@@ -2780,8 +2769,6 @@ nsSHistory::CreateEntry(nsISHEntry** aEntry) {
   nsCOMPtr<nsISHEntry> entry;
   if (XRE_IsParentProcess()) {
     entry = new SessionHistoryEntry();
-  } else {
-    entry = new nsSHEntry();
   }
   entry.forget(aEntry);
   return NS_OK;

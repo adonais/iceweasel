@@ -6,7 +6,6 @@
 #include "mozilla/dom/BrowsingContextGroup.h"
 
 // session history
-#include "nsSHEntryShared.h"
 #include "nsSHistory.h"
 
 namespace mozilla {
