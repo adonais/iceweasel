@@ -218,16 +218,13 @@ export class AboutReaderParent extends JSWindowActorParent {
   }
 
   hasReaderModeEntryAtOffset(url, offset) {
-    if (Services.appinfo.sessionHistoryInParent) {
-      let browsingContext = this.browsingContext;
-      if (browsingContext.childSessionHistory.canGo(offset)) {
-        let shistory = browsingContext.sessionHistory;
-        let nextEntry = shistory.getEntryAtIndex(shistory.index + offset);
-        let nextURL = nextEntry.URI.spec;
-        return nextURL && (nextURL == url || !url);
-      }
+    let browsingContext = this.browsingContext;
+    if (browsingContext.childSessionHistory.canGo(offset)) {
+      let shistory = browsingContext.sessionHistory;
+      let nextEntry = shistory.getEntryAtIndex(shistory.index + offset);
+      let nextURL = nextEntry.URI.spec;
+      return nextURL && (nextURL == url || !url);
     }
-
     return false;
   }
 

@@ -882,13 +882,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   // retained.
   virtual void SetInitialPrincipal(nsIPrincipal* aNewWindowPrincipal) = 0;
 
-  // Returns an object containing the window's state.  This also suspends
-  // all running timeouts in the window.
-  virtual already_AddRefed<nsISupports> SaveWindowState() = 0;
-
-  // Restore the window state from aState.
-  virtual nsresult RestoreWindowState(nsISupports* aState) = 0;
-
   // Fire any DOM notification events related to things that happened while
   // the window was frozen.
   virtual nsresult FireDelayedDOMEvents(bool aIncludeSubWindows) = 0;

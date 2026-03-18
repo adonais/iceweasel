@@ -163,7 +163,7 @@ class MOZ_STACK_CLASS SHistoryChangeNotifier {
       mSHistory->SetHasOngoingUpdate(false);
 
       RefPtr<BrowsingContext> rootBC = mSHistory->GetBrowsingContext();
-      if (mozilla::SessionHistoryInParent() && rootBC) {
+      if (rootBC) {
         RefPtr canonical = rootBC->Canonical();
         canonical->HistoryCommitIndexAndLength();
       }
@@ -360,7 +360,7 @@ uint32_t nsSHistory::CalcMaxTotalViewers() {
 // static
 void nsSHistory::UpdatePrefs() {
   Preferences::GetInt(PREF_SHISTORY_SIZE, &gHistoryMaxSize);
-  if (mozilla::SessionHistoryInParent() && !mozilla::BFCacheInParent()) {
+  if (!mozilla::BFCacheInParent()) {
     sHistoryMaxTotalViewers = 0;
     return;
   }
@@ -458,26 +458,12 @@ nsresult nsSHistory::WalkHistoryEntries(nsISHEntry* aRootEntry,
     BrowsingContext* childBC = nullptr;
     if (aBC) {
       for (BrowsingContext* child : aBC->Children()) {
-        // If the SH pref is on and we are in the parent process, update
-        // canonical BC directly
-        bool foundChild = false;
-        if (mozilla::SessionHistoryInParent() && XRE_IsParentProcess()) {
+        // If we are in the parent process, update canonical BC directly.
+        if (XRE_IsParentProcess()) {
           if (child->Canonical()->HasHistoryEntry(childEntry)) {
             childBC = child;
-            foundChild = true;
+            break;
           }
-        }
-
-        nsDocShell* docshell = static_cast<nsDocShell*>(child->GetDocShell());
-        if (docshell && docshell->HasHistoryEntry(childEntry)) {
-          childBC = docshell->GetBrowsingContext();
-          foundChild = true;
-        }
-
-        // XXX Simplify this once the old and new session history
-        // implementations don't run at the same time.
-        if (foundChild) {
-          break;
         }
       }
     }
@@ -622,7 +608,6 @@ void nsSHistory::WalkContiguousEntries(
 void nsSHistory::WalkContiguousEntriesInOrder(
     nsISHEntry* aEntry, const std::function<bool(nsISHEntry*)>& aCallback) {
   MOZ_ASSERT(aEntry);
-  MOZ_ASSERT(SessionHistoryInParent());
 
   nsCOMPtr<SessionHistoryEntry> entry = do_QueryInterface(aEntry);
   RefPtr<nsSHistory> shistory = entry->GetSessionHistory();
@@ -680,7 +665,6 @@ void nsSHistory::WalkContiguousEntriesInOrder(
 void nsSHistory::WalkClosestContiguousEntriesFrom(
     nsISHEntry* aEntry, const std::function<bool(nsISHEntry*)>& aCallback) {
   MOZ_ASSERT(aEntry);
-  MOZ_ASSERT(SessionHistoryInParent());
 
   nsCOMPtr<SessionHistoryEntry> entry = do_QueryInterface(aEntry);
   RefPtr<nsSHistory> shistory = entry->GetSessionHistory();
@@ -829,19 +813,11 @@ nsresult nsSHistory::SetChildHistoryEntry(nsISHEntry* aEntry,
 void nsSHistory::HandleEntriesToSwapInDocShell(
     mozilla::dom::BrowsingContext* aBC, nsISHEntry* aOldEntry,
     nsISHEntry* aNewEntry) {
-  bool shPref = mozilla::SessionHistoryInParent();
-  if (aBC->IsInProcess() || !shPref) {
-    nsDocShell* docshell = static_cast<nsDocShell*>(aBC->GetDocShell());
-    if (docshell) {
-      docshell->SwapHistoryEntries(aOldEntry, aNewEntry);
-    }
-  } else {
-    // FIXME Bug 1633988: Need to update entries?
-  }
+  // FIXME Bug 1633988: Need to update entries?
 
   // XXX Simplify this once the old and new session history implementations
   // don't run at the same time.
-  if (shPref && XRE_IsParentProcess()) {
+  if (XRE_IsParentProcess()) {
     aBC->Canonical()->SwapHistoryEntries(aOldEntry, aNewEntry);
   }
 }
@@ -1053,12 +1029,8 @@ static void LogEntry(nsISHEntry* aEntry, int32_t aIndex, int32_t aTotal,
   aEntry->GetTitle(title);
   aEntry->GetName(name);
 
-  SHEntrySharedParentState* shared;
-  if (mozilla::SessionHistoryInParent()) {
-    shared = static_cast<SessionHistoryEntry*>(aEntry)->SharedInfo();
-  } else {
-    shared = static_cast<nsSHEntry*>(aEntry)->GetState();
-  }
+  SHEntrySharedParentState* shared =
+      static_cast<SessionHistoryEntry*>(aEntry)->SharedInfo();
 
   nsID docShellId;
   aEntry->GetDocshellID(docShellId);
@@ -1558,8 +1530,8 @@ static bool MaybeCheckUnloadingIsCanceled(
     std::function<void(nsTArray<nsSHistory::LoadEntryResult>&,
                        nsIDocumentViewer::PermitUnloadResult)>&& aResolver) {
   // Step 4
-  if (!aTraversable || !aTraversable->IsTop() || !SessionHistoryInParent() ||
-      !aLoadResults.Length() || !Navigation::IsAPIEnabled()) {
+  if (!aTraversable || !aTraversable->IsTop() || !aLoadResults.Length() ||
+      !Navigation::IsAPIEnabled()) {
     return false;
   }
 
@@ -2456,29 +2428,27 @@ nsresult nsSHistory::LoadEntry(BrowsingContext* aSourceBrowsingContext,
     return NS_ERROR_FAILURE;
   }
 
-  if (mozilla::SessionHistoryInParent()) {
-    if (aHistCmd == HIST_CMD_GOTOINDEX) {
-      // https://html.spec.whatwg.org/#history-traversal:
-      // To traverse the history
-      // "If entry has a different Document object than the current entry, then
-      // run the following substeps: Remove any tasks queued by the history
-      // traversal task source..."
-      //
-      // aSameEpoch is true only if the navigations would have been
-      // generated in the same spin of the event loop (i.e. history.go(-2);
-      // history.go(-1)) and from the same content process.
-      if (aSameEpoch) {
-        bool same_doc = false;
-        prevEntry->SharesDocumentWith(nextEntry, &same_doc);
-        if (!same_doc) {
-          MOZ_LOG(
-              gSHistoryLog, LogLevel::Debug,
-              ("Aborting GotoIndex %d - same epoch and not same doc", aIndex));
-          // Ignore this load. Before SessionHistoryInParent, this would
-          // have been dropped in InternalLoad after we filter out SameDoc
-          // loads.
-          return NS_ERROR_FAILURE;
-        }
+  if (aHistCmd == HIST_CMD_GOTOINDEX) {
+    // https://html.spec.whatwg.org/#history-traversal:
+    // To traverse the history
+    // "If entry has a different Document object than the current entry, then
+    // run the following substeps: Remove any tasks queued by the history
+    // traversal task source..."
+    //
+    // aSameEpoch is true only if the navigations would have been
+    // generated in the same spin of the event loop (i.e. history.go(-2);
+    // history.go(-1)) and from the same content process.
+    if (aSameEpoch) {
+      bool same_doc = false;
+      prevEntry->SharesDocumentWith(nextEntry, &same_doc);
+      if (!same_doc) {
+        MOZ_LOG(
+            gSHistoryLog, LogLevel::Debug,
+            ("Aborting GotoIndex %d - same epoch and not same doc", aIndex));
+        // Ignore this load. Before SessionHistoryInParent, this would
+        // have been dropped in InternalLoad after we filter out SameDoc
+        // loads.
+        return NS_ERROR_FAILURE;
       }
     }
   }
@@ -2780,23 +2750,13 @@ void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
   // If we're loading the current entry we want to treat it as not a
   // same-document navigation (see nsDocShell::IsSameDocumentNavigation), so
   // record that here in the LoadingSessionHistoryEntry.
-  bool loadingCurrentEntry;
-  if (mozilla::SessionHistoryInParent()) {
-    loadingCurrentEntry = aLoadCurrentEntry;
-  } else {
-    loadingCurrentEntry =
-        aFrameBC->GetDocShell() &&
-        nsDocShell::Cast(aFrameBC->GetDocShell())->IsOSHE(aFrameEntry);
-  }
-  loadState->SetLoadIsFromSessionHistory(aOffset, loadingCurrentEntry);
+  loadState->SetLoadIsFromSessionHistory(aOffset, aLoadCurrentEntry);
 
-  if (mozilla::SessionHistoryInParent()) {
-    nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(aFrameEntry);
-    const LoadingSessionHistoryInfo* loadingInfo =
-        loadState->GetLoadingSessionHistoryInfo();
-    aFrameBC->Canonical()->AddLoadingSessionHistoryEntry(loadingInfo->mLoadId,
-                                                         she);
-  }
+  nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(aFrameEntry);
+  const LoadingSessionHistoryInfo* loadingInfo =
+      loadState->GetLoadingSessionHistoryInfo();
+  aFrameBC->Canonical()->AddLoadingSessionHistoryEntry(loadingInfo->mLoadId,
+                                                       she);
 
   nsCOMPtr<nsIURI> originalURI = aFrameEntry->GetOriginalURI();
   loadState->SetOriginalURI(originalURI);
@@ -2818,7 +2778,7 @@ void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
 NS_IMETHODIMP
 nsSHistory::CreateEntry(nsISHEntry** aEntry) {
   nsCOMPtr<nsISHEntry> entry;
-  if (XRE_IsParentProcess() && mozilla::SessionHistoryInParent()) {
+  if (XRE_IsParentProcess()) {
     entry = new SessionHistoryEntry();
   } else {
     entry = new nsSHEntry();

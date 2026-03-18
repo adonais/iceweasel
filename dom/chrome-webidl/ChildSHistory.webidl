@@ -26,13 +26,4 @@ interface ChildSHistory {
    */
   [Throws]
   undefined reload(unsigned long aReloadFlags);
-
-  /**
-   * Getter for the legacy nsISHistory implementation.
-   *
-   * legacySHistory has been deprecated. Don't use it, but instead handle
-   * the interaction with nsISHistory in the parent process.
-   */
-  [Throws]
-  readonly attribute nsISHistory legacySHistory;
 };

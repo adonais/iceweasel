@@ -246,18 +246,6 @@ void MarkDocShell(nsIDocShellTreeItem* aNode, bool aCleanupJS) {
   nsCOMPtr<nsIWebNavigation> webNav = do_QueryInterface(shell);
   RefPtr<ChildSHistory> history = webNav->GetSessionHistory();
   IgnoredErrorResult ignore;
-  nsISHistory* legacyHistory =
-      history ? history->GetLegacySHistory(ignore) : nullptr;
-  if (legacyHistory) {
-    MOZ_DIAGNOSTIC_ASSERT(!mozilla::SessionHistoryInParent());
-    int32_t historyCount = history->Count();
-    for (int32_t i = 0; i < historyCount; ++i) {
-      nsCOMPtr<nsISHEntry> shEntry;
-      legacyHistory->GetEntryAtIndex(i, getter_AddRefs(shEntry));
-
-      MarkSHEntry(shEntry, aCleanupJS);
-    }
-  }
 
   int32_t i, childCount;
   aNode->GetInProcessChildCount(&childCount);

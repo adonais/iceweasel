@@ -2133,7 +2133,7 @@ already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
 
   // If we're called from JS, i.e window.open, we need to set history handling
   // behavior here to be able to do push to replace conversion if needed.
-  if (aIsWindowOpen && mozilla::SessionHistoryInParent()) {
+  if (aIsWindowOpen) {
     loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
   }
 

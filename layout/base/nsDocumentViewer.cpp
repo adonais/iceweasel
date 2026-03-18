@@ -1936,27 +1936,6 @@ nsDocumentViewer::Show() {
     nsCOMPtr<nsIDocumentViewer> prevViewer(mPreviousViewer);
     mPreviousViewer = nullptr;
     prevViewer->Destroy();
-
-    // Make sure we don't have too many cached DocumentViewers
-    nsCOMPtr<nsIDocShellTreeItem> treeItem(mContainer);
-    if (treeItem) {
-      // We need to find the root DocShell since only that object has an
-      // SHistory and we need the SHistory to evict content viewers
-      nsCOMPtr<nsIDocShellTreeItem> root;
-      treeItem->GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
-      nsCOMPtr<nsIWebNavigation> webNav = do_QueryInterface(root);
-      RefPtr<ChildSHistory> history = webNav->GetSessionHistory();
-      if (!mozilla::SessionHistoryInParent() && history) {
-        int32_t prevIndex, loadedIndex;
-        nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(treeItem);
-        docShell->GetPreviousEntryIndex(&prevIndex);
-        docShell->GetLoadedEntryIndex(&loadedIndex);
-        MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
-                ("About to evict content viewers: prev=%d, loaded=%d",
-                 prevIndex, loadedIndex));
-        history->LegacySHistory()->EvictOutOfRangeDocumentViewers(loadedIndex);
-      }
-    }
   }
 
   // Hold on to the document so we can use it after the script blocker below

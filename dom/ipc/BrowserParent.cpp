@@ -2994,11 +2994,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnLocationChange(
   browsingContext->SetCurrentRemoteURI(aLocation);
 
   nsCOMPtr<nsIBrowser> browser = GetBrowser();
-  if (!mozilla::SessionHistoryInParent() && browser) {
-    (void)browser->UpdateWebNavigationForLocationChange(
-        aCanGoBack, aCanGoBackIgnoringUserInteraction, aCanGoForward);
-  }
-
   if (aLocationChangeData.isSome()) {
     if (!browsingContext->IsTopContent()) {
       return IPC_FAIL(this,
@@ -3725,12 +3720,6 @@ bool BrowserParent::CanCancelContentJS(
     nsIURI* aNavigationURI) const {
   // Pre-checking if we can cancel content js in the parent is only
   // supported when session history in the parent is enabled.
-  if (!mozilla::SessionHistoryInParent()) {
-    // If session history in the parent isn't enabled, this check will
-    // be fully done in BrowserChild::CanCancelContentJS
-    return true;
-  }
-
   nsCOMPtr<nsISHistory> history = mBrowsingContext->GetSessionHistory();
 
   if (!history) {

@@ -1647,11 +1647,7 @@ export class SpecialPowersChild extends JSWindowActorChild {
   }
 
   async evictAllDocumentViewers() {
-    if (Services.appinfo.sessionHistoryInParent) {
-      await this.sendQuery("EvictAllDocumentViewers");
-    } else {
-      this.browsingContext.top.childSessionHistory.legacySHistory.evictAllDocumentViewers();
-    }
+    await this.sendQuery("EvictAllDocumentViewers");
   }
 
   /**

@@ -284,10 +284,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   // Outer windows only.
   virtual void SetInitialPrincipal(nsIPrincipal* aNewWindowPrincipal) override;
 
-  virtual already_AddRefed<nsISupports> SaveWindowState() override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsresult RestoreWindowState(
-      nsISupports* aState) override;
-
   virtual bool IsSuspended() const override;
   virtual bool IsFrozen() const override;
 

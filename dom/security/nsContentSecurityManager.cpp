@@ -1343,12 +1343,6 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
                         "Unexpected off-the-main-thread call to "
                         "CheckAllowLoadByTriggeringRemoteType");
 
-  // Due to the way that session history is handled without SHIP, we cannot run
-  // these checks when SHIP is disabled.
-  if (!mozilla::SessionHistoryInParent()) {
-    return NS_OK;
-  }
-
   nsAutoCString triggeringRemoteType;
   nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
   NS_ENSURE_SUCCESS(rv, rv);

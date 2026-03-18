@@ -483,28 +483,20 @@ void SessionHistoryEntry::RemoveLoadId(uint64_t aLoadId) {
 }
 
 SessionHistoryEntry::SessionHistoryEntry()
-    : mInfo(new SessionHistoryInfo()), mID(++gEntryID) {
-  MOZ_ASSERT(mozilla::SessionHistoryInParent());
-}
+    : mInfo(new SessionHistoryInfo()), mID(++gEntryID) {}
 
 SessionHistoryEntry::SessionHistoryEntry(nsDocShellLoadState* aLoadState,
                                          nsIChannel* aChannel)
-    : mInfo(new SessionHistoryInfo(aLoadState, aChannel)), mID(++gEntryID) {
-  MOZ_ASSERT(mozilla::SessionHistoryInParent());
-}
+    : mInfo(new SessionHistoryInfo(aLoadState, aChannel)), mID(++gEntryID) {}
 
 SessionHistoryEntry::SessionHistoryEntry(SessionHistoryInfo* aInfo)
-    : mInfo(MakeUnique<SessionHistoryInfo>(*aInfo)), mID(++gEntryID) {
-  MOZ_ASSERT(mozilla::SessionHistoryInParent());
-}
+    : mInfo(MakeUnique<SessionHistoryInfo>(*aInfo)), mID(++gEntryID) {}
 
 SessionHistoryEntry::SessionHistoryEntry(const SessionHistoryEntry& aEntry)
     : mInfo(MakeUnique<SessionHistoryInfo>(*aEntry.mInfo)),
       mParent(aEntry.mParent),
       mID(aEntry.mID),
-      mBCHistoryLength(aEntry.mBCHistoryLength) {
-  MOZ_ASSERT(mozilla::SessionHistoryInParent());
-}
+      mBCHistoryLength(aEntry.mBCHistoryLength) {}
 
 SessionHistoryEntry::~SessionHistoryEntry() {
   // Null out the mParent pointers on all our kids.

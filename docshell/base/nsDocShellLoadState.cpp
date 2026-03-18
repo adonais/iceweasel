@@ -1078,8 +1078,7 @@ void nsDocShellLoadState::AssertProcessCouldTriggerLoadIfSystem() {
   // If this assertion fails, the load will fail later during
   // nsContentSecurityManager checks, however this assertion should happen
   // closer to whichever caller is triggering the system-principal load.
-  if (mozilla::SessionHistoryInParent() &&
-      TriggeringPrincipal()->IsSystemPrincipal() &&
+  if (TriggeringPrincipal()->IsSystemPrincipal() &&
       mozilla::dom::IsWebRemoteType(GetEffectiveTriggeringRemoteType())) {
     bool localFile = false;
     if (NS_SUCCEEDED(NS_URIChainHasFlags(

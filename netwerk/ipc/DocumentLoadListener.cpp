@@ -634,7 +634,6 @@ bool CheckRecursiveLoad(CanonicalBrowsingContext* aLoadingContext,
 static Result<SessionHistoryEntry*, const char*> ValidateHistoryLoad(
     CanonicalBrowsingContext* aLoadingContext,
     nsDocShellLoadState* aLoadState) {
-  MOZ_ASSERT(SessionHistoryInParent());
   MOZ_ASSERT(aLoadState->LoadIsFromSessionHistory());
 
   if (!aLoadState->GetLoadingSessionHistoryInfo()) {
@@ -740,7 +739,7 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   // NOTE: Keep this check in-sync with the check in
   // `nsDocShellLoadState::GetEffectiveTriggeringRemoteType()`!
   RefPtr<SessionHistoryEntry> existingEntry;
-  if (SessionHistoryInParent() && aLoadState->LoadIsFromSessionHistory() &&
+  if (aLoadState->LoadIsFromSessionHistory() &&
       aLoadState->LoadType() != LOAD_ERROR_PAGE) {
     Result<SessionHistoryEntry*, const char*> result =
         ValidateHistoryLoad(loadingContext, aLoadState);
@@ -859,8 +858,7 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     aLoadState->SetPartitionedPrincipalToInherit(partitionedPrincipal);
   }
 
-  if (documentContext && aLoadState->LoadType() != LOAD_ERROR_PAGE &&
-      mozilla::SessionHistoryInParent()) {
+  if (documentContext && aLoadState->LoadType() != LOAD_ERROR_PAGE) {
     // It's hard to know at this point whether session history will be enabled
     // in the browsing context, so we always create an entry for a load here.
     mLoadingSessionHistoryInfo =

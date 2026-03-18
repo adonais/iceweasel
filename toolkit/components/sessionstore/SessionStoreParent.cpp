@@ -162,7 +162,7 @@ void SessionStoreParent::FinalFlushAllSessionStoreChildren(
 
   SessionStoreChild* sessionStoreChild =
       static_cast<SessionStoreChild*>(InProcessParent::ChildActorFor(this));
-  if (!sessionStoreChild || mozilla::SessionHistoryInParent()) {
+  if (!sessionStoreChild) {
     return FlushAllSessionStoreChildren(aDone);
   }
 

@@ -194,12 +194,4 @@ WebBrowserPersistRemoteDocument::WriteContent(
              : NS_ERROR_FAILURE;
 }
 
-// Forcing WebBrowserPersistRemoteDocument to implement GetHistory is the
-// easiest way to ensure that we can call GetHistory in
-// WebBrowserPersistDocumentChild::Start
-already_AddRefed<nsISHEntry> WebBrowserPersistRemoteDocument::GetHistory() {
-  MOZ_CRASH("We should not call GetHistory on WebBrowserPersistRemoteDocument");
-  return nullptr;
-}
-
 }  // namespace mozilla

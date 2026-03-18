@@ -3148,8 +3148,7 @@ void nsGlobalWindowInner::AudioPlaybackChanged(bool aIsPlayingAudio) {
 }
 
 bool nsPIDOMWindowInner::IsCurrentInnerWindow() const {
-  if (mozilla::SessionHistoryInParent() && mBrowsingContext &&
-      mBrowsingContext->IsInBFCache()) {
+  if (mBrowsingContext && mBrowsingContext->IsInBFCache()) {
     return false;
   }
 
@@ -6788,8 +6787,7 @@ void nsGlobalWindowInner::EventListenerAdded(nsAtom* aType) {
   }
 
   if (aType == nsGkAtoms::onbeforeunload && mWindowGlobalChild) {
-    if (!mozilla::SessionHistoryInParent() ||
-        !StaticPrefs::
+    if (!StaticPrefs::
             docshell_shistory_bfcache_ship_allow_beforeunload_listeners()) {
       if (++mUnloadOrBeforeUnloadListenerCount == 1) {
         mWindowGlobalChild->BlockBFCacheFor(
@@ -6826,8 +6824,7 @@ void nsGlobalWindowInner::EventListenerRemoved(nsAtom* aType) {
   }
 
   if (aType == nsGkAtoms::onbeforeunload && mWindowGlobalChild) {
-    if (!mozilla::SessionHistoryInParent() ||
-        !StaticPrefs::
+    if (!StaticPrefs::
             docshell_shistory_bfcache_ship_allow_beforeunload_listeners()) {
       if (--mUnloadOrBeforeUnloadListenerCount == 0) {
         mWindowGlobalChild->UnblockBFCacheFor(

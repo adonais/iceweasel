@@ -693,13 +693,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     // If loading an about:reader page in a BrowsingContext which shares a
     // BrowsingContextGroup with other toplevel documents, replace the
     // BrowsingContext to destroy any references.
-    //
-    // With SHIP we can apply this to all about:reader loads, but otherwise
-    // do it at least where there are opener/group relationships.
-    if (mozilla::SessionHistoryInParent() ||
-        aTopBC->Group()->Toplevels().Length() > 1) {
-      options.mReplaceBrowsingContext = true;
-    }
+    // With SHIP we can apply this to all about:reader loads.
+    options.mReplaceBrowsingContext = true;
   }
 
   // If we're running in a test which is requesting that system-triggered

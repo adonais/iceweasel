@@ -193,29 +193,6 @@ WebBrowserPersistLocalDocument::GetPrincipal(nsIPrincipal** aPrincipal) {
   return NS_OK;
 }
 
-already_AddRefed<nsISHEntry> WebBrowserPersistLocalDocument::GetHistory() {
-  nsCOMPtr<nsPIDOMWindowOuter> window = mDocument->GetWindow();
-  if (NS_WARN_IF(!window)) {
-    return nullptr;
-  }
-  nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(window);
-  if (NS_WARN_IF(!webNav)) {
-    return nullptr;
-  }
-  nsCOMPtr<nsIWebPageDescriptor> desc = do_QueryInterface(webNav);
-  if (NS_WARN_IF(!desc)) {
-    return nullptr;
-  }
-  nsCOMPtr<nsISupports> curDesc;
-  nsresult rv = desc->GetCurrentDescriptor(getter_AddRefs(curDesc));
-  // This can fail if, e.g., the document is a Print Preview.
-  if (NS_FAILED(rv) || NS_WARN_IF(!curDesc)) {
-    return nullptr;
-  }
-  nsCOMPtr<nsISHEntry> history = do_QueryInterface(curDesc);
-  return history.forget();
-}
-
 NotNull<const Encoding*> WebBrowserPersistLocalDocument::GetCharacterSet()
     const {
   return mDocument->GetDocumentCharacterSet();

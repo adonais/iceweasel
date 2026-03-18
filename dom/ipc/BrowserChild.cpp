@@ -3850,7 +3850,6 @@ void BrowserChild::UnloadLayersWhileInterruptingJS() {
 nsresult BrowserChild::CanCancelContentJS(
     nsIRemoteTab::NavigationType aNavigationType, int32_t aNavigationIndex,
     nsIURI* aNavigationURI, int32_t aEpoch, bool* aCanCancel) {
-  nsresult rv;
   *aCanCancel = false;
 
   if (aEpoch <= mCancelContentJSEpoch) {
@@ -3859,102 +3858,7 @@ nsresult BrowserChild::CanCancelContentJS(
     return NS_OK;
   }
 
-  // If we have session history in the parent we've already performed
-  // the checks following, so we can return early.
-  if (mozilla::SessionHistoryInParent()) {
-    *aCanCancel = true;
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-  nsCOMPtr<nsISHistory> history;
-  if (docShell) {
-    history = nsDocShell::Cast(docShell)->GetSessionHistory()->LegacySHistory();
-  }
-
-  if (!history) {
-    return NS_ERROR_FAILURE;
-  }
-
-  int32_t current;
-  rv = history->GetIndex(&current);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (current == -1) {
-    // This tab has no history! Just return.
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsISHEntry> entry;
-  rv = history->GetEntryAtIndex(current, getter_AddRefs(entry));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIURI> currentURI = entry->GetURI();
-  if (!net::SchemeIsHttpOrHttps(currentURI) && !currentURI->SchemeIs("file")) {
-    // Only cancel content JS for http(s) and file URIs. Other URIs are probably
-    // internal and we should just let them run to completion.
-    return NS_OK;
-  }
-
-  if (aNavigationType == nsIRemoteTab::NAVIGATE_BACK) {
-    aNavigationIndex = current - 1;
-  } else if (aNavigationType == nsIRemoteTab::NAVIGATE_FORWARD) {
-    aNavigationIndex = current + 1;
-  } else if (aNavigationType == nsIRemoteTab::NAVIGATE_URL) {
-    if (!aNavigationURI) {
-      return NS_ERROR_FAILURE;
-    }
-
-    if (aNavigationURI->SchemeIs("javascript")) {
-      // "javascript:" URIs don't (necessarily) trigger navigation to a
-      // different page, so don't allow the current page's JS to terminate.
-      return NS_OK;
-    }
-
-    // If navigating directly to a URL (e.g. via hitting Enter in the location
-    // bar), then we can cancel anytime the next URL is different from the
-    // current, *excluding* the ref ("#").
-    bool equals;
-    rv = currentURI->EqualsExceptRef(aNavigationURI, &equals);
-    NS_ENSURE_SUCCESS(rv, rv);
-    *aCanCancel = !equals;
-    return NS_OK;
-  }
-  // Note: aNavigationType may also be NAVIGATE_INDEX, in which case we don't
-  // need to do anything special.
-
-  int32_t delta = aNavigationIndex > current ? 1 : -1;
-  for (int32_t i = current + delta; i != aNavigationIndex + delta; i += delta) {
-    nsCOMPtr<nsISHEntry> nextEntry;
-    // If `i` happens to be negative, this call will fail (which is what we
-    // would want to happen).
-    rv = history->GetEntryAtIndex(i, getter_AddRefs(nextEntry));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsCOMPtr<nsISHEntry> laterEntry = delta == 1 ? nextEntry : entry;
-    nsCOMPtr<nsIURI> thisURI = entry->GetURI();
-    nsCOMPtr<nsIURI> nextURI = nextEntry->GetURI();
-
-    // If we changed origin and the load wasn't in a subframe, we know it was
-    // a full document load, so we can cancel the content JS safely.
-    if (!laterEntry->GetIsSubFrame()) {
-      nsAutoCString thisHost;
-      rv = thisURI->GetPrePath(thisHost);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      nsAutoCString nextHost;
-      rv = nextURI->GetPrePath(nextHost);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      if (!thisHost.Equals(nextHost)) {
-        *aCanCancel = true;
-        return NS_OK;
-      }
-    }
-
-    entry = nextEntry;
-  }
-
+  *aCanCancel = true;
   return NS_OK;
 }
 
@@ -4070,12 +3974,6 @@ NS_IMETHODIMP BrowserChild::OnLocationChange(nsIWebProgress* aWebProgress,
   bool canGoBack = false;
   bool canGoBackIgnoringUserInteraction = false;
   bool canGoForward = false;
-  if (!mozilla::SessionHistoryInParent()) {
-    MOZ_TRY(WebNavigation()->GetCanGoBack(&canGoBack));
-    MOZ_TRY(WebNavigation()->GetCanGoBackIgnoringUserInteraction(
-        &canGoBackIgnoringUserInteraction));
-    MOZ_TRY(WebNavigation()->GetCanGoForward(&canGoForward));
-  }
 
   if (browsingContext->IsTopContent()) {
     MOZ_ASSERT(

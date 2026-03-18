@@ -609,10 +609,8 @@ mozilla::ipc::IPCResult BrowsingContext::CreateFromIPC(
   context->mChildOffset = aInit.mChildOffset;
   if (context->GetHasSessionHistory()) {
     context->CreateChildSHistory();
-    if (mozilla::SessionHistoryInParent()) {
-      context->GetChildSessionHistory()->SetIndexAndLength(
-          aInit.mSessionHistoryIndex, aInit.mSessionHistoryCount, nsID());
-    }
+    context->GetChildSessionHistory()->SetIndexAndLength(
+        aInit.mSessionHistoryIndex, aInit.mSessionHistoryCount, nsID());
   }
 
   // NOTE: Call through the `Set` methods for these values to ensure that any
@@ -674,9 +672,6 @@ void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
   mDocShell = aDocShell;
   mDanglingRemoteOuterProxies = !mIsInProcess;
   mIsInProcess = true;
-  if (mChildSessionHistory) {
-    mChildSessionHistory->SetIsInProcess(true);
-  }
 
   RecomputeCanExecuteScripts();
   ClearCachedValuesOfLocations();
@@ -1191,11 +1186,6 @@ void BrowsingContext::PrepareForProcessChange() {
   // different process now. This may need to change in the future with
   // Cross-Process BFCache.
   mDocShell = nullptr;
-  if (mChildSessionHistory) {
-    // This can be removed once session history is stored exclusively in the
-    // parent process.
-    mChildSessionHistory->SetIsInProcess(false);
-  }
 
   if (!mWindowProxy) {
     return;
@@ -1256,16 +1246,9 @@ bool BrowsingContext::AncestorsAreCurrent() const {
   }
 }
 
-bool BrowsingContext::IsInBFCache() const {
-  if (mozilla::SessionHistoryInParent()) {
-    return mIsInBFCache;
-  }
-  return mParentWindow &&
-         mParentWindow->TopWindowContext()->GetWindowStateSaved();
-}
+bool BrowsingContext::IsInBFCache() const { return mIsInBFCache; }
 
 void BrowsingContext::SetIsInBFCache(bool aIsInBFCache) {
-  MOZ_DIAGNOSTIC_ASSERT(mozilla::SessionHistoryInParent());
   mIsInBFCache = aIsInBFCache;
 }
 
@@ -2606,10 +2589,8 @@ void BrowsingContext::Navigate(
     return;
   }
 
-  if (mozilla::SessionHistoryInParent()) {
-    loadState->SetNeedsCompletelyLoadedDocument(aNeedsCompletelyLoadedDocument);
-    loadState->SetHistoryBehavior(aHistoryHandling);
-  }
+  loadState->SetNeedsCompletelyLoadedDocument(aNeedsCompletelyLoadedDocument);
+  loadState->SetHistoryBehavior(aHistoryHandling);
 
   if (aHistoryHandling == NavigationHistoryBehavior::Replace) {
     loadState->SetLoadType(LOAD_STOP_CONTENT_AND_REPLACE);
@@ -3095,7 +3076,7 @@ BrowsingContext::IPCInitializer BrowsingContext::GetIPCInitializer() {
   init.mCreatedDynamically = mCreatedDynamically;
   init.mChildOffset = mChildOffset;
   init.mOriginAttributes = mOriginAttributes;
-  if (mChildSessionHistory && mozilla::SessionHistoryInParent()) {
+  if (mChildSessionHistory) {
     init.mSessionHistoryIndex = mChildSessionHistory->Index();
     init.mSessionHistoryCount = mChildSessionHistory->Count();
   }
@@ -3417,14 +3398,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_PageAwakeRequestCount>,
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_AllowJavascript>, bool aValue,
                              ContentParent* aSource) -> CanSetResult {
-  if (mozilla::SessionHistoryInParent()) {
-    return XRE_IsParentProcess() && !aSource ? CanSetResult::Allow
-                                             : CanSetResult::Deny;
-  }
-
-  // Without Session History in Parent, session restore code still needs to set
-  // this from content processes.
-  return LegacyRevertIfNotOwningOrParentProcess(aSource);
+  return XRE_IsParentProcess() && !aSource ? CanSetResult::Allow
+                                           : CanSetResult::Deny;
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_AllowJavascript>, bool aOldValue) {
@@ -4220,17 +4195,6 @@ void BrowsingContext::InitSessionHistory() {
 }
 
 ChildSHistory* BrowsingContext::GetChildSessionHistory() {
-  if (!mozilla::SessionHistoryInParent()) {
-    // For now we're checking that the session history object for the child
-    // process is available before returning the ChildSHistory object, because
-    // it is the actual implementation that ChildSHistory forwards to. This can
-    // be removed once session history is stored exclusively in the parent
-    // process.
-    return mChildSessionHistory && mChildSessionHistory->IsInProcess()
-               ? mChildSessionHistory.get()
-               : nullptr;
-  }
-
   return mChildSessionHistory;
 }
 
@@ -4244,12 +4208,6 @@ void BrowsingContext::CreateChildSHistory() {
   // history. That is why we create the ChildSHistory object in every process
   // where we have access to this browsing context (which is the top one).
   mChildSessionHistory = new ChildSHistory(this);
-
-  // If the top browsing context (this one) is loaded in this process then we
-  // also create the session history implementation for the child process.
-  // This can be removed once session history is stored exclusively in the
-  // parent process.
-  mChildSessionHistory->SetIsInProcess(IsInProcess());
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_HasSessionHistory>,

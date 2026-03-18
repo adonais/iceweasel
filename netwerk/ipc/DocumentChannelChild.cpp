@@ -211,8 +211,7 @@ IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
           ExtContentPolicy::TYPE_DOCUMENT &&
       shell) {
     MOZ_ASSERT(shell->GetBrowsingContext()->IsTop());
-    if (mozilla::SessionHistoryInParent() &&
-        shell->GetBrowsingContext()->IsInBFCache()) {
+    if (shell->GetBrowsingContext()->IsInBFCache()) {
       DisconnectChildListeners(aStatus, aLoadGroupStatus);
     } else {
       // Tell the DocShell which channel to cancel if it enters the BFCache.

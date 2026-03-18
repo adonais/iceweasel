@@ -249,12 +249,9 @@ void SessionStoreUtils::RestoreDocShellCapabilities(
   aDocShell->SetAllowContentRetargeting(true);
   aDocShell->SetAllowContentRetargetingOnChildren(true);
 
-  bool allowJavascript = true;
   for (const nsACString& token :
        nsCCharSeparatedTokenizer(aDisallowCapabilities, ',').ToRange()) {
-    if (token.EqualsLiteral("Javascript")) {
-      allowJavascript = false;
-    } else if (token.EqualsLiteral("MetaRedirects")) {
+    if (token.EqualsLiteral("MetaRedirects")) {
       aDocShell->SetAllowMetaRedirects(false);
     } else if (token.EqualsLiteral("Subframes")) {
       aDocShell->SetAllowSubframes(false);
@@ -276,12 +273,6 @@ void SessionStoreUtils::RestoreDocShellCapabilities(
     } else if (token.EqualsLiteral("ContentRetargetingOnChildren")) {
       aDocShell->SetAllowContentRetargetingOnChildren(false);
     }
-  }
-
-  if (!mozilla::SessionHistoryInParent()) {
-    // With SessionHistoryInParent, this is set from the parent process.
-    BrowsingContext* bc = aDocShell->GetBrowsingContext();
-    (void)bc->SetAllowJavascript(allowJavascript);
   }
 }
 
@@ -1648,10 +1639,6 @@ SessionStoreUtils::ConstructSessionStoreRestoreData(
 already_AddRefed<Promise> SessionStoreUtils::InitializeRestore(
     const GlobalObject& aGlobal, CanonicalBrowsingContext& aContext,
     nsISessionStoreRestoreData* aData, ErrorResult& aError) {
-  if (!mozilla::SessionHistoryInParent()) {
-    MOZ_CRASH("why were we called?");
-  }
-
   MOZ_DIAGNOSTIC_ASSERT(aContext.IsTop());
 
   MOZ_DIAGNOSTIC_ASSERT(aData);
@@ -1686,7 +1673,6 @@ already_AddRefed<Promise> SessionStoreUtils::RestoreDocShellState(
     const GlobalObject& aGlobal, CanonicalBrowsingContext& aContext,
     const nsACString& aURL, const nsCString& aDocShellCaps,
     ErrorResult& aError) {
-  MOZ_RELEASE_ASSERT(mozilla::SessionHistoryInParent());
   MOZ_RELEASE_ASSERT(aContext.IsTop());
 
   WindowGlobalParent* wgp = aContext.GetCurrentWindowGlobal();

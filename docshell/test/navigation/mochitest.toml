@@ -50,8 +50,6 @@ support-files = [
   "file_bug1300461_redirect.html^headers^",
   "file_bug1300461_back.html",
   "file_contentpolicy_block_window.html",
-  "file_bug1364364-1.html",
-  "file_bug1364364-2.html",
   "file_bug1375833.html",
   "file_bug1375833-frame1.html",
   "file_bug1375833-frame2.html",
@@ -152,11 +150,6 @@ skip-if = [
 ]
 
 ["test_bug1300461.html"]
-
-["test_bug1364364.html"]
-skip-if = [
-  "os == 'android'", # Bug 1560378
-]
 
 ["test_bug1375833.html"]
 

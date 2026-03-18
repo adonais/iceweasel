@@ -152,8 +152,8 @@ class Navigation final : public DOMEventTargetHelper {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  // The Navigation API is only enabled if both SessionHistoryInParent and
-  // the dom.navigation.webidl.enabled pref are set.
+  // The Navigation API is only enabled if the dom.navigation.webidl.enabled
+  // pref is set.
   static bool IsAPIEnabled(JSContext* /* unused */ = nullptr,
                            JSObject* /* unused */ = nullptr);
 

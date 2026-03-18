@@ -233,8 +233,7 @@ void Navigation::EventListenerRemoved(nsAtom* aType) {
 
 /* static */
 bool Navigation::IsAPIEnabled(JSContext* /* unused */, JSObject* /* unused */) {
-  return SessionHistoryInParent() &&
-         StaticPrefs::dom_navigation_webidl_enabled_DoNotUseDirectly();
+  return StaticPrefs::dom_navigation_webidl_enabled_DoNotUseDirectly();
 }
 
 void Navigation::Entries(

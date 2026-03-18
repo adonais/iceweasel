@@ -642,8 +642,7 @@ already_AddRefed<JSActor> WindowGlobalParent::InitJSActor(
 }
 
 bool WindowGlobalParent::IsCurrentGlobal() {
-  if (mozilla::SessionHistoryInParent() && BrowsingContext() &&
-      BrowsingContext()->IsInBFCache()) {
+  if (BrowsingContext() && BrowsingContext()->IsInBFCache()) {
     return false;
   }
 

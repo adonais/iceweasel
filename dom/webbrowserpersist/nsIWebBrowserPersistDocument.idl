@@ -128,8 +128,6 @@ interface nsIWebBrowserPersistDocument : nsISupports
                     in unsigned long aEncoderFlags,
                     in unsigned long aWrapColumn,
                     in nsIWebBrowserPersistWriteCompletion aCompletion);
-
-  [notxpcom, nostdcall] SHEntryRef GetHistory();
 };
 
 /**

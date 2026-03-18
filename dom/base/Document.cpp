@@ -7703,7 +7703,7 @@ bool Document::RemoveFromBFCacheSync() {
     removed = true;
   }
 
-  if (mozilla::SessionHistoryInParent() && XRE_IsContentProcess()) {
+  if (XRE_IsContentProcess()) {
     if (BrowsingContext* bc = GetBrowsingContext()) {
       if (bc->IsInBFCache()) {
         ContentChild* cc = ContentChild::GetSingleton();
@@ -12075,16 +12075,13 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
         aBFCacheCombo |= BFCacheStatus::UNLOAD_LISTENER;
         ret = false;
       }
-      if (manager->HasBeforeUnloadListeners()) {
-        if (!mozilla::SessionHistoryInParent() ||
-            !StaticPrefs::
-                docshell_shistory_bfcache_ship_allow_beforeunload_listeners()) {
-          MOZ_LOG(
-              gPageCacheLog, mozilla::LogLevel::Verbose,
-              ("Save of %s blocked due to beforeUnload handlers", uri.get()));
-          aBFCacheCombo |= BFCacheStatus::BEFOREUNLOAD_LISTENER;
-          ret = false;
-        }
+      if (manager->HasBeforeUnloadListeners() &&
+          !StaticPrefs::
+              docshell_shistory_bfcache_ship_allow_beforeunload_listeners()) {
+        MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+                ("Save of %s blocked due to beforeUnload handlers", uri.get()));
+        aBFCacheCombo |= BFCacheStatus::BEFOREUNLOAD_LISTENER;
+        ret = false;
       }
     }
   }
@@ -18418,19 +18415,6 @@ void Document::SetSHEntryHasUserInteraction(bool aHasInteraction) {
     // Setting has user interaction on a discarded browsing context has
     // no effect.
     (void)topWc->SetSHEntryHasUserInteraction(aHasInteraction);
-  }
-
-  // For when SHIP is not enabled, we need to get the current entry
-  // directly from the docshell.
-  nsIDocShell* docShell = GetDocShell();
-  if (docShell) {
-    nsCOMPtr<nsISHEntry> currentEntry;
-    bool oshe;
-    nsresult rv =
-        docShell->GetCurrentSHEntry(getter_AddRefs(currentEntry), &oshe);
-    if (!NS_WARN_IF(NS_FAILED(rv)) && currentEntry) {
-      currentEntry->SetHasUserInteraction(aHasInteraction);
-    }
   }
 }
 

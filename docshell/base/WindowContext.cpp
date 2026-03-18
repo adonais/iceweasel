@@ -70,12 +70,7 @@ bool WindowContext::IsCurrent() const {
   return mBrowsingContext->mCurrentWindowContext == this;
 }
 
-bool WindowContext::IsInBFCache() {
-  if (mozilla::SessionHistoryInParent()) {
-    return mBrowsingContext->IsInBFCache();
-  }
-  return TopWindowContext()->GetWindowStateSaved();
-}
+bool WindowContext::IsInBFCache() { return mBrowsingContext->IsInBFCache(); }
 
 already_AddRefed<nsIRFPTargetSetIDL>
 WindowContext::GetOverriddenFingerprintingSettingsWebIDL() const {
@@ -478,8 +473,7 @@ void WindowContext::DidSet(FieldIndex<IDX_HasReportedShadowDOMUsage>,
 
 bool WindowContext::CanSet(FieldIndex<IDX_WindowStateSaved>, bool aValue,
                            ContentParent* aSource) {
-  return !mozilla::SessionHistoryInParent() && IsTop() &&
-         CheckOnlyOwningProcessCanSet(aSource);
+  return false;
 }
 
 void WindowContext::CreateFromIPC(IPCInitializer&& aInit) {
