@@ -18,6 +18,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ParentProcessMessageManager.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/TimeoutManager.h"
 #include "nsAppShellCID.h"
 #include "nsContentUtils.h"
@@ -31,7 +32,6 @@
 #include "nsIDocumentViewer.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObserverService.h"
-#include "nsISHEntry.h"
 #include "nsISHistory.h"
 #include "nsIWebNavigation.h"
 #include "nsIWindowMediator.h"
@@ -208,7 +208,7 @@ void MarkDocumentViewer(nsIDocumentViewer* aViewer, bool aCleanupJS) {
 
 void MarkDocShell(nsIDocShellTreeItem* aNode, bool aCleanupJS);
 
-void MarkSHEntry(nsISHEntry* aSHEntry, bool aCleanupJS) {
+void MarkSHEntry(SessionHistoryEntry* aSHEntry, bool aCleanupJS) {
   if (!aSHEntry) {
     return;
   }
@@ -227,7 +227,7 @@ void MarkSHEntry(nsISHEntry* aSHEntry, bool aCleanupJS) {
   int32_t count;
   aSHEntry->GetChildCount(&count);
   for (i = 0; i < count; ++i) {
-    nsCOMPtr<nsISHEntry> childEntry;
+    RefPtr<SessionHistoryEntry> childEntry;
     aSHEntry->GetChildAt(i, getter_AddRefs(childEntry));
     MarkSHEntry(childEntry, aCleanupJS);
   }

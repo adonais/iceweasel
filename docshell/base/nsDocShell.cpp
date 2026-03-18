@@ -157,7 +157,6 @@
 #include "nsISecureBrowserUI.h"
 #include "nsISeekableStream.h"
 #include "nsISelectionDisplay.h"
-#include "nsISHEntry.h"
 #include "nsISiteSecurityService.h"
 #include "nsISocketProvider.h"
 #include "nsIStringBundle.h"
@@ -2607,7 +2606,7 @@ void nsDocShell::StoreWindowNameToSHEntries() {
         mBrowsingContext->Canonical()->GetActiveSessionHistoryEntry();
     if (entry) {
       nsSHistory::WalkContiguousEntries(
-          entry, [&](nsISHEntry* aEntry) { aEntry->SetName(name); });
+          entry, [&](SessionHistoryEntry* aEntry) { aEntry->SetName(name); });
     }
   } else {
     // Ask parent process to store the name in entries.
@@ -10605,6 +10604,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   // We don't update session history on reload unless we're loading
   // an iframe in shift-reload case.
+  [[maybe_unused]]
   bool updateSHistory = mBrowsingContext->ShouldUpdateSessionHistory(mLoadType);
 
   // Create SH Entry (mLSHE) only if there is a SessionHistory object in the
@@ -10987,7 +10987,7 @@ nsresult nsDocShell::UpdateURLAndHistory(
 
   mLoadType = LOAD_PUSHSTATE;
 
-  nsCOMPtr<nsISHEntry> newSHEntry;
+  RefPtr<SessionHistoryEntry> newSHEntry;
   if (!isReplace) {
     // Step 2.
 
@@ -11251,7 +11251,8 @@ void nsDocShell::UpdateActiveEntry(
   }
 }
 
-nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
+nsresult nsDocShell::LoadHistoryEntry(SessionHistoryEntry* aEntry,
+                                      uint32_t aLoadType,
                                       bool aUserActivation) {
   NS_ENSURE_TRUE(aEntry, NS_ERROR_FAILURE);
 
@@ -11264,7 +11265,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
   // that's the only thing holding a ref to aEntry that will cause aEntry to
   // die while we're loading it.  So hold a strong ref to aEntry here, just
   // in case.
-  nsCOMPtr<nsISHEntry> kungFuDeathGrip(aEntry);
+  RefPtr<SessionHistoryEntry> kungFuDeathGrip(aEntry);
 
   loadState->SetHasValidUserGestureActivation(
       loadState->HasValidUserGestureActivation() || aUserActivation);
@@ -11378,7 +11379,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
     // code in the URL.
     // Don't cache the presentation if we're going to just reload the
     // current entry. Caching would lead to trying to save the different
-    // content viewers in the same nsISHEntry object.
+    // content viewers in the same SessionHistoryEntry object.
     rv = CreateAboutBlankDocumentViewer(
         aLoadState->PrincipalToInherit(),
         aLoadState->PartitionedPrincipalToInherit(), nullptr, nullptr,

@@ -7,7 +7,6 @@
 #include "nsDocShell.h"
 #include "nsILoadInfo.h"
 #include "nsIProtocolHandler.h"
-#include "nsISHEntry.h"
 #include "nsIURIFixup.h"
 #include "nsIWebNavigation.h"
 #include "nsIChannel.h"
@@ -26,6 +25,7 @@
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/NavigationUtils.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_fission.h"
@@ -770,13 +770,13 @@ void nsDocShellLoadState::SetUserNavigationInvolvement(
   mUserNavigationInvolvement = aUserNavigationInvolvement;
 }
 
-nsISHEntry* nsDocShellLoadState::SHEntry() const { return mSHEntry; }
+SessionHistoryEntry* nsDocShellLoadState::SHEntry() const { return mSHEntry; }
 
-void nsDocShellLoadState::SetSHEntry(nsISHEntry* aSHEntry) {
+void nsDocShellLoadState::SetSHEntry(SessionHistoryEntry* aSHEntry) {
   mSHEntry = aSHEntry;
-  nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(aSHEntry);
-  if (she) {
-    mLoadingSessionHistoryInfo = MakeUnique<LoadingSessionHistoryInfo>(she);
+  if (aSHEntry) {
+    mLoadingSessionHistoryInfo =
+        MakeUnique<LoadingSessionHistoryInfo>(aSHEntry);
     mLoadingSessionHistoryInfo->mTriggeringNavigationType =
         NavigationUtils::NavigationTypeFromLoadType(LoadType());
     MOZ_ASSERT(mLoadingSessionHistoryInfo->mTriggeringNavigationType);

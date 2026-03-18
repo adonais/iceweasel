@@ -308,8 +308,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void ReplacedBy(CanonicalBrowsingContext* aNewContext,
                   const NavigationIsolationOptions& aRemotenessOptions);
 
-  bool HasHistoryEntry(nsISHEntry* aEntry);
-  bool HasLoadingHistoryEntry(nsISHEntry* aEntry) {
+  bool HasHistoryEntry(SessionHistoryEntry* aEntry);
+  bool HasLoadingHistoryEntry(SessionHistoryEntry* aEntry) {
     for (const LoadingSessionHistoryEntry& loading : mLoadingEntries) {
       if (loading.mEntry == aEntry) {
         return true;
@@ -318,7 +318,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     return false;
   }
 
-  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry);
+  void SwapHistoryEntries(SessionHistoryEntry* aOldEntry,
+                          SessionHistoryEntry* aNewEntry);
 
   void AddLoadingSessionHistoryEntry(uint64_t aLoadId,
                                      SessionHistoryEntry* aEntry);
@@ -372,7 +373,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
  private:
   static nsresult ContainsSameOriginBfcacheEntry(
-      nsISHEntry* aEntry, mozilla::dom::BrowsingContext* aBC,
+      SessionHistoryEntry* aEntry, mozilla::dom::BrowsingContext* aBC,
       int32_t aChildIndex, void* aData);
 
  public:

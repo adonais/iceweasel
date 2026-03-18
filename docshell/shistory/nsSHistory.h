@@ -14,6 +14,7 @@
 #include "nsTObserverArray.h"
 #include "nsWeakReference.h"
 
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/UniquePtr.h"
@@ -21,7 +22,6 @@
 class nsIDocShell;
 class nsDocShell;
 class nsSHistoryObserver;
-class nsISHEntry;
 
 namespace mozilla {
 namespace dom {
@@ -33,6 +33,8 @@ class LoadSHEntryResult;
 class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
                    public nsISHistory,
                    public nsSupportsWeakReference {
+  using SessionHistoryEntry = mozilla::dom::SessionHistoryEntry;
+
  public:
   // The timer based history tracker is used to evict bfcache on expiration.
   class HistoryTracker final
@@ -62,10 +64,11 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // Structure used in SetChildHistoryEntry
   struct SwapEntriesData {
     mozilla::dom::BrowsingContext*
-        ignoreBC;                // constant; the browsing context to ignore
-    nsISHEntry* destTreeRoot;    // constant; the root of the dest tree
-    nsISHEntry* destTreeParent;  // constant; the node under destTreeRoot
-                                 // whose children will correspond to aEntry
+        ignoreBC;  // constant; the browsing context to ignore
+    SessionHistoryEntry* destTreeRoot;  // constant; the root of the dest tree
+    SessionHistoryEntry*
+        destTreeParent;  // constant; the node under destTreeRoot
+                         // whose children will correspond to aEntry
   };
 
   explicit nsSHistory(mozilla::dom::BrowsingContext* aRootBC);
@@ -84,7 +87,8 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   static uint32_t GetMaxTotalViewers() { return sHistoryMaxTotalViewers; }
 
   // Get the root SHEntry from a given entry.
-  static already_AddRefed<nsISHEntry> GetRootSHEntry(nsISHEntry* aEntry);
+  static already_AddRefed<SessionHistoryEntry> GetRootSHEntry(
+      SessionHistoryEntry* aEntry);
 
   // Callback prototype for WalkHistoryEntries.
   // `aEntry` is the child history entry, `aBC` is its corresponding browsing
@@ -94,7 +98,7 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // `aEntriesToUpdate`, which is an array of entries we need to update in
   // docshell, if the 'SH in parent' pref is on (which implies that this method
   // is executed in the parent)
-  typedef nsresult (*WalkHistoryEntriesFunc)(nsISHEntry* aEntry,
+  typedef nsresult (*WalkHistoryEntriesFunc)(SessionHistoryEntry* aEntry,
                                              mozilla::dom::BrowsingContext* aBC,
                                              int32_t aChildIndex, void* aData);
 
@@ -106,25 +110,27 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // have that pointer updated to point to the cloned history entry.
   // If aCloneChildren is true then the children of the entry with id
   // |aCloneID| will be cloned into |aReplaceEntry|.
-  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry,
+  static nsresult CloneAndReplace(SessionHistoryEntry* aSrcEntry,
                                   mozilla::dom::BrowsingContext* aOwnerBC,
-                                  uint32_t aCloneID, nsISHEntry* aReplaceEntry,
-                                  bool aCloneChildren, nsISHEntry** aDestEntry);
+                                  uint32_t aCloneID,
+                                  SessionHistoryEntry* aReplaceEntry,
+                                  bool aCloneChildren,
+                                  SessionHistoryEntry** aDestEntry);
 
   // Child-walking callback for CloneAndReplace
-  static nsresult CloneAndReplaceChild(nsISHEntry* aEntry,
+  static nsresult CloneAndReplaceChild(SessionHistoryEntry* aEntry,
                                        mozilla::dom::BrowsingContext* aOwnerBC,
                                        int32_t aChildIndex, void* aData);
 
   // Child-walking callback for SetHistoryEntry
-  static nsresult SetChildHistoryEntry(nsISHEntry* aEntry,
+  static nsresult SetChildHistoryEntry(SessionHistoryEntry* aEntry,
                                        mozilla::dom::BrowsingContext* aBC,
                                        int32_t aEntryIndex, void* aData);
 
   // For each child of aRootEntry, find the corresponding shell which is
   // a child of aBC, and call aCallback. The opaque pointer aData
   // is passed to the callback.
-  static nsresult WalkHistoryEntries(nsISHEntry* aRootEntry,
+  static nsresult WalkHistoryEntries(SessionHistoryEntry* aRootEntry,
                                      mozilla::dom::BrowsingContext* aBC,
                                      WalkHistoryEntriesFunc aCallback,
                                      void* aData);
@@ -133,22 +139,25 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // the aEntry. And call the aCallback on them, including the aEntry. This only
   // works for the root entries. It will do nothing for non-root entries.
   static void WalkContiguousEntries(
-      nsISHEntry* aEntry, const std::function<void(nsISHEntry*)>& aCallback);
+      SessionHistoryEntry* aEntry,
+      const std::function<void(SessionHistoryEntry*)>& aCallback);
   // This function finds all entries that are contiguous and same-origin with
   // the aEntry and call the aCallback on them, including the aEntry, in their
   // history order. Will stop walking when `aCallback` returns false. Finds the
   // leftmost of entries that share navigation key. Works for all entries, not
   // just root entries.
   static void WalkContiguousEntriesInOrder(
-      nsISHEntry* aEntry, const std::function<bool(nsISHEntry*)>& aCallback);
+      SessionHistoryEntry* aEntry,
+      const std::function<bool(SessionHistoryEntry*)>& aCallback);
   // Same as above, but calls aCallback on aEntry, then the entries to the left
   // of aEntry in reverse order, then the entries to the right in normal order.
   // In case of sequences of adjacent contiguous same ID entries aCallback will
   // be called on the leftmost entry only.
   static void WalkClosestContiguousEntriesFrom(
-      nsISHEntry* aEntry, const std::function<bool(nsISHEntry*)>& aCallback);
+      SessionHistoryEntry* aEntry,
+      const std::function<bool(SessionHistoryEntry*)>& aCallback);
 
-  nsTArray<nsCOMPtr<nsISHEntry>>& Entries() { return mEntries; }
+  nsTArray<RefPtr<SessionHistoryEntry>>& Entries() { return mEntries; }
 
   void NotifyOnHistoryReplaceEntry();
 
@@ -249,7 +258,7 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
       mozilla::dom::SessionHistoryEntry* aEntry,
       SearchDirection aSearchDirection);
 
-  bool ContainsEntry(nsISHEntry* aEntry);
+  bool ContainsEntry(SessionHistoryEntry* aEntry);
 
  protected:
   virtual ~nsSHistory();
@@ -260,12 +269,12 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   friend class nsSHistoryObserver;
 
   bool ForEachDifferingEntry(
-      nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
+      SessionHistoryEntry* aPrevEntry, SessionHistoryEntry* aNextEntry,
       mozilla::dom::BrowsingContext* aParent,
-      const std::function<void(nsISHEntry*, mozilla::dom::BrowsingContext*)>&
-          aCallback);
+      const std::function<void(SessionHistoryEntry*,
+                               mozilla::dom::BrowsingContext*)>& aCallback);
   void InitiateLoad(mozilla::dom::BrowsingContext* aSourceBrowsingContext,
-                    nsISHEntry* aFrameEntry,
+                    SessionHistoryEntry* aFrameEntry,
                     mozilla::dom::BrowsingContext* aFrameBC, long aLoadType,
                     nsTArray<LoadEntryResult>& aLoadResult,
                     bool aLoadCurrentEntry, bool aUserActivation,
@@ -279,14 +288,15 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // Find the history entry for a given bfcache entry. It only looks up between
   // the range where alive viewers may exist (i.e nsSHistory::VIEWER_WINDOW).
   nsresult FindEntryForBFCache(mozilla::dom::SHEntrySharedParentState* aEntry,
-                               nsISHEntry** aResult, int32_t* aResultIndex);
+                               SessionHistoryEntry** aResult,
+                               int32_t* aResultIndex);
 
   // Evict content viewers in this window which don't lie in the "safe" range
   // around aIndex.
   virtual void EvictOutOfRangeWindowDocumentViewers(int32_t aIndex);
 
  public:
-  void EvictDocumentViewerForEntry(nsISHEntry* aEntry);
+  void EvictDocumentViewerForEntry(SessionHistoryEntry* aEntry);
 
  private:
   static void GloballyEvictDocumentViewers();
@@ -317,15 +327,15 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // do a nested IPC call to that process to update the docshell in that
   // process.
   static void HandleEntriesToSwapInDocShell(mozilla::dom::BrowsingContext* aBC,
-                                            nsISHEntry* aOldEntry,
-                                            nsISHEntry* aNewEntry);
+                                            SessionHistoryEntry* aOldEntry,
+                                            SessionHistoryEntry* aNewEntry);
 
-  void UpdateEntryLength(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry,
-                         bool aMove);
+  void UpdateEntryLength(SessionHistoryEntry* aOldEntry,
+                         SessionHistoryEntry* aNewEntry, bool aMove);
 
  protected:
   bool mHasOngoingUpdate;
-  nsTArray<nsCOMPtr<nsISHEntry>> mEntries;  // entries are never null
+  nsTArray<RefPtr<SessionHistoryEntry>> mEntries;  // entries are never null
  private:
   // Track all bfcache entries and evict on expiration.
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;

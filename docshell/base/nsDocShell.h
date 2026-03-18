@@ -14,6 +14,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/NavigationBinding.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsCOMPtr.h"
 #include "nsCharsetSource.h"
@@ -836,12 +837,13 @@ class nsDocShell final : public nsDocLoader,
   //   2) The content viewer is still being displayed while we begin loading
   //      a new document. The content viewer is owned by the _new_
   //      content viewer's mPreviousViewer, and has a pointer to the
-  //      nsISHEntry where it will eventually be stored. The content viewer
-  //      has been close()d by the docshell, which detaches the document from
-  //      the window object.
-  //   3) The content viewer is cached in session history. The nsISHEntry
-  //      has the only owning reference to the content viewer. The viewer
-  //      has released its nsISHEntry pointer to prevent circular ownership.
+  //      SessionHistoryEntry where it will eventually be stored. The content
+  //      viewer has been close()d by the docshell, which detaches the document
+  //      from the window object.
+  //   3) The content viewer is cached in session history. The
+  //      SessionHistoryEntry has the only owning reference to the content
+  //      viewer. The viewer has released its SessionHistoryEntry pointer to
+  //      prevent circular ownership.
   //
   // When restoring a content viewer from session history, open() is called
   // to reattach the document to the window object. The content viewer is
@@ -965,8 +967,8 @@ class nsDocShell final : public nsDocLoader,
       const mozilla::dom::SessionHistoryInfo& aInfo,
       mozilla::Maybe<mozilla::dom::UserNavigationInvolvement> aUserInvolvement);
 
-  nsresult LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
-                            bool aUserActivation);
+  nsresult LoadHistoryEntry(mozilla::dom::SessionHistoryEntry* aEntry,
+                            uint32_t aLoadType, bool aUserActivation);
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
       bool aUserActivation, bool aNotifiedBeforeUnloadListeners);
@@ -1264,8 +1266,8 @@ class nsDocShell final : public nsDocLoader,
   // This can either be a content docshell or a chrome docshell.
   const int32_t mItemType;
 
-  // Index into the nsISHEntry array, indicating the previous and current
-  // entry at the time that this DocShell begins to load. Consequently
+  // Index into the SessionHistoryEntry array, indicating the previous and
+  // current entry at the time that this DocShell begins to load. Consequently
   // root docshell's indices can differ from child docshells'.
   int32_t mPreviousEntryIndex;
   int32_t mLoadedEntryIndex;

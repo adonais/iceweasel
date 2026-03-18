@@ -423,9 +423,11 @@ class SessionHistoryEntry : public nsISHEntry, public nsSupportsWeakReference {
   NS_DECL_NSISHENTRY
   NS_INLINE_DECL_STATIC_IID(NS_SESSIONHISTORYENTRY_IID)
 
+  using nsISHEntry::IsTransient;
+
   bool IsInSessionHistory() {
     SessionHistoryEntry* entry = this;
-    while (nsCOMPtr<SessionHistoryEntry> parent =
+    while (RefPtr<SessionHistoryEntry> parent =
                do_QueryReferent(entry->mParent)) {
       entry = parent;
     }
@@ -449,6 +451,12 @@ class SessionHistoryEntry : public nsISHEntry, public nsSupportsWeakReference {
   // aNewChild and returns true. If there is no child with the same docshell ID
   // then it returns false.
   bool ReplaceChild(SessionHistoryEntry* aNewChild);
+  void GetChildAt(int32_t aIndex, SessionHistoryEntry** aChild);
+
+  SessionHistoryEntry* GetChildSHEntryIfHasNoDynamicallyAddedChild(
+      int32_t aChildOffset);
+
+  already_AddRefed<SessionHistoryEntry> GetParent();
 
   void SetInfo(SessionHistoryInfo* aInfo);
 

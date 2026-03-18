@@ -102,6 +102,7 @@
 
 // focus
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/XMLHttpRequestMainThread.h"
 #include "nsIDOMEventListener.h"
 #include "nsISHEntry.h"
@@ -400,7 +401,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   RefPtr<nsDocViewerFocusListener> mFocusListener;
 
   nsCOMPtr<nsIDocumentViewer> mPreviousViewer;
-  nsCOMPtr<nsISHEntry> mSHEntry;
+  RefPtr<SessionHistoryEntry> mSHEntry;
   // Observer that will prevent bfcaching if it gets notified.  This
   // is non-null precisely when mSHEntry is non-null.
   RefPtr<BFCachePreventionObserver> mBFCachePreventionObserver;
@@ -1440,7 +1441,7 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
   // destructor might never be called (especially if we're being
   // used from JS.
 
-  mSHEntry = aSHEntry;
+  mSHEntry = static_cast<SessionHistoryEntry*>(aSHEntry);
 
   // Close is also needed to disable scripts during paint suppression,
   // since we transfer the existing global object to the new document
@@ -1545,7 +1546,7 @@ nsDocumentViewer::Destroy() {
     // via a stack reference, in case those calls mess with our members.
     MOZ_LOG(gPageCacheLog, LogLevel::Debug,
             ("BFCache not allowed, dropping SHEntry"));
-    nsCOMPtr<nsISHEntry> shEntry = std::move(mSHEntry);
+    RefPtr<SessionHistoryEntry> shEntry = std::move(mSHEntry);
     shEntry->SetDocumentViewer(nullptr);
     shEntry->SyncPresentationState();
   }
@@ -1578,7 +1579,7 @@ nsDocumentViewer::Destroy() {
 
     // Grab a reference to mSHEntry before calling into things like
     // SyncPresentationState that might mess with our members.
-    nsCOMPtr<nsISHEntry> shEntry =
+    RefPtr<SessionHistoryEntry> shEntry =
         std::move(mSHEntry);  // we'll need this below
 
     MOZ_LOG(gPageCacheLog, LogLevel::Debug,

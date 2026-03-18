@@ -7568,7 +7568,7 @@ ContentParent::RecvSessionHistoryEntryStoreWindowNameInContiguousEntries(
 
   if (entry) {
     nsSHistory::WalkContiguousEntries(
-        entry, [&](nsISHEntry* aEntry) { aEntry->SetName(aName); });
+        entry, [&](SessionHistoryEntry* aEntry) { aEntry->SetName(aName); });
   }
 
   return IPC_OK();
@@ -7662,14 +7662,12 @@ mozilla::ipc::IPCResult ContentParent::RecvRemoveFromBFCache(
   for (uint32_t i = 0; i < count; ++i) {
     nsCOMPtr<nsISHEntry> entry;
     shistory->GetEntryAtIndex(i, getter_AddRefs(entry));
-    nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(entry);
-    if (she) {
-      if (RefPtr<nsFrameLoader> frameLoader = she->GetFrameLoader()) {
-        if (frameLoader->GetMaybePendingBrowsingContext() == aContext.get()) {
-          she->SetFrameLoader(nullptr);
-          frameLoader->Destroy();
-          break;
-        }
+    RefPtr she = entry->GetAsSessionHistoryEntry();
+    if (RefPtr<nsFrameLoader> frameLoader = she->GetFrameLoader()) {
+      if (frameLoader->GetMaybePendingBrowsingContext() == aContext.get()) {
+        she->SetFrameLoader(nullptr);
+        frameLoader->Destroy();
+        break;
       }
     }
   }

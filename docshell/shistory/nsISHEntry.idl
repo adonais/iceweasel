@@ -31,6 +31,7 @@ namespace mozilla {
 namespace dom {
 
 class SHEntrySharedParentState;
+class SessionHistoryEntry;
 
 }
 }
@@ -41,6 +42,7 @@ struct EntriesAndBrowsingContextData;
 [ptr] native nsDocShellEditorDataPtr(nsDocShellEditorData);
 [ptr] native nsDocShellLoadStatePtr(nsDocShellLoadState);
 [ptr] native SHEntrySharedParentStatePtr(mozilla::dom::SHEntrySharedParentState);
+[ptr] native SessionHistoryEntryPtr(mozilla::dom::SessionHistoryEntry);
 webidl BrowsingContext;
 
 [builtinclass, scriptable, uuid(0dad26b8-a259-42c7-93f1-2fa7fc076e45)]
@@ -485,4 +487,9 @@ interface nsISHEntry : nsISupports
      * Only used with SHIP enabled.
      */
     attribute nsIDRef navigationId;
+
+    /**
+     * Get as SessionHistoryEntry native pointer.
+     */
+    [noscript, notxpcom] SessionHistoryEntryPtr GetAsSessionHistoryEntry();
 };

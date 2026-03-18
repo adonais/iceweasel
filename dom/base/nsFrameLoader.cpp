@@ -2063,8 +2063,8 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
           for (uint32_t i = 0; i < count; ++i) {
             nsCOMPtr<nsISHEntry> entry;
             shistory->GetEntryAtIndex(i, getter_AddRefs(entry));
-            nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(entry);
-            MOZ_RELEASE_ASSERT(!she || !she->GetFrameLoader());
+            RefPtr she = entry->GetAsSessionHistoryEntry();
+            MOZ_RELEASE_ASSERT(!she->GetFrameLoader());
           }
         }
       }

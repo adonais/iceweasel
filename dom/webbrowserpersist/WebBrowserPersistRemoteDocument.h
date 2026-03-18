@@ -38,7 +38,7 @@ class WebBrowserPersistRemoteDocument final
   using Attrs = WebBrowserPersistDocumentAttrs;
   WebBrowserPersistDocumentParent* mActor;
   Attrs mAttrs;
-  nsCOMPtr<nsISHEntry> mSHEntry;
+  RefPtr<dom::SessionHistoryEntry> mSHEntry;
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
   nsCOMPtr<nsIInputStream> mPostData;
   nsCOMPtr<nsIPrincipal> mPrincipal;
