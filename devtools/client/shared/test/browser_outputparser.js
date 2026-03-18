@@ -1675,6 +1675,96 @@ function testParseLightDark(doc, parser) {
           `</span>,a,b` +
         `)`,
     },
+    {
+      message:
+        "in light mode with images, the second parameter gets the unmatched class",
+      propertyName: "background-image",
+      propertyValue: `light-dark(url("a.png"), url("b.png"))`,
+      isDarkColorScheme: false,
+      expected: `light-dark(url("a.png"), <span class="unmatched-class">url("b.png")</span>)`,
+    },
+    {
+      message:
+        "in dark mode with images, the first parameter gets the unmatched class",
+      propertyName: "background-image",
+      propertyValue: `light-dark(url("a.png"), url("b.png"))`,
+      isDarkColorScheme: true,
+      expected: `light-dark(<span class="unmatched-class">url("a.png")</span>, url("b.png"))`,
+    },
+    {
+      message:
+        "in light mode with gradients, the second parameter gets the unmatched class",
+      propertyName: "background-image",
+      propertyValue:
+        "light-dark(linear-gradient(white, blue), linear-gradient(black, red))",
+      isDarkColorScheme: false,
+      expected:
+        // prettier-ignore
+        `light-dark(` +
+          `linear-gradient(` +
+            `<span data-color="white" class="color-swatch-container">` +
+              `<span class="test-class" style="background-color:white" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+              `<span>white</span>` +
+            `</span>` +
+            `, ` +
+            `<span data-color="blue" class="color-swatch-container">` +
+              `<span class="test-class" style="background-color:blue" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+              `<span>blue</span>` +
+            `</span>` +
+          `)` +
+          `, ` +
+          `<span class="unmatched-class">` +
+            `linear-gradient(` +
+              `<span data-color="black" class="color-swatch-container">` +
+                `<span class="test-class" style="background-color:black" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+                `<span>black</span>` +
+              `</span>` +
+              `, ` +
+              `<span data-color="red" class="color-swatch-container">` +
+                `<span class="test-class" style="background-color:red" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+                `<span>red</span>` +
+              `</span>` +
+            `)` +
+          `</span>` +
+        `)`,
+    },
+    {
+      message:
+        "in dark mode with gradients, the first parameter gets the unmatched class",
+      propertyName: "background-image",
+      propertyValue:
+        "light-dark(linear-gradient(white, blue), linear-gradient(black, red))",
+      isDarkColorScheme: true,
+      expected:
+        // prettier-ignore
+        `light-dark(` +
+          `<span class="unmatched-class">` +
+            `linear-gradient(` +
+              `<span data-color="white" class="color-swatch-container">` +
+                `<span class="test-class" style="background-color:white" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+                `<span>white</span>` +
+              `</span>` +
+              `, ` +
+              `<span data-color="blue" class="color-swatch-container">` +
+                `<span class="test-class" style="background-color:blue" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+                `<span>blue</span>` +
+              `</span>` +
+            `)` +
+          `</span>` +
+          `, ` +
+          `linear-gradient(` +
+            `<span data-color="black" class="color-swatch-container">` +
+              `<span class="test-class" style="background-color:black" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+              `<span>black</span>` +
+            `</span>` +
+            `, ` +
+            `<span data-color="red" class="color-swatch-container">` +
+              `<span class="test-class" style="background-color:red" tabindex="0" role="button" data-color-function="linear-gradient"></span>` +
+              `<span>red</span>` +
+            `</span>` +
+          `)` +
+        `)`,
+    },
   ];
 
   for (const test of TESTS) {
