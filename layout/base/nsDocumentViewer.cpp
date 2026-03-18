@@ -339,7 +339,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
    * FIXME(emilio): aNeedMakeCX makes no sense, it only influences whether
    * aDoInitialReflow is true.
    */
-  nsresult InitInternal(nsIWidget* aParentWidget, nsISupports* aState,
+  nsresult InitInternal(nsIWidget* aParentWidget,
                         mozilla::dom::WindowGlobalChild* aActor,
                         const LayoutDeviceIntRect& aBounds, bool aDoCreation,
                         bool aNeedMakeCX = true,
@@ -401,7 +401,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   RefPtr<nsDocViewerFocusListener> mFocusListener;
 
   nsCOMPtr<nsIDocumentViewer> mPreviousViewer;
-  RefPtr<SessionHistoryEntry> mSHEntry;
   // Observer that will prevent bfcaching if it gets notified.  This
   // is non-null precisely when mSHEntry is non-null.
   RefPtr<BFCachePreventionObserver> mBFCachePreventionObserver;
@@ -528,7 +527,7 @@ NS_INTERFACE_MAP_END
 
 nsDocumentViewer::~nsDocumentViewer() {
   if (mDocument) {
-    Close(nullptr);
+    Close();
     mDocument->Destroy();
   }
 
@@ -543,10 +542,6 @@ nsDocumentViewer::~nsDocumentViewer() {
   NS_ASSERTION(!mPresShell && !mPresContext,
                "User did not call nsIDocumentViewer::Destroy");
   if (mPresShell || mPresContext) {
-    // Make sure we don't hand out a reference to the content viewer to
-    // the SHEntry!
-    mSHEntry = nullptr;
-
     Destroy();
   }
 
@@ -657,7 +652,7 @@ NS_IMETHODIMP
 nsDocumentViewer::Init(nsIWidget* aParentWidget,
                        const LayoutDeviceIntRect& aBounds,
                        WindowGlobalChild* aActor) {
-  return InitInternal(aParentWidget, nullptr, aActor, aBounds, true);
+  return InitInternal(aParentWidget, aActor, aBounds, true);
 }
 
 nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
@@ -765,10 +760,10 @@ static already_AddRefed<nsPresContext> CreatePresContext(
 // The aDoCreation indicates whether it should create
 // all the new objects or just initialize the existing ones
 nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
-                                        nsISupports* aState,
                                         WindowGlobalChild* aActor,
                                         const LayoutDeviceIntRect& aBounds,
-                                        bool aDoCreation, bool aNeedMakeCX,
+                                        bool aDoCreation,
+                                        bool aNeedMakeCX /*= true*/,
                                         bool aForceSetNewDocument /* = true*/) {
   // We don't want any scripts to run here. That can cause flushing,
   // which can cause reentry into initialization of this document viewer,
@@ -833,7 +828,7 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
     if (window) {
       nsCOMPtr<Document> curDoc = window->GetExtantDoc();
       if (aForceSetNewDocument || curDoc != mDocument) {
-        nsresult rv = window->SetNewDocument(mDocument, aState, false, aActor);
+        nsresult rv = window->SetNewDocument(mDocument, nullptr, false, aActor);
         if (NS_FAILED(rv)) {
           Destroy();
           return rv;
@@ -1358,40 +1353,15 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
   return NS_OK;
 }
 
-static void AttachContainerRecurse(nsIDocShell* aShell) {
-  nsCOMPtr<nsIDocumentViewer> viewer;
-  aShell->GetDocViewer(getter_AddRefs(viewer));
-  if (viewer) {
-    viewer->SetIsHidden(false);
-    Document* doc = viewer->GetDocument();
-    if (doc) {
-      doc->SetContainer(static_cast<nsDocShell*>(aShell));
-    }
-    if (PresShell* presShell = viewer->GetPresShell()) {
-      presShell->SetForwardingContainer(WeakPtr<nsDocShell>());
-    }
-  }
-
-  // Now recurse through the children
-  int32_t childCount;
-  aShell->GetInProcessChildCount(&childCount);
-  for (int32_t i = 0; i < childCount; ++i) {
-    nsCOMPtr<nsIDocShellTreeItem> childItem;
-    aShell->GetInProcessChildAt(i, getter_AddRefs(childItem));
-    nsCOMPtr<nsIDocShell> shell = do_QueryInterface(childItem);
-    AttachContainerRecurse(shell);
-  }
-}
-
 NS_IMETHODIMP
-nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
+nsDocumentViewer::Open() {
   NS_ENSURE_TRUE(mPresShell, NS_ERROR_NOT_INITIALIZED);
 
   if (mDocument) {
     mDocument->SetContainer(mContainer);
   }
 
-  MOZ_TRY(InitInternal(mParentWidget, aState, nullptr, mBounds, false));
+  MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, false));
 
   mHidden = false;
 
@@ -1401,17 +1371,6 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
 
   // Rehook the child presentations.  The child shells are still in
   // session history, so get them from there.
-
-  if (aSHEntry) {
-    nsCOMPtr<nsIDocShellTreeItem> item;
-    int32_t itemIndex = 0;
-    while (NS_SUCCEEDED(
-               aSHEntry->ChildShellAt(itemIndex++, getter_AddRefs(item))) &&
-           item) {
-      nsCOMPtr<nsIDocShell> shell = do_QueryInterface(item);
-      AttachContainerRecurse(shell);
-    }
-  }
 
   SyncParentSubDocMap();
 
@@ -1435,13 +1394,11 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
 }
 
 NS_IMETHODIMP
-nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
+nsDocumentViewer::Close() {
   // All callers are supposed to call close to break circular
   // references.  If we do this stuff in the destructor, the
   // destructor might never be called (especially if we're being
   // used from JS.
-
-  mSHEntry = static_cast<SessionHistoryEntry*>(aSHEntry);
 
   // Close is also needed to disable scripts during paint suppression,
   // since we transfer the existing global object to the new document
@@ -1451,14 +1408,6 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
 
   if (!mDocument) {
     return NS_OK;
-  }
-
-  if (mSHEntry) {
-    if (mBFCachePreventionObserver) {
-      mBFCachePreventionObserver->Disconnect();
-    }
-    mBFCachePreventionObserver = new BFCachePreventionObserver(mDocument);
-    mDocument->AddMutationObserver(mBFCachePreventionObserver);
   }
 
 #ifdef NS_PRINTING
@@ -1473,39 +1422,13 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
     // out of band cleanup of docshell
     mDocument->SetScriptGlobalObject(nullptr);
 
-    if (!mSHEntry && mDocument) {
+    if (mDocument) {
       mDocument->RemovedFromDocShell();
     }
   }
 
   RemoveFocusListener();
   return NS_OK;
-}
-
-static void DetachContainerRecurse(nsIDocShell* aShell) {
-  // Unhook this docshell's presentation
-  aShell->SynchronizeLayoutHistoryState();
-  nsCOMPtr<nsIDocumentViewer> viewer;
-  aShell->GetDocViewer(getter_AddRefs(viewer));
-  if (viewer) {
-    if (Document* doc = viewer->GetDocument()) {
-      doc->SetContainer(nullptr);
-    }
-    if (PresShell* presShell = viewer->GetPresShell()) {
-      auto weakShell = static_cast<nsDocShell*>(aShell);
-      presShell->SetForwardingContainer(weakShell);
-    }
-  }
-
-  // Now recurse through the children
-  int32_t childCount;
-  aShell->GetInProcessChildCount(&childCount);
-  for (int32_t i = 0; i < childCount; ++i) {
-    nsCOMPtr<nsIDocShellTreeItem> childItem;
-    aShell->GetInProcessChildAt(i, getter_AddRefs(childItem));
-    nsCOMPtr<nsIDocShell> shell = do_QueryInterface(childItem);
-    DetachContainerRecurse(shell);
-  }
 }
 
 NS_IMETHODIMP
@@ -1536,96 +1459,6 @@ nsDocumentViewer::Destroy() {
   if (mBFCachePreventionObserver) {
     mBFCachePreventionObserver->Disconnect();
     mBFCachePreventionObserver = nullptr;
-  }
-
-  if (mSHEntry && mDocument && !mDocument->IsBFCachingAllowed()) {
-    // Just drop the SHEntry now and pretend like we never even tried to bfcache
-    // this viewer.  This should only happen when someone calls
-    // DisallowBFCaching() after CanSavePresentation() already ran.  Ensure that
-    // the SHEntry has no viewer and its state is synced up.  We want to do this
-    // via a stack reference, in case those calls mess with our members.
-    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-            ("BFCache not allowed, dropping SHEntry"));
-    RefPtr<SessionHistoryEntry> shEntry = std::move(mSHEntry);
-    shEntry->SetDocumentViewer(nullptr);
-    shEntry->SyncPresentationState();
-  }
-
-  // If we were told to put ourselves into session history instead of destroy
-  // the presentation, do that now.
-  if (mSHEntry) {
-    if (mPresShell) {
-      mPresShell->Freeze();
-    }
-
-    // Make sure the presentation isn't torn down by Hide().
-    mSHEntry->SetSticky(mIsSticky);
-    mIsSticky = true;
-
-    // Clear our display items.
-    if (nsSubDocumentFrame* f = FindContainerFrame()) {
-      f->ClearDisplayItems();
-    }
-
-    Hide();
-
-    // This is after Hide() so that the user doesn't see the inputs clear.
-    if (mDocument) {
-      mDocument->Sanitize();
-    }
-
-    // Reverse ownership. Do this *after* calling sanitize so that sanitize
-    // doesn't cause mutations that make the SHEntry drop the presentation
-
-    // Grab a reference to mSHEntry before calling into things like
-    // SyncPresentationState that might mess with our members.
-    RefPtr<SessionHistoryEntry> shEntry =
-        std::move(mSHEntry);  // we'll need this below
-
-    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-            ("Storing content viewer into cache entry"));
-    shEntry->SetDocumentViewer(this);
-
-    // Always sync the presentation state.  That way even if someone screws up
-    // and shEntry has no window state at this point we'll be ok; we just won't
-    // cache ourselves.
-    shEntry->SyncPresentationState();
-    // XXX Synchronize layout history state to parent once bfcache is supported
-    //     in session-history-in-parent.
-
-    // Shut down accessibility for the document before we start to tear it down.
-#ifdef ACCESSIBILITY
-    if (mPresShell) {
-      if (a11y::DocAccessible* docAcc = mPresShell->GetDocAccessible()) {
-        docAcc->Shutdown();
-      }
-    }
-#endif
-
-    // Break the link from the document/presentation to the docshell, so that
-    // link traversals cannot affect the currently-loaded document.
-    // When the presentation is restored, Open() and InitInternal() will reset
-    // these pointers to their original values.
-
-    if (mDocument) {
-      mDocument->SetContainer(nullptr);
-    }
-    if (mPresShell) {
-      mPresShell->SetForwardingContainer(mContainer);
-    }
-
-    // Do the same for our children.  Note that we need to get the child
-    // docshells from the SHEntry now; the docshell will have cleared them.
-    nsCOMPtr<nsIDocShellTreeItem> item;
-    int32_t itemIndex = 0;
-    while (NS_SUCCEEDED(
-               shEntry->ChildShellAt(itemIndex++, getter_AddRefs(item))) &&
-           item) {
-      nsCOMPtr<nsIDocShell> shell = do_QueryInterface(item);
-      DetachContainerRecurse(shell);
-    }
-
-    return NS_OK;
   }
 
   // The document was not put in the bfcache
@@ -1795,8 +1628,7 @@ nsDocumentViewer::SetDocumentInternal(Document* aDocument,
     DestroyPresContext();
 
     mWindow = nullptr;
-    MOZ_TRY(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, true,
-                         false));
+    MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, true, true, false));
   }
 
   return NS_OK;
@@ -2064,7 +1896,6 @@ nsDocumentViewer::ClearHistoryEntry() {
                             StaticPrefs::javascript_options_gc_delay() * 2));
   }
 
-  mSHEntry = nullptr;
   return NS_OK;
 }
 
@@ -3207,16 +3038,10 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     mPresContext->SetIsRootPaginatedDocument(true);
     mPresContext->SetPageScale(1.0f);
   }
-  MOZ_TRY(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, false,
-                       false));
+
+  MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, true, false, false));
 
   Show();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocumentViewer::GetHistoryEntry(nsISHEntry** aHistoryEntry) {
-  NS_IF_ADDREF(*aHistoryEntry = mSHEntry);
   return NS_OK;
 }
 

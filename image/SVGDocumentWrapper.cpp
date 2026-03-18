@@ -55,7 +55,7 @@ void SVGDocumentWrapper::DestroyViewer() {
   MOZ_ASSERT(NS_IsMainThread());
   if (mViewer) {
     mViewer->GetDocument()->OnPageHide(false, nullptr);
-    mViewer->Close(nullptr);
+    mViewer->Close();
     mViewer->Destroy();
     mViewer = nullptr;
   }
@@ -208,7 +208,7 @@ SVGDocumentWrapper::OnStartRequest(nsIRequest* aRequest) {
 
     rv = mViewer->Init(nullptr, LayoutDeviceIntRect(), nullptr);
     if (NS_SUCCEEDED(rv)) {
-      rv = mViewer->Open(nullptr, nullptr);
+      rv = mViewer->Open();
     }
   }
   return rv;

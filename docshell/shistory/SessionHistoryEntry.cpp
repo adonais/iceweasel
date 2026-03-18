@@ -681,18 +681,6 @@ SessionHistoryEntry::SetReferrerInfo(nsIReferrerInfo* aReferrerInfo) {
 }
 
 NS_IMETHODIMP
-SessionHistoryEntry::GetDocumentViewer(nsIDocumentViewer** aDocumentViewer) {
-  *aDocumentViewer = nullptr;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SessionHistoryEntry::SetDocumentViewer(nsIDocumentViewer* aDocumentViewer) {
-  MOZ_CRASH("This lives in the child process");
-  return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
 SessionHistoryEntry::GetIsInBFCache(bool* aResult) {
   *aResult = !!SharedInfo()->mFrameLoader;
   return NS_OK;
@@ -708,30 +696,6 @@ NS_IMETHODIMP
 SessionHistoryEntry::SetSticky(bool aSticky) {
   SharedInfo()->mSticky = aSticky;
   return NS_OK;
-}
-
-NS_IMETHODIMP
-SessionHistoryEntry::GetWindowState(nsISupports** aWindowState) {
-  MOZ_CRASH("This lives in the child process");
-  return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-SessionHistoryEntry::SetWindowState(nsISupports* aWindowState) {
-  MOZ_CRASH("This lives in the child process");
-  return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-SessionHistoryEntry::GetRefreshURIList(nsIMutableArray** aRefreshURIList) {
-  MOZ_CRASH("This lives in the child process");
-  return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-SessionHistoryEntry::SetRefreshURIList(nsIMutableArray* aRefreshURIList) {
-  MOZ_CRASH("This lives in the child process");
-  return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
@@ -1098,28 +1062,6 @@ SessionHistoryEntry::SetViewerBounds(const nsIntRect& bounds) {
   SharedInfo()->mViewerBounds = bounds;
 }
 
-NS_IMETHODIMP_(void)
-SessionHistoryEntry::AddChildShell(nsIDocShellTreeItem* shell) {
-  MOZ_CRASH("This lives in the child process");
-}
-
-NS_IMETHODIMP
-SessionHistoryEntry::ChildShellAt(int32_t index,
-                                  nsIDocShellTreeItem** _retval) {
-  MOZ_CRASH("This lives in the child process");
-  return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP_(void)
-SessionHistoryEntry::ClearChildShells() {
-  MOZ_CRASH("This lives in the child process");
-}
-
-NS_IMETHODIMP_(void)
-SessionHistoryEntry::SyncPresentationState() {
-  MOZ_CRASH("This lives in the child process");
-}
-
 NS_IMETHODIMP
 SessionHistoryEntry::InitLayoutHistoryState(
     nsILayoutHistoryState** aLayoutHistoryState) {
@@ -1164,23 +1106,6 @@ SessionHistoryEntry::Clone(nsISHEntry** aEntry) {
   return NS_OK;
 }
 
-NS_IMETHODIMP_(nsDocShellEditorData*)
-SessionHistoryEntry::ForgetEditorData() {
-  MOZ_CRASH("This lives in the child process");
-  return nullptr;
-}
-
-NS_IMETHODIMP_(void)
-SessionHistoryEntry::SetEditorData(nsDocShellEditorData* aData) {
-  NS_WARNING("This lives in the child process");
-}
-
-NS_IMETHODIMP_(bool)
-SessionHistoryEntry::HasDetachedEditor() {
-  NS_WARNING("This lives in the child process");
-  return false;
-}
-
 NS_IMETHODIMP_(bool)
 SessionHistoryEntry::IsDynamicallyAdded() {
   return SharedInfo()->mDynamicallyCreated;
@@ -1220,12 +1145,6 @@ SessionHistoryEntry::AdoptBFCacheEntry(nsISHEntry* aEntry) {
   mInfo->mSharedState = entry->mInfo->mSharedState;
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-SessionHistoryEntry::AbandonBFCacheEntry() {
-  MOZ_CRASH("This lives in the child process");
-  return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP

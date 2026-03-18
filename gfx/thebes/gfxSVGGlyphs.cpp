@@ -139,7 +139,7 @@ nsresult gfxSVGGlyphsDocument::SetupPresentation() {
   auto upem = mOwner->FontEntry()->UnitsPerEm();
   rv = viewer->Init(nullptr, LayoutDeviceIntRect(0, 0, upem, upem), nullptr);
   if (NS_SUCCEEDED(rv)) {
-    rv = viewer->Open(nullptr, nullptr);
+    rv = viewer->Open();
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -323,7 +323,7 @@ gfxSVGGlyphsDocument::~gfxSVGGlyphsDocument() {
     mPresShell->RemovePostRefreshObserver(this);
   }
   if (mViewer) {
-    mViewer->Close(nullptr);
+    mViewer->Close();
     mViewer->Destroy();
   }
 }

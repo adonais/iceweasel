@@ -471,11 +471,6 @@ void WindowContext::DidSet(FieldIndex<IDX_HasReportedShadowDOMUsage>,
   }
 }
 
-bool WindowContext::CanSet(FieldIndex<IDX_WindowStateSaved>, bool aValue,
-                           ContentParent* aSource) {
-  return false;
-}
-
 void WindowContext::CreateFromIPC(IPCInitializer&& aInit) {
   MOZ_RELEASE_ASSERT(XRE_IsContentProcess(),
                      "Should be a WindowGlobalParent in the parent");

@@ -214,20 +214,7 @@ nsSHistoryObserver::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 void nsSHistory::EvictDocumentViewerForEntry(SessionHistoryEntry* aEntry) {
-  nsCOMPtr<nsIDocumentViewer> viewer = aEntry->GetDocumentViewer();
-  if (viewer) {
-    LOG_SHENTRY_SPEC(("Evicting content viewer 0x%p for "
-                      "owning SHEntry 0x%p at %s.",
-                      viewer.get(), aEntry, _spec),
-                     aEntry);
-
-    // Drop the presentation state before destroying the viewer, so that
-    // document teardown is able to correctly persist the state.
-    NotifyListenersDocumentViewerEvicted(1);
-    aEntry->SetDocumentViewer(nullptr);
-    aEntry->SyncPresentationState();
-    viewer->Destroy();
-  } else if (RefPtr<nsFrameLoader> frameLoader = aEntry->GetFrameLoader()) {
+  if (RefPtr<nsFrameLoader> frameLoader = aEntry->GetFrameLoader()) {
     nsCOMPtr<nsFrameLoaderOwner> owner =
         do_QueryInterface(frameLoader->GetOwnerContent());
     RefPtr<nsFrameLoader> currentFrameLoader;
@@ -1843,14 +1830,9 @@ void nsSHistory::EvictOutOfRangeWindowDocumentViewers(int32_t aIndex) {
   nsCOMArray<nsIDocumentViewer> safeViewers;
   nsTArray<RefPtr<nsFrameLoader>> safeFrameLoaders;
   for (int32_t i = startSafeIndex; i <= endSafeIndex; i++) {
-    nsCOMPtr<nsIDocumentViewer> viewer = mEntries[i]->GetDocumentViewer();
-    if (viewer) {
-      safeViewers.AppendObject(viewer);
-    } else {
-      nsFrameLoader* frameLoader = mEntries[i]->GetFrameLoader();
-      if (frameLoader) {
-        safeFrameLoaders.AppendElement(frameLoader);
-      }
+    nsFrameLoader* frameLoader = mEntries[i]->GetFrameLoader();
+    if (frameLoader) {
+      safeFrameLoaders.AppendElement(frameLoader);
     }
   }
 
@@ -1859,16 +1841,10 @@ void nsSHistory::EvictOutOfRangeWindowDocumentViewers(int32_t aIndex) {
   // copy of Length(), because the length might change between iterations.)
   for (int32_t i = 0; i < Length(); i++) {
     RefPtr<SessionHistoryEntry> entry = mEntries[i];
-    if (nsCOMPtr<nsIDocumentViewer> viewer = entry->GetDocumentViewer()) {
-      if (safeViewers.IndexOf(viewer) == -1) {
+    nsFrameLoader* frameLoader = entry->GetFrameLoader();
+    if (frameLoader) {
+      if (!safeFrameLoaders.Contains(frameLoader)) {
         EvictDocumentViewerForEntry(entry);
-      }
-    } else {
-      nsFrameLoader* frameLoader = entry->GetFrameLoader();
-      if (frameLoader) {
-        if (!safeFrameLoaders.Contains(frameLoader)) {
-          EvictDocumentViewerForEntry(entry);
-        }
       }
     }
   }
@@ -1882,12 +1858,10 @@ class EntryAndDistance {
                    uint32_t aDist)
       : mSHistory(aSHistory),
         mEntry(aEntry),
-        mViewer(aEntry->GetDocumentViewer()),
         mFrameLoader(aEntry->GetFrameLoader()),
         mLastTouched(mEntry->GetLastTouched()),
         mDistance(aDist) {
-    NS_ASSERTION(mViewer || mFrameLoader,
-                 "Entry should have a content viewer or frame loader.");
+    NS_ASSERTION(mFrameLoader, "Entry should have a frame loader.");
   }
 
   bool operator<(const EntryAndDistance& aOther) const {
@@ -1909,7 +1883,6 @@ class EntryAndDistance {
 
   RefPtr<nsSHistory> mSHistory;
   RefPtr<SessionHistoryEntry> mEntry;
-  nsCOMPtr<nsIDocumentViewer> mViewer;
   RefPtr<nsFrameLoader> mFrameLoader;
   uint32_t mLastTouched;
   uint32_t mDistance;
@@ -1948,30 +1921,16 @@ void nsSHistory::GloballyEvictDocumentViewers() {
     shist->WindowIndices(shist->mIndex, &startIndex, &endIndex);
     for (int32_t i = startIndex; i <= endIndex; i++) {
       RefPtr<SessionHistoryEntry> entry = shist->mEntries[i];
-      nsCOMPtr<nsIDocumentViewer> viewer = entry->GetDocumentViewer();
 
       bool found = false;
-      bool hasDocumentViewerOrFrameLoader = false;
-      if (viewer) {
-        hasDocumentViewerOrFrameLoader = true;
+      bool hasFrameLoader = false;
+      if (RefPtr<nsFrameLoader> frameLoader = entry->GetFrameLoader()) {
+        hasFrameLoader = true;
         // Because one content viewer might belong to multiple SHEntries, we
         // have to search through shEntries to see if we already know
         // about this content viewer.  If we find the viewer, update its
         // distance from the SHistory's index and continue.
-        for (uint32_t j = 0; j < shEntries.Length(); j++) {
-          EntryAndDistance& container = shEntries[j];
-          if (container.mViewer == viewer) {
-            container.mDistance =
-                std::min(container.mDistance, Abs(i - shist->mIndex));
-            found = true;
-            break;
-          }
-        }
-      } else if (RefPtr<nsFrameLoader> frameLoader = entry->GetFrameLoader()) {
-        hasDocumentViewerOrFrameLoader = true;
-        // Similar search as above but using frameloader.
-        for (uint32_t j = 0; j < shEntries.Length(); j++) {
-          EntryAndDistance& container = shEntries[j];
+        for (EntryAndDistance& container : shEntries) {
           if (container.mFrameLoader == frameLoader) {
             container.mDistance =
                 std::min(container.mDistance, Abs(i - shist->mIndex));
@@ -1983,7 +1942,7 @@ void nsSHistory::GloballyEvictDocumentViewers() {
 
       // If we didn't find a EntryAndDistance for this content viewer /
       // frameloader, make a new one.
-      if (hasDocumentViewerOrFrameLoader && !found) {
+      if (hasFrameLoader && !found) {
         EntryAndDistance container(shist, entry, Abs(i - shist->mIndex));
         shEntries.AppendElement(container);
       }

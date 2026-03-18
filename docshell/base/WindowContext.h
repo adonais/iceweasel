@@ -98,10 +98,6 @@ class BrowsingContextGroup;
    * unless scripts are also allowed in the BrowsingContext. */          \
   FIELD(AllowJavascript, bool)                                           \
   /* If this field is `true`, it means that this WindowContext's         \
-   * WindowState was saved to be stored in the legacy (non-SHIP) BFCache \
-   * implementation. Always false for SHIP */                            \
-  FIELD(WindowStateSaved, bool)                                          \
-  /* If this field is `true`, it means that this WindowContext's         \
    * CloseWatcherManager has active CloseWatchers, which some UIs may    \
    * want to dismiss (for example the Android "back button"). */         \
   FIELD(HasActiveCloseWatcher, bool)
@@ -366,9 +362,6 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   void DidSet(FieldIndex<IDX_SHEntryHasUserInteraction>, bool aOldValue);
 
   void DidSet(FieldIndex<IDX_HasActivePeerConnections>, bool aOldValue);
-
-  bool CanSet(FieldIndex<IDX_WindowStateSaved>, bool aValue,
-              ContentParent* aSource);
 
   bool CanSet(FieldIndex<IDX_HasActiveCloseWatcher>, bool, ContentParent*) {
     return true;

@@ -395,7 +395,7 @@ void nsDocShell::DestroyDocumentViewer() {
   if (!mDocumentViewer) {
     return;
   }
-  mDocumentViewer->Close(nullptr);
+  mDocumentViewer->Close();
   mDocumentViewer->Destroy();
   mDocumentViewer = nullptr;
 }
@@ -7214,7 +7214,7 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
       isUnderHiddenEmbedderElement = presShell->IsUnderHiddenEmbedderElement();
     }
 
-    viewer->Close(nullptr);
+    viewer->Close();
     aNewViewer->SetPreviousViewer(viewer);
   }
 
@@ -7234,7 +7234,7 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
   nsresult rv = mDocumentViewer->Init(widget, bounds, aWindowActor);
   if (NS_FAILED(rv)) {
     nsCOMPtr<nsIDocumentViewer> viewer = mDocumentViewer;
-    viewer->Close(nullptr);
+    viewer->Close();
     viewer->Destroy();
     mDocumentViewer = nullptr;
     SetCurrentURIInternal(nullptr);

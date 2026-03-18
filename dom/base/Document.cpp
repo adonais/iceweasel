@@ -1050,7 +1050,7 @@ nsresult ExternalResourceMap::AddExternalResource(nsIURI* aURI,
 
     rv = aViewer->Init(nullptr, LayoutDeviceIntRect(), nullptr);
     if (NS_SUCCEEDED(rv)) {
-      rv = aViewer->Open(nullptr, nullptr);
+      rv = aViewer->Open();
     }
 
     if (NS_FAILED(rv)) {
@@ -1285,7 +1285,7 @@ ExternalResourceMap::LoadgroupCallbacks::GetInterface(const nsIID& aIID,
 
 ExternalResourceMap::ExternalResource::~ExternalResource() {
   if (mViewer) {
-    mViewer->Close(nullptr);
+    mViewer->Close();
     mViewer->Destroy();
   }
 }

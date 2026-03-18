@@ -213,20 +213,8 @@ void MarkSHEntry(SessionHistoryEntry* aSHEntry, bool aCleanupJS) {
     return;
   }
 
-  nsCOMPtr<nsIDocumentViewer> viewer;
-  aSHEntry->GetDocumentViewer(getter_AddRefs(viewer));
-  MarkDocumentViewer(viewer, aCleanupJS);
-
-  nsCOMPtr<nsIDocShellTreeItem> child;
-  int32_t i = 0;
-  while (NS_SUCCEEDED(aSHEntry->ChildShellAt(i++, getter_AddRefs(child))) &&
-         child) {
-    MarkDocShell(child, aCleanupJS);
-  }
-
-  int32_t count;
-  aSHEntry->GetChildCount(&count);
-  for (i = 0; i < count; ++i) {
+  int32_t count = aSHEntry->GetChildCount();
+  for (int32_t i = 0; i < count; ++i) {
     RefPtr<SessionHistoryEntry> childEntry;
     aSHEntry->GetChildAt(i, getter_AddRefs(childEntry));
     MarkSHEntry(childEntry, aCleanupJS);
