@@ -34,6 +34,7 @@ const hourlyForecasts = [
     temperature: { c: 18, f: 64 },
     icon_id: 5,
     date_time: "2024-01-15T14:00:00",
+    url: "https://example.com/forecast",
   },
   {
     epoch_date_time: 1000003600,
@@ -661,6 +662,24 @@ describe("<WeatherForecast>", () => {
       assert.equal(action.data.widget_source, "widget");
       assert.equal(action.data.user_action, "provider_link_click");
       assert.equal(action.data.widget_size, "medium");
+    });
+
+    it("should render .full-forecast as an anchor with the forecast URL", () => {
+      const link = wrapper.find("a.full-forecast");
+      assert.ok(link.exists());
+      assert.equal(link.prop("href"), hourlyForecasts[0].url);
+    });
+
+    it("should dispatch WIDGETS_USER_EVENT with provider_link_click when .full-forecast is clicked", () => {
+      const link = wrapper.find("a.full-forecast");
+      link.props().onClick();
+
+      assert.ok(dispatch.calledOnce);
+      const [action] = dispatch.getCall(0).args;
+      assert.equal(action.type, at.WIDGETS_USER_EVENT);
+      assert.equal(action.data.widget_name, "weather");
+      assert.equal(action.data.widget_source, "widget");
+      assert.equal(action.data.user_action, "provider_link_click");
     });
   });
 });

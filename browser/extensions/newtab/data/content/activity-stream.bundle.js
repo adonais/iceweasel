@@ -13608,8 +13608,10 @@ function WeatherForecast({
     "aria-hidden": "true",
     "data-l10n-id": "newtab-weather-sponsored",
     "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
-  }), /*#__PURE__*/external_React_default().createElement("span", {
+  }), /*#__PURE__*/external_React_default().createElement("a", {
     className: "full-forecast",
+    href: HOURLY_FORECASTS[0]?.url || "#",
+    onClick: handleProviderLinkClick,
     "data-l10n-id": "newtab-weather-see-full-forecast"
   })));
 }

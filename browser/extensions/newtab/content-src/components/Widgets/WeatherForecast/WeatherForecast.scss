@@ -77,7 +77,10 @@
     .sponsored-text {
       visibility: visible;
     }
+  }
 
+  &:hover,
+  &:focus-within {
     .full-forecast {
       text-decoration: underline;
       color: var(--newtab-primary-action-background);
@@ -368,6 +371,14 @@ hr {
 
   .sponsored-text {
     visibility: hidden;
+  }
+
+  .full-forecast {
+    position: relative;
+    z-index: 1;
+    font-size: var(--font-size-xsmall);
+    text-decoration: none;
+    color: inherit;
   }
 }
 

@@ -469,10 +469,12 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
           data-l10n-id="newtab-weather-sponsored"
           data-l10n-args='{"provider": "AccuWeather®"}'
         ></span>
-        <span
+        <a
           className="full-forecast"
+          href={HOURLY_FORECASTS[0]?.url || "#"}
+          onClick={handleProviderLinkClick}
           data-l10n-id="newtab-weather-see-full-forecast"
-        ></span>
+        ></a>
       </div>
     </article>
   );

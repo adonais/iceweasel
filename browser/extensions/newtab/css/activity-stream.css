@@ -4933,7 +4933,7 @@ dialog:dir(rtl)::after {
 .weather-forecast-widget:hover .sponsored-text {
   visibility: visible;
 }
-.weather-forecast-widget:hover .full-forecast {
+.weather-forecast-widget:hover .full-forecast, .weather-forecast-widget:focus-within .full-forecast {
   text-decoration: underline;
   color: var(--newtab-primary-action-background);
 }
@@ -5160,6 +5160,13 @@ hr {
 }
 .forecast-footer .sponsored-text {
   visibility: hidden;
+}
+.forecast-footer .full-forecast {
+  position: relative;
+  z-index: 1;
+  font-size: var(--font-size-xsmall);
+  text-decoration: none;
+  color: inherit;
 }
 
 .small-widget {
