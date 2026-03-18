@@ -979,21 +979,6 @@
       }
     ]
   },
-  "1827678_83269": {
-    "label": "jelly.jd.com",
-    "bugs": {
-      "1899051": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://jelly.jd.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["add_Chrome"]
-      }
-    ]
-  },
   "1827678_119402": {
     "label": "oirsa.org",
     "bugs": {
