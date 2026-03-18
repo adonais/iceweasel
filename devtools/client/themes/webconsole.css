@@ -289,8 +289,8 @@
 .message > .icon.logpoint {
   background-image: url(chrome://devtools/content/shared/components/images/webconsole-logpoint.svg);
   -moz-context-properties: fill, stroke;
-  fill: var(--theme-graphs-purple);
-  stroke: var(--theme-graphs-purple);
+  fill: var(--theme-breakpoint-logpoint);
+  stroke: var(--theme-breakpoint-logpoint);
 }
 
 .message > .icon.logtrace {
