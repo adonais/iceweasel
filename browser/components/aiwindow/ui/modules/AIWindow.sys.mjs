@@ -611,6 +611,10 @@ export const AIWindow = {
           );
         }
 
+        if (lazy.hasFirstrunCompleted) {
+          lazy.AIWindowUI.openSidebar(win);
+        }
+
         lazy.MemoriesSchedulers.maybeRunAndSchedule();
       } else {
         // Close sidebar when switching back to classic window if it is open

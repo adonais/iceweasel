@@ -123,6 +123,16 @@ export const AIWindowUI = {
     this._showSidebarElements(box, splitter);
     this._setAskButtonStyle(win, true);
 
+    // Dispatch event to notify tab state manager that sidebar was toggled
+    win.dispatchEvent(
+      new win.CustomEvent("ai-window:sidebar-toggle", {
+        detail: {
+          tab: win.gBrowser.selectedTab,
+          isOpen: true,
+        },
+      })
+    );
+
     if (conversation) {
       aiBrowser.setAttribute("data-conversation-id", conversation.id);
     } else {
