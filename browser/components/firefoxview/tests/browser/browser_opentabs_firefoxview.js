@@ -371,9 +371,8 @@ add_task(async function test_send_device_submenu() {
       .expects("sendTabToDevice")
       .once()
       .withExactArgs(
-        TEST_URL1,
-        [fxaDevicesWithCommands[0]],
-        "Gort! Klaatu barada nikto!"
+        { url: TEST_URL1, title: "Gort! Klaatu barada nikto!", private: false },
+        [fxaDevicesWithCommands[0]]
       )
       .returns(true);
 
