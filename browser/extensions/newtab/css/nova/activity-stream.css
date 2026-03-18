@@ -9499,9 +9499,6 @@ hr {
   width: auto;
   padding: var(--space-large);
 }
-.wallpaper-feature-highlight .feature-highlight .feature-highlight-modal .content-wrapper {
-  margin-block: 0;
-}
 .wallpaper-feature-highlight .feature-highlight .feature-highlight-modal .message-icon {
   display: none;
 }

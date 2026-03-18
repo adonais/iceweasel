@@ -39,6 +39,11 @@ test_newtab({
     );
     topsitesAddBtn.click();
 
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".topsite-form"),
+      "Should find a visible topsite form"
+    );
+
     let found = content.document.querySelector(".topsite-form");
     ok(found && !found.hidden, "Should find a visible topsite form");
 
@@ -89,6 +94,11 @@ test_newtab({
     topsiteContextBtn = topsiteEl.querySelector(".context-menu-button");
     ok(topsiteContextBtn, "Should find a context menu button");
     topsiteContextBtn.click();
+
+    await ContentTaskUtils.waitForCondition(
+      () => topsiteEl.querySelector(".context-menu-item button"),
+      "Should find context menu item button for unpin"
+    );
     topsiteEl.querySelector(".context-menu-item button").click();
 
     // Need to wait for unpin action.

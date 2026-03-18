@@ -381,7 +381,17 @@ module.exports = function (config) {
         },
       },
     },
-    files: [PATHS.testEntryFile],
+    files: [
+      // Load React 16 from toolkit vendor for enzyme compatibility, instead of React19
+      "../../../toolkit/content/vendor/react/react.js",
+      "../../../toolkit/content/vendor/react/react-dom.js",
+      "../../../toolkit/content/vendor/react/react-dom-server.js",
+      "test/vendor/react-dom-test-utils.js",
+      "../../../toolkit/content/vendor/react/prop-types.js",
+      "../../../toolkit/content/vendor/react/react-redux.js",
+      "../../../toolkit/content/vendor/react/redux.js",
+      PATHS.testEntryFile,
+    ],
     preprocessors,
     webpack: {
       mode: "none",
@@ -427,14 +437,43 @@ module.exports = function (config) {
         new webpack.DefinePlugin({
           "process.env.NODE_ENV": JSON.stringify("development"),
         }),
+
+        // Replace react-redux imports with React 16-compatible version from toolkit
+        new webpack.NormalModuleReplacementPlugin(
+          /^react-redux$/,
+          path.resolve(
+            __dirname,
+            "../../../toolkit/content/vendor/react/react-redux.js"
+          )
+        ),
       ],
-      externals: {
-        // enzyme needs these for backwards compatibility with 0.13.
-        // see https://github.com/airbnb/enzyme/blob/master/docs/guides/webpack.md#using-enzyme-with-webpack
-        "react/addons": true,
-        "react/lib/ReactContext": true,
-        "react/lib/ExecutionEnvironment": true,
-      },
+      externals: [
+        // Use React 16 from toolkit vendor files for enzyme compatibility
+        {
+          react: "React",
+          "react-dom": "ReactDOM",
+          "react-dom/client": "ReactDOM",
+          "react-dom/server": "ReactDOMServer",
+          "react-dom/server.browser": "ReactDOMServer",
+          "react-dom/test-utils": "ReactTestUtils",
+          "prop-types": "PropTypes",
+          "react-redux": "ReactRedux",
+          redux: "Redux",
+          // enzyme needs these for backwards compatibility with 0.13.
+          // see https://github.com/airbnb/enzyme/blob/master/docs/guides/webpack.md#using-enzyme-with-webpack
+          "react/addons": true,
+          "react/lib/ReactContext": true,
+          "react/lib/ExecutionEnvironment": true,
+        },
+        // Exclude use-sync-external-store completely
+        // eslint-disable-next-line consistent-return
+        function ({ request }, callback) {
+          if (/^use-sync-external-store/.test(request)) {
+            return callback(null, "var {}");
+          }
+          callback();
+        },
+      ],
       module: {
         rules: [
           {

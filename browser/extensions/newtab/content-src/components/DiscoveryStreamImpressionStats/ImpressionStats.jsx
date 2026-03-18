@@ -34,6 +34,11 @@ export const INTERSECTION_RATIO = 0.5;
  *     impression pings separately
  */
 export class ImpressionStats extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.impressionRef = React.createRef();
+  }
+
   // This checks if the given cards are the same as those in the last impression ping.
   // If so, it should not send the same impression ping again.
   _needsImpressionStats(cards) {
@@ -230,7 +235,7 @@ export class ImpressionStats extends React.PureComponent {
         )
       ) {
         this._dispatchImpressionStats();
-        this.impressionObserver.unobserve(this.refs.impression);
+        this.impressionObserver.unobserve(this.impressionRef.current);
       }
     };
 
@@ -239,7 +244,7 @@ export class ImpressionStats extends React.PureComponent {
       this._handleIntersect,
       options
     );
-    this.impressionObserver.observe(this.refs.impression);
+    this.impressionObserver.observe(this.impressionRef.current);
   }
 
   componentDidMount() {
@@ -250,7 +255,7 @@ export class ImpressionStats extends React.PureComponent {
 
   componentWillUnmount() {
     if (this._handleIntersect && this.impressionObserver) {
-      this.impressionObserver.unobserve(this.refs.impression);
+      this.impressionObserver.unobserve(this.impressionRef.current);
     }
     if (this._onVisibilityChange) {
       this.props.document.removeEventListener(
@@ -262,7 +267,7 @@ export class ImpressionStats extends React.PureComponent {
 
   render() {
     return (
-      <div ref={"impression"} className="impression-observer">
+      <div ref={this.impressionRef} className="impression-observer">
         {this.props.children}
       </div>
     );

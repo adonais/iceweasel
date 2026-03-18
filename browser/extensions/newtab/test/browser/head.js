@@ -205,19 +205,19 @@ function test_newtab(testInfo, browserURL = "about:newtab") {
     // Add shared helpers to the content process
     SpecialPowers.spawn(browser, [], addContentHelpers);
 
-    // Wait for React to render something
-    await BrowserTestUtils.waitForCondition(
-      () =>
-        SpecialPowers.spawn(
-          browser,
-          [],
-          () => content.document.getElementById("root").children.length
-        ),
-      "Should render activity stream content"
-    );
-
     // Chain together before -> contentTask -> after data passing
     try {
+      // Wait for React to render something
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          SpecialPowers.spawn(
+            browser,
+            [],
+            () => content.document.getElementById("root")?.children.length
+          ),
+        "Should render activity stream content"
+      );
+
       let contentArg = await before({ pushPrefs: scopedPushPrefs, tab });
       let contentResult = await SpecialPowers.spawn(
         browser,
