@@ -2148,51 +2148,89 @@ void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.SetParentTarget(GetParentTarget(), true);
 }
 
+// Editor library types for about:blank compat workaround
+enum class EmptyFrameLibrary {
+  None,
+  CKEditor,
+  GWT,
+  ZE,
+};
+
 // ckeditor 4 uses UA sniffing to wait for an async load event for its editor
 // iframe. This patch makes it work by delaying the sync-about:blank's load
 // event on such frames. See bug 2002481 and:
 // https://github.com/ckeditor/ckeditor4/blob/c7e59ec199298b6b23f4aa7a7668f18572385bac/plugins/wysiwygarea/plugin.js#L43
 //
 // GWT RichTextArea also uses UA sniffing and expects an async `load` event
-// for its editor iframe. See bug
-MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
+// for its editor iframe. See bug 2020927,
+// https://github.com/gwtproject/gwt/issues/10292 , and
+// https://github.com/gwtproject/gwt/blob/4b6a646faf0e9ce579658d78b6acf9fe5c840379/user/src/com/google/gwt/user/client/ui/impl/RichTextAreaImplMozilla.java#L44
+// .
+//
+// Old version of ZE appears to have a similar problem. Newer versions don't,
+// because they have `srcdoc`. See bug 2020668.
+MOZ_CAN_RUN_SCRIPT static bool IsDeferredLoadEmptyFrame(Element& aEmbedder) {
   const nsAttrValue* classes = aEmbedder.GetClasses();
   if (!classes) {
     return false;
   }
-  // We're looking for an <iframe> with a cke_wysiwyg_frame or gwt-RichTextArea
-  // class. That's the most likely check to fail so do it first.
-  bool gwt = false;
-  bool ckeditor = classes->Contains(nsGkAtoms::cke_wysiwyg_frame, eCaseMatters);
-  if (!ckeditor) {
-    gwt = classes->Contains(nsGkAtoms::gwt_RichTextArea, eCaseMatters);
+  EmptyFrameLibrary lib = EmptyFrameLibrary::None;
+  if (StaticPrefs::dom_about_blank_ckeditor_hack_enabled() &&
+      classes->Contains(nsGkAtoms::cke_wysiwyg_frame, eCaseMatters)) {
+    lib = EmptyFrameLibrary::CKEditor;
+  } else if (StaticPrefs::dom_about_blank_gwt_hack_enabled() &&
+             classes->Contains(nsGkAtoms::gwt_RichTextArea, eCaseMatters)) {
+    lib = EmptyFrameLibrary::GWT;
+  } else if (StaticPrefs::dom_about_blank_ze_hack_enabled() &&
+             classes->Contains(nsGkAtoms::ze_area, eCaseMatters)) {
+    lib = EmptyFrameLibrary::ZE;
   }
-  if (!(ckeditor || gwt)) {
-    return false;
-  }
-  MOZ_ASSERT(ckeditor != gwt);
-  if (ckeditor && !StaticPrefs::dom_about_blank_ckeditor_hack_enabled()) {
-    return false;
-  }
-  if (gwt && !StaticPrefs::dom_about_blank_gwt_hack_enabled()) {
+  if (lib == EmptyFrameLibrary::None) {
     return false;
   }
   if (!aEmbedder.IsHTMLElement(nsGkAtoms::iframe)) {
     return false;
   }
+  // We only come here if the initial document is reaching its load event.
+  // That doesn't happen with `srcdoc`, which is an immediate navigation
+  // to a non-about:blank document. Newer versions of ZE don't need this
+  // and don't come here, because they have `srcdoc`.
+  // Note: We can assert on `srcdoc` only after excluding non-iframe
+  // element type above!
+  MOZ_ASSERT(!aEmbedder.HasAttr(nsGkAtoms::srcdoc));
   const auto* src = aEmbedder.GetParsedAttr(nsGkAtoms::src);
-  // Require empty src for CKEditor 4 and no src for GWT.
-  if (ckeditor && (!src || !src->IsEmptyString())) {
-    return false;
+  // Require empty src for CKEditor 4 and no src for GWT and ZE.
+  switch (lib) {
+    case EmptyFrameLibrary::CKEditor:
+      if (!src || !src->IsEmptyString()) {
+        return false;
+      }
+      break;
+    default:
+      if (src) {
+        return false;
+      }
+      break;
   }
-  if (gwt && src) {
-    return false;
+  const char* blocklistPref = "";
+  switch (lib) {
+    case EmptyFrameLibrary::CKEditor:
+      blocklistPref = "dom.about-blank-ckeditor-hack.disabled-domains";
+      break;
+    case EmptyFrameLibrary::GWT:
+      blocklistPref = "dom.about-blank-gwt-hack.disabled-domains";
+      break;
+    case EmptyFrameLibrary::ZE:
+      blocklistPref = "dom.about-blank-ze-hack.disabled-domains";
+      break;
+    case EmptyFrameLibrary::None:
+      MOZ_ASSERT_UNREACHABLE();
+      return false;
   }
+
   // Deal with the blocklist here before properties on the global
   // (which is potentially observable via JS getters).
-  if (aEmbedder.NodePrincipal()->IsURIInPrefList(
-          ckeditor ? "dom.about-blank-ckeditor-hack.disabled-domains"
-                   : "dom.about-blank-gwt-hack.disabled-domains")) {
+  if (aEmbedder.NodePrincipal()->IsURIInPrefList(blocklistPref)) {
     return false;
   }
   // Finally, we also look for an identifying property on the embedder's global
@@ -2205,7 +2243,7 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
   if (!jsapi.Init(global)) {
     return false;
   }
-  if (gwt) {
+  if (lib == EmptyFrameLibrary::GWT) {
     JS::Rooted<JSObject*> globalObj(jsapi.cx(), global->GetGlobalJSObject());
     JS::Rooted<JS::Value> val(jsapi.cx());
     if (!JS_GetProperty(jsapi.cx(), globalObj, "__gwt_stylesLoaded", &val)) {
@@ -2226,28 +2264,38 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
     JS_ClearPendingException(jsapi.cx());
     return false;
   }
-  MOZ_ASSERT(ckeditor);
-  const auto* version = [&]() -> const CkEditorVersion* {
-    if (property.mCKEDITOR.WasPassed()) {
-      return &property.mCKEDITOR.Value();
-    }
-    if (property.mJEDITOR.WasPassed()) {
-      return &property.mJEDITOR.Value();
-    }
-    return nullptr;
-  }();
-  if (!version) {
-    return false;
+  switch (lib) {
+    case EmptyFrameLibrary::GWT:
+    case EmptyFrameLibrary::None:
+      MOZ_ASSERT_UNREACHABLE();
+      return false;
+    case EmptyFrameLibrary::ZE:
+      return property.mZE_Init.WasPassed();
+    case EmptyFrameLibrary::CKEditor:
+      const auto* version = [&]() -> const CkEditorVersion* {
+        if (property.mCKEDITOR.WasPassed()) {
+          return &property.mCKEDITOR.Value();
+        }
+        if (property.mJEDITOR.WasPassed()) {
+          return &property.mJEDITOR.Value();
+        }
+        return nullptr;
+      }();
+      if (!version) {
+        return false;
+      }
+      // The CKEditor source code has "%VERSION%", which may be left in place
+      // in deployment if a proper build step is missing.
+      if (!(StringBeginsWith(version->mVersion, u"4."_ns) ||
+            version->mVersion.EqualsLiteral(u"%VERSION%"))) {
+        return false;
+      }
+      aEmbedder.OwnerDoc()->WarnOnceAbout(
+          DeprecatedOperations::eCKEditor4CompatHack);
+      return true;
   }
-  // The CKEditor source code has "%VERSION%", which may be left in place
-  // in deployment if a proper build step is missing.
-  if (!(StringBeginsWith(version->mVersion, u"4."_ns) ||
-        version->mVersion.EqualsLiteral(u"%VERSION%"))) {
-    return false;
-  }
-  aEmbedder.OwnerDoc()->WarnOnceAbout(
-      DeprecatedOperations::eCKEditor4CompatHack);
-  return true;
+  MOZ_ASSERT_UNREACHABLE("Every switch case should have returned.");
+  return false;
 }
 
 MOZ_CAN_RUN_SCRIPT static bool NeedsAsyncLoadEventForInitialDocument(
@@ -2255,7 +2303,7 @@ MOZ_CAN_RUN_SCRIPT static bool NeedsAsyncLoadEventForInitialDocument(
   if (auto* doc = aInner.GetExtantDoc(); !doc || !doc->IsInitialDocument()) {
     return false;
   }
-  return IsCkEditor4OrGwtEmptyFrame(aEmbedder);
+  return IsDeferredLoadEmptyFrame(aEmbedder);
 }
 
 void nsGlobalWindowInner::FireFrameLoadEvent() {

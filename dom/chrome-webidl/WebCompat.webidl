@@ -11,8 +11,11 @@ dictionary CkEditorVersion {
   required DOMString version;
 };
 
+dictionary ZE_Init {};
+
 [GenerateInit]
 dictionary CkEditorProperty {
   CkEditorVersion CKEDITOR;
   CkEditorVersion JEDITOR;
+  ZE_Init ZE_Init;
 };

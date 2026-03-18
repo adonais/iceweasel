@@ -1381,6 +1381,7 @@ STATIC_ATOMS = [
     Atom("xul", "xul"),
     Atom("yes", "yes"),
     Atom("z_index", "z-index"),
+    Atom("ze_area", "ze_area"),
     Atom("zeroDigit", "zero-digit"),
     Atom("zlevel", "zlevel"),
     Atom("percentage", "%"),
