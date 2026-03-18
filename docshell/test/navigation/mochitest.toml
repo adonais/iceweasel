@@ -171,12 +171,6 @@ skip-if = [
   "verify-standalone",
 ]
 
-["test_bug1706090.html"]
-support-files = ["file_bug1706090.html"]
-skip-if = [
-  "sessionHistoryInParent", # The test is currently for the old bfcache implementation
-]
-
 ["test_bug1745638.html"]
 support-files = ["file_bug1745638.html"]
 
