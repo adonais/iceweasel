@@ -71,23 +71,6 @@ preferences:
     data_sensitivity:
       - technical
 
-  prefs_file_that_failed_to_parse:
-    type: text
-    description: >
-      The contents of the prefs file that failed to parse.
-    send_in_pings:
-      - prefs-file-invalid
-    lifetime: application
-    bugs:
-      - https://bugzil.la/2004956
-    data_reviews:
-      - https://bugzil.la/2004956
-    notification_emails:
-      - gstoll@mozilla.com
-    expires: 151
-    data_sensitivity:
-      - stored_content
-
   user_prefs:
     type: object
     lifetime: application

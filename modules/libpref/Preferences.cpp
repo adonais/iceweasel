@@ -25,7 +25,6 @@
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/glean/LibprefMetrics.h"
-#include "mozilla/glean/GleanPings.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/IdleTaskRunner.h"
 #include "mozilla/HashTable.h"
@@ -2136,30 +2135,12 @@ class Parser {
   }
 };
 
-#ifdef NIGHTLY_BUILD
-static nsCString RedactUUIDs(const nsCString& aData) {
-  static const std::regex sUUIDPattern(
-      "[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-"
-      "[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}");
-  std::string result = std::regex_replace(
-      aData.get(), sUUIDPattern, "00000000-0000-0000-0000-000000000000");
-  return nsCString(result.c_str());
-}
-#endif
-
 static nsresult parsePrefFileData(PrefValueKind aKind, const char* aPath,
                                   const nsCString& aData,
                                   PrefsParserPrefFn aPrefFn,
                                   PrefsParserErrorFn aErrorFn) {
   if (!prefs_parser_parse(aPath, aKind, aData.get(), aData.Length(), aPrefFn,
                           aErrorFn)) {
-#ifdef NIGHTLY_BUILD
-    // Added for bug 2004956. We are seeing prefs files fail to parse
-    // much more often than expected, and we want to see a few examples
-    // of failing ones. It's fine to only get one of these per client.
-    glean::preferences::prefs_file_that_failed_to_parse.Set(RedactUUIDs(aData));
-    glean_pings::PrefsFileInvalid.Submit();
-#endif
     return NS_ERROR_FILE_CORRUPTED;
   }
   return NS_OK;

@@ -3,8 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
-#include "mozilla/glean/LibprefMetrics.h"
-#include "mozilla/glean/fog_ffi_generated.h"
 #include "Preferences.h"
 
 using namespace mozilla;
@@ -598,56 +596,4 @@ user_pref("int.ok", 1);
   );
 
   // clang-format on
-}
-
-TEST(PrefsParser, PrefsFileThatFailedToParse)
-{
-  nsCString empty;
-  ASSERT_EQ(NS_OK, mozilla::glean::impl::fog_test_reset(&empty, &empty));
-
-  // Valid prefs should not set the metric.
-  nsCString unusedErrorMsg;
-  TestParseError(PrefValueKind::User, "user_pref(\"some.pref\", true);",
-                 unusedErrorMsg);
-  ASSERT_TRUE(mozilla::glean::preferences::prefs_file_that_failed_to_parse
-                  .TestGetValue()
-                  .unwrap()
-                  .isNothing());
-
-  // Invalid prefs should set the metric to the file contents.
-  const char* invalidText = "bad syntax";
-  TestParseError(PrefValueKind::User, invalidText, unusedErrorMsg);
-  auto value = mozilla::glean::preferences::prefs_file_that_failed_to_parse
-                   .TestGetValue()
-                   .unwrap();
-#ifdef NIGHTLY_BUILD
-  ASSERT_TRUE(value.isSome());
-  ASSERT_STREQ(invalidText, value.value().get());
-#else
-  ASSERT_TRUE(value.isNothing());
-#endif
-}
-
-TEST(PrefsParser, PrefsFileThatFailedToParseRedactsUUIDs)
-{
-  nsCString empty;
-  ASSERT_EQ(NS_OK, mozilla::glean::impl::fog_test_reset(&empty, &empty));
-
-  nsCString unusedErrorMsg;
-  const char* textWithUUID =
-      "user_pref(\"some.pref\", "
-      "\"01234567-89ab-cdef-ABCD-EF0123456789 and more\")bad";
-  TestParseError(PrefValueKind::User, textWithUUID, unusedErrorMsg);
-  auto value = mozilla::glean::preferences::prefs_file_that_failed_to_parse
-                   .TestGetValue()
-                   .unwrap();
-#ifdef NIGHTLY_BUILD
-  ASSERT_TRUE(value.isSome());
-  const char* expected =
-      "user_pref(\"some.pref\", "
-      "\"00000000-0000-0000-0000-000000000000 and more\")bad";
-  ASSERT_STREQ(expected, value.value().get());
-#else
-  ASSERT_TRUE(value.isNothing());
-#endif
 }

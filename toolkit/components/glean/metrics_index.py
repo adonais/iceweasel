@@ -209,7 +209,6 @@ metrics_yamls = sorted(
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 gecko_pings = [
     "dom/pings.yaml",
-    "modules/libpref/pings.yaml",
     "netwerk/pings.yaml",
     "toolkit/components/antitracking/bouncetrackingprotection/pings.yaml",
     "toolkit/components/backgroundhangmonitor/pings.yaml",
