@@ -297,6 +297,11 @@ add_task(async function test_restore_uses_matching_initial_folder() {
     let selectedFilePromise = BrowserTestUtils.waitForEvent(
       settings,
       "BackupUI:SelectNewFilepickerPath"
+    ).then(() =>
+      BrowserTestUtils.waitForEvent(
+        restoreFromBackup,
+        "BackupUI:StateWasUpdated"
+      )
     );
 
     restoreFromBackup.backupServiceState.backupFileToRestore =
@@ -306,6 +311,8 @@ add_task(async function test_restore_uses_matching_initial_folder() {
     await filePickerShownPromise;
     await selectedFilePromise;
   });
+
+  BackupService.get().resetLastBackupInternalState();
 });
 
 /**
