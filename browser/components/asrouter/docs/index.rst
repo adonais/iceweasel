@@ -89,6 +89,7 @@ Current templates include\:
   spotlight
   private-browsing
   multi-message
+  menu-message
 
 Detailed Docs
 -------------
