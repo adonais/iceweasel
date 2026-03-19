@@ -65,6 +65,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
+  Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   StartupOSIntegration:
     "moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs",
   TelemetryReportingPolicy:
@@ -1662,16 +1663,34 @@ BrowserGlue.prototype = {
     gBrowser.selectedTab = tab;
   },
 
-  _showSetToDefaultSpotlight(message, browser) {
-    const config = {
-      type: "SHOW_SPOTLIGHT",
-      data: message,
-    };
-
+  async _showSetToDefaultSpotlight(message, browser) {
+    let shown;
     try {
-      lazy.SpecialMessageActions.handleAction(config, browser);
+      shown = await lazy.Spotlight.showSpotlightDialog(browser, message);
     } catch (e) {
       console.error("Couldn't render spotlight", message, e);
+      return;
+    }
+
+    if (!shown) {
+      return;
+    }
+
+    Services.prefs.setCharPref(
+      "browser.shell.mostRecentDefaultPromptSeen",
+      Math.floor(Date.now() / 1000).toString()
+    );
+
+    try {
+      const win = browser.ownerGlobal;
+      const shellService = win.getShellService();
+      const isNowDefault = shellService.isDefaultBrowser(false, false);
+      const resultEnum =
+        (isNowDefault ? 0 : 1) * 2 +
+        (shellService.shouldCheckDefaultBrowser ? 1 : 0);
+      Glean.browser.setDefaultResult.accumulateSingleSample(resultEnum);
+    } catch (ex) {
+      /* Don't break if telemetry is acting up. */
     }
   },
 
@@ -1741,8 +1760,20 @@ BrowserGlue.prototype = {
         setToDefaultFeature.getAllVariables();
 
       if (showSpotlightPrompt && message) {
-        // Show experimental message
-        this._showSetToDefaultSpotlight(message, win.gBrowser.selectedBrowser);
+        // Show experimental spotlight in place of the default browser prompt.
+        //
+        // Note: Spotlight.showSpotlightDialog guards on gDialogBox.isOpen and
+        // returns false without showing if another dialog is already open.
+        // This is safe here because DefaultBrowserCheck.prompt() (the control
+        // branch below) routes through gDialogBox via MODAL_TYPE_INTERNAL_WINDOW,
+        // so gDialogBox.isOpen prevents a spotlight from stacking on top of an
+        // already-showing prompt. In the treatment arm we never call the old
+        // prompt, so gDialogBox.isOpen will be false at this point and the
+        // spotlight will always show.
+        await this._showSetToDefaultSpotlight(
+          message,
+          win.gBrowser.selectedBrowser
+        );
         return;
       }
 
