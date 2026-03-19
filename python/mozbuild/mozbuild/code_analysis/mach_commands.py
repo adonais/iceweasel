@@ -363,8 +363,9 @@ def check(
         command_context.log_manager, monitor, footer
     ) as output_manager:
         rc = 0
-        arg_max = 512  # The actual shell limit is way above
-        for batch in batched(source, arg_max):
+        nproc = cpu_count()
+        batch_size = max((len(source) + nproc - 1) // nproc, 1)
+        for batch in batched(source, batch_size):
             args = _get_clang_tidy_command(
                 command_context,
                 clang_paths,
