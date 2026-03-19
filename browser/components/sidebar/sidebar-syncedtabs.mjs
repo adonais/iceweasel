@@ -108,6 +108,13 @@ class SyncedTabsInSidebar extends SidebarPage {
     this.searchTextbox?.focus();
   }
 
+  handleNavigateToLink(e) {
+    navigateToLink(e);
+    // TO DO: update the below to handle multiple links opened at once. Bug 2024639
+    Glean.sidebar.link.synced_tabs.add(1);
+    this.treeView.clearSelection();
+  }
+
   onSecondaryAction(e) {
     const { url, fxaDeviceId, secondaryActionClass } = e.originalTarget;
     this.requestOrRemoveTabToClose(url, fxaDeviceId, secondaryActionClass);
@@ -191,9 +198,9 @@ class SyncedTabsInSidebar extends SidebarPage {
         .multiSelect=${false}
         .updatesPaused=${false}
         .searchQuery=${this.controller.searchQuery}
-        @fxview-tab-list-primary-action=${navigateToLink}
+        @fxview-tab-list-primary-action=${this.handleNavigateToLink}
         @fxview-tab-list-secondary-action=${this.onSecondaryAction}
-        @fxview-tab-list-middleclick-action=${navigateToLink}
+        @fxview-tab-list-middleclick-action=${this.handleNavigateToLink}
       ></sidebar-tab-list>
     </moz-card>`;
   }

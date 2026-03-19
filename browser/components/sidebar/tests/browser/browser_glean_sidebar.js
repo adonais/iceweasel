@@ -12,6 +12,9 @@ const initialTabDirection = Services.prefs.getBoolPref(VERTICAL_TABS_PREF)
   : "horizontal";
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  SyncedTabs: "resource://services-sync/SyncedTabs.sys.mjs",
+  SyncedTabsErrorHandler:
+    "resource:///modules/firefox-view-synced-tabs-error-handler.sys.mjs",
   TabsSetupFlowManager:
     "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
@@ -832,3 +835,107 @@ add_task(async function test_pinned_tabs_pin_from_context_menu() {
 });
 
 // TODO: Bug 1971584 - Add test coverage for pinning and unpinning a tab from the vertical grid
+
+add_task(async function test_history_link_glean_probe() {
+  Services.fog.testResetFOG();
+  const { URLs } = await populateHistory();
+  const { component, contentWindow } = await showHistorySidebar();
+  const { lists } = component;
+
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => !!lists.length
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    lists[0].shadowRoot,
+    { subtree: true, childList: true },
+    () => lists[0].rowEls.length
+  );
+
+  const rows = lists[0].rowEls;
+  const browser = gBrowser.selectedBrowser;
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, URLs[0]);
+
+  AccessibilityUtils.setEnv({ focusableRule: false });
+  EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow);
+  AccessibilityUtils.resetEnv();
+  await loaded;
+
+  Assert.equal(
+    Glean.sidebar.link.history.testGetValue(),
+    1,
+    "One history link click was recorded."
+  );
+
+  await PlacesUtils.history.clear();
+  SidebarController.hide();
+  cleanUpExtraTabs();
+});
+
+add_task(async function test_synced_tabs_link_glean_probe() {
+  Services.fog.testResetFOG();
+
+  const syncedTabClients = [
+    {
+      id: 1,
+      type: "client",
+      name: "My desktop",
+      clientType: "desktop",
+      lastModified: 1655730486760,
+      tabs: [
+        {
+          device: "My desktop",
+          deviceType: "desktop",
+          type: "tab",
+          title: "Test page",
+          url: "http://mochi.test:8888/browser/",
+          icon: "",
+          lastUsed: 1655391592,
+          client: 1,
+          fxaDeviceId: "1",
+          availableCommands: {},
+          secondaryL10nArgs: '{"deviceName": "My Desktop"}',
+        },
+      ],
+    },
+  ];
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(lazy.SyncedTabsErrorHandler, "getErrorType").returns(null);
+  sandbox.stub(lazy.TabsSetupFlowManager, "uiStateIndex").value(4);
+  sandbox.stub(lazy.SyncedTabs, "getTabClients").resolves(syncedTabClients);
+  sandbox
+    .stub(lazy.SyncedTabs, "createRecentTabsList")
+    .resolves(syncedTabClients.flatMap(client => client.tabs));
+
+  await SidebarController.show("viewTabsSidebar");
+  const { contentDocument, contentWindow } = SidebarController.browser;
+  const component = contentDocument.querySelector("sidebar-syncedtabs");
+
+  const rows = await TestUtils.waitForCondition(() => {
+    const tabList = component.cards?.[0]?.querySelector("sidebar-tab-list");
+    return tabList?.rowEls?.length && tabList.rowEls;
+  }, "Synced tab rows are shown.");
+
+  const loaded = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    syncedTabClients[0].tabs[0].url,
+    true
+  );
+
+  AccessibilityUtils.setEnv({ focusableRule: false });
+  EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow);
+  AccessibilityUtils.resetEnv();
+  await loaded;
+
+  Assert.equal(
+    Glean.sidebar.link.synced_tabs.testGetValue(),
+    1,
+    "One synced tabs link click was recorded."
+  );
+
+  SidebarController.hide();
+  sandbox.restore();
+  cleanUpExtraTabs();
+});

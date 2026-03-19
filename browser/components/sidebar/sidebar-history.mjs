@@ -171,13 +171,19 @@ export class SidebarHistory extends SidebarPage {
     this.searchTextbox?.focus();
   }
 
-  onPrimaryAction(e) {
+  handleNavigateToLink(e) {
     if (this.isMultipleRowsSelected) {
       // Avoid opening multiple links at once.
       return;
     }
     navigateToLink(e, e.originalTarget.url, { forceNewTab: false });
+    // TO DO: update the below to handle multiple links opened at once. Bug 2024639
+    Glean.sidebar.link.history.add(1);
     this.treeView.clearSelection();
+  }
+
+  onPrimaryAction(e) {
+    this.handleNavigateToLink(e);
   }
 
   onSecondaryAction(e) {
@@ -186,12 +192,7 @@ export class SidebarHistory extends SidebarPage {
   }
 
   onMiddleClickAction(e) {
-    if (this.isMultipleRowsSelected) {
-      // Avoid opening multiple links at once.
-      return;
-    }
-    navigateToLink(e, e.originalTarget.url, { forceNewTab: true });
-    this.treeView.clearSelection();
+    this.handleNavigateToLink(e);
   }
 
   /**
