@@ -82,10 +82,6 @@ function scrubMailtoHandlers(handlerInfo) {
 ("use strict");
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   // Create our dummy handlers
   let handler1 = Cc["@mozilla.org/uriloader/web-handler-app;1"].createInstance(
     Ci.nsIWebHandlerApp
@@ -149,7 +145,7 @@ add_setup(async function () {
 add_task(async function dialogShowsCorrectContent() {
   let win = gBrowser.selectedBrowser.contentWindow;
 
-  let container = win.document.getElementById("applicationsHandlersView");
+  let container = win.document.getElementById("handlersView");
   await appHandlerInitialized;
 
   // First, find the PDF item.
