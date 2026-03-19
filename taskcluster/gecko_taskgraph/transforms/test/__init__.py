@@ -25,7 +25,7 @@ from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from voluptuous import Any, Exclusive, Optional, Required
 
-from gecko_taskgraph.optimize.schema import OptimizationSchema
+from gecko_taskgraph.optimize.schema import LegacyOptimizationSchema
 from gecko_taskgraph.transforms.job import job_description_schema
 from gecko_taskgraph.transforms.job.run_task import run_task_schema
 from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
@@ -261,7 +261,7 @@ test_description_schema = LegacySchema({
     },
     # Optimization to perform on this task during the optimization phase.
     # Optimizations are defined in taskcluster/gecko_taskgraph/optimize.py.
-    Exclusive("optimization", "optimization"): OptimizationSchema,
+    Exclusive("optimization", "optimization"): LegacyOptimizationSchema,
     # The SCHEDULES component for this task; this defaults to the suite
     # (not including the flavor) but can be overridden here.
     Exclusive("schedules-component", "optimization"): Any(

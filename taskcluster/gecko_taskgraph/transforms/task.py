@@ -38,7 +38,7 @@ from taskgraph.util.treeherder import split_symbol
 from voluptuous import All, Any, Extra, Match, NotIn, Optional, Required
 
 from gecko_taskgraph import GECKO
-from gecko_taskgraph.optimize.schema import OptimizationSchema
+from gecko_taskgraph.optimize.schema import LegacyOptimizationSchema
 from gecko_taskgraph.transforms.job.common import get_expiration
 from gecko_taskgraph.util import docker as dockerutil
 from gecko_taskgraph.util.attributes import TRUNK_PROJECTS, is_try, release_level
@@ -198,7 +198,7 @@ task_description_schema = LegacySchema({
     Required("always-target"): bool,
     # Optimization to perform on this task during the optimization phase.
     # Optimizations are defined in taskcluster/gecko_taskgraph/optimize.py.
-    Required("optimization"): OptimizationSchema,
+    Required("optimization"): LegacyOptimizationSchema,
     # the provisioner-id/worker-type for the task.  The following parameters will
     # be substituted in this string:
     #  {level} -- the scm level of this push
