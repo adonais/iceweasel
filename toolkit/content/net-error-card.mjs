@@ -604,6 +604,7 @@ export class NetErrorCard extends MozLitElement {
       whyDidThisHappenL10nArgs: customNetError.whyDidThisHappenL10nArgs,
       whatCanYouDoL10nId: customNetError.whatCanYouDoL10nId,
       whatCanYouDoL10nArgs: customNetError.whatCanYouDoL10nArgs,
+      whatCanYouDoItems: customNetError.whatCanYouDoItems,
       learnMoreL10nId: customNetError.learnMoreL10nId,
       learnMoreSupportPage: customNetError.learnMoreSupportPage,
       buttons: {
@@ -661,6 +662,7 @@ export class NetErrorCard extends MozLitElement {
       whyDidThisHappenL10nArgs,
       whatCanYouDoL10nId,
       whatCanYouDoL10nArgs,
+      whatCanYouDoItems,
       learnMoreL10nId,
       learnMoreSupportPage,
       buttons = {},
@@ -680,6 +682,25 @@ export class NetErrorCard extends MozLitElement {
       learnMoreHref = baseURL + learnMoreSupportPage;
     }
 
+    let whatCanYouDoSection = null;
+    if (whatCanYouDoItems?.length) {
+      whatCanYouDoSection = html`<div>
+        <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>
+        <ul class="what-can-you-do-list">
+          ${whatCanYouDoItems.map(id => html`<li data-l10n-id=${id}></li>`)}
+        </ul>
+      </div>`;
+    } else if (whatCanYouDoL10nId) {
+      whatCanYouDoSection = html`<div>
+        <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>
+        <p
+          id="whatCanYouDo"
+          data-l10n-id=${whatCanYouDoL10nId}
+          data-l10n-args=${JSON.stringify(whatCanYouDoL10nArgs)}
+        ></p>
+      </div>`;
+    }
+
     const content = html`
       ${whyDangerousL10nId
         ? html`<div>
@@ -690,16 +711,7 @@ export class NetErrorCard extends MozLitElement {
             ></p>
           </div>`
         : null}
-      ${whatCanYouDoL10nId
-        ? html`<div>
-            <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>
-            <p
-              id="whatCanYouDo"
-              data-l10n-id=${whatCanYouDoL10nId}
-              data-l10n-args=${JSON.stringify(whatCanYouDoL10nArgs)}
-            ></p>
-          </div>`
-        : null}
+      ${whatCanYouDoSection}
       ${whyDidThisHappenL10nId
         ? html`<div>
             <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>

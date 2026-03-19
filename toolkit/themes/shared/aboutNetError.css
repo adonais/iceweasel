@@ -113,6 +113,20 @@ button:disabled {
   }
 }
 
+.what-can-you-do-list {
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+
+  & > li {
+    padding-inline-start: 1.2em;
+    text-indent: -1.2em;
+  }
+}
+
 .custom-net-error-card h1 + p:last-of-type {
   margin-block-end: var(--space-xxlarge);
 }

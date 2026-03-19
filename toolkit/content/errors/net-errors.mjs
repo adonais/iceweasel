@@ -275,9 +275,9 @@ export const NET_ERRORS = [
     id: "netTimeout",
     errorCode: "netTimeout",
     category: "net",
-    bodyTitleL10nId: "problem-with-this-site-title",
+    bodyTitleL10nId: "netTimeout-title",
     introContent: {
-      dataL10nId: "fp-neterror-offline-intro",
+      dataL10nId: "fp-neterror-net-timeout-intro",
       dataL10nArgs: { hostname: null },
     },
     descriptionParts: DESCRIPTION_PARTS_MAP.connectionFailureDescription,
@@ -286,8 +286,12 @@ export const NET_ERRORS = [
       showGoBack: false,
     },
     customNetError: {
-      titleL10nId: "problem-with-this-site-title",
-      whatCanYouDoL10nId: "fp-neterror-offline-what-can-you-do-body",
+      titleL10nId: "netTimeout-title",
+      whatCanYouDoItems: [
+        "neterror-load-error-try-again",
+        "neterror-load-error-connection",
+        "neterror-load-error-firewall",
+      ],
     },
     hasNoUserFix: false,
     image: NET_ERROR_ILLUSTRATIONS.noConnection,

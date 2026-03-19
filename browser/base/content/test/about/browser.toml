@@ -94,6 +94,11 @@ support-files = [
   "server_error.sjs",
 ]
 
+["browser_aboutNetError_timeout.js"]
+skip-if = [
+  "socketprocess_networking",
+]
+
 ["browser_aboutNetError_trr.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1831977
