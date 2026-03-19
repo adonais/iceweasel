@@ -10,6 +10,7 @@ import { WeatherForecast } from "./WeatherForecast/WeatherForecast";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 import { WidgetsFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WidgetsFeatureHighlight";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
@@ -17,16 +18,6 @@ const CONTAINER_ACTION_TYPES = {
   FEEDBACK: "feedback",
 };
 
-const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
-const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
-const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
-const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED =
-  "widgets.system.weatherForecast.enabled";
-const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
-const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
-const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
-const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL =
   "https://connect.mozilla.org/t5/discussions/feedback-welcome-for-new-tab-widgets-now-available-via-firefox/td-p/108354";
 
@@ -68,8 +59,8 @@ function Widgets() {
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
   const timerData = useSelector(state => state.TimerWidget);
-  const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
-  const widgetsMayBeMaximized = prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
+  const isMaximized = prefs[PREFS.WIDGETS_MAXIMIZED];
+  const widgetsMayBeMaximized = prefs[PREFS.WIDGETS_SYSTEM_MAXIMIZED];
   const dispatch = useDispatch();
 
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
@@ -84,24 +75,24 @@ function Widgets() {
     prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled =
     prefs.trainhopConfig?.widgets?.feedbackEnabled ||
-    prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
+    prefs[PREFS.WIDGETS_FEEDBACK_ENABLED];
   const hideAllToastEnabled =
     prefs.trainhopConfig?.widgets?.hideAllToastEnabled ||
-    prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
+    prefs[PREFS.WIDGETS_HIDE_ALL_TOAST_ENABLED];
   const feedbackUrl =
     prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
 
   const listsEnabled =
     (nimbusListsTrainhopEnabled ||
       nimbusListsEnabled ||
-      prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) &&
-    prefs[PREF_WIDGETS_LISTS_ENABLED];
+      prefs[PREFS.WIDGETS_SYSTEM_LISTS_ENABLED]) &&
+    prefs[PREFS.WIDGETS_LISTS_ENABLED];
 
   const timerEnabled =
     (nimbusTimerTrainhopEnabled ||
       nimbusTimerEnabled ||
-      prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) &&
-    prefs[PREF_WIDGETS_TIMER_ENABLED];
+      prefs[PREFS.WIDGETS_SYSTEM_TIMER_ENABLED]) &&
+    prefs[PREFS.WIDGETS_TIMER_ENABLED];
 
   // This weather forecast widget will only show when the following are true:
   // - The weather view is set to "detailed" (can be checked with the weather.display pref)
@@ -111,13 +102,13 @@ function Widgets() {
   // then the mini weather widget will display with the "detailed" view
   const weatherForecastSystemEnabled =
     nimbusWeatherForecastTrainhopEnabled ||
-    prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
+    prefs[PREFS.WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
 
-  const showDetailedView = prefs["weather.display"] === "detailed";
+  const showDetailedView = prefs[PREFS.WEATHER_DISPLAY] === "detailed";
 
   // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
-  const { showWeather } = prefs;
-  const systemShowWeather = prefs["system.showWeather"];
+  const showWeather = prefs[PREFS.SHOW_WEATHER];
+  const systemShowWeather = prefs[PREFS.SYSTEM_SHOW_WEATHER];
   const weatherExperimentEnabled = prefs.trainhopConfig?.weather?.enabled;
   const isWeatherEnabled =
     showWeather && (systemShowWeather || weatherExperimentEnabled);
@@ -152,11 +143,11 @@ function Widgets() {
   // Bug 2013978 - Replace hardcoded widget list with programmatic registry
   function hideAllWidgets() {
     batch(() => {
-      dispatch(ac.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
-      dispatch(ac.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
+      dispatch(ac.SetPref(PREFS.WIDGETS_LISTS_ENABLED, false));
+      dispatch(ac.SetPref(PREFS.WIDGETS_TIMER_ENABLED, false));
       // If weather forecast widget is visible, turn off the weather
       if (weatherForecastEnabled) {
-        dispatch(ac.SetPref("showWeather", false));
+        dispatch(ac.SetPref(PREFS.SHOW_WEATHER, false));
       }
 
       const telemetryData = {
@@ -247,7 +238,7 @@ function Widgets() {
       widgetsMayBeMaximized && !newMaximizedState ? "small" : "medium";
 
     batch(() => {
-      dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, newMaximizedState));
+      dispatch(ac.SetPref(PREFS.WIDGETS_MAXIMIZED, newMaximizedState));
 
       const telemetryData = {
         action_type: CONTAINER_ACTION_TYPES.CHANGE_SIZE_ALL,
@@ -326,7 +317,7 @@ function Widgets() {
           </div>
 
           {(nimbusMaximizedTrainhopEnabled ||
-            prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED]) && (
+            prefs[PREFS.WIDGETS_SYSTEM_MAXIMIZED]) && (
             <moz-button
               id="toggle-widgets-size-button"
               type="icon ghost"

@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 
 function LocationSearch({ outerClassName }) {
   // should be the location object from suggestedLocations
@@ -33,7 +34,7 @@ function LocationSearch({ outerClassName }) {
           },
         })
       );
-      dispatch(ac.SetPref("weather.query", selectedLocation.key));
+      dispatch(ac.SetPref(PREFS.WEATHER_QUERY, selectedLocation.key));
       dispatch(
         ac.BroadcastToContent({
           type: at.WEATHER_SEARCH_ACTIVE,
