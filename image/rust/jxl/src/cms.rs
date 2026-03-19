@@ -8,11 +8,25 @@ use jxl::api::{JxlCms, JxlCmsTransformer, JxlColorEncoding, JxlColorProfile};
 use jxl::error::{Error, Result};
 use qcms::{DataType, Intent, Profile, Transform};
 
+pub enum RenderingIntent {
+    Intent(qcms::Intent),
+    FromImageProfile,
+}
+
+fn get_rendering_intent(rendering_intent: &RenderingIntent, profile: &Profile) -> Intent {
+    match rendering_intent {
+        RenderingIntent::Intent(intent) => *intent,
+        RenderingIntent::FromImageProfile => profile.rendering_intent(),
+    }
+}
+
 // Initialized once, then shared across all decoder instances.
 static SRGB_PROFILE: LazyLock<Box<Profile>> = LazyLock::new(Profile::new_sRGB);
 
 // Always converts to sRGB, matching the output profile set in JxlApiDecoder::new.
-pub struct QcmsCms;
+pub struct QcmsCms {
+    pub rendering_intent: RenderingIntent,
+}
 
 fn get_data_type(profile: &JxlColorProfile) -> DataType {
     match profile {
@@ -76,7 +90,7 @@ impl JxlCms for QcmsCms {
                 &SRGB_PROFILE,
                 in_type,
                 out_type,
-                Intent::Perceptual,
+                get_rendering_intent(&self.rendering_intent, &input_profile),
             )
             .ok_or(Error::InvalidIccStream)?;
             transformers.push(Box::new(QcmsTransformer {

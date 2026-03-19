@@ -9,6 +9,7 @@
 
 #include "AnimationParams.h"
 #include "mozilla/CheckedInt.h"
+#include "gfxPlatform.h"
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
 #include "mozilla/Vector.h"
@@ -30,7 +31,8 @@ nsJXLDecoder::nsJXLDecoder(RasterImage* aImage)
 
 nsresult nsJXLDecoder::InitInternal() {
   bool premultiply = !(GetSurfaceFlags() & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
-  mDecoder.reset(jxl_decoder_new(IsMetadataDecode(), premultiply));
+  mDecoder.reset(jxl_decoder_new(IsMetadataDecode(), premultiply,
+                                 gfxPlatform::GetRenderingIntent()));
   return NS_OK;
 }
 

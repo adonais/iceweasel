@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use crate::cms::RenderingIntent;
 use crate::decoder::JxlApiDecoder;
 use std::slice;
 
@@ -33,8 +34,23 @@ pub struct JxlFrameInfo {
 }
 
 #[no_mangle]
-pub extern "C" fn jxl_decoder_new(metadata_only: bool, premultiply: bool) -> *mut JxlApiDecoder {
-    Box::into_raw(Box::new(JxlApiDecoder::new(metadata_only, premultiply)))
+pub extern "C" fn jxl_decoder_new(
+    metadata_only: bool,
+    premultiply: bool,
+    rendering_intent: i32,
+) -> *mut JxlApiDecoder {
+    let rendering_intent = match rendering_intent {
+        0 => RenderingIntent::Intent(qcms::Intent::Perceptual),
+        1 => RenderingIntent::Intent(qcms::Intent::RelativeColorimetric),
+        2 => RenderingIntent::Intent(qcms::Intent::Saturation),
+        3 => RenderingIntent::Intent(qcms::Intent::AbsoluteColorimetric),
+        _ => RenderingIntent::FromImageProfile,
+    };
+    Box::into_raw(Box::new(JxlApiDecoder::new(
+        metadata_only,
+        premultiply,
+        rendering_intent,
+    )))
 }
 
 /// # Safety
