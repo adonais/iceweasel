@@ -16,6 +16,8 @@ import re
 import time
 import typing
 from pathlib import Path
+from typing import Literal, Union
+from typing import Optional as TOptional
 from urllib.parse import quote
 
 import msgspec
@@ -29,6 +31,7 @@ from taskgraph.util.copy import deepcopy
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.schema import (
     LegacySchema,
+    Schema,
     optionally_keyed_by,
     resolve_keyed_by,
     taskref_or_string,
@@ -38,7 +41,10 @@ from taskgraph.util.treeherder import split_symbol
 from voluptuous import All, Any, Extra, Match, NotIn, Optional, Required
 
 from gecko_taskgraph import GECKO
-from gecko_taskgraph.optimize.schema import LegacyOptimizationSchema
+from gecko_taskgraph.optimize.schema import (
+    LegacyOptimizationSchema,
+    OptimizationSchema,
+)
 from gecko_taskgraph.transforms.job.common import get_expiration
 from gecko_taskgraph.util import docker as dockerutil
 from gecko_taskgraph.util.attributes import TRUNK_PROJECTS, is_try, release_level
@@ -215,6 +221,151 @@ task_description_schema = LegacySchema({
     # Override the default 5 retries
     Optional("retries"): int,
 })
+
+
+class TreeherderSchema(Schema, kw_only=True):
+    # either a bare symbol, or "grp(sym)".
+    symbol: TOptional[str] = None
+    # the job kind
+    kind: TOptional[Literal["build", "test", "other"]] = None
+    # tier for this task
+    tier: TOptional[int] = None
+    # task platform, in the form platform/collection, used to set
+    # treeherder.machine.platform and treeherder.collection or
+    # treeherder.labels
+    platform: TOptional[str] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.platform and not re.match(
+            r"^[A-Za-z0-9_-]{1,50}/[A-Za-z0-9_-]{1,50}$", self.platform
+        ):
+            raise ValueError(f"Invalid treeherder platform: {self.platform!r}")
+
+
+class IndexSchema(Schema, kw_only=True):
+    # the name of the product this build produces
+    product: TOptional[str] = None
+    # the names to use for this job in the TaskCluster index
+    job_name: str
+    # Type of gecko v2 index to use
+    type: Literal[
+        "generic",
+        "l10n",
+        "shippable",
+        "shippable-l10n",
+        "android-shippable",
+        "android-shippable-with-multi-l10n",
+        "shippable-with-multi-l10n",
+    ] = "generic"
+    # The rank that the task will receive in the TaskCluster
+    # index.  A newly completed task supercedes the currently
+    # indexed task iff it has a higher rank.  If unspecified,
+    # 'by-tier' behavior will be used.
+    rank: Union[Literal["by-tier", "build_date"], int] = "by-tier"
+
+
+class TaskWorkerSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    implementation: str
+
+
+class TaskDescriptionSchema(Schema, kw_only=True):
+    # the label for this task
+    label: str
+    # description of the task (for metadata)
+    description: str
+    # attributes for this task
+    attributes: TOptional[dict[str, object]] = None
+    # relative path (from config.path) to the file task was defined in
+    task_from: TOptional[str] = None
+    # dependencies of this task, keyed by name; these are passed through
+    # verbatim and subject to the interpretation of the Task's get_dependencies
+    # method.
+    dependencies: TOptional[dict[str, object]] = None
+    # Soft dependencies of this task, as a list of tasks labels
+    soft_dependencies: TOptional[list[str]] = None
+    # Dependencies that must be scheduled in order for this task to run.
+    if_dependencies: TOptional[list[str]] = None
+    requires: TOptional[Literal["all-completed", "all-resolved"]] = None
+    # expiration and deadline times, relative to task creation, with units
+    # (e.g., "14 days").  Defaults are set based on the project.
+    expires_after: TOptional[str] = None
+    deadline_after: TOptional[str] = None
+    expiration_policy: TOptional[str] = None
+    # custom routes for this task; the default treeherder routes will be added
+    # automatically
+    routes: TOptional[list[str]] = None
+    # custom scopes for this task; any scopes required for the worker will be
+    # added automatically. The following parameters will be substituted in each
+    # scope:
+    #  {level} -- the scm level of this push
+    #  {project} -- the project of this push
+    scopes: TOptional[list[str]] = None
+    # Tags
+    tags: TOptional[dict[str, str]] = None
+    # custom "task.extra" content
+    extra: TOptional[dict[str, object]] = None
+    # treeherder-related information; see
+    # https://firefox-ci-tc.services.mozilla.com/schemas/taskcluster-treeherder/v1/task-treeherder-config.json
+    # If not specified, no treeherder extra information or routes will be
+    # added to the task
+    treeherder: TOptional[TreeherderSchema] = None
+    # information for indexing this build so its artifacts can be discovered;
+    # if omitted, the build will not be indexed.
+    index: TOptional[IndexSchema] = None
+    # The `run_on_repo_type` attribute, defaulting to "hg".  This dictates
+    # the types of repositories on which this task should be included in
+    # the target task set. See the attributes documentation for details.
+    run_on_repo_type: TOptional[list[Literal["git", "hg"]]] = None
+    # The `run_on_projects` attribute, defaulting to "all".  This dictates the
+    # projects on which this task should be included in the target task set.
+    # See the attributes documentation for details.
+    run_on_projects: TOptional[  # type: ignore
+        optionally_keyed_by("build-platform", list[str], use_msgspec=True)
+    ] = None
+    # Like `run_on_projects`, `run-on-hg-branches` defaults to "all".
+    run_on_hg_branches: TOptional[  # type: ignore
+        optionally_keyed_by("project", list[str], use_msgspec=True)
+    ] = None
+    # Specifies git branches for which this task should run.
+    run_on_git_branches: TOptional[list[str]] = None
+    # The `shipping_phase` attribute, defaulting to None. This specifies the
+    # release promotion phase that this task belongs to.
+    shipping_phase: TOptional[Literal["build", "promote", "push", "ship"]] = None
+    # The `shipping_product` attribute, defaulting to None. This specifies the
+    # release promotion product that this task belongs to.
+    shipping_product: TOptional[str] = None
+    # The `always-target` attribute will cause the task to be included in the
+    # target_task_graph regardless of filtering. Tasks included in this manner
+    # will be candidates for optimization even when `optimize_target_tasks` is
+    # False, unless the task was also explicitly chosen by the target_tasks
+    # method.
+    always_target: bool = False
+    # Optimization to perform on this task during the optimization phase.
+    # Optimizations are defined in taskcluster/gecko_taskgraph/optimize.py.
+    optimization: OptimizationSchema = None
+    # the provisioner-id/worker-type for the task.  The following parameters will
+    # be substituted in this string:
+    #  {level} -- the scm level of this push
+    worker_type: TOptional[str] = None
+    # Whether the job should use sccache compiler caching.
+    use_sccache: bool = False
+    # information specific to the worker implementation that will run this task
+    worker: TOptional[TaskWorkerSchema] = None
+    # Override the default priority for the project
+    priority: TOptional[str] = None
+    # Override the default 5 retries
+    retries: TOptional[int] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.dependencies:
+            for key in self.dependencies:
+                if key in ("self", "decision"):
+                    raise ValueError(
+                        "Can't use 'self` or 'decision' as depdency names."
+                    )
+
 
 TREEHERDER_ROOT_URL = "https://treeherder.mozilla.org"
 TC_TREEHERDER_SCHEMA_URL = (
