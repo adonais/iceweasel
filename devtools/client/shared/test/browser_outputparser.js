@@ -379,6 +379,23 @@ function testParseCssProperty(doc, parser) {
         ")",
       ]
     ),
+
+    // multi-color color-mix
+    makeColorTest("color", "color-mix(in srgb, red, blue, green)", [
+      "color-mix(in srgb, ",
+      { name: "red", colorFunction: "color-mix" },
+      ", ",
+      { name: "blue", colorFunction: "color-mix" },
+      ", ",
+      { name: "green", colorFunction: "color-mix" },
+      ")",
+    ]),
+
+    makeColorTest("color", "color-mix(in srgb, red)", [
+      "color-mix(in srgb, ",
+      { name: "red", colorFunction: "color-mix" },
+      ")",
+    ]),
   ];
 
   const target = doc.querySelector("div");
