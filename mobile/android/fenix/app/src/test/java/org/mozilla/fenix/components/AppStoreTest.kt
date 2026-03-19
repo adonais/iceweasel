@@ -52,6 +52,7 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGrou
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.onboarding.FenixOnboarding
+import mozilla.components.ui.icons.R as iconsR
 
 @RunWith(AndroidJUnit4::class)
 class AppStoreTest {
@@ -799,7 +800,7 @@ class AppStoreTest {
                 ChecklistItem.Task(
                     type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
                     title = R.string.setup_checklist_task_default_browser,
-                    icon = R.drawable.ic_addons_extensions,
+                    icon = iconsR.drawable.mozac_ic_extension_24,
                     isCompleted = false,
                 ),
             ),
@@ -811,7 +812,7 @@ class AppStoreTest {
                 ChecklistItem.Task(
                     type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                     title = R.string.setup_checklist_task_search_widget_2,
-                    icon = R.drawable.ic_addons_extensions,
+                    icon = iconsR.drawable.mozac_ic_extension_24,
                     isCompleted = false,
                 ),
             ),
@@ -844,7 +845,7 @@ class AppStoreTest {
         val task = ChecklistItem.Task(
             type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
             title = R.string.setup_checklist_task_default_browser,
-            icon = R.drawable.ic_addons_extensions,
+            icon = iconsR.drawable.mozac_ic_extension_24,
             isCompleted = false,
         )
 
@@ -861,7 +862,7 @@ class AppStoreTest {
         val task = ChecklistItem.Task(
             type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
             title = R.string.setup_checklist_task_default_browser,
-            icon = R.drawable.ic_addons_extensions,
+            icon = iconsR.drawable.mozac_ic_extension_24,
             isCompleted = false,
         )
 
@@ -882,13 +883,13 @@ class AppStoreTest {
         val updatedTask = ChecklistItem.Task(
             type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
             title = R.string.setup_checklist_task_default_browser,
-            icon = R.drawable.ic_addons_extensions,
+            icon = iconsR.drawable.mozac_ic_extension_24,
             isCompleted = false,
         )
         val nonUpdatedTask = ChecklistItem.Task(
             type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
             title = R.string.setup_checklist_task_search_widget_2,
-            icon = R.drawable.ic_addons_extensions,
+            icon = iconsR.drawable.mozac_ic_extension_24,
             isCompleted = false,
         )
         val group = ChecklistItem.Group(

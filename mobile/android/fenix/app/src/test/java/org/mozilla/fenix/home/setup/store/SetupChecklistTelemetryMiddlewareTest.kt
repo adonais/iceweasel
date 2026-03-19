@@ -22,6 +22,7 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.robolectric.RobolectricTestRunner
+import mozilla.components.ui.icons.R as iconsR
 
 @RunWith(RobolectricTestRunner::class)
 class SetupChecklistTelemetryMiddlewareTest {
@@ -140,7 +141,7 @@ class SetupChecklistTelemetryMiddlewareTest {
         val task = ChecklistItem.Task(
             type = type,
             title = R.string.setup_checklist_task_default_browser,
-            icon = R.drawable.ic_addons_extensions,
+            icon = iconsR.drawable.mozac_ic_extension_24,
             isCompleted = false,
         )
 
