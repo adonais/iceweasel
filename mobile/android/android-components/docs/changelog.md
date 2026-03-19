@@ -14,6 +14,9 @@ permalink: /changelog/
   * ⚠️ **Breaking change**: Removed `currentDeviceId` and `sessionToken` from `mozilla.components.service.fxa.store.Account`.
   * Added the `FxaAccountManager.connectedAccount` method, which will return an `OAuthAccount` only if the user is in the `Connected` state.
 
+* **support-test**
+    * ⚠️ **Breaking change**: Removed `MainCoroutineRule`. Inject Main Dispatcher if you need to override it in tests. [Bug 1984347](https://bugzilla.mozilla.org/show_bug.cgi?id=1984347)
+  
 # 149.0
 * **lib-state**
   * ⚠️ **Breaking change**: Removed the composableStore API from `ComposeExtensions.kt` in favor of the newer one from `StoreProvider.kt`. [Bug 2017822](https://bugzilla.mozilla.org/show_bug.cgi?id=2017822)
