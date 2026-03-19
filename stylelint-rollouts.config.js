@@ -359,6 +359,7 @@ module.exports = [
       "toolkit/themes/shared/downloads/unknownContentType.css",
       "toolkit/themes/shared/error-pages.css",
       "toolkit/themes/shared/findbar.css",
+      "toolkit/themes/shared/global-shared.css",
       "toolkit/themes/shared/in-content/common-shared.css",
       "toolkit/themes/shared/in-content/info-pages.css",
       "toolkit/themes/shared/menu.css",

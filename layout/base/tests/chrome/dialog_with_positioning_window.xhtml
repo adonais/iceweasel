@@ -20,10 +20,7 @@ var ok = window.arguments[0].ok;
 function runTest() {
   var t = document.getElementById("t");
   var tBottom = t.getBoundingClientRect().bottom;
-  var documentBottom = document.documentElement.getBoundingClientRect().bottom - 16;
-  var diff = Math.abs(documentBottom - tBottom);
-  var withinOnePx = diff <= 1;
-  is(withinOnePx, true,
+  is(tBottom, document.documentElement.getBoundingClientRect().bottom - 16,
      "check fixed-pos element t bottom positioned correctly");
   ok(tBottom < 200, "fixed-pos element t bottom must be sane, less than 200 (got " + tBottom + ")");
   window.close();

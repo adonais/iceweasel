@@ -154,11 +154,6 @@ testRule({
       description:
         "Using a custom token that resolves to a system color, even if non-semantic, is valid.",
     },
-    {
-      code: ".bg { background-color: var(--custom-token, FieldText); }",
-      description:
-        "Using a custom token that falls back to a system color is valid",
-    },
   ],
   reject: [
     {
@@ -271,10 +266,7 @@ testRule({
     },
     {
       code: ".a { color: FieldText; }",
-      message: messages.warning(
-        "FieldText",
-        "a text-color or icon-color design token"
-      ),
+      message: messages.rejected("FieldText", ["text-color", "icon-color"]),
       description: "FieldText should use a text-color design token.",
     },
     {
