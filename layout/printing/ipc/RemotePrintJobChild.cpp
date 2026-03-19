@@ -17,13 +17,11 @@ NS_IMPL_ISUPPORTS(RemotePrintJobChild, nsIWebProgressListener)
 RemotePrintJobChild::RemotePrintJobChild() = default;
 
 nsresult RemotePrintJobChild::InitializePrint(const nsString& aDocumentTitle,
-                                              uint64_t aBrowsingContextId,
                                               const int32_t& aStartPage,
                                               const int32_t& aEndPage) {
   // Print initialization can sometimes display a dialog in the parent, so we
   // need to spin a nested event loop until initialization completes.
-  (void)SendInitializePrint(aDocumentTitle, aBrowsingContextId, aStartPage,
-                            aEndPage);
+  (void)SendInitializePrint(aDocumentTitle, aStartPage, aEndPage);
   mozilla::SpinEventLoopUntil("RemotePrintJobChild::InitializePrint"_ns,
                               [&]() { return mPrintInitialized; });
 

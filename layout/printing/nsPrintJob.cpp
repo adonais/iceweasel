@@ -83,10 +83,6 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsPageSequenceFrame.h"
 #include "nsRange.h"
 
-#ifdef ACCESSIBILITY
-#  include "mozilla/a11y/PdfStructTreeBuilder.h"
-#endif
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -886,31 +882,14 @@ nsresult nsPrintJob::SetupToPrintContent() {
     endPage = std::min(mNumPrintablePages, std::max(endPage, ranges[i + 1]));
   }
 
-  uint64_t browsingContextId = 0;
-  if (auto* bc = mPrintObject->mDocument->GetBrowsingContext()) {
-    browsingContextId = bc->Id();
-  }
-
   nsresult rv = NS_OK;
   // BeginDocument may pass back a FAILURE code
   // i.e. On Windows, if you are printing to a file and hit "Cancel"
   //      to the "File Name" dialog, this comes back as an error
   // Don't start printing when regression test are executed
   if (mIsDoingPrinting) {
-#ifdef ACCESSIBILITY
-    if (!mIsCreatingPrintPreview) {
-      if (nsAccessibilityService* serv = GetAccService()) {
-        serv->NotifyOfPrintDocument(mPrintObject->mDocument);
-        // XXX Out-of-process iframes inside a parent process document won't be
-        // accessible. We need to wait for the iframe accessibility trees to
-        // arrive asynchronously using
-        // a11y::PdfStructTreeBuilder::GetReadyPromise, but there's no clear
-        // place to do that right now when printing in-process.
-      }
-    }
-#endif
-    rv = printData->mPrintDC->BeginDocument(
-        docTitleStr, fileNameStr, browsingContextId, startPage, endPage);
+    rv = printData->mPrintDC->BeginDocument(docTitleStr, fileNameStr, startPage,
+                                            endPage);
   }
 
   if (mIsCreatingPrintPreview) {

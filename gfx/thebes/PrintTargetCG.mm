@@ -164,7 +164,6 @@ already_AddRefed<DrawTarget> PrintTargetCG::GetReferenceDrawTarget() {
 
 nsresult PrintTargetCG::BeginPrinting(const nsAString& aTitle,
                                       const nsAString& aPrintToFileName,
-                                      uint64_t aBrowsingContextId,
                                       int32_t aStartPage, int32_t aEndPage) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 

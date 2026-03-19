@@ -73,8 +73,7 @@ class nsIDeviceContextSpec : public nsISupports {
 
   NS_IMETHOD BeginDocument(const nsAString& aTitle,
                            const nsAString& aPrintToFileName,
-                           uint64_t aBrowsingContextId, int32_t aStartPage,
-                           int32_t aEndPage) = 0;
+                           int32_t aStartPage, int32_t aEndPage) = 0;
 
   virtual RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() = 0;
   /**

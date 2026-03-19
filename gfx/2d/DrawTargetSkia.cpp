@@ -48,11 +48,6 @@
 #  include "ScaledFontDWrite.h"
 #endif
 
-#ifdef ACCESSIBILITY
-#  include "mozilla/a11y/PdfStructTreeBuilder.h"
-#  include "skia/include/docs/SkPDFDocument.h"
-#endif
-
 namespace mozilla {
 
 void RefPtrTraits<SkSurface>::Release(SkSurface* aSurface) {
@@ -2208,15 +2203,6 @@ void DrawTargetSkia::DetachAllSnapshots() {
 void DrawTargetSkia::MarkChanged() {
   DetachAllSnapshots();
   mIsClear = false;
-}
-
-void DrawTargetSkia::AccessibleId(uint64_t aBrowsingContextId,
-                                  uint64_t aAccId) {
-#ifdef ACCESSIBILITY
-  int pdfId =
-      mozilla::a11y::PdfStructTreeBuilder::GetPdfId(aBrowsingContextId, aAccId);
-  SkPDF::SetNodeId(mCanvas, pdfId);
-#endif
 }
 
 }  // namespace mozilla::gfx

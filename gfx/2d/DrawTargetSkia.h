@@ -169,8 +169,6 @@ class DrawTargetSkia : public DrawTarget {
                      const StrokeOptions* aStrokeOptions = nullptr,
                      const DrawOptions& aOptions = DrawOptions());
 
-  void AccessibleId(uint64_t aBrowsingContextId, uint64_t aAccId) final;
-
  private:
   friend class SourceSurfaceSkia;
 

@@ -108,8 +108,6 @@ class DocManager : public nsIWebProgressListener,
   bool IsProcessingRefreshDriverNotification() const;
 #endif
 
-  void NotifyOfPrintDocument(dom::Document* aDoc);
-
  protected:
   DocManager();
   virtual ~DocManager() = default;
@@ -153,8 +151,7 @@ class DocManager : public nsIWebProgressListener,
   /**
    * Create document or root accessible.
    */
-  DocAccessible* CreateDocOrRootAccessible(dom::Document* aDocument,
-                                           bool aAllowStatic = false);
+  DocAccessible* CreateDocOrRootAccessible(dom::Document* aDocument);
 
   /**
    * Clear the cache and shutdown the document accessibles.

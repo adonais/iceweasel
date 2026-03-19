@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 // IWYU pragma: private, include "nsDisplayList.h"
-DECLARE_DISPLAY_ITEM_TYPE(ACCESSIBLE_ID, TYPE_RENDERS_NO_IMAGES)
 DECLARE_DISPLAY_ITEM_TYPE(ALT_FEEDBACK, 0)
 DECLARE_DISPLAY_ITEM_TYPE(ASYNC_ZOOM,
                           TYPE_RENDERS_NO_IMAGES | TYPE_IS_CONTAINER)

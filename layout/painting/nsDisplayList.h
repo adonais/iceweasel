@@ -6951,29 +6951,6 @@ class nsDisplayDestination final : public nsPaintedDisplayItem {
   nsPoint mPosition;
 };
 
-/**
- * A display item to associate subsequent display items with a specific
- * accessibility node. This is used to generate tagged PDF output. Specifying an
- * id of (0, 0) disassociates subsequent display items from any accessibility
- * node.
- */
-class nsDisplayAccessibleId final : public nsPaintedDisplayItem {
- public:
-  nsDisplayAccessibleId(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                        uint64_t aBrowsingContextId, uint64_t aAccId)
-      : nsPaintedDisplayItem(aBuilder, aFrame),
-        mBrowsingContextId(aBrowsingContextId),
-        mAccId(aAccId) {}
-
-  NS_DISPLAY_DECL_NAME("AccessibleId", TYPE_ACCESSIBLE_ID)
-
-  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-
- private:
-  uint64_t mBrowsingContextId;
-  uint64_t mAccId;
-};
-
 class MOZ_STACK_CLASS FlattenedDisplayListIterator {
  public:
   FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,

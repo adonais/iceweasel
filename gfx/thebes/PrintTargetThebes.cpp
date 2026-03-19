@@ -64,7 +64,6 @@ already_AddRefed<DrawTarget> PrintTargetThebes::GetReferenceDrawTarget() {
 
 nsresult PrintTargetThebes::BeginPrinting(const nsAString& aTitle,
                                           const nsAString& aPrintToFileName,
-                                          uint64_t aBrowsingContextId,
                                           int32_t aStartPage,
                                           int32_t aEndPage) {
   return mGfxSurface->BeginPrinting(aTitle, aPrintToFileName);

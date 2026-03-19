@@ -458,7 +458,6 @@ class RecordedEvent {
     OPTIMIZESOURCESURFACE,
     LINK,
     DESTINATION,
-    ACCESSIBLEID,
     LAST,
   };
 

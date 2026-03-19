@@ -25,7 +25,6 @@ DIRS += [
     "html",
     "interfaces",
     "ipc",
-    "pdf",
     "xpcom",
     "xul",
 ]
@@ -44,7 +43,6 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/browser/hittest/browser.toml",
     "tests/browser/mac/browser.toml",
     "tests/browser/name_and_description/browser.toml",
-    "tests/browser/pdfOutput/browser.toml",
     "tests/browser/performance/perftest.toml",
     "tests/browser/pivot/browser.toml",
     "tests/browser/relations/browser.toml",

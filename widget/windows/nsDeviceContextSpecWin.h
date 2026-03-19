@@ -25,8 +25,7 @@ class nsDeviceContextSpecWin : public nsIDeviceContextSpec {
   already_AddRefed<PrintTarget> MakePrintTarget() final;
   NS_IMETHOD BeginDocument(const nsAString& aTitle,
                            const nsAString& aPrintToFileName,
-                           uint64_t aBrowsingContextId, int32_t aStartPage,
-                           int32_t aEndPage) override {
+                           int32_t aStartPage, int32_t aEndPage) override {
     return NS_OK;
   }
   RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() override;

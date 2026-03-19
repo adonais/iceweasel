@@ -23,8 +23,7 @@ class PrintTargetCG final : public PrintTarget {
       const IntSize& aSize);
 
   nsresult BeginPrinting(const nsAString& aTitle,
-                         const nsAString& aPrintToFileName,
-                         uint64_t aBrowsingContextId, int32_t aStartPage,
+                         const nsAString& aPrintToFileName, int32_t aStartPage,
                          int32_t aEndPage) final;
   nsresult EndPrinting() final;
   nsresult AbortPrinting() final;

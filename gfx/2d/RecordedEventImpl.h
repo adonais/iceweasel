@@ -1877,30 +1877,6 @@ class RecordedDestination : public RecordedEventDerived<RecordedDestination> {
   MOZ_IMPLICIT RecordedDestination(S& aStream);
 };
 
-class RecordedAccessibleId : public RecordedEventDerived<RecordedAccessibleId> {
- public:
-  RecordedAccessibleId(uint64_t aBrowsingContextId, uint64_t aAccId)
-      : RecordedEventDerived(ACCESSIBLEID),
-        mBrowsingContextId(aBrowsingContextId),
-        mAccId(aAccId) {}
-
-  bool PlayEvent(Translator* aTranslator) const override;
-  template <class S>
-  void Record(S& aStream) const;
-  void OutputSimpleEventInfo(std::stringstream& aStringStream) const override;
-
-  std::string GetName() const override { return "AccessibleId"; }
-
- private:
-  friend class RecordedEvent;
-
-  uint64_t mBrowsingContextId = 0;
-  uint64_t mAccId = 0;
-
-  template <class S>
-  MOZ_IMPLICIT RecordedAccessibleId(S& aStream);
-};
-
 static std::string NameFromBackend(BackendType aType) {
   switch (aType) {
     case BackendType::NONE:
@@ -4669,34 +4645,6 @@ inline void RecordedDestination::OutputSimpleEventInfo(
                 << "]";
 }
 
-inline bool RecordedAccessibleId::PlayEvent(Translator* aTranslator) const {
-  DrawTarget* dt = aTranslator->GetCurrentDrawTarget();
-  if (!dt) {
-    return false;
-  }
-  dt->AccessibleId(mBrowsingContextId, mAccId);
-  return true;
-}
-
-template <class S>
-void RecordedAccessibleId::Record(S& aStream) const {
-  WriteElement(aStream, mBrowsingContextId);
-  WriteElement(aStream, mAccId);
-}
-
-template <class S>
-RecordedAccessibleId::RecordedAccessibleId(S& aStream)
-    : RecordedEventDerived(ACCESSIBLEID) {
-  ReadElement(aStream, mBrowsingContextId);
-  ReadElement(aStream, mAccId);
-}
-
-inline void RecordedAccessibleId::OutputSimpleEventInfo(
-    std::stringstream& aStringStream) const {
-  aStringStream << "AccessibleId [" << mBrowsingContextId << ", " << mAccId
-                << "]";
-}
-
 #define FOR_EACH_EVENT(f)                                          \
   f(DRAWTARGETCREATION, RecordedDrawTargetCreation);               \
   f(DRAWTARGETDESTRUCTION, RecordedDrawTargetDestruction);         \
@@ -4757,7 +4705,6 @@ inline void RecordedAccessibleId::OutputSimpleEventInfo(
   f(DETACHALLSNAPSHOTS, RecordedDetachAllSnapshots);               \
   f(OPTIMIZESOURCESURFACE, RecordedOptimizeSourceSurface);         \
   f(LINK, RecordedLink);                                           \
-  f(ACCESSIBLEID, RecordedAccessibleId);                           \
   f(DESTINATION, RecordedDestination);
 
 #define DO_WITH_EVENT_TYPE(_typeenum, _class) \

@@ -55,6 +55,10 @@ inline void DocAccessible::FireDelayedEvent(uint32_t aEventType,
   FireDelayedEvent(event);
 }
 
+inline void DocAccessible::BindChildDocument(DocAccessible* aDocument) {
+  mNotificationController->ScheduleChildDocBinding(aDocument);
+}
+
 template <class Class, class... Args>
 inline void DocAccessible::HandleNotification(
     Class* aInstance, typename TNotification<Class, Args...>::Callback aMethod,

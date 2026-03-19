@@ -32,9 +32,9 @@ class RemotePrintJobParent final : public PRemotePrintJobParent {
 
   void ActorDestroy(ActorDestroyReason aWhy) final;
 
-  mozilla::ipc::IPCResult RecvInitializePrint(
-      const nsAString& aDocumentTitle, const uint64_t& aBrowsingContextId,
-      const int32_t& aStartPage, const int32_t& aEndPage) final;
+  mozilla::ipc::IPCResult RecvInitializePrint(const nsAString& aDocumentTitle,
+                                              const int32_t& aStartPage,
+                                              const int32_t& aEndPage) final;
 
   mozilla::ipc::IPCResult RecvProcessPage(const int32_t& aWidthInPoints,
                                           const int32_t& aHeightInPoints,
@@ -65,12 +65,7 @@ class RemotePrintJobParent final : public PRemotePrintJobParent {
  private:
   ~RemotePrintJobParent() final;
 
-  void InitializePrint(const nsAString& aDocumentTitle,
-                       const uint64_t& aBrowsingContextId,
-                       const int32_t& aStartPage, const int32_t& aEndPage);
-
   nsresult InitializePrintDevice(const nsAString& aDocumentTitle,
-                                 const uint64_t& aBrowsingContextId,
                                  const int32_t& aStartPage,
                                  const int32_t& aEndPage);
 

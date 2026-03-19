@@ -35,8 +35,7 @@ class nsDeviceContextSpecGTK : public nsIDeviceContextSpec {
   NS_IMETHOD Init(nsIPrintSettings* aPS, bool aIsPrintPreview) override;
   NS_IMETHOD BeginDocument(const nsAString& aTitle,
                            const nsAString& aPrintToFileName,
-                           uint64_t aBrowsingContextId, int32_t aStartPage,
-                           int32_t aEndPage) override;
+                           int32_t aStartPage, int32_t aEndPage) override;
   RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() override;
   NS_IMETHOD BeginPage(const IntSize& aSizeInPoints) override { return NS_OK; }
   NS_IMETHOD EndPage() override { return NS_OK; }

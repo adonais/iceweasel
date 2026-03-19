@@ -1068,10 +1068,6 @@ child:
      */
     async DispatchToDropTargetAndResumeEndDragSession(bool aShouldDrop, StringHashSet aAllowedFilePaths);
 
-#ifdef ACCESSIBILITY
-    async RequestDocAccessibleForPrint();
-#endif
-
 parent:
     /**
      * Fetches whether this window supports protected media, which is sent back in response.
