@@ -8,9 +8,6 @@ is not an actual documentation about the list of preferences available in DevToo
 Preferences allows you to save and read strings, numbers, booleans to the preferences
 store, which is tied to a profile. A preference can also have a default value.
 
-The technical solution for handling preferences differs depending whether you are
-testing DevTools as Firefox panel, or a standalone tool running with Launchpad.
-
 ## Preference types
 
 DevTools relies on nsIPrefBranch for preferences, which supports different types of
@@ -26,8 +23,7 @@ a JavaScript object or array, the recommended way is to:
 * use JSON.stringify to save
 * use JSON.parse to read
 
-Note that nsIPrefBranch also supports a `Complex` type, but this type is not supported
-when running in Launchpad.
+Note that nsIPrefBranch also supports a `Complex` type.
 
 ## Reading and updating preferences
 
@@ -37,10 +33,6 @@ DevTools relies on Services.pref to handle preferences. You can access the API d
 this service at:
 * [Source for nsIPrefBranch](https://searchfox.org/mozilla-central/source/modules/libpref/nsIPrefBranch.idl)
 * [Source for nsIPrefService](https://searchfox.org/mozilla-central/source/modules/libpref/nsIPrefService.idl)
-
-If you are using Launchpad, note that only a subset of nsIPrefService methods are
-implemented (addObserver and removeObserver). Launchpad relies on a Services shim file
-provided by devtools-module ([code on GitHub](https://github.com/firefox-devtools/devtools-core/blob/master/packages/devtools-modules/src/Services.js)).
 
 ### Services.pref.get* and Services.pref.set*
 
@@ -61,22 +53,9 @@ If a preference should be available even when the client for DevTools is not
 shipped (for instance on Fennec) it should go in modules/libpref/init/all.js,
 which is for preferences that go in all products.
 
-### Projects using Launchpad
-
-At the time of writing this doc, projects using Launchpad have to duplicate the default
-definition of a preference.
-* debugger.html: update [src/utils/prefs.js](https://github.com/firefox-devtools/debugger.html/blob/master/src/utils/prefs.js)
-* netmonitor: update [index.js](http://searchfox.org/mozilla-central/source/devtools/client/netmonitor/index.js)
-* webconsole: update [local-dev/index.js](http://searchfox.org/mozilla-central/source/devtools/client/webconsole/local-dev/index.js)
-
 ## Inspect preferences
 
 Depending on the project you are working on, preferences are stored differently but can
 always be inspected.
 
 In Firefox, you can open a tab to about:config and search by preference name.
-
-In Launchpad, preferences are actually saved to localStorage. Open DevTools on your
-Launchpad application and inspect the local storage content. You should see entries
-prefixed by `Services.prefs:`. You will only see preferences where a user-specific value
-has overridden the default value.

@@ -278,10 +278,7 @@ const calculateHorizontalPosition = (
  * is always the element's ownerDocument).
  */
 const getRelativeRect = function (node, relativeTo) {
-  // getBoxQuads is a non-standard WebAPI which will not work on non-firefox
-  // browser when running launchpad on Chrome.
   if (
-    !node.getBoxQuads ||
     !node.getBoxQuads({
       relativeTo,
       createFramesForSuppressedWhitespace: false,
