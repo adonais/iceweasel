@@ -59,7 +59,7 @@
                 android:textSize="16sp"
                 android:textColor="?attr/textPrimary"
                 android:drawablePadding="32dp"
-                android:drawableStart="@drawable/ic_private_browsing"
+                android:drawableStart="@drawable/mozac_ic_private_mode_24"
                 app:drawableTint="?attr/textPrimary" />
 
             <TextView
