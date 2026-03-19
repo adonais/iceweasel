@@ -4038,11 +4038,11 @@ SettingGroupManager.registerGroups({
         items: [
           {
             id: "popupAndRedirectPolicyButton",
-            l10nId: "permissions-block-popups-exceptions-button3",
+            l10nId: "permissions-block-popups-exceptions-button4",
             control: "moz-box-button",
             controlAttrs: {
               "search-l10n-ids":
-                "permissions-address,permissions-exceptions-popup-window3.title,permissions-exceptions-popup-desc2",
+                "permissions-address,permissions-exceptions-popup-window3.title,permissions-exceptions-popup-desc2,permissions-block-popups-exceptions-button4.searchkeywords",
             },
           },
         ],
