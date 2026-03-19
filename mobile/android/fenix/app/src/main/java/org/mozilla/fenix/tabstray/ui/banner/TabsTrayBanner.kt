@@ -508,7 +508,7 @@ private fun generateMultiSelectBannerMenuItems(
     val menuItems = mutableListOf(
         MenuItem.IconItem(
             text = Text.Resource(R.string.tab_manager_multiselect_menu_item_share),
-            drawableRes = R.drawable.ic_share,
+            drawableRes = iconsR.drawable.mozac_ic_share_android_24,
             testTag = TabsTrayTestTag.SHARE_BUTTON,
             onClick = onShareSelectedTabs,
         ),

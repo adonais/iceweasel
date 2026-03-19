@@ -50,7 +50,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.LOREM_IPSUM
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGroupMenuButton
 import org.mozilla.fenix.tabstray.ui.tabpage.TabLayout
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.R as iconsR
+import mozilla.components.ui.icons.R as iconsR
 
 private const val BOTTOM_SHEET_HANDLER_ALPHA = 0.4F
 
@@ -178,7 +178,7 @@ private fun ViewTabGroupHeader(title: String, groupColor: Color) {
             },
         ) {
             Icon(
-                painter = painterResource(id = iconsR.drawable.ic_share),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_share_android_24),
                 contentDescription = PLACEHOLDER_SHARE_TAB_GROUP_CONTENT_DESCRIPTION,
                 tint = MaterialTheme.colorScheme.onSurface,
             )
