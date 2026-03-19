@@ -28,6 +28,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.ext.showToolbarWithIconButton
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Settings screen allowing users to configure options not intended for general release.
@@ -46,7 +47,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             showToolbarWithIconButton(
                 title = getString(R.string.preferences_debug_settings),
                 contentDescription = getString(R.string.settings_search_button_content_description),
-                iconResId = R.drawable.ic_search,
+                iconResId = iconsR.drawable.mozac_ic_search_24,
                 onClick = {
                     findNavController().navigate(
                         R.id.action_secretSettingsFragment_to_secretSettingsSearchFragment,

@@ -33,7 +33,7 @@
                 app:shapeAppearanceOverlay="@style/SearchSelectorIconStyle"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:src="@drawable/ic_search" />
+                tools:src="@drawable/mozac_ic_search_24" />
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/arrow"

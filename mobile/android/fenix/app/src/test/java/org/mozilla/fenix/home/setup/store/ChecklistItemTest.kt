@@ -213,7 +213,7 @@ class ChecklistItemTest {
                     ChecklistItem.Task(
                         type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                         title = R.string.setup_checklist_task_search_widget_2,
-                        icon = R.drawable.ic_search,
+                        icon = iconsR.drawable.mozac_ic_search_24,
                         isCompleted = isCompleted,
                     ),
                     ChecklistItem.Task(
@@ -280,7 +280,7 @@ class ChecklistItemTest {
                     ChecklistItem.Task(
                         type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                         title = R.string.setup_checklist_task_search_widget_2,
-                        icon = R.drawable.ic_search,
+                        icon = iconsR.drawable.mozac_ic_search_24,
                         isCompleted = isCompleted,
                     ),
                     ChecklistItem.Task(

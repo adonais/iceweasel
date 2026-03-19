@@ -121,7 +121,7 @@ class DefaultSuggestionIconProvider(private val context: Context) : SuggestionIc
     }
 
     private val searchIconBitmapInstance: Bitmap? by lazy {
-        AppCompatResources.getDrawable(context, R.drawable.ic_search)?.apply {
+        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_search_24)?.apply {
             colorFilter = createBlendModeColorFilterCompat(
                 primaryTextColor,
                 SRC_IN,
