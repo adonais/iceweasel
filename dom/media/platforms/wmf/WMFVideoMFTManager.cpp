@@ -21,6 +21,7 @@
 #include "gfx2DGlue.h"
 #include "gfxWindowsPlatform.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/SchedulerGroup.h"
@@ -587,6 +588,10 @@ WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
     stride = mVideoStride;
   }
+  if (stride <= 0) {
+    LOG("CreateBasicVideoFrame: invalid stride %ld", stride);
+    return E_FAIL;
+  }
 
   const GUID& subType = mDecoder->GetOutputMediaSubType();
   MOZ_DIAGNOSTIC_ASSERT(subType == MFVideoFormat_YV12 ||
@@ -615,9 +620,17 @@ WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
 
   MOZ_DIAGNOSTIC_ASSERT(mSoftwareImageSize.height % 16 == 0,
                         "decoded height must be 16 bytes aligned");
-  const uint32_t y_size = stride * mSoftwareImageSize.height;
-  const uint32_t v_size = stride * mSoftwareImageSize.height / 4;
-  const uint32_t halfStride = (stride + 1) / 2;
+  mozilla::CheckedInt<uint32_t> y_size_checked =
+      mozilla::CheckedInt<uint32_t>(static_cast<uint32_t>(stride)) *
+      mSoftwareImageSize.height;
+  if (!y_size_checked.isValid()) {
+    LOG("CreateBasicVideoFrame: plane size overflow");
+    return E_FAIL;
+  }
+  const uint32_t y_size = y_size_checked.value();
+  const uint32_t v_size = y_size / 4;
+  const uint32_t halfStride =
+      static_cast<uint32_t>((static_cast<int64_t>(stride) + 1) / 2);
   const uint32_t halfHeight = (videoHeight + 1) / 2;
   const uint32_t halfWidth = (videoWidth + 1) / 2;
 
