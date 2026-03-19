@@ -108,43 +108,7 @@ add_task(async function test_memories_toggle_telemetry() {
   Services.fog.testResetFOG();
 
   const win = await openAIWindow();
-  let MemoryStore;
   try {
-    ({ MemoryStore } = ChromeUtils.importESModule(
-      "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
-    ));
-    const preExistingMemories = await MemoryStore.getMemories({
-      includeSoftDeleted: true,
-    });
-    for (const memory of preExistingMemories) {
-      await MemoryStore.hardDeleteMemory(memory.id, "other");
-    }
-    const seededMemories = [
-      {
-        id: "memory-1",
-        memory_summary: "User is vegan",
-        category: "preference",
-        intent: "profile",
-        reasoning: "Test memory",
-        score: 0.5,
-        updated_at: Date.now(),
-        is_deleted: false,
-      },
-      {
-        id: "memory-2",
-        memory_summary: "User has a cat",
-        category: "personal",
-        intent: "profile",
-        reasoning: "Test memory",
-        score: 0.5,
-        updated_at: Date.now(),
-        is_deleted: false,
-      },
-    ];
-    for (const memory of seededMemories) {
-      await MemoryStore.addMemory(memory);
-    }
-
     const browser = win.gBrowser.selectedBrowser;
 
     const conversationId = await getConversationId(browser);
@@ -163,20 +127,7 @@ add_task(async function test_memories_toggle_telemetry() {
       "true",
       "memories toggle event includes the enabled state"
     );
-    Assert.equal(
-      events[0].extra.memories,
-      "2",
-      "memories toggle event includes memories count"
-    );
   } finally {
-    if (MemoryStore) {
-      const postTestMemories = await MemoryStore.getMemories({
-        includeSoftDeleted: true,
-      });
-      for (const memory of postTestMemories) {
-        await MemoryStore.hardDeleteMemory(memory.id, "other");
-      }
-    }
     await BrowserTestUtils.closeWindow(win);
   }
 });
@@ -476,124 +427,6 @@ add_task(async function test_memory_removed_panel_telemetry() {
         await MemoryStore.hardDeleteMemory(memory.id, "other");
       }
     }
-    await BrowserTestUtils.closeWindow(win);
-  }
-});
-
-add_task(async function test_memory_applied_telemetry() {
-  let win;
-
-  try {
-    Services.fog.testResetFOG();
-
-    win = await openAIWindow();
-    const browser = win.gBrowser.selectedBrowser;
-
-    const conversationId = await getConversationId(browser);
-    const aiWindow = await TestUtils.waitForCondition(
-      () => browser.contentDocument?.querySelector("ai-window"),
-      "Wait for ai-window element"
-    );
-    aiWindow.onMemoriesApplied();
-
-    await TestUtils.waitForCondition(
-      () => Glean.smartWindow.memoryApplied.testGetValue()?.length,
-      "memory applied telemetry should be recorded"
-    );
-
-    const events = Glean.smartWindow.memoryApplied.testGetValue();
-    Assert.equal(
-      events[0].extra.chat_id,
-      conversationId,
-      "memory applied event includes the conversation id"
-    );
-  } finally {
-    if (win) {
-      await BrowserTestUtils.closeWindow(win);
-    }
-  }
-});
-
-add_task(async function test_memory_applied_click_telemetry() {
-  Services.fog.testResetFOG();
-
-  const win = await openAIWindow();
-  try {
-    const browser = win.gBrowser.selectedBrowser;
-
-    const aiWindow = await TestUtils.waitForCondition(
-      () => browser.contentDocument?.querySelector("ai-window"),
-      "Wait for ai-window element"
-    );
-
-    const { AssistantRoleOpts } = ChromeUtils.importESModule(
-      "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs"
-    );
-
-    const conversation = new ChatConversation({});
-    conversation.addUserMessage("Hello");
-    conversation.addAssistantMessage("text", "Hi", new AssistantRoleOpts());
-    aiWindow.openConversation(conversation);
-    aiWindow.handleFooterAction({
-      action: "toggle-applied-memories",
-      open: true,
-    });
-
-    const conversationId = await getConversationId(browser);
-    await TestUtils.waitForCondition(
-      () => Glean.smartWindow.memoryAppliedClick.testGetValue()?.length,
-      "memory applied click telemetry should be recorded"
-    );
-
-    const events = Glean.smartWindow.memoryAppliedClick.testGetValue();
-    Assert.equal(
-      events[0].extra.chat_id,
-      conversationId,
-      "memory applied click event includes the conversation id"
-    );
-  } finally {
-    await BrowserTestUtils.closeWindow(win);
-  }
-});
-
-add_task(async function test_retry_no_memories_telemetry() {
-  Services.fog.testResetFOG();
-
-  const win = await openAIWindow();
-  try {
-    const browser = win.gBrowser.selectedBrowser;
-
-    const aiWindow = await TestUtils.waitForCondition(
-      () => browser.contentDocument?.querySelector("ai-window"),
-      "Wait for ai-window element"
-    );
-
-    const { AssistantRoleOpts } = ChromeUtils.importESModule(
-      "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs"
-    );
-
-    const conversation = new ChatConversation({});
-    conversation.addUserMessage("Hello");
-    conversation.addAssistantMessage("text", "Hi", new AssistantRoleOpts());
-    aiWindow.openConversation(conversation);
-    aiWindow.handleFooterAction({
-      action: "retry-without-memories",
-      messageId: null,
-    });
-
-    const conversationId = await getConversationId(browser);
-    await TestUtils.waitForCondition(
-      () => Glean.smartWindow.retryNoMemories.testGetValue()?.length,
-      "retry without memories telemetry should be recorded"
-    );
-
-    const events = Glean.smartWindow.retryNoMemories.testGetValue();
-    Assert.equal(
-      events[0].extra.chat_id,
-      conversationId,
-      "retry without memories event includes the conversation id"
-    );
-  } finally {
     await BrowserTestUtils.closeWindow(win);
   }
 });

@@ -163,7 +163,6 @@ export class ChatConversation extends EventEmitter {
     }
 
     await lazy.ChatStore.updateConversation(this);
-    this.emit("chat-conversation:message-complete", currentMessage);
 
     return { pendingToolCalls, fullResponseText };
   }
