@@ -14,6 +14,7 @@ import mozilla.components.feature.summarize.SummarizationSettings
 import mozilla.components.feature.summarize.SummarizationState
 import mozilla.components.feature.summarize.SummarizationStore
 import mozilla.components.feature.summarize.content.PageContentExtractor
+import mozilla.components.feature.summarize.content.PageMetadataExtractor
 import mozilla.components.feature.summarize.summarizationReducer
 
 /**
@@ -23,12 +24,14 @@ import mozilla.components.feature.summarize.summarizationReducer
  * @param llmProvider the [LlmProvider] used to summarize the page.
  * @param settings the SummarizationSettings.
  * @param pageContentExtractor an extractor for page content.
+ * @param pageMetadataExtractor an extractor for page metadata.
  */
 class SummarizationStoreViewModel(
     initializedFromShake: Boolean,
     llmProvider: CloudLlmProvider,
     settings: SummarizationSettings,
     pageContentExtractor: PageContentExtractor,
+    pageMetadataExtractor: PageMetadataExtractor,
 ) : ViewModel() {
     val store = SummarizationStore(
         initialState = SummarizationState.Inert(initializedFromShake),
@@ -38,6 +41,7 @@ class SummarizationStoreViewModel(
                 settings = settings,
                 llmProvider = llmProvider,
                 pageContentExtractor = pageContentExtractor,
+                pageMetadataExtractor = pageMetadataExtractor,
                 scope = viewModelScope,
             ),
         ),
@@ -51,12 +55,14 @@ class SummarizationStoreViewModel(
          * @param llmProvider the [LlmProvider] used to summarize the page.
          * @param settings the SummarizationSettings.
          * @param pageContentExtractor an extractor for page content.
+         * @param pageMetadataExtractor an extractor for page metadata.
          */
         fun factory(
             initializedFromShake: Boolean,
             llmProvider: CloudLlmProvider,
             settings: SummarizationSettings,
             pageContentExtractor: PageContentExtractor,
+            pageMetadataExtractor: PageMetadataExtractor,
         ) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -65,6 +71,7 @@ class SummarizationStoreViewModel(
                     llmProvider = llmProvider,
                     settings = settings,
                     pageContentExtractor = pageContentExtractor,
+                    pageMetadataExtractor = pageMetadataExtractor,
                 ) as T
             }
         }

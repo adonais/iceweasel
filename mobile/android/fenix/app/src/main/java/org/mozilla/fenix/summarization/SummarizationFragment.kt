@@ -23,6 +23,8 @@ import mozilla.components.feature.summarize.SummarizationSettings
 import mozilla.components.feature.summarize.SummarizationState
 import mozilla.components.feature.summarize.SummarizationUi
 import mozilla.components.feature.summarize.content.PageContentExtractor
+import mozilla.components.feature.summarize.content.PageMetadata
+import mozilla.components.feature.summarize.content.PageMetadataExtractor
 import mozilla.components.feature.summarize.settings.SummarizeSettingsMiddleware
 import mozilla.components.feature.summarize.settings.SummarizeSettingsState
 import mozilla.components.feature.summarize.settings.SummarizeSettingsStore
@@ -54,6 +56,26 @@ private fun EngineSession?.asPageContentExtractor(): PageContentExtractor = {
     }
 }
 
+private fun EngineSession?.asPageMetadataExtractor(): PageMetadataExtractor = {
+    runCatching {
+        suspendCancellableCoroutine { continuation ->
+            this!!.getPageMetadata(
+                onResult = { metadata ->
+                    continuation.resume(
+                        PageMetadata(
+                            structuredDataTypes = metadata.structuredDataTypes,
+                            language = metadata.language,
+                        ),
+                    )
+                },
+                onException = { error ->
+                    continuation.resumeWithException(error)
+                },
+            )
+        }
+    }
+}
+
 /**
  * Summarization UI entry fragment.
  */
@@ -67,6 +89,7 @@ class SummarizationFragment : BottomSheetDialogFragment() {
             llmProvider = provider,
             settings = SummarizationSettings.sharedPrefs(requireContext()),
             pageContentExtractor = engineSession.asPageContentExtractor(),
+            pageMetadataExtractor = engineSession.asPageMetadataExtractor(),
         )
     }
 

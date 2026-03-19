@@ -1174,6 +1174,7 @@ class MenuDialogMiddlewareTest {
     private fun createStore(
         appStore: AppStore = AppStore(),
         isTabLoading: Boolean = false,
+        evaluateEligibilityForSummarization: suspend () -> Boolean = { true },
         menuState: MenuState = MenuState(
             browserMenuState = BrowserMenuState(
                 selectedTab = createTab(
@@ -1192,6 +1193,7 @@ class MenuDialogMiddlewareTest {
                 addonManager = addonManager,
                 settings = settings,
                 summarizeMenuSettings = summarizeFeatureSettings,
+                evaluateEligibilityForSummarization = evaluateEligibilityForSummarization,
                 bookmarksStorage = bookmarksStorage,
                 pinnedSiteStorage = pinnedSiteStorage,
                 appLinksUseCases = appLinksUseCases,

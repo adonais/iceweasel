@@ -57,6 +57,7 @@ import org.mozilla.fenix.utils.Settings
  * properties.
  * @param summarizeMenuSettings An instance of [SummarizationFeatureDiscoveryConfiguration] to manage the feature's
  * settings in the menu.
+ * @param evaluateEligibilityForSummarization Callback to check whether a page is eligibile for summarization.
  * @param bookmarksStorage An instance of the [BookmarksStorage] used
  * to query matching bookmarks.
  * @param pinnedSiteStorage An instance of the [PinnedSiteStorage] used
@@ -86,6 +87,7 @@ class MenuDialogMiddleware(
     private val addonManager: AddonManager,
     private val settings: Settings,
     private val summarizeMenuSettings: SummarizationFeatureDiscoveryConfiguration,
+    private val evaluateEligibilityForSummarization: suspend () -> Boolean,
     private val bookmarksStorage: BookmarksStorage,
     private val pinnedSiteStorage: PinnedSiteStorage,
     private val appLinksUseCases: AppLinksUseCases,
@@ -151,16 +153,19 @@ class MenuDialogMiddleware(
         setupPageSummarizationState(store)
     }
 
-    private fun setupPageSummarizationState(store: Store<MenuState, MenuAction>) {
+    private suspend fun setupPageSummarizationState(store: Store<MenuState, MenuAction>) {
         val isNormalTab = store.state.browserMenuState?.selectedTab?.isNormalTab() ?: false
         val isLoading = store.state.browserMenuState?.isLoading ?: false
 
         val summarizationState = SummarizationMenuState.Default.copy(
             visible = summarizeMenuSettings.showMenuItem,
-            enabled = summarizeMenuSettings.showMenuItem && isNormalTab && !isLoading,
             highlighted = summarizeMenuSettings.shouldHighlightMenuItem && isNormalTab,
             overflowMenuHighlighted = summarizeMenuSettings.shouldHighlightOverflowMenuItem && isNormalTab,
             showNewFeatureBadge = true,
+            enabled = summarizeMenuSettings.showMenuItem &&
+                    isNormalTab &&
+                    !isLoading &&
+                    evaluateEligibilityForSummarization(),
         )
         store.dispatch(
             MenuAction.InitializeSummarizationMenuState(summarizationState),
