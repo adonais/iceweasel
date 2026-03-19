@@ -3631,7 +3631,17 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     }
   }
 
-  mMode = Mode::DeleteNonCollapsedRange;
+  if (EditorRawDOMPoint::After(*mRightContent)
+          .EqualsOrIsBefore(EditorRawDOMPoint(aRangeToDelete.EndRef()))) {
+    // If mRightContent is completely in the range to delete, we won't join
+    // mLeftContent and mRightContent which mRightContent will be deleted. So,
+    // we need just to delete all things in the range.
+    mMode = Mode::DeleteContentInRange;
+  } else {
+    // Otherwise, we need to delete the content in the range and then, join
+    // mLeftContent and mRightContent.
+    mMode = Mode::DeleteNonCollapsedRange;
+  }
   return true;
 }
 
@@ -4019,8 +4029,7 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     return Err(rv);
   }
   iter.AppendAllNodesToArray(arrayOfTopChildren);
-  return NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
-      aHTMLEditor, arrayOfTopChildren, aSelectionWasCollapsed);
+  return NeedsToJoinNodesAfterDeleteNodesEntirelyInRange();
 }
 
 Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
@@ -4064,44 +4073,29 @@ Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
 }
 
 bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
-    NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
-        const HTMLEditor& aHTMLEditor,
-        const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
-        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
-        const {
+    NeedsToJoinNodesAfterDeleteNodesEntirelyInRange() const {
   switch (mMode) {
     case Mode::DeletePrecedingLinesAndContentInRange:
     case Mode::DeleteBRElement:
     case Mode::DeletePrecedingBRElementOfBlock:
     case Mode::DeletePrecedingPreformattedLineBreak:
+      // We want to delete a line but preseve the block structure around the
+      // selection.
       return false;
-    default:
+    case Mode::DeleteNonCollapsedRange:
+      // We must move the first line of mRightContent. If we'll delete
+      // mRightContent instead, we should handle the case in the
+      // DeleteContentInRange mode.
+      return true;
+    case Mode::DeleteContentInRange:
+    case Mode::JoinBlocksInSameParent:
+    case Mode::JoinCurrentBlock:
+    case Mode::JoinOtherBlock:
+    case Mode::NotInitialized:
+      MOZ_ASSERT_UNREACHABLE("Shouldn't be handled in this path");
       break;
   }
-
-  // If original selection was collapsed, we need always to join the nodes
-  // because the user must intent to delete the block boundaries.
-  if (aSelectionWasCollapsed ==
-      AutoDeleteRangesHandler::SelectionWasCollapsed::No) {
-    return true;
-  }
-  // Otherwise, i.e., the range was extended by ourselves to consider the
-  // deleting range before/after the caret, we want to delete only visible
-  // things in the range if there are some visible contents in the range. Or
-  // join the blocks at start/end points if there is no visible things.
-  if (aArrayOfContents.IsEmpty()) {
-    return true;
-  }
-  for (const OwningNonNull<nsIContent>& content : aArrayOfContents) {
-    // We want to treat non-editable nodes are invisible here.
-    if (!HTMLEditUtils::IsSimplyEditableNode(content)) {
-      continue;
-    }
-    if (!NodeIsInvisibleOrLineBreakFollowedByBlockBoundary(content)) {
-      return false;
-    }
-  }
-  return true;
+  return false;
 }
 
 Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
@@ -4555,22 +4549,6 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       aSelectionWasCollapsed == SelectionWasCollapsed::Yes &&
       nsIEditor::DirectionIsBackspace(aDirectionAndAmount);
 
-  AutoTArray<OwningNonNull<nsIContent>, 10> arrayOfTopChildren;
-  {
-    DOMSubtreeIterator iter;
-    nsresult rv = iter.Init(aRangeToDelete);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("DOMSubtreeIterator::Init() failed");
-      return Err(rv);
-    }
-    iter.AppendAllNodesToArray(arrayOfTopChildren);
-  }
-
-  const bool needsToJoinLater =
-      NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
-          aHTMLEditor, arrayOfTopChildren, aSelectionWasCollapsed);
-  const bool joinInclusiveAncestorBlockElements =
-      !isDeletingLineBreak && needsToJoinLater;
   const bool maybeDeleteOnlyFollowingContentOfFollowingBlockBoundary =
       !isDeletingLineBreak &&
       mMode != Mode::DeletePrecedingLinesAndContentInRange &&
@@ -4586,7 +4564,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     // If we're joining blocks: if deleting forward the selection should be
     // collapsed to the end of the selection, if deleting backward the selection
     // should be collapsed to the beginning of the selection.
-    if (joinInclusiveAncestorBlockElements) {
+    if (NeedsToJoinNodesAfterDeleteNodesEntirelyInRange()) {
       return nsIEditor::DirectionIsDelete(aDirectionAndAmount)
                  ? PutCaretTo::EndOfRange
                  : PutCaretTo::StartOfRange;
@@ -4604,6 +4582,17 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   auto deleteContentResultOrError =
       [&]() MOZ_NEVER_INLINE_DEBUG MOZ_CAN_RUN_SCRIPT
       -> Result<DeleteRangeResult, nsresult> {
+    AutoTArray<OwningNonNull<nsIContent>, 10> arrayOfTopChildren;
+    {
+      DOMSubtreeIterator iter;
+      nsresult rv = iter.Init(aRangeToDelete);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("DOMSubtreeIterator::Init() failed");
+        return Err(rv);
+      }
+      iter.AppendAllNodesToArray(arrayOfTopChildren);
+    }
+
     OwningNonNull<nsRange> rangeToDelete(aRangeToDelete);
     AutoTrackDOMRange trackRangeToDelete(aHTMLEditor.RangeUpdaterRef(),
                                          &rangeToDelete);
@@ -4667,7 +4656,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   DeleteRangeResult deleteContentResult = deleteContentResultOrError.unwrap();
   // HandleDeleteLineBreak() should handle the new caret position by itself.
   if (isDeletingLineBreak) {
-    MOZ_ASSERT(!joinInclusiveAncestorBlockElements);
+    MOZ_ASSERT(!NeedsToJoinNodesAfterDeleteNodesEntirelyInRange());
     deleteContentResult.IgnoreCaretPointSuggestion();
     return EditActionResult::HandledResult();
   }
@@ -4675,7 +4664,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   auto moveFirstLineResultOrError =
       [&]() MOZ_NEVER_INLINE_DEBUG MOZ_CAN_RUN_SCRIPT
       -> Result<DeleteRangeResult, nsresult> {
-    if (!joinInclusiveAncestorBlockElements) {
+    if (!NeedsToJoinNodesAfterDeleteNodesEntirelyInRange()) {
       return DeleteRangeResult::IgnoredResult();
     }
 
@@ -4683,10 +4672,6 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     MOZ_ASSERT(mLeftContent->IsElement());
     MOZ_ASSERT(mRightContent);
     MOZ_ASSERT(mRightContent->IsElement());
-
-    if (!joinInclusiveAncestorBlockElements) {
-      return DeleteRangeResult::IgnoredResult();
-    }
 
     // Finally, join elements containing either mLeftContent or mRightContent.
     // XXX This may join only inline elements despite its name.

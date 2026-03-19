@@ -1408,12 +1408,7 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner final {
       HTMLEditor& aHTMLEditor,
       const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContent,
       PutCaretTo aPutCaretTo);
-  [[nodiscard]] bool
-  NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
-      const HTMLEditor& aHTMLEditor,
-      const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
-      AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
-      const;
+  [[nodiscard]] bool NeedsToJoinNodesAfterDeleteNodesEntirelyInRange() const;
   Result<bool, nsresult>
   ComputeRangeToDeleteNodesEntirelyInRangeButKeepTableStructure(
       const HTMLEditor& aHTMLEditor, nsRange& aRange,
