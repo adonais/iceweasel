@@ -287,46 +287,6 @@ smart_window:
       chat_id: *chat_id
       message_seq: *message_seq
 
-  memories_view:
-    type: event
-    description: |
-      User views applied memories via hover, click, or inline display
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D287197
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
-    expires: never
-    extra_keys:
-      location: *location
-      chat_id: *chat_id
-      message_seq: *message_seq
-      display:
-        type: string
-        description: >
-          hover, click, inline
-
-  memories_applied_impression:
-    type: event
-    description: |
-      Impression of memories applied tooltip
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D287197
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
-    expires: never
-    extra_keys:
-      location: *location
-      chat_id: *chat_id
-      message_seq: *message_seq
-
   retry_no_memories:
     type: event
     description: |
