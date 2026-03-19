@@ -180,9 +180,6 @@ export default [
   //     
   "<h1 id=\"my-element\" class=\"test-class-a test-class-b\" aria-collapsed=\"false\" hidden>",
 
-  // new Document()
-  "Document { … }",
-
   // new Error("foo")
   "Error: foo",
 

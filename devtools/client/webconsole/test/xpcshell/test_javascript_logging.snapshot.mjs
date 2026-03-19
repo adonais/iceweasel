@@ -180,9 +180,6 @@ export default [
   //     
   "<H1 #my-element .test-class-a test-class-b>",
 
-  // new Document()
-  "[object Document]",
-
   // new Error("foo")
   "Error: foo",
 
