@@ -249,6 +249,97 @@ class DefaultDownloadFileUtils(
             File(filePath),
         )
 
+    override fun renameFile(
+        directoryPath: String,
+        oldName: String?,
+        newName: String,
+    ): Boolean {
+        if (oldName == null) return false
+        return try {
+            if (directoryPath.startsWith(SCHEME_CONTENT)) {
+                renameSafFile(directoryPath, oldName, newName)
+            } else {
+                renameLegacyFile(directoryPath, oldName, newName)
+            }
+        } catch (e: SecurityException) {
+            logger.error("Security error renaming file: ${e.message}")
+            false
+        } catch (e: IllegalArgumentException) {
+            logger.error("Invalid arguments for renaming file: ${e.message}")
+            false
+        } catch (e: IllegalStateException) {
+            logger.error("State error renaming file: ${e.message}")
+            false
+        }
+    }
+
+    private fun renameSafFile(directoryPath: String, oldName: String, newName: String): Boolean {
+        val directoryUri = directoryPath.toUri()
+        val directory = DocumentFile.fromTreeUri(context, directoryUri)
+
+        return when {
+            directory == null || !directory.canWrite() -> {
+                logger.error("Cannot write to SAF directory: $directoryPath")
+                false
+            }
+            else -> performSafRename(directory, oldName, newName)
+        }
+    }
+
+    private fun performSafRename(directory: DocumentFile, oldName: String, newName: String): Boolean {
+        val fileToRename = directory.findFile(oldName)
+
+        return if (fileToRename == null) {
+            handleMissingFile(directory, oldName, newName)
+        } else {
+            val success = fileToRename.renameTo(newName)
+            verifyRenameOutcome(success, directory, oldName, newName)
+        }
+    }
+
+    private fun handleMissingFile(directory: DocumentFile, oldName: String, newName: String): Boolean {
+        val alreadyExists = directory.findFile(newName) != null
+        if (alreadyExists) {
+            logger.debug("Rename unnecessary: '$newName' already exists.")
+        } else {
+            logger.error("Could not find file '$oldName' in SAF directory")
+        }
+        return alreadyExists
+    }
+
+    private fun verifyRenameOutcome(
+        success: Boolean,
+        directory: DocumentFile,
+        oldName: String,
+        newName: String,
+    ): Boolean {
+        val verifiedSuccess = success || directory.findFile(newName) != null
+
+        if (!verifiedSuccess) {
+            logger.error("SAF renameTo failed for $oldName -> $newName")
+        } else if (!success) {
+            logger.debug("SAF renameTo reported failure, but verified success for '$newName'")
+        }
+
+        return verifiedSuccess
+    }
+
+    private fun renameLegacyFile(directoryPath: String, oldName: String, newName: String): Boolean {
+        val from = File(directoryPath, oldName)
+        val to = File(directoryPath, newName)
+
+        val renamed = from.exists() && from.renameTo(to)
+        if (renamed) {
+            MediaScannerConnection.scanFile(
+                context,
+                arrayOf(from.absolutePath, to.absolutePath),
+                null,
+                null,
+            )
+        }
+        return renamed
+    }
+
     private fun deleteSafDocument(contentResolver: ContentResolver, uri: Uri): Boolean {
         logger.debug("Deleting using DocumentsContract (SAF): $uri")
         return DocumentsContract.deleteDocument(contentResolver, uri)

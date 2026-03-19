@@ -63,6 +63,11 @@ class FakeDownloadFileUtils(
     ) -> String = { _, _, _ ->
         "safeContentType"
     },
+    private val renameFile: (
+        directoryPath: String,
+        oldName: String?,
+        newName: String,
+    ) -> Boolean = { _, _, _ -> true },
 ) : DownloadFileUtils {
     override val currentDownloadLocation: String
         get() = downloadLocation
@@ -126,5 +131,13 @@ class FakeDownloadFileUtils(
         directoryPath: String,
     ): Boolean {
         return deleteMediaFile.invoke(contentResolver, fileName, directoryPath)
+    }
+
+    override fun renameFile(
+        directoryPath: String,
+        oldName: String?,
+        newName: String,
+    ): Boolean {
+        return renameFile.invoke(directoryPath, oldName, newName)
     }
 }

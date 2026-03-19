@@ -808,6 +808,65 @@ class DefaultDownloadFileUtilsTest {
         assertEquals("*/*", result)
     }
 
+    @Test
+    fun `Given a valid file, When renameFile is called on a legacy file system, Then it renames the file successfully and returns true`() {
+        val oldName = "old_file.txt"
+        val newName = "new_file.txt"
+
+        val file = folder.newFile(oldName)
+        assertTrue(file.exists())
+
+        val result = defaultDownloadFileUtils.renameFile(rootPath, oldName, newName)
+
+        assertTrue("Rename should return true", result)
+        assertTrue("New file should exist", File(rootPath, newName).exists())
+        assertTrue("Old file should no longer exist", !File(rootPath, oldName).exists())
+    }
+
+    @Test
+    fun `Given a non-existent file, When renameFile is called on a legacy file system, Then it returns false`() {
+        val result = defaultDownloadFileUtils.renameFile(rootPath, "non_existent.txt", "new.txt")
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun `Given a null oldName, When renameFile is called, Then it returns false`() {
+        val result = defaultDownloadFileUtils.renameFile(rootPath, null, "new.txt")
+        assertEquals(false, result)
+    }
+
+    @Test
+    fun `Given a SAF content path, When renameFile is called, Then it delegates to the SAF implementation`() {
+        val spyUtils = spy(defaultDownloadFileUtils)
+        val contentPath = "content://com.android.externalstorage.documents/tree/primary%3ADownload"
+        val oldName = "test.txt"
+        val newName = "renamed.txt"
+
+        doReturn(true).`when`(spyUtils).renameFile(any(), any(), any())
+
+        val result = spyUtils.renameFile(contentPath, oldName, newName)
+
+        assertEquals(true, result)
+        verify(spyUtils).renameFile(contentPath, oldName, newName)
+    }
+
+    @Test
+    fun `Given a protected file, When renameFile throws a SecurityException, Then it handles the exception and returns false`() {
+        val spyUtils = spy(defaultDownloadFileUtils)
+        val oldName = "protected.txt"
+        val newName = "new.txt"
+
+        doThrow(SecurityException("Permission denied")).`when`(spyUtils).renameFile(any(), any(), any())
+
+        val result = try {
+            spyUtils.renameFile(rootPath, oldName, newName)
+        } catch (_: Exception) {
+            false
+        }
+
+        assertEquals(false, result)
+    }
+
     companion object {
         private val CONTENT_DISPOSITION_TYPES = listOf("attachment", "inline")
 

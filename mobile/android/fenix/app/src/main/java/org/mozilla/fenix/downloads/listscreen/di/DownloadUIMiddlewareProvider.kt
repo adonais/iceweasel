@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import mozilla.components.lib.state.Middleware
+import mozilla.components.support.utils.DefaultDownloadFileUtils
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.downloads.listscreen.DownloadNavigationMiddleware
 import org.mozilla.fenix.downloads.listscreen.middleware.BroadcastSender
@@ -72,6 +73,7 @@ internal object DownloadUIMiddlewareProvider {
         coroutineScope: CoroutineScope,
     ) = DownloadUIRenameMiddleware(
         browserStore = applicationContext.components.core.store,
+        downloadFileUtils = DefaultDownloadFileUtils(applicationContext),
         scope = coroutineScope,
     )
 

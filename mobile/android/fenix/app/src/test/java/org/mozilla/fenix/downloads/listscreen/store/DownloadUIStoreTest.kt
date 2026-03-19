@@ -12,6 +12,7 @@ import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DownloadsUseCases
 import mozilla.components.support.utils.FakeDateTimeProvider
+import mozilla.components.support.utils.FakeDownloadFileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
@@ -1272,7 +1273,12 @@ class DownloadUIStoreTest {
         val store = DownloadUIStore(
             initialState = DownloadUIState.INITIAL,
             middleware = listOf(
-                DownloadUIRenameMiddleware(browserStore = browserStore, scope = testScope, mainDispatcher = testDispatcher),
+                DownloadUIRenameMiddleware(
+                    browserStore = browserStore,
+                    scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
+                    mainDispatcher = testDispatcher,
+                    ),
                 DownloadUIMapperMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
@@ -1325,6 +1331,7 @@ class DownloadUIStoreTest {
                 DownloadUIRenameMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
                     mainDispatcher = testDispatcher,
                 ),
             ),
@@ -1373,6 +1380,7 @@ class DownloadUIStoreTest {
                 DownloadUIRenameMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
                     mainDispatcher = testDispatcher,
                 ),
             ),
@@ -1401,12 +1409,6 @@ class DownloadUIStoreTest {
         val currentName = "1.pdf"
         val newName = "renamed.pdf"
 
-        val from = File(dirFile, currentName).apply { writeText("data") }
-        val to = File(dirFile, newName)
-
-        assertTrue(from.exists())
-        assertFalse(to.exists())
-
         val browserStore = BrowserStore(
             initialState = BrowserState(
                 downloads = mapOf(
@@ -1429,6 +1431,7 @@ class DownloadUIStoreTest {
                 DownloadUIRenameMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
                     mainDispatcher = testDispatcher,
                 ),
             ),
@@ -1442,9 +1445,6 @@ class DownloadUIStoreTest {
         )
 
         testDispatcher.scheduler.advanceUntilIdle()
-
-        assertFalse(from.exists())
-        assertTrue(to.exists())
 
         assertEquals(newName, browserStore.state.downloads["1"]?.fileName)
 
@@ -1476,6 +1476,7 @@ class DownloadUIStoreTest {
                 DownloadUIRenameMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
                     mainDispatcher = testDispatcher,
                 ),
             ),
@@ -1517,6 +1518,7 @@ class DownloadUIStoreTest {
                 DownloadUIRenameMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
                     mainDispatcher = testDispatcher,
                 ),
             ),
@@ -1558,6 +1560,7 @@ class DownloadUIStoreTest {
                 DownloadUIRenameMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
                     mainDispatcher = testDispatcher,
                 ),
             ),
@@ -1599,6 +1602,7 @@ class DownloadUIStoreTest {
                 DownloadUIRenameMiddleware(
                     browserStore = browserStore,
                     scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
                     mainDispatcher = testDispatcher,
                 ),
             ),

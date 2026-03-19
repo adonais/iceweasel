@@ -117,4 +117,18 @@ interface DownloadFileUtils {
         fileName: String?,
         directoryPath: String,
     ): Boolean
+
+    /**
+     * Renames a file within a directory.
+     * This method handles both standard file paths and Storage Access Framework (SAF) URIs.
+     *
+     * @param directoryPath The path of the directory containing the file.
+     * @param oldName The current name of the file to be renamed.
+     * @param newName The new name to be assigned to the file.
+     */
+    fun renameFile(
+        directoryPath: String,
+        oldName: String?,
+        newName: String,
+    ): Boolean
 }

@@ -13,6 +13,7 @@ import mozilla.components.browser.state.action.DownloadAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import mozilla.components.support.utils.DownloadFileUtils
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
@@ -24,11 +25,13 @@ import java.io.File
  *
  * @param browserStore [BrowserStore] instance to get the download items from.
  * @param scope The [CoroutineScope] that will be used to launch coroutines.
+ * @param downloadFileUtils [DownloadFileUtils] instance used for file system operations.
  * @param mainDispatcher The [CoroutineDispatcher] used for dispatching actions back to the stores.
  */
 class DownloadUIRenameMiddleware(
     private val browserStore: BrowserStore,
     private val scope: CoroutineScope,
+    private val downloadFileUtils: DownloadFileUtils,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : Middleware<DownloadUIState, DownloadUIAction> {
 
@@ -79,10 +82,8 @@ class DownloadUIRenameMiddleware(
             }
 
             val newNameTrimmed = newName.trim()
-            val from = File(download.directoryPath, currentName)
-            val to = File(download.directoryPath, newNameTrimmed)
 
-            if (to.exists()) {
+            if (downloadFileUtils.fileExists(download.directoryPath, newNameTrimmed)) {
                 dispatchAction(
                     uiStore,
                     DownloadUIAction.RenameFileFailed(
@@ -92,8 +93,17 @@ class DownloadUIRenameMiddleware(
                 return@launch
             }
 
-            if (!attemptFileRename(from, to)) {
-                dispatchAction(uiStore, DownloadUIAction.RenameFileFailed(RenameFileError.CannotRename))
+            val attemptFileRename = downloadFileUtils.renameFile(
+                directoryPath = download.directoryPath,
+                oldName = download.fileName,
+                newName = newNameTrimmed,
+            )
+
+            if (!attemptFileRename) {
+                dispatchAction(
+                    uiStore,
+                    DownloadUIAction.RenameFileFailed(RenameFileError.CannotRename),
+                )
                 return@launch
             }
 
@@ -102,14 +112,6 @@ class DownloadUIRenameMiddleware(
                 browserStore.dispatch(DownloadAction.UpdateDownloadAction(updated))
                 uiStore.dispatch(DownloadUIAction.RenameFileDismissed)
             }
-        }
-    }
-
-    private fun attemptFileRename(from: File, to: File): Boolean {
-        return try {
-            from.exists() && from.isFile && from.renameTo(to)
-        } catch (_: Throwable) {
-            false
         }
     }
 }
