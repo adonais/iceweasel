@@ -26,7 +26,7 @@
                 android:padding="8dp"
                 android:scaleType="centerCrop"
                 android:importantForAccessibility="no"
-                tools:src="@drawable/ic_folder_icon" />
+                tools:src="@drawable/mozac_ic_folder_24" />
         <ImageView
                 android:id="@+id/checkmark"
                 android:layout_width="40dp"

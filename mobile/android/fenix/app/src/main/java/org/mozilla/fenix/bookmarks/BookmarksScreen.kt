@@ -1605,7 +1605,7 @@ private fun EditFolderScreen(
 
                 IconListItem(
                     label = editState.parent.title,
-                    beforeIconPainter = painterResource(R.drawable.ic_folder_icon),
+                    beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
                     onClick = { store.dispatch(EditFolderAction.ParentFolderClicked) },
                 )
             }
@@ -1696,7 +1696,7 @@ private fun AddFolderScreen(
 
                 IconListItem(
                     label = state?.parent?.title ?: "",
-                    beforeIconPainter = painterResource(R.drawable.ic_folder_icon),
+                    beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
                     onClick = { store.dispatch(AddFolderAction.ParentFolderClicked) },
                 )
             }
