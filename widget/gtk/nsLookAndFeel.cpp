@@ -2697,6 +2697,8 @@ void nsLookAndFeel::RecordLookAndFeelSpecificTelemetry() {
   nsCString version;
   version.AppendPrintf("%d.%d", gtk_major_version, gtk_minor_version);
   glean::widget::gtk_version.Set(version);
+
+  glean::widget::desktop_environment.Set(GetDesktopEnvironmentIdentifier());
 }
 
 bool nsLookAndFeel::ShouldHonorThemeScrollbarColors() {
