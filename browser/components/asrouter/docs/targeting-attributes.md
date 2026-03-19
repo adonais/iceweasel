@@ -55,6 +55,8 @@ Please note that some targeting attributes require stricter controls on the tele
 * [isDefaultHandler](#isdefaulthandler)
 * [isDeviceMigration](#isdevicemigration)
 * [isEncryptedBackup](#isEncryptedBackup)
+* [isFirstRun](#isfirstrun)
+* [isFirstStartup](#isfirststartup)
 * [isFxAEnabled](#isfxaenabled)
 * [isFxASignedIn](#isfxasignedin)
 * [isMajorUpgrade](#ismajorupgrade)
@@ -349,7 +351,9 @@ declare const launchOnLoginEnabled: boolean;
 ```
 
 ### `locale`
-The current locale of the browser including country code, e.g. `en-US`.
+The current UI locale of the browser including country code, e.g. `en-US`. This is
+the locale Firefox chose to render its UI in: the first match between Firefox's
+available locales and the user's ranked OS/browser language preferences.
 
 #### Examples
 * Is the locale of the browser either English (US) or German (Germany)?
@@ -361,6 +365,8 @@ locale in ["en-US", "de-DE"]
 ```ts
 declare const locale: string;
 ```
+
+[Source](https://searchfox.org/mozilla-central/source/browser/components/asrouter/modules/ASRouterTargeting.sys.mjs#651)
 
 ### `localeLanguageCode`
 The current locale of the browser NOT including country code, e.g. `en`.
@@ -502,7 +508,15 @@ declare const providerCohorts: {
 
 ### `region`
 
-Country code retrieved from `location.services.mozilla.com`. Can be `""` if request did not finish or encountered an error.
+The user's home region as a country code. Firefox distinguishes between two region concepts:
+
+- **Home region** (`Region.home`): the region determined when the user first set up their
+  profile, queried from `location.services.mozilla.com` and then persisted. This is
+  what this targeting attribute exposes.
+- **Current region** (`Region.current`): the most recently detected region via IP-based
+  geolocation, which may differ from home if the user is traveling.
+
+Can be `""` if the location service request has not yet completed or encountered an error.
 
 #### Examples
 * Is the user in Canada?
@@ -515,6 +529,8 @@ region == "CA"
 ```ts
 declare const region: string;
 ```
+
+[Source](https://searchfox.org/mozilla-central/source/browser/components/asrouter/modules/ASRouterTargeting.sys.mjs#835)
 
 ### `searchEngines`
 
@@ -1291,3 +1307,41 @@ Indicates whether a user has selected an encrypted or non-encrypted backup metho
 ### `isSmartWindowOnboarding`
 
 A boolean. `true` when a user downloads Firefox from a Smart Window marketing campaign (ie. `attributionData.campaign == "smart_window"`), `false` otherwise.
+
+### `isFirstRun`
+
+`true` on the first time Normandy runs on a new profile. Normandy sets the
+`app.normandy.first_run` pref to `false` after its first run, so this will be
+`true` exactly once per profile regardless of installation mechanism.
+
+> ⚠ **NOTE:** This targeting attribute is only available for the JEXL expressions
+> of experiments' advanced targeting configs, which are defined in the
+> [experimenter repository](https://experimenter.info). Targeting expressions for
+> messages do not have access to this attribute.
+
+#### Definition
+
+```ts
+declare const isFirstRun: boolean;
+```
+
+[Source](https://searchfox.org/mozilla-central/source/toolkit/components/normandy/lib/ClientEnvironment.sys.mjs#121)
+
+### `isFirstStartup`
+
+`true` while Firefox is running through its first-startup sequence (i.e., when
+`FirstStartup` is in the `IN_PROGRESS` state). Unlike `isFirstRun`, which tracks
+the first Normandy run, this tracks the first startup of the browser itself.
+
+> ⚠ **NOTE:** This targeting attribute is only available for the JEXL expressions
+> of experiments' advanced targeting configs, which are defined in the
+> [experimenter repository](https://experimenter.info). Targeting expressions for
+> messages do not have access to this attribute.
+
+#### Definition
+
+```ts
+declare const isFirstStartup: boolean;
+```
+
+[Source](https://searchfox.org/mozilla-central/source/toolkit/components/nimbus/lib/ExperimentManager.sys.mjs#233)
