@@ -9,7 +9,7 @@ let gMatchingRegex;
 
 add_setup(async () => {
   gMatchingRegex = new RegExp(
-    `^${BackupService.BACKUP_FILE_NAME}_[a-z0-9-]+_[0-9_-]+.html$`
+    `^${BackupService.BACKUP_FILE_NAME}_[a-z0-9-]+_[0-9.-]+.html$`
   );
   gTestSourcePath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
@@ -82,7 +82,7 @@ add_task(async function test_filename() {
 add_task(async function test_remove_old_files() {
   const OLDER_BACKUP = PathUtils.join(
     gTestDestPath,
-    `FirefoxBackup_${FAKE_METADATA.profileName}_20200101-0000.html`
+    `FirefoxBackup_${FAKE_METADATA.profileName}_20200101-000000.000.html`
   );
   await IOUtils.writeUTF8(OLDER_BACKUP, "test");
 
@@ -102,7 +102,7 @@ add_task(async function test_remove_old_files() {
 add_task(async function test_remove_old_files_other_profile() {
   const OLDER_BACKUP = PathUtils.join(
     gTestDestPath,
-    `FirefoxBackup_SomeOtherProfile_20200101-0000.html`
+    `FirefoxBackup_SomeOtherProfile_20200101-000000.000.html`
   );
   await IOUtils.writeUTF8(OLDER_BACKUP, "test");
 
