@@ -5544,7 +5544,8 @@ class FunctionCompiler {
     MInstruction* dstData = MWasmLoadField::New(
         alloc(), dstArrayObject, nullptr, WasmArrayObject::offsetOfData(),
         mozilla::Nothing(), MIRType::WasmArrayData, MWideningOp::None,
-        AliasSet::Load(AliasSet::WasmArrayDataPointer));
+        AliasSet::Load(AliasSet::WasmArrayDataPointer),
+        mozilla::Some(trapSiteDesc()));
     if (!dstData) {
       return false;
     }
@@ -5553,7 +5554,8 @@ class FunctionCompiler {
     MInstruction* srcData = MWasmLoadField::New(
         alloc(), srcArrayObject, nullptr, WasmArrayObject::offsetOfData(),
         mozilla::Nothing(), MIRType::WasmArrayData, MWideningOp::None,
-        AliasSet::Load(AliasSet::WasmArrayDataPointer));
+        AliasSet::Load(AliasSet::WasmArrayDataPointer),
+        mozilla::Some(trapSiteDesc()));
     if (!srcData) {
       return false;
     }
