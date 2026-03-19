@@ -109,7 +109,7 @@ class HistoryListItemViewHolder(
         ) {
             binding.historyLayout.loadFavicon(item.url)
         } else if (item is History.Group) {
-            binding.historyLayout.iconView.setImageResource(R.drawable.ic_multiple_tabs)
+            binding.historyLayout.iconView.setImageResource(iconsR.drawable.mozac_ic_tab_tray_24)
         }
 
         if (mode is HistoryFragmentState.Mode.Editing) {

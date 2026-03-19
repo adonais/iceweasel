@@ -24,7 +24,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_multiple_tabs" />
+        app:srcCompat="@drawable/mozac_ic_tab_tray_24" />
 
     <TextView
         android:id="@+id/recently_closed_tabs_header"
