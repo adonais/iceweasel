@@ -114,6 +114,7 @@ import org.mozilla.fenix.telemetry.ACTION_QR_CLICKED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import kotlin.LazyThreadSafetyMode.NONE
 import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.GleanMetrics.Toolbar as GleanMetricsToolbar
 
 typealias SearchDialogFragmentStore = SearchFragmentStore
@@ -927,7 +928,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
                 if (qrButtonAction == null) {
                     qrButtonAction = IncreasedTapAreaActionDecorator(
                         BrowserToolbar.Button(
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_qr)!!,
+                            AppCompatResources.getDrawable(requireContext(), iconsR.drawable.mozac_ic_qr_code_24)!!,
                             requireContext().getString(R.string.search_scan_button_2),
                             autoHide = { true },
                             listener = ::launchQr,
