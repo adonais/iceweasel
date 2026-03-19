@@ -1224,6 +1224,60 @@ const POLICIES_TESTS = [
     },
   },
 
+  // AIControls - all features locked via Default.Locked
+  {
+    policies: {
+      AIControls: {
+        Default: { Value: "blocked", Locked: true },
+        Translations: { Value: "available" },
+        PDFAltText: { Value: "available" },
+        SmartTabGroups: { Value: "blocked" },
+        LinkPreviewKeyPoints: { Value: "available" },
+        SidebarChatbot: { Value: "blocked" },
+      },
+    },
+    lockedPrefs: {
+      "browser.ai.control.default": "blocked",
+      "browser.ai.control.translations": "available",
+      "browser.translations.enable": true,
+      "browser.ai.control.pdfjsAltText": "available",
+      "pdfjs.enableAltText": true,
+      "browser.ai.control.smartTabGroups": "blocked",
+      "browser.tabs.groups.smart.userEnabled": false,
+      "browser.ai.control.linkPreviewKeyPoints": "available",
+      "browser.ml.linkPreview.enabled": true,
+      "browser.ai.control.sidebarChatbot": "blocked",
+      "browser.ml.chat.enabled": false,
+      "browser.ml.chat.page": false,
+    },
+  },
+
+  // AIControls - per-feature locked override
+  {
+    policies: {
+      AIControls: {
+        Default: { Value: "blocked", Locked: true },
+        Translations: { Value: "available", Locked: false },
+      },
+    },
+    lockedPrefs: {
+      "browser.ai.control.default": "blocked",
+      "browser.ai.control.pdfjsAltText": "blocked",
+      "pdfjs.enableAltText": false,
+      "browser.ai.control.smartTabGroups": "blocked",
+      "browser.tabs.groups.smart.userEnabled": false,
+      "browser.ai.control.linkPreviewKeyPoints": "blocked",
+      "browser.ml.linkPreview.optin": false,
+      "browser.ai.control.sidebarChatbot": "blocked",
+      "browser.ml.chat.enabled": false,
+      "browser.ml.chat.page": false,
+    },
+    unlockedPrefs: {
+      "browser.ai.control.translations": "available",
+      "browser.translations.enable": true,
+    },
+  },
+
   // GenerativeAI
   {
     policies: {

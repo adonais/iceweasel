@@ -43,17 +43,19 @@ export class PdfJsGuessAltTextFeature extends AIFeature {
   }
 
   /** @inheritdoc */
-  static async disable() {
+  static async block() {
     Services.prefs.setBoolPref("pdfjs.enableGuessAltText", false);
     Services.prefs.setBoolPref("pdfjs.enableAltTextModelDownload", false);
     Services.prefs.setBoolPref("pdfjs.enableAltText", false);
     await this.uninstall();
   }
 
-  static async reset() {
+  static async makeAvailable() {
     Services.prefs.clearUserPref("pdfjs.enableGuessAltText");
     Services.prefs.clearUserPref("pdfjs.enableAltTextModelDownload");
-    Services.prefs.clearUserPref("pdfjs.enableAltText");
+    // Set explicitly rather than clearing, so that a non-locked policy default
+    // of "blocked" does not prevent the user from switching back to "available".
+    Services.prefs.setBoolPref("pdfjs.enableAltText", true);
     await this.uninstall();
   }
 

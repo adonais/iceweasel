@@ -53,7 +53,7 @@ export const GeckoViewAIFeatures = {
           aCallback.onError(`Unknown AI feature: '${aData.featureId}'`);
           return;
         }
-        (aData.isEnabled ? feature.enable() : feature.disable()).then(
+        (aData.isEnabled ? feature.enable() : feature.block()).then(
           () => aCallback.onSuccess(),
           error =>
             aCallback.onError(
@@ -68,11 +68,11 @@ export const GeckoViewAIFeatures = {
           aCallback.onError(`Unknown AI feature: ${aData.featureId}`);
           return;
         }
-        feature.reset().then(
+        feature.makeAvailable().then(
           () => aCallback.onSuccess(),
           error =>
             aCallback.onError(
-              `Could not reset ${aData.featureId} error: ${error}`
+              `Could not make ${aData.featureId} available error: ${error}`
             )
         );
         break;

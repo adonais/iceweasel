@@ -95,10 +95,13 @@ export const OnDeviceModelManager = {
           .get(/** @type {OnDeviceModelFeaturesEnum} */ (feature))
           .has(data)
       ) {
-        Services.obs.notifyObservers(
-          null,
-          "OnDeviceModelManagerChange",
-          feature
+        // Ensure feature pref listeners trigger before we notify the change.
+        queueMicrotask(() =>
+          Services.obs.notifyObservers(
+            null,
+            "OnDeviceModelManagerChange",
+            feature
+          )
         );
       }
     }
@@ -192,16 +195,16 @@ export const OnDeviceModelManager = {
   },
 
   /**
-   * Reset a feature to its default state.
+   * Make a feature available (reset to default state).
    *
-   * @param {OnDeviceModelFeaturesEnum} feature The feature key to reset.
+   * @param {OnDeviceModelFeaturesEnum} feature The feature key to make available.
    */
-  async reset(feature) {
+  async makeAvailable(feature) {
     if (this.isManagedByPolicy(feature)) {
       return;
     }
     Services.prefs.clearUserPref(this.getFeaturePref(feature));
-    await this.getAIFeature(feature).reset();
+    await this.getAIFeature(feature).makeAvailable();
   },
 
   /**
@@ -218,16 +221,16 @@ export const OnDeviceModelManager = {
   },
 
   /**
-   * Disable a feature (block it, hide UI, remove models).
+   * Block a feature (hide UI, remove models).
    *
-   * @param {OnDeviceModelFeaturesEnum} feature The feature key to disable.
+   * @param {OnDeviceModelFeaturesEnum} feature The feature key to block.
    */
-  async disable(feature) {
+  async block(feature) {
     if (this.isManagedByPolicy(feature)) {
       return;
     }
     Services.prefs.setStringPref(this.getFeaturePref(feature), "blocked");
-    await this.getAIFeature(feature).disable();
+    await this.getAIFeature(feature).block();
   },
 };
 

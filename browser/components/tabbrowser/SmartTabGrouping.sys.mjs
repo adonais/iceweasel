@@ -270,7 +270,7 @@ export class SmartTabGroupingManager extends AIFeature {
    *
    * @return {Promise<void>}
    */
-  static async disable() {
+  static async block() {
     // disable prefs associated with stg
     // opt-in flow is kept as in unless we decide to disable and re-enable later
     // which would make the user have to go through the flow twice
@@ -314,9 +314,11 @@ export class SmartTabGroupingManager extends AIFeature {
    * Resets smart tab grouping to its default state where UI is visible
    * and user opt-in is required
    */
-  static async reset() {
-    Services.prefs.clearUserPref("browser.tabs.groups.smart.enabled");
-    Services.prefs.clearUserPref("browser.tabs.groups.smart.userEnabled");
+  static async makeAvailable() {
+    // Set explicitly rather than clearing, so that a non-locked policy default
+    // of "blocked" does not prevent the user from switching back to "available".
+    Services.prefs.setBoolPref("browser.tabs.groups.smart.enabled", true);
+    Services.prefs.setBoolPref("browser.tabs.groups.smart.userEnabled", true);
     Services.prefs.clearUserPref("browser.tabs.groups.smart.optin");
 
     // remove local models

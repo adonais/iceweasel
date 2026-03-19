@@ -142,7 +142,7 @@ add_task(
         ],
       },
       async () => {
-        await TranslationsParent.AIFeature.disable();
+        await TranslationsParent.AIFeature.block();
       }
     );
     await aboutTranslationsTestUtils.assertIsVisible(FEATURE_BLOCKED_UI);
@@ -180,7 +180,7 @@ add_task(
         ],
       },
       async () => {
-        await TranslationsParent.AIFeature.disable();
+        await TranslationsParent.AIFeature.block();
       }
     );
     await aboutTranslationsTestUtils.assertIsVisible(FEATURE_BLOCKED_UI);
@@ -346,7 +346,7 @@ add_task(
         ],
       },
       async () => {
-        await TranslationsParent.AIFeature.disable();
+        await TranslationsParent.AIFeature.block();
       }
     );
 

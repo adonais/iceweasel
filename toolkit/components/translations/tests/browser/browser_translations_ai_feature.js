@@ -282,7 +282,7 @@ add_task(async function test_ai_feature_disable() {
 
   try {
     shouldThrow = true;
-    await feature.disable();
+    await feature.block();
     is(
       Services.prefs.getStringPref(AI_CONTROL_TRANSLATIONS_PREF),
       "blocked",
@@ -331,14 +331,16 @@ add_task(async function test_ai_feature_reset() {
   };
 
   try {
-    await feature.reset();
-    ok(
-      !Services.prefs.prefHasUserValue(AI_CONTROL_TRANSLATIONS_PREF),
-      "Reset clears the AI control pref"
+    await feature.makeAvailable();
+    is(
+      Services.prefs.getStringPref(AI_CONTROL_TRANSLATIONS_PREF),
+      "available",
+      "makeAvailable sets the AI control pref to 'available'"
     );
-    ok(
-      !Services.prefs.prefHasUserValue(TRANSLATIONS_ENABLE_PREF),
-      "Reset clears the translations enabled pref"
+    is(
+      Services.prefs.getBoolPref(TRANSLATIONS_ENABLE_PREF),
+      true,
+      "makeAvailable enables translations"
     );
     is(deleteCalls, 1, "Reset deletes artifacts");
 
@@ -386,7 +388,7 @@ add_task(async function test_ai_feature_policy_lock_enable_pref() {
 
     threw = false;
     try {
-      await feature.disable();
+      await feature.block();
     } catch (error) {
       threw = true;
     }
@@ -394,7 +396,7 @@ add_task(async function test_ai_feature_policy_lock_enable_pref() {
 
     threw = false;
     try {
-      await feature.reset();
+      await feature.makeAvailable();
     } catch (error) {
       threw = true;
     }
@@ -440,7 +442,7 @@ add_task(async function test_ai_feature_policy_lock_ai_control_pref() {
 
     threw = false;
     try {
-      await feature.disable();
+      await feature.block();
     } catch (error) {
       threw = true;
     }
@@ -448,7 +450,7 @@ add_task(async function test_ai_feature_policy_lock_ai_control_pref() {
 
     threw = false;
     try {
-      await feature.reset();
+      await feature.makeAvailable();
     } catch (error) {
       threw = true;
     }
