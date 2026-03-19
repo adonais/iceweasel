@@ -50,8 +50,13 @@
     <!-- Description for the sport suggestion card's date when the game will hold today. -->
     <string name="mozac_browser_awesomebar_sport_suggestion_date_today">Today</string>
     <!--
-      The description for the stock suggestion card's date when the game will hold tomorrow.
+      The description for the sport suggestion card's date when the game will hold tomorrow.
       %s is a placeholder that will be replaced by the time e.g. 5:00 PM or 17:00 depending on the locale
     -->
     <string name="mozac_browser_awesomebar_sport_suggestion_date_tomorrow">Tomorrow at %s</string>
+    <!--
+      The description for the sport suggestion teams to be read by talkback when there are no sports scores displayed.
+      %s are placeholders that will be replaced by the team names e.g. Yankees versus Lakers.
+    -->
+    <string name="mozac_browser_awesomebar_sport_suggestion_talkback_team_description_no_score">%1$s versus %2$s</string>
 </resources>
