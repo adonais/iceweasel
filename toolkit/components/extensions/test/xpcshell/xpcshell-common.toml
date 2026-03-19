@@ -826,6 +826,8 @@ skip-if = [
   "os == 'android' && debug",
 ]
 
+["text_ext_webRequest_js_cache.js"]
+
 ["test_ext_webRequest_mergecsp.js"]
 skip-if = [
   "tsan", # Bug 1683730
