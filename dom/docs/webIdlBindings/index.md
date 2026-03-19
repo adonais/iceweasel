@@ -1842,7 +1842,7 @@ the first time the object is constructed, or any static method on the
 object is invoked.
 
 The complete list of valid deprecation tags is maintained in
-[nsDeprecatedOperationList.inc](https://searchfox.org/mozilla-central/source/dom/base/nsDeprecatedOperationList.h).
+[nsDeprecatedOperationList.inc](https://searchfox.org/firefox-main/source/dom/base/nsDeprecatedOperationList.inc).
 Each new tag requires that a localized string be defined, containing the
 deprecation message to display.
 
