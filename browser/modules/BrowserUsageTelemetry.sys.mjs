@@ -830,6 +830,13 @@ export let BrowserUsageTelemetry = {
 
     // Handle share menu items before checking customizable widgets,
     // since they are children of share-tab-button.
+    if (node.classList?.contains("share-copy-link")) {
+      let shareItem = node.closest(".share-tab-url-item") ?? node;
+      return shareItem.browsersToShare !== null
+        ? "context-copy-multiple-urls"
+        : "context-copy-url";
+    }
+
     if (node.hasAttribute("data-share-name")) {
       return "share-macos-provider";
     }

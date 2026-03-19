@@ -1576,6 +1576,7 @@ browser.ui.interaction:
   tabs_context:
     bug_numbers:
       - 1620358
+      - 2020865
     description: >
       Records a count of interactions with items in the tab context menu.
       See https://firefox-source-docs.mozilla.org/browser/BrowserUsageTelemetry.html

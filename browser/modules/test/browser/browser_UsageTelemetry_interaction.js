@@ -302,6 +302,138 @@ add_task(async function contextMenu() {
   });
 });
 
+add_task(async function contextMenu_copyLink() {
+  // On Windows, single-tab uses the native share dialog rather than copy-link.
+  if (AppConstants.platform == "win") {
+    return;
+  }
+  await BrowserTestUtils.withNewTab("https://example.com", async () => {
+    Services.telemetry.getSnapshotForKeyedScalars("main", true);
+    resetGleanEvents();
+
+    let tab = gBrowser.selectedTab;
+    let context = elem("tabContextMenu");
+    let shown = BrowserTestUtils.waitForEvent(context, "popupshown");
+    EventUtils.synthesizeMouseAtCenter(
+      tab,
+      { type: "contextmenu", button: 2 },
+      window
+    );
+    await shown;
+
+    let hidden = BrowserTestUtils.waitForEvent(context, "popuphidden");
+
+    // On macOS, the "Copy Link" item appears in a submenu item, alongside a
+    // list of native macOS share options.
+    if (AppConstants.platform == "macosx") {
+      await BrowserTestUtils.waitForMutationCondition(
+        context,
+        { childList: true },
+        () => context.querySelector(".share-tab-url-item")
+      );
+      let shareMenu = context.querySelector(".share-tab-url-item");
+      let submenuShown = BrowserTestUtils.waitForPopupEvent(
+        shareMenu.menupopup,
+        "shown"
+      );
+      shareMenu.openMenu(true);
+      await submenuShown;
+      shareMenu.menupopup.activateItem(
+        shareMenu.menupopup.querySelector(".share-copy-link")
+      );
+    } else {
+      context.activateItem(context.querySelector(".share-tab-url-item"));
+    }
+
+    await hidden;
+
+    let events = Glean.browserUsage.interaction
+      .testGetValue()
+      .map(e => [e.extra.source, e.extra.widget_id]);
+    Assert.deepEqual(
+      [
+        ["tabs-context", "context-copy-url"],
+        ["tabs-context-entrypoint", "context-copy-url"],
+      ],
+      events
+    );
+    assertInteractionScalars({
+      tabs_context: { "context-copy-url": 1 },
+    });
+  });
+});
+
+add_task(async function contextMenu_copyMultipleLinks() {
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com"
+  );
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.org"
+  );
+
+  let clicked = BrowserTestUtils.waitForEvent(tab1, "click");
+  let multiSelectKey =
+    AppConstants.platform == "macosx" ? { metaKey: true } : { ctrlKey: true };
+  EventUtils.synthesizeMouseAtCenter(tab1, multiSelectKey, window);
+  await clicked;
+
+  Services.telemetry.getSnapshotForKeyedScalars("main", true);
+  resetGleanEvents();
+
+  let context = elem("tabContextMenu");
+  let shown = BrowserTestUtils.waitForEvent(context, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(
+    tab2,
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  await shown;
+
+  let hidden = BrowserTestUtils.waitForEvent(context, "popuphidden");
+
+  // On macOS, the "Copy Link" item appears in a submenu item, alongside a
+  // list of native macOS share options.
+  if (AppConstants.platform == "macosx") {
+    await BrowserTestUtils.waitForMutationCondition(
+      context,
+      { childList: true },
+      () => context.querySelector(".share-tab-url-item")
+    );
+    let shareMenu = context.querySelector(".share-tab-url-item");
+    let submenuShown = BrowserTestUtils.waitForPopupEvent(
+      shareMenu.menupopup,
+      "shown"
+    );
+    shareMenu.openMenu(true);
+    await submenuShown;
+    shareMenu.menupopup.activateItem(
+      shareMenu.menupopup.querySelector(".share-copy-link")
+    );
+  } else {
+    context.activateItem(context.querySelector(".share-tab-url-item"));
+  }
+  await hidden;
+
+  let events = Glean.browserUsage.interaction
+    .testGetValue()
+    .map(e => [e.extra.source, e.extra.widget_id]);
+  Assert.deepEqual(
+    [
+      ["tabs-context", "context-copy-multiple-urls"],
+      ["tabs-context-entrypoint", "context-copy-multiple-urls"],
+    ],
+    events
+  );
+  assertInteractionScalars({
+    tabs_context: { "context-copy-multiple-urls": 1 },
+  });
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+});
+
 add_task(async function contextMenu_entrypoints() {
   /**
    * A utility function for this test task that opens the tab context

@@ -197,7 +197,6 @@ class SharingUtilsCls {
     shareURLMenuItem.classList.add("share-copy-link");
 
     if (AppConstants.platform == "macosx") {
-      shareURLMenuItem.setAttribute("data-share-name", "share_macosx_copy");
       shareURLMenuItem.classList.add("menuitem-iconic");
       shareURLMenuItem.setAttribute(
         "image",

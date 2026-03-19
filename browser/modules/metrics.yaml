@@ -1068,11 +1068,14 @@ browser.ui.interaction:
       scalar browser.ui.interaction.tabs_context.
     bugs:
       - https://bugzil.la/1620358
+      - https://bugzil.la/2020865
     data_reviews:
       - https://bugzil.la/1620358
+      - https://bugzil.la/2020865
     notification_emails:
       - shong@mozilla.com
       - dtownsend@mozilla.com
+      - jswinarton@mozilla.com
     expires: never
     telemetry_mirror: BROWSER_UI_INTERACTION_TABS_CONTEXT
 
