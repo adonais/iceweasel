@@ -258,8 +258,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
    private:
     uint32_t mDecodedFrames = 0;
 
-    float mAverageFrameDecodeTime = 0;
-    float mAverageFrameDuration = 0;
+    double mAverageFrameDecodeTime = 0;
+    double mAverageFrameDuration = 0;
 
     // Number of delayed frames until we consider decoding as slow.
     const uint32_t mMaxLateDecodedFrames = 15;

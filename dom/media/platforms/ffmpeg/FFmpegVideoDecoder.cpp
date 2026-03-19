@@ -1115,24 +1115,24 @@ bool FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::IsDecodingSlow() const {
 void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::UpdateDecodeTimes(
     int64_t aDuration) {
   TimeStamp now = TimeStamp::Now();
-  float decodeTime = AssertedCast<float>((now - mDecodeStart).ToMilliseconds());
+  double decodeTime = (now - mDecodeStart).ToMilliseconds();
   mDecodeStart = now;
 
-  const float frameDuration = AssertedCast<float>(aDuration) / 1000.0f;
-  if (frameDuration <= 0.0f) {
+  const double frameDuration = AssertedCast<double>(aDuration) / 1000.0;
+  if (frameDuration <= 0.0) {
     FFMPEGV_LOG("Incorrect frame duration, skipping decode stats.");
     return;
   }
 
   mDecodedFrames++;
   mAverageFrameDuration =
-      (mAverageFrameDuration * AssertedCast<float>(mDecodedFrames - 1) +
+      (mAverageFrameDuration * AssertedCast<double>(mDecodedFrames - 1) +
        frameDuration) /
-      AssertedCast<float>(mDecodedFrames);
+      AssertedCast<double>(mDecodedFrames);
   mAverageFrameDecodeTime =
-      (mAverageFrameDecodeTime * AssertedCast<float>(mDecodedFrames - 1) +
+      (mAverageFrameDecodeTime * AssertedCast<double>(mDecodedFrames - 1) +
        decodeTime) /
-      AssertedCast<float>(mDecodedFrames);
+      AssertedCast<double>(mDecodedFrames);
 
   FFMPEGV_LOG(
       "Frame decode takes %.2f ms average decode time %.2f ms frame duration "
@@ -1157,10 +1157,10 @@ void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::UpdateDecodeTimes(
   } else if (mLastDelayedFrameNum) {
     // Reset mDecodedFramesLate in case of correct decode during
     // mDelayedFrameReset period.
-    float correctPlaybackTime =
-        AssertedCast<float>(mDecodedFrames - mLastDelayedFrameNum) *
+    double correctPlaybackTime =
+        AssertedCast<double>(mDecodedFrames - mLastDelayedFrameNum) *
         mAverageFrameDuration;
-    if (correctPlaybackTime > AssertedCast<float>(mDelayedFrameReset)) {
+    if (correctPlaybackTime > mDelayedFrameReset) {
       FFMPEGV_LOG("  mLastFramePts reset due to seamless decode period");
       mDecodedFramesLate = 0;
       mLastDelayedFrameNum = 0;
