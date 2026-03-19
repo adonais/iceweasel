@@ -9,12 +9,16 @@ import {
   AIWindow,
 } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
 
+const gFadingWindows = new WeakSet();
+
 export const AIWindowUI = {
   BOX_ID: "ai-window-box",
   SPLITTER_ID: "ai-window-splitter",
   BROWSER_ID: "ai-window-browser",
   STACK_CLASS: "ai-window-browser-stack",
   AI_WINDOW_ELEMENT_TIMEOUT: 1500,
+  TAB_FADE_MS: 200,
+  TAB_FADE_TIMEOUT_MS: 200 * 2 + 50,
 
   /**
    * @param {Window} win
@@ -385,5 +389,77 @@ export const AIWindowUI = {
 
     const aiWindowBrowser = win.document.getElementById(this.BROWSER_ID);
     return aiWindowBrowser?.contentDocument?.querySelector("ai-window:defined");
+  },
+
+  _getFadeTarget(win) {
+    const tabPanels = win?.document?.getElementById("tabbrowser-tabpanels");
+    return tabPanels?.selectedPanel ?? null;
+  },
+
+  _prefersReducedMotion(win) {
+    return !!win?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  },
+
+  _fadeToOpacity(el, win, { to }) {
+    return new Promise(resolve => {
+      const onEnd = event => {
+        if (event.propertyName !== "opacity") {
+          return;
+        }
+        el.removeEventListener("transitionend", onEnd);
+        win.clearTimeout(timer);
+        resolve();
+      };
+
+      const timer = win.setTimeout(() => {
+        el.removeEventListener("transitionend", onEnd);
+        resolve();
+      }, this.TAB_FADE_TIMEOUT_MS);
+
+      el.addEventListener("transitionend", onEnd);
+
+      el.style.transition = `opacity ${this.TAB_FADE_MS}ms ease`;
+      el.style.opacity = String(to);
+    });
+  },
+
+  async _runTabPanelsFade(win) {
+    const target = this._getFadeTarget(win);
+    if (!win || !target) {
+      return;
+    }
+    if (this._prefersReducedMotion(win)) {
+      // TODO - find alternate approach here
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=2024055
+      return;
+    }
+
+    const prevTransition = target.style.transition;
+    const prevOpacity = target.style.opacity;
+
+    try {
+      await this._fadeToOpacity(target, win, { to: "0.25" });
+      target.getBoundingClientRect(); // layout flush for reliable fade-in
+      await this._fadeToOpacity(target, win, { to: "1" });
+    } finally {
+      target.style.transition = prevTransition;
+      target.style.opacity = prevOpacity;
+    }
+  },
+
+  /**
+   * Handle citation link click of a URL that the user is currently on
+   *
+   * @param {Window} win
+   */
+  handleSameLinkClick(win) {
+    if (!win || gFadingWindows.has(win)) {
+      return;
+    }
+    gFadingWindows.add(win);
+
+    this._runTabPanelsFade(win).finally(() => {
+      gFadingWindows.delete(win);
+    });
   },
 };

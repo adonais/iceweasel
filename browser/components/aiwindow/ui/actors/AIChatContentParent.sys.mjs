@@ -10,6 +10,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://global/content/ml/security/SecurityOrchestrator.sys.mjs",
   SmartWindowTelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
+  AIWindowUI:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
 });
 
 /**
@@ -176,6 +178,7 @@ export class AIChatContentParent extends JSWindowActorParent {
   #handleOpenLink(data) {
     const aiWindow = this.#getAIWindowElement();
     aiWindow?.onOpenLink();
+
     try {
       const { url } = data;
       if (!url) {
@@ -188,15 +191,27 @@ export class AIChatContentParent extends JSWindowActorParent {
       }
 
       const window = this.browsingContext.topChromeWindow;
-      if (window) {
-        lazy.SmartWindowTelemetry.recordUriLoad();
-        const tabFound = window.switchToTabHavingURI(url, false, {});
-        if (!tabFound) {
-          window.gBrowser.selectedTab = window.gBrowser.addTab(url, {
-            triggeringPrincipal:
-              Services.scriptSecurityManager.createNullPrincipal({}),
-          });
-        }
+
+      if (!window) {
+        return;
+      }
+
+      lazy.SmartWindowTelemetry.recordUriLoad();
+      const currentPageURL = window.gBrowser.selectedBrowser.currentURI.spec;
+
+      // Only treat it as "same link" if the URL is identical.
+      // If anything differs (hash/query/path), let normal navigation proceed.
+      if (url === currentPageURL) {
+        lazy.AIWindowUI.handleSameLinkClick(window);
+        return;
+      }
+
+      const tabFound = window.switchToTabHavingURI(url, false, {});
+      if (!tabFound) {
+        window.gBrowser.selectedTab = window.gBrowser.addTab(url, {
+          triggeringPrincipal:
+            Services.scriptSecurityManager.createNullPrincipal({}),
+        });
       }
     } catch (e) {
       console.warn("Could not open link from AI Window chat", e);
