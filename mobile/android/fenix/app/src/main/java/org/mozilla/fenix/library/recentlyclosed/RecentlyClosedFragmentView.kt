@@ -15,6 +15,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.ComponentRecentlyClosedBinding
 import org.mozilla.fenix.library.LibraryPageView
 import org.mozilla.fenix.selection.SelectionInteractor
+import mozilla.components.ui.icons.R as iconsR
 
 interface RecentlyClosedInteractor : SelectionInteractor<TabState> {
     /**
@@ -62,7 +63,7 @@ class RecentlyClosedFragmentView(
             iconView.setImageDrawable(
                 AppCompatResources.getDrawable(
                     containerView.context,
-                    R.drawable.ic_history,
+                    iconsR.drawable.mozac_ic_history_24,
                 ),
             )
             setOnClickListener {
