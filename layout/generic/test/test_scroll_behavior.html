@@ -59,6 +59,9 @@
     is(window.scrollX, 15, "smooth scroll-behavior must be asynchronous (x)");
     is(window.scrollY, 16, "smooth scroll-behavior must be asynchronous (y)");
 
+    // Ensure the smooth scroll request has arrived to APZ before advancing.
+    await promiseApzFlushedRepaints();
+
     SpecialPowers.DOMWindowUtils.advanceTimeAndRefresh(100);
     await promiseApzFlushedRepaints();
 
@@ -217,6 +220,9 @@
 
     window.scrollTo(startX, startY);
     window.scrollTo({left: endX, top: endY, behavior: 'smooth'});
+
+    // Ensure the smooth scroll request has arrived to APZ before advancing.
+    await promiseApzFlushedRepaints();
 
     var currentTime = 0; // ms
 
