@@ -25,28 +25,14 @@ namespace mozilla::layers {
 
 ClipManager::ClipManager() : mManager(nullptr), mBuilder(nullptr) {}
 
-void ClipManager::PushCacheScope() {
-  if (mCacheStackTop < mCacheStack.size()) {
-    mCacheStack[mCacheStackTop].clear();
-  } else {
-    mCacheStack.emplace_back();
-  }
-  mCacheStackTop++;
-}
-
-void ClipManager::PopCacheScope() {
-  MOZ_ASSERT(mCacheStackTop > 0);
-  mCacheStackTop--;
-}
-
 void ClipManager::BeginBuild(WebRenderLayerManager* aManager,
                              wr::DisplayListBuilder& aBuilder) {
   MOZ_ASSERT(!mManager);
   mManager = aManager;
   MOZ_ASSERT(!mBuilder);
   mBuilder = &aBuilder;
-  MOZ_ASSERT(mCacheStackTop == 0);
-  PushCacheScope();
+  MOZ_ASSERT(mCacheStack.empty());
+  mCacheStack.emplace();
   MOZ_ASSERT(mASROverride.empty());
   MOZ_ASSERT(mItemClipStack.empty());
 }
@@ -54,8 +40,8 @@ void ClipManager::BeginBuild(WebRenderLayerManager* aManager,
 void ClipManager::EndBuild() {
   mBuilder = nullptr;
   mManager = nullptr;
-  PopCacheScope();
-  MOZ_ASSERT(mCacheStackTop == 0);
+  mCacheStack.pop();
+  MOZ_ASSERT(mCacheStack.empty());
   MOZ_ASSERT(mASROverride.empty());
   MOZ_ASSERT(mItemClipStack.empty());
 }
@@ -76,7 +62,7 @@ void ClipManager::BeginList(const StackingContextHelper& aStackingContext) {
       clips.mScrollId = *referenceFrameId;
     } else {
       // Start a new cache
-      PushCacheScope();
+      mCacheStack.emplace();
     }
     // Ensure we recreate the chain id if needed.
     clips.mClipChainId.reset();
@@ -102,7 +88,8 @@ void ClipManager::EndList(const StackingContextHelper& aStackingContext) {
       PopOverrideForASR(mItemClipStack.empty() ? nullptr
                                                : mItemClipStack.top().mASR);
     } else {
-      PopCacheScope();
+      MOZ_ASSERT(!mCacheStack.empty());
+      mCacheStack.pop();
     }
   }
 }
@@ -116,7 +103,7 @@ void ClipManager::PushOverrideForASR(const ActiveScrolledRoot* aASR,
   it.first->second.push(aSpatialId);
 
   // Start a new cache
-  PushCacheScope();
+  mCacheStack.emplace();
 
   // Fix up our cached item clip if needed.
   if (!mItemClipStack.empty()) {
@@ -129,7 +116,8 @@ void ClipManager::PushOverrideForASR(const ActiveScrolledRoot* aASR,
 }
 
 void ClipManager::PopOverrideForASR(const ActiveScrolledRoot* aASR) {
-  PopCacheScope();
+  MOZ_ASSERT(!mCacheStack.empty());
+  mCacheStack.pop();
 
   wr::WrSpatialId space = GetSpatialId(aASR);
   auto it = mASROverride.find(space);
@@ -661,12 +649,12 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
 
 Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
     const DisplayItemClipChain* aChain, int32_t aAppUnitsPerDevPixel) {
-  MOZ_ASSERT(mCacheStackTop > 0);
+  MOZ_ASSERT(!mCacheStack.empty());
   if (!aChain) {
     return Nothing();
   }
 
-  ClipIdMap& cache = mCacheStack[mCacheStackTop - 1];
+  ClipIdMap& cache = mCacheStack.top();
   MOZ_DIAGNOSTIC_ASSERT(aChain->mOnStack || !aChain->mASR ||
                         aChain->mASR->mFrame);
 
@@ -713,7 +701,7 @@ Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
 
 ClipManager::~ClipManager() {
   MOZ_ASSERT(!mBuilder);
-  MOZ_ASSERT(mCacheStackTop == 0);
+  MOZ_ASSERT(mCacheStack.empty());
   MOZ_ASSERT(mItemClipStack.empty());
 }
 
