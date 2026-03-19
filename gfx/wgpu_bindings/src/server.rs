@@ -1034,10 +1034,8 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
         let mut export_memory_alloc_info = vk::ExportMemoryAllocateInfo::default()
             .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
 
-        let flags = vk::ImageCreateFlags::empty();
-
         let vk_info = vk::ImageCreateInfo::default()
-            .flags(flags)
+            .flags(vk::ImageCreateFlags::ALIAS)
             .image_type(vk::ImageType::TYPE_2D)
             // Bug 1971883: Rather than hard-coding this format, we should use
             // whatever format was negotiated between `GPUCanvasContext.configure`
@@ -1685,10 +1683,8 @@ impl Global {
                 .drm_format_modifier(vk_image_wrapper.modifier)
                 .plane_layouts(&memory_plane_layouts);
 
-            let flags = vk::ImageCreateFlags::empty();
-
             let vk_info = vk::ImageCreateInfo::default()
-                .flags(flags)
+                .flags(vk::ImageCreateFlags::ALIAS)
                 .image_type(vk::ImageType::TYPE_2D)
                 // Bug 1971883: Rather than hard-coding this format, we should use
                 // whatever format was negotiated between `GPUCanvasContext.configure`
