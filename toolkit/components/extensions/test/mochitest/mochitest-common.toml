@@ -541,6 +541,8 @@ skip-if = [
   "os == 'android' && debug", # bug 1397615
 ]
 
+["test_ext_webauthn.html"]
+
 ["test_ext_webnavigation.html"]
 skip-if = [
   "http2",

@@ -7,9 +7,14 @@
 #include "hasht.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
+#include "mozilla/extensions/MatchPattern.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/net/DNS.h"
 #include "mozpkix/pkixutil.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
@@ -42,6 +47,12 @@ bool IsValidAppId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
   // [2] https://w3c.github.io/webauthn/#sctn-appid-extension
 
   auto* principal = BasePrincipal::Cast(aPrincipal);
+  bool reqIsFromExtension = !!principal->AddonPolicy();
+  if (reqIsFromExtension) {
+    // AppIDs are not allowed from extensions.
+    return false;
+  }
+
   nsCOMPtr<nsIURI> callerUri;
   nsresult rv = principal->GetURI(getter_AddRefs(callerUri));
   if (NS_FAILED(rv)) {
@@ -180,22 +191,66 @@ bool IsWebAuthnAllowedForTransportSecurityInfo(
   }
 }
 
-bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
-                 const nsACString& aRpId) {
+// The "is a registrable domain suffix of or is equal to" condition is defined
+// in https://html.spec.whatwg.org/multipage/browsers.html#dom-document-domain
+// as a subroutine of the document.domain setter, and it is exposed in XUL as
+// the Document::IsValidDomain function. Unfortunately Document::IsValidDomain
+// takes URIs, and to support web extensions we need to compare directly with
+// ASCII host names.
+bool IsRegistrableDomainSuffixOfOrEqualTo(const nsACString& aQuery,
+                                          const nsACString& aReference) {
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+      mozilla::components::EffectiveTLD::Service();
+  if (!tldService) {
+    return false;
+  }
+
+  // exclude values that are themselves in the public suffix list.
+  nsAutoCString queryPublicSuffix;
+  nsresult rv =
+      tldService->GetKnownPublicSuffixFromHost(aQuery, queryPublicSuffix);
+  if (NS_FAILED(rv) || aQuery == queryPublicSuffix) {
+    return false;
+  }
+
+  if (aQuery.Equals(aReference)) {
+    return true;
+  }
+
+  if (aQuery.Length() > aReference.Length() &&
+      StringEndsWith(aQuery, aReference) &&
+      aQuery.CharAt(aQuery.Length() - aReference.Length() - 1) == '.') {
+    // The query string ends with '.' followed by the reference string. It is a
+    // registrable domain suffix of the reference string if and only if its base
+    // domain is entirely contained in `aReference`.
+    nsAutoCString queryBaseDomain;
+    rv = tldService->GetBaseDomainFromHost(aQuery, 0, queryBaseDomain);
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+
+    return aReference.Length() >= queryBaseDomain.Length();
+  }
+
+  return false;
+}
+
+static bool OriginCanClaimRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                               const nsACString& aRpId) {
   // This checks two of the conditions defined in
   // https://w3c.github.io/webauthn/#rp-id, namely that the RP ID value is
   //  (1) "a valid domain string", and
   //  (2) "a registrable domain suffix of or is equal to the caller's origin's
   //      effective domain"
   //
-  // We do not check that the condition that "origin's scheme is https [, or]
-  // the origin's host is localhost and its scheme is http". These are special
-  // cases of secure contexts (https://www.w3.org/TR/secure-contexts/). We
-  // expose WebAuthn in all secure contexts, which is slightly more lenient
-  // than the spec's condition.
+  // The specification also requires
+  //  (3) Either "the origin's scheme is https" or "the origin's host is
+  //      localhost and its scheme is http".
+  // We relax this third condition slightly and expose WebAuthn in all secure
+  // contexts (https://www.w3.org/TR/secure-contexts/).
 
   // Condition (1)
-  nsCString normalizedRpId;
+  nsAutoCString normalizedRpId;
   nsresult rv = NS_DomainToASCII(aRpId, normalizedRpId);
   if (NS_FAILED(rv)) {
     return false;
@@ -205,23 +260,142 @@ bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
   }
 
   // Condition (2)
-  // The "is a registrable domain suffix of or is equal to" condition is defined
-  // in https://html.spec.whatwg.org/multipage/browsers.html#dom-document-domain
-  // as a subroutine of the document.domain setter, and it is exposed in XUL as
-  // the Document::IsValidDomain function. This function takes URIs as inputs
-  // rather than domain strings, so we construct a target URI using the current
-  // document URI as a template.
   auto* basePrin = BasePrincipal::Cast(aPrincipal);
-  nsCOMPtr<nsIURI> currentURI;
-  if (NS_FAILED(basePrin->GetURI(getter_AddRefs(currentURI)))) {
+  nsAutoCString current;
+  if (NS_FAILED(basePrin->GetAsciiHost(current))) {
     return false;
   }
-  nsCOMPtr<nsIURI> targetURI;
-  rv = NS_MutateURI(currentURI).SetHost(aRpId).Finalize(targetURI);
+  if (!IsRegistrableDomainSuffixOfOrEqualTo(current, aRpId)) {
+    return false;
+  }
+
+  // Condition (3)
+  if (!aPrincipal->GetIsOriginPotentiallyTrustworthy()) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool ExtensionCanClaimRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                                  const nsACString& aRpId) {
+  // The conditions here are largely the same as in IsValidRpId. However, rather
+  // than making direct comparisons with the caller's origin, we check whether
+  // the extension has host permissions for a suitable origin.
+  //
+  // The conditions that we enforce are:
+  // (1) The RP ID must be a valid domain string.
+  // (2) The RP ID must not be a single-label non-loopback hostname or a known
+  //     public suffix.
+  // (3) The extension must have host permissions for either
+  //     - https://<domain> where RP ID is a registrable domain suffix of or
+  //     equal to <domain>, or
+  //     - http://<domain> where RP ID is equal to <domain> and <domain> is a
+  //     loopback hostname (per mozilla::net::IsLoopbackHostname).
+
+  // Condition (1)
+  nsAutoCString normalizedRpId;
+  nsresult rv = NS_DomainToASCII(aRpId, normalizedRpId);
   if (NS_FAILED(rv)) {
     return false;
   }
-  return Document::IsValidDomain(currentURI, targetURI);
+  if (normalizedRpId != aRpId) {
+    return false;
+  }
+
+  // Condition (2)
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+      mozilla::components::EffectiveTLD::Service();
+  if (!tldService) {
+    return false;
+  }
+
+  nsAutoCString rpIdPublicSuffix;
+  if (NS_FAILED(
+          tldService->GetKnownPublicSuffixFromHost(aRpId, rpIdPublicSuffix))) {
+    return false;
+  }
+
+  if (aRpId == rpIdPublicSuffix) {
+    return false;
+  }
+
+  // Exclude single-label non-loopback hostnames.
+  int32_t firstDot = aRpId.FindChar('.');
+  if ((firstDot < 0 || firstDot == (int32_t)aRpId.Length() - 1) &&
+      !mozilla::net::IsLoopbackHostname(aRpId)) {
+    return false;
+  }
+
+  // Condition (3)
+  auto* basePrin = BasePrincipal::Cast(aPrincipal);
+  MOZ_ASSERT(basePrin->AddonPolicy());
+
+  RefPtr<mozilla::extensions::MatchPatternSet> matchPatternSet =
+      basePrin->AddonPolicy()->AllowedOrigins();
+
+  nsTArray<RefPtr<mozilla::extensions::MatchPattern>> matchPatterns;
+  matchPatternSet->GetPatterns(matchPatterns);
+
+  for (const auto& matchPattern : matchPatterns) {
+    bool matchesHttps = matchPattern->Core()->ContainsScheme(nsGkAtoms::https);
+    bool matchesHttp = matchPattern->Core()->ContainsScheme(nsGkAtoms::http);
+
+    if (matchPattern->MatchesDomain(aRpId)) {
+      return matchesHttps ||
+             (matchesHttp && mozilla::net::IsLoopbackHostname(aRpId));
+    }
+
+    if (matchesHttps) {
+      // An extension with https:// permissions for a domain from which aRpId
+      // is a valid RP ID (i.e. aRpId is a registrable domain suffix of or
+      // equal to the pattern domain) can claim aRpId.
+      nsCString patternDomain;
+      matchPattern->Core()->GetDomain(patternDomain);
+      return IsRegistrableDomainSuffixOfOrEqualTo(patternDomain, aRpId);
+    }
+  }
+
+  return false;
+}
+
+bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                 const nsACString& aRpId) {
+  auto* basePrincipal = BasePrincipal::Cast(aPrincipal);
+  bool reqIsFromExtension = !!basePrincipal->AddonPolicy();
+  if (reqIsFromExtension) {
+    return ExtensionCanClaimRpId(aPrincipal, aRpId);
+  }
+  return OriginCanClaimRpId(aPrincipal, aRpId);
+}
+
+nsresult GetWebAuthnClientDataOrigin(nsIPrincipal* aPrincipal,
+                                     /* out */ nsACString& aOrigin) {
+  auto* basePrincipal = BasePrincipal::Cast(aPrincipal);
+
+  bool reqIsFromExtension = !!basePrincipal->AddonPolicy();
+  if (reqIsFromExtension) {
+    nsAutoCString extensionId;
+    basePrincipal->AddonPolicy()->Id()->ToUTF8String(extensionId);
+
+    nsTArray<uint8_t> hashedId;
+    nsresult rv = HashCString(extensionId, hashedId);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    // The extension ID may not be a valid host string. So we use the sha256
+    // hash of the extension ID encoded in base 16 with the digits [a-p].
+    aOrigin.Assign("moz-extension://");
+    for (uint8_t byte : hashedId) {
+      aOrigin.Append(char('a' + ((byte >> 4) & 0x0F)));
+      aOrigin.Append(char('a' + (byte & 0x0F)));
+    }
+
+    return NS_OK;
+  }
+
+  return basePrincipal->GetWebExposedOriginSerialization(aOrigin);
 }
 
 static nsresult HashCString(nsICryptoHash* aHashService, const nsACString& aIn,

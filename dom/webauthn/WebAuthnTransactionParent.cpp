@@ -12,6 +12,7 @@
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
 #include "nsThreadUtils.h"
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -29,20 +30,20 @@ nsresult AssembleClientData(WindowGlobalParent* aManager,
       Base64URLEncode(aChallenge.Length(), aChallenge.Elements(),
                       Base64URLEncodePaddingPolicy::Omit, challengeBase64);
   if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
+    return rv;
   }
 
   nsIPrincipal* principal = aManager->DocumentPrincipal();
   nsIPrincipal* topPrincipal =
       aManager->TopWindowContext()->DocumentPrincipal();
 
-  nsCString origin;
-  rv = principal->GetWebExposedOriginSerialization(origin);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
-  }
-
   bool crossOrigin = !principal->Equals(topPrincipal);
+
+  nsAutoCString origin;
+  rv = GetWebAuthnClientDataOrigin(principal, origin);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   // Serialize the collected client data using the algorithm from
   // https://www.w3.org/TR/webauthn-3/#clientdatajson-serialization.
@@ -150,15 +151,15 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestRegister(
   }
 
   nsIPrincipal* principal = manager->DocumentPrincipal();
-  if (!IsValidRpId(principal, aTransactionInfo.RpId())) {
+  nsAutoCString origin;
+  nsresult rv = GetWebAuthnClientDataOrigin(principal, origin);
+  if (NS_FAILED(rv)) {
     aResolver(NS_ERROR_DOM_SECURITY_ERR);
     return IPC_OK();
   }
 
-  nsCString origin;
-  nsresult rv = principal->GetWebExposedOriginSerialization(origin);
-  if (NS_FAILED(rv)) {
-    aResolver(NS_ERROR_FAILURE);
+  if (!IsValidRpId(principal, aTransactionInfo.RpId())) {
+    aResolver(NS_ERROR_DOM_SECURITY_ERR);
     return IPC_OK();
   }
 
@@ -348,6 +349,13 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
   }
 
   nsIPrincipal* principal = manager->DocumentPrincipal();
+  nsAutoCString origin;
+  nsresult rv = GetWebAuthnClientDataOrigin(principal, origin);
+  if (NS_FAILED(rv)) {
+    aResolver(NS_ERROR_DOM_SECURITY_ERR);
+    return IPC_OK();
+  }
+
   if (!IsValidRpId(principal, aTransactionInfo.RpId())) {
     aResolver(NS_ERROR_DOM_SECURITY_ERR);
     return IPC_OK();
@@ -356,13 +364,6 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
   if (aTransactionInfo.AppId().isSome() &&
       !IsValidAppId(principal, aTransactionInfo.AppId().ref())) {
     aResolver(NS_ERROR_DOM_SECURITY_ERR);
-    return IPC_OK();
-  }
-
-  nsCString origin;
-  nsresult rv = principal->GetWebExposedOriginSerialization(origin);
-  if (NS_FAILED(rv)) {
-    aResolver(NS_ERROR_FAILURE);
     return IPC_OK();
   }
 

@@ -170,6 +170,8 @@ class MatchPatternCore final {
   // Helper for MatchPatternSetCore::MatchesAllWebUrls:
   bool MatchesAllUrlsWithScheme(const nsAtom* aScheme) const;
 
+  bool ContainsScheme(const nsAtom* aScheme) const;
+
   bool MatchesCookie(const CookieInfo& aCookie) const;
 
   bool MatchesDomain(const nsACString& aDomain) const;
@@ -183,6 +185,8 @@ class MatchPatternCore final {
   bool DomainIsWildcard() const { return mMatchSubdomain && mDomain.IsEmpty(); }
 
   void GetPattern(nsAString& aPattern) const { aPattern = mPattern; }
+
+  void GetDomain(nsACString& aDomain) const { aDomain = mDomain; }
 
  private:
   ~MatchPatternCore() = default;

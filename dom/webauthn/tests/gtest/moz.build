@@ -3,6 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 UNIFIED_SOURCES += [
+    "TestWebAuthnExtensionRpId.cpp",
+    "TestWebAuthnRpId.cpp",
     "TestWebAuthnSerialization.cpp",
 ]
 

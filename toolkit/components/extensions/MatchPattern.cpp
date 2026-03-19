@@ -366,6 +366,10 @@ bool MatchPatternCore::MatchesAllUrlsWithScheme(const nsAtom* scheme) const {
           (!mPath || mPath->IsWildcard()));
 }
 
+bool MatchPatternCore::ContainsScheme(const nsAtom* scheme) const {
+  return mSchemes->Contains(scheme);
+}
+
 bool MatchPatternCore::MatchesDomain(const nsACString& aDomain) const {
   if (DomainIsWildcard() || mDomain == aDomain) {
     return true;
