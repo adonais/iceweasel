@@ -38,7 +38,6 @@ BACKGROUND_TABS = [
 SUPPORTED_DEVICES = {"SM-A556E": "a55", "Pixel 6": "p6", "SM-S921B": "s24"}
 VALID_IMAGES_DIR = "testing/performance/mobile-startup/expected_startup_screenshots"
 ERROR_THRESHOLD = 8  # This is the lower bound for the high pass filter to remove noise
-ITERATIONS = 5
 MAX_STARTUP_TIME = 25000  # 25000ms = 25 seconds
 PROD_CHRM = "chrome-m"
 PROD_FENIX = "fenix"
@@ -336,6 +335,7 @@ if __name__ == "__main__":
 
     base_testing_dir = os.environ["TESTING_DIR"]
     profiler_combinations = get_profiler_combinations()
+    iterations = 10
     if not profiler_combinations:
         profiler_combinations = [[]]
     for profilers in profiler_combinations:
@@ -344,11 +344,12 @@ if __name__ == "__main__":
             output_path = pathlib.Path(base_testing_dir) / subdir_name
             output_path.mkdir(parents=True, exist_ok=True)
             os.environ["TESTING_DIR"] = str(output_path)
+            iterations = 5
         else:
             os.environ["TESTING_DIR"] = base_testing_dir
 
         ImageObject = ImageAnalzer(browser, test, test_url, profilers)
-        for iteration in range(ITERATIONS):
+        for iteration in range(iterations):
             ImageObject.app_setup()
             ImageObject.get_video(iteration)
             nav_done_frame = ImageObject.get_page_loaded_time(iteration)
