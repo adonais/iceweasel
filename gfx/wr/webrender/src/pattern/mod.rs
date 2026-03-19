@@ -6,7 +6,7 @@ pub mod gradient;
 pub mod box_shadow;
 pub mod repeat;
 
-use api::units::{LayoutVector2D, LayoutPoint};
+use api::units::LayoutVector2D;
 use api::{ColorF, units::DeviceRect};
 
 use crate::frame_builder::FrameBuilderConfig;
@@ -79,7 +79,6 @@ pub struct PatternBuilderContext<'a> {
     pub scene_properties: &'a SceneProperties,
     pub spatial_tree: &'a SpatialTree,
     pub fb_config: &'a FrameBuilderConfig,
-    pub prim_origin: LayoutPoint,
 }
 
 pub struct PatternBuilderState<'a> {

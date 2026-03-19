@@ -164,8 +164,7 @@ impl DataStores {
                 }
             }
             _ => {
-                let common = self.as_common_data(prim_instance);
-                LayoutRect::from_origin_and_size(prim_instance.prim_origin, common.prim_size)
+                self.as_common_data(prim_instance).prim_rect
             }
         }
     }
@@ -195,8 +194,7 @@ impl DataStores {
                 }
             }
             _ => {
-                let common = self.as_common_data(prim_instance);
-                LayoutRect::from_origin_and_size(prim_instance.prim_origin, common.prim_size)
+                self.as_common_data(prim_instance).prim_rect
             }
         }
     }
