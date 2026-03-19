@@ -179,13 +179,13 @@ class nsSHistoryObserver final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  nsSHistoryObserver() = default;
+  nsSHistoryObserver() {}
 
   static void PrefChanged(const char* aPref, void* aSelf);
   void PrefChanged(const char* aPref);
 
  protected:
-  ~nsSHistoryObserver() = default;
+  ~nsSHistoryObserver() {}
 };
 
 StaticRefPtr<nsSHistoryObserver> gObserver;

@@ -29,7 +29,7 @@ WebrtcMediaDataDecoder::WebrtcMediaDataDecoder(nsACString& aCodecMimeType,
       mCodecType(aCodecMimeType),
       mTrackingId(std::move(aTrackingId)) {}
 
-WebrtcMediaDataDecoder::~WebrtcMediaDataDecoder() = default;
+WebrtcMediaDataDecoder::~WebrtcMediaDataDecoder() {}
 
 bool WebrtcMediaDataDecoder::Configure(
     const webrtc::VideoDecoder::Settings& settings) {

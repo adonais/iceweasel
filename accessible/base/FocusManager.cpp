@@ -19,9 +19,9 @@
 namespace mozilla {
 namespace a11y {
 
-FocusManager::FocusManager() = default;
+FocusManager::FocusManager() {}
 
-FocusManager::~FocusManager() = default;
+FocusManager::~FocusManager() {}
 
 LocalAccessible* FocusManager::FocusedLocalAccessible() const {
   MOZ_ASSERT(NS_IsMainThread());

@@ -155,7 +155,9 @@ nsXPCComponents_Interfaces::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
 
 nsXPCComponents_Interfaces::nsXPCComponents_Interfaces() = default;
 
-nsXPCComponents_Interfaces::~nsXPCComponents_Interfaces() = default;
+nsXPCComponents_Interfaces::~nsXPCComponents_Interfaces() {
+  // empty
+}
 
 NS_IMPL_ISUPPORTS(nsXPCComponents_Interfaces, nsIXPCComponents_Interfaces,
                   nsIXPCScriptable, nsIClassInfo);
@@ -306,7 +308,9 @@ nsXPCComponents_Classes::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
 
 nsXPCComponents_Classes::nsXPCComponents_Classes() = default;
 
-nsXPCComponents_Classes::~nsXPCComponents_Classes() = default;
+nsXPCComponents_Classes::~nsXPCComponents_Classes() {
+  // empty
+}
 
 NS_IMPL_ISUPPORTS(nsXPCComponents_Classes, nsIXPCComponents_Classes,
                   nsIXPCScriptable, nsIClassInfo)
@@ -445,7 +449,9 @@ nsXPCComponents_Results::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
 
 nsXPCComponents_Results::nsXPCComponents_Results() = default;
 
-nsXPCComponents_Results::~nsXPCComponents_Results() = default;
+nsXPCComponents_Results::~nsXPCComponents_Results() {
+  // empty
+}
 
 NS_IMPL_ISUPPORTS(nsXPCComponents_Results, nsIXPCComponents_Results,
                   nsIXPCScriptable, nsIClassInfo)
@@ -584,7 +590,9 @@ nsXPCComponents_ID::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
 
 nsXPCComponents_ID::nsXPCComponents_ID() = default;
 
-nsXPCComponents_ID::~nsXPCComponents_ID() = default;
+nsXPCComponents_ID::~nsXPCComponents_ID() {
+  // empty
+}
 
 NS_IMPL_ISUPPORTS(nsXPCComponents_ID, nsIXPCComponents_ID, nsIXPCScriptable,
                   nsIClassInfo)
@@ -733,7 +741,9 @@ nsXPCComponents_Exception::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
 
 nsXPCComponents_Exception::nsXPCComponents_Exception() = default;
 
-nsXPCComponents_Exception::~nsXPCComponents_Exception() = default;
+nsXPCComponents_Exception::~nsXPCComponents_Exception() {
+  // empty
+}
 
 NS_IMPL_ISUPPORTS(nsXPCComponents_Exception, nsIXPCComponents_Exception,
                   nsIXPCScriptable, nsIClassInfo)
@@ -1024,7 +1034,9 @@ nsXPCComponents_Constructor::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
 
 nsXPCComponents_Constructor::nsXPCComponents_Constructor() = default;
 
-nsXPCComponents_Constructor::~nsXPCComponents_Constructor() = default;
+nsXPCComponents_Constructor::~nsXPCComponents_Constructor() {
+  // empty
+}
 
 NS_IMPL_ISUPPORTS(nsXPCComponents_Constructor, nsIXPCComponents_Constructor,
                   nsIXPCScriptable, nsIClassInfo)

@@ -27,6 +27,7 @@ PreloaderBase::UsageTimer::UsageTimer(PreloaderBase* aPreload,
 class PreloaderBase::RedirectSink final : public nsIInterfaceRequestor,
                                           public nsIChannelEventSink,
                                           public nsIRedirectResultListener {
+  RedirectSink() = delete;
   virtual ~RedirectSink();
 
  public:
@@ -36,7 +37,6 @@ class PreloaderBase::RedirectSink final : public nsIInterfaceRequestor,
   NS_DECL_NSIREDIRECTRESULTLISTENER
 
   RedirectSink(PreloaderBase* aPreloader, nsIInterfaceRequestor* aCallbacks);
-  RedirectSink() = delete;
 
  private:
   MainThreadWeakPtr<PreloaderBase> mPreloader;

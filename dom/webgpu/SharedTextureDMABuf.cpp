@@ -94,7 +94,7 @@ SharedTextureDMABuf::SharedTextureDMABuf(
       mSurface(std::move(aSurface)),
       mSurfaceDescriptor(aSurfaceDescriptor) {}
 
-SharedTextureDMABuf::~SharedTextureDMABuf() = default;
+SharedTextureDMABuf::~SharedTextureDMABuf() {}
 
 void SharedTextureDMABuf::CleanForRecycling() {
   mSemaphoreFds.Clear();

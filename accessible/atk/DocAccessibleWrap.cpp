@@ -19,7 +19,7 @@ DocAccessibleWrap::DocAccessibleWrap(dom::Document* aDocument,
                                      PresShell* aPresShell)
     : DocAccessible(aDocument, aPresShell) {}
 
-DocAccessibleWrap::~DocAccessibleWrap() = default;
+DocAccessibleWrap::~DocAccessibleWrap() {}
 
 bool DocAccessibleWrap::IsActivated() {
   if (nsWindow* window = nsWindow::GetFocusedWindow()) {

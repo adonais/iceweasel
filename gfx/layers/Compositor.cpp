@@ -63,7 +63,7 @@ Compositor::Compositor(widget::CompositorWidget* aWidget)
 {
 }
 
-Compositor::~Compositor() = default;
+Compositor::~Compositor() {}
 
 void Compositor::Destroy() {
   mWidget = nullptr;

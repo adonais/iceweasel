@@ -29,7 +29,7 @@
 using namespace mozilla::a11y;
 using namespace mozilla;
 
-XULTreeGridAccessible::~XULTreeGridAccessible() = default;
+XULTreeGridAccessible::~XULTreeGridAccessible() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULTreeGridAccessible: Table
@@ -223,7 +223,7 @@ XULTreeGridRowAccessible::XULTreeGridRowAccessible(
   mStateFlags |= eNoKidsFromDOM;
 }
 
-XULTreeGridRowAccessible::~XULTreeGridRowAccessible() = default;
+XULTreeGridRowAccessible::~XULTreeGridRowAccessible() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULTreeGridRowAccessible: nsISupports and cycle collection implementation
@@ -371,7 +371,7 @@ XULTreeGridCellAccessible::XULTreeGridCellAccessible(
   }
 }
 
-XULTreeGridCellAccessible::~XULTreeGridCellAccessible() = default;
+XULTreeGridCellAccessible::~XULTreeGridCellAccessible() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULTreeGridCellAccessible: nsISupports implementation

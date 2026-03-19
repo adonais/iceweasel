@@ -242,7 +242,7 @@ struct ArenaTreeTrait {
 //   used by the standard API.
 class ArenaCollection {
  public:
-  constexpr ArenaCollection() = default;
+  constexpr ArenaCollection() {}
 
   bool Init() MOZ_REQUIRES(gInitLock) MOZ_EXCLUDES(mLock) {
     arena_params_t params;

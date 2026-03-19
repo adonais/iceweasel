@@ -67,7 +67,7 @@ ProfilerBacktrace::ProfilerBacktrace(
   }
 }
 
-ProfilerBacktrace::~ProfilerBacktrace() = default;
+ProfilerBacktrace::~ProfilerBacktrace() {}
 
 BaseProfilerThreadId ProfilerBacktrace::StreamJSON(
     SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime,

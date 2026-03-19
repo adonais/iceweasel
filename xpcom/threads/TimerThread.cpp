@@ -264,11 +264,11 @@ class nsTimerEvent final : public CancelableRunnable {
 
   already_AddRefed<nsTimerImpl> ForgetTimer() { return mTimer.forget(); }
 
+ private:
   nsTimerEvent(const nsTimerEvent&) = delete;
   nsTimerEvent& operator=(const nsTimerEvent&) = delete;
   nsTimerEvent& operator=(const nsTimerEvent&&) = delete;
 
- private:
   ~nsTimerEvent() = default;
 
   static void AddAllocatorRef() { ++sAllocatorRefs; }

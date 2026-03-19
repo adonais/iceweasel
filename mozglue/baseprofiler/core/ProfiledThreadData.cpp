@@ -19,7 +19,7 @@ namespace baseprofiler {
 ProfiledThreadData::ProfiledThreadData(ThreadInfo* aThreadInfo)
     : mThreadInfo(aThreadInfo) {}
 
-ProfiledThreadData::~ProfiledThreadData() = default;
+ProfiledThreadData::~ProfiledThreadData() {}
 
 void ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer,
                                     SpliceableJSONWriter& aWriter,

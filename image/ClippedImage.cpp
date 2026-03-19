@@ -125,7 +125,7 @@ ClippedImage::ClippedImage(Image* aImage, nsIntRect aClip,
   }
 }
 
-ClippedImage::~ClippedImage() = default;
+ClippedImage::~ClippedImage() {}
 
 bool ClippedImage::ShouldClip() {
   // We need to evaluate the clipping region against the image's width and

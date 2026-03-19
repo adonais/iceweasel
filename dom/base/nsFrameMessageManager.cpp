@@ -1420,6 +1420,13 @@ void nsFrameMessageManager::MarkForCC() {
   }
 }
 
+nsSameProcessAsyncMessageBase::nsSameProcessAsyncMessageBase()
+#ifdef DEBUG
+    : mCalledInit(false)
+#endif
+{
+}
+
 nsresult nsSameProcessAsyncMessageBase::Init(
     const nsAString& aMessage, NotNull<StructuredCloneData*> aData) {
   mData = aData;

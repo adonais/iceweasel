@@ -18,7 +18,7 @@ nsProfilerStartParams::nsProfilerStartParams(
       mFilters(std::move(aFilters)),
       mActiveTabID(aActiveTabID) {}
 
-nsProfilerStartParams::~nsProfilerStartParams() = default;
+nsProfilerStartParams::~nsProfilerStartParams() {}
 
 NS_IMETHODIMP
 nsProfilerStartParams::GetEntries(uint32_t* aEntries) {

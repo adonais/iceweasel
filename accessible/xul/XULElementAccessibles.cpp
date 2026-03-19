@@ -132,7 +132,7 @@ role XULTooltipAccessible::NativeRole() const { return roles::TOOLTIP; }
 XULLinkAccessible::XULLinkAccessible(nsIContent* aContent, DocAccessible* aDoc)
     : XULLabelAccessible(aContent, aDoc) {}
 
-XULLinkAccessible::~XULLinkAccessible() = default;
+XULLinkAccessible::~XULLinkAccessible() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULLinkAccessible: LocalAccessible

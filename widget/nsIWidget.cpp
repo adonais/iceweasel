@@ -130,10 +130,11 @@ WidgetShutdownObserver::WidgetShutdownObserver(nsIWidget* aWidget)
   Register();
 }
 
-// No need to call Unregister(), we can't be destroyed until nsIWidget
-// gets torn down. The observer service and nsIWidget.have a ref on us
-// so nsIWidget.has to call Unregister and then clear its ref.
-WidgetShutdownObserver::~WidgetShutdownObserver() = default;
+WidgetShutdownObserver::~WidgetShutdownObserver() {
+  // No need to call Unregister(), we can't be destroyed until nsIWidget
+  // gets torn down. The observer service and nsIWidget.have a ref on us
+  // so nsIWidget.has to call Unregister and then clear its ref.
+}
 
 NS_IMETHODIMP
 WidgetShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
@@ -215,10 +216,11 @@ LocalesChangedObserver::LocalesChangedObserver(nsIWidget* aWidget)
   Register();
 }
 
-// No need to call Unregister(), we can't be destroyed until nsIWidget
-// gets torn down. The observer service and nsIWidget.have a ref on us
-// so nsIWidget.has to call Unregister and then clear its ref.
-LocalesChangedObserver::~LocalesChangedObserver() = default;
+LocalesChangedObserver::~LocalesChangedObserver() {
+  // No need to call Unregister(), we can't be destroyed until nsIWidget
+  // gets torn down. The observer service and nsIWidget.have a ref on us
+  // so nsIWidget.has to call Unregister and then clear its ref.
+}
 
 NS_IMETHODIMP
 LocalesChangedObserver::Observe(nsISupports* aSubject, const char* aTopic,

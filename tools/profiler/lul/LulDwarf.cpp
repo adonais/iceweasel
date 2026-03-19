@@ -73,7 +73,7 @@ ByteReader::ByteReader(enum Endianness endian)
       have_data_base_(),
       have_function_base_() {}
 
-ByteReader::~ByteReader() = default;
+ByteReader::~ByteReader() {}
 
 void ByteReader::SetOffsetSize(uint8 size) {
   offset_size_ = size;

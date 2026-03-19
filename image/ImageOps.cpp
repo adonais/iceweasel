@@ -88,7 +88,7 @@ class ImageOps::ImageBufferImpl final : public ImageOps::ImageBuffer {
       : mSourceBuffer(aSourceBuffer) {}
 
  protected:
-  ~ImageBufferImpl() override = default;
+  ~ImageBufferImpl() override {}
 
   already_AddRefed<SourceBuffer> GetSourceBuffer() const override {
     RefPtr<SourceBuffer> sourceBuffer = mSourceBuffer;

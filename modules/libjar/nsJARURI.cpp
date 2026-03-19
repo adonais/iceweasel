@@ -26,9 +26,9 @@ NS_IMPL_CLASSINFO(nsJARURI, nullptr, nsIClassInfo::THREADSAFE, NS_JARURI_CID)
 // Empty CI getter. We only need nsIClassInfo for Serialization
 NS_IMPL_CI_INTERFACE_GETTER0(nsJARURI)
 
-nsJARURI::nsJARURI() = default;
+nsJARURI::nsJARURI() {}
 
-nsJARURI::~nsJARURI() = default;
+nsJARURI::~nsJARURI() {}
 
 // XXX Why is this threadsafe?
 NS_IMPL_ADDREF(nsJARURI)

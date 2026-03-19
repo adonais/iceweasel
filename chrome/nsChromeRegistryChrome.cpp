@@ -83,7 +83,7 @@ static bool LanguagesMatch(const nsACString& a, const nsACString& b) {
 nsChromeRegistryChrome::nsChromeRegistryChrome()
     : mProfileLoaded(false), mDynamicRegistration(true) {}
 
-nsChromeRegistryChrome::~nsChromeRegistryChrome() = default;
+nsChromeRegistryChrome::~nsChromeRegistryChrome() {}
 
 nsresult nsChromeRegistryChrome::Init() {
   nsresult rv = nsChromeRegistry::Init();

@@ -13,9 +13,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-nsIconProtocolHandler::nsIconProtocolHandler() = default;
+nsIconProtocolHandler::nsIconProtocolHandler() {}
 
-nsIconProtocolHandler::~nsIconProtocolHandler() = default;
+nsIconProtocolHandler::~nsIconProtocolHandler() {}
 
 NS_IMPL_ISUPPORTS(nsIconProtocolHandler, nsIProtocolHandler,
                   nsISupportsWeakReference)

@@ -47,7 +47,7 @@ ImageAccessible::ImageAccessible(nsIContent* aContent, DocAccessible* aDoc)
   }
 }
 
-ImageAccessible::~ImageAccessible() = default;
+ImageAccessible::~ImageAccessible() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // LocalAccessible public

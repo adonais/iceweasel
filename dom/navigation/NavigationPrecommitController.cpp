@@ -27,7 +27,7 @@ NavigationPrecommitController::NavigationPrecommitController(
   MOZ_DIAGNOSTIC_ASSERT(mEvent);
 }
 
-NavigationPrecommitController::~NavigationPrecommitController() = default;
+NavigationPrecommitController::~NavigationPrecommitController() {}
 
 JSObject* NavigationPrecommitController::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {

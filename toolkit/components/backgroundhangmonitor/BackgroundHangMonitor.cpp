@@ -71,6 +71,9 @@ class BackgroundHangManager : public nsIObserver {
   // Stop hang monitoring
   bool mShutdown;
 
+  BackgroundHangManager(const BackgroundHangManager&);
+  BackgroundHangManager& operator=(const BackgroundHangManager&);
+
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -125,9 +128,6 @@ class BackgroundHangManager : public nsIObserver {
   }
 
   BackgroundHangManager();
-
-  BackgroundHangManager(const BackgroundHangManager&) = delete;
-  BackgroundHangManager& operator=(const BackgroundHangManager&) = delete;
 
  private:
   virtual ~BackgroundHangManager();
@@ -184,6 +184,8 @@ class BackgroundHangThread final
   static MOZ_THREAD_LOCAL(BackgroundHangThread*) sTlsKey;
   static bool sTlsKeyInitialized;
 
+  BackgroundHangThread(const BackgroundHangThread&);
+  BackgroundHangThread& operator=(const BackgroundHangThread&);
   ~BackgroundHangThread();
 
   /* Keep a reference to the manager, so we can keep going even
@@ -245,9 +247,6 @@ class BackgroundHangThread final
                        uint32_t aMaxTimeoutMs,
                        BackgroundHangMonitor::ThreadType aThreadType =
                            BackgroundHangMonitor::THREAD_SHARED);
-
-  BackgroundHangThread(const BackgroundHangThread&) = delete;
-  BackgroundHangThread& operator=(const BackgroundHangThread&) = delete;
 
   // Report a hang; aManager->mLock IS locked. The hang will be processed
   // off-main-thread, and will then be submitted back.

@@ -26,7 +26,9 @@ NS_IMPL_ISUPPORTS(nsClipboardHelper, nsIClipboardHelper)
 
 nsClipboardHelper::nsClipboardHelper() = default;
 
-nsClipboardHelper::~nsClipboardHelper() = default;
+nsClipboardHelper::~nsClipboardHelper() {
+  // no members, nothing to destroy
+}
 
 /*****************************************************************************
  * nsIClipboardHelper methods

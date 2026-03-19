@@ -35,7 +35,7 @@ struct mozilla::a11y::SelData final {
 
  private:
   // Private destructor, to discourage deletion outside of Release():
-  ~SelData() = default;
+  ~SelData() {}
 };
 
 SelectionManager::SelectionManager()

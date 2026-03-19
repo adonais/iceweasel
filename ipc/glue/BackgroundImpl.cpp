@@ -256,12 +256,17 @@ class ChildImpl final : public BackgroundChildImpl {
 
  public:
   struct ThreadLocalInfo {
-    ThreadLocalInfo() = default;
+    ThreadLocalInfo()
+#ifdef DEBUG
+        : mClosed(false)
+#endif
+    {
+    }
 
     RefPtr<ChildImpl> mActor;
     UniquePtr<BackgroundChildImpl::ThreadLocal> mConsumerThreadLocal;
 #ifdef DEBUG
-    bool mClosed = false;
+    bool mClosed;
 #endif
   };
 

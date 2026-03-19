@@ -45,7 +45,7 @@ OuterDocAccessible::OuterDocAccessible(nsIContent* aContent,
   }
 }
 
-OuterDocAccessible::~OuterDocAccessible() = default;
+OuterDocAccessible::~OuterDocAccessible() {}
 
 void OuterDocAccessible::SendEmbedderAccessible(
     dom::BrowserBridgeChild* aBridge) {

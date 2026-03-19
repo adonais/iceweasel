@@ -2954,6 +2954,9 @@ class RopeBuilder {
   JSContext* cx;
   RootedString res;
 
+  RopeBuilder(const RopeBuilder& other) = delete;
+  void operator=(const RopeBuilder& other) = delete;
+
  public:
   explicit RopeBuilder(JSContext* cx)
       : cx(cx), res(cx, cx->runtime()->emptyString) {}
@@ -2964,9 +2967,6 @@ class RopeBuilder {
   }
 
   inline JSString* result() { return res; }
-
-  RopeBuilder(const RopeBuilder& other) = delete;
-  void operator=(const RopeBuilder& other) = delete;
 };
 
 namespace {

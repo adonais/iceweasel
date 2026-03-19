@@ -288,7 +288,7 @@ class CorePS {
  private:
   CorePS() : mProcessStartTime(TimeStamp::ProcessCreation()) {}
 
-  ~CorePS() = default;
+  ~CorePS() {}
 
  public:
   static void Create(PSLockRef aLock) {
@@ -2026,9 +2026,6 @@ class SamplerThread {
   // This runs on the main thread.
   void Stop(PSLockRef aLock);
 
-  SamplerThread(const SamplerThread&) = delete;
-  void operator=(const SamplerThread&) = delete;
-
  private:
   // This suspends the calling thread for the given number of microseconds.
   // Best effort timing.
@@ -2055,6 +2052,9 @@ class SamplerThread {
   bool mNoTimerResolutionChange = true;
   HANDLE mHiResTimer;
 #endif
+
+  SamplerThread(const SamplerThread&) = delete;
+  void operator=(const SamplerThread&) = delete;
 };
 
 // This function is required because we need to create a SamplerThread within

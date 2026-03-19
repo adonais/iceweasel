@@ -21,7 +21,7 @@ nsAccessibleRelation::nsAccessibleRelation(uint32_t aType, Relation* aRel)
   }
 }
 
-nsAccessibleRelation::~nsAccessibleRelation() = default;
+nsAccessibleRelation::~nsAccessibleRelation() {}
 
 // nsISupports
 NS_IMPL_ISUPPORTS(nsAccessibleRelation, nsIAccessibleRelation)

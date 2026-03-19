@@ -446,8 +446,6 @@ class gfxFontEntry::FontTableBlobData {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  FontTableBlobData(const FontTableBlobData&) = delete;
-
  private:
   // The font table data block
   const nsTArray<uint8_t> mTableData;
@@ -457,6 +455,9 @@ class gfxFontEntry::FontTableBlobData {
   // hashtable; and the hashtable key, so that it can remove the entry.
   gfxFontEntry* mFontEntry;
   uint32_t mHashKey;
+
+  // not implemented
+  FontTableBlobData(const FontTableBlobData&);
 };
 
 hb_blob_t* gfxFontEntry::FontTableHashEntry::ShareTableAndGetBlob(

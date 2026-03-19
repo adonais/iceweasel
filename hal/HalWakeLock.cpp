@@ -59,7 +59,7 @@ static void CountWakeLocks(ProcessLockTable* aTable, LockCount* aTotalCount) {
 }
 
 class ClearHashtableOnShutdown final : public nsIObserver {
-  ~ClearHashtableOnShutdown() = default;
+  ~ClearHashtableOnShutdown() {}
 
  public:
   NS_DECL_ISUPPORTS
@@ -80,7 +80,7 @@ ClearHashtableOnShutdown::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 class CleanupOnContentShutdown final : public nsIObserver {
-  ~CleanupOnContentShutdown() = default;
+  ~CleanupOnContentShutdown() {}
 
  public:
   NS_DECL_ISUPPORTS

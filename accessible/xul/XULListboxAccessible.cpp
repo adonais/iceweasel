@@ -361,7 +361,7 @@ XULListitemAccessible::XULListitemAccessible(nsIContent* aContent,
   mType = eXULListItemType;
 }
 
-XULListitemAccessible::~XULListitemAccessible() = default;
+XULListitemAccessible::~XULListitemAccessible() {}
 
 LocalAccessible* XULListitemAccessible::GetListAccessible() const {
   if (IsDefunct()) return nullptr;

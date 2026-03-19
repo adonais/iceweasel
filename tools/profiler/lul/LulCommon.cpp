@@ -55,7 +55,7 @@ Module::Module(const string& name, const string& os, const string& architecture,
                const string& id)
     : name_(name), os_(os), architecture_(architecture), id_(id) {}
 
-Module::~Module() = default;
+Module::~Module() {}
 
 ////////////////////////////////////////////////////////////////
 // UniqueString

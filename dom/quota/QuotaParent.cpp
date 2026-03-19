@@ -138,11 +138,14 @@ already_AddRefed<PQuotaParent> AllocPQuotaParent() {
   return actor.forget();
 }
 
+Quota::Quota()
 #ifdef DEBUG
-Quota::~Quota() { MOZ_ASSERT(mActorDestroyed); }
-#else
-Quota::~Quota() = default;
+    : mActorDestroyed(false)
 #endif
+{
+}
+
+Quota::~Quota() { MOZ_ASSERT(mActorDestroyed); }
 
 bool Quota::TrustParams() const {
 #ifdef DEBUG

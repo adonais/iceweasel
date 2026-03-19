@@ -28,7 +28,7 @@ Http2Stream::Http2Stream(nsAHttpTransaction* httpTransaction,
   LOG1(("Http2Stream::Http2Stream %p trans=%p", this, httpTransaction));
 }
 
-Http2Stream::~Http2Stream() = default;
+Http2Stream::~Http2Stream() {}
 
 void Http2Stream::CloseStream(nsresult reason) {
   if (reason == NS_ERROR_NET_RESET &&

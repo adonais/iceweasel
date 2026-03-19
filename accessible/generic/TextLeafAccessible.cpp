@@ -21,7 +21,7 @@ TextLeafAccessible::TextLeafAccessible(nsIContent* aContent,
   mStateFlags |= eNoKidsFromDOM;
 }
 
-TextLeafAccessible::~TextLeafAccessible() = default;
+TextLeafAccessible::~TextLeafAccessible() {}
 
 role TextLeafAccessible::NativeRole() const {
   nsIFrame* frame = GetFrame();

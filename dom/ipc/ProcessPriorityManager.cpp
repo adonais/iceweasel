@@ -201,11 +201,6 @@ class ProcessPriorityManagerImpl final : public nsIObserver,
   void BrowserPriorityChanged(CanonicalBrowsingContext* aBC, bool aPriority);
   void BrowserPriorityChanged(BrowserParent* aBrowserParent, bool aPriority);
 
-  ProcessPriorityManagerImpl(const ProcessPriorityManagerImpl&) = delete;
-
-  const ProcessPriorityManagerImpl& operator=(
-      const ProcessPriorityManagerImpl&) = delete;
-
  private:
   static bool sPrefListenersRegistered;
   static bool sInitialized;
@@ -215,6 +210,10 @@ class ProcessPriorityManagerImpl final : public nsIObserver,
 
   ProcessPriorityManagerImpl();
   ~ProcessPriorityManagerImpl();
+  ProcessPriorityManagerImpl(const ProcessPriorityManagerImpl&) = delete;
+
+  const ProcessPriorityManagerImpl& operator=(
+      const ProcessPriorityManagerImpl&) = delete;
 
   void Init();
 
@@ -244,16 +243,15 @@ class ProcessPriorityManagerChild final : public nsIObserver {
 
   bool CurrentProcessIsForeground();
 
-  ProcessPriorityManagerChild(const ProcessPriorityManagerChild&) = delete;
-
-  const ProcessPriorityManagerChild& operator=(
-      const ProcessPriorityManagerChild&) = delete;
-
  private:
   static StaticRefPtr<ProcessPriorityManagerChild> sSingleton;
 
   ProcessPriorityManagerChild();
   ~ProcessPriorityManagerChild() = default;
+  ProcessPriorityManagerChild(const ProcessPriorityManagerChild&) = delete;
+
+  const ProcessPriorityManagerChild& operator=(
+      const ProcessPriorityManagerChild&) = delete;
 
   void Init();
 

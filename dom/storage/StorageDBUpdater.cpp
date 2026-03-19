@@ -145,9 +145,8 @@ class GetOriginParticular final : public mozIStorageFunction {
   explicit GetOriginParticular(EParticular aParticular)
       : mParticular(aParticular) {}
 
-  GetOriginParticular() = delete;
-
  private:
+  GetOriginParticular() = delete;
   ~GetOriginParticular() = default;
 
   EParticular mParticular;

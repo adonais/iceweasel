@@ -2959,7 +2959,7 @@ class AppWindowTimerCallback final : public nsITimerCallback, public nsINamed {
   }
 
  private:
-  ~AppWindowTimerCallback() = default;
+  ~AppWindowTimerCallback() {}
 
   RefPtr<AppWindow> mWindow;
 };

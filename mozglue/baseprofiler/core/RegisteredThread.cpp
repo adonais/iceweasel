@@ -21,7 +21,7 @@ RegisteredThread::RegisteredThread(ThreadInfo* aInfo, void* aStackTop)
 #endif
 }
 
-RegisteredThread::~RegisteredThread() = default;
+RegisteredThread::~RegisteredThread() {}
 
 size_t RegisteredThread::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);

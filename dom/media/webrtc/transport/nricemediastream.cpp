@@ -191,9 +191,10 @@ NrIceMediaStream::NrIceMediaStream(NrIceCtx* ctx, const std::string& id,
       old_stream_(nullptr),
       id_(id) {}
 
-// We do not need to destroy anything. All major resources
-// are attached to the ice ctx.
-NrIceMediaStream::~NrIceMediaStream() = default;
+NrIceMediaStream::~NrIceMediaStream() {
+  // We do not need to destroy anything. All major resources
+  // are attached to the ice ctx.
+}
 
 nsresult NrIceMediaStream::ConnectToPeer(
     const std::string& ufrag, const std::string& pwd,

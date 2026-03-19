@@ -1627,11 +1627,12 @@ struct ConnectionPool::DatabaseInfo final {
   }
 
   nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable);
-  DatabaseInfo(const DatabaseInfo&) = delete;
-  DatabaseInfo& operator=(const DatabaseInfo&) = delete;
 
  private:
   ~DatabaseInfo();
+
+  DatabaseInfo(const DatabaseInfo&) = delete;
+  DatabaseInfo& operator=(const DatabaseInfo&) = delete;
 };
 
 struct ConnectionPool::DatabaseCompleteCallback final {
@@ -4448,6 +4449,9 @@ class Cursor final
   void SendResponseInternal(CursorResponse& aResponse,
                             const FilesArrayT<CursorType>& aFiles);
 
+  // Must call SendResponseInternal!
+  bool SendResponse(const CursorResponse& aResponse) = delete;
+
   // IPDL methods.
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -4474,9 +4478,6 @@ class Cursor final
       : Base{std::move(aTransaction), std::move(aObjectStoreMetadata),
              aDirection, aConstructionTag},
         KeyValueBase{this->mTransaction.unsafeGetRawPtr()} {}
-
-  // Must call SendResponseInternal!
-  bool SendResponse(const CursorResponse& aResponse) = delete;
 
  private:
   void SetOptionalKeyRange(const Maybe<SerializedKeyRange>& aOptionalKeyRange,

@@ -17,7 +17,7 @@ using mozilla::DebugOnly;
 class xpcPivotRule : public PivotRule {
  public:
   explicit xpcPivotRule(nsIAccessibleTraversalRule* aRule) : mRule(aRule) {}
-  ~xpcPivotRule() = default;
+  ~xpcPivotRule() {}
 
   virtual uint16_t Match(Accessible* aAcc) override;
 
@@ -32,7 +32,7 @@ xpcAccessiblePivot::xpcAccessiblePivot(nsIAccessible* aRoot) : mRoot(aRoot) {
   NS_ASSERTION(aRoot, "A root accessible is required");
 }
 
-xpcAccessiblePivot::~xpcAccessiblePivot() = default;
+xpcAccessiblePivot::~xpcAccessiblePivot() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // nsISupports

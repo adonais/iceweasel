@@ -19,7 +19,8 @@ ICU4XChineseBasedCalendar::ICU4XChineseBasedCalendar(
     : ICU4XCalendar(kind, timeZone, locale, success) {}
 
 ICU4XChineseBasedCalendar::ICU4XChineseBasedCalendar(
-    const ICU4XChineseBasedCalendar& other) = default;
+    const ICU4XChineseBasedCalendar& other)
+    : ICU4XCalendar(other) {}
 
 ICU4XChineseBasedCalendar::~ICU4XChineseBasedCalendar() = default;
 

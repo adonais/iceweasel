@@ -54,7 +54,7 @@ XULTreeAccessible::XULTreeAccessible(nsIContent* aContent, DocAccessible* aDoc,
   }
 }
 
-XULTreeAccessible::~XULTreeAccessible() = default;
+XULTreeAccessible::~XULTreeAccessible() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULTreeAccessible: nsISupports and cycle collection implementation
@@ -574,7 +574,7 @@ XULTreeItemAccessibleBase::XULTreeItemAccessibleBase(
   mStateFlags |= eSharedNode;
 }
 
-XULTreeItemAccessibleBase::~XULTreeItemAccessibleBase() = default;
+XULTreeItemAccessibleBase::~XULTreeItemAccessibleBase() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULTreeItemAccessibleBase: nsISupports implementation
@@ -906,7 +906,7 @@ XULTreeItemAccessible::XULTreeItemAccessible(
   GetCellName(mColumn, mCachedName);
 }
 
-XULTreeItemAccessible::~XULTreeItemAccessible() = default;
+XULTreeItemAccessible::~XULTreeItemAccessible() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // XULTreeItemAccessible: nsISupports implementation

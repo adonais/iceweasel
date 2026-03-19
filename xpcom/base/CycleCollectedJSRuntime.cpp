@@ -685,7 +685,7 @@ JSHolderList::Iter::Iter(JSHolderList& aList, WhichJSHolders aWhich)
 
 void JSHolderList::Iter::UpdateForRemovals() { mIter.Settle(); }
 
-JSHolderList::JSHolderList() = default;
+JSHolderList::JSHolderList() {}
 
 bool JSHolderList::RemoveEntry(EntryVector& aJSHolders, Entry* aEntry) {
   MOZ_ASSERT(aEntry);

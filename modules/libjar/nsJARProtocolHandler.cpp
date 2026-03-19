@@ -24,7 +24,7 @@ mozilla::StaticRefPtr<nsJARProtocolHandler> gJarHandler;
 
 nsJARProtocolHandler::nsJARProtocolHandler() { MOZ_ASSERT(NS_IsMainThread()); }
 
-nsJARProtocolHandler::~nsJARProtocolHandler() = default;
+nsJARProtocolHandler::~nsJARProtocolHandler() {}
 
 nsresult nsJARProtocolHandler::Init() {
   nsresult rv;

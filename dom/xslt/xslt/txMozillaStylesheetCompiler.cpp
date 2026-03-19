@@ -337,12 +337,12 @@ class txCompileObserver final : public txACompileObserver {
                      nsIPrincipal* aSourcePrincipal,
                      ReferrerPolicy aReferrerPolicy);
 
-  // This exists solely to suppress a warning from nsDerivedSafe
-  txCompileObserver() = delete;
-
  private:
   RefPtr<txMozillaXSLTProcessor> mProcessor;
   nsCOMPtr<Document> mLoaderDocument;
+
+  // This exists solely to suppress a warning from nsDerivedSafe
+  txCompileObserver();
 
   // Private destructor, to discourage deletion outside of Release():
   ~txCompileObserver() = default;

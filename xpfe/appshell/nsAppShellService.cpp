@@ -65,7 +65,7 @@ nsAppShellService::nsAppShellService()
   }
 }
 
-nsAppShellService::~nsAppShellService() = default;
+nsAppShellService::~nsAppShellService() {}
 
 /*
  * Implement the nsISupports methods...
@@ -286,7 +286,7 @@ class BrowserDestroyer final : public Runnable {
   }
 
  protected:
-  virtual ~BrowserDestroyer() = default;
+  virtual ~BrowserDestroyer() {}
 
  private:
   nsCOMPtr<nsIWebBrowser> mBrowser;

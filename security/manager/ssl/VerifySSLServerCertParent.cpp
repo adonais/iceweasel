@@ -20,7 +20,7 @@ using namespace mozilla::pkix;
 namespace mozilla {
 namespace psm {
 
-VerifySSLServerCertParent::VerifySSLServerCertParent() = default;
+VerifySSLServerCertParent::VerifySSLServerCertParent() {}
 
 void VerifySSLServerCertParent::OnVerifiedSSLServerCert(
     const nsTArray<ByteArray>& aBuiltCertChain,

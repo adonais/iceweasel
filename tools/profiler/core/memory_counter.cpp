@@ -15,8 +15,9 @@ class MemoryCounter : public BaseProfilerCount {
   MemoryCounter()
       : BaseProfilerCount("malloc", "Memory", "Amount of allocated memory") {};
 
-  // The counter is removed by ActivePS::Destroy()
-  virtual ~MemoryCounter() = default;
+  virtual ~MemoryCounter() {
+    // The counter is removed by ActivePS::Destroy()
+  }
 
   CountSample Sample() override {
     CountSample sample = {

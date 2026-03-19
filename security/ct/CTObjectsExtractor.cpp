@@ -47,14 +47,14 @@ class Output {
     return input.Init(begin, length);
   }
 
-  Output(const Output&) = delete;
-  void operator=(const Output&) = delete;
-
  private:
   uint8_t* begin;
   uint8_t* end;
   uint8_t* current;
   bool overflowed;
+
+  Output(const Output&) = delete;
+  void operator=(const Output&) = delete;
 
   void Write(const uint8_t* data, size_t length) {
     if (end < current) {

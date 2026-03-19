@@ -25,7 +25,7 @@ PrototypeDocumentParser::PrototypeDocumentParser(nsIURI* aDocumentURI,
       mPrototypeAlreadyLoaded(false),
       mIsComplete(false) {}
 
-PrototypeDocumentParser::~PrototypeDocumentParser() = default;
+PrototypeDocumentParser::~PrototypeDocumentParser() {}
 
 NS_INTERFACE_TABLE_HEAD(PrototypeDocumentParser)
   NS_INTERFACE_TABLE(PrototypeDocumentParser, nsIParser, nsIStreamListener,

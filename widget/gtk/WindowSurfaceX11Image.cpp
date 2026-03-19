@@ -31,7 +31,7 @@ WindowSurfaceX11Image::WindowSurfaceX11Image(Display* aDisplay, Window aWindow,
                                              unsigned int aDepth)
     : WindowSurfaceX11(aDisplay, aWindow, aVisual, aDepth) {}
 
-WindowSurfaceX11Image::~WindowSurfaceX11Image() = default;
+WindowSurfaceX11Image::~WindowSurfaceX11Image() {}
 
 already_AddRefed<gfx::DrawTarget> WindowSurfaceX11Image::Lock(
     const LayoutDeviceIntRegion& aRegion) {

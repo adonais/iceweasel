@@ -39,7 +39,7 @@ const nsLiteralString kSpace(u" ");
 
 nsChromeTreeOwner::nsChromeTreeOwner() : mAppWindow(nullptr) {}
 
-nsChromeTreeOwner::~nsChromeTreeOwner() = default;
+nsChromeTreeOwner::~nsChromeTreeOwner() {}
 
 //*****************************************************************************
 // nsChromeTreeOwner::nsISupports

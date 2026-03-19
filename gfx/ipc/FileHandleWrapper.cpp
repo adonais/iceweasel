@@ -11,7 +11,7 @@ namespace mozilla::gfx {
 FileHandleWrapper::FileHandleWrapper(mozilla::UniqueFileHandle&& aHandle)
     : mHandle(std::move(aHandle)) {}
 
-FileHandleWrapper::~FileHandleWrapper() = default;
+FileHandleWrapper::~FileHandleWrapper() {}
 
 mozilla::detail::FileHandleType FileHandleWrapper::GetHandle() {
   return mHandle.get();

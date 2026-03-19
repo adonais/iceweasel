@@ -4465,9 +4465,6 @@ class SamplerThread {
         std::move(mPostSamplingCallbackList), std::move(aCallback));
   }
 
-  SamplerThread(const SamplerThread&) = delete;
-  void operator=(const SamplerThread&) = delete;
-
  private:
   void SpyOnUnregisteredThreads();
 
@@ -4590,6 +4587,9 @@ class SamplerThread {
   // Unregistered threads that have been found, and are being spied on.
   using SpiedThreads = AutoTArray<SpiedThread, 128>;
   SpiedThreads mSpiedThreads;
+
+  SamplerThread(const SamplerThread&) = delete;
+  void operator=(const SamplerThread&) = delete;
 };
 
 namespace geckoprofiler::markers {

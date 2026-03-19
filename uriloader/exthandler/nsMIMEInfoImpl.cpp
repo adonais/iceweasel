@@ -107,7 +107,7 @@ nsMIMEInfoBase::nsMIMEInfoBase(const nsACString& aType, HandlerClass aClass)
               browser_download_always_ask_before_handling_new_types() ||
           aClass != eMIMEInfo) {}
 
-nsMIMEInfoBase::~nsMIMEInfoBase() = default;
+nsMIMEInfoBase::~nsMIMEInfoBase() {}
 
 NS_IMETHODIMP
 nsMIMEInfoBase::GetFileExtensions(nsIUTF8StringEnumerator** aResult) {

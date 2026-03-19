@@ -1398,12 +1398,12 @@ class UpgradeSchemaFrom17_0To18_0Helper final {
   static nsresult DoUpgrade(mozIStorageConnection& aConnection,
                             const nsACString& aOrigin);
 
-  UpgradeSchemaFrom17_0To18_0Helper() = delete;
-  ~UpgradeSchemaFrom17_0To18_0Helper() = delete;
-
  private:
   static nsresult DoUpgradeInternal(mozIStorageConnection& aConnection,
                                     const nsACString& aOrigin);
+
+  UpgradeSchemaFrom17_0To18_0Helper() = delete;
+  ~UpgradeSchemaFrom17_0To18_0Helper() = delete;
 };
 
 class UpgradeSchemaFrom17_0To18_0Helper::InsertIndexDataValuesFunction final

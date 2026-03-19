@@ -522,7 +522,7 @@ class mozInlineSpellResume : public Runnable {
 
 // Used as the nsIEditorSpellCheck::InitSpellChecker callback.
 class InitEditorSpellCheckCallback final : public nsIEditorSpellCheckCallback {
-  ~InitEditorSpellCheckCallback() = default;
+  ~InitEditorSpellCheckCallback() {}
 
  public:
   NS_DECL_ISUPPORTS
@@ -570,7 +570,7 @@ mozInlineSpellChecker::mozInlineSpellChecker()
       mFullSpellCheckScheduled(false),
       mIsListeningToEditSubActions(false) {}
 
-mozInlineSpellChecker::~mozInlineSpellChecker() = default;
+mozInlineSpellChecker::~mozInlineSpellChecker() {}
 
 EditorSpellCheck* mozInlineSpellChecker::GetEditorSpellCheck() {
   return mSpellCheck ? mSpellCheck : mPendingSpellCheck;
@@ -2054,7 +2054,7 @@ class UpdateCurrentDictionaryCallback final
   }
 
  private:
-  ~UpdateCurrentDictionaryCallback() = default;
+  ~UpdateCurrentDictionaryCallback() {}
 
   RefPtr<mozInlineSpellChecker> mSpellChecker;
   uint32_t mDisabledAsyncToken;

@@ -39,7 +39,7 @@ NS_IMPL_ISUPPORTS(nsAutoConfig, nsITimerCallback, nsIStreamListener,
                   nsIObserver, nsIRequestObserver, nsISupportsWeakReference,
                   nsINamed)
 
-nsAutoConfig::nsAutoConfig() = default;
+nsAutoConfig::nsAutoConfig() {}
 
 nsresult nsAutoConfig::Init() {
   // member initializers and constructor code
@@ -57,7 +57,7 @@ nsresult nsAutoConfig::Init() {
   return rv;
 }
 
-nsAutoConfig::~nsAutoConfig() = default;
+nsAutoConfig::~nsAutoConfig() {}
 
 void nsAutoConfig::SetConfigURL(const char* aConfigURL) {
   mConfigURL.Assign(aConfigURL);

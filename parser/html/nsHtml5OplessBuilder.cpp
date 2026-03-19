@@ -10,7 +10,7 @@
 
 nsHtml5OplessBuilder::nsHtml5OplessBuilder() : nsHtml5DocumentBuilder(true) {}
 
-nsHtml5OplessBuilder::~nsHtml5OplessBuilder() = default;
+nsHtml5OplessBuilder::~nsHtml5OplessBuilder() {}
 
 void nsHtml5OplessBuilder::Start() {
   BeginFlush();

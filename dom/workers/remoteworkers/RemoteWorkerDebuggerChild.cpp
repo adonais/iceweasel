@@ -128,7 +128,7 @@ RemoteWorkerDebuggerChild::RemoteWorkerDebuggerChild(
   aWorkerPrivate->AssertIsOnWorkerThread();
 }
 
-RemoteWorkerDebuggerChild::~RemoteWorkerDebuggerChild() = default;
+RemoteWorkerDebuggerChild::~RemoteWorkerDebuggerChild() {}
 
 mozilla::ipc::IPCResult RemoteWorkerDebuggerChild::RecvRegisterDone() {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();

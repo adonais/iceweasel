@@ -54,7 +54,7 @@ AccessibleNode::AccessibleNode(nsINode* aNode)
   }
 }
 
-AccessibleNode::~AccessibleNode() = default;
+AccessibleNode::~AccessibleNode() {}
 
 /* virtual */
 JSObject* AccessibleNode::WrapObject(JSContext* aCx,

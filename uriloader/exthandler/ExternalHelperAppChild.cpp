@@ -17,7 +17,7 @@ NS_IMPL_ISUPPORTS(ExternalHelperAppChild, nsIStreamListener, nsIRequestObserver)
 
 ExternalHelperAppChild::ExternalHelperAppChild() : mStatus(NS_OK) {}
 
-ExternalHelperAppChild::~ExternalHelperAppChild() = default;
+ExternalHelperAppChild::~ExternalHelperAppChild() {}
 
 //-----------------------------------------------------------------------------
 // nsIStreamListener

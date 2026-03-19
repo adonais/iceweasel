@@ -150,7 +150,7 @@ mozPersonalDictionary::mozPersonalDictionary()
       mMonitor("mozPersonalDictionary::mMonitor"),
       mMonitorSave("mozPersonalDictionary::mMonitorSave") {}
 
-mozPersonalDictionary::~mozPersonalDictionary() = default;
+mozPersonalDictionary::~mozPersonalDictionary() {}
 
 nsresult mozPersonalDictionary::Init() {
   nsCOMPtr<nsIObserverService> svc =

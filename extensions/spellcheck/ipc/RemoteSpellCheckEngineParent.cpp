@@ -12,7 +12,7 @@ RemoteSpellcheckEngineParent::RemoteSpellcheckEngineParent() {
   mSpellChecker = mozSpellChecker::Create();
 }
 
-RemoteSpellcheckEngineParent::~RemoteSpellcheckEngineParent() = default;
+RemoteSpellcheckEngineParent::~RemoteSpellcheckEngineParent() {}
 
 mozilla::ipc::IPCResult RemoteSpellcheckEngineParent::RecvSetDictionary(
     const nsACString& aDictionary, bool* success) {

@@ -130,7 +130,7 @@ class MediaTransportParent::Impl : public sigslot::has_slots<> {
 
 MediaTransportParent::MediaTransportParent() : mImpl(new Impl(this)) {}
 
-MediaTransportParent::~MediaTransportParent() = default;
+MediaTransportParent::~MediaTransportParent() {}
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvGetIceLog(
     const nsCString& pattern, GetIceLogResolver&& aResolve) {

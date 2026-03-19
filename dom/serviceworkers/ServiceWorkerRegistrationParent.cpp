@@ -136,7 +136,7 @@ IPCResult ServiceWorkerRegistrationParent::RecvGetNotifications(
   return IPC_OK();
 }
 
-ServiceWorkerRegistrationParent::ServiceWorkerRegistrationParent() = default;
+ServiceWorkerRegistrationParent::ServiceWorkerRegistrationParent() {}
 
 ServiceWorkerRegistrationParent::~ServiceWorkerRegistrationParent() {
   MOZ_DIAGNOSTIC_ASSERT(!mProxy);

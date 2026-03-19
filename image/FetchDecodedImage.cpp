@@ -71,7 +71,7 @@ class FetchDecodedImageHelper : public imgIContainerCallback,
   }
 
  private:
-  virtual ~FetchDecodedImageHelper() = default;
+  virtual ~FetchDecodedImageHelper() {}
 
   void RequestDecode() {
     if (mSize.Width() && mSize.Height()) {

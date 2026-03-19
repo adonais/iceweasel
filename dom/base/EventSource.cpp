@@ -346,10 +346,6 @@ class EventSourceImpl final : public nsIChannelEventSink,
   JSCallingLocation mCallingLocation;
   uint64_t mInnerWindowID;
 
-  // prevent bad usage
-  EventSourceImpl(const EventSourceImpl& x) = delete;
-  EventSourceImpl& operator=(const EventSourceImpl& x) = delete;
-
  private:
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
 
@@ -360,6 +356,9 @@ class EventSourceImpl final : public nsIChannelEventSink,
   // and must not be dereferenced.
   nsIThread* mTargetThread;
 
+  // prevent bad usage
+  EventSourceImpl(const EventSourceImpl& x) = delete;
+  EventSourceImpl& operator=(const EventSourceImpl& x) = delete;
   ~EventSourceImpl() {
     if (IsClosed()) {
       return;

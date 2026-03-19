@@ -365,7 +365,7 @@ class RenderSourceLMC : public profiler_screenshots::RenderSource {
   const auto& RenderTarget() { return mRT; }
 
  protected:
-  virtual ~RenderSourceLMC() = default;
+  virtual ~RenderSourceLMC() {}
 
   RefPtr<CompositingRenderTarget> mRT;
 };
@@ -403,7 +403,7 @@ class DownscaleTargetLMC : public profiler_screenshots::DownscaleTarget {
   }
 
  protected:
-  virtual ~DownscaleTargetLMC() = default;
+  virtual ~DownscaleTargetLMC() {}
 
   RefPtr<RenderSourceLMC> mRenderSource;
   Compositor* mCompositor;
@@ -427,7 +427,7 @@ class AsyncReadbackBufferLMC
   }
 
  protected:
-  virtual ~AsyncReadbackBufferLMC() = default;
+  virtual ~AsyncReadbackBufferLMC() {}
 
   RefPtr<mozilla::layers::AsyncReadbackBuffer> mARB;
   Compositor* mCompositor;

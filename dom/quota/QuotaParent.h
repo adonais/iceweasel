@@ -12,11 +12,11 @@ namespace mozilla::dom::quota {
 
 class Quota final : public PQuotaParent {
 #ifdef DEBUG
-  bool mActorDestroyed = false;
+  bool mActorDestroyed;
 #endif
 
  public:
-  Quota() = default;
+  Quota();
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(mozilla::dom::quota::Quota, override)
 

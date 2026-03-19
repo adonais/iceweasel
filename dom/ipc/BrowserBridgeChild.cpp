@@ -32,7 +32,7 @@ BrowserBridgeChild::BrowserBridgeChild(BrowsingContext* aBrowsingContext,
                                        TabId aId, const LayersId& aLayersId)
     : mId{aId}, mLayersId{aLayersId}, mBrowsingContext(aBrowsingContext) {}
 
-BrowserBridgeChild::~BrowserBridgeChild() = default;
+BrowserBridgeChild::~BrowserBridgeChild() {}
 
 already_AddRefed<BrowserBridgeHost> BrowserBridgeChild::FinishInit(
     nsFrameLoader* aFrameLoader) {
