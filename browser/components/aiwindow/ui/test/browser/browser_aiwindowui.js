@@ -3,8 +3,13 @@
 
 "use strict";
 
-const { AIWindowUI } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+// AI chat content loads Fluent strings asynchronously, which may not complete
+// before the test finishes. This is expected and doesn't affect test behavior.
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Missing message.*smartwindow-messages-document-title/
 );
 
 add_task(async function test_aiwindowui_constants() {
@@ -95,6 +100,30 @@ add_task(async function test_aiwindowui_sidebar_operations() {
     // Restore initial state
     box.collapsed = initialBoxHidden;
     splitter.collapsed = initialSplitterHidden;
+  }
+});
+
+// Verify sidebar opens for returning user
+add_task(async function test_returning_user_sidebar_opens() {
+  const win = await openAIWindow();
+
+  try {
+    BrowserTestUtils.startLoadingURIString(
+      win.gBrowser.selectedTab.linkedBrowser,
+      "https://example.com/"
+    );
+    await BrowserTestUtils.browserLoaded(
+      win.gBrowser.selectedTab.linkedBrowser
+    );
+
+    await TestUtils.waitForCondition(
+      () => AIWindowUI.isSidebarOpen(win),
+      "Sidebar should auto-open for returning user"
+    );
+    Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should be open");
+  } finally {
+    win.document.getElementById(AIWindowUI.BROWSER_ID)?.remove();
+    await BrowserTestUtils.closeWindow(win);
   }
 });
 
