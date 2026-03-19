@@ -154,3 +154,19 @@ def partner_repack_ids_grouping(config, tasks):
             groups[partner_repack_ids_key].append(task)
 
     return groups.values()
+
+
+@group_by("product")
+def product_grouping(config, tasks):
+    groups = {}
+    for task in tasks:
+        if task.kind not in config.config.get("kind-dependencies", []):
+            continue
+        if skip_only_or_not(config.config, task):
+            continue
+        product = task.attributes.get(
+            "shipping_product", task.task.get("shipping-product")
+        )
+
+        groups.setdefault(product, []).append(task)
+    return groups.values()
