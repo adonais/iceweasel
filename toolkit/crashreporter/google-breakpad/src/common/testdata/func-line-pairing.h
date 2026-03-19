@@ -1,5 +1,3 @@
-// -*- mode: c++ -*-
-
 // Test data for pairing functions and lines.
 // 
 // For a pair of functions that are adjacent (10,20),(20,25) and a

@@ -1,6 +1,3 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et: */
-
 // Tests for `History.remove`, as implemented in History.sys.mjs
 
 "use strict";
