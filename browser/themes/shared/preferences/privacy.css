@@ -292,6 +292,11 @@
   margin: 0;
 }
 
+#telemetry-container {
+  margin-block: 4px;
+  width: 100%;
+}
+
 .privacy-detailedoption-description {
   font-size: 90%;
   opacity: 0.6;
@@ -318,6 +323,10 @@
 #deleteOnCloseNote {
   margin-top: 8px;
   margin-inline-end: 32px;
+}
+
+#submitHealthReportBox {
+  display: inline-flex;
 }
 
 /* Logins and Passwords */
