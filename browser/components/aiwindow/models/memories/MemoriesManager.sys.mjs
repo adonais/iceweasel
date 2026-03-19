@@ -17,7 +17,6 @@ import {
   openAIEngine,
   renderPrompt,
   SERVICE_TYPES,
-  PURPOSES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { MemoryStore } from "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs";
 import {
@@ -88,8 +87,7 @@ export class MemoriesManager {
       this.#openAIEngineGenerationPromise = openAIEngine.build(
         MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         `${DEFAULT_ENGINE_ID}-memories-generation`,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
+        SERVICE_TYPES.MEMORIES
       );
       return this.#openAIEngineGenerationPromise;
     };
@@ -125,8 +123,7 @@ export class MemoriesManager {
       this.#openAIEngineUsagePromise = openAIEngine.build(
         MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM,
         `${DEFAULT_ENGINE_ID}-memories-usage`,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION // no dedicated purpose for classification, not currently used
+        SERVICE_TYPES.MEMORIES
       );
       return this.#openAIEngineUsagePromise;
     };

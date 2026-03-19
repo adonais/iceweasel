@@ -42,16 +42,6 @@ export const SERVICE_TYPES = Object.freeze({
 });
 
 /**
- * Purposes for different AI Window features, used to track usage and performance in telemetry
- */
-export const PURPOSES = Object.freeze({
-  CHAT: "chat",
-  TITLE_GENERATION: "title-generation",
-  CONVERSATION_STARTERS_SIDEBAR: "convo-starters-sidebar",
-  MEMORY_GENERATION: "memory-generation",
-});
-
-/**
  * Observer for model preference changes.
  * Invalidates the Remote Settings client cache when user changes their model preference.
  */
@@ -327,13 +317,6 @@ export class openAIEngine {
   #serviceType = null;
 
   /**
-   * Purpose used for creating the engine instance
-   *
-   * @type {string | null}
-   */
-  #purpose = null;
-
-  /**
    * Gets the Remote Settings client for AI window configurations.
    *
    * @returns {RemoteSettingsClient}
@@ -545,17 +528,13 @@ export class openAIEngine {
    * @param {string} serviceType
    *   The type of message to be sent ("ai", "memories", "s2s").
    *   Defaults to SERVICE_TYPES.AI.
-   * @param {string} purpose
-   *   The purpose of the request, used for telemetry tracking.
-   *   Defaults to PURPOSES.CHAT.
    * @returns {Promise<object>}
    *   Promise that will resolve to the configured engine instance.
    */
   static async build(
     feature,
     engineId = DEFAULT_ENGINE_ID,
-    serviceType = SERVICE_TYPES.AI,
-    purpose = PURPOSES.CHAT
+    serviceType = SERVICE_TYPES.AI
   ) {
     const engine = new openAIEngine();
 
@@ -563,12 +542,10 @@ export class openAIEngine {
 
     engine.#engineId = engineId;
     engine.#serviceType = serviceType;
-    engine.#purpose = purpose;
 
     engine.engineInstance = await openAIEngine.#createOpenAIEngine(
       engineId,
       serviceType,
-      purpose,
       engine.model
     );
 
@@ -598,16 +575,10 @@ export class openAIEngine {
    *
    * @param {string} engineId     The identifier for the engine instance
    * @param {string} serviceType  The type of message to be sent ("ai", "memories", "s2s")
-   * @param {string} purpose      The purpose of the request, used for telemetry tracking
    * @param {string | null} modelId  The resolved model ID (already contains fallback logic)
    * @returns {Promise<object>}   The configured engine instance
    */
-  static async #createOpenAIEngine(
-    engineId,
-    serviceType,
-    purpose,
-    modelId = null
-  ) {
+  static async #createOpenAIEngine(engineId, serviceType, modelId = null) {
     const extraHeadersPref = Services.prefs.getStringPref(
       "browser.smartwindow.extraHeaders",
       "{}"
@@ -630,7 +601,6 @@ export class openAIEngine {
         modelRevision: "main",
         taskName: "text-generation",
         serviceType,
-        purpose,
         extraHeaders,
       });
       return engineInstance;
@@ -715,7 +685,6 @@ export class openAIEngine {
     this.engineInstance = await openAIEngine.#createOpenAIEngine(
       this.#engineId,
       this.#serviceType,
-      this.#purpose,
       this.model
     );
   }

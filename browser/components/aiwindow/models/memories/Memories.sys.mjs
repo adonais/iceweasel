@@ -17,7 +17,7 @@
  * 3. `existingMemoriesList`: an array of existing memory summary strings to deduplicate against
  *
  * Example Usage:
- * const engine = await openAIEngine.build(MODEL_FEATURES.MEMORIES, DEFAULT_ENGINE_ID, SERVICE_TYPES.MEMORIES, PURPOSES.MEMORY_GENERATION);
+ * const engine = await openAIEngine.build(MODEL_FEATURES.MEMORIES, DEFAULT_ENGINE_ID, SERVICE_TYPES.MEMORIES);
  * const sources = {history: [domainItems, titleItems, searchItems]};
  * const existingMemoriesList = [...]; // Array of existing memory summary strings; this should be fetched from memory storage
  * const newMemories = await generateMemories(engine, sources, existingMemoriesList);
