@@ -104,6 +104,14 @@ class ExternalEngineStateMachine final
         "ExternalEngineStateMachine::NotifyHardwareReset",
         [self = RefPtr{this}] { self->RecoverFromHardwareReset(); }));
   }
+#ifdef MOZ_WMF_CDM
+  void NotifyWaitingForKey() {
+    // On the engine manager thread.
+    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
+        "ExternalEngineStateMachine::NotifyWaitingForKey",
+        [self = RefPtr{this}] { self->NotifyWaitingForKeyInternal(); }));
+  }
+#endif
 
   const char* GetStateStr() const;
 
@@ -307,6 +315,9 @@ class ExternalEngineStateMachine final
   // alive, so reinitialize the engine only.
   void RecoverFromCDMProcessCrashIfNeeded();
   void RecoverFromHardwareReset();
+#ifdef MOZ_WMF_CDM
+  void NotifyWaitingForKeyInternal();
+#endif
 
   void ReportTelemetry(const MediaResult& aError);
 
