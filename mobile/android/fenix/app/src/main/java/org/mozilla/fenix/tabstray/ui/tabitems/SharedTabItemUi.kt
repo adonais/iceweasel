@@ -37,7 +37,6 @@ import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
-import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import mozilla.components.ui.icons.R as iconsR
@@ -172,7 +171,7 @@ fun TabGroupMenuButton(
             .testTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON),
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.ic_menu),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
             contentDescription = PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION,
             tint = MaterialTheme.colorScheme.onSurface,
         )
