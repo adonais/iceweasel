@@ -33,6 +33,9 @@
     if (event.target != document) {
       return;
     }
+    await SpecialPowers.pushPrefEnv({"set":
+      [["layout.disable-pixel-alignment", true]]});
+
     await testScrollBehaviorInterruption();
     await testScrollBehaviorFramerate();
     window.scrollTo(0,0);
